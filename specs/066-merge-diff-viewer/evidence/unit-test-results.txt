@@ -1,84 +1,38 @@
 
- RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-merge-diff-viewer
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-merge-diff-viewer[39m
 
- ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > rendering > renders flat file list 34ms
- ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > rendering > renders nested folders and files 68ms
- ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > rendering > expands all folders by default 22ms
- ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > selection > calls onSelectChange when a file is clicked 8ms
- ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > selection > highlights the initially selected item 3ms
- ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > selection > updates selection when different file is clicked 4ms
- ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > custom icon and badge > renders custom badge content 3ms
- ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > custom icon and badge > renders custom icon 3ms
- ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > indicator > renders without indicator lines when indicator is false 12ms
- ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > single code mode > renders the filename in the header 42ms
- ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > single code mode > renders the code-block test id 7ms
- ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > single code mode > renders the code content via syntax highlighter 4ms
- ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > single code mode > renders copy button 38ms
- ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > single code mode > applies additional className 4ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > rendering > renders nothing when fileDiffs is empty 6ms
- ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > tabbed mode > renders tab buttons 11ms
- ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > tabbed mode > renders first tab content by default 3ms
- ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > tabbed mode > switches to second tab when clicked 14ms
- ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > copy to clipboard > copies code to clipboard when copy button is clicked 7ms
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > PR link > renders PR number as clickable external link with correct href and target 93ms
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > rendering > renders merge-diff-viewer container when files are provided 111ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > rendering > renders file tree header with file count 33ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > rendering > renders file names in the tree 30ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > rendering > renders folder structure from file paths 27ms
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > PR status > displays PR status text 7ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > CI status badge > renders green badge with "Passing" text for CiStatus.Success 5ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > CI status badge > renders yellow badge with "Pending" text for CiStatus.Pending 6ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > CI status badge > renders red badge with "Failing" text for CiStatus.Failure 7ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > CI status badge > omits CI section entirely when ciStatus is undefined 6ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > diff summary > renders diff stats with correct formatting when available 7ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > diff summary > shows warning message when diffSummary is absent and warning is set 7ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > commit hash > displays truncated commit hash (7 chars) when available 7ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > commit hash > does not show commit hash section when commitHash is undefined 5ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > branch info > renders source and target branch names when branch data is provided 7ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > branch info > does not render branch section when branch is undefined 5ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > chat input > renders the chat input field 12ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > chat input > calls onReject with trimmed text on submit 14ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > chat input > does not call onReject when input is empty 10ms
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > rendering > applies custom className 19ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > file selection > selects first file by default and shows its diff 22ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > file selection > shows "No diff content available" for file with empty hunks 6ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > addition/deletion badges > shows addition count for added files 17ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > addition/deletion badges > shows deletion count for deleted files 29ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > addition/deletion badges > shows both addition and deletion counts for modified files 19ms
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > chat input > disables chat input when isProcessing is true 8ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > approve button > renders "Approve Merge" button that calls onApprove when Ctrl+Shift is held 11ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > approve button > disables approve button when isProcessing is true 17ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > file diffs > renders merge diff viewer when fileDiffs are provided 36ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > file diffs > does not render merge diff viewer when fileDiffs is undefined 6ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > file diffs > does not render merge diff viewer when fileDiffs is empty 4ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > no PR > hides PR card and shows alternate description when pr is undefined 3ms
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/file-tree.test.tsx[2m > [22mTree[2m > [22mrendering[2m > [22mrenders flat file list[32m 79[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/file-tree.test.tsx[2m > [22mTree[2m > [22mrendering[2m > [22mrenders nested folders and files[32m 152[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/file-tree.test.tsx[2m > [22mTree[2m > [22mrendering[2m > [22mexpands all folders by default[32m 45[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/file-tree.test.tsx[2m > [22mTree[2m > [22mselection[2m > [22mcalls onSelectChange when a file is clicked[32m 12[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/file-tree.test.tsx[2m > [22mTree[2m > [22mselection[2m > [22mhighlights the initially selected item[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/file-tree.test.tsx[2m > [22mTree[2m > [22mselection[2m > [22mupdates selection when different file is clicked[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/file-tree.test.tsx[2m > [22mTree[2m > [22mcustom icon and badge[2m > [22mrenders custom badge content[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/file-tree.test.tsx[2m > [22mTree[2m > [22mcustom icon and badge[2m > [22mrenders custom icon[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/file-tree.test.tsx[2m > [22mTree[2m > [22mindicator[2m > [22mrenders without indicator lines when indicator is false[32m 14[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/code-block.test.tsx[2m > [22mCodeBlock[2m > [22msingle code mode[2m > [22mrenders the filename in the header[32m 52[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/code-block.test.tsx[2m > [22mCodeBlock[2m > [22msingle code mode[2m > [22mrenders the code-block test id[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/code-block.test.tsx[2m > [22mCodeBlock[2m > [22msingle code mode[2m > [22mrenders the code content via syntax highlighter[32m 4[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/code-block.test.tsx[2m > [22mCodeBlock[2m > [22msingle code mode[2m > [22mrenders copy button[32m 44[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/code-block.test.tsx[2m > [22mCodeBlock[2m > [22msingle code mode[2m > [22mapplies additional className[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/code-block.test.tsx[2m > [22mCodeBlock[2m > [22mtabbed mode[2m > [22mrenders tab buttons[32m 11[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/code-block.test.tsx[2m > [22mCodeBlock[2m > [22mtabbed mode[2m > [22mrenders first tab content by default[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/code-block.test.tsx[2m > [22mCodeBlock[2m > [22mtabbed mode[2m > [22mswitches to second tab when clicked[32m 16[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/ui/code-block.test.tsx[2m > [22mCodeBlock[2m > [22mcopy to clipboard[2m > [22mcopies code to clipboard when copy button is clicked[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx[2m > [22mMergeDiffViewer[2m > [22mrendering[2m > [22mrenders nothing when fileDiffs is empty[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx[2m > [22mMergeDiffViewer[2m > [22mrendering[2m > [22mrenders merge-diff-viewer container when files are provided[32m 109[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx[2m > [22mMergeDiffViewer[2m > [22mrendering[2m > [22mrenders file tree header with file count[32m 33[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx[2m > [22mMergeDiffViewer[2m > [22mrendering[2m > [22mrenders file names in the tree[32m 27[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx[2m > [22mMergeDiffViewer[2m > [22mrendering[2m > [22mrenders folder structure from file paths[32m 24[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx[2m > [22mMergeDiffViewer[2m > [22mrendering[2m > [22mapplies custom className[32m 19[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx[2m > [22mMergeDiffViewer[2m > [22mfile selection[2m > [22mselects first file by default and shows its diff[32m 20[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx[2m > [22mMergeDiffViewer[2m > [22mfile selection[2m > [22mshows "No diff content available" for file with empty hunks[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx[2m > [22mMergeDiffViewer[2m > [22maddition/deletion badges[2m > [22mshows addition count for added files[32m 15[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx[2m > [22mMergeDiffViewer[2m > [22maddition/deletion badges[2m > [22mshows deletion count for deleted files[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx[2m > [22mMergeDiffViewer[2m > [22maddition/deletion badges[2m > [22mshows both addition and deletion counts for modified files[32m 18[2mms[22m[39m
 
- Test Files  4 passed (4)
-      Tests  51 passed (51)
-   Start at  23:52:09
-   Duration  1.31s (transform 329ms, setup 540ms, import 1.45s, tests 892ms, environment 1.51s)
+[2m Test Files [22m [1m[32m3 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[32m29 passed[39m[22m[90m (29)[39m
+[2m   Start at [22m 23:57:46
+[2m   Duration [22m 1.78s[2m (transform 250ms, setup 391ms, import 1.94s, tests 761ms, environment 1.29s)[22m
 
