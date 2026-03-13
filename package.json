@@ -120,6 +120,7 @@
     "@types/node-notifier": "^8.0.5",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
+    "@types/which": "^3.0.4",
     "@typespec-tools/emitter-typescript": "^0.3.0",
     "@typespec/compiler": "^0.60.0",
     "@typespec/json-schema": "^0.60.0",

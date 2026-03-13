@@ -19,7 +19,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { CiStatusBadge } from '@/components/common/ci-status-badge';
 import { DrawerActionBar } from '@/components/common/drawer-action-bar';
-import { DiffView } from './diff-view';
+import { MergeDiffViewer } from './merge-diff-viewer';
 import type { MergeReviewProps, MergeReviewEvidence } from './merge-review-config';
 
 const EVIDENCE_ICONS: Record<MergeReviewEvidence['type'], typeof Camera> = {
@@ -337,7 +337,9 @@ export function MergeReview({
         ) : null}
 
         {/* File diffs */}
-        {fileDiffs && fileDiffs.length > 0 ? <DiffView fileDiffs={fileDiffs} /> : null}
+        {fileDiffs && fileDiffs.length > 0 ? (
+          <MergeDiffViewer fileDiffs={fileDiffs} className="min-h-[400px]" />
+        ) : null}
       </div>
 
       <DrawerActionBar

@@ -225,7 +225,7 @@ describe('MergeReview', () => {
   });
 
   describe('file diffs', () => {
-    it('renders diff view section when fileDiffs are provided', () => {
+    it('renders merge diff viewer when fileDiffs are provided', () => {
       const props: MergeReviewProps = {
         ...baseProps,
         data: {
@@ -243,17 +243,17 @@ describe('MergeReview', () => {
       };
       render(<MergeReview {...props} />);
 
-      expect(screen.getByText('Changed Files')).toBeInTheDocument();
+      expect(screen.getByTestId('merge-diff-viewer')).toBeInTheDocument();
       expect(screen.getByText('app.ts')).toBeInTheDocument();
     });
 
-    it('does not render diff view when fileDiffs is undefined', () => {
+    it('does not render merge diff viewer when fileDiffs is undefined', () => {
       render(<MergeReview {...baseProps} />);
 
-      expect(screen.queryByText('Changed Files')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('merge-diff-viewer')).not.toBeInTheDocument();
     });
 
-    it('does not render diff view when fileDiffs is empty', () => {
+    it('does not render merge diff viewer when fileDiffs is empty', () => {
       const props: MergeReviewProps = {
         ...baseProps,
         data: {
@@ -263,7 +263,7 @@ describe('MergeReview', () => {
       };
       render(<MergeReview {...props} />);
 
-      expect(screen.queryByText('Changed Files')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('merge-diff-viewer')).not.toBeInTheDocument();
     });
   });
 
