@@ -1,0 +1,84 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-merge-diff-viewer
+
+ ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > rendering > renders flat file list 34ms
+ ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > rendering > renders nested folders and files 68ms
+ ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > rendering > expands all folders by default 22ms
+ ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > selection > calls onSelectChange when a file is clicked 8ms
+ ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > selection > highlights the initially selected item 3ms
+ ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > selection > updates selection when different file is clicked 4ms
+ ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > custom icon and badge > renders custom badge content 3ms
+ ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > custom icon and badge > renders custom icon 3ms
+ ✓  web  tests/unit/presentation/web/components/ui/file-tree.test.tsx > Tree > indicator > renders without indicator lines when indicator is false 12ms
+ ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > single code mode > renders the filename in the header 42ms
+ ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > single code mode > renders the code-block test id 7ms
+ ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > single code mode > renders the code content via syntax highlighter 4ms
+ ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > single code mode > renders copy button 38ms
+ ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > single code mode > applies additional className 4ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > rendering > renders nothing when fileDiffs is empty 6ms
+ ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > tabbed mode > renders tab buttons 11ms
+ ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > tabbed mode > renders first tab content by default 3ms
+ ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > tabbed mode > switches to second tab when clicked 14ms
+ ✓  web  tests/unit/presentation/web/components/ui/code-block.test.tsx > CodeBlock > copy to clipboard > copies code to clipboard when copy button is clicked 7ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > PR link > renders PR number as clickable external link with correct href and target 93ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > rendering > renders merge-diff-viewer container when files are provided 111ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > rendering > renders file tree header with file count 33ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > rendering > renders file names in the tree 30ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > rendering > renders folder structure from file paths 27ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > PR status > displays PR status text 7ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > CI status badge > renders green badge with "Passing" text for CiStatus.Success 5ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > CI status badge > renders yellow badge with "Pending" text for CiStatus.Pending 6ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > CI status badge > renders red badge with "Failing" text for CiStatus.Failure 7ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > CI status badge > omits CI section entirely when ciStatus is undefined 6ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > diff summary > renders diff stats with correct formatting when available 7ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > diff summary > shows warning message when diffSummary is absent and warning is set 7ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > commit hash > displays truncated commit hash (7 chars) when available 7ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > commit hash > does not show commit hash section when commitHash is undefined 5ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > branch info > renders source and target branch names when branch data is provided 7ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > branch info > does not render branch section when branch is undefined 5ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > chat input > renders the chat input field 12ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > chat input > calls onReject with trimmed text on submit 14ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > chat input > does not call onReject when input is empty 10ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > rendering > applies custom className 19ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > file selection > selects first file by default and shows its diff 22ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > file selection > shows "No diff content available" for file with empty hunks 6ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > addition/deletion badges > shows addition count for added files 17ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > addition/deletion badges > shows deletion count for deleted files 29ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-diff-viewer.test.tsx > MergeDiffViewer > addition/deletion badges > shows both addition and deletion counts for modified files 19ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > chat input > disables chat input when isProcessing is true 8ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > approve button > renders "Approve Merge" button that calls onApprove when Ctrl+Shift is held 11ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > approve button > disables approve button when isProcessing is true 17ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > file diffs > renders merge diff viewer when fileDiffs are provided 36ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > file diffs > does not render merge diff viewer when fileDiffs is undefined 6ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > file diffs > does not render merge diff viewer when fileDiffs is empty 4ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx > MergeReview > no PR > hides PR card and shows alternate description when pr is undefined 3ms
+
+ Test Files  4 passed (4)
+      Tests  51 passed (51)
+   Start at  23:52:09
+   Duration  1.31s (transform 329ms, setup 540ms, import 1.45s, tests 892ms, environment 1.51s)
+
