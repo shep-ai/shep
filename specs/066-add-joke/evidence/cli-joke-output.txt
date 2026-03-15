@@ -1,0 +1,31 @@
+=== shep joke - CLI Evidence ===
+
+=== Run 1 ===
+
+> @shepai/cli@1.112.1 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-add-joke
+> tsx src/presentation/cli/index.ts joke
+
+
+There are only 10 types of people in the world:
+those who understand binary and those who don't.
+
+
+=== Run 2 ===
+
+> @shepai/cli@1.112.1 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-add-joke
+> tsx src/presentation/cli/index.ts joke
+
+
+Why do programmers prefer dark mode?
+Because light attracts bugs.
+
+
+=== Run 3 ===
+
+> @shepai/cli@1.112.1 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-add-joke
+> tsx src/presentation/cli/index.ts joke
+
+
+There are two hard things in computer science:
+cache invalidation, naming things, and off-by-one errors.
+
