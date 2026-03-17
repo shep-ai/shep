@@ -9,6 +9,7 @@ import { ActionButton } from '@/components/common/action-button';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import type { RepositoryNodeData } from './repository-node-config';
 import { useRepositoryActions } from './use-repository-actions';
+import { InitRemoteSection } from './init-remote-section';
 
 export interface RepositoryDrawerProps {
   data: RepositoryNodeData | null;
@@ -115,6 +116,12 @@ export function RepositoryDrawer({ data, onClose }: RepositoryDrawerProps) {
               </div>
             </>
           ) : null}
+          {data.gitInfoStatus === 'ready' &&
+            data.hasRemote === false &&
+            !!data.repositoryPath &&
+            !!data.id && (
+              <InitRemoteSection repositoryId={data.id} repositoryPath={data.repositoryPath} />
+            )}
         </>
       ) : null}
     </BaseDrawer>

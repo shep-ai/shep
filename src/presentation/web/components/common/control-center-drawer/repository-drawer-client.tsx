@@ -9,6 +9,7 @@ import { DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
 import { Separator } from '@/components/ui/separator';
 import { useRepositoryActions } from '@/components/common/repository-node/use-repository-actions';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
+import { InitRemoteSection } from '@/components/common/repository-node/init-remote-section';
 import type { RepositoryNodeData } from '@/components/common/repository-node';
 
 export interface RepositoryDrawerClientProps {
@@ -118,6 +119,12 @@ export function RepositoryDrawerClient({ data }: RepositoryDrawerClientProps) {
               </div>
             </>
           ) : null}
+          {data.gitInfoStatus === 'ready' &&
+            data.hasRemote === false &&
+            !!data.repositoryPath &&
+            !!data.id && (
+              <InitRemoteSection repositoryId={data.id} repositoryPath={data.repositoryPath} />
+            )}
         </div>
       ) : null}
     </BaseDrawer>
