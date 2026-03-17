@@ -1,0 +1,40 @@
+shep repo init-remote — CLI Help Output
+========================================
+
+$ shep repo init-remote --help
+
+Usage: shep repo init-remote [options] [name]
+
+Create a GitHub repository and configure the local git remote
+
+Arguments:
+  name          GitHub repository name (defaults to directory name)
+
+Options:
+  --public      Create a public repository (default: private) (default: false)
+  --org <name>  Create the repository under a GitHub organization
+  -h, --help    display help for command
+
+---
+
+$ shep repo --help
+
+Usage: shep repo [options] [command]
+
+Manage tracked repositories
+
+Options:
+  -h, --help                    display help for command
+
+Commands:
+  ls                            List tracked repositories
+  show <id>                     Display details of a tracked repository
+  init-remote [options] [name]  Create a GitHub repository and configure the
+                                local git remote
+  help [command]                display help for command
+
+Evidence: The init-remote command is properly registered under `shep repo`:
+- Optional [name] argument for repo name (defaults to directory name)
+- --public flag for public repos (defaults to private)
+- --org <name> option for organization repos
+- Listed alongside existing `ls` and `show` subcommands
