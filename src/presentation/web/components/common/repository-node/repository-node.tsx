@@ -17,6 +17,7 @@ import {
   ArrowDown,
   User,
   RotateCcw,
+  CloudOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ActionButton } from '@/components/common/action-button';
@@ -251,6 +252,22 @@ export function RepositoryNode({ data }: { data: RepositoryNodeData; [key: strin
                   repositoryPath={data.repositoryPath}
                   onCreateFromSession={handleCreateFromSession}
                 />
+                {data.gitInfoStatus === 'ready' && data.hasRemote === false && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => data.onClick?.()}
+                          className="text-muted-foreground cursor-pointer rounded-full p-0.5 transition-colors hover:text-orange-500"
+                          aria-label="Set up GitHub remote"
+                        >
+                          <CloudOff className="size-4" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Set up GitHub remote</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </>
             ) : null}
 
