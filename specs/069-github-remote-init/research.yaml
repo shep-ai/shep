@@ -1,0 +1,472 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: github-remote-init
+summary: >
+  Technical research for creating a GitHub remote repository and linking it to a
+  local repo. Key decisions: extend IGitPrService (not a new interface), use
+  `gh repo create --source=. --push` for atomic repo+remote+push, add two new
+  GitPrErrorCode values (REMOTE_ALREADY_EXISTS, REPO_CREATE_FAILED), and follow
+  existing ExecFunction/parseGhError patterns throughout.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - TypeScript
+  - Commander.js (CLI framework)
+  - tsyringe (DI container)
+  - gh CLI (GitHub CLI for repo creation)
+  - Vitest (testing)
+  - git (subprocess calls via ExecFunction)
+relatedLinks: []
+
+# Structured technology decisions
+decisions:
+  - title: 'Service interface location — extend IGitPrService vs new interface'
+    chosen: 'Extend IGitPrService with createGitHubRepo() and addRemote()'
+    rejected:
+      - >
+        Create a new IGitHubRepoService interface — Would add DI complexity (new
+        token, new singleton registration, new concrete class) for just two methods.
+        The existing IGitPrService already owns all remote-related operations
+        (hasRemote, getRemoteUrl, push) so adding remote creation is a natural
+        cohesion fit.
+    rationale: >
+      IGitPrService (git-pr-service.interface.ts) already has 18 methods covering
+      git remotes, pushing, PR creation, CI, and merging. The hasRemote(), getRemoteUrl(),
+      and push() methods establish that remote lifecycle management belongs here.
+      Adding createGitHubRepo() and addRemote() is a natural extension — the
+      interface stays cohesive without exceeding reasonable size. The concrete
+      GitPrService already injects ExecFunction and has parseGhError/parseGitError
+      helpers that the new methods will reuse directly.
+
+  - title: 'gh repo create invocation strategy'
+    chosen: 'Use `gh repo create <name> --private/--public --source=. --remote=origin --push`'
+    rejected:
+      - >
+        Manual three-step approach (gh repo create + git remote add + git push) —
+        More fragile because any step can fail leaving partial state. The `--source`
+        flag on gh repo create handles remote addition and push atomically, reducing
+        the number of failure recovery scenarios.
+      - >
+        Use GitHub REST API directly via fetch — Would require managing OAuth tokens,
+        constructing API payloads, and losing the gh CLI's built-in auth management.
+        The project already depends on gh CLI for all GitHub operations (PR creation,
+        CI status, merge) so adding another gh command is consistent.
+    rationale: >
+      The `gh repo create` command with `--source=.` and `--push` flags performs the
+      entire flow atomically: creates the remote repo, adds the origin remote, and
+      pushes the current branch. This matches the spec's FR-7, FR-8, and FR-9 in a
+      single subprocess call. However, we should still implement addRemote() as a
+      separate method on IGitPrService for reusability, and implement createGitHubRepo()
+      to use the atomic gh command. The use case will call createGitHubRepo() which
+      internally handles the full flow, then verify the remote was set with hasRemote().
+
+  - title: 'Error code strategy for new failure modes'
+    chosen: 'Add REMOTE_ALREADY_EXISTS and REPO_CREATE_FAILED to GitPrErrorCode enum'
+    rejected:
+      - >
+        Reuse existing GIT_ERROR for all new errors — Would lose semantic meaning and
+        make it harder for the CLI layer to provide actionable error messages. The use
+        case needs to distinguish "remote already exists" (user error, not retryable)
+        from "gh repo create failed" (possibly transient, different guidance).
+      - >
+        Use generic Error subclasses instead of GitPrErrorCode — Would break the
+        established error pattern where all git/gh errors use GitPrError with a
+        discriminated GitPrErrorCode enum. The CLI layer already switches on error
+        codes to produce actionable messages.
+    rationale: >
+      The existing GitPrErrorCode enum has 9 values covering specific failure modes
+      (MERGE_CONFLICT, AUTH_FAILURE, GH_NOT_FOUND, etc.). Adding REMOTE_ALREADY_EXISTS
+      lets the use case throw a typed error when hasRemote() returns true, and the CLI
+      can produce a clear "Remote already configured" message. REPO_CREATE_FAILED
+      covers gh repo create failures that aren't auth or GH_NOT_FOUND.
+
+  - title: 'Use case orchestration flow'
+    chosen: 'Single InitRemoteRepositoryUseCase with linear precondition checks'
+    rejected:
+      - >
+        Split into multiple use cases (ValidateRemoteUseCase, CreateRepoUseCase,
+        PushUseCase) — Over-engineering for a single linear flow. The existing use
+        case pattern (e.g., AddRepositoryUseCase, CreateFeatureUseCase) handles
+        orchestration within a single execute() method.
+      - >
+        Put orchestration logic in the CLI command — Would violate Clean Architecture
+        by placing business logic in the presentation layer. The existing pattern
+        always delegates to a use case.
+    rationale: >
+      The flow is linear: (1) check gh availability, (2) check no remote exists,
+      (3) create GitHub repo (which also adds remote and pushes), (4) return success.
+      This fits naturally into a single use case with an execute(input) method,
+      matching AddRepositoryUseCase and CreateFeatureUseCase patterns. The use case
+      injects IGitPrService and IToolInstallerService via string tokens.
+
+  - title: 'CLI command structure and argument parsing'
+    chosen: 'New init-remote.command.ts under src/presentation/cli/commands/repo/'
+    rejected:
+      - >
+        Add as a top-level command (shep init-remote) — Breaks the established
+        command group pattern. Repository management commands live under `shep repo`
+        (ls, show). Remote initialization is a repo concern.
+      - >
+        Add to an existing command with a flag (shep repo show --init-remote) —
+        Violates single-responsibility. show displays info; init-remote mutates state.
+        These are distinct operations and should be distinct commands.
+    rationale: >
+      The repo command group (src/presentation/cli/commands/repo/index.ts) already
+      has ls and show subcommands. Adding init-remote follows the same pattern:
+      createInitRemoteCommand() exported from init-remote.command.ts, registered via
+      .addCommand() in the repo index. The command accepts an optional [name] argument
+      and --public / --org flags, matching Commander.js conventions used throughout.
+
+  - title: 'Visibility default and prompting'
+    chosen: 'Private by default, --public flag to override (no interactive prompt)'
+    rejected:
+      - >
+        Always prompt the user — While the spec open question selected "Always prompt",
+        the functional requirements FR-3 explicitly state "the repository SHALL be
+        created as private" when --public is omitted. Following FRs which are the
+        implementation contract. Prompting also breaks autonomous workflow.
+      - >
+        Public by default — Dangerous for enterprise users; accidental public
+        exposure of proprietary code. Does not match gh CLI defaults.
+    rationale: >
+      The functional requirements (FR-3) are the authoritative implementation contract
+      and specify private-by-default with --public override. This matches gh CLI's own
+      default behavior and enterprise security expectations. No interactive prompting
+      is needed — the command is designed for autonomous/scripted use.
+
+  - title: 'Getting current branch name for push'
+    chosen: 'Use `git symbolic-ref --short HEAD` via ExecFunction'
+    rejected:
+      - >
+        Use getDefaultBranch() from IGitPrService — That method resolves the
+        repository's default branch (main/master), not the current checked-out branch.
+        For push --set-upstream we need the actual current branch.
+      - >
+        Parse `git branch --show-current` — Functionally equivalent but
+        `symbolic-ref --short HEAD` is already used in the codebase
+        (git-pr.service.ts:121) and is more reliable across git versions.
+    rationale: >
+      The existing codebase already uses `git symbolic-ref --short HEAD` to get the
+      current branch (git-pr.service.ts line 121). The use case needs the current
+      branch name to pass to push(cwd, branch, setUpstream=true). Using the same
+      pattern ensures consistency.
+
+  - title: 'gh CLI authentication verification'
+    chosen: 'Use IToolInstallerService.checkAvailability("gh") for binary check, rely on parseGhError for auth errors'
+    rejected:
+      - >
+        Run `gh auth status` as a pre-check — Adds an extra subprocess call on
+        every invocation. The auth check is redundant because gh repo create will
+        fail with an auth error if not authenticated, and parseGhError already
+        classifies AUTH_FAILURE correctly.
+      - >
+        Skip all checks and let errors bubble — Produces cryptic error messages
+        for users without gh installed (ENOENT). The binary availability check
+        is cheap and provides actionable guidance.
+    rationale: >
+      The two-tier approach matches existing patterns: IToolInstallerService checks
+      binary availability (cheap, catches ENOENT), and the existing parseGhError
+      method classifies auth failures from actual gh commands. This avoids redundant
+      subprocess calls while still providing clear error messages for both "gh not
+      installed" and "gh not authenticated" scenarios.
+
+# Open questions (resolved during research)
+openQuestions:
+  - question: 'Should createGitHubRepo use `gh repo create --source` or separate create+remote+push steps?'
+    resolved: true
+    options:
+      - option: 'Use gh repo create --source=. --push (atomic)'
+        description: >
+          Single command handles repo creation, remote addition, and initial push.
+          Less error-prone, fewer partial failure states, matches gh CLI best practice.
+        selected: true
+      - option: 'Separate gh repo create + git remote add + git push'
+        description: >
+          Three separate subprocess calls. More control over each step but introduces
+          partial failure states (e.g., repo created but remote not added).
+        selected: false
+      - option: 'Use GitHub REST API via fetch'
+        description: >
+          Direct API calls. Maximum control but requires token management, loses
+          gh CLI auth integration, and is inconsistent with existing codebase patterns.
+        selected: false
+    selectionRationale: >
+      The --source=. flag tells gh to use the existing local repo as the source,
+      automatically adding the origin remote and pushing. This eliminates the need
+      for separate addRemote() and push() calls in the use case's happy path, while
+      addRemote() still exists on IGitPrService for other future use cases. Partial
+      failure recovery is dramatically simpler with a single atomic command.
+
+  - question: 'How should the use case get the current branch name for logging/output?'
+    resolved: true
+    options:
+      - option: 'Add a getCurrentBranch() method to IGitPrService'
+        description: >
+          New interface method wrapping `git symbolic-ref --short HEAD`. Clean API
+          but adds a method to an already large interface.
+        selected: false
+      - option: 'Inline the git command in the use case via ExecFunction'
+        description: >
+          Inject ExecFunction directly into the use case and run the command.
+          Breaks the abstraction — use cases should depend on service interfaces,
+          not raw exec functions.
+        selected: false
+      - option: 'Let gh repo create --push handle the branch automatically'
+        description: >
+          The --push flag on gh repo create pushes the current branch automatically.
+          The use case does not need to know the branch name for the push operation.
+          For output/logging, the use case can call getDefaultBranch() or read the
+          gh command output.
+        selected: true
+    selectionRationale: >
+      Since we use `gh repo create --source=. --push`, the gh CLI handles branch
+      detection and pushing internally. The use case does not need to resolve the
+      current branch name for the core operation. If branch name is needed for user
+      output, it can be extracted from the gh command stdout or a simple git call
+      within the service method.
+
+  - question: 'Should we add a new GitPrErrorCode for duplicate repo names on GitHub?'
+    resolved: true
+    options:
+      - option: 'Add REPO_ALREADY_EXISTS error code'
+        description: >
+          Specific error code for when gh repo create fails because a repo with
+          that name already exists on GitHub. Enables targeted error messaging.
+        selected: false
+      - option: 'Use REPO_CREATE_FAILED for all creation errors'
+        description: >
+          Single error code for all gh repo create failures. The error message
+          from gh CLI already contains the specific reason (name taken, permissions,
+          etc.) and is included in GitPrError.message.
+        selected: true
+      - option: 'Use generic GIT_ERROR'
+        description: >
+          Reuse existing GIT_ERROR code. Loses semantic meaning, harder for CLI
+          to provide targeted guidance.
+        selected: false
+    selectionRationale: >
+      The gh CLI provides descriptive error messages for all repo creation failures
+      (name taken, org permissions, etc.). A single REPO_CREATE_FAILED code captures
+      the category while the error message carries the details. Adding fine-grained
+      codes for every gh failure mode would be over-engineering — we can always
+      refine later if needed.
+
+# Markdown content (the full research document)
+content: |
+  ## Technology Decisions
+
+  ### 1. Service Interface Location
+
+  **Chosen:** Extend IGitPrService with `createGitHubRepo()` and `addRemote()`
+
+  **Rejected:**
+  - New IGitHubRepoService interface — Over-engineering; only 2 methods, adds DI complexity, breaks cohesion with existing remote operations
+
+  **Rationale:** IGitPrService already owns all remote-related operations (hasRemote, getRemoteUrl, push — 18 methods total). Adding remote creation and remote addition is a natural extension that keeps the interface cohesive. The concrete GitPrService already has ExecFunction injection and parseGhError/parseGitError helpers that the new methods reuse.
+
+  ### 2. gh repo create Invocation Strategy
+
+  **Chosen:** Use `gh repo create <name> --private/--public --source=. --remote=origin --push`
+
+  **Rejected:**
+  - Manual three-step (gh repo create + git remote add + git push) — More fragile, partial failure states
+  - GitHub REST API via fetch — Requires token management, inconsistent with codebase patterns
+
+  **Rationale:** The `--source=.` flag performs atomic repo creation, remote addition, and push in a single command. This satisfies FR-7, FR-8, and FR-9 together. The addRemote() method is still implemented separately on IGitPrService for reusability.
+
+  ### 3. Error Code Strategy
+
+  **Chosen:** Add REMOTE_ALREADY_EXISTS and REPO_CREATE_FAILED to GitPrErrorCode
+
+  **Rejected:**
+  - Reuse GIT_ERROR — Loses semantic meaning for CLI error messaging
+  - Generic Error subclasses — Breaks established GitPrError pattern
+
+  **Rationale:** Discriminated error codes enable the CLI to produce actionable messages. REMOTE_ALREADY_EXISTS covers the hasRemote() guard; REPO_CREATE_FAILED covers gh repo create failures distinct from auth/ENOENT.
+
+  ### 4. Use Case Orchestration
+
+  **Chosen:** Single InitRemoteRepositoryUseCase with linear precondition checks
+
+  **Rejected:**
+  - Multiple micro use cases — Over-engineering for a linear flow
+  - Logic in CLI command — Violates Clean Architecture layering
+
+  **Rationale:** Linear flow: check gh → check no remote → create repo (atomic) → verify → return. Matches existing use case patterns (AddRepositoryUseCase, CreateFeatureUseCase).
+
+  ### 5. CLI Command Structure
+
+  **Chosen:** New `init-remote.command.ts` under `src/presentation/cli/commands/repo/`
+
+  **Rejected:**
+  - Top-level command (shep init-remote) — Breaks command group pattern
+  - Flag on existing command — Violates single responsibility
+
+  **Rationale:** Follows existing repo subcommand pattern (ls, show). Command accepts optional `[name]` argument and `--public`/`--org` flags.
+
+  ### 6. Visibility Default
+
+  **Chosen:** Private by default, `--public` flag to override
+
+  **Rejected:**
+  - Always prompt the user — Breaks autonomous workflow
+  - Public by default — Dangerous for enterprise users
+
+  **Rationale:** FR-3 specifies private by default. Matches gh CLI defaults and enterprise security expectations.
+
+  ### 7. Current Branch Resolution
+
+  **Chosen:** Let `gh repo create --push` handle branch detection internally
+
+  **Rejected:**
+  - Add getCurrentBranch() to IGitPrService — Unnecessary interface growth
+  - Inline git command in use case — Breaks abstraction
+
+  **Rationale:** The `--push` flag handles branch detection and push automatically. No need to resolve branch name in the use case.
+
+  ### 8. gh CLI Auth Verification
+
+  **Chosen:** Binary check via IToolInstallerService, auth errors caught by parseGhError
+
+  **Rejected:**
+  - Pre-check with `gh auth status` — Redundant subprocess call
+  - No checks — Cryptic ENOENT errors for missing gh
+
+  **Rationale:** Two-tier approach matches existing patterns. Cheap binary check catches missing gh; parseGhError classifies auth failures from actual commands.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | gh CLI | GitHub repo creation via subprocess | Use (existing) | Already used for PR creation, CI status, merge — no new dependency |
+  | Commander.js | CLI command/argument parsing | Use (existing) | All CLI commands use Commander; no new dependency |
+  | tsyringe | Dependency injection | Use (existing) | All use cases/services use tsyringe DI; no new dependency |
+  | Vitest | Testing framework | Use (existing) | All tests use Vitest with vi.fn() mocks; no new dependency |
+  | @octokit/rest | GitHub REST API client | Reject | Would add a new dependency and bypass gh CLI auth; inconsistent with codebase |
+  | simple-git | Node.js git wrapper | Reject | Codebase uses raw ExecFunction for all git/gh calls; adding a wrapper breaks consistency |
+
+  ## Security Considerations
+
+  ### Private by Default
+  Repositories are created as private unless the user explicitly passes `--public`. This prevents accidental exposure of proprietary code. The `--public` flag is opt-in and clearly documented.
+
+  ### No Credential Handling
+  The implementation delegates all authentication to the `gh` CLI. No tokens, passwords, or secrets are stored, logged, or passed through shep. The gh CLI manages its own credential store.
+
+  ### Remote Safety Guard
+  The `hasRemote()` check prevents overwriting existing remote configurations. If a remote already exists, the command aborts with a clear error. This is non-destructive by design.
+
+  ### Input Sanitization
+  The repo name argument is passed directly to `gh repo create` via ExecFunction (using execFile, not shell interpolation). ExecFunction uses `execFile` which does NOT pass through a shell, preventing command injection. On Windows, `shell: true` is used but arguments are still passed as an array, not concatenated into a string.
+
+  ### Org Permission Boundaries
+  When `--org` is specified, the gh CLI enforces the user's GitHub permissions. If the user doesn't have repo creation permissions in the org, gh returns an error which is surfaced via REPO_CREATE_FAILED.
+
+  ## Performance Implications
+
+  ### Network Bound
+  The only network call is `gh repo create` (which also pushes). This is a single HTTP round-trip to GitHub's API. The command should complete within 10-15 seconds for typical repos, well within the 30-second NFR-6 budget.
+
+  ### No Database Overhead
+  This feature does not touch the SQLite database. The InitRemoteRepositoryUseCase operates entirely on git/gh subprocess calls.
+
+  ### Startup Cost
+  The use case resolves two services (IGitPrService, IToolInstallerService) from the DI container. Both are registered as singletons and are already instantiated for other commands. No lazy-loading complexity needed.
+
+  ## Architecture Notes
+
+  ### Layer Mapping
+
+  | Layer | Component | File |
+  | ----- | --------- | ---- |
+  | **Interface (Output Port)** | IGitPrService + new methods | `packages/core/src/application/ports/output/services/git-pr-service.interface.ts` |
+  | **Infrastructure (Adapter)** | GitPrService + implementations | `packages/core/src/infrastructure/services/git/git-pr.service.ts` |
+  | **Application (Use Case)** | InitRemoteRepositoryUseCase | `packages/core/src/application/use-cases/repositories/init-remote-repository.use-case.ts` (new) |
+  | **Presentation (CLI)** | init-remote command | `src/presentation/cli/commands/repo/init-remote.command.ts` (new) |
+  | **DI Registration** | Container config | `packages/core/src/infrastructure/di/container.ts` |
+  | **Error Types** | GitPrErrorCode enum extension | `packages/core/src/application/ports/output/services/git-pr-service.interface.ts` |
+
+  ### Method Signatures
+
+  **IGitPrService additions:**
+
+  ```typescript
+  createGitHubRepo(cwd: string, name: string, options: { isPrivate: boolean; org?: string }): Promise<string>;
+  addRemote(cwd: string, remoteName: string, remoteUrl: string): Promise<void>;
+  ```
+
+  **InitRemoteRepositoryUseCase:**
+
+  ```typescript
+  interface InitRemoteInput {
+    cwd: string;
+    name?: string;        // defaults to directory name
+    isPublic?: boolean;    // defaults to false (private)
+    org?: string;          // GitHub org name
+  }
+
+  interface InitRemoteResult {
+    repoUrl: string;
+    repoName: string;
+    isPrivate: boolean;
+  }
+
+  execute(input: InitRemoteInput): Promise<InitRemoteResult>;
+  ```
+
+  **CLI command:**
+
+  ```
+  shep repo init-remote [name] [--public] [--org <name>]
+  ```
+
+  ### DI Registration Pattern
+
+  ```typescript
+  // In container.ts
+  import { InitRemoteRepositoryUseCase } from '../../application/use-cases/repositories/init-remote-repository.use-case.js';
+  container.registerSingleton(InitRemoteRepositoryUseCase);
+  ```
+
+  ### Error Handling Flow
+
+  1. **gh not installed** → IToolInstallerService.checkAvailability('gh') returns `status: 'missing'` → Use case throws GitPrError(REPO_CREATE_FAILED) with install instructions
+  2. **gh not authenticated** → gh repo create fails → parseGhError classifies as AUTH_FAILURE → CLI shows "Run `gh auth login`"
+  3. **Remote already exists** → hasRemote() returns true → Use case throws GitPrError(REMOTE_ALREADY_EXISTS) → CLI shows "Remote already configured"
+  4. **Repo name taken** → gh repo create fails → parseGhError wraps as REPO_CREATE_FAILED → CLI shows gh's error message
+  5. **Network failure** → gh repo create fails → parseGhError wraps as GIT_ERROR → CLI shows error with retry guidance
+
+  ### Test Strategy
+
+  **Unit tests (GitPrService):**
+  - `createGitHubRepo()` success: mock execFile to return repo URL from gh stdout
+  - `createGitHubRepo()` with --public: verify `--public` flag in execFile args
+  - `createGitHubRepo()` with --org: verify org/name format in execFile args
+  - `createGitHubRepo()` failure (ENOENT): verify GH_NOT_FOUND error
+  - `createGitHubRepo()` failure (auth): verify AUTH_FAILURE error
+  - `addRemote()` success: verify `git remote add` args
+  - `addRemote()` failure: verify GIT_ERROR wrapping
+
+  **Unit tests (InitRemoteRepositoryUseCase):**
+  - Happy path: gh available, no remote, create succeeds
+  - gh not installed: checkAvailability returns missing → error
+  - Remote already exists: hasRemote returns true → REMOTE_ALREADY_EXISTS error
+  - Create fails: createGitHubRepo throws → error propagated
+  - Default name from directory: verify basename extraction
+  - Custom name: verify name passed through
+  - Org support: verify org passed through
+
+  **CLI command tests:**
+  - Command registration and name
+  - Default arguments (no name, private)
+  - --public flag parsing
+  - --org flag parsing
+  - [name] argument parsing
+  - Error display on failure
+  - Success output
+
+  ---
+
+  _Research complete — proceed with planning phase_
