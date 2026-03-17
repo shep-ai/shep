@@ -765,15 +765,40 @@ export class GitPrService implements IGitPrService {
   }
 
   async createGitHubRepo(
-    _cwd: string,
-    _name: string,
-    _options: { isPrivate: boolean; org?: string }
+    cwd: string,
+    name: string,
+    options: { isPrivate: boolean; org?: string }
   ): Promise<string> {
-    throw new GitPrError('createGitHubRepo not yet implemented', GitPrErrorCode.REPO_CREATE_FAILED);
+    const repoName = options.org ? `${options.org}/${name}` : name;
+    const visibilityFlag = options.isPrivate ? '--private' : '--public';
+    const args = [
+      'repo',
+      'create',
+      repoName,
+      visibilityFlag,
+      '--source=.',
+      '--remote=origin',
+      '--push',
+    ];
+
+    try {
+      const { stdout } = await this.execFile('gh', args, { cwd });
+      return stdout.trim();
+    } catch (error) {
+      const ghError = this.parseGhError(error);
+      if (ghError.code === GitPrErrorCode.GIT_ERROR) {
+        throw new GitPrError(ghError.message, GitPrErrorCode.REPO_CREATE_FAILED, ghError.cause);
+      }
+      throw ghError;
+    }
   }
 
-  async addRemote(_cwd: string, _remoteName: string, _remoteUrl: string): Promise<void> {
-    throw new GitPrError('addRemote not yet implemented', GitPrErrorCode.GIT_ERROR);
+  async addRemote(cwd: string, remoteName: string, remoteUrl: string): Promise<void> {
+    try {
+      await this.execFile('git', ['remote', 'add', remoteName, remoteUrl], { cwd });
+    } catch (error) {
+      throw this.parseGitError(error);
+    }
   }
 
   private parseDiffStat(diffStat: string, logOutput: string): DiffSummary {
