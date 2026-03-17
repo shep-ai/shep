@@ -20,6 +20,8 @@ export interface RepositoryNodeData {
   behindCount?: number | null;
   /** Git info resolution status. undefined/'loading' = fetching, 'ready' = resolved, 'not-a-repo' = not a git repo */
   gitInfoStatus?: 'loading' | 'ready' | 'not-a-repo';
+  /** Whether the repository has a configured git remote. undefined when gitInfoStatus !== 'ready'. */
+  hasRemote?: boolean;
   onClick?: () => void;
   onAdd?: () => void;
   onDelete?: (repositoryId: string) => void;
