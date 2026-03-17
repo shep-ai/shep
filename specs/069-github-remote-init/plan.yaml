@@ -1,0 +1,161 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: github-remote-init
+summary: >
+  Extend IGitPrService with createGitHubRepo() and addRemote(), create
+  InitRemoteRepositoryUseCase for orchestration, and add a `shep repo
+  init-remote` CLI command. Uses atomic `gh repo create --source=. --push` to
+  create the repo, add the remote, and push in a single subprocess call. Two new
+  GitPrErrorCode values (REMOTE_ALREADY_EXISTS, REPO_CREATE_FAILED) enable
+  actionable CLI error messages. All new code follows existing ExecFunction,
+  parseGhError, and DI patterns with full TDD coverage.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - TypeScript
+  - Commander.js (CLI framework)
+  - tsyringe (DI container)
+  - gh CLI (GitHub CLI for repo creation)
+  - Vitest (testing)
+  - git (subprocess calls via ExecFunction)
+relatedLinks: []
+
+# Structured implementation phases
+phases:
+  - id: phase-1
+    name: 'Interface & Error Codes'
+    description: >
+      Extend IGitPrService interface with createGitHubRepo() and addRemote()
+      method signatures, and add REMOTE_ALREADY_EXISTS and REPO_CREATE_FAILED to
+      the GitPrErrorCode enum. This phase comes first because all subsequent
+      layers depend on the interface contract and error types.
+    parallel: false
+
+  - id: phase-2
+    name: 'Infrastructure Implementation'
+    description: >
+      Implement createGitHubRepo() and addRemote() in the concrete GitPrService
+      class. createGitHubRepo() uses `gh repo create --source=. --push` for
+      atomic repo+remote+push. addRemote() wraps `git remote add`. Both follow
+      existing ExecFunction/parseGhError/parseGitError patterns. Full unit test
+      coverage for success and error paths.
+    parallel: false
+
+  - id: phase-3
+    name: 'Use Case Orchestration'
+    description: >
+      Create InitRemoteRepositoryUseCase in the application layer. Orchestrates
+      the full flow: check gh availability via IToolInstallerService, guard
+      against existing remote via hasRemote(), derive repo name from cwd
+      directory basename, call createGitHubRepo(), verify remote was set.
+      Register in DI container. Full unit test coverage with mocked dependencies.
+    parallel: false
+
+  - id: phase-4
+    name: 'CLI Command & Integration'
+    description: >
+      Create the `shep repo init-remote` CLI command with optional [name]
+      argument, --public flag, and --org option. Register in the repo command
+      group index. Wire error handling to produce actionable messages for each
+      GitPrErrorCode. Add integration test for the CLI command flow.
+    parallel: false
+
+# File change tracking
+filesToCreate:
+  - packages/core/src/application/use-cases/repositories/init-remote-repository.use-case.ts
+  - src/presentation/cli/commands/repo/init-remote.command.ts
+  - tests/unit/infrastructure/services/git/git-pr.service.createGitHubRepo.test.ts
+  - tests/unit/infrastructure/services/git/git-pr.service.addRemote.test.ts
+  - tests/unit/application/use-cases/repositories/init-remote-repository.use-case.test.ts
+  - tests/integration/cli/commands/repo/init-remote.command.test.ts
+
+filesToModify:
+  - packages/core/src/application/ports/output/services/git-pr-service.interface.ts
+  - packages/core/src/infrastructure/services/git/git-pr.service.ts
+  - packages/core/src/infrastructure/di/container.ts
+  - src/presentation/cli/commands/repo/index.ts
+
+# Open questions (all resolved)
+openQuestions: []
+
+# Markdown content (the full plan document)
+content: |
+  ## Architecture Overview
+
+  This feature adds a single vertical slice through all four Clean Architecture layers:
+
+  1. **Output Port (Interface)** — Extend `IGitPrService` with two new methods and two new error codes
+  2. **Infrastructure (Adapter)** — Implement the methods in `GitPrService` using `ExecFunction`
+  3. **Application (Use Case)** — `InitRemoteRepositoryUseCase` orchestrates precondition checks and repo creation
+  4. **Presentation (CLI)** — `shep repo init-remote` command parses arguments, invokes the use case, and formats output
+
+  The existing `IGitPrService` already owns remote-related operations (`hasRemote`, `getRemoteUrl`, `push`)
+  with 18 methods total. Adding `createGitHubRepo()` and `addRemote()` is a natural extension that
+  maintains cohesion without exceeding interface size. The concrete `GitPrService` already injects
+  `ExecFunction` and has `parseGhError`/`parseGitError` helpers that the new methods reuse directly.
+
+  ## Key Design Decisions
+
+  ### 1. Atomic gh repo create (vs. three-step manual approach)
+
+  **Chosen:** `gh repo create <name> --private/--public --source=. --remote=origin --push`
+
+  This single command creates the GitHub repo, adds the `origin` remote, and pushes the current
+  branch — satisfying FR-7, FR-8, and FR-9 atomically. The alternative (three separate subprocess
+  calls) introduces partial failure states that are harder to recover from. The `addRemote()` method
+  is still implemented separately on `IGitPrService` for reusability in future features.
+
+  ### 2. Error codes: REMOTE_ALREADY_EXISTS + REPO_CREATE_FAILED
+
+  Two new `GitPrErrorCode` values enable the CLI to produce targeted, actionable error messages.
+  `REMOTE_ALREADY_EXISTS` is a user error (not retryable); `REPO_CREATE_FAILED` covers all
+  `gh repo create` failures (name taken, org permissions, network). The existing `GH_NOT_FOUND`
+  and `AUTH_FAILURE` codes handle gh-not-installed and gh-not-authenticated cases respectively.
+
+  ### 3. Private by default (no interactive prompt)
+
+  FR-3 specifies private by default with `--public` override. This matches `gh` CLI defaults and
+  enterprise security expectations. No interactive prompting — the command is designed for
+  autonomous/scripted use.
+
+  ### 4. gh availability: binary check + parseGhError two-tier
+
+  `IToolInstallerService.checkAvailability('gh')` catches missing binary (cheap PATH check).
+  Auth errors are caught by `parseGhError` from the actual `gh repo create` call. This avoids
+  a redundant `gh auth status` subprocess on every invocation.
+
+  ### 5. Use case injects IGitPrService + IToolInstallerService
+
+  The use case depends on interfaces (not concrete classes) via string DI tokens, maintaining
+  testability and Clean Architecture compliance. Both services are already registered as singletons
+  in the DI container.
+
+  ## Implementation Strategy
+
+  Phase ordering follows dependency flow: interface first (all layers depend on it), then
+  infrastructure (use case calls service methods), then use case (CLI calls use case), then CLI
+  (final consumer). Each phase is TDD: write failing tests first, implement minimal code, refactor.
+
+  The infrastructure phase implements both `createGitHubRepo()` and `addRemote()` with full test
+  coverage before the use case phase begins, ensuring the use case can mock well-defined methods.
+
+  The CLI phase is last because it's the thinnest layer — it parses arguments, resolves the use
+  case from the DI container, and formats output. The integration test verifies the full stack.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Partial failure: repo created but remote not set | The `--source=. --push` flags make the operation atomic. Post-creation `hasRemote()` verification catches edge cases. NFR-7 requires guidance on re-run. |
+  | Command injection via repo name | `ExecFunction` uses `execFile` (not shell interpolation). Arguments are passed as an array, not concatenated. |
+  | Accidental public repo creation | Private by default (FR-3). `--public` is an explicit opt-in flag. |
+  | Overwriting existing remote | `hasRemote()` guard aborts with `REMOTE_ALREADY_EXISTS` before any mutation (NFR-3). |
+  | gh CLI not installed | `IToolInstallerService.checkAvailability('gh')` provides actionable install instructions before attempting repo creation. |
+  | gh CLI not authenticated | `parseGhError` classifies auth failures from `gh repo create` output, producing a "Run `gh auth login`" message. |
+  | Duplicate GitHub repo name | `gh repo create` returns an error; wrapped as `REPO_CREATE_FAILED` with the gh error message preserved. |
+
+  ---
+
+  _Plan complete — proceed with task breakdown_
