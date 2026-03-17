@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { FeatureFlagsProvider } from '@/hooks/feature-flags-context';
 import { RepositoryDrawer } from './repository-drawer';
 import type { RepositoryNodeData } from './repository-node-config';
+import { InitRemoteSection } from './init-remote-section';
 
 const meta: Meta<typeof RepositoryDrawer> = {
   title: 'Drawers/Feature/RepositoryDrawer',
@@ -119,4 +120,71 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
 /** Repository drawer with git operations section visible (gitRebaseSync flag enabled). */
 export const WithGitOperations: Story = {
   render: () => <WithGitOpsTemplate data={repoData} />,
+};
+
+/* ---------------------------------------------------------------------------
+ * GitHub remote init stories
+ * ------------------------------------------------------------------------- */
+
+const noRemoteData: RepositoryNodeData = {
+  id: 'repo-1',
+  name: 'my-project',
+  repositoryPath: '/home/user/my-project',
+  gitInfoStatus: 'ready',
+  hasRemote: false,
+};
+
+/** Drawer open with no remote configured — init-remote form is visible. */
+export const HasNoRemote: Story = {
+  render: () => <RepositoryDrawerShellTemplate data={noRemoteData} />,
+};
+
+/** Drawer open with a remote already configured — init-remote form is absent. */
+export const HasRemote: Story = {
+  render: () => <RepositoryDrawerShellTemplate data={{ ...noRemoteData, hasRemote: true }} />,
+};
+
+/** Init-remote section in pre-seeded error state. */
+export const InitRemoteError: Story = {
+  render: () => (
+    <div className="bg-background w-72 rounded-lg border p-4">
+      <InitRemoteSection
+        repositoryId="repo-1"
+        repositoryPath="/home/user/my-project"
+        _initialErrorMessage="gh CLI not found. Install with: brew install gh"
+      />
+    </div>
+  ),
+};
+
+/** Init-remote section in pre-seeded success state. */
+export const InitRemoteSuccess: Story = {
+  render: () => (
+    <div className="bg-background w-72 rounded-lg border p-4">
+      <InitRemoteSection
+        repositoryId="repo-1"
+        repositoryPath="/home/user/my-project"
+        _initialSuccessUrl="github.com/example/my-project"
+      />
+    </div>
+  ),
+};
+
+/** Static loading skeleton representing the transient loading state. */
+export const InitRemoteLoading: Story = {
+  render: () => (
+    <div className="bg-background w-72 rounded-lg border p-4">
+      <div className="mt-4 border-t pt-4">
+        <p className="text-muted-foreground mb-3 text-sm font-medium tracking-wide uppercase">
+          Set Up GitHub Remote
+        </p>
+        <div className="pointer-events-none space-y-3 opacity-50">
+          <div className="bg-muted h-7 animate-pulse rounded" />
+          <div className="bg-muted h-7 animate-pulse rounded" />
+          <div className="bg-muted h-7 animate-pulse rounded" />
+          <div className="bg-primary/30 h-8 animate-pulse rounded" />
+        </div>
+      </div>
+    </div>
+  ),
 };
