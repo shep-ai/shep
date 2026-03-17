@@ -1,0 +1,150 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: github-remote-init
+number: 069
+branch: feat/069-github-remote-init
+oneLiner: Create a GitHub remote repository and link it for repos without a remote
+userQuery: >
+  Add support to init remote github repository for a repo without remote github repo
+summary: >
+  Add a new CLI command `shep repo init-remote` that creates a GitHub repository via `gh repo create`
+  and configures the local git remote for repositories that don't yet have one. This integrates into
+  the existing Clean Architecture layers: a new use case, extended IGitPrService interface, and a new
+  CLI command under the `repo` command group.
+phase: Analysis
+sizeEstimate: M
+
+# Relationships
+relatedFeatures: []
+
+technologies:
+  - TypeScript
+  - Commander (CLI framework)
+  - tsyringe (DI)
+  - gh CLI (GitHub CLI for repo creation)
+  - Vitest (testing)
+
+relatedLinks: []
+
+# Open questions (must be resolved before implementation)
+openQuestions:
+  - Should the command support creating private repos by default or prompt the user for visibility?
+  - Should the command automatically push the existing local commits to the new remote after creation?
+  - Should there be a --org flag to create repos under a GitHub organization instead of the user's account?
+  - Should this integrate into the feature creation flow (auto-create remote when `hasRemote()` returns false)?
+
+# Markdown content (the actual spec)
+content: |
+  ## Problem Statement
+
+  When a user runs `shep` on a local repository that has no GitHub remote configured,
+  several workflows break or are unavailable: PR creation (`gh pr create`), CI status
+  checks (`gh run list`), push operations, and any feature that relies on `hasRemote()`.
+  Currently, `ensureGitRepository()` in `WorktreeService` handles local git initialization
+  (creating a repo with an initial commit), but there is no equivalent for creating and
+  linking a GitHub remote. Users must manually run `gh repo create` and `git remote add`
+  outside of shep, which breaks the autonomous workflow promise.
+
+  This feature adds a command and underlying use case to create a GitHub repository via
+  the `gh` CLI and configure the local `origin` remote, bridging the gap between local-only
+  repos and the GitHub-dependent features in shep.
+
+  ## Codebase Analysis
+
+  ### Project Structure
+
+  The codebase follows a monorepo structure with Clean Architecture:
+
+  - `packages/core/src/domain/` — TypeSpec-generated domain models (Repository, Feature, etc.)
+  - `packages/core/src/application/` — Use cases and output port interfaces
+    - `ports/output/services/git-pr-service.interface.ts` — IGitPrService (git/GitHub operations)
+    - `ports/output/services/worktree-service.interface.ts` — IWorktreeService (worktree + git init)
+    - `use-cases/repositories/` — Repository management use cases (add, list, delete)
+  - `packages/core/src/infrastructure/` — Implementations
+    - `services/git/git-pr.service.ts` — GitPrService (uses `gh` CLI subprocess calls)
+    - `services/git/worktree.service.ts` — WorktreeService (git init, worktree management)
+    - `di/container.ts` — tsyringe DI container configuration
+  - `src/presentation/cli/commands/repo/` — CLI repo commands (ls, show)
+  - `tests/` — unit, integration, e2e test directories
+
+  ### Architecture Patterns
+
+  - **Clean Architecture**: Dependencies point inward (Presentation → Application → Domain ← Infrastructure)
+  - **Dependency Injection**: tsyringe with string token registration (e.g., `'IGitPrService'`)
+  - **Port/Adapter pattern**: Interfaces in `application/ports/output/`, implementations in `infrastructure/`
+  - **Command pattern**: Commander.js commands in `src/presentation/cli/commands/`
+  - **ExecFunction injection**: Git and gh CLI operations use an injected `ExecFunction` (promisified `execFile`) for testability
+
+  ### Relevant Technologies
+
+  - **gh CLI**: All GitHub operations (PR creation, CI checks, issue fetching) use `gh` subprocess calls, not the Octokit SDK. The new `gh repo create` command fits this pattern perfectly.
+  - **Commander.js**: CLI commands are structured as factory functions returning `Command` objects.
+  - **tsyringe**: DI container with `@injectable()` classes and token-based resolution.
+  - **Vitest**: Tests use `vi.fn()` mocks and the AAA (Arrange-Act-Assert) pattern.
+
+  ### Key Existing Code
+
+  **IGitPrService** (`packages/core/src/application/ports/output/services/git-pr-service.interface.ts`):
+  - Already has `hasRemote(cwd)` — checks if any remote is configured
+  - Already has `getRemoteUrl(cwd)` — gets origin URL
+  - Already has `push(cwd, branch, setUpstream?)` — pushes with optional upstream tracking
+  - Missing: `createGitHubRepo()` and `addRemote()` methods
+
+  **WorktreeService** (`packages/core/src/infrastructure/services/git/worktree.service.ts`):
+  - `ensureGitRepository()` handles local git init + initial commit
+  - Analogous pattern for what we're building (ensure remote exists)
+
+  **GitPrService** (`packages/core/src/infrastructure/services/git/git-pr.service.ts`):
+  - Uses injected `ExecFunction` for all shell operations
+  - Error handling via `GitPrError` with typed error codes
+  - Follows pattern: `await this.execFile('gh', [...args], { cwd })`
+
+  **Repo CLI commands** (`src/presentation/cli/commands/repo/`):
+  - Currently has `ls` and `show` subcommands
+  - New `init-remote` command fits naturally as a sibling subcommand
+
+  ## Success Criteria
+
+  - [ ] New `createGitHubRepo()` method on IGitPrService interface
+  - [ ] New `addRemote()` method on IGitPrService interface
+  - [ ] GitPrService implementation using `gh repo create` and `git remote add`
+  - [ ] New `InitializeGitHubRemoteUseCase` in application layer
+  - [ ] New `shep repo init-remote` CLI command with visibility and name options
+  - [ ] Guard: command errors gracefully if remote already exists
+  - [ ] Guard: command errors gracefully if `gh` CLI is not installed/authenticated
+  - [ ] Unit tests for use case with mocked IGitPrService
+  - [ ] Unit tests for new GitPrService methods
+  - [ ] Integration test for the full CLI command flow
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `packages/core/src/application/ports/output/services/git-pr-service.interface.ts` | High | Add `createGitHubRepo()` and `addRemote()` to the interface |
+  | `packages/core/src/infrastructure/services/git/git-pr.service.ts` | High | Implement the new methods using `gh repo create` and `git remote add` |
+  | `packages/core/src/application/use-cases/repositories/` | High | New `InitializeGitHubRemoteUseCase` |
+  | `src/presentation/cli/commands/repo/` | High | New `init-remote.command.ts` and update `index.ts` |
+  | `packages/core/src/infrastructure/di/container.ts` | Low | Register new use case (if not auto-resolved by tsyringe) |
+  | `tests/unit/` | Medium | New unit tests for use case and service methods |
+  | `tests/integration/` | Medium | Integration test for CLI command |
+
+  ## Dependencies
+
+  - **gh CLI**: Must be installed and authenticated (`gh auth login`). The tool installer
+    service (`IToolInstallerService`) already manages `gh` installation.
+  - **IGitPrService**: Existing interface and implementation that will be extended.
+  - **IRepositoryRepository**: For updating the repository record after remote is linked.
+  - **Commander.js**: For adding the new CLI subcommand.
+
+  ## Size Estimate
+
+  **M** — This feature touches 4 layers (interface, implementation, use case, CLI command)
+  but each change is well-scoped. The `gh repo create` integration follows the exact same
+  subprocess pattern already used throughout GitPrService. The main complexity is in the
+  use case logic (checking preconditions, handling errors) and writing comprehensive tests.
+  Estimated at 2-3 days including TDD cycles.
+
+  ---
+
+  _Analysis complete — proceed with research phase_
