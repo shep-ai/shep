@@ -114,6 +114,7 @@ import { ListRepositoriesUseCase } from '../../application/use-cases/repositorie
 import { DeleteRepositoryUseCase } from '../../application/use-cases/repositories/delete-repository.use-case.js';
 import { ImportGitHubRepositoryUseCase } from '../../application/use-cases/repositories/import-github-repository.use-case.js';
 import { ListGitHubRepositoriesUseCase } from '../../application/use-cases/repositories/list-github-repositories.use-case.js';
+import { InitRemoteRepositoryUseCase } from '../../application/use-cases/repositories/init-remote-repository.use-case.js';
 import { CheckAndUnblockFeaturesUseCase } from '../../application/use-cases/features/check-and-unblock-features.use-case.js';
 import { UpdateFeatureLifecycleUseCase } from '../../application/use-cases/features/update/update-feature-lifecycle.use-case.js';
 import { CleanupFeatureWorktreeUseCase } from '../../application/use-cases/features/cleanup-feature-worktree.use-case.js';
@@ -374,6 +375,7 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(DeleteRepositoryUseCase);
   container.registerSingleton(ImportGitHubRepositoryUseCase);
   container.registerSingleton(ListGitHubRepositoriesUseCase);
+  container.registerSingleton(InitRemoteRepositoryUseCase);
   // CheckAndUnblockFeaturesUseCase must be registered before UpdateFeatureLifecycleUseCase
   // because the latter injects the former via class token.
   container.registerSingleton(CheckAndUnblockFeaturesUseCase);
@@ -469,6 +471,9 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('ListGitHubRepositoriesUseCase', {
     useFactory: (c) => c.resolve(ListGitHubRepositoriesUseCase),
+  });
+  container.register('InitRemoteRepositoryUseCase', {
+    useFactory: (c) => c.resolve(InitRemoteRepositoryUseCase),
   });
   container.register('CheckAndUnblockFeaturesUseCase', {
     useFactory: (c) => c.resolve(CheckAndUnblockFeaturesUseCase),
