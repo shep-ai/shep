@@ -34,7 +34,13 @@ export interface BuildGraphNodesOptions {
   /** Git info (branch, commit message, committer, behind count) keyed by repository path */
   repoGitInfo?: Map<
     string,
-    { branch: string; commitMessage: string; committer: string; behindCount: number | null }
+    {
+      branch: string;
+      commitMessage: string;
+      committer: string;
+      behindCount: number | null;
+      hasRemote: boolean;
+    }
   >;
   /** Git info resolution status keyed by repository path */
   repoGitStatus?: Map<string, 'loading' | 'ready' | 'not-a-repo'>;
@@ -87,6 +93,7 @@ export function buildGraphNodes(
           commitMessage: gitInfo.commitMessage,
           committer: gitInfo.committer,
           behindCount: gitInfo.behindCount,
+          hasRemote: gitInfo.hasRemote,
         }),
       },
     });
@@ -113,7 +120,7 @@ export function buildGraphNodes(
       id: virtualRepoNodeId,
       type: 'repositoryNode',
       position: { x: 0, y: 0 },
-      data: { name: repoName, repositoryPath: repoPath },
+      data: { name: repoName, repositoryPath: repoPath, hasRemote: true },
     });
 
     appendFeatureNodes(

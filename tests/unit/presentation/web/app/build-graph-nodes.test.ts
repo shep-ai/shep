@@ -296,6 +296,60 @@ describe('buildGraphNodes', () => {
     });
   });
 
+  describe('repository node hasRemote field', () => {
+    it('sets hasRemote: true on a real repo node when repoGitInfo has hasRemote: true', () => {
+      const repo = makeRepo({ path: '/my/repo' });
+      const repoGitInfo = new Map([
+        [
+          '/my/repo',
+          {
+            branch: 'main',
+            commitMessage: 'init',
+            committer: 'Alice',
+            behindCount: 0,
+            hasRemote: true,
+          },
+        ],
+      ]);
+      const { nodes } = buildGraphNodes([repo], [], { repoGitInfo });
+      const repoNode = nodes.find((n) => n.id === 'repo-repo-1');
+      expect((repoNode!.data as Record<string, unknown>).hasRemote).toBe(true);
+    });
+
+    it('sets hasRemote: false on a real repo node when repoGitInfo has hasRemote: false', () => {
+      const repo = makeRepo({ path: '/my/repo' });
+      const repoGitInfo = new Map([
+        [
+          '/my/repo',
+          {
+            branch: 'main',
+            commitMessage: 'init',
+            committer: 'Alice',
+            behindCount: 0,
+            hasRemote: false,
+          },
+        ],
+      ]);
+      const { nodes } = buildGraphNodes([repo], [], { repoGitInfo });
+      const repoNode = nodes.find((n) => n.id === 'repo-repo-1');
+      expect((repoNode!.data as Record<string, unknown>).hasRemote).toBe(false);
+    });
+
+    it('sets hasRemote: true on virtual repo nodes (suppress init-remote form)', () => {
+      const feature = makeFeature({ repositoryPath: '/orphan/repo' });
+      const { nodes } = buildGraphNodes([], [{ feature, run: null }]);
+      const virtualNode = nodes.find((n) => n.id === 'virtual-repo-/orphan/repo');
+      expect((virtualNode!.data as Record<string, unknown>).hasRemote).toBe(true);
+    });
+
+    it('leaves hasRemote undefined on real repo node when repoGitInfo not provided', () => {
+      const repo = makeRepo({ path: '/my/repo' });
+      const { nodes } = buildGraphNodes([repo], []);
+      const repoNode = nodes.find((n) => n.id === 'repo-repo-1');
+      expect((repoNode!.data as Record<string, unknown>).hasRemote).toBeUndefined();
+    });
+  });
+
   describe('repository git info enrichment', () => {
     it('includes git info when repoGitInfo map has data for the repository', () => {
       const repo = makeRepo({ path: '/my/repo' });
@@ -307,6 +361,7 @@ describe('buildGraphNodes', () => {
             commitMessage: 'feat: add login page',
             committer: 'Jane Doe',
             behindCount: 3,
+            hasRemote: true,
           },
         ],
       ]);
@@ -326,7 +381,13 @@ describe('buildGraphNodes', () => {
       const repoGitInfo = new Map([
         [
           '/other/repo',
-          { branch: 'main', commitMessage: 'chore: cleanup', committer: 'Bot', behindCount: 0 },
+          {
+            branch: 'main',
+            commitMessage: 'chore: cleanup',
+            committer: 'Bot',
+            behindCount: 0,
+            hasRemote: true,
+          },
         ],
       ]);
       const { nodes } = buildGraphNodes([repo], [], { repoGitInfo });
