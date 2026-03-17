@@ -198,6 +198,8 @@ export function createStubMergeNodeDeps(featureId?: string): Omit<MergeNodeDeps,
       rebaseContinue: vi.fn().mockResolvedValue(undefined),
       rebaseAbort: vi.fn().mockResolvedValue(undefined),
       getBranchSyncStatus: vi.fn().mockResolvedValue({ ahead: 0, behind: 0 }),
+      createGitHubRepo: vi.fn().mockResolvedValue('https://github.com/test/repo'),
+      addRemote: vi.fn().mockResolvedValue(undefined),
     },
     cleanupFeatureWorktreeUseCase: { execute: vi.fn().mockResolvedValue(undefined) } as any,
   };

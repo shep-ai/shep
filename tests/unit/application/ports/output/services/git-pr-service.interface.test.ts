@@ -12,8 +12,8 @@ import {
 } from '@/application/ports/output/services/git-pr-service.interface';
 
 describe('GitPrErrorCode', () => {
-  it('should define all 11 error codes', () => {
-    expect(Object.keys(GitPrErrorCode)).toHaveLength(11);
+  it('should define all 13 error codes', () => {
+    expect(Object.keys(GitPrErrorCode)).toHaveLength(13);
   });
 
   it.each([
@@ -27,6 +27,8 @@ describe('GitPrErrorCode', () => {
     'MERGE_FAILED',
     'PR_NOT_FOUND',
     'REBASE_CONFLICT',
+    'REMOTE_ALREADY_EXISTS',
+    'REPO_CREATE_FAILED',
     'SYNC_FAILED',
   ] as const)('should have %s error code', (code) => {
     expect(GitPrErrorCode[code]).toBe(code);
@@ -187,6 +189,10 @@ describe('IGitPrService', () => {
       getBranchSyncStatus: async () => {
         return { ahead: 0, behind: 0 };
       },
+      createGitHubRepo: async () => 'https://github.com/org/repo',
+      addRemote: async () => {
+        /* noop */
+      },
     };
 
     // Verify all methods exist
@@ -218,9 +224,11 @@ describe('IGitPrService', () => {
       'rebaseContinue',
       'rebaseAbort',
       'getBranchSyncStatus',
+      'createGitHubRepo',
+      'addRemote',
     ];
 
-    expect(methodNames).toHaveLength(27);
+    expect(methodNames).toHaveLength(29);
     for (const name of methodNames) {
       expect(typeof mock[name]).toBe('function');
     }

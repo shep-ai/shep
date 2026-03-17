@@ -764,6 +764,18 @@ export class GitPrService implements IGitPrService {
     return match ? parseInt(match[1], 10) : 0;
   }
 
+  async createGitHubRepo(
+    _cwd: string,
+    _name: string,
+    _options: { isPrivate: boolean; org?: string }
+  ): Promise<string> {
+    throw new GitPrError('createGitHubRepo not yet implemented', GitPrErrorCode.REPO_CREATE_FAILED);
+  }
+
+  async addRemote(_cwd: string, _remoteName: string, _remoteUrl: string): Promise<void> {
+    throw new GitPrError('addRemote not yet implemented', GitPrErrorCode.GIT_ERROR);
+  }
+
   private parseDiffStat(diffStat: string, logOutput: string): DiffSummary {
     const summaryLine = diffStat.trim().split('\n').pop() ?? '';
     const filesMatch = summaryLine.match(/(\d+)\s+files?\s+changed/);

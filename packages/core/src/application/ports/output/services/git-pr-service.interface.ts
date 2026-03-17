@@ -21,6 +21,8 @@ export enum GitPrErrorCode {
   NETWORK_ERROR = 'NETWORK_ERROR',
   PR_NOT_FOUND = 'PR_NOT_FOUND',
   REBASE_CONFLICT = 'REBASE_CONFLICT',
+  REMOTE_ALREADY_EXISTS = 'REMOTE_ALREADY_EXISTS',
+  REPO_CREATE_FAILED = 'REPO_CREATE_FAILED',
   SYNC_FAILED = 'SYNC_FAILED',
 }
 
@@ -163,6 +165,37 @@ export interface IGitPrService {
    * @returns The remote URL, or null if no remote is configured
    */
   getRemoteUrl(cwd: string): Promise<string | null>;
+
+  /**
+   * Create a GitHub repository and link it to the local repo.
+   * Uses `gh repo create` with `--source=.` and `--push` to atomically
+   * create the remote repo, add the origin remote, and push the current branch.
+   *
+   * @param cwd - Working directory path
+   * @param name - Repository name (e.g. "my-repo" or "org/my-repo")
+   * @param options - Creation options
+   * @param options.isPrivate - Whether to create a private repository
+   * @param options.org - Optional GitHub organization to create the repo under
+   * @returns The URL of the created GitHub repository
+   * @throws GitPrError with REPO_CREATE_FAILED code on creation failure
+   * @throws GitPrError with GH_NOT_FOUND code if gh CLI is not installed
+   * @throws GitPrError with AUTH_FAILURE code if gh is not authenticated
+   */
+  createGitHubRepo(
+    cwd: string,
+    name: string,
+    options: { isPrivate: boolean; org?: string }
+  ): Promise<string>;
+
+  /**
+   * Add a git remote to the local repository.
+   *
+   * @param cwd - Working directory path
+   * @param remoteName - Name for the remote (e.g. "origin")
+   * @param remoteUrl - URL of the remote repository
+   * @throws GitPrError with GIT_ERROR code on failure
+   */
+  addRemote(cwd: string, remoteName: string, remoteUrl: string): Promise<void>;
 
   /**
    * Detect the repository's default branch with robust fallback chain:
