@@ -1,0 +1,40 @@
+feature:
+  id: 069-github-remote-init
+  name: github-remote-init
+  number: 69
+  branch: feat/069-github-remote-init
+  lifecycle: research
+  createdAt: '2026-03-17T07:42:38Z'
+status:
+  phase: implementation-complete
+  progress:
+    completed: 10
+    total: 10
+    percentage: 100
+  currentTask: null
+  lastUpdated: '2026-03-17T13:48:43.276Z'
+  lastUpdatedBy: feature-agent:implement
+  completedPhases:
+    - analyze
+    - requirements
+    - research
+    - plan
+    - phase-1
+    - phase-2
+    - phase-3
+    - phase-4
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: feature-created
+    completedAt: '2026-03-17T07:42:38Z'
+    completedBy: feature-agent
+errors:
+  current: null
+  history: []
