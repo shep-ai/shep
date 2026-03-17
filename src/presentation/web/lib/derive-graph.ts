@@ -97,7 +97,7 @@ export function deriveGraph(
       id: virtualId,
       type: 'repositoryNode',
       position: { x: 0, y: 0 },
-      data: { name: repoName, repositoryPath } satisfies RepositoryNodeData,
+      data: { name: repoName, repositoryPath, hasRemote: true } satisfies RepositoryNodeData,
     } as CanvasNodeType);
     virtualRepos.set(repositoryPath, virtualId);
     return virtualId;

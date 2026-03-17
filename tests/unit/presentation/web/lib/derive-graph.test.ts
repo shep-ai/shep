@@ -116,6 +116,20 @@ describe('deriveGraph', () => {
       expect(edge?.source).toMatch(/^virtual-repo-/);
     });
 
+    it('virtual repo nodes have hasRemote: true to suppress the set-up-github-remote form', () => {
+      const featureMap = new Map([
+        makeFeatureEntry('feat-orphan', { repositoryPath: '/orphan/repo' }),
+      ]);
+      const repoMap = new Map<string, RepoEntry>();
+      const pendingMap = new Map<string, FeatureEntry>();
+
+      const { nodes } = deriveGraph(featureMap, repoMap, pendingMap);
+
+      const virtualNode = nodes.find((n) => n.id === 'virtual-repo-/orphan/repo');
+      expect(virtualNode).toBeDefined();
+      expect((virtualNode!.data as Record<string, unknown>).hasRemote).toBe(true);
+    });
+
     it('pending feature with tempId → produces creating node with edge to repo', () => {
       const repoMap = new Map([makeRepoEntry('repo-1', '/repo')]);
       const featureMap = new Map<string, FeatureEntry>();
