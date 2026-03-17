@@ -21,6 +21,7 @@ export interface RepoGitInfo {
   commitMessage: string;
   committer: string;
   behindCount: number | null;
+  hasRemote: boolean;
 }
 
 // Cache git info per repo — refreshed every GIT_INFO_TTL_MS via background-style check.
@@ -33,6 +34,11 @@ type GitCacheEntry =
   | { kind: 'not-a-repo'; checkedAt: number };
 
 const gitInfoCache = new Map<string, GitCacheEntry>();
+
+/** Evict a repo from the git info cache so the next getGraphData() call fetches fresh data. */
+export function invalidateRepoGitCache(repoPath: string): void {
+  gitInfoCache.delete(repoPath);
+}
 
 async function gitCommand(cwd: string, args: string[]): Promise<string | null> {
   try {
@@ -56,7 +62,19 @@ async function refreshRepoGitInfo(repo: Repository): Promise<void> {
       return;
     }
 
-    // Fetch branch + subject & author in parallel
+    // Always check hasRemote — adding a remote does NOT change HEAD
+    const remoteUrl = await gitCommand(repo.path, ['remote', 'get-url', 'origin']);
+    const hasRemote = remoteUrl !== null && remoteUrl.length > 0;
+
+    const cached = gitInfoCache.get(repo.path);
+    if (cached?.kind === 'repo' && cached.sha === headSha) {
+      // HEAD unchanged — just bump checkedAt
+      cached.checkedAt = Date.now();
+      cached.data.hasRemote = hasRemote;
+      return;
+    }
+
+    // HEAD changed — fetch branch + subject & author in parallel
     const [currentBranch, logLine] = await Promise.all([
       gitCommand(repo.path, ['symbolic-ref', '--short', 'HEAD']),
       gitCommand(repo.path, ['log', '-1', `--format=%s${FIELD_SEP}%an`]),
@@ -95,6 +113,7 @@ async function refreshRepoGitInfo(repo: Repository): Promise<void> {
         commitMessage: commitMessage ?? 'unknown',
         committer: committer ?? 'unknown',
         behindCount,
+        hasRemote,
       },
     });
   } catch {
