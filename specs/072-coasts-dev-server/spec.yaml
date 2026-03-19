@@ -1,243 +1,287 @@
-# Feature Specification (YAML)
-# This is the source of truth. Markdown is auto-generated from this file.
-
 name: coasts-dev-server
-number: 072
+number: 72
 branch: feat/072-coasts-dev-server
-oneLiner: integrate coasts.dev runtime isolation for the shep dev server behind a feature flag
+oneLiner: >-
+  integrate coasts.dev runtime isolation for shep dev servers behind a
+  feature flag
 summary: >
-  Integrate the Coasts (coasts.dev) containerized runtime system as an alternative dev server mode
-  for Shep. Coasts provides per-worktree runtime isolation via Docker containers, automatic port
-  management, and service orchestration — enabling parallel feature development without port
-  conflicts or shared state. A new feature flag toggles between the current bare Next.js dev
-  server and the Coasts-managed mode. The feature adds a new infrastructure service wrapping the
-  coast CLI, a Coastfile template for the Shep project, and branching logic in the dev server
-  entrypoint.
+  Integrate the Coasts (coasts.dev) containerized runtime system as an
+  alternative dev server mode for Shep. When users run `shep ui` or the dev
+  server for any repository managed by Shep, Coasts provides per-worktree
+  runtime isolation via Docker containers, automatic port management, and
+  service orchestration — enabling parallel feature development across
+  multiple worktrees without port conflicts or shared state. A feature flag
+  toggles between the current bare Next.js dev server and the Coasts-managed
+  mode. The feature adds a new infrastructure service wrapping the coast CLI
+  and branching logic in the dev server entrypoint. Each repo/worktree gets
+  its own isolated dev server instance through Coasts — Coastfile
+  configuration is the responsibility of the target repo, not Shep.
 phase: Requirements
 sizeEstimate: L
-
 relatedFeatures: []
-
 technologies:
-  - Coasts CLI/daemon (Rust binary, Unix socket protocol, HTTP API on port 31415)
+  - >-
+    Coasts CLI/daemon (Rust binary, Unix socket protocol, HTTP API on port
+    31415)
   - Docker / Docker-in-Docker (DinD) runtime
-  - Coastfile (TOML configuration format)
+  - Coastfile (TOML configuration format — owned by target repos, not Shep)
   - TypeSpec (domain model extension for feature flag)
   - Next.js 16 programmatic server API
   - tsyringe dependency injection
   - SQLite (settings persistence)
   - socat (port forwarding managed by coastd)
   - child_process (Node.js subprocess spawning for coast CLI)
-
 relatedLinks:
-  - title: 'Coasts documentation'
-    url: 'https://coasts.dev/docs'
-  - title: 'Coasts GitHub repository'
-    url: 'https://github.com/coast-guard/coasts'
-
+  - title: Coasts documentation
+    url: https://coasts.dev/docs
+  - title: Coasts GitHub repository
+    url: https://github.com/coast-guard/coasts
 openQuestions:
-  - question: 'Should the dev server manage the coastd daemon lifecycle (auto-start/stop) or require the user to start it manually?'
+  - question: >-
+      Should the dev server manage the coastd daemon lifecycle (auto-start/stop)
+      or require the user to start it manually?
     resolved: true
     options:
-      - option: 'Manual daemon management'
+      - option: Manual daemon management
         description: >
-          Require the user to run `coastd` before starting the dev server. Simplest
-          implementation — just check the socket exists and fail with a helpful message
-          if not. Avoids complex process management and background daemon ownership issues.
-          Users control when the daemon runs and stops.
+          Require the user to run `coastd` before starting the dev server.
+          Simplest implementation — just check the socket exists and fail with a
+          helpful message if not. Avoids complex process management and
+          background daemon ownership issues. Users control when the daemon runs
+          and stops.
         selected: true
-      - option: 'Auto-start daemon on dev server launch'
+      - option: Auto-start daemon on dev server launch
         description: >
-          Automatically start coastd if not running when the dev server starts. Adds
-          convenience but introduces complexity: who owns the process? When does it stop?
-          Risk of orphan daemons. Would need health-check retry logic and graceful
-          fallback if the daemon fails to start.
+          Automatically start coastd if not running when the dev server starts.
+          Adds convenience but introduces complexity: who owns the process? When
+          does it stop? Risk of orphan daemons. Would need health-check retry
+          logic and graceful fallback if the daemon fails to start.
         selected: false
-      - option: 'Hybrid — auto-start with user opt-out'
+      - option: Hybrid — auto-start with user opt-out
         description: >
-          Auto-start by default with a setting to disable it. Maximum convenience but
-          maximum complexity. Adds another setting to manage and test.
+          Auto-start by default with a setting to disable it. Maximum
+          convenience but maximum complexity. Adds another setting to manage and
+          test.
         selected: false
     selectionRationale: >
-      Manual daemon management is recommended because coastd is an external Rust binary
-      with its own lifecycle. Auto-starting it from Node.js introduces process ownership
-      ambiguity, orphan daemon risk, and complex error recovery. A clear prerequisite
-      check with a helpful error message is the simplest, most reliable approach. Power
-      users who want auto-start can configure their shell profile or use a process manager.
-    answer: 'Manual daemon management'
-
-  - question: 'Should Shep auto-generate a Coastfile when the feature flag is enabled, or require the user to create one manually?'
+      Manual daemon management is recommended because coastd is an external Rust
+      binary with its own lifecycle. Auto-starting it from Node.js introduces
+      process ownership ambiguity, orphan daemon risk, and complex error
+      recovery. A clear prerequisite check with a helpful error message is the
+      simplest, most reliable approach. Power users who want auto-start can
+      configure their shell profile or use a process manager.
+    answer: Manual daemon management
+  - question: >-
+      What scope of isolation should Coasts provide for V1 — full services
+      or ports-only?
     resolved: true
     options:
-      - option: 'Auto-generate from template'
+      - option: Ports and SQLite only
         description: >
-          When the coastsDevServer flag is enabled and no Coastfile exists, auto-generate
-          one from a bundled template with Shep-specific defaults (port 3000, SQLite volume,
-          Next.js setup commands). Reduces friction. The generated file can be customized
-          afterward. Follows the pattern of other scaffolding tools.
+          Isolate the Next.js dev server port (3000) and the SQLite database
+          file per worktree. This is the minimum viable isolation that solves
+          the stated problem (port conflicts and shared state). No custom
+          services, secrets, or complex volume mounts. Fastest to implement and
+          test.
         selected: true
-      - option: 'Require manual creation'
+      - option: Full service stack
         description: >
-          Require the user to write their own Coastfile. Maximum flexibility but high
-          friction — most users won't know the Coastfile format. Risk of misconfiguration.
-        selected: false
-      - option: 'Interactive wizard'
-        description: >
-          Prompt the user through a TUI wizard to configure the Coastfile. Best UX but
-          significant implementation effort for an opt-in feature flag. Overkill for V1.
+          Define the complete Coasts service stack including background
+          watchers, notification service, deployment services, and any future
+          services. Provides maximum isolation but significantly increases
+          complexity and testing surface. Many of these services may not benefit
+          from isolation.
         selected: false
     selectionRationale: >
-      Auto-generating from a template is recommended because it minimizes friction for
-      the common case (Shep's own dev server has well-known port and service requirements).
-      The template encodes best-practice defaults while remaining editable. This approach
-      follows the principle of sensible defaults — users can customize after generation.
-      A wizard can be added later if demand warrants it.
-    answer: 'Auto-generate from template'
-
-  - question: 'What scope of isolation should the Coastfile define for V1 — full services or ports-only?'
+      Ports and SQLite isolation is recommended for V1 because it directly
+      addresses the two problems stated in the spec: port conflicts and shared
+      database state. The notification watcher, PR sync watcher, and deployment
+      services are already per-process and don't suffer from cross-worktree
+      interference. Starting minimal allows learning from real usage before
+      expanding the isolation boundary.
+    answer: Ports and SQLite only
+  - question: >-
+      How should the dev server behave when Coasts mode is enabled but
+      prerequisites are missing (no coast binary, no Docker, daemon not
+      running)?
     resolved: true
     options:
-      - option: 'Ports and SQLite only'
+      - option: Fail fast with actionable error
         description: >
-          Isolate the Next.js dev server port (3000) and the SQLite database file per
-          worktree. This is the minimum viable isolation that solves the stated problem
-          (port conflicts and shared state). No custom services, secrets, or complex
-          volume mounts. Simplest Coastfile, fastest to implement and test.
+          Check all prerequisites upfront before attempting to start. If any are
+          missing, print a clear error message listing what is missing and how
+          to install/fix it, then exit with a non-zero code. Does not fall back
+          to bare mode. Forces the user to either fix prerequisites or disable
+          the flag.
         selected: true
-      - option: 'Full service stack'
+      - option: Graceful fallback to bare mode
         description: >
-          Define the complete Coasts service stack including background watchers,
-          notification service, deployment services, and any future services. Provides
-          maximum isolation but significantly increases Coastfile complexity and testing
-          surface. Many of these services may not benefit from isolation.
+          If Coasts prerequisites are missing, log a warning and fall back to
+          the existing bare Next.js dev server. Convenient but dangerous — users
+          may think they are running in isolated mode when they are not. Silent
+          degradation violates the principle of least surprise.
+        selected: false
+      - option: Interactive prompt asking user to choose
+        description: >
+          When prerequisites are missing, prompt the user: "Coasts not
+          available. Start in bare mode instead?" Good UX but complicates
+          non-interactive environments (CI, scripts, headless). The dev server
+          should be startable without interaction.
         selected: false
     selectionRationale: >
-      Ports and SQLite isolation is recommended for V1 because it directly addresses
-      the two problems stated in the spec: port conflicts and shared database state.
-      The notification watcher, PR sync watcher, and deployment services are already
-      per-process and don't suffer from cross-worktree interference. Starting minimal
-      allows learning from real usage before expanding the isolation boundary.
-    answer: 'Ports and SQLite only'
-
-  - question: 'How should the dev server behave when Coasts mode is enabled but prerequisites are missing (no coast binary, no Docker, daemon not running)?'
+      Fail fast with actionable error is recommended because silent fallback
+      would mask configuration issues — a developer thinking they have isolation
+      when they don't could cause data corruption across worktrees. An explicit
+      error with installation instructions is the safest approach. Users who
+      want bare mode can simply disable the feature flag.
+    answer: Fail fast with actionable error
+  - question: >-
+      Should the coastsDevServer feature flag affect only the dev server (pnpm
+      dev:web) or also the production web server (shep ui)?
     resolved: true
     options:
-      - option: 'Fail fast with actionable error'
+      - option: Dev server only (V1)
         description: >
-          Check all prerequisites upfront before attempting to start. If any are missing,
-          print a clear error message listing what is missing and how to install/fix it,
-          then exit with a non-zero code. Does not fall back to bare mode. Forces the user
-          to either fix prerequisites or disable the flag.
+          Only affect the dev-server.ts entrypoint. The production shep ui
+          command continues using WebServerService as-is. This limits scope,
+          reduces risk, and aligns with the feature name "coasts-dev-server".
+          Production Coasts support can be a follow-up feature.
         selected: true
-      - option: 'Graceful fallback to bare mode'
+      - option: Both dev and production
         description: >
-          If Coasts prerequisites are missing, log a warning and fall back to the existing
-          bare Next.js dev server. Convenient but dangerous — users may think they are
-          running in isolated mode when they are not. Silent degradation violates the
-          principle of least surprise.
-        selected: false
-      - option: 'Interactive prompt asking user to choose'
-        description: >
-          When prerequisites are missing, prompt the user: "Coasts not available. Start
-          in bare mode instead?" Good UX but complicates non-interactive environments
-          (CI, scripts, headless). The dev server should be startable without interaction.
+          Modify both dev-server.ts and WebServerService to support Coasts mode.
+          Provides consistent behavior across modes but doubles the
+          implementation surface and testing burden. Production usage patterns
+          differ significantly from dev.
         selected: false
     selectionRationale: >
-      Fail fast with actionable error is recommended because silent fallback would mask
-      configuration issues — a developer thinking they have isolation when they don't
-      could cause data corruption across worktrees. An explicit error with installation
-      instructions is the safest approach. Users who want bare mode can simply disable
-      the feature flag.
-    answer: 'Fail fast with actionable error'
-
-  - question: 'Should the coastsDevServer feature flag affect only the dev server (pnpm dev:web) or also the production web server (shep ui)?'
+      Dev server only is recommended for V1 because the problem statement
+      specifically targets parallel development with worktrees — a dev-only
+      workflow. Production mode (shep ui) runs a single built Next.js instance
+      and doesn't face the same port/state conflicts. Keeping scope narrow
+      enables faster delivery and real-world validation before expanding to
+      production.
+    answer: Dev server only (V1)
+  - question: >-
+      Should the coast CLI be invoked via direct subprocess spawning or through
+      the coastd HTTP API?
     resolved: true
     options:
-      - option: 'Dev server only (V1)'
+      - option: Coast CLI subprocess
         description: >
-          Only affect the dev-server.ts entrypoint. The production shep ui command
-          continues using WebServerService as-is. This limits scope, reduces risk, and
-          aligns with the feature name "coasts-dev-server". Production Coasts support
-          can be a follow-up feature.
+          Invoke the `coast` CLI binary via child_process.spawn for each
+          operation (build, run, stop, checkout, lookup). Simpler implementation
+          — works with any coast version, no API version coupling, leverages
+          existing CLI error messages. Downside: subprocess overhead per call
+          and parsing CLI output.
         selected: true
-      - option: 'Both dev and production'
+      - option: Coastd HTTP API direct
         description: >
-          Modify both dev-server.ts and WebServerService to support Coasts mode. Provides
-          consistent behavior across modes but doubles the implementation surface and
-          testing burden. Production usage patterns differ significantly from dev.
+          Communicate directly with the coastd HTTP API on port 31415 or Unix
+          socket. More efficient for frequent operations, structured JSON
+          responses. But couples Shep to coastd API contract, requires
+          understanding the wire protocol, and bypasses any CLI-level validation
+          or user messaging.
         selected: false
     selectionRationale: >
-      Dev server only is recommended for V1 because the problem statement specifically
-      targets parallel development with worktrees — a dev-only workflow. Production mode
-      (shep ui) runs a single built Next.js instance and doesn't face the same port/state
-      conflicts. Keeping scope narrow enables faster delivery and real-world validation
-      before expanding to production.
-    answer: 'Dev server only (V1)'
-
-  - question: 'Should the coast CLI be invoked via direct subprocess spawning or through the coastd HTTP API?'
+      Coast CLI subprocess is recommended because it provides the most stable
+      integration surface. The CLI is the public API of Coasts; the HTTP/socket
+      protocol is internal. CLI invocation handles authentication, configuration
+      resolution, and error formatting that would need to be reimplemented if
+      using the API directly. The subprocess overhead is negligible for the
+      operations involved (build, run, stop — all infrequent).
+    answer: Coast CLI subprocess
+  - question: >-
+      Should the dev-server.ts Coasts code path still bootstrap the DI container
+      and watchers inside the container, or delegate everything to the
+      coast-managed process?
     resolved: true
     options:
-      - option: 'Coast CLI subprocess'
+      - option: Bootstrap DI on host, delegate Next.js to coast
         description: >
-          Invoke the `coast` CLI binary via child_process.spawn for each operation (build,
-          run, stop, checkout, lookup). Simpler implementation — works with any coast
-          version, no API version coupling, leverages existing CLI error messages. Downside:
-          subprocess overhead per call and parsing CLI output.
+          The host dev-server.ts still initializes the DI container, settings,
+          notification watcher, and PR sync watcher on the host machine. Only
+          the Next.js server itself runs inside the Coasts container. This
+          preserves the existing watcher behavior and settings resolution while
+          isolating the web server port and database.
         selected: true
-      - option: 'Coastd HTTP API direct'
+      - option: Delegate everything to coast container
         description: >
-          Communicate directly with the coastd HTTP API on port 31415 or Unix socket.
-          More efficient for frequent operations, structured JSON responses. But couples
-          Shep to coastd API contract, requires understanding the wire protocol, and
-          bypasses any CLI-level validation or user messaging.
+          The entire dev-server.ts process runs inside the Coasts container.
+          Maximum isolation but requires the container to have access to the git
+          repo, GitHub credentials, and all Node.js dependencies. Significantly
+          more complex Coastfile configuration and volume mounting.
         selected: false
     selectionRationale: >
-      Coast CLI subprocess is recommended because it provides the most stable integration
-      surface. The CLI is the public API of Coasts; the HTTP/socket protocol is internal.
-      CLI invocation handles authentication, configuration resolution, and error formatting
-      that would need to be reimplemented if using the API directly. The subprocess overhead
-      is negligible for the operations involved (build, run, stop — all infrequent).
-    answer: 'Coast CLI subprocess'
-
-  - question: 'Should the dev-server.ts Coasts code path still bootstrap the DI container and watchers inside the container, or delegate everything to the coast-managed process?'
+      Bootstrap DI on host is recommended because the watchers (notification, PR
+      sync) need direct access to the host git repo and GitHub credentials.
+      Running them inside a container would require complex volume mounts and
+      credential forwarding. The primary isolation benefit is port and database
+      separation, which is achieved by running only Next.js inside the coast
+      container. This hybrid approach minimizes Coastfile complexity while
+      delivering the core isolation value.
+    answer: Bootstrap DI on host, delegate Next.js to coast
+  - question: >-
+      Should the dev server require a Coastfile in the target repo, or should
+      Shep handle Coasts orchestration without one?
     resolved: true
     options:
-      - option: 'Bootstrap DI on host, delegate Next.js to coast'
+      - option: Require Coastfile in target repo
         description: >
-          The host dev-server.ts still initializes the DI container, settings, notification
-          watcher, and PR sync watcher on the host machine. Only the Next.js server itself
-          runs inside the Coasts container. This preserves the existing watcher behavior
-          and settings resolution while isolating the web server port and database.
+          Require that the target repository contains a Coastfile before Coasts
+          mode can activate. The Coastfile is the repo owner's responsibility —
+          it defines the repo's specific port, volume, and service requirements.
+          Shep checks for its existence as part of prerequisite validation and
+          fails with instructions if missing. This keeps Shep from making
+          assumptions about arbitrary repo configurations.
         selected: true
-      - option: 'Delegate everything to coast container'
+      - option: Auto-generate a generic Coastfile
         description: >
-          The entire dev-server.ts process runs inside the Coasts container. Maximum
-          isolation but requires the container to have access to the git repo, GitHub
-          credentials, and all Node.js dependencies. Significantly more complex Coastfile
-          configuration and volume mounting.
+          Have Shep generate a Coastfile with generic defaults (port 3000,
+          basic setup) when none exists. Reduces friction but makes dangerous
+          assumptions about the target repo's build system, port requirements,
+          and volume needs. A generic template may not work for most repos and
+          could cause confusion.
+        selected: false
+      - option: Use coast CLI defaults without Coastfile
+        description: >
+          Invoke `coast run` without a Coastfile and rely on Coasts built-in
+          defaults. Simplest for Shep but gives no control over port assignment,
+          volumes, or setup commands. May not provide meaningful isolation
+          without explicit configuration.
         selected: false
     selectionRationale: >
-      Bootstrap DI on host is recommended because the watchers (notification, PR sync)
-      need direct access to the host git repo and GitHub credentials. Running them inside
-      a container would require complex volume mounts and credential forwarding. The primary
-      isolation benefit is port and database separation, which is achieved by running only
-      Next.js inside the coast container. This hybrid approach minimizes Coastfile complexity
-      while delivering the core isolation value.
-    answer: 'Bootstrap DI on host, delegate Next.js to coast'
-
+      Requiring a Coastfile in the target repo is recommended because each
+      repository has unique port requirements, build systems, volume needs, and
+      service dependencies. Shep manages arbitrary repos — it cannot assume a
+      one-size-fits-all configuration. The Coastfile is the repo owner's
+      declaration of how their project should be containerized. Shep's role is
+      to detect and delegate to Coasts, not to configure it. A clear error
+      message with a link to Coasts documentation guides the user to create
+      the appropriate Coastfile for their project.
+    answer: Require Coastfile in target repo
 content: |
   ## Problem Statement
 
-  The current Shep dev server (`dev-server.ts`) runs Next.js directly on the host machine. When
-  developers work on multiple features in parallel using git worktrees, each worktree's dev server
-  competes for the same ports (default 3000) and shares the same SQLite database and background
-  services. The current workaround is manual port incrementing via `findAvailablePort()`, but this
-  doesn't isolate databases, services, or environment state.
+  The current Shep dev server (`dev-server.ts`) runs Next.js directly on the
+  host machine. Shep manages arbitrary repositories — when developers work on
+  multiple features in parallel using git worktrees, each worktree's dev server
+  competes for the same ports (default 3000) and shares the same SQLite database
+  and background services. The current workaround is manual port incrementing
+  via `findAvailablePort()`, but this doesn't isolate databases, services, or
+  environment state.
 
-  Coasts (https://coasts.dev) solves this by providing containerized runtime isolation per worktree.
-  Each "coast" instance gets its own ports, volumes, services, and network — enabling true parallel
-  development. This feature adds Coasts as an optional dev server mode behind a feature flag,
-  scoped to the dev server entrypoint only (not production `shep ui`).
+  Coasts (https://coasts.dev) solves this by providing containerized runtime
+  isolation per worktree. Each "coast" instance gets its own ports, volumes,
+  services, and network — enabling true parallel development across any repo
+  that Shep manages. This feature adds Coasts as an optional dev server mode
+  behind a feature flag, scoped to the dev server entrypoint only (not
+  production `shep ui`).
+
+  The Coastfile (Coasts configuration) is owned by each target repository, not
+  by Shep. Shep's role is to detect Coasts availability, validate prerequisites,
+  and delegate dev server startup to the `coast` CLI when the feature flag is
+  enabled.
 
   ## Success Criteria
 
@@ -245,17 +289,17 @@ content: |
   - [ ] The feature flag toggle appears in the web UI settings page under Feature Flags
   - [ ] The feature flag defaults to `false` (opt-in)
   - [ ] When the flag is `false`, the dev server behaves identically to the current implementation (no regression)
-  - [ ] When the flag is `true` and all prerequisites are met, the dev server starts Next.js via `coast run` instead of bare `next()`
-  - [ ] When the flag is `true` but prerequisites are missing (no coast binary, no Docker, no coastd), the dev server exits with a non-zero code and a human-readable error listing missing prerequisites and installation instructions
+  - [ ] When the flag is `true` and all prerequisites are met (coast binary, Docker, coastd, Coastfile in repo), the dev server starts Next.js via `coast run` instead of bare `next()`
+  - [ ] When the flag is `true` but prerequisites are missing, the dev server exits with a non-zero code and a human-readable error listing missing prerequisites and installation instructions
   - [ ] A `CoastsService` infrastructure service exists with methods for: `checkPrerequisites`, `build`, `run`, `stop`, `lookup`, and `isRunning`
   - [ ] The `CoastsService` is registered in the DI container and accessed via an `ICoastsService` interface
-  - [ ] A template `Coastfile` is auto-generated in the project root when the flag is enabled and no Coastfile exists
-  - [ ] The generated Coastfile isolates the Next.js port (3000) and SQLite database per worktree
+  - [ ] The prerequisite check validates: coast binary on PATH, Docker running, coastd daemon running, Coastfile exists in the target repo
   - [ ] Graceful shutdown in Coasts mode stops the coast instance before exiting
   - [ ] A `pnpm dev:coasts` script exists as a convenience alias for running the dev server with the Coasts flag enabled
   - [ ] Unit tests exist for all `CoastsService` methods with subprocess mocking
   - [ ] Integration tests verify the dev-server branching logic for both flag states
   - [ ] All existing tests continue to pass (zero regressions)
+  - [ ] Multiple worktrees of the same repo can each run an isolated dev server via Coasts concurrently
 
   ## Functional Requirements
 
@@ -268,32 +312,27 @@ content: |
   - **FR-4: Feature flag context** — Add `coastsDevServer: false` to the default flags in `feature-flags-context.tsx`.
 
   - **FR-5: ICoastsService interface** — Define an `ICoastsService` output port interface in `packages/core/src/application/ports/output/services/` with the following methods:
-    - `checkPrerequisites(): Promise<PrerequisiteCheckResult>` — checks for coast binary, Docker, and running coastd daemon
+    - `checkPrerequisites(workDir: string): Promise<PrerequisiteCheckResult>` — checks for coast binary, Docker, running coastd daemon, and Coastfile presence in the target repo
     - `build(workDir: string): Promise<void>` — runs `coast build` in the given directory
-    - `run(workDir: string): Promise<CoastInstance>` — runs `coast run` and returns instance info
+    - `run(workDir: string): Promise<CoastInstance>` — runs `coast run` and returns instance info (port, URL)
     - `stop(workDir: string): Promise<void>` — stops the coast instance for the given directory
-    - `lookup(workDir: string): Promise<CoastInstance | null>` — looks up running instance
+    - `lookup(workDir: string): Promise<CoastInstance | null>` — looks up a running instance for this worktree
     - `isRunning(workDir: string): Promise<boolean>` — checks if an instance is running for this worktree
     - `checkout(workDir: string): Promise<void>` — assigns canonical ports to this worktree's instance
 
-  - **FR-6: CoastsService implementation** — Implement `CoastsService` in `packages/core/src/infrastructure/services/coasts.service.ts`. Each method invokes the `coast` CLI binary via `child_process.spawn`. Parse JSON output where available, fall back to exit code + stderr for error detection.
+  - **FR-6: CoastsService implementation** — Implement `CoastsService` in `packages/core/src/infrastructure/services/coasts.service.ts`. Each method invokes the `coast` CLI binary via `child_process.spawn` with `workDir` as the cwd. Parse JSON output where available, fall back to exit code + stderr for error detection.
 
   - **FR-7: DI registration** — Register `CoastsService` as the `ICoastsService` token in the DI container (`container.ts`).
 
-  - **FR-8: Coastfile template** — Create a Coastfile template that defines:
-    - Port 3000 (Next.js dev server) as the primary canonical port
-    - A volume mount for the SQLite database directory (`~/.shep/repos/<hash>/`)
-    - Setup commands for `pnpm install` and any build prerequisites
-    - The template is written to the project root as `Coastfile` when missing
+  - **FR-8: Coastfile prerequisite check** — The `checkPrerequisites` method must validate that a `Coastfile` exists in the target repo's working directory. If missing, the error message must explain that the repo needs a Coastfile and link to Coasts documentation for how to create one. Shep does NOT generate Coastfiles — each repo defines its own Coasts configuration.
 
   - **FR-9: Dev server branching logic** — Modify `dev-server.ts` to read the `coastsDevServer` feature flag after DI initialization. If enabled:
     1. Resolve `ICoastsService` from the DI container
-    2. Run `checkPrerequisites()` — if any fail, log the error and `process.exit(1)`
-    3. Check for existing `Coastfile` — if missing, generate from template
-    4. Run `coast build` if needed (image not built or Coastfile changed)
-    5. Run `coast run` or `coast checkout` to start/activate the instance
-    6. Log the Coasts-managed URL to the console
-    7. If disabled (default), proceed with the existing bare Next.js startup path unchanged
+    2. Run `checkPrerequisites(workDir)` — if any fail, log the error and `process.exit(1)`
+    3. Run `coast build` if needed (image not built or Coastfile changed)
+    4. Run `coast run` or `coast checkout` to start/activate the instance
+    5. Log the Coasts-managed URL to the console
+    6. If disabled (default), proceed with the existing bare Next.js startup path unchanged
 
   - **FR-10: Graceful shutdown in Coasts mode** — The `shutdown` handler in dev-server.ts must detect Coasts mode and call `coastsService.stop()` before exiting. The 2-second force-exit timeout must still apply.
 
@@ -303,6 +342,7 @@ content: |
     - `coastBinary: boolean` — whether `coast` is on PATH
     - `docker: boolean` — whether Docker daemon is reachable
     - `coastdRunning: boolean` — whether coastd Unix socket responds
+    - `coastfileExists: boolean` — whether a Coastfile exists in the target repo workDir
     - `allMet: boolean` — convenience AND of all checks
     - `missingMessages: string[]` — human-readable list of what's missing with fix instructions
 
@@ -310,13 +350,11 @@ content: |
 
   - **NFR-1: Zero regression** — When the `coastsDevServer` flag is `false` (default), the dev server must behave identically to the pre-feature implementation. No new imports, checks, or side effects on the default path beyond reading the flag value.
 
-  - **NFR-2: Startup latency** — The prerequisite check (FR-12) must complete within 2 seconds. Each check (coast binary, Docker, coastd) should use a short timeout (500ms) to avoid blocking startup.
+  - **NFR-2: Startup latency** — The prerequisite check (FR-12) must complete within 2 seconds. Each check (coast binary, Docker, coastd, Coastfile) should use a short timeout (500ms for subprocess checks) to avoid blocking startup.
 
   - **NFR-3: Clean Architecture compliance** — The `ICoastsService` interface lives in the application layer. The `CoastsService` implementation lives in the infrastructure layer. No direct subprocess calls from the presentation layer.
 
-  - **NFR-4: Error message quality** — All error messages from failed prerequisites must include:
-    (a) what is missing, (b) how to install/fix it, and (c) a link to relevant documentation.
-    Example: "coastd daemon is not running. Start it with: coastd &. See https://coasts.dev/docs/daemon"
+  - **NFR-4: Error message quality** — All error messages from failed prerequisites must include: (a) what is missing, (b) how to install/fix it, and (c) a link to relevant documentation. Example: "coastd daemon is not running. Start it with: coastd &. See https://coasts.dev/docs/daemon". For missing Coastfile: "No Coastfile found in <workDir>. Create one for your project — see https://coasts.dev/docs/coastfile".
 
   - **NFR-5: Subprocess safety** — All coast CLI invocations must:
     - Use `spawn` (not `exec`) to avoid shell injection
@@ -334,17 +372,19 @@ content: |
 
   - **NFR-10: Logging consistency** — All Coasts-mode log messages must use the `[dev-server:coasts]` prefix to distinguish them from bare-mode `[dev-server]` messages.
 
+  - **NFR-11: Multi-worktree concurrency** — The CoastsService must support multiple concurrent coast instances for different worktrees of the same or different repos. Each `workDir` parameter scopes operations to that specific worktree. No global state or singleton locks that would prevent parallel usage.
+
   ## Product Questions & AI Recommendations
 
   | # | Question | AI Recommendation | Rationale |
   | - | -------- | ----------------- | --------- |
   | 1 | Should Shep manage the coastd daemon lifecycle? | Manual management | coastd is an external binary with its own process model; auto-starting introduces orphan risk and ownership ambiguity |
-  | 2 | Should Shep auto-generate a Coastfile? | Auto-generate from template | Reduces friction for the common case; template encodes Shep-specific defaults; file remains editable |
-  | 3 | What isolation scope for V1? | Ports and SQLite only | Minimum viable isolation solving the stated problem; watchers and services don't suffer cross-worktree interference |
-  | 4 | How to handle missing prerequisites? | Fail fast with actionable error | Silent fallback would mask config issues; explicit errors with install instructions are safest |
-  | 5 | Should the flag affect production mode too? | Dev server only | Problem is dev-only (worktree parallelism); production doesn't face port/state conflicts |
-  | 6 | CLI subprocess or HTTP API? | Coast CLI subprocess | CLI is the public API; HTTP protocol is internal; CLI handles auth, config, error formatting |
-  | 7 | Where to bootstrap DI in Coasts mode? | Host-side DI, delegate Next.js to coast | Watchers need host git/GitHub access; container-only approach requires complex volume/credential forwarding |
+  | 2 | What isolation scope for V1? | Ports and SQLite only | Minimum viable isolation solving the stated problem; watchers and services don't suffer cross-worktree interference |
+  | 3 | How to handle missing prerequisites? | Fail fast with actionable error | Silent fallback would mask config issues; explicit errors with install instructions are safest |
+  | 4 | Should the flag affect production mode too? | Dev server only | Problem is dev-only (worktree parallelism); production doesn't face port/state conflicts |
+  | 5 | CLI subprocess or HTTP API? | Coast CLI subprocess | CLI is the public API; HTTP protocol is internal; CLI handles auth, config, error formatting |
+  | 6 | Where to bootstrap DI in Coasts mode? | Host-side DI, delegate Next.js to coast | Watchers need host git/GitHub access; container-only approach requires complex volume/credential forwarding |
+  | 7 | Should Shep generate Coastfiles for repos? | No — require Coastfile in target repo | Each repo has unique port, build, and volume needs; Shep manages arbitrary repos and cannot assume a one-size-fits-all config; the Coastfile is the repo owner's responsibility |
 
   ## Affected Areas
 
@@ -357,36 +397,39 @@ content: |
   | `src/presentation/web/dev-server.ts` | High | Branch startup logic: if flag enabled, invoke coast CLI instead of bare Next.js |
   | `packages/core/src/infrastructure/di/container.ts` | Low | Register CoastsService |
   | `packages/core/src/application/ports/output/services/` | Medium | New ICoastsService interface for coast CLI interaction |
-  | `packages/core/src/infrastructure/services/` | High | New coasts.service.ts — wraps coast CLI (build, run, checkout, stop, lookup) |
-  | Root `Coastfile` (new) | Medium | Template Coastfile for Shep project defining ports, services, setup |
+  | `packages/core/src/infrastructure/services/` | High | New coasts.service.ts — wraps coast CLI (build, run, checkout, stop, lookup) with workDir-scoped operations |
   | `package.json` scripts | Low | Add `dev:coasts` script for Coasts-mode dev server |
   | SQLite migrations | Low | FeatureFlags column migration for coastsDevServer |
   | Tests | High | Unit tests for CoastsService, integration tests for flag toggle, dev-server branching |
 
   ## Dependencies
 
-  - **Coasts binary** (`coast` + `coastd`): Must be installed on the host machine. The daemon must
-    be running. Installation via `curl -fsSL https://coasts.dev/install | sh`.
+  - **Coasts binary** (`coast` + `coastd`): Must be installed on the host machine. The daemon must be running. Installation via `curl -fsSL https://coasts.dev/install | sh`.
   - **Docker**: Required by Coasts for DinD container runtime.
-  - **Existing feature flag infrastructure**: TypeSpec model, settings service, flag UI components,
-    and context provider are all in place — adding a new flag follows the established pattern.
+  - **Coastfile in target repo**: Each repo that wants Coasts isolation must have a `Coastfile` defining its port, volume, and service requirements. Shep validates its existence but does not create it.
+  - **Existing feature flag infrastructure**: TypeSpec model, settings service, flag UI components, and context provider are all in place — adding a new flag follows the established pattern.
   - **Existing dev-server.ts**: The branching point where Coasts mode diverges from bare mode.
   - **child_process module**: Node.js built-in, no external dependency needed for subprocess spawning.
 
   ## Size Estimate
 
   **L** — This feature involves:
-  1. A new TypeSpec field + migration + flag wiring (S — well-patterned, ~30 min)
-  2. A new infrastructure service wrapping the coast CLI with 7 methods (M — subprocess management, error handling, output parsing)
-  3. Dev-server.ts branching logic with prerequisite checks and Coastfile generation (M — two code paths, graceful shutdown)
-  4. A Coastfile template for the Shep project (S — port and SQLite volume config)
-  5. Comprehensive tests for CoastsService and dev-server branching (M — subprocess mocking, flag state permutations)
-  6. Seven product decisions resolved (captured above, no further blocking questions)
 
-  The well-established feature flag pattern reduces the flag-wiring portion to S-sized work,
-  but the CoastsService and dev-server branching logic are non-trivial, pushing the overall
-  estimate to L. No changes to WebServerService (production) in V1.
+  1. A new TypeSpec field + migration + flag wiring (S — well-patterned)
+  2. A new infrastructure service wrapping the coast CLI with 7 methods (M — subprocess management, error handling, output parsing)
+  3. Dev-server.ts branching logic with prerequisite checks (M — two code paths, graceful shutdown)
+  4. Comprehensive tests for CoastsService and dev-server branching (M — subprocess mocking, flag state permutations)
+  5. Seven product decisions resolved (captured above, no further blocking questions)
+
+  The well-established feature flag pattern reduces the flag-wiring portion to S-sized work, but the CoastsService and dev-server branching logic are non-trivial, pushing the overall estimate to L. No changes to WebServerService (production) in V1. No Coastfile generation — Shep delegates to Coasts and the target repo's own configuration.
 
   ---
 
   _Requirements phase completed — proceed with research to resolve technical details_
+rejectionFeedback:
+  - iteration: 1
+    message: >-
+      The idea that any repo we are working on with shep we would be able to
+      start multiple dev server with coasts, so question 2 doesn't make sense
+    phase: requirements
+    timestamp: '2026-03-19T18:32:02.603Z'
