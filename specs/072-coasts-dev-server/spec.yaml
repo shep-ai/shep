@@ -2,20 +2,22 @@ name: coasts-dev-server
 number: 72
 branch: feat/072-coasts-dev-server
 oneLiner: >-
-  integrate coasts.dev runtime isolation for shep dev servers behind a
-  feature flag
+  integrate coasts.dev runtime isolation for shep dev servers behind a feature
+  flag
 summary: >
   Integrate the Coasts (coasts.dev) containerized runtime system as an
   alternative dev server mode for Shep. When users run `shep ui` or the dev
   server for any repository managed by Shep, Coasts provides per-worktree
   runtime isolation via Docker containers, automatic port management, and
-  service orchestration — enabling parallel feature development across
-  multiple worktrees without port conflicts or shared state. A feature flag
-  toggles between the current bare Next.js dev server and the Coasts-managed
-  mode. The feature adds a new infrastructure service wrapping the coast CLI
-  and branching logic in the dev server entrypoint. Each repo/worktree gets
-  its own isolated dev server instance through Coasts — Coastfile
-  configuration is the responsibility of the target repo, not Shep.
+  service orchestration — enabling parallel feature development across multiple
+  worktrees without port conflicts or shared state. A feature flag toggles
+  between the current bare Next.js dev server and the Coasts-managed mode. The
+  feature adds a new infrastructure service wrapping the coast CLI and branching
+  logic in the dev server entrypoint. Each repo/worktree gets its own isolated
+  dev server instance through Coasts. When a target repo lacks a Coastfile, Shep
+  auto-generates one by running the `coast installation-prompt` CLI command to
+  obtain a comprehensive prompt, then passing that prompt along with the repo
+  context to the AI agent system for intelligent Coastfile generation.
 phase: Requirements
 sizeEstimate: L
 relatedFeatures: []
@@ -24,13 +26,16 @@ technologies:
     Coasts CLI/daemon (Rust binary, Unix socket protocol, HTTP API on port
     31415)
   - Docker / Docker-in-Docker (DinD) runtime
-  - Coastfile (TOML configuration format — owned by target repos, not Shep)
+  - Coastfile (TOML configuration format)
   - TypeSpec (domain model extension for feature flag)
   - Next.js 16 programmatic server API
   - tsyringe dependency injection
   - SQLite (settings persistence)
   - socat (port forwarding managed by coastd)
   - child_process (Node.js subprocess spawning for coast CLI)
+  - >-
+    AI agent system (IAgentExecutorProvider) for Coastfile generation via
+    coast installation-prompt
 relatedLinks:
   - title: Coasts documentation
     url: https://coasts.dev/docs
@@ -71,35 +76,6 @@ openQuestions:
       simplest, most reliable approach. Power users who want auto-start can
       configure their shell profile or use a process manager.
     answer: Manual daemon management
-  - question: >-
-      What scope of isolation should Coasts provide for V1 — full services
-      or ports-only?
-    resolved: true
-    options:
-      - option: Ports and SQLite only
-        description: >
-          Isolate the Next.js dev server port (3000) and the SQLite database
-          file per worktree. This is the minimum viable isolation that solves
-          the stated problem (port conflicts and shared state). No custom
-          services, secrets, or complex volume mounts. Fastest to implement and
-          test.
-        selected: true
-      - option: Full service stack
-        description: >
-          Define the complete Coasts service stack including background
-          watchers, notification service, deployment services, and any future
-          services. Provides maximum isolation but significantly increases
-          complexity and testing surface. Many of these services may not benefit
-          from isolation.
-        selected: false
-    selectionRationale: >
-      Ports and SQLite isolation is recommended for V1 because it directly
-      addresses the two problems stated in the spec: port conflicts and shared
-      database state. The notification watcher, PR sync watcher, and deployment
-      services are already per-process and don't suffer from cross-worktree
-      interference. Starting minimal allows learning from real usage before
-      expanding the isolation boundary.
-    answer: Ports and SQLite only
   - question: >-
       How should the dev server behave when Coasts mode is enabled but
       prerequisites are missing (no coast binary, no Docker, daemon not
@@ -222,44 +198,53 @@ openQuestions:
       delivering the core isolation value.
     answer: Bootstrap DI on host, delegate Next.js to coast
   - question: >-
-      Should the dev server require a Coastfile in the target repo, or should
-      Shep handle Coasts orchestration without one?
+      How should Shep handle Coastfile generation when a target repo lacks one?
     resolved: true
     options:
+      - option: Auto-generate via AI agent using coast installation-prompt
+        description: >
+          When no Coastfile exists in the target repo, Shep runs
+          `coast installation-prompt` to obtain the official Coasts prompt
+          (which includes full schema documentation, examples, and instructions
+          for analyzing a project). Shep then passes this prompt to the AI agent
+          system (via IAgentExecutorProvider) along with the repo context, and
+          the agent generates a tailored Coastfile for the project. This
+          leverages the existing agent infrastructure and produces
+          project-specific configuration based on the repo's actual structure
+          (docker-compose.yml, ports, services, worktree layout). The generated
+          Coastfile is written to the repo root and committed. The user can
+          review and edit it afterward.
+        selected: true
       - option: Require Coastfile in target repo
         description: >
-          Require that the target repository contains a Coastfile before Coasts
-          mode can activate. The Coastfile is the repo owner's responsibility —
-          it defines the repo's specific port, volume, and service requirements.
-          Shep checks for its existence as part of prerequisite validation and
-          fails with instructions if missing. This keeps Shep from making
-          assumptions about arbitrary repo configurations.
-        selected: true
-      - option: Auto-generate a generic Coastfile
-        description: >
-          Have Shep generate a Coastfile with generic defaults (port 3000,
-          basic setup) when none exists. Reduces friction but makes dangerous
-          assumptions about the target repo's build system, port requirements,
-          and volume needs. A generic template may not work for most repos and
-          could cause confusion.
+          Require that the target repository already contains a Coastfile before
+          Coasts mode can activate. If missing, fail with an error message
+          linking to Coasts documentation. The repo owner must manually create
+          the Coastfile. This is the simplest approach but creates friction —
+          users must leave Shep, learn the Coastfile format, write TOML
+          configuration, and return.
         selected: false
-      - option: Use coast CLI defaults without Coastfile
+      - option: Generate a static template Coastfile
         description: >
-          Invoke `coast run` without a Coastfile and rely on Coasts built-in
-          defaults. Simplest for Shep but gives no control over port assignment,
-          volumes, or setup commands. May not provide meaningful isolation
-          without explicit configuration.
+          Generate a hardcoded template Coastfile with generic defaults (port
+          3000, basic setup). Reduces friction but makes dangerous assumptions
+          about the target repo's build system, port requirements, and volume
+          needs. A static template will not work for most repos without manual
+          editing.
         selected: false
     selectionRationale: >
-      Requiring a Coastfile in the target repo is recommended because each
-      repository has unique port requirements, build systems, volume needs, and
-      service dependencies. Shep manages arbitrary repos — it cannot assume a
-      one-size-fits-all configuration. The Coastfile is the repo owner's
-      declaration of how their project should be containerized. Shep's role is
-      to detect and delegate to Coasts, not to configure it. A clear error
-      message with a link to Coasts documentation guides the user to create
-      the appropriate Coastfile for their project.
-    answer: Require Coastfile in target repo
+      Auto-generating via the AI agent is recommended because the
+      `coast installation-prompt` command provides a comprehensive,
+      version-matched prompt that includes the full Coastfile schema, examples
+      for different project types, and step-by-step instructions for analyzing
+      a project. By feeding this prompt to Shep's existing AI agent system
+      along with the repo's actual structure, the agent can generate a tailored
+      Coastfile that accounts for the project's specific ports, services,
+      docker-compose setup, worktree layout, and dependencies. This eliminates
+      the friction of requiring users to manually learn and write TOML
+      configuration, and it leverages Shep's core capability — AI-powered
+      autonomous development tasks.
+    answer: Auto-generate via AI agent using coast installation-prompt
 content: |
   ## Problem Statement
 
@@ -278,83 +263,162 @@ content: |
   behind a feature flag, scoped to the dev server entrypoint only (not
   production `shep ui`).
 
-  The Coastfile (Coasts configuration) is owned by each target repository, not
-  by Shep. Shep's role is to detect Coasts availability, validate prerequisites,
-  and delegate dev server startup to the `coast` CLI when the feature flag is
-  enabled.
+  When a target repo does not have a Coastfile, Shep auto-generates one by
+  running `coast installation-prompt` to obtain the official generation prompt,
+  then passing it to the AI agent system to produce a tailored Coastfile based
+  on the repo's actual structure.
 
   ## Success Criteria
 
-  - [ ] A `coastsDevServer` boolean feature flag exists in the TypeSpec FeatureFlags model and is persisted in SQLite
-  - [ ] The feature flag toggle appears in the web UI settings page under Feature Flags
+  - [ ] A `coastsDevServer` boolean feature flag exists in the TypeSpec
+  FeatureFlags model and is persisted in SQLite
+  - [ ] The feature flag toggle appears in the web UI settings page under
+  Feature Flags
   - [ ] The feature flag defaults to `false` (opt-in)
-  - [ ] When the flag is `false`, the dev server behaves identically to the current implementation (no regression)
-  - [ ] When the flag is `true` and all prerequisites are met (coast binary, Docker, coastd, Coastfile in repo), the dev server starts Next.js via `coast run` instead of bare `next()`
-  - [ ] When the flag is `true` but prerequisites are missing, the dev server exits with a non-zero code and a human-readable error listing missing prerequisites and installation instructions
-  - [ ] A `CoastsService` infrastructure service exists with methods for: `checkPrerequisites`, `build`, `run`, `stop`, `lookup`, and `isRunning`
-  - [ ] The `CoastsService` is registered in the DI container and accessed via an `ICoastsService` interface
-  - [ ] The prerequisite check validates: coast binary on PATH, Docker running, coastd daemon running, Coastfile exists in the target repo
+  - [ ] When the flag is `false`, the dev server behaves identically to the
+  current implementation (no regression)
+  - [ ] When the flag is `true` and all prerequisites are met (coast binary,
+  Docker, coastd running), the dev server starts Next.js via `coast run`
+  instead of bare `next()`
+  - [ ] When the flag is `true` but prerequisites are missing, the dev server
+  exits with a non-zero code and a human-readable error listing missing
+  prerequisites and installation instructions
+  - [ ] When the flag is `true` and no Coastfile exists in the target repo,
+  Shep auto-generates one by running `coast installation-prompt` and passing
+  the result to the AI agent system
+  - [ ] The generated Coastfile is written to the target repo root and the
+  user is informed of its creation
+  - [ ] A `CoastsService` infrastructure service exists with methods for:
+  `checkPrerequisites`, `build`, `run`, `stop`, `lookup`, `isRunning`,
+  and `generateCoastfile`
+  - [ ] The `CoastsService` is registered in the DI container and accessed via
+  an `ICoastsService` interface
+  - [ ] The prerequisite check validates: coast binary on PATH, Docker running,
+  coastd daemon running
   - [ ] Graceful shutdown in Coasts mode stops the coast instance before exiting
-  - [ ] A `pnpm dev:coasts` script exists as a convenience alias for running the dev server with the Coasts flag enabled
+  - [ ] A `pnpm dev:coasts` script exists as a convenience alias for running the
+  dev server with the Coasts flag enabled
   - [ ] Unit tests exist for all `CoastsService` methods with subprocess mocking
-  - [ ] Integration tests verify the dev-server branching logic for both flag states
+  - [ ] Integration tests verify the dev-server branching logic for both flag
+  states
   - [ ] All existing tests continue to pass (zero regressions)
-  - [ ] Multiple worktrees of the same repo can each run an isolated dev server via Coasts concurrently
+  - [ ] Multiple worktrees of the same repo can each run an isolated dev server
+  via Coasts concurrently
 
   ## Functional Requirements
 
-  - **FR-1: Feature flag definition** — Add a `coastsDevServer: boolean = false` field to the `FeatureFlags` model in `tsp/domain/entities/settings.tsp`. Run `pnpm tsp:compile` to regenerate `output.ts`. Add the corresponding SQLite migration column.
+  - **FR-1: Feature flag definition** — Add a `coastsDevServer: boolean = false`
+  field to the `FeatureFlags` model in `tsp/domain/entities/settings.tsp`. Run
+  `pnpm tsp:compile` to regenerate `output.ts`. Add the corresponding SQLite
+  migration column.
 
-  - **FR-2: Feature flag resolution** — Add `coastsDevServer` to the `FeatureFlagsState` interface in `feature-flags.ts` with DB-primary resolution and env-var fallback via `NEXT_PUBLIC_FLAG_COASTS_DEV_SERVER`. Default to `false`.
+  - **FR-2: Feature flag resolution** — Add `coastsDevServer` to the
+  `FeatureFlagsState` interface in `feature-flags.ts` with DB-primary resolution
+  and env-var fallback via `NEXT_PUBLIC_FLAG_COASTS_DEV_SERVER`. Default to
+  `false`.
 
-  - **FR-3: Feature flag UI** — Add a "Coasts Dev Server" toggle to the feature flags settings section in the web UI. The toggle must follow the existing pattern: entry in `FLAG_DESCRIPTIONS`, `FLAG_LABELS`, and `FLAG_KEYS` arrays.
+  - **FR-3: Feature flag UI** — Add a "Coasts Dev Server" toggle to the feature
+  flags settings section in the web UI. The toggle must follow the existing
+  pattern: entry in `FLAG_DESCRIPTIONS`, `FLAG_LABELS`, and `FLAG_KEYS` arrays.
 
-  - **FR-4: Feature flag context** — Add `coastsDevServer: false` to the default flags in `feature-flags-context.tsx`.
+  - **FR-4: Feature flag context** — Add `coastsDevServer: false` to the default
+  flags in `feature-flags-context.tsx`.
 
-  - **FR-5: ICoastsService interface** — Define an `ICoastsService` output port interface in `packages/core/src/application/ports/output/services/` with the following methods:
-    - `checkPrerequisites(workDir: string): Promise<PrerequisiteCheckResult>` — checks for coast binary, Docker, running coastd daemon, and Coastfile presence in the target repo
+  - **FR-5: ICoastsService interface** — Define an `ICoastsService` output port
+  interface in `packages/core/src/application/ports/output/services/` with the
+  following methods:
+    - `checkPrerequisites(workDir: string): Promise<PrerequisiteCheckResult>` — checks for coast binary, Docker, running coastd daemon
     - `build(workDir: string): Promise<void>` — runs `coast build` in the given directory
     - `run(workDir: string): Promise<CoastInstance>` — runs `coast run` and returns instance info (port, URL)
     - `stop(workDir: string): Promise<void>` — stops the coast instance for the given directory
     - `lookup(workDir: string): Promise<CoastInstance | null>` — looks up a running instance for this worktree
     - `isRunning(workDir: string): Promise<boolean>` — checks if an instance is running for this worktree
     - `checkout(workDir: string): Promise<void>` — assigns canonical ports to this worktree's instance
+    - `getInstallationPrompt(): Promise<string>` — runs `coast installation-prompt` and returns the full prompt text
+    - `generateCoastfile(workDir: string): Promise<string>` — orchestrates Coastfile generation: runs `coast installation-prompt`, passes the prompt + repo context to the AI agent system, writes the generated Coastfile to workDir, returns the file path
+    - `hasCoastfile(workDir: string): Promise<boolean>` — checks if a Coastfile exists in the given directory
 
-  - **FR-6: CoastsService implementation** — Implement `CoastsService` in `packages/core/src/infrastructure/services/coasts.service.ts`. Each method invokes the `coast` CLI binary via `child_process.spawn` with `workDir` as the cwd. Parse JSON output where available, fall back to exit code + stderr for error detection.
+  - **FR-6: CoastsService implementation** — Implement `CoastsService` in
+  `packages/core/src/infrastructure/services/coasts.service.ts`. Each method
+  invokes the `coast` CLI binary via `child_process.spawn` with `workDir` as the
+  cwd. Parse JSON output where available, fall back to exit code + stderr for
+  error detection. The `generateCoastfile` method invokes `coast installation-prompt`
+  to get the generation prompt, then delegates to the AI agent system
+  (via `IAgentExecutorProvider`) to generate a Coastfile tailored to the
+  target repo.
 
-  - **FR-7: DI registration** — Register `CoastsService` as the `ICoastsService` token in the DI container (`container.ts`).
+  - **FR-7: DI registration** — Register `CoastsService` as the `ICoastsService`
+  token in the DI container (`container.ts`).
 
-  - **FR-8: Coastfile prerequisite check** — The `checkPrerequisites` method must validate that a `Coastfile` exists in the target repo's working directory. If missing, the error message must explain that the repo needs a Coastfile and link to Coasts documentation for how to create one. Shep does NOT generate Coastfiles — each repo defines its own Coasts configuration.
+  - **FR-8: Coastfile auto-generation flow** — When the Coasts feature flag is
+  enabled and no Coastfile exists in the target repo:
+    1. Run `coast installation-prompt` via CoastsService to obtain the official
+       generation prompt (full schema docs, examples, project analysis instructions)
+    2. Pass the prompt to the AI agent system along with the repo working directory
+       as context
+    3. The agent analyzes the repo structure (docker-compose.yml, package.json,
+       existing ports, worktree layout) and generates a tailored Coastfile
+    4. Write the generated Coastfile to the repo root
+    5. Log a message informing the user that a Coastfile was generated and where
+       it is located
+    6. Continue with the normal coast build/run flow
+  The user can review and edit the generated Coastfile at any time. Subsequent
+  dev server starts will use the existing Coastfile without regenerating.
 
-  - **FR-9: Dev server branching logic** — Modify `dev-server.ts` to read the `coastsDevServer` feature flag after DI initialization. If enabled:
+  - **FR-9: Dev server branching logic** — Modify `dev-server.ts` to read the
+  `coastsDevServer` feature flag after DI initialization. If enabled:
     1. Resolve `ICoastsService` from the DI container
     2. Run `checkPrerequisites(workDir)` — if any fail, log the error and `process.exit(1)`
-    3. Run `coast build` if needed (image not built or Coastfile changed)
-    4. Run `coast run` or `coast checkout` to start/activate the instance
-    5. Log the Coasts-managed URL to the console
-    6. If disabled (default), proceed with the existing bare Next.js startup path unchanged
+    3. Check for Coastfile — if missing, run `generateCoastfile(workDir)` to auto-generate one via the AI agent
+    4. Run `coast build` if needed (image not built or Coastfile changed)
+    5. Run `coast run` or `coast checkout` to start/activate the instance
+    6. Log the Coasts-managed URL to the console
+    7. If disabled (default), proceed with the existing bare Next.js startup path unchanged
 
-  - **FR-10: Graceful shutdown in Coasts mode** — The `shutdown` handler in dev-server.ts must detect Coasts mode and call `coastsService.stop()` before exiting. The 2-second force-exit timeout must still apply.
+  - **FR-10: Graceful shutdown in Coasts mode** — The `shutdown` handler in
+  dev-server.ts must detect Coasts mode and call `coastsService.stop()` before
+  exiting. The 2-second force-exit timeout must still apply.
 
-  - **FR-11: Convenience script** — Add `"dev:coasts": "NEXT_PUBLIC_FLAG_COASTS_DEV_SERVER=true pnpm dev:web"` to `package.json` scripts.
+  - **FR-11: Convenience script** — Add `"dev:coasts":
+  "NEXT_PUBLIC_FLAG_COASTS_DEV_SERVER=true pnpm dev:web"` to `package.json`
+  scripts.
 
-  - **FR-12: Prerequisite check detail** — The `PrerequisiteCheckResult` type must include:
+  - **FR-12: Prerequisite check detail** — The `PrerequisiteCheckResult` type
+  must include:
     - `coastBinary: boolean` — whether `coast` is on PATH
     - `docker: boolean` — whether Docker daemon is reachable
     - `coastdRunning: boolean` — whether coastd Unix socket responds
-    - `coastfileExists: boolean` — whether a Coastfile exists in the target repo workDir
     - `allMet: boolean` — convenience AND of all checks
     - `missingMessages: string[]` — human-readable list of what's missing with fix instructions
 
+  - **FR-13: Installation prompt caching** — The output of
+  `coast installation-prompt` should be cached in memory for the duration of the
+  dev server process. The prompt content is static per coast version and does
+  not need to be fetched on every invocation.
+
   ## Non-Functional Requirements
 
-  - **NFR-1: Zero regression** — When the `coastsDevServer` flag is `false` (default), the dev server must behave identically to the pre-feature implementation. No new imports, checks, or side effects on the default path beyond reading the flag value.
+  - **NFR-1: Zero regression** — When the `coastsDevServer` flag is `false`
+  (default), the dev server must behave identically to the pre-feature
+  implementation. No new imports, checks, or side effects on the default path
+  beyond reading the flag value.
 
-  - **NFR-2: Startup latency** — The prerequisite check (FR-12) must complete within 2 seconds. Each check (coast binary, Docker, coastd, Coastfile) should use a short timeout (500ms for subprocess checks) to avoid blocking startup.
+  - **NFR-2: Startup latency** — The prerequisite check (FR-12) must complete
+  within 2 seconds. Each check (coast binary, Docker, coastd) should use a
+  short timeout (500ms for subprocess checks) to avoid blocking startup. The
+  Coastfile generation step (FR-8) is excluded from this latency budget as it
+  is a one-time operation that involves AI agent execution.
 
-  - **NFR-3: Clean Architecture compliance** — The `ICoastsService` interface lives in the application layer. The `CoastsService` implementation lives in the infrastructure layer. No direct subprocess calls from the presentation layer.
+  - **NFR-3: Clean Architecture compliance** — The `ICoastsService` interface
+  lives in the application layer. The `CoastsService` implementation lives in
+  the infrastructure layer. No direct subprocess calls from the presentation
+  layer. Agent resolution for Coastfile generation flows through
+  `IAgentExecutorProvider` per the mandatory agent resolution rule.
 
-  - **NFR-4: Error message quality** — All error messages from failed prerequisites must include: (a) what is missing, (b) how to install/fix it, and (c) a link to relevant documentation. Example: "coastd daemon is not running. Start it with: coastd &. See https://coasts.dev/docs/daemon". For missing Coastfile: "No Coastfile found in <workDir>. Create one for your project — see https://coasts.dev/docs/coastfile".
+  - **NFR-4: Error message quality** — All error messages from failed
+  prerequisites must include: (a) what is missing, (b) how to install/fix it,
+  and (c) a link to relevant documentation. Example: "coastd daemon is not
+  running. Start it with: coastd &. See https://coasts.dev/docs/daemon".
 
   - **NFR-5: Subprocess safety** — All coast CLI invocations must:
     - Use `spawn` (not `exec`) to avoid shell injection
@@ -362,29 +426,52 @@ content: |
     - Capture and log stderr on failure
     - Handle ENOENT (binary not found) gracefully
 
-  - **NFR-6: Testability** — `CoastsService` must accept injected dependencies for the subprocess spawner, enabling unit tests to mock all CLI interactions without requiring coast/Docker to be installed.
+  - **NFR-6: Testability** — `CoastsService` must accept injected dependencies
+  for the subprocess spawner and agent executor, enabling unit tests to mock all
+  CLI interactions and agent calls without requiring coast/Docker to be
+  installed.
 
-  - **NFR-7: Idempotent operations** — `coast build` and `coast run` must be safe to call when the image is already built or the instance is already running. The service must check state before invoking and handle "already running" responses gracefully.
+  - **NFR-7: Idempotent operations** — `coast build` and `coast run` must be
+  safe to call when the image is already built or the instance is already
+  running. The service must check state before invoking and handle "already
+  running" responses gracefully. Coastfile generation must be idempotent — if a
+  Coastfile already exists, skip generation entirely.
 
-  - **NFR-8: Platform scope** — V1 targets macOS and Linux only. Windows is explicitly out of scope (Coasts uses Unix sockets and socat). The prerequisite check should detect Windows and fail with "Coasts dev server is not supported on Windows".
+  - **NFR-8: Platform scope** — V1 targets macOS and Linux only. Windows is
+  explicitly out of scope (Coasts uses Unix sockets and socat). The prerequisite
+  check should detect Windows and fail with "Coasts dev server is not supported
+  on Windows".
 
-  - **NFR-9: Feature flag env var** — The environment variable fallback must follow the existing naming convention: `NEXT_PUBLIC_FLAG_COASTS_DEV_SERVER`.
+  - **NFR-9: Feature flag env var** — The environment variable fallback must
+  follow the existing naming convention: `NEXT_PUBLIC_FLAG_COASTS_DEV_SERVER`.
 
-  - **NFR-10: Logging consistency** — All Coasts-mode log messages must use the `[dev-server:coasts]` prefix to distinguish them from bare-mode `[dev-server]` messages.
+  - **NFR-10: Logging consistency** — All Coasts-mode log messages must use the
+  `[dev-server:coasts]` prefix to distinguish them from bare-mode `[dev-server]`
+  messages.
 
-  - **NFR-11: Multi-worktree concurrency** — The CoastsService must support multiple concurrent coast instances for different worktrees of the same or different repos. Each `workDir` parameter scopes operations to that specific worktree. No global state or singleton locks that would prevent parallel usage.
+  - **NFR-11: Multi-worktree concurrency** — The CoastsService must support
+  multiple concurrent coast instances for different worktrees of the same or
+  different repos. Each `workDir` parameter scopes operations to that specific
+  worktree. No global state or singleton locks that would prevent parallel
+  usage.
+
+  - **NFR-12: Generated Coastfile quality** — The AI-generated Coastfile must be
+  valid TOML that passes `coast build` without errors. The generation prompt
+  from `coast installation-prompt` provides the schema and examples; the agent
+  must produce output conforming to that schema. If `coast build` fails after
+  generation, the error should be surfaced to the user with instructions to
+  manually edit the Coastfile.
 
   ## Product Questions & AI Recommendations
 
   | # | Question | AI Recommendation | Rationale |
   | - | -------- | ----------------- | --------- |
   | 1 | Should Shep manage the coastd daemon lifecycle? | Manual management | coastd is an external binary with its own process model; auto-starting introduces orphan risk and ownership ambiguity |
-  | 2 | What isolation scope for V1? | Ports and SQLite only | Minimum viable isolation solving the stated problem; watchers and services don't suffer cross-worktree interference |
-  | 3 | How to handle missing prerequisites? | Fail fast with actionable error | Silent fallback would mask config issues; explicit errors with install instructions are safest |
-  | 4 | Should the flag affect production mode too? | Dev server only | Problem is dev-only (worktree parallelism); production doesn't face port/state conflicts |
-  | 5 | CLI subprocess or HTTP API? | Coast CLI subprocess | CLI is the public API; HTTP protocol is internal; CLI handles auth, config, error formatting |
-  | 6 | Where to bootstrap DI in Coasts mode? | Host-side DI, delegate Next.js to coast | Watchers need host git/GitHub access; container-only approach requires complex volume/credential forwarding |
-  | 7 | Should Shep generate Coastfiles for repos? | No — require Coastfile in target repo | Each repo has unique port, build, and volume needs; Shep manages arbitrary repos and cannot assume a one-size-fits-all config; the Coastfile is the repo owner's responsibility |
+  | 2 | How to handle missing prerequisites? | Fail fast with actionable error | Silent fallback would mask config issues; explicit errors with install instructions are safest |
+  | 3 | Should the flag affect production mode too? | Dev server only | Problem is dev-only (worktree parallelism); production doesn't face port/state conflicts |
+  | 4 | CLI subprocess or HTTP API? | Coast CLI subprocess | CLI is the public API; HTTP protocol is internal; CLI handles auth, config, error formatting |
+  | 5 | Where to bootstrap DI in Coasts mode? | Host-side DI, delegate Next.js to coast | Watchers need host git/GitHub access; container-only approach requires complex volume/credential forwarding |
+  | 6 | How should Shep handle missing Coastfiles? | Auto-generate via AI agent using coast installation-prompt | The `coast installation-prompt` command provides a version-matched prompt with full schema, examples, and repo analysis instructions; Shep's AI agent system can generate a tailored Coastfile per repo, eliminating user friction |
 
   ## Affected Areas
 
@@ -394,38 +481,61 @@ content: |
   | `src/presentation/web/lib/feature-flags.ts` | Medium | Add coastsDevServer flag to FeatureFlagsState interface and resolution |
   | `src/presentation/web/hooks/feature-flags-context.tsx` | Low | Add default for new flag |
   | `src/presentation/web/components/features/settings/feature-flags-settings-section.tsx` | Low | Add toggle entry for coastsDevServer flag |
-  | `src/presentation/web/dev-server.ts` | High | Branch startup logic: if flag enabled, invoke coast CLI instead of bare Next.js |
+  | `src/presentation/web/dev-server.ts` | High | Branch startup logic: if flag enabled, check Coastfile (generate if missing), invoke coast CLI instead of bare Next.js |
   | `packages/core/src/infrastructure/di/container.ts` | Low | Register CoastsService |
-  | `packages/core/src/application/ports/output/services/` | Medium | New ICoastsService interface for coast CLI interaction |
-  | `packages/core/src/infrastructure/services/` | High | New coasts.service.ts — wraps coast CLI (build, run, checkout, stop, lookup) with workDir-scoped operations |
+  | `packages/core/src/application/ports/output/services/` | Medium | New ICoastsService interface with coast CLI + Coastfile generation methods |
+  | `packages/core/src/infrastructure/services/` | High | New coasts.service.ts — wraps coast CLI (build, run, checkout, stop, lookup) and Coastfile generation via agent system |
   | `package.json` scripts | Low | Add `dev:coasts` script for Coasts-mode dev server |
   | SQLite migrations | Low | FeatureFlags column migration for coastsDevServer |
-  | Tests | High | Unit tests for CoastsService, integration tests for flag toggle, dev-server branching |
+  | Tests | High | Unit tests for CoastsService (including generateCoastfile), integration tests for flag toggle, dev-server branching |
 
   ## Dependencies
 
-  - **Coasts binary** (`coast` + `coastd`): Must be installed on the host machine. The daemon must be running. Installation via `curl -fsSL https://coasts.dev/install | sh`.
+  - **Coasts binary** (`coast` + `coastd`): Must be installed on the host
+  machine. The daemon must be running. Installation via `curl -fsSL
+  https://coasts.dev/install | sh`.
   - **Docker**: Required by Coasts for DinD container runtime.
-  - **Coastfile in target repo**: Each repo that wants Coasts isolation must have a `Coastfile` defining its port, volume, and service requirements. Shep validates its existence but does not create it.
-  - **Existing feature flag infrastructure**: TypeSpec model, settings service, flag UI components, and context provider are all in place — adding a new flag follows the established pattern.
-  - **Existing dev-server.ts**: The branching point where Coasts mode diverges from bare mode.
-  - **child_process module**: Node.js built-in, no external dependency needed for subprocess spawning.
+  - **`coast installation-prompt` CLI command**: Used to obtain the official
+  Coastfile generation prompt. This command outputs a comprehensive prompt
+  including full Coastfile schema documentation, examples for various project
+  types, and step-by-step instructions for analyzing a project's structure
+  and generating an appropriate Coastfile.
+  - **AI agent system** (`IAgentExecutorProvider`): Used to execute the
+  Coastfile generation prompt against the target repo. The agent analyzes
+  the repo's structure (docker-compose.yml, package.json, ports, worktree
+  layout) and produces a tailored Coastfile.
+  - **Existing feature flag infrastructure**: TypeSpec model, settings service,
+  flag UI components, and context provider are all in place — adding a new flag
+  follows the established pattern.
+  - **Existing dev-server.ts**: The branching point where Coasts mode diverges
+  from bare mode.
+  - **child_process module**: Node.js built-in, no external dependency needed
+  for subprocess spawning.
 
   ## Size Estimate
 
   **L** — This feature involves:
 
   1. A new TypeSpec field + migration + flag wiring (S — well-patterned)
-  2. A new infrastructure service wrapping the coast CLI with 7 methods (M — subprocess management, error handling, output parsing)
-  3. Dev-server.ts branching logic with prerequisite checks (M — two code paths, graceful shutdown)
-  4. Comprehensive tests for CoastsService and dev-server branching (M — subprocess mocking, flag state permutations)
-  5. Seven product decisions resolved (captured above, no further blocking questions)
+  2. A new infrastructure service wrapping the coast CLI with 10 methods
+  including Coastfile generation (M — subprocess management, error handling,
+  output parsing, agent integration)
+  3. Dev-server.ts branching logic with prerequisite checks and Coastfile
+  auto-generation (M — two code paths, graceful shutdown, agent invocation)
+  4. Comprehensive tests for CoastsService and dev-server branching (M —
+  subprocess mocking, agent mocking, flag state permutations)
+  5. Six product decisions resolved (captured above, no further blocking
+  questions)
 
-  The well-established feature flag pattern reduces the flag-wiring portion to S-sized work, but the CoastsService and dev-server branching logic are non-trivial, pushing the overall estimate to L. No changes to WebServerService (production) in V1. No Coastfile generation — Shep delegates to Coasts and the target repo's own configuration.
+  The well-established feature flag pattern reduces the flag-wiring portion to
+  S-sized work, but the CoastsService (especially the Coastfile generation via
+  agent system) and dev-server branching logic are non-trivial, pushing the
+  overall estimate to L. No changes to WebServerService (production) in V1.
 
   ---
 
-  _Requirements phase completed — proceed with research to resolve technical details_
+  _Requirements phase completed — proceed with research to resolve technical
+  details_
 rejectionFeedback:
   - iteration: 1
     message: >-
@@ -433,3 +543,10 @@ rejectionFeedback:
       start multiple dev server with coasts, so question 2 doesn't make sense
     phase: requirements
     timestamp: '2026-03-19T18:32:02.603Z'
+  - iteration: 2
+    message: >-
+      running "coast installation-prompt" returns a prompt on how to generate a
+      coastfile for a project. let use it get the prompt and use this promt to
+      generate the coasts file. update the PRD
+    phase: requirements
+    timestamp: '2026-03-19T19:39:15.750Z'
