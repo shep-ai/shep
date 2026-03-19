@@ -1,31 +1,510 @@
-# Research Artifact (YAML)
-# This is the source of truth. Markdown is auto-generated from this file.
+name: "coasts-dev-server"
+summary: |
+  Technical research for integrating Coasts containerized runtime isolation into Shep's dev server.
+  Key decisions: use IStructuredAgentCaller (not raw IAgentExecutorProvider) for Coastfile generation,
+  inject ExecFunction for CLI subprocess calls following WorktreeService pattern, use factory-based
+  DI registration with lazy loading, and follow the established 8-step feature flag wiring pattern.
+  No new external dependencies required — leverages child_process, existing agent system, and
+  established TypeSpec/SQLite/settings infrastructure.
 
-name: coasts-dev-server
-summary: Technical analysis for 072-coasts-dev-server
-
-# Relationships
 relatedFeatures: []
-technologies: []
-relatedLinks: []
 
-# Structured technology decisions
-decisions: []
+technologies:
+  - "Coasts CLI (coast binary — Rust, installed via coasts.dev/install)"
+  - "coastd daemon (background process, Unix socket + HTTP API on port 31415)"
+  - "Coastfile (TOML configuration at repo root)"
+  - "Docker / Docker-in-Docker (DinD) runtime"
+  - "socat (port forwarding managed by coastd)"
+  - "child_process.spawn (Node.js built-in — subprocess spawning)"
+  - "tsyringe (dependency injection container)"
+  - "TypeSpec (domain model extension for feature flag)"
+  - "SQLite (settings persistence — feature flag column)"
+  - "IStructuredAgentCaller (agent system for Coastfile generation)"
+  - "Next.js 16 programmatic server API"
 
-# Open questions (should be resolved by end of research)
-openQuestions: []
+relatedLinks:
+  - title: "Coasts documentation"
+    url: "https://coasts.dev/docs"
+  - title: "Coasts GitHub repository"
+    url: "https://github.com/coast-guard/coasts"
+  - title: "Coasts installation"
+    url: "https://coasts.dev/install"
 
-# Markdown content (the full research document)
+decisions:
+  - title: "Agent Integration for Coastfile Generation"
+    chosen: "IStructuredAgentCaller with JSON schema for Coastfile content extraction"
+    rejected:
+      - "Raw IAgentExecutorProvider.getExecutor().execute() — lower-level API that requires manual JSON parsing from unstructured agent output; does not leverage native structured output support in Claude Code/Cursor/Gemini CLI; more error-prone for extracting valid TOML from free-text responses"
+      - "Hardcoded agent type (e.g. always use Claude Code) — violates the mandatory agent resolution rule in CLAUDE.md; would break for users configured with Cursor or Gemini CLI"
+      - "Custom prompt-parsing without schema — brittle string extraction; no type safety; prone to partial/malformed output"
+    rationale: |
+      The codebase already has IStructuredAgentCaller registered in the DI container
+      (packages/core/src/infrastructure/di/container.ts) and a production example in
+      MetadataGenerator (packages/core/src/application/use-cases/features/create/metadata-generator.ts).
+      IStructuredAgentCaller automatically detects whether the configured agent supports
+      native structured output (JSON schema) and falls back to prompt-based extraction
+      with brace-depth parsing. This is the idiomatic, highest-level API for getting
+      typed results from agents. For Coastfile generation, define a schema with a
+      `content` field (string containing the TOML) and optional `warnings` array.
+      The agent receives the coast installation-prompt output as context and produces
+      structured output conforming to the schema. This approach follows the mandatory
+      agent resolution rule (no hardcoded agent type) and leverages existing infrastructure.
+
+  - title: "Subprocess Invocation Pattern for Coast CLI"
+    chosen: "Inject ExecFunction (promisified execFile) following WorktreeService pattern"
+    rejected:
+      - "Raw child_process.spawn with manual promise wrapping — more boilerplate, inconsistent with existing service patterns (WorktreeService, GitService all use injected ExecFunction); would need to reimplement timeout, error handling, and cross-platform logic already handled by the container-registered ExecFunction"
+      - "Direct import of child_process without injection — violates NFR-6 testability requirement; makes unit testing impossible without mocking Node.js built-ins; the codebase explicitly injects exec/spawn functions for this reason"
+      - "Coast HTTP API via fetch/axios — couples to internal coastd wire protocol; spec decision Q4 explicitly chose CLI subprocess over HTTP API; CLI provides stable public API surface"
+    rationale: |
+      The DI container already registers an ExecFunction (promisified execFile) at
+      packages/core/src/infrastructure/di/container.ts that handles Windows shell mode,
+      windowsHide, and returns Promise<{stdout, stderr}>. WorktreeService demonstrates
+      the exact pattern: constructor(@inject('ExecFunction') private readonly execFile: ExecFunction).
+      CoastsService should follow this identical pattern. Each coast CLI command
+      (build, run, stop, ls, lookup, checkout, installation-prompt) maps to a single
+      execFile call with the command as args and workDir as cwd. The promisified
+      interface handles timeout naturally via AbortController or the timeout option.
+      For the `run` command specifically, which may need to be long-running, use spawn
+      with streaming — but since coast run in practice starts the instance and returns,
+      execFile with a 30-second timeout is sufficient.
+
+  - title: "CoastsService DI Registration Strategy"
+    chosen: "Factory-based registration with constructor injection of ExecFunction and IStructuredAgentCaller"
+    rejected:
+      - "registerSingleton with @injectable()/@inject() decorators — would work but CoastsService needs ExecFunction (string token) and IStructuredAgentCaller (string token) which require factory-based resolution in this codebase's tsyringe setup"
+      - "Lazy proxy pattern (like WebServerService) — unnecessary overhead; coast CLI import is cheap (just child_process); lazy loading is only needed for expensive imports like Next.js (~80ms); CoastsService has no heavy imports"
+      - "registerInstance with manual construction — less flexible; factory pattern allows the container to resolve dependencies automatically"
+    rationale: |
+      The factory pattern matches existing services that need string-token dependencies.
+      Registration would be:
+      container.register<ICoastsService>('ICoastsService', {
+        useFactory: (c) => {
+          const execFn = c.resolve<ExecFunction>('ExecFunction');
+          const structuredCaller = c.resolve<IStructuredAgentCaller>('IStructuredAgentCaller');
+          return new CoastsService(execFn, structuredCaller);
+        },
+      });
+      This follows the pattern used by IAgentExecutorProvider and IStructuredAgentCaller
+      registrations in the same container file. No lazy loading needed since child_process
+      is a Node.js built-in with zero import cost.
+
+  - title: "Prerequisite Check Implementation"
+    chosen: "Parallel Promise.allSettled with short-timeout subprocess checks"
+    rejected:
+      - "Sequential checks with early exit — slower; checking coast binary, Docker, and coastd sequentially adds up to 1.5s worst case; parallel checks complete in max(500ms, 500ms, 500ms) = 500ms"
+      - "Single coast CLI health command — no such command exists in coast CLI; would need to parse composite output; individual checks give better error messages per missing prerequisite"
+      - "Check only coast binary, skip Docker/daemon — insufficient; coast build/run will fail cryptically without Docker or coastd; better to surface all issues upfront with actionable fix instructions"
+    rationale: |
+      NFR-2 requires prerequisite checks to complete within 2 seconds with 500ms timeout
+      per check. Running all three checks in parallel via Promise.allSettled ensures the
+      total time is bounded by the slowest single check (~500ms), not the sum. Each check
+      is independent:
+      1. Coast binary: execFile('coast', ['--version'], {timeout: 500}) — ENOENT means not installed
+      2. Docker: execFile('docker', ['info'], {timeout: 500}) — non-zero exit means Docker not running
+      3. coastd: execFile('coast', ['ls'], {timeout: 500}) — if this succeeds, the daemon is running;
+         alternatively check the Unix socket directly. The coast ls command requires the daemon,
+         so it serves as both a daemon check and a connectivity test.
+      On Windows, fail immediately with platform-not-supported message (NFR-8) without
+      running any subprocess checks.
+
+  - title: "Dev Server Branching Architecture"
+    chosen: "Single branching point after DI initialization with feature flag read"
+    rejected:
+      - "Separate entrypoint file (dev-server-coasts.ts) — duplicates the entire DI bootstrap, watcher setup, and shutdown logic; high maintenance burden; any change to dev-server.ts must be mirrored"
+      - "Middleware-based approach (intercept requests) — doesn't apply; the isolation happens at the process/container level, not at the HTTP request level; coast manages the entire Next.js server process"
+      - "Strategy pattern with abstract DevServerStrategy — over-engineered for two code paths (bare vs coasts); a simple if/else after DI init is sufficient and more readable; the two paths share most of the setup (DI, watchers, shutdown) and only diverge at the server start step"
+    rationale: |
+      The dev-server.ts file currently has a linear flow: DI init -> settings -> watchers -> Next.js start -> shutdown.
+      The Coasts branching point is naturally after DI initialization and settings resolution
+      (where the feature flag value is available) and before the Next.js server start.
+      The two paths share: DI init, settings, watcher startup, and shutdown skeleton.
+      They diverge at: server startup (bare Next.js vs coast build/run) and shutdown
+      cleanup (server.close() vs coastsService.stop()). A simple if/else with the
+      coastsDevServer flag keeps the code readable and avoids abstracting prematurely.
+      The Coasts path adds: prerequisite check -> Coastfile check/generate -> coast build -> coast run.
+      The bare path remains unchanged (NFR-1 zero regression).
+
+  - title: "Coastfile Detection and Generation Flow"
+    chosen: "Synchronous fs.existsSync check for Coastfile existence, async agent-based generation when missing"
+    rejected:
+      - "Always regenerate Coastfile on every startup — wasteful; AI agent execution is expensive (time and tokens); NFR-7 requires idempotent generation; existing Coastfile should be respected"
+      - "Store Coastfile existence in SQLite settings — unnecessary indirection; the filesystem is the source of truth; checking for a file at workDir/Coastfile is O(1) and unambiguous"
+      - "Generate Coastfile in a background task after server starts — the server cannot start without a Coastfile (coast build requires it); generation must be synchronous in the startup flow"
+    rationale: |
+      The flow is: (1) check if workDir/Coastfile exists (fs.existsSync — fast, no async needed),
+      (2) if missing, call coastsService.generateCoastfile(workDir) which runs coast installation-prompt
+      and passes the result to IStructuredAgentCaller, (3) write the generated TOML to workDir/Coastfile,
+      (4) proceed with coast build/run. This is idempotent — subsequent startups skip generation.
+      The user can manually edit the generated Coastfile at any time. The generation step is
+      excluded from the 2-second startup latency budget (NFR-2) since it is a one-time AI
+      operation. Log messages with [dev-server:coasts] prefix inform the user of generation progress.
+
+  - title: "Feature Flag Wiring Approach"
+    chosen: "Follow the established 8-step pattern used by all existing feature flags"
+    rejected:
+      - "Runtime-only flag without persistence — loses state across restarts; inconsistent with how all other flags work; users expect flag state to persist in settings"
+      - "Environment variable only (no DB column) — breaks the DB-primary resolution pattern; the web UI toggle would not work; other flags all have DB columns with env var fallback"
+    rationale: |
+      The codebase has a well-established pattern for adding feature flags, demonstrated by
+      adoptBranch (migration 040) and githubImport (migration 041). The pattern touches
+      exactly 8 files in a predictable way:
+      1. tsp/domain/entities/settings.tsp — add coastsDevServer: boolean = false with @doc
+      2. settings.mapper.ts — add feature_flag_coasts_dev_server to SettingsRow, toDatabase(), fromDatabase()
+      3. sqlite-settings.repository.ts — add column to INSERT and UPDATE SQL
+      4. Migration 042 — ALTER TABLE settings ADD COLUMN feature_flag_coasts_dev_server INTEGER NOT NULL DEFAULT 0
+      5. feature-flags.ts — add to FeatureFlagsState interface and getFeatureFlags() with env var fallback
+      6. feature-flags-context.tsx — add coastsDevServer: false to defaultFlags
+      7. feature-flags-settings-section.tsx — add to FLAG_DESCRIPTIONS, FLAG_LABELS, FLAG_KEYS
+      8. Run pnpm tsp:compile to regenerate output.ts
+      This is well-patterned S-sized work with zero design risk.
+
+  - title: "Coast CLI Output Parsing Strategy"
+    chosen: "Exit code + stderr for error detection, stdout text parsing for instance info"
+    rejected:
+      - "JSON output parsing via --json flag — coast CLI documentation does not confirm a universal --json flag for all commands; relying on undocumented flags risks breakage on coast version updates"
+      - "Regex-based stdout parsing — brittle; coast CLI output format may change between versions; prefer structured checks (exit code 0 = success) with minimal parsing"
+    rationale: |
+      Coast CLI commands follow standard Unix conventions: exit code 0 = success, non-zero = failure,
+      error details on stderr. For most CoastsService methods (build, run, stop, checkout),
+      the exit code is sufficient — we don't need to parse structured output. For `coast ls`
+      and `coast ports`, which return instance/port information, parse stdout line-by-line.
+      For `coast installation-prompt`, capture the full stdout as the prompt text.
+      This minimal-parsing approach is resilient to coast CLI output format changes and
+      avoids coupling to internal output structures. If coast adds --json support in the
+      future, the parsing can be upgraded without changing the service interface.
+
+  - title: "Installation Prompt Caching Strategy"
+    chosen: "Instance-level cache in CoastsService with lazy initialization"
+    rejected:
+      - "No caching — coast installation-prompt spawns a subprocess each time; while the output is static per coast version, repeated calls waste ~200ms each; FR-13 explicitly requires caching"
+      - "File-based cache with TTL — over-engineered for a single in-memory string; the prompt is only needed during Coastfile generation, which happens at most once per dev server lifetime; no need for persistence across processes"
+      - "Global module-level cache — violates Clean Architecture; makes testing harder; instance-level cache is naturally scoped to the service lifecycle"
+    rationale: |
+      CoastsService stores the installation prompt as a private instance field
+      (private cachedInstallationPrompt: string | null = null). The getInstallationPrompt()
+      method checks the cache first, only spawning `coast installation-prompt` on cache miss.
+      This satisfies FR-13 with minimal complexity. The cache lives for the duration of the
+      dev server process, which is appropriate since the coast version (and thus the prompt)
+      does not change during a single process lifetime.
+
+  - title: "Graceful Shutdown in Coasts Mode"
+    chosen: "Add coastsService.stop() call to existing shutdown handler with mode detection"
+    rejected:
+      - "Separate shutdown handler for Coasts mode — duplicates the watcher stop, connection close, and force-exit logic; the existing shutdown handler already has the right structure"
+      - "No explicit stop (rely on coast daemon cleanup) — risky; orphaned coast instances consume Docker resources; explicit stop is the responsible approach"
+    rationale: |
+      The existing dev-server.ts shutdown handler has a clear structure:
+      (1) set isShuttingDown flag, (2) start 2-second force-exit timer, (3) stop watchers,
+      (4) stop deployments, (5) close connections, (6) close server/app. In Coasts mode,
+      step 4 becomes coastsService.stop(workDir) instead of/in addition to deploymentService.stopAll().
+      The Coasts mode is detected by checking if coastsService was initialized (a simple
+      null check on a variable set during the Coasts startup path). This keeps the shutdown
+      handler unified and avoids duplicating cleanup logic.
+
+  - title: "Error Handling for Failed Coastfile Generation"
+    chosen: "Surface coast build error with instructions to manually edit the generated Coastfile"
+    rejected:
+      - "Retry generation with different prompt — expensive (more AI tokens); the issue is likely with the repo structure, not the prompt; a second attempt would likely produce similar output"
+      - "Delete the generated Coastfile and fall back to bare mode — dangerous; user may have already customized it; silent fallback violates the fail-fast principle from spec Q2"
+      - "Auto-fix by re-running the agent with the error message — could create an infinite loop; the error may be in the repo setup (missing Dockerfile, wrong ports) not in the Coastfile format"
+    rationale: |
+      NFR-12 states: if coast build fails after generation, surface the error to the user
+      with instructions to manually edit the Coastfile. This is the simplest, safest approach.
+      The generated Coastfile stays on disk so the user can inspect and fix it. The error
+      message should include: (a) what went wrong (coast build exit code + stderr),
+      (b) where the Coastfile is located, (c) a link to Coasts documentation for the
+      Coastfile format. The user can fix the Coastfile and restart the dev server — the
+      existing Coastfile will be used without regeneration (NFR-7 idempotency).
+
+openQuestions:
+  - question: "Should CoastsService use execFile or spawn for coast CLI invocations?"
+    resolved: true
+    options:
+      - option: "execFile (promisified) for all commands"
+        description: "Use the injected ExecFunction (promisified execFile) for all coast CLI calls. Returns Promise<{stdout, stderr}>. Simple, consistent with WorktreeService pattern. Buffers all output in memory. Suitable for commands that complete quickly and produce bounded output."
+        selected: true
+      - option: "spawn for all commands"
+        description: "Use child_process.spawn for all coast CLI calls. Returns ChildProcess with streaming stdout/stderr. More complex but supports real-time output. The codebase uses spawn for agent executors (long-running, streaming). Requires manual promise wrapping and stream handling."
+        selected: false
+      - option: "Hybrid — execFile for short commands, spawn for coast build"
+        description: "Use execFile for quick commands (ls, lookup, stop, checkout, installation-prompt) and spawn for coast build (which may take 30+ seconds and produce streaming build output). Most flexible but inconsistent — two invocation patterns in one service."
+        selected: false
+    selectionRationale: |
+      execFile (promisified) is the right choice because all coast CLI commands in the
+      CoastsService scope are short-lived and produce bounded output. Even coast build,
+      while potentially slow, does not produce unbounded streaming output that would
+      exhaust memory. The WorktreeService demonstrates this exact pattern with git commands
+      that can also take several seconds. The timeout option on execFile handles the
+      30-second build timeout naturally. Using spawn would add unnecessary complexity
+      (manual promise wrapping, stream concatenation) without benefit. If streaming build
+      output becomes important in the future, a single method can be upgraded to spawn
+      without changing the interface.
+
+  - question: "How should the dev-server.ts resolve workDir for Coasts operations?"
+    resolved: true
+    options:
+      - option: "Use process.cwd() as workDir"
+        description: "The dev server runs from the repo root (or worktree root). process.cwd() gives the correct working directory for coast CLI commands. Simple and standard."
+        selected: false
+      - option: "Use import.meta.dirname resolved to repo root"
+        description: "Resolve the repo root from the dev-server.ts file location. More explicit but fragile — depends on directory structure remaining stable. import.meta.dirname is already used for Next.js dir resolution."
+        selected: false
+      - option: "Resolve from DI container settings (repo path from DB)"
+        description: "Read the repository path from the settings/repository table in the database. Most correct for multi-repo scenarios — Shep tracks which repo it is managing. The DI container is already initialized before the Coasts branch point."
+        selected: true
+    selectionRationale: |
+      Resolving workDir from the DI container settings is the most robust approach because
+      Shep manages arbitrary repositories — the dev server may not always be running from
+      the repo root. The settings repository stores the managed repo path, which is the
+      correct workDir for coast CLI operations. However, for V1, process.cwd() is acceptable
+      as a pragmatic simplification since the dev server is started from the repo root
+      in practice. The DI-based resolution can be added when multi-repo support is refined.
+      For implementation, use process.cwd() initially with a TODO to migrate to settings-based
+      resolution.
+
+  - question: "What migration number should be used for the coastsDevServer feature flag?"
+    resolved: true
+    options:
+      - option: "042"
+        description: "The current highest migration is 041 (add-feature-flag-github-import). Following sequential numbering, the next migration is 042. Note: there are three 040-* migrations (feature flag, repository remote url, dev servers table) showing that numbering can have collisions handled by the migration runner."
+        selected: true
+      - option: "043"
+        description: "Skip 042 to leave room for other in-flight features that may need migrations. Defensive but breaks the sequential convention."
+        selected: false
+      - option: "050"
+        description: "Use a round number to start a new series for coasts-related migrations. Non-standard and wastes number space."
+        selected: false
+    selectionRationale: |
+      042 is the correct next migration number. The existing migrations follow sequential
+      numbering (035, 036, 037, 038, 039, 040, 041) with 040 having multiple migrations
+      (which the umzug runner handles by filename sorting). Following the established
+      convention, 042-add-feature-flag-coasts-dev-server.ts is the appropriate filename.
+
 content: |
-  ## Status
-
-  - **Phase:** Research
-  - **Updated:** 2026-03-19
-
   ## Technology Decisions
 
-  TBD
+  ### 1. Agent Integration for Coastfile Generation
 
-  ---
+  **Chosen:** IStructuredAgentCaller with JSON schema for Coastfile content extraction
 
-  _To be updated during research phase_
+  **Rejected:**
+  - Raw IAgentExecutorProvider.getExecutor().execute() — lower-level API requiring manual JSON parsing; no native structured output support
+  - Hardcoded agent type — violates mandatory agent resolution rule in CLAUDE.md
+  - Custom prompt-parsing without schema — brittle string extraction with no type safety
+
+  **Rationale:** The codebase has IStructuredAgentCaller registered in the DI container and a production
+  example in MetadataGenerator. It automatically detects native structured output support and falls back
+  to prompt-based extraction. For Coastfile generation, define a schema with `content` (TOML string) and
+  optional `warnings` array. This follows the mandatory agent resolution rule and leverages existing infrastructure.
+
+  ### 2. Subprocess Invocation Pattern for Coast CLI
+
+  **Chosen:** Inject ExecFunction (promisified execFile) following WorktreeService pattern
+
+  **Rejected:**
+  - Raw child_process.spawn — inconsistent with existing patterns; requires manual promise wrapping
+  - Direct import without injection — violates NFR-6 testability; prevents unit test mocking
+  - Coast HTTP API — spec decision Q4 chose CLI subprocess; HTTP protocol is internal
+
+  **Rationale:** The DI container registers ExecFunction (promisified execFile) with Windows shell/hide handling.
+  WorktreeService demonstrates the exact constructor injection pattern: `@inject('ExecFunction')`. Each coast
+  CLI command maps to a single execFile call. This handles timeout, error handling, and cross-platform logic.
+
+  ### 3. CoastsService DI Registration
+
+  **Chosen:** Factory-based registration with constructor injection of ExecFunction and IStructuredAgentCaller
+
+  **Rejected:**
+  - registerSingleton with decorators — requires factory for string-token dependencies
+  - Lazy proxy (like WebServerService) — unnecessary; coast CLI import is cheap (just child_process)
+  - registerInstance — less flexible than factory pattern
+
+  **Rationale:** Factory pattern matches existing services with string-token dependencies.
+  No lazy loading needed since child_process is a Node.js built-in with zero import cost.
+
+  ### 4. Prerequisite Check Implementation
+
+  **Chosen:** Parallel Promise.allSettled with short-timeout subprocess checks
+
+  **Rejected:**
+  - Sequential checks — slower; up to 1.5s vs parallel's ~500ms
+  - Single health command — no such command in coast CLI
+  - Partial checks — insufficient; cryptic failures without full prerequisite validation
+
+  **Rationale:** NFR-2 requires checks within 2 seconds. Parallel execution bounds total time to
+  the slowest check (~500ms). Three independent checks: coast --version (binary), docker info (Docker),
+  coast ls (daemon). Windows gets immediate platform-not-supported failure (NFR-8).
+
+  ### 5. Dev Server Branching Architecture
+
+  **Chosen:** Single branching point after DI initialization with feature flag read
+
+  **Rejected:**
+  - Separate entrypoint (dev-server-coasts.ts) — duplicates DI bootstrap, watchers, shutdown
+  - Middleware-based — isolation is at process level, not HTTP request level
+  - Strategy pattern — over-engineered for two code paths
+
+  **Rationale:** dev-server.ts has a linear flow where the Coasts branch naturally occurs after DI init
+  and before Next.js start. The two paths share DI, settings, watchers, and shutdown skeleton.
+  They diverge only at server startup. A simple if/else keeps code readable.
+
+  ### 6. Coastfile Detection and Generation
+
+  **Chosen:** fs.existsSync for detection, async agent-based generation when missing
+
+  **Rejected:**
+  - Always regenerate — wasteful AI tokens; violates NFR-7 idempotency
+  - SQLite tracking — unnecessary; filesystem is the source of truth
+  - Background generation — server cannot start without Coastfile
+
+  **Rationale:** Check workDir/Coastfile existence synchronously. If missing, call generateCoastfile()
+  which runs coast installation-prompt and passes result to IStructuredAgentCaller. Generation is
+  one-time and excluded from the 2-second startup budget (NFR-2).
+
+  ### 7. Feature Flag Wiring
+
+  **Chosen:** Established 8-step pattern (TypeSpec -> mapper -> repository -> migration -> flags lib -> context -> UI)
+
+  **Rejected:**
+  - Runtime-only flag — no persistence across restarts
+  - Env-var only — breaks DB-primary resolution and UI toggle
+
+  **Rationale:** The codebase has a well-established pattern demonstrated by adoptBranch (040) and
+  githubImport (041). Migration 042 adds feature_flag_coasts_dev_server column. S-sized, zero-risk work.
+
+  ### 8. Coast CLI Output Parsing
+
+  **Chosen:** Exit code + stderr for error detection, minimal stdout parsing
+
+  **Rejected:**
+  - JSON output via --json flag — not confirmed in coast CLI docs; risk of breakage
+  - Regex-based parsing — brittle across coast versions
+
+  **Rationale:** Standard Unix conventions: exit 0 = success, non-zero = failure, errors on stderr.
+  For coast ls/ports, parse stdout line-by-line. For installation-prompt, capture full stdout. Resilient to format changes.
+
+  ### 9. Installation Prompt Caching
+
+  **Chosen:** Instance-level cache in CoastsService (private field, lazy init)
+
+  **Rejected:**
+  - No caching — wastes ~200ms per call; FR-13 requires caching
+  - File-based cache with TTL — over-engineered for in-memory string
+  - Global module cache — violates Clean Architecture; harder to test
+
+  **Rationale:** Private string field, null on init, populated on first getInstallationPrompt() call.
+  Lives for process duration. Prompt is static per coast version. Minimal complexity.
+
+  ### 10. Graceful Shutdown
+
+  **Chosen:** Add coastsService.stop() to existing shutdown handler with mode detection
+
+  **Rejected:**
+  - Separate shutdown handler — duplicates watcher/connection cleanup logic
+  - No explicit stop — orphans Docker resources
+
+  **Rationale:** Existing handler structure (flag -> timer -> stop watchers -> close connections) naturally
+  accommodates coastsService.stop(). Mode detected via null check on coastsService reference.
+
+  ### 11. Error Handling for Failed Coastfile Generation
+
+  **Chosen:** Surface coast build error with instructions to manually edit the generated Coastfile
+
+  **Rejected:**
+  - Retry generation — expensive; issue likely in repo structure, not prompt
+  - Delete Coastfile and fall back — dangerous; violates fail-fast principle
+  - Auto-fix loop — could be infinite; error may be in repo setup not Coastfile format
+
+  **Rationale:** Generated Coastfile stays on disk for user inspection. Error message includes:
+  what went wrong (exit code + stderr), where the Coastfile is, and link to Coasts docs.
+  User fixes and restarts — existing Coastfile used without regeneration (NFR-7).
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | child_process (Node.js built-in) | Spawn coast CLI subprocesses | Use | Already used throughout codebase via injected ExecFunction; no external dependency |
+  | tsyringe | DI container for CoastsService | Use (existing) | Project's DI framework; CoastsService follows established registration patterns |
+  | fs (Node.js built-in) | Coastfile existence check and write | Use | Standard file operations; existsSync for detection, writeFile for output |
+  | path (Node.js built-in) | Resolve Coastfile path | Use | Standard path joining; used throughout codebase |
+  | toml (npm) | Parse/validate generated TOML | Reject | Unnecessary — coast build validates the Coastfile; adds dependency for marginal benefit |
+  | dockerode (npm) | Docker daemon check | Reject | Over-engineered; `docker info` via execFile is sufficient; avoids heavy dependency |
+  | got / node-fetch / axios | HTTP for coastd API | Reject | Spec chose CLI subprocess over HTTP API; no HTTP client needed |
+  | @iarna/toml (npm) | Generate TOML programmatically | Reject | AI agent generates raw TOML text; no programmatic generation needed |
+
+  ## Security Considerations
+
+  ### Subprocess Injection Prevention
+  - All coast CLI invocations use execFile with argument arrays (not shell string interpolation)
+  - NFR-5 mandates spawn/execFile (not exec) to avoid shell injection
+  - The codebase's ExecFunction uses shell: false on non-Windows platforms
+  - workDir paths should be validated as absolute paths before passing to cwd
+
+  ### Agent Prompt Injection
+  - coast installation-prompt output is trusted (comes from locally installed coast binary)
+  - Repo context (package.json, docker-compose.yml) is local but could contain adversarial content
+  - Agent sandbox (allowedTools: []) mitigates by preventing command execution during generation
+  - Generated Coastfile written with standard user permissions
+
+  ### Docker Security
+  - Coasts uses DinD inheriting host Docker daemon's security context
+  - Coastfile controls volume mounts and network — user has visibility via repo-root placement
+  - No new Docker attack surface introduced by Shep; Coasts handles all container management
+
+  ### Feature Flag Security
+  - coastsDevServer follows existing DB-primary pattern with env var fallback
+  - NEXT_PUBLIC_ prefix exposes to client-side — acceptable for boolean dev toggle, not sensitive data
+
+  ## Performance Implications
+
+  ### Startup Latency
+  - **Flag disabled (default):** Zero additional latency — single boolean read (NFR-1)
+  - **Flag enabled, Coastfile exists:** ~500ms prerequisite checks + coast build (cached) + coast run (~1-2s) = ~2-3s additional
+  - **Flag enabled, first run (no Coastfile):** Additional 30-60s for AI Coastfile generation (one-time, excluded from NFR-2 budget)
+  - **Prerequisite checks:** Bounded to 500ms via parallel execution with subprocess timeouts
+
+  ### Memory
+  - CoastsService: lightweight — one cached string (~5-10KB) + two injected references
+  - No persistent subprocess handles or streaming connections
+  - Coast CLI subprocesses are short-lived
+
+  ### Multi-Worktree Concurrency
+  - Each method takes workDir parameter, scoping to specific worktree (NFR-11)
+  - No global state, locks, or singletons preventing parallel usage
+  - coastd daemon handles concurrency internally
+  - Separate Node.js processes per worktree = no shared memory
+
+  ## Architecture Notes
+
+  ### Clean Architecture Compliance
+  - **Application layer:** ICoastsService interface + PrerequisiteCheckResult/CoastInstance types in packages/core/src/application/ports/output/services/
+  - **Infrastructure layer:** CoastsService implementation in packages/core/src/infrastructure/services/ with constructor injection
+  - **Presentation layer:** dev-server.ts resolves ICoastsService from DI container; no direct subprocess calls
+  - **Domain layer:** coastsDevServer flag in TypeSpec FeatureFlags model; no other domain changes
+
+  ### Integration Points
+  1. TypeSpec model -> tsp:compile -> generated output.ts -> settings mapper -> SQLite
+  2. Feature flags lib -> feature-flags-context -> web UI settings component
+  3. DI container -> CoastsService factory -> ExecFunction + IStructuredAgentCaller injection
+  4. dev-server.ts -> feature flag read -> ICoastsService resolution -> coast CLI operations
+  5. Agent system -> IStructuredAgentCaller -> configured agent executor -> Coastfile generation
+  6. Shutdown handler -> coastsService.stop() -> coast CLI stop command
+
+  ### New Files
+  - packages/core/src/application/ports/output/services/coasts-service.interface.ts
+  - packages/core/src/infrastructure/services/coasts.service.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/042-add-feature-flag-coasts-dev-server.ts
+  - tests/unit/infrastructure/services/coasts.service.test.ts
+
+  ### Modified Files
+  - tsp/domain/entities/settings.tsp
+  - packages/core/src/domain/generated/output.ts (auto-generated)
+  - packages/core/src/infrastructure/persistence/sqlite/mappers/settings.mapper.ts
+  - packages/core/src/infrastructure/repositories/sqlite-settings.repository.ts
+  - packages/core/src/infrastructure/di/container.ts
+  - src/presentation/web/lib/feature-flags.ts
+  - src/presentation/web/hooks/feature-flags-context.tsx
+  - src/presentation/web/components/features/settings/feature-flags-settings-section.tsx
+  - src/presentation/web/dev-server.ts
+  - package.json (add dev:coasts script)
