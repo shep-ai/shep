@@ -1,0 +1,169 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: coasts-dev-server
+number: 072
+branch: feat/072-coasts-dev-server
+oneLiner: integrate coasts.dev runtime isolation for the shep dev server behind a feature flag
+summary: >
+  Integrate the Coasts (coasts.dev) containerized runtime system as an alternative dev server mode
+  for Shep. Coasts provides per-worktree runtime isolation via Docker containers, automatic port
+  management, and service orchestration — enabling parallel feature development without port
+  conflicts or shared state. A new feature flag toggles between the current bare Next.js dev
+  server and the Coasts-managed mode.
+phase: Analysis
+sizeEstimate: L
+
+relatedFeatures: []
+
+technologies:
+  - Coasts CLI/daemon (Rust binary, Unix socket protocol, HTTP API on port 31415)
+  - Docker / Docker-in-Docker (DinD) runtime
+  - Coastfile (TOML configuration format)
+  - TypeSpec (domain model extension for feature flag)
+  - Next.js 16 programmatic server API
+  - tsyringe dependency injection
+  - SQLite (settings persistence)
+  - socat (port forwarding managed by coastd)
+
+relatedLinks:
+  - https://coasts.dev/docs
+  - https://github.com/coast-guard/coasts
+
+openQuestions:
+  - "Daemon lifecycle: should Shep auto-start coastd, or require the user to start it separately?"
+  - "Coastfile generation: should Shep auto-generate a Coastfile for the project, or require the user to provide one?"
+  - "Port strategy: should we use coast checkout for canonical port switching, or always use dynamic ports and update the browser URL?"
+  - "Scope of isolation: should the Coasts mode wrap only the Next.js dev server, or also isolate the SQLite database and background services (notification watcher, PR sync)?"
+  - "Installation: should Shep install the coasts binary automatically via the tool-installer service, or require manual installation?"
+
+content: |
+  ## Problem Statement
+
+  The current Shep dev server (`dev-server.ts`) runs Next.js directly on the host machine. When
+  developers work on multiple features in parallel using git worktrees, each worktree's dev server
+  competes for the same ports (default 3000) and shares the same SQLite database and background
+  services. The current workaround is manual port incrementing via `findAvailablePort()`, but this
+  doesn't isolate databases, services, or environment state.
+
+  Coasts (https://coasts.dev) solves this by providing containerized runtime isolation per worktree.
+  Each "coast" instance gets its own ports, volumes, services, and network — enabling true parallel
+  development. This feature adds Coasts as an optional dev server mode behind a feature flag.
+
+  ## Codebase Analysis
+
+  ### Project Structure
+
+  The repository follows Clean Architecture with four layers in `packages/core/src/`:
+
+  - **domain/** — Core business logic and TypeSpec-generated models (`output.ts`)
+  - **application/** — Use cases and output port interfaces (services, repositories)
+  - **infrastructure/** — DI container, SQLite repos, service implementations
+  - **presentation/** — CLI (`src/presentation/cli/`), Web UI (`src/presentation/web/`)
+
+  Key directories for this feature:
+  - `src/presentation/web/dev-server.ts` — Current dev server entry point (171 lines)
+  - `packages/core/src/infrastructure/services/web-server.service.ts` — Production web server service
+  - `src/presentation/web/lib/feature-flags.ts` — Feature flag resolution (DB-primary, env fallback)
+  - `src/presentation/web/hooks/feature-flags-context.tsx` — React context for flags
+  - `src/presentation/web/components/features/settings/feature-flags-settings-section.tsx` — Flag toggle UI
+  - `tsp/domain/entities/settings.tsp` — TypeSpec definition for FeatureFlags model
+  - `packages/core/src/infrastructure/di/container.ts` — DI container bootstrap
+
+  ### Architecture Patterns
+
+  1. **Dev server lifecycle**: `dev-server.ts` bootstraps the full DI container (database, migrations,
+     settings), starts notification and PR sync watchers, then launches Next.js programmatically with
+     `next({ dev: true })`. It handles WebSocket upgrades for HMR and graceful shutdown.
+
+  2. **Feature flag system**: TypeSpec-first definition in `settings.tsp` → generated `FeatureFlags`
+     type → stored in SQLite via settings repository → resolved in `getFeatureFlags()` with DB-primary /
+     env-fallback pattern → distributed to React components via `FeatureFlagsProvider` context.
+     The settings UI (`feature-flags-settings-section.tsx`) renders Switch toggles for each flag,
+     persisting changes via `updateSettingsAction` server action.
+
+  3. **Settings singleton**: `globalThis.__shepSettings` + `process.__shepSettings` dual-write for
+     Turbopack module re-evaluation resilience. Initialized once during bootstrap, read everywhere.
+
+  4. **Production mode**: `WebServerService` (injectable) resolves web directory (dev vs. prod path),
+     creates Next.js app, and manages HTTP server lifecycle. Used by `shep ui` CLI command.
+
+  5. **DI container**: tsyringe-based, registered in `container.ts`, exposed on `globalThis.__shepContainer`
+     for Next.js server components to access.
+
+  ### Coasts Architecture (from source analysis)
+
+  Coasts is a Rust-based daemon + CLI system:
+
+  - **coastd** (daemon): Background process managing Docker containers, port forwarding (socat),
+    SQLite state DB, and HTTP/WebSocket API on port 31415. Communicates via Unix socket at
+    `~/.coast/coastd.sock`.
+
+  - **coast** (CLI): Thin client sending JSON requests to the daemon socket. Subcommands include
+    `build`, `run`, `stop`, `checkout`, `assign`, `exec`, `logs`, `ports`, `ls`, `lookup`.
+
+  - **Coastfile** (TOML): Project configuration defining ports, services, volumes, secrets, setup
+    commands, and assignment strategies. Supports inheritance via `extends` and typed variants
+    (e.g., `Coastfile.light`).
+
+  - **Port management**: Each instance gets canonical ports (from Coastfile) and dynamic ports
+    (49152-65535). `coast checkout` swaps which instance binds canonical ports. Forwarding via socat.
+
+  - **Worktree integration**: `coast lookup` discovers instances for the current worktree.
+    `coast assign` switches a running instance to a different worktree/branch.
+
+  ### Relevant Technologies
+
+  - **Next.js 16.1.6** — Turbopack bundler, App Router, standalone output mode
+  - **TypeSpec** — Domain model definitions, auto-generates TypeScript types
+  - **tsyringe** — Dependency injection container
+  - **better-sqlite3** — Settings and feature persistence
+  - **Coasts** — Rust binary (coastd daemon + coast CLI), Docker DinD, socat port forwarding
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `tsp/domain/entities/settings.tsp` | Medium | Add `coastsDevServer` boolean to FeatureFlags model |
+  | `src/presentation/web/lib/feature-flags.ts` | Medium | Add coastsDevServer flag to FeatureFlagsState interface and resolution |
+  | `src/presentation/web/hooks/feature-flags-context.tsx` | Low | Add default for new flag |
+  | `src/presentation/web/components/features/settings/feature-flags-settings-section.tsx` | Low | Add toggle entry for coastsDevServer flag |
+  | `src/presentation/web/dev-server.ts` | High | Branch startup logic: if flag enabled, invoke coast CLI instead of bare Next.js |
+  | `packages/core/src/infrastructure/services/web-server.service.ts` | High | Add Coasts-aware startup path for production `shep ui` command |
+  | `packages/core/src/infrastructure/di/container.ts` | Low | Register new CoastsService if needed |
+  | `packages/core/src/application/ports/output/services/` | Medium | New ICoastsService interface for coast CLI interaction |
+  | `packages/core/src/infrastructure/services/` | High | New coasts.service.ts — wraps coast CLI (build, run, checkout, stop, lookup) |
+  | Root `Coastfile` (new) | Medium | Template Coastfile for Shep project defining ports, services, setup |
+  | `package.json` scripts | Low | Add `dev:coasts` script for Coasts-mode dev server |
+  | SQLite migrations | Low | FeatureFlags column migration for coastsDevServer |
+  | Tests | High | Unit tests for CoastsService, integration tests for flag toggle, dev-server branching |
+
+  ## Dependencies
+
+  - **Coasts binary** (`coast` + `coastd`): Must be installed on the host machine. The daemon must
+    be running. Installation via `curl -fsSL https://coasts.dev/install | sh`.
+  - **Docker**: Required by Coasts for DinD container runtime.
+  - **Existing feature flag infrastructure**: TypeSpec model, settings service, flag UI components,
+    and context provider are all in place — adding a new flag follows the established pattern.
+  - **Existing dev-server.ts**: The branching point where Coasts mode diverges from bare mode.
+  - **Existing WebServerService**: Production path needs equivalent Coasts support.
+
+  ## Size Estimate
+
+  **L** — This feature involves:
+  1. A new TypeSpec field + migration + flag wiring (small, well-patterned)
+  2. A new infrastructure service wrapping the coast CLI (medium — subprocess management, error handling)
+  3. Significant changes to dev-server.ts startup logic with two code paths (medium)
+  4. A Coastfile template for the Shep project (medium — requires testing port/service configs)
+  5. Changes to WebServerService for production Coasts mode (medium)
+  6. Comprehensive tests for all new code paths (medium)
+  7. Multiple open questions about daemon lifecycle, Coastfile generation, and isolation scope
+     that need resolution before implementation can begin
+
+  The well-established feature flag pattern reduces the flag-wiring portion to S-sized work,
+  but the CoastsService and dev-server branching logic are non-trivial, pushing the overall
+  estimate to L.
+
+  ---
+
+  _Analysis completed — proceed with research to resolve open questions_
