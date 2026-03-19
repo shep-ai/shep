@@ -1,0 +1,34 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: coasts-dev-server
+summary: Task breakdown for 072-coasts-dev-server
+
+# Relationships
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+
+# Structured task list
+tasks: []
+
+# Total effort estimate
+totalEstimate: TBD
+
+# Open questions
+openQuestions: []
+
+# Markdown content (the full tasks document)
+content: |
+  ## Status
+
+  - **Phase:** Implementation
+  - **Updated:** 2026-03-19
+
+  ## Task List
+
+  TBD
+
+  ---
+
+  _Task breakdown for implementation tracking_

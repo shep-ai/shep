@@ -1,0 +1,31 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: coasts-dev-server
+summary: Technical analysis for 072-coasts-dev-server
+
+# Relationships
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+
+# Structured technology decisions
+decisions: []
+
+# Open questions (should be resolved by end of research)
+openQuestions: []
+
+# Markdown content (the full research document)
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-03-19
+
+  ## Technology Decisions
+
+  TBD
+
+  ---
+
+  _To be updated during research phase_

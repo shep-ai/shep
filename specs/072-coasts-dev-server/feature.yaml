@@ -1,0 +1,34 @@
+feature:
+  id: 072-coasts-dev-server
+  name: coasts-dev-server
+  number: 72
+  branch: feat/072-coasts-dev-server
+  lifecycle: research
+  createdAt: '2026-03-19T17:07:38Z'
+status:
+  phase: research
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-03-19T17:07:38Z'
+  lastUpdatedBy: feature-agent
+  completedPhases:
+    - analyze
+    - requirements
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: feature-created
+    completedAt: '2026-03-19T17:07:38Z'
+    completedBy: feature-agent
+errors:
+  current: null
+  history: []

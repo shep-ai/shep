@@ -30,8 +30,10 @@ technologies:
   - child_process (Node.js subprocess spawning for coast CLI)
 
 relatedLinks:
-  - https://coasts.dev/docs
-  - https://github.com/coast-guard/coasts
+  - title: 'Coasts documentation'
+    url: 'https://coasts.dev/docs'
+  - title: 'Coasts GitHub repository'
+    url: 'https://github.com/coast-guard/coasts'
 
 openQuestions:
   - question: 'Should the dev server manage the coastd daemon lifecycle (auto-start/stop) or require the user to start it manually?'
