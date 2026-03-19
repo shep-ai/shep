@@ -2,33 +2,611 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: coasts-dev-server
-summary: Task breakdown for 072-coasts-dev-server
+summary: >
+  16 tasks across 5 phases implementing Coasts containerized runtime
+  isolation for Shep's dev server. Covers feature flag wiring (8-step
+  pattern), ICoastsService port interface definition, CoastsService
+  infrastructure implementation with coast CLI subprocess management and
+  AI-powered Coastfile generation, dev-server.ts branching logic with
+  prerequisite checks and graceful shutdown, and integration testing.
 
-# Relationships
 relatedFeatures: []
-technologies: []
-relatedLinks: []
 
-# Structured task list
-tasks: []
+technologies:
+  - "Coasts CLI"
+  - "coastd daemon"
+  - "Docker"
+  - "TypeSpec"
+  - "SQLite / umzug"
+  - "tsyringe"
+  - "IStructuredAgentCaller"
+  - "ExecFunction (child_process)"
+  - "Next.js 16"
 
-# Total effort estimate
-totalEstimate: TBD
+relatedLinks:
+  - title: "Coasts documentation"
+    url: "https://coasts.dev/docs"
 
-# Open questions
+tasks:
+  # ============================================================
+  # PHASE 1: Feature Flag Foundation
+  # ============================================================
+
+  - id: task-1
+    phaseId: phase-1
+    title: "Add coastsDevServer to FeatureFlags TypeSpec model and compile"
+    description: >
+      Add coastsDevServer: boolean = false with @doc annotation to the
+      FeatureFlags model in tsp/domain/entities/settings.tsp. Run pnpm
+      tsp:compile to regenerate output.ts. Verify the generated FeatureFlags
+      type includes the new field.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - "FeatureFlags type in output.ts includes coastsDevServer: boolean"
+      - "pnpm tsp:compile succeeds without errors"
+      - "Existing FeatureFlags fields unchanged"
+      - "Default value is false"
+    tdd:
+      red:
+        - "Write test asserting FeatureFlags type from output.ts has coastsDevServer property"
+      green:
+        - "Add coastsDevServer: boolean = false to FeatureFlags model in settings.tsp"
+        - "Run pnpm tsp:compile to regenerate output.ts"
+      refactor:
+        - "Verify @doc annotation matches existing flag documentation style"
+    estimatedEffort: "20min"
+
+  - id: task-2
+    phaseId: phase-1
+    title: "Create SQLite migration 042 for coastsDevServer feature flag column"
+    description: >
+      Create migration 042-add-feature-flag-coasts-dev-server.ts that adds
+      feature_flag_coasts_dev_server INTEGER NOT NULL DEFAULT 0 to the
+      settings table. Follow the idempotent pattern from migration 041
+      (check existing columns via pragma before ALTER TABLE).
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "Migration file exists at migrations/042-add-feature-flag-coasts-dev-server.ts"
+      - "Migration adds feature_flag_coasts_dev_server INTEGER NOT NULL DEFAULT 0"
+      - "Migration is idempotent (safe to run on already-migrated databases)"
+      - "down() handles SQLite DROP COLUMN limitation"
+    tdd:
+      red:
+        - "Write test that runs migration on fresh DB and asserts column exists"
+        - "Write test that running migration twice does not throw"
+      green:
+        - "Implement migration 042 with ALTER TABLE ADD COLUMN"
+        - "Add pragma table_info idempotency check"
+      refactor:
+        - "Ensure naming convention matches existing migrations exactly"
+    estimatedEffort: "20min"
+
+  - id: task-3
+    phaseId: phase-1
+    title: "Extend settings mapper with coastsDevServer mapping"
+    description: >
+      Add feature_flag_coasts_dev_server to SettingsRow interface. Update
+      toDatabase() to map coastsDevServer boolean to 0/1 integer. Update
+      fromDatabase() to map integer back to boolean. Follow the exact
+      pattern used by feature_flag_github_import.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "SettingsRow interface includes feature_flag_coasts_dev_server: number"
+      - "toDatabase() maps featureFlags.coastsDevServer to 0/1"
+      - "fromDatabase() maps feature_flag_coasts_dev_server === 1 to boolean"
+      - "Existing mappings unchanged"
+    tdd:
+      red:
+        - "Write test: toDatabase() maps coastsDevServer true to 1"
+        - "Write test: toDatabase() maps coastsDevServer false/undefined to 0"
+        - "Write test: fromDatabase() maps 1 back to true"
+        - "Write test: fromDatabase() maps 0 back to false"
+      green:
+        - "Add feature_flag_coasts_dev_server to SettingsRow"
+        - "Add mapping in toDatabase() and fromDatabase()"
+      refactor:
+        - "Verify alphabetical ordering of feature flag fields in SettingsRow"
+    estimatedEffort: "20min"
+
+  - id: task-4
+    phaseId: phase-1
+    title: "Add coastsDevServer column to SQLite settings repository SQL"
+    description: >
+      Add feature_flag_coasts_dev_server to the INSERT and UPDATE prepared
+      statements in sqlite-settings.repository.ts. Follow the exact pattern
+      used by other feature flag columns in the SQL statements.
+    state: Todo
+    dependencies:
+      - task-2
+      - task-3
+    acceptanceCriteria:
+      - "INSERT statement includes feature_flag_coasts_dev_server column and @parameter"
+      - "UPDATE statement includes feature_flag_coasts_dev_server = @parameter"
+      - "Settings can be initialized and updated with coastsDevServer flag"
+    tdd:
+      red:
+        - "Write test: initialize settings with coastsDevServer=true persists correctly"
+        - "Write test: update settings toggles coastsDevServer and load returns new value"
+      green:
+        - "Add feature_flag_coasts_dev_server to INSERT columns and VALUES"
+        - "Add feature_flag_coasts_dev_server to UPDATE SET clause"
+      refactor:
+        - "Verify column ordering matches SettingsRow interface"
+    estimatedEffort: "15min"
+
+  - id: task-5
+    phaseId: phase-1
+    title: "Wire coastsDevServer into feature-flags resolution and context"
+    description: >
+      Add coastsDevServer to the FeatureFlagsState interface in
+      feature-flags.ts with DB-primary resolution and NEXT_PUBLIC_FLAG_COASTS_DEV_SERVER
+      env var fallback. Add coastsDevServer: false to defaultFlags in
+      feature-flags-context.tsx.
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - "FeatureFlagsState interface includes coastsDevServer: boolean"
+      - "getFeatureFlags() resolves coastsDevServer from settings DB"
+      - "Env var fallback reads NEXT_PUBLIC_FLAG_COASTS_DEV_SERVER"
+      - "Default value is false when settings not initialized"
+      - "defaultFlags in context includes coastsDevServer: false"
+    tdd:
+      red:
+        - "Write test: getFeatureFlags() returns coastsDevServer from settings"
+        - "Write test: getFeatureFlags() falls back to env var when settings not initialized"
+        - "Write test: default flags include coastsDevServer: false"
+      green:
+        - "Add coastsDevServer to FeatureFlagsState interface"
+        - "Add coastsDevServer resolution in getFeatureFlags()"
+        - "Add coastsDevServer: false to defaultFlags"
+      refactor:
+        - "Verify env var naming follows NEXT_PUBLIC_FLAG_ convention"
+    estimatedEffort: "20min"
+
+  - id: task-6
+    phaseId: phase-1
+    title: "Add Coasts Dev Server toggle to feature flags settings UI"
+    description: >
+      Add coastsDevServer entry to FLAG_DESCRIPTIONS, FLAG_LABELS, and
+      FLAG_KEYS arrays in feature-flags-settings-section.tsx. The toggle
+      follows the exact existing pattern — no custom UI needed.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - "FLAG_DESCRIPTIONS includes coastsDevServer with description of the feature"
+      - "FLAG_LABELS includes coastsDevServer with label 'Coasts Dev Server'"
+      - "FLAG_KEYS includes 'coastsDevServer' in the array"
+      - "Toggle renders in the settings page and persists on click"
+    tdd:
+      red:
+        - "Write test: settings page renders Coasts Dev Server toggle"
+        - "Write test: toggling switch calls updateSettingsAction"
+      green:
+        - "Add coastsDevServer to FLAG_DESCRIPTIONS with feature description"
+        - "Add coastsDevServer to FLAG_LABELS with 'Coasts Dev Server'"
+        - "Add 'coastsDevServer' to FLAG_KEYS array"
+      refactor:
+        - "Verify description text is concise and matches existing flag descriptions style"
+    estimatedEffort: "15min"
+
+  # ============================================================
+  # PHASE 2: ICoastsService Interface & Types
+  # ============================================================
+
+  - id: task-7
+    phaseId: phase-2
+    title: "Define ICoastsService output port interface with types"
+    description: >
+      Create coasts-service.interface.ts in the application ports directory.
+      Define PrerequisiteCheckResult type (coastBinary, docker, coastdRunning,
+      allMet, missingMessages), CoastInstance type (port, url), and
+      ICoastsService interface with all 10 methods: checkPrerequisites, build,
+      run, stop, lookup, isRunning, checkout, getInstallationPrompt,
+      generateCoastfile, hasCoastfile. Follow the pattern from
+      deployment-service.interface.ts.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "ICoastsService interface exported with all 10 method signatures"
+      - "PrerequisiteCheckResult type has coastBinary, docker, coastdRunning, allMet, missingMessages fields"
+      - "CoastInstance type has port and url fields"
+      - "All methods accept workDir: string as first parameter (except getInstallationPrompt)"
+      - "Return types are properly typed (Promise-based)"
+      - "File lives in packages/core/src/application/ports/output/services/"
+    tdd:
+      red:
+        - "Write type-level test asserting ICoastsService has checkPrerequisites method"
+        - "Write type-level test asserting PrerequisiteCheckResult has allMet boolean field"
+        - "Write type-level test asserting CoastInstance has port and url fields"
+      green:
+        - "Create coasts-service.interface.ts with PrerequisiteCheckResult type"
+        - "Add CoastInstance type"
+        - "Define ICoastsService interface with all 10 methods"
+      refactor:
+        - "Add JSDoc to each method with @param and @returns documentation"
+    estimatedEffort: "30min"
+
+  # ============================================================
+  # PHASE 3: CoastsService Infrastructure Implementation
+  # ============================================================
+
+  - id: task-8
+    phaseId: phase-3
+    title: "Implement CoastsService prerequisite checks"
+    description: >
+      Create coasts.service.ts in the infrastructure services directory.
+      Implement constructor with @inject('ExecFunction') and
+      @inject('IStructuredAgentCaller') injection. Implement
+      checkPrerequisites() running three parallel subprocess checks via
+      Promise.allSettled with 500ms timeouts: coast --version (binary check),
+      docker info (Docker check), coast ls (daemon check). On Windows, fail
+      immediately. Return PrerequisiteCheckResult with actionable messages.
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - "CoastsService class is @injectable() with ExecFunction and IStructuredAgentCaller injection"
+      - "checkPrerequisites() runs three checks in parallel via Promise.allSettled"
+      - "Each check has 500ms timeout"
+      - "coastBinary check uses coast --version; ENOENT means not installed"
+      - "docker check uses docker info; non-zero exit means Docker not running"
+      - "coastdRunning check uses coast ls; failure means daemon not running"
+      - "Windows platform returns allMet: false with platform-not-supported message"
+      - "missingMessages array includes actionable fix instructions for each failure"
+      - "allMet is true only when all three checks pass"
+    tdd:
+      red:
+        - "Write test: checkPrerequisites returns allMet true when all checks pass"
+        - "Write test: coastBinary is false when coast --version throws ENOENT"
+        - "Write test: docker is false when docker info exits non-zero"
+        - "Write test: coastdRunning is false when coast ls fails"
+        - "Write test: missingMessages includes install instructions for each missing prerequisite"
+        - "Write test: Windows platform returns allMet false immediately"
+        - "Write test: all three checks run in parallel (not sequentially)"
+      green:
+        - "Create CoastsService class with constructor injection"
+        - "Implement checkPrerequisites with Promise.allSettled and three async checks"
+        - "Add platform detection for Windows early exit"
+        - "Build PrerequisiteCheckResult from settled results"
+        - "Include actionable error messages with install URLs"
+      refactor:
+        - "Extract individual check methods (checkCoastBinary, checkDocker, checkCoastd) as private helpers"
+        - "Ensure error messages match NFR-4 quality requirements"
+    estimatedEffort: "1h"
+
+  - id: task-9
+    phaseId: phase-3
+    title: "Implement CoastsService coast CLI operations (build, run, stop, checkout, lookup, isRunning)"
+    description: >
+      Implement the six coast CLI operation methods in CoastsService. Each
+      method invokes the coast binary via ExecFunction with workDir as cwd.
+      build() has 30-second timeout, others have 10-second timeout. run()
+      returns CoastInstance with port and URL parsed from stdout. lookup()
+      returns CoastInstance or null. isRunning() returns boolean. stop() and
+      checkout() return void. All methods handle ENOENT, non-zero exit codes,
+      and stderr logging.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - "build(workDir) runs coast build with 30-second timeout"
+      - "run(workDir) runs coast run and returns CoastInstance with port and url"
+      - "stop(workDir) runs coast stop"
+      - "checkout(workDir) runs coast checkout"
+      - "lookup(workDir) runs coast lookup and returns CoastInstance or null"
+      - "isRunning(workDir) returns true when lookup succeeds, false otherwise"
+      - "All methods use workDir as cwd for execFile"
+      - "Non-zero exit codes throw with stderr content in error message"
+      - "ENOENT errors throw with installation instructions"
+      - "build() handles 'already built' gracefully (NFR-7)"
+      - "run() handles 'already running' gracefully (NFR-7)"
+    tdd:
+      red:
+        - "Write test: build() calls execFile with coast build args and workDir cwd"
+        - "Write test: build() uses 30-second timeout"
+        - "Write test: run() parses port and url from stdout"
+        - "Write test: run() returns CoastInstance on success"
+        - "Write test: stop() calls execFile with coast stop args"
+        - "Write test: checkout() calls execFile with coast checkout args"
+        - "Write test: lookup() returns CoastInstance when instance exists"
+        - "Write test: lookup() returns null when no instance found"
+        - "Write test: isRunning() returns true when lookup succeeds"
+        - "Write test: isRunning() returns false when lookup fails"
+        - "Write test: all methods throw with stderr on non-zero exit"
+      green:
+        - "Implement build() with execFile('coast', ['build'], { cwd: workDir, timeout: 30000 })"
+        - "Implement run() with stdout parsing for port/url"
+        - "Implement stop(), checkout() as simple execFile calls"
+        - "Implement lookup() with try/catch returning null on failure"
+        - "Implement isRunning() delegating to lookup()"
+      refactor:
+        - "Extract common execFile wrapper with error handling and logging prefix"
+        - "Use [dev-server:coasts] log prefix for all messages (NFR-10)"
+    estimatedEffort: "1.5h"
+
+  - id: task-10
+    phaseId: phase-3
+    title: "Implement CoastsService Coastfile detection and generation"
+    description: >
+      Implement hasCoastfile(), getInstallationPrompt(), and
+      generateCoastfile() in CoastsService. hasCoastfile() checks for
+      Coastfile at workDir root via fs.existsSync. getInstallationPrompt()
+      runs coast installation-prompt and caches the result (FR-13).
+      generateCoastfile() orchestrates the full flow: get installation prompt,
+      pass to IStructuredAgentCaller with JSON schema (content: string,
+      warnings: string[]), write generated TOML to workDir/Coastfile, return
+      file path. Follow MetadataGenerator pattern for structured agent calls.
+    state: Todo
+    dependencies:
+      - task-9
+    acceptanceCriteria:
+      - "hasCoastfile(workDir) returns true when Coastfile exists at workDir root"
+      - "hasCoastfile(workDir) returns false when no Coastfile exists"
+      - "getInstallationPrompt() runs coast installation-prompt and returns full stdout"
+      - "getInstallationPrompt() caches result on first call (FR-13)"
+      - "getInstallationPrompt() returns cached value on subsequent calls without subprocess"
+      - "generateCoastfile(workDir) calls getInstallationPrompt() for the prompt text"
+      - "generateCoastfile(workDir) passes prompt to IStructuredAgentCaller with JSON schema"
+      - "generateCoastfile(workDir) writes generated TOML to workDir/Coastfile"
+      - "generateCoastfile(workDir) returns the file path"
+      - "Agent schema defines content (string) and warnings (string[]) fields"
+      - "Agent call uses allowedTools: [] and silent: true"
+    tdd:
+      red:
+        - "Write test: hasCoastfile returns true when Coastfile exists"
+        - "Write test: hasCoastfile returns false when Coastfile missing"
+        - "Write test: getInstallationPrompt runs coast installation-prompt subprocess"
+        - "Write test: getInstallationPrompt returns cached value on second call"
+        - "Write test: generateCoastfile calls getInstallationPrompt then structuredCaller"
+        - "Write test: generateCoastfile writes content to workDir/Coastfile"
+        - "Write test: generateCoastfile returns the Coastfile path"
+        - "Write test: agent schema includes content and warnings fields"
+      green:
+        - "Implement hasCoastfile with fs.existsSync(path.join(workDir, 'Coastfile'))"
+        - "Implement getInstallationPrompt with execFile and instance-level cache"
+        - "Implement generateCoastfile with prompt retrieval, agent call, and file write"
+        - "Define JSON schema for structured agent output"
+      refactor:
+        - "Ensure generated Coastfile path uses path.join for cross-platform safety"
+        - "Add log messages with [dev-server:coasts] prefix for generation progress"
+    estimatedEffort: "1.5h"
+
+  - id: task-11
+    phaseId: phase-3
+    title: "Register CoastsService in DI container"
+    description: >
+      Add ICoastsService factory registration to container.ts. The factory
+      resolves ExecFunction and IStructuredAgentCaller from the container and
+      passes them to the CoastsService constructor. Follow the existing
+      factory pattern used by IAgentExecutorProvider registration.
+    state: Todo
+    dependencies:
+      - task-10
+    acceptanceCriteria:
+      - "ICoastsService registered with useFactory in container.ts"
+      - "Factory resolves ExecFunction and IStructuredAgentCaller"
+      - "container.resolve('ICoastsService') returns CoastsService instance"
+      - "Registration placed near other service registrations"
+    tdd:
+      red:
+        - "Write test: container resolves ICoastsService without error"
+        - "Write test: resolved service has checkPrerequisites method"
+      green:
+        - "Add factory registration for ICoastsService in container.ts"
+        - "Import CoastsService and ICoastsService types"
+      refactor:
+        - "Group registration with related infrastructure service registrations"
+    estimatedEffort: "15min"
+
+  # ============================================================
+  # PHASE 4: Dev Server Integration & Shutdown
+  # ============================================================
+
+  - id: task-12
+    phaseId: phase-4
+    title: "Add Coasts startup path to dev-server.ts"
+    description: >
+      After DI initialization in dev-server.ts, read the coastsDevServer
+      feature flag from settings. When enabled: (1) resolve ICoastsService
+      from container, (2) run checkPrerequisites — if any fail, log errors
+      with [dev-server:coasts] prefix and process.exit(1), (3) check
+      hasCoastfile — if missing, run generateCoastfile, (4) run coast build,
+      (5) run coast run or checkout, (6) log the Coasts-managed URL. When
+      disabled (default), proceed with existing bare Next.js path unchanged.
+      The branching point is a simple if/else — no strategy pattern.
+    state: Todo
+    dependencies:
+      - task-5
+      - task-11
+    acceptanceCriteria:
+      - "Feature flag read after DI initialization"
+      - "When flag is false, bare Next.js path is completely unchanged (NFR-1)"
+      - "When flag is true, ICoastsService resolved from container"
+      - "Prerequisite check runs; on failure, logs actionable errors and exits with code 1"
+      - "Missing Coastfile triggers generateCoastfile() call"
+      - "coast build and coast run called in sequence"
+      - "Coasts-managed URL logged with [dev-server:coasts] prefix"
+      - "No new imports/side effects on the default (flag=false) path"
+    tdd:
+      red:
+        - "Write test: flag disabled — bare Next.js path executed, no ICoastsService resolved"
+        - "Write test: flag enabled, prerequisites met — coast build and run called"
+        - "Write test: flag enabled, prerequisites missing — process exits with code 1"
+        - "Write test: flag enabled, no Coastfile — generateCoastfile called before build"
+        - "Write test: flag enabled, Coastfile exists — generateCoastfile not called"
+      green:
+        - "Add feature flag read after DI init"
+        - "Add if/else branching for Coasts vs bare path"
+        - "Implement Coasts startup sequence: prerequisites -> coastfile -> build -> run"
+        - "Add error logging with [dev-server:coasts] prefix"
+      refactor:
+        - "Extract Coasts startup into a named async function for readability"
+        - "Ensure no changes leak into the bare path"
+    estimatedEffort: "1.5h"
+
+  - id: task-13
+    phaseId: phase-4
+    title: "Add Coasts-mode graceful shutdown to dev-server.ts"
+    description: >
+      Modify the existing shutdown handler in dev-server.ts to detect Coasts
+      mode and call coastsService.stop(workDir) before the process exits.
+      Coasts mode is detected by checking if the coastsService reference was
+      initialized during startup (null check). The 2-second force-exit
+      timeout still applies. The shutdown handler structure (flag, timer,
+      stop watchers, close connections) remains unchanged — only the
+      server stop step is modified.
+    state: Todo
+    dependencies:
+      - task-12
+    acceptanceCriteria:
+      - "Shutdown handler detects Coasts mode via coastsService null check"
+      - "In Coasts mode, coastsService.stop(workDir) called during shutdown"
+      - "2-second force-exit timeout still applies"
+      - "In bare mode, shutdown behavior is completely unchanged"
+      - "coastsService.stop() errors are caught and logged (no crash on shutdown)"
+    tdd:
+      red:
+        - "Write test: shutdown in Coasts mode calls coastsService.stop()"
+        - "Write test: shutdown in bare mode does not call coastsService.stop()"
+        - "Write test: coastsService.stop() error is caught and logged, does not prevent exit"
+        - "Write test: 2-second force-exit timeout still applies in Coasts mode"
+      green:
+        - "Add coastsService variable at module level (null by default)"
+        - "Set coastsService during Coasts startup path"
+        - "Add coastsService.stop() call in shutdown handler with null check"
+        - "Wrap stop() in try-catch to prevent shutdown failures"
+      refactor:
+        - "Ensure shutdown log messages use [dev-server:coasts] prefix"
+    estimatedEffort: "45min"
+
+  - id: task-14
+    phaseId: phase-4
+    title: "Add dev:coasts convenience script to package.json"
+    description: >
+      Add a dev:coasts script to the root package.json that sets the
+      NEXT_PUBLIC_FLAG_COASTS_DEV_SERVER=true environment variable and runs
+      pnpm dev:web. This provides a one-command way to start the dev server
+      in Coasts mode.
+    state: Todo
+    dependencies:
+      - task-12
+    acceptanceCriteria:
+      - "package.json scripts includes dev:coasts"
+      - "Script sets NEXT_PUBLIC_FLAG_COASTS_DEV_SERVER=true"
+      - "Script delegates to pnpm dev:web"
+      - "Running pnpm dev:coasts starts dev server with Coasts flag enabled"
+    tdd: null
+    estimatedEffort: "5min"
+
+  # ============================================================
+  # PHASE 5: Integration Testing & Validation
+  # ============================================================
+
+  - id: task-15
+    phaseId: phase-5
+    title: "Write integration tests for dev-server Coasts branching"
+    description: >
+      Write integration tests that verify the dev-server branching logic
+      for both flag states. Test with mocked ICoastsService to verify the
+      correct sequence of calls. Test prerequisite failure scenarios. Test
+      Coastfile generation flow when Coastfile is missing. Verify the bare
+      path is completely unchanged when flag is disabled.
+    state: Todo
+    dependencies:
+      - task-13
+    acceptanceCriteria:
+      - "Test: flag disabled — ICoastsService never resolved, bare Next.js starts"
+      - "Test: flag enabled, all prerequisites met, Coastfile exists — build and run called"
+      - "Test: flag enabled, prerequisites missing — exits with code 1 and error messages"
+      - "Test: flag enabled, no Coastfile — generateCoastfile called before build"
+      - "Test: shutdown in Coasts mode calls stop()"
+      - "Test: shutdown in bare mode does not call stop()"
+      - "All tests mock ExecFunction and IStructuredAgentCaller (no real coast/Docker needed)"
+    tdd:
+      red:
+        - "Write integration test: flag off preserves bare Next.js startup"
+        - "Write integration test: flag on with valid prerequisites runs full Coasts flow"
+        - "Write integration test: flag on with missing coast binary exits with error"
+        - "Write integration test: flag on with missing Coastfile triggers generation"
+        - "Write integration test: Coasts mode shutdown calls stop()"
+      green:
+        - "Set up test fixture with mocked container, feature flags, and ICoastsService"
+        - "Implement each test case verifying call sequences and exit behavior"
+      refactor:
+        - "Extract shared test setup into beforeEach fixture"
+    estimatedEffort: "2h"
+
+  - id: task-16
+    phaseId: phase-5
+    title: "Run full validation suite and fix any failures"
+    description: >
+      Run pnpm validate (lint + format + typecheck + tsp) and pnpm test
+      (all unit + integration tests). Fix any failures. Verify that all
+      existing tests continue to pass with zero regressions. Confirm the
+      feature flag persists correctly through the full stack (TypeSpec ->
+      migration -> mapper -> repository -> resolution -> context -> UI).
+    state: Todo
+    dependencies:
+      - task-15
+    acceptanceCriteria:
+      - "pnpm validate passes (lint, format, typecheck, tsp all green)"
+      - "pnpm test passes (all unit + integration tests green)"
+      - "Zero regressions in existing tests"
+      - "Feature flag round-trips correctly: set via UI -> persisted in DB -> read in dev-server"
+      - "CoastsService unit tests all pass with mocked dependencies"
+    tdd:
+      red:
+        - "Run pnpm validate and note any failures"
+        - "Run pnpm test and note any failures"
+      green:
+        - "Fix all lint, format, typecheck, and tsp errors"
+        - "Fix all test failures"
+      refactor:
+        - "Final cleanup of any code style inconsistencies"
+    estimatedEffort: "1h"
+
+totalEstimate: "12h"
+
 openQuestions: []
 
-# Markdown content (the full tasks document)
 content: |
-  ## Status
+  ## Summary
 
-  - **Phase:** Implementation
-  - **Updated:** 2026-03-19
+  This task breakdown covers 16 tasks across 5 phases, implementing Coasts
+  containerized runtime isolation for Shep's dev server behind a feature flag.
 
-  ## Task List
+  The work begins with the feature flag foundation (Phase 1) — wiring
+  coastsDevServer through the established 8-step pattern: TypeSpec model,
+  SQLite migration, settings mapper, settings repository, feature-flags
+  resolution, React context, and UI toggle. This is well-patterned S-sized
+  work that produces a visible UI toggle early.
 
-  TBD
+  Next, the ICoastsService interface is defined in the application layer
+  (Phase 2), establishing the contract with all 10 method signatures and
+  the PrerequisiteCheckResult/CoastInstance types before any infrastructure
+  work begins.
 
-  ---
+  The infrastructure phase (Phase 3) is the heaviest — implementing
+  CoastsService with parallel prerequisite checks, six coast CLI operation
+  methods, installation prompt caching, and AI-powered Coastfile generation
+  via IStructuredAgentCaller. Each method is independently unit-testable
+  with mocked ExecFunction. DI container registration follows factory pattern.
 
-  _Task breakdown for implementation tracking_
+  Phase 4 integrates everything into dev-server.ts with a single branching
+  point after DI initialization. The Coasts path runs prerequisites, detects
+  or generates a Coastfile, builds and runs via coast CLI. The shutdown
+  handler gains coastsService.stop() for cleanup. The bare Next.js path
+  remains completely unchanged per NFR-1. A dev:coasts convenience script
+  is added to package.json.
+
+  Finally, integration tests (Phase 5) verify the full branching logic for
+  both flag states, prerequisite failures, and Coastfile generation flow.
+  The validation suite confirms zero regressions across the entire codebase.

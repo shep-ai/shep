@@ -2,34 +2,275 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: coasts-dev-server
-summary: Implementation plan for 072-coasts-dev-server
+summary: >
+  Implementation plan for integrating Coasts containerized runtime isolation
+  into Shep's dev server behind a coastsDevServer feature flag. Follows Clean
+  Architecture with a new ICoastsService output port, CoastsService
+  infrastructure adapter wrapping the coast CLI via injected ExecFunction, and
+  AI-powered Coastfile auto-generation via IStructuredAgentCaller. The dev
+  server gains a branching point after DI initialization — when the flag is
+  enabled, it checks prerequisites, generates a Coastfile if missing, and
+  starts Next.js via coast run instead of bare next(). The feature flag follows
+  the established 8-step wiring pattern (TypeSpec, migration, mapper,
+  repository, flag resolution, context, UI toggle).
 
-# Relationships
 relatedFeatures: []
-technologies: []
-relatedLinks: []
 
-# Structured implementation phases
-phases: []
+technologies:
+  - "Coasts CLI (coast binary — Rust, installed via coasts.dev/install)"
+  - "coastd daemon (background process, Unix socket + HTTP API)"
+  - "Coastfile (TOML configuration at repo root)"
+  - "Docker / Docker-in-Docker (DinD) runtime"
+  - "child_process / ExecFunction (Node.js built-in — subprocess spawning)"
+  - "tsyringe (dependency injection container)"
+  - "TypeSpec (domain model extension for feature flag)"
+  - "SQLite (settings persistence — feature flag column)"
+  - "IStructuredAgentCaller (agent system for Coastfile generation)"
+  - "Next.js 16 programmatic server API"
 
-# File change tracking
-filesToCreate: []
-filesToModify: []
+relatedLinks:
+  - title: "Coasts documentation"
+    url: "https://coasts.dev/docs"
+  - title: "Coasts GitHub repository"
+    url: "https://github.com/coast-guard/coasts"
+  - title: "Coasts installation"
+    url: "https://coasts.dev/install"
 
-# Open questions (should all be resolved before implementation)
+phases:
+  - id: phase-1
+    name: "Feature Flag Foundation"
+    description: >
+      Wire the coastsDevServer boolean feature flag through the entire stack:
+      TypeSpec model, SQLite migration 042, settings mapper, settings
+      repository, feature-flags resolution lib, React context defaults, and
+      web UI toggle. This phase must come first because the dev server
+      branching logic and all Coasts-mode behavior depend on reading this
+      flag. Follows the established 8-step pattern used by adoptBranch (040)
+      and githubImport (041) flags — zero design risk, well-patterned work.
+    parallel: false
+
+  - id: phase-2
+    name: "ICoastsService Interface & Types"
+    description: >
+      Define the ICoastsService output port interface in the application layer
+      with all method signatures, the PrerequisiteCheckResult type, and the
+      CoastInstance type. This establishes the contract that the infrastructure
+      layer will implement and the presentation layer will consume. Defined
+      before implementation so that the dev-server branching logic and
+      CoastsService can be developed against a stable interface.
+    parallel: false
+
+  - id: phase-3
+    name: "CoastsService Infrastructure Implementation"
+    description: >
+      Implement CoastsService in the infrastructure layer, wrapping the coast
+      CLI binary via injected ExecFunction. Covers prerequisite checks
+      (parallel via Promise.allSettled with 500ms timeouts), coast build/run/
+      stop/checkout/lookup operations, installation prompt caching, and
+      Coastfile generation via IStructuredAgentCaller. Register in the DI
+      container with factory-based injection. This is the heaviest phase —
+      10 methods with subprocess management, error handling, and agent
+      integration.
+    parallel: false
+
+  - id: phase-4
+    name: "Dev Server Integration & Shutdown"
+    description: >
+      Modify dev-server.ts to read the coastsDevServer flag after DI
+      initialization and branch the startup logic. The Coasts path runs
+      prerequisite checks, detects/generates Coastfile, builds and runs via
+      coast CLI, and logs the Coasts-managed URL. The shutdown handler gains
+      coastsService.stop() for Coasts mode cleanup. The bare Next.js path
+      remains completely unchanged (NFR-1 zero regression). Add the
+      dev:coasts convenience script to package.json.
+    parallel: false
+
+  - id: phase-5
+    name: "Integration Testing & Validation"
+    description: >
+      Write integration tests for the dev-server branching logic (flag on/off,
+      prerequisites missing, Coastfile generation flow). Verify the feature
+      flag persists correctly through the full stack. Run pnpm validate to
+      confirm lint, format, typecheck, and tsp all pass. Ensure all existing
+      tests continue to pass with zero regressions.
+    parallel: false
+
+filesToCreate:
+  # Application port interface
+  - "packages/core/src/application/ports/output/services/coasts-service.interface.ts"
+
+  # Infrastructure service
+  - "packages/core/src/infrastructure/services/coasts.service.ts"
+
+  # Database migration
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/042-add-feature-flag-coasts-dev-server.ts"
+
+  # Tests
+  - "packages/core/src/infrastructure/services/__tests__/coasts.service.test.ts"
+  - "src/presentation/web/__tests__/dev-server-coasts.integration.test.ts"
+
+filesToModify:
+  # TypeSpec domain model
+  - "tsp/domain/entities/settings.tsp"
+  - "packages/core/src/domain/generated/output.ts"
+
+  # Settings persistence
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/settings.mapper.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-settings.repository.ts"
+
+  # Feature flag resolution
+  - "src/presentation/web/lib/feature-flags.ts"
+  - "src/presentation/web/hooks/feature-flags-context.tsx"
+
+  # Feature flag UI
+  - "src/presentation/web/components/features/settings/feature-flags-settings-section.tsx"
+
+  # DI container
+  - "packages/core/src/infrastructure/di/container.ts"
+
+  # Dev server entrypoint
+  - "src/presentation/web/dev-server.ts"
+
+  # Convenience script
+  - "package.json"
+
 openQuestions: []
 
-# Markdown content (the full plan document)
 content: |
-  ## Status
+  ## Architecture Overview
 
-  - **Phase:** Planning
-  - **Updated:** 2026-03-19
+  This feature adds Coasts containerized runtime isolation as an optional dev
+  server mode, toggled by a `coastsDevServer` feature flag. The architecture
+  follows Clean Architecture with dependencies pointing inward:
+
+  ```
+  Presentation (dev-server.ts)
+    -> ICoastsService (application port)
+      -> CoastsService (infrastructure — wraps coast CLI via ExecFunction)
+      -> IStructuredAgentCaller (application port — for Coastfile generation)
+  ```
+
+  **Domain layer**: The only domain change is adding `coastsDevServer: boolean`
+  to the FeatureFlags TypeSpec model. No new domain entities — CoastInstance
+  and PrerequisiteCheckResult are ephemeral types defined in the port interface
+  file (not TypeSpec), following the pattern used by DeploymentStatus in
+  deployment-service.interface.ts.
+
+  **Application layer**: New `ICoastsService` output port interface defines
+  the contract for all Coasts operations. Ten methods covering prerequisite
+  checks, coast CLI operations, and Coastfile generation. Types defined in
+  the interface file.
+
+  **Infrastructure layer**: `CoastsService` implements `ICoastsService` using
+  injected `ExecFunction` (promisified execFile) for coast CLI subprocess
+  invocation and `IStructuredAgentCaller` for AI-powered Coastfile generation.
+  Registered in the DI container via factory-based registration.
+
+  **Presentation layer**: `dev-server.ts` gains a single branching point after
+  DI initialization. When the flag is enabled, it resolves `ICoastsService`
+  from the container and follows the Coasts startup path. When disabled
+  (default), the bare Next.js path is completely unchanged — no new imports,
+  checks, or side effects (NFR-1).
+
+  ## Key Design Decisions
+
+  ### 1. Agent Integration via IStructuredAgentCaller (Research Decision #1)
+  Coastfile generation uses `IStructuredAgentCaller` with a JSON schema
+  defining a `content` field (TOML string) and optional `warnings` array.
+  This follows the MetadataGenerator pattern — the highest-level API for
+  getting typed results from agents. It automatically handles native structured
+  output for agents that support it, with prompt-based fallback for others.
+  The `coast installation-prompt` output provides the full Coastfile schema,
+  examples, and repo analysis instructions — this is passed as the prompt
+  body. The agent resolution flows through `IAgentExecutorProvider` per the
+  mandatory agent resolution rule (no hardcoded agent type).
+
+  ### 2. Subprocess Invocation via ExecFunction (Research Decision #2)
+  All coast CLI commands use the injected `ExecFunction` (promisified execFile)
+  following the WorktreeService pattern: `@inject('ExecFunction')` in the
+  constructor. This provides: (a) testability — mock the function in tests
+  without coast/Docker installed, (b) consistency — same pattern as git
+  commands, (c) safety — argument arrays prevent shell injection (NFR-5).
+  The 30-second timeout for build and 10-second timeout for other commands
+  are handled via the timeout option on execFile.
+
+  ### 3. Parallel Prerequisite Checks (Research Decision #4)
+  The three prerequisite checks (coast binary, Docker, coastd daemon) run in
+  parallel via `Promise.allSettled` with 500ms timeouts per check. This bounds
+  total check time to ~500ms (NFR-2 requires < 2 seconds). On Windows,
+  the check fails immediately with a platform-not-supported message (NFR-8).
+  Each check produces specific actionable error messages (NFR-4).
+
+  ### 4. Single Branching Point in dev-server.ts (Research Decision #5)
+  Rather than a separate entrypoint or strategy pattern, the dev server uses
+  a simple if/else after DI initialization. The two paths share: DI init,
+  settings resolution, watcher startup, and shutdown skeleton. They diverge
+  only at server startup (bare Next.js vs coast build/run). This keeps the
+  code readable and avoids premature abstraction for just two code paths.
+
+  ### 5. Feature Flag 8-Step Pattern (Research Decision #7)
+  The flag wiring follows the identical pattern used by adoptBranch and
+  githubImport — eight files touched in a predictable way. Migration 042
+  adds `feature_flag_coasts_dev_server INTEGER NOT NULL DEFAULT 0`. The
+  env var fallback is `NEXT_PUBLIC_FLAG_COASTS_DEV_SERVER`. This is
+  well-patterned S-sized work with zero design risk.
+
+  ### 6. Factory-Based DI Registration (Research Decision #3)
+  CoastsService uses factory registration to inject both ExecFunction and
+  IStructuredAgentCaller (both string tokens). No lazy loading needed since
+  child_process is a built-in with zero import cost (unlike WebServerService
+  which lazy-loads Next.js).
+
+  ### 7. Installation Prompt Caching (Research Decision #9)
+  The `coast installation-prompt` output is cached as a private instance field
+  in CoastsService. Populated on first call to `getInstallationPrompt()`,
+  lives for the process duration. The prompt is static per coast version and
+  does not change during a single dev server process lifetime.
 
   ## Implementation Strategy
 
-  TBD
+  The five phases follow Clean Architecture's dependency rule — inner layers
+  first, outer layers last:
 
-  ---
+  **Phase 1 (Feature Flag Foundation)** comes first because the dev server
+  branching logic cannot be implemented without a flag to read. The 8-step
+  pattern is well-established and low-risk, making it a safe starting point
+  that produces visible progress (a UI toggle) early.
 
-  _To be updated during planning phase_
+  **Phase 2 (ICoastsService Interface)** defines the application-layer
+  contract before any infrastructure work. This enables the dev-server
+  integration (Phase 4) and CoastsService (Phase 3) to be developed against
+  a stable interface. The types and method signatures are driven by the spec's
+  functional requirements.
+
+  **Phase 3 (CoastsService Implementation)** is the heaviest phase — 10
+  methods wrapping coast CLI operations with subprocess management, error
+  handling, timeout enforcement, and agent-based Coastfile generation. Each
+  method is independently testable with mocked ExecFunction.
+
+  **Phase 4 (Dev Server Integration)** wires everything together in
+  dev-server.ts. The branching logic, prerequisite checks, Coastfile
+  detection/generation, coast build/run, and graceful shutdown are all
+  integrated here. The bare path must remain completely unchanged.
+
+  **Phase 5 (Integration Testing)** exercises the full stack with integration
+  tests covering both flag states, prerequisite failure scenarios, and
+  Coastfile generation flow. Final validation ensures zero regressions.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Coast binary not installed or not on PATH | checkPrerequisites() detects via execFile ENOENT; actionable error with installation URL |
+  | Docker daemon not running | checkPrerequisites() detects via `docker info` non-zero exit; error with start instructions |
+  | coastd daemon not running | checkPrerequisites() detects via `coast ls` failure; error with `coastd &` start instruction |
+  | TypeSpec model change breaks generated output | Run `pnpm tsp:compile` immediately; verify output.ts diff matches expectation |
+  | Migration fails on existing databases | Idempotent migration with pragma table_info check (pattern from 041) |
+  | Bare dev server path regresses | NFR-1 enforced: no new imports/checks/side effects on default path; integration test verifies identical behavior |
+  | Coast build fails on AI-generated Coastfile | Surface coast build error with Coastfile path and docs link; user can edit and retry (NFR-12) |
+  | Generated TOML is invalid | IStructuredAgentCaller schema constrains output; coast build validates; error surfaced with edit instructions |
+  | Subprocess shell injection | ExecFunction uses execFile with argument arrays (not shell strings); NFR-5 enforced |
+  | Windows platform | Platform check in checkPrerequisites fails fast with clear message (NFR-8) |
+  | Orphan coast instances on crash | Shutdown handler calls coastsService.stop(); coastd daemon handles container lifecycle independently |
+  | Multiple worktrees conflict | Each CoastsService method takes workDir parameter scoping to specific worktree; no global state (NFR-11) |
+  | Prerequisite checks slow startup | Parallel Promise.allSettled with 500ms timeouts bounds total to ~500ms (NFR-2) |
