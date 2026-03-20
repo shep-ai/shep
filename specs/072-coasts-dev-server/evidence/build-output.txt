@@ -1,0 +1,8 @@
+
+> @shepai/cli@1.131.0 build /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server
+> pnpm build:cli
+
+
+> @shepai/cli@1.131.0 build:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server
+> tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths && shx mkdir -p dist/packages/core/src/infrastructure/services/tool-installer && shx rm -rf dist/packages/core/src/infrastructure/services/tool-installer/tools && shx cp -r packages/core/src/infrastructure/services/tool-installer/tools dist/packages/core/src/infrastructure/services/tool-installer/tools
+

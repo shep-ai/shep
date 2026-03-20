@@ -1,0 +1,39 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server[39m
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mcheckPrerequisites[2m > [22mreturns allMet true when all checks pass[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mcheckPrerequisites[2m > [22mcoastBinary is false when coast --version throws ENOENT[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mcheckPrerequisites[2m > [22mdocker is false when docker info exits non-zero[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mcheckPrerequisites[2m > [22mcoastdRunning is false when coast ls fails[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mcheckPrerequisites[2m > [22mmissingMessages includes install instructions for each missing prerequisite[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mcheckPrerequisites[2m > [22mWindows platform returns allMet false immediately[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mcheckPrerequisites[2m > [22mall three checks run in parallel (not sequentially)[32m 12[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mbuild[2m > [22mcalls execFile with coast build args and workDir cwd[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mbuild[2m > [22muses 30-second timeout[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mbuild[2m > [22mthrows with stderr on non-zero exit[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mrun[2m > [22mparses port and url from stdout[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mrun[2m > [22mreturns CoastInstance on success[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mrun[2m > [22mcalls execFile with coast run args[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mrun[2m > [22mthrows with stderr on failure[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mstop[2m > [22mcalls execFile with coast stop args[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mstop[2m > [22mdoes not throw when no instance is running[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mcheckout[2m > [22mcalls execFile with coast checkout args[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mlookup[2m > [22mreturns CoastInstance when instance exists[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mlookup[2m > [22mreturns null when no instance found[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mlookup[2m > [22mcalls execFile with coast lookup args[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22misRunning[2m > [22mreturns true when lookup succeeds[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22misRunning[2m > [22mreturns false when lookup fails[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mhasCoastfile[2m > [22mreturns true when Coastfile exists[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mhasCoastfile[2m > [22mreturns false when Coastfile missing[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mgetInstallationPrompt[2m > [22mruns coast installation-prompt subprocess[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mgetInstallationPrompt[2m > [22mreturns cached value on second call[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mgenerateCoastfile[2m > [22mcalls getInstallationPrompt then structuredCaller[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mgenerateCoastfile[2m > [22mwrites content to workDir/Coastfile[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mgenerateCoastfile[2m > [22mreturns the Coastfile path[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/coasts.service.test.ts[2m > [22mCoastsService[2m > [22mgenerateCoastfile[2m > [22magent schema includes content and warnings fields[32m 0[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m30 passed[39m[22m[90m (30)[39m
+[2m   Start at [22m 16:35:51
+[2m   Duration [22m 136ms[2m (transform 38ms, setup 0ms, import 57ms, tests 18ms, environment 0ms)[22m
+

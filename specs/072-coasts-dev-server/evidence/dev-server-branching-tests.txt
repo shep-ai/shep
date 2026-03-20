@@ -1,0 +1,155 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server[39m
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mruns prerequisite check as the first step
+[22m[39m[dev-server:coasts] Checking prerequisites...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mruns prerequisite check as the first step
+[22m[39m[dev-server:coasts] All prerequisites met.
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mruns prerequisite check as the first step
+[22m[39m[dev-server:coasts] Building coast container...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mruns prerequisite check as the first step
+[22m[39m[dev-server:coasts] Build complete.
+[dev-server:coasts] Starting coast instance...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mruns prerequisite check as the first step
+[22m[39m[dev-server:coasts] Ready at http://localhost:3000
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mthrows when prerequisites are not met
+[22m[39m[dev-server:coasts] Checking prerequisites...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mdoes not call build/run when prerequisites fail
+[22m[39m[dev-server:coasts] Checking prerequisites...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mcalls generateCoastfile when no Coastfile exists
+[22m[39m[dev-server:coasts] Checking prerequisites...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mcalls generateCoastfile when no Coastfile exists
+[22m[39m[dev-server:coasts] All prerequisites met.
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mcalls generateCoastfile when no Coastfile exists
+[22m[39m[dev-server:coasts] No Coastfile found. Generating via AI agent...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mcalls generateCoastfile when no Coastfile exists
+[22m[39m[dev-server:coasts] Coastfile generated at /repos/my-project/Coastfile
+[dev-server:coasts] Building coast container...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mcalls generateCoastfile when no Coastfile exists
+[22m[39m[dev-server:coasts] Build complete.
+[dev-server:coasts] Starting coast instance...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mcalls generateCoastfile when no Coastfile exists
+[22m[39m[dev-server:coasts] Ready at http://localhost:3000
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mdoes not call generateCoastfile when Coastfile exists
+[22m[39m[dev-server:coasts] Checking prerequisites...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mdoes not call generateCoastfile when Coastfile exists
+[22m[39m[dev-server:coasts] All prerequisites met.
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mdoes not call generateCoastfile when Coastfile exists
+[22m[39m[dev-server:coasts] Building coast container...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mdoes not call generateCoastfile when Coastfile exists
+[22m[39m[dev-server:coasts] Build complete.
+[dev-server:coasts] Starting coast instance...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mdoes not call generateCoastfile when Coastfile exists
+[22m[39m[dev-server:coasts] Ready at http://localhost:3000
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mcalls coast build then coast run in sequence
+[22m[39m[dev-server:coasts] Checking prerequisites...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mcalls coast build then coast run in sequence
+[22m[39m[dev-server:coasts] All prerequisites met.
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mcalls coast build then coast run in sequence
+[22m[39m[dev-server:coasts] Building coast container...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mcalls coast build then coast run in sequence
+[22m[39m[dev-server:coasts] Build complete.
+[dev-server:coasts] Starting coast instance...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mcalls coast build then coast run in sequence
+[22m[39m[dev-server:coasts] Ready at http://localhost:3000
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mreturns the CoastInstance from coast run
+[22m[39m[dev-server:coasts] Checking prerequisites...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mreturns the CoastInstance from coast run
+[22m[39m[dev-server:coasts] All prerequisites met.
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mreturns the CoastInstance from coast run
+[22m[39m[dev-server:coasts] Building coast container...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mreturns the CoastInstance from coast run
+[22m[39m[dev-server:coasts] Build complete.
+[dev-server:coasts] Starting coast instance...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mreturns the CoastInstance from coast run
+[22m[39m[dev-server:coasts] Ready at http://localhost:8080
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mpropagates coast build errors
+[22m[39m[dev-server:coasts] Checking prerequisites...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mpropagates coast build errors
+[22m[39m[dev-server:coasts] All prerequisites met.
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mpropagates coast build errors
+[22m[39m[dev-server:coasts] Building coast container...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mpropagates coast run errors
+[22m[39m[dev-server:coasts] Checking prerequisites...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mpropagates coast run errors
+[22m[39m[dev-server:coasts] All prerequisites met.
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mpropagates coast run errors
+[22m[39m[dev-server:coasts] Building coast container...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mstartCoastsDevServer[2m > [22m[2mpropagates coast run errors
+[22m[39m[dev-server:coasts] Build complete.
+[dev-server:coasts] Starting coast instance...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mshutdownCoasts[2m > [22m[2mcalls coastsService.stop() with workDir
+[22m[39m[dev-server:coasts] Stopping coast instance...
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mshutdownCoasts[2m > [22m[2mcalls coastsService.stop() with workDir
+[22m[39m[dev-server:coasts] Coast instance stopped.
+
+[90mstdout[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mshutdownCoasts[2m > [22m[2mdoes not throw when coastsService.stop() fails
+[22m[39m[dev-server:coasts] Stopping coast instance...
+
+[90mstderr[2m | tests/unit/presentation/dev-server-coasts.test.ts[2m > [22m[2mCoasts Dev Server Startup[2m > [22m[2mshutdownCoasts[2m > [22m[2mdoes not throw when coastsService.stop() fails
+[22m[39m[dev-server:coasts] Failed to stop coast instance: Error: stop failed
+    at [90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server/[39mtests/unit/presentation/dev-server-coasts.test.ts:186:53
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1209:10[90m)[39m
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1653:37
+    at Traces.$ [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server/[39mnode_modules/[4m.pnpm[24m/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[39m
+    at trace [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server/[39mnode_modules/[4m.pnpm[24m/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1653:12[90m)[39m
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/dev-server-coasts.test.ts[2m > [22mCoasts Dev Server Startup[2m > [22mstartCoastsDevServer[2m > [22mruns prerequisite check as the first step[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/dev-server-coasts.test.ts[2m > [22mCoasts Dev Server Startup[2m > [22mstartCoastsDevServer[2m > [22mthrows when prerequisites are not met[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/dev-server-coasts.test.ts[2m > [22mCoasts Dev Server Startup[2m > [22mstartCoastsDevServer[2m > [22mdoes not call build/run when prerequisites fail[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/dev-server-coasts.test.ts[2m > [22mCoasts Dev Server Startup[2m > [22mstartCoastsDevServer[2m > [22mcalls generateCoastfile when no Coastfile exists[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/dev-server-coasts.test.ts[2m > [22mCoasts Dev Server Startup[2m > [22mstartCoastsDevServer[2m > [22mdoes not call generateCoastfile when Coastfile exists[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/dev-server-coasts.test.ts[2m > [22mCoasts Dev Server Startup[2m > [22mstartCoastsDevServer[2m > [22mcalls coast build then coast run in sequence[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/dev-server-coasts.test.ts[2m > [22mCoasts Dev Server Startup[2m > [22mstartCoastsDevServer[2m > [22mreturns the CoastInstance from coast run[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/dev-server-coasts.test.ts[2m > [22mCoasts Dev Server Startup[2m > [22mstartCoastsDevServer[2m > [22mpropagates coast build errors[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/dev-server-coasts.test.ts[2m > [22mCoasts Dev Server Startup[2m > [22mstartCoastsDevServer[2m > [22mpropagates coast run errors[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/dev-server-coasts.test.ts[2m > [22mCoasts Dev Server Startup[2m > [22mshutdownCoasts[2m > [22mcalls coastsService.stop() with workDir[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/dev-server-coasts.test.ts[2m > [22mCoasts Dev Server Startup[2m > [22mshutdownCoasts[2m > [22mdoes not throw when coastsService.stop() fails[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/dev-server-coasts.test.ts[2m > [22mCoasts Dev Server Startup[2m > [22mshutdownCoasts[2m > [22mdoes nothing when service is null[32m 0[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 16:35:54
+[2m   Duration [22m 93ms[2m (transform 22ms, setup 0ms, import 30ms, tests 7ms, environment 0ms)[22m
+

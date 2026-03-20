@@ -1,0 +1,12 @@
+=== UNIT TESTS ===
+Test Files: 336 passed (336)
+Tests: 4559 passed (4559)
+
+=== INTEGRATION TESTS ===
+Test Files: 46 passed (46)
+Tests: 521 passed (521)
+
+=== TOTAL ===
+All 382 test files passed
+All 5080 tests passed
+Zero regressions
