@@ -1,25 +1,25 @@
 
-[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server[39m
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-coasts-dev-server
 
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mstartCoastsDevServer[2m > [22mruns full Coasts flow when all prerequisites met and Coastfile exists[32m 1[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mstartCoastsDevServer[2m > [22mthrows when prerequisites are not met (missing coast binary)[32m 1[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mstartCoastsDevServer[2m > [22mthrows when Docker is not running[32m 0[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mstartCoastsDevServer[2m > [22mthrows when coastd daemon is not running[32m 0[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mstartCoastsDevServer[2m > [22mincludes missing prerequisite messages in error[32m 0[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mstartCoastsDevServer[2m > [22mcalls generateCoastfile when no Coastfile exists[32m 0[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mstartCoastsDevServer[2m > [22mlogs Coastfile generation progress[32m 1[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mstartCoastsDevServer[2m > [22mthrows when Coastfile generation fails[32m 0[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mstartCoastsDevServer[2m > [22mthrows when coast build fails[32m 0[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mstartCoastsDevServer[2m > [22mthrows when coast run fails[32m 0[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mstartCoastsDevServer[2m > [22mlogs [dev-server:coasts] prefix messages throughout startup[32m 0[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mstartCoastsDevServer[2m > [22mreturns the CoastInstance from coast run[32m 0[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mshutdownCoasts[2m > [22mcalls stop() on the coastsService[32m 0[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mshutdownCoasts[2m > [22mdoes nothing when coastsService is null (bare mode)[32m 0[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mshutdownCoasts[2m > [22mcatches and logs errors from stop() without rethrowing[32m 0[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/coasts-dev-server.test.ts[2m > [22mshutdownCoasts[2m > [22mlogs [dev-server:coasts] prefix during shutdown[32m 0[2mms[22m[39m
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > runs full Coasts flow when all prerequisites met and Coastfile exists 1ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > throws when prerequisites are not met (missing coast binary) 1ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > throws when Docker is not running 0ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > throws when coastd daemon is not running 0ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > includes missing prerequisite messages in error 0ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > calls generateCoastfile when no Coastfile exists 0ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > logs Coastfile generation progress 1ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > throws when Coastfile generation fails 0ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > throws when coast build fails 0ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > throws when coast run fails 0ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > logs [dev-server:coasts] prefix messages throughout startup 0ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > returns the CoastInstance from coast run 0ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > shutdownCoasts > calls stop() on the coastsService 0ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > shutdownCoasts > does nothing when coastsService is null (bare mode) 0ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > shutdownCoasts > catches and logs errors from stop() without rethrowing 0ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > shutdownCoasts > logs [dev-server:coasts] prefix during shutdown 0ms
 
-[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
-[2m      Tests [22m [1m[32m16 passed[39m[22m[90m (16)[39m
-[2m   Start at [22m 16:35:53
-[2m   Duration [22m 574ms[2m (transform 28ms, setup 106ms, import 17ms, tests 5ms, environment 383ms)[22m
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+   Start at  16:52:44
+   Duration  609ms (transform 26ms, setup 120ms, import 17ms, tests 5ms, environment 403ms)
 
