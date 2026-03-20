@@ -9,7 +9,7 @@
  ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > calls generateCoastfile when no Coastfile exists 0ms
  ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > logs Coastfile generation progress 1ms
  ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > throws when Coastfile generation fails 0ms
- ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > throws when coast build fails 0ms
+ ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > throws when coast build fails 1ms
  ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > throws when coast run fails 0ms
  ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > logs [dev-server:coasts] prefix messages throughout startup 0ms
  ✓  web  tests/unit/presentation/web/coasts-dev-server.test.ts > startCoastsDevServer > returns the CoastInstance from coast run 0ms
@@ -20,6 +20,6 @@
 
  Test Files  1 passed (1)
       Tests  16 passed (16)
-   Start at  16:52:44
-   Duration  609ms (transform 26ms, setup 120ms, import 17ms, tests 5ms, environment 403ms)
+   Start at  16:58:10
+   Duration  553ms (transform 31ms, setup 116ms, import 20ms, tests 7ms, environment 343ms)
 

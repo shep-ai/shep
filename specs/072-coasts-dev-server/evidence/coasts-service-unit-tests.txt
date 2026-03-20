@@ -8,7 +8,7 @@
  ✓  node  tests/unit/infrastructure/services/coasts.service.test.ts > CoastsService > checkPrerequisites > missingMessages includes install instructions for each missing prerequisite 0ms
  ✓  node  tests/unit/infrastructure/services/coasts.service.test.ts > CoastsService > checkPrerequisites > Windows platform returns allMet false immediately 0ms
  ✓  node  tests/unit/infrastructure/services/coasts.service.test.ts > CoastsService > checkPrerequisites > all three checks run in parallel (not sequentially) 12ms
- ✓  node  tests/unit/infrastructure/services/coasts.service.test.ts > CoastsService > build > calls execFile with coast build args and workDir cwd 1ms
+ ✓  node  tests/unit/infrastructure/services/coasts.service.test.ts > CoastsService > build > calls execFile with coast build args and workDir cwd 0ms
  ✓  node  tests/unit/infrastructure/services/coasts.service.test.ts > CoastsService > build > uses 30-second timeout 1ms
  ✓  node  tests/unit/infrastructure/services/coasts.service.test.ts > CoastsService > build > throws with stderr on non-zero exit 0ms
  ✓  node  tests/unit/infrastructure/services/coasts.service.test.ts > CoastsService > run > parses port and url from stdout 0ms
@@ -34,6 +34,6 @@
 
  Test Files  1 passed (1)
       Tests  30 passed (30)
-   Start at  16:52:42
-   Duration  159ms (transform 47ms, setup 0ms, import 72ms, tests 19ms, environment 0ms)
+   Start at  16:58:04
+   Duration  136ms (transform 36ms, setup 0ms, import 56ms, tests 18ms, environment 0ms)
 

@@ -1,12 +1,12 @@
 === UNIT TESTS ===
 Test Files: 336 passed (336)
 Tests: 4559 passed (4559)
-Duration: 41.87s
+Duration: 29.47s
 
 === INTEGRATION TESTS ===
 Test Files: 46 passed (46)
 Tests: 521 passed (521)
-Duration: 14.65s
+Duration: 8.03s
 
 === TOTAL ===
 All 382 test files passed
