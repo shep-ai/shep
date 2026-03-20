@@ -52,3 +52,8 @@ export {
   GitHubUrlParseError,
   GitHubRepoListError,
 } from './github-repository-service.interface.js';
+export type {
+  ICoastsService,
+  PrerequisiteCheckResult,
+  CoastInstance,
+} from './coasts-service.interface.js';
