@@ -319,6 +319,7 @@ describe('createDefaultSettings', () => {
         adoptBranch: false,
         gitRebaseSync: false,
         reactFileManager: false,
+        coastsDevServer: false,
       });
     });
   });

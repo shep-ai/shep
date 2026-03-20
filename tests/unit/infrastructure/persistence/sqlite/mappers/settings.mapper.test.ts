@@ -149,6 +149,7 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     feature_flag_adopt_branch: 0,
     feature_flag_git_rebase_sync: 0,
     feature_flag_react_file_manager: 0,
+    feature_flag_coasts_dev_server: 0,
     ...overrides,
   };
 }

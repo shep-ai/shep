@@ -23,6 +23,7 @@ export const Default: Story = {
       adoptBranch: false,
       gitRebaseSync: false,
       reactFileManager: false,
+      coastsDevServer: false,
     },
   },
 };
@@ -37,6 +38,7 @@ export const AllEnabled: Story = {
       adoptBranch: true,
       gitRebaseSync: true,
       reactFileManager: true,
+      coastsDevServer: true,
     },
   },
 };
@@ -51,6 +53,7 @@ export const AllDisabled: Story = {
       adoptBranch: false,
       gitRebaseSync: false,
       reactFileManager: false,
+      coastsDevServer: false,
     },
   },
 };

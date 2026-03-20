@@ -20,6 +20,7 @@ const defaultFlags = {
   adoptBranch: false,
   gitRebaseSync: false,
   reactFileManager: false,
+  coastsDevServer: false,
 };
 
 describe('FeatureFlagsSettingsSection', () => {

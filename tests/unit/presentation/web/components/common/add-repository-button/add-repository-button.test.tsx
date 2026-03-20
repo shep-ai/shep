@@ -55,6 +55,7 @@ vi.mock('@/hooks/feature-flags-context', () => ({
     githubImport: true,
     adoptBranch: false,
     reactFileManager: false,
+    coastsDevServer: false,
   })),
 }));
 
@@ -75,7 +76,11 @@ describe('AddRepositoryButton', () => {
       githubImport: true,
       adoptBranch: false,
       reactFileManager: false,
+<<<<<<< HEAD
       gitRebaseSync: false,
+=======
+      coastsDevServer: false,
+>>>>>>> 18b1929f6 (feat(domain): add coasts-dev-server feature flag across full stack)
     });
   });
 
@@ -172,6 +177,7 @@ describe('AddRepositoryButton', () => {
         adoptBranch: false,
         reactFileManager: false,
         gitRebaseSync: false,
+        coastsDevServer: false,
       });
     });
 
@@ -301,6 +307,7 @@ describe('AddRepositoryButton', () => {
         adoptBranch: false,
         reactFileManager: true,
         gitRebaseSync: false,
+        coastsDevServer: false,
       });
     });
 
@@ -372,6 +379,7 @@ describe('AddRepositoryButton', () => {
         adoptBranch: false,
         reactFileManager: true,
         gitRebaseSync: false,
+        coastsDevServer: false,
       });
       const user = userEvent.setup();
       render(<AddRepositoryButton />);

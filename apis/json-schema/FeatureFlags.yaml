@@ -30,6 +30,10 @@ properties:
     type: boolean
     default: false
     description: Use the built-in React file manager instead of the native OS folder picker
+  coastsDevServer:
+    type: boolean
+    default: false
+    description: Enable Coasts containerized runtime isolation for the dev server
 required:
   - skills
   - envDeploy
@@ -38,4 +42,5 @@ required:
   - adoptBranch
   - gitRebaseSync
   - reactFileManager
+  - coastsDevServer
 description: Feature flag toggles for runtime feature control

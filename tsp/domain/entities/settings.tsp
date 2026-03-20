@@ -490,6 +490,9 @@ model FeatureFlags {
 
   @doc("Use the built-in React file manager instead of the native OS folder picker")
   reactFileManager: boolean = false;
+
+  @doc("Enable Coasts containerized runtime isolation for the dev server")
+  coastsDevServer: boolean = false;
 }
 
 /**
