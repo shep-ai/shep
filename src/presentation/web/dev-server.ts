@@ -36,6 +36,9 @@ import {
   getPrSyncWatcher,
 } from '@/infrastructure/services/pr-sync/pr-sync-watcher.service.js';
 import { getExistingConnection } from '@/infrastructure/persistence/sqlite/connection.js';
+import { getFeatureFlags } from './lib/feature-flags.js';
+import type { ICoastsService } from '@/application/ports/output/services/coasts-service.interface.js';
+import { startCoastsDevServer, shutdownCoasts } from './coasts-dev-server.js';
 
 const DEFAULT_PORT = 3000;
 
@@ -67,6 +70,10 @@ async function findAvailablePort(startPort: number): Promise<number> {
 async function main() {
   const basePort = process.env.PORT !== undefined ? parseInt(process.env.PORT, 10) : DEFAULT_PORT;
   const port = await findAvailablePort(basePort);
+
+  // Track Coasts mode state for shutdown handler
+  let coastsService: ICoastsService | null = null;
+  let coastsWorkDir: string | null = null;
 
   // Step 1: Initialize DI container (database + migrations)
   // Same as CLI bootstrap (src/presentation/cli/index.ts:52-58)
@@ -105,7 +112,61 @@ async function main() {
     console.warn('[dev-server] DI initialization failed — features will be empty:', error);
   }
 
-  // Step 2: Clean up lock file to allow multiple dev instances
+  // Step 2: Check coastsDevServer feature flag — branch to Coasts mode or bare Next.js
+  const flags = getFeatureFlags();
+  if (flags.coastsDevServer) {
+    // --- Coasts mode: containerized runtime isolation ---
+    const workDir = process.cwd();
+    try {
+      const service = container.resolve<ICoastsService>('ICoastsService');
+      const instance = await startCoastsDevServer(service, workDir);
+      coastsService = service;
+      coastsWorkDir = workDir;
+      console.log(`[dev-server:coasts] Dev server running in Coasts mode at ${instance.url}`);
+    } catch (error) {
+      console.error('[dev-server:coasts] Failed to start Coasts dev server:', error);
+      process.exit(1);
+    }
+
+    // Graceful shutdown for Coasts mode
+    let isShuttingDown = false;
+    const shutdown = async () => {
+      if (isShuttingDown) return;
+      isShuttingDown = true;
+      console.log('\n[dev-server:coasts] Shutting down...');
+      const forceExit = setTimeout(() => process.exit(0), 2000);
+      try {
+        await shutdownCoasts(coastsService, coastsWorkDir!);
+        try {
+          const deploymentService = container.resolve<IDeploymentService>('IDeploymentService');
+          deploymentService.stopAll();
+        } catch {
+          /* not initialized */
+        }
+        try {
+          getNotificationWatcher().stop();
+        } catch {
+          /* not initialized */
+        }
+        try {
+          getPrSyncWatcher().stop();
+        } catch {
+          /* not initialized */
+        }
+      } finally {
+        clearTimeout(forceExit);
+        process.exit(0);
+      }
+    };
+
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+    return;
+  }
+
+  // --- Bare mode: standard Next.js dev server (default, unchanged) ---
+
+  // Clean up lock file to allow multiple dev instances
   const lockPath = path.join(import.meta.dirname, '.next', 'dev', 'lock');
   try {
     fs.rmSync(lockPath, { force: true });

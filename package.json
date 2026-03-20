@@ -44,6 +44,7 @@
     "dev:cli": "tsx src/presentation/cli/index.ts",
     "dev:web": "tsx --tsconfig tsconfig.json src/presentation/web/dev-server.ts",
     "dev:storybook": "storybook dev -p 6006",
+    "dev:coasts": "NEXT_PUBLIC_FLAG_COASTS_DEV_SERVER=true pnpm dev:web",
     "generate": "pnpm tsp:codegen",
     "tsp:codegen": "tsp compile tsp/ --emit @typespec-tools/emitter-typescript && prettier --write packages/core/src/domain/generated/",
     "build:cli": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths && shx mkdir -p dist/packages/core/src/infrastructure/services/tool-installer && shx rm -rf dist/packages/core/src/infrastructure/services/tool-installer/tools && shx cp -r packages/core/src/infrastructure/services/tool-installer/tools dist/packages/core/src/infrastructure/services/tool-installer/tools",
