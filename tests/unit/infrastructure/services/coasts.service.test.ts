@@ -8,6 +8,7 @@
  */
 
 import 'reflect-metadata';
+import path from 'node:path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockExistsSync = vi.hoisted(() => vi.fn());
@@ -40,7 +41,7 @@ describe('CoastsService', () => {
     mockStructuredCaller = {
       call: vi.fn(),
     };
-    service = new CoastsService(mockExecFile, mockStructuredCaller);
+    service = new CoastsService(mockExecFile, mockStructuredCaller, false);
   });
 
   describe('checkPrerequisites', () => {
@@ -465,7 +466,7 @@ describe('CoastsService', () => {
       const result = await service.generateCoastfile(workDir);
 
       expect(result).toContain('Coastfile');
-      expect(result).toContain(workDir);
+      expect(result).toBe(path.join(workDir, 'Coastfile'));
     });
 
     it('agent schema includes content and warnings fields', async () => {
