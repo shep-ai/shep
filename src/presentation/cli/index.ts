@@ -46,6 +46,7 @@ import { createIdeOpenCommand } from './commands/ide-open.command.js';
 import { createInstallCommand } from './commands/install.command.js';
 import { createUpgradeCommand } from './commands/upgrade.command.js';
 import { createToolsCommand } from './commands/tools.command.js';
+import { createCoastsCommand } from './commands/coasts/index.js';
 import { messages } from './ui/index.js';
 
 // Daemon lifecycle commands
@@ -119,6 +120,7 @@ async function bootstrap() {
     program.addCommand(createInstallCommand());
     program.addCommand(createToolsCommand());
     program.addCommand(createUpgradeCommand());
+    program.addCommand(createCoastsCommand());
 
     // Daemon lifecycle commands (task-9)
     program.addCommand(createStartCommand());
