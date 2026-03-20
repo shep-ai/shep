@@ -17,6 +17,7 @@ import {
   ArrowDown,
   User,
   RotateCcw,
+  FileCode2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ActionButton } from '@/components/common/action-button';
@@ -35,6 +36,7 @@ import { useDeployAction } from '@/hooks/use-deploy-action';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import type { RepositoryNodeData } from './repository-node-config';
 import { useRepositoryActions } from './use-repository-actions';
+import { useCoastsActions } from './use-coasts-actions';
 import {
   FeatureSessionsDropdown,
   type SessionSummary,
@@ -62,6 +64,9 @@ export function RepositoryNode({
           repositoryPath: data.repositoryPath,
         }
       : null
+  );
+  const coastsActions = useCoastsActions(
+    data.repositoryPath ? { repositoryPath: data.repositoryPath } : null
   );
   const isDeploymentActive = deployAction.status === 'Booting' || deployAction.status === 'Ready';
 
@@ -453,6 +458,49 @@ export function RepositoryNode({
                   </TooltipTrigger>
                   <TooltipContent>
                     {isDeploymentActive ? 'Stop Dev Server' : 'Start Dev Server'}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Row 5: Coastfile generation — visible when coastsDevServer flag is on */}
+        {featureFlags.coastsDevServer && data.repositoryPath ? (
+          <div
+            data-testid="repository-node-coastfile"
+            className="border-t px-4 py-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">
+                {coastsActions.coastfileExists ? 'Coastfile' : 'No Coastfile'}
+              </span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="ml-auto flex items-center">
+                      <ActionButton
+                        label={
+                          coastsActions.coastfileExists
+                            ? 'Regenerate Coastfile'
+                            : 'Generate Coastfile'
+                        }
+                        onClick={coastsActions.generateCoastfile}
+                        loading={coastsActions.generating || coastsActions.checkLoading}
+                        error={!!coastsActions.error}
+                        icon={FileCode2}
+                        iconOnly
+                        variant="ghost"
+                        size="icon-xs"
+                      />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {coastsActions.error ??
+                      (coastsActions.coastfileExists
+                        ? 'Regenerate Coastfile'
+                        : 'Generate Coastfile')}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
