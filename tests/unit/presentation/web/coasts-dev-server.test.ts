@@ -152,49 +152,29 @@ describe('startCoastsDevServer', () => {
     await expect(startCoastsDevServer(service, workDir)).rejects.toThrow(/coast binary not found/);
   });
 
-  it('calls generateCoastfile when no Coastfile exists', async () => {
+  it('throws with helpful error when no Coastfile exists', async () => {
     const service = createMockCoastsService();
     vi.mocked(service.checkPrerequisites).mockResolvedValue(allPrerequisitesMet());
     vi.mocked(service.hasCoastfile).mockResolvedValue(false);
-    vi.mocked(service.generateCoastfile).mockResolvedValue('/repos/my-project/Coastfile');
-    vi.mocked(service.build).mockResolvedValue(undefined);
-    vi.mocked(service.run).mockResolvedValue(runningInstance());
 
-    await startCoastsDevServer(service, workDir);
-
-    expect(service.generateCoastfile).toHaveBeenCalledWith(workDir);
-    // After generation, build and run should still be called
-    expect(service.build).toHaveBeenCalledWith(workDir);
-    expect(service.run).toHaveBeenCalledWith(workDir);
-  });
-
-  it('logs Coastfile generation progress', async () => {
-    const service = createMockCoastsService();
-    vi.mocked(service.checkPrerequisites).mockResolvedValue(allPrerequisitesMet());
-    vi.mocked(service.hasCoastfile).mockResolvedValue(false);
-    vi.mocked(service.generateCoastfile).mockResolvedValue('/repos/my-project/Coastfile');
-    vi.mocked(service.build).mockResolvedValue(undefined);
-    vi.mocked(service.run).mockResolvedValue(runningInstance());
-
-    await startCoastsDevServer(service, workDir);
-
-    expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('No Coastfile found'));
-    expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('Coastfile generated'));
-  });
-
-  it('throws when Coastfile generation fails', async () => {
-    const service = createMockCoastsService();
-    vi.mocked(service.checkPrerequisites).mockResolvedValue(allPrerequisitesMet());
-    vi.mocked(service.hasCoastfile).mockResolvedValue(false);
-    vi.mocked(service.generateCoastfile).mockRejectedValue(
-      new Error('Agent failed to generate Coastfile')
-    );
-
-    await expect(startCoastsDevServer(service, workDir)).rejects.toThrow(/agent failed/i);
+    await expect(startCoastsDevServer(service, workDir)).rejects.toThrow(/no coastfile found/i);
 
     // Should not proceed to build or run
     expect(service.build).not.toHaveBeenCalled();
     expect(service.run).not.toHaveBeenCalled();
+    // Should NOT call generateCoastfile
+    expect(service.generateCoastfile).not.toHaveBeenCalled();
+  });
+
+  it('includes both CLI and web UI instructions in missing Coastfile error', async () => {
+    const service = createMockCoastsService();
+    vi.mocked(service.checkPrerequisites).mockResolvedValue(allPrerequisitesMet());
+    vi.mocked(service.hasCoastfile).mockResolvedValue(false);
+
+    const error = await startCoastsDevServer(service, workDir).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toMatch(/shep coasts init/);
+    expect((error as Error).message).toMatch(/Generate Coastfile/);
   });
 
   it('throws when coast build fails', async () => {

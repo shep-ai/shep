@@ -99,19 +99,19 @@ describe('Coasts Dev Server Startup', () => {
       expect(mockService.run).not.toHaveBeenCalled();
     });
 
-    it('calls generateCoastfile when no Coastfile exists', async () => {
+    it('throws when no Coastfile exists', async () => {
       vi.mocked(mockService.checkPrerequisites).mockResolvedValue(allMetResult());
       vi.mocked(mockService.hasCoastfile).mockResolvedValue(false);
-      vi.mocked(mockService.generateCoastfile).mockResolvedValue('/repos/my-project/Coastfile');
-      vi.mocked(mockService.build).mockResolvedValue(undefined);
-      vi.mocked(mockService.run).mockResolvedValue(coastInstance());
 
-      await startCoastsDevServer(mockService, workDir);
+      await expect(startCoastsDevServer(mockService, workDir)).rejects.toThrow(
+        /no coastfile found/i
+      );
 
-      expect(mockService.generateCoastfile).toHaveBeenCalledWith(workDir);
+      expect(mockService.generateCoastfile).not.toHaveBeenCalled();
+      expect(mockService.build).not.toHaveBeenCalled();
     });
 
-    it('does not call generateCoastfile when Coastfile exists', async () => {
+    it('proceeds with build and run when Coastfile exists', async () => {
       vi.mocked(mockService.checkPrerequisites).mockResolvedValue(allMetResult());
       vi.mocked(mockService.hasCoastfile).mockResolvedValue(true);
       vi.mocked(mockService.build).mockResolvedValue(undefined);

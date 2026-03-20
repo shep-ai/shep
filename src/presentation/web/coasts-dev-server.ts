@@ -2,7 +2,7 @@
  * Coasts Dev Server Startup & Shutdown
  *
  * Extracted from dev-server.ts for testability. Provides the Coasts startup
- * sequence (prerequisite checks, Coastfile generation, build, run) and
+ * sequence (prerequisite checks, Coastfile existence check, build, run) and
  * graceful shutdown logic.
  *
  * All log messages use [dev-server:coasts] prefix per NFR-10.
@@ -20,7 +20,7 @@ import type {
  *
  * Sequence:
  * 1. Check prerequisites (coast binary, Docker, coastd daemon)
- * 2. Check for Coastfile — generate if missing
+ * 2. Check for Coastfile — fail if missing
  * 3. Build the coast container image
  * 4. Run the coast instance
  *
@@ -43,12 +43,15 @@ export async function startCoastsDevServer(
   }
   console.log('[dev-server:coasts] All prerequisites met.');
 
-  // Step 2: Check for Coastfile — generate if missing
+  // Step 2: Check for Coastfile — fail if missing (generate on-demand via CLI or web UI)
   const hasCoastfile = await coastsService.hasCoastfile(workDir);
   if (!hasCoastfile) {
-    console.log('[dev-server:coasts] No Coastfile found. Generating via AI agent...');
-    const coastfilePath = await coastsService.generateCoastfile(workDir);
-    console.log(`[dev-server:coasts] Coastfile generated at ${coastfilePath}`);
+    throw new Error(
+      `[dev-server:coasts] No Coastfile found in ${workDir} (expected: Coastfile).\n` +
+        'Generate one with:\n' +
+        '  - CLI:    shep coasts init\n' +
+        '  - Web UI: Use the "Generate Coastfile" button on the repository node'
+    );
   }
 
   // Step 3: Build the coast container image
