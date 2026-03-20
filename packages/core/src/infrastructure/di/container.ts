@@ -51,6 +51,9 @@ import { DeploymentService } from '../services/deployment/deployment.service.js'
 import { AttachmentStorageService } from '../services/attachment-storage.service.js';
 import type { IGitHubRepositoryService } from '../../application/ports/output/services/github-repository-service.interface.js';
 import { GitHubRepositoryService } from '../services/external/github-repository.service.js';
+import type { ICoastsService } from '../../application/ports/output/services/coasts-service.interface.js';
+import { CoastsService } from '../services/coasts.service.js';
+import type { ExecFunction } from '../services/git/worktree.service.js';
 
 // Agent infrastructure interfaces and implementations
 import type { IAgentExecutorFactory } from '../../application/ports/output/agents/agent-executor-factory.interface.js';
@@ -242,6 +245,16 @@ export async function initializeContainer(): Promise<typeof container> {
   deploymentService.setDatabase(db);
   deploymentService.recoverAll();
   container.registerInstance<IDeploymentService>('IDeploymentService', deploymentService);
+
+  // Register Coasts service (factory — needs ExecFunction + IStructuredAgentCaller)
+  // NOTE: IStructuredAgentCaller is registered below; tsyringe resolves lazily via factory.
+  container.register<ICoastsService>('ICoastsService', {
+    useFactory: (c) => {
+      const execFn = c.resolve<ExecFunction>('ExecFunction');
+      const structuredCaller = c.resolve<IStructuredAgentCaller>('IStructuredAgentCaller');
+      return new CoastsService(execFn, structuredCaller);
+    },
+  });
 
   // Register agent infrastructure
   container.register<IAgentRunRepository>('IAgentRunRepository', {
