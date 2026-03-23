@@ -76,11 +76,8 @@ describe('AddRepositoryButton', () => {
       githubImport: true,
       adoptBranch: false,
       reactFileManager: false,
-<<<<<<< HEAD
       gitRebaseSync: false,
-=======
       coastsDevServer: false,
->>>>>>> 18b1929f6 (feat(domain): add coasts-dev-server feature flag across full stack)
     });
   });
 

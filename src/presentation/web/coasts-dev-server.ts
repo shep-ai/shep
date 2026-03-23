@@ -1,39 +1,31 @@
 /**
  * Coasts Dev Server Startup & Shutdown
  *
- * Extracted from dev-server.ts for testability. Provides the Coasts startup
- * sequence (prerequisite checks, Coastfile existence check, build, run) and
- * graceful shutdown logic.
+ * Extracted from dev-server.ts for testability. Validates Coasts prerequisites
+ * at startup so the UI can offer coasts actions. Build/run/generate are all
+ * user-initiated from the Web UI or CLI — nothing happens automatically.
  *
  * All log messages use [dev-server:coasts] prefix per NFR-10.
  */
 
 /* eslint-disable no-console */
 
-import type {
-  ICoastsService,
-  CoastInstance,
-} from '@shepai/core/application/ports/output/services/coasts-service.interface';
+import type { ICoastsService } from '@shepai/core/application/ports/output/services/coasts-service.interface';
 
 /**
- * Start the dev server in Coasts mode.
+ * Initialize Coasts mode by validating prerequisites.
  *
- * Sequence:
- * 1. Check prerequisites (coast binary, Docker, coastd daemon)
- * 2. Check for Coastfile — fail if missing
- * 3. Build the coast container image
- * 4. Run the coast instance
+ * Only checks that the coast binary, Docker, and coastd daemon are available.
+ * Does NOT build, run, or generate anything — all of that is on-demand.
  *
  * @param coastsService - Resolved ICoastsService from the DI container
  * @param workDir - Working directory (repo/worktree root)
- * @returns The running CoastInstance with port and URL
- * @throws Error if prerequisites are not met or any step fails
+ * @throws Error if prerequisites are not met
  */
 export async function startCoastsDevServer(
   coastsService: ICoastsService,
   workDir: string
-): Promise<CoastInstance> {
-  // Step 1: Check prerequisites
+): Promise<void> {
   console.log('[dev-server:coasts] Checking prerequisites...');
   const prereqs = await coastsService.checkPrerequisites(workDir);
 
@@ -41,30 +33,7 @@ export async function startCoastsDevServer(
     const messages = prereqs.missingMessages.map((m) => `  - ${m}`).join('\n');
     throw new Error(`[dev-server:coasts] Prerequisites not met:\n${messages}`);
   }
-  console.log('[dev-server:coasts] All prerequisites met.');
-
-  // Step 2: Check for Coastfile — fail if missing (generate on-demand via CLI or web UI)
-  const hasCoastfile = await coastsService.hasCoastfile(workDir);
-  if (!hasCoastfile) {
-    throw new Error(
-      `[dev-server:coasts] No Coastfile found in ${workDir} (expected: Coastfile).\n` +
-        'Generate one with:\n' +
-        '  - CLI:    shep coasts init\n' +
-        '  - Web UI: Use the "Generate Coastfile" button on the repository node'
-    );
-  }
-
-  // Step 3: Build the coast container image
-  console.log('[dev-server:coasts] Building coast container...');
-  await coastsService.build(workDir);
-  console.log('[dev-server:coasts] Build complete.');
-
-  // Step 4: Run the coast instance
-  console.log('[dev-server:coasts] Starting coast instance...');
-  const instance = await coastsService.run(workDir);
-  console.log(`[dev-server:coasts] Ready at ${instance.url}`);
-
-  return instance;
+  console.log('[dev-server:coasts] All prerequisites met. Build/run available on demand.');
 }
 
 /**

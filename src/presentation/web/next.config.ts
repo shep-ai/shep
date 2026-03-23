@@ -69,6 +69,9 @@ const nextConfig: NextConfig = {
   // Enable typed routes (moved from experimental in Next.js 16)
   typedRoutes: true,
 
+  // Disable verbose request logging in dev
+  logging: false,
+
   // Configure the output directory
   distDir: '.next',
 

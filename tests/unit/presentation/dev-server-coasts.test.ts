@@ -13,7 +13,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type {
   ICoastsService,
   PrerequisiteCheckResult,
-  CoastInstance,
 } from '@/application/ports/output/services/coasts-service.interface.js';
 
 /** Creates a mock ICoastsService with all methods stubbed. */
@@ -52,10 +51,6 @@ function failedResult(messages: string[]): PrerequisiteCheckResult {
   };
 }
 
-function coastInstance(port = 3000): CoastInstance {
-  return { port, url: `http://localhost:${port}` };
-}
-
 // Import the function under test — extracted from dev-server.ts for testability
 import { startCoastsDevServer, shutdownCoasts } from '@/presentation/web/coasts-dev-server.js';
 
@@ -71,9 +66,6 @@ describe('Coasts Dev Server Startup', () => {
   describe('startCoastsDevServer', () => {
     it('runs prerequisite check as the first step', async () => {
       vi.mocked(mockService.checkPrerequisites).mockResolvedValue(allMetResult());
-      vi.mocked(mockService.hasCoastfile).mockResolvedValue(true);
-      vi.mocked(mockService.build).mockResolvedValue(undefined);
-      vi.mocked(mockService.run).mockResolvedValue(coastInstance());
 
       await startCoastsDevServer(mockService, workDir);
 
@@ -99,77 +91,15 @@ describe('Coasts Dev Server Startup', () => {
       expect(mockService.run).not.toHaveBeenCalled();
     });
 
-    it('throws when no Coastfile exists', async () => {
+    it('does not build, run, or generate anything on startup', async () => {
       vi.mocked(mockService.checkPrerequisites).mockResolvedValue(allMetResult());
-      vi.mocked(mockService.hasCoastfile).mockResolvedValue(false);
 
-      await expect(startCoastsDevServer(mockService, workDir)).rejects.toThrow(
-        /no coastfile found/i
-      );
+      await startCoastsDevServer(mockService, workDir);
 
-      expect(mockService.generateCoastfile).not.toHaveBeenCalled();
       expect(mockService.build).not.toHaveBeenCalled();
-    });
-
-    it('proceeds with build and run when Coastfile exists', async () => {
-      vi.mocked(mockService.checkPrerequisites).mockResolvedValue(allMetResult());
-      vi.mocked(mockService.hasCoastfile).mockResolvedValue(true);
-      vi.mocked(mockService.build).mockResolvedValue(undefined);
-      vi.mocked(mockService.run).mockResolvedValue(coastInstance());
-
-      await startCoastsDevServer(mockService, workDir);
-
+      expect(mockService.run).not.toHaveBeenCalled();
+      expect(mockService.hasCoastfile).not.toHaveBeenCalled();
       expect(mockService.generateCoastfile).not.toHaveBeenCalled();
-    });
-
-    it('calls coast build then coast run in sequence', async () => {
-      const callOrder: string[] = [];
-      vi.mocked(mockService.checkPrerequisites).mockResolvedValue(allMetResult());
-      vi.mocked(mockService.hasCoastfile).mockResolvedValue(true);
-      vi.mocked(mockService.build).mockImplementation(async () => {
-        callOrder.push('build');
-      });
-      vi.mocked(mockService.run).mockImplementation(async () => {
-        callOrder.push('run');
-        return coastInstance();
-      });
-
-      await startCoastsDevServer(mockService, workDir);
-
-      expect(callOrder).toEqual(['build', 'run']);
-    });
-
-    it('returns the CoastInstance from coast run', async () => {
-      vi.mocked(mockService.checkPrerequisites).mockResolvedValue(allMetResult());
-      vi.mocked(mockService.hasCoastfile).mockResolvedValue(true);
-      vi.mocked(mockService.build).mockResolvedValue(undefined);
-      vi.mocked(mockService.run).mockResolvedValue(coastInstance(8080));
-
-      const result = await startCoastsDevServer(mockService, workDir);
-
-      expect(result.port).toBe(8080);
-      expect(result.url).toBe('http://localhost:8080');
-    });
-
-    it('propagates coast build errors', async () => {
-      vi.mocked(mockService.checkPrerequisites).mockResolvedValue(allMetResult());
-      vi.mocked(mockService.hasCoastfile).mockResolvedValue(true);
-      vi.mocked(mockService.build).mockRejectedValue(
-        new Error('coast build failed: invalid Coastfile')
-      );
-
-      await expect(startCoastsDevServer(mockService, workDir)).rejects.toThrow(
-        'coast build failed'
-      );
-    });
-
-    it('propagates coast run errors', async () => {
-      vi.mocked(mockService.checkPrerequisites).mockResolvedValue(allMetResult());
-      vi.mocked(mockService.hasCoastfile).mockResolvedValue(true);
-      vi.mocked(mockService.build).mockResolvedValue(undefined);
-      vi.mocked(mockService.run).mockRejectedValue(new Error('coast run failed'));
-
-      await expect(startCoastsDevServer(mockService, workDir)).rejects.toThrow('coast run failed');
     });
   });
 

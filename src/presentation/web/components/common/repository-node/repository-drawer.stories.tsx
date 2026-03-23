@@ -98,6 +98,7 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
     adoptBranch: true,
     gitRebaseSync: true,
     reactFileManager: true,
+    coastsDevServer: true,
   };
 
   return (

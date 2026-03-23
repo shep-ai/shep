@@ -171,6 +171,7 @@ export class CoastsService implements ICoastsService {
       prompt,
       COASTFILE_SCHEMA,
       {
+        cwd: workDir,
         allowedTools: [],
         silent: true,
         maxTurns: 10,
