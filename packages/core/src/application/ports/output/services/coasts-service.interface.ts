@@ -112,20 +112,9 @@ export interface ICoastsService {
   checkout(workDir: string): Promise<void>;
 
   /**
-   * Get the Coasts installation prompt for Coastfile generation.
-   * Invokes `coast installation-prompt` and returns the full prompt text.
-   * The result is cached for the process lifetime (FR-13).
-   *
-   * @returns The full installation prompt text from the coast CLI
-   * @throws Error if the coast binary is not available
-   */
-  getInstallationPrompt(): Promise<string>;
-
-  /**
    * Generate a Coastfile for the given directory using the AI agent system.
-   * Runs `coast installation-prompt` to obtain the generation prompt,
-   * passes it to the AI agent system with repo context, and writes the
-   * generated Coastfile to the directory.
+   * Uses the bundled coastfile generation prompt with repo context and writes
+   * the generated Coastfile to the directory.
    *
    * @param workDir - Directory where the Coastfile should be generated
    * @returns Absolute path to the generated Coastfile

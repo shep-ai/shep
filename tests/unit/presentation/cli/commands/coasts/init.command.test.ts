@@ -12,7 +12,6 @@ function createMockCoastsService(): ICoastsService {
     lookup: vi.fn(),
     isRunning: vi.fn(),
     checkout: vi.fn(),
-    getInstallationPrompt: vi.fn(),
     generateCoastfile: vi.fn(),
     hasCoastfile: vi.fn(),
   };

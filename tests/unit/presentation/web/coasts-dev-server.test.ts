@@ -35,7 +35,6 @@ function createMockCoastsService(overrides: Partial<ICoastsService> = {}): ICoas
     lookup: vi.fn<ICoastsService['lookup']>(),
     isRunning: vi.fn<ICoastsService['isRunning']>(),
     checkout: vi.fn<ICoastsService['checkout']>(),
-    getInstallationPrompt: vi.fn<ICoastsService['getInstallationPrompt']>(),
     generateCoastfile: vi.fn<ICoastsService['generateCoastfile']>(),
     hasCoastfile: vi.fn<ICoastsService['hasCoastfile']>(),
     ...overrides,

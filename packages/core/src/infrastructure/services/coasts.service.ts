@@ -22,6 +22,7 @@ import type {
 import type { IStructuredAgentCaller } from '../../application/ports/output/agents/structured-agent-caller.interface.js';
 import type { ExecFunction } from './git/worktree.service.js';
 import { IS_WINDOWS } from '../platform.js';
+import { COASTFILE_GENERATION_PROMPT } from './coasts/coastfile-generation.prompt.js';
 
 /** Timeout for coast build (may need to pull Docker images). */
 const BUILD_TIMEOUT_MS = 30_000;
@@ -54,7 +55,6 @@ interface CoastfileGenerationResult {
 
 @injectable()
 export class CoastsService implements ICoastsService {
-  private cachedInstallationPrompt: string | null = null;
   private readonly isWindows: boolean;
 
   constructor(
@@ -149,23 +149,8 @@ export class CoastsService implements ICoastsService {
     await this.execCoast(['checkout'], workDir);
   }
 
-  async getInstallationPrompt(): Promise<string> {
-    if (this.cachedInstallationPrompt !== null) {
-      return this.cachedInstallationPrompt;
-    }
-
-    const { stdout } = await this.execFile('coast', ['installation-prompt'], {
-      timeout: DEFAULT_TIMEOUT_MS,
-    });
-
-    this.cachedInstallationPrompt = stdout;
-    return stdout;
-  }
-
   async generateCoastfile(workDir: string): Promise<string> {
-    const installationPrompt = await this.getInstallationPrompt();
-
-    const prompt = `${installationPrompt}\n\nAnalyze the project at the working directory and generate a Coastfile.\nReturn the complete Coastfile content as valid TOML in the "content" field.`;
+    const prompt = `${COASTFILE_GENERATION_PROMPT}\n\nAnalyze the project at the working directory and generate a Coastfile.\nReturn the complete Coastfile content as valid TOML in the "content" field.`;
 
     const result = await this.structuredCaller.call<CoastfileGenerationResult>(
       prompt,

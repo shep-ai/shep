@@ -368,48 +368,8 @@ describe('CoastsService', () => {
     });
   });
 
-  describe('getInstallationPrompt', () => {
-    it('runs coast installation-prompt subprocess', async () => {
-      mockExecFile.mockResolvedValueOnce({
-        stdout: 'This is the installation prompt text...',
-        stderr: '',
-      });
-
-      const result = await service.getInstallationPrompt();
-
-      expect(result).toBe('This is the installation prompt text...');
-      expect(mockExecFile).toHaveBeenCalledWith(
-        'coast',
-        ['installation-prompt'],
-        expect.objectContaining({ timeout: 10000 })
-      );
-    });
-
-    it('returns cached value on second call', async () => {
-      mockExecFile.mockResolvedValueOnce({
-        stdout: 'Cached prompt text',
-        stderr: '',
-      });
-
-      const first = await service.getInstallationPrompt();
-      const second = await service.getInstallationPrompt();
-
-      expect(first).toBe('Cached prompt text');
-      expect(second).toBe('Cached prompt text');
-      // Should only be called once — second call uses cache
-      expect(mockExecFile).toHaveBeenCalledTimes(1);
-    });
-  });
-
   describe('generateCoastfile', () => {
-    it('calls getInstallationPrompt then structuredCaller', async () => {
-      // Mock getInstallationPrompt subprocess
-      mockExecFile.mockResolvedValueOnce({
-        stdout: 'Generate a Coastfile for this project...',
-        stderr: '',
-      });
-
-      // Mock structuredCaller.call to return TOML content
+    it('calls structuredCaller with bundled prompt', async () => {
       vi.mocked(mockStructuredCaller.call).mockResolvedValueOnce({
         content: '[project]\nname = "my-project"\n',
         warnings: [],
@@ -417,8 +377,12 @@ describe('CoastsService', () => {
 
       await service.generateCoastfile(workDir);
 
+      const promptArg = vi.mocked(mockStructuredCaller.call).mock.calls[0][0];
+      expect(promptArg).toContain('Coastfile Generation Prompt');
+      expect(promptArg).toContain('Analyze the project at the working directory');
+      expect(promptArg).toContain('Return the complete Coastfile content as valid TOML');
       expect(mockStructuredCaller.call).toHaveBeenCalledWith(
-        expect.stringContaining('Generate a Coastfile'),
+        expect.any(String),
         expect.objectContaining({
           type: 'object',
           properties: expect.objectContaining({
@@ -433,11 +397,6 @@ describe('CoastsService', () => {
     });
 
     it('writes content to workDir/Coastfile', async () => {
-      mockExecFile.mockResolvedValueOnce({
-        stdout: 'prompt text',
-        stderr: '',
-      });
-
       vi.mocked(mockStructuredCaller.call).mockResolvedValueOnce({
         content: '[project]\nname = "test"\n',
         warnings: [],
@@ -453,11 +412,6 @@ describe('CoastsService', () => {
     });
 
     it('returns the Coastfile path', async () => {
-      mockExecFile.mockResolvedValueOnce({
-        stdout: 'prompt text',
-        stderr: '',
-      });
-
       vi.mocked(mockStructuredCaller.call).mockResolvedValueOnce({
         content: '[project]\nname = "test"\n',
         warnings: [],
@@ -470,11 +424,6 @@ describe('CoastsService', () => {
     });
 
     it('agent schema includes content and warnings fields', async () => {
-      mockExecFile.mockResolvedValueOnce({
-        stdout: 'prompt text',
-        stderr: '',
-      });
-
       vi.mocked(mockStructuredCaller.call).mockResolvedValueOnce({
         content: '[project]\nname = "test"\n',
         warnings: [],

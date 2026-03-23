@@ -90,10 +90,6 @@ describe('ICoastsService', () => {
     expectTypeOf<ICoastsService['checkout']>().toEqualTypeOf<(workDir: string) => Promise<void>>();
   });
 
-  it('has getInstallationPrompt method with no parameters returning string', () => {
-    expectTypeOf<ICoastsService['getInstallationPrompt']>().toEqualTypeOf<() => Promise<string>>();
-  });
-
   it('has generateCoastfile method accepting workDir and returning string path', () => {
     expectTypeOf<ICoastsService['generateCoastfile']>().toEqualTypeOf<
       (workDir: string) => Promise<string>
