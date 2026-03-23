@@ -123,45 +123,47 @@ async function main() {
       coastsService = service;
       coastsWorkDir = workDir;
       console.log(`[dev-server:coasts] Dev server running in Coasts mode at ${instance.url}`);
+
+      // Graceful shutdown for Coasts mode — only registered when Coasts started successfully
+      let isShuttingDown = false;
+      const shutdown = async () => {
+        if (isShuttingDown) return;
+        isShuttingDown = true;
+        console.log('\n[dev-server:coasts] Shutting down...');
+        const forceExit = setTimeout(() => process.exit(0), 2000);
+        try {
+          await shutdownCoasts(coastsService, coastsWorkDir!);
+          try {
+            const deploymentService = container.resolve<IDeploymentService>('IDeploymentService');
+            deploymentService.stopAll();
+          } catch {
+            /* not initialized */
+          }
+          try {
+            getNotificationWatcher().stop();
+          } catch {
+            /* not initialized */
+          }
+          try {
+            getPrSyncWatcher().stop();
+          } catch {
+            /* not initialized */
+          }
+        } finally {
+          clearTimeout(forceExit);
+          process.exit(0);
+        }
+      };
+
+      process.on('SIGINT', shutdown);
+      process.on('SIGTERM', shutdown);
+      return;
     } catch (error) {
-      console.error('[dev-server:coasts] Failed to start Coasts dev server:', error);
-      process.exit(1);
+      console.warn(
+        '[dev-server:coasts] Coasts mode unavailable, falling back to bare Next.js:',
+        error
+      );
     }
-
-    // Graceful shutdown for Coasts mode
-    let isShuttingDown = false;
-    const shutdown = async () => {
-      if (isShuttingDown) return;
-      isShuttingDown = true;
-      console.log('\n[dev-server:coasts] Shutting down...');
-      const forceExit = setTimeout(() => process.exit(0), 2000);
-      try {
-        await shutdownCoasts(coastsService, coastsWorkDir!);
-        try {
-          const deploymentService = container.resolve<IDeploymentService>('IDeploymentService');
-          deploymentService.stopAll();
-        } catch {
-          /* not initialized */
-        }
-        try {
-          getNotificationWatcher().stop();
-        } catch {
-          /* not initialized */
-        }
-        try {
-          getPrSyncWatcher().stop();
-        } catch {
-          /* not initialized */
-        }
-      } finally {
-        clearTimeout(forceExit);
-        process.exit(0);
-      }
-    };
-
-    process.on('SIGINT', shutdown);
-    process.on('SIGTERM', shutdown);
-    return;
   }
 
   // --- Bare mode: standard Next.js dev server (default, unchanged) ---
