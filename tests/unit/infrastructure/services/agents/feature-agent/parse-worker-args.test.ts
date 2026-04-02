@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseWorkerArgs } from '@/infrastructure/services/agents/feature-agent/feature-agent-worker.js';
-import { AgentType } from '@/domain/generated/output.js';
+import { AgentType, FeatureMode } from '@/domain/generated/output.js';
 
 describe('parseWorkerArgs - agentType', () => {
   const baseArgs = [
@@ -49,7 +49,7 @@ describe('parseWorkerArgs - agentType', () => {
   });
 });
 
-describe('parseWorkerArgs - fast', () => {
+describe('parseWorkerArgs - mode', () => {
   const baseArgs = [
     '--feature-id',
     'feat-001',
@@ -61,26 +61,27 @@ describe('parseWorkerArgs - fast', () => {
     '/tmp/spec',
   ];
 
-  it('should parse --fast when present', () => {
-    const args = parseWorkerArgs([...baseArgs, '--fast']);
-    expect(args.fast).toBe(true);
+  it('should parse --mode when present', () => {
+    const args = parseWorkerArgs([...baseArgs, '--mode', 'Fast']);
+    expect(args.mode).toBe(FeatureMode.Fast);
   });
 
-  it('should set fast to false when --fast is not present', () => {
+  it('should default mode to Regular when --mode is not present', () => {
     const args = parseWorkerArgs(baseArgs);
-    expect(args.fast).toBe(false);
+    expect(args.mode).toBe(FeatureMode.Regular);
   });
 
   it('should coexist with other flags', () => {
     const args = parseWorkerArgs([
       ...baseArgs,
-      '--fast',
+      '--mode',
+      'Fast',
       '--push',
       '--open-pr',
       '--thread-id',
       'thread-001',
     ]);
-    expect(args.fast).toBe(true);
+    expect(args.mode).toBe(FeatureMode.Fast);
     expect(args.push).toBe(true);
     expect(args.openPr).toBe(true);
     expect(args.threadId).toBe('thread-001');
@@ -116,12 +117,13 @@ describe('parseWorkerArgs - model', () => {
       'claude-opus-4-6',
       '--agent-type',
       'claude-code',
-      '--fast',
+      '--mode',
+      'Fast',
       '--push',
     ]);
     expect(args.model).toBe('claude-opus-4-6');
     expect(args.agentType).toBe(AgentType.ClaudeCode);
-    expect(args.fast).toBe(true);
+    expect(args.mode).toBe(FeatureMode.Fast);
     expect(args.push).toBe(true);
   });
 });

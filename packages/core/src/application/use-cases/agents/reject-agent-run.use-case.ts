@@ -14,7 +14,7 @@ import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-re
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
 import type { IPhaseTimingRepository } from '../../ports/output/agents/phase-timing-repository.interface.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
-import { AgentRunStatus } from '../../../domain/generated/output.js';
+import { AgentRunStatus, FeatureMode } from '../../../domain/generated/output.js';
 import type {
   PrdRejectionPayload,
   RejectionFeedbackEntry,
@@ -167,7 +167,7 @@ export class RejectAgentRunUseCase {
         resumePayload: JSON.stringify(rejectionPayload),
         agentType: run.agentType,
         ...(run.modelId ? { model: run.modelId } : {}),
-        ...(feature.fast ? { fast: true } : {}),
+        ...(feature.mode !== FeatureMode.Regular ? { mode: feature.mode } : {}),
       }
     );
 

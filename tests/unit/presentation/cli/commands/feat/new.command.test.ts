@@ -6,6 +6,7 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { FeatureMode } from '@/domain/generated/output.js';
 
 const { mockResolve, mockCreateExecute, mockFindByIdPrefix } = vi.hoisted(() => ({
   mockResolve: vi.fn(),
@@ -363,15 +364,17 @@ describe('createNewCommand', () => {
       const cmd = createNewCommand();
       await cmd.parseAsync(['Fix typo', '--fast'], { from: 'user' });
 
-      expect(mockCreateExecute).toHaveBeenCalledWith(expect.objectContaining({ fast: true }));
+      expect(mockCreateExecute).toHaveBeenCalledWith(
+        expect.objectContaining({ mode: FeatureMode.Fast })
+      );
     });
 
-    it('should not set fast on input when --fast is not provided', async () => {
+    it('should use default mode when --fast is not provided', async () => {
       const cmd = createNewCommand();
       await cmd.parseAsync(['Add feature'], { from: 'user' });
 
       const callArg = mockCreateExecute.mock.calls[0][0];
-      expect(callArg.fast).toBeUndefined();
+      expect(callArg.mode).toBe(FeatureMode.Regular);
     });
 
     it('should combine --fast with --allow-all', async () => {
@@ -380,7 +383,7 @@ describe('createNewCommand', () => {
 
       expect(mockCreateExecute).toHaveBeenCalledWith(
         expect.objectContaining({
-          fast: true,
+          mode: FeatureMode.Fast,
           approvalGates: { allowPrd: true, allowPlan: true, allowMerge: true },
         })
       );

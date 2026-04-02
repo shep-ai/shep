@@ -888,6 +888,11 @@ export enum SdlcLifecycle {
   AwaitingUpstream = 'AwaitingUpstream',
   Archived = 'Archived',
 }
+export enum FeatureMode {
+  Regular = 'Regular',
+  Fast = 'Fast',
+  Exploration = 'Exploration',
+}
 
 /**
  * Configuration for human-in-the-loop approval gates
@@ -1084,9 +1089,9 @@ export type Feature = SoftDeletableEntity & {
    */
   repositoryId?: UUID;
   /**
-   * When true, SDLC phases were skipped and the feature was implemented directly from the prompt
+   * Execution mode determining the workflow: Regular (full SDLC), Fast (direct implementation), or Exploration (iterative prototyping)
    */
-  fast: boolean;
+  mode: FeatureMode;
   /**
    * Push branch to remote after implementation (default: false)
    */

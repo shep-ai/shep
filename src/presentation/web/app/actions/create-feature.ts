@@ -3,6 +3,7 @@
 import { resolve } from '@/lib/server-container';
 import type { CreateFeatureUseCase } from '@shepai/core/application/use-cases/features/create/create-feature.use-case';
 import type { Feature } from '@shepai/core/domain/generated/output';
+import { type FeatureMode } from '@shepai/core/domain/generated/output';
 import { composeUserInput } from './compose-user-input';
 
 interface Attachment {
@@ -30,8 +31,8 @@ interface CreateFeatureInput {
   push?: boolean;
   openPr?: boolean;
   parentId?: string;
-  /** When true, skip SDLC phases and implement directly from the prompt. */
-  fast?: boolean;
+  /** Execution mode: Regular (full SDLC), Fast (direct implementation), or Exploration (iterative prototyping). */
+  mode?: FeatureMode;
   /** When true, create the feature in pending state (no agent spawned). */
   pending?: boolean;
   /** Fork repo and create PR to upstream at merge time. */
@@ -66,7 +67,7 @@ export async function createFeature(
     push,
     openPr,
     parentId,
-    fast,
+    mode,
     pending,
     forkAndPr,
     commitSpecs,
@@ -106,7 +107,7 @@ export async function createFeature(
       openPr: openPr ?? false,
       ...(parentId ? { parentId } : {}),
       description,
-      ...(fast ? { fast } : {}),
+      ...(mode ? { mode } : {}),
       ...(pending ? { pending } : {}),
       ...(forkAndPr != null ? { forkAndPr } : {}),
       ...(commitSpecs != null ? { commitSpecs } : {}),
@@ -131,7 +132,7 @@ export async function createFeature(
           push: push ?? false,
           openPr: openPr ?? false,
           ...(parentId ? { parentId } : {}),
-          ...(fast ? { fast } : {}),
+          ...(mode ? { mode } : {}),
           ...(pending ? { pending } : {}),
           ...(forkAndPr != null ? { forkAndPr } : {}),
           ...(commitSpecs != null ? { commitSpecs } : {}),

@@ -19,7 +19,12 @@ import { SQLiteFeatureRepository } from '@/infrastructure/repositories/sqlite-fe
 import { SQLiteAgentRunRepository } from '@/infrastructure/repositories/agent-run.repository.js';
 import { StartFeatureUseCase } from '@/application/use-cases/features/start-feature.use-case.js';
 import type { Feature, AgentRun } from '@/domain/generated/output.js';
-import { SdlcLifecycle, AgentRunStatus, AgentType } from '@/domain/generated/output.js';
+import {
+  SdlcLifecycle,
+  AgentRunStatus,
+  AgentType,
+  FeatureMode,
+} from '@/domain/generated/output.js';
 
 function createMockProcessService() {
   return {
@@ -67,7 +72,7 @@ describe('StartFeatureUseCase (integration)', () => {
     lifecycle: SdlcLifecycle.Pending,
     messages: [],
     relatedArtifacts: [],
-    fast: false,
+    mode: FeatureMode.Regular,
     push: false,
     openPr: false,
     forkAndPr: false,
@@ -185,7 +190,7 @@ describe('StartFeatureUseCase (integration)', () => {
 
   it('should transition fast Pending feature to Implementation', async () => {
     const run = createTestRun();
-    const feature = createTestFeature({ agentRunId: run.id, fast: true });
+    const feature = createTestFeature({ agentRunId: run.id, mode: FeatureMode.Fast });
     createdFeatureIds.push(feature.id);
     createdRunIds.push(run.id);
 
@@ -206,7 +211,7 @@ describe('StartFeatureUseCase (integration)', () => {
       expect.any(String),
       expect.any(String),
       expect.any(String),
-      expect.objectContaining({ fast: true })
+      expect.objectContaining({ mode: FeatureMode.Fast })
     );
   });
 

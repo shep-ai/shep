@@ -10,7 +10,7 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentRunStatus } from '@/domain/generated/output.js';
+import { AgentRunStatus, FeatureMode } from '@/domain/generated/output.js';
 import type { AgentRun } from '@/domain/generated/output.js';
 
 // Use vi.hoisted so mock fns are available when vi.mock factories run
@@ -137,7 +137,9 @@ describe('parseWorkerArgs', () => {
       commitEvidence: false,
       resumePayload: undefined,
       agentType: undefined,
-      fast: false,
+      mode: FeatureMode.Regular,
+      model: undefined,
+      resumeReason: undefined,
     });
   });
 
@@ -273,7 +275,7 @@ describe('parseWorkerArgs', () => {
     expect(parsed.resumeFromInterrupt).toBe(true);
   });
 
-  it('should parse optional --fast flag', () => {
+  it('should parse optional --mode flag', () => {
     const args = [
       '--feature-id',
       'feat-123',
@@ -283,14 +285,15 @@ describe('parseWorkerArgs', () => {
       '/path/to/repo',
       '--spec-dir',
       '/path/to/specs',
-      '--fast',
+      '--mode',
+      'Fast',
     ];
 
     const parsed = parseWorkerArgs(args);
-    expect(parsed.fast).toBe(true);
+    expect(parsed.mode).toBe(FeatureMode.Fast);
   });
 
-  it('should default fast to false when not provided', () => {
+  it('should default mode to Regular when not provided', () => {
     const args = [
       '--feature-id',
       'feat-123',
@@ -303,7 +306,7 @@ describe('parseWorkerArgs', () => {
     ];
 
     const parsed = parseWorkerArgs(args);
-    expect(parsed.fast).toBe(false);
+    expect(parsed.mode).toBe(FeatureMode.Regular);
   });
 });
 
@@ -618,7 +621,7 @@ describe('runWorker', () => {
       runId: 'run-1',
       repo: '/repo',
       specDir: '/specs',
-      fast: true,
+      mode: FeatureMode.Fast,
     });
 
     expect(mockCreateFastFeatureAgentGraph).toHaveBeenCalledWith(
@@ -634,7 +637,7 @@ describe('runWorker', () => {
       runId: 'run-1',
       repo: '/repo',
       specDir: '/specs',
-      fast: false,
+      mode: FeatureMode.Regular,
     });
 
     expect(mockCreateFeatureAgentGraph).toHaveBeenCalledWith(expect.anything(), expect.anything());
@@ -659,7 +662,7 @@ describe('runWorker', () => {
       runId: 'run-1',
       repo: '/repo',
       specDir: '/specs',
-      fast: true,
+      mode: FeatureMode.Fast,
       worktreePath: '/wt/path',
     });
 
@@ -680,7 +683,7 @@ describe('runWorker', () => {
       runId: 'run-1',
       repo: '/repo',
       specDir: '/specs',
-      fast: true,
+      mode: FeatureMode.Fast,
     });
 
     expect(mockRunRepo.updateStatus).toHaveBeenCalledWith(

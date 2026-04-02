@@ -27,7 +27,7 @@ import type { IFeatureRepository } from '@/application/ports/output/repositories
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { INotificationService } from '@/application/ports/output/services/notification-service.interface.js';
-import { AgentRunStatus } from '@/domain/generated/output.js';
+import { AgentRunStatus, FeatureMode } from '@/domain/generated/output.js';
 
 function createMockFeature(overrides: Partial<Feature> = {}): Feature {
   return {
@@ -41,7 +41,7 @@ function createMockFeature(overrides: Partial<Feature> = {}): Feature {
     lifecycle: SdlcLifecycle.Review,
     messages: [],
     relatedArtifacts: [],
-    fast: false,
+    mode: FeatureMode.Regular,
     push: true,
     openPr: true,
     forkAndPr: false,

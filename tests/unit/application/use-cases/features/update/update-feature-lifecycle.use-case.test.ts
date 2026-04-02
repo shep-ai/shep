@@ -15,7 +15,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UpdateFeatureLifecycleUseCase } from '@/application/use-cases/features/update/update-feature-lifecycle.use-case.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { CheckAndUnblockFeaturesUseCase } from '@/application/use-cases/features/check-and-unblock-features.use-case.js';
-import { SdlcLifecycle } from '@/domain/generated/output.js';
+import { SdlcLifecycle, FeatureMode } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
 
 // ---------------------------------------------------------------------------
@@ -34,7 +34,7 @@ function makeFeature(overrides?: Partial<Feature>): Feature {
     lifecycle: SdlcLifecycle.Planning,
     messages: [],
     relatedArtifacts: [],
-    fast: false,
+    mode: FeatureMode.Regular,
     push: false,
     openPr: false,
     forkAndPr: false,

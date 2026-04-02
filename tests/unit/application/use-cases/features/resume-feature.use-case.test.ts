@@ -9,7 +9,7 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ResumeFeatureUseCase } from '@/application/use-cases/features/resume-feature.use-case.js';
-import { AgentRunStatus, SdlcLifecycle } from '@/domain/generated/output.js';
+import { AgentRunStatus, SdlcLifecycle, FeatureMode } from '@/domain/generated/output.js';
 import type { AgentRun, Feature } from '@/domain/generated/output.js';
 
 function createMockFeatureRepo() {
@@ -66,7 +66,7 @@ function createTestFeature(overrides?: Partial<Feature>): Feature {
     lifecycle: SdlcLifecycle.Implementation,
     messages: [],
     relatedArtifacts: [],
-    fast: false,
+    mode: FeatureMode.Regular,
     push: false,
     openPr: false,
     forkAndPr: false,
@@ -315,7 +315,7 @@ describe('ResumeFeatureUseCase', () => {
   });
 
   it('should pass fast flag from feature entity to spawn for fast-mode features', async () => {
-    featureRepo.findById.mockResolvedValue(createTestFeature({ fast: true }));
+    featureRepo.findById.mockResolvedValue(createTestFeature({ mode: FeatureMode.Fast }));
     runRepo.findById.mockResolvedValue(createTestRun({ status: AgentRunStatus.failed }));
 
     await useCase.execute('feat-001');
@@ -328,13 +328,13 @@ describe('ResumeFeatureUseCase', () => {
       expect.any(String),
       expect.objectContaining({
         resume: true,
-        fast: true,
+        mode: FeatureMode.Fast,
       })
     );
   });
 
   it('should not pass fast flag for non-fast features', async () => {
-    featureRepo.findById.mockResolvedValue(createTestFeature({ fast: false }));
+    featureRepo.findById.mockResolvedValue(createTestFeature({ mode: FeatureMode.Regular }));
     runRepo.findById.mockResolvedValue(createTestRun({ status: AgentRunStatus.failed }));
 
     await useCase.execute('feat-001');

@@ -9,7 +9,7 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentRunStatus } from '@/domain/generated/output.js';
+import { AgentRunStatus, FeatureMode } from '@/domain/generated/output.js';
 import type { Feature, AgentRun } from '@/domain/generated/output.js';
 import { resolveWaitingFeature } from '../../../../../../src/presentation/cli/commands/feat/resolve-waiting-feature.js';
 
@@ -50,7 +50,7 @@ function makeFeature(overrides?: Partial<Feature>): Feature {
     messages: [],
     relatedArtifacts: [],
     agentRunId: 'run-001',
-    fast: false,
+    mode: FeatureMode.Regular,
     push: false,
     openPr: false,
     forkAndPr: false,

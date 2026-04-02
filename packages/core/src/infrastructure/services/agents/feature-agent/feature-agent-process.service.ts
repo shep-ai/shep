@@ -15,7 +15,12 @@ import { homedir } from 'node:os';
 import { mkdirSync } from 'node:fs';
 import type { IFeatureAgentProcessService } from '@/application/ports/output/agents/feature-agent-process.interface.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
-import { AgentRunStatus, type ApprovalGates, type AgentType } from '@/domain/generated/output.js';
+import {
+  AgentRunStatus,
+  FeatureMode,
+  type ApprovalGates,
+  type AgentType,
+} from '@/domain/generated/output.js';
 import { IS_WINDOWS } from '../../../platform.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -51,7 +56,7 @@ export class FeatureAgentProcessService implements IFeatureAgentProcessService {
       commitEvidence?: boolean;
       resumePayload?: string;
       agentType?: AgentType;
-      fast?: boolean;
+      mode?: FeatureMode;
       model?: string;
       resumeReason?: string;
     }
@@ -110,8 +115,8 @@ export class FeatureAgentProcessService implements IFeatureAgentProcessService {
     if (options?.agentType) {
       args.push('--agent-type', options.agentType);
     }
-    if (options?.fast) {
-      args.push('--fast');
+    if (options?.mode && options.mode !== FeatureMode.Regular) {
+      args.push('--mode', options.mode);
     }
     if (options?.model) {
       args.push('--model', options.model);

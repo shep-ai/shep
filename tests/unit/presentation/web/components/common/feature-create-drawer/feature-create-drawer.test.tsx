@@ -6,6 +6,7 @@ import type { FeatureCreateDrawerProps } from '@/components/common/feature-creat
 import { DrawerCloseGuardProvider } from '@/hooks/drawer-close-guard';
 import type { FileAttachment } from '@shepai/core/infrastructure/services/file-dialog.service';
 import type { WorkflowDefaults } from '@/app/actions/get-workflow-defaults';
+import { FeatureMode } from '@shepai/core/domain/generated/output';
 
 // Mock pickFiles client helper
 const mockPickFiles = vi.fn<() => Promise<FileAttachment[] | null>>();
@@ -211,7 +212,7 @@ describe('FeatureCreateDrawer', () => {
         approvalGates: { allowPrd: false, allowPlan: false, allowMerge: false },
         push: false,
         openPr: false,
-        fast: true,
+        mode: FeatureMode.Fast,
       });
       expect(payload).toHaveProperty('sessionId');
       expect(payload).not.toHaveProperty('name');
@@ -309,7 +310,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: false,
+        defaultMode: FeatureMode.Regular,
         injectSkills: false,
       };
       const { rerender } = render(
@@ -410,7 +411,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: false,
+        defaultMode: FeatureMode.Regular,
         injectSkills: false,
       };
       renderDrawer({ workflowDefaults: defaults });
@@ -742,7 +743,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: true,
+        defaultMode: FeatureMode.Fast,
         injectSkills: false,
       };
       renderDrawer({ workflowDefaults: defaults });
@@ -757,7 +758,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: false,
+        defaultMode: FeatureMode.Regular,
         injectSkills: false,
       };
       renderDrawer({ workflowDefaults: defaults });
@@ -773,7 +774,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: false,
+        defaultMode: FeatureMode.Regular,
         injectSkills: false,
       };
       renderDrawer({ workflowDefaults: defaults });
@@ -794,7 +795,9 @@ describe('FeatureCreateDrawer', () => {
       await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
 
       expect(onSubmit).toHaveBeenCalledOnce();
-      expect(onSubmit.mock.calls[0][0]).toEqual(expect.objectContaining({ fast: true }));
+      expect(onSubmit.mock.calls[0][0]).toEqual(
+        expect.objectContaining({ mode: FeatureMode.Fast })
+      );
     });
 
     it('submitting with fast mode off includes fast=false in payload', async () => {
@@ -808,7 +811,9 @@ describe('FeatureCreateDrawer', () => {
       await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
 
       expect(onSubmit).toHaveBeenCalledOnce();
-      expect(onSubmit.mock.calls[0][0]).toEqual(expect.objectContaining({ fast: false }));
+      expect(onSubmit.mock.calls[0][0]).toEqual(
+        expect.objectContaining({ mode: FeatureMode.Regular })
+      );
     });
 
     it('fast mode checkbox has accessible label', () => {
@@ -1359,7 +1364,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: true,
+        defaultMode: FeatureMode.Fast,
         injectSkills: false,
       };
       const { rerender } = render(

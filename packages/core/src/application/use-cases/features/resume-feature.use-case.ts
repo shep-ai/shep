@@ -8,7 +8,7 @@
 import { injectable, inject } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import type { Feature, AgentRun } from '../../../domain/generated/output.js';
-import { AgentRunStatus } from '../../../domain/generated/output.js';
+import { AgentRunStatus, FeatureMode } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
@@ -141,7 +141,7 @@ export class ResumeFeatureUseCase {
         enableEvidence: feature.enableEvidence,
         commitEvidence: feature.commitEvidence,
         agentType: lastRun.agentType,
-        ...(feature.fast ? { fast: true } : {}),
+        ...(feature.mode !== FeatureMode.Regular ? { mode: feature.mode } : {}),
         ...(lastRun.modelId ? { model: lastRun.modelId } : {}),
         resumeReason: lastRun.status,
       }

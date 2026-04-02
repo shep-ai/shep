@@ -223,7 +223,7 @@ test.describe('Chat tab — interactive agent flow', () => {
           repositoryPath: '/tmp/e2e-chat-repo',
           messages: [],
           relatedArtifacts: [],
-          fast: false,
+          mode: 'Regular',
           push: false,
           openPr: false,
           autoMerge: false,

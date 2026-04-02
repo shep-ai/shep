@@ -38,6 +38,7 @@ import type {
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import { FeatureContextBuilder } from '@/infrastructure/services/interactive/feature-context.builder.js';
 import type { Feature, InteractiveSession } from '@/domain/generated/output.js';
+import { FeatureMode } from '@/domain/generated/output.js';
 import {
   InteractiveSessionStatus,
   InteractiveMessageRole,
@@ -84,7 +85,7 @@ function makeFeature(overrides?: Partial<Feature>): Feature {
       updatedAt: new Date(),
     },
     relatedArtifacts: [],
-    fast: false,
+    mode: FeatureMode.Regular,
     push: false,
     openPr: false,
     forkAndPr: false,

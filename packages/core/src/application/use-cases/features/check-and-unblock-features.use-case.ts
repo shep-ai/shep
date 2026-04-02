@@ -16,7 +16,7 @@
  */
 
 import { injectable, inject } from 'tsyringe';
-import { SdlcLifecycle } from '../../../domain/generated/output.js';
+import { SdlcLifecycle, FeatureMode } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
 import { POST_IMPLEMENTATION } from '../../../domain/lifecycle-gates.js';
@@ -72,7 +72,7 @@ export class CheckAndUnblockFeaturesUseCase {
             ciWatchEnabled: child.ciWatchEnabled,
             enableEvidence: child.enableEvidence,
             commitEvidence: child.commitEvidence,
-            ...(child.fast ? { fast: true } : {}),
+            ...(child.mode !== FeatureMode.Regular ? { mode: child.mode } : {}),
           }
         );
       }

@@ -1,4 +1,5 @@
 import type { ApprovalGates, Attachment, Feature } from '../../../../domain/generated/output.js';
+import { type FeatureMode } from '../../../../domain/generated/output.js';
 
 export interface CreateFeatureInput {
   userInput: string;
@@ -12,8 +13,8 @@ export interface CreateFeatureInput {
   name?: string;
   /** Pre-supplied description (skips AI metadata extraction for description). */
   description?: string;
-  /** When true, skip SDLC phases and implement directly from the user prompt. */
-  fast?: boolean;
+  /** Execution mode: Regular (full SDLC), Fast (direct implementation), or Exploration (iterative prototyping). */
+  mode?: FeatureMode;
   /** Fork repo and create PR to upstream at merge time (default: false). */
   forkAndPr?: boolean;
   /** Commit specs/evidences into the repo (default: true, auto-false when forkAndPr). */

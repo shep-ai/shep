@@ -1,5 +1,5 @@
 import type { Feature, Repository, AgentRun } from '@shepai/core/domain/generated/output';
-import { AgentRunStatus } from '@shepai/core/domain/generated/output';
+import { AgentRunStatus, FeatureMode } from '@shepai/core/domain/generated/output';
 import {
   deriveNodeState,
   deriveProgress,
@@ -203,7 +203,7 @@ function appendFeatureNodes(
       userQuery: feature.userQuery,
       createdAt:
         feature.createdAt instanceof Date ? feature.createdAt.getTime() : feature.createdAt,
-      ...(feature.fast && { fastMode: true }),
+      ...(feature.mode === FeatureMode.Fast && { fastMode: true }),
       approvalGates: feature.approvalGates,
       push: feature.push,
       openPr: feature.openPr,

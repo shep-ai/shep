@@ -12,7 +12,7 @@ import type { ConflictResolutionService } from '@/infrastructure/services/agents
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
 import type { Feature } from '@/domain/generated/output.js';
-import { SdlcLifecycle } from '@/domain/generated/output.js';
+import { SdlcLifecycle, FeatureMode } from '@/domain/generated/output.js';
 
 function createMockFeatureRepo(): IFeatureRepository {
   return {
@@ -115,7 +115,7 @@ const sampleFeature: Feature = {
   lifecycle: SdlcLifecycle.Implementation,
   messages: [],
   relatedArtifacts: [],
-  fast: false,
+  mode: FeatureMode.Regular,
   push: false,
   openPr: false,
   forkAndPr: false,

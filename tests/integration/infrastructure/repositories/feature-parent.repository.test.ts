@@ -22,7 +22,7 @@ import {
 } from '@/infrastructure/persistence/sqlite/migrations.js';
 import { SQLiteFeatureRepository } from '@/infrastructure/repositories/sqlite-feature.repository.js';
 import type { Feature } from '@/domain/generated/output.js';
-import { SdlcLifecycle } from '@/domain/generated/output.js';
+import { SdlcLifecycle, FeatureMode } from '@/domain/generated/output.js';
 
 describe('Feature parent_id migration and findByParentId', () => {
   let db: Database.Database;
@@ -39,7 +39,7 @@ describe('Feature parent_id migration and findByParentId', () => {
     lifecycle: SdlcLifecycle.Requirements,
     messages: [],
     relatedArtifacts: [],
-    fast: false,
+    mode: FeatureMode.Regular,
     push: false,
     openPr: false,
     forkAndPr: false,

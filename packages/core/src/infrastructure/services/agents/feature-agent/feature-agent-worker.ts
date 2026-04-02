@@ -25,7 +25,12 @@ import type { IAgentExecutorFactory } from '@/application/ports/output/agents/ag
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { IGitForkService } from '@/application/ports/output/services/git-fork-service.interface.js';
-import { AgentRunStatus, SdlcLifecycle, type AgentType } from '@/domain/generated/output.js';
+import {
+  AgentRunStatus,
+  SdlcLifecycle,
+  FeatureMode,
+  type AgentType,
+} from '@/domain/generated/output.js';
 import { initializeSettings } from '@/infrastructure/services/settings.service.js';
 import { InitializeSettingsUseCase } from '@/application/use-cases/settings/initialize-settings.use-case.js';
 import { setHeartbeatContext } from './heartbeat.js';
@@ -57,7 +62,7 @@ export interface WorkerArgs {
   commitEvidence?: boolean;
   resumePayload?: string;
   agentType?: AgentType;
-  fast?: boolean;
+  mode?: FeatureMode;
   model?: string;
   resumeReason?: string;
 }
@@ -99,7 +104,11 @@ export function parseWorkerArgs(args: string[]): WorkerArgs {
   const ciWatchEnabled = !args.includes('--no-ci-watch');
   const enableEvidence = args.includes('--enable-evidence');
   const commitEvidence = args.includes('--commit-evidence');
-  const fast = args.includes('--fast');
+  const modeIdx = args.indexOf('--mode');
+  const mode: FeatureMode =
+    modeIdx !== -1 && modeIdx + 1 < args.length
+      ? (args[modeIdx + 1] as FeatureMode)
+      : FeatureMode.Regular;
   const threadIdx = args.indexOf('--thread-id');
   const threadId =
     threadIdx !== -1 && threadIdx + 1 < args.length ? args[threadIdx + 1] : undefined;
@@ -144,7 +153,7 @@ export function parseWorkerArgs(args: string[]): WorkerArgs {
     commitEvidence,
     resumePayload,
     agentType,
-    fast,
+    mode,
     model,
     resumeReason,
   };
@@ -211,7 +220,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     ...(args.commitSpecs === false ? ['--no-commit-specs'] : []),
     ...(args.resumePayload ? ['--resume-payload', args.resumePayload] : []),
     ...(args.agentType ? ['--agent-type', args.agentType] : []),
-    ...(args.fast ? ['--fast'] : []),
+    ...(args.mode && args.mode !== FeatureMode.Regular ? ['--mode', args.mode] : []),
     ...(args.model ? ['--model', args.model] : []),
   ];
   log(`Starting worker — full command:`);
@@ -282,12 +291,13 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   // Both graph factories return compiled graphs with identical FeatureAgentAnnotation
   // state shape and invoke() interface. Cast through unknown because the compiled
   // graphs have different node name types but share the same runtime contract.
-  const graph = args.fast
-    ? (createFastFeatureAgentGraph(
-        graphDeps as FastFeatureAgentGraphDeps,
-        checkpointer
-      ) as unknown as ReturnType<typeof createFeatureAgentGraph>)
-    : createFeatureAgentGraph(graphDeps, checkpointer);
+  const graph =
+    args.mode === FeatureMode.Fast
+      ? (createFastFeatureAgentGraph(
+          graphDeps as FastFeatureAgentGraphDeps,
+          checkpointer
+        ) as unknown as ReturnType<typeof createFeatureAgentGraph>)
+      : createFeatureAgentGraph(graphDeps, checkpointer);
 
   // Mark the run as running with our PID
   const now = new Date();

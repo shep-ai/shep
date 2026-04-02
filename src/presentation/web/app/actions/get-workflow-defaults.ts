@@ -1,6 +1,7 @@
 'use server';
 
 import { getSettings } from '@shepai/core/infrastructure/services/settings.service';
+import { FeatureMode } from '@shepai/core/domain/generated/output';
 
 export interface WorkflowDefaults {
   approvalGates: {
@@ -13,7 +14,7 @@ export interface WorkflowDefaults {
   ciWatchEnabled: boolean;
   enableEvidence: boolean;
   commitEvidence: boolean;
-  fast: boolean;
+  defaultMode: FeatureMode;
   injectSkills: boolean;
 }
 
@@ -32,7 +33,7 @@ export async function getWorkflowDefaults(): Promise<WorkflowDefaults> {
     ciWatchEnabled: workflow.ciWatchEnabled,
     enableEvidence: workflow.enableEvidence,
     commitEvidence: workflow.commitEvidence,
-    fast: workflow.defaultFastMode,
+    defaultMode: workflow.defaultFastMode ? FeatureMode.Fast : FeatureMode.Regular,
     injectSkills: workflow.skillInjection?.enabled ?? false,
   };
 }

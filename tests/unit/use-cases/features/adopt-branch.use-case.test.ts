@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SdlcLifecycle, PrStatus } from '@/domain/generated/output.js';
+import { SdlcLifecycle, PrStatus, FeatureMode } from '@/domain/generated/output.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IRepositoryRepository } from '@/application/ports/output/repositories/repository-repository.interface.js';
 import type { IWorktreeService } from '@/application/ports/output/services/worktree-service.interface.js';
@@ -129,7 +129,7 @@ describe('AdoptBranchUseCase', () => {
       expect(result.feature.agentRunId).toBeUndefined();
       expect(result.feature.messages).toEqual([]);
       expect(result.feature.relatedArtifacts).toEqual([]);
-      expect(result.feature.fast).toBe(false);
+      expect(result.feature.mode).toBe(FeatureMode.Regular);
       expect(result.feature.push).toBe(false);
       expect(result.feature.openPr).toBe(false);
       expect(result.feature.approvalGates).toEqual({

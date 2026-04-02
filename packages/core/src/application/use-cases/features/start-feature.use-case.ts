@@ -8,7 +8,7 @@
 
 import { injectable, inject } from 'tsyringe';
 import type { Feature, AgentRun } from '../../../domain/generated/output.js';
-import { SdlcLifecycle } from '../../../domain/generated/output.js';
+import { SdlcLifecycle, FeatureMode } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
@@ -83,7 +83,10 @@ export class StartFeatureUseCase {
     }
 
     // Check parent gate if feature has a parent
-    let targetLifecycle = resolved.fast ? SdlcLifecycle.Implementation : SdlcLifecycle.Requirements;
+    let targetLifecycle =
+      resolved.mode === FeatureMode.Fast
+        ? SdlcLifecycle.Implementation
+        : SdlcLifecycle.Requirements;
     let shouldSpawn = true;
 
     if (resolved.parentId) {
@@ -130,7 +133,7 @@ export class StartFeatureUseCase {
           enableEvidence: resolved.enableEvidence,
           commitEvidence: resolved.commitEvidence,
           agentType: agentRun.agentType,
-          ...(resolved.fast ? { fast: true } : {}),
+          ...(resolved.mode !== FeatureMode.Regular ? { mode: resolved.mode } : {}),
           ...(agentRun.modelId ? { model: agentRun.modelId } : {}),
         }
       );

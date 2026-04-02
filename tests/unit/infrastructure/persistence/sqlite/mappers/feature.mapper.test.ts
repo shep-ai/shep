@@ -7,6 +7,7 @@ import {
 import {
   PrStatus,
   SdlcLifecycle,
+  FeatureMode,
   type Feature,
   type Attachment,
 } from '@/domain/generated/output.js';
@@ -40,7 +41,7 @@ function createTestFeature(overrides: Partial<Feature> = {}): Feature {
     enableEvidence: false,
     injectSkills: false,
     commitEvidence: false,
-    fast: false,
+    mode: FeatureMode.Regular,
     approvalGates: { allowPrd: false, allowPlan: false, allowMerge: false },
     createdAt: new Date('2026-03-08T10:00:00Z'),
     updatedAt: new Date('2026-03-08T10:00:00Z'),
@@ -89,7 +90,7 @@ function createTestRow(overrides: Partial<FeatureRow> = {}): FeatureRow {
     pr_mergeable: null,
     parent_id: null,
     previous_lifecycle: null,
-    fast: 0,
+    mode: 'Regular',
     attachments: '[]',
     injected_skills: null,
     inject_skills: 0,

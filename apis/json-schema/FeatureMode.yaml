@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FeatureMode.yaml
+type: string
+enum:
+  - Regular
+  - Fast
+  - Exploration
+description: Execution mode determining the feature's workflow and agent graph

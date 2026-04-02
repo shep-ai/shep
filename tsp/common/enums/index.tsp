@@ -17,3 +17,4 @@ import "./language.tsp";
 import "./tool.tsp";
 import "./notification.tsp";
 import "./evidence-type.tsp";
+import "./feature-mode.tsp";
