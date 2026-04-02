@@ -6,7 +6,6 @@ import {
   PaperclipIcon,
   ChevronsUpDown,
   CheckIcon,
-  Zap,
   Clock,
   FolderPlus,
   Loader2,
@@ -38,6 +37,7 @@ import { ReactFileManagerDialog } from '@/components/common/react-file-manager-d
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { FeatureMode } from '@shepai/core/domain/generated/output';
 import { addRepository } from '@/app/actions/add-repository';
+import { ModeSelector } from './mode-selector';
 import { pickFiles } from './pick-files';
 
 export type { FileAttachment } from '@shepai/core/infrastructure/services/file-dialog.service';
@@ -828,30 +828,7 @@ export function FeatureCreateDrawer({
                       {t('createDrawer.pendingModeDescription')}
                     </TooltipContent>
                   </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex cursor-pointer items-center gap-2">
-                        <Switch
-                          id="fast-mode"
-                          checked={mode === FeatureMode.Fast}
-                          onCheckedChange={(v) =>
-                            setMode(v ? FeatureMode.Fast : FeatureMode.Regular)
-                          }
-                          disabled={isSubmitting}
-                        />
-                        <Label
-                          htmlFor="fast-mode"
-                          className="flex cursor-pointer items-center gap-1 text-sm font-medium"
-                        >
-                          <Zap className="h-3.5 w-3.5" />
-                          {t('createDrawer.fastModeLabel')}
-                        </Label>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      {t('createDrawer.fastModeDescription')}
-                    </TooltipContent>
-                  </Tooltip>
+                  <ModeSelector value={mode} onChange={setMode} disabled={isSubmitting} />
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
@@ -890,78 +867,80 @@ export function FeatureCreateDrawer({
 
             {/* Approve + Git — compact switch groups */}
             <div className="flex flex-col gap-2">
-              {/* Approve row */}
-              <div className="border-input flex items-center gap-4 rounded-md border px-3 py-2.5">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="text-muted-foreground w-16 shrink-0 cursor-default text-xs font-semibold tracking-wider">
-                      {t('createDrawer.approve')}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    {t('createDrawer.approveDescription')}
-                  </TooltipContent>
-                </Tooltip>
-                <div className="flex flex-1 items-center gap-4">
-                  {AUTO_APPROVE_OPTIONS.map((opt) => (
-                    <Tooltip key={opt.id}>
-                      <TooltipTrigger asChild>
-                        <div className="flex cursor-pointer items-center gap-1.5">
-                          <Switch
-                            id={`approve-${opt.id}`}
-                            size="sm"
-                            checked={approvalGates[opt.id] ?? false}
-                            onCheckedChange={(v) =>
-                              setApprovalGates((prev) => ({ ...prev, [opt.id]: v }))
-                            }
-                            disabled={
-                              isSubmitting ||
-                              (mode === FeatureMode.Fast &&
-                                (opt.id === 'allowPrd' || opt.id === 'allowPlan'))
-                            }
-                          />
-                          <Label
-                            htmlFor={`approve-${opt.id}`}
-                            className="cursor-pointer text-xs font-medium"
-                          >
-                            {opt.label}
-                          </Label>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">
-                        {mode === FeatureMode.Fast &&
-                        (opt.id === 'allowPrd' || opt.id === 'allowPlan')
-                          ? t('createDrawer.skippedInFastMode')
-                          : opt.description}
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
+              {/* Approve row — hidden for exploration mode (no SDLC gates) */}
+              {mode !== FeatureMode.Exploration && (
+                <div className="border-input flex items-center gap-4 rounded-md border px-3 py-2.5">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-muted-foreground w-16 shrink-0 cursor-default text-xs font-semibold tracking-wider">
+                        {t('createDrawer.approve')}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      {t('createDrawer.approveDescription')}
+                    </TooltipContent>
+                  </Tooltip>
+                  <div className="flex flex-1 items-center gap-4">
+                    {AUTO_APPROVE_OPTIONS.map((opt) => (
+                      <Tooltip key={opt.id}>
+                        <TooltipTrigger asChild>
+                          <div className="flex cursor-pointer items-center gap-1.5">
+                            <Switch
+                              id={`approve-${opt.id}`}
+                              size="sm"
+                              checked={approvalGates[opt.id] ?? false}
+                              onCheckedChange={(v) =>
+                                setApprovalGates((prev) => ({ ...prev, [opt.id]: v }))
+                              }
+                              disabled={
+                                isSubmitting ||
+                                (mode === FeatureMode.Fast &&
+                                  (opt.id === 'allowPrd' || opt.id === 'allowPlan'))
+                              }
+                            />
+                            <Label
+                              htmlFor={`approve-${opt.id}`}
+                              className="cursor-pointer text-xs font-medium"
+                            >
+                              {opt.label}
+                            </Label>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          {mode === FeatureMode.Fast &&
+                          (opt.id === 'allowPrd' || opt.id === 'allowPlan')
+                            ? t('createDrawer.skippedInFastMode')
+                            : opt.description}
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                  {/* Select all shortcut */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const allOn = AUTO_APPROVE_OPTIONS.every((o) => approvalGates[o.id]);
+                          const next: Record<string, boolean> = {};
+                          for (const o of AUTO_APPROVE_OPTIONS) next[o.id] = !allOn;
+                          setApprovalGates(next);
+                        }}
+                        disabled={isSubmitting}
+                        className={cn(
+                          'text-muted-foreground hover:text-foreground cursor-pointer rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase transition-colors',
+                          AUTO_APPROVE_OPTIONS.every((o) => approvalGates[o.id]) && 'text-primary'
+                        )}
+                      >
+                        {t('createDrawer.all')}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      {t('createDrawer.toggleAllApprovalGates')}
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
-                {/* Select all shortcut */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const allOn = AUTO_APPROVE_OPTIONS.every((o) => approvalGates[o.id]);
-                        const next: Record<string, boolean> = {};
-                        for (const o of AUTO_APPROVE_OPTIONS) next[o.id] = !allOn;
-                        setApprovalGates(next);
-                      }}
-                      disabled={isSubmitting}
-                      className={cn(
-                        'text-muted-foreground hover:text-foreground cursor-pointer rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase transition-colors',
-                        AUTO_APPROVE_OPTIONS.every((o) => approvalGates[o.id]) && 'text-primary'
-                      )}
-                    >
-                      {t('createDrawer.all')}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    {t('createDrawer.toggleAllApprovalGates')}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
+              )}
 
               {/* Evidence row */}
               <div className="border-input flex items-center gap-4 rounded-md border px-3 py-2.5">
