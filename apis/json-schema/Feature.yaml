@@ -92,6 +92,17 @@ properties:
   worktreePath:
     type: string
     description: Absolute path to the git worktree for this feature
+  iterationCount:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 0
+    description: Current feedback iteration count in exploration mode (0 when not exploring)
+  maxIterations:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Maximum allowed iterations for exploration mode (only set when mode is Exploration)
   pr:
     $ref: PullRequest.yaml
     description: Pull request data (null until PR created)
@@ -126,6 +137,7 @@ required:
   - injectSkills
   - commitEvidence
   - approvalGates
+  - iterationCount
 allOf:
   - $ref: SoftDeletableEntity.yaml
 description: Central entity tracking a piece of work through the SDLC lifecycle (Aggregate Root)
