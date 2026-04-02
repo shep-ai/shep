@@ -628,6 +628,74 @@ describe('CreateFeatureUseCase', () => {
   });
 
   // -------------------------------------------------------------------------
+  // Exploration mode
+  // -------------------------------------------------------------------------
+
+  describe('exploration mode', () => {
+    it('should set lifecycle to Exploring when mode is Exploration', async () => {
+      const result = await useCase.execute({ ...baseInput, mode: FeatureMode.Exploration });
+
+      expect(result.feature.lifecycle).toBe(SdlcLifecycle.Exploring);
+    });
+
+    it('should pass exploration mode to specInitializer.initialize()', async () => {
+      await useCase.execute({ ...baseInput, mode: FeatureMode.Exploration });
+
+      expect(mockSpecInitializer.initialize).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        expect.any(Number),
+        expect.any(String),
+        'exploration'
+      );
+    });
+
+    it('should pass mode=Exploration to agentProcess.spawn() options', async () => {
+      await useCase.execute({ ...baseInput, mode: FeatureMode.Exploration });
+
+      expect(mockAgentProcess.spawn).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        expect.any(String),
+        expect.any(String),
+        expect.any(String),
+        expect.objectContaining({ mode: FeatureMode.Exploration })
+      );
+    });
+
+    it('should set feature mode to Exploration on the created feature', async () => {
+      const result = await useCase.execute({ ...baseInput, mode: FeatureMode.Exploration });
+
+      expect(result.feature.mode).toBe(FeatureMode.Exploration);
+    });
+
+    it('should still set lifecycle to Blocked for exploration child when parent is Blocked', async () => {
+      const parent = makeParentFeature({ lifecycle: SdlcLifecycle.Blocked });
+      mockFeatureRepo.findById = vi.fn().mockResolvedValue(parent);
+
+      const result = await useCase.execute({
+        ...baseInput,
+        parentId: 'parent-id',
+        mode: FeatureMode.Exploration,
+      });
+
+      expect(result.feature.lifecycle).toBe(SdlcLifecycle.Blocked);
+      expect(mockAgentProcess.spawn).not.toHaveBeenCalled();
+    });
+
+    it('should set lifecycle to Pending when pending=true and mode is Exploration', async () => {
+      const result = await useCase.execute({
+        ...baseInput,
+        pending: true,
+        mode: FeatureMode.Exploration,
+      });
+
+      expect(result.feature.lifecycle).toBe(SdlcLifecycle.Pending);
+      expect(mockAgentProcess.spawn).not.toHaveBeenCalled();
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Pending flag
   // -------------------------------------------------------------------------
 

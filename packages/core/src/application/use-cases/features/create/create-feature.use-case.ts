@@ -89,9 +89,11 @@ export class CreateFeatureUseCase {
   async createRecord(input: CreateFeatureInput): Promise<CreateRecordResult> {
     const effectiveMode = input.mode ?? FeatureMode.Regular;
     let initialLifecycle: SdlcLifecycle =
-      effectiveMode === FeatureMode.Fast
-        ? SdlcLifecycle.Implementation
-        : SdlcLifecycle.Requirements;
+      effectiveMode === FeatureMode.Exploration
+        ? SdlcLifecycle.Exploring
+        : effectiveMode === FeatureMode.Fast
+          ? SdlcLifecycle.Implementation
+          : SdlcLifecycle.Requirements;
     let shouldSpawn = true;
     let effectiveRepoPath = input.repositoryPath.replace(/\\/g, '/');
 
@@ -282,7 +284,11 @@ export class CreateFeatureUseCase {
       slug,
       featureNumber,
       input.userInput,
-      feature.mode === FeatureMode.Fast ? 'fast' : undefined
+      feature.mode === FeatureMode.Fast
+        ? 'fast'
+        : feature.mode === FeatureMode.Exploration
+          ? 'exploration'
+          : undefined
     );
 
     // Commit pending attachments if sessionId was provided (web UI flow)
