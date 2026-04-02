@@ -159,6 +159,10 @@ function createMockState(overrides?: Partial<FeatureAgentState>): FeatureAgentSt
     ciWatchEnabled: true,
     enableEvidence: true,
     commitEvidence: false,
+    iterationCount: 0,
+    maxIterations: 10,
+    feedbackHistory: [],
+    explorationStatus: undefined,
     ...overrides,
   };
 }

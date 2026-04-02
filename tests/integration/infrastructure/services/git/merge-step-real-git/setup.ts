@@ -299,6 +299,10 @@ export function makeState(overrides: Partial<FeatureAgentState>): FeatureAgentSt
     ciWatchEnabled: true,
     enableEvidence: false,
     commitEvidence: false,
+    iterationCount: 0,
+    maxIterations: 10,
+    feedbackHistory: [],
+    explorationStatus: undefined,
     ...overrides,
   };
 }

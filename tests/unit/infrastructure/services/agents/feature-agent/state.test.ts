@@ -27,7 +27,7 @@ describe('FeatureAgentAnnotation', () => {
       expect(FeatureAgentAnnotation.spec).toBeDefined();
     });
 
-    it('should have all 29 channels', () => {
+    it('should have all 36 channels', () => {
       const channelNames = Object.keys(FeatureAgentAnnotation.spec);
       // Original: featureId, repositoryPath, specDir, worktreePath, currentNode, error,
       //           approvalGates, messages, validationRetries, lastValidationTarget, lastValidationErrors
@@ -35,6 +35,7 @@ describe('FeatureAgentAnnotation', () => {
       // Approval: _approvalAction, _rejectionFeedback, _needsReexecution
       // CI fix:   ciFixAttempts, ciFixHistory, ciFixStatus
       // Fork:     forkAndPr, commitSpecs
+      // Exploration: iterationCount, maxIterations, feedbackHistory, explorationStatus
       expect(channelNames).toContain('prUrl');
       expect(channelNames).toContain('prNumber');
       expect(channelNames).toContain('commitHash');
@@ -58,7 +59,11 @@ describe('FeatureAgentAnnotation', () => {
       expect(channelNames).toContain('ciWatchEnabled');
       expect(channelNames).toContain('enableEvidence');
       expect(channelNames).toContain('commitEvidence');
-      expect(channelNames.length).toBe(32);
+      expect(channelNames).toContain('iterationCount');
+      expect(channelNames).toContain('maxIterations');
+      expect(channelNames).toContain('feedbackHistory');
+      expect(channelNames).toContain('explorationStatus');
+      expect(channelNames.length).toBe(36);
     });
   });
 
@@ -243,6 +248,129 @@ describe('FeatureAgentAnnotation', () => {
         const statuses = ['idle', 'watching', 'fixing', 'success', 'exhausted', 'timeout'] as const;
         for (const status of statuses) {
           expect(op('idle', status)).toBe(status);
+        }
+      });
+    });
+  });
+
+  describe('exploration mode state channels', () => {
+    describe('initial defaults', () => {
+      it('iterationCount defaults to 0', () => {
+        const channel = FeatureAgentAnnotation.spec.iterationCount as unknown as {
+          initialValueFactory: () => number;
+        };
+        expect(channel.initialValueFactory()).toBe(0);
+      });
+
+      it('maxIterations defaults to 10', () => {
+        const channel = FeatureAgentAnnotation.spec.maxIterations as unknown as {
+          initialValueFactory: () => number;
+        };
+        expect(channel.initialValueFactory()).toBe(10);
+      });
+
+      it('feedbackHistory defaults to empty array', () => {
+        const channel = FeatureAgentAnnotation.spec.feedbackHistory as unknown as {
+          initialValueFactory: () => string[];
+        };
+        expect(channel.initialValueFactory()).toEqual([]);
+      });
+
+      it('explorationStatus defaults to undefined', () => {
+        const channel = FeatureAgentAnnotation.spec.explorationStatus as unknown as {
+          initialValueFactory: () => string | undefined;
+        };
+        expect(channel.initialValueFactory()).toBeUndefined();
+      });
+    });
+
+    describe('iterationCount reducer — replace', () => {
+      const getOperator = () =>
+        (
+          FeatureAgentAnnotation.spec.iterationCount as unknown as {
+            operator: (prev: number, next: number) => number;
+          }
+        ).operator;
+
+      it('replaces previous value on each update', () => {
+        const op = getOperator();
+        expect(op(0, 1)).toBe(1);
+        expect(op(1, 2)).toBe(2);
+        expect(op(2, 3)).toBe(3);
+      });
+
+      it('does not accumulate — keeps only the latest value', () => {
+        const op = getOperator();
+        let state = op(0, 1);
+        state = op(state, 5);
+        expect(state).toBe(5);
+      });
+    });
+
+    describe('feedbackHistory reducer — append (accumulating)', () => {
+      const getOperator = () =>
+        (
+          FeatureAgentAnnotation.spec.feedbackHistory as unknown as {
+            operator: (prev: string[], next: string[]) => string[];
+          }
+        ).operator;
+
+      it('accumulates feedback across two state updates', () => {
+        const op = getOperator();
+        const afterFirst = op([], ['make it blue']);
+        expect(afterFirst).toHaveLength(1);
+        expect(afterFirst[0]).toBe('make it blue');
+
+        const afterSecond = op(afterFirst, ['also add a header']);
+        expect(afterSecond).toHaveLength(2);
+        expect(afterSecond[0]).toBe('make it blue');
+        expect(afterSecond[1]).toBe('also add a header');
+      });
+
+      it('does not lose prior feedback on checkpoint restore', () => {
+        const op = getOperator();
+        const existing = ['feedback 1', 'feedback 2'];
+        const result = op(existing, ['feedback 3']);
+        expect(result).toHaveLength(3);
+        expect(result[2]).toBe('feedback 3');
+      });
+
+      it('produces [...prev, ...next] — not a replace', () => {
+        const op = getOperator();
+        const prev = ['first feedback'];
+        const next = ['second feedback'];
+        const result = op(prev, next);
+        expect(result).toEqual([...prev, ...next]);
+      });
+    });
+
+    describe('explorationStatus reducer — replace', () => {
+      const getOperator = () =>
+        (
+          FeatureAgentAnnotation.spec.explorationStatus as unknown as {
+            operator: (prev: string | undefined, next: string | undefined) => string | undefined;
+          }
+        ).operator;
+
+      it('replaces previous status on each update', () => {
+        const op = getOperator();
+        expect(op(undefined, 'generating')).toBe('generating');
+        expect(op('generating', 'waiting-feedback')).toBe('waiting-feedback');
+        expect(op('waiting-feedback', 'applying-feedback')).toBe('applying-feedback');
+      });
+
+      it('accepts all valid status values', () => {
+        const op = getOperator();
+        const statuses = [
+          'generating',
+          'waiting-feedback',
+          'applying-feedback',
+          'promoting',
+          'discarding',
+          undefined,
+        ] as const;
+        for (const status of statuses) {
+          expect(op(undefined, status)).toBe(status);
         }
       });
     });
