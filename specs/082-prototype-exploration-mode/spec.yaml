@@ -1,0 +1,185 @@
+name: "prototype-exploration-mode"
+number: 82
+branch: "feat/082-prototype-exploration-mode"
+oneLiner: "Add a prototype/exploration mode for iterative visual prototyping before committing to full feature development"
+summary: >
+  Add a new \"exploration\" mode alongside the existing \"fast\" and \"regular\" (full SDLC) modes.
+  In exploration mode, users describe a vague idea and the system generates quick, disposable
+  prototypes that can be viewed in the Web UI, iterated on with feedback, and eventually
+  promoted to a real feature (fast or regular mode) once the direction is clear. This enables
+  a discovery-first workflow where users explore design space before committing to implementation.
+phase: "Analysis"
+sizeEstimate: "XL"
+
+relatedFeatures:
+  - "052-fast-prompt-to-pr"
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "LangGraph"
+  - "React / Next.js"
+  - "Commander.js"
+  - "shadcn/ui"
+  - "SQLite (better-sqlite3)"
+  - "tsyringe (DI)"
+
+relatedLinks: []
+
+openQuestions:
+  - question: >-
+      What constitutes a \"prototype\" — should the agent produce actual runnable code in a
+      worktree, or generate design documents/wireframes/pseudocode that are displayed in
+      the Web UI without touching the real codebase?
+    resolved: false
+  - question: >-
+      Should prototypes be stored as Feature entities with a new lifecycle state (e.g.
+      Exploring) or as a completely separate entity type (e.g. Prototype) with its own
+      repository and lifecycle?
+    resolved: false
+  - question: >-
+      How should the \"promote to feature\" flow work — does it create a new Feature entity
+      with the exploration context pre-filled, or does it mutate the existing entity from
+      Exploring to Requirements/Implementation lifecycle?
+    resolved: false
+  - question: >-
+      Should exploration mode support multiple prototype variants (e.g. \"show me 3 different
+      approaches\") or is it always a single linear iteration?
+    resolved: false
+  - question: >-
+      What is the visual prototyping experience in the Web UI — a new drawer, a dedicated
+      page, an inline preview panel, or integration with the existing feature drawer tabs?
+    resolved: false
+
+content: |
+  ## Problem Statement
+
+  Currently, Shep offers two modes for feature development:
+
+  1. **Regular mode** (full SDLC): Analyze -> Requirements -> Research -> Planning -> Implementation -> Review -> Maintain.
+     Best for well-understood, complex features but heavy for exploration.
+
+  2. **Fast mode**: Skips all SDLC phases, sends the user prompt directly to the executor for
+     immediate implementation. Best for small, clear changes but produces committed code immediately.
+
+  Neither mode supports the common scenario where a user has a vague idea and needs to explore
+  multiple directions before committing. For example: "I want to add workspaces or projects to
+  group repos/features" — the user doesn't yet know what this means architecturally, what the
+  UI should look like, or which approach is best. They need to see quick prototypes, evaluate
+  them visually, provide feedback, and iterate before deciding on a direction.
+
+  The exploration/prototyping mode fills this gap by enabling a discovery-first workflow:
+  describe an idea -> see a quick prototype -> iterate with feedback -> approve and promote
+  to a full feature for proper implementation.
+
+  ## Codebase Analysis
+
+  ### Project Structure
+
+  The repository follows Clean Architecture with four layers in `packages/core/src/`:
+
+  - **domain/** — Core business logic, TypeSpec-generated models (`domain/generated/output.ts`),
+    lifecycle gates, and domain constants. No external dependencies.
+  - **application/** — Use cases (e.g., `CreateFeatureUseCase`, `UpdateFeatureLifecycleUseCase`),
+    port interfaces in `application/ports/output/`. Orchestrates domain logic.
+  - **infrastructure/** — External concerns: SQLite repositories, agent executors (Claude Code,
+    Gemini CLI, Cursor, Codex), LangGraph agent graphs, services (worktree, spec initializer,
+    settings, git operations).
+  - **presentation/** — CLI (`src/presentation/cli/`), TUI (`src/presentation/tui/`), and
+    Web UI (`src/presentation/web/` — Next.js app with shadcn/ui components).
+
+  Key directories relevant to this feature:
+  - `tsp/` — TypeSpec domain model definitions (source of truth)
+  - `packages/core/src/infrastructure/services/agents/feature-agent/` — LangGraph agent graphs
+    (full pipeline + fast mode), graph nodes, worker process
+  - `src/presentation/web/components/common/feature-create-drawer/` — Feature creation UI
+  - `src/presentation/web/components/common/feature-drawer-tabs/` — Feature detail tabs
+  - `src/presentation/web/components/features/control-center/` — Main canvas view
+  - `src/presentation/cli/commands/feat/` — CLI feature commands
+
+  ### Architecture Patterns
+
+  - **TypeSpec-first domain models**: All entities defined in `tsp/` and compiled to
+    `packages/core/src/domain/generated/output.ts`. The `Feature` entity is the aggregate root
+    with `SdlcLifecycle` enum tracking progression through phases.
+  - **LangGraph state machines**: Feature agents run as LangGraph `StateGraph` instances.
+    The full pipeline has 15+ nodes (analyze, requirements, research, plan, implement, merge).
+    Fast mode has a separate graph (`fast-feature-agent-graph.ts`) with only 2 nodes
+    (fast-implement, merge). Both share `FeatureAgentAnnotation` state and checkpoint persistence.
+  - **Worker process model**: Agent graphs execute in forked child processes
+    (`feature-agent-worker.ts`) with heartbeat monitoring, phase timing, and lifecycle context.
+    The worker selects the graph factory based on the `fast` flag.
+  - **Use case pattern**: Presentation layers call use cases exclusively. `CreateFeatureUseCase`
+    handles record creation, worktree setup, spec initialization, and agent spawning. It already
+    has a two-phase design: `createRecord()` (fast DB write) and `initializeAndSpawn()` (slow
+    git/AI operations).
+  - **Feature modes via boolean flags**: The existing `fast` mode is implemented as a boolean
+    field on the `Feature` entity and `CreateFeatureInput`. This pattern would extend to support
+    an exploration mode, though a mode enum may be cleaner than multiple booleans.
+  - **Dependency injection**: tsyringe container with interface-based port injection throughout
+    the application layer.
+
+  ### Relevant Technologies
+
+  - **LangGraph** (`@langchain/langgraph`): State machine framework for agent orchestration.
+    Supports checkpointing, interrupts (HITL approval gates), and conditional edges.
+  - **TypeSpec** (`@typespec/compiler`): Domain model DSL compiled to TypeScript interfaces.
+    All new domain entities and enums must be defined here first.
+  - **Next.js 15** (App Router): Web UI with server actions, React Server Components, and
+    client components using shadcn/ui + Tailwind CSS.
+  - **Commander.js**: CLI command framework with options/flags parsing.
+  - **SQLite** (better-sqlite3): Local persistence for features, agent runs, settings.
+  - **React Flow** (@xyflow/react): Canvas visualization for the control center — features
+    appear as nodes on the canvas.
+  - **Storybook**: Every UI component requires colocated `.stories.tsx` files.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | TypeSpec domain models (`tsp/`) | High | New `FeatureMode` enum (or similar) replacing the boolean `fast` field; possibly a new `Exploring` lifecycle state or a `Prototype` entity |
+  | CreateFeatureUseCase (`application/`) | High | Must support exploration mode input, different lifecycle initialization, and potentially different agent spawning logic |
+  | LangGraph agent graph (`infrastructure/agents/feature-agent/`) | High | New exploration-mode graph factory with prototype-generation nodes, feedback loops, and promote-to-feature edges |
+  | Feature Agent Worker (`infrastructure/agents/feature-agent/worker`) | High | Must instantiate the exploration graph when mode is set, handle iteration/feedback cycles |
+  | Web UI Create Drawer (`presentation/web/feature-create-drawer/`) | High | New mode selector (regular/fast/explore), exploration-specific UI for viewing prototypes, providing feedback, and promoting |
+  | Web UI Feature Drawer Tabs (`presentation/web/feature-drawer-tabs/`) | High | New prototype preview tab or panel for viewing exploration results, iteration history |
+  | Web UI Control Center Canvas (`presentation/web/control-center/`) | Medium | Exploration features need distinct visual treatment on the canvas (different node style/color/icon) |
+  | CLI feat new command (`presentation/cli/commands/feat/`) | Medium | New `--explore` flag, exploration-specific output formatting |
+  | Spec Initializer (`infrastructure/services/spec/`) | Medium | Exploration mode may need different or minimal spec scaffolding |
+  | Settings / WorkflowConfig (`tsp/domain/entities/settings.tsp`) | Low | Optional default mode preference in workflow settings |
+  | Feature Repository (`infrastructure/repositories/`) | Low | Query support for filtering exploration-mode features |
+  | Domain lifecycle gates (`domain/lifecycle-gates.ts`) | Low | May need new gate sets for the exploration lifecycle |
+
+  ## Dependencies
+
+  - **Existing fast-mode infrastructure**: The exploration mode follows the same architectural
+    pattern as fast mode (separate graph factory, worker flag routing, UI toggle). Understanding
+    and reusing this pattern is critical.
+  - **LangGraph checkpoint/interrupt system**: The iterative feedback loop in exploration mode
+    requires interrupt points where the user can review a prototype and provide feedback. This
+    uses the same HITL interrupt mechanism as approval gates.
+  - **Worktree service**: Exploration prototypes need isolated git worktrees, same as regular
+    features. The existing `IWorktreeService` handles this.
+  - **Feature entity and lifecycle system**: Whether exploration uses the existing Feature entity
+    with a new lifecycle state or a separate entity is a key architectural decision that affects
+    many downstream components.
+  - **Web UI drawer/tabs system**: The existing `BaseDrawer`, `FeatureCreateDrawer`, and
+    feature drawer tabs provide the framework for the exploration UI. New tabs or views for
+    prototype preview and iteration would extend this system.
+  - **Agent executor interface**: The exploration prototype agent would use the same
+    `IAgentExecutor` interface, just with different prompts optimized for quick prototyping.
+
+  ## Size Estimate
+
+  **XL** — This feature introduces a fundamentally new workflow mode that touches every layer
+  of the architecture: new TypeSpec domain models, a new LangGraph graph with iterative
+  feedback nodes, significant Web UI work for prototype preview and iteration, CLI support,
+  and potentially a new entity type. The scope is comparable to the original feature-agent
+  implementation or larger than the fast-mode feature (which was rated L). The iterative
+  feedback loop and prototype visualization add complexity beyond what fast mode required.
+  Multiple open architectural questions (entity model, prototype format, UI design) need
+  resolution before implementation can begin.
+
+  ---
+
+  _Analysis complete — proceed with research to resolve open questions_
