@@ -10,11 +10,15 @@ import type {
   PrdApprovalPayload,
   QuestionSelectionChange,
 } from '@shepai/core/domain/generated/output';
+import type { FeatureMode } from '@shepai/core/domain/generated/output';
 import { approveFeature } from '@/app/actions/approve-feature';
 import { resumeFeature } from '@/app/actions/resume-feature';
 import { startFeature } from '@/app/actions/start-feature';
 import { stopFeature } from '@/app/actions/stop-feature';
 import { rejectFeature } from '@/app/actions/reject-feature';
+import { submitExplorationFeedback } from '@/app/actions/submit-exploration-feedback';
+import { promoteExploration } from '@/app/actions/promote-exploration';
+import { discardExploration } from '@/app/actions/discard-exploration';
 import type { RejectAttachment } from '@/components/common/drawer-action-bar';
 import { getFeatureArtifact } from '@/app/actions/get-feature-artifact';
 import { getResearchArtifact } from '@/app/actions/get-research-artifact';
@@ -213,6 +217,9 @@ export function FeatureDrawerClient({
       setIsArchiving(false);
     }
   }, [archiveResetKey]);
+
+  // ── Exploration state ────────────────────────────────────────────────
+  const [isPrototypeSubmitting, setIsPrototypeSubmitting] = useState(false);
 
   // ── Shared reject state ────────────────────────────────────────────────
   const [isRejecting, setIsRejecting] = useState(false);
@@ -629,6 +636,75 @@ export function FeatureDrawerClient({
     [featureNode, lastSavedPinnedConfig]
   );
 
+  // ── Exploration handlers ─────────────────────────────────────────────
+
+  const handleSubmitFeedback = useCallback(
+    async (feedback: string) => {
+      if (!featureNode?.featureId) return;
+      setIsPrototypeSubmitting(true);
+      try {
+        const result = await submitExplorationFeedback(featureNode.featureId, feedback);
+        if (!result.submitted) {
+          toast.error(result.error ?? 'Failed to submit feedback');
+          return;
+        }
+        toast.success(`Feedback sent — generating iteration ${(result.iteration ?? 0) + 1}`);
+        window.dispatchEvent(
+          new CustomEvent('shep:feature-approved', {
+            detail: { featureId: featureNode.featureId },
+          })
+        );
+      } finally {
+        setIsPrototypeSubmitting(false);
+      }
+    },
+    [featureNode]
+  );
+
+  const handlePromote = useCallback(
+    async (targetMode: FeatureMode.Regular | FeatureMode.Fast) => {
+      if (!featureNode?.featureId) return;
+      setIsPrototypeSubmitting(true);
+      try {
+        const result = await promoteExploration(featureNode.featureId, targetMode);
+        if (result.error) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(`Exploration promoted to ${targetMode === 'Fast' ? 'fast' : 'regular'} mode`);
+        window.dispatchEvent(
+          new CustomEvent('shep:feature-approved', {
+            detail: { featureId: featureNode.featureId },
+          })
+        );
+      } finally {
+        setIsPrototypeSubmitting(false);
+      }
+    },
+    [featureNode]
+  );
+
+  const handleDiscardExploration = useCallback(async () => {
+    if (!featureNode?.featureId) return;
+    setIsPrototypeSubmitting(true);
+    try {
+      const result = await discardExploration(featureNode.featureId);
+      if (!result.discarded) {
+        toast.error(result.error ?? 'Failed to discard exploration');
+        return;
+      }
+      toast.success('Exploration discarded');
+      window.dispatchEvent(
+        new CustomEvent('shep:feature-delete-requested', {
+          detail: { featureId: featureNode.featureId, cleanup: true },
+        })
+      );
+      router.push('/');
+    } finally {
+      setIsPrototypeSubmitting(false);
+    }
+  }, [featureNode, router]);
+
   // ── Hooks (always called unconditionally per Rules of Hooks) ──────────
 
   const featureActionsInput =
@@ -942,6 +1018,10 @@ export function FeatureDrawerClient({
             : undefined
         }
         continuationActionsDisabled={pinnedConfigSaving}
+        onSubmitFeedback={handleSubmitFeedback}
+        onPromote={handlePromote}
+        onDiscardExploration={handleDiscardExploration}
+        isPrototypeSubmitting={isPrototypeSubmitting}
         interactiveAgentEnabled={interactiveAgentEnabled}
         onRetry={handleRetry}
         onStop={handleStop}
