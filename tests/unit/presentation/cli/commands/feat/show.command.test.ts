@@ -54,6 +54,7 @@ function makeFeature(overrides?: Partial<Feature>): Feature {
     relatedArtifacts: [],
     agentRunId: 'run-001',
     mode: FeatureMode.Regular,
+    iterationCount: 0,
     push: false,
     openPr: false,
     forkAndPr: false,

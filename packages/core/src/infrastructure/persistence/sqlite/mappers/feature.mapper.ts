@@ -38,6 +38,9 @@ export interface FeatureRow {
   spec_path: string | null;
   // Feature mode
   mode: string;
+  // Iteration tracking
+  iteration_count: number;
+  max_iterations: number | null;
   // Workflow configuration (flat columns)
   push: number;
   open_pr: number;
@@ -104,6 +107,9 @@ export function toDatabase(feature: Feature): FeatureRow {
     spec_path: feature.specPath ?? null,
     // Feature mode
     mode: feature.mode,
+    // Iteration tracking
+    iteration_count: feature.iterationCount,
+    max_iterations: feature.maxIterations ?? null,
     // Flatten workflow flags to individual columns
     push: feature.push ? 1 : 0,
     open_pr: feature.openPr ? 1 : 0,
@@ -176,6 +182,9 @@ export function fromDatabase(row: FeatureRow): Feature {
     ...(row.spec_path != null && { specPath: row.spec_path }),
     // Feature mode
     mode: row.mode as FeatureMode,
+    // Iteration tracking
+    iterationCount: row.iteration_count ?? 0,
+    ...(row.max_iterations != null && { maxIterations: row.max_iterations }),
     // Assemble workflow flags from flat columns
     push: row.push === 1,
     openPr: row.open_pr === 1,

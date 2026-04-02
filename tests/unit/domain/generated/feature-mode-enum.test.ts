@@ -52,3 +52,26 @@ describe('Feature type mode field', () => {
     expect(exploration.mode).toBe('Exploration');
   });
 });
+
+describe('Feature iteration fields', () => {
+  it('should have iterationCount as a number field', () => {
+    const feature = { iterationCount: 0 } as Partial<Feature>;
+    expect(feature.iterationCount).toBe(0);
+  });
+
+  it('should have maxIterations as an optional number field', () => {
+    const withMax = { maxIterations: 10 } as Partial<Feature>;
+    const withoutMax = {} as Partial<Feature>;
+    expect(withMax.maxIterations).toBe(10);
+    expect(withoutMax.maxIterations).toBeUndefined();
+  });
+
+  it('should allow iterationCount to be set on Feature type', () => {
+    const feature = {
+      iterationCount: 5,
+      maxIterations: 10,
+    } as Partial<Feature>;
+    expect(feature).toHaveProperty('iterationCount');
+    expect(feature).toHaveProperty('maxIterations');
+  });
+});

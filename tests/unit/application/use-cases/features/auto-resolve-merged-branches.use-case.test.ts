@@ -25,6 +25,7 @@ function createMockFeature(overrides: Partial<Feature> = {}): Feature {
     messages: [],
     relatedArtifacts: [],
     mode: FeatureMode.Regular,
+    iterationCount: 0,
     push: true,
     openPr: true,
     forkAndPr: false,

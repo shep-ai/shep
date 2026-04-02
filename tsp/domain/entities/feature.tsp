@@ -407,6 +407,14 @@ model Feature extends SoftDeletableEntity {
   @doc("Absolute path to the git worktree for this feature")
   worktreePath?: string;
 
+  // ── Exploration Mode ─────────────────────────────────────
+
+  @doc("Current feedback iteration count in exploration mode (0 when not exploring)")
+  iterationCount: int32 = 0;
+
+  @doc("Maximum allowed iterations for exploration mode (only set when mode is Exploration)")
+  maxIterations?: int32;
+
   // ── Pull Request Tracking ──────────────────────────────────
 
   @doc("Pull request data (null until PR created)")

@@ -1134,6 +1134,14 @@ export type Feature = SoftDeletableEntity & {
    */
   worktreePath?: string;
   /**
+   * Current feedback iteration count in exploration mode (0 when not exploring)
+   */
+  iterationCount: number;
+  /**
+   * Maximum allowed iterations for exploration mode (only set when mode is Exploration)
+   */
+  maxIterations?: number;
+  /**
    * Pull request data (null until PR created)
    */
   pr?: PullRequest;

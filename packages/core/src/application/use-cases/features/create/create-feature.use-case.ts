@@ -190,6 +190,7 @@ export class CreateFeatureUseCase {
         allowPlan: false,
         allowMerge: false,
       },
+      iterationCount: 0,
       agentRunId: runId,
       specPath: '',
       repositoryId: repository.id,

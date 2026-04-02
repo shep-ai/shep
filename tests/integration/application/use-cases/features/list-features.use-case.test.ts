@@ -42,6 +42,7 @@ describe('ListFeaturesUseCase (integration)', () => {
     messages: [],
     relatedArtifacts: [],
     mode: FeatureMode.Regular,
+    iterationCount: 0,
     push: false,
     openPr: false,
     forkAndPr: false,

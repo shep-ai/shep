@@ -40,6 +40,7 @@ describe('Feature parent_id migration and findByParentId', () => {
     messages: [],
     relatedArtifacts: [],
     mode: FeatureMode.Regular,
+    iterationCount: 0,
     push: false,
     openPr: false,
     forkAndPr: false,

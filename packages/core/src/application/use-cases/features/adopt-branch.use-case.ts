@@ -115,6 +115,7 @@ export class AdoptBranchUseCase {
       messages: [],
       relatedArtifacts: [],
       mode: FeatureMode.Regular,
+      iterationCount: 0,
       push: false,
       openPr: hasOpenPr,
       forkAndPr: false,
