@@ -71,6 +71,11 @@ describe('parseWorkerArgs - mode', () => {
     expect(args.mode).toBe(FeatureMode.Regular);
   });
 
+  it('should parse --mode=Exploration', () => {
+    const args = parseWorkerArgs([...baseArgs, '--mode', 'Exploration']);
+    expect(args.mode).toBe(FeatureMode.Exploration);
+  });
+
   it('should coexist with other flags', () => {
     const args = parseWorkerArgs([
       ...baseArgs,

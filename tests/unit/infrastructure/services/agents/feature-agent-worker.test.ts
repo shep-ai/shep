@@ -19,16 +19,20 @@ const {
   mockResolve,
   mockGraphInvoke,
   mockFastGraphInvoke,
+  mockExplorationGraphInvoke,
   mockCreateFeatureAgentGraph,
   mockCreateFastFeatureAgentGraph,
+  mockCreateExplorationAgentGraph,
   mockCreateCheckpointer,
 } = vi.hoisted(() => ({
   mockInitializeContainer: vi.fn(),
   mockResolve: vi.fn(),
   mockGraphInvoke: vi.fn(),
   mockFastGraphInvoke: vi.fn(),
+  mockExplorationGraphInvoke: vi.fn(),
   mockCreateFeatureAgentGraph: vi.fn(),
   mockCreateFastFeatureAgentGraph: vi.fn(),
+  mockCreateExplorationAgentGraph: vi.fn(),
   mockCreateCheckpointer: vi.fn().mockReturnValue({}),
 }));
 
@@ -43,6 +47,10 @@ vi.mock('@/infrastructure/services/agents/feature-agent/feature-agent-graph.js',
 
 vi.mock('@/infrastructure/services/agents/feature-agent/fast-feature-agent-graph.js', () => ({
   createFastFeatureAgentGraph: (...args: unknown[]) => mockCreateFastFeatureAgentGraph(...args),
+}));
+
+vi.mock('@/infrastructure/services/agents/feature-agent/exploration-agent-graph.js', () => ({
+  createExplorationAgentGraph: (...args: unknown[]) => mockCreateExplorationAgentGraph(...args),
 }));
 
 vi.mock('@/infrastructure/services/agents/common/checkpointer.js', () => ({
@@ -348,6 +356,23 @@ describe('runWorker', () => {
     });
     mockCreateFastFeatureAgentGraph.mockReturnValue({
       invoke: mockFastGraphInvoke,
+    });
+    mockExplorationGraphInvoke.mockResolvedValue({
+      currentNode: 'prototype-generate',
+      messages: ['[prototype-generate] done'],
+      error: null,
+      __interrupt__: [
+        {
+          value: {
+            node: 'prototype-generate',
+            message: 'Prototype iteration 1 complete.',
+            iterationCount: 1,
+          },
+        },
+      ],
+    });
+    mockCreateExplorationAgentGraph.mockReturnValue({
+      invoke: mockExplorationGraphInvoke,
     });
   });
 
@@ -691,6 +716,46 @@ describe('runWorker', () => {
       AgentRunStatus.completed,
       expect.objectContaining({
         completedAt: expect.any(Date),
+      })
+    );
+  });
+
+  it('should select exploration graph for mode=Exploration', async () => {
+    await runWorker({
+      featureId: 'feat-1',
+      runId: 'run-1',
+      repo: '/repo',
+      specDir: '/specs',
+      mode: FeatureMode.Exploration,
+    });
+
+    expect(mockCreateExplorationAgentGraph).toHaveBeenCalled();
+    expect(mockCreateFeatureAgentGraph).not.toHaveBeenCalled();
+    expect(mockCreateFastFeatureAgentGraph).not.toHaveBeenCalled();
+  });
+
+  it('should invoke exploration graph and handle interrupt as waiting_approval', async () => {
+    await runWorker({
+      featureId: 'feat-1',
+      runId: 'run-1',
+      repo: '/repo',
+      specDir: '/specs',
+      mode: FeatureMode.Exploration,
+    });
+
+    expect(mockExplorationGraphInvoke).toHaveBeenCalledWith(
+      expect.objectContaining({
+        featureId: 'feat-1',
+      }),
+      expect.anything()
+    );
+
+    // Exploration graph interrupts — worker should mark as waitingApproval
+    expect(mockRunRepo.updateStatus).toHaveBeenCalledWith(
+      'run-1',
+      AgentRunStatus.waitingApproval,
+      expect.objectContaining({
+        updatedAt: expect.any(Date),
       })
     );
   });

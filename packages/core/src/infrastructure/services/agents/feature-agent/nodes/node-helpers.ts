@@ -76,6 +76,7 @@ const STAGE_TIMEOUT_KEY: Record<string, string> = {
   plan: 'planMs',
   implement: 'implementMs',
   'fast-implement': 'fastImplementMs',
+  'prototype-generate': 'implementMs',
   evidence: 'implementMs',
   merge: 'mergeMs',
 };
