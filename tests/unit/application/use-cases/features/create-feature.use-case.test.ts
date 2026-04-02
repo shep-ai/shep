@@ -693,6 +693,32 @@ describe('CreateFeatureUseCase', () => {
       expect(result.feature.lifecycle).toBe(SdlcLifecycle.Pending);
       expect(mockAgentProcess.spawn).not.toHaveBeenCalled();
     });
+
+    it('should set maxIterations from settings when mode is Exploration', async () => {
+      mockGetSettings.mockReturnValue({
+        agent: { type: 'claude-code' },
+        workflow: { explorationMaxIterations: 15 },
+      });
+      const result = await useCase.execute({ ...baseInput, mode: FeatureMode.Exploration });
+
+      expect(result.feature.maxIterations).toBe(15);
+    });
+
+    it('should default maxIterations to 10 when settings omit explorationMaxIterations', async () => {
+      mockGetSettings.mockReturnValue({
+        agent: { type: 'claude-code' },
+        workflow: {},
+      });
+      const result = await useCase.execute({ ...baseInput, mode: FeatureMode.Exploration });
+
+      expect(result.feature.maxIterations).toBe(10);
+    });
+
+    it('should not set maxIterations for non-Exploration modes', async () => {
+      const result = await useCase.execute({ ...baseInput, mode: FeatureMode.Fast });
+
+      expect(result.feature.maxIterations).toBeUndefined();
+    });
   });
 
   // -------------------------------------------------------------------------

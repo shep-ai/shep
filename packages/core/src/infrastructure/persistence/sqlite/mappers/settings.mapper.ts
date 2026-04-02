@@ -138,6 +138,9 @@ export interface SettingsRow {
   // Skill injection config (added in migration 051)
   skill_injection_enabled: number;
   skill_injection_skills: string | null;
+
+  // Exploration max iterations (added in migration 053)
+  exploration_max_iterations: number | null;
 }
 
 /**
@@ -265,6 +268,9 @@ export function toDatabase(settings: Settings): SettingsRow {
     skill_injection_skills: settings.workflow.skillInjection?.skills?.length
       ? JSON.stringify(settings.workflow.skillInjection.skills)
       : null,
+
+    // Exploration max iterations (default: 10)
+    exploration_max_iterations: settings.workflow.explorationMaxIterations ?? null,
   };
 }
 
@@ -418,6 +424,9 @@ export function fromDatabase(row: SettingsRow): Settings {
       commitEvidence: row.workflow_commit_evidence === 1,
       hideCiStatus: row.hide_ci_status === 1,
       defaultMode: row.default_mode ?? 'Fast',
+      ...(row.exploration_max_iterations !== null && {
+        explorationMaxIterations: row.exploration_max_iterations,
+      }),
       autoArchiveDelayMinutes: row.auto_archive_delay_minutes ?? 10,
     },
 

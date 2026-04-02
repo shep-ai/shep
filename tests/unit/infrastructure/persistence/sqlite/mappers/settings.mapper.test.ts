@@ -168,6 +168,7 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     fab_position_swapped: 0,
     skill_injection_enabled: 0,
     skill_injection_skills: null,
+    exploration_max_iterations: null,
     ...overrides,
   };
 }
@@ -962,6 +963,39 @@ describe('Settings Mapper', () => {
       const row = toDatabase(original);
       const restored = fromDatabase(row);
       expect(restored.workflow.defaultMode).toBe('Exploration');
+    });
+  });
+
+  describe('toDatabase() - explorationMaxIterations', () => {
+    it('should map workflow.explorationMaxIterations=10 to exploration_max_iterations=10', () => {
+      const settings = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          explorationMaxIterations: 10,
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.exploration_max_iterations).toBe(10);
+    });
+
+    it('should map undefined explorationMaxIterations to null', () => {
+      const settings = createTestSettings();
+      const row = toDatabase(settings);
+      expect(row.exploration_max_iterations).toBeNull();
+    });
+  });
+
+  describe('fromDatabase() - explorationMaxIterations', () => {
+    it('should map exploration_max_iterations=10 to workflow.explorationMaxIterations=10', () => {
+      const row = createTestRow({ exploration_max_iterations: 10 });
+      const settings = fromDatabase(row);
+      expect(settings.workflow.explorationMaxIterations).toBe(10);
+    });
+
+    it('should omit explorationMaxIterations when column is null', () => {
+      const row = createTestRow({ exploration_max_iterations: null });
+      const settings = fromDatabase(row);
+      expect(settings.workflow.explorationMaxIterations).toBeUndefined();
     });
   });
 

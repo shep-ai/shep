@@ -330,6 +330,11 @@ describe('createDefaultSettings', () => {
       expect(settings.workflow.defaultMode).toBe('Fast');
     });
 
+    it('should default workflow.explorationMaxIterations to 10', () => {
+      const settings = createDefaultSettings();
+      expect(settings.workflow.explorationMaxIterations).toBe(10);
+    });
+
     it('should include all workflow defaults', () => {
       const settings = createDefaultSettings();
       expect(settings.workflow).toEqual({
@@ -344,6 +349,7 @@ describe('createDefaultSettings', () => {
         enableEvidence: false,
         commitEvidence: false,
         defaultMode: 'Fast',
+        explorationMaxIterations: 10,
         autoArchiveDelayMinutes: 10,
         skillInjection: {
           enabled: false,

@@ -419,6 +419,14 @@ model WorkflowConfig {
   defaultMode: string = "Fast";
 
   /**
+   * Maximum number of feedback iterations allowed in exploration mode.
+   * When the limit is reached, the user is prompted to promote or discard.
+   * Set to 0 for unlimited iterations.
+   */
+  @doc("Maximum exploration feedback iterations (default: 10, 0 = unlimited)")
+  explorationMaxIterations?: int32;
+
+  /**
    * Automatically archive features that reach the Maintain (completed) lifecycle
    * after this many minutes. When set to 0, auto-archiving is disabled.
    * The timer starts from the feature's updatedAt timestamp (the moment it

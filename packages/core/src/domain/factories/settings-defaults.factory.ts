@@ -209,6 +209,7 @@ export function createDefaultSettings(): Settings {
     enableEvidence: false,
     commitEvidence: false,
     defaultMode: 'Fast',
+    explorationMaxIterations: 10,
     autoArchiveDelayMinutes: 10,
     skillInjection,
   };

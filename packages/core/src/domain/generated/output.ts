@@ -499,6 +499,10 @@ export type WorkflowConfig = {
    */
   defaultMode: string;
   /**
+   * Maximum exploration feedback iterations (default: 10, 0 = unlimited)
+   */
+  explorationMaxIterations?: number;
+  /**
    * Minutes after completion before auto-archiving a feature (default: 10, 0 = disabled)
    */
   autoArchiveDelayMinutes?: number;
