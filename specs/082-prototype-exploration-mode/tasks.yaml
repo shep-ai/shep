@@ -1,0 +1,864 @@
+name: "prototype-exploration-mode"
+summary: >
+  29 tasks across 7 phases implementing exploration/prototyping mode. Starts with TypeSpec
+  domain models (FeatureMode enum, Exploring lifecycle state, iteration fields), then persistence
+  migration (fast boolean to mode enum), agent graph infrastructure (exploration graph factory,
+  prototype-generate and apply-feedback nodes, worker routing), application use cases (create,
+  promote, discard), CLI commands (--explore, feedback, promote), Web UI (mode selector, canvas
+  nodes, prototype drawer tab), and settings integration (defaultMode, maxIterations).
+
+relatedFeatures:
+  - "052-fast-prompt-to-pr"
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "LangGraph (@langchain/langgraph)"
+  - "React / Next.js"
+  - "Commander.js"
+  - "shadcn/ui"
+  - "SQLite (better-sqlite3)"
+  - "tsyringe (DI)"
+  - "React Flow (@xyflow/react)"
+  - "Lucide React (icons)"
+  - "Storybook"
+  - "Vitest"
+
+relatedLinks:
+  - title: "LangGraph Interrupt/Resume Documentation"
+    url: "https://langchain-ai.github.io/langgraphjs/how-tos/human_in_the_loop/breakpoints/"
+  - title: "TypeSpec Enum Documentation"
+    url: "https://typespec.io/docs/language-basics/enums"
+
+tasks:
+  # ============================================================
+  # Phase 1: Domain Foundation (TypeSpec + Generated Code)
+  # ============================================================
+
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Define FeatureMode enum in TypeSpec"
+    description: "Create a new FeatureMode enum in tsp/common/enums/feature-mode.tsp with values Regular, Fast, and Exploration. Follow the pattern of existing enums like SdlcLifecycle. Import and use the new enum in tsp/domain/entities/feature.tsp to replace the boolean fast field."
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "FeatureMode enum exists in tsp/common/enums/feature-mode.tsp with Regular, Fast, Exploration values"
+      - "Feature entity in feature.tsp uses FeatureMode instead of boolean fast"
+      - "pnpm tsp:compile succeeds and generates output.ts with FeatureMode"
+      - "Generated output.ts includes FeatureMode type and enum values"
+    tdd:
+      red:
+        - "Write test asserting FeatureMode enum has exactly three values: Regular, Fast, Exploration"
+        - "Write test asserting Feature type has mode field of type FeatureMode instead of fast boolean"
+      green:
+        - "Create tsp/common/enums/feature-mode.tsp with FeatureMode enum"
+        - "Update tsp/domain/entities/feature.tsp to replace fast: boolean with mode: FeatureMode"
+        - "Run pnpm tsp:compile to regenerate output.ts"
+      refactor:
+        - "Ensure enum doc comments match the domain language from the spec"
+    estimatedEffort: "45min"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Add Exploring state to SdlcLifecycle enum"
+    description: "Add Exploring to the SdlcLifecycle enum in tsp/common/enums/lifecycle.tsp. Position it logically near Started since it represents an early-stage exploratory state. Recompile TypeSpec."
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "SdlcLifecycle enum includes Exploring state"
+      - "pnpm tsp:compile succeeds"
+      - "Generated output.ts includes Exploring in the lifecycle type"
+    tdd:
+      red:
+        - "Write test asserting SdlcLifecycle includes 'Exploring' as a valid value"
+      green:
+        - "Add Exploring variant to SdlcLifecycle in lifecycle.tsp"
+        - "Run pnpm tsp:compile"
+      refactor:
+        - "Add doc comment explaining Exploring state purpose and valid transitions"
+    estimatedEffort: "20min"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Add iteration fields to Feature entity in TypeSpec"
+    description: "Add iterationCount (integer, default 0) and maxIterations (optional integer) fields to the Feature model in feature.tsp. These fields track exploration feedback loop progress and are persisted to the database for Web UI access."
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Feature entity has iterationCount: int32 = 0 field"
+      - "Feature entity has maxIterations?: int32 optional field"
+      - "pnpm tsp:compile succeeds"
+      - "Generated output.ts includes both fields on Feature type"
+    tdd:
+      red:
+        - "Write test asserting Feature type has iterationCount (number) and maxIterations (optional number) fields"
+      green:
+        - "Add iterationCount and maxIterations fields to Feature model in feature.tsp"
+        - "Run pnpm tsp:compile"
+      refactor:
+        - "Add doc comments explaining field purpose and when they are populated"
+    estimatedEffort: "15min"
+
+  - id: "task-4"
+    phaseId: "phase-1"
+    title: "Update lifecycle gate definitions for Exploring state"
+    description: "Add lifecycle gate configuration for the Exploring state in the domain lifecycle gates module. Define valid transitions: Exploring -> Implementation (promote-fast), Exploring -> Requirements (promote-regular), Exploring -> Deleting (discard). The Exploring state has no approval gates since exploration bypasses SDLC."
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "Lifecycle gates module includes Exploring state with valid transition targets"
+      - "Exploring state transitions to Implementation, Requirements, and Deleting only"
+      - "No approval gates defined for Exploring state"
+      - "Existing lifecycle gate tests still pass"
+    tdd:
+      red:
+        - "Write test asserting Exploring state has valid transitions to Implementation, Requirements, and Deleting"
+        - "Write test asserting Exploring state has no approval gates"
+        - "Write test asserting invalid transition from Exploring to Review throws error"
+      green:
+        - "Add Exploring configuration to lifecycle gates"
+        - "Define valid transition targets"
+      refactor:
+        - "Ensure gate definitions follow the same pattern as existing states"
+    estimatedEffort: "30min"
+
+  # ============================================================
+  # Phase 2: Persistence Migration (Boolean-to-Enum + Schema)
+  # ============================================================
+
+  - id: "task-5"
+    phaseId: "phase-2"
+    title: "Create SQLite migration to replace fast boolean with mode enum"
+    description: "Create migration 051-replace-fast-with-mode.ts that adds a TEXT mode column to the features table, migrates existing data (fast=1 -> 'Fast', fast=0 -> 'Regular'), and drops the fast column via SQLite table recreation. Register the migration in the migrations index."
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Migration file exists at 051-replace-fast-with-mode.ts"
+      - "Migration adds TEXT mode column with DEFAULT 'Regular'"
+      - "Migration maps fast=1 to mode='Fast' and fast=0 to mode='Regular'"
+      - "Migration drops the fast column after data migration"
+      - "Migration is registered in migrations/index.ts"
+      - "Migration handles empty tables gracefully"
+    tdd:
+      red:
+        - "Write integration test creating a test DB with features (fast=0 and fast=1), running migration, asserting mode column values are 'Regular' and 'Fast'"
+        - "Write test asserting fast column no longer exists after migration"
+      green:
+        - "Implement migration using table recreation pattern (create temp, copy data, drop old, rename)"
+        - "Add migration to index.ts exports"
+      refactor:
+        - "Add comments explaining the SQLite table recreation pattern"
+    estimatedEffort: "1h"
+
+  - id: "task-6"
+    phaseId: "phase-2"
+    title: "Update feature mapper from boolean fast to enum mode"
+    description: "Update feature.mapper.ts to map between FeatureMode enum (domain) and TEXT mode column (database). Replace toDatabase: fast ? 1 : 0 with mode string, and toDomain: row.fast === 1 with FeatureMode enum parsing. Add iterationCount and maxIterations field mapping."
+    state: "Todo"
+    dependencies:
+      - "task-3"
+      - "task-5"
+    acceptanceCriteria:
+      - "toDatabase maps FeatureMode enum to string ('Regular', 'Fast', 'Exploration')"
+      - "toDomain maps string mode column to FeatureMode enum"
+      - "toDatabase and toDomain handle iterationCount and maxIterations"
+      - "No references to boolean fast remain in mapper"
+      - "Existing mapper tests updated and passing"
+    tdd:
+      red:
+        - "Write test: toDatabase with mode=FeatureMode.Fast produces row with mode='Fast'"
+        - "Write test: toDomain with row.mode='Exploration' produces feature with mode=FeatureMode.Exploration"
+        - "Write test: toDomain with row.mode='Regular' produces feature with mode=FeatureMode.Regular"
+        - "Write test: iterationCount and maxIterations round-trip correctly through mapper"
+      green:
+        - "Replace fast boolean mapping with mode enum mapping in toDatabase"
+        - "Replace fast boolean mapping with mode enum parsing in toDomain"
+        - "Add iterationCount/maxIterations field mapping"
+      refactor:
+        - "Remove any dead code related to boolean fast mapping"
+        - "Update existing tests that reference the fast boolean"
+    estimatedEffort: "45min"
+
+  - id: "task-7"
+    phaseId: "phase-2"
+    title: "Update feature repository queries for mode enum"
+    description: "Update any repository queries that filter or sort by the fast boolean to use the mode TEXT column instead. Update any query builders or raw SQL that references the fast column."
+    state: "Todo"
+    dependencies:
+      - "task-6"
+    acceptanceCriteria:
+      - "No repository queries reference the fast column"
+      - "Queries that filtered on fast now filter on mode"
+      - "Repository can query features by mode (findByMode or equivalent)"
+      - "All existing repository tests pass with mode instead of fast"
+    tdd:
+      red:
+        - "Write test: repository query filters features by mode='Exploration'"
+        - "Write test: repository returns correct mode value for persisted features"
+      green:
+        - "Update SQL queries and query builders from fast column to mode column"
+        - "Add any new mode-based query methods if needed"
+      refactor:
+        - "Search for remaining references to 'fast' in repository layer and update"
+    estimatedEffort: "30min"
+
+  # ============================================================
+  # Phase 3: Agent Graph Infrastructure
+  # ============================================================
+
+  - id: "task-8"
+    phaseId: "phase-3"
+    title: "Extend FeatureAgentAnnotation with exploration state channels"
+    description: "Add exploration-specific channels to the FeatureAgentAnnotation in state.ts: iterationCount (number, default 0), maxIterations (number, default 10), feedbackHistory (string array with accumulating reducer), and explorationStatus (string union type). Follow the pattern of existing CI fix channels."
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "FeatureAgentAnnotation includes iterationCount channel with default 0"
+      - "FeatureAgentAnnotation includes maxIterations channel with default 10"
+      - "FeatureAgentAnnotation includes feedbackHistory channel with accumulating reducer"
+      - "FeatureAgentAnnotation includes explorationStatus channel"
+      - "Existing graph tests still pass (new channels have safe defaults)"
+    tdd:
+      red:
+        - "Write test: annotation creates state with iterationCount=0 by default"
+        - "Write test: feedbackHistory accumulates via reducer ([...prev, ...next])"
+        - "Write test: explorationStatus defaults to undefined/null for non-exploration graphs"
+      green:
+        - "Add four new channels to FeatureAgentAnnotation definition"
+        - "Implement accumulating reducer for feedbackHistory"
+      refactor:
+        - "Group exploration channels together with a comment block, similar to CI fix channels"
+    estimatedEffort: "30min"
+
+  - id: "task-9"
+    phaseId: "phase-3"
+    title: "Create exploration prompt builders"
+    description: "Create buildPrototypeGeneratePrompt in prototype-generate.prompt.ts and buildApplyFeedbackPrompt in apply-feedback.prompt.ts. The generate prompt emphasizes quick prototyping, minimal scope, and throwaway quality. The feedback prompt includes previous prototype context, accumulated feedback history, and current iteration number."
+    state: "Todo"
+    dependencies:
+      - "task-8"
+    acceptanceCriteria:
+      - "buildPrototypeGeneratePrompt produces a prompt emphasizing speed over quality"
+      - "buildPrototypeGeneratePrompt includes user query, repo context, and iteration context"
+      - "buildApplyFeedbackPrompt includes feedback text, iteration history summary, and instruction to modify prototype"
+      - "Both prompt builders handle first iteration (no prior feedback) and subsequent iterations (with history)"
+      - "Older feedback (beyond 3 iterations) is summarized to manage context window"
+    tdd:
+      red:
+        - "Write test: buildPrototypeGeneratePrompt includes user query in output"
+        - "Write test: buildPrototypeGeneratePrompt on iteration 0 has no feedback context"
+        - "Write test: buildPrototypeGeneratePrompt on iteration 3 includes summarized history"
+        - "Write test: buildApplyFeedbackPrompt includes current feedback text"
+        - "Write test: buildApplyFeedbackPrompt includes iteration count"
+      green:
+        - "Implement buildPrototypeGeneratePrompt with conditional history inclusion"
+        - "Implement buildApplyFeedbackPrompt with feedback context building"
+      refactor:
+        - "Extract shared prompt utilities if patterns emerge between generate and feedback prompts"
+    estimatedEffort: "1h"
+
+  - id: "task-10"
+    phaseId: "phase-3"
+    title: "Implement prototype-generate node"
+    description: "Create the prototype-generate node function in prototype-generate.node.ts. This node calls the agent executor with the exploration prompt, writes code changes to the worktree, updates iterationCount on the feature entity, and interrupts for user feedback. Uses retryExecute and createNodeLogger from shared utilities."
+    state: "Todo"
+    dependencies:
+      - "task-8"
+      - "task-9"
+    acceptanceCriteria:
+      - "Node calls agent executor with prototype generate prompt via retryExecute"
+      - "Node updates iterationCount in graph state"
+      - "Node updates feature entity iterationCount in database"
+      - "Node interrupts after generation with summary payload"
+      - "Node respects maxIterations limit"
+      - "Node uses createNodeLogger for consistent logging"
+    tdd:
+      red:
+        - "Write test: node calls executor with prototype generate prompt"
+        - "Write test: node increments iterationCount in returned state"
+        - "Write test: node interrupts after generation"
+        - "Write test: node includes iteration count in interrupt payload"
+        - "Write test: node forces promote/discard when iterationCount reaches maxIterations"
+      green:
+        - "Implement createPrototypeGenerateNode factory function"
+        - "Call retryExecute with exploration prompt"
+        - "Return state update with incremented iterationCount and messages"
+        - "Call interrupt() with generation summary"
+      refactor:
+        - "Ensure error handling follows the pattern of other nodes (re-throw with node name prefix)"
+    estimatedEffort: "1.5h"
+
+  - id: "task-11"
+    phaseId: "phase-3"
+    title: "Implement apply-feedback node"
+    description: "Create the apply-feedback node function in apply-feedback.node.ts. This node receives user feedback from the resume payload, appends it to feedbackHistory, updates explorationStatus, and prepares context for the next prototype-generate iteration. It does NOT call the agent executor — it is a state-transformation node."
+    state: "Todo"
+    dependencies:
+      - "task-8"
+    acceptanceCriteria:
+      - "Node extracts feedback text from resume payload"
+      - "Node appends feedback to feedbackHistory accumulator"
+      - "Node updates explorationStatus to 'applying-feedback'"
+      - "Node returns state ready for next prototype-generate iteration"
+      - "Node handles empty or missing feedback gracefully"
+    tdd:
+      red:
+        - "Write test: node appends feedback text to feedbackHistory"
+        - "Write test: node updates explorationStatus to 'applying-feedback'"
+        - "Write test: node handles empty feedback string gracefully"
+        - "Write test: node preserves existing feedbackHistory entries"
+      green:
+        - "Implement createApplyFeedbackNode factory function"
+        - "Extract feedback from state (populated by Command resume)"
+        - "Return state update with appended feedbackHistory"
+      refactor:
+        - "Ensure the node is pure state transformation with no side effects"
+    estimatedEffort: "45min"
+
+  - id: "task-12"
+    phaseId: "phase-3"
+    title: "Create exploration agent graph factory"
+    description: "Create createExplorationAgentGraph in exploration-agent-graph.ts with topology: START -> prototype-generate -> interrupt -> apply-feedback -> prototype-generate (loop). The graph exits via conditional routing when the resume action is 'promote' or 'discard' instead of 'iterate'. Follow the factory pattern of createFastFeatureAgentGraph."
+    state: "Todo"
+    dependencies:
+      - "task-10"
+      - "task-11"
+    acceptanceCriteria:
+      - "Graph factory creates a compiled StateGraph with FeatureAgentAnnotation"
+      - "Graph topology: START -> prototype-generate, prototype-generate -> apply-feedback (on iterate), prototype-generate -> END (on promote/discard)"
+      - "Graph accepts checkpointer parameter for interrupt/resume"
+      - "Graph deps interface follows the FeatureAgentGraphDeps pattern"
+      - "Graph handles the feedback resume payload to route correctly"
+    tdd:
+      red:
+        - "Write test: graph factory returns compiled graph"
+        - "Write test: graph invocation calls prototype-generate node first"
+        - "Write test: graph interrupts after prototype-generate"
+        - "Write test: graph routes to apply-feedback on 'iterate' resume action"
+        - "Write test: graph routes to END on 'promote' resume action"
+        - "Write test: graph routes to END on 'discard' resume action"
+      green:
+        - "Implement createExplorationAgentGraph with StateGraph construction"
+        - "Add nodes: prototype-generate, apply-feedback"
+        - "Add edges: START -> prototype-generate"
+        - "Add conditional routing from resume payload"
+        - "Compile graph with checkpointer"
+      refactor:
+        - "Align factory signature and deps interface with existing graph factories"
+        - "Extract routing function for testability"
+    estimatedEffort: "1.5h"
+
+  - id: "task-13"
+    phaseId: "phase-3"
+    title: "Update worker routing from --fast boolean to --mode enum"
+    description: "Replace the --fast boolean flag in feature-agent-worker.ts with --mode string flag accepting 'regular', 'fast', or 'exploration'. Update WorkerArgs interface, parseWorkerArgs function, and graph selection logic to route based on mode value. Update feature-agent-process.service.ts to pass --mode instead of --fast."
+    state: "Todo"
+    dependencies:
+      - "task-12"
+    acceptanceCriteria:
+      - "WorkerArgs has mode: string instead of fast: boolean"
+      - "parseWorkerArgs parses --mode flag correctly"
+      - "Graph selection uses mode value: 'exploration' -> exploration graph, 'fast' -> fast graph, 'regular' -> regular graph"
+      - "Process service passes --mode=<value> instead of --fast"
+      - "Worker handles missing --mode flag with default 'regular' for backward compatibility"
+    tdd:
+      red:
+        - "Write test: parseWorkerArgs parses --mode=exploration correctly"
+        - "Write test: parseWorkerArgs parses --mode=fast correctly"
+        - "Write test: parseWorkerArgs defaults to 'regular' when --mode is absent"
+        - "Write test: graph selection returns exploration graph for mode='exploration'"
+        - "Write test: graph selection returns fast graph for mode='fast'"
+        - "Write test: process service spawns worker with --mode=exploration for exploration features"
+      green:
+        - "Replace --fast with --mode in WorkerArgs and parseWorkerArgs"
+        - "Update graph selection from boolean check to switch on mode"
+        - "Update process service to pass --mode flag"
+      refactor:
+        - "Remove dead code related to --fast flag"
+        - "Ensure backward compatibility for any workers started with old --fast flag"
+    estimatedEffort: "1h"
+
+  # ============================================================
+  # Phase 4: Application Use Cases
+  # ============================================================
+
+  - id: "task-14"
+    phaseId: "phase-4"
+    title: "Extend CreateFeatureUseCase for exploration mode"
+    description: "Update CreateFeatureUseCase to accept mode: FeatureMode as input instead of fast: boolean. When mode is Exploration, set initial lifecycle to Exploring, use minimal spec initialization (feature.yaml only), and spawn the exploration agent graph. Update all callers to pass mode enum."
+    state: "Todo"
+    dependencies:
+      - "task-4"
+      - "task-7"
+      - "task-13"
+    acceptanceCriteria:
+      - "CreateFeatureInput accepts mode: FeatureMode instead of fast: boolean"
+      - "mode=Exploration sets lifecycle to SdlcLifecycle.Exploring"
+      - "mode=Exploration triggers exploration spec initialization (feature.yaml only)"
+      - "mode=Exploration spawns worker with --mode=exploration"
+      - "mode=Fast preserves existing fast mode behavior"
+      - "mode=Regular preserves existing regular mode behavior"
+      - "All existing create feature tests updated for mode enum"
+    tdd:
+      red:
+        - "Write test: creating feature with mode=Exploration sets lifecycle to Exploring"
+        - "Write test: creating feature with mode=Exploration initializes minimal spec"
+        - "Write test: creating feature with mode=Exploration spawns worker with exploration mode"
+        - "Write test: creating feature with mode=Fast still works (backward compatibility)"
+        - "Write test: creating feature with mode=Regular still works (backward compatibility)"
+      green:
+        - "Replace fast: boolean with mode: FeatureMode in CreateFeatureInput"
+        - "Update lifecycle selection logic for three modes"
+        - "Update spec initializer call to pass 'exploration' mode"
+        - "Update process service spawn call to pass mode"
+      refactor:
+        - "Update all callers of CreateFeatureUseCase (CLI, Web UI server action)"
+    estimatedEffort: "1.5h"
+
+  - id: "task-15"
+    phaseId: "phase-4"
+    title: "Update spec initializer for exploration mode"
+    description: "Extend the spec initializer service to accept mode='exploration' and generate only feature.yaml (no spec.yaml, research.yaml, plan.yaml, or tasks.yaml). Follow the existing pattern where fast mode already generates a minimal subset."
+    state: "Todo"
+    dependencies:
+      - "task-14"
+    acceptanceCriteria:
+      - "Spec initializer accepts mode='exploration' parameter"
+      - "mode='exploration' generates only feature.yaml"
+      - "mode='fast' still generates feature.yaml + spec.yaml (unchanged)"
+      - "mode=undefined still generates all 5 files (unchanged)"
+      - "feature.yaml for exploration includes the exploration prompt as description"
+    tdd:
+      red:
+        - "Write test: initializer with mode='exploration' creates only feature.yaml"
+        - "Write test: initializer with mode='exploration' does not create spec.yaml"
+        - "Write test: initializer with mode='fast' still creates feature.yaml and spec.yaml"
+      green:
+        - "Add 'exploration' case to mode-based template filtering"
+        - "Only include feature.yaml template for exploration mode"
+      refactor:
+        - "Consider extracting mode-based template selection into a named function for clarity"
+    estimatedEffort: "30min"
+
+  - id: "task-16"
+    phaseId: "phase-4"
+    title: "Create PromoteExplorationUseCase"
+    description: "Create a new use case that transitions an exploration feature to Regular or Fast mode. Changes mode field, transitions lifecycle (Exploring -> Requirements for regular, Exploring -> Implementation for fast), optionally scaffolds missing spec YAMLs when promoting to regular, and spawns the appropriate agent graph."
+    state: "Todo"
+    dependencies:
+      - "task-14"
+    acceptanceCriteria:
+      - "Use case validates feature is in Exploration mode and Exploring lifecycle"
+      - "Promote to Regular: mode=Regular, lifecycle=Requirements, scaffolds missing spec YAMLs"
+      - "Promote to Fast: mode=Fast, lifecycle=Implementation, no spec scaffolding"
+      - "Preserves existing worktree and branch (no cleanup)"
+      - "Spawns appropriate agent graph after transition"
+      - "Returns updated feature entity"
+      - "Rejects promotion of non-exploration features with descriptive error"
+    tdd:
+      red:
+        - "Write test: promoting exploration feature to Regular changes mode and lifecycle"
+        - "Write test: promoting exploration feature to Fast changes mode and lifecycle"
+        - "Write test: promoting to Regular scaffolds missing spec YAMLs"
+        - "Write test: promoting to Fast does not scaffold spec YAMLs"
+        - "Write test: promoting non-exploration feature throws error"
+        - "Write test: promoting feature not in Exploring lifecycle throws error"
+      green:
+        - "Create PromoteExplorationUseCase with DI for feature repository, spec initializer, process service"
+        - "Implement execute method with mode transition logic"
+        - "Call spec initializer for regular promotion"
+        - "Spawn worker via process service with new mode"
+      refactor:
+        - "Follow existing use case patterns (output port interface, result types)"
+    estimatedEffort: "1.5h"
+
+  - id: "task-17"
+    phaseId: "phase-4"
+    title: "Extend discard/delete logic for exploration features"
+    description: "Ensure the existing feature deletion use case handles exploration features correctly. Exploration features in Exploring lifecycle transition to Deleting, clean up the worktree and branch, and archive. Verify checkpoint cleanup occurs for exploration graphs."
+    state: "Todo"
+    dependencies:
+      - "task-14"
+    acceptanceCriteria:
+      - "Deleting an exploration feature transitions Exploring -> Deleting -> Archived"
+      - "Worktree is cleaned up during deletion"
+      - "Branch is cleaned up during deletion"
+      - "Checkpoint database files are cleaned up for discarded explorations"
+      - "Existing delete functionality for regular/fast features is unchanged"
+    tdd:
+      red:
+        - "Write test: deleting exploration feature in Exploring state succeeds"
+        - "Write test: deleting exploration feature cleans up worktree"
+        - "Write test: deleting regular feature still works (no regression)"
+      green:
+        - "Add Exploring to the list of valid source states for deletion transition"
+        - "Ensure worktree cleanup runs for exploration features"
+        - "Add checkpoint cleanup for exploration graph thread IDs"
+      refactor:
+        - "Verify no special-casing is needed beyond allowing Exploring as a valid delete source"
+    estimatedEffort: "45min"
+
+  # ============================================================
+  # Phase 5: CLI Presentation
+  # ============================================================
+
+  - id: "task-18"
+    phaseId: "phase-5"
+    title: "Add --explore flag to feat new command"
+    description: "Add --explore flag to the feat new CLI command. When --explore is specified, create the feature with mode=Exploration. Update the mutually exclusive flag logic so --explore, --fast, and default (regular) are exclusive. Update getWorkflowDefaults to return mode enum instead of fast boolean."
+    state: "Todo"
+    dependencies:
+      - "task-14"
+    acceptanceCriteria:
+      - "shep feat new <idea> --explore creates feature with mode=Exploration"
+      - "--explore and --fast are mutually exclusive (error if both specified)"
+      - "Default mode comes from workflow settings (defaultMode)"
+      - "getWorkflowDefaults returns mode string instead of fast boolean"
+      - "Existing --fast and --no-fast flags still work"
+    tdd:
+      red:
+        - "Write test: --explore flag sets mode to Exploration in use case input"
+        - "Write test: --fast and --explore together produces error"
+        - "Write test: --fast flag sets mode to Fast (backward compat)"
+        - "Write test: no mode flag uses workflow default"
+      green:
+        - "Add --explore option to commander definition"
+        - "Update flag resolution logic for three-way mode selection"
+        - "Update getWorkflowDefaults to use mode enum"
+        - "Pass mode to CreateFeatureUseCase"
+      refactor:
+        - "Extract mode resolution into a helper function for clarity"
+    estimatedEffort: "45min"
+
+  - id: "task-19"
+    phaseId: "phase-5"
+    title: "Create feat feedback CLI command"
+    description: "Create a new feedback.command.ts that implements 'shep feat feedback <feature-id> <feedback-text>'. The command sends feedback to an exploration feature by resuming the interrupted agent graph with an iterate action and the provided feedback text."
+    state: "Todo"
+    dependencies:
+      - "task-14"
+    acceptanceCriteria:
+      - "shep feat feedback <id> <text> resumes the exploration graph with iterate action"
+      - "Command validates feature exists and is in Exploring lifecycle"
+      - "Command shows current iteration count after feedback submission"
+      - "Command shows error if feature is not in exploration mode"
+      - "Command is registered in the feat command group"
+    tdd:
+      red:
+        - "Write test: feedback command calls resume with correct action and feedback text"
+        - "Write test: feedback command rejects non-exploration features"
+        - "Write test: feedback command displays iteration count"
+      green:
+        - "Create feedback.command.ts with commander action"
+        - "Look up feature, validate mode and lifecycle"
+        - "Resume agent graph via process service with iterate payload"
+        - "Display iteration status"
+      refactor:
+        - "Follow the pattern of existing feat subcommands (feat start, feat del)"
+    estimatedEffort: "1h"
+
+  - id: "task-20"
+    phaseId: "phase-5"
+    title: "Create feat promote CLI command"
+    description: "Create a new promote.command.ts that implements 'shep feat promote <feature-id> [--fast]'. The command promotes an exploration feature to Regular mode (default) or Fast mode (with --fast flag) using PromoteExplorationUseCase."
+    state: "Todo"
+    dependencies:
+      - "task-16"
+    acceptanceCriteria:
+      - "shep feat promote <id> promotes to Regular mode by default"
+      - "shep feat promote <id> --fast promotes to Fast mode"
+      - "Command validates feature is in exploration mode before promoting"
+      - "Command shows updated feature status after promotion"
+      - "Command is registered in the feat command group"
+    tdd:
+      red:
+        - "Write test: promote command calls PromoteExplorationUseCase with Regular mode"
+        - "Write test: promote command with --fast calls PromoteExplorationUseCase with Fast mode"
+        - "Write test: promote command rejects non-exploration features"
+      green:
+        - "Create promote.command.ts with commander action"
+        - "Parse --fast flag to determine target mode"
+        - "Call PromoteExplorationUseCase"
+        - "Display promotion result"
+      refactor:
+        - "Register command in feat/index.ts alongside other subcommands"
+    estimatedEffort: "45min"
+
+  - id: "task-21"
+    phaseId: "phase-5"
+    title: "Register new CLI commands in feat command group"
+    description: "Register feedback and promote commands in the feat command group index. Ensure commands appear in help output and tab completion."
+    state: "Todo"
+    dependencies:
+      - "task-19"
+      - "task-20"
+    acceptanceCriteria:
+      - "feat feedback and feat promote appear in shep feat --help"
+      - "Commands are properly imported and registered"
+      - "No circular dependency issues"
+    tdd: null
+    estimatedEffort: "15min"
+
+  # ============================================================
+  # Phase 6: Web UI Presentation
+  # ============================================================
+
+  - id: "task-22"
+    phaseId: "phase-6"
+    title: "Create mode selector component (ToggleGroup)"
+    description: "Create a ModeSelector component using shadcn/ui ToggleGroup with type='single'. Three options: Regular (ClipboardList icon), Fast (Zap icon), Explore (FlaskConical icon). Component receives value and onChange props. Create colocated Storybook stories."
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "ModeSelector renders three options with correct icons and labels"
+      - "Only one option can be selected at a time"
+      - "Component emits FeatureMode enum value on change"
+      - "Component accepts controlled value prop"
+      - "Storybook stories cover all three selected states plus disabled state"
+    tdd:
+      red:
+        - "Write test: ModeSelector renders three options"
+        - "Write test: clicking an option calls onChange with correct FeatureMode value"
+        - "Write test: selected state is visually distinguished"
+      green:
+        - "Create mode-selector.tsx with ToggleGroup from shadcn/ui"
+        - "Add icons from lucide-react (ClipboardList, Zap, FlaskConical)"
+        - "Wire value/onChange for controlled usage"
+      refactor:
+        - "Create mode-selector.stories.tsx with all states"
+        - "Ensure accessible labels and keyboard navigation"
+    estimatedEffort: "1h"
+
+  - id: "task-23"
+    phaseId: "phase-6"
+    title: "Replace fast toggle with mode selector in feature create drawer"
+    description: "Replace the Switch toggle for fast mode in feature-create-drawer.tsx with the new ModeSelector component. When Explore is selected, hide approval gate options (they do not apply to exploration). Update FeatureCreatePayload from fast: boolean to mode: FeatureMode."
+    state: "Todo"
+    dependencies:
+      - "task-22"
+    acceptanceCriteria:
+      - "Feature create drawer shows ModeSelector instead of Switch"
+      - "FeatureCreatePayload has mode: FeatureMode instead of fast: boolean"
+      - "Selecting Explore hides approval gate toggles"
+      - "Selecting Regular shows all options (unchanged behavior)"
+      - "Selecting Fast hides approval gates (same as current fast toggle)"
+      - "Default mode matches workflow settings preference"
+    tdd:
+      red:
+        - "Write test: drawer renders ModeSelector instead of Switch"
+        - "Write test: selecting Explore hides approval gates"
+        - "Write test: submitting with Explore mode sends mode=Exploration"
+        - "Write test: selecting Regular shows approval gates"
+      green:
+        - "Replace Switch with ModeSelector in drawer JSX"
+        - "Update form state from fast boolean to mode enum"
+        - "Conditionally hide approval gates based on mode"
+        - "Update submit handler to send mode in payload"
+      refactor:
+        - "Update any tests that reference the old fast toggle"
+    estimatedEffort: "1h"
+
+  - id: "task-24"
+    phaseId: "phase-6"
+    title: "Add exploring state to canvas node configuration"
+    description: "Add an 'exploring' entry to feature-node-state-config.ts with amber/yellow color scheme, FlaskConical icon, and iteration badge. Update feature-node.tsx to render the exploration badge with iteration count."
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "feature-node-state-config.ts has exploring state with amber colors"
+      - "Exploring state uses letter 'E' and amber background"
+      - "feature-node.tsx renders FlaskConical icon for exploration features"
+      - "Iteration count badge displays current iteration number"
+      - "Exploring nodes are visually distinct from fast and regular nodes"
+    tdd:
+      red:
+        - "Write test: state config returns correct colors for 'exploring' state"
+        - "Write test: feature node renders FlaskConical icon when lifecycle is exploring"
+        - "Write test: feature node shows iteration badge with correct count"
+      green:
+        - "Add exploring entry to phase badge config with amber colors"
+        - "Add FlaskConical icon rendering for exploration mode in feature-node.tsx"
+        - "Add iteration count badge for exploration features"
+      refactor:
+        - "Ensure amber colors work in both light and dark mode"
+    estimatedEffort: "45min"
+
+  - id: "task-25"
+    phaseId: "phase-6"
+    title: "Create prototype review drawer tab"
+    description: "Create a prototype-tab.tsx component shown when lifecycle is Exploring. The tab displays: (a) prototype diff/code changes, (b) feedback text input with submit button, (c) promote button opening mode selection dialog (Regular/Fast), (d) discard button with confirmation. Create colocated Storybook stories."
+    state: "Todo"
+    dependencies:
+      - "task-14"
+      - "task-16"
+    acceptanceCriteria:
+      - "Prototype tab shows current prototype changes/diff"
+      - "Feedback input allows entering text and submitting"
+      - "Submit sends feedback via server action that resumes graph with iterate action"
+      - "Promote button opens dialog to choose Regular or Fast target mode"
+      - "Discard button shows confirmation dialog before discarding"
+      - "Iteration count and history are displayed"
+      - "Storybook stories cover: first iteration, mid-iteration, max-iterations-reached, loading states"
+    tdd:
+      red:
+        - "Write test: prototype tab renders feedback input"
+        - "Write test: submit button sends feedback action"
+        - "Write test: promote button opens mode selection dialog"
+        - "Write test: discard button shows confirmation"
+        - "Write test: iteration count displays correctly"
+      green:
+        - "Create prototype-tab.tsx with feedback form, promote/discard actions"
+        - "Wire server actions for feedback, promote, and discard"
+        - "Display prototype diff using existing code diff components"
+      refactor:
+        - "Create prototype-tab.stories.tsx with all variant states"
+        - "Extract action handlers into server actions for clean separation"
+    estimatedEffort: "2h"
+
+  - id: "task-26"
+    phaseId: "phase-6"
+    title: "Update drawer tabs visibility for exploration features"
+    description: "Update computeVisibleTabs in feature-drawer-tabs.tsx to show the 'prototype' tab when lifecycle is Exploring. Hide SDLC-specific tabs (prd-review, tech-decisions, plan) for exploration features. Add the prototype tab key to the tab registry."
+    state: "Todo"
+    dependencies:
+      - "task-25"
+    acceptanceCriteria:
+      - "computeVisibleTabs includes 'prototype' when lifecycle is 'exploring'"
+      - "SDLC-specific tabs are not shown for exploration features"
+      - "Tab renders PrototypeTab component when selected"
+      - "Existing tab visibility logic for regular/fast features is unchanged"
+    tdd:
+      red:
+        - "Write test: computeVisibleTabs returns 'prototype' for exploring lifecycle"
+        - "Write test: computeVisibleTabs does not return 'prd-review' for exploring lifecycle"
+        - "Write test: computeVisibleTabs returns 'prd-review' for requirements lifecycle (no regression)"
+      green:
+        - "Add prototype tab key to tab registry"
+        - "Add exploring lifecycle check in computeVisibleTabs"
+        - "Map prototype tab key to PrototypeTab component"
+      refactor:
+        - "Ensure tab ordering is logical (overview, prototype, activity, log)"
+    estimatedEffort: "30min"
+
+  - id: "task-27"
+    phaseId: "phase-6"
+    title: "Wire Web UI server actions for exploration feedback, promote, and discard"
+    description: "Create or extend server actions to handle exploration-specific operations: submitFeedback (resumes graph with iterate action), promoteExploration (calls PromoteExplorationUseCase), and discardExploration (calls delete use case). These server actions connect the Web UI to the application layer."
+    state: "Todo"
+    dependencies:
+      - "task-16"
+      - "task-17"
+    acceptanceCriteria:
+      - "submitFeedback server action resumes the exploration graph with iterate payload"
+      - "promoteExploration server action calls PromoteExplorationUseCase"
+      - "discardExploration server action calls delete/discard use case"
+      - "Server actions return appropriate response types for UI rendering"
+      - "Server actions validate feature mode before executing"
+    tdd:
+      red:
+        - "Write test: submitFeedback calls resume with correct payload"
+        - "Write test: promoteExploration calls use case with correct target mode"
+        - "Write test: discardExploration calls delete use case"
+        - "Write test: server actions reject operations on non-exploration features"
+      green:
+        - "Create server action functions in appropriate location"
+        - "Wire to use cases and process service via DI"
+        - "Return typed responses"
+      refactor:
+        - "Follow existing server action patterns for consistency"
+    estimatedEffort: "1h"
+
+  # ============================================================
+  # Phase 7: Settings Integration + Polish
+  # ============================================================
+
+  - id: "task-28"
+    phaseId: "phase-7"
+    title: "Replace defaultFastMode with defaultMode in settings"
+    description: "Update WorkflowConfig in settings.tsp to replace defaultFastMode: boolean with defaultMode: string accepting 'regular', 'fast', or 'exploration'. Update settings defaults factory, settings mapper, and all consumers. Default to 'fast' to preserve backward compatibility."
+    state: "Todo"
+    dependencies:
+      - "task-18"
+      - "task-23"
+    acceptanceCriteria:
+      - "WorkflowConfig in settings.tsp has defaultMode instead of defaultFastMode"
+      - "Default value is 'fast' to preserve backward compatibility"
+      - "Settings defaults factory returns mode='fast' as default"
+      - "Settings migration maps defaultFastMode=true to defaultMode='fast'"
+      - "CLI getWorkflowDefaults reads defaultMode"
+      - "Web UI mode selector defaults to settings preference"
+      - "Existing settings with defaultFastMode=true migrate correctly"
+    tdd:
+      red:
+        - "Write test: settings factory returns defaultMode='fast' by default"
+        - "Write test: settings with defaultFastMode=true migrate to defaultMode='fast'"
+        - "Write test: settings with defaultFastMode=false migrate to defaultMode='regular'"
+      green:
+        - "Update settings.tsp with defaultMode field"
+        - "Run pnpm tsp:compile"
+        - "Update settings-defaults.factory.ts"
+        - "Create settings migration for the boolean-to-string change"
+        - "Update all consumers"
+      refactor:
+        - "Remove dead code referencing defaultFastMode"
+    estimatedEffort: "1h"
+
+  - id: "task-29"
+    phaseId: "phase-7"
+    title: "Add explorationMaxIterations setting"
+    description: "Add explorationMaxIterations optional integer field to WorkflowConfig in settings.tsp with default 10. Wire it through settings service so the exploration graph reads it as maxIterations. Update CLI and Web UI to respect this setting."
+    state: "Todo"
+    dependencies:
+      - "task-28"
+    acceptanceCriteria:
+      - "WorkflowConfig has explorationMaxIterations?: int32 = 10"
+      - "Settings defaults factory includes explorationMaxIterations=10"
+      - "Exploration graph receives maxIterations from settings"
+      - "CreateFeatureUseCase passes maxIterations to feature entity on creation"
+      - "Users can override via settings"
+    tdd:
+      red:
+        - "Write test: settings factory returns explorationMaxIterations=10 by default"
+        - "Write test: creating exploration feature sets maxIterations from settings"
+      green:
+        - "Add explorationMaxIterations to settings.tsp"
+        - "Update settings defaults factory"
+        - "Wire maxIterations through CreateFeatureUseCase to feature entity"
+      refactor:
+        - "Verify maxIterations is accessible from the exploration graph nodes"
+    estimatedEffort: "30min"
+
+totalEstimate: "24h"
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  This task breakdown implements exploration/prototyping mode across 29 tasks in 7 phases.
+  The work follows a strict dependency chain: domain types must exist before persistence can
+  map them, persistence must work before the agent graph can read/write features, the graph
+  must exist before use cases can spawn it, and use cases must exist before CLI/Web UI can
+  call them.
+
+  Phase 1 establishes the TypeSpec foundation — FeatureMode enum, Exploring lifecycle state,
+  and iteration fields on the Feature entity. Phase 2 migrates the database from boolean fast
+  to enum mode and updates the mapper. Phase 3 builds the exploration agent graph with its
+  prototype-generate and apply-feedback nodes, prompt builders, state channels, and worker
+  routing. Phase 4 creates the application use cases: extending CreateFeatureUseCase for
+  exploration mode, creating PromoteExplorationUseCase for mode transitions, and extending
+  delete logic for exploration cleanup. Phase 5 adds CLI commands: --explore flag, feedback
+  subcommand, and promote subcommand. Phase 6 builds the Web UI: mode selector component,
+  canvas node styling, prototype review drawer tab, and server actions. Phase 7 integrates
+  settings: replacing defaultFastMode with defaultMode and adding explorationMaxIterations.
+
+  Every code task follows TDD: write a failing test first (RED), implement the minimum to
+  pass (GREEN), then clean up (REFACTOR). The total estimated effort is 24 hours of
+  focused development work.
