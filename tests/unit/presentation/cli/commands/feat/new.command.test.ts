@@ -397,6 +397,46 @@ describe('createNewCommand', () => {
     });
   });
 
+  describe('--explore flag', () => {
+    it('should pass mode=Exploration to use case when --explore is provided', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Explore an idea', '--explore'], { from: 'user' });
+
+      expect(mockCreateExecute).toHaveBeenCalledWith(
+        expect.objectContaining({ mode: FeatureMode.Exploration })
+      );
+    });
+
+    it('should show error and set exit code 1 when both --explore and --fast are provided', async () => {
+      const { messages: mockMessages } = await import(
+        '../../../../../../src/presentation/cli/ui/index.js'
+      );
+
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Explore an idea', '--explore', '--fast'], { from: 'user' });
+
+      expect(process.exitCode).toBe(1);
+      expect(mockMessages.error).toHaveBeenCalledWith(expect.stringContaining('--explore'));
+      expect(mockCreateExecute).not.toHaveBeenCalled();
+    });
+
+    it('should use workflow default mode when no mode flag is provided', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature'], { from: 'user' });
+
+      const callArg = mockCreateExecute.mock.calls[0][0];
+      // Default settings have defaultFastMode=false, so defaults to Regular
+      expect(callArg.mode).toBe(FeatureMode.Regular);
+    });
+
+    it('should expose --explore option in command help', () => {
+      const cmd = createNewCommand();
+      const exploreOption = cmd.options.find((o) => o.long === '--explore');
+      expect(exploreOption).toBeDefined();
+      expect(exploreOption?.description).toBeTruthy();
+    });
+  });
+
   describe('--model flag', () => {
     it('should expose --model option in command help', () => {
       const cmd = createNewCommand();
