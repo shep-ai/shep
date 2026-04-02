@@ -884,6 +884,7 @@ export enum SdlcLifecycle {
   Maintain = 'Maintain',
   Blocked = 'Blocked',
   Pending = 'Pending',
+  Exploring = 'Exploring',
   Deleting = 'Deleting',
   AwaitingUpstream = 'AwaitingUpstream',
   Archived = 'Archived',

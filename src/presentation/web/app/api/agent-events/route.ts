@@ -63,6 +63,7 @@ const LIFECYCLE_TO_NODE: Record<SdlcLifecycle, string> = {
   [SdlcLifecycle.Maintain]: 'maintain',
   [SdlcLifecycle.Blocked]: 'blocked',
   [SdlcLifecycle.Pending]: 'pending',
+  [SdlcLifecycle.Exploring]: 'exploring',
   [SdlcLifecycle.Deleting]: 'blocked',
   [SdlcLifecycle.AwaitingUpstream]: 'merge',
   [SdlcLifecycle.Archived]: 'archived',

@@ -98,6 +98,21 @@ enum SdlcLifecycle {
   Pending,
 
   /**
+   * Exploring state. The feature is in exploration/prototyping mode with an
+   * iterative feedback loop. The agent generates quick prototypes, interrupts
+   * for user feedback, and iterates until the user promotes to a full feature
+   * (Regular or Fast mode) or discards the exploration.
+   *
+   * Valid transitions:
+   * - Exploring → Implementation (promote to Fast mode)
+   * - Exploring → Requirements (promote to Regular mode)
+   * - Exploring → Deleting (discard)
+   * - Self-loop for feedback iterations (lifecycle stays Exploring)
+   */
+  @doc("Exploration mode — iterative prototyping with feedback loops before committing to implementation")
+  Exploring,
+
+  /**
    * Deleting state. The feature is being deleted — cleanup of worktrees,
    * branches, and agent runs is in progress. The feature will be soft-deleted
    * (deletedAt set) once cleanup completes.

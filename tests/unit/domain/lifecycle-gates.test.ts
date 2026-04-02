@@ -12,6 +12,10 @@ describe('SdlcLifecycle', () => {
   it('should include a Pending value', () => {
     expect(SdlcLifecycle.Pending).toBe('Pending');
   });
+
+  it('should include an Exploring value', () => {
+    expect(SdlcLifecycle.Exploring).toBe('Exploring');
+  });
 });
 
 describe('POST_IMPLEMENTATION', () => {

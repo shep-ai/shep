@@ -50,10 +50,10 @@ properties:
   repositoryId:
     $ref: UUID.yaml
     description: ID of the Repository entity this feature belongs to
-  fast:
-    type: boolean
-    default: false
-    description: When true, SDLC phases were skipped and the feature was implemented directly from the prompt
+  mode:
+    $ref: FeatureMode.yaml
+    default: Regular
+    description: "Execution mode determining the workflow: Regular (full SDLC), Fast (direct implementation), or Exploration (iterative prototyping)"
   push:
     type: boolean
     default: false
@@ -116,7 +116,7 @@ required:
   - lifecycle
   - messages
   - relatedArtifacts
-  - fast
+  - mode
   - push
   - openPr
   - forkAndPr
