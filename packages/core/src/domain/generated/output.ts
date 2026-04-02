@@ -495,9 +495,9 @@ export type WorkflowConfig = {
    */
   hideCiStatus?: boolean;
   /**
-   * Default new features to fast mode (default: true)
+   * Default feature mode for new features: 'Regular', 'Fast', or 'Exploration' (default: 'Fast')
    */
-  defaultFastMode: boolean;
+  defaultMode: string;
   /**
    * Minutes after completion before auto-archiving a feature (default: 10, 0 = disabled)
    */

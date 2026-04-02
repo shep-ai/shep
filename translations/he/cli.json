@@ -204,6 +204,8 @@
         "pendingOption": "צור פיצ'ר מבלי להפעיל את הסוכן",
         "fastOption": "דלג על שלבי SDLC ומימש ישירות מההנחיה שלך (ברירת מחדל: מופעל)",
         "noFastOption": "הרץ את כל שלבי ה-SDLC (ניתוח → דרישות → תוכנית → מימוש)",
+        "exploreOption": "Start an exploration/prototyping session for iterative design",
+        "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
         "modelOption": "מזהה מודל LLM להרצה זו (לדוגמה claude-opus-4-6)",
         "noRebaseOption": "Skip syncing main from remote before creating the feature branch",
         "injectSkillsOption": "Inject curated skills into the worktree",
@@ -415,6 +417,28 @@
         "nameLabel": "שם:",
         "restoredLabel": "שוחזר:",
         "failedToUnarchive": "שחזור הפיצ'ר מארכיון נכשל"
+      },
+      "feedback": {
+        "description": "Send feedback on an exploration prototype to iterate",
+        "idArgument": "Feature ID or prefix",
+        "feedbackArgument": "Feedback text for the next iteration",
+        "feedbackSubmitted": "Feedback submitted for: {{name}}",
+        "iterationLabel": "Iteration:",
+        "agentLabel": "Agent:",
+        "agentIterating": "iterating on feedback",
+        "notExploration": "Feature \"{{name}}\" is not in exploration mode (mode: {{mode}}, lifecycle: {{lifecycle}})",
+        "failedToSubmit": "Failed to submit feedback"
+      },
+      "promote": {
+        "description": "Promote an exploration feature to Regular or Fast mode",
+        "idArgument": "Feature ID or prefix",
+        "fastOption": "Promote to Fast mode (skip SDLC phases)",
+        "promoted": "Exploration promoted: {{name}}",
+        "modeLabel": "Mode:",
+        "statusLabel": "Status:",
+        "agentLabel": "Agent:",
+        "agentSpawned": "spawned for {{mode}} mode",
+        "failedToPromote": "Failed to promote exploration"
       },
       "resolveWaiting": {
         "featureNotFound": "פיצ'ר לא נמצא: \"{{id}}\"",

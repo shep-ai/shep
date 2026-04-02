@@ -204,6 +204,8 @@
         "pendingOption": "Создать функцию без запуска агента",
         "fastOption": "Пропустить фазы SDLC и реализовать непосредственно из вашего промпта (по умолчанию: вкл.)",
         "noFastOption": "Выполнить все фазы SDLC (анализ → требования → план → реализация)",
+        "exploreOption": "Start an exploration/prototyping session for iterative design",
+        "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
         "modelOption": "Идентификатор модели LLM для этого запуска (например, claude-opus-4-6)",
         "noRebaseOption": "Skip syncing main from remote before creating the feature branch",
         "injectSkillsOption": "Inject curated skills into the worktree",
@@ -415,6 +417,28 @@
         "nameLabel": "Название:",
         "restoredLabel": "Восстановлено:",
         "failedToUnarchive": "Не удалось восстановить функцию из архива"
+      },
+      "feedback": {
+        "description": "Send feedback on an exploration prototype to iterate",
+        "idArgument": "Feature ID or prefix",
+        "feedbackArgument": "Feedback text for the next iteration",
+        "feedbackSubmitted": "Feedback submitted for: {{name}}",
+        "iterationLabel": "Iteration:",
+        "agentLabel": "Agent:",
+        "agentIterating": "iterating on feedback",
+        "notExploration": "Feature \"{{name}}\" is not in exploration mode (mode: {{mode}}, lifecycle: {{lifecycle}})",
+        "failedToSubmit": "Failed to submit feedback"
+      },
+      "promote": {
+        "description": "Promote an exploration feature to Regular or Fast mode",
+        "idArgument": "Feature ID or prefix",
+        "fastOption": "Promote to Fast mode (skip SDLC phases)",
+        "promoted": "Exploration promoted: {{name}}",
+        "modeLabel": "Mode:",
+        "statusLabel": "Status:",
+        "agentLabel": "Agent:",
+        "agentSpawned": "spawned for {{mode}} mode",
+        "failedToPromote": "Failed to promote exploration"
       },
       "resolveWaiting": {
         "featureNotFound": "Функция не найдена: \"{{id}}\"",

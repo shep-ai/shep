@@ -20,7 +20,7 @@ describe('getWorkflowDefaults server action', () => {
     mockGetSettings.mockReturnValue({
       workflow: {
         openPrOnImplementationComplete: true,
-        defaultFastMode: true,
+        defaultMode: 'Fast',
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
@@ -56,11 +56,11 @@ describe('getWorkflowDefaults server action', () => {
     });
   });
 
-  it('returns all false when workflow defaults are all false', async () => {
+  it('returns Regular mode when defaultMode is Regular', async () => {
     mockGetSettings.mockReturnValue({
       workflow: {
         openPrOnImplementationComplete: false,
-        defaultFastMode: false,
+        defaultMode: 'Regular',
         ciWatchEnabled: false,
         enableEvidence: false,
         commitEvidence: false,

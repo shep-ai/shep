@@ -68,8 +68,11 @@
       "title": "Workflow",
       "description": "Configure PR behavior, approval gates, and CI settings",
       "sectionDescription": "Automation behavior after implementation",
-      "defaultFastMode": "Fast mode by default",
-      "defaultFastModeDescription": "Skip SDLC phases and implement directly from prompt",
+      "defaultMode": "Default feature mode",
+      "defaultModeDescription": "Default mode for new features created via CLI or Web UI",
+      "modeRegular": "Regular",
+      "modeFast": "Fast",
+      "modeExploration": "Exploration",
       "subsections": {
         "approve": "Approve",
         "evidence": "Evidence",

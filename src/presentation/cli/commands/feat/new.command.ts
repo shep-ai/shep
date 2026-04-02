@@ -80,7 +80,7 @@ function getWorkflowDefaults(): WorkflowDefaults {
     allowPlan: gates.allowPlan,
     allowMerge: gates.allowMerge,
     push: gates.pushOnImplementationComplete,
-    defaultMode: settings.workflow.defaultFastMode ? FeatureMode.Fast : FeatureMode.Regular,
+    defaultMode: (settings.workflow.defaultMode as FeatureMode) ?? FeatureMode.Fast,
   };
 }
 

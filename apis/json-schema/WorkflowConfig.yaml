@@ -55,10 +55,10 @@ properties:
   hideCiStatus:
     type: boolean
     description: "Hide CI status badges from UI (default: true)"
-  defaultFastMode:
-    type: boolean
-    default: true
-    description: "Default new features to fast mode (default: true)"
+  defaultMode:
+    type: string
+    default: Fast
+    description: "Default feature mode for new features: 'Regular', 'Fast', or 'Exploration' (default: 'Fast')"
   autoArchiveDelayMinutes:
     type: integer
     minimum: -2147483648
@@ -73,5 +73,5 @@ required:
   - ciWatchEnabled
   - enableEvidence
   - commitEvidence
-  - defaultFastMode
+  - defaultMode
 description: Global workflow configuration defaults

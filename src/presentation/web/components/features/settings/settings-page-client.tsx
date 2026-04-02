@@ -407,9 +407,7 @@ export function SettingsPageClient({
   const [commitEvidence, setCommitEvidence] = useState(settings.workflow.commitEvidence);
   const [ciWatchEnabled, setCiWatchEnabled] = useState(settings.workflow.ciWatchEnabled !== false);
   const [hideCiStatus, setHideCiStatus] = useState(settings.workflow.hideCiStatus !== false);
-  const [defaultFastMode, setDefaultFastMode] = useState(
-    settings.workflow.defaultFastMode !== false
-  );
+  const [defaultMode, setDefaultMode] = useState(settings.workflow.defaultMode ?? 'Fast');
   // Auto-archive state
   const [autoArchiveEnabled, setAutoArchiveEnabled] = useState(
     (settings.workflow.autoArchiveDelayMinutes ?? 10) > 0
@@ -558,7 +556,7 @@ export function SettingsPageClient({
       commitEvidence?: boolean;
       ciWatchEnabled?: boolean;
       hideCiStatus?: boolean;
-      defaultFastMode?: boolean;
+      defaultMode?: string;
       autoArchiveEnabled?: boolean;
       autoArchiveDelay?: string;
       ciMaxFix?: string;
@@ -591,7 +589,7 @@ export function SettingsPageClient({
         commitEvidence: overrides.commitEvidence ?? commitEvidence,
         ciWatchEnabled: overrides.ciWatchEnabled ?? ciWatchEnabled,
         hideCiStatus: overrides.hideCiStatus ?? hideCiStatus,
-        defaultFastMode: overrides.defaultFastMode ?? defaultFastMode,
+        defaultMode: overrides.defaultMode ?? defaultMode,
         autoArchiveDelayMinutes: archiveEnabled
           ? Number.isNaN(archiveDelay) || archiveDelay < 1
             ? 10
@@ -917,17 +915,33 @@ export function SettingsPageClient({
             description={t('settings.workflow.sectionDescription')}
             testId="workflow-settings-section"
           >
-            <SwitchRow
-              label={t('settings.workflow.defaultFastMode')}
-              description={t('settings.workflow.defaultFastModeDescription')}
-              id="default-fast-mode"
-              testId="switch-default-fast-mode"
-              checked={defaultFastMode}
-              onChange={(v) => {
-                setDefaultFastMode(v);
-                save(buildWorkflowPayload({ defaultFastMode: v }));
-              }}
-            />
+            <SettingsRow
+              label={t('settings.workflow.defaultMode')}
+              description={t('settings.workflow.defaultModeDescription')}
+            >
+              <Select
+                value={defaultMode}
+                onValueChange={(v) => {
+                  setDefaultMode(v);
+                  save(buildWorkflowPayload({ defaultMode: v }));
+                }}
+              >
+                <SelectTrigger
+                  id="default-mode"
+                  data-testid="default-mode-select"
+                  className="w-55 cursor-pointer text-xs"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Regular">{t('settings.workflow.modeRegular')}</SelectItem>
+                  <SelectItem value="Fast">{t('settings.workflow.modeFast')}</SelectItem>
+                  <SelectItem value="Exploration">
+                    {t('settings.workflow.modeExploration')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </SettingsRow>
             <SubsectionLabel>{t('settings.workflow.subsections.approve')}</SubsectionLabel>
             <SwitchRow
               label={t('settings.workflow.autoApprovePrd')}

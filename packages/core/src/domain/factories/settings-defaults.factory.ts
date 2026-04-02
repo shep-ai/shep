@@ -208,7 +208,7 @@ export function createDefaultSettings(): Settings {
     ciWatchEnabled: true,
     enableEvidence: false,
     commitEvidence: false,
-    defaultFastMode: true,
+    defaultMode: 'Fast',
     autoArchiveDelayMinutes: 10,
     skillInjection,
   };

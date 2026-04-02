@@ -325,9 +325,9 @@ describe('createDefaultSettings', () => {
   });
 
   describe('WorkflowConfig defaults', () => {
-    it('should default workflow.defaultFastMode to true', () => {
+    it('should default workflow.defaultMode to Fast', () => {
       const settings = createDefaultSettings();
-      expect(settings.workflow.defaultFastMode).toBe(true);
+      expect(settings.workflow.defaultMode).toBe('Fast');
     });
 
     it('should include all workflow defaults', () => {
@@ -343,7 +343,7 @@ describe('createDefaultSettings', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        defaultFastMode: true,
+        defaultMode: 'Fast',
         autoArchiveDelayMinutes: 10,
         skillInjection: {
           enabled: false,

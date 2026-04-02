@@ -204,6 +204,8 @@
         "pendingOption": "Feature erstellen, ohne den Agenten zu starten",
         "fastOption": "SDLC-Phasen überspringen und direkt nach Ihrem Prompt implementieren (Standard: ein)",
         "noFastOption": "Alle SDLC-Phasen durchlaufen (Analyse → Anforderungen → Plan → Implementierung)",
+        "exploreOption": "Start an exploration/prototyping session for iterative design",
+        "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
         "modelOption": "LLM-Modellbezeichnung für diesen Lauf (z.B. claude-opus-4-6)",
         "noRebaseOption": "Skip syncing main from remote before creating the feature branch",
         "injectSkillsOption": "Inject curated skills into the worktree",
@@ -415,6 +417,28 @@
         "nameLabel": "Name:",
         "restoredLabel": "Wiederhergestellt:",
         "failedToUnarchive": "Feature konnte nicht wiederhergestellt werden"
+      },
+      "feedback": {
+        "description": "Send feedback on an exploration prototype to iterate",
+        "idArgument": "Feature ID or prefix",
+        "feedbackArgument": "Feedback text for the next iteration",
+        "feedbackSubmitted": "Feedback submitted for: {{name}}",
+        "iterationLabel": "Iteration:",
+        "agentLabel": "Agent:",
+        "agentIterating": "iterating on feedback",
+        "notExploration": "Feature \"{{name}}\" is not in exploration mode (mode: {{mode}}, lifecycle: {{lifecycle}})",
+        "failedToSubmit": "Failed to submit feedback"
+      },
+      "promote": {
+        "description": "Promote an exploration feature to Regular or Fast mode",
+        "idArgument": "Feature ID or prefix",
+        "fastOption": "Promote to Fast mode (skip SDLC phases)",
+        "promoted": "Exploration promoted: {{name}}",
+        "modeLabel": "Mode:",
+        "statusLabel": "Status:",
+        "agentLabel": "Agent:",
+        "agentSpawned": "spawned for {{mode}} mode",
+        "failedToPromote": "Failed to promote exploration"
       },
       "resolveWaiting": {
         "featureNotFound": "Feature nicht gefunden: \"{{id}}\"",

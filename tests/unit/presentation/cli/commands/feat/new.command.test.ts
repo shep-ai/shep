@@ -369,12 +369,13 @@ describe('createNewCommand', () => {
       );
     });
 
-    it('should use default mode when --fast is not provided', async () => {
+    it('should use default mode from settings when --fast is not provided', async () => {
       const cmd = createNewCommand();
       await cmd.parseAsync(['Add feature'], { from: 'user' });
 
       const callArg = mockCreateExecute.mock.calls[0][0];
-      expect(callArg.mode).toBe(FeatureMode.Regular);
+      // Default settings have no defaultMode set, so fallback is Fast
+      expect(callArg.mode).toBe(FeatureMode.Fast);
     });
 
     it('should combine --fast with --allow-all', async () => {
@@ -425,8 +426,8 @@ describe('createNewCommand', () => {
       await cmd.parseAsync(['Add feature'], { from: 'user' });
 
       const callArg = mockCreateExecute.mock.calls[0][0];
-      // Default settings have defaultFastMode=false, so defaults to Regular
-      expect(callArg.mode).toBe(FeatureMode.Regular);
+      // Default settings have no defaultMode set, so fallback is Fast
+      expect(callArg.mode).toBe(FeatureMode.Fast);
     });
 
     it('should expose --explore option in command help', () => {
