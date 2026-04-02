@@ -1,17 +1,500 @@
- [32m✓[39m [30m[43m node [49m[39m tests/unit/domain/generated/feature-mode-enum.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/feature.mapper.test.ts [2m([22m[2m35 tests[22m[2m)[22m[32m 12[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/promote-exploration.use-case.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 24[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/delete-feature.use-case.test.ts [2m([22m[2m40 tests[22m[2m)[22m[32m 68[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/create-feature.use-case.test.ts [2m([22m[2m55 tests[22m[2m)[22m[32m 61[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/domain/lifecycle-gates.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/state.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/nodes/prototype-generate.node.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
-[2026-04-02T11:12:36.713Z] [default] [WORKER] Graph invocation error: Graph execution failed
-[2026-04-02T11:12:36.713Z] [default] [WORKER] Run marked as failed
-[2026-04-02T11:12:36.714Z] [default] [WORKER] Run marked as failed: ENOENT: no such file or directory
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/nodes/apply-feedback.node.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent-worker.test.ts [2m([22m[2m35 tests[22m[2m)[22m[32m 13[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/langgraph/exploration-agent-graph.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 54[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 2[2mms[22m[39m
-[2m Test Files [22m [1m[32m12 passed[39m[22m[90m (12)[39m
-[2m      Tests [22m [1m[32m281 passed[39m[22m[90m (281)[39m
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent-worker.test.ts > runWorker > should invoke exploration graph and handle interrupt as waiting_approval 0ms
+[2026-04-02T11:26:31.039Z] [default] [WORKER] Received SIGTERM, shutting down...
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should soft-reset spec commits when commitSpecs=false 455ms
+ ✓  node  tests/unit/application/use-cases/features/get-branch-sync-status.use-case.test.ts > GetBranchSyncStatusUseCase > should return sync status for a feature 3ms
+ ✓  node  tests/unit/application/use-cases/features/get-branch-sync-status.use-case.test.ts > GetBranchSyncStatusUseCase > should use worktree path when worktree exists 1ms
+ ✓  node  tests/unit/application/use-cases/features/get-branch-sync-status.use-case.test.ts > GetBranchSyncStatusUseCase > should throw when feature not found 1ms
+ ✓  node  tests/unit/application/use-cases/features/get-branch-sync-status.use-case.test.ts > GetBranchSyncStatusUseCase > should throw when feature has no branch 0ms
+ ✓  node  tests/unit/application/use-cases/features/get-branch-sync-status.use-case.test.ts > GetBranchSyncStatusUseCase > should throw when repository has no remote 0ms
+ ✓  node  tests/unit/application/use-cases/features/get-branch-sync-status.use-case.test.ts > GetBranchSyncStatusUseCase > should fall back to findByIdPrefix 0ms
+[2026-04-02T11:26:31.138Z] [prototype-generate] Starting prototype generation (iteration 1/10)
+[2026-04-02T11:26:31.142Z] [prototype-generate] Executing agent at cwd=/test/worktree
+[2026-04-02T11:26:31.142Z] [prototype-generate] Prompt length: 1442 chars
+[2026-04-02T11:26:31.142Z] [prototype-generate] Prototype generated (24 chars, 0.0s)
+[2026-04-02T11:26:31.142Z] [prototype-generate] Interrupting for feedback (iteration 1/10)
+[2026-04-02T11:26:31.142Z] [prototype-generate] ERROR: Called interrupt() outside the context of a graph. (after 0.0s)
+[2026-04-02T11:26:31.144Z] [prototype-generate] Starting prototype generation (iteration 1/10)
+[2026-04-02T11:26:31.145Z] [prototype-generate] Executing agent at cwd=/test/worktree
+[2026-04-02T11:26:31.145Z] [prototype-generate] Prompt length: 1442 chars
+[2026-04-02T11:26:31.145Z] [prototype-generate] Prototype generated (24 chars, 0.0s)
+[2026-04-02T11:26:31.145Z] [prototype-generate] Interrupting for feedback (iteration 1/10)
+[2026-04-02T11:26:31.145Z] [prototype-generate] ERROR: Called interrupt() outside the context of a graph. (after 0.0s)
+[2026-04-02T11:26:31.146Z] [prototype-generate] Starting prototype generation (iteration 11/10)
+[2026-04-02T11:26:31.146Z] [prototype-generate] Max iterations (10) reached — interrupting for final action
+[2026-04-02T11:26:31.147Z] [prototype-generate] Starting prototype generation (iteration 1/10)
+[2026-04-02T11:26:31.148Z] [prototype-generate] Executing agent at cwd=/test/worktree
+[2026-04-02T11:26:31.148Z] [prototype-generate] Prompt length: 1442 chars
+[2026-04-02T11:26:31.149Z] [prototype-generate] Starting prototype generation (iteration 3/10)
+[2026-04-02T11:26:31.149Z] [prototype-generate] Executing agent at cwd=/test/worktree
+[2026-04-02T11:26:31.149Z] [prototype-generate] Prompt length: 1703 chars
+[2026-04-02T11:26:31.149Z] [prototype-generate] Prototype generated (24 chars, 0.0s)
+[2026-04-02T11:26:31.149Z] [prototype-generate] Interrupting for feedback (iteration 3/10)
+[2026-04-02T11:26:31.148Z] [prototype-generate] ERROR: Process exited with code 1 (after 0.0s)
+[2026-04-02T11:26:31.149Z] [prototype-generate] ERROR: Called interrupt() outside the context of a graph. (after 0.0s)
+[2026-04-02T11:26:31.149Z] [prototype-generate] Starting prototype generation (iteration 1/10)
+[2026-04-02T11:26:31.149Z] [prototype-generate] Executing agent at cwd=/custom/worktree
+[2026-04-02T11:26:31.149Z] [prototype-generate] Prompt length: 1444 chars
+[2026-04-02T11:26:31.149Z] [prototype-generate] Prototype generated (24 chars, 0.0s)
+[2026-04-02T11:26:31.149Z] [prototype-generate] Interrupting for feedback (iteration 1/10)
+[2026-04-02T11:26:31.149Z] [prototype-generate] ERROR: Called interrupt() outside the context of a graph. (after 0.0s)
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prototype-generate.node.test.ts > createPrototypeGenerateNode > calls executor with prototype generate prompt 6ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prototype-generate.node.test.ts > createPrototypeGenerateNode > interrupts after generation (throws outside graph context) 3ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prototype-generate.node.test.ts > createPrototypeGenerateNode > does not call executor when iterationCount reaches maxIterations 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prototype-generate.node.test.ts > createPrototypeGenerateNode > throws non-interrupt errors for resumability 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prototype-generate.node.test.ts > createPrototypeGenerateNode > builds prompt with feedback history for subsequent iterations 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prototype-generate.node.test.ts > createPrototypeGenerateNode > uses correct working directory in executor options 0ms
+ ✓  node  tests/unit/application/use-cases/features/poll-upstream-pr.use-case.test.ts > PollUpstreamPrUseCase > should transition feature to Maintain when upstream PR is merged 3ms
+ ✓  node  tests/unit/application/use-cases/features/poll-upstream-pr.use-case.test.ts > PollUpstreamPrUseCase > should update status to Closed but stay in AwaitingUpstream when PR is closed 1ms
+ ✓  node  tests/unit/application/use-cases/features/poll-upstream-pr.use-case.test.ts > PollUpstreamPrUseCase > should return no-op when upstream PR is still open 0ms
+ ✓  node  tests/unit/application/use-cases/features/poll-upstream-pr.use-case.test.ts > PollUpstreamPrUseCase > should return early when feature is not found 0ms
+ ✓  node  tests/unit/application/use-cases/features/poll-upstream-pr.use-case.test.ts > PollUpstreamPrUseCase > should return early when feature is not in AwaitingUpstream lifecycle 0ms
+ ✓  node  tests/unit/application/use-cases/features/poll-upstream-pr.use-case.test.ts > PollUpstreamPrUseCase > should return early when feature has no upstream PR URL 0ms
+ ✓  node  tests/unit/application/use-cases/features/poll-upstream-pr.use-case.test.ts > PollUpstreamPrUseCase > should return early when upstream PR URL cannot be parsed 0ms
+ ✓  node  tests/unit/application/use-cases/features/poll-upstream-pr.use-case.test.ts > PollUpstreamPrUseCase > should extract correct upstream repo from PR URL 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-message.mapper.test.ts > InteractiveMessage Mapper — toDatabase() > converts camelCase domain object to snake_case DB row 2ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-message.mapper.test.ts > InteractiveMessage Mapper — toDatabase() > maps undefined sessionId to null 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-message.mapper.test.ts > InteractiveMessage Mapper — toDatabase() > maps assistant role correctly 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-message.mapper.test.ts > InteractiveMessage Mapper — fromDatabase() > converts snake_case DB row to camelCase domain object 1ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-message.mapper.test.ts > InteractiveMessage Mapper — fromDatabase() > maps null session_id to undefined sessionId 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-message.mapper.test.ts > InteractiveMessage Mapper — fromDatabase() > maps assistant role correctly 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-message.mapper.test.ts > InteractiveMessage Mapper — fromDatabase() > roundtrips correctly: toDatabase then fromDatabase 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > should include spec context when spec.yaml exists 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > should include tasks context when tasks.yaml exists 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > should include worktree path 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > should fall back to repositoryPath when worktreePath is absent 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > should include JSON output format instructions 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > should include all valid EvidenceType values in instructions 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > should include file size constraints (standard resolution) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > should include file size constraints (500-line truncation) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > should include sensitive data redaction instructions 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > should include evidence capture instructions per task type 8ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > should handle missing spec.yaml gracefully 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > should handle missing tasks.yaml gracefully 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > should be deterministic (same input = same output) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > commitEvidence=false (default) > should store evidence in shep home folder by default 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > commitEvidence=false (default) > should NOT include commit/push block 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > commitEvidence=false (default) > should instruct NOT to commit files 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > mandatory screenshot rule > should require screenshots for UI changes 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > mandatory screenshot rule > should include Playwright installation instructions 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > mandatory screenshot rule > should include screenshot capture script example 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > mandatory screenshot rule > should state minimum evidence requirements 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > mandatory screenshot rule > should not contain "be selective" language 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > commitEvidence=true > should include spec evidence folder storage instructions 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > commitEvidence=true > should include commit block via buildCommitPushBlock 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > commitEvidence=true > should pass spec evidence path in commit block files 7ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > commitEvidence=true > should pass push flag through to buildCommitPushBlock 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > commitEvidence=true > should mention PR body in the prompt 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidencePrompt > commitEvidence=true > should save to BOTH locations 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidenceRetryPrompt > should include base evidence prompt content 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidenceRetryPrompt > should include VALIDATION FEEDBACK section header 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidenceRetryPrompt > should format UI validation errors with task details 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidenceRetryPrompt > should format completeness errors with task list 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidenceRetryPrompt > should format file existence errors with paths 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidenceRetryPrompt > should include all error types when mixed errors are provided 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidenceRetryPrompt > should instruct the agent to focus on fixing gaps, not recollecting everything 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidenceRetryPrompt > should accept EvidencePromptOptions and forward them to buildEvidencePrompt 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts > buildEvidenceRetryPrompt > should return base prompt when errors array is empty 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildPrototypeGeneratePrompt > includes user query in output 3ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildPrototypeGeneratePrompt > includes exploration mode instructions 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildPrototypeGeneratePrompt > on iteration 0 has no feedback context 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildPrototypeGeneratePrompt > on iteration 3 includes feedback history 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildPrototypeGeneratePrompt > on iteration 5+ summarizes older feedback 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildPrototypeGeneratePrompt > includes CLAUDE.md content when present 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildPrototypeGeneratePrompt > includes working directory path 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildPrototypeGeneratePrompt > instructs not to write tests 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildPrototypeGeneratePrompt > instructs not to push to remote 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildPrototypeGeneratePrompt > falls back to feature.yaml when spec.yaml has no content 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildFeedbackHistorySection > returns empty string for empty history 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildFeedbackHistorySection > includes single feedback entry 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildFeedbackHistorySection > includes multiple feedback entries 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildFeedbackHistorySection > summarizes entries beyond the recent 3 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.test.ts > buildFeedbackHistorySection > truncates long older feedback entries 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/validate.node.test.ts > createValidateNode > returns empty errors on valid YAML 7ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/validate.node.test.ts > createValidateNode > returns errors on schema failure and increments retries 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/validate.node.test.ts > createValidateNode > returns parse error when YAML is malformed 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/validate.node.test.ts > createValidateNode > accumulates retry count across invocations 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/validate.node.test.ts > createValidateNode > skips validation when successor phase is already completed 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/validate.node.test.ts > createValidateNode > still validates when successor phase is NOT completed 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/validate.node.test.ts > createValidateNode > validates normally when no successor phase is specified (backwards compat) 16ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/validate.node.test.ts > createValidateNode > does NOT skip when producer completed but successor has not (validation failed before) 1ms
+ ✓  node  tests/unit/domain/generated/feature-mode-enum.test.ts > FeatureMode enum > should have exactly 3 values 2ms
+ ✓  node  tests/unit/domain/generated/feature-mode-enum.test.ts > FeatureMode enum > should have Regular value 0ms
+ ✓  node  tests/unit/domain/generated/feature-mode-enum.test.ts > FeatureMode enum > should have Fast value 0ms
+ ✓  node  tests/unit/domain/generated/feature-mode-enum.test.ts > FeatureMode enum > should have Exploration value 0ms
+ ✓  node  tests/unit/domain/generated/feature-mode-enum.test.ts > FeatureMode enum > should contain all expected values 1ms
+ ✓  node  tests/unit/domain/generated/feature-mode-enum.test.ts > Feature type mode field > should have a mode field of type FeatureMode 0ms
+ ✓  node  tests/unit/domain/generated/feature-mode-enum.test.ts > Feature type mode field > should accept all FeatureMode values 0ms
+ ✓  node  tests/unit/domain/generated/feature-mode-enum.test.ts > Feature iteration fields > should have iterationCount as a number field 0ms
+ ✓  node  tests/unit/domain/generated/feature-mode-enum.test.ts > Feature iteration fields > should have maxIterations as an optional number field 0ms
+ ✓  node  tests/unit/domain/generated/feature-mode-enum.test.ts > Feature iteration fields > should allow iterationCount to be set on Feature type 0ms
+ ✓  node  tests/unit/application/use-cases/features/list-features.use-case.test.ts > ListFeaturesUseCase > should list all features without filters 9ms
+ ✓  node  tests/unit/application/use-cases/features/list-features.use-case.test.ts > ListFeaturesUseCase > should pass repository path filter 1ms
+ ✓  node  tests/unit/application/use-cases/features/list-features.use-case.test.ts > ListFeaturesUseCase > should pass lifecycle filter 1ms
+ ✓  node  tests/unit/application/use-cases/features/list-features.use-case.test.ts > ListFeaturesUseCase > should return empty array when no features found 1ms
+ ✓  node  tests/unit/application/use-cases/features/list-features.use-case.test.ts > ListFeaturesUseCase > should pass combined filters 0ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should throw when feature not found 2ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should include the feature id in the not found error 0ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should succeed for Started lifecycle 3ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should succeed for Implementation lifecycle 1ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should succeed for Review lifecycle 1ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should throw when lifecycle is Archived (already archived) 1ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should throw when lifecycle is Deleting 0ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should succeed when feature has active children 0ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should preserve children relationships when archiving parent 1ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should succeed for Maintain lifecycle, storing previousLifecycle 3ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should succeed for Pending lifecycle 0ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should succeed for Blocked lifecycle 0ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should allow archiving when all children are also archived 0ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should allow archiving when all children are soft-deleted 0ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should find feature by prefix match 0ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should update the updatedAt timestamp 0ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts > ArchiveFeatureUseCase > should return the updated feature 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should not modify commits when commitSpecs=true 338ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should include an evidence section when state.evidence is non-empty 4ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should NOT include an evidence section when state.evidence is empty 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should render screenshot evidence as inline image markdown 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should render video evidence as a markdown link 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should render test output evidence as a fenced code block with description 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should render terminal recording evidence as a markdown link 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should render multiple evidence items in order 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should include taskRef when present on evidence 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should include evidence section even when openPr is false (commit-only mode) 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should use absolute raw.githubusercontent.com URLs when repoUrl is provided 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should convert SSH remote URLs to raw.githubusercontent.com URLs 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should fall back to relative paths when repoUrl is not provided 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should use absolute URLs for video evidence when repoUrl is provided 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should keep relative paths for test output even when repoUrl is provided 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > parseGitHubOwnerRepo > should parse HTTPS GitHub URLs 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > parseGitHubOwnerRepo > should parse HTTPS GitHub URLs with .git suffix 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > parseGitHubOwnerRepo > should parse SSH GitHub URLs 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > parseGitHubOwnerRepo > should parse SSH GitHub URLs without .git suffix 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > parseGitHubOwnerRepo > should return null for non-GitHub URLs 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > parseGitHubOwnerRepo > should return null for invalid URLs 0ms
+ ✓  node  tests/unit/application/use-cases/features/show-feature.use-case.test.ts > ShowFeatureUseCase > should return feature by id 3ms
+ ✓  node  tests/unit/application/use-cases/features/show-feature.use-case.test.ts > ShowFeatureUseCase > should fall back to prefix match when exact match fails 0ms
+ ✓  node  tests/unit/application/use-cases/features/show-feature.use-case.test.ts > ShowFeatureUseCase > should throw if feature not found by id or prefix 1ms
+ ✓  node  tests/unit/application/use-cases/features/show-feature.use-case.test.ts > ShowFeatureUseCase > should include feature id in error message 0ms
+ ✓  node  tests/unit/application/use-cases/features/show-feature.use-case.test.ts > ShowFeatureUseCase > should not call prefix match if exact match succeeds 0ms
+ ✓  node  tests/unit/application/use-cases/features/show-feature.use-case.test.ts > ShowFeatureUseCase > should return the full feature object from repository 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/write-spec-file-atomic.test.ts > writeSpecFileAtomic > should write content to the target file 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/write-spec-file-atomic.test.ts > writeSpecFileAtomic > should not leave a .tmp file after success 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/write-spec-file-atomic.test.ts > writeSpecFileAtomic > should replace an existing file entirely 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/write-spec-file-atomic.test.ts > writeSpecFileAtomic > should work with feature.yaml filename 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecAnalyze > passes for a valid analyze spec 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecAnalyze > fails when name is missing 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecAnalyze > fails when technologies is empty 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecAnalyze > fails when sizeEstimate is invalid 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecAnalyze > fails for null input 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecAnalyze > fails when openQuestions is a non-empty array 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecAnalyze > passes when openQuestions is an empty array 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecAnalyze > passes when openQuestions is not present 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecAnalyze > fails when number is a string instead of integer 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecAnalyze > fails when number is a float 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecAnalyze > fails when number is missing 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecAnalyze > fails when branch is missing 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecAnalyze > fails when openQuestions contains structured objects 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecRequirements > passes for a valid requirements spec 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecRequirements > fails when openQuestions is missing 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecRequirements > fails when openQuestion item missing question field 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts > validateSpecRequirements > passes when openQuestions is empty array (no questions is valid) 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > createToolInstallationStatus > should create an object with "available" status 1ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > createToolInstallationStatus > should create an object with "missing" status and suggestions 1ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > createToolInstallationStatus > should create an object with "error" status and errorMessage 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > createToolInstallationStatus > should throw or return error when toolName is empty string 1ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > createToolInstallationStatus > should throw or return error when toolName is whitespace-only 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > createToolInstallationStatus > should throw when status is invalid value 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > createToolInstallationStatus > should freeze the returned object (immutability) 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > createToolInstallationStatus > should freeze suggestions array if present 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > createToolInstallationStatus > should prevent mutation after freezing 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > Factory helper: createAvailableStatus > should create an available status object with provided toolName 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > Factory helper: createAvailableStatus > should validate toolName is not empty 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > Factory helper: createAvailableStatus > should validate toolName is not whitespace-only 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > Factory helper: createMissingStatus > should create a missing status object with suggestions 1ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > Factory helper: createMissingStatus > should create missing status with empty suggestions array 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > Factory helper: createMissingStatus > should validate toolName is not empty 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > Factory helper: createErrorStatus > should create an error status object with errorMessage 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > Factory helper: createErrorStatus > should accept error message with special characters 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > Factory helper: createErrorStatus > should validate toolName is not empty 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > Edge cases and normalization > should handle toolName with leading/trailing whitespace 0ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts > ToolInstallationStatus Value Object > Edge cases and normalization > should handle multiple suggestions 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/requirements-prompt.test.ts > buildRequirementsPrompt > should include structured options instruction 4ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/requirements-prompt.test.ts > buildRequirementsPrompt > should include QuestionOption structure example 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/requirements-prompt.test.ts > buildRequirementsPrompt > should include rejection feedback section when present 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/requirements-prompt.test.ts > buildRequirementsPrompt > should NOT include rejection feedback section when absent 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/requirements-prompt.test.ts > buildRequirementsPrompt > should put latest feedback first and older entries in context section 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/requirements-prompt.test.ts > buildRequirementsPrompt > should instruct exactly one option selected per question 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/requirements-prompt.test.ts > buildRequirementsPrompt > should include commit block when commitSpecs=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/requirements-prompt.test.ts > buildRequirementsPrompt > should exclude commit block when commitSpecs=false 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > toDatabase > should map all fields to snake_case columns 1ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > toDatabase > should convert Date objects to unix milliseconds 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > fromDatabase > should map all columns to camelCase fields 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > fromDatabase > should convert unix milliseconds back to Date objects 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > soft delete (deletedAt) > toDatabase should map deletedAt Date to unix milliseconds 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > soft delete (deletedAt) > toDatabase should map undefined deletedAt to null 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > soft delete (deletedAt) > fromDatabase should map deleted_at integer to Date 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > soft delete (deletedAt) > fromDatabase should map null deleted_at to undefined 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > remoteUrl mapping > toDatabase should map remoteUrl to remote_url column 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > remoteUrl mapping > toDatabase should map undefined remoteUrl to null 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > remoteUrl mapping > fromDatabase should map remote_url to remoteUrl 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > remoteUrl mapping > fromDatabase should map null remote_url to undefined 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > round-trip > should preserve all data through toDatabase -> fromDatabase 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > round-trip > should preserve deletedAt through round-trip 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > round-trip > should preserve remoteUrl through round-trip 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts > Repository Mapper > round-trip > should preserve undefined remoteUrl through round-trip 0ms
+ ✓  node  tests/unit/application/use-cases/features/update/update-feature-lifecycle.use-case.test.ts > UpdateFeatureLifecycleUseCase > should persist the new lifecycle on the feature 1ms
+ ✓  node  tests/unit/application/use-cases/features/update/update-feature-lifecycle.use-case.test.ts > UpdateFeatureLifecycleUseCase > should call checkAndUnblock.execute() with the featureId after persisting 1ms
+ ✓  node  tests/unit/application/use-cases/features/update/update-feature-lifecycle.use-case.test.ts > UpdateFeatureLifecycleUseCase > should be a no-op when the feature is not found 0ms
+ ✓  node  tests/unit/application/use-cases/features/update/update-feature-lifecycle.use-case.test.ts > UpdateFeatureLifecycleUseCase > should still call checkAndUnblock even when lifecycle value is unchanged 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should not modify commits for non-spec phases 337ms
+[2026-04-02T11:26:31.745Z] [apply-feedback] Processing user feedback
+[2026-04-02T11:26:31.748Z] [apply-feedback] Feedback received (12 chars) for iteration 1
+[2026-04-02T11:26:31.748Z] [apply-feedback] Context prepared for next iteration
+[2026-04-02T11:26:31.749Z] [apply-feedback] Processing user feedback
+[2026-04-02T11:26:31.749Z] [apply-feedback] Feedback received (17 chars) for iteration 1
+[2026-04-02T11:26:31.749Z] [apply-feedback] Context prepared for next iteration
+[2026-04-02T11:26:31.749Z] [apply-feedback] Processing user feedback
+[2026-04-02T11:26:31.749Z] [apply-feedback] No feedback text provided — proceeding with empty feedback
+[2026-04-02T11:26:31.749Z] [apply-feedback] Context prepared for next iteration
+[2026-04-02T11:26:31.750Z] [apply-feedback] Processing user feedback
+[2026-04-02T11:26:31.750Z] [apply-feedback] No feedback text provided — proceeding with empty feedback
+[2026-04-02T11:26:31.750Z] [apply-feedback] Context prepared for next iteration
+[2026-04-02T11:26:31.751Z] [apply-feedback] Processing user feedback
+[2026-04-02T11:26:31.751Z] [apply-feedback] Feedback received (13 chars) for iteration 2
+[2026-04-02T11:26:31.751Z] [apply-feedback] Context prepared for next iteration
+[2026-04-02T11:26:31.751Z] [apply-feedback] Processing user feedback
+[2026-04-02T11:26:31.751Z] [apply-feedback] Feedback received (13 chars) for iteration 1
+[2026-04-02T11:26:31.751Z] [apply-feedback] Context prepared for next iteration
+[2026-04-02T11:26:31.751Z] [apply-feedback] Processing user feedback
+[2026-04-02T11:26:31.751Z] [apply-feedback] Feedback received (4 chars) for iteration 1
+[2026-04-02T11:26:31.751Z] [apply-feedback] Context prepared for next iteration
+[2026-04-02T11:26:31.751Z] [apply-feedback] Processing user feedback
+[2026-04-02T11:26:31.751Z] [apply-feedback] Feedback received (24 chars) for iteration 2
+[2026-04-02T11:26:31.751Z] [apply-feedback] Context prepared for next iteration
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/apply-feedback.node.test.ts > createApplyFeedbackNode > appends feedback text to feedbackHistory 4ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/apply-feedback.node.test.ts > createApplyFeedbackNode > updates explorationStatus to applying-feedback 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/apply-feedback.node.test.ts > createApplyFeedbackNode > handles empty feedback string gracefully 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/apply-feedback.node.test.ts > createApplyFeedbackNode > handles null feedback gracefully 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/apply-feedback.node.test.ts > createApplyFeedbackNode > preserves existing feedbackHistory entries via accumulating reducer 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/apply-feedback.node.test.ts > createApplyFeedbackNode > clears _rejectionFeedback after consuming it 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/apply-feedback.node.test.ts > createApplyFeedbackNode > sets currentNode to apply-feedback 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/apply-feedback.node.test.ts > createApplyFeedbackNode > includes feedback summary in messages 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/validation.test.ts > validation helpers > requireString > returns no errors for a valid string 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/validation.test.ts > validation helpers > requireString > adds error for missing field 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/validation.test.ts > validation helpers > requireString > adds error for non-string field 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/validation.test.ts > validation helpers > requireString > adds error for empty string 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/validation.test.ts > validation helpers > requireNonEmptyArray > returns no errors for a non-empty array 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/validation.test.ts > validation helpers > requireNonEmptyArray > adds error for missing field 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/validation.test.ts > validation helpers > requireNonEmptyArray > adds error for non-array 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/validation.test.ts > validation helpers > requireNonEmptyArray > adds error for empty array 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/validation.test.ts > validation helpers > requireArrayOfShape > validates each item with the provided checker 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/validation.test.ts > validation helpers > requireArrayOfShape > reports errors with indexed paths 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/plan.schema.test.ts > validatePlan > passes for valid plan 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/plan.schema.test.ts > validatePlan > fails when phases is empty 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/plan.schema.test.ts > validatePlan > fails when phase missing id 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/plan.schema.test.ts > validatePlan > fails when both filesToCreate and filesToModify are empty 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/plan.schema.test.ts > validatePlan > passes when only filesToCreate is non-empty 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/plan.schema.test.ts > validateTasks > passes for valid tasks with matching phaseIds 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/plan.schema.test.ts > validateTasks > fails when tasks is empty 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/plan.schema.test.ts > validateTasks > fails when task phaseId does not match any phase 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/plan.schema.test.ts > validateTasks > fails when task missing acceptanceCriteria 0ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts > CheckAndUnblockFeaturesUseCase > should be a no-op when parent is not found 2ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts > CheckAndUnblockFeaturesUseCase > should be a no-op when parent lifecycle is Planning (below Implementation gate) 0ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts > CheckAndUnblockFeaturesUseCase > should be a no-op when parent lifecycle is Started (below gate) 0ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts > CheckAndUnblockFeaturesUseCase > should be a no-op when parent lifecycle is Blocked 0ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts > CheckAndUnblockFeaturesUseCase > should be a no-op when parent lifecycle is Implementation but no blocked children 0ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts > CheckAndUnblockFeaturesUseCase > should unblock a single blocked child when parent reaches Implementation 1ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts > CheckAndUnblockFeaturesUseCase > should unblock two blocked children when parent reaches Implementation 1ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts > CheckAndUnblockFeaturesUseCase > should only unblock blocked children, not already-started children 0ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts > CheckAndUnblockFeaturesUseCase > should work when parent lifecycle is Review (also in POST_IMPLEMENTATION) 0ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts > CheckAndUnblockFeaturesUseCase > should work when parent lifecycle is Maintain (also in POST_IMPLEMENTATION) 0ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts > CheckAndUnblockFeaturesUseCase > should be idempotent: second call finds no blocked children, spawn called once total 0ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts > CheckAndUnblockFeaturesUseCase > should call spawn() with the correct feature fields from the blocked child 0ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts > CheckAndUnblockFeaturesUseCase > should skip spawn() for a blocked child that has no agentRunId or specPath 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/repair.node.test.ts > buildRepairPrompt > includes validation errors in prompt 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/repair.node.test.ts > buildRepairPrompt > includes file path for executor to write 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/repair.node.test.ts > buildRepairPrompt > handles multi-file repair (array of filenames) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/repair.node.test.ts > createRepairNode > calls executor with constrained options 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/repair.node.test.ts > createRepairNode > returns messages about repair attempt 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/repair.node.test.ts > createRepairNode > handles multi-file repair 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/repair.node.test.ts > createRepairNode > returns error message when executor throws 0ms
+ ✓  node  tests/unit/domain/prd-approval-types.test.ts > PRD Approval TypeSpec Types > PrdApprovalPayload has correct shape 1ms
+ ✓  node  tests/unit/domain/prd-approval-types.test.ts > PRD Approval TypeSpec Types > PrdApprovalPayload works without changedSelections 0ms
+ ✓  node  tests/unit/domain/prd-approval-types.test.ts > PRD Approval TypeSpec Types > PrdRejectionPayload has correct shape 0ms
+ ✓  node  tests/unit/domain/prd-approval-types.test.ts > PRD Approval TypeSpec Types > PrdReviewResult has correct shape for approve 0ms
+ ✓  node  tests/unit/domain/prd-approval-types.test.ts > PRD Approval TypeSpec Types > PrdReviewResult has correct shape for reject 0ms
+ ✓  node  tests/unit/domain/prd-approval-types.test.ts > PRD Approval TypeSpec Types > QuestionSelectionChange has correct shape 0ms
+ ✓  node  tests/unit/domain/prd-approval-types.test.ts > PRD Approval TypeSpec Types > ReviewQuestion has correct shape 0ms
+ ✓  node  tests/unit/domain/prd-approval-types.test.ts > PRD Approval TypeSpec Types > RejectionFeedbackEntry has correct shape 0ms
+ ✓  node  tests/unit/domain/factories/settings-defaults-onboarding.test.ts > createDefaultSettings — onboarding fields > should return onboardingComplete as false 3ms
+ ✓  node  tests/unit/domain/factories/settings-defaults-onboarding.test.ts > createDefaultSettings — onboarding fields > should return workflow.approvalGateDefaults with all fields set to false 1ms
+ ✓  node  tests/unit/domain/factories/settings-defaults-onboarding.test.ts > createDefaultSettings — onboarding fields > should preserve existing workflow defaults alongside new approvalGateDefaults 0ms
+ ✓  node  tests/unit/domain/generated/language-enum.test.ts > Language enum > should have exactly 8 values 1ms
+ ✓  node  tests/unit/domain/generated/language-enum.test.ts > Language enum > should map English to "en" 0ms
+ ✓  node  tests/unit/domain/generated/language-enum.test.ts > Language enum > should map Russian to "ru" 0ms
+ ✓  node  tests/unit/domain/generated/language-enum.test.ts > Language enum > should map Portuguese to "pt" 0ms
+ ✓  node  tests/unit/domain/generated/language-enum.test.ts > Language enum > should map Spanish to "es" 0ms
+ ✓  node  tests/unit/domain/generated/language-enum.test.ts > Language enum > should map Arabic to "ar" 0ms
+ ✓  node  tests/unit/domain/generated/language-enum.test.ts > Language enum > should map Hebrew to "he" 0ms
+ ✓  node  tests/unit/domain/generated/language-enum.test.ts > Language enum > should map French to "fr" 0ms
+ ✓  node  tests/unit/domain/generated/language-enum.test.ts > Language enum > should map German to "de" 0ms
+ ✓  node  tests/unit/domain/generated/language-enum.test.ts > Language enum > should contain all expected ISO 639-1 codes 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/research.schema.test.ts > validateResearch > passes for valid research 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/research.schema.test.ts > validateResearch > fails when decisions is empty 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/research.schema.test.ts > validateResearch > fails when a decision missing title 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/research.schema.test.ts > validateResearch > fails when a decision missing rejected array 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/research.schema.test.ts > validateResearch > fails for null input 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parseCommitHash > should extract full 40-char SHA from git commit output 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parseCommitHash > should extract short 7-char SHA from abbreviated output 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parseCommitHash > should extract SHA from "git commit" style output line 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parseCommitHash > should return null when no SHA found 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parseCommitHash > should return null for empty string 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parseCommitHash > should handle multi-line output and pick first SHA 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parsePrUrl > should extract PR URL and number from gh pr create output 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parsePrUrl > should handle URL in middle of other output 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parsePrUrl > should return null when no PR URL found 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parsePrUrl > should return null for empty string 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parsePrUrl > should handle URLs with complex org/repo names 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parseCiWatchResult > should return success for CI_STATUS: PASSED 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parseCiWatchResult > should return failure with summary for CI_STATUS: FAILED 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parseCiWatchResult > should return failure with unknown summary for unparseable output 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parseCiWatchResult > should extract run URL from output 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parseCiWatchResult > should handle PASSED with extra whitespace 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parseCiWatchResult > should handle FAILED without summary after dash 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parseCiWatchResult > should return failure for empty string 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts > merge-output-parser > parseCiWatchResult > should extract the last CI_STATUS if multiple appear 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should always include commit instructions 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include push instructions when push=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include push instructions when openPr=true (implied push) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include PR creation instructions when openPr=true 9ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include push instructions when push=false and openPr=false 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include PR instructions when openPr=false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include spec context 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include branch names 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should instruct agent to write commit message from diff 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should not instruct agent to update feature.yaml (PR data persisted via DB) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include local verification step before pushing when push=true 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include local verification step when not pushing 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should forbid git pull and rebase before pushing 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should be deterministic (same input = same output) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should forbid source code modification when no rejection feedback 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include Shep branding instruction when openPr=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include branding instruction when openPr=false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should instruct agent to modify source code when rejection feedback exists 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should be a no-op when agent did not commit spec files 375ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > merge state channels exist on type > should include prUrl, prNumber, commitHash, ciStatus in FeatureAgentState 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > merge state channels exist on type > should include openPr boolean flag 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > FeatureAgentAnnotation structure > should be a valid LangGraph Annotation root 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > FeatureAgentAnnotation structure > should have all 36 channels 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > evidence state channel > initial default > evidence defaults to empty array 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > evidence state channel > evidence reducer — append (accumulating) > accumulates evidence records across two state updates 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > evidence state channel > evidence reducer — append (accumulating) > does not lose prior records on checkpoint restore (append semantics) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > evidence state channel > evidence reducer — append (accumulating) > produces [...prev, ...next] — not a replace 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > CI watch/fix loop state channels > initial defaults > ciFixAttempts defaults to 0 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > CI watch/fix loop state channels > initial defaults > ciFixHistory defaults to [] 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > CI watch/fix loop state channels > initial defaults > ciFixStatus defaults to "idle" 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > CI watch/fix loop state channels > ciFixAttempts reducer — replace > replaces previous value on each update 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > CI watch/fix loop state channels > ciFixAttempts reducer — replace > does not accumulate — keeps only the latest value 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > CI watch/fix loop state channels > ciFixHistory reducer — append > accumulates records across two state updates 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > CI watch/fix loop state channels > ciFixHistory reducer — append > does not lose prior records on checkpoint restore (append semantics) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > CI watch/fix loop state channels > ciFixHistory reducer — append > produces [...prev, ...next] — not a replace 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > CI watch/fix loop state channels > ciFixStatus reducer — replace > replaces previous status on each update 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > CI watch/fix loop state channels > ciFixStatus reducer — replace > accepts all valid status values 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > exploration mode state channels > initial defaults > iterationCount defaults to 0 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > exploration mode state channels > initial defaults > maxIterations defaults to 10 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > exploration mode state channels > initial defaults > feedbackHistory defaults to empty array 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > exploration mode state channels > initial defaults > explorationStatus defaults to undefined 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > exploration mode state channels > iterationCount reducer — replace > replaces previous value on each update 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > exploration mode state channels > iterationCount reducer — replace > does not accumulate — keeps only the latest value 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > exploration mode state channels > feedbackHistory reducer — append (accumulating) > accumulates feedback across two state updates 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > exploration mode state channels > feedbackHistory reducer — append (accumulating) > does not lose prior feedback on checkpoint restore 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > exploration mode state channels > feedbackHistory reducer — append (accumulating) > produces [...prev, ...next] — not a replace 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > exploration mode state channels > explorationStatus reducer — replace > replaces previous status on each update 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts > FeatureAgentAnnotation > exploration mode state channels > explorationStatus reducer — replace > accepts all valid status values 4ms
+ ✓  node  tests/unit/domain/lifecycle-gates.test.ts > SdlcLifecycle > should include a Pending value 1ms
+ ✓  node  tests/unit/domain/lifecycle-gates.test.ts > SdlcLifecycle > should include an Exploring value 0ms
+ ✓  node  tests/unit/domain/lifecycle-gates.test.ts > POST_IMPLEMENTATION > should NOT contain SdlcLifecycle.Pending 0ms
+ ✓  node  tests/unit/domain/lifecycle-gates.test.ts > POST_IMPLEMENTATION > should NOT contain SdlcLifecycle.Exploring 0ms
+ ✓  node  tests/unit/domain/lifecycle-gates.test.ts > POST_IMPLEMENTATION > should contain Implementation, Review, and Maintain 0ms
+ ✓  node  tests/unit/domain/lifecycle-gates.test.ts > EXPLORING_TRANSITIONS > should allow transition from Exploring to Implementation (promote to fast) 0ms
+ ✓  node  tests/unit/domain/lifecycle-gates.test.ts > EXPLORING_TRANSITIONS > should allow transition from Exploring to Requirements (promote to regular) 0ms
+ ✓  node  tests/unit/domain/lifecycle-gates.test.ts > EXPLORING_TRANSITIONS > should allow transition from Exploring to Deleting (discard) 0ms
+ ✓  node  tests/unit/domain/lifecycle-gates.test.ts > EXPLORING_TRANSITIONS > should contain exactly 3 valid transitions 0ms
+ ✓  node  tests/unit/domain/lifecycle-gates.test.ts > EXPLORING_TRANSITIONS > should NOT allow transition from Exploring to Review 0ms
+ ✓  node  tests/unit/domain/lifecycle-gates.test.ts > EXPLORING_TRANSITIONS > should NOT allow transition from Exploring to Maintain 0ms
+ ✓  node  tests/unit/domain/lifecycle-gates.test.ts > EXPLORING_TRANSITIONS > should NOT allow transition from Exploring to Exploring (self-loop is implicit) 0ms
+ ✓  node  tests/unit/domain/errors/session-not-found.error.test.ts > SessionNotFoundError > should be an instance of Error 1ms
+ ✓  node  tests/unit/domain/errors/session-not-found.error.test.ts > SessionNotFoundError > should include the session ID in the message 0ms
+ ✓  node  tests/unit/domain/errors/session-not-found.error.test.ts > SessionNotFoundError > should have name set to SessionNotFoundError 0ms
+ ✓  node  tests/unit/domain/errors/session-not-found.error.test.ts > SessionNotFoundError > should include different session IDs in message 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/apply-feedback.prompt.test.ts > buildApplyFeedbackContext > includes current feedback text 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/apply-feedback.prompt.test.ts > buildApplyFeedbackContext > includes iteration count 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/apply-feedback.prompt.test.ts > buildApplyFeedbackContext > shows prior feedback count when history exists 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/apply-feedback.prompt.test.ts > buildApplyFeedbackContext > omits prior feedback section when no history 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/apply-feedback.prompt.test.ts > buildApplyFeedbackContext > truncates long prior feedback entries 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-session.mapper.test.ts > InteractiveSession Mapper — toDatabase() > converts camelCase domain object to snake_case DB row 1ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-session.mapper.test.ts > InteractiveSession Mapper — toDatabase() > maps undefined stoppedAt to null 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-session.mapper.test.ts > InteractiveSession Mapper — toDatabase() > maps stoppedAt Date to unix milliseconds 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-session.mapper.test.ts > InteractiveSession Mapper — toDatabase() > handles all InteractiveSessionStatus enum values 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-session.mapper.test.ts > InteractiveSession Mapper — fromDatabase() > converts snake_case DB row to camelCase domain object 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-session.mapper.test.ts > InteractiveSession Mapper — fromDatabase() > maps null stopped_at to undefined stoppedAt 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-session.mapper.test.ts > InteractiveSession Mapper — fromDatabase() > maps non-null stopped_at to Date 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-session.mapper.test.ts > InteractiveSession Mapper — fromDatabase() > roundtrips correctly: toDatabase then fromDatabase 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/commit-specs-flag.test.ts > 'analyze' prompt — commitSpecs flag > should include commit block when commitSpecs=true 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/commit-specs-flag.test.ts > 'analyze' prompt — commitSpecs flag > should exclude commit block when commitSpecs=false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/commit-specs-flag.test.ts > 'requirements' prompt — commitSpecs flag > should include commit block when commitSpecs=true 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/commit-specs-flag.test.ts > 'requirements' prompt — commitSpecs flag > should exclude commit block when commitSpecs=false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/commit-specs-flag.test.ts > 'research' prompt — commitSpecs flag > should include commit block when commitSpecs=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/commit-specs-flag.test.ts > 'research' prompt — commitSpecs flag > should exclude commit block when commitSpecs=false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/commit-specs-flag.test.ts > 'plan' prompt — commitSpecs flag > should include commit block when commitSpecs=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/commit-specs-flag.test.ts > 'plan' prompt — commitSpecs flag > should exclude commit block when commitSpecs=false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > includes the branch name 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > instructs to list ALL runs with gh run list 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > instructs to check ALL runs not just one 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > instructs to use --interval 20 for gh run watch 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > requires CI_STATUS: PASSED output on success 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > requires CI_STATUS: FAILED output on failure 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > instructs to verify all runs after watching 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > includes --json fields for run listing 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > is deterministic (same input = same output) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > does not contain repo-specific references 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge.prompt.test.ts > buildCiFixPrompt > returns a string containing the log excerpt 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge.prompt.test.ts > buildCiFixPrompt > includes the attempt number and max attempts 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge.prompt.test.ts > buildCiFixPrompt > includes the spec summary for context 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge.prompt.test.ts > buildCiFixPrompt > result length is bounded under 10000 chars for typical inputs 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge.prompt.test.ts > buildCiFixPrompt > truncates very long log excerpts to keep total length bounded 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge.prompt.test.ts > buildCiFixPrompt > provides focused fix instructions 0ms
+ ✓  node  tests/unit/domain/generated/agent-type-codex-cli.test.ts > AgentType.CodexCli > should have CodexCli variant with value "codex-cli" 1ms
+ ✓  node  tests/unit/domain/generated/agent-type-codex-cli.test.ts > AgentType.CodexCli > should not break existing enum variants 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > includes the full failure logs verbatim 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > includes the conventional commit message format: fix(ci): attempt N/max 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > includes the branch name in push instruction 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > includes attempt number context 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > includes push instruction after commit 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > instructs executor to diagnose the failure 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > is deterministic (same input = same output) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > contains different commit format strings for different attempt numbers 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - agentType > should parse --agent-type when present 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - agentType > should set agentType to undefined when --agent-type is not present 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - agentType > should coexist with other flags including --resume and --resume-payload 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - mode > should parse --mode when present 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - mode > should default mode to Regular when --mode is not present 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - mode > should parse --mode=Exploration 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - mode > should coexist with other flags 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - model > should parse --model when present 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - model > should set model to undefined when --model is not present 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - model > should coexist with --agent-type and other flags 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - resumeReason > should parse --resume-reason when present 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - resumeReason > should set resumeReason to undefined when not present 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - resumeReason > should parse failed reason 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - resumeReason > should coexist with --resume and other flags 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - resumePayload > should parse --resume-payload when present 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - resumePayload > should set resumePayload to undefined when not present 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - resumePayload > should parse rejection payload 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts > parseWorkerArgs - resumePayload > should coexist with other flags 0ms
+
+ Test Files  63 passed (63)
+      Tests  1267 passed (1267)
+   Start at  14:26:30
+   Duration  2.54s (transform 2.93s, setup 1.09s, import 9.63s, tests 2.49s, environment 6ms)
+
+[2026-04-02T11:26:32.600Z] [WORKER] Received SIGTERM, shutting down...

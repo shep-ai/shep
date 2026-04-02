@@ -2,18 +2,11 @@ name: "prototype-exploration-mode"
 number: 82
 branch: "feat/082-prototype-exploration-mode"
 oneLiner: "Add a prototype/exploration mode for iterative visual prototyping before committing to full feature development"
-summary: >
-  Add a new "exploration" mode alongside the existing "fast" and "regular" (full SDLC) modes.
-  In exploration mode, users describe a vague idea and the system generates quick, disposable
-  prototypes that can be viewed in the Web UI, iterated on with feedback, and eventually
-  promoted to a real feature (fast or regular mode) once the direction is clear. This enables
-  a discovery-first workflow where users explore design space before committing to implementation.
+summary: "Add a new \"exploration\" mode alongside the existing \"fast\" and \"regular\" (full SDLC) modes. In exploration mode, users describe a vague idea and the system generates quick, disposable prototypes that can be viewed in the Web UI, iterated on with feedback, and eventually promoted to a real feature (fast or regular mode) once the direction is clear. This enables a discovery-first workflow where users explore design space before committing to implementation.\n"
 phase: "Requirements"
 sizeEstimate: "XL"
-
 relatedFeatures:
   - "052-fast-prompt-to-pr"
-
 technologies:
   - "TypeScript"
   - "TypeSpec"
@@ -24,9 +17,7 @@ technologies:
   - "SQLite (better-sqlite3)"
   - "tsyringe (DI)"
   - "React Flow (@xyflow/react)"
-
 relatedLinks: []
-
 openQuestions:
   - question: "Should the feature mode be modeled as a FeatureMode enum replacing the boolean fast field, or as an additional exploration boolean alongside fast?"
     resolved: true
@@ -39,7 +30,6 @@ openQuestions:
         selected: false
     selectionRationale: "A FeatureMode enum is the cleaner domain model. The boolean fast field is already a code smell — two booleans create four states but only three are valid. An enum makes the mode explicit, self-documenting, and prevents invalid combinations. The migration cost is bounded (one TypeSpec enum + repository column change + UI toggle update) and is a worthwhile investment for correctness."
     answer: "FeatureMode enum"
-
   - question: "Should exploration mode reuse the existing Feature entity with a new Exploring lifecycle state, or introduce a separate Prototype entity?"
     resolved: true
     options:
@@ -51,22 +41,20 @@ openQuestions:
         selected: false
     selectionRationale: "Reusing the Feature entity is the pragmatic choice. Exploration features share the same core behaviors (worktree, agent execution, canvas display) and differ only in graph topology and lifecycle gates. A new entity would duplicate massive infrastructure. The Feature entity already accommodates fast mode via a flag — exploration mode follows the same pattern. Adding an Exploring lifecycle state is a minimal, safe extension."
     answer: "Reuse Feature entity with Exploring lifecycle state"
-
   - question: "What should the exploration agent generate as a prototype artifact?"
     resolved: true
     options:
       - option: "Code diff in worktree"
         description: "The agent writes actual code changes to an isolated worktree branch, same as fast mode. The user reviews real code diffs and can see the prototype running locally if they choose. Promotion means the code is already in place. Leverages existing worktree infrastructure entirely."
-        selected: true
+        selected: false
       - option: "Markdown/HTML preview document"
         description: "The agent generates a rich description document (markdown with wireframes, architecture diagrams, API sketches) rather than code. Faster to generate and easier to throw away. But requires a separate rendering system and cannot be directly promoted to code."
         selected: false
       - option: "Sandboxed UI component preview"
         description: "The agent generates a standalone React component rendered in an iframe or sandbox within the Web UI. Provides the richest visual feedback but requires a component sandbox runtime, significantly increasing complexity."
-        selected: false
+        selected: true
     selectionRationale: "Code diff in worktree is the most practical approach. It reuses the entire existing infrastructure (worktree service, agent executor, git operations) and produces something that can be directly promoted. Users can review diffs in the Web UI artifact tab, check out the branch locally to test, or promote the code as-is. The key insight is that exploration prototypes should be real code — just produced with different prompting (speed over quality, minimal scope, throwaway mindset)."
-    answer: "Code diff in worktree"
-
+    answer: "Sandboxed UI component preview"
   - question: "How should the feedback loop work when the user wants to iterate on a prototype?"
     resolved: true
     options:
@@ -78,19 +66,17 @@ openQuestions:
         selected: false
     selectionRationale: "LangGraph interrupt with resume is the natural fit. The codebase already has a robust interrupt/resume mechanism used for approval gates (interrupt() call, --resume-from-interrupt, Command({resume, update})). The feedback loop is conceptually identical: pause, get human input, resume. This approach preserves full agent context across iterations and avoids the overhead of spawning new processes."
     answer: "LangGraph interrupt with resume"
-
   - question: "Should there be a limit on the number of feedback iterations per exploration?"
     resolved: true
     options:
       - option: "Configurable limit with sensible default"
         description: "Set a default maximum (e.g., 10 iterations) configurable via workflow settings. Prevents runaway loops and unbounded resource usage while allowing power users to increase the limit. The agent notifies the user when approaching the limit."
-        selected: true
+        selected: false
       - option: "Unlimited iterations"
         description: "No limit on feedback rounds. Exploration continues until the user explicitly promotes or discards. Simpler implementation but risks unbounded resource consumption and endlessly diverging prototypes."
-        selected: false
+        selected: true
     selectionRationale: "A configurable limit protects against unbounded resource usage while maintaining flexibility. 10 iterations is generous for exploration — if a user needs more than 10 rounds, the exploration has likely diverged and should be restarted with clearer direction. The limit is a guardrail, not a hard wall."
-    answer: "Configurable limit with sensible default"
-
+    answer: "Unlimited iterations"
   - question: "How should promotion from exploration to regular/fast feature work?"
     resolved: true
     options:
@@ -102,7 +88,6 @@ openQuestions:
         selected: false
     selectionRationale: "In-place mode transition is the elegant solution. The Feature entity already has the mode field and lifecycle state — changing them is a state transition, not a data migration. The prototype code in the worktree becomes the starting point for the real implementation. If the user wants a clean start, they can still discard the exploration and create a fresh feature. This approach avoids entity duplication and preserves the iteration history as context for the real implementation."
     answer: "In-place mode transition"
-
   - question: "Should exploration mode skip spec initialization entirely or use a minimal spec?"
     resolved: true
     options:
@@ -117,7 +102,6 @@ openQuestions:
         selected: false
     selectionRationale: "Minimal spec matches the exploration philosophy: lightweight, just enough structure to be trackable. feature.yaml captures the exploration prompt and metadata. The spec initializer already supports a mode parameter (fast mode creates minimal specs) so this is a natural extension. On promotion to regular mode, the missing YAMLs can be scaffolded."
     answer: "Minimal spec (feature.yaml only)"
-
   - question: "How should exploration features appear on the Web UI canvas?"
     resolved: true
     options:
@@ -129,164 +113,4 @@ openQuestions:
         selected: false
     selectionRationale: "A distinct visual style on the existing canvas is the right balance. Users should see all their work in one place — explorations and real features coexist. The visual distinction (color, icon, badge) makes it immediately clear which features are explorations without fragmenting the workspace. This approach minimizes UI work by extending the existing node component rather than building a parallel canvas."
     answer: "Distinct visual style on existing canvas"
-
-content: |
-  ## Problem Statement
-
-  Currently, Shep offers two modes for feature development:
-
-  1. **Regular mode** (full SDLC): Analyze -> Requirements -> Research -> Planning -> Implementation -> Review -> Maintain.
-     Best for well-understood, complex features but heavy for exploration.
-
-  2. **Fast mode**: Skips all SDLC phases, sends the user prompt directly to the executor for
-     immediate implementation. Best for small, clear changes but produces committed code immediately.
-
-  Neither mode supports the common scenario where a user has a vague idea and needs to explore
-  multiple directions before committing. For example: "I want to add workspaces or projects to
-  group repos/features" — the user doesn't yet know what this means architecturally, what the
-  UI should look like, or which approach is best. They need to see quick prototypes, evaluate
-  them visually, provide feedback, and iterate before deciding on a direction.
-
-  The exploration/prototyping mode fills this gap by enabling a discovery-first workflow:
-  describe an idea -> see a quick prototype -> iterate with feedback -> approve and promote
-  to a full feature for proper implementation.
-
-  ## Success Criteria
-
-  - [ ] User can create an exploration-mode feature from the Web UI via a mode selector (Regular / Fast / Explore)
-  - [ ] User can create an exploration-mode feature from the CLI via `shep feat new <idea> --explore`
-  - [ ] Exploration agent generates a working code prototype in an isolated worktree within 2 minutes of creation
-  - [ ] User can view the generated prototype diff in the Web UI feature drawer
-  - [ ] User can provide text feedback on a prototype and the agent iterates, producing an updated prototype
-  - [ ] Feedback loop supports at least 5 consecutive iterations without context degradation
-  - [ ] User can promote an exploration feature to Regular or Fast mode, preserving the prototype code
-  - [ ] User can discard an exploration feature, cleaning up the worktree and branch
-  - [ ] Exploration features are visually distinct on the canvas (different color/icon from regular and fast features)
-  - [ ] Exploration features show iteration count (e.g., "Iteration 3/10") in the UI
-  - [ ] FeatureMode enum replaces the boolean fast field across domain, persistence, and presentation layers
-  - [ ] All existing fast-mode functionality continues to work after the boolean-to-enum migration
-  - [ ] All new UI components have colocated Storybook stories
-  - [ ] Unit tests cover the exploration agent graph, mode transition logic, and feedback loop
-  - [ ] Integration tests cover the create-explore-iterate-promote workflow end-to-end
-
-  ## Functional Requirements
-
-  - **FR-1: FeatureMode enum** — Replace the boolean `fast` field on the Feature entity with a `FeatureMode` enum (`Regular`, `Fast`, `Exploration`) defined in TypeSpec. Migrate all code paths that check `fast` boolean to use the enum. This is a prerequisite for all other requirements.
-
-  - **FR-2: Create exploration feature** — The `CreateFeatureUseCase` must accept `mode: FeatureMode.Exploration` as input and create a Feature record with lifecycle state `Exploring`. The use case must initialize a minimal spec (feature.yaml only), create an isolated worktree, and spawn the exploration agent graph.
-
-  - **FR-3: Exploration agent graph** — A new LangGraph graph factory (`createExplorationAgentGraph`) with the following topology: `START -> prototype-generate -> interrupt(feedback) -> apply-feedback -> prototype-generate -> ... -> END`. The graph generates a quick code prototype, interrupts for user feedback, applies feedback, and loops. The graph exits when the user promotes or discards.
-
-  - **FR-4: Prototype generation node** — The `prototype-generate` node invokes the agent executor with prompting optimized for speed and minimal scope: "generate a quick, working prototype that demonstrates the idea — prioritize showing the concept over production quality." The agent writes code changes to the worktree.
-
-  - **FR-5: Feedback interrupt** — After each prototype generation, the graph interrupts using the existing LangGraph interrupt mechanism. The interrupt payload includes a summary of what was generated and the iteration count. The user provides text feedback or a promote/discard action.
-
-  - **FR-6: Apply feedback node** — The `apply-feedback` node receives user feedback text and prepares context for the next prototype-generate iteration. It accumulates feedback history in the graph state so the agent has full iteration context.
-
-  - **FR-7: Iteration limit** — The feedback loop enforces a configurable maximum iteration count (default: 10). When the limit is reached, the graph interrupts with a final prompt asking the user to promote, discard, or reset the exploration. The limit is configurable in workflow settings.
-
-  - **FR-8: Promote exploration to feature** — A `PromoteExplorationUseCase` transitions an exploration feature to Regular or Fast mode. For Regular mode: transitions lifecycle to `Requirements` (or `Implementation` if the user wants to skip SDLC) and optionally scaffolds full spec YAMLs. For Fast mode: transitions lifecycle to `Implementation`. The existing worktree code is preserved as the starting point. The appropriate agent graph is spawned.
-
-  - **FR-9: Discard exploration** — A `DiscardExplorationUseCase` (or extension of existing delete logic) moves an exploration feature to `Deleting` state, cleans up the worktree and branch, and transitions to `Archived`. Reuses existing feature deletion infrastructure.
-
-  - **FR-10: Web UI mode selector** — The feature creation drawer replaces the fast-mode toggle with a three-way mode selector (Regular / Fast / Explore). When Explore is selected, approval gates and SDLC-specific options are hidden since they do not apply. The mode selector defaults to the user's workflow settings preference.
-
-  - **FR-11: Web UI prototype review** — The feature drawer for exploration features shows: (a) the current prototype diff in the artifacts/code tab, (b) a feedback input area with a text field and submit button, (c) a promote button that opens a mode selection dialog (Regular or Fast), and (d) a discard button. The iteration count is displayed prominently.
-
-  - **FR-12: Web UI canvas treatment** — Exploration features render on the canvas with a distinct visual style: amber/yellow color scheme, a beaker/flask icon, and a badge showing the current iteration count. Clicking opens the feature drawer with the prototype review tab.
-
-  - **FR-13: CLI exploration support** — Add `--explore` flag to `shep feat new`. Add `shep feat feedback <feature-id> <feedback-text>` command for providing feedback from CLI. Add `shep feat promote <feature-id> [--fast]` command for promoting. The CLI displays prototype summaries and iteration status.
-
-  - **FR-14: Worker process routing** — The feature agent worker selects the exploration graph factory when mode is `Exploration`, alongside the existing fast/regular routing. The worker handles interrupt/resume for the feedback loop using the same mechanism as approval gates.
-
-  - **FR-15: Exploring lifecycle state** — Add `Exploring` to the `SdlcLifecycle` enum in TypeSpec. Define lifecycle gates for exploration: the only valid transitions are `Exploring -> Implementation` (promote to fast), `Exploring -> Requirements` (promote to regular), `Exploring -> Deleting` (discard), and self-loop for iterations.
-
-  - **FR-16: Exploration state channels** — Extend `FeatureAgentAnnotation` with exploration-specific state channels: `iterationCount` (number), `maxIterations` (number), `feedbackHistory` (string array), `explorationStatus` (generating/waiting-feedback/applying-feedback/promoting/discarding).
-
-  - **FR-17: Settings integration** — Add `workflow.defaultMode` setting (replacing or extending `workflow.defaultFastMode`) that accepts `regular`, `fast`, or `exploration`. The Web UI mode selector and CLI default to this preference.
-
-  ## Non-Functional Requirements
-
-  - **NFR-1: Prototype generation speed** — The initial prototype generation must complete within 2 minutes for typical prompts. Subsequent feedback iterations must complete within 90 seconds. The exploration agent prompt must explicitly prioritize speed over completeness.
-
-  - **NFR-2: Backward compatibility** — The FeatureMode enum migration must not break existing features. Existing features with `fast=true` must map to `FeatureMode.Fast` and `fast=false` to `FeatureMode.Regular`. Database migration must be reversible.
-
-  - **NFR-3: Resource isolation** — Each exploration feature runs in its own worktree and branch, same as regular features. No shared state between exploration features. Exploration worktrees are cleaned up on discard.
-
-  - **NFR-4: Context preservation** — The feedback loop must preserve full agent context across iterations via LangGraph checkpointing. The agent must be able to reference all previous feedback and prototype state when generating the next iteration.
-
-  - **NFR-5: UI responsiveness** — The Web UI must remain responsive during prototype generation. SSE events provide real-time status updates (generating, ready for feedback, applying feedback). No blocking operations in the main thread.
-
-  - **NFR-6: Storybook coverage** — Every new or modified Web UI component must have colocated `.stories.tsx` files with representative states (empty, loading, with data, error, multiple iterations).
-
-  - **NFR-7: Test coverage** — Unit tests for the exploration graph nodes, mode transition logic, feedback accumulation, and iteration limits. Integration tests for the full create-iterate-promote workflow. No untested code paths in the new mode.
-
-  - **NFR-8: Clean Architecture compliance** — All new code must follow the existing four-layer architecture. The exploration agent graph lives in infrastructure. Use cases live in application. The FeatureMode enum and Exploring lifecycle state live in domain (via TypeSpec). Presentation layers call use cases only.
-
-  - **NFR-9: Agent-agnostic execution** — The exploration agent graph must work with any configured agent executor (Claude Code, Gemini CLI, Cursor, Codex) via the existing `IAgentExecutorProvider` interface. No hardcoded provider references.
-
-  ## Product Questions & AI Recommendations
-
-  | # | Question | AI Recommendation | Rationale |
-  | - | -------- | ----------------- | --------- |
-  | 1 | Mode modeling: enum vs additional boolean? | FeatureMode enum | Prevents invalid state combinations, scales to future modes, cleaner domain model |
-  | 2 | Entity model: reuse Feature or new Prototype entity? | Reuse Feature with Exploring lifecycle state | Avoids massive infrastructure duplication, promotion is a state transition not entity migration |
-  | 3 | Prototype artifact format? | Code diff in worktree | Reuses existing infrastructure, produces promotable code, users can test locally |
-  | 4 | Feedback loop mechanism? | LangGraph interrupt with resume | Leverages existing HITL mechanism, preserves agent context, proven pattern |
-  | 5 | Iteration limit? | Configurable limit, default 10 | Prevents runaway loops, protects resources, power users can increase |
-  | 6 | Promotion mechanism? | In-place mode transition | Simplest path, preserves history, no entity duplication |
-  | 7 | Spec initialization for exploration? | Minimal spec (feature.yaml only) | Matches lightweight philosophy, extensible on promotion |
-  | 8 | Canvas treatment? | Distinct visual style on existing canvas | Unified workspace view, minimal UI work, clear visual distinction |
-
-  ## Affected Areas
-
-  | Area | Impact | Reasoning |
-  | ---- | ------ | --------- |
-  | TypeSpec domain models (`tsp/`) | High | New `FeatureMode` enum replacing the boolean `fast` field; new `Exploring` lifecycle state |
-  | CreateFeatureUseCase (`application/`) | High | Must support exploration mode input, different lifecycle initialization, and exploration agent spawning |
-  | LangGraph agent graph (`infrastructure/agents/feature-agent/`) | High | New exploration-mode graph factory with prototype-generation nodes, feedback loops, and promote-to-feature edges |
-  | Feature Agent Worker (`infrastructure/agents/feature-agent/worker`) | High | Must instantiate the exploration graph when mode is set, handle iteration/feedback cycles |
-  | Web UI Create Drawer (`presentation/web/feature-create-drawer/`) | High | New mode selector (Regular/Fast/Explore), exploration-specific UI for viewing prototypes, providing feedback, and promoting |
-  | Web UI Feature Drawer Tabs (`presentation/web/feature-drawer-tabs/`) | High | New prototype preview tab or panel for viewing exploration results, iteration history |
-  | Web UI Control Center Canvas (`presentation/web/control-center/`) | Medium | Exploration features need distinct visual treatment on the canvas (different node style/color/icon) |
-  | CLI feat new command (`presentation/cli/commands/feat/`) | Medium | New `--explore` flag, new `feedback` and `promote` subcommands |
-  | Spec Initializer (`infrastructure/services/spec/`) | Medium | Exploration mode needs different minimal spec scaffolding |
-  | PromoteExplorationUseCase (`application/`) | Medium | New use case for mode transition and graph re-spawning |
-  | Settings / WorkflowConfig (`tsp/domain/entities/settings.tsp`) | Low | `workflow.defaultMode` setting replacing `workflow.defaultFastMode` |
-  | Feature Repository (`infrastructure/repositories/`) | Low | Column migration from boolean fast to enum mode; query support for filtering by mode |
-  | Domain lifecycle gates (`domain/lifecycle-gates.ts`) | Low | New gate sets for the Exploring lifecycle state and valid transitions |
-
-  ## Dependencies
-
-  - **Existing fast-mode infrastructure**: The exploration mode follows the same architectural
-    pattern as fast mode (separate graph factory, worker flag routing, UI toggle). Understanding
-    and reusing this pattern is critical.
-  - **LangGraph checkpoint/interrupt system**: The iterative feedback loop in exploration mode
-    requires interrupt points where the user can review a prototype and provide feedback. This
-    uses the same HITL interrupt mechanism as approval gates.
-  - **Worktree service**: Exploration prototypes need isolated git worktrees, same as regular
-    features. The existing `IWorktreeService` handles this.
-  - **Feature entity and lifecycle system**: Exploration reuses the Feature entity with a new
-    Exploring lifecycle state. The FeatureMode enum replaces the boolean fast field.
-  - **Web UI drawer/tabs system**: The existing `BaseDrawer`, `FeatureCreateDrawer`, and
-    feature drawer tabs provide the framework for the exploration UI. New tabs or views for
-    prototype preview and iteration extend this system.
-  - **Agent executor interface**: The exploration prototype agent uses the same
-    `IAgentExecutor` interface, just with different prompts optimized for quick prototyping.
-  - **FeatureMode enum migration**: The boolean-to-enum migration (FR-1) is a prerequisite
-    for all other exploration mode work. It must be completed and verified first.
-
-  ## Size Estimate
-
-  **XL** — This feature introduces a fundamentally new workflow mode that touches every layer
-  of the architecture: new TypeSpec domain models (FeatureMode enum, Exploring lifecycle state),
-  a new LangGraph graph with iterative feedback nodes, significant Web UI work for prototype
-  review and iteration, CLI support with new subcommands, and a FeatureMode enum migration.
-  The scope is comparable to the original feature-agent implementation. The iterative feedback
-  loop and the boolean-to-enum migration add complexity beyond what fast mode required.
-  Estimated at 17 functional requirements across domain, application, infrastructure, and
-  presentation layers.
-
-  ---
-
-  _Requirements complete — proceed with research to resolve technical approach_
+content: "## Problem Statement\n\nCurrently, Shep offers two modes for feature development:\n\n1. **Regular mode** (full SDLC): Analyze -> Requirements -> Research -> Planning -> Implementation -> Review -> Maintain.\n   Best for well-understood, complex features but heavy for exploration.\n\n2. **Fast mode**: Skips all SDLC phases, sends the user prompt directly to the executor for\n   immediate implementation. Best for small, clear changes but produces committed code immediately.\n\nNeither mode supports the common scenario where a user has a vague idea and needs to explore\nmultiple directions before committing. For example: \"I want to add workspaces or projects to\ngroup repos/features\" — the user doesn't yet know what this means architecturally, what the\nUI should look like, or which approach is best. They need to see quick prototypes, evaluate\nthem visually, provide feedback, and iterate before deciding on a direction.\n\nThe exploration/prototyping mode fills this gap by enabling a discovery-first workflow:\ndescribe an idea -> see a quick prototype -> iterate with feedback -> approve and promote\nto a full feature for proper implementation.\n\n## Success Criteria\n\n- [ ] User can create an exploration-mode feature from the Web UI via a mode selector (Regular / Fast / Explore)\n- [ ] User can create an exploration-mode feature from the CLI via `shep feat new <idea> --explore`\n- [ ] Exploration agent generates a working code prototype in an isolated worktree within 2 minutes of creation\n- [ ] User can view the generated prototype diff in the Web UI feature drawer\n- [ ] User can provide text feedback on a prototype and the agent iterates, producing an updated prototype\n- [ ] Feedback loop supports at least 5 consecutive iterations without context degradation\n- [ ] User can promote an exploration feature to Regular or Fast mode, preserving the prototype code\n- [ ] User can discard an exploration feature, cleaning up the worktree and branch\n- [ ] Exploration features are visually distinct on the canvas (different color/icon from regular and fast features)\n- [ ] Exploration features show iteration count (e.g., \"Iteration 3/10\") in the UI\n- [ ] FeatureMode enum replaces the boolean fast field across domain, persistence, and presentation layers\n- [ ] All existing fast-mode functionality continues to work after the boolean-to-enum migration\n- [ ] All new UI components have colocated Storybook stories\n- [ ] Unit tests cover the exploration agent graph, mode transition logic, and feedback loop\n- [ ] Integration tests cover the create-explore-iterate-promote workflow end-to-end\n\n## Functional Requirements\n\n- **FR-1: FeatureMode enum** — Replace the boolean `fast` field on the Feature entity with a `FeatureMode` enum (`Regular`, `Fast`, `Exploration`) defined in TypeSpec. Migrate all code paths that check `fast` boolean to use the enum. This is a prerequisite for all other requirements.\n\n- **FR-2: Create exploration feature** — The `CreateFeatureUseCase` must accept `mode: FeatureMode.Exploration` as input and create a Feature record with lifecycle state `Exploring`. The use case must initialize a minimal spec (feature.yaml only), create an isolated worktree, and spawn the exploration agent graph.\n\n- **FR-3: Exploration agent graph** — A new LangGraph graph factory (`createExplorationAgentGraph`) with the following topology: `START -> prototype-generate -> interrupt(feedback) -> apply-feedback -> prototype-generate -> ... -> END`. The graph generates a quick code prototype, interrupts for user feedback, applies feedback, and loops. The graph exits when the user promotes or discards.\n\n- **FR-4: Prototype generation node** — The `prototype-generate` node invokes the agent executor with prompting optimized for speed and minimal scope: \"generate a quick, working prototype that demonstrates the idea — prioritize showing the concept over production quality.\" The agent writes code changes to the worktree.\n\n- **FR-5: Feedback interrupt** — After each prototype generation, the graph interrupts using the existing LangGraph interrupt mechanism. The interrupt payload includes a summary of what was generated and the iteration count. The user provides text feedback or a promote/discard action.\n\n- **FR-6: Apply feedback node** — The `apply-feedback` node receives user feedback text and prepares context for the next prototype-generate iteration. It accumulates feedback history in the graph state so the agent has full iteration context.\n\n- **FR-7: Iteration limit** — The feedback loop enforces a configurable maximum iteration count (default: 10). When the limit is reached, the graph interrupts with a final prompt asking the user to promote, discard, or reset the exploration. The limit is configurable in workflow settings.\n\n- **FR-8: Promote exploration to feature** — A `PromoteExplorationUseCase` transitions an exploration feature to Regular or Fast mode. For Regular mode: transitions lifecycle to `Requirements` (or `Implementation` if the user wants to skip SDLC) and optionally scaffolds full spec YAMLs. For Fast mode: transitions lifecycle to `Implementation`. The existing worktree code is preserved as the starting point. The appropriate agent graph is spawned.\n\n- **FR-9: Discard exploration** — A `DiscardExplorationUseCase` (or extension of existing delete logic) moves an exploration feature to `Deleting` state, cleans up the worktree and branch, and transitions to `Archived`. Reuses existing feature deletion infrastructure.\n\n- **FR-10: Web UI mode selector** — The feature creation drawer replaces the fast-mode toggle with a three-way mode selector (Regular / Fast / Explore). When Explore is selected, approval gates and SDLC-specific options are hidden since they do not apply. The mode selector defaults to the user's workflow settings preference.\n\n- **FR-11: Web UI prototype review** — The feature drawer for exploration features shows: (a) the current prototype diff in the artifacts/code tab, (b) a feedback input area with a text field and submit button, (c) a promote button that opens a mode selection dialog (Regular or Fast), and (d) a discard button. The iteration count is displayed prominently.\n\n- **FR-12: Web UI canvas treatment** — Exploration features render on the canvas with a distinct visual style: amber/yellow color scheme, a beaker/flask icon, and a badge showing the current iteration count. Clicking opens the feature drawer with the prototype review tab.\n\n- **FR-13: CLI exploration support** — Add `--explore` flag to `shep feat new`. Add `shep feat feedback <feature-id> <feedback-text>` command for providing feedback from CLI. Add `shep feat promote <feature-id> [--fast]` command for promoting. The CLI displays prototype summaries and iteration status.\n\n- **FR-14: Worker process routing** — The feature agent worker selects the exploration graph factory when mode is `Exploration`, alongside the existing fast/regular routing. The worker handles interrupt/resume for the feedback loop using the same mechanism as approval gates.\n\n- **FR-15: Exploring lifecycle state** — Add `Exploring` to the `SdlcLifecycle` enum in TypeSpec. Define lifecycle gates for exploration: the only valid transitions are `Exploring -> Implementation` (promote to fast), `Exploring -> Requirements` (promote to regular), `Exploring -> Deleting` (discard), and self-loop for iterations.\n\n- **FR-16: Exploration state channels** — Extend `FeatureAgentAnnotation` with exploration-specific state channels: `iterationCount` (number), `maxIterations` (number), `feedbackHistory` (string array), `explorationStatus` (generating/waiting-feedback/applying-feedback/promoting/discarding).\n\n- **FR-17: Settings integration** — Add `workflow.defaultMode` setting (replacing or extending `workflow.defaultFastMode`) that accepts `regular`, `fast`, or `exploration`. The Web UI mode selector and CLI default to this preference.\n\n## Non-Functional Requirements\n\n- **NFR-1: Prototype generation speed** — The initial prototype generation must complete within 2 minutes for typical prompts. Subsequent feedback iterations must complete within 90 seconds. The exploration agent prompt must explicitly prioritize speed over completeness.\n\n- **NFR-2: Backward compatibility** — The FeatureMode enum migration must not break existing features. Existing features with `fast=true` must map to `FeatureMode.Fast` and `fast=false` to `FeatureMode.Regular`. Database migration must be reversible.\n\n- **NFR-3: Resource isolation** — Each exploration feature runs in its own worktree and branch, same as regular features. No shared state between exploration features. Exploration worktrees are cleaned up on discard.\n\n- **NFR-4: Context preservation** — The feedback loop must preserve full agent context across iterations via LangGraph checkpointing. The agent must be able to reference all previous feedback and prototype state when generating the next iteration.\n\n- **NFR-5: UI responsiveness** — The Web UI must remain responsive during prototype generation. SSE events provide real-time status updates (generating, ready for feedback, applying feedback). No blocking operations in the main thread.\n\n- **NFR-6: Storybook coverage** — Every new or modified Web UI component must have colocated `.stories.tsx` files with representative states (empty, loading, with data, error, multiple iterations).\n\n- **NFR-7: Test coverage** — Unit tests for the exploration graph nodes, mode transition logic, feedback accumulation, and iteration limits. Integration tests for the full create-iterate-promote workflow. No untested code paths in the new mode.\n\n- **NFR-8: Clean Architecture compliance** — All new code must follow the existing four-layer architecture. The exploration agent graph lives in infrastructure. Use cases live in application. The FeatureMode enum and Exploring lifecycle state live in domain (via TypeSpec). Presentation layers call use cases only.\n\n- **NFR-9: Agent-agnostic execution** — The exploration agent graph must work with any configured agent executor (Claude Code, Gemini CLI, Cursor, Codex) via the existing `IAgentExecutorProvider` interface. No hardcoded provider references.\n\n## Product Questions & AI Recommendations\n\n| # | Question | AI Recommendation | Rationale |\n| - | -------- | ----------------- | --------- |\n| 1 | Mode modeling: enum vs additional boolean? | FeatureMode enum | Prevents invalid state combinations, scales to future modes, cleaner domain model |\n| 2 | Entity model: reuse Feature or new Prototype entity? | Reuse Feature with Exploring lifecycle state | Avoids massive infrastructure duplication, promotion is a state transition not entity migration |\n| 3 | Prototype artifact format? | Code diff in worktree | Reuses existing infrastructure, produces promotable code, users can test locally |\n| 4 | Feedback loop mechanism? | LangGraph interrupt with resume | Leverages existing HITL mechanism, preserves agent context, proven pattern |\n| 5 | Iteration limit? | Configurable limit, default 10 | Prevents runaway loops, protects resources, power users can increase |\n| 6 | Promotion mechanism? | In-place mode transition | Simplest path, preserves history, no entity duplication |\n| 7 | Spec initialization for exploration? | Minimal spec (feature.yaml only) | Matches lightweight philosophy, extensible on promotion |\n| 8 | Canvas treatment? | Distinct visual style on existing canvas | Unified workspace view, minimal UI work, clear visual distinction |\n\n## Affected Areas\n\n| Area | Impact | Reasoning |\n| ---- | ------ | --------- |\n| TypeSpec domain models (`tsp/`) | High | New `FeatureMode` enum replacing the boolean `fast` field; new `Exploring` lifecycle state |\n| CreateFeatureUseCase (`application/`) | High | Must support exploration mode input, different lifecycle initialization, and exploration agent spawning |\n| LangGraph agent graph (`infrastructure/agents/feature-agent/`) | High | New exploration-mode graph factory with prototype-generation nodes, feedback loops, and promote-to-feature edges |\n| Feature Agent Worker (`infrastructure/agents/feature-agent/worker`) | High | Must instantiate the exploration graph when mode is set, handle iteration/feedback cycles |\n| Web UI Create Drawer (`presentation/web/feature-create-drawer/`) | High | New mode selector (Regular/Fast/Explore), exploration-specific UI for viewing prototypes, providing feedback, and promoting |\n| Web UI Feature Drawer Tabs (`presentation/web/feature-drawer-tabs/`) | High | New prototype preview tab or panel for viewing exploration results, iteration history |\n| Web UI Control Center Canvas (`presentation/web/control-center/`) | Medium | Exploration features need distinct visual treatment on the canvas (different node style/color/icon) |\n| CLI feat new command (`presentation/cli/commands/feat/`) | Medium | New `--explore` flag, new `feedback` and `promote` subcommands |\n| Spec Initializer (`infrastructure/services/spec/`) | Medium | Exploration mode needs different minimal spec scaffolding |\n| PromoteExplorationUseCase (`application/`) | Medium | New use case for mode transition and graph re-spawning |\n| Settings / WorkflowConfig (`tsp/domain/entities/settings.tsp`) | Low | `workflow.defaultMode` setting replacing `workflow.defaultFastMode` |\n| Feature Repository (`infrastructure/repositories/`) | Low | Column migration from boolean fast to enum mode; query support for filtering by mode |\n| Domain lifecycle gates (`domain/lifecycle-gates.ts`) | Low | New gate sets for the Exploring lifecycle state and valid transitions |\n\n## Dependencies\n\n- **Existing fast-mode infrastructure**: The exploration mode follows the same architectural\n  pattern as fast mode (separate graph factory, worker flag routing, UI toggle). Understanding\n  and reusing this pattern is critical.\n- **LangGraph checkpoint/interrupt system**: The iterative feedback loop in exploration mode\n  requires interrupt points where the user can review a prototype and provide feedback. This\n  uses the same HITL interrupt mechanism as approval gates.\n- **Worktree service**: Exploration prototypes need isolated git worktrees, same as regular\n  features. The existing `IWorktreeService` handles this.\n- **Feature entity and lifecycle system**: Exploration reuses the Feature entity with a new\n  Exploring lifecycle state. The FeatureMode enum replaces the boolean fast field.\n- **Web UI drawer/tabs system**: The existing `BaseDrawer`, `FeatureCreateDrawer`, and\n  feature drawer tabs provide the framework for the exploration UI. New tabs or views for\n  prototype preview and iteration extend this system.\n- **Agent executor interface**: The exploration prototype agent uses the same\n  `IAgentExecutor` interface, just with different prompts optimized for quick prototyping.\n- **FeatureMode enum migration**: The boolean-to-enum migration (FR-1) is a prerequisite\n  for all other exploration mode work. It must be completed and verified first.\n\n## Size Estimate\n\n**XL** — This feature introduces a fundamentally new workflow mode that touches every layer\nof the architecture: new TypeSpec domain models (FeatureMode enum, Exploring lifecycle state),\na new LangGraph graph with iterative feedback nodes, significant Web UI work for prototype\nreview and iteration, CLI support with new subcommands, and a FeatureMode enum migration.\nThe scope is comparable to the original feature-agent implementation. The iterative feedback\nloop and the boolean-to-enum migration add complexity beyond what fast mode required.\nEstimated at 17 functional requirements across domain, application, infrastructure, and\npresentation layers.\n\n---\n\n_Requirements complete — proceed with research to resolve technical approach_\n"
