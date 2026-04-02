@@ -14,6 +14,9 @@
  */
 
 import { injectable, inject } from 'tsyringe';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { unlink } from 'node:fs/promises';
 import type { Feature } from '../../../domain/generated/output.js';
 import { AgentRunStatus, PrStatus, SdlcLifecycle } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
@@ -136,6 +139,16 @@ export class DeleteFeatureUseCase {
           }
         }
         await this.runRepo.updateStatus(run.id, AgentRunStatus.cancelled);
+      }
+
+      // Clean up checkpoint database file (used by LangGraph for state persistence)
+      if (run?.threadId) {
+        const checkpointPath = join(homedir(), '.shep', 'checkpoints', `${run.threadId}.db`);
+        try {
+          await unlink(checkpointPath);
+        } catch {
+          // Checkpoint file may not exist or already be removed
+        }
       }
     }
 
