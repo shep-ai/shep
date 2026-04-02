@@ -13,6 +13,7 @@ export type FeatureTabKey =
   | 'tech-decisions'
   | 'product-decisions'
   | 'merge-review'
+  | 'prototype'
   | 'chat';
 
 /** All valid tab key values — used for URL param validation. */
@@ -25,6 +26,7 @@ export const VALID_TAB_KEYS: ReadonlySet<string> = new Set<FeatureTabKey>([
   'tech-decisions',
   'product-decisions',
   'merge-review',
+  'prototype',
   'chat',
 ]);
 
@@ -54,6 +56,7 @@ export type DrawerView =
 
 /** Derives the initial tab from node lifecycle + state. */
 export function deriveInitialTab(node: FeatureNodeData): FeatureTabKey {
+  if (node.lifecycle === 'exploring') return 'prototype';
   if (node.lifecycle === 'requirements' && node.state === 'action-required') return 'prd-review';
   if (node.lifecycle === 'implementation' && node.state === 'action-required')
     return 'tech-decisions';
