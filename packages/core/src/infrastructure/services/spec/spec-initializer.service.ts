@@ -271,7 +271,7 @@ export class SpecInitializerService implements ISpecInitializerService {
     slug: string,
     featureNumber: number,
     description: string,
-    mode?: 'fast'
+    mode?: 'fast' | 'exploration'
   ): Promise<SpecInitializerResult> {
     // Scan existing specs/ directory for highest NNN prefix to avoid collisions
     // (specs may have been created outside the DB, e.g., via /shep-kit:new-feature)
@@ -291,13 +291,16 @@ export class SpecInitializerService implements ISpecInitializerService {
     const vars = { nnn, slug, featureNumber: resolvedNumber, date, timestamp, description };
 
     // In fast mode, write feature.yaml + spec.yaml (spec.yaml stores the user query
-    // which the fast-implement node reads; no research/plan/tasks needed)
+    // which the fast-implement node reads; no research/plan/tasks needed).
+    // In exploration mode, write only feature.yaml (no SDLC spec artifacts).
     const templates =
-      mode === 'fast'
-        ? TEMPLATES.filter(
-            ({ filename }) => filename === 'feature.yaml' || filename === 'spec.yaml'
-          )
-        : TEMPLATES;
+      mode === 'exploration'
+        ? TEMPLATES.filter(({ filename }) => filename === 'feature.yaml')
+        : mode === 'fast'
+          ? TEMPLATES.filter(
+              ({ filename }) => filename === 'feature.yaml' || filename === 'spec.yaml'
+            )
+          : TEMPLATES;
 
     // Write template files
     await Promise.all(

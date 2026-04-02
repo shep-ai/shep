@@ -314,4 +314,96 @@ describe('SpecInitializerService', () => {
       expect(files).toContain('feature.yaml');
     });
   });
+
+  describe('exploration mode', () => {
+    it('should create only feature.yaml when mode is exploration', async () => {
+      const result = await service.initialize(
+        tempDir,
+        'explore-idea',
+        1,
+        'Explore idea',
+        'exploration'
+      );
+
+      const files = readdirSync(result.specDir);
+      expect(files).toContain('feature.yaml');
+      expect(files.length).toBe(1);
+    });
+
+    it('should NOT create spec.yaml when mode is exploration', async () => {
+      const result = await service.initialize(
+        tempDir,
+        'explore-idea',
+        1,
+        'Explore idea',
+        'exploration'
+      );
+
+      expect(existsSync(join(result.specDir, 'spec.yaml'))).toBe(false);
+    });
+
+    it('should NOT create research.yaml when mode is exploration', async () => {
+      const result = await service.initialize(
+        tempDir,
+        'explore-idea',
+        1,
+        'Explore idea',
+        'exploration'
+      );
+
+      expect(existsSync(join(result.specDir, 'research.yaml'))).toBe(false);
+    });
+
+    it('should NOT create plan.yaml when mode is exploration', async () => {
+      const result = await service.initialize(
+        tempDir,
+        'explore-idea',
+        1,
+        'Explore idea',
+        'exploration'
+      );
+
+      expect(existsSync(join(result.specDir, 'plan.yaml'))).toBe(false);
+    });
+
+    it('should NOT create tasks.yaml when mode is exploration', async () => {
+      const result = await service.initialize(
+        tempDir,
+        'explore-idea',
+        1,
+        'Explore idea',
+        'exploration'
+      );
+
+      expect(existsSync(join(result.specDir, 'tasks.yaml'))).toBe(false);
+    });
+
+    it('should still create the spec directory', async () => {
+      const result = await service.initialize(
+        tempDir,
+        'explore-idea',
+        1,
+        'Explore idea',
+        'exploration'
+      );
+
+      expect(existsSync(result.specDir)).toBe(true);
+      expect(result.specDir).toBe(join(tempDir, 'specs', '001-explore-idea'));
+    });
+
+    it('should include exploration prompt in feature.yaml', async () => {
+      const result = await service.initialize(
+        tempDir,
+        'explore-idea',
+        3,
+        'Add workspace grouping for repos',
+        'exploration'
+      );
+
+      const content = readFileSync(join(result.specDir, 'feature.yaml'), 'utf-8');
+      expect(content).toContain("id: '003-explore-idea'");
+      expect(content).toContain("name: 'explore-idea'");
+      expect(content).not.toMatch(/\{\{[A-Z_]+\}\}/);
+    });
+  });
 });
