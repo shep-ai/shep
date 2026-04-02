@@ -37,6 +37,28 @@ export function createPrototypeGenerateNode(executor: IAgentExecutor) {
     reportNodeStart('prototype-generate');
     await updateNodeLifecycle('prototype-generate');
 
+    // On resume from interrupt, LangGraph re-executes the node function.
+    // If _approvalAction is set, the worker has resumed us with a user action.
+    // Return early and let the conditional edge route to apply-feedback or END.
+    if (state._approvalAction !== null && state._approvalAction !== undefined) {
+      if (state._approvalAction === 'rejected') {
+        log.info('Resumed with feedback — routing to apply-feedback');
+        return {
+          currentNode: 'prototype-generate',
+          explorationStatus: 'applying-feedback',
+          messages: ['[prototype-generate] Resumed — routing feedback to apply-feedback'],
+        };
+      } else {
+        log.info('Resumed with promote/discard — routing to END');
+        return {
+          currentNode: 'prototype-generate',
+          explorationStatus: 'promoting',
+          messages: ['[prototype-generate] Resumed — routing to END (promote/discard)'],
+          _approvalAction: null,
+        };
+      }
+    }
+
     // Check if max iterations reached — force user to promote or discard
     if (iterationCount >= maxIterations) {
       log.info(`Max iterations (${maxIterations}) reached — interrupting for final action`);
