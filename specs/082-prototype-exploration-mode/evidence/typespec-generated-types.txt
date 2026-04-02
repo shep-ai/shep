@@ -1,0 +1,66 @@
+=== FeatureMode Enum (generated/output.ts) ===
+export enum FeatureMode {
+  Regular = 'Regular',
+  Fast = 'Fast',
+  Exploration = 'Exploration',
+}
+
+/**
+ * Configuration for human-in-the-loop approval gates
+ */
+export type ApprovalGates = {
+  /**
+--
+  mode: FeatureMode;
+  /**
+   * Push branch to remote after implementation (default: false)
+   */
+  push: boolean;
+  /**
+   * Create PR after implementation (default: false)
+   */
+
+=== SdlcLifecycle Enum - includes Exploring ===
+export enum SdlcLifecycle {
+  Started = 'Started',
+  Analyze = 'Analyze',
+  Requirements = 'Requirements',
+  Research = 'Research',
+  Planning = 'Planning',
+  Implementation = 'Implementation',
+  Review = 'Review',
+  Maintain = 'Maintain',
+  Blocked = 'Blocked',
+  Pending = 'Pending',
+  Exploring = 'Exploring',
+  Deleting = 'Deleting',
+  AwaitingUpstream = 'AwaitingUpstream',
+  Archived = 'Archived',
+}
+export enum FeatureMode {
+  Regular = 'Regular',
+  Fast = 'Fast',
+  Exploration = 'Exploration',
+}
+--
+  lifecycle: SdlcLifecycle;
+  /**
+   * Conversation history with the AI assistant
+   */
+  messages: Message[];
+  /**
+   * Implementation plan containing tasks, artifacts, and requirements (optional)
+   */
+
+=== Feature Type - mode field + iteration fields ===
+
+=== Feature Type - iterationCount and maxIterations fields ===
+  /**
+   * Current feedback iteration count in exploration mode (0 when not exploring)
+   */
+  iterationCount: number;
+  /**
+   * Maximum allowed iterations for exploration mode (only set when mode is Exploration)
+   */
+  maxIterations?: number;
+  /**

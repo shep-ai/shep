@@ -1,0 +1,92 @@
+
+> @shepai/cli@1.163.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-prototype-exploration-mode
+> tsx src/presentation/cli/index.ts feat --help
+
+Usage: shep feat [options] [command]
+
+Manage features through the SDLC lifecycle
+
+Options:
+  -h, --help                   display help for command
+
+Commands:
+  new [options] <description>  Create a new feature
+  ls [options]                 List features
+  show <id>                    Show feature details
+  del [options] <id>           Delete a feature
+  resume <id>                  Resume a stopped or failed feature agent
+  start <id>                   Start a pending feature (spawn the agent)
+  review [id]                  Interactive review of a feature waiting for
+                               approval
+  approve [id]                 Approve a feature waiting for review
+  reject [options] [id]        Reject a feature waiting for review
+  logs [options] <id>          View feature agent logs
+  adopt [options] <branch>     Adopt an existing branch as a tracked feature
+  archive [options] <id>       Archive a feature to hide it from the canvas
+  unarchive <id>               Restore an archived feature to its previous state
+  feedback <id> <feedback>     Send feedback on an exploration prototype to
+                               iterate
+  promote [options] <id>       Promote an exploration feature to Regular or Fast
+                               mode
+  help [command]               display help for command
+---
+
+Usage: shep feat new [options] <description>
+
+Create a new feature
+
+Arguments:
+  description        Feature description
+
+Options:
+  -r, --repo <path>  Repository path (defaults to current directory)
+  --push             Push branch to remote after implementation
+  --pr               Open PR on implementation complete (implies --push)
+  --no-pr            Do not open PR on implementation complete
+  --allow-prd        Auto-approve through requirements, pause after
+  --allow-plan       Auto-approve through planning, pause at implementation
+  --allow-merge      Auto-approve merge phase
+  --allow-all        Run fully autonomous (no approval pauses)
+  --parent <fid>     Parent feature ID (full or partial prefix)
+  --pending          Create feature without starting the agent
+  --fast             Skip SDLC phases and implement directly from your prompt
+                     (default: on)
+  --no-fast          Run full SDLC phases (analyze → requirements → plan →
+                     implement)
+  --explore          Start an exploration/prototyping session for iterative
+                     design
+  --model <model>    LLM model identifier for this run (e.g. claude-opus-4-6)
+  --no-rebase        Skip syncing main from remote before creating the feature
+                     branch
+  --attach <path>    Attach a file (repeatable) (default: [])
+  -h, --help         display help for command
+---
+
+> @shepai/cli@1.163.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-prototype-exploration-mode
+> tsx src/presentation/cli/index.ts feat feedback --help
+
+Usage: shep feat feedback [options] <id> <feedback>
+
+Send feedback on an exploration prototype to iterate
+
+Arguments:
+  id          Feature ID or prefix
+  feedback    Feedback text for the next iteration
+
+Options:
+  -h, --help  display help for command
+---
+
+> @shepai/cli@1.163.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-prototype-exploration-mode
+> tsx src/presentation/cli/index.ts feat promote --help
+
+Usage: shep feat promote [options] <id>
+
+Promote an exploration feature to Regular or Fast mode
+
+Arguments:
+  id          Feature ID or prefix
+
+Options:
+  --fast      Promote to Fast mode (skip SDLC phases)
+  -h, --help  display help for command
