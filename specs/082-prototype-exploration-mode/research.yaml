@@ -1,0 +1,545 @@
+name: "prototype-exploration-mode"
+summary: >
+  Technical research for adding an exploration/prototyping mode to Shep. Key decisions:
+  replace boolean fast field with FeatureMode enum (TypeSpec-defined), add Exploring lifecycle
+  state, create a new LangGraph exploration graph factory with interrupt-based feedback loops,
+  extend the Web UI with a three-way mode selector and prototype review drawer, and perform
+  an in-place database migration from INTEGER fast column to TEXT mode column.
+
+relatedFeatures:
+  - "052-fast-prompt-to-pr"
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "LangGraph (@langchain/langgraph)"
+  - "React / Next.js"
+  - "Commander.js"
+  - "shadcn/ui"
+  - "SQLite (better-sqlite3)"
+  - "tsyringe (DI)"
+  - "React Flow (@xyflow/react)"
+  - "Lucide React (icons)"
+  - "Storybook"
+  - "Vitest"
+
+relatedLinks:
+  - title: "LangGraph Interrupt/Resume Documentation"
+    url: "https://langchain-ai.github.io/langgraphjs/how-tos/human_in_the_loop/breakpoints/"
+  - title: "LangGraph Annotation State Channels"
+    url: "https://langchain-ai.github.io/langgraphjs/concepts/low_level/"
+  - title: "TypeSpec Enum Documentation"
+    url: "https://typespec.io/docs/language-basics/enums"
+
+decisions:
+  - title: "FeatureMode Enum Design (TypeSpec)"
+    chosen: "Three-value TypeSpec enum FeatureMode { Regular, Fast, Exploration } replacing the boolean fast field"
+    rejected:
+      - "Additional exploration boolean alongside fast — creates 4 states (2 booleans) but only 3 are valid; impossible combinations (fast=true AND exploration=true) cannot be prevented at the type level; does not scale to future modes"
+      - "String union type instead of enum — loses TypeSpec's enum benefits (auto-generated code, documentation, validation); less discoverable in IDE tooling"
+    rationale: |
+      The codebase currently uses a boolean fast field defined in tsp/domain/entities/feature.tsp
+      (line 370) and stored as INTEGER (0/1) in SQLite (migration 027). Two booleans would create
+      four states where only three are valid. A TypeSpec enum is the natural extension — it matches
+      the existing SdlcLifecycle enum pattern, auto-generates to TypeScript via tsp:compile, and
+      prevents invalid state combinations at the type level. The enum values (Regular, Fast,
+      Exploration) are self-documenting and scale to future modes without additional fields.
+
+  - title: "Database Migration Strategy (fast boolean to mode enum)"
+    chosen: "New migration (051+) that adds TEXT mode column, migrates data from fast INTEGER, then drops fast column using SQLite table recreation"
+    rejected:
+      - "Keep fast column and add separate mode column — leaves dead column in schema, creates confusion about which is authoritative, and violates single-source-of-truth principle"
+      - "Rename fast column to mode and change type in-place — SQLite does not support ALTER COLUMN; would require the same table recreation approach but with more confusing migration semantics"
+    rationale: |
+      SQLite does not support ALTER COLUMN TYPE, so the migration must use the standard
+      create-new-table, copy-data, drop-old, rename pattern. The codebase already has
+      35 legacy migrations (legacy-migrations.ts) plus file-based migrations up to 050
+      (packages/core/src/infrastructure/persistence/sqlite/migrations/). The new migration
+      will: (1) add a TEXT mode column with DEFAULT 'Regular', (2) UPDATE mode = 'Fast'
+      WHERE fast = 1, (3) drop the fast column via table recreation. The mapper
+      (feature.mapper.ts) will change from boolean mapping (row.fast === 1) to string
+      mapping (row.mode as FeatureMode). This is a proven pattern in this codebase.
+
+  - title: "Exploring Lifecycle State Placement"
+    chosen: "Add Exploring to the SdlcLifecycle enum in tsp/common/enums/lifecycle.tsp with defined transition rules"
+    rejected:
+      - "Reuse Started state for exploration — conflates two different semantics; Started means 'agent not yet running' while Exploring means 'actively generating prototypes in a feedback loop'; would break existing lifecycle gate logic"
+      - "Reuse Implementation state with a sub-state flag — adds implicit state that is invisible to lifecycle queries and UI rendering; the canvas and drawer tabs use lifecycle directly for rendering decisions"
+    rationale: |
+      The SdlcLifecycle enum (lifecycle.tsp lines 24-126) currently has 13 states. Adding
+      Exploring follows the established pattern (e.g., AwaitingUpstream was added for fork-and-PR
+      features). The lifecycle is used directly by: the Web UI canvas for node styling
+      (feature-node-state-config.ts), the drawer tabs for visibility (feature-drawer-tabs.tsx
+      computeVisibleTabs), the SSE event route for status mapping (agent-events/route.ts
+      LIFECYCLE_TO_NODE), and the worker for lifecycle updates (node-helpers.ts
+      updateNodeLifecycle). A dedicated state ensures all these systems handle exploration
+      correctly without special-case boolean checks.
+
+  - title: "Exploration Agent Graph Topology"
+    chosen: "New createExplorationAgentGraph() factory with looping topology: START -> prototype-generate -> interrupt(feedback) -> [apply-feedback -> prototype-generate]* -> END"
+    rejected:
+      - "Extend the fast graph with a feedback loop — the fast graph (fast-feature-agent-graph.ts) is intentionally minimal (2 nodes) and designed for single-pass execution; adding loop edges and feedback state would complicate its simplicity and break the separation of concerns"
+      - "Single monolithic node that handles everything — loses LangGraph's checkpoint benefits; if the agent crashes during feedback application, the entire iteration is lost; separate nodes allow checkpoint resume from the last successful step"
+    rationale: |
+      The codebase follows a clear graph factory pattern: createFeatureAgentGraph() for full SDLC
+      and createFastFeatureAgentGraph() for fast mode (both in infrastructure/services/agents/
+      feature-agent/). A third factory createExplorationAgentGraph() follows this pattern exactly.
+      The topology is simple: prototype-generate (a custom node function) calls the agent executor
+      to generate code, then interrupts for feedback using the same interrupt() mechanism proven
+      in approval gates (node-helpers.ts lines 616-628). On resume, apply-feedback prepares
+      context and routes back to prototype-generate. The loop exits when the user sends a promote
+      or discard action instead of text feedback. This reuses the existing Command({resume,
+      update}) resume pattern from the worker (feature-agent-worker.ts lines 329-362).
+
+  - title: "Feedback Loop Interrupt Mechanism"
+    chosen: "Reuse existing LangGraph interrupt() with Command({resume, update}) pattern, extending the resume payload to include feedback text and action type"
+    rejected:
+      - "New agent run per iteration — each feedback round would spawn a new worker process, losing checkpoint state and requiring context reconstruction from scratch; the codebase's checkpoint-first design (checkpointer at ~/.shep/checkpoints/{threadId}.db) makes interrupt/resume the natural choice"
+      - "Polling-based feedback (agent polls a queue/file for user input) — introduces unnecessary complexity, race conditions, and a new communication channel when interrupt/resume already provides exactly this capability"
+    rationale: |
+      The interrupt/resume pattern is battle-tested in this codebase for approval gates.
+      The worker already handles resume-from-interrupt (feature-agent-worker.ts lines 329-362)
+      by parsing --resume-payload JSON and deriving state updates via Command({resume, update}).
+      For exploration, the resume payload extends from {approved: true} | {rejected: true,
+      feedback: string} to include {feedback: string, action: 'iterate'} |
+      {action: 'promote', targetMode: 'Regular' | 'Fast'} | {action: 'discard'}. The state
+      update channels (_approvalAction, _rejectionFeedback) are extended with
+      exploration-specific channels (iterationCount, feedbackHistory, explorationStatus).
+      This is a minimal, safe extension of proven infrastructure.
+
+  - title: "Exploration State Channels (FeatureAgentAnnotation Extension)"
+    chosen: "Add exploration-specific channels to FeatureAgentAnnotation: iterationCount (number), maxIterations (number), feedbackHistory (string[] with accumulating reducer), explorationStatus (union type)"
+    rejected:
+      - "Separate ExplorationAgentAnnotation — LangGraph requires the same annotation type across graphs that share checkpointing infrastructure; the worker casts between graph types already (feature-agent-worker.ts line 287); a separate annotation would break the cast pattern"
+      - "Store feedback in the existing messages channel — messages is an accumulating string array used for node execution logs; mixing feedback history with execution logs makes it impossible to extract feedback for display or context building"
+    rationale: |
+      The FeatureAgentAnnotation (state.ts) already uses the extension pattern — it has
+      channels for CI watch (ciFixAttempts, ciFixHistory, ciFixStatus) that are only used
+      by the merge node. Adding exploration channels follows the same pattern: they are
+      only used by the exploration graph nodes but coexist in the shared annotation.
+      The feedbackHistory channel uses the accumulating reducer pattern [...prev, ...next]
+      already proven by messages and evidence channels. iterationCount uses the simple
+      override reducer (_prev, next) => next. explorationStatus uses a union type like
+      ciFixStatus. The exploration graph nodes read/write these channels; other graphs
+      ignore them (they default to initial values).
+
+  - title: "Worker Graph Routing (Fast/Regular/Exploration)"
+    chosen: "Replace boolean --fast flag with --mode flag accepting 'regular' | 'fast' | 'exploration'; worker selects graph factory based on mode value"
+    rejected:
+      - "Add separate --exploration flag alongside --fast — creates the same boolean combination problem as the domain model; --fast and --exploration could both be true; does not scale to future modes"
+      - "Encode mode in the feature record and have worker read from DB — adds a DB dependency to the worker startup path which currently receives all needed info via CLI args; increases latency and failure surface"
+    rationale: |
+      The worker currently receives --fast as a boolean flag and selects the graph factory
+      (feature-agent-worker.ts lines 285-290). Replacing this with --mode 'regular' | 'fast' |
+      'exploration' follows the same pattern but supports the enum. The worker's argument
+      parsing (parseWorkerArgs) changes from a boolean fast check to a string mode value.
+      The graph selection becomes a switch/if-else chain on mode value. The process service
+      (feature-agent-process.service.ts) passes --mode instead of --fast. The CreateFeatureUseCase
+      already passes fast to the spawner; it changes to passing mode. This is a clean,
+      localized change.
+
+  - title: "Web UI Mode Selector Design"
+    chosen: "Replace Switch toggle with a three-option SegmentedControl (ToggleGroup) using shadcn/ui ToggleGroup"
+    rejected:
+      - "Keep Switch and add a second toggle for Explore — two independent toggles create the same invalid-state problem as two booleans; users could enable both"
+      - "Dropdown/Select component — adds an extra click (open dropdown, then select); a segmented control shows all options at once and is more discoverable for three mutually exclusive options"
+    rationale: |
+      The current fast mode UI is a Switch toggle (feature-create-drawer.tsx lines 825-844)
+      with a Zap icon. For three mutually exclusive modes, a SegmentedControl (implemented
+      via shadcn/ui ToggleGroup with type='single') is the standard pattern. Each option
+      shows an icon (ClipboardList for Regular, Zap for Fast, FlaskConical for Explore)
+      and a label. When Explore is selected, approval gates are hidden entirely (not just
+      disabled like in fast mode) since exploration has no SDLC gates. The ToggleGroup
+      component from shadcn/ui is already available in the project and provides the right
+      behavior (single selection, accessible, keyboard navigable).
+
+  - title: "Canvas Node Visual Treatment for Exploration Features"
+    chosen: "Extend feature-node-state-config.ts with an 'exploring' state entry using amber/yellow color scheme and FlaskConical icon, plus an iteration count badge"
+    rejected:
+      - "Separate canvas section/tab for exploration features — fragments the user's workspace; users should see all work in one place; requires significant React Flow layout changes"
+      - "Same visual treatment as fast mode with just a different icon — exploration features have fundamentally different user interaction (feedback loop vs single-pass); they need to be immediately visually distinguishable from both fast and regular features"
+    rationale: |
+      The feature-node-state-config.ts (lines 297-388) already defines state-based styling
+      with icon, borderClass, labelClass, badgeClass, and label per state. The fast mode badge
+      uses Zap icon (feature-node.tsx line 331). For exploration, an 'exploring' state with
+      amber/yellow border (border-s-amber-400), FlaskConical icon from lucide-react, and a
+      badge showing iteration count follows the established pattern. The feature-node.tsx
+      already conditionally renders the fast mode Zap icon (lines 329-341); extending this
+      to show FlaskConical for exploration mode is a minimal change.
+
+  - title: "Prototype Review in Feature Drawer"
+    chosen: "Add a 'Prototype' tab to the feature drawer tabs visible only when lifecycle is Exploring, showing diff view + feedback input + promote/discard actions"
+    rejected:
+      - "Reuse the existing 'merge-review' tab — merge-review is specifically designed for PR review with diff summary, CI status, and merge action; exploration review needs feedback input, iteration history, and promote/discard which are fundamentally different interactions"
+      - "Inline feedback in the overview tab — the overview tab already has a dense layout with metadata; adding a feedback form, iteration history, and action buttons would make it cluttered and break the existing layout"
+    rationale: |
+      The drawer tab system (feature-drawer-tabs.tsx) dynamically shows tabs based on lifecycle
+      and state via computeVisibleTabs() (lines 61-94). Adding a 'prototype' tab key that is
+      visible when lifecycle === 'exploring' follows the exact pattern used for 'prd-review'
+      (shown when lifecycle === 'requirements' and state === 'action-required') and 'merge-review'
+      (shown when lifecycle === 'review'). The tab content includes: (1) a code diff view showing
+      the prototype changes (reusing existing diff rendering infrastructure), (2) a feedback
+      TextArea with submit button, (3) a promote button opening a mode selection dialog
+      (Regular or Fast), and (4) a discard button with confirmation dialog. Each iteration
+      is displayed with its feedback text and timestamp.
+
+  - title: "Promotion Mechanism (Exploration to Regular/Fast)"
+    chosen: "PromoteExplorationUseCase performs in-place mode transition: update mode field, transition lifecycle, optionally scaffold missing spec YAMLs, spawn appropriate agent graph"
+    rejected:
+      - "Create new Feature entity from exploration — requires data migration between entities, loses iteration history, duplicates git worktree/branch management, and makes the promotion flow fragile"
+      - "Manual user workflow (discard exploration, create new feature, cherry-pick code) — poor UX, high friction, users would lose the exploration context and feedback history"
+    rationale: |
+      The Feature entity already has a mode field (after migration) and lifecycle state.
+      Promotion is a state transition: mode changes from Exploration to Regular or Fast,
+      lifecycle changes from Exploring to Requirements (regular) or Implementation (fast).
+      The existing worktree and branch are preserved — the prototype code becomes the
+      starting point. For promotion to regular mode, the spec initializer can scaffold
+      the missing YAMLs (research.yaml, plan.yaml, tasks.yaml) since it already supports
+      mode-based template selection (spec-initializer.service.ts lines 293-300). The new
+      agent graph (regular or fast) is spawned via the existing process service. This is
+      the simplest path that preserves all context.
+
+  - title: "CLI Command Design for Exploration"
+    chosen: "Add --explore flag to 'shep feat new', new 'shep feat feedback' subcommand, and new 'shep feat promote' subcommand"
+    rejected:
+      - "Separate 'shep explore' top-level command — breaks the established 'shep feat' command group pattern; exploration is a mode of feature development, not a separate concept; would require duplicating shared feat infrastructure"
+      - "Interactive TUI-only feedback (no CLI subcommand) — excludes CI/automation use cases and users who prefer CLI over Web UI; the feedback command enables scriptable exploration iteration"
+    rationale: |
+      The CLI uses Commander.js with a 'feat' command group (src/presentation/cli/commands/feat/).
+      The existing pattern has feat new with flags (--fast, --pending, etc.), feat del, feat start,
+      feat archive, etc. Adding --explore to feat new follows the same flag pattern. The feedback
+      and promote subcommands follow the pattern of feat start (takes feature-id, performs action).
+      The new.command.ts already resolves workflow defaults and passes them to CreateFeatureUseCase
+      (lines 62-83, 163, 174); extending this for --explore is straightforward.
+
+  - title: "Settings Integration (defaultMode)"
+    chosen: "Add workflow.defaultMode setting (string enum: 'regular' | 'fast' | 'exploration') replacing workflow.defaultFastMode boolean"
+    rejected:
+      - "Keep defaultFastMode and add defaultExplorationMode boolean — same invalid-state problem as the feature flag approach; two booleans, four states, three valid"
+      - "No default mode setting (always require explicit flag) — breaks existing UX where features default to fast mode; users expect a configurable default"
+    rationale: |
+      The settings TypeSpec (tsp/domain/entities/settings.tsp lines 283-367) defines
+      WorkflowConfig with defaultFastMode: boolean = true. This maps to the domain
+      SettingsDefaults (settings-defaults.factory.ts line 151). Replacing the boolean with
+      a string enum 'regular' | 'fast' | 'exploration' (with default 'fast' to preserve
+      backward compatibility) is a clean migration. The settings DB column changes from
+      INTEGER to TEXT, matching the feature mode migration pattern. The Web UI mode selector
+      defaults to this preference. The CLI feat new command reads it via getWorkflowDefaults()
+      (new.command.ts lines 62-83).
+
+  - title: "Spec Initialization for Exploration Mode"
+    chosen: "Extend spec initializer mode parameter to accept 'exploration', writing only feature.yaml (no spec.yaml, no research/plan/tasks)"
+    rejected:
+      - "No spec initialization at all — breaks the convention that all features have a spec directory; the spec directory is used for feature number allocation (resolveNextNumber), phase tracking (getCompletedPhases), and the Web UI spec viewer"
+      - "Full spec scaffolding like regular mode — creates unused files (research.yaml, plan.yaml, tasks.yaml) that are meaningless for exploration; confusing for users who browse the spec directory"
+    rationale: |
+      The spec initializer (spec-initializer.service.ts lines 293-300) already supports
+      mode-based template filtering: fast mode writes feature.yaml + spec.yaml, regular mode
+      writes all 5 files. Exploration mode needs even less: only feature.yaml (to store the
+      exploration prompt and metadata). spec.yaml is not needed because exploration does not
+      follow the spec-driven workflow. The initialize() interface already accepts mode as an
+      optional string parameter — extending it from 'fast' | undefined to
+      'fast' | 'exploration' | undefined is a minimal change.
+
+  - title: "Exploration Node Implementation Strategy"
+    chosen: "Custom node functions with shared utilities (retryExecute, createNodeLogger, recordPhaseStart/End) instead of the executeNode() factory"
+    rejected:
+      - "Reuse executeNode() factory directly — tightly coupled to approval gate pattern (completedPhases check, shouldInterrupt, _approvalAction handling); exploration has fundamentally different flow semantics (interrupt every iteration, use feedback text, loop instead of route forward)"
+      - "Fork executeNode() into executeExplorationNode() — creates code duplication; the shared utilities are already individually exported and testable"
+    rationale: |
+      executeNode() (node-helpers.ts lines 512-649) is tightly coupled to the approval gate
+      pattern: it checks completedPhases, evaluates shouldInterrupt(), handles _approvalAction,
+      and manages _needsReexecution routing. The exploration graph has fundamentally different
+      flow semantics — it interrupts EVERY iteration (not conditionally based on gates), uses
+      feedback text instead of approve/reject, and loops instead of routing forward. Custom
+      node functions that reuse the lower-level utilities (retryExecute for agent calls,
+      createNodeLogger for logging, recordPhaseStart/End for timing) give the exploration
+      graph clean semantics without the overhead of gate logic.
+
+openQuestions:
+  - question: "Should the exploration graph reuse executeNode() from node-helpers.ts or implement custom node functions?"
+    resolved: true
+    options:
+      - option: "Reuse executeNode() factory"
+        description: "Use the existing executeNode() factory that handles lifecycle updates, phase tracking, retry logic, and timing. Provides consistent behavior across all graph types but includes approval gate logic that is irrelevant for exploration nodes."
+        selected: false
+      - option: "Custom node functions with shared utilities"
+        description: "Write custom node functions for prototype-generate and apply-feedback that directly call shared utilities (retryExecute, createNodeLogger, recordPhaseStart/End) without the executeNode() wrapper. This avoids the approval gate overhead and allows exploration-specific logic like feedback accumulation."
+        selected: true
+      - option: "Fork executeNode() into executeExplorationNode()"
+        description: "Copy executeNode() and modify it for exploration semantics: remove approval gate logic, add feedback context building, add iteration tracking. Creates code duplication but provides maximum control over the exploration flow."
+        selected: false
+    selectionRationale: |
+      executeNode() (node-helpers.ts lines 512-649) is tightly coupled to the approval gate
+      pattern: it checks completedPhases, evaluates shouldInterrupt(), handles _approvalAction,
+      and manages _needsReexecution routing. The exploration graph has fundamentally different
+      flow semantics — it interrupts EVERY iteration (not conditionally based on gates), uses
+      feedback text instead of approve/reject, and loops instead of routing forward. Custom
+      node functions that reuse the lower-level utilities (retryExecute for agent calls,
+      createNodeLogger for logging, recordPhaseStart/End for timing) give the exploration
+      graph clean semantics without the overhead of gate logic. The shared utilities are
+      already exported and well-tested.
+
+  - question: "How should the iteration count be persisted and communicated to the Web UI?"
+    resolved: true
+    options:
+      - option: "Graph state channel only (iterationCount in FeatureAgentAnnotation)"
+        description: "Store iteration count solely in the LangGraph state. The SSE route reads it from the checkpoint DB or interrupt payload. Simple but requires checkpoint DB access from the web layer."
+        selected: false
+      - option: "Feature entity field persisted to database"
+        description: "Add iterationCount and maxIterations fields to the Feature entity and persist them in SQLite. The exploration graph nodes update the feature record after each iteration. The Web UI reads it from the feature API like any other field."
+        selected: true
+      - option: "Interrupt payload metadata"
+        description: "Include iteration count in the interrupt() payload alongside the feedback prompt. The worker writes it to the agent_runs table result column. The Web UI reads it from the run status. Lightweight but fragile — depends on parsing unstructured run result data."
+        selected: false
+    selectionRationale: |
+      The Web UI reads feature data from the feature repository via API routes. Adding
+      iterationCount and maxIterations as Feature entity fields follows the existing pattern
+      for per-feature metadata (push, openPr, ciWatchEnabled are all Feature fields persisted
+      to SQLite). The exploration graph nodes update these fields via the feature repository
+      (the merge node already does this — merge.node.ts line 105 calls featureRepository.findById
+      and update). This ensures the Web UI has real-time access to iteration state through the
+      standard feature data flow, and it persists across worker restarts/crashes. The graph
+      state channel also tracks it for the agent's own context, but the DB is the source of
+      truth for the UI.
+
+  - question: "Should the exploration prompt use a separate prompt builder or extend buildFastImplementPrompt?"
+    resolved: true
+    options:
+      - option: "Separate buildExplorationPrompt function"
+        description: "Create a dedicated prompt builder that emphasizes quick prototyping, minimal scope, and throwaway quality. Clear separation of concerns, each mode has its own prompt strategy."
+        selected: true
+      - option: "Extend buildFastImplementPrompt with mode parameter"
+        description: "Add a mode parameter to the existing fast prompt builder to vary the instructions. Reduces file count but couples two different prompting strategies in one function."
+        selected: false
+      - option: "Generic prompt template with mode-specific sections"
+        description: "Create a template system where prompts are composed from mode-specific sections. Over-engineered for three modes; the prompt strategies differ significantly enough to warrant separate builders."
+        selected: false
+    selectionRationale: |
+      The fast-implement prompt (nodes/fast-implement.node.ts) is tuned for single-pass
+      implementation from a clear user request. Exploration prompts have different goals:
+      generate a quick visual prototype, prioritize showing the concept over production quality,
+      include iteration context (previous feedback, what to change). These are fundamentally
+      different prompt strategies. A separate buildExplorationPrompt() function in a new
+      exploration-prompt.ts file follows the existing pattern where each node type has its own
+      prompt builder (buildAnalyzePrompt, buildRequirementsPrompt, buildFastImplementPrompt).
+      The exploration prompt builder takes the additional feedbackHistory from state to include
+      iteration context.
+
+content: |
+  ## Technology Decisions
+
+  ### 1. FeatureMode Enum Design (TypeSpec)
+
+  **Chosen:** Three-value TypeSpec enum `FeatureMode { Regular, Fast, Exploration }` replacing the boolean `fast` field
+
+  **Rejected:**
+  - Additional exploration boolean alongside fast — creates 4 states but only 3 valid; impossible combinations cannot be prevented at type level
+  - String union type instead of enum — loses TypeSpec's enum benefits (auto-generated code, documentation, validation)
+
+  **Rationale:** The codebase uses a boolean `fast` field (feature.tsp line 370, SQLite migration 027). Two booleans create an invalid state space. A TypeSpec enum matches the existing SdlcLifecycle pattern, auto-generates to TypeScript, and prevents invalid combinations at the type level.
+
+  ### 2. Database Migration Strategy
+
+  **Chosen:** New migration (051+) adding TEXT `mode` column, migrating data from fast INTEGER, dropping fast column via table recreation
+
+  **Rejected:**
+  - Keep both columns — dead column creates confusion about source of truth
+  - Rename in-place — SQLite doesn't support ALTER COLUMN TYPE
+
+  **Rationale:** SQLite requires create-new-table, copy-data, drop-old, rename for column type changes. The codebase has 35 legacy migrations plus file-based migrations up to 050. The migration maps `fast=1` to `'Fast'`, `fast=0` to `'Regular'`, adds `'Exploration'` as a new valid value. Feature mapper changes from boolean to string mapping.
+
+  ### 3. Exploring Lifecycle State
+
+  **Chosen:** Add `Exploring` to `SdlcLifecycle` enum in `tsp/common/enums/lifecycle.tsp`
+
+  **Rejected:**
+  - Reuse Started state — conflates "not yet running" with "actively prototyping"
+  - Reuse Implementation with sub-state flag — invisible to lifecycle queries and UI
+
+  **Rationale:** Lifecycle is used directly by canvas nodes, drawer tabs, SSE events, and worker lifecycle updates. A dedicated state ensures all systems handle exploration without boolean checks. Valid transitions: Exploring to Implementation (promote-fast), Exploring to Requirements (promote-regular), Exploring to Deleting (discard), plus self-loop for iterations.
+
+  ### 4. Exploration Agent Graph Topology
+
+  **Chosen:** New `createExplorationAgentGraph()` factory: `START -> prototype-generate -> interrupt -> [apply-feedback -> prototype-generate]* -> END`
+
+  **Rejected:**
+  - Extend fast graph with loop — fast graph is intentionally minimal (2 nodes); adding loops breaks its simplicity
+  - Single monolithic node — loses LangGraph checkpoint benefits for crash recovery
+
+  **Rationale:** Follows the established graph factory pattern. The prototype-generate node calls the agent executor, interrupts for feedback using proven interrupt() mechanism, and loops via apply-feedback. Exit via promote/discard action in resume payload.
+
+  ### 5. Feedback Loop Interrupt Mechanism
+
+  **Chosen:** Reuse LangGraph `interrupt()` with `Command({resume, update})`, extending resume payload for feedback
+
+  **Rejected:**
+  - New agent run per iteration — loses checkpoint state, requires context reconstruction
+  - Polling-based feedback — unnecessary complexity when interrupt/resume already provides this
+
+  **Rationale:** The worker already handles resume-from-interrupt (feature-agent-worker.ts lines 329-362). Resume payload extends to: `{feedback: string, action: 'iterate'}`, `{action: 'promote', targetMode: 'Regular'|'Fast'}`, `{action: 'discard'}`. State channels extended for exploration context.
+
+  ### 6. Exploration State Channels
+
+  **Chosen:** Add channels to `FeatureAgentAnnotation`: `iterationCount`, `maxIterations`, `feedbackHistory` (accumulating), `explorationStatus`
+
+  **Rejected:**
+  - Separate annotation type — breaks worker's graph type casting pattern
+  - Reuse messages channel for feedback — mixes execution logs with feedback
+
+  **Rationale:** The annotation already has mode-specific channels (CI fix channels used only by merge node). Exploration channels follow the same pattern. Accumulating reducer for feedbackHistory matches messages and evidence patterns. Other graphs ignore these channels (default to initial values).
+
+  ### 7. Worker Graph Routing
+
+  **Chosen:** Replace `--fast` boolean flag with `--mode` string flag (`regular`|`fast`|`exploration`)
+
+  **Rejected:**
+  - Separate --exploration flag — creates same boolean combination problem
+  - Read mode from DB — adds DB dependency to worker startup
+
+  **Rationale:** Worker currently receives --fast and selects graph (feature-agent-worker.ts lines 285-290). A --mode flag supports the enum cleanly. Process service and CreateFeatureUseCase pass mode instead of fast. Graph selection becomes a switch on mode value.
+
+  ### 8. Web UI Mode Selector
+
+  **Chosen:** Three-option SegmentedControl (ToggleGroup) replacing the Switch toggle
+
+  **Rejected:**
+  - Two independent Switch toggles — invalid state combinations possible
+  - Dropdown/Select — extra click for three mutually exclusive options
+
+  **Rationale:** Current Switch toggle (feature-create-drawer.tsx lines 825-844) works for binary choice. For three modes, shadcn/ui ToggleGroup with type='single' shows all options with icons (ClipboardList/Regular, Zap/Fast, FlaskConical/Explore). When Explore is selected, approval gates are hidden entirely.
+
+  ### 9. Canvas Visual Treatment
+
+  **Chosen:** Extend `feature-node-state-config.ts` with 'exploring' state using amber color + FlaskConical icon + iteration badge
+
+  **Rejected:**
+  - Separate canvas section — fragments workspace, requires major layout changes
+  - Same treatment as fast mode — exploration has fundamentally different UX
+
+  **Rationale:** State config defines icon/borderClass/label per state. Adding 'exploring' with amber border, FlaskConical icon, and iteration count badge follows the established pattern.
+
+  ### 10. Prototype Review Drawer Tab
+
+  **Chosen:** New 'prototype' tab visible when lifecycle is Exploring
+
+  **Rejected:**
+  - Reuse merge-review tab — designed for PR review, not exploration feedback
+  - Inline in overview tab — would make overview cluttered
+
+  **Rationale:** The tab system dynamically shows tabs based on lifecycle via computeVisibleTabs(). Adding 'prototype' when lifecycle is Exploring follows the pattern for 'prd-review' and 'merge-review'. Content: diff view, feedback TextArea, promote button (mode dialog), discard button.
+
+  ### 11. Promotion Mechanism
+
+  **Chosen:** In-place mode transition via PromoteExplorationUseCase
+
+  **Rejected:**
+  - Create new Feature entity — loses history, duplicates worktree management
+  - Manual workflow — high friction, loses context
+
+  **Rationale:** Promotion changes mode (Exploration to Regular/Fast) and lifecycle (Exploring to Requirements or Implementation). Worktree and branch preserved. Missing spec YAMLs scaffolded on promotion to regular mode.
+
+  ### 12. CLI Command Design
+
+  **Chosen:** --explore flag on 'feat new', plus 'feat feedback' and 'feat promote' subcommands
+
+  **Rejected:**
+  - Separate 'shep explore' command — breaks feat command group pattern
+  - TUI-only feedback — excludes CI/automation use cases
+
+  **Rationale:** Commander.js feat group already has new, del, start, archive. Adding --explore and new subcommands follows the same pattern.
+
+  ### 13. Settings Integration
+
+  **Chosen:** `workflow.defaultMode` string replacing `workflow.defaultFastMode` boolean
+
+  **Rejected:**
+  - Additional boolean — same invalid-state problem
+  - No default setting — breaks existing UX
+
+  **Rationale:** Settings TypeSpec defines WorkflowConfig with defaultFastMode boolean. Replacing with defaultMode string ('regular'|'fast'|'exploration', default 'fast') is a clean migration preserving backward compatibility.
+
+  ### 14. Spec Initialization
+
+  **Chosen:** Extend spec initializer mode to accept 'exploration', writing only feature.yaml
+
+  **Rejected:**
+  - No spec at all — breaks feature number allocation and phase tracking
+  - Full spec scaffolding — creates meaningless unused files
+
+  **Rationale:** Spec initializer already supports mode-based filtering. Exploration needs only feature.yaml. Interface extends from 'fast' | undefined to 'fast' | 'exploration' | undefined.
+
+  ### 15. Exploration Node Implementation
+
+  **Chosen:** Custom node functions with shared utilities instead of executeNode() factory
+
+  **Rejected:**
+  - Reuse executeNode() directly — tightly coupled to approval gate pattern
+  - Fork executeNode() — creates code duplication
+
+  **Rationale:** executeNode() handles completedPhases, shouldInterrupt, _approvalAction, _needsReexecution which are all approval gate concerns. Custom node functions using retryExecute, createNodeLogger, recordPhaseStart/End provide clean exploration semantics.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | @langchain/langgraph | Graph execution, checkpointing, interrupt/resume | Use (existing) | Core infrastructure already in use; exploration graph uses identical APIs |
+  | lucide-react (FlaskConical) | Exploration mode icon | Use (existing) | Already used for all icons (Zap, ClipboardList, CircleAlert, etc.) |
+  | shadcn/ui (ToggleGroup) | Three-way mode selector | Use (existing) | Already in the project; type='single' provides mutually exclusive selection |
+  | better-sqlite3 | Database migration for mode column | Use (existing) | All migrations use this; table recreation pattern is proven |
+  | @xyflow/react | Canvas node extension | Use (existing) | React Flow canvas already renders feature nodes; exploration nodes extend existing component |
+  | vitest | Testing exploration graph, use cases, and components | Use (existing) | All tests in the codebase use vitest |
+  | No new libraries needed | — | — | All requirements can be met with existing dependencies |
+
+  ## Security Considerations
+
+  - **Worktree isolation**: Exploration prototypes run in isolated git worktrees, same as regular features. No shared state between explorations. The existing IWorktreeService handles creation and cleanup.
+  - **Agent executor sandboxing**: The exploration agent uses the same IAgentExecutor interface with the same execution constraints (working directory restricted to worktree). No new attack surface.
+  - **Feedback injection**: User feedback text is passed to the agent as prompt context. The existing agent executor already handles untrusted user input (userQuery). No additional sanitization needed beyond what the agent executor provides.
+  - **Resource limits**: Each iteration generates a checkpoint. For unbounded iterations (no limit per spec), disk usage grows linearly. Consider checkpoint auto-cleanup for discarded explorations.
+  - **Promotion authorization**: Same authorization as feature creation. No new authorization model needed.
+
+  ## Performance Implications
+
+  - **Prototype generation speed (NFR-1)**: Exploration prompt prioritizes speed over completeness. Target: initial prototype < 2 minutes, iterations < 90 seconds.
+  - **Checkpoint growth**: Each iteration creates a checkpoint (~10-50KB). Even 20+ iterations produce negligible disk impact.
+  - **Web UI responsiveness (NFR-5)**: SSE events provide real-time status updates. The existing 2-second DB polling handles exploration state changes.
+  - **Context window management**: feedbackHistory accumulates across iterations. The prompt builder should summarize older feedback to stay within token limits for long exploration sessions.
+  - **Database migration**: fast-to-mode migration runs once per upgrade. For typical installations (< 1000 features), completes in < 1 second.
+
+  ## Architecture Notes
+
+  ### Layer Mapping (Clean Architecture Compliance)
+
+  | Layer | New Components |
+  | ----- | -------------- |
+  | Domain (tsp/) | FeatureMode enum, Exploring lifecycle state, iteration fields on Feature |
+  | Application (use-cases/) | PromoteExplorationUseCase, extended CreateFeatureUseCase |
+  | Infrastructure (agents/) | createExplorationAgentGraph(), exploration nodes, buildExplorationPrompt(), worker --mode routing |
+  | Infrastructure (persistence/) | Migration 051+ for mode column, feature mapper update |
+  | Infrastructure (services/) | Spec initializer 'exploration' mode support |
+  | Presentation (web/) | Mode selector ToggleGroup, Prototype drawer tab, Exploring canvas node style, feedback/promote/discard actions |
+  | Presentation (cli/) | --explore flag, feat feedback command, feat promote command |
+
+  ### Implementation Order (Dependencies)
+
+  1. TypeSpec models (FeatureMode enum, Exploring lifecycle, iteration fields) — everything depends on these
+  2. Database migration (fast boolean to mode enum) — mapper and repository changes
+  3. Worker routing (--mode flag replacing --fast) — enables graph selection
+  4. Exploration graph factory — new graph with prototype-generate, apply-feedback nodes
+  5. CreateFeatureUseCase mode support — exploration lifecycle initialization
+  6. PromoteExplorationUseCase — mode transition, graph re-spawning
+  7. CLI commands (--explore flag, feedback, promote subcommands)
+  8. Web UI (mode selector, canvas node, drawer tab, feedback UI)
+  9. Settings migration (defaultMode replacing defaultFastMode)
+
+  ### Existing Pattern Reuse Summary
+
+  - Graph factory pattern: identical to createFastFeatureAgentGraph() but different topology
+  - Interrupt/resume pattern: identical to approval gates but with feedback payload
+  - State channel pattern: identical to CI fix channels (used by one graph, ignored by others)
+  - Spec initializer mode: extending existing mode parameter
+  - Worker flag routing: same pattern as --fast but with string enum
+  - Canvas node styling: same state config with different colors/icons
+  - Drawer tab visibility: same computeVisibleTabs() with new lifecycle check
+  - Use case pattern: same DI-based use case pattern with output port interfaces
