@@ -204,6 +204,8 @@ function appendFeatureNodes(
       createdAt:
         feature.createdAt instanceof Date ? feature.createdAt.getTime() : feature.createdAt,
       ...(feature.mode === FeatureMode.Fast && { fastMode: true }),
+      mode: feature.mode,
+      ...(feature.iterationCount > 0 && { iterationCount: feature.iterationCount }),
       approvalGates: feature.approvalGates,
       push: feature.push,
       openPr: feature.openPr,
