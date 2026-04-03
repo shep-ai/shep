@@ -192,7 +192,7 @@ function seedFeature(db: Database.Database): void {
     `INSERT OR REPLACE INTO features (
       id, name, slug, description, user_query, repository_path, branch,
       lifecycle, messages, plan, related_artifacts, agent_run_id, spec_path,
-      fast, push, open_pr, auto_merge, allow_prd, allow_plan, allow_merge,
+      mode, push, open_pr, auto_merge, allow_prd, allow_plan, allow_merge,
       worktree_path, repository_id, pr_url, pr_number, pr_status,
       commit_hash, ci_status, ci_fix_attempts, ci_fix_history,
       parent_id, created_at, updated_at
@@ -218,7 +218,7 @@ function seedFeature(db: Database.Database): void {
     '[]', // related_artifacts
     null, // agent_run_id — no agent run so state derives from plan tasks
     null, // spec_path
-    0, // fast
+    'Regular', // mode
     0, // push
     0, // open_pr
     0, // auto_merge
