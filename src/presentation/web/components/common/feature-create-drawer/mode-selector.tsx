@@ -55,7 +55,7 @@ export function ModeSelector({ value, onChange, disabled }: ModeSelectorProps) {
                 value={opt.value}
                 aria-label={opt.label}
                 data-testid={`mode-option-${opt.value.toLowerCase()}`}
-                className="flex items-center gap-1 px-2 text-xs"
+                className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground flex items-center gap-1 px-2 text-xs"
               >
                 <opt.icon className="h-3.5 w-3.5" />
                 {opt.label}
