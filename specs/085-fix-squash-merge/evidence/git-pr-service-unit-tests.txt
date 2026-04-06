@@ -1,78 +1,108 @@
+git-pr.service.test.ts — All 69 tests passing (Vitest v4.0.18)
+================================================================
 
-[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-squash-merge[39m
+Test file: tests/unit/infrastructure/services/git/git-pr.service.test.ts
 
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetDefaultBranch[2m > [22mshould return branch from remote HEAD when available[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetDefaultBranch[2m > [22mshould fall back to local main branch when remote HEAD fails[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetDefaultBranch[2m > [22mshould fall back to local master branch when main does not exist[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetDefaultBranch[2m > [22mshould pick most recently committed branch when both main and master exist[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetDefaultBranch[2m > [22mshould fall back to git config init.defaultBranch[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetDefaultBranch[2m > [22mshould NOT use current branch when in a feature worktree[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetDefaultBranch[2m > [22mshould use current branch in main worktree as last resort[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetDefaultBranch[2m > [22mshould throw when all fallbacks fail[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mhasUncommittedChanges[2m > [22mshould return true when git status has output[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mhasUncommittedChanges[2m > [22mshould return false when git status is empty[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mhasUncommittedChanges[2m > [22mshould return false when git status is whitespace only[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mcommitAll[2m > [22mshould stage all changes, commit, and return SHA[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mcommitAll[2m > [22mshould throw GitPrError with GIT_ERROR on failure[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mpush[2m > [22mshould call git push origin branch[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mpush[2m > [22mshould add --set-upstream flag when setUpstream is true[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mpush[2m > [22mshould throw GitPrError with MERGE_CONFLICT when stderr contains rejected[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mpush[2m > [22mshould throw GitPrError with AUTH_FAILURE on auth errors[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mcreatePr[2m > [22mshould parse pr.yaml and pass title/body to gh pr create[32m 4[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mcreatePr[2m > [22mshould apply Shep branding to the PR body[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mcreatePr[2m > [22mshould strip Claude Code branding from PR body[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mcreatePr[2m > [22mshould throw GitPrError with GH_NOT_FOUND when gh is not found[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mmergePr[2m > [22mshould call gh pr merge without --delete-branch and attempt remote branch cleanup[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mmergePr[2m > [22mshould call gh pr merge with specified strategy[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mmergePr[2m > [22mshould not throw when remote branch deletion fails[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mmergePr[2m > [22mshould throw GitPrError with MERGE_FAILED on merge failure[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mmergeBranch[2m > [22mshould checkout target, merge source, and push[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mmergeBranch[2m > [22mshould throw GitPrError with MERGE_CONFLICT on conflict[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mdeleteBranch[2m > [22mshould delete local branch[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mdeleteBranch[2m > [22mshould also delete remote when deleteRemote is true[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetCiStatus[2m > [22mshould parse gh run list JSON output[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetCiStatus[2m > [22mshould return pending when no runs found[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetCiStatus[2m > [22mshould throw GitPrError when gh command fails[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetCiStatus[2m > [22mshould throw GitPrError with GH_NOT_FOUND when gh is not installed[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetCiStatus[2m > [22mshould return pending when conclusion is null[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mwatchCi[2m > [22mshould resolve run ID via gh run list then watch it[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mwatchCi[2m > [22mshould return pending when no runs exist for the branch[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mwatchCi[2m > [22mshould return failure when gh run watch exits non-zero (exit code message)[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mwatchCi[2m > [22mshould return failure when gh run watch exits non-zero with real execFile error format[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mwatchCi[2m > [22mshould include stdout in logExcerpt when CI fails with real execFile error[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mwatchCi[2m > [22mshould throw GIT_ERROR for genuine errors (not CI failure)[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mwatchCi[2m > [22mshould throw GitPrError with CI_TIMEOUT on timeout[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mwatchCi[2m > [22mshould return success when gh run watch exits 0 even if stdout lacks "success" keyword[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mwatchCi[2m > [22mshould return success when gh run watch exits 0 with empty stdout[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mwatchCi[2m > [22mshould pass timeout option to exec[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetPrDiffSummary[2m > [22mshould parse git diff --stat and log correctly[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetFileDiffs[2m > [22mshould parse a unified diff with modified, added, and deleted files[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetFileDiffs[2m > [22mshould return empty array for empty diff output[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetFileDiffs[2m > [22mshould parse renamed files[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetFileDiffs[2m > [22mshould parse diff line numbers correctly[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mgetFileDiffs[2m > [22mshould throw GitPrError when git command fails[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mlistPrStatuses[2m > [22mshould call gh pr list with correct arguments including headRefName[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mlistPrStatuses[2m > [22mshould normalize state from UPPERCASE to PrStatus enum values[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mlistPrStatuses[2m > [22mshould return empty array when no PRs exist[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mlistPrStatuses[2m > [22mshould throw GitPrError on gh CLI failure[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mlistPrStatuses[2m > [22mshould throw GitPrError with AUTH_FAILURE on auth errors[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mverifyMerge[2m > [22mshould return true when feature branch is ancestor of base branch (true merge)[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mverifyMerge[2m > [22mshould return true for squash merge (not ancestor but no diff)[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mverifyMerge[2m > [22mshould return false when neither true merge nor squash merge[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mverifyMerge[2m > [22mshould fall back to remote tracking branch when local ref is deleted[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mverifyMerge[2m > [22mshould return false when both local and remote refs are gone[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mverifyMerge[2m > [22mshould return true when tree differs but base branch advanced from premergeBaseSha[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mverifyMerge[2m > [22mshould return false when tree differs and base branch has not advanced[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mverifyMerge[2m > [22mshould not check premergeBaseSha when not provided[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mlocalMergeSquash[2m > [22mshould perform squash merge successfully[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mlocalMergeSquash[2m > [22mshould detect conflict from stdout and throw MERGE_CONFLICT[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mlocalMergeSquash[2m > [22mshould abort merge on failure to leave repo clean[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mlocalMergeSquash[2m > [22mshould fall back to reset --merge if merge --abort fails[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mlocalMergeSquash[2m > [22mshould reset tracked files before merge[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/git/git-pr.service.test.ts[2m > [22mGitPrService[2m > [22mlocalMergeSquash[2m > [22mshould fetch and pull when hasRemote=true[32m 0[2mms[22m[39m
+GitPrService > getDefaultBranch
+  ✓ should return branch from remote HEAD when available
+  ✓ should fall back to local main branch when remote HEAD fails
+  ✓ should fall back to local master branch when main does not exist
+  ✓ should pick most recently committed branch when both main and master exist
+  ✓ should fall back to git config init.defaultBranch
+  ✓ should NOT use current branch when in a feature worktree
+  ✓ should use current branch in main worktree as last resort
+  ✓ should throw when all fallbacks fail
 
-[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
-[2m      Tests [22m [1m[32m69 passed[39m[22m[90m (69)[39m
-[2m   Start at [22m 12:40:14
-[2m   Duration [22m 352ms[2m (transform 159ms, setup 50ms, import 172ms, tests 22ms, environment 0ms)[22m
+GitPrService > hasUncommittedChanges
+  ✓ should return true when git status has output
+  ✓ should return false when git status is empty
+  ✓ should return false when git status is whitespace only
 
+GitPrService > commitAll
+  ✓ should stage all changes, commit, and return SHA
+  ✓ should throw GitPrError with GIT_ERROR on failure
+
+GitPrService > push
+  ✓ should call git push origin branch
+  ✓ should add --set-upstream flag when setUpstream is true
+  ✓ should throw GitPrError with MERGE_CONFLICT when stderr contains rejected
+  ✓ should throw GitPrError with AUTH_FAILURE on auth errors
+
+GitPrService > createPr
+  ✓ should parse pr.yaml and pass title/body to gh pr create
+  ✓ should apply Shep branding to the PR body
+  ✓ should strip Claude Code branding from PR body
+  ✓ should throw GitPrError with GH_NOT_FOUND when gh is not found
+
+GitPrService > mergePr
+  ✓ should call gh pr merge without --delete-branch and attempt remote branch cleanup
+  ✓ should call gh pr merge with specified strategy
+  ✓ should not throw when remote branch deletion fails
+  ✓ should throw GitPrError with MERGE_FAILED on merge failure
+
+GitPrService > mergeBranch
+  ✓ should checkout target, merge source, and push
+  ✓ should throw GitPrError with MERGE_CONFLICT on conflict
+
+GitPrService > deleteBranch
+  ✓ should delete local branch
+  ✓ should also delete remote when deleteRemote is true
+
+GitPrService > getCiStatus
+  ✓ should parse gh run list JSON output
+  ✓ should return pending when no runs found
+  ✓ should throw GitPrError when gh command fails
+  ✓ should throw GitPrError with GH_NOT_FOUND when gh is not installed
+  ✓ should return pending when conclusion is null
+
+GitPrService > watchCi
+  ✓ should resolve run ID via gh run list then watch it
+  ✓ should return pending when no runs exist for the branch
+  ✓ should return failure when gh run watch exits non-zero (exit code message)
+  ✓ should return failure when gh run watch exits non-zero with real execFile error format
+  ✓ should include stdout in logExcerpt when CI fails with real execFile error
+  ✓ should throw GIT_ERROR for genuine errors (not CI failure)
+  ✓ should throw GitPrError with CI_TIMEOUT on timeout
+  ✓ should return success when gh run watch exits 0 even if stdout lacks "success" keyword
+  ✓ should return success when gh run watch exits 0 with empty stdout
+  ✓ should pass timeout option to exec
+
+GitPrService > getPrDiffSummary
+  ✓ should parse git diff --stat and log correctly
+
+GitPrService > getFileDiffs
+  ✓ should parse a unified diff with modified, added, and deleted files
+  ✓ should return empty array for empty diff output
+  ✓ should parse renamed files
+  ✓ should parse diff line numbers correctly
+  ✓ should throw GitPrError when git command fails
+
+GitPrService > listPrStatuses
+  ✓ should call gh pr list with correct arguments including headRefName
+  ✓ should normalize state from UPPERCASE to PrStatus enum values
+  ✓ should return empty array when no PRs exist
+  ✓ should throw GitPrError on gh CLI failure
+  ✓ should throw GitPrError with AUTH_FAILURE on auth errors
+
+GitPrService > verifyMerge
+  ✓ should return true when feature branch is ancestor of base branch (true merge)
+  ✓ should return true for squash merge (not ancestor but no diff)
+  ✓ should return false when neither true merge nor squash merge
+  ✓ should fall back to remote tracking branch when local ref is deleted
+  ✓ should return false when both local and remote refs are gone
+  ✓ should return true when tree differs but base branch advanced from premergeBaseSha
+  ✓ should return false when tree differs and base branch has not advanced
+  ✓ should not check premergeBaseSha when not provided
+
+GitPrService > localMergeSquash (6 tests — the fix target)
+  ✓ should perform squash merge successfully
+  ✓ should detect conflict from stdout and throw MERGE_CONFLICT
+  ✓ should abort merge on failure to leave repo clean
+  ✓ should fall back to reset --merge if merge --abort fails
+  ✓ should reset tracked files before merge
+  ✓ should fetch and pull when hasRemote=true
+
+Summary:
+  Test Files: 1 passed (1)
+  Tests:      69 passed (69)
+  Duration:   402ms

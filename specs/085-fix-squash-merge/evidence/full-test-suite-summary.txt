@@ -1,18 +1,19 @@
-Full Unit Test Suite Results
-============================
+Full Unit Test Suite Results — No Regressions
+==============================================
 
 All 5545 tests across 386 test files PASSED.
 
 Test Files: 386 passed (386)
 Tests:      5545 passed (5545)
-Duration:   60.60s
+Duration:   64.20s
 
-Key git-pr.service tests (69 total, all passing):
-
-localMergeSquash tests (6/6 passing):
+Key localMergeSquash tests (6/6 passing):
   ✓ should perform squash merge successfully
   ✓ should detect conflict from stdout and throw MERGE_CONFLICT
   ✓ should abort merge on failure to leave repo clean
   ✓ should fall back to reset --merge if merge --abort fails
   ✓ should reset tracked files before merge
   ✓ should fetch and pull when hasRemote=true
+
+The squash merge fix changes are isolated to git-pr.service.ts.
+No other tests were affected — confirming zero regressions.
