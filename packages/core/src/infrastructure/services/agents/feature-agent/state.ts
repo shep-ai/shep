@@ -128,6 +128,11 @@ export const FeatureAgentAnnotation = Annotation.Root({
     reducer: (_prev, next) => next,
     default: () => 'idle',
   }),
+  // --- Token optimization state ---
+  specFileHashes: Annotation<Record<string, string>>({
+    reducer: (_prev, next) => next,
+    default: () => ({}),
+  }),
 });
 
 export type FeatureAgentState = typeof FeatureAgentAnnotation.State;

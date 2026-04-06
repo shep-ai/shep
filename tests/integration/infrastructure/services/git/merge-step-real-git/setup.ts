@@ -299,6 +299,7 @@ export function makeState(overrides: Partial<FeatureAgentState>): FeatureAgentSt
     ciWatchEnabled: true,
     enableEvidence: false,
     commitEvidence: false,
+    specFileHashes: {},
     ...overrides,
   };
 }
