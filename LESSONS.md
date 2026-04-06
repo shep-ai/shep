@@ -199,3 +199,13 @@ When a use case is called from a web server action via `resolve<T>('StringToken'
 **Rule:** Nodes that manually call `buildExecutorOptions` (merge, implement, fast-implement, evidence) MUST pass their own node name: `buildExecutorOptions(state, undefined, 'merge')`. The `executeNode()` helper already does this correctly (line 572 of node-helpers.ts).
 
 **Prevention:** When adding a new node that doesn't use `executeNode()`, always pass the explicit node name to `buildExecutorOptions`.
+
+## git merge --squash Writes Conflict Info to stdout, Not stderr
+
+Node's `execFile` error only includes stderr in `error.message`. But `git merge --squash` writes conflict information (including "CONFLICT") to **stdout**, not stderr. The stderr is empty on conflict.
+
+**What happened:** `localMergeSquash()` caught the error and checked `error.message.includes('CONFLICT')` — which never matched because the CONFLICT text was in `error.stdout`. Every conflict was misclassified as a generic `GIT_ERROR` instead of `MERGE_CONFLICT`, and the error message lacked useful diagnostics.
+
+**Rule:** When catching errors from `execFile`, always check `error.stdout` in addition to `error.message` and `error.stderr`. Different git commands send error details to different streams.
+
+**Additional fix:** After a failed `git merge --squash`, the repo is left in a merge state. Always `git merge --abort` (or `git reset --merge` as fallback) in the error handler to leave the repo clean. Also `git reset --hard HEAD` before the merge to handle dirty tracked files that `git clean -fd` doesn't remove.
