@@ -536,7 +536,12 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
       </div>
     </div>
   ) : (
-    <ControlCenterEmptyState onRepositorySelect={addRepoAndFocus} />
+    <ControlCenterEmptyState
+      onRepositorySelect={addRepoAndFocus}
+      onApplicationCreated={(appId, initialPrompt) => {
+        router.push(`/application/${appId}?prompt=${encodeURIComponent(initialPrompt)}`);
+      }}
+    />
   );
 
   // ── Full-screen create prompt overlay ────────────────────────────────
