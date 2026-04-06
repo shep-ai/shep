@@ -60,3 +60,29 @@ export type {
   ChatState,
 } from './interactive-session-service.interface.js';
 export type { ISkillInjectorService, SkillInjectionResult } from './skill-injector.interface.js';
+export type {
+  IPromptOptimizerService,
+  PromptOptimizationContext,
+  PromptOptimizationResult,
+  OptimizationMetrics,
+} from './prompt-optimizer.interface.js';
+export type {
+  ICommandOutputFilterService,
+  CommandOutputFilterResult,
+  OutputFilterPolicyType,
+} from './command-output-filter.interface.js';
+export type { ISkillRoutingService, SkillRoutingResult } from './skill-routing.interface.js';
+export type {
+  IDeltaContextService,
+  DeltaContextResult,
+  SpecFileEntry,
+} from './delta-context.interface.js';
+export type {
+  ISemanticCompressorService,
+  SemanticCompressionResult,
+} from './semantic-compressor.interface.js';
+export type {
+  IAliasCompressionService,
+  AliasCompressionResult,
+} from './alias-compression.interface.js';
+export type { IOptimizationMetricsService } from './optimization-metrics.interface.js';
