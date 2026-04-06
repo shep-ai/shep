@@ -1,0 +1,44 @@
+feature:
+  id: "085-token-optimization-layer"
+  name: "token-optimization-layer"
+  number: 85
+  branch: "feat/085-token-optimization-layer"
+  lifecycle: "research"
+  createdAt: "2026-04-05T20:49:33Z"
+status:
+  phase: "implementing-phase-9"
+  progress:
+    completed: 19
+    total: 28
+    percentage: 68
+  currentTask: "task-20"
+  lastUpdated: "2026-04-06T16:05:03.311Z"
+  lastUpdatedBy: "feature-agent:implement"
+  completedPhases:
+    - "analyze"
+    - "requirements"
+    - "research"
+    - "plan"
+    - "phase-1"
+    - "phase-2"
+    - "phase-3"
+    - "phase-4"
+    - "phase-5"
+    - "phase-6"
+    - "phase-7"
+    - "phase-8"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-04-05T20:49:33Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []

@@ -35,6 +35,7 @@ function createMockTimingRepo(): IPhaseTimingRepository {
     save: vi.fn().mockResolvedValue(undefined),
     update: vi.fn().mockResolvedValue(undefined),
     updateApprovalWait: vi.fn().mockResolvedValue(undefined),
+    findById: vi.fn().mockResolvedValue(null),
     findByRunId: vi.fn().mockResolvedValue([]),
     findByFeatureId: vi.fn().mockResolvedValue([]),
   };

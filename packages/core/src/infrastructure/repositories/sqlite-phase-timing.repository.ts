@@ -342,6 +342,17 @@ export class SQLitePhaseTimingRepository implements IPhaseTimingRepository {
     stmt.run(params);
   }
 
+  async findById(id: string): Promise<PhaseTiming | null> {
+    const stmt = this.db.prepare('SELECT * FROM phase_timings WHERE id = ?');
+    const row = stmt.get(id) as PhaseTimingRow | undefined;
+
+    if (!row) {
+      return null;
+    }
+
+    return fromDatabase(row);
+  }
+
   async findByRunId(agentRunId: string): Promise<PhaseTiming[]> {
     const stmt = this.db.prepare(
       'SELECT * FROM phase_timings WHERE agent_run_id = ? ORDER BY created_at'

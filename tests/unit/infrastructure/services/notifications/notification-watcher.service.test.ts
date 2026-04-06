@@ -71,6 +71,7 @@ function createMockPhaseTimingRepository(timings: PhaseTiming[] = []): IPhaseTim
     save: vi.fn(),
     update: vi.fn(),
     updateApprovalWait: vi.fn(),
+    findById: vi.fn().mockResolvedValue(null),
     findByRunId: vi.fn().mockResolvedValue(timings),
     findByFeatureId: vi.fn(),
   };

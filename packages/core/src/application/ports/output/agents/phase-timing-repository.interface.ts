@@ -69,6 +69,14 @@ export interface IPhaseTimingRepository {
   ): Promise<void>;
 
   /**
+   * Find a single phase timing record by its ID.
+   *
+   * @param id - The phase timing ID
+   * @returns The phase timing record, or null if not found
+   */
+  findById(id: string): Promise<PhaseTiming | null>;
+
+  /**
    * Find all phase timings for an agent run.
    *
    * @param agentRunId - The agent run ID

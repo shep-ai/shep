@@ -14,7 +14,7 @@
 import type { OptimizationMetrics } from './prompt-optimizer.interface.js';
 
 /**
- * Service interface for recording optimization metrics.
+ * Service interface for recording and retrieving optimization metrics.
  *
  * Persists optimization metrics as additional fields on PhaseTiming
  * records. Uses the existing phase timing infrastructure so metrics
@@ -32,4 +32,16 @@ export interface IOptimizationMetricsService {
    * @param metrics - Optimization metrics to persist
    */
   record(phaseTimingId: string, metrics: OptimizationMetrics): Promise<void>;
+
+  /**
+   * Retrieve optimization metrics previously recorded for a phase timing.
+   *
+   * Returns null when no phase timing exists for the supplied ID, when
+   * the record exists but has no optimization columns populated, or when
+   * the underlying repository read fails.
+   *
+   * @param phaseTimingId - ID of the PhaseTiming record to query
+   * @returns Stored OptimizationMetrics or null if no metrics are present
+   */
+  getByPhaseTimingId(phaseTimingId: string): Promise<OptimizationMetrics | null>;
 }

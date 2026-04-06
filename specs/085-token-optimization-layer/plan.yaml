@@ -1,0 +1,221 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: token-optimization-layer
+summary: >
+  Implement a Token Optimization Layer as composable services behind a unified
+  IPromptOptimizerService interface, injected via DI and invoked from executeNode()
+  between prompt assembly and executor invocation. Phase 1 delivers the highest-ROI
+  capabilities (command output filtering, skill routing, delta-context diffing).
+  Phase 2 adds semantic compression and alias/meta-token compression. Infrastructure
+  includes TypeSpec domain models, settings integration, optimization metrics tracking,
+  and DI wiring. All capabilities are independently toggleable via workflow settings.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - "TypeScript"
+  - "LangGraph (@langchain/langgraph)"
+  - "tsyringe (dependency injection)"
+  - "TypeSpec (domain model generation)"
+  - "better-sqlite3 (persistence)"
+relatedLinks:
+  - title: "Caveman Claude - Token-Cutting Skill"
+    url: "https://dev.to/onsen/caveman-claude-the-token-cutting-skill-thats-changing-ai-workflows-4hmc"
+  - title: "RTK - CLI proxy that reduces LLM token consumption"
+    url: "https://github.com/rtk-ai/rtk"
+
+# Structured implementation phases
+phases:
+  - id: phase-1
+    name: "Domain Models & Settings Foundation"
+    description: >
+      Define TypeSpec models for TokenOptimizationConfig and OptimizationMetrics.
+      Add tokenOptimization settings section to workflow settings with master toggle
+      and per-capability toggles. Create DB migration for optimization metrics columns
+      on PhaseTiming. This phase is first because all subsequent phases depend on the
+      domain types and settings infrastructure.
+    parallel: false
+
+  - id: phase-2
+    name: "Port Interfaces & Core Abstractions"
+    description: >
+      Define application port interfaces: IPromptOptimizerService,
+      ICommandOutputFilterService, ISkillRoutingService, IDeltaContextService,
+      ISemanticCompressorService, IAliasCompressionService, and
+      IOptimizationMetricsService. These ports establish the contract that
+      infrastructure implementations fulfill. Depends on phase-1 for domain types.
+    parallel: false
+
+  - id: phase-3
+    name: "Command Output Filter Implementation"
+    description: >
+      Implement the regex-based command output filter service that reduces
+      test/build/git output tokens by 50%+ while preserving all error-relevant
+      lines. Includes configurable filter policies for Jest/Vitest, TypeScript
+      build, git diff, and pnpm install output. Depends on phase-2 for port
+      interface.
+    parallel: false
+
+  - id: phase-4
+    name: "Phase-Aware Skill Routing Implementation"
+    description: >
+      Implement the skill routing service that maintains a phase-to-skill mapping
+      table and generates prompt directives listing phase-relevant skills. The
+      routing table is configurable via settings. Depends on phase-2 for port
+      interface.
+    parallel: false
+
+  - id: phase-5
+    name: "Delta-Context State Diffing Implementation"
+    description: >
+      Implement hash-based change detection for spec files using LangGraph state
+      channels. When a spec file is unchanged between consecutive phases, replace
+      full content with a compact summary. Add specFileHashes channel to
+      FeatureAgentAnnotation state. Depends on phase-2 for port interface.
+    parallel: false
+
+  - id: phase-6
+    name: "Semantic Text Compression Implementation"
+    description: >
+      Implement rule-based caveman compression for non-code prompt sections.
+      Rules include article removal, filler word stripping, phrase shortening,
+      and whitespace collapsing. Must preserve code blocks, file paths, URLs,
+      YAML/JSON content, and quoted strings. Depends on phase-2 for port interface.
+    parallel: false
+
+  - id: phase-7
+    name: "Alias/Meta-Token Compression Implementation"
+    description: >
+      Implement session dictionary builder that identifies repeated long strings
+      (3+ occurrences, 20+ chars) and replaces them with short aliases. Dictionary
+      is prepended to the prompt. Net-positive check ensures dictionary overhead
+      does not exceed savings. Depends on phase-2 for port interface.
+    parallel: false
+
+  - id: phase-8
+    name: "Prompt Optimizer Orchestrator & DI Wiring"
+    description: >
+      Implement the top-level PromptOptimizerService that orchestrates all
+      capability services based on settings. Register all services in the DI
+      container. Wire the optimizer into executeNode() in node-helpers.ts as a
+      single interceptor between buildPrompt() and executor.execute(). Depends
+      on phases 3-7 for all capability implementations.
+    parallel: false
+
+  - id: phase-9
+    name: "Optimization Metrics Tracking"
+    description: >
+      Implement metrics collection in the optimizer orchestrator and persistence
+      via the existing PhaseTiming infrastructure. Track original/optimized token
+      estimates, savings percent, capabilities applied, and per-capability stats.
+      Depends on phase-8 for the orchestrator.
+    parallel: false
+
+  - id: phase-10
+    name: "Integration Testing & Validation"
+    description: >
+      End-to-end integration tests verifying the full optimization pipeline.
+      Run pnpm validate and pnpm test to confirm zero regressions. Verify
+      optimization adds less than 50ms latency. Depends on all prior phases.
+    parallel: false
+
+# File change tracking
+filesToCreate:
+  - "tsp/models/token-optimization-config.tsp"
+  - "tsp/models/optimization-metrics.tsp"
+  - "packages/core/src/application/ports/output/services/prompt-optimizer.interface.ts"
+  - "packages/core/src/application/ports/output/services/command-output-filter.interface.ts"
+  - "packages/core/src/application/ports/output/services/skill-routing.interface.ts"
+  - "packages/core/src/application/ports/output/services/delta-context.interface.ts"
+  - "packages/core/src/application/ports/output/services/semantic-compressor.interface.ts"
+  - "packages/core/src/application/ports/output/services/alias-compression.interface.ts"
+  - "packages/core/src/application/ports/output/services/optimization-metrics.interface.ts"
+  - "packages/core/src/infrastructure/services/token-optimization/command-output-filter.service.ts"
+  - "packages/core/src/infrastructure/services/token-optimization/skill-routing.service.ts"
+  - "packages/core/src/infrastructure/services/token-optimization/delta-context.service.ts"
+  - "packages/core/src/infrastructure/services/token-optimization/semantic-compressor.service.ts"
+  - "packages/core/src/infrastructure/services/token-optimization/alias-compression.service.ts"
+  - "packages/core/src/infrastructure/services/token-optimization/prompt-optimizer.service.ts"
+  - "packages/core/src/infrastructure/services/token-optimization/optimization-metrics.service.ts"
+  - "tests/unit/infrastructure/services/token-optimization/command-output-filter.service.test.ts"
+  - "tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts"
+  - "tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts"
+  - "tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts"
+  - "tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts"
+  - "tests/unit/infrastructure/services/token-optimization/prompt-optimizer.service.test.ts"
+  - "tests/unit/infrastructure/services/token-optimization/optimization-metrics.service.test.ts"
+
+filesToModify:
+  - "packages/core/src/infrastructure/services/agents/feature-agent/nodes/node-helpers.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/state.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/phase-timing-context.ts"
+  - "packages/core/src/infrastructure/di/container.ts"
+  - "packages/core/src/infrastructure/services/settings.service.ts"
+  - "packages/core/src/domain/generated/output.ts"
+
+# Open questions (should all be resolved before implementation)
+openQuestions: []
+
+# Markdown content (the full plan document)
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-04-06
+
+  ## Architecture Overview
+
+  The Token Optimization Layer is implemented as a set of composable services behind a
+  unified `IPromptOptimizerService` interface. The optimizer is injected via DI and invoked
+  from `executeNode()` in node-helpers.ts — a single interceptor between prompt assembly
+  and executor invocation.
+
+  Each optimization capability is an independent service with its own port interface
+  (application layer) and implementation (infrastructure layer). The orchestrating
+  `PromptOptimizerService` checks per-capability settings toggles and delegates to
+  enabled services in sequence.
+
+  ### Capability Pipeline Order
+
+  1. **Delta-Context Diffing** — Replace unchanged spec files with compact summaries
+  2. **Command Output Filtering** — Reduce test/build/git output via regex policies
+  3. **Skill Routing** — Add phase-relevant skill directives to prompt
+  4. **Semantic Compression** — Caveman-style rule-based text compression
+  5. **Alias Compression** — Session dictionary for repeated long strings
+
+  ### Settings Model
+
+  ```
+  tokenOptimization:
+    enabled: true          # master toggle
+    outputFiltering: true  # per-capability
+    skillRouting: true
+    deltaContext: true
+    semanticCompression: true
+    aliasCompression: true
+  ```
+
+  ### Key Design Decisions
+
+  - Single interceptor in executeNode() — centralized, no prompt builder changes needed
+  - Filter at prompt assembly time for skills — no filesystem manipulation
+  - Rule-based caveman compression — zero latency, no LLM cost, deterministic
+  - Hash-based change detection in LangGraph state — natural fit, no external storage
+  - Token budget enforcement deferred to Phase 3 — needs calibration data first
+  - Master toggle + per-capability toggles — balances simplicity with surgical control
+
+  ## Risk Mitigation
+
+  - **Safety**: Command output filter preserves all error-related lines via conservative
+    keyword matching. When in doubt, preserve the line.
+  - **Performance**: Target less than 50ms overhead. All operations are string-based with
+    no LLM calls or I/O beyond what already exists.
+  - **Backward compatibility**: Optimized prompts are functionally equivalent to originals.
+    All DB changes are additive-only migrations.
+  - **Testability**: Each capability is independently testable with mocked dependencies.
+    The orchestrator is testable with mocked capability services.
+
+  ---
+
+  _Implementation plan for the Token Optimization Layer (spec 085)._

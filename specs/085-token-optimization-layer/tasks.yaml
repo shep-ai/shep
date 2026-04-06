@@ -1,0 +1,923 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: token-optimization-layer
+summary: >
+  28 tasks across 10 phases implementing the Token Optimization Layer. Starts with
+  TypeSpec domain models and settings foundation, defines port interfaces, then
+  implements each optimization capability (command output filter, skill routing,
+  delta-context, semantic compression, alias compression) with TDD. Culminates in
+  the orchestrator service, DI wiring, metrics tracking, and integration validation.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - "TypeScript"
+  - "LangGraph (@langchain/langgraph)"
+  - "tsyringe (dependency injection)"
+  - "TypeSpec (domain model generation)"
+  - "better-sqlite3 (persistence)"
+relatedLinks: []
+
+# Structured task list
+tasks:
+  # ── Phase 1: Domain Models & Settings Foundation ─────────────────────────
+
+  - id: task-1
+    phaseId: phase-1
+    title: "Define TypeSpec models for token optimization"
+    description: >
+      Create TypeSpec models for TokenOptimizationConfig (master toggle + per-capability
+      booleans) and OptimizationMetrics (original/optimized token estimates, savings
+      percent, capabilities applied, per-capability stats). Run pnpm tsp:compile to
+      generate domain types in output.ts.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - "TokenOptimizationConfig model exists in tsp/ with enabled, outputFiltering, skillRouting, deltaContext, semanticCompression, aliasCompression boolean fields"
+      - "OptimizationMetrics model exists with originalTokenEstimate, optimizedTokenEstimate, savingsPercent, capabilitiesApplied, outputFilterLinesRemoved, deltaContextFilesSkipped, compressionRatio, aliasesCreated fields"
+      - "pnpm tsp:compile succeeds and generates types in output.ts"
+      - "Generated types are importable from domain/generated/output"
+    tdd:
+      red:
+        - "Write test: TokenOptimizationConfig type has all required boolean fields"
+        - "Write test: OptimizationMetrics type has all required numeric and array fields"
+      green:
+        - "Create tsp/models/token-optimization-config.tsp with TokenOptimizationConfig model"
+        - "Create tsp/models/optimization-metrics.tsp with OptimizationMetrics model"
+        - "Run pnpm tsp:compile to generate types"
+      refactor:
+        - "Verify generated types align with existing domain model patterns"
+    estimatedEffort: "1h"
+
+  - id: task-2
+    phaseId: phase-1
+    title: "Add tokenOptimization settings section"
+    description: >
+      Add a tokenOptimization section to workflow settings following the existing pattern
+      (e.g., skillInjection). Create DB migration with additive-only columns. Add mapper
+      fallback to factory defaults when DB values are null. Settings include master toggle
+      and per-capability booleans, all defaulting to true.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "Settings service exposes tokenOptimization config with all 6 boolean fields"
+      - "DB migration adds columns without dropping or renaming existing columns"
+      - "Mapper returns factory defaults (all true) when DB values are null"
+      - "Settings are readable and writable through existing settings infrastructure"
+      - "Existing settings tests still pass"
+    tdd:
+      red:
+        - "Write test: settings service returns default tokenOptimization config (all true)"
+        - "Write test: settings service persists and retrieves custom tokenOptimization config"
+        - "Write test: mapper falls back to defaults when DB values are null"
+      green:
+        - "Add tokenOptimization fields to settings TypeSpec model or settings types"
+        - "Create DB migration for new columns with default values"
+        - "Update settings mapper with null fallback logic"
+        - "Register new settings fields in settings service"
+      refactor:
+        - "Ensure migration follows existing migration patterns"
+    estimatedEffort: "1.5h"
+
+  # ── Phase 2: Port Interfaces & Core Abstractions ─────────────────────────
+
+  - id: task-3
+    phaseId: phase-2
+    title: "Define IPromptOptimizerService port interface"
+    description: >
+      Create the top-level port interface in application/ports/output/services/.
+      The interface defines optimize(prompt, context) accepting a raw prompt string
+      and phase context (phase name, model ID, feature ID, agent run ID) and returning
+      an optimized prompt string plus OptimizationMetrics.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "IPromptOptimizerService interface exists in application/ports/output/services/"
+      - "Interface defines optimize() method with prompt string and context parameters"
+      - "Return type includes optimized prompt string and OptimizationMetrics"
+      - "Context type includes phaseName, modelId, featureId, agentRunId"
+    tdd:
+      red: []
+      green:
+        - "Create prompt-optimizer.interface.ts with IPromptOptimizerService"
+        - "Define PromptOptimizationContext type for the context parameter"
+        - "Define PromptOptimizationResult type for the return value"
+      refactor:
+        - "Verify interface follows existing port interface naming conventions"
+    estimatedEffort: "30min"
+
+  - id: task-4
+    phaseId: phase-2
+    title: "Define capability port interfaces"
+    description: >
+      Create port interfaces for each optimization capability:
+      ICommandOutputFilterService, ISkillRoutingService, IDeltaContextService,
+      ISemanticCompressorService, IAliasCompressionService, and
+      IOptimizationMetricsService. Each defines a focused contract for its
+      optimization capability.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "ICommandOutputFilterService defines filter(output, policyType) returning filtered string and lines-removed count"
+      - "ISkillRoutingService defines getRelevantSkills(phaseName) returning skill list and prompt directive"
+      - "IDeltaContextService defines diffContext(files, previousHashes) returning optimized content and new hashes"
+      - "ISemanticCompressorService defines compress(text) returning compressed text and compression ratio"
+      - "IAliasCompressionService defines compress(text) returning aliased text, dictionary header, and alias count"
+      - "IOptimizationMetricsService defines record(metrics, phaseTimingId) for persistence"
+      - "All interfaces live in application/ports/output/services/"
+    tdd:
+      red: []
+      green:
+        - "Create command-output-filter.interface.ts"
+        - "Create skill-routing.interface.ts"
+        - "Create delta-context.interface.ts"
+        - "Create semantic-compressor.interface.ts"
+        - "Create alias-compression.interface.ts"
+        - "Create optimization-metrics.interface.ts"
+      refactor:
+        - "Ensure parameter and return types are clean and reusable"
+    estimatedEffort: "45min"
+
+  # ── Phase 3: Command Output Filter ──────────────────────────────────────
+
+  - id: task-5
+    phaseId: phase-3
+    title: "Write unit tests for command output filter (RED)"
+    description: >
+      Create comprehensive unit tests for the command output filter service before
+      implementation. Tests cover: Jest/Vitest output filtering (remove PASS lines,
+      keep FAIL lines), TypeScript build output filtering, git diff filtering,
+      pnpm install filtering, safety keyword preservation (error, fail, warn, ENOENT,
+      stack trace lines), and custom policy support.
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - "Test file exists at tests/unit/infrastructure/services/token-optimization/command-output-filter.service.test.ts"
+      - "Tests cover PASS line removal in test output"
+      - "Tests cover FAIL/error line preservation in test output"
+      - "Tests cover stack trace preservation"
+      - "Tests cover TypeScript build error preservation"
+      - "Tests cover git diff output reduction"
+      - "Tests cover safety keyword preservation (error, fail, warn, ENOENT, etc.)"
+      - "Tests cover empty input and input with no filterable content"
+      - "Tests compile and fail at runtime (RED)"
+    tdd:
+      red:
+        - "Import CommandOutputFilterService (will fail - file does not exist)"
+        - "Write test: Jest PASS lines are removed, FAIL lines preserved"
+        - "Write test: stack traces are fully preserved"
+        - "Write test: lines containing safety keywords are never removed"
+        - "Write test: TypeScript compilation errors with file:line are preserved"
+        - "Write test: git diff output is reduced while preserving changed file names"
+        - "Write test: empty input returns empty output with 0 lines removed"
+        - "Write test: input with only error lines returns unchanged with 0 lines removed"
+      green: []
+      refactor: []
+    estimatedEffort: "1h"
+
+  - id: task-6
+    phaseId: phase-3
+    title: "Implement command output filter service (GREEN + REFACTOR)"
+    description: >
+      Implement CommandOutputFilterService with regex-based filter policies for
+      Jest/Vitest, TypeScript build, git diff, and pnpm install output. Each policy
+      defines matcher patterns and replacement strategies (remove, summarize, truncate).
+      Safety policy preserves all lines containing error-related keywords.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - "Service implements ICommandOutputFilterService interface"
+      - "Default policies for Jest/Vitest, TypeScript build, git diff, pnpm install"
+      - "Safety policy preserves lines with error/fail/warn/ENOENT and 15+ other keywords"
+      - "Filter reduces test output by 50%+ on typical passing test suites"
+      - "All task-5 tests pass (GREEN)"
+      - "Service is stateless and independently testable"
+    tdd:
+      red: []
+      green:
+        - "Create command-output-filter.service.ts implementing ICommandOutputFilterService"
+        - "Implement filter policy registry with default policies"
+        - "Implement safety keyword preservation logic"
+        - "Implement remove, summarize, and truncate replacement strategies"
+        - "Run task-5 tests - all should pass"
+      refactor:
+        - "Extract policy definitions into a separate constants file if they grow large"
+        - "Optimize regex compilation (compile once, reuse)"
+    estimatedEffort: "1.5h"
+
+  # ── Phase 4: Skill Routing ──────────────────────────────────────────────
+
+  - id: task-7
+    phaseId: phase-4
+    title: "Write unit tests for skill routing service (RED)"
+    description: >
+      Create unit tests for the skill routing service. Tests cover: correct skill
+      mapping for each phase (analyze, requirements, research, plan, implement,
+      fast-implement, merge, evidence), prompt directive generation, configurable
+      routing table override, and unknown phase fallback behavior.
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - "Test file exists at tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts"
+      - "Tests cover default routing for all 8 phase types"
+      - "Tests cover prompt directive format includes relevant skill names"
+      - "Tests cover custom routing table override"
+      - "Tests cover unknown phase returns empty skill list gracefully"
+      - "Tests compile and fail at runtime (RED)"
+    tdd:
+      red:
+        - "Import SkillRoutingService (will fail - file does not exist)"
+        - "Write test: analyze phase returns architecture-reviewer skills"
+        - "Write test: implement phase returns tdd-guide and implementation-guide skills"
+        - "Write test: merge phase returns git-related skills only"
+        - "Write test: unknown phase returns empty list without error"
+        - "Write test: custom routing table overrides defaults"
+        - "Write test: prompt directive includes skill names and prioritization instruction"
+      green: []
+      refactor: []
+    estimatedEffort: "45min"
+
+  - id: task-8
+    phaseId: phase-4
+    title: "Implement skill routing service (GREEN + REFACTOR)"
+    description: >
+      Implement SkillRoutingService with a default phase-to-skill routing table
+      matching the spec (FR-3). Generate prompt directives that list relevant skills
+      for the current phase and instruct the agent to prioritize them. Support
+      routing table override via settings.
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - "Service implements ISkillRoutingService interface"
+      - "Default routing table covers all 8 phase types per FR-3"
+      - "Prompt directive is a clear, concise instruction block"
+      - "Routing table is configurable via constructor parameter"
+      - "All task-7 tests pass (GREEN)"
+    tdd:
+      red: []
+      green:
+        - "Create skill-routing.service.ts implementing ISkillRoutingService"
+        - "Define default routing table as a constant"
+        - "Implement getRelevantSkills() with phase lookup and fallback"
+        - "Implement prompt directive generation"
+        - "Run task-7 tests - all should pass"
+      refactor:
+        - "Extract routing table to a named constant for readability"
+    estimatedEffort: "1h"
+
+  # ── Phase 5: Delta-Context Diffing ──────────────────────────────────────
+
+  - id: task-9
+    phaseId: phase-5
+    title: "Write unit tests for delta-context service (RED)"
+    description: >
+      Create unit tests for the delta-context diffing service. Tests cover:
+      SHA-256 hash computation for file contents, unchanged file detection with
+      compact summary replacement, changed file passthrough with full content,
+      first phase behavior (no prior hashes, all files included in full),
+      and hash state update.
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - "Test file exists at tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts"
+      - "Tests cover unchanged file replaced with summary string"
+      - "Tests cover changed file passed through with full content"
+      - "Tests cover first phase (no prior hashes) includes all files in full"
+      - "Tests cover hash state is returned for next phase comparison"
+      - "Tests cover summary format includes file name, line count, and short hash"
+      - "Tests compile and fail at runtime (RED)"
+    tdd:
+      red:
+        - "Import DeltaContextService (will fail - file does not exist)"
+        - "Write test: file with same hash as previous returns summary string"
+        - "Write test: summary includes file name, line count, and short hash prefix"
+        - "Write test: file with different hash returns full content"
+        - "Write test: empty previous hashes (first phase) returns all files in full"
+        - "Write test: returned hashes map contains current file hashes"
+        - "Write test: multiple files with mixed changed/unchanged status"
+      green: []
+      refactor: []
+    estimatedEffort: "1h"
+
+  - id: task-10
+    phaseId: phase-5
+    title: "Implement delta-context service (GREEN + REFACTOR)"
+    description: >
+      Implement DeltaContextService with SHA-256 hash-based change detection.
+      For unchanged files, replace content with a compact summary. For changed
+      files, pass through full content. Return updated hash map for storage
+      in LangGraph state channels.
+    state: Todo
+    dependencies:
+      - task-9
+    acceptanceCriteria:
+      - "Service implements IDeltaContextService interface"
+      - "Uses Node.js crypto SHA-256 for hash computation"
+      - "Unchanged files replaced with format: [file unchanged since {phase} - {lineCount} lines, hash {shortHash}]"
+      - "Changed files pass through unmodified"
+      - "Returns updated hash map for state storage"
+      - "All task-9 tests pass (GREEN)"
+    tdd:
+      red: []
+      green:
+        - "Create delta-context.service.ts implementing IDeltaContextService"
+        - "Implement SHA-256 hash computation for file contents"
+        - "Implement change detection comparing current vs previous hashes"
+        - "Implement compact summary generation for unchanged files"
+        - "Run task-9 tests - all should pass"
+      refactor:
+        - "Extract hash computation into a pure utility function"
+    estimatedEffort: "1h"
+
+  - id: task-11
+    phaseId: phase-5
+    title: "Add specFileHashes channel to LangGraph state"
+    description: >
+      Add a specFileHashes state channel to FeatureAgentAnnotation in state.ts.
+      The channel stores Record<string, string> mapping file names to SHA-256 hashes.
+      Uses a replace reducer (latest value wins). This enables delta-context
+      tracking across phase executions.
+    state: Todo
+    dependencies:
+      - task-10
+    acceptanceCriteria:
+      - "specFileHashes channel exists in FeatureAgentAnnotation"
+      - "Channel type is Record<string, string>"
+      - "Channel uses replace reducer"
+      - "Default value is empty object {}"
+      - "Existing state tests still pass"
+    tdd:
+      red:
+        - "Write test: state annotation includes specFileHashes channel"
+        - "Write test: specFileHashes defaults to empty object"
+      green:
+        - "Add specFileHashes channel to FeatureAgentAnnotation in state.ts"
+        - "Configure replace reducer and empty default"
+      refactor:
+        - "Verify channel follows existing state channel patterns"
+    estimatedEffort: "30min"
+
+  # ── Phase 6: Semantic Compression ───────────────────────────────────────
+
+  - id: task-12
+    phaseId: phase-6
+    title: "Write unit tests for semantic compressor (RED)"
+    description: >
+      Create unit tests for the semantic text compressor. Tests cover: article
+      removal, filler word stripping, phrase shortening, whitespace collapsing,
+      technical term abbreviation, code block preservation, file path preservation,
+      URL preservation, YAML/JSON preservation, and quoted string preservation.
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - "Test file exists at tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts"
+      - "Tests cover article removal (a, an, the)"
+      - "Tests cover filler word removal (just, simply, basically, actually, really)"
+      - "Tests cover phrase shortening (you must -> must, make sure to -> ensure)"
+      - "Tests cover whitespace and blank line collapsing"
+      - "Tests cover code blocks are NOT compressed"
+      - "Tests cover file paths and URLs are NOT compressed"
+      - "Tests cover YAML/JSON content is NOT compressed"
+      - "Tests cover quoted strings are NOT compressed"
+      - "Tests cover compression ratio calculation"
+      - "Tests compile and fail at runtime (RED)"
+    tdd:
+      red:
+        - "Import SemanticCompressorService (will fail - file does not exist)"
+        - "Write test: removes articles from instruction text"
+        - "Write test: removes filler words from instruction text"
+        - "Write test: shortens common phrases"
+        - "Write test: collapses multiple blank lines to single"
+        - "Write test: preserves fenced code blocks verbatim"
+        - "Write test: preserves file paths like /src/foo/bar.ts"
+        - "Write test: preserves URLs like https://example.com"
+        - "Write test: preserves YAML content blocks"
+        - "Write test: preserves double-quoted strings"
+        - "Write test: returns compression ratio > 0 for compressible text"
+      green: []
+      refactor: []
+    estimatedEffort: "1h"
+
+  - id: task-13
+    phaseId: phase-6
+    title: "Implement semantic compressor service (GREEN + REFACTOR)"
+    description: >
+      Implement SemanticCompressorService with rule-based text compression.
+      Uses a protect-then-compress strategy: first extract and replace protected
+      regions (code blocks, paths, URLs, YAML, quoted strings) with placeholders,
+      apply compression rules, then restore protected regions.
+    state: Todo
+    dependencies:
+      - task-12
+    acceptanceCriteria:
+      - "Service implements ISemanticCompressorService interface"
+      - "Protect-then-compress strategy preserves all protected content types"
+      - "Article removal handles word boundaries correctly"
+      - "Filler word removal handles word boundaries correctly"
+      - "Phrase shortening covers 10+ common instruction phrases"
+      - "Returns compression ratio as a number between 0 and 1"
+      - "All task-12 tests pass (GREEN)"
+    tdd:
+      red: []
+      green:
+        - "Create semantic-compressor.service.ts implementing ISemanticCompressorService"
+        - "Implement protected region extraction with placeholder replacement"
+        - "Implement article removal with word boundary regex"
+        - "Implement filler word removal with word boundary regex"
+        - "Implement phrase shortening with pattern map"
+        - "Implement whitespace collapsing"
+        - "Implement protected region restoration"
+        - "Run task-12 tests - all should pass"
+      refactor:
+        - "Extract compression rules into a declarative rules array for maintainability"
+        - "Optimize regex compilation (compile once at construction)"
+    estimatedEffort: "1.5h"
+
+  # ── Phase 7: Alias Compression ──────────────────────────────────────────
+
+  - id: task-14
+    phaseId: phase-7
+    title: "Write unit tests for alias compression service (RED)"
+    description: >
+      Create unit tests for the alias/meta-token compression service. Tests cover:
+      string frequency detection (3+ occurrences), minimum length threshold (20+ chars),
+      alias format ($A1, $A2), dictionary header generation, net-positive check
+      (dictionary overhead vs savings), and edge cases (no qualifying strings,
+      all unique strings).
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - "Test file exists at tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts"
+      - "Tests cover string appearing 3+ times gets aliased"
+      - "Tests cover string appearing 2 times is NOT aliased"
+      - "Tests cover string under 20 chars is NOT aliased"
+      - "Tests cover alias format is $A1, $A2, etc."
+      - "Tests cover dictionary header format"
+      - "Tests cover net-positive check (skip aliasing when dictionary is larger than savings)"
+      - "Tests cover empty input returns empty output"
+      - "Tests cover input with no qualifying strings returns unchanged"
+      - "Tests compile and fail at runtime (RED)"
+    tdd:
+      red:
+        - "Import AliasCompressionService (will fail - file does not exist)"
+        - "Write test: string repeated 3 times and 25 chars long gets $A1 alias"
+        - "Write test: string repeated 2 times is not aliased"
+        - "Write test: string of 15 chars repeated 5 times is not aliased (under 20 char threshold)"
+        - "Write test: dictionary header starts with '## Aliases' and lists all aliases"
+        - "Write test: net-positive check skips aliasing when savings are negative"
+        - "Write test: multiple qualifying strings get sequential aliases ($A1, $A2, $A3)"
+        - "Write test: empty input returns empty output with 0 aliases"
+      green: []
+      refactor: []
+    estimatedEffort: "1h"
+
+  - id: task-15
+    phaseId: phase-7
+    title: "Implement alias compression service (GREEN + REFACTOR)"
+    description: >
+      Implement AliasCompressionService that builds a session dictionary of repeated
+      long strings and replaces them with short aliases. Dictionary is prepended to
+      the prompt. Net-positive check ensures dictionary overhead does not exceed savings.
+    state: Todo
+    dependencies:
+      - task-14
+    acceptanceCriteria:
+      - "Service implements IAliasCompressionService interface"
+      - "Detects strings with 3+ occurrences and 20+ character length"
+      - "Assigns sequential aliases ($A1, $A2, ...)"
+      - "Prepends dictionary header in format: ## Aliases\\n$A1 = \"original\"\\n..."
+      - "Performs net-positive check before applying aliases"
+      - "Returns alias count and compressed text"
+      - "All task-14 tests pass (GREEN)"
+    tdd:
+      red: []
+      green:
+        - "Create alias-compression.service.ts implementing IAliasCompressionService"
+        - "Implement string frequency analysis"
+        - "Implement minimum length and occurrence threshold filtering"
+        - "Implement alias assignment and text replacement"
+        - "Implement dictionary header generation"
+        - "Implement net-positive savings check"
+        - "Run task-14 tests - all should pass"
+      refactor:
+        - "Optimize string scanning for large prompts"
+    estimatedEffort: "1h"
+
+  # ── Phase 8: Orchestrator & DI Wiring ───────────────────────────────────
+
+  - id: task-16
+    phaseId: phase-8
+    title: "Write unit tests for prompt optimizer orchestrator (RED)"
+    description: >
+      Create unit tests for the top-level PromptOptimizerService that orchestrates
+      all capability services. Tests use mocked capability services and verify:
+      correct delegation order, settings-based capability toggling, metrics
+      aggregation, and bypass when master toggle is off.
+    state: Todo
+    dependencies:
+      - task-6
+      - task-8
+      - task-10
+      - task-13
+      - task-15
+    acceptanceCriteria:
+      - "Test file exists at tests/unit/infrastructure/services/token-optimization/prompt-optimizer.service.test.ts"
+      - "Tests cover all capabilities called in correct order when all enabled"
+      - "Tests cover individual capability skipped when its toggle is off"
+      - "Tests cover all capabilities skipped when master toggle is off"
+      - "Tests cover metrics aggregated from all capability results"
+      - "Tests cover original prompt returned unchanged when master toggle is off"
+      - "Tests compile and fail at runtime (RED)"
+    tdd:
+      red:
+        - "Import PromptOptimizerService (will fail - file does not exist)"
+        - "Create mock implementations for all 5 capability services"
+        - "Write test: all enabled - each capability called in pipeline order"
+        - "Write test: outputFiltering disabled - filter service not called"
+        - "Write test: master toggle off - returns original prompt unchanged"
+        - "Write test: metrics include savings from all active capabilities"
+        - "Write test: context (phaseName, featureId) passed to capability services"
+      green: []
+      refactor: []
+    estimatedEffort: "1h"
+
+  - id: task-17
+    phaseId: phase-8
+    title: "Implement prompt optimizer orchestrator (GREEN + REFACTOR)"
+    description: >
+      Implement PromptOptimizerService that checks settings, delegates to enabled
+      capability services in pipeline order, aggregates metrics, and returns the
+      optimized prompt. Logs a debug-level summary of optimizations applied.
+    state: Todo
+    dependencies:
+      - task-16
+    acceptanceCriteria:
+      - "Service implements IPromptOptimizerService interface"
+      - "Checks master toggle first, returns early if disabled"
+      - "Delegates to capabilities in order: delta-context, output filter, skill routing, semantic compression, alias compression"
+      - "Skips individual capabilities based on per-capability toggles"
+      - "Aggregates metrics from all capability results"
+      - "Logs debug summary of optimizations applied"
+      - "All task-16 tests pass (GREEN)"
+    tdd:
+      red: []
+      green:
+        - "Create prompt-optimizer.service.ts implementing IPromptOptimizerService"
+        - "Inject all capability services and settings service via constructor"
+        - "Implement settings check and early return for master toggle"
+        - "Implement capability pipeline with per-toggle checks"
+        - "Implement metrics aggregation"
+        - "Add debug logging for optimization summary"
+        - "Run task-16 tests - all should pass"
+      refactor:
+        - "Extract pipeline execution into a clean, declarative capability chain"
+    estimatedEffort: "1.5h"
+
+  - id: task-18
+    phaseId: phase-8
+    title: "Register all services in DI container"
+    description: >
+      Register all new services (PromptOptimizerService, CommandOutputFilterService,
+      SkillRoutingService, DeltaContextService, SemanticCompressorService,
+      AliasCompressionService, OptimizationMetricsService) in the DI container
+      with their port interface tokens. Follow existing registration patterns.
+    state: Todo
+    dependencies:
+      - task-17
+    acceptanceCriteria:
+      - "All 7 services registered in container.ts"
+      - "Registration uses interface tokens (e.g., IPromptOptimizerService symbol)"
+      - "Services are injectable via @inject decorator"
+      - "Container resolves all services without errors"
+      - "Existing container registrations unchanged"
+    tdd:
+      red:
+        - "Write test: container resolves IPromptOptimizerService"
+        - "Write test: container resolves each capability service interface"
+      green:
+        - "Add DI tokens for all 7 service interfaces"
+        - "Register all service implementations in container.ts"
+        - "Run container resolution tests"
+      refactor:
+        - "Group token optimization registrations together in container.ts"
+    estimatedEffort: "45min"
+
+  - id: task-19
+    phaseId: phase-8
+    title: "Wire optimizer into executeNode() in node-helpers.ts"
+    description: >
+      Insert the prompt optimizer call in executeNode() between buildPrompt()
+      completion and executor.execute() invocation. The optimizer is resolved
+      from the DI container. The optimization context is built from the current
+      state (phase name, model ID, feature ID, agent run ID). The optimized
+      prompt replaces the original prompt in the executor call.
+    state: Todo
+    dependencies:
+      - task-18
+    acceptanceCriteria:
+      - "executeNode() resolves IPromptOptimizerService from container"
+      - "Optimizer called with built prompt and phase context"
+      - "Optimized prompt passed to executor instead of original"
+      - "Optimization metadata stored in state or available for metrics"
+      - "No changes to prompt builder functions"
+      - "Existing node-helpers tests still pass"
+    tdd:
+      red:
+        - "Write test: executeNode calls optimizer.optimize() with built prompt"
+        - "Write test: executor receives optimized prompt, not original"
+        - "Write test: optimization context includes correct phase name and feature ID"
+        - "Write test: when optimizer is not available, original prompt is used (graceful degradation)"
+      green:
+        - "Add optimizer resolution in executeNode()"
+        - "Build optimization context from state"
+        - "Call optimizer.optimize() and use result prompt"
+        - "Handle optimizer unavailability gracefully"
+      refactor:
+        - "Ensure the insertion point is clean and minimal"
+    estimatedEffort: "1h"
+
+  # ── Phase 9: Optimization Metrics Tracking ──────────────────────────────
+
+  - id: task-20
+    phaseId: phase-9
+    title: "Write unit tests for optimization metrics service (RED)"
+    description: >
+      Create unit tests for the optimization metrics persistence service.
+      Tests cover: metrics recording alongside PhaseTiming records, query
+      retrieval of metrics by phase timing ID, and handling of null/missing
+      metrics gracefully.
+    state: Done
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - "Test file exists at tests/unit/infrastructure/services/token-optimization/optimization-metrics.service.test.ts"
+      - "Tests cover recording metrics with all fields populated"
+      - "Tests cover retrieving metrics by phase timing ID"
+      - "Tests cover null handling when no metrics exist for a phase"
+      - "Tests compile and fail at runtime (RED)"
+    tdd:
+      red:
+        - "Import OptimizationMetricsService (will fail - file does not exist)"
+        - "Write test: record() persists all metric fields"
+        - "Write test: getByPhaseTimingId() returns stored metrics"
+        - "Write test: getByPhaseTimingId() returns null for unknown ID"
+      green: []
+      refactor: []
+    estimatedEffort: "30min"
+
+  - id: task-21
+    phaseId: phase-9
+    title: "Implement optimization metrics service (GREEN + REFACTOR)"
+    description: >
+      Implement OptimizationMetricsService that persists optimization metrics
+      alongside PhaseTiming records. Uses the existing database infrastructure
+      with new additive columns on the phase_timing table (or a related table).
+    state: Done
+    dependencies:
+      - task-20
+      - task-2
+    acceptanceCriteria:
+      - "Service implements IOptimizationMetricsService interface"
+      - "Metrics persisted to database using existing DB infrastructure"
+      - "All metric fields stored: originalTokenEstimate, optimizedTokenEstimate, savingsPercent, capabilitiesApplied, outputFilterLinesRemoved, deltaContextFilesSkipped, compressionRatio, aliasesCreated"
+      - "Metrics queryable by phase timing ID"
+      - "All task-20 tests pass (GREEN)"
+    tdd:
+      red: []
+      green:
+        - "Create optimization-metrics.service.ts implementing IOptimizationMetricsService"
+        - "Implement record() with DB insert/update"
+        - "Implement getByPhaseTimingId() with DB query"
+        - "Run task-20 tests - all should pass"
+      refactor:
+        - "Ensure DB queries follow existing repository patterns"
+    estimatedEffort: "1h"
+
+  - id: task-22
+    phaseId: phase-9
+    title: "Wire metrics recording into optimizer orchestrator"
+    description: >
+      Update the PromptOptimizerService to call the metrics service after
+      optimization completes. Metrics are recorded with the current phase
+      timing ID so they can be correlated with existing phase timing data.
+    state: Done
+    dependencies:
+      - task-17
+      - task-21
+    acceptanceCriteria:
+      - "Optimizer calls metricsService.record() after optimization"
+      - "Metrics include all capability stats from the optimization run"
+      - "Metrics recording does not block or slow down the optimization pipeline"
+      - "Metrics recording failure does not cause optimizer to fail (fire-and-forget or try/catch)"
+    tdd:
+      red:
+        - "Write test: optimizer calls metricsService.record() with aggregated metrics"
+        - "Write test: metrics recording failure does not cause optimize() to throw"
+      green:
+        - "Inject IOptimizationMetricsService into PromptOptimizerService"
+        - "Add record() call after optimization pipeline completes"
+        - "Wrap in try/catch to prevent metrics failure from breaking optimization"
+      refactor:
+        - "Consider async fire-and-forget for metrics recording to minimize latency"
+    estimatedEffort: "30min"
+
+  # ── Phase 10: Integration Testing & Validation ──────────────────────────
+
+  - id: task-23
+    phaseId: phase-10
+    title: "Write integration tests for full optimization pipeline"
+    description: >
+      Create integration tests that verify the complete optimization pipeline
+      end-to-end. Tests use real service implementations (not mocks) wired through
+      the DI container. Verify that a typical prompt is optimized with measurable
+      token savings and all capabilities contribute to the result.
+    state: Todo
+    dependencies:
+      - task-19
+      - task-22
+    acceptanceCriteria:
+      - "Integration test file exists"
+      - "Test resolves PromptOptimizerService from DI container"
+      - "Test passes a realistic prompt through the full pipeline"
+      - "Test verifies token savings > 0"
+      - "Test verifies each enabled capability contributed"
+      - "Test verifies output prompt is valid and contains all critical content"
+    tdd:
+      red:
+        - "Write integration test: full pipeline reduces a realistic prompt by > 20%"
+        - "Write integration test: all 5 capabilities appear in metrics.capabilitiesApplied"
+        - "Write integration test: error-related lines in command output survive optimization"
+      green:
+        - "Create integration test with real DI container setup"
+        - "Create realistic test prompt with command output, instructions, and repeated strings"
+        - "Fix any issues discovered during integration"
+      refactor:
+        - "Extract test fixture generation into reusable helpers"
+    estimatedEffort: "1.5h"
+
+  - id: task-24
+    phaseId: phase-10
+    title: "Verify performance - optimization adds less than 50ms latency"
+    description: >
+      Create a performance test that measures the wall-clock time of the
+      optimization pipeline on a typical prompt (under 100KB). Verify the
+      overhead is less than 50ms as required by NFR-1.
+    state: Todo
+    dependencies:
+      - task-23
+    acceptanceCriteria:
+      - "Performance test exists and is repeatable"
+      - "Test uses a realistic prompt size (50-100KB)"
+      - "Measured overhead is under 50ms on standard hardware"
+      - "Test is not part of the regular test suite (tagged as perf or in a separate file)"
+    tdd:
+      red:
+        - "Write perf test: optimize() on 80KB prompt completes in under 50ms"
+      green:
+        - "Create performance test with large realistic prompt"
+        - "Measure and assert timing"
+      refactor:
+        - "Add warm-up iteration to avoid cold-start measurement bias"
+    estimatedEffort: "30min"
+
+  - id: task-25
+    phaseId: phase-10
+    title: "Run pnpm validate and fix any issues"
+    description: >
+      Run pnpm validate (lint + format + typecheck + tsp) and fix all issues.
+      Ensure zero lint errors, zero type errors, and all TypeSpec compilations
+      succeed.
+    state: Todo
+    dependencies:
+      - task-23
+    acceptanceCriteria:
+      - "pnpm lint passes with zero errors"
+      - "pnpm format:check passes"
+      - "pnpm typecheck passes with zero errors"
+      - "pnpm tsp:compile succeeds"
+    tdd: null
+    estimatedEffort: "30min"
+
+  - id: task-26
+    phaseId: phase-10
+    title: "Run full test suite and confirm zero regressions"
+    description: >
+      Run pnpm test to execute all unit and integration tests. Confirm all tests
+      pass with no regressions. If any existing test fails, investigate and fix
+      without altering test expectations.
+    state: Todo
+    dependencies:
+      - task-25
+    acceptanceCriteria:
+      - "pnpm test exits with code 0"
+      - "No existing tests changed to make them pass"
+      - "All new tests from tasks 5-24 pass"
+      - "Test count increased by the number of new test files"
+    tdd: null
+    estimatedEffort: "30min"
+
+  - id: task-27
+    phaseId: phase-10
+    title: "Run pnpm build and confirm compilation"
+    description: >
+      Run pnpm build to confirm the full project compiles without errors.
+      This catches any issues not caught by typecheck alone (e.g., import
+      resolution, bundling).
+    state: Todo
+    dependencies:
+      - task-26
+    acceptanceCriteria:
+      - "pnpm build exits with code 0"
+      - "No build warnings related to new files"
+    tdd: null
+    estimatedEffort: "15min"
+
+  - id: task-28
+    phaseId: phase-10
+    title: "Verify per-feature override support"
+    description: >
+      Verify that per-feature override of optimization settings works correctly.
+      When a feature has explicit tokenOptimization settings, they take precedence
+      over global workflow settings. Test both enabling a disabled capability and
+      disabling an enabled capability at the feature level.
+    state: Todo
+    dependencies:
+      - task-19
+    acceptanceCriteria:
+      - "Per-feature settings override global settings for each capability toggle"
+      - "Feature with optimization disabled still works correctly"
+      - "Feature with specific capability disabled while globally enabled works"
+      - "Feature without overrides uses global defaults"
+    tdd:
+      red:
+        - "Write test: feature-level enabled=false overrides global enabled=true"
+        - "Write test: feature-level outputFiltering=false disables filter while others remain active"
+        - "Write test: feature without overrides uses global defaults"
+      green:
+        - "Implement per-feature settings resolution in optimizer"
+        - "Follow existing per-feature settings pattern"
+      refactor:
+        - "Ensure settings merge logic is clean and testable"
+    estimatedEffort: "1h"
+
+# Total effort estimate
+totalEstimate: "~24h"
+
+# Open questions
+openQuestions: []
+
+# Markdown content (the full tasks document)
+content: |
+  ## Status
+
+  - **Phase:** Implementation
+  - **Updated:** 2026-04-06
+
+  ## Summary
+
+  28 tasks across 10 phases implementing the Token Optimization Layer.
+
+  ### Phase 1: Domain Models & Settings Foundation (2 tasks, ~2.5h)
+  TypeSpec models and settings infrastructure.
+
+  ### Phase 2: Port Interfaces & Core Abstractions (2 tasks, ~1.25h)
+  Application-layer port interfaces for all services.
+
+  ### Phase 3: Command Output Filter (2 tasks, ~2.5h)
+  Regex-based output filtering with safety keyword preservation.
+
+  ### Phase 4: Skill Routing (2 tasks, ~1.75h)
+  Phase-aware skill relevance directives.
+
+  ### Phase 5: Delta-Context Diffing (3 tasks, ~2.5h)
+  Hash-based change detection for spec files.
+
+  ### Phase 6: Semantic Compression (2 tasks, ~2.5h)
+  Rule-based caveman text compression.
+
+  ### Phase 7: Alias Compression (2 tasks, ~2h)
+  Session dictionary for repeated long strings.
+
+  ### Phase 8: Orchestrator & DI Wiring (4 tasks, ~4.25h)
+  Top-level service, DI registration, and executeNode() integration.
+
+  ### Phase 9: Metrics Tracking (3 tasks, ~2h)
+  Optimization metrics persistence and recording.
+
+  ### Phase 10: Integration & Validation (6 tasks, ~4.25h)
+  End-to-end tests, performance verification, and full suite validation.
+
+  ---
+
+  _Task breakdown for Token Optimization Layer (spec 085)._

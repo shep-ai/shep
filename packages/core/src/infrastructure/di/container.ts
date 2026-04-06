@@ -44,6 +44,20 @@ import type { IGitForkService } from '../../application/ports/output/services/gi
 import { GitForkService } from '../services/git/git-fork.service.js';
 import type { ISkillInjectorService } from '../../application/ports/output/services/skill-injector.interface.js';
 import { SkillInjectorService } from '../services/skill-injector.service.js';
+import type { ICommandOutputFilterService } from '../../application/ports/output/services/command-output-filter.interface.js';
+import { CommandOutputFilterService } from '../services/token-optimization/command-output-filter.service.js';
+import type { ISkillRoutingService } from '../../application/ports/output/services/skill-routing.interface.js';
+import { SkillRoutingService } from '../services/token-optimization/skill-routing.service.js';
+import type { IDeltaContextService } from '../../application/ports/output/services/delta-context.interface.js';
+import { DeltaContextService } from '../services/token-optimization/delta-context.service.js';
+import type { ISemanticCompressorService } from '../../application/ports/output/services/semantic-compressor.interface.js';
+import { SemanticCompressorService } from '../services/token-optimization/semantic-compressor.service.js';
+import type { IAliasCompressionService } from '../../application/ports/output/services/alias-compression.interface.js';
+import { AliasCompressionService } from '../services/token-optimization/alias-compression.service.js';
+import type { IPromptOptimizerService } from '../../application/ports/output/services/prompt-optimizer.interface.js';
+import { PromptOptimizerService } from '../services/token-optimization/prompt-optimizer.service.js';
+import type { IOptimizationMetricsService } from '../../application/ports/output/services/optimization-metrics.interface.js';
+import { OptimizationMetricsService } from '../services/token-optimization/optimization-metrics.service.js';
 import type { IIdeLauncherService } from '../../application/ports/output/services/ide-launcher-service.interface.js';
 import { JsonDrivenIdeLauncherService } from '../services/ide-launchers/json-driven-ide-launcher.service.js';
 import type { IDaemonService } from '../../application/ports/output/services/daemon-service.interface.js';
@@ -244,6 +258,33 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.registerSingleton<IWorktreeService>('IWorktreeService', WorktreeService);
   container.registerSingleton<ISkillInjectorService>('ISkillInjectorService', SkillInjectorService);
+
+  // Token optimization layer — five capability services + orchestrator + metrics.
+  // Capability services are stateless and have no DI dependencies, so useFactory
+  // is preferred over registerSingleton (avoids requiring @injectable on each).
+  container.register<ICommandOutputFilterService>('ICommandOutputFilterService', {
+    useFactory: () => new CommandOutputFilterService(),
+  });
+  container.register<ISkillRoutingService>('ISkillRoutingService', {
+    useFactory: () => new SkillRoutingService(),
+  });
+  container.register<IDeltaContextService>('IDeltaContextService', {
+    useFactory: () => new DeltaContextService(),
+  });
+  container.register<ISemanticCompressorService>('ISemanticCompressorService', {
+    useFactory: () => new SemanticCompressorService(),
+  });
+  container.register<IAliasCompressionService>('IAliasCompressionService', {
+    useFactory: () => new AliasCompressionService(),
+  });
+  container.registerSingleton<IPromptOptimizerService>(
+    'IPromptOptimizerService',
+    PromptOptimizerService
+  );
+  container.registerSingleton<IOptimizationMetricsService>(
+    'IOptimizationMetricsService',
+    OptimizationMetricsService
+  );
   container.registerSingleton<IToolInstallerService>(
     'IToolInstallerService',
     ToolInstallerServiceImpl

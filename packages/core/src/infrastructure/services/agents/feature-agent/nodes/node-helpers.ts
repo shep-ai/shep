@@ -24,6 +24,10 @@ import {
   recordPhaseEnd,
   recordApprovalWaitStart,
 } from '../phase-timing-context.js';
+import {
+  optimizePromptIfEnabled,
+  recordOptimizationMetricsIfEnabled,
+} from '../prompt-optimization-context.js';
 import { updateNodeLifecycle } from '../lifecycle-context.js';
 import { getLogPrefix, setCurrentPhase } from '../log-context.js';
 
@@ -568,7 +572,27 @@ export function executeNode(
     const startTime = Date.now();
 
     const resumePrefix = buildResumeContext(state.resumeReason);
-    const prompt = resumePrefix + buildPrompt(state, log);
+    const rawPrompt = resumePrefix + buildPrompt(state, log);
+
+    // Token optimization layer — single interceptor between prompt build
+    // and executor invocation. Falls back to the raw prompt on any error
+    // so optimization failures can never break a phase.
+    const optimization = await optimizePromptIfEnabled(
+      rawPrompt,
+      nodeName,
+      state.model,
+      state.specFileHashes
+    );
+    const prompt = optimization.prompt;
+    if (optimization.metrics) {
+      log.info(
+        `Prompt optimized: ${optimization.metrics.originalTokenEstimate} → ` +
+          `${optimization.metrics.optimizedTokenEstimate} tokens ` +
+          `(${optimization.metrics.savingsPercent.toFixed(1)}% saved, ` +
+          `capabilities=${optimization.metrics.capabilitiesApplied.join(',') || 'none'})`
+      );
+    }
+
     const options = buildExecutorOptions(state, undefined, nodeName);
 
     // Record phase start with pre-execution metadata
@@ -598,6 +622,10 @@ export function executeNode(
         exitCode: 'success',
       });
 
+      // Persist optimization metrics on the same phase timing row.
+      // No-op when optimization is disabled or context is not set.
+      await recordOptimizationMetricsIfEnabled(timingId, optimization.metrics);
+
       // Safety net: undo spec commits if commitSpecs=false
       removeSpecCommitsIfNeeded(state, nodeName, log);
 
@@ -611,6 +639,7 @@ export function executeNode(
         _approvalAction: null,
         _rejectionFeedback: null,
         _needsReexecution: false,
+        specFileHashes: optimization.specFileHashes,
       };
 
       // Human-in-the-loop: interrupt after node execution for review.

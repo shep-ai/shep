@@ -25,6 +25,8 @@ export interface PromptOptimizationContext {
   featureId: string;
   /** Agent run ID for metrics correlation */
   agentRunId: string;
+  /** PhaseTiming row ID for persisting optimization metrics (if available) */
+  phaseTimingId?: string;
   /** Previous spec file hashes for delta-context diffing */
   previousSpecFileHashes?: Record<string, string>;
   /** Optimization config override (if not provided, reads from global settings) */

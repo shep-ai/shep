@@ -30,9 +30,12 @@ import { initializeSettings } from '@/infrastructure/services/settings.service.j
 import { InitializeSettingsUseCase } from '@/application/use-cases/settings/initialize-settings.use-case.js';
 import { setHeartbeatContext } from './heartbeat.js';
 import { setPhaseTimingContext, recordLifecycleEvent } from './phase-timing-context.js';
+import { setPromptOptimizationContext } from './prompt-optimization-context.js';
 import { setLifecycleContext } from './lifecycle-context.js';
 import { setLogPrefix, getLogPrefix } from './log-context.js';
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
+import type { IPromptOptimizerService } from '@/application/ports/output/services/prompt-optimizer.interface.js';
+import type { IOptimizationMetricsService } from '@/application/ports/output/services/optimization-metrics.interface.js';
 import { UpdateFeatureLifecycleUseCase } from '@/application/use-cases/features/update/update-feature-lifecycle.use-case.js';
 import { CleanupFeatureWorktreeUseCase } from '@/application/use-cases/features/cleanup-feature-worktree.use-case.js';
 
@@ -308,6 +311,19 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   // Set phase timing context so executeNode() records per-phase durations
   const timingRepository = container.resolve<IPhaseTimingRepository>('IPhaseTimingRepository');
   setPhaseTimingContext(args.runId, timingRepository);
+
+  // Set prompt optimization context so executeNode() can run the
+  // token-optimization layer between buildPrompt() and executor.execute().
+  const promptOptimizer = container.resolve<IPromptOptimizerService>('IPromptOptimizerService');
+  const optimizationMetricsService = container.resolve<IOptimizationMetricsService>(
+    'IOptimizationMetricsService'
+  );
+  setPromptOptimizationContext(
+    promptOptimizer,
+    optimizationMetricsService,
+    args.runId,
+    args.featureId
+  );
 
   // Capture repos for SIGTERM handler
   runRepoForSignal = runRepository;
