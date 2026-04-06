@@ -18,12 +18,13 @@ function createDeps(overrides: Partial<ResolveWebDirDeps> = {}): ResolveWebDirDe
 describe('resolveWebDirForElectron', () => {
   describe('packaged mode (isPackaged = true)', () => {
     it('resolves from resourcesPath/web when .next directory exists', () => {
-      const existsSync = vi.fn((p: unknown) => String(p) === '/app/resources/web/.next');
+      const expectedCheck = path.join('/app/resources', 'web', '.next');
+      const existsSync = vi.fn((p: unknown) => String(p) === expectedCheck);
       const deps = createDeps({ isPackaged: true, existsSync });
 
       const result = resolveWebDirForElectron(deps);
 
-      expect(result.dir).toBe('/app/resources/web');
+      expect(result.dir).toBe(path.join('/app/resources', 'web'));
       expect(result.dev).toBe(false);
     });
 
