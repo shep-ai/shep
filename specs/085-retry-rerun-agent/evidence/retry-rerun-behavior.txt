@@ -1,0 +1,45 @@
+Feature: 085-retry-rerun-agent
+Evidence: Terminal output demonstrating retry-rerun behavior
+Date: 2026-04-06T10:50:00Z
+
+== What the fix does ==
+When a validate/repair loop exhausts retries:
+1. routeValidation clears the producer's completedPhases entry (so the agent re-runs)
+2. Worker deletes the stale checkpoint DB on resume-from-error (so LangGraph starts fresh)
+
+== Test log output proving fix #1: clearCompletedPhase ==
+From feature-agent-graph.test.ts - "should clear producer completed phase when validation retries are exhausted":
+
+  [routeValidation] Clearing completed phase 'research' so retry re-runs the agent
+
+This confirms that when validation retries exhaust (3 failures), routeValidation
+calls clearCompletedPhase() for the producer node before throwing, ensuring the
+producer re-executes on the next resume instead of being skipped.
+
+== Test log output proving fix #2: checkpoint deletion on resume ==
+From feature-agent-worker.test.ts - "should create fresh graph and checkpointer when resuming from error":
+
+  [WORKER] Deleting stale checkpoint for fresh resume...
+  [WORKER] No checkpoint to delete (first run or already cleaned)
+  [WORKER] Resuming graph with fresh checkpoint...
+
+This confirms that on resume-from-error:
+1. The worker attempts to delete the stale checkpoint DB
+2. A fresh checkpointer and graph are created
+3. The graph is invoked from scratch (not from the stale checkpoint)
+
+== Code changes summary ==
+1. feature-agent-graph.ts:
+   - routeValidation() now accepts a producerNode parameter
+   - When retries exhaust, calls clearCompletedPhase(specDir, producerNode)
+   - All 4 validation edges pass their producer node name:
+     * validate_spec_analyze → 'analyze'
+     * validate_spec_requirements → 'requirements'
+     * validate_research → 'research'
+     * validate_plan_tasks → 'plan'
+
+2. feature-agent-worker.ts:
+   - Resume-from-error path now deletes stale checkpoint DB (unlinkSync)
+   - Creates fresh checkpointer and fresh graph after deletion
+   - Invokes the fresh graph (completed phases skip via completedPhases guard)
+   - Resume-from-interrupt path unchanged (uses existing checkpoint + Command)

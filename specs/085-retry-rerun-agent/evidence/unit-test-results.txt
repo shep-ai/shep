@@ -1,0 +1,82 @@
+Feature: 085-retry-rerun-agent
+Evidence: Unit test results for changed files
+Date: 2026-04-06T10:50:00Z
+
+== Changed Files ==
+- packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-graph.ts
+- packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-worker.ts
+
+== Test File: feature-agent-graph.test.ts (17 tests — ALL PASS) ==
+
+  FeatureAgentAnnotation
+    ✓ should be a valid Annotation root
+  FeatureAgentAnnotation - approvalGates
+    ✓ should support approvalGates in state
+    ✓ should default approvalGates to undefined when not provided
+  createFeatureAgentGraph
+    ✓ should create a compiled graph
+    ✓ should work without a checkpointer
+    graph structure
+      ✓ should have all producer, validate, and repair nodes
+      ✓ should have flow with validation gates from START to END
+    node execution with executor
+      ✓ should call executor.execute for each node
+      ✓ should throw on executor errors for resumability
+    full graph execution
+      ✓ should execute all nodes and accumulate messages
+    interrupt behavior with approvalGates
+      ✓ should interrupt after requirements in interactive gates
+      ✓ should resume after approval in interactive gates
+      ✓ should not interrupt when no gates (undefined)
+      ✓ should not interrupt with allow-all gates
+      ✓ should interrupt at plan in allow-prd gates
+    validation retry clears completed phase for re-run          <-- NEW TEST
+      ✓ should clear producer completed phase when validation   <-- NEW TEST
+        retries are exhausted
+    state persistence with checkpointer
+      ✓ should persist state across invocations via checkpointer
+
+== Test File: feature-agent-worker.test.ts (34 tests — ALL PASS) ==
+
+  parseWorkerArgs
+    ✓ should parse all required CLI arguments
+    ✓ should parse optional worktree-path argument
+    ✓ should throw if feature-id is missing
+    ✓ should throw if run-id is missing
+    ✓ should throw if repo is missing
+    ✓ should throw if spec-dir is missing
+    ✓ should parse optional approval-gates argument as JSON
+    ✓ should parse optional resume flag
+    ✓ should default approvalGates to undefined and resume to false
+    ✓ should parse optional thread-id argument
+    ✓ should parse optional resume-from-interrupt flag
+    ✓ should parse optional --fast flag
+    ✓ should default fast to false when not provided
+  runWorker
+    ✓ should initialize the DI container
+    ✓ should resolve the agent run repository and executor factory from DI
+    ✓ should create a file-based checkpointer using threadId when provided
+    ✓ should fall back to runId for checkpointer when no threadId
+    ✓ should create the feature agent graph with executor and checkpointer
+    ✓ should update agent run status to running
+    ✓ should invoke the graph with correct state including worktreePath
+    ✓ should default worktreePath to repo when not provided
+    ✓ should update agent run status to completed on success
+    ✓ should update agent run status to failed on error
+    ✓ should pass approvalGates in graph invoke state
+    ✓ should update status to waiting_approval when graph returns with __interrupt__
+    ✓ should invoke graph with Command resume when resuming from interrupt
+    ✓ should invoke graph with initial state when resuming from error
+    ✓ should create fresh graph and checkpointer when resuming     <-- NEW TEST
+      from error
+    ✓ should handle graph returning error state
+    ✓ should use createFastFeatureAgentGraph when fast=true
+    ✓ should use createFeatureAgentGraph when fast=false
+    ✓ should use createFeatureAgentGraph when fast is undefined
+    ✓ should invoke the fast graph with correct state when fast=true
+    ✓ should complete successfully with fast graph
+
+== Full Suite Summary ==
+  Test Files: 388 passed (388)
+  Tests:      5609 passed (5609)
+  Duration:   ~55s
