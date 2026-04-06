@@ -55,6 +55,44 @@ import type {
 const DEFAULT_MODEL = 'claude-sonnet-4-6';
 
 /**
+ * All standard Claude Code tool names to auto-allow without permission prompts.
+ *
+ * The V2 SDK API hardcodes `allowDangerouslySkipPermissions: false`, so
+ * `permissionMode: 'bypassPermissions'` does not work. Instead, V2 provides
+ * `allowedTools` to pre-approve tools at the CLI level — no callback needed.
+ *
+ * AskUserQuestion is intentionally excluded: it is intercepted by the
+ * `canUseTool` callback so the session service can pause the stream and
+ * collect user answers before resuming.
+ */
+const AUTO_ALLOWED_TOOLS = [
+  'Bash',
+  'Read',
+  'Write',
+  'Edit',
+  'Glob',
+  'Grep',
+  'LS',
+  'Agent',
+  'WebFetch',
+  'WebSearch',
+  'NotebookEdit',
+  'NotebookRead',
+  'TodoWrite',
+  'TaskCreate',
+  'TaskGet',
+  'TaskList',
+  'TaskUpdate',
+  'TaskOutput',
+  'TaskStop',
+  'EnterPlanMode',
+  'ExitPlanMode',
+  'SendMessage',
+  'KillShell',
+  'LSP',
+];
+
+/**
  * Process-level mutex for process.chdir().
  *
  * SDKSessionOptions (V2) does not support a `cwd` parameter, so we
@@ -141,10 +179,13 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
 
     return {
       model: options.model ?? DEFAULT_MODEL,
-      // When onUserQuestion is provided, use canUseTool to intercept AskUserQuestion
-      // while auto-allowing everything else (replaces bypassPermissions).
-      // When not provided, use bypassPermissions for backward compatibility.
-      ...(canUseTool ? { canUseTool } : { permissionMode: 'bypassPermissions' as const }),
+      // Auto-allow all standard tools at the CLI level. This replaces the V1
+      // bypassPermissions approach — V2 hardcodes allowDangerouslySkipPermissions
+      // to false, so bypassPermissions silently falls back to default mode.
+      allowedTools: AUTO_ALLOWED_TOOLS,
+      // When onUserQuestion is provided, use canUseTool to intercept
+      // AskUserQuestion while auto-allowing any unlisted tools as a fallback.
+      ...(canUseTool ? { canUseTool } : {}),
       env: cleanEnv,
       // Forward system prompt using preset+append pattern
       ...(options.systemPrompt && {
