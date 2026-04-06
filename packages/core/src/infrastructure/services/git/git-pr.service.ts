@@ -252,6 +252,25 @@ export class GitPrService implements IGitPrService {
     hasRemote = false
   ): Promise<void> {
     try {
+      // Clean up any stale merge/rebase state and dirty index BEFORE checkout.
+      // A previous failed merge may have left the repo in a merge state, causing
+      // "you need to resolve your current index first" on checkout.
+      try {
+        await this.execFile('git', ['merge', '--abort'], { cwd });
+      } catch {
+        // No merge in progress — expected, non-fatal
+      }
+      try {
+        await this.execFile('git', ['reset', '--hard', 'HEAD'], { cwd });
+      } catch {
+        // Reset failure is non-fatal
+      }
+      try {
+        await this.execFile('git', ['clean', '-fd'], { cwd });
+      } catch {
+        // Clean failure is non-fatal
+      }
+
       // Fetch latest from remote if available
       if (hasRemote) {
         try {
@@ -271,20 +290,6 @@ export class GitPrService implements IGitPrService {
         } catch {
           // Pull failure is non-fatal — proceed with local state
         }
-      }
-
-      // Reset tracked files and clean untracked files to ensure a pristine state.
-      // The repo may have dirty tracked files (e.g. user edits) or untracked files
-      // (e.g. artifacts from a prior agent call) that would cause the merge to fail.
-      try {
-        await this.execFile('git', ['reset', '--hard', 'HEAD'], { cwd });
-      } catch {
-        // Reset failure is non-fatal
-      }
-      try {
-        await this.execFile('git', ['clean', '-fd'], { cwd });
-      } catch {
-        // Clean failure is non-fatal
       }
 
       // Squash merge the feature branch.

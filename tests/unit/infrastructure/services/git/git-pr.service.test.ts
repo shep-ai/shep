@@ -1073,9 +1073,10 @@ describe('GitPrService', () => {
   describe('localMergeSquash', () => {
     it('should perform squash merge successfully', async () => {
       vi.mocked(mockExec)
+        .mockRejectedValueOnce(new Error('no merge')) // merge --abort (pre-cleanup, no merge in progress)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd (pre-cleanup)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // checkout baseBranch
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd
         .mockResolvedValueOnce({ stdout: 'Squash commit\n', stderr: '' }) // merge --squash
         .mockResolvedValueOnce({ stdout: 'M file.txt\n', stderr: '' }) // status --porcelain
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // commit --file
@@ -1102,11 +1103,12 @@ describe('GitPrService', () => {
       );
 
       vi.mocked(mockExec)
+        .mockRejectedValueOnce(new Error('no merge')) // merge --abort (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd (pre-cleanup)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // checkout baseBranch
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd
         .mockRejectedValueOnce(mergeError) // merge --squash (conflict)
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // merge --abort
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // merge --abort (post-merge cleanup)
 
       await expect(service.localMergeSquash('/repo', 'feat/test', 'main', 'msg')).rejects.toThrow(
         expect.objectContaining({
@@ -1123,17 +1125,18 @@ describe('GitPrService', () => {
       );
 
       vi.mocked(mockExec)
+        .mockRejectedValueOnce(new Error('no merge')) // merge --abort (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd (pre-cleanup)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // checkout baseBranch
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd
         .mockRejectedValueOnce(mergeError) // merge --squash
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // merge --abort
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // merge --abort (post-merge cleanup)
 
       await expect(service.localMergeSquash('/repo', 'feat/test', 'main', 'msg')).rejects.toThrow(
         GitPrError
       );
 
-      // Verify merge --abort was called
+      // Verify merge --abort was called (both pre-cleanup and post-merge)
       expect(mockExec).toHaveBeenCalledWith('git', ['merge', '--abort'], { cwd: '/repo' });
     });
 
@@ -1144,11 +1147,12 @@ describe('GitPrService', () => {
       );
 
       vi.mocked(mockExec)
+        .mockRejectedValueOnce(new Error('no merge')) // merge --abort (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd (pre-cleanup)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // checkout baseBranch
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd
         .mockRejectedValueOnce(mergeError) // merge --squash
-        .mockRejectedValueOnce(new Error('no merge')) // merge --abort fails
+        .mockRejectedValueOnce(new Error('no merge')) // merge --abort (post-merge) fails
         .mockResolvedValueOnce({ stdout: '', stderr: '' }); // reset --merge
 
       await expect(service.localMergeSquash('/repo', 'feat/test', 'main', 'msg')).rejects.toThrow(
@@ -1159,28 +1163,60 @@ describe('GitPrService', () => {
       expect(mockExec).toHaveBeenCalledWith('git', ['reset', '--merge'], { cwd: '/repo' });
     });
 
-    it('should reset tracked files before merge', async () => {
+    it('should reset tracked files before checkout', async () => {
       vi.mocked(mockExec)
+        .mockRejectedValueOnce(new Error('no merge')) // merge --abort (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd (pre-cleanup)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // checkout baseBranch
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // merge --squash
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // status --porcelain (empty)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }); // branch -d
 
       await service.localMergeSquash('/repo', 'feat/test', 'main', 'msg');
 
-      // Verify reset --hard HEAD was called before merge
+      // Verify reset --hard HEAD was called before checkout
+      const calls = vi.mocked(mockExec).mock.calls;
+      const resetIdx = calls.findIndex(
+        (c) => c[0] === 'git' && c[1][0] === 'reset' && c[1][1] === '--hard'
+      );
+      const checkoutIdx = calls.findIndex((c) => c[0] === 'git' && c[1][0] === 'checkout');
+      expect(resetIdx).toBeLessThan(checkoutIdx);
       expect(mockExec).toHaveBeenCalledWith('git', ['reset', '--hard', 'HEAD'], { cwd: '/repo' });
+    });
+
+    it('should clean stale merge state before checkout to prevent index errors', async () => {
+      // Simulates the case where a previous merge left the repo in a merge state.
+      // Without pre-cleanup, git checkout would fail with
+      // "you need to resolve your current index first".
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // merge --abort (succeeds — stale merge present)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // checkout baseBranch (now succeeds)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // merge --squash
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // status --porcelain (empty)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // branch -d
+
+      await service.localMergeSquash('/repo', 'feat/test', 'main', 'msg');
+
+      // Verify merge --abort was called BEFORE checkout
+      const calls = vi.mocked(mockExec).mock.calls;
+      const abortIdx = calls.findIndex(
+        (c) => c[0] === 'git' && c[1][0] === 'merge' && c[1][1] === '--abort'
+      );
+      const checkoutIdx = calls.findIndex((c) => c[0] === 'git' && c[1][0] === 'checkout');
+      expect(abortIdx).toBeLessThan(checkoutIdx);
     });
 
     it('should fetch and pull when hasRemote=true', async () => {
       vi.mocked(mockExec)
+        .mockRejectedValueOnce(new Error('no merge')) // merge --abort (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd (pre-cleanup)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // fetch origin
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // checkout baseBranch
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // pull origin baseBranch
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // merge --squash
         .mockResolvedValueOnce({ stdout: '', stderr: '' }) // status --porcelain (empty)
         .mockResolvedValueOnce({ stdout: '', stderr: '' }); // branch -d
