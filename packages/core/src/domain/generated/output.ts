@@ -251,6 +251,7 @@ export type ModelConfiguration = {
 };
 export enum Language {
   English = 'en',
+  Ukrainian = 'uk',
   Russian = 'ru',
   Portuguese = 'pt',
   Spanish = 'es',
