@@ -7,7 +7,6 @@
  */
 
 import 'reflect-metadata';
-import { join } from 'node:path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ImportGitHubRepositoryUseCase } from '@/application/use-cases/repositories/import-github-repository.use-case.js';
 import type { IGitHubRepositoryService } from '@/application/ports/output/services/github-repository-service.interface.js';
@@ -129,9 +128,12 @@ describe('ImportGitHubRepositoryUseCase', () => {
         defaultCloneDir: '/home/user/repos',
       });
 
+      // Destination is normalised to forward slashes for cross-platform
+      // consistency — see Fix #15. `join()` on Windows would produce backslashes,
+      // so we assert the normalised form directly instead.
       expect(mockGitHubService.cloneRepository).toHaveBeenCalledWith(
         'octocat/my-project',
-        join('/home/user/repos', 'my-project'),
+        '/home/user/repos/my-project',
         undefined
       );
     });
