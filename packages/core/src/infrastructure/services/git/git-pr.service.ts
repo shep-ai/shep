@@ -273,16 +273,66 @@ export class GitPrService implements IGitPrService {
         }
       }
 
-      // Clean untracked files that may conflict with the merge (e.g. files created
-      // by a prior agent call that leaked into the original repo directory)
+      // Reset tracked files and clean untracked files to ensure a pristine state.
+      // The repo may have dirty tracked files (e.g. user edits) or untracked files
+      // (e.g. artifacts from a prior agent call) that would cause the merge to fail.
+      try {
+        await this.execFile('git', ['reset', '--hard', 'HEAD'], { cwd });
+      } catch {
+        // Reset failure is non-fatal
+      }
       try {
         await this.execFile('git', ['clean', '-fd'], { cwd });
       } catch {
         // Clean failure is non-fatal
       }
 
-      // Squash merge the feature branch
-      await this.execFile('git', ['merge', '--squash', featureBranch], { cwd });
+      // Squash merge the feature branch.
+      // git merge --squash writes conflict info to STDOUT (not stderr), so the
+      // error.message from execFile won't contain "CONFLICT". We must check
+      // error.stdout to detect conflicts and include it in diagnostics.
+      try {
+        await this.execFile('git', ['merge', '--squash', featureBranch], { cwd });
+      } catch (mergeError: unknown) {
+        // Abort the in-progress merge to leave the repo clean
+        try {
+          await this.execFile('git', ['merge', '--abort'], { cwd });
+        } catch {
+          // merge --abort may fail if there's no merge in progress; non-fatal
+          try {
+            await this.execFile('git', ['reset', '--merge'], { cwd });
+          } catch {
+            // Last-resort cleanup; non-fatal
+          }
+        }
+
+        // Check stdout for CONFLICT text (git merge --squash puts it there, not stderr)
+        const stdout = (mergeError as { stdout?: string })?.stdout ?? '';
+        const stderr = (mergeError as { stderr?: string })?.stderr ?? '';
+        const combined = `${stdout}\n${stderr}`;
+        const mergeMsg = mergeError instanceof Error ? mergeError.message : String(mergeError);
+
+        if (
+          combined.includes('CONFLICT') ||
+          combined.includes('conflict') ||
+          mergeMsg.includes('CONFLICT') ||
+          mergeMsg.includes('conflict')
+        ) {
+          throw new GitPrError(
+            `Merge conflict while squash-merging ${featureBranch} into ${baseBranch}: ${combined.trim()}`,
+            GitPrErrorCode.MERGE_CONFLICT,
+            mergeError instanceof Error ? mergeError : undefined
+          );
+        }
+
+        // Include stdout in the error for better diagnostics
+        const detail = combined.trim() || mergeMsg;
+        throw new GitPrError(
+          `Local squash merge failed: ${detail}`,
+          GitPrErrorCode.GIT_ERROR,
+          mergeError instanceof Error ? mergeError : undefined
+        );
+      }
 
       // Commit the squash merge (skip if nothing to commit — branches may be equivalent)
       const { stdout: status } = await this.execFile('git', ['status', '--porcelain'], { cwd });
@@ -309,15 +359,11 @@ export class GitPrService implements IGitPrService {
         // Branch deletion failure is non-fatal (branch may have already been deleted)
       }
     } catch (error) {
+      // Re-throw GitPrErrors as-is (already properly classified above)
+      if (error instanceof GitPrError) throw error;
+
       const message = error instanceof Error ? error.message : String(error);
       const cause = error instanceof Error ? error : undefined;
-      if (message.includes('CONFLICT') || message.includes('conflict')) {
-        throw new GitPrError(
-          `Merge conflict while squash-merging ${featureBranch} into ${baseBranch}: ${message}`,
-          GitPrErrorCode.MERGE_CONFLICT,
-          cause
-        );
-      }
       throw new GitPrError(
         `Local squash merge failed: ${message}`,
         GitPrErrorCode.GIT_ERROR,
