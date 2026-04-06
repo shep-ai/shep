@@ -94,6 +94,14 @@ vi.mock('next/image', () => ({
   },
 }));
 
+vi.mock('@/app/actions/create-project-and-feature', () => ({
+  createProjectAndFeature: vi.fn(() => Promise.resolve({ error: 'Not available in test' })),
+}));
+
+vi.mock('@/app/actions/check-all-agents-status', () => ({
+  checkAllAgentsStatus: vi.fn(() => Promise.resolve({ 'claude-code': true })),
+}));
+
 vi.mock('@/hooks/use-turn-statuses', () => ({
   useAllTurnStatuses: () => ({}),
 }));
@@ -164,8 +172,8 @@ describe('ControlCenter', () => {
     await waitFor(() => {
       expect(screen.getByTestId('control-center-empty-state')).toBeInTheDocument();
     });
-    // Agent setup wizard is shown first — repo section is gated behind it
-    expect(screen.getByTestId('welcome-agent-setup')).toBeInTheDocument();
+    // Prompt-first onboarding is shown directly (no wizard gate)
+    expect(screen.getByText('What do you want to build?')).toBeInTheDocument();
   });
 
   it('renders feature nodes when initialNodes has feature nodes', () => {

@@ -130,10 +130,22 @@ describe('AppShell', () => {
   });
 
   describe('global chat popup', () => {
-    it('renders the chat toggle button', () => {
-      renderShell(<div>Content</div>);
+    it('renders the chat toggle button when repos exist', () => {
+      render(
+        <FeatureFlagsProvider flags={defaultFlags}>
+          <AppShell>
+            <ContextPublisher features={[]} hasRepositories={true} />
+            <div>Content</div>
+          </AppShell>
+        </FeatureFlagsProvider>
+      );
       // GlobalChatPopup renders a "Shep Chat" tooltip label
       expect(screen.getByText('Shep Chat')).toBeInTheDocument();
+    });
+
+    it('hides the chat toggle button during onboarding', () => {
+      renderShell(<div>Content</div>);
+      expect(screen.queryByText('Shep Chat')).not.toBeInTheDocument();
     });
   });
 });

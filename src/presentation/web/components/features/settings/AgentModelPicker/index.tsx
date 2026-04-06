@@ -1,9 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, CircleCheck, CircleMinus } from 'lucide-react';
 import { getAllAgentModels } from '@/app/actions/get-all-agent-models';
 import type { AgentModelGroup } from '@/app/actions/get-all-agent-models';
+import { checkAllAgentsStatus } from '@/app/actions/check-all-agents-status';
+import type { AgentInstallMap } from '@/app/actions/check-all-agents-status';
 import { updateAgentAndModel } from '@/app/actions/update-agent-and-model';
 import { getAgentTypeIcon } from '@/components/common/feature-node/agent-type-icons';
 import { getModelMeta } from '@/lib/model-metadata';
@@ -24,6 +26,8 @@ export interface AgentModelPickerProps {
   className?: string;
   /** 'settings' persists to DB; 'override' only calls onAgentModelChange */
   mode: 'settings' | 'override';
+  /** Show installed/not-installed badges next to agent names */
+  showInstallStatus?: boolean;
 }
 
 export interface AgentModelPickerSaveResult {
@@ -43,10 +47,12 @@ export function AgentModelPicker({
   disabled,
   className,
   mode,
+  showInstallStatus,
 }: AgentModelPickerProps) {
   const [open, setOpen] = React.useState(false);
   const [groups, setGroups] = React.useState<AgentModelGroup[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [installMap, setInstallMap] = React.useState<AgentInstallMap>({});
   const [agentType, setAgentType] = React.useState(controlledAgentType ?? initialAgentType);
   const [model, setModel] = React.useState(controlledModel ?? initialModel);
   const [internalSaving, setInternalSaving] = React.useState(false);
@@ -61,7 +67,10 @@ export function AgentModelPicker({
     getAllAgentModels()
       .then(setGroups)
       .finally(() => setLoading(false));
-  }, []);
+    if (showInstallStatus) {
+      checkAllAgentsStatus().then(setInstallMap);
+    }
+  }, [showInstallStatus]);
 
   React.useEffect(() => {
     setAgentType(controlledAgentType ?? initialAgentType);
@@ -210,6 +219,13 @@ export function AgentModelPicker({
                   >
                     <GroupIcon className="h-4 w-4 shrink-0" />
                     <span className="flex-1 text-start">{group.label}</span>
+                    {showInstallStatus && group.agentType in installMap ? (
+                      installMap[group.agentType] ? (
+                        <CircleCheck className="h-3 w-3 shrink-0 text-emerald-500" />
+                      ) : (
+                        <CircleMinus className="text-muted-foreground/40 h-3 w-3 shrink-0" />
+                      )
+                    ) : null}
                     {isActive && !hasModels ? (
                       <Check className="text-primary h-3.5 w-3.5 shrink-0" />
                     ) : null}

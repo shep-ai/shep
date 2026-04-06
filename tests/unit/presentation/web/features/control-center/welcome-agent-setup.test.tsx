@@ -26,32 +26,6 @@ vi.mock('@/app/actions/update-agent-and-model', () => ({
   updateAgentAndModel: vi.fn(() => Promise.resolve({ ok: true })),
 }));
 
-interface MockToolStatus {
-  git: {
-    installed: boolean;
-    version: string | null;
-    installCommand: string | null;
-    installUrl: string | null;
-  };
-  gh: {
-    installed: boolean;
-    version: string | null;
-    installCommand: string | null;
-    installUrl: string | null;
-  };
-}
-
-const mockCheckToolStatus = vi.fn<() => Promise<MockToolStatus>>(() =>
-  Promise.resolve({
-    git: { installed: true, version: '2.43.0', installCommand: null, installUrl: null },
-    gh: { installed: false, version: null, installCommand: null, installUrl: null },
-  })
-);
-
-vi.mock('@/app/actions/check-tool-status', () => ({
-  checkToolStatus: () => mockCheckToolStatus(),
-}));
-
 vi.mock('@/components/common/feature-node/agent-type-icons', () => ({
   getAgentTypeIcon: () => {
     function MockIcon(props: Record<string, unknown>) {
@@ -145,56 +119,6 @@ describe('WelcomeAgentSetup', () => {
     await waitFor(() => {
       expect(onComplete).toHaveBeenCalled();
     });
-  });
-
-  it('renders GitHub CLI prerequisite notice on agent selection step', async () => {
-    render(<WelcomeAgentSetup onComplete={onComplete} />);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('gh-cli-notice')).toBeInTheDocument();
-    });
-
-    expect(screen.getByText(/GitHub CLI \(gh\)/)).toBeInTheDocument();
-    expect(screen.getByText(/CI\/CD self-healing/)).toBeInTheDocument();
-
-    const link = screen.getByRole('link', { name: /install it here/i });
-    expect(link).toHaveAttribute('href', 'https://cli.github.com/');
-    expect(link).toHaveAttribute('target', '_blank');
-  });
-
-  it('hides GitHub CLI notice when gh is installed', async () => {
-    mockCheckToolStatus.mockResolvedValueOnce({
-      git: { installed: true, version: '2.43.0', installCommand: null, installUrl: null },
-      gh: { installed: true, version: '2.40.1', installCommand: null, installUrl: null },
-    });
-
-    render(<WelcomeAgentSetup onComplete={onComplete} />);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('agent-list')).toBeInTheDocument();
-    });
-
-    // Wait a tick for the tool status check to settle, then assert notice is absent.
-    await waitFor(() => {
-      expect(screen.queryByTestId('gh-cli-notice')).not.toBeInTheDocument();
-    });
-  });
-
-  it('hides GitHub CLI notice on model selection step', async () => {
-    const user = userEvent.setup();
-    render(<WelcomeAgentSetup onComplete={onComplete} />);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('gh-cli-notice')).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByTestId('agent-option-claude-code'));
-
-    await waitFor(() => {
-      expect(screen.getByTestId('model-list')).toBeInTheDocument();
-    });
-
-    expect(screen.queryByTestId('gh-cli-notice')).not.toBeInTheDocument();
   });
 
   it('shows loading state initially', () => {
