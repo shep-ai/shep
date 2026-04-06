@@ -6,8 +6,15 @@ import { ApplicationPage } from '@/components/features/application-page/applicat
 /** Skip static pre-rendering since we need runtime DI container and server context. */
 export const dynamic = 'force-dynamic';
 
-export default async function ApplicationRoute({ params }: { params: Promise<{ id: string }> }) {
+export default async function ApplicationRoute({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ prompt?: string }>;
+}) {
   const { id } = await params;
+  const { prompt } = await searchParams;
   const getApp = resolve<GetApplicationUseCase>('GetApplicationUseCase');
   const application = await getApp.execute(id);
 
@@ -15,5 +22,5 @@ export default async function ApplicationRoute({ params }: { params: Promise<{ i
     notFound();
   }
 
-  return <ApplicationPage application={application} />;
+  return <ApplicationPage application={application} initialPrompt={prompt} />;
 }

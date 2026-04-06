@@ -670,9 +670,9 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
               setShowCreatePrompt(false);
               addRepoAndFocus(path);
             }}
-            onApplicationCreated={(appId) => {
+            onApplicationCreated={(appId, initialPrompt) => {
               setShowCreatePrompt(false);
-              router.push(`/application/${appId}`);
+              router.push(`/application/${appId}?prompt=${encodeURIComponent(initialPrompt)}`);
             }}
             onClose={() => setShowCreatePrompt(false)}
             className="bg-background"

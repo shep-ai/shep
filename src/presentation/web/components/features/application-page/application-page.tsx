@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, LayoutGrid } from 'lucide-react';
 import type { Application, ApplicationStatus } from '@shepai/core/domain/generated/output';
@@ -124,10 +124,38 @@ function ViewSelector() {
 
 export interface ApplicationPageProps {
   application: Application;
+  /** When provided, auto-sends this as the first chat message on mount. */
+  initialPrompt?: string;
 }
 
-export function ApplicationPage({ application }: ApplicationPageProps) {
+export function ApplicationPage({ application, initialPrompt }: ApplicationPageProps) {
   const router = useRouter();
+  const [promptSent, setPromptSent] = useState(false);
+
+  // Auto-send the initial prompt as the first chat message
+  useEffect(() => {
+    if (!initialPrompt || promptSent) return;
+    setPromptSent(true);
+
+    // Small delay to let the ChatTab mount and initialize
+    const timer = setTimeout(async () => {
+      try {
+        await fetch(`/api/interactive/chat/app-${application.id}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: initialPrompt,
+            worktreePath: application.repositoryPath,
+            model: application.modelOverride,
+            agentType: application.agentType,
+          }),
+        });
+      } catch {
+        // Chat component will handle retries
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [initialPrompt, promptSent, application]);
 
   return (
     <div className="bg-background flex h-dvh flex-col">

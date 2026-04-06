@@ -78,7 +78,7 @@ const BUILD_MODE_CONFIG: Record<
 
 export interface ControlCenterEmptyStateProps {
   onRepositorySelect?: (path: string) => void;
-  onApplicationCreated?: (applicationId: string) => void;
+  onApplicationCreated?: (applicationId: string, initialPrompt: string) => void;
   onClose?: () => void;
   className?: string;
 }
@@ -156,7 +156,7 @@ export function ControlCenterEmptyState({
               },
             })
           );
-          onApplicationCreated?.(result.application.id);
+          onApplicationCreated?.(result.application.id, description.trim());
         }
       } else {
         const result = await createProjectAndFeature({
@@ -383,8 +383,13 @@ export function ControlCenterEmptyState({
                     data-testid="build-mode-selector"
                     className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
                   >
-                    <ModeIcon className="h-3.5 w-3.5" />
-                    {modeConfig.label}
+                    <span
+                      key={buildMode}
+                      className="flex animate-[onboard-fade-up_0.25s_ease-out_both] items-center gap-1.5"
+                    >
+                      <ModeIcon className="h-3.5 w-3.5" />
+                      {modeConfig.label}
+                    </span>
                     <ChevronDown className="h-3 w-3 opacity-50" />
                   </button>
                 </DropdownMenuTrigger>
@@ -446,10 +451,10 @@ export function ControlCenterEmptyState({
           {error ? <p className="text-destructive mt-2 text-center text-sm">{error}</p> : null}
         </div>
 
-        {/* Suggestion chips */}
+        {/* Suggestion chips — re-animate on mode change */}
         <div
-          className="mt-6 flex animate-[onboard-fade-up_0.7s_cubic-bezier(0.16,1,0.3,1)_both] flex-wrap justify-center gap-2"
-          style={{ animationDelay: '500ms' }}
+          key={buildMode}
+          className="mt-6 flex animate-[onboard-fade-up_0.4s_ease-out_both] flex-wrap justify-center gap-2"
         >
           {modeConfig.suggestions.map((suggestion) => (
             <button
