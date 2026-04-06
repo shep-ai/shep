@@ -239,9 +239,10 @@ export function deriveGraph(
     }
   }
 
-  // Add application nodes (independent — no edges to/from other nodes).
+  // Add application nodes and derive repo→app edges (matched by repositoryPath).
   if (applicationMap) {
     for (const [nodeId, entry] of applicationMap) {
+      const appNodeId = nodeId;
       const data: ApplicationNodeData = {
         ...entry.data,
         ...(callbacks?.onApplicationClick && {
@@ -252,11 +253,25 @@ export function deriveGraph(
         }),
       };
       nodes.push({
-        id: nodeId,
+        id: appNodeId,
         type: 'applicationNode',
         position: { x: 0, y: 0 },
         data,
       } as CanvasNodeType);
+
+      // After creating the application node, derive repo→app edge
+      if (entry.data.repositoryPath) {
+        const repoPath = entry.data.repositoryPath.replace(/\\/g, '/');
+        const repoNodeId = repoByPath.get(repoPath);
+        if (repoNodeId) {
+          edges.push({
+            id: `edge-${repoNodeId}-${appNodeId}`,
+            source: repoNodeId,
+            target: appNodeId,
+            style: { strokeDasharray: '5 5' },
+          });
+        }
+      }
     }
   }
 
