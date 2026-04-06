@@ -1,6 +1,6 @@
 Feature: 085-retry-rerun-agent
 Evidence: Terminal output demonstrating retry-rerun behavior
-Date: 2026-04-06T10:58:00Z
+Date: 2026-04-06T11:04:39Z
 
 == What the fix does ==
 When a validate/repair loop exhausts retries:
@@ -31,10 +31,19 @@ Actual vitest verbose output:
     > runWorker > should create fresh graph and checkpointer when resuming
     from error  0ms
 
-Worker log output during test:
+Worker log output during test (captured from verbose run):
+  [WORKER] Starting worker — full command:
+    feature-agent-worker --feature-id feat-1 --run-id run-1 --repo /repo --spec-dir /specs --resume --thread-id thread-abc
+  [WORKER] Initializing container...
+  [WORKER] Loading settings...
+  [WORKER] Creating executor from configured agent settings...
+  [WORKER] Creating checkpointer at ~/.shep/checkpoints/thread-abc.db (thread: thread-abc)
+  [WORKER] Updating status to running (PID 54998)...
   [WORKER] Deleting stale checkpoint for fresh resume...
   [WORKER] No checkpoint to delete (first run or already cleaned)
   [WORKER] Resuming graph with fresh checkpoint...
+  [WORKER] Graph invocation completed. Error: none
+  [WORKER] Run marked as completed
 
 This test confirms that on resume-from-error:
 1. Worker attempts to delete stale checkpoint DB via unlinkSync
