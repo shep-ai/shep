@@ -217,6 +217,76 @@ ${!state.commitSpecs ? '- Do NOT commit the `specs/` directory — it must stay 
 }
 
 /**
+ * Build a prompt for agent-based local squash merge with conflict resolution.
+ *
+ * Used as a fallback when the programmatic localMergeSquash encounters merge
+ * conflicts. The agent resolves conflicts using its full coding capabilities,
+ * then commits and cleans up.
+ *
+ * @param repositoryPath - Path to the original repository (not worktree)
+ * @param featureBranch - Branch to squash-merge from
+ * @param baseBranch - Target branch (e.g. main)
+ * @param commitMessage - Commit message for the squash merge commit
+ * @param conflictDetails - Stdout/stderr from the failed merge attempt describing the conflicts
+ */
+export function buildLocalSquashMergePrompt(
+  repositoryPath: string,
+  featureBranch: string,
+  baseBranch: string,
+  commitMessage: string,
+  conflictDetails: string
+): string {
+  return `You are resolving merge conflicts for a local squash merge.
+
+## Context
+
+A programmatic \`git merge --squash\` of \`${featureBranch}\` into \`${baseBranch}\` failed due to merge conflicts.
+The repo has already been cleaned up (merge aborted). You need to perform the merge manually, resolving all conflicts.
+
+## Conflict Details
+
+\`\`\`
+${conflictDetails}
+\`\`\`
+
+## Working Directory
+
+${repositoryPath}
+
+## Instructions
+
+Follow these steps EXACTLY:
+
+1. Make sure you are on the \`${baseBranch}\` branch:
+   \`git checkout ${baseBranch}\`
+
+2. Start the squash merge:
+   \`git merge --squash ${featureBranch}\`
+
+3. Resolve ALL merge conflicts:
+   - For each conflicted file, open it and resolve the conflict markers (\`<<<<<<<\`, \`=======\`, \`>>>>>>>\`)
+   - Choose the correct resolution by understanding what both sides intended
+   - For lock files (package-lock.json, yarn.lock, pnpm-lock.yaml), accept the feature branch version and regenerate if possible, or accept theirs
+   - For config files (.gitignore, tsconfig.json, etc.), merge both sides' additions
+   - Stage each resolved file: \`git add <file>\`
+
+4. After ALL conflicts are resolved, commit:
+   \`git commit -m "${commitMessage.replace(/"/g, '\\"')}"\`
+
+5. Delete the feature branch:
+   \`git branch -d ${featureBranch}\` (non-fatal if it fails)
+
+## Constraints
+
+- Work in the repository at: ${repositoryPath}
+- Do NOT push — this is a local-only operation
+- Do NOT modify any source code beyond resolving conflicts
+- Do NOT create new files
+- If a conflict cannot be resolved confidently, prefer the feature branch version (theirs in squash context)
+- Ensure the final commit has no conflict markers remaining`;
+}
+
+/**
  * Build a prompt for the CI watch/fix agent call.
  *
  * Instructs the executor to diagnose CI failure logs, apply a targeted fix,

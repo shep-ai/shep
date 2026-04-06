@@ -209,3 +209,25 @@ Node's `execFile` error only includes stderr in `error.message`. But `git merge 
 **Rule:** When catching errors from `execFile`, always check `error.stdout` in addition to `error.message` and `error.stderr`. Different git commands send error details to different streams.
 
 **Additional fix:** After a failed `git merge --squash`, the repo is left in a merge state. Always `git merge --abort` (or `git reset --merge` as fallback) in the error handler to leave the repo clean. Also `git reset --hard HEAD` before the merge to handle dirty tracked files that `git clean -fd` doesn't remove.
+
+## Clean Up Stale Git State BEFORE Checkout, Not After
+
+When a multi-step git operation fails mid-way (e.g. squash merge), it can leave the repo in a dirty merge/rebase state. The **next** invocation must clean up this stale state **before** attempting `git checkout`, not after.
+
+**What happened:** `localMergeSquash` ran `git checkout main` first, then `git reset --hard HEAD` + `git clean -fd`. But a previous failed merge had left the repo in a merge state, so checkout failed with "you need to resolve your current index first".
+
+**Rule:** In any multi-step git workflow, ALWAYS run cleanup first: `git merge --abort` (non-fatal), `git reset --hard HEAD` (non-fatal), `git clean -fd` (non-fatal) — THEN `git checkout`. The cleanup must be idempotent and non-fatal (catch and swallow errors) since there may or may not be stale state to clean up.
+
+## Programmatic Git Operations Should Fall Back to Agent on Conflict
+
+When a deterministic git operation (like `localMergeSquash`) encounters merge conflicts, don't just throw and crash the entire workflow. Instead, catch the specific `MERGE_CONFLICT` error and fall back to agent-based resolution.
+
+**What happened:** `localMergeSquash` properly detected conflicts (via stdout) and threw `GitPrError(MERGE_CONFLICT)`, but the merge node let this error propagate, crashing the workflow. The user had to manually intervene. Meanwhile, the agent executor was available and capable of resolving conflicts.
+
+**Rule:** For any programmatic git operation that can fail on conflicts, wrap it in a try/catch that:
+1. Catches the specific conflict error type (e.g. `GitPrErrorCode.MERGE_CONFLICT`)
+2. Lets non-conflict errors propagate normally
+3. Falls back to an agent call with a prompt that describes the conflict and instructs resolution
+4. The agent has full coding capabilities and can resolve merge markers, regenerate lock files, etc.
+
+**Pattern:** `try { programmaticMerge() } catch (err) { if (isConflict(err)) agentMerge(conflictDetails) else throw err }`

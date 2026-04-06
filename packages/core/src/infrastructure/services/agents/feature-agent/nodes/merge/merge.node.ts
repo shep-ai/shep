@@ -36,7 +36,11 @@ import {
   updatePhasePrompt,
 } from '../../phase-timing-context.js';
 import { updateNodeLifecycle } from '../../lifecycle-context.js';
-import { buildCommitPushPrPrompt } from '../prompts/merge-prompts.js';
+import { buildCommitPushPrPrompt, buildLocalSquashMergePrompt } from '../prompts/merge-prompts.js';
+import {
+  GitPrError,
+  GitPrErrorCode,
+} from '@/application/ports/output/services/git-pr-service.interface.js';
 import { parseCommitHash, parsePrUrl } from './merge-output-parser.js';
 import { runCiWatchFixLoop } from './ci-watch-fix-loop.js';
 import { getSettings } from '@/infrastructure/services/settings.service.js';
@@ -404,20 +408,56 @@ export function createMergeNode(deps: MergeNodeDeps) {
           // No PR: programmatic local squash merge in the ORIGINAL repo (not the worktree,
           // which IS the feature branch and must not be modified during merge).
           // Uses direct git commands instead of an agent for reliability.
+          // On MERGE_CONFLICT, falls back to agent-based merge for conflict resolution.
           log.info('Programmatic local squash merge (no agent needed)');
 
           const commitMsg = `feat: squash merge ${branch} into ${baseBranch}`;
-          await deps.localMergeSquash(
-            state.repositoryPath,
-            branch,
-            baseBranch,
-            commitMsg,
-            remoteAvailable
-          );
+          try {
+            await deps.localMergeSquash(
+              state.repositoryPath,
+              branch,
+              baseBranch,
+              commitMsg,
+              remoteAvailable
+            );
 
-          log.info('Local squash merge completed successfully');
-          messages.push(`[merge] Local squash merge completed`);
-          merged = true;
+            log.info('Local squash merge completed successfully');
+            messages.push(`[merge] Local squash merge completed`);
+            merged = true;
+          } catch (mergeErr: unknown) {
+            // Fall back to agent-based merge when conflicts are detected.
+            // The agent can resolve conflicts using its full coding capabilities.
+            const isConflict =
+              mergeErr instanceof GitPrError && mergeErr.code === GitPrErrorCode.MERGE_CONFLICT;
+
+            if (!isConflict) throw mergeErr;
+
+            const conflictDetails = mergeErr instanceof Error ? mergeErr.message : String(mergeErr);
+            log.info(
+              'Merge conflict detected — falling back to agent-based merge for conflict resolution'
+            );
+            messages.push(`[merge] Conflict detected, delegating to agent for resolution`);
+
+            const mergePrompt = buildLocalSquashMergePrompt(
+              state.repositoryPath,
+              branch,
+              baseBranch,
+              commitMsg,
+              conflictDetails
+            );
+            const mergeResult = await retryExecute(executor, mergePrompt, options, {
+              logger: log,
+            });
+            totalInputTokens += mergeResult.usage?.inputTokens ?? 0;
+            totalOutputTokens += mergeResult.usage?.outputTokens ?? 0;
+            totalCostUsd += mergeResult.usage?.costUsd ?? 0;
+            totalNumTurns += mergeResult.usage?.numTurns ?? 0;
+            totalDurationApiMs += mergeResult.usage?.durationApiMs ?? 0;
+
+            log.info('Agent-based merge completed successfully');
+            messages.push(`[merge] Agent resolved conflicts and completed merge`);
+            merged = true;
+          }
         }
       }
 

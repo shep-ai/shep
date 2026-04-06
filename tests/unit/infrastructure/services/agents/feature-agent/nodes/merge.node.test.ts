@@ -30,6 +30,7 @@ const {
   mockRecordPhaseEnd,
   mockRecordApprovalWaitStart,
   mockBuildCommitPushPrPrompt,
+  mockBuildLocalSquashMergePrompt,
   mockParseCommitHash,
   mockParsePrUrl,
   mockCleanupExecute,
@@ -43,6 +44,7 @@ const {
   mockRecordPhaseEnd: vi.fn().mockResolvedValue(undefined),
   mockRecordApprovalWaitStart: vi.fn().mockResolvedValue(undefined),
   mockBuildCommitPushPrPrompt: vi.fn().mockReturnValue('commit-push-pr prompt'),
+  mockBuildLocalSquashMergePrompt: vi.fn().mockReturnValue('local-squash-merge-conflict prompt'),
   mockParseCommitHash: vi.fn().mockReturnValue('abc1234'),
   mockParsePrUrl: vi
     .fn()
@@ -99,6 +101,7 @@ vi.mock('@/infrastructure/services/agents/feature-agent/lifecycle-context.js', (
 // Mock prompt builders
 vi.mock('@/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.js', () => ({
   buildCommitPushPrPrompt: mockBuildCommitPushPrPrompt,
+  buildLocalSquashMergePrompt: mockBuildLocalSquashMergePrompt,
 }));
 
 // Mock output parser
@@ -123,7 +126,11 @@ import {
 } from '@/infrastructure/services/agents/feature-agent/nodes/merge/merge.node.js';
 import type { FeatureAgentState } from '@/infrastructure/services/agents/feature-agent/state.js';
 import type { IAgentExecutor } from '@/application/ports/output/agents/agent-executor.interface.js';
-import type { DiffSummary } from '@/application/ports/output/services/git-pr-service.interface.js';
+import {
+  GitPrError,
+  GitPrErrorCode,
+  type DiffSummary,
+} from '@/application/ports/output/services/git-pr-service.interface.js';
 
 function createMockExecutor(): IAgentExecutor {
   return {
@@ -666,16 +673,55 @@ describe('createMergeNode (agent-driven)', () => {
       );
     });
 
-    it('should throw when localMergeSquash fails', async () => {
+    it('should throw when localMergeSquash fails with non-conflict error', async () => {
       const failDeps = baseDeps({
-        localMergeSquash: vi.fn().mockRejectedValue(new Error('Merge conflict')),
+        localMergeSquash: vi
+          .fn()
+          .mockRejectedValue(
+            new GitPrError('Local squash merge failed: checkout error', GitPrErrorCode.GIT_ERROR)
+          ),
       });
       const node = createMergeNode(failDeps);
       const state = baseState({
         approvalGates: { allowPrd: false, allowPlan: false, allowMerge: true },
       });
 
-      await expect(node(state)).rejects.toThrow('Merge conflict');
+      await expect(node(state)).rejects.toThrow('checkout error');
+    });
+
+    it('should fall back to agent-based merge when localMergeSquash encounters MERGE_CONFLICT', async () => {
+      const conflictDeps = baseDeps({
+        localMergeSquash: vi
+          .fn()
+          .mockRejectedValue(
+            new GitPrError(
+              'Merge conflict while squash-merging feat/test into main: CONFLICT in .gitignore',
+              GitPrErrorCode.MERGE_CONFLICT
+            )
+          ),
+      });
+      const node = createMergeNode(conflictDeps);
+      const state = baseState({
+        approvalGates: { allowPrd: false, allowPlan: false, allowMerge: true },
+      });
+
+      const result = await node(state);
+
+      // Agent should have been called twice: once for commit/push/PR, once for conflict resolution
+      expect(conflictDeps.executor.execute).toHaveBeenCalledTimes(2);
+      expect(mockBuildLocalSquashMergePrompt).toHaveBeenCalledWith(
+        '/tmp/repo',
+        'feat/test',
+        'main',
+        expect.stringContaining('squash merge'),
+        expect.stringContaining('CONFLICT')
+      );
+      expect(result.messages).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('Conflict detected'),
+          expect.stringContaining('Agent resolved conflicts'),
+        ])
+      );
     });
 
     it('should skip localMergeSquash when PR exists (remote merge via service)', async () => {
@@ -759,16 +805,42 @@ describe('createMergeNode (agent-driven)', () => {
       await expect(node(state)).rejects.toThrow('Agent execution failed');
     });
 
-    it('should throw when localMergeSquash fails (local merge step, no PR)', async () => {
+    it('should throw when localMergeSquash fails with non-conflict error (local merge step, no PR)', async () => {
       const failDeps = baseDeps({
-        localMergeSquash: vi.fn().mockRejectedValue(new Error('Merge conflict')),
+        localMergeSquash: vi
+          .fn()
+          .mockRejectedValue(
+            new GitPrError('Local squash merge failed: git error', GitPrErrorCode.GIT_ERROR)
+          ),
       });
       const node = createMergeNode(failDeps);
       const state = baseState({
         approvalGates: { allowPrd: false, allowPlan: false, allowMerge: true },
       });
 
-      await expect(node(state)).rejects.toThrow('Merge conflict');
+      await expect(node(state)).rejects.toThrow('git error');
+    });
+
+    it('should fall back to agent when localMergeSquash fails with MERGE_CONFLICT (not throw)', async () => {
+      const conflictDeps = baseDeps({
+        localMergeSquash: vi
+          .fn()
+          .mockRejectedValue(
+            new GitPrError(
+              'Merge conflict while squash-merging feat/test into main',
+              GitPrErrorCode.MERGE_CONFLICT
+            )
+          ),
+      });
+      const node = createMergeNode(conflictDeps);
+      const state = baseState({
+        approvalGates: { allowPrd: false, allowPlan: false, allowMerge: true },
+      });
+
+      // Should NOT throw — agent resolves the conflict
+      const result = await node(state);
+      expect(result.currentNode).toBe('merge');
+      expect(conflictDeps.executor.execute).toHaveBeenCalledTimes(2);
     });
 
     it('should throw when gitPrService.mergePr fails (PR merge)', async () => {
