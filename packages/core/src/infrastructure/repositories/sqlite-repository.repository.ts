@@ -72,9 +72,18 @@ export class SQLiteRepositoryRepository implements IRepositoryRepository {
     return row ? fromDatabase(row) : null;
   }
 
+  async findByUpstreamUrl(url: string): Promise<Repository | null> {
+    const normalized = SQLiteRepositoryRepository.normalizeRemoteUrl(url);
+    const stmt = this.db.prepare(
+      'SELECT * FROM repositories WHERE upstream_url = ? AND deleted_at IS NULL'
+    );
+    const row = stmt.get(normalized) as RepositoryRow | undefined;
+    return row ? fromDatabase(row) : null;
+  }
+
   async update(
     id: string,
-    fields: Partial<Pick<Repository, 'name' | 'path' | 'remoteUrl'>>
+    fields: Partial<Pick<Repository, 'name' | 'path' | 'remoteUrl' | 'isFork' | 'upstreamUrl'>>
   ): Promise<Repository> {
     const now = Date.now();
     const setClauses: string[] = ['updated_at = ?'];
@@ -91,6 +100,14 @@ export class SQLiteRepositoryRepository implements IRepositoryRepository {
     if (fields.remoteUrl !== undefined) {
       setClauses.push('remote_url = ?');
       values.push(fields.remoteUrl);
+    }
+    if (fields.isFork !== undefined) {
+      setClauses.push('is_fork = ?');
+      values.push(fields.isFork ? 1 : 0);
+    }
+    if (fields.upstreamUrl !== undefined) {
+      setClauses.push('upstream_url = ?');
+      values.push(fields.upstreamUrl);
     }
 
     values.push(id);

@@ -64,6 +64,8 @@ export interface RepositoryOption {
   id: string;
   name: string;
   path: string;
+  isFork?: boolean;
+  upstreamUrl?: string;
 }
 
 export interface FeatureCreatePayload {
@@ -1570,7 +1572,15 @@ export function RepositoryCombobox({
                       className={cn('h-4 w-4 shrink-0', value !== r.path && 'invisible')}
                     />
                     <span className="flex flex-col items-start truncate">
-                      <span className="truncate">{r.name}</span>
+                      <span className="flex items-center gap-1.5 truncate">
+                        {r.name}
+                        {r.isFork ? (
+                          <Badge variant="outline" className="h-4 shrink-0 px-1 text-[10px]">
+                            <GitFork className="mr-0.5 h-2.5 w-2.5" />
+                            Fork
+                          </Badge>
+                        ) : null}
+                      </span>
                       <span className="text-muted-foreground truncate text-xs">{r.path}</span>
                     </span>
                   </button>

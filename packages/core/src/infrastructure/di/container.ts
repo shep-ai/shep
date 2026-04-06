@@ -118,8 +118,10 @@ import { AddRepositoryUseCase } from '../../application/use-cases/repositories/a
 import { ListRepositoriesUseCase } from '../../application/use-cases/repositories/list-repositories.use-case.js';
 import { DeleteRepositoryUseCase } from '../../application/use-cases/repositories/delete-repository.use-case.js';
 import { ImportGitHubRepositoryUseCase } from '../../application/use-cases/repositories/import-github-repository.use-case.js';
+import { InitRemoteRepositoryUseCase } from '../../application/use-cases/repositories/init-remote-repository.use-case.js';
 import { ListGitHubRepositoriesUseCase } from '../../application/use-cases/repositories/list-github-repositories.use-case.js';
 import { ListGitHubOrganizationsUseCase } from '../../application/use-cases/repositories/list-github-organizations.use-case.js';
+import { CreateFeatureFromRemoteUseCase } from '../../application/use-cases/features/create/create-feature-from-remote.use-case.js';
 import { CheckAndUnblockFeaturesUseCase } from '../../application/use-cases/features/check-and-unblock-features.use-case.js';
 import { UpdateFeatureLifecycleUseCase } from '../../application/use-cases/features/update/update-feature-lifecycle.use-case.js';
 import { CleanupFeatureWorktreeUseCase } from '../../application/use-cases/features/cleanup-feature-worktree.use-case.js';
@@ -400,6 +402,8 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(ListRepositoriesUseCase);
   container.registerSingleton(DeleteRepositoryUseCase);
   container.registerSingleton(ImportGitHubRepositoryUseCase);
+  container.registerSingleton(InitRemoteRepositoryUseCase);
+  container.registerSingleton(CreateFeatureFromRemoteUseCase);
   container.registerSingleton(ListGitHubRepositoriesUseCase);
   container.registerSingleton(ListGitHubOrganizationsUseCase);
   // CheckAndUnblockFeaturesUseCase must be registered before UpdateFeatureLifecycleUseCase
@@ -507,6 +511,12 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('ImportGitHubRepositoryUseCase', {
     useFactory: (c) => c.resolve(ImportGitHubRepositoryUseCase),
+  });
+  container.register('InitRemoteRepositoryUseCase', {
+    useFactory: (c) => c.resolve(InitRemoteRepositoryUseCase),
+  });
+  container.register('CreateFeatureFromRemoteUseCase', {
+    useFactory: (c) => c.resolve(CreateFeatureFromRemoteUseCase),
   });
   container.register('ListGitHubRepositoriesUseCase', {
     useFactory: (c) => c.resolve(ListGitHubRepositoriesUseCase),

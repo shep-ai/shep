@@ -176,6 +176,7 @@ describe('CreateFeatureUseCase', () => {
       findByPath: vi.fn().mockResolvedValue(null),
       findByPathIncludingDeleted: vi.fn().mockResolvedValue(null),
       findByRemoteUrl: vi.fn().mockResolvedValue(null),
+      findByUpstreamUrl: vi.fn().mockResolvedValue(null),
       list: vi.fn().mockResolvedValue([]),
       remove: vi.fn().mockResolvedValue(undefined),
       softDelete: vi.fn().mockResolvedValue(undefined),

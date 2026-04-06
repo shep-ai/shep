@@ -16,7 +16,8 @@ import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { container } from '@/infrastructure/di/container.js';
 import { CreateFeatureUseCase } from '@/application/use-cases/features/create/create-feature.use-case.js';
-import type { ApprovalGates } from '@/domain/generated/output.js';
+import { CreateFeatureFromRemoteUseCase } from '@/application/use-cases/features/create/create-feature-from-remote.use-case.js';
+import type { ApprovalGates, Feature } from '@/domain/generated/output.js';
 import { SdlcLifecycle } from '@/domain/generated/output.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import { colors, messages, spinner } from '../../ui/index.js';
@@ -28,6 +29,7 @@ import { onboardingWizard } from '../../../tui/wizards/onboarding/onboarding.wiz
 
 interface NewOptions {
   repo?: string;
+  remote?: string;
   push?: boolean;
   pr?: boolean;
   allowPrd?: boolean;
@@ -92,6 +94,7 @@ export function createNewCommand(): Command {
     .description(t('cli:commands.feat.new.description'))
     .argument('<description>', t('cli:commands.feat.new.descriptionArgument'))
     .option('-r, --repo <path>', t('cli:commands.feat.new.repoOption'))
+    .option('--remote <url>', t('cli:commands.feat.new.remoteOption'))
     .option('--push', t('cli:commands.feat.new.pushOption'))
     .option('--pr', t('cli:commands.feat.new.prOption'))
     .option('--no-pr', t('cli:commands.feat.new.noPrOption'))
@@ -110,6 +113,13 @@ export function createNewCommand(): Command {
     .option('--attach <path>', t('cli:commands.feat.new.attachOption'), collect, [])
     .action(async (description: string, options: NewOptions) => {
       try {
+        // Conflict check: --remote and --repo are mutually exclusive
+        if (options.remote && options.repo) {
+          messages.error(t('cli:commands.feat.new.remoteConflict'));
+          process.exitCode = 1;
+          return;
+        }
+
         // First-run onboarding gate — only for interactive terminals
         if (process.stdin.isTTY) {
           const { isComplete } = await new CheckOnboardingStatusUseCase().execute();
@@ -118,7 +128,6 @@ export function createNewCommand(): Command {
           }
         }
 
-        const useCase = container.resolve(CreateFeatureUseCase);
         const repoPath = options.repo ?? process.cwd();
 
         // Resolve openPr from CLI flags or settings defaults
@@ -165,22 +174,44 @@ export function createNewCommand(): Command {
 
         const fast = options.fast ?? defaults.fast;
 
-        const result = await spinner(t('cli:commands.feat.new.spinnerText'), () =>
-          useCase.execute({
-            userInput: description,
-            repositoryPath: repoPath,
-            approvalGates,
-            push,
-            openPr,
-            ...(parentId !== undefined && { parentId }),
-            ...(options.pending && { pending: true }),
-            ...(fast && { fast: true }),
-            ...(options.model !== undefined && { model: options.model }),
-            ...(attachmentPaths.length > 0 && { attachmentPaths }),
-            ...(options.injectSkills !== undefined && { injectSkills: options.injectSkills }),
-            rebaseBeforeBranch: options.rebase,
-          })
-        );
+        const commonInput = {
+          userInput: description,
+          approvalGates,
+          push,
+          openPr,
+          ...(parentId !== undefined && { parentId }),
+          ...(options.pending && { pending: true }),
+          ...(fast && { fast: true }),
+          ...(options.model !== undefined && { model: options.model }),
+          ...(attachmentPaths.length > 0 && { attachmentPaths }),
+        };
+
+        let result: { feature: Feature; warning?: string };
+
+        if (options.remote) {
+          // Remote path: clone (or fork) then create feature
+          const settings = getSettings();
+          const defaultCloneDir = settings.environment?.defaultCloneDirectory;
+          const remoteUseCase = container.resolve(CreateFeatureFromRemoteUseCase);
+          result = await spinner(t('cli:commands.feat.new.spinnerText'), () =>
+            remoteUseCase.execute({
+              ...commonInput,
+              remoteUrl: options.remote!,
+              defaultCloneDir,
+            })
+          );
+        } else {
+          // Local path: create feature on existing repo
+          const useCase = container.resolve(CreateFeatureUseCase);
+          result = await spinner(t('cli:commands.feat.new.spinnerText'), () =>
+            useCase.execute({
+              ...commonInput,
+              repositoryPath: repoPath,
+              ...(options.injectSkills !== undefined && { injectSkills: options.injectSkills }),
+              rebaseBeforeBranch: options.rebase,
+            })
+          );
+        }
 
         const { feature, warning } = result;
         const repoHash = createHash('sha256').update(repoPath).digest('hex').slice(0, 16);

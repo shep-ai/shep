@@ -18,6 +18,8 @@ export interface RepositoryRow {
   name: string;
   path: string;
   remote_url: string | null;
+  is_fork: number;
+  upstream_url: string | null;
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
@@ -32,6 +34,8 @@ export function toDatabase(repo: Repository): RepositoryRow {
     name: repo.name,
     path: repo.path,
     remote_url: repo.remoteUrl ?? null,
+    is_fork: repo.isFork ? 1 : 0,
+    upstream_url: repo.upstreamUrl ?? null,
     created_at: repo.createdAt instanceof Date ? repo.createdAt.getTime() : repo.createdAt,
     updated_at: repo.updatedAt instanceof Date ? repo.updatedAt.getTime() : repo.updatedAt,
     deleted_at: repo.deletedAt
@@ -51,6 +55,8 @@ export function fromDatabase(row: RepositoryRow): Repository {
     name: row.name,
     path: row.path,
     remoteUrl: row.remote_url ?? undefined,
+    isFork: row.is_fork === 1 ? true : undefined,
+    upstreamUrl: row.upstream_url ?? undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     deletedAt: row.deleted_at ? new Date(row.deleted_at) : undefined,
