@@ -8,7 +8,6 @@ import {
   LayoutGrid,
   Zap,
   ClipboardList,
-  ChevronDown,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -19,20 +18,54 @@ import { AgentModelPicker } from '@/components/features/settings/AgentModelPicke
 import { AttachmentChip } from '@/components/common/attachment-chip';
 import { ShepLogo } from '@/components/common/shep-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { useAttachments } from '@/hooks/use-attachments';
 
 type BuildMode = 'application' | 'fast' | 'spec';
 
-const BUILD_MODE_CONFIG: Record<BuildMode, { icon: React.ElementType; label: string }> = {
-  application: { icon: LayoutGrid, label: 'Application' },
-  fast: { icon: Zap, label: 'Fast Mode' },
-  spec: { icon: ClipboardList, label: 'Spec Driven' },
+const BUILD_MODES: BuildMode[] = ['application', 'fast', 'spec'];
+
+const BUILD_MODE_CONFIG: Record<
+  BuildMode,
+  {
+    icon: React.ElementType;
+    label: string;
+    placeholder: string;
+    suggestions: string[];
+  }
+> = {
+  application: {
+    icon: LayoutGrid,
+    label: 'Application',
+    placeholder: 'Build a modern e-commerce storefront with product catalog...',
+    suggestions: [
+      'A landing page with hero, features, and pricing sections',
+      'Full-stack SaaS app with auth, billing, and dashboard',
+      'Mobile-first social media app with real-time chat',
+      'Personal portfolio with blog and project showcase',
+    ],
+  },
+  fast: {
+    icon: Zap,
+    label: 'Fast',
+    placeholder: 'Add a dark mode toggle to the settings page...',
+    suggestions: [
+      'Add pagination to the users list endpoint',
+      'Fix the broken logout redirect',
+      'Add input validation to the signup form',
+      'Refactor the API error handling middleware',
+    ],
+  },
+  spec: {
+    icon: ClipboardList,
+    label: 'Spec Driven',
+    placeholder: 'Implement a role-based access control system with audit logging...',
+    suggestions: [
+      'OAuth2 authentication with SSO and MFA support',
+      'Event-driven notification system with email and push',
+      'REST API with versioning, rate limiting, and OpenAPI docs',
+      'Data pipeline with ETL, validation, and monitoring',
+    ],
+  },
 };
 
 export interface ControlCenterEmptyStateProps {
@@ -41,13 +74,6 @@ export interface ControlCenterEmptyStateProps {
   onClose?: () => void;
   className?: string;
 }
-
-const SUGGESTIONS = [
-  'A landing page with hero, features, and pricing sections',
-  'REST API with authentication and CRUD endpoints',
-  'CLI tool that converts CSV files to JSON',
-  'React dashboard with charts and real-time data',
-];
 
 export function ControlCenterEmptyState({
   onRepositorySelect,
@@ -66,15 +92,25 @@ export function ControlCenterEmptyState({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const att = useAttachments();
 
-  // Allow closing the overlay with Escape
+  // Circular mode switching with Shift+Tab, close overlay with Escape
+  const cycleBuildMode = useCallback(() => {
+    setBuildMode((prev) => {
+      const idx = BUILD_MODES.indexOf(prev);
+      return BUILD_MODES[(idx + 1) % BUILD_MODES.length];
+    });
+  }, []);
+
   useEffect(() => {
-    if (!onClose) return;
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && onClose) onClose();
+      if (e.key === 'Tab' && e.shiftKey) {
+        e.preventDefault();
+        cycleBuildMode();
+      }
     };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [onClose]);
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [onClose, cycleBuildMode]);
 
   const handleSubmit = useCallback(async () => {
     if (!description.trim() || submitting) return;
@@ -209,7 +245,6 @@ export function ControlCenterEmptyState({
   }, []);
 
   const modeConfig = BUILD_MODE_CONFIG[buildMode];
-  const ModeIcon = modeConfig.icon;
 
   return (
     <div
@@ -287,7 +322,7 @@ export function ControlCenterEmptyState({
               onChange={(e) => setDescription(e.target.value)}
               onKeyDown={handleKeyDown}
               onPaste={att.handlePaste}
-              placeholder="Build a modern e-commerce storefront with product catalog..."
+              placeholder={modeConfig.placeholder}
               disabled={submitting}
               className="text-foreground placeholder:text-muted-foreground/60 max-h-[10rem] min-h-[4.5rem] w-full resize-none border-0 bg-transparent px-4 py-3.5 text-sm leading-relaxed focus:outline-none disabled:cursor-not-allowed"
             />
@@ -331,40 +366,34 @@ export function ControlCenterEmptyState({
               />
               <div className="flex-1" />
 
-              {/* Build mode dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    data-testid="build-mode-trigger"
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex cursor-pointer items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors"
-                  >
-                    <ModeIcon className="h-3.5 w-3.5" />
-                    {modeConfig.label}
-                    <ChevronDown className="h-3 w-3" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem
-                    onClick={() => setBuildMode('application')}
-                    data-testid="build-mode-application"
-                  >
-                    <LayoutGrid className="mr-2 h-3.5 w-3.5" /> Application
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setBuildMode('fast')}
-                    data-testid="build-mode-fast"
-                  >
-                    <Zap className="mr-2 h-3.5 w-3.5" /> Fast Mode
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setBuildMode('spec')}
-                    data-testid="build-mode-spec"
-                  >
-                    <ClipboardList className="mr-2 h-3.5 w-3.5" /> Spec Driven
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Build mode inline selector — Shift+Tab to cycle */}
+              <div
+                className="bg-muted/50 flex items-center gap-0.5 rounded-lg p-0.5"
+                data-testid="build-mode-selector"
+              >
+                {BUILD_MODES.map((mode) => {
+                  const cfg = BUILD_MODE_CONFIG[mode];
+                  const Icon = cfg.icon;
+                  const isActive = buildMode === mode;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setBuildMode(mode)}
+                      data-testid={`build-mode-${mode}`}
+                      className={cn(
+                        'flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-all duration-150',
+                        isActive
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <Icon className="h-3 w-3" />
+                      {cfg.label}
+                    </button>
+                  );
+                })}
+              </div>
 
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -408,7 +437,7 @@ export function ControlCenterEmptyState({
           className="mt-6 flex animate-[onboard-fade-up_0.7s_cubic-bezier(0.16,1,0.3,1)_both] flex-wrap justify-center gap-2"
           style={{ animationDelay: '500ms' }}
         >
-          {SUGGESTIONS.map((suggestion) => (
+          {modeConfig.suggestions.map((suggestion) => (
             <button
               key={suggestion}
               type="button"

@@ -77,7 +77,7 @@ describe('ControlCenterEmptyState', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/landing page/i)).toBeInTheDocument();
-      expect(screen.getByText(/REST API/i)).toBeInTheDocument();
+      expect(screen.getByText(/SaaS app/i)).toBeInTheDocument();
     });
   });
 
