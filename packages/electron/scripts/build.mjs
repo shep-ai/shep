@@ -66,7 +66,18 @@ async function main() {
     bundle: true,
     platform: 'node',
     target: 'node22',
-    format: 'esm',
+    // CJS output: Electron's main process runs the entry synchronously,
+    // and tsyringe checks for the reflect-metadata polyfill at CJS load
+    // time. ESM linking would load tsyringe before any inline shim has a
+    // chance to install the polyfill, and an `import('./main.js')` from
+    // a CJS shim breaks app.whenReady() because Electron emits `ready`
+    // before the dynamic import has actually entered startApp(). CJS
+    // sidesteps both issues — entry.cjs `require`s reflect-metadata
+    // first, then `require`s this bundle synchronously.
+    format: 'cjs',
+    // Emit .cjs so Node treats this file as CommonJS even though the
+    // package.json declares "type": "module" (preload.js stays ESM).
+    outExtension: { '.js': '.cjs' },
     outdir: distDir,
     external: externals,
     sourcemap: true,
@@ -74,8 +85,22 @@ async function main() {
       '@shepai/core': coreDir,
     },
     resolveExtensions: ['.ts', '.js', '.mjs', '.json'],
+    // import.meta is unavailable in CJS, so map dirname/filename to the
+    // CJS equivalents and define `import.meta.url` to a banner-provided
+    // identifier so the bundled @shepai/core modules that use
+    // fileURLToPath(import.meta.url) keep working at runtime.
+    define: {
+      'import.meta.dirname': '__dirname',
+      'import.meta.filename': '__filename',
+      'import.meta.url': '__shep_import_meta_url',
+    },
     banner: {
-      js: '// Built by esbuild for Electron main process',
+      js: [
+        '// Built by esbuild for Electron main process (CJS)',
+        // Compute once for the entire bundled file. All bundled modules
+        // share this single __filename, so a single value is correct.
+        'const __shep_import_meta_url = require("url").pathToFileURL(__filename).href;',
+      ].join('\n'),
     },
     logLevel: 'info',
   });
@@ -100,6 +125,17 @@ async function main() {
   if (existsSync(splashSrc)) {
     copyFileSync(splashSrc, splashDst);
     console.log('Copied splash.html to dist/');
+  }
+
+  // Copy CJS entry shim to dist/. This is the file Electron loads first
+  // (per package.json `main`); it requires reflect-metadata synchronously
+  // before dynamically importing the ESM main bundle. See entry.cjs for
+  // the full rationale.
+  const entrySrc = path.join(root, 'src', 'entry.cjs');
+  const entryDst = path.join(distDir, 'entry.cjs');
+  if (existsSync(entrySrc)) {
+    copyFileSync(entrySrc, entryDst);
+    console.log('Copied entry.cjs to dist/');
   }
 
   console.log('Electron build complete.');
