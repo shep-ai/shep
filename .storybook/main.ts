@@ -28,6 +28,11 @@ const config: StorybookConfig = {
     config.resolve = config.resolve ?? {};
     config.resolve.alias = {
       ...config.resolve.alias,
+      // Mock ChatTab (requires QueryClient, SSE, etc. unavailable in Storybook)
+      '@/components/features/chat/ChatTab': resolve(
+        __dirname,
+        'mocks/components/features/chat/ChatTab.tsx'
+      ),
       '@/components': resolve(__dirname, '../src/presentation/web/components'),
       '@/lib': resolve(__dirname, '../src/presentation/web/lib'),
       '@/hooks': resolve(__dirname, '../src/presentation/web/hooks'),

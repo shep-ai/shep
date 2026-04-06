@@ -2,11 +2,12 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, LayoutGrid, Send } from 'lucide-react';
+import { ArrowLeft, LayoutGrid } from 'lucide-react';
 import type { Application, ApplicationStatus } from '@shepai/core/domain/generated/output';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ChatTab } from '@/components/features/chat/ChatTab';
 
 /* ------------------------------------------------------------------ */
 /*  Status badge                                                       */
@@ -90,41 +91,6 @@ function ResizableSplit({ left, right }: { left: React.ReactNode; right: React.R
 }
 
 /* ------------------------------------------------------------------ */
-/*  Chat placeholder (left panel)                                      */
-/* ------------------------------------------------------------------ */
-
-function ChatPlaceholder() {
-  return (
-    <div className="flex h-full flex-col">
-      {/* Chat header */}
-      <div className="flex items-center gap-2 border-b px-4 py-3">
-        <span className="text-sm font-medium">Chat with AI</span>
-      </div>
-
-      {/* Chat body */}
-      <div className="flex flex-1 items-center justify-center">
-        <p className="text-muted-foreground text-sm">Start a conversation to build your app</p>
-      </div>
-
-      {/* Chat input */}
-      <div className="border-t px-4 py-3">
-        <div className="flex items-end gap-2">
-          <textarea
-            disabled
-            placeholder="Type a message..."
-            rows={1}
-            className="border-input bg-muted/40 placeholder:text-muted-foreground flex-1 resize-none rounded-lg border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
-          />
-          <Button variant="secondary" size="icon" disabled aria-label="Send">
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /*  View selector (right panel)                                        */
 /* ------------------------------------------------------------------ */
 
@@ -186,7 +152,17 @@ export function ApplicationPage({ application }: ApplicationPageProps) {
       </header>
 
       {/* Split layout */}
-      <ResizableSplit left={<ChatPlaceholder />} right={<ViewSelector />} />
+      <ResizableSplit
+        left={
+          <ChatTab
+            featureId={`app-${application.id}`}
+            worktreePath={application.repositoryPath}
+            initialAgent={application.agentType}
+            initialModel={application.modelOverride}
+          />
+        }
+        right={<ViewSelector />}
+      />
     </div>
   );
 }

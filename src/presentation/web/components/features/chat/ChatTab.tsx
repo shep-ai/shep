@@ -16,13 +16,17 @@ import { InteractionBubble } from './InteractionBubble';
 export interface ChatTabProps {
   featureId: string;
   worktreePath?: string;
+  /** Seed the agent override (e.g. from an Application's agentType) */
+  initialAgent?: string;
+  /** Seed the model override (e.g. from an Application's modelOverride) */
+  initialModel?: string;
 }
 
 const IS_DEV = process.env.NODE_ENV === 'development';
 
-export function ChatTab({ featureId, worktreePath }: ChatTabProps) {
-  const [overrideAgent, setOverrideAgent] = useState<string | undefined>(undefined);
-  const [overrideModel, setOverrideModel] = useState<string | undefined>(undefined);
+export function ChatTab({ featureId, worktreePath, initialAgent, initialModel }: ChatTabProps) {
+  const [overrideAgent, setOverrideAgent] = useState<string | undefined>(initialAgent);
+  const [overrideModel, setOverrideModel] = useState<string | undefined>(initialModel);
   const [debugMode, setDebugMode] = useState(false);
   const att = useAttachments();
 
