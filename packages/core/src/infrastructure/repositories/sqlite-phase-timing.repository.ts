@@ -34,6 +34,14 @@ interface PhaseTimingRow {
   duration_api_ms: number | null;
   exit_code: string | null;
   error_message: string | null;
+  original_token_estimate: number | null;
+  optimized_token_estimate: number | null;
+  savings_percent: number | null;
+  capabilities_applied: string | null;
+  output_filter_lines_removed: number | null;
+  delta_context_files_skipped: number | null;
+  compression_ratio: number | null;
+  aliases_created: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -63,6 +71,16 @@ function toDatabase(timing: PhaseTiming): PhaseTimingRow {
     duration_api_ms: timing.durationApiMs != null ? Number(timing.durationApiMs) : null,
     exit_code: timing.exitCode ?? null,
     error_message: timing.errorMessage ?? null,
+    original_token_estimate:
+      timing.originalTokenEstimate != null ? Number(timing.originalTokenEstimate) : null,
+    optimized_token_estimate:
+      timing.optimizedTokenEstimate != null ? Number(timing.optimizedTokenEstimate) : null,
+    savings_percent: timing.savingsPercent != null ? Number(timing.savingsPercent) : null,
+    capabilities_applied: timing.capabilitiesApplied ?? null,
+    output_filter_lines_removed: timing.outputFilterLinesRemoved ?? null,
+    delta_context_files_skipped: timing.deltaContextFilesSkipped ?? null,
+    compression_ratio: timing.compressionRatio != null ? Number(timing.compressionRatio) : null,
+    aliases_created: timing.aliasesCreated ?? null,
     created_at: timing.createdAt instanceof Date ? timing.createdAt.getTime() : timing.createdAt,
     updated_at: timing.updatedAt instanceof Date ? timing.updatedAt.getTime() : timing.updatedAt,
   };
@@ -98,6 +116,22 @@ function fromDatabase(row: PhaseTimingRow): PhaseTiming {
     ...(row.duration_api_ms !== null && { durationApiMs: BigInt(row.duration_api_ms) }),
     ...(row.exit_code !== null && { exitCode: row.exit_code }),
     ...(row.error_message !== null && { errorMessage: row.error_message }),
+    ...(row.original_token_estimate !== null && {
+      originalTokenEstimate: BigInt(row.original_token_estimate),
+    }),
+    ...(row.optimized_token_estimate !== null && {
+      optimizedTokenEstimate: BigInt(row.optimized_token_estimate),
+    }),
+    ...(row.savings_percent !== null && { savingsPercent: row.savings_percent }),
+    ...(row.capabilities_applied !== null && { capabilitiesApplied: row.capabilities_applied }),
+    ...(row.output_filter_lines_removed !== null && {
+      outputFilterLinesRemoved: row.output_filter_lines_removed,
+    }),
+    ...(row.delta_context_files_skipped !== null && {
+      deltaContextFilesSkipped: row.delta_context_files_skipped,
+    }),
+    ...(row.compression_ratio !== null && { compressionRatio: row.compression_ratio }),
+    ...(row.aliases_created !== null && { aliasesCreated: row.aliases_created }),
   };
 }
 
@@ -119,6 +153,10 @@ export class SQLitePhaseTimingRepository implements IPhaseTimingRepository {
         cache_creation_input_tokens, cache_read_input_tokens,
         cost_usd, num_turns, duration_api_ms,
         exit_code, error_message,
+        original_token_estimate, optimized_token_estimate,
+        savings_percent, capabilities_applied,
+        output_filter_lines_removed, delta_context_files_skipped,
+        compression_ratio, aliases_created,
         created_at, updated_at
       ) VALUES (
         @id, @agent_run_id, @phase, @started_at, @completed_at, @duration_ms,
@@ -127,6 +165,10 @@ export class SQLitePhaseTimingRepository implements IPhaseTimingRepository {
         @cache_creation_input_tokens, @cache_read_input_tokens,
         @cost_usd, @num_turns, @duration_api_ms,
         @exit_code, @error_message,
+        @original_token_estimate, @optimized_token_estimate,
+        @savings_percent, @capabilities_applied,
+        @output_filter_lines_removed, @delta_context_files_skipped,
+        @compression_ratio, @aliases_created,
         @created_at, @updated_at
       )
     `);
@@ -150,6 +192,14 @@ export class SQLitePhaseTimingRepository implements IPhaseTimingRepository {
         | 'durationApiMs'
         | 'exitCode'
         | 'errorMessage'
+        | 'originalTokenEstimate'
+        | 'optimizedTokenEstimate'
+        | 'savingsPercent'
+        | 'capabilitiesApplied'
+        | 'outputFilterLinesRemoved'
+        | 'deltaContextFilesSkipped'
+        | 'compressionRatio'
+        | 'aliasesCreated'
       >
     >
   ): Promise<void> {
@@ -213,6 +263,46 @@ export class SQLitePhaseTimingRepository implements IPhaseTimingRepository {
     if (updates.errorMessage !== undefined) {
       setClauses.push('error_message = @error_message');
       params.error_message = updates.errorMessage;
+    }
+
+    if (updates.originalTokenEstimate !== undefined) {
+      setClauses.push('original_token_estimate = @original_token_estimate');
+      params.original_token_estimate = Number(updates.originalTokenEstimate);
+    }
+
+    if (updates.optimizedTokenEstimate !== undefined) {
+      setClauses.push('optimized_token_estimate = @optimized_token_estimate');
+      params.optimized_token_estimate = Number(updates.optimizedTokenEstimate);
+    }
+
+    if (updates.savingsPercent !== undefined) {
+      setClauses.push('savings_percent = @savings_percent');
+      params.savings_percent = Number(updates.savingsPercent);
+    }
+
+    if (updates.capabilitiesApplied !== undefined) {
+      setClauses.push('capabilities_applied = @capabilities_applied');
+      params.capabilities_applied = updates.capabilitiesApplied;
+    }
+
+    if (updates.outputFilterLinesRemoved !== undefined) {
+      setClauses.push('output_filter_lines_removed = @output_filter_lines_removed');
+      params.output_filter_lines_removed = updates.outputFilterLinesRemoved;
+    }
+
+    if (updates.deltaContextFilesSkipped !== undefined) {
+      setClauses.push('delta_context_files_skipped = @delta_context_files_skipped');
+      params.delta_context_files_skipped = updates.deltaContextFilesSkipped;
+    }
+
+    if (updates.compressionRatio !== undefined) {
+      setClauses.push('compression_ratio = @compression_ratio');
+      params.compression_ratio = Number(updates.compressionRatio);
+    }
+
+    if (updates.aliasesCreated !== undefined) {
+      setClauses.push('aliases_created = @aliases_created');
+      params.aliases_created = updates.aliasesCreated;
     }
 
     const stmt = this.db.prepare(

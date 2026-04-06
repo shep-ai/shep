@@ -15,6 +15,7 @@ import type {
   Settings,
   SkillInjectionConfig,
   SkillSource,
+  TokenOptimizationConfig,
 } from '../../../../domain/generated/output.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import {
@@ -138,6 +139,14 @@ export interface SettingsRow {
   // Skill injection config (added in migration 051)
   skill_injection_enabled: number;
   skill_injection_skills: string | null;
+
+  // Token optimization config (added in migration 055)
+  token_opt_enabled: number;
+  token_opt_output_filtering: number;
+  token_opt_skill_routing: number;
+  token_opt_delta_context: number;
+  token_opt_semantic_compression: number;
+  token_opt_alias_compression: number;
 }
 
 /**
@@ -265,6 +274,17 @@ export function toDatabase(settings: Settings): SettingsRow {
     skill_injection_skills: settings.workflow.skillInjection?.skills?.length
       ? JSON.stringify(settings.workflow.skillInjection.skills)
       : null,
+
+    // Token optimization config (default: all enabled)
+    token_opt_enabled: (settings.workflow.tokenOptimization?.enabled ?? true) ? 1 : 0,
+    token_opt_output_filtering:
+      (settings.workflow.tokenOptimization?.outputFiltering ?? true) ? 1 : 0,
+    token_opt_skill_routing: (settings.workflow.tokenOptimization?.skillRouting ?? true) ? 1 : 0,
+    token_opt_delta_context: (settings.workflow.tokenOptimization?.deltaContext ?? true) ? 1 : 0,
+    token_opt_semantic_compression:
+      (settings.workflow.tokenOptimization?.semanticCompression ?? true) ? 1 : 0,
+    token_opt_alias_compression:
+      (settings.workflow.tokenOptimization?.aliasCompression ?? true) ? 1 : 0,
   };
 }
 
@@ -327,6 +347,46 @@ function buildSkillInjectionFromRow(
     skillInjection: {
       enabled: isEnabled,
       skills,
+    },
+  };
+}
+
+/**
+ * Build the tokenOptimization spread from DB row columns.
+ * Returns `{ tokenOptimization: { ... } }` when at least one capability is non-default,
+ * or an empty object `{}` when all columns are at their default (1 = enabled), so the
+ * field stays undefined and factory defaults apply.
+ */
+function buildTokenOptimizationFromRow(
+  row: SettingsRow
+): { tokenOptimization: TokenOptimizationConfig } | Record<string, never> {
+  const enabled = (row.token_opt_enabled ?? 1) === 1;
+  const outputFiltering = (row.token_opt_output_filtering ?? 1) === 1;
+  const skillRouting = (row.token_opt_skill_routing ?? 1) === 1;
+  const deltaContext = (row.token_opt_delta_context ?? 1) === 1;
+  const semanticCompression = (row.token_opt_semantic_compression ?? 1) === 1;
+  const aliasCompression = (row.token_opt_alias_compression ?? 1) === 1;
+
+  // All defaults — return empty so the field stays undefined (factory defaults apply)
+  if (
+    enabled &&
+    outputFiltering &&
+    skillRouting &&
+    deltaContext &&
+    semanticCompression &&
+    aliasCompression
+  ) {
+    return {};
+  }
+
+  return {
+    tokenOptimization: {
+      enabled,
+      outputFiltering,
+      skillRouting,
+      deltaContext,
+      semanticCompression,
+      aliasCompression,
     },
   };
 }
@@ -413,6 +473,7 @@ export function fromDatabase(row: SettingsRow): Settings {
       ...buildStageTimeoutsFromRow(row),
       ...buildAnalyzeRepoTimeoutsFromRow(row),
       ...buildSkillInjectionFromRow(row),
+      ...buildTokenOptimizationFromRow(row),
       ciWatchEnabled: row.ci_watch_enabled !== 0,
       enableEvidence: row.workflow_enable_evidence === 1,
       commitEvidence: row.workflow_commit_evidence === 1,

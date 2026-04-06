@@ -65,4 +65,28 @@ model PhaseTiming extends BaseEntity {
 
   @doc("Error details when exitCode is not success")
   errorMessage?: string;
+
+  @doc("Estimated token count before optimization (chars / 4 heuristic)")
+  originalTokenEstimate?: int64;
+
+  @doc("Estimated token count after optimization (chars / 4 heuristic)")
+  optimizedTokenEstimate?: int64;
+
+  @doc("Percentage of tokens saved by optimization ((original - optimized) / original * 100)")
+  savingsPercent?: float64;
+
+  @doc("JSON array of optimization capability names that were applied")
+  capabilitiesApplied?: string;
+
+  @doc("Number of lines removed by the command output filter")
+  outputFilterLinesRemoved?: int32;
+
+  @doc("Number of spec files replaced with compact summaries by delta-context")
+  deltaContextFilesSkipped?: int32;
+
+  @doc("Compression ratio achieved by semantic text compression (compressed / original)")
+  compressionRatio?: float64;
+
+  @doc("Number of alias substitutions created by the alias compression engine")
+  aliasesCreated?: int32;
 }

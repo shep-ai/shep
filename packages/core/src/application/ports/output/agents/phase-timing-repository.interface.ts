@@ -45,6 +45,14 @@ export interface IPhaseTimingRepository {
         | 'exitCode'
         | 'errorMessage'
         | 'prompt'
+        | 'originalTokenEstimate'
+        | 'optimizedTokenEstimate'
+        | 'savingsPercent'
+        | 'capabilitiesApplied'
+        | 'outputFilterLinesRemoved'
+        | 'deltaContextFilesSkipped'
+        | 'compressionRatio'
+        | 'aliasesCreated'
       >
     >
   ): Promise<void>;

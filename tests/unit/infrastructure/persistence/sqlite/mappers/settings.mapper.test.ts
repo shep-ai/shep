@@ -168,6 +168,12 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     fab_position_swapped: 0,
     skill_injection_enabled: 0,
     skill_injection_skills: null,
+    token_opt_enabled: 1,
+    token_opt_output_filtering: 1,
+    token_opt_skill_routing: 1,
+    token_opt_delta_context: 1,
+    token_opt_semantic_compression: 1,
+    token_opt_alias_compression: 1,
     ...overrides,
   };
 }
@@ -1208,6 +1214,197 @@ describe('Settings Mapper', () => {
       const row = toDatabase(original);
       const restored = fromDatabase(row);
       expect(restored.workflow.skillInjection).toBeUndefined();
+    });
+  });
+
+  describe('toDatabase() - token optimization', () => {
+    it('should map tokenOptimization.enabled=true to token_opt_enabled=1', () => {
+      const settings = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          tokenOptimization: {
+            enabled: true,
+            outputFiltering: true,
+            skillRouting: true,
+            deltaContext: true,
+            semanticCompression: true,
+            aliasCompression: true,
+          },
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.token_opt_enabled).toBe(1);
+    });
+
+    it('should map tokenOptimization.enabled=false to token_opt_enabled=0', () => {
+      const settings = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          tokenOptimization: {
+            enabled: false,
+            outputFiltering: true,
+            skillRouting: true,
+            deltaContext: true,
+            semanticCompression: true,
+            aliasCompression: true,
+          },
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.token_opt_enabled).toBe(0);
+    });
+
+    it('should map all per-capability toggles to integer columns', () => {
+      const settings = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          tokenOptimization: {
+            enabled: true,
+            outputFiltering: false,
+            skillRouting: true,
+            deltaContext: false,
+            semanticCompression: true,
+            aliasCompression: false,
+          },
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.token_opt_enabled).toBe(1);
+      expect(row.token_opt_output_filtering).toBe(0);
+      expect(row.token_opt_skill_routing).toBe(1);
+      expect(row.token_opt_delta_context).toBe(0);
+      expect(row.token_opt_semantic_compression).toBe(1);
+      expect(row.token_opt_alias_compression).toBe(0);
+    });
+
+    it('should default to all enabled (1) when tokenOptimization is undefined', () => {
+      const settings = createTestSettings();
+      const row = toDatabase(settings);
+      expect(row.token_opt_enabled).toBe(1);
+      expect(row.token_opt_output_filtering).toBe(1);
+      expect(row.token_opt_skill_routing).toBe(1);
+      expect(row.token_opt_delta_context).toBe(1);
+      expect(row.token_opt_semantic_compression).toBe(1);
+      expect(row.token_opt_alias_compression).toBe(1);
+    });
+  });
+
+  describe('fromDatabase() - token optimization', () => {
+    it('should omit tokenOptimization when all columns are default (all 1)', () => {
+      const row = createTestRow({
+        token_opt_enabled: 1,
+        token_opt_output_filtering: 1,
+        token_opt_skill_routing: 1,
+        token_opt_delta_context: 1,
+        token_opt_semantic_compression: 1,
+        token_opt_alias_compression: 1,
+      });
+      const settings = fromDatabase(row);
+      expect(settings.workflow.tokenOptimization).toBeUndefined();
+    });
+
+    it('should reconstruct tokenOptimization when any capability is disabled', () => {
+      const row = createTestRow({
+        token_opt_enabled: 1,
+        token_opt_output_filtering: 0,
+        token_opt_skill_routing: 1,
+        token_opt_delta_context: 1,
+        token_opt_semantic_compression: 1,
+        token_opt_alias_compression: 1,
+      });
+      const settings = fromDatabase(row);
+      expect(settings.workflow.tokenOptimization).toEqual({
+        enabled: true,
+        outputFiltering: false,
+        skillRouting: true,
+        deltaContext: true,
+        semanticCompression: true,
+        aliasCompression: true,
+      });
+    });
+
+    it('should reconstruct tokenOptimization when master toggle is disabled', () => {
+      const row = createTestRow({
+        token_opt_enabled: 0,
+        token_opt_output_filtering: 1,
+        token_opt_skill_routing: 1,
+        token_opt_delta_context: 1,
+        token_opt_semantic_compression: 1,
+        token_opt_alias_compression: 1,
+      });
+      const settings = fromDatabase(row);
+      expect(settings.workflow.tokenOptimization).toEqual({
+        enabled: false,
+        outputFiltering: true,
+        skillRouting: true,
+        deltaContext: true,
+        semanticCompression: true,
+        aliasCompression: true,
+      });
+    });
+
+    it('should default to enabled when columns are null (backward compat)', () => {
+      const row = createTestRow({
+        token_opt_enabled: undefined as any,
+        token_opt_output_filtering: undefined as any,
+        token_opt_skill_routing: undefined as any,
+        token_opt_delta_context: undefined as any,
+        token_opt_semantic_compression: undefined as any,
+        token_opt_alias_compression: undefined as any,
+      });
+      const settings = fromDatabase(row);
+      // All default to 1 (enabled), so tokenOptimization should be undefined (all defaults)
+      expect(settings.workflow.tokenOptimization).toBeUndefined();
+    });
+  });
+
+  describe('round-trip - token optimization', () => {
+    it('should preserve tokenOptimization with mixed values through round-trip', () => {
+      const tokenOptimization = {
+        enabled: true,
+        outputFiltering: false,
+        skillRouting: true,
+        deltaContext: false,
+        semanticCompression: true,
+        aliasCompression: false,
+      };
+      const original = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          tokenOptimization,
+        },
+      });
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+      expect(restored.workflow.tokenOptimization).toEqual(tokenOptimization);
+    });
+
+    it('should preserve fully disabled tokenOptimization through round-trip', () => {
+      const tokenOptimization = {
+        enabled: false,
+        outputFiltering: false,
+        skillRouting: false,
+        deltaContext: false,
+        semanticCompression: false,
+        aliasCompression: false,
+      };
+      const original = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          tokenOptimization,
+        },
+      });
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+      expect(restored.workflow.tokenOptimization).toEqual(tokenOptimization);
+    });
+
+    it('should preserve undefined tokenOptimization through round-trip as undefined (all defaults)', () => {
+      const original = createTestSettings();
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+      // When all defaults (enabled=true), tokenOptimization is omitted (undefined)
+      expect(restored.workflow.tokenOptimization).toBeUndefined();
     });
   });
 });

@@ -67,6 +67,9 @@ properties:
   skillInjection:
     $ref: SkillInjectionConfig.yaml
     description: Skill injection configuration (optional, disabled by default)
+  tokenOptimization:
+    $ref: TokenOptimizationConfig.yaml
+    description: Token optimization configuration (optional, enabled by default)
 required:
   - openPrOnImplementationComplete
   - approvalGateDefaults

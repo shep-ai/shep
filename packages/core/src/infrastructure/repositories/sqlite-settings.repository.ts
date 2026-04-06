@@ -74,7 +74,11 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         interactive_agent_max_concurrent_sessions,
         auto_archive_delay_minutes,
         stage_timeout_fast_implement_ms,
-        fab_position_swapped
+        fab_position_swapped,
+        skill_injection_enabled, skill_injection_skills,
+        token_opt_enabled, token_opt_output_filtering,
+        token_opt_skill_routing, token_opt_delta_context,
+        token_opt_semantic_compression, token_opt_alias_compression
       ) VALUES (
         @id, @created_at, @updated_at,
         @model_analyze, @model_requirements, @model_plan, @model_implement, @model_default,
@@ -106,7 +110,11 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         @interactive_agent_max_concurrent_sessions,
         @auto_archive_delay_minutes,
         @stage_timeout_fast_implement_ms,
-        @fab_position_swapped
+        @fab_position_swapped,
+        @skill_injection_enabled, @skill_injection_skills,
+        @token_opt_enabled, @token_opt_output_filtering,
+        @token_opt_skill_routing, @token_opt_delta_context,
+        @token_opt_semantic_compression, @token_opt_alias_compression
       )
     `);
 
@@ -220,7 +228,15 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         interactive_agent_max_concurrent_sessions = @interactive_agent_max_concurrent_sessions,
         auto_archive_delay_minutes = @auto_archive_delay_minutes,
         stage_timeout_fast_implement_ms = @stage_timeout_fast_implement_ms,
-        fab_position_swapped = @fab_position_swapped
+        fab_position_swapped = @fab_position_swapped,
+        skill_injection_enabled = @skill_injection_enabled,
+        skill_injection_skills = @skill_injection_skills,
+        token_opt_enabled = @token_opt_enabled,
+        token_opt_output_filtering = @token_opt_output_filtering,
+        token_opt_skill_routing = @token_opt_skill_routing,
+        token_opt_delta_context = @token_opt_delta_context,
+        token_opt_semantic_compression = @token_opt_semantic_compression,
+        token_opt_alias_compression = @token_opt_alias_compression
       WHERE id = @id
     `);
 

@@ -439,6 +439,36 @@ export type SkillInjectionConfig = {
 };
 
 /**
+ * Token optimization layer configuration with master toggle and per-capability controls
+ */
+export type TokenOptimizationConfig = {
+  /**
+   * Master toggle for the entire optimization layer (default: true)
+   */
+  enabled: boolean;
+  /**
+   * Enable command output filtering to reduce test/build/git output tokens (default: true)
+   */
+  outputFiltering: boolean;
+  /**
+   * Enable phase-aware skill routing directives in prompts (default: true)
+   */
+  skillRouting: boolean;
+  /**
+   * Enable delta-context diffing to skip unchanged spec files (default: true)
+   */
+  deltaContext: boolean;
+  /**
+   * Enable rule-based semantic text compression on instruction sections (default: true)
+   */
+  semanticCompression: boolean;
+  /**
+   * Enable alias/meta-token compression for repeated long strings (default: true)
+   */
+  aliasCompression: boolean;
+};
+
+/**
  * Global workflow configuration defaults
  */
 export type WorkflowConfig = {
@@ -506,6 +536,10 @@ export type WorkflowConfig = {
    * Skill injection configuration (optional, disabled by default)
    */
   skillInjection?: SkillInjectionConfig;
+  /**
+   * Token optimization configuration (optional, enabled by default)
+   */
+  tokenOptimization?: TokenOptimizationConfig;
 };
 export enum AgentType {
   ClaudeCode = 'claude-code',
@@ -2241,6 +2275,38 @@ export type PhaseTiming = BaseEntity & {
    * Error details when exitCode is not success
    */
   errorMessage?: string;
+  /**
+   * Estimated token count before optimization (chars / 4 heuristic)
+   */
+  originalTokenEstimate?: bigint;
+  /**
+   * Estimated token count after optimization (chars / 4 heuristic)
+   */
+  optimizedTokenEstimate?: bigint;
+  /**
+   * Percentage of tokens saved by optimization ((original - optimized) / original * 100)
+   */
+  savingsPercent?: float64;
+  /**
+   * JSON array of optimization capability names that were applied
+   */
+  capabilitiesApplied?: string;
+  /**
+   * Number of lines removed by the command output filter
+   */
+  outputFilterLinesRemoved?: number;
+  /**
+   * Number of spec files replaced with compact summaries by delta-context
+   */
+  deltaContextFilesSkipped?: number;
+  /**
+   * Compression ratio achieved by semantic text compression (compressed / original)
+   */
+  compressionRatio?: float64;
+  /**
+   * Number of alias substitutions created by the alias compression engine
+   */
+  aliasesCreated?: number;
 };
 
 /**

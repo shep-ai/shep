@@ -24,6 +24,7 @@ import type {
   ApprovalGateDefaults,
   FeatureFlags,
   SkillInjectionConfig,
+  TokenOptimizationConfig,
 } from '../generated/output';
 import {
   AgentType,
@@ -202,6 +203,15 @@ export function createDefaultSettings(): Settings {
     ],
   };
 
+  const tokenOptimization: TokenOptimizationConfig = {
+    enabled: true,
+    outputFiltering: true,
+    skillRouting: true,
+    deltaContext: true,
+    semanticCompression: true,
+    aliasCompression: true,
+  };
+
   const workflow: WorkflowConfig = {
     openPrOnImplementationComplete: false,
     approvalGateDefaults,
@@ -211,6 +221,7 @@ export function createDefaultSettings(): Settings {
     defaultFastMode: true,
     autoArchiveDelayMinutes: 10,
     skillInjection,
+    tokenOptimization,
   };
 
   const featureFlags: FeatureFlags = {

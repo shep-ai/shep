@@ -1,0 +1,36 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: TokenOptimizationConfig.yaml
+type: object
+properties:
+  enabled:
+    type: boolean
+    default: true
+    description: "Master toggle for the entire optimization layer (default: true)"
+  outputFiltering:
+    type: boolean
+    default: true
+    description: "Enable command output filtering to reduce test/build/git output tokens (default: true)"
+  skillRouting:
+    type: boolean
+    default: true
+    description: "Enable phase-aware skill routing directives in prompts (default: true)"
+  deltaContext:
+    type: boolean
+    default: true
+    description: "Enable delta-context diffing to skip unchanged spec files (default: true)"
+  semanticCompression:
+    type: boolean
+    default: true
+    description: "Enable rule-based semantic text compression on instruction sections (default: true)"
+  aliasCompression:
+    type: boolean
+    default: true
+    description: "Enable alias/meta-token compression for repeated long strings (default: true)"
+required:
+  - enabled
+  - outputFiltering
+  - skillRouting
+  - deltaContext
+  - semanticCompression
+  - aliasCompression
+description: Token optimization layer configuration with master toggle and per-capability controls

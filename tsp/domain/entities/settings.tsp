@@ -342,6 +342,39 @@ model SkillInjectionConfig {
   skills: SkillSource[];
 }
 
+/**
+ * Token Optimization Configuration
+ *
+ * Controls the token optimization layer that sits between prompt assembly
+ * and LLM executor invocation. Each capability can be independently toggled.
+ * The master toggle (`enabled`) disables the entire layer when false.
+ *
+ * All capabilities default to true (enabled). Users can disable individual
+ * capabilities if they experience issues without losing all optimization savings.
+ *
+ * Optional for backward compatibility with pre-migration databases.
+ */
+@doc("Token optimization layer configuration with master toggle and per-capability controls")
+model TokenOptimizationConfig {
+  @doc("Master toggle for the entire optimization layer (default: true)")
+  enabled: boolean = true;
+
+  @doc("Enable command output filtering to reduce test/build/git output tokens (default: true)")
+  outputFiltering: boolean = true;
+
+  @doc("Enable phase-aware skill routing directives in prompts (default: true)")
+  skillRouting: boolean = true;
+
+  @doc("Enable delta-context diffing to skip unchanged spec files (default: true)")
+  deltaContext: boolean = true;
+
+  @doc("Enable rule-based semantic text compression on instruction sections (default: true)")
+  semanticCompression: boolean = true;
+
+  @doc("Enable alias/meta-token compression for repeated long strings (default: true)")
+  aliasCompression: boolean = true;
+}
+
 @doc("Global workflow configuration defaults")
 model WorkflowConfig {
   /**
@@ -435,6 +468,17 @@ model WorkflowConfig {
    */
   @doc("Skill injection configuration (optional, disabled by default)")
   skillInjection?: SkillInjectionConfig;
+
+  /**
+   * Token optimization layer configuration.
+   * Controls whether prompt optimization is applied between prompt assembly
+   * and LLM executor invocation. Each capability (output filtering, skill
+   * routing, delta-context, semantic compression, alias compression) can be
+   * independently toggled.
+   * Optional for backward compatibility with pre-migration databases.
+   */
+  @doc("Token optimization configuration (optional, enabled by default)")
+  tokenOptimization?: TokenOptimizationConfig;
 }
 
 @doc("AI coding agent configuration")

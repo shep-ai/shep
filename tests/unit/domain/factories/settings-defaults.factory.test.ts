@@ -398,6 +398,14 @@ describe('createDefaultSettings', () => {
             },
           ],
         },
+        tokenOptimization: {
+          enabled: true,
+          outputFiltering: true,
+          skillRouting: true,
+          deltaContext: true,
+          semanticCompression: true,
+          aliasCompression: true,
+        },
       });
     });
   });

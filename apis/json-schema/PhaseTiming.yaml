@@ -64,6 +64,36 @@ properties:
   errorMessage:
     type: string
     description: Error details when exitCode is not success
+  originalTokenEstimate:
+    type: string
+    description: Estimated token count before optimization (chars / 4 heuristic)
+  optimizedTokenEstimate:
+    type: string
+    description: Estimated token count after optimization (chars / 4 heuristic)
+  savingsPercent:
+    type: number
+    description: Percentage of tokens saved by optimization ((original - optimized) / original * 100)
+  capabilitiesApplied:
+    type: string
+    description: JSON array of optimization capability names that were applied
+  outputFilterLinesRemoved:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Number of lines removed by the command output filter
+  deltaContextFilesSkipped:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Number of spec files replaced with compact summaries by delta-context
+  compressionRatio:
+    type: number
+    description: Compression ratio achieved by semantic text compression (compressed / original)
+  aliasesCreated:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Number of alias substitutions created by the alias compression engine
 required:
   - agentRunId
   - phase
