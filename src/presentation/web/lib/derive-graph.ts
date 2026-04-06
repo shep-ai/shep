@@ -259,15 +259,15 @@ export function deriveGraph(
         data,
       } as CanvasNodeType);
 
-      // After creating the application node, derive repo→app edge
+      // Derive app→repo edge (application on LEFT, repo on RIGHT)
       if (entry.data.repositoryPath) {
         const repoPath = entry.data.repositoryPath.replace(/\\/g, '/');
         const repoNodeId = repoByPath.get(repoPath);
         if (repoNodeId) {
           edges.push({
-            id: `edge-${repoNodeId}-${appNodeId}`,
-            source: repoNodeId,
-            target: appNodeId,
+            id: `edge-${appNodeId}-${repoNodeId}`,
+            source: appNodeId,
+            target: repoNodeId,
             style: { strokeDasharray: '5 5' },
           });
         }

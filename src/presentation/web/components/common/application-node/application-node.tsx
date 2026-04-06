@@ -44,24 +44,23 @@ export function ApplicationNode({
   const statusDotClass = STATUS_DOT_CLASSES[data.status] ?? STATUS_DOT_DEFAULT;
 
   return (
-    <div
-      className={cn('group relative', data.onDelete && data.id && 'ps-10')}
-      style={{ direction: isRtl ? 'rtl' : 'ltr' }}
-    >
-      {data.showHandles ? (
-        <Handle
-          type="target"
-          position={targetHandlePos}
-          isConnectable={false}
-          className="opacity-0!"
-          style={{ top: 70 }}
-        />
-      ) : null}
+    <div className="group relative" style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
+      {/* Target handle (left in LTR) — always rendered for edge connections */}
+      <Handle
+        type="target"
+        position={targetHandlePos}
+        isConnectable={false}
+        className="opacity-0!"
+        style={{ top: 70 }}
+      />
 
-      {/* Delete button — visible on hover, positioned to the left */}
+      {/* Delete button — visible on hover, positioned outside the card on the left */}
       {data.onDelete && data.id ? (
         <>
-          <div className="absolute -start-3 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100">
+          <div
+            className="absolute -start-14 top-0 bottom-0 flex items-center justify-center ps-4 pe-3 opacity-0 transition-opacity group-hover:opacity-100"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -194,16 +193,14 @@ export function ApplicationNode({
         </div>
       </div>
 
-      {/* Source handle — invisible, for edge connections */}
-      {data.showHandles ? (
-        <Handle
-          type="source"
-          position={sourceHandlePos}
-          isConnectable={false}
-          className="opacity-0!"
-          style={{ top: 70 }}
-        />
-      ) : null}
+      {/* Source handle (right in LTR) — always rendered for edge connections */}
+      <Handle
+        type="source"
+        position={sourceHandlePos}
+        isConnectable={false}
+        className="opacity-0!"
+        style={{ top: 70 }}
+      />
     </div>
   );
 }

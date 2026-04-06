@@ -202,18 +202,11 @@ describe('ApplicationNode', () => {
   });
 
   describe('handles', () => {
-    it('renders handles when showHandles is true', () => {
-      renderNode({ ...defaultData, showHandles: true });
+    it('always renders handles for edge connections', () => {
+      renderNode({ ...defaultData });
 
       expect(screen.getByTestId('handle-target-left')).toBeInTheDocument();
       expect(screen.getByTestId('handle-source-right')).toBeInTheDocument();
-    });
-
-    it('does not render handles when showHandles is false', () => {
-      renderNode({ ...defaultData, showHandles: false });
-
-      expect(screen.queryByTestId('handle-target-left')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('handle-source-right')).not.toBeInTheDocument();
     });
   });
 });
