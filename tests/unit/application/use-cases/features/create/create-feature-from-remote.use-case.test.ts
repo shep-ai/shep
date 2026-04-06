@@ -292,7 +292,10 @@ describe('CreateFeatureFromRemoteUseCase', () => {
     });
 
     it('should pass feature, input fields, and shouldSpawn to createFeature', async () => {
-      const feature = createMockFeature({ id: 'feat-abc' });
+      const feature = createMockFeature({
+        id: 'feat-abc',
+        repositoryPath: '/home/user/repos/my-project',
+      });
 
       await useCase.initializeAndSpawn(feature, baseInput, true);
 
@@ -300,19 +303,19 @@ describe('CreateFeatureFromRemoteUseCase', () => {
         feature,
         expect.objectContaining({
           userInput: 'add authentication',
-          repositoryPath: '',
+          repositoryPath: '/home/user/repos/my-project',
         }),
         true
       );
     });
 
-    it('should pass repositoryPath as empty string (resolved from feature.repositoryId)', async () => {
-      const feature = createMockFeature();
+    it('should pass repositoryPath from feature (not an empty string)', async () => {
+      const feature = createMockFeature({ repositoryPath: '/repos/my-project' });
 
       await useCase.initializeAndSpawn(feature, baseInput, false);
 
       const callArgs = vi.mocked(mockCreateFeatureUseCase.initializeAndSpawn).mock.calls[0];
-      expect(callArgs[1].repositoryPath).toBe('');
+      expect(callArgs[1].repositoryPath).toBe('/repos/my-project');
     });
 
     it('should forward shouldSpawn=false to createFeature', async () => {

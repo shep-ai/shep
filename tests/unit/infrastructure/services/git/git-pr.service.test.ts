@@ -1069,4 +1069,128 @@ describe('GitPrService', () => {
       expect(mockExec).toHaveBeenCalledTimes(3);
     });
   });
+
+  describe('createGitHubRepo', () => {
+    it('should extract the repo URL from gh repo create stdout', async () => {
+      vi.mocked(mockExec).mockResolvedValueOnce({
+        stdout:
+          '✓ Created repository octocat/my-project on GitHub\n  https://github.com/octocat/my-project\n',
+        stderr: '',
+      });
+
+      const url = await service.createGitHubRepo('/repo', 'my-project', { isPrivate: true });
+
+      expect(url).toBe('https://github.com/octocat/my-project');
+    });
+
+    it('should extract the repo URL from gh repo create stderr when stdout is empty', async () => {
+      vi.mocked(mockExec).mockResolvedValueOnce({
+        stdout: '',
+        stderr: '✓ Created https://github.com/org/repo.git\n',
+      });
+
+      const url = await service.createGitHubRepo('/repo', 'repo', { isPrivate: false });
+
+      expect(url).toBe('https://github.com/org/repo');
+    });
+
+    it('should strip trailing .git and punctuation from parsed URL', async () => {
+      vi.mocked(mockExec).mockResolvedValueOnce({
+        stdout: 'Remote repo created at (https://github.com/acme/widget.git),\n',
+        stderr: '',
+      });
+
+      const url = await service.createGitHubRepo('/repo', 'widget', { isPrivate: true });
+
+      expect(url).toBe('https://github.com/acme/widget');
+    });
+
+    it('should fall back to gh repo view when stdout has no URL', async () => {
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // gh repo create — no URL
+        .mockResolvedValueOnce({
+          stdout: 'https://github.com/fallback/repo\n',
+          stderr: '',
+        }); // gh repo view
+
+      const url = await service.createGitHubRepo('/repo', 'repo', { isPrivate: true });
+
+      expect(url).toBe('https://github.com/fallback/repo');
+      expect(mockExec).toHaveBeenNthCalledWith(
+        2,
+        'gh',
+        ['repo', 'view', '--json', 'url', '--jq', '.url'],
+        { cwd: '/repo' }
+      );
+    });
+
+    it('should include org prefix when org option is provided', async () => {
+      vi.mocked(mockExec).mockResolvedValueOnce({
+        stdout: 'https://github.com/my-org/my-project\n',
+        stderr: '',
+      });
+
+      await service.createGitHubRepo('/repo', 'my-project', {
+        isPrivate: true,
+        org: 'my-org',
+      });
+
+      expect(mockExec).toHaveBeenCalledWith(
+        'gh',
+        expect.arrayContaining(['repo', 'create', 'my-org/my-project', '--private']),
+        { cwd: '/repo' }
+      );
+    });
+
+    it('should use --public when isPrivate is false', async () => {
+      vi.mocked(mockExec).mockResolvedValueOnce({
+        stdout: 'https://github.com/octocat/public-repo\n',
+        stderr: '',
+      });
+
+      await service.createGitHubRepo('/repo', 'public-repo', { isPrivate: false });
+
+      expect(mockExec).toHaveBeenCalledWith(
+        'gh',
+        expect.arrayContaining(['--public']),
+        expect.any(Object)
+      );
+    });
+
+    it('should throw GitPrError with REPO_CREATE_FAILED when gh repo create fails', async () => {
+      vi.mocked(mockExec).mockRejectedValueOnce(new Error('repo already exists'));
+
+      await expect(
+        service.createGitHubRepo('/repo', 'my-project', { isPrivate: true })
+      ).rejects.toThrow(GitPrError);
+
+      try {
+        await service.createGitHubRepo('/repo', 'my-project', { isPrivate: true });
+      } catch (error) {
+        expect((error as GitPrError).code).toBe(GitPrErrorCode.REPO_CREATE_FAILED);
+      }
+    });
+  });
+
+  describe('addRemote', () => {
+    it('should run git remote add with the given name and URL', async () => {
+      vi.mocked(mockExec).mockResolvedValueOnce({ stdout: '', stderr: '' });
+
+      await service.addRemote('/repo', 'upstream', 'https://github.com/octocat/original');
+
+      expect(mockExec).toHaveBeenCalledWith(
+        'git',
+        ['remote', 'add', 'upstream', 'https://github.com/octocat/original'],
+        { cwd: '/repo' }
+      );
+    });
+
+    it('should wrap underlying git errors in GitPrError', async () => {
+      vi.mocked(mockExec).mockRejectedValueOnce(new Error('remote upstream already exists'));
+
+      await expect(
+        service.addRemote('/repo', 'upstream', 'https://github.com/x/y')
+      ).rejects.toThrow(GitPrError);
+    });
+  });
 });

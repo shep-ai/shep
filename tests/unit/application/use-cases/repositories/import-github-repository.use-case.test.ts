@@ -15,6 +15,7 @@ import {
   GitHubAuthError,
   GitHubUrlParseError,
 } from '@/application/ports/output/services/github-repository-service.interface.js';
+import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { IRepositoryRepository } from '@/application/ports/output/repositories/repository-repository.interface.js';
 import type { AddRepositoryUseCase } from '@/application/use-cases/repositories/add-repository.use-case.js';
 import type { Repository } from '@/domain/generated/output.js';
@@ -35,6 +36,7 @@ describe('ImportGitHubRepositoryUseCase', () => {
   let mockGitHubService: IGitHubRepositoryService;
   let mockRepoRepository: IRepositoryRepository;
   let mockAddRepoUseCase: AddRepositoryUseCase;
+  let mockGitPrService: IGitPrService;
 
   beforeEach(() => {
     mockGitHubService = {
@@ -77,10 +79,15 @@ describe('ImportGitHubRepositoryUseCase', () => {
       execute: vi.fn<() => Promise<Repository>>().mockResolvedValue(createMockRepository()),
     } as unknown as AddRepositoryUseCase;
 
+    mockGitPrService = {
+      addRemote: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    } as unknown as IGitPrService;
+
     useCase = new ImportGitHubRepositoryUseCase(
       mockGitHubService,
       mockRepoRepository,
-      mockAddRepoUseCase
+      mockAddRepoUseCase,
+      mockGitPrService
     );
   });
 
@@ -302,6 +309,20 @@ describe('ImportGitHubRepositoryUseCase', () => {
       });
       expect(result.remoteUrl).toBe('https://github.com/octocat/my-project');
     });
+
+    it('should NOT configure an upstream remote on direct clone', async () => {
+      vi.mocked(mockGitHubService.checkPushAccess).mockResolvedValue({
+        hasPushAccess: true,
+        viewerLogin: 'octocat',
+      });
+
+      await useCase.execute({
+        url: 'https://github.com/octocat/my-project',
+        dest: '/repos/my-project',
+      });
+
+      expect(mockGitPrService.addRemote).not.toHaveBeenCalled();
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -355,6 +376,54 @@ describe('ImportGitHubRepositoryUseCase', () => {
       expect(result.isFork).toBe(true);
       expect(result.upstreamUrl).toBe('https://github.com/octocat/my-project');
       expect(result.remoteUrl).toBe('https://github.com/contributor/my-project');
+    });
+
+    it('should configure upstream remote pointing at the original repo', async () => {
+      await useCase.execute({
+        url: 'https://github.com/octocat/my-project',
+        dest: '/repos/my-project',
+      });
+
+      expect(mockGitPrService.addRemote).toHaveBeenCalledWith(
+        '/repos/my-project',
+        'upstream',
+        'https://github.com/octocat/my-project'
+      );
+    });
+
+    it('should configure upstream remote after cloning the fork, not before', async () => {
+      const callOrder: string[] = [];
+      vi.mocked(mockGitHubService.cloneRepository).mockImplementation(async () => {
+        callOrder.push('cloneRepository');
+      });
+      vi.mocked(mockGitPrService.addRemote).mockImplementation(async () => {
+        callOrder.push('addRemote');
+      });
+
+      await useCase.execute({
+        url: 'https://github.com/octocat/my-project',
+        dest: '/repos/my-project',
+      });
+
+      expect(callOrder.indexOf('cloneRepository')).toBeLessThan(callOrder.indexOf('addRemote'));
+    });
+
+    it('should NOT configure upstream remote when the fork is already tracked', async () => {
+      const existingFork = createMockRepository({
+        id: 'existing-fork-id',
+        remoteUrl: 'https://github.com/contributor/my-project',
+        isFork: true,
+        upstreamUrl: 'https://github.com/octocat/my-project',
+      });
+      vi.mocked(mockRepoRepository.findByRemoteUrl)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(existingFork);
+
+      await useCase.execute({
+        url: 'https://github.com/octocat/my-project',
+      });
+
+      expect(mockGitPrService.addRemote).not.toHaveBeenCalled();
     });
 
     it('should pass forkOptions through to forkRepository', async () => {

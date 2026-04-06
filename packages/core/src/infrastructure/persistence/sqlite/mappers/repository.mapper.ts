@@ -55,7 +55,7 @@ export function fromDatabase(row: RepositoryRow): Repository {
     name: row.name,
     path: row.path,
     remoteUrl: row.remote_url ?? undefined,
-    isFork: row.is_fork === 1 ? true : undefined,
+    isFork: row.is_fork === 1,
     upstreamUrl: row.upstream_url ?? undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),

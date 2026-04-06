@@ -15,8 +15,12 @@ import type {
   CloneOptions,
   ForkOptions,
 } from '../../ports/output/services/github-repository-service.interface.js';
+import type { IGitPrService } from '../../ports/output/services/git-pr-service.interface.js';
 import type { IRepositoryRepository } from '../../ports/output/repositories/repository-repository.interface.js';
 import { AddRepositoryUseCase } from './add-repository.use-case.js';
+
+/** Name of the git remote used to track the original upstream repo of a fork. */
+const UPSTREAM_REMOTE_NAME = 'upstream';
 
 export interface ImportGitHubRepositoryInput {
   /** GitHub URL or shorthand (e.g. "owner/repo") */
@@ -47,7 +51,9 @@ export class ImportGitHubRepositoryUseCase {
     @inject('IRepositoryRepository')
     private readonly repositoryRepo: IRepositoryRepository,
     @inject(AddRepositoryUseCase)
-    private readonly addRepositoryUseCase: AddRepositoryUseCase
+    private readonly addRepositoryUseCase: AddRepositoryUseCase,
+    @inject('IGitPrService')
+    private readonly gitPrService: IGitPrService
   ) {}
 
   async execute(input: ImportGitHubRepositoryInput): Promise<Repository> {
@@ -137,6 +143,11 @@ export class ImportGitHubRepositoryUseCase {
       input.cloneOptions
     );
 
+    // Configure the upstream remote so users can `git fetch upstream` / sync
+    // with the original repo. Without this, the fork has no knowledge of its
+    // upstream — breaking PR workflows that rely on upstream as the merge base.
+    await this.gitPrService.addRemote(destination, UPSTREAM_REMOTE_NAME, normalizedOriginalUrl);
+
     // Register the cloned fork
     const repository = await this.addRepositoryUseCase.execute({
       path: destination,
@@ -160,13 +171,23 @@ export class ImportGitHubRepositoryUseCase {
 
   private resolveDestination(input: ImportGitHubRepositoryInput, repoName: string): string {
     if (input.dest) {
-      return input.dest;
+      return normalizePath(input.dest);
     }
 
     let baseDir = input.defaultCloneDir ?? join(homedir(), 'repos');
     if (baseDir.startsWith('~/')) {
       baseDir = join(homedir(), baseDir.slice(2));
     }
-    return join(baseDir, repoName);
+    return normalizePath(join(baseDir, repoName));
   }
+}
+
+/**
+ * Normalizes a filesystem path to use forward slashes.
+ *
+ * Per packages/CLAUDE.md, all paths stored in the database MUST use forward
+ * slashes so that Windows and POSIX callers resolve/compare identically.
+ */
+function normalizePath(p: string): string {
+  return p.replace(/\\/g, '/');
 }

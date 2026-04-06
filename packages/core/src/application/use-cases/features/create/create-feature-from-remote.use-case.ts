@@ -136,7 +136,10 @@ export class CreateFeatureFromRemoteUseCase {
       feature,
       {
         userInput: input.userInput,
-        repositoryPath: '', // Will be resolved from feature.repositoryId
+        // CreateFeatureUseCase.initializeAndSpawn reads the effective repo path
+        // from feature.repositoryPath, but the interface still requires this
+        // field. Pass the feature's repositoryPath for consistency.
+        repositoryPath: feature.repositoryPath,
         approvalGates: input.approvalGates,
         push: input.push,
         openPr: input.openPr,

@@ -8,7 +8,11 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { InitRemoteRepositoryUseCase } from '@/application/use-cases/repositories/init-remote-repository.use-case.js';
-import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
+import {
+  GitPrError,
+  GitPrErrorCode,
+  type IGitPrService,
+} from '@/application/ports/output/services/git-pr-service.interface.js';
 
 describe('InitRemoteRepositoryUseCase', () => {
   let useCase: InitRemoteRepositoryUseCase;
@@ -191,6 +195,19 @@ describe('InitRemoteRepositoryUseCase', () => {
       await expect(useCase.execute({ cwd: '/repo' })).rejects.toThrow(
         'git remote set-url origin <url>'
       );
+    });
+
+    it('should throw a GitPrError with REMOTE_ALREADY_EXISTS code', async () => {
+      vi.mocked(mockGitPrService.hasRemote).mockResolvedValue(true);
+      vi.mocked(mockGitPrService.getRemoteUrl).mockResolvedValue('https://github.com/other/repo');
+
+      try {
+        await useCase.execute({ cwd: '/repo', name: 'my-repo' });
+        expect.fail('Expected GitPrError to be thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(GitPrError);
+        expect((error as GitPrError).code).toBe(GitPrErrorCode.REMOTE_ALREADY_EXISTS);
+      }
     });
   });
 

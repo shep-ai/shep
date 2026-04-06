@@ -8,7 +8,11 @@
 
 import { injectable, inject } from 'tsyringe';
 import { basename } from 'node:path';
-import type { IGitPrService } from '../../ports/output/services/git-pr-service.interface.js';
+import {
+  GitPrError,
+  GitPrErrorCode,
+  type IGitPrService,
+} from '../../ports/output/services/git-pr-service.interface.js';
 
 export interface InitRemoteRepositoryInput {
   /** Working directory of the local repository */
@@ -40,9 +44,10 @@ export class InitRemoteRepositoryUseCase {
     const hasRemote = await this.gitPrService.hasRemote(input.cwd);
     if (hasRemote) {
       const existingUrl = await this.gitPrService.getRemoteUrl(input.cwd);
-      throw new Error(
+      throw new GitPrError(
         `Repository already has a remote configured${existingUrl ? ` (${existingUrl})` : ''}. ` +
-          'Use `git remote set-url origin <url>` to change it.'
+          'Use `git remote set-url origin <url>` to change it.',
+        GitPrErrorCode.REMOTE_ALREADY_EXISTS
       );
     }
 
