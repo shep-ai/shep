@@ -1,12 +1,12 @@
 Feature: 085-retry-rerun-agent
 Evidence: Unit test results for changed files
-Date: 2026-04-06T10:50:00Z
+Date: 2026-04-06T10:58:00Z
 
 == Changed Files ==
 - packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-graph.ts
 - packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-worker.ts
 
-== Test File: feature-agent-graph.test.ts (17 tests — ALL PASS) ==
+== Test File: feature-agent-graph.test.ts (17 tests - ALL PASS) ==
 
   FeatureAgentAnnotation
     ✓ should be a valid Annotation root
@@ -32,11 +32,15 @@ Date: 2026-04-06T10:50:00Z
       ✓ should interrupt at plan in allow-prd gates
     validation retry clears completed phase for re-run          <-- NEW TEST
       ✓ should clear producer completed phase when validation   <-- NEW TEST
-        retries are exhausted
+        retries are exhausted                                   <-- NEW TEST
     state persistence with checkpointer
       ✓ should persist state across invocations via checkpointer
 
-== Test File: feature-agent-worker.test.ts (34 tests — ALL PASS) ==
+  Test Files  1 passed (1)
+  Tests       17 passed (17)
+  Duration    725ms
+
+== Test File: feature-agent-worker.test.ts (34 tests - ALL PASS) ==
 
   parseWorkerArgs
     ✓ should parse all required CLI arguments
@@ -68,7 +72,7 @@ Date: 2026-04-06T10:50:00Z
     ✓ should invoke graph with Command resume when resuming from interrupt
     ✓ should invoke graph with initial state when resuming from error
     ✓ should create fresh graph and checkpointer when resuming     <-- NEW TEST
-      from error
+      from error                                                   <-- NEW TEST
     ✓ should handle graph returning error state
     ✓ should use createFastFeatureAgentGraph when fast=true
     ✓ should use createFeatureAgentGraph when fast=false
@@ -76,7 +80,11 @@ Date: 2026-04-06T10:50:00Z
     ✓ should invoke the fast graph with correct state when fast=true
     ✓ should complete successfully with fast graph
 
+  Test Files  1 passed (1)
+  Tests       34 passed (34)
+  Duration    563ms
+
 == Full Suite Summary ==
   Test Files: 388 passed (388)
   Tests:      5609 passed (5609)
-  Duration:   ~55s
+  Duration:   ~52s
