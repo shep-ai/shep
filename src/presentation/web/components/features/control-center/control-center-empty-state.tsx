@@ -8,6 +8,8 @@ import {
   LayoutGrid,
   Zap,
   ClipboardList,
+  ChevronDown,
+  Check,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +20,12 @@ import { AgentModelPicker } from '@/components/features/settings/AgentModelPicke
 import { AttachmentChip } from '@/components/common/attachment-chip';
 import { ShepLogo } from '@/components/common/shep-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useAttachments } from '@/hooks/use-attachments';
 
 type BuildMode = 'application' | 'fast' | 'spec';
@@ -245,6 +253,7 @@ export function ControlCenterEmptyState({
   }, []);
 
   const modeConfig = BUILD_MODE_CONFIG[buildMode];
+  const ModeIcon = modeConfig.icon;
 
   return (
     <div
@@ -366,34 +375,39 @@ export function ControlCenterEmptyState({
               />
               <div className="flex-1" />
 
-              {/* Build mode inline selector — Shift+Tab to cycle */}
-              <div
-                className="bg-muted/50 flex items-center gap-0.5 rounded-lg p-0.5"
-                data-testid="build-mode-selector"
-              >
-                {BUILD_MODES.map((mode) => {
-                  const cfg = BUILD_MODE_CONFIG[mode];
-                  const Icon = cfg.icon;
-                  const isActive = buildMode === mode;
-                  return (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => setBuildMode(mode)}
-                      data-testid={`build-mode-${mode}`}
-                      className={cn(
-                        'flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-all duration-150',
-                        isActive
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      <Icon className="h-3 w-3" />
-                      {cfg.label}
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Build mode dropdown — Shift+Tab to cycle */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    data-testid="build-mode-selector"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
+                  >
+                    <ModeIcon className="h-3.5 w-3.5" />
+                    {modeConfig.label}
+                    <ChevronDown className="h-3 w-3 opacity-50" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[160px]">
+                  {BUILD_MODES.map((mode) => {
+                    const cfg = BUILD_MODE_CONFIG[mode];
+                    const Icon = cfg.icon;
+                    const isActive = buildMode === mode;
+                    return (
+                      <DropdownMenuItem
+                        key={mode}
+                        onClick={() => setBuildMode(mode)}
+                        data-testid={`build-mode-${mode}`}
+                        className="flex items-center gap-2"
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        <span className="flex-1">{cfg.label}</span>
+                        {isActive ? <Check className="text-foreground h-3.5 w-3.5" /> : null}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <Tooltip>
                 <TooltipTrigger asChild>
