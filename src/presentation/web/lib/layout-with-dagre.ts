@@ -30,6 +30,7 @@ export function getCanvasLayoutDefaults(dir: 'ltr' | 'rtl' = 'ltr'): LayoutOptio
 const NODE_DIMENSIONS: Record<string, { width: number; height: number }> = {
   featureNode: { width: 388, height: 140 },
   repositoryNode: { width: 400, height: 140 },
+  applicationNode: { width: 416, height: 220 },
 };
 
 function getNodeSize(

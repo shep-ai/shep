@@ -12,9 +12,11 @@ import { FeatureNode } from '@/components/common/feature-node';
 import type { FeatureNodeType, FeatureNodeData } from '@/components/common/feature-node';
 import { RepositoryNode } from '@/components/common/repository-node';
 import type { RepositoryNodeType, RepositoryNodeData } from '@/components/common/repository-node';
+import { ApplicationNode } from '@/components/common/application-node/application-node';
+import type { ApplicationNodeType } from '@/components/common/application-node/application-node-config';
 import { DependencyEdge } from './dependency-edge';
 
-export type CanvasNodeType = FeatureNodeType | RepositoryNodeType;
+export type CanvasNodeType = FeatureNodeType | RepositoryNodeType | ApplicationNodeType;
 
 export interface FeaturesCanvasProps {
   nodes: CanvasNodeType[];
@@ -56,6 +58,7 @@ export function FeaturesCanvas({
     () => ({
       featureNode: FeatureNode,
       repositoryNode: RepositoryNode,
+      applicationNode: ApplicationNode,
     }),
     []
   );

@@ -10,6 +10,7 @@ import type { Edge } from '@xyflow/react';
 import type { CanvasNodeType } from '@/components/features/features-canvas';
 import type { FeatureNodeData } from '@/components/common/feature-node';
 import type { RepositoryNodeData } from '@/components/common/repository-node';
+import type { ApplicationNodeData } from '@/components/common/application-node/application-node-config';
 /** A feature node entry stored in the domain Map. */
 export interface FeatureEntry {
   nodeId: string;
@@ -22,6 +23,12 @@ export interface FeatureEntry {
 export interface RepoEntry {
   nodeId: string;
   data: RepositoryNodeData;
+}
+
+/** An application node entry stored in the domain Map. */
+export interface ApplicationEntry {
+  nodeId: string;
+  data: ApplicationNodeData;
 }
 
 /** Stable callbacks passed by the consumer, injected into derived node data. */
@@ -53,6 +60,10 @@ export interface GraphCallbacks {
   onArchiveFeature?: (featureId: string) => void;
   /** Called when the user unarchives a feature. */
   onUnarchiveFeature?: (featureId: string) => void;
+  /** Called when the user clicks an application node to navigate to its detail page. */
+  onApplicationClick?: (applicationId: string) => void;
+  /** Called when the user deletes an application. */
+  onApplicationDelete?: (applicationId: string) => void;
 }
 
 /**
@@ -68,7 +79,8 @@ export function deriveGraph(
   featureMap: Map<string, FeatureEntry>,
   repoMap: Map<string, RepoEntry>,
   pendingMap: Map<string, FeatureEntry>,
-  callbacks?: GraphCallbacks
+  callbacks?: GraphCallbacks,
+  applicationMap?: Map<string, ApplicationEntry>
 ): { nodes: CanvasNodeType[]; edges: Edge[] } {
   const nodes: CanvasNodeType[] = [];
   const edges: Edge[] = [];
@@ -224,6 +236,27 @@ export function deriveGraph(
         target: nodeId,
         style: { strokeDasharray: '5 5' },
       });
+    }
+  }
+
+  // Add application nodes (independent — no edges to/from other nodes).
+  if (applicationMap) {
+    for (const [nodeId, entry] of applicationMap) {
+      const data: ApplicationNodeData = {
+        ...entry.data,
+        ...(callbacks?.onApplicationClick && {
+          onClick: () => callbacks.onApplicationClick!(entry.data.id),
+        }),
+        ...(callbacks?.onApplicationDelete && {
+          onDelete: callbacks.onApplicationDelete,
+        }),
+      };
+      nodes.push({
+        id: nodeId,
+        type: 'applicationNode',
+        position: { x: 0, y: 0 },
+        data,
+      } as CanvasNodeType);
     }
   }
 

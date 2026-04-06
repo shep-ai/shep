@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { FolderPlus } from 'lucide-react';
+import { FolderPlus, LayoutGrid, Loader2 } from 'lucide-react';
 import type { Edge, Viewport } from '@xyflow/react';
 import { useReactFlow } from '@xyflow/react';
 import { FeaturesCanvas } from '@/components/features/features-canvas';
@@ -31,11 +31,22 @@ import {
   type FloatingActionButtonAction,
 } from '@/components/common/floating-action-button';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import {
   useSidebarFeaturesContext,
   mapNodeStateToSidebarStatus,
 } from '@/hooks/sidebar-features-context';
 import { useTranslation } from 'react-i18next';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
+import { toast } from 'sonner';
+import { createApplication } from '@/app/actions/create-application';
 
 import { useSelectedFeatureId } from '@/hooks/use-selected-feature-id';
 import { useSelectedRepository } from '@/hooks/use-selected-repository';
@@ -93,7 +104,9 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     handleStopFeature,
     handleUnarchiveFeature,
     handleDeleteRepository,
+    handleDeleteApplication,
     createFeatureNode,
+    addApplication,
     showArchived,
     setShowArchived,
     setCallbacks,
@@ -176,6 +189,13 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
   }, [sidebarKey, featureNodes, setSidebarFeatures]);
 
   // ── URL-based navigation handlers ────────────────────────────────────
+
+  const handleApplicationClick = useCallback(
+    (applicationId: string) => {
+      guardedNavigate(() => router.push(`/application/${applicationId}`));
+    },
+    [router, guardedNavigate]
+  );
 
   const handleNodeClick = useCallback(
     (event: React.MouseEvent, node: CanvasNodeType) => {
@@ -331,6 +351,8 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
       onRepositoryAdd: handleAddFeatureToRepo,
       onRepositoryClick: handleRepositoryClick,
       onRepositoryDelete: handleDeleteRepository,
+      onApplicationClick: handleApplicationClick,
+      onApplicationDelete: handleDeleteApplication,
     });
   }, [
     setCallbacks,
@@ -344,6 +366,8 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     handleAddFeatureToRepo,
     handleRepositoryClick,
     handleDeleteRepository,
+    handleApplicationClick,
+    handleDeleteApplication,
   ]);
 
   const handleMoveEnd = useCallback(
@@ -499,6 +523,43 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     <ControlCenterEmptyState onRepositorySelect={addRepoAndFocus} />
   );
 
+  // ── New Application dialog state ────────────────────────────────────
+  const [newAppDialogOpen, setNewAppDialogOpen] = useState(false);
+  const [newAppDescription, setNewAppDescription] = useState('');
+  const [newAppSubmitting, setNewAppSubmitting] = useState(false);
+
+  const handleNewApplicationSubmit = useCallback(async () => {
+    const description = newAppDescription.trim();
+    if (!description) return;
+
+    setNewAppSubmitting(true);
+    try {
+      const result = await createApplication({ description });
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      const app = result.application!;
+      // Optimistic: add application node to the canvas
+      const appNodeId = `app-${app.id}`;
+      addApplication(appNodeId, {
+        id: app.id,
+        name: app.name,
+        description: app.description ?? description,
+        status: app.status ?? 'Idle',
+        repositoryPath: result.repositoryPath ?? '',
+        additionalPathCount: 0,
+      });
+      setNewAppDialogOpen(false);
+      setNewAppDescription('');
+      router.push(`/application/${app.id}`);
+    } catch {
+      toast.error('Failed to create application');
+    } finally {
+      setNewAppSubmitting(false);
+    }
+  }, [newAppDescription, addApplication, router]);
+
   const featureFlags = useFeatureFlags();
 
   // (+) FAB actions — only visible on control center. Action list lives in
@@ -509,6 +570,7 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     guardedNavigate,
     handlePickFolder,
     onNewProject: () => setWorkspaceNewProjectOpen(true),
+    onNewApplication: () => setNewAppDialogOpen(true),
     featureFlags,
   });
 
@@ -617,6 +679,38 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* New Application dialog */}
+      <Dialog open={newAppDialogOpen} onOpenChange={setNewAppDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('fab.newApplication')}</DialogTitle>
+            <DialogDescription>{t('fab.newApplicationDescription')}</DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder={t('fab.newApplicationPlaceholder')}
+            value={newAppDescription}
+            onChange={(e) => setNewAppDescription(e.target.value)}
+            rows={4}
+            disabled={newAppSubmitting}
+          />
+          <DialogFooter>
+            <Button
+              onClick={handleNewApplicationSubmit}
+              disabled={!newAppDescription.trim() || newAppSubmitting}
+            >
+              {newAppSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('fab.creating')}
+                </>
+              ) : (
+                t('fab.create')
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

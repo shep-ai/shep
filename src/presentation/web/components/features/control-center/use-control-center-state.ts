@@ -12,6 +12,7 @@ import {
   getCanvasLayoutDefaults,
   type LayoutDirection,
 } from '@/lib/layout-with-dagre';
+import type { ApplicationNodeData } from '@/components/common/application-node/application-node-config';
 import { archiveFeature } from '@/app/actions/archive-feature';
 import { deleteFeature } from '@/app/actions/delete-feature';
 import { resumeFeature } from '@/app/actions/resume-feature';
@@ -20,6 +21,7 @@ import { stopFeature } from '@/app/actions/stop-feature';
 import { unarchiveFeature } from '@/app/actions/unarchive-feature';
 import { addRepository } from '@/app/actions/add-repository';
 import { deleteRepository } from '@/app/actions/delete-repository';
+import { deleteApplication } from '@/app/actions/delete-application';
 import { getFeatureMetadata } from '@/app/actions/get-feature-metadata';
 import { useAgentEventsContext } from '@/hooks/agent-events-provider';
 import { useDeploymentStatusContext } from '@/hooks/deployment-status-provider';
@@ -62,11 +64,14 @@ export interface ControlCenterState {
     repositoryId: string,
     options?: { deleteFromDisk?: boolean }
   ) => Promise<void>;
+  handleDeleteApplication: (applicationId: string) => Promise<void>;
   createFeatureNode: (
     sourceNodeId: string | null,
     dataOverride?: Partial<FeatureNodeData>,
     edgeType?: string
   ) => string;
+  /** Add an application node to the canvas optimistically. */
+  addApplication: (nodeId: string, data: ApplicationNodeData) => void;
   /** Whether archived features are shown on the canvas. */
   showArchived: boolean;
   /** Toggle archived feature visibility. */
@@ -110,6 +115,8 @@ export function useControlCenterState(
     getFeatureRepositoryPath,
     getRepositoryData,
     getRepoMapSize,
+    addApplication: addApplicationToMap,
+    removeApplication,
     setCallbacks,
     beginMutation,
     endMutation,
@@ -601,6 +608,31 @@ export function useControlCenterState(
     ]
   );
 
+  const handleDeleteApplication = useCallback(
+    async (applicationId: string) => {
+      const appNodeId = `app-${applicationId}`;
+
+      // Optimistic: remove application node
+      beginMutation();
+      removeApplication(appNodeId);
+      deleteSound.play();
+
+      try {
+        const result = await deleteApplication(applicationId);
+        if (result.error) {
+          toast.error(result.error);
+          // Rollback would require storing the previous data; for now we let
+          // the next polling reconcile restore it if the delete actually failed.
+        }
+      } catch {
+        toast.error('Failed to delete application');
+      } finally {
+        endMutation();
+      }
+    },
+    [deleteSound, removeApplication, beginMutation, endMutation]
+  );
+
   const handleLayout = useCallback(
     (direction: LayoutDirection) => {
       // Layout is applied via reconcile on next server prop update.
@@ -684,7 +716,9 @@ export function useControlCenterState(
     handleStopFeature,
     handleUnarchiveFeature,
     handleDeleteRepository,
+    handleDeleteApplication,
     createFeatureNode,
+    addApplication: addApplicationToMap,
     showArchived,
     setShowArchived,
     getFeatureRepositoryPath,

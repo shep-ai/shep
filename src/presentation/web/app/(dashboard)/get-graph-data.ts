@@ -4,6 +4,7 @@ import { IS_WINDOWS } from '@shepai/core/infrastructure/platform';
 import { resolve } from '@/lib/server-container';
 import type { ListFeaturesUseCase } from '@shepai/core/application/use-cases/features/list-features.use-case';
 import type { ListRepositoriesUseCase } from '@shepai/core/application/use-cases/repositories/list-repositories.use-case';
+import type { ListApplicationsUseCase } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 import type { AutoResolveMergedBranchesUseCase } from '@shepai/core/application/use-cases/features/auto-resolve-merged-branches.use-case';
 import type { IAgentRunRepository } from '@shepai/core/application/ports/output/agents/agent-run-repository.interface';
 import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
@@ -145,11 +146,20 @@ export async function getGraphData(): Promise<{
   const listRepos = resolve<ListRepositoriesUseCase>('ListRepositoriesUseCase');
   const agentRunRepo = resolve<IAgentRunRepository>('IAgentRunRepository');
 
+  // Resolve ListApplicationsUseCase — may not be registered in older environments
+  let listApplications: ListApplicationsUseCase | null = null;
+  try {
+    listApplications = resolve<ListApplicationsUseCase>('ListApplicationsUseCase');
+  } catch {
+    // Use case not registered — skip application nodes
+  }
+
   // Always include archived features so the client has full data for instant
   // show/hide toggle without a server round-trip (NFR-3).
-  const [features, repositories] = await Promise.all([
+  const [features, repositories, applications] = await Promise.all([
     listFeatures.execute({ includeArchived: true }),
     listRepos.execute(),
+    listApplications ? listApplications.execute() : Promise.resolve([]),
   ]);
 
   // Read git info from cache (zero git calls). Stale entries trigger
@@ -193,6 +203,7 @@ export async function getGraphData(): Promise<{
     ciWatchEnabled: workflow.ciWatchEnabled,
     repoGitInfo: repoGitInfoMap,
     repoGitStatus: repoGitStatusMap,
+    applications,
   });
 
   // Load all live deployments via the use case. The client-side

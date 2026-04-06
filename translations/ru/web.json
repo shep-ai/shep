@@ -409,7 +409,12 @@
     "newFeature": "Новая функция",
     "localFolder": "Локальная папка",
     "adoptBranch": "Принять ветку",
-    "fromGithub": "Из GitHub"
+    "fromGithub": "Из GitHub",
+    "newApplication": "Новое приложение",
+    "newApplicationDescription": "Опишите приложение, которое вы хотите создать, и Shep настроит его для вас.",
+    "newApplicationPlaceholder": "Опишите, что вы хотите создать...",
+    "creating": "Создание...",
+    "create": "Создать"
   },
   "chat": {
     "shepChat": "Shep Чат",

@@ -22,6 +22,8 @@ import type { IFeatureRepository } from '../../application/ports/output/reposito
 import { SQLiteFeatureRepository } from '../repositories/sqlite-feature.repository.js';
 import type { IRepositoryRepository } from '../../application/ports/output/repositories/repository-repository.interface.js';
 import { SQLiteRepositoryRepository } from '../repositories/sqlite-repository.repository.js';
+import type { IApplicationRepository } from '../../application/ports/output/repositories/application-repository.interface.js';
+import { SQLiteApplicationRepository } from '../repositories/sqlite-application.repository.js';
 
 // Validator interfaces and implementations
 import type { IAgentValidator } from '../../application/ports/output/agents/agent-validator.interface.js';
@@ -145,6 +147,11 @@ import { RebaseFeatureOnMainUseCase } from '../../application/use-cases/features
 import { GetBranchSyncStatusUseCase } from '../../application/use-cases/features/get-branch-sync-status.use-case.js';
 import { ConflictResolutionService } from '../services/agents/conflict-resolution/conflict-resolution.service.js';
 import { AutoResolveMergedBranchesUseCase } from '../../application/use-cases/features/auto-resolve-merged-branches.use-case.js';
+import { CreateApplicationUseCase } from '../../application/use-cases/applications/create-application.use-case.js';
+import { ListApplicationsUseCase } from '../../application/use-cases/applications/list-applications.use-case.js';
+import { GetApplicationUseCase } from '../../application/use-cases/applications/get-application.use-case.js';
+import { DeleteApplicationUseCase } from '../../application/use-cases/applications/delete-application.use-case.js';
+import { UpdateApplicationUseCase } from '../../application/use-cases/applications/update-application.use-case.js';
 
 // Deployment use cases
 import { StartFeatureDeploymentUseCase } from '../../application/use-cases/deployments/start-feature-deployment.use-case.js';
@@ -224,6 +231,13 @@ export async function initializeContainer(): Promise<typeof container> {
     useFactory: (c) => {
       const database = c.resolve<Database.Database>('Database');
       return new SQLiteRepositoryRepository(database);
+    },
+  });
+
+  container.register<IApplicationRepository>('IApplicationRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteApplicationRepository(database);
     },
   });
 
@@ -458,6 +472,11 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(RebaseFeatureOnMainUseCase);
   container.registerSingleton(GetBranchSyncStatusUseCase);
   container.registerSingleton(AutoResolveMergedBranchesUseCase);
+  container.registerSingleton(CreateApplicationUseCase);
+  container.registerSingleton(ListApplicationsUseCase);
+  container.registerSingleton(GetApplicationUseCase);
+  container.registerSingleton(DeleteApplicationUseCase);
+  container.registerSingleton(UpdateApplicationUseCase);
 
   // Deployment use cases
   container.registerSingleton(StartFeatureDeploymentUseCase);
@@ -626,6 +645,21 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('AutoResolveMergedBranchesUseCase', {
     useFactory: (c) => c.resolve(AutoResolveMergedBranchesUseCase),
+  });
+  container.register('CreateApplicationUseCase', {
+    useFactory: (c) => c.resolve(CreateApplicationUseCase),
+  });
+  container.register('ListApplicationsUseCase', {
+    useFactory: (c) => c.resolve(ListApplicationsUseCase),
+  });
+  container.register('GetApplicationUseCase', {
+    useFactory: (c) => c.resolve(GetApplicationUseCase),
+  });
+  container.register('DeleteApplicationUseCase', {
+    useFactory: (c) => c.resolve(DeleteApplicationUseCase),
+  });
+  container.register('UpdateApplicationUseCase', {
+    useFactory: (c) => c.resolve(UpdateApplicationUseCase),
   });
 
   // Register interactive session infrastructure

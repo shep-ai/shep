@@ -387,22 +387,32 @@
 }
 
 @keyframes onboard-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* ─── Onboarding background ───────────────────────────────────────────────── */
 /* Light: warm white with a violet bloom at the bottom.                      */
 /* Dark: deep black with a warm orange glow — bold, not shy.                 */
 .onboard-bg {
-  background:
-    radial-gradient(ellipse 130% 55% at 50% 105%, rgba(124,58,237,0.18), transparent 65%),
+  background: radial-gradient(
+      ellipse 130% 55% at 50% 105%,
+      rgba(237, 189, 58, 0.18),
+      transparent 65%
+    ),
     #f4f4f6;
 }
 
 :is(.dark) .onboard-bg {
-  background:
-    radial-gradient(ellipse 130% 55% at 50% 105%, rgba(234,120,23,0.25), transparent 65%),
+  background: radial-gradient(
+      ellipse 130% 55% at 50% 105%,
+      rgba(234, 121, 23, 0.329),
+      transparent 65%
+    ),
     #0a0a0c;
 }
 

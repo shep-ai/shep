@@ -5,7 +5,7 @@
  */
 
 import { useMemo } from 'react';
-import { FolderOpen, FolderPlus, GitBranch, Github, Sparkles } from 'lucide-react';
+import { FolderOpen, FolderPlus, GitBranch, Github, LayoutGrid, Sparkles } from 'lucide-react';
 import type { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 
@@ -20,6 +20,7 @@ interface UseFabActionsParams {
   guardedNavigate: (fn: () => void) => void;
   handlePickFolder: () => void;
   onNewProject: () => void;
+  onNewApplication: () => void;
   featureFlags: ReturnType<typeof useFeatureFlags>;
 }
 
@@ -29,6 +30,7 @@ export function useFabActions({
   guardedNavigate,
   handlePickFolder,
   onNewProject,
+  onNewApplication,
   featureFlags,
 }: UseFabActionsParams): FloatingActionButtonAction[] {
   const { t } = useTranslation('web');
@@ -59,6 +61,12 @@ export function useFabActions({
         icon: <FolderOpen className="h-4 w-4" />,
         onClick: handlePickFolder,
       },
+      {
+        id: 'new-application',
+        label: t('fab.newApplication'),
+        icon: <LayoutGrid className="h-4 w-4" />,
+        onClick: onNewApplication,
+      },
     ];
     if (featureFlags.adoptBranch) {
       actions.push({
@@ -88,6 +96,7 @@ export function useFabActions({
     router,
     handlePickFolder,
     onNewProject,
+    onNewApplication,
     featureFlags.adoptBranch,
     featureFlags.githubImport,
   ]);

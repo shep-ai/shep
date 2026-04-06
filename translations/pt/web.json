@@ -409,7 +409,12 @@
     "newFeature": "Nova funcionalidade",
     "localFolder": "Pasta local",
     "adoptBranch": "Adotar branch",
-    "fromGithub": "Do GitHub"
+    "fromGithub": "Do GitHub",
+    "newApplication": "Nova Aplicação",
+    "newApplicationDescription": "Descreva a aplicação que deseja construir e o Shep irá configurá-la para você.",
+    "newApplicationPlaceholder": "Descreva o que você quer construir...",
+    "creating": "Criando...",
+    "create": "Criar"
   },
   "chat": {
     "shepChat": "Shep Chat",

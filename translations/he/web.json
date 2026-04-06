@@ -409,7 +409,12 @@
     "newFeature": "פיצ'ר חדש",
     "localFolder": "תיקייה מקומית",
     "adoptBranch": "אימוץ ענף",
-    "fromGithub": "מ-GitHub"
+    "fromGithub": "מ-GitHub",
+    "newApplication": "אפליקציה חדשה",
+    "newApplicationDescription": "תאר את האפליקציה שאתה רוצה לבנות ו-Shep יגדיר אותה עבורך.",
+    "newApplicationPlaceholder": "תאר מה אתה רוצה לבנות...",
+    "creating": "יוצר...",
+    "create": "יצירה"
   },
   "chat": {
     "shepChat": "צ'אט Shep",
