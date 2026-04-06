@@ -17,6 +17,7 @@ import {
   safeYamlLoad,
   createNodeLogger,
   getCompletedPhases,
+  clearCompletedPhase,
 } from './nodes/node-helpers.js';
 
 // Re-export state types for consumers
@@ -53,15 +54,31 @@ function routeReexecution(
  * Factory that creates a conditional edge function for validation routing.
  *
  * Routes to successNode on pass, repairNode on fail, throws after maxRetries.
+ *
+ * When retries are exhausted, clears the producer node's completedPhases entry
+ * before throwing. This ensures that on resume, the producer node re-executes
+ * the full agent instead of skipping (because `executeNode` checks
+ * completedPhases). Without this, a phase that produced empty/unfilled output
+ * would be permanently stuck: the repair node can only fix formatting, not
+ * generate content from scratch, and the producer would skip on every retry.
  */
 function routeValidation(
   successNode: string,
   repairNode: string,
+  producerNode?: string,
   maxRetries = 3
 ): (state: FeatureAgentState) => string {
+  const log = createNodeLogger('routeValidation');
+
   return (state: FeatureAgentState): string => {
     if (state.lastValidationErrors.length === 0) return successNode;
     if (state.validationRetries >= maxRetries) {
+      // Clear the producer's completed phase so that on resume the producer
+      // node re-executes the full agent instead of skipping.
+      if (producerNode) {
+        log.info(`Clearing completed phase '${producerNode}' so retry re-runs the agent`);
+        clearCompletedPhase(state.specDir, producerNode, log);
+      }
       throw new Error(
         `Validation failed after ${maxRetries} repair attempts for '${state.lastValidationTarget}': ${state.lastValidationErrors.join('; ')}`
       );
@@ -223,7 +240,7 @@ export function createFeatureAgentGraph(
     .addEdge('analyze', 'validate_spec_analyze')
     .addConditionalEdges(
       'validate_spec_analyze',
-      routeValidation('requirements', 'repair_spec_analyze')
+      routeValidation('requirements', 'repair_spec_analyze', 'analyze')
     )
     .addEdge('repair_spec_analyze', 'validate_spec_analyze')
 
@@ -233,16 +250,22 @@ export function createFeatureAgentGraph(
     )
     .addConditionalEdges(
       'validate_spec_requirements',
-      routeValidation('research', 'repair_spec_requirements')
+      routeValidation('research', 'repair_spec_requirements', 'requirements')
     )
     .addEdge('repair_spec_requirements', 'validate_spec_requirements')
 
     .addEdge('research', 'validate_research')
-    .addConditionalEdges('validate_research', routeValidation('plan', 'repair_research'))
+    .addConditionalEdges(
+      'validate_research',
+      routeValidation('plan', 'repair_research', 'research')
+    )
     .addEdge('repair_research', 'validate_research')
 
     .addConditionalEdges('plan', routeReexecution('plan', 'validate_plan_tasks'))
-    .addConditionalEdges('validate_plan_tasks', routeValidation('implement', 'repair_plan_tasks'))
+    .addConditionalEdges(
+      'validate_plan_tasks',
+      routeValidation('implement', 'repair_plan_tasks', 'plan')
+    )
     .addEdge('repair_plan_tasks', 'validate_plan_tasks');
 
   // --- Merge node: wired when deps are provided ---
