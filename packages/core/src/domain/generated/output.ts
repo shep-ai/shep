@@ -1742,6 +1742,49 @@ export type Repository = SoftDeletableEntity & {
    */
   upstreamUrl?: string;
 };
+export enum ApplicationStatus {
+  Idle = 'Idle',
+  Active = 'Active',
+  Error = 'Error',
+}
+
+/**
+ * A persistent AI-powered application workspace
+ */
+export type Application = SoftDeletableEntity & {
+  /**
+   * Human-readable application name
+   */
+  name: string;
+  /**
+   * URL-friendly identifier (unique)
+   */
+  slug: string;
+  /**
+   * Original user prompt / purpose description
+   */
+  description: string;
+  /**
+   * Absolute path to the primary repository
+   */
+  repositoryPath: string;
+  /**
+   * Additional linked repository/directory paths (JSON array)
+   */
+  additionalPaths: string[];
+  /**
+   * Chosen agent executor type override
+   */
+  agentType?: string;
+  /**
+   * Chosen model override
+   */
+  modelOverride?: string;
+  /**
+   * Current application status
+   */
+  status: ApplicationStatus;
+};
 
 /**
  * Single installation suggestion for a tool
