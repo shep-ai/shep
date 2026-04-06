@@ -98,6 +98,10 @@ vi.mock('@/app/actions/create-project-and-feature', () => ({
   createProjectAndFeature: vi.fn(() => Promise.resolve({ error: 'Not available in test' })),
 }));
 
+vi.mock('@/app/actions/create-application', () => ({
+  createApplication: vi.fn(() => Promise.resolve({ error: 'Not available in test' })),
+}));
+
 vi.mock('@/app/actions/check-all-agents-status', () => ({
   checkAllAgentsStatus: vi.fn(() => Promise.resolve({ 'claude-code': true })),
 }));

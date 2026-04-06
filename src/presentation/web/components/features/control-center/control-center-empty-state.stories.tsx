@@ -32,5 +32,20 @@ export const WithCallback: Story = {
       // eslint-disable-next-line no-console
       console.log('Selected repository:', path);
     },
+    onApplicationCreated: (appId: string) => {
+      // eslint-disable-next-line no-console
+      console.log('Application created:', appId);
+    },
+  },
+};
+
+/** As overlay — with close button */
+export const AsOverlay: Story = {
+  args: {
+    onClose: () => {
+      // eslint-disable-next-line no-console
+      console.log('Close clicked');
+    },
+    className: 'bg-background',
   },
 };

@@ -1,19 +1,44 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
-import { SendHorizontal, Paperclip, Loader2 } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import {
+  SendHorizontal,
+  Paperclip,
+  Loader2,
+  LayoutGrid,
+  Zap,
+  ClipboardList,
+  ChevronDown,
+  X,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { createProjectAndFeature } from '@/app/actions/create-project-and-feature';
+import { createApplication } from '@/app/actions/create-application';
 import { AgentModelPicker } from '@/components/features/settings/AgentModelPicker';
 import { AttachmentChip } from '@/components/common/attachment-chip';
 import { ShepLogo } from '@/components/common/shep-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Switch } from '@/components/ui/switch';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useAttachments } from '@/hooks/use-attachments';
+
+type BuildMode = 'application' | 'fast' | 'spec';
+
+const BUILD_MODE_CONFIG: Record<BuildMode, { icon: React.ElementType; label: string }> = {
+  application: { icon: LayoutGrid, label: 'Application' },
+  fast: { icon: Zap, label: 'Fast Mode' },
+  spec: { icon: ClipboardList, label: 'Spec Driven' },
+};
 
 export interface ControlCenterEmptyStateProps {
   onRepositorySelect?: (path: string) => void;
+  onApplicationCreated?: (applicationId: string) => void;
+  onClose?: () => void;
   className?: string;
 }
 
@@ -26,18 +51,30 @@ const SUGGESTIONS = [
 
 export function ControlCenterEmptyState({
   onRepositorySelect,
+  onApplicationCreated,
+  onClose,
   className,
 }: ControlCenterEmptyStateProps) {
   const { t } = useTranslation('web');
   const [description, setDescription] = useState('');
   const [overrideAgent, setOverrideAgent] = useState<string | undefined>(undefined);
   const [overrideModel, setOverrideModel] = useState<string | undefined>(undefined);
-  const [specDriven, setSpecDriven] = useState(false);
+  const [buildMode, setBuildMode] = useState<BuildMode>('application');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const att = useAttachments();
+
+  // Allow closing the overlay with Escape
+  useEffect(() => {
+    if (!onClose) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
 
   const handleSubmit = useCallback(async () => {
     if (!description.trim() || submitting) return;
@@ -46,39 +83,72 @@ export function ControlCenterEmptyState({
     setError(null);
 
     try {
-      const result = await createProjectAndFeature({
-        description: description.trim(),
-        attachments: att.completedAttachments.map((a) => ({
-          path: a.path,
-          name: a.name,
-          notes: a.notes,
-        })),
-        agentType: overrideAgent,
-        model: overrideModel,
-        fast: !specDriven,
-      });
+      if (buildMode === 'application') {
+        const result = await createApplication({
+          description: description.trim(),
+          agentType: overrideAgent,
+          modelOverride: overrideModel,
+        });
 
-      if (result.error) {
-        setError(result.error);
-        setSubmitting(false);
-        return;
-      }
+        if (result.error) {
+          setError(result.error);
+          setSubmitting(false);
+          return;
+        }
 
-      if (result.repositoryPath) {
-        onRepositorySelect?.(result.repositoryPath);
-      }
+        if (result.repositoryPath) {
+          onRepositorySelect?.(result.repositoryPath);
+        }
 
-      if (result.feature && result.repositoryPath) {
-        window.dispatchEvent(
-          new CustomEvent('shep:feature-created', {
-            detail: {
-              featureId: result.feature.id,
-              name: result.feature.name,
-              description: result.feature.description,
-              repositoryPath: result.repositoryPath,
-            },
-          })
-        );
+        if (result.application) {
+          window.dispatchEvent(
+            new CustomEvent('shep:application-created', {
+              detail: {
+                applicationId: result.application.id,
+                name: result.application.name,
+                description: result.application.description,
+                repositoryPath: result.repositoryPath,
+                status: result.application.status,
+              },
+            })
+          );
+          onApplicationCreated?.(result.application.id);
+        }
+      } else {
+        const result = await createProjectAndFeature({
+          description: description.trim(),
+          attachments: att.completedAttachments.map((a) => ({
+            path: a.path,
+            name: a.name,
+            notes: a.notes,
+          })),
+          agentType: overrideAgent,
+          model: overrideModel,
+          fast: buildMode === 'fast',
+        });
+
+        if (result.error) {
+          setError(result.error);
+          setSubmitting(false);
+          return;
+        }
+
+        if (result.repositoryPath) {
+          onRepositorySelect?.(result.repositoryPath);
+        }
+
+        if (result.feature && result.repositoryPath) {
+          window.dispatchEvent(
+            new CustomEvent('shep:feature-created', {
+              detail: {
+                featureId: result.feature.id,
+                name: result.feature.name,
+                description: result.feature.description,
+                repositoryPath: result.repositoryPath,
+              },
+            })
+          );
+        }
       }
     } catch {
       setError('Something went wrong. Please try again.');
@@ -87,11 +157,12 @@ export function ControlCenterEmptyState({
   }, [
     description,
     submitting,
+    buildMode,
     att.completedAttachments,
     overrideAgent,
     overrideModel,
-    specDriven,
     onRepositorySelect,
+    onApplicationCreated,
   ]);
 
   const handleKeyDown = useCallback(
@@ -137,6 +208,9 @@ export function ControlCenterEmptyState({
     textareaRef.current?.focus();
   }, []);
 
+  const modeConfig = BUILD_MODE_CONFIG[buildMode];
+  const ModeIcon = modeConfig.icon;
+
   return (
     <div
       data-testid="control-center-empty-state"
@@ -147,6 +221,18 @@ export function ControlCenterEmptyState({
     >
       {/* Gradient background — covers canvas dots */}
       <div className="onboard-bg pointer-events-none absolute inset-0 animate-[onboard-fade-in_1.2s_ease-out_both]" />
+
+      {/* Close button — only shown when used as overlay */}
+      {onClose ? (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="text-muted-foreground hover:text-foreground hover:bg-accent/50 absolute top-4 right-4 z-10 cursor-pointer rounded p-1.5 transition-colors"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      ) : null}
 
       <div className="relative flex w-full max-w-2xl flex-col items-center">
         {/* Shep Logo */}
@@ -245,11 +331,40 @@ export function ControlCenterEmptyState({
               />
               <div className="flex-1" />
 
-              {/* Spec-driven toggle (off = fast mode) */}
-              <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs select-none">
-                <Switch checked={specDriven} onCheckedChange={setSpecDriven} className="scale-75" />
-                Spec driven
-              </label>
+              {/* Build mode dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    data-testid="build-mode-trigger"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex cursor-pointer items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors"
+                  >
+                    <ModeIcon className="h-3.5 w-3.5" />
+                    {modeConfig.label}
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem
+                    onClick={() => setBuildMode('application')}
+                    data-testid="build-mode-application"
+                  >
+                    <LayoutGrid className="mr-2 h-3.5 w-3.5" /> Application
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setBuildMode('fast')}
+                    data-testid="build-mode-fast"
+                  >
+                    <Zap className="mr-2 h-3.5 w-3.5" /> Fast Mode
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setBuildMode('spec')}
+                    data-testid="build-mode-spec"
+                  >
+                    <ClipboardList className="mr-2 h-3.5 w-3.5" /> Spec Driven
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <Tooltip>
                 <TooltipTrigger asChild>

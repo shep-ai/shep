@@ -48,6 +48,10 @@ vi.mock('@/app/actions/create-project-and-feature', () => ({
   createProjectAndFeature: vi.fn(() => Promise.resolve({ error: 'Not available in test' })),
 }));
 
+vi.mock('@/app/actions/create-application', () => ({
+  createApplication: vi.fn(() => Promise.resolve({ error: 'Not available in test' })),
+}));
+
 import { ControlCenterEmptyState } from '@/components/features/control-center/control-center-empty-state';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
