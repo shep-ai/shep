@@ -46,12 +46,10 @@ describe('ClaudeCodeInteractiveExecutor', () => {
       capturedOptions = opts;
       return mockSession;
     });
-    mockResumeSession.mockImplementation(
-      (_id: string, opts: Record<string, unknown>) => {
-        capturedOptions = opts;
-        return mockSession;
-      }
-    );
+    mockResumeSession.mockImplementation((_id: string, opts: Record<string, unknown>) => {
+      capturedOptions = opts;
+      return mockSession;
+    });
 
     executor = new ClaudeCodeInteractiveExecutor();
   });
@@ -150,11 +148,7 @@ describe('ClaudeCodeInteractiveExecutor', () => {
       ) => Promise<{ behavior: string; updatedInput?: Record<string, unknown> }>;
 
       const questions = [{ id: 'q1', text: 'What is your name?' }];
-      const result = await canUseTool(
-        'AskUserQuestion',
-        { questions },
-        { toolUseID: 'tu_ask' }
-      );
+      const result = await canUseTool('AskUserQuestion', { questions }, { toolUseID: 'tu_ask' });
 
       expect(result.behavior).toBe('allow');
       expect(result.updatedInput).toEqual({
