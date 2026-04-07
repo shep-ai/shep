@@ -7,7 +7,26 @@
 
 import { test, expect } from '@playwright/test';
 
+// These tests mutate the global server-side language setting which is shared
+// across all Playwright workers via the reused dev:web server. Run them
+// serially and reset to English after each test so concurrent tests in other
+// files don't see polluted UI language.
+test.describe.configure({ mode: 'serial' });
+
 test.describe('i18n: language switching', () => {
+  test.afterEach(async ({ page }) => {
+    try {
+      await page.goto('/settings');
+      await page.waitForLoadState('networkidle');
+      const languageSelect = page.getByTestId('language-select');
+      await languageSelect.click();
+      await page.getByRole('option', { name: 'English' }).click();
+      await page.waitForTimeout(500);
+    } catch {
+      // Best-effort cleanup; do not fail the test on cleanup error
+    }
+  });
+
   test('switching to Russian updates UI text immediately', async ({ page }) => {
     // Navigate to settings page
     await page.goto('/settings');

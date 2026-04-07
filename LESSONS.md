@@ -199,3 +199,26 @@ When a use case is called from a web server action via `resolve<T>('StringToken'
 **Rule:** Nodes that manually call `buildExecutorOptions` (merge, implement, fast-implement, evidence) MUST pass their own node name: `buildExecutorOptions(state, undefined, 'merge')`. The `executeNode()` helper already does this correctly (line 572 of node-helpers.ts).
 
 **Prevention:** When adding a new node that doesn't use `executeNode()`, always pass the explicit node name to `buildExecutorOptions`.
+
+## Web E2E Test Failures Caused by Persistent DB State (Language Setting)
+
+The i18n language-switching tests (`tests/e2e/web/i18n-language-switching.spec.ts`) write to `settings.user_preferred_language` in the dev:web database (`~/.shep/data`) and **never reset it back to English**. Because Playwright runs against a reused dev server (`reuseExistingServer: !process.env.CI`), the language stays set to whatever the last i18n test selected (typically `ru` for Russian).
+
+**Symptom:** Subsequent web e2e tests like `chat-tab.spec.ts`, `copy-worktree-path.spec.ts`, and `optimistic-node-clickability.spec.ts` fail because they look for English UI text via accessible names (e.g. `getByRole('textbox', { name: /message|write/i })`) but the textbox accessible name is now `"Напишите сообщение..."` (Russian).
+
+**Diagnosis:** Inspect the playwright `error-context.md` snapshot for non-English text. Check `sqlite3 ~/.shep/data "SELECT user_preferred_language FROM settings;"` — if it returns `ru`, `ar`, or `es`, the i18n tests left state behind.
+
+**Workaround:** `sqlite3 ~/.shep/data "UPDATE settings SET user_preferred_language='en';"` and re-run the failing tests.
+
+**Permanent fix applied:** `i18n-language-switching.spec.ts` now uses `test.describe.configure({ mode: 'serial' })` plus an `afterEach` that resets language back to English via the UI dropdown. This prevents the language from persisting in the shared dev:web settings DB after the suite completes.
+
+**Caveat — parallel race window remains:** Even with `afterEach` cleanup, Playwright's default 5-worker parallelism means tests in OTHER files can still run concurrently with the i18n tests, briefly seeing a non-English language during the window between "switch to X" and "reset to English". A complete fix requires either:
+1. Run i18n tests in their own Playwright project (isolated worker)
+2. Mark all UI tests as `serial` globally
+3. Move language storage from a shared singleton to a per-test cookie/header
+
+For the same reason, `chat-tab.spec.ts` "Chat tab is absent when interactiveAgent.enabled = false" can race with the "happy path" test in the same file when both run in parallel — the global `interactive_agent_enabled` setting on the shared dev server is mutated by both tests. Passes in isolation; flakes under parallel execution.
+
+Similarly, `optimistic-node-clickability.spec.ts` is gated on `test.skip(!hasFeatures, ...)` — it requires other tests to seed feature nodes in the DB before it runs. Run alone, it skips. Run with other tests, it depends on prior test side effects.
+
+These three flakes exist independently of any feature branch work. They will appear on `main` as well. Properly fixing them is a test infrastructure project.
