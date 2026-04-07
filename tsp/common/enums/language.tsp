@@ -18,6 +18,9 @@ enum Language {
   @doc("English")
   English: "en",
 
+  @doc("Ukrainian")
+  Ukrainian: "uk",
+
   @doc("Russian")
   Russian: "ru",
 

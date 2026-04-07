@@ -1,6 +1,6 @@
 {
   "name": "@shepai/cli",
-  "version": "1.175.0",
+  "version": "1.177.0",
   "description": "Autonomous AI Native SDLC Platform - Automate the development cycle from idea to deploy",
   "type": "module",
   "license": "MIT",
@@ -83,7 +83,13 @@
     "spec:validate": "tsx scripts/spec-validate.ts",
     "cli": "tsx src/presentation/cli/index.ts",
     "prepare": "husky",
-    "validate": "pnpm run lint:fix && pnpm run format && pnpm run typecheck && pnpm run tsp:compile"
+    "validate": "pnpm run lint:fix && pnpm run format && pnpm run typecheck && pnpm run tsp:compile",
+    "electron:dev": "pnpm --filter @shepai/electron dev",
+    "electron:compile": "pnpm --filter @shepai/electron compile",
+    "electron:build": "pnpm --filter @shepai/electron build",
+    "electron:build:mac": "pnpm --filter @shepai/electron build:mac",
+    "electron:build:win": "pnpm --filter @shepai/electron build:win",
+    "electron:build:linux": "pnpm --filter @shepai/electron build:linux"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",
@@ -166,6 +172,8 @@
     "onlyBuiltDependencies": [
       "better-sqlite3",
       "esbuild",
+      "electron",
+      "electron-winstaller",
       "sharp"
     ],
     "overrides": {

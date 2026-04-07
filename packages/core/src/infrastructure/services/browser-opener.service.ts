@@ -1,4 +1,5 @@
 import { execFile as cpExecFile, type ChildProcess } from 'node:child_process';
+import type { IBrowserOpener } from '../../application/ports/output/services/i-browser-opener.js';
 
 export interface BrowserOpenerDeps {
   platform: NodeJS.Platform;
@@ -25,7 +26,7 @@ const PLATFORM_COMMANDS: Record<string, { cmd: string; args: (url: string) => st
   win32: { cmd: 'cmd', args: (url) => ['/c', 'start', '', url] },
 };
 
-export class BrowserOpenerService {
+export class BrowserOpenerService implements IBrowserOpener {
   private deps: BrowserOpenerDeps;
 
   constructor(deps: Partial<BrowserOpenerDeps> = {}) {

@@ -1,0 +1,95 @@
+=== IBrowserOpener Port Interface ===
+/**
+ * Browser Opener Interface
+ *
+ * Output port for opening URLs in the user's default browser.
+ * Infrastructure layer provides concrete implementations:
+ * - BrowserOpenerService — default, uses platform-specific commands (open, xdg-open, cmd start)
+ * - ElectronBrowserOpener — used when running inside Electron (focuses BrowserWindow or shell.openExternal)
+ *
+ * Following Clean Architecture:
+ * - Application layer depends on this interface
+ * - Infrastructure layer provides concrete implementations
+ */
+
+/**
+ * Port interface for opening URLs in the user's browser or app window.
+ *
+ * Implementations must:
+ * - Handle errors gracefully (log, never throw)
+ * - Degrade gracefully in non-interactive environments (CI, piped I/O)
+ */
+export interface IBrowserOpener {
+  /**
+   * Open a URL in the user's default browser or application window.
+   *
+   * @param url - The URL to open
+   */
+  open(url: string): void;
+}
+
+=== IDesktopNotifier Port Interface ===
+/**
+ * Desktop Notifier Interface
+ *
+ * Output port for sending native OS desktop notifications.
+ * Infrastructure layer provides concrete implementations:
+ * - DesktopNotifier (node-notifier) — default for CLI/web contexts
+ * - ElectronDesktopNotifier — used when running inside Electron
+ *
+ * Following Clean Architecture:
+ * - Application layer depends on this interface
+ * - Infrastructure layer provides concrete implementations
+ */
+
+/**
+ * Port interface for sending native OS desktop notifications.
+ *
+ * Implementations must:
+ * - Sanitize input to prevent injection (shell metacharacters, length limits)
+ * - Handle errors gracefully (log, never throw)
+ */
+export interface IDesktopNotifier {
+  /**
+   * Send a native OS desktop notification.
+   *
+   * @param title - Notification title
+   * @param body - Notification body text
+   */
+  send(title: string, body: string): void;
+}
+
+=== DI Container Registration (IBrowserOpener and DesktopNotifier tokens) ===
+56:import type { IBrowserOpener } from '../../application/ports/output/services/i-browser-opener.js';
+57-import { BrowserOpenerService } from '../services/browser-opener.service.js';
+58-
+59-// Agent infrastructure interfaces and implementations
+60-import type { IAgentExecutorFactory } from '../../application/ports/output/agents/agent-executor-factory.interface.js';
+61-import type { IAgentExecutorProvider } from '../../application/ports/output/agents/agent-executor-provider.interface.js';
+--
+80:import { DesktopNotifier } from '../services/notifications/desktop-notifier.js';
+81-import { NotificationService } from '../services/notifications/notification.service.js';
+82-import { getNotificationBus } from '../services/notifications/notification-bus.js';
+83-import { spawn } from 'node:child_process';
+84-
+85-// Use cases
+--
+355:  container.register('DesktopNotifier', {
+356:    useFactory: () => new DesktopNotifier(),
+357-  });
+358-
+359-  container.register<INotificationService>('INotificationService', {
+360-    useFactory: (c) => {
+361-      const bus = c.resolve('NotificationEventBus') as ReturnType<typeof getNotificationBus>;
+362:      const desktopNotif = c.resolve('DesktopNotifier') as DesktopNotifier;
+363-      return new NotificationService(bus, desktopNotif);
+364-    },
+365-  });
+366-
+367-  // Register browser opener service
+368:  container.register<IBrowserOpener>('IBrowserOpener', {
+369-    useFactory: () => new BrowserOpenerService(),
+370-  });
+371-
+372-  // Register use cases (singletons for performance)
+373-  container.registerSingleton(InitializeSettingsUseCase);

@@ -59,6 +59,8 @@ import { DeploymentService } from '../services/deployment/deployment.service.js'
 import { AttachmentStorageService } from '../services/attachment-storage.service.js';
 import type { IGitHubRepositoryService } from '../../application/ports/output/services/github-repository-service.interface.js';
 import { GitHubRepositoryService } from '../services/external/github-repository.service.js';
+import type { IBrowserOpener } from '../../application/ports/output/services/i-browser-opener.js';
+import { BrowserOpenerService } from '../services/browser-opener.service.js';
 
 // Agent infrastructure interfaces and implementations
 import type { IAgentExecutorFactory } from '../../application/ports/output/agents/agent-executor-factory.interface.js';
@@ -379,6 +381,11 @@ export async function initializeContainer(): Promise<typeof container> {
       const desktopNotif = c.resolve('DesktopNotifier') as DesktopNotifier;
       return new NotificationService(bus, desktopNotif);
     },
+  });
+
+  // Register browser opener service
+  container.register<IBrowserOpener>('IBrowserOpener', {
+    useFactory: () => new BrowserOpenerService(),
   });
 
   // Register use cases (singletons for performance)

@@ -1,0 +1,4 @@
+
+> @shepai/cli@1.172.0 typecheck /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-electron-desktop-wrapper
+> tsc --noEmit
+

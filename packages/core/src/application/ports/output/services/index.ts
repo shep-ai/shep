@@ -67,3 +67,5 @@ export type {
   ScaffoldProjectResult,
 } from './project-scaffold-service.interface.js';
 export type { IAgentAuthDetectorService } from './agent-auth-detector.interface.js';
+export type { IDesktopNotifier } from './i-desktop-notifier.js';
+export type { IBrowserOpener } from './i-browser-opener.js';

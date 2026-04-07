@@ -464,6 +464,60 @@ describe('createFeatureAgentGraph', () => {
     });
   });
 
+  describe('validation retry clears completed phase for re-run', () => {
+    it('should clear producer completed phase when validation retries are exhausted', async () => {
+      // Set up spec files so that analyze + requirements pass, but the
+      // research YAML is invalid (missing required fields). The
+      // validate/repair loop will exhaust retries and should clear the
+      // 'research' completed phase so that on retry the agent re-runs.
+      const INVALID_RESEARCH = 'name: test\n'; // Missing required fields: summary, content, decisions
+
+      mockReadFileSync.mockImplementation((path: string) => {
+        if (typeof path === 'string') {
+          if (path.endsWith('spec.yaml')) return MOCK_SPEC_YAML;
+          if (path.endsWith('research.yaml')) return INVALID_RESEARCH;
+          if (path.endsWith('plan.yaml')) return MOCK_PLAN_YAML;
+          if (path.endsWith('tasks.yaml')) return MOCK_TASKS_YAML;
+          if (path.endsWith('feature.yaml')) return MOCK_FEATURE_YAML;
+        }
+        return '';
+      });
+
+      const compiled = createFeatureAgentGraph(mockExecutor, checkpointer);
+      const config = { configurable: { thread_id: 'retry-clear-phase-thread' } };
+
+      // First invocation: analyze + requirements pass, research runs but
+      // produces invalid YAML. The validate/repair loop exhausts retries
+      // and throws.
+      await expect(
+        compiled.invoke(
+          {
+            featureId: 'feat-retry',
+            repositoryPath: '/test/repo',
+            worktreePath: '/test/repo',
+            specDir: '/test/specs/001-retry',
+            enableEvidence: true,
+            commitEvidence: false,
+          },
+          config
+        )
+      ).rejects.toThrow(/Validation failed after 3 repair attempts/);
+
+      // Verify that writeFileSync was called to clear the 'research' phase
+      // from completedPhases in feature.yaml. The last feature.yaml write
+      // should NOT contain 'research' in completedPhases.
+      const writeFileCalls = mockWriteFileSync.mock.calls as unknown[][];
+      const featureYamlWrites = writeFileCalls.filter(
+        (call) => typeof call[0] === 'string' && call[0].endsWith('feature.yaml')
+      );
+
+      expect(featureYamlWrites.length).toBeGreaterThan(0);
+      const lastWrite = featureYamlWrites[featureYamlWrites.length - 1][1] as string;
+      // After clearing, completedPhases should not contain 'research'
+      expect(lastWrite).not.toContain('"research"');
+    });
+  });
+
   describe('state persistence with checkpointer', () => {
     it('should persist state across invocations via checkpointer', async () => {
       setupSpecFileMocks();

@@ -1,0 +1,208 @@
+=== packages/electron/ Source Files ===
+packages/electron/src/adapters/electron-browser-opener.ts
+packages/electron/src/adapters/electron-desktop-notifier.ts
+packages/electron/src/app.ts
+packages/electron/src/bootstrap.ts
+packages/electron/src/electron-adapters.ts
+packages/electron/src/ipc/channels.ts
+packages/electron/src/ipc/constants.ts
+packages/electron/src/main.ts
+packages/electron/src/port-conflict.ts
+packages/electron/src/preload.ts
+packages/electron/src/resolve-web-dir.ts
+packages/electron/src/splash.html
+packages/electron/src/tray.ts
+packages/electron/src/update-checker.ts
+
+=== packages/electron/ Test Files ===
+tests/unit/electron/adapters/electron-browser-opener.test.ts
+tests/unit/electron/adapters/electron-desktop-notifier.test.ts
+tests/unit/electron/app-wiring.test.ts
+tests/unit/electron/bootstrap.test.ts
+tests/unit/electron/ipc/channels.test.ts
+tests/unit/electron/main.test.ts
+tests/unit/electron/port-conflict.test.ts
+tests/unit/electron/preload.test.ts
+tests/unit/electron/resolve-web-dir.test.ts
+tests/unit/electron/tray.test.ts
+tests/unit/electron/update-checker.test.ts
+
+=== packages/electron/ Resource Assets ===
+packages/electron/resources/icon.icns
+packages/electron/resources/icon.ico
+packages/electron/resources/icon.png
+packages/electron/resources/tray.ico
+packages/electron/resources/tray.png
+packages/electron/resources/trayTemplate.png
+packages/electron/resources/trayTemplate@2x.png
+
+=== pnpm-workspace.yaml ===
+# pnpm workspace configuration
+
+packages:
+  # Root package (main CLI)
+  - '.'
+  # Core package (domain, application, infrastructure layers)
+  - 'packages/core'
+  # Web UI package
+  - 'src/presentation/web'
+  # Electron desktop app
+  - 'packages/electron'
+
+=== packages/electron/package.json (scripts section) ===
+{
+  "name": "@shepai/electron",
+  "scripts": {
+    "dev": "electron .",
+    "compile": "node scripts/build.mjs",
+    "build": "node scripts/build.mjs && electron-builder --publish never",
+    "build:mac": "node scripts/build.mjs && electron-builder --mac --publish never",
+    "build:win": "node scripts/build.mjs && electron-builder --win --publish never",
+    "build:linux": "node scripts/build.mjs && electron-builder --linux --publish never",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": [
+    "@electron/rebuild",
+    "electron",
+    "electron-builder",
+    "esbuild",
+    "typescript"
+  ],
+  "dependencies": [
+    "electron-window-state",
+    "reflect-metadata",
+    "tsyringe",
+    "better-sqlite3",
+    "next",
+    "react",
+    "react-dom",
+    "js-yaml",
+    "node-notifier",
+    "umzug",
+    "ajv",
+    "ajv-formats",
+    "which",
+    "@langchain/langgraph",
+    "@langchain/langgraph-checkpoint-sqlite",
+    "@langchain/core"
+  ]
+}
+
+=== packages/electron/tsconfig.json ===
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "declaration": true,
+    "declarationMap": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": ".",
+    "paths": {
+      "@shepai/core": ["../core/src/index.ts"],
+      "@shepai/core/*": ["../core/src/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+
+=== packages/electron/electron-builder.yml ===
+# electron-builder configuration
+# Docs: https://www.electron.build/configuration.html
+
+appId: 'ai.shep.desktop'
+productName: 'Shep'
+copyright: 'Copyright © 2024-2026 Shep AI'
+
+# The compiled JS output directory
+directories:
+  buildResources: 'resources'
+  output: 'release'
+  app: '.'
+
+# Use the compiled JS entry point
+files:
+  - 'dist/**/*'
+  - 'resources/**/*'
+  - 'package.json'
+  - '!src/**/*'
+  - '!scripts/**/*'
+  - '!tsconfig*.json'
+  - '!electron-builder.yml'
+  - '!**/*.ts'
+  - '!dist/**/*.map'
+
+# Rebuild native modules (better-sqlite3) for Electron's Node.js ABI
+npmRebuild: true
+
+# Native .node binaries cannot load from inside ASAR archives
+asar: true
+asarUnpack:
+  - '**/node_modules/better-sqlite3/**'
+  - '**/node_modules/bindings/**'
+  - '**/node_modules/file-uri-to-path/**'
+
+# Copy the pre-built web UI into the packaged app's resources
+extraResources:
+  - from: '../../web'
+    to: 'web'
+    filter:
+      - '**/*'
+      - '!**/*.map'
+
+# macOS configuration
+mac:
+  target:
+    - target: 'dmg'
+      arch:
+        - 'x64'
+        - 'arm64'
+  icon: 'resources/icon.icns'
+  category: 'public.app-category.developer-tools'
+  darkModeSupport: true
+
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: 'link'
+      path: '/Applications'
+
+# Windows configuration
+win:
+  target:
+    - target: 'nsis'
+      arch:
+        - 'x64'
+  icon: 'resources/icon.ico'
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: 'resources/icon.ico'
+  uninstallerIcon: 'resources/icon.ico'
+
+# Linux configuration
+linux:
+  target:
+    - target: 'AppImage'
+      arch:
+        - 'x64'
+  icon: 'resources/icon.png'
+  category: 'Development'
+  synopsis: 'Autonomous AI Native SDLC Platform'
+  description: 'Shep — AI-powered software development lifecycle automation'

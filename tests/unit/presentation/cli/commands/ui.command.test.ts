@@ -37,6 +37,9 @@ vi.mock('@/infrastructure/di/container.js', () => ({
       if (token === 'IWebServerService') {
         return mockWebServerService;
       }
+      if (token === 'IBrowserOpener') {
+        return { open: mockBrowserOpen };
+      }
       // Return empty stubs for notification-related and PR sync services
       if (
         token === 'IAgentRunRepository' ||
@@ -93,17 +96,11 @@ vi.mock('@/infrastructure/services/auto-archive/auto-archive-watcher.service.js'
   }),
 }));
 
-// Mock BrowserOpenerService — use a class so `new` works
+// Mock IBrowserOpener — resolved from DI container
 const mockBrowserOpen = vi.fn();
-vi.mock('@/infrastructure/services/browser-opener.service.js', () => ({
-  BrowserOpenerService: vi.fn().mockImplementation(function () {
-    return { open: mockBrowserOpen };
-  }),
-}));
 
 import { findAvailablePort } from '@/infrastructure/services/port.service.js';
 import { resolveWebDir } from '@/infrastructure/services/web-server.service.js';
-import { BrowserOpenerService } from '@/infrastructure/services/browser-opener.service.js';
 import { createUiCommand } from '../../../../../src/presentation/cli/commands/ui.command.js';
 
 describe('UI Command', () => {
@@ -223,7 +220,6 @@ describe('UI Command', () => {
 
       await cmd.parseAsync([], { from: 'user' });
 
-      expect(BrowserOpenerService).toHaveBeenCalled();
       expect(mockBrowserOpen).toHaveBeenCalledWith('http://localhost:4050');
       consoleSpy.mockRestore();
     });

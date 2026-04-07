@@ -11,12 +11,13 @@
  */
 
 import notifier from 'node-notifier';
+import type { IDesktopNotifier } from '../../../application/ports/output/services/i-desktop-notifier.js';
 
 const SHELL_METACHAR_REGEX = /[`$|;&()<>]/g;
 const MAX_TITLE_LENGTH = 100;
 const MAX_BODY_LENGTH = 500;
 
-export class DesktopNotifier {
+export class DesktopNotifier implements IDesktopNotifier {
   /**
    * Send a native OS desktop notification.
    *

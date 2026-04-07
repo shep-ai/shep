@@ -3,6 +3,7 @@ import {
   BrowserOpenerService,
   type BrowserOpenerDeps,
 } from '@/infrastructure/services/browser-opener.service.js';
+import type { IBrowserOpener } from '@/application/ports/output/services/i-browser-opener.js';
 
 function createMockChild() {
   return { unref: vi.fn() };
@@ -28,6 +29,11 @@ function createService(platform: NodeJS.Platform, execFileError?: Error) {
 }
 
 describe('BrowserOpenerService', () => {
+  it('should be assignable to IBrowserOpener', () => {
+    const opener: IBrowserOpener = new BrowserOpenerService();
+    expect(opener.open).toBeTypeOf('function');
+  });
+
   const testUrl = 'http://localhost:3000';
 
   describe('darwin (macOS)', () => {

@@ -1,0 +1,143 @@
+=== electron-builder.yml Configuration ===
+# electron-builder configuration
+# Docs: https://www.electron.build/configuration.html
+
+appId: 'ai.shep.desktop'
+productName: 'Shep'
+copyright: 'Copyright © 2024-2026 Shep AI'
+
+# The compiled JS output directory
+directories:
+  buildResources: 'resources'
+  output: 'release'
+  app: '.'
+
+# Use the compiled JS entry point
+files:
+  - 'dist/**/*'
+  - 'resources/**/*'
+  - 'package.json'
+  - '!src/**/*'
+  - '!scripts/**/*'
+  - '!tsconfig*.json'
+  - '!electron-builder.yml'
+  - '!**/*.ts'
+  - '!dist/**/*.map'
+
+# Rebuild native modules (better-sqlite3) for Electron's Node.js ABI
+npmRebuild: true
+
+# Native .node binaries cannot load from inside ASAR archives
+asar: true
+asarUnpack:
+  - '**/node_modules/better-sqlite3/**'
+  - '**/node_modules/bindings/**'
+  - '**/node_modules/file-uri-to-path/**'
+
+# Copy the pre-built web UI into the packaged app's resources
+extraResources:
+  - from: '../../web'
+    to: 'web'
+    filter:
+      - '**/*'
+      - '!**/*.map'
+
+# macOS configuration
+mac:
+  target:
+    - target: 'dmg'
+      arch:
+        - 'x64'
+        - 'arm64'
+  icon: 'resources/icon.icns'
+  category: 'public.app-category.developer-tools'
+  darkModeSupport: true
+
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: 'link'
+      path: '/Applications'
+
+# Windows configuration
+win:
+  target:
+    - target: 'nsis'
+      arch:
+        - 'x64'
+  icon: 'resources/icon.ico'
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: 'resources/icon.ico'
+  uninstallerIcon: 'resources/icon.ico'
+
+# Linux configuration
+linux:
+  target:
+    - target: 'AppImage'
+      arch:
+        - 'x64'
+  icon: 'resources/icon.png'
+  category: 'Development'
+  synopsis: 'Autonomous AI Native SDLC Platform'
+  description: 'Shep — AI-powered software development lifecycle automation'
+
+=== packages/electron/package.json Build Scripts ===
+{
+  "dev": "electron .",
+  "compile": "node scripts/build.mjs",
+  "build": "node scripts/build.mjs && electron-builder --publish never",
+  "build:mac": "node scripts/build.mjs && electron-builder --mac --publish never",
+  "build:win": "node scripts/build.mjs && electron-builder --win --publish never",
+  "build:linux": "node scripts/build.mjs && electron-builder --linux --publish never",
+  "typecheck": "tsc --noEmit"
+}
+
+=== Source Files Count ===
+Source files in packages/electron/src/:
+      14
+packages/electron/src/adapters/electron-browser-opener.ts
+packages/electron/src/adapters/electron-desktop-notifier.ts
+packages/electron/src/app.ts
+packages/electron/src/bootstrap.ts
+packages/electron/src/electron-adapters.ts
+packages/electron/src/ipc/channels.ts
+packages/electron/src/ipc/constants.ts
+packages/electron/src/main.ts
+packages/electron/src/port-conflict.ts
+packages/electron/src/preload.ts
+packages/electron/src/resolve-web-dir.ts
+packages/electron/src/splash.html
+packages/electron/src/tray.ts
+packages/electron/src/update-checker.ts
+
+=== Icon Assets ===
+packages/electron/resources/icon.icns
+packages/electron/resources/icon.ico
+packages/electron/resources/icon.png
+packages/electron/resources/tray.ico
+packages/electron/resources/tray.png
+packages/electron/resources/trayTemplate.png
+packages/electron/resources/trayTemplate@2x.png
+
+=== TypeCheck Result ===
+
+> @shepai/cli@1.172.0 typecheck /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-electron-desktop-wrapper
+> tsc --noEmit
+
+
+=== Build Result ===
+
+> @shepai/cli@1.172.0 build /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-electron-desktop-wrapper
+> pnpm build:cli
+
+
+> @shepai/cli@1.172.0 build:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-electron-desktop-wrapper
+> tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths && shx mkdir -p dist/packages/core/src/infrastructure/services/tool-installer && shx rm -rf dist/packages/core/src/infrastructure/services/tool-installer/tools && shx cp -r packages/core/src/infrastructure/services/tool-installer/tools dist/packages/core/src/infrastructure/services/tool-installer/tools && shx rm -rf dist/translations && shx cp -r translations dist/translations
+

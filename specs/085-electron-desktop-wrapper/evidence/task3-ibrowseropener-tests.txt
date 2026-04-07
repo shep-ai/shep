@@ -1,0 +1,18 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-electron-desktop-wrapper[39m
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/adapters/electron-browser-opener.test.ts[2m > [22mElectronBrowserOpener[2m > [22mfocuses BrowserWindow for localhost:port URLs[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/adapters/electron-browser-opener.test.ts[2m > [22mElectronBrowserOpener[2m > [22mfocuses BrowserWindow for localhost:port/path URLs[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/adapters/electron-browser-opener.test.ts[2m > [22mElectronBrowserOpener[2m > [22mfocuses BrowserWindow for 127.0.0.1:port URLs[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/adapters/electron-browser-opener.test.ts[2m > [22mElectronBrowserOpener[2m > [22mcalls openExternal for external URLs[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/adapters/electron-browser-opener.test.ts[2m > [22mElectronBrowserOpener[2m > [22mcalls openExternal for localhost URLs on a different port[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/adapters/electron-browser-opener.test.ts[2m > [22mElectronBrowserOpener[2m > [22mhandles destroyed window gracefully (no throw)[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/adapters/electron-browser-opener.test.ts[2m > [22mElectronBrowserOpener[2m > [22mhandles null window gracefully[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/adapters/electron-browser-opener.test.ts[2m > [22mElectronBrowserOpener[2m > [22mcatches errors from openExternal and warns[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/adapters/electron-browser-opener.test.ts[2m > [22mElectronBrowserOpener[2m > [22mdoes not navigate main window for root localhost URL[32m 0[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m9 passed[39m[22m[90m (9)[39m
+[2m   Start at [22m 03:42:03
+[2m   Duration [22m 218ms[2m (transform 100ms, setup 107ms, import 24ms, tests 5ms, environment 0ms)[22m
+

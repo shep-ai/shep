@@ -1,0 +1,241 @@
+name: "electron-desktop-wrapper"
+summary: >
+  Package the shep Next.js web UI as a native Electron desktop app. The implementation
+  follows a phased approach: (1) scaffold the workspace package and core port interfaces,
+  (2) build the Electron main process with bootstrap, window management, and tray,
+  (3) create Electron-specific adapters and IPC bridge, (4) configure packaging with
+  electron-builder and native module rebuilding, (5) add CI pipeline for cross-platform
+  builds. All existing behavior is preserved — Electron-specific code lives exclusively
+  in packages/electron/ and adapters are wired via post-initialization DI token replacement.
+
+relatedFeatures: []
+technologies:
+  - "Electron 35.x"
+  - "electron-builder 26.x"
+  - "@electron/rebuild"
+  - "electron-window-state"
+  - "Next.js 16"
+  - "better-sqlite3 (native addon)"
+  - "tsyringe (DI container)"
+  - "pnpm workspaces"
+  - "contextBridge / preload scripts"
+relatedLinks:
+  - title: "Electron Documentation"
+    url: "https://www.electronjs.org/docs/latest"
+  - title: "electron-builder Configuration"
+    url: "https://www.electron.build/configuration.html"
+  - title: "Electron Security Best Practices"
+    url: "https://www.electronjs.org/docs/latest/tutorial/security"
+  - title: "electron-window-state"
+    url: "https://github.com/mawie81/electron-window-state"
+  - title: "@electron/rebuild"
+    url: "https://github.com/electron/rebuild"
+
+phases:
+  - id: "phase-1"
+    name: "Foundation — Workspace Scaffold & Core Port Interfaces"
+    description: >
+      Create the packages/electron/ workspace package with package.json, tsconfig.json,
+      and basic directory structure. Add IDesktopNotifier and IBrowserOpener port interfaces
+      to packages/core/src/application/ports/. Make existing DesktopNotifier and
+      BrowserOpenerService implement these interfaces (no logic changes). Register
+      BrowserOpenerService in the DI container (it currently is not). This phase establishes
+      the foundation that all subsequent phases build upon — it must come first because
+      Electron code imports from @shepai/core, and the adapters implement core interfaces.
+    parallel: false
+
+  - id: "phase-2"
+    name: "Electron Main Process — Bootstrap, Window & Tray"
+    description: >
+      Build the Electron main process entry point (main.ts) that replicates the
+      dev-server.ts / _serve bootstrap sequence: initializeContainer(), settings,
+      watchers, WebServerService. Add the splash screen, BrowserWindow creation,
+      system tray with minimize-to-tray behavior, window state persistence via
+      electron-window-state, and graceful shutdown orchestration. Also add the
+      Electron-specific web directory resolver for packaged ASAR paths. This phase
+      produces a runnable Electron app that displays the web UI.
+    parallel: false
+
+  - id: "phase-3"
+    name: "Adapters, IPC Bridge & Update Checker"
+    description: >
+      Create ElectronDesktopNotifier (subscribes to NotificationEventBus, creates
+      Electron Notification objects) and ElectronBrowserOpener (focuses BrowserWindow
+      or calls shell.openExternal). Build the preload script with contextBridge API
+      (version info, update status, window controls, isElectron flag). Wire adapters
+      into the bootstrap via post-initialization DI token replacement. Add the GitHub
+      Releases version check with in-app update notification. Add daemon coexistence
+      detection (port conflict dialog).
+    parallel: false
+
+  - id: "phase-4"
+    name: "Packaging & Distribution"
+    description: >
+      Configure electron-builder (electron-builder.yml) for macOS (.dmg), Windows
+      (NSIS .exe), and Linux (.AppImage). Configure native module rebuilding via
+      @electron/rebuild for better-sqlite3. Set up asarUnpack for native .node
+      binaries. Add app icons and tray icons for all platforms. Add build scripts
+      to root package.json. Verify packaged app launches correctly on at least
+      one platform.
+    parallel: false
+
+  - id: "phase-5"
+    name: "CI Pipeline & Backward Compatibility Verification"
+    description: >
+      Add a new build-electron job to .github/workflows/ci.yml with a matrix
+      strategy for macOS, Windows, and Linux. On tagged releases, upload Electron
+      installers as GitHub Release assets via release.config.mjs. Run the full
+      existing test suite (unit, integration, e2e) to verify zero regressions.
+      Ensure pnpm build and pnpm build:release still work unchanged.
+    parallel: false
+
+filesToCreate:
+  - "packages/electron/package.json"
+  - "packages/electron/tsconfig.json"
+  - "packages/electron/electron-builder.yml"
+  - "packages/electron/src/main.ts"
+  - "packages/electron/src/preload.ts"
+  - "packages/electron/src/bootstrap.ts"
+  - "packages/electron/src/resolve-web-dir.ts"
+  - "packages/electron/src/tray.ts"
+  - "packages/electron/src/update-checker.ts"
+  - "packages/electron/src/splash.html"
+  - "packages/electron/src/adapters/electron-desktop-notifier.ts"
+  - "packages/electron/src/adapters/electron-browser-opener.ts"
+  - "packages/electron/src/ipc/channels.ts"
+  - "packages/electron/resources/icon.icns"
+  - "packages/electron/resources/icon.ico"
+  - "packages/electron/resources/icon.png"
+  - "packages/electron/resources/trayTemplate.png"
+  - "packages/electron/resources/trayTemplate@2x.png"
+  - "packages/electron/resources/tray.ico"
+  - "packages/electron/resources/tray.png"
+  - "packages/core/src/application/ports/output/services/i-desktop-notifier.ts"
+  - "packages/core/src/application/ports/output/services/i-browser-opener.ts"
+
+filesToModify:
+  - "pnpm-workspace.yaml"
+  - "packages/core/src/infrastructure/services/notifications/desktop-notifier.ts"
+  - "packages/core/src/infrastructure/services/browser-opener.service.ts"
+  - "packages/core/src/infrastructure/di/container.ts"
+  - ".github/workflows/ci.yml"
+  - "release.config.mjs"
+  - "package.json"
+
+openQuestions: []
+
+content: |
+  ## Architecture Overview
+
+  The Electron desktop app is a new **presentation layer** that sits alongside the existing CLI and
+  web UI. It consumes the same `@shepai/core` APIs via the DI container, starts the same Next.js
+  web server via `WebServerService`, and runs the same background watchers. The entire Electron
+  codebase lives in `packages/electron/` — a new pnpm workspace member.
+
+  ```
+  packages/core/           <- Core (unchanged, gains 2 port interfaces)
+  src/presentation/cli/    <- CLI (unchanged)
+  src/presentation/web/    <- Web UI (unchanged)
+  packages/electron/       <- Electron desktop (NEW)
+  ```
+
+  The Electron main process replicates the proven bootstrap sequence from `dev-server.ts` (lines
+  75-114) and `_serve.command.ts` (lines 69-111):
+
+  1. `initializeContainer()` — DI + DB migrations + all service registrations
+  2. `globalThis.__shepContainer = container` — expose to Next.js server actions
+  3. Post-init DI overrides — replace DesktopNotifier and IBrowserOpener tokens
+  4. `InitializeSettingsUseCase.execute()` + `initializeSettings()`
+  5. Start notification, PR-sync, and auto-archive watchers
+  6. `WebServerService.start(port, dir, dev)` — Next.js on dynamic localhost port
+  7. Load `http://localhost:<port>` in `BrowserWindow`
+
+  ## Key Design Decisions
+
+  ### 1. DI Container Override via Token Replacement (No Core Modifications)
+
+  tsyringe's `container.register()` naturally replaces previous registrations for the same token.
+  This is already used in the codebase (container.ts line 284: conditional mock executor via
+  `process.env.SHEP_MOCK_EXECUTOR`). The Electron bootstrap calls `initializeContainer()` first
+  (completely unchanged), then overrides specific tokens:
+
+  ```typescript
+  await initializeContainer();
+  container.register('DesktopNotifier', { useFactory: () => new ElectronDesktopNotifier(bus) });
+  container.register('IBrowserOpener', { useFactory: () => new ElectronBrowserOpener(mainWindow) });
+  ```
+
+  This preserves full backward compatibility — CLI and web see exactly the same container.
+
+  ### 2. ElectronDesktopNotifier Subscribes to NotificationEventBus Directly
+
+  The `NotificationService` currently emits to the bus for in-app toasts (line 56 of
+  notification.service.ts) but has desktop notifications disabled (line 59: "removed in favour of
+  in-app toasts"). Rather than re-enabling the commented-out path (which would modify
+  NotificationService), the `ElectronDesktopNotifier` subscribes directly to the
+  `NotificationEventBus` (the `globalThis` singleton via `Symbol.for('shep:notification-bus')`).
+
+  When a notification event is emitted, the Electron adapter independently creates an Electron
+  `Notification` object. Zero changes to NotificationService. The adapter is wired up only in the
+  Electron bootstrap. In CLI/web context, nothing listens for native OS notifications.
+
+  ### 3. BrowserOpenerService Gets DI Registration
+
+  `BrowserOpenerService` is currently instantiated directly in `start-daemon.ts` (line 144) and
+  `ui.command.ts` (line 127) — not registered in the DI container. To support adapter replacement,
+  it needs a DI token (`IBrowserOpener`). The existing call sites will resolve from the container
+  instead. The Electron bootstrap overrides with `ElectronBrowserOpener` that focuses the existing
+  `BrowserWindow` for app URLs or calls `shell.openExternal()` for external URLs.
+
+  ### 4. Custom Server Approach for Next.js
+
+  The codebase already embeds Next.js via `WebServerService` on a localhost port. The Electron
+  main process uses the exact same approach — no protocol handlers, no serverless mode, no
+  standalone output. The only addition is `resolveWebDirForElectron()` in `packages/electron/`
+  that resolves the web bundle from `process.resourcesPath` in packaged mode.
+
+  ### 5. Electron 35.x with Node.js 22 ABI Matching
+
+  The project requires Node.js >= 22. Electron 35.x ships Node.js 22.x, ensuring `better-sqlite3`
+  compiled against Node 22 ABI works correctly after `@electron/rebuild`. This avoids the ABI
+  mismatch issues that would come from Electron 41.x (Node 24) or Electron 33.x (Node 20).
+
+  ### 6. System Tray with Minimize-to-Tray
+
+  Closing the window (red X / Cmd+W) hides the window and keeps the app alive in the system tray.
+  Background watchers continue running. The actual quit path goes through the tray menu or Cmd+Q,
+  which triggers the graceful shutdown sequence (stop watchers -> stop web server -> close DB -> exit).
+
+  ### 7. GitHub Releases API for Update Check (No Code Signing Required)
+
+  On app startup (with a 10-second delay), the main process fetches the latest release from GitHub
+  API and compares versions. If a newer version exists, an IPC message triggers an in-app banner.
+  This avoids the code signing requirement of `electron-updater`.
+
+  ## Implementation Strategy
+
+  The phases are ordered by dependency: Phase 1 creates the workspace and core interfaces that all
+  other phases depend on. Phase 2 builds the runnable Electron shell that Phase 3's adapters and
+  IPC plug into. Phase 4 packages what Phases 2-3 produce. Phase 5 validates everything in CI.
+
+  Within each phase, tasks follow a strict dependency chain — later tasks build on earlier ones.
+  TDD is applied to all testable code (adapters, bootstrap logic, IPC handlers, update checker).
+  Packaging and CI tasks use integration-style verification instead of unit tests.
+
+  The critical path is: workspace scaffold -> main process bootstrap -> web server integration ->
+  packaging -> CI. Adapters and IPC are on a parallel track that merges before packaging.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | better-sqlite3 ABI mismatch in Electron | Use Electron 35.x (Node 22) matching project's engine requirement. @electron/rebuild runs during electron-builder's npmRebuild step. asarUnpack for native .node binaries. Test on all three platforms in CI. |
+  | Next.js path resolution fails in ASAR | Separate resolveWebDirForElectron() in packages/electron/ handles packaged paths. Web bundle is copied to resources/web/ outside ASAR. Test with actual packaged build before CI integration. |
+  | DI token replacement breaks existing registrations | Token replacement is additive — existing registrations work until overridden. Only the Electron bootstrap calls override. Verify all existing tests pass unchanged (NFR-12). |
+  | System tray behavior inconsistencies across platforms | Use Electron's built-in Tray API which handles platform differences. macOS template images, Windows ICO, Linux PNG. Test on all three platforms in CI matrix. |
+  | Electron + Next.js memory exceeds 300MB budget | Profile early in Phase 2. Next.js production mode is significantly lighter than dev mode. If over budget, investigate renderer process throttling when window is hidden. |
+  | Packaged installer exceeds 250MB | Monitor size during Phase 4. electron-builder's ASAR compression helps. If over budget, investigate excluding dev dependencies and unnecessary node_modules. |
+  | Port conflict with running CLI daemon | Phase 3 adds port conflict detection dialog. User chooses to connect to existing daemon or start on a new port. Reuses existing findAvailablePort() logic. |
+  | Preload script exposes too much to renderer | Minimal contextBridge API: version, update status, window controls, isElectron flag. No Node.js APIs exposed. Security review as part of Phase 3 task acceptance criteria. |
+  | CI build time exceeds 10-minute budget per platform | Electron builds run in parallel with existing CI jobs. electron-builder caches Electron binaries. Expected 3-5 minutes per platform. Monitor in Phase 5. |
+  | Backward compatibility regression | Run full existing test suite (unit, integration, e2e) in Phase 5. Any test failure indicates a backward compatibility violation that must be fixed before merge. |

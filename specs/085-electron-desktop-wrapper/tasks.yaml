@@ -1,0 +1,670 @@
+name: "electron-desktop-wrapper"
+summary: >
+  20 tasks across 5 phases. Phase 1 scaffolds the workspace and core port interfaces.
+  Phase 2 builds the Electron main process with bootstrap, window, tray, and splash screen.
+  Phase 3 adds adapters, IPC bridge, update checker, and daemon coexistence. Phase 4
+  configures packaging with electron-builder. Phase 5 adds CI pipeline and runs backward
+  compatibility verification.
+
+relatedFeatures: []
+technologies:
+  - "Electron 35.x"
+  - "electron-builder 26.x"
+  - "@electron/rebuild"
+  - "electron-window-state"
+  - "tsyringe"
+relatedLinks:
+  - title: "Electron Documentation"
+    url: "https://www.electronjs.org/docs/latest"
+  - title: "electron-builder Configuration"
+    url: "https://www.electron.build/configuration.html"
+
+tasks:
+  # ==========================================================================
+  # Phase 1: Foundation — Workspace Scaffold & Core Port Interfaces
+  # ==========================================================================
+
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Scaffold packages/electron/ workspace package"
+    description: >
+      Create the packages/electron/ directory with package.json (electron 35.x,
+      electron-builder 26.x, @electron/rebuild, electron-window-state as devDependencies,
+      @shepai/core as workspace dependency), tsconfig.json extending root config, and
+      src/ directory structure. Add packages/electron to pnpm-workspace.yaml. Run
+      pnpm install to verify workspace resolution.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "packages/electron/package.json exists with correct dependencies"
+      - "packages/electron/tsconfig.json exists and extends root tsconfig"
+      - "pnpm-workspace.yaml includes packages/electron"
+      - "pnpm install succeeds with the new workspace member"
+      - "packages/electron/src/ directory structure matches plan (adapters/, ipc/, resources/)"
+    tdd: null
+    estimatedEffort: "30min"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Create IDesktopNotifier port interface"
+    description: >
+      Create IDesktopNotifier interface in packages/core/src/application/ports/output/services/
+      matching the existing DesktopNotifier.send(title, body) signature. Make the existing
+      DesktopNotifier class implement this interface — add 'implements IDesktopNotifier' with
+      zero logic changes. This enables the Electron adapter to provide an alternative
+      implementation via DI.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "IDesktopNotifier interface exists at packages/core/src/application/ports/output/services/i-desktop-notifier.ts"
+      - "Interface declares send(title: string, body: string): void"
+      - "Existing DesktopNotifier class has 'implements IDesktopNotifier' added"
+      - "Zero logic changes to DesktopNotifier — only the implements clause added"
+      - "pnpm typecheck passes"
+    tdd:
+      red:
+        - "Write a type-level test that asserts DesktopNotifier is assignable to IDesktopNotifier"
+      green:
+        - "Create the IDesktopNotifier interface with send(title, body) method"
+        - "Add 'implements IDesktopNotifier' to DesktopNotifier class"
+      refactor:
+        - "Ensure interface JSDoc matches existing DesktopNotifier documentation"
+    estimatedEffort: "20min"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Create IBrowserOpener port interface and register in DI"
+    description: >
+      Create IBrowserOpener interface in packages/core/src/application/ports/output/services/
+      matching BrowserOpenerService.open(url) signature. Make BrowserOpenerService implement it.
+      Register BrowserOpenerService in the DI container under the 'IBrowserOpener' token —
+      it is currently NOT registered (instantiated directly in start-daemon.ts and ui.command.ts).
+      Update start-daemon.ts and ui.command.ts to resolve IBrowserOpener from the container
+      instead of direct instantiation.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "IBrowserOpener interface exists at packages/core/src/application/ports/output/services/i-browser-opener.ts"
+      - "Interface declares open(url: string): void"
+      - "BrowserOpenerService has 'implements IBrowserOpener' added"
+      - "Zero logic changes to BrowserOpenerService"
+      - "DI container registers BrowserOpenerService under 'IBrowserOpener' token"
+      - "start-daemon.ts resolves IBrowserOpener from container instead of new BrowserOpenerService()"
+      - "ui.command.ts resolves IBrowserOpener from container instead of new BrowserOpenerService()"
+      - "pnpm typecheck passes"
+      - "Existing tests pass unchanged"
+    tdd:
+      red:
+        - "Write a type-level test that asserts BrowserOpenerService is assignable to IBrowserOpener"
+        - "Write a test that resolves 'IBrowserOpener' from the container after initializeContainer() and verifies it has an open() method"
+      green:
+        - "Create the IBrowserOpener interface"
+        - "Add 'implements IBrowserOpener' to BrowserOpenerService"
+        - "Register BrowserOpenerService in container.ts under 'IBrowserOpener' token"
+        - "Update start-daemon.ts and ui.command.ts to resolve from container"
+      refactor:
+        - "Ensure the DI registration follows the same factory pattern used for other services"
+    estimatedEffort: "45min"
+
+  # ==========================================================================
+  # Phase 2: Electron Main Process — Bootstrap, Window & Tray
+  # ==========================================================================
+
+  - id: "task-4"
+    phaseId: "phase-2"
+    title: "Create Electron-specific web directory resolver"
+    description: >
+      Create resolveWebDirForElectron() in packages/electron/src/resolve-web-dir.ts that
+      handles path resolution for both development mode (source directory) and production
+      mode (packaged ASAR/resources path). In production, checks process.resourcesPath +
+      '/web/' for the pre-built .next output. In development, falls back to the source
+      web directory. Returns { dir: string; dev: boolean } matching WebServerService.start()
+      parameters.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "resolveWebDirForElectron() exists in packages/electron/src/resolve-web-dir.ts"
+      - "Returns { dir: string; dev: boolean }"
+      - "In packaged mode (app.isPackaged), resolves from process.resourcesPath + '/web/'"
+      - "In dev mode, resolves to src/presentation/web/ relative to monorepo root"
+      - "Handles both macOS (.app bundle) and Windows/Linux paths"
+    tdd:
+      red:
+        - "Write tests for resolveWebDirForElectron() with mocked app.isPackaged and process.resourcesPath"
+        - "Test dev mode resolution falls back to source directory"
+        - "Test production mode resolution uses process.resourcesPath"
+      green:
+        - "Implement resolveWebDirForElectron() with conditional path resolution"
+      refactor:
+        - "Extract path constants for clarity"
+    estimatedEffort: "30min"
+
+  - id: "task-5"
+    phaseId: "phase-2"
+    title: "Create bootstrap module replicating _serve/dev-server pattern"
+    description: >
+      Create packages/electron/src/bootstrap.ts that encapsulates the backend initialization
+      sequence: (1) initializeContainer(), (2) expose container on globalThis.__shepContainer,
+      (3) InitializeSettingsUseCase + initializeSettings(), (4) start notification watcher,
+      (5) start PR sync watcher, (6) start auto-archive watcher. Returns references to all
+      started services for graceful shutdown. Does NOT start the web server — that is handled
+      separately in main.ts after splash screen. This replicates dev-server.ts lines 75-111
+      exactly.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "bootstrap.ts exists at packages/electron/src/bootstrap.ts"
+      - "Exports async bootstrapBackend() function"
+      - "Calls initializeContainer() and exposes container on globalThis"
+      - "Initializes settings via InitializeSettingsUseCase"
+      - "Starts notification, PR-sync, and auto-archive watchers"
+      - "Returns a BootstrapResult with stop functions for graceful shutdown"
+      - "Does NOT start the web server (that happens in main.ts)"
+    tdd:
+      red:
+        - "Write test that calls bootstrapBackend() with mocked container and verifies initialization sequence order"
+        - "Write test that verifies BootstrapResult contains stop functions for all watchers"
+      green:
+        - "Implement bootstrapBackend() following dev-server.ts pattern"
+        - "Return BootstrapResult with references to all started services"
+      refactor:
+        - "Extract watcher initialization into a helper if the function is too long"
+    estimatedEffort: "1h"
+
+  - id: "task-6"
+    phaseId: "phase-2"
+    title: "Create splash screen HTML"
+    description: >
+      Create packages/electron/src/splash.html — a small frameless loading screen (400x300)
+      showing the shep logo and a progress message (e.g., 'Starting shep...'). This is loaded
+      in a frameless BrowserWindow immediately on app.ready, while the backend bootstraps in
+      the background. Simple static HTML with embedded CSS — no external dependencies.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "splash.html exists at packages/electron/src/splash.html"
+      - "Contains shep branding and a loading indicator"
+      - "Self-contained — no external CSS/JS dependencies"
+      - "Works as a local file loaded via BrowserWindow.loadFile()"
+    tdd: null
+    estimatedEffort: "20min"
+
+  - id: "task-7"
+    phaseId: "phase-2"
+    title: "Create system tray module with minimize-to-tray behavior"
+    description: >
+      Create packages/electron/src/tray.ts that sets up the system tray icon with a context
+      menu (Show Window, Quit). Uses platform-specific icons: macOS template images
+      (trayTemplate.png), Windows ICO, Linux PNG. Exports a setupTray(mainWindow) function
+      that returns the Tray instance. The tray's 'Show Window' action calls mainWindow.show()
+      and mainWindow.focus(). The 'Quit' action calls app.quit(). On tray icon double-click
+      (Windows/Linux), shows the window.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "tray.ts exists at packages/electron/src/tray.ts"
+      - "Exports setupTray(mainWindow: BrowserWindow) returning Tray instance"
+      - "Context menu has Show Window and Quit actions"
+      - "Uses platform-specific tray icons (template for macOS, ICO for Windows, PNG for Linux)"
+      - "Double-click on tray icon shows and focuses the window"
+    tdd:
+      red:
+        - "Write test that verifies setupTray returns a Tray instance with mocked Electron APIs"
+        - "Write test that Show Window menu action calls mainWindow.show() and mainWindow.focus()"
+        - "Write test that Quit action calls app.quit()"
+      green:
+        - "Implement setupTray() with platform detection and icon selection"
+        - "Create context menu with Show Window and Quit items"
+        - "Wire up click/double-click handlers"
+      refactor:
+        - "Extract platform icon resolution into a helper function"
+    estimatedEffort: "45min"
+
+  - id: "task-8"
+    phaseId: "phase-2"
+    title: "Build Electron main process entry point"
+    description: >
+      Create packages/electron/src/main.ts — the Electron main process entry point. On
+      app.ready: (1) show splash screen, (2) call bootstrapBackend(), (3) override DI
+      tokens for Electron adapters, (4) find available port, (5) start WebServerService,
+      (6) create main BrowserWindow with electron-window-state persistence, (7) load
+      http://localhost:port, (8) close splash, (9) set up system tray. On window close:
+      preventDefault() + hide (minimize to tray). On app before-quit: set quitting flag.
+      On app quit: run graceful shutdown (stop watchers, stop web server, close DB).
+      Sets nodeIntegration: false, contextIsolation: true, sandbox: true, and loads
+      preload script.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+      - "task-5"
+      - "task-6"
+      - "task-7"
+    acceptanceCriteria:
+      - "main.ts exists at packages/electron/src/main.ts"
+      - "Shows splash screen immediately on app.ready"
+      - "Calls bootstrapBackend() for DI + settings + watchers"
+      - "Starts WebServerService on dynamic port via resolveWebDirForElectron()"
+      - "Creates BrowserWindow with electron-window-state persistence"
+      - "Loads http://localhost:port in the BrowserWindow"
+      - "Closes splash screen when main window is ready-to-show"
+      - "Sets up system tray via setupTray()"
+      - "Window close hides to tray (does not quit)"
+      - "Cmd+Q / Quit triggers graceful shutdown sequence"
+      - "BrowserWindow has nodeIntegration: false, contextIsolation: true, sandbox: true"
+      - "Preload script path is configured"
+    tdd:
+      red:
+        - "Write test that verifies the app.ready handler calls bootstrapBackend() then creates BrowserWindow"
+        - "Write test that window close event hides the window instead of destroying it"
+        - "Write test that app quit triggers graceful shutdown (stops watchers, web server, DB)"
+      green:
+        - "Implement app.ready handler with full bootstrap + window creation sequence"
+        - "Implement window close interception for minimize-to-tray"
+        - "Implement graceful shutdown sequence in before-quit handler"
+      refactor:
+        - "Extract window creation config into a separate function"
+        - "Ensure shutdown sequence has proper error handling and timeout"
+    estimatedEffort: "2h"
+
+  # ==========================================================================
+  # Phase 3: Adapters, IPC Bridge & Update Checker
+  # ==========================================================================
+
+  - id: "task-9"
+    phaseId: "phase-3"
+    title: "Create ElectronDesktopNotifier adapter"
+    description: >
+      Create packages/electron/src/adapters/electron-desktop-notifier.ts that implements
+      IDesktopNotifier. The adapter subscribes to the NotificationEventBus (globalThis
+      singleton via Symbol.for('shep:notification-bus')) and creates Electron Notification
+      objects when events are emitted. The send(title, body) method creates and shows an
+      Electron Notification. The adapter also has a startListening() method that subscribes
+      to the bus, and a stopListening() method for cleanup. This is independent of
+      NotificationService — zero changes to existing notification code.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+      - "task-5"
+    acceptanceCriteria:
+      - "ElectronDesktopNotifier exists at packages/electron/src/adapters/electron-desktop-notifier.ts"
+      - "Implements IDesktopNotifier interface"
+      - "send(title, body) creates and shows an Electron Notification"
+      - "startListening() subscribes to NotificationEventBus 'notification' events"
+      - "stopListening() removes the listener (for clean shutdown)"
+      - "Handles Notification.isSupported() check gracefully"
+      - "Errors are caught and logged, never thrown"
+    tdd:
+      red:
+        - "Write test that send() creates an Electron Notification with correct title and body (mock Electron Notification class)"
+        - "Write test that startListening() subscribes to the notification bus and calls send() on events"
+        - "Write test that stopListening() removes the bus listener"
+        - "Write test that send() gracefully handles Notification.isSupported() === false"
+      green:
+        - "Implement ElectronDesktopNotifier with send(), startListening(), stopListening()"
+        - "Subscribe to NotificationEventBus in startListening()"
+        - "Create Electron Notification in send()"
+      refactor:
+        - "Ensure consistent error handling pattern with try/catch + console.warn"
+    estimatedEffort: "45min"
+
+  - id: "task-10"
+    phaseId: "phase-3"
+    title: "Create ElectronBrowserOpener adapter"
+    description: >
+      Create packages/electron/src/adapters/electron-browser-opener.ts that implements
+      IBrowserOpener. For URLs matching the app's own localhost server, focuses the existing
+      BrowserWindow. For external URLs, calls Electron's shell.openExternal(). Receives the
+      mainWindow reference and server port via constructor.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "ElectronBrowserOpener exists at packages/electron/src/adapters/electron-browser-opener.ts"
+      - "Implements IBrowserOpener interface"
+      - "open(url) focuses BrowserWindow for localhost:port URLs"
+      - "open(url) calls shell.openExternal() for external URLs"
+      - "Handles null/destroyed mainWindow gracefully"
+    tdd:
+      red:
+        - "Write test that open(localhost:4050) focuses the BrowserWindow"
+        - "Write test that open(https://github.com) calls shell.openExternal()"
+        - "Write test that open() handles destroyed window gracefully (no throw)"
+      green:
+        - "Implement ElectronBrowserOpener with URL matching and dispatch"
+      refactor:
+        - "Extract URL matching logic into a helper for testability"
+    estimatedEffort: "30min"
+
+  - id: "task-11"
+    phaseId: "phase-3"
+    title: "Create preload script with contextBridge API"
+    description: >
+      Create packages/electron/src/preload.ts that uses contextBridge.exposeInMainWorld()
+      to expose a minimal 'shepElectron' API to the renderer: getVersion() (returns app
+      version string), onUpdateAvailable(callback) (receives update notifications from main
+      process via ipcRenderer), windowControls.minimize() and windowControls.close()
+      (send IPC to main process), and isElectron: true (feature detection flag). All IPC
+      channels use a 'shep:' prefix. No Node.js APIs are exposed.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "preload.ts exists at packages/electron/src/preload.ts"
+      - "Uses contextBridge.exposeInMainWorld('shepElectron', api)"
+      - "Exposes getVersion(), onUpdateAvailable(callback), windowControls, isElectron"
+      - "All IPC channels use 'shep:' prefix"
+      - "Does NOT expose ipcRenderer directly"
+      - "Does NOT expose any Node.js APIs"
+    tdd:
+      red:
+        - "Write test that verifies contextBridge.exposeInMainWorld is called with 'shepElectron' and correct API shape"
+        - "Write test that getVersion() sends 'shep:get-version' IPC and returns result"
+        - "Write test that onUpdateAvailable() registers listener on 'shep:update-available' channel"
+      green:
+        - "Implement preload.ts with contextBridge API"
+        - "Define typed IPC channels"
+      refactor:
+        - "Extract channel name constants to shared file for type safety between preload and main"
+    estimatedEffort: "30min"
+
+  - id: "task-12"
+    phaseId: "phase-3"
+    title: "Create IPC channel handlers in main process"
+    description: >
+      Create packages/electron/src/ipc/channels.ts that registers ipcMain handlers for
+      all channels defined in the preload script: 'shep:get-version' (returns app.getVersion()),
+      'shep:minimize' (mainWindow.minimize()), 'shep:close' (mainWindow.hide()). Exports a
+      setupIpcHandlers(mainWindow) function called from main.ts. All handlers validate the
+      sender's origin matches the expected localhost URL.
+    state: "Todo"
+    dependencies:
+      - "task-11"
+    acceptanceCriteria:
+      - "channels.ts exists at packages/electron/src/ipc/channels.ts"
+      - "Exports setupIpcHandlers(mainWindow, serverPort) function"
+      - "Handles 'shep:get-version' returning app version"
+      - "Handles 'shep:minimize' calling mainWindow.minimize()"
+      - "Handles 'shep:close' calling mainWindow.hide()"
+      - "Validates sender origin matches expected localhost URL"
+    tdd:
+      red:
+        - "Write test that 'shep:get-version' handler returns the app version"
+        - "Write test that 'shep:minimize' handler calls mainWindow.minimize()"
+        - "Write test that handler rejects IPC from unexpected origins"
+      green:
+        - "Implement setupIpcHandlers() with all channel handlers"
+        - "Add origin validation"
+      refactor:
+        - "Extract origin validation into a reusable guard function"
+    estimatedEffort: "30min"
+
+  - id: "task-13"
+    phaseId: "phase-3"
+    title: "Create GitHub Releases update checker"
+    description: >
+      Create packages/electron/src/update-checker.ts that checks GitHub Releases API for
+      newer versions on app startup. Fetches the latest release tag, compares with the
+      current app version via semver, and sends an IPC message to the renderer if an update
+      is available. Runs with a 10-second delay after app start to not block the UI. Degrades
+      gracefully when offline (catches network errors, does not show error UI). Exports
+      checkForUpdates(mainWindow) function.
+    state: "Todo"
+    dependencies:
+      - "task-12"
+    acceptanceCriteria:
+      - "update-checker.ts exists at packages/electron/src/update-checker.ts"
+      - "Exports checkForUpdates(mainWindow) function"
+      - "Fetches https://api.github.com/repos/{owner}/{repo}/releases/latest"
+      - "Compares tag version against app.getVersion() using semver"
+      - "Sends 'shep:update-available' IPC to renderer with version and download URL"
+      - "Runs with 10-second delay (setTimeout)"
+      - "Catches network errors silently (no UI error when offline)"
+    tdd:
+      red:
+        - "Write test that checkForUpdates() fetches GitHub API and detects newer version"
+        - "Write test that no IPC is sent when current version is latest"
+        - "Write test that network errors are caught silently"
+        - "Write test that the check runs after 10-second delay"
+      green:
+        - "Implement checkForUpdates() with fetch, semver comparison, and IPC dispatch"
+      refactor:
+        - "Extract GitHub API URL and repo owner/name into constants"
+    estimatedEffort: "45min"
+
+  - id: "task-14"
+    phaseId: "phase-3"
+    title: "Add daemon coexistence and port conflict detection"
+    description: >
+      In the Electron bootstrap (main.ts), before starting WebServerService, check if the
+      default port (4050) is already in use (indicating a running CLI daemon). If so, show
+      a dialog with two options: (1) 'Connect to existing' — load the existing daemon's URL
+      in BrowserWindow without starting a new server, (2) 'Start new' — find the next
+      available port and start a new server. Uses the existing findAvailablePort() from
+      port.service.ts.
+    state: "Todo"
+    dependencies:
+      - "task-8"
+    acceptanceCriteria:
+      - "Port conflict detection runs before WebServerService.start()"
+      - "Dialog shows when port 4050 is in use"
+      - "Connect to existing option loads existing URL without starting new server"
+      - "Start new option finds next available port and starts server"
+      - "When no conflict, proceeds normally on port 4050"
+    tdd:
+      red:
+        - "Write test that when port is available, server starts normally on that port"
+        - "Write test that when port is in use, dialog is shown with two options"
+        - "Write test that 'Connect to existing' skips server start and loads existing URL"
+        - "Write test that 'Start new' calls findAvailablePort and starts on the returned port"
+      green:
+        - "Add port check before server start in main.ts"
+        - "Implement dialog with Electron dialog.showMessageBox()"
+        - "Wire up both dialog paths"
+      refactor:
+        - "Extract port conflict handling into a separate function for testability"
+    estimatedEffort: "45min"
+
+  - id: "task-15"
+    phaseId: "phase-3"
+    title: "Wire Electron adapters into bootstrap via DI token replacement"
+    description: >
+      Update packages/electron/src/main.ts to register Electron-specific adapters after
+      bootstrapBackend() completes. Override 'DesktopNotifier' token with
+      ElectronDesktopNotifier. Override 'IBrowserOpener' token with ElectronBrowserOpener.
+      Call ElectronDesktopNotifier.startListening() to subscribe to the notification bus.
+      Include stopListening() in the graceful shutdown sequence.
+    state: "Todo"
+    dependencies:
+      - "task-9"
+      - "task-10"
+      - "task-12"
+      - "task-13"
+      - "task-14"
+    acceptanceCriteria:
+      - "DI token 'DesktopNotifier' is overridden with ElectronDesktopNotifier after bootstrap"
+      - "DI token 'IBrowserOpener' is overridden with ElectronBrowserOpener after bootstrap"
+      - "ElectronDesktopNotifier.startListening() is called during startup"
+      - "ElectronDesktopNotifier.stopListening() is called during shutdown"
+      - "IPC handlers are set up via setupIpcHandlers()"
+      - "Update checker is started via checkForUpdates()"
+    tdd:
+      red:
+        - "Write test that after bootstrap, resolving 'DesktopNotifier' returns ElectronDesktopNotifier instance"
+        - "Write test that after bootstrap, resolving 'IBrowserOpener' returns ElectronBrowserOpener instance"
+        - "Write test that shutdown sequence calls stopListening()"
+      green:
+        - "Add DI override calls in main.ts after bootstrapBackend()"
+        - "Wire up startListening/stopListening in startup/shutdown"
+        - "Call setupIpcHandlers() and checkForUpdates()"
+      refactor:
+        - "Group all DI overrides into a single registerElectronAdapters() function"
+    estimatedEffort: "30min"
+
+  # ==========================================================================
+  # Phase 4: Packaging & Distribution
+  # ==========================================================================
+
+  - id: "task-16"
+    phaseId: "phase-4"
+    title: "Create app and tray icon assets for all platforms"
+    description: >
+      Create placeholder icon assets in packages/electron/resources/: icon.icns (macOS app),
+      icon.ico (Windows app), icon.png (Linux app, 512x512), trayTemplate.png (macOS tray,
+      16x16 black+alpha), trayTemplate@2x.png (macOS tray retina, 32x32), tray.ico
+      (Windows tray), tray.png (Linux tray, 16x16). These can be placeholder/generated
+      icons initially — final branding can be swapped in later.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "All icon files exist in packages/electron/resources/"
+      - "macOS icons are .icns format"
+      - "Windows icons are .ico format"
+      - "Linux app icon is 512x512 PNG"
+      - "Tray template images follow macOS naming convention (xxxTemplate.png)"
+      - "All icons are valid image files (not zero-byte placeholders)"
+    tdd: null
+    estimatedEffort: "30min"
+
+  - id: "task-17"
+    phaseId: "phase-4"
+    title: "Configure electron-builder for cross-platform packaging"
+    description: >
+      Create packages/electron/electron-builder.yml with configuration for all three platforms:
+      mac (dmg target, icns icon), win (nsis target, ico icon), linux (AppImage target, png icon).
+      Set npmRebuild: true for native module rebuilding. Set asarUnpack for better-sqlite3
+      native binaries. Configure extraResources to copy the pre-built web/ directory into the
+      packaged app. Set app metadata (productName, appId, copyright). Add build scripts to
+      packages/electron/package.json and root package.json.
+    state: "Todo"
+    dependencies:
+      - "task-15"
+      - "task-16"
+    acceptanceCriteria:
+      - "electron-builder.yml exists at packages/electron/electron-builder.yml"
+      - "Mac target: dmg with icns icon"
+      - "Win target: nsis with ico icon"
+      - "Linux target: AppImage with png icon"
+      - "npmRebuild: true configured"
+      - "asarUnpack includes better-sqlite3 native binaries"
+      - "extraResources copies web/ directory"
+      - "Root package.json has electron:dev, electron:build, electron:build:mac/win/linux scripts"
+      - "packages/electron/package.json has build and dev scripts"
+    tdd: null
+    estimatedEffort: "1h"
+
+  - id: "task-18"
+    phaseId: "phase-4"
+    title: "Verify packaged app launches on local platform"
+    description: >
+      Run the full Electron build pipeline locally: pnpm build:release (builds web UI),
+      then electron-builder for the local platform. Verify the packaged app launches,
+      shows the splash screen, starts the web server, displays the web UI, and the system
+      tray works. Fix any path resolution, native module, or packaging issues discovered.
+      This is an integration verification task — not unit-testable.
+    state: "Todo"
+    dependencies:
+      - "task-17"
+    acceptanceCriteria:
+      - "Packaged app launches without errors on the local platform"
+      - "Splash screen appears during startup"
+      - "Web UI loads in the BrowserWindow"
+      - "System tray icon is visible with working context menu"
+      - "Window close minimizes to tray"
+      - "Quit from tray or Cmd+Q exits cleanly"
+      - "better-sqlite3 loads without ABI errors"
+      - "No console errors related to path resolution or missing modules"
+    tdd: null
+    estimatedEffort: "2h"
+
+  # ==========================================================================
+  # Phase 5: CI Pipeline & Backward Compatibility Verification
+  # ==========================================================================
+
+  - id: "task-19"
+    phaseId: "phase-5"
+    title: "Add Electron build job to CI pipeline"
+    description: >
+      Add a new 'build-electron' job to .github/workflows/ci.yml that runs in parallel
+      with existing jobs. Uses a matrix strategy for os: [macos-latest, windows-latest,
+      ubuntu-latest]. Steps: checkout, setup pnpm + node, pnpm install, pnpm build:release,
+      then electron-builder --publish never in packages/electron/. On tagged releases (the
+      existing release job), upload Electron installers as GitHub Release assets. Update
+      release.config.mjs to include Electron artifact paths in the GitHub plugin's assets.
+    state: "Todo"
+    dependencies:
+      - "task-18"
+    acceptanceCriteria:
+      - "ci.yml has a new build-electron job with macOS, Windows, Linux matrix"
+      - "Job runs in parallel with existing lint, test, typecheck jobs"
+      - "Job builds web UI first (pnpm build:release), then Electron installer"
+      - "Electron artifacts are uploaded as GitHub Actions artifacts on PRs"
+      - "Release job uploads Electron installers to GitHub Releases on tagged releases"
+      - "release.config.mjs assets include Electron installer paths"
+      - "build-electron job completes within 10 minutes per platform"
+    tdd: null
+    estimatedEffort: "1h"
+
+  - id: "task-20"
+    phaseId: "phase-5"
+    title: "Run full backward compatibility verification"
+    description: >
+      Run the complete existing test suite to verify zero regressions: pnpm test:unit,
+      pnpm test:int, pnpm test:e2e. Run pnpm build and pnpm build:release to verify
+      CLI and web builds are unaffected. Run pnpm validate (lint, format, typecheck, tsp).
+      Any failure indicates a backward compatibility violation that must be fixed. This
+      task verifies NFR-12: all existing tests pass without modification.
+    state: "Todo"
+    dependencies:
+      - "task-19"
+    acceptanceCriteria:
+      - "pnpm test:unit passes — all unit tests green"
+      - "pnpm test:int passes — all integration tests green"
+      - "pnpm test:e2e passes — all e2e tests green"
+      - "pnpm build passes — CLI build succeeds"
+      - "pnpm build:release passes — full release build succeeds"
+      - "pnpm validate passes — lint, format, typecheck, tsp all clean"
+      - "No test was modified to make it pass — any modification = backward compat violation"
+    tdd: null
+    estimatedEffort: "30min"
+
+totalEstimate: "14h"
+openQuestions: []
+
+content: |
+  ## Summary
+
+  The implementation is organized into 20 tasks across 5 phases, estimated at ~14 hours total.
+
+  **Phase 1 (Foundation)** establishes the workspace scaffold and core port interfaces. The
+  packages/electron/ workspace package is created first since all Electron code lives there.
+  Two new port interfaces (IDesktopNotifier, IBrowserOpener) are added to core — existing
+  implementations adopt them with zero logic changes. BrowserOpenerService gets registered in
+  the DI container for the first time, enabling adapter replacement.
+
+  **Phase 2 (Main Process)** builds the runnable Electron shell. The web directory resolver,
+  bootstrap module, splash screen, and tray module are developed independently as focused units,
+  then composed in main.ts — the Electron entry point that orchestrates the full lifecycle from
+  app.ready through window creation to graceful shutdown.
+
+  **Phase 3 (Adapters & IPC)** creates the Electron-specific adapters that differentiate the
+  desktop experience from CLI/web. ElectronDesktopNotifier subscribes directly to the notification
+  bus for native OS notifications. ElectronBrowserOpener focuses the app window instead of launching
+  an external browser. The preload script and IPC handlers provide a secure bridge between the
+  renderer and main process. The update checker queries GitHub Releases for version notifications.
+  Port conflict detection ensures coexistence with the CLI daemon.
+
+  **Phase 4 (Packaging)** configures electron-builder for cross-platform distribution. Icon assets,
+  native module rebuilding (better-sqlite3), ASAR packaging with exclusions, and platform-specific
+  installer targets are all configured. A local build verification confirms the packaged app works
+  end-to-end before CI integration.
+
+  **Phase 5 (CI & Verification)** adds the Electron build to the CI pipeline as a parallel job
+  and runs the full existing test suite to confirm zero backward compatibility regressions. The
+  release pipeline is updated to publish Electron installers alongside the npm package.

@@ -1,5 +1,7 @@
 # Build outputs
 dist/
+packages/*/dist/
+packages/*/release/
 build/
 .next/
 out/

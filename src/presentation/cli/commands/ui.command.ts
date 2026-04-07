@@ -41,7 +41,7 @@ import {
   getAutoArchiveWatcher,
 } from '@/infrastructure/services/auto-archive/auto-archive-watcher.service.js';
 import { getExistingConnection } from '@/infrastructure/persistence/sqlite/connection.js';
-import { BrowserOpenerService } from '@/infrastructure/services/browser-opener.service.js';
+import type { IBrowserOpener } from '@/application/ports/output/services/i-browser-opener.js';
 import { colors, fmt, messages } from '../ui/index.js';
 import { getCliI18n } from '../i18n.js';
 
@@ -124,7 +124,7 @@ Examples:
 
         // Auto-open browser (unless --no-open)
         if (options.open !== false) {
-          const opener = new BrowserOpenerService({ warn: messages.warning });
+          const opener = container.resolve<IBrowserOpener>('IBrowserOpener');
           opener.open(url);
         }
 
