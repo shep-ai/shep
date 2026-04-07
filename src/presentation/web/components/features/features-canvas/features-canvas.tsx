@@ -170,7 +170,7 @@ export function FeaturesCanvas({
           color="#b8bcc4"
           className="dark:[&_circle]:!fill-white/[0.1]"
         />
-        {!isEmpty && toolbar ? (
+        {toolbar && !isEmpty ? (
           <Panel position="top-right" className="!me-3 !mt-3">
             {toolbar}
           </Panel>
@@ -185,6 +185,11 @@ export function FeaturesCanvas({
         >
           <div className="pointer-events-auto h-full w-full">{overlayContent}</div>
         </div>
+      ) : null}
+      {/* Toolbar rendered above the empty-state overlay so the workspace
+          selector remains usable while an empty workspace is shown. */}
+      {toolbar && isEmpty ? (
+        <div className="pointer-events-auto absolute end-3 top-3 z-20">{toolbar}</div>
       ) : null}
     </div>
   );

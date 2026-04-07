@@ -2,9 +2,29 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
-import { execFile } from 'node:child_process';
+import { homedir, platform } from 'node:os';
+import { execFile, execFileSync } from 'node:child_process';
 import { IS_WINDOWS } from '@shepai/core/infrastructure/platform';
+
+const IS_MACOS = platform() === 'darwin';
+
+/**
+ * On macOS, Claude Code stores OAuth credentials in the Keychain under the
+ * service name "Claude Code-credentials" (not in ~/.claude/.credentials.json).
+ * Use `security find-generic-password` to detect the entry without reading it.
+ */
+function macKeychainHasClaudeCreds(): boolean {
+  if (!IS_MACOS) return false;
+  try {
+    execFileSync('security', ['find-generic-password', '-s', 'Claude Code-credentials'], {
+      stdio: 'ignore',
+      timeout: 1500,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
 import { getSettings } from '@shepai/core/infrastructure/services/settings.service';
 import { resolve } from '@/lib/server-container';
 import type { ListToolsUseCase } from '@shepai/core/application/use-cases/tools/list-tools.use-case';
@@ -62,6 +82,9 @@ function tier1AuthCheck(agentType: string): boolean {
       if (process.env['CLAUDE_CODE_USE_BEDROCK']) return true;
       if (process.env['CLAUDE_CODE_USE_VERTEX']) return true;
       if (process.env['CLAUDE_CODE_OAUTH_TOKEN']) return true;
+      // macOS: credentials live in Keychain (no .credentials.json on disk).
+      if (macKeychainHasClaudeCreds()) return true;
+      // Linux / Windows: file-based credentials.
       const credPath = join(home, '.claude', '.credentials.json');
       return existsSync(credPath);
     }
@@ -104,9 +127,12 @@ function tier2AuthVerify(agentType: string, binaryName: string): Promise<boolean
 
     switch (agentType) {
       case 'claude-code':
-        cmd = binaryName;
-        args = ['auth', 'status'];
-        break;
+        // Claude Code has no non-interactive `auth status` subcommand. Running
+        // `claude auth status` launches an interactive session that hangs and
+        // gets killed by the timeout, producing a false negative. Trust tier 1
+        // (env vars / Keychain on macOS / .credentials.json elsewhere).
+        resolve(true);
+        return;
       case 'cursor':
         cmd = binaryName;
         args = ['status'];

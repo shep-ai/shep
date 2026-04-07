@@ -2,11 +2,27 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Sparkles, FolderPlus, Github, GitBranch } from 'lucide-react';
+import { Sparkles, FolderPlus, FolderOpen, Github, GitBranch } from 'lucide-react';
 import type { Edge, Viewport } from '@xyflow/react';
 import { useReactFlow } from '@xyflow/react';
 import { FeaturesCanvas } from '@/components/features/features-canvas';
 import { CanvasToolbar } from '@/components/features/features-canvas/canvas-toolbar';
+import { WorkspaceSelector } from '@/components/features/features-canvas/workspace-selector';
+import { ManageWorkspaceDialog } from '@/components/features/features-canvas/manage-workspace-dialog';
+import { WorkspaceNameDialog } from '@/components/features/features-canvas/workspace-name-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useWorkspaces, DEFAULT_WORKSPACE_ID } from '@/hooks/use-workspaces';
+import { Layers, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { CanvasNodeType } from '@/components/features/features-canvas';
 import type { FeatureNodeData } from '@/components/common/feature-node';
 import type { RepositoryNodeData } from '@/components/common/repository-node';
@@ -29,6 +45,7 @@ import { useViewportPersistence } from '@/hooks/use-viewport-persistence';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useFabLayout } from '@/hooks/fab-layout-context';
 import { ControlCenterEmptyState } from './control-center-empty-state';
+import { NewProjectDialog } from './new-project-dialog';
 import { useControlCenterState } from './use-control-center-state';
 
 const AUTO_FOCUS_OPTIONS = {
@@ -79,6 +96,32 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     setShowArchived,
     setCallbacks,
   } = useControlCenterState(initialNodes, initialEdges);
+
+  // ── Workspaces (client-only prototype) ────────────────────────────────
+  const {
+    workspaces,
+    activeWorkspace,
+    isDefaultActive,
+    setActiveWorkspace,
+    createWorkspace,
+    renameWorkspace,
+    deleteWorkspace,
+    setWorkspaceMembers,
+    addToActiveWorkspace,
+  } = useWorkspaces();
+  // Tracks the set of node ids we've already seen, so we can detect new
+  // repo/feature nodes appearing on the canvas and auto-include them in the
+  // active workspace (when it isn't the default).
+  const knownNodeIdsRef = useRef<Set<string>>(new Set());
+  const [manageWorkspaceOpen, setManageWorkspaceOpen] = useState(false);
+  const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false);
+  const [renameWorkspaceOpen, setRenameWorkspaceOpen] = useState(false);
+  const [deleteWorkspaceOpen, setDeleteWorkspaceOpen] = useState(false);
+  // Target of the delete confirmation dialog. Allows deleting any workspace
+  // (not just the active one) directly from the workspace dropdown.
+  const [pendingDeleteWorkspaceId, setPendingDeleteWorkspaceId] = useState<string | null>(null);
+  // Inline "New Project" dialog launched from the empty-workspace state.
+  const [workspaceNewProjectOpen, setWorkspaceNewProjectOpen] = useState(false);
 
   // Publish sidebar features + repo state to context
   const { setFeatures: setSidebarFeatures, setHasRepositories: setSidebarHasRepos } =
@@ -425,30 +468,152 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     };
   }, [hasRepositories, showCanvas, resetViewport]);
 
+  // Auto-include any newly-appearing repo/feature nodes in the active
+  // workspace (skipped when default is active — that workspace shows
+  // everything anyway). We diff the current node id list against the set
+  // we've already seen so we only add the deltas.
+  useEffect(() => {
+    const seen = knownNodeIdsRef.current;
+    const newRepoIds: string[] = [];
+    const newFeatureIds: string[] = [];
+    for (const n of nodes) {
+      if (seen.has(n.id)) continue;
+      seen.add(n.id);
+      if (n.type === 'repositoryNode') newRepoIds.push(n.id);
+      else if (n.type === 'featureNode') newFeatureIds.push(n.id);
+    }
+    if (isDefaultActive) return;
+    if (newRepoIds.length === 0 && newFeatureIds.length === 0) return;
+    addToActiveWorkspace({ repoIds: newRepoIds, featureIds: newFeatureIds });
+  }, [nodes, isDefaultActive, addToActiveWorkspace]);
+
+  // Filter nodes by the active workspace (default workspace = no filter).
+  // We always filter from the full `nodes` list so `displayNodes` already
+  // reflects workspace membership before pulse-add decoration runs.
+  const workspaceFilteredNodes = useMemo(() => {
+    if (isDefaultActive) return nodes;
+    const allowedRepos = new Set(activeWorkspace.repoIds);
+    const allowedFeatures = new Set(activeWorkspace.featureIds);
+    return nodes.filter((n) => {
+      if (n.type === 'repositoryNode') return allowedRepos.has(n.id);
+      if (n.type === 'featureNode') return allowedFeatures.has(n.id);
+      return true;
+    });
+  }, [nodes, isDefaultActive, activeWorkspace]);
+
+  // Drop edges whose endpoints were filtered out.
+  const workspaceFilteredEdges = useMemo(() => {
+    if (isDefaultActive) return edges;
+    const visibleIds = new Set(workspaceFilteredNodes.map((n) => n.id));
+    return edges.filter((e) => visibleIds.has(e.source) && visibleIds.has(e.target));
+  }, [edges, isDefaultActive, workspaceFilteredNodes]);
+
   // Pulse the "+" button when there's a single repo with no features and the
   // create-feature drawer is not open — draws attention to the next action.
   const isCreateDrawerOpen = pathname.startsWith('/create');
   const displayNodes = useMemo(() => {
-    const repoNodes = nodes.filter((n) => n.type === 'repositoryNode');
-    const hasFeatures = nodes.some((n) => n.type === 'featureNode');
+    const source = workspaceFilteredNodes;
+    const repoNodes = source.filter((n) => n.type === 'repositoryNode');
+    const hasFeatures = source.some((n) => n.type === 'featureNode');
     const shouldPulse = repoNodes.length === 1 && !hasFeatures && !isCreateDrawerOpen;
 
-    if (!shouldPulse) return nodes;
+    if (!shouldPulse) return source;
 
-    return nodes.map((n) =>
+    return source.map((n) =>
       n.type === 'repositoryNode' ? { ...n, data: { ...n.data, pulseAdd: true } } : n
     );
-  }, [nodes, isCreateDrawerOpen]);
+  }, [workspaceFilteredNodes, isCreateDrawerOpen]);
 
   const handlePickFolder = useCallback(() => {
     window.dispatchEvent(new CustomEvent('shep:pick-folder'));
   }, []);
+
+  // Re-fit the viewport when the active workspace's visible node set changes
+  // (switching workspaces, or changing the active workspace's membership via
+  // the Manage dialog). The default workspace shows everything and uses the
+  // persisted viewport, so it's skipped. The first run after mount is also
+  // skipped so we don't override the user's saved viewport on initial load.
+  const workspaceFitFingerprint = useMemo(() => {
+    if (isDefaultActive) return `default`;
+    const ids = workspaceFilteredNodes
+      .map((n) => n.id)
+      .sort()
+      .join(',');
+    return `${activeWorkspace.id}:${ids}`;
+  }, [isDefaultActive, activeWorkspace.id, workspaceFilteredNodes]);
+  const prevWorkspaceFitFingerprintRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevWorkspaceFitFingerprintRef.current;
+    prevWorkspaceFitFingerprintRef.current = workspaceFitFingerprint;
+    // Skip the very first run so we don't override the persisted viewport.
+    if (prev === null) return;
+    if (prev === workspaceFitFingerprint) return;
+    if (isDefaultActive) return;
+    if (workspaceFilteredNodes.length === 0) return;
+    // Defer to next frame so React Flow has committed the new node set
+    // before we measure for fitView.
+    const t = setTimeout(() => {
+      fitView(AUTO_FOCUS_OPTIONS);
+    }, 0);
+    return () => clearTimeout(t);
+  }, [workspaceFitFingerprint, isDefaultActive, workspaceFilteredNodes.length, fitView]);
+
+  // When the active (non-default) workspace has no members but real repos
+  // exist on the canvas, show a workspace-aware empty state instead of the
+  // welcome wizard. The wizard would imply "no repos at all", which is wrong
+  // here — and crucially, leaves the workspace selector visible via the
+  // toolbar so users can switch back to the default workspace.
+  const workspaceFilteredEmpty =
+    hasRepositories && !isDefaultActive && workspaceFilteredNodes.length === 0;
+
+  const emptyStateNode = workspaceFilteredEmpty ? (
+    <div className="pointer-events-auto flex h-full w-full flex-col items-center justify-center px-8">
+      <div className="bg-primary/10 text-primary mb-5 flex h-12 w-12 items-center justify-center rounded-2xl">
+        <Layers className="h-6 w-6" />
+      </div>
+      <h2 className="text-foreground/90 text-center text-2xl font-light tracking-tight">
+        This workspace is empty
+      </h2>
+      <p className="text-muted-foreground mt-2 max-w-sm text-center text-sm leading-relaxed">
+        Add repositories or features from the canvas, or switch back to the default workspace to see
+        everything.
+      </p>
+      <div className="mt-6 flex items-center gap-2">
+        <Button
+          size="sm"
+          onClick={() => setWorkspaceNewProjectOpen(true)}
+          className="bg-blue-500 text-white hover:bg-blue-600"
+        >
+          <FolderPlus className="me-1.5 h-3.5 w-3.5" />
+          New project
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setManageWorkspaceOpen(true)}>
+          <Plus className="me-1.5 h-3.5 w-3.5" />
+          Manage items
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => setActiveWorkspace(DEFAULT_WORKSPACE_ID)}>
+          Switch to Default
+        </Button>
+      </div>
+    </div>
+  ) : (
+    <ControlCenterEmptyState onRepositorySelect={addRepoAndFocus} />
+  );
 
   const featureFlags = useFeatureFlags();
 
   // (+) FAB actions — only visible on control center
   const fabActions = useMemo<FloatingActionButtonAction[]>(() => {
     const actions: FloatingActionButtonAction[] = [
+      {
+        id: 'new-project',
+        label: 'New project',
+        icon: <FolderPlus className="h-4 w-4" />,
+        onClick: () => {
+          clickSound.play();
+          setWorkspaceNewProjectOpen(true);
+        },
+      },
       {
         id: 'new-feature',
         label: t('fab.newFeature'),
@@ -461,7 +626,7 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
       {
         id: 'add-local-repo',
         label: t('fab.localFolder'),
-        icon: <FolderPlus className="h-4 w-4" />,
+        icon: <FolderOpen className="h-4 w-4" />,
         onClick: handlePickFolder,
       },
     ];
@@ -501,6 +666,20 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
       showArchived={showArchived}
       onToggleArchived={() => setShowArchived(!showArchived)}
       onResetViewport={resetViewport}
+      startSlot={
+        <WorkspaceSelector
+          workspaces={workspaces}
+          activeWorkspace={activeWorkspace}
+          onSelect={setActiveWorkspace}
+          onRequestCreate={() => setCreateWorkspaceOpen(true)}
+          onRequestRename={() => setRenameWorkspaceOpen(true)}
+          onRequestDelete={(id) => {
+            setPendingDeleteWorkspaceId(id);
+            setDeleteWorkspaceOpen(true);
+          }}
+          onManage={() => setManageWorkspaceOpen(true)}
+        />
+      }
     />
   );
 
@@ -508,7 +687,7 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     <>
       <FeaturesCanvas
         nodes={showCanvas ? displayNodes : []}
-        edges={showCanvas ? edges : []}
+        edges={showCanvas ? workspaceFilteredEdges : []}
         selectedFeatureId={selectedFeatureId}
         selectedRepository={selectedRepository}
         defaultViewport={defaultViewport}
@@ -519,10 +698,74 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
         onPaneClick={handleClearDrawers}
         onMoveEnd={handleMoveEnd}
         toolbar={canvasToolbar}
-        emptyState={<ControlCenterEmptyState onRepositorySelect={addRepoAndFocus} />}
+        emptyState={emptyStateNode}
       />
       {/* (+) FAB — bottom-left, moves with sidebar */}
       {showCanvas ? <CreateFab actions={fabActions} /> : null}
+      <NewProjectDialog
+        open={workspaceNewProjectOpen}
+        onOpenChange={setWorkspaceNewProjectOpen}
+        onCreated={(path) => addRepoAndFocus(path)}
+      />
+      <ManageWorkspaceDialog
+        open={manageWorkspaceOpen}
+        onOpenChange={setManageWorkspaceOpen}
+        workspace={activeWorkspace}
+        allNodes={nodes}
+        onSave={(members) => setWorkspaceMembers(activeWorkspace.id, members)}
+      />
+      <WorkspaceNameDialog
+        open={createWorkspaceOpen}
+        onOpenChange={setCreateWorkspaceOpen}
+        title="New workspace"
+        description="Create a workspace to filter the canvas to a specific set of repositories and features."
+        confirmLabel="Create"
+        onConfirm={(name) => {
+          createWorkspace(name);
+          setManageWorkspaceOpen(true);
+        }}
+      />
+      <WorkspaceNameDialog
+        open={renameWorkspaceOpen}
+        onOpenChange={setRenameWorkspaceOpen}
+        title="Rename workspace"
+        initialValue={activeWorkspace.name}
+        confirmLabel="Rename"
+        onConfirm={(name) => renameWorkspace(activeWorkspace.id, name)}
+      />
+      <AlertDialog
+        open={deleteWorkspaceOpen}
+        onOpenChange={(open) => {
+          setDeleteWorkspaceOpen(open);
+          if (!open) setPendingDeleteWorkspaceId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete workspace?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove the workspace &ldquo;
+              {workspaces.find((w) => w.id === pendingDeleteWorkspaceId)?.name ??
+                activeWorkspace.name}
+              &rdquo;. The repositories and features themselves are not affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (pendingDeleteWorkspaceId) {
+                  deleteWorkspace(pendingDeleteWorkspaceId);
+                  setPendingDeleteWorkspaceId(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

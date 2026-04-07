@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
   FolderOpen,
+  FolderPlus,
   Copy,
   Check,
   Loader2,
@@ -23,6 +24,7 @@ import type { AgentAuthStatus } from '@/app/actions/check-agent-auth';
 import { checkToolStatus } from '@/app/actions/check-tool-status';
 import type { ToolStatusResult, ToolStatusEntry } from '@/app/actions/check-tool-status';
 import { WelcomeAgentSetup } from './welcome-agent-setup';
+import { NewProjectDialog } from './new-project-dialog';
 
 export interface ControlCenterEmptyStateProps {
   onRepositorySelect?: (path: string) => void;
@@ -43,6 +45,7 @@ export function ControlCenterEmptyState({
   const [authStatus, setAuthStatus] = useState<AgentAuthStatus | null>(null);
   const [cliExpanded, setCliExpanded] = useState(false);
   const [toolStatus, setToolStatus] = useState<ToolStatusResult | null>(null);
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
   const { reactFileManager: useReactFileManager } = useFeatureFlags();
 
   useEffect(() => {
@@ -157,6 +160,18 @@ export function ControlCenterEmptyState({
             {loading ? t('emptyState.opening') : t('emptyState.chooseFolder')}
           </button>
 
+          {/* Secondary CTA — create a brand-new project folder under shep home */}
+          <button
+            type="button"
+            data-testid="empty-state-new-project"
+            onClick={() => setNewProjectOpen(true)}
+            disabled={loading}
+            className="border-foreground/15 text-foreground/80 hover:bg-foreground/5 hover:border-foreground/25 mt-3 flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-6 py-3.5 text-sm font-medium transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <FolderPlus className="h-4 w-4" />
+            New Project
+          </button>
+
           {/* Subtitle under CTA */}
           <p className="text-muted-foreground/60 mt-3 text-center text-sm">
             {t('emptyState.folderHint')}
@@ -227,6 +242,11 @@ export function ControlCenterEmptyState({
           if (!open) setShowReactPicker(false);
         }}
         onSelect={handleReactPickerSelect}
+      />
+      <NewProjectDialog
+        open={newProjectOpen}
+        onOpenChange={setNewProjectOpen}
+        onCreated={(path) => onRepositorySelect?.(path)}
       />
     </div>
   );

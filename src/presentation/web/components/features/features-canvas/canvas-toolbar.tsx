@@ -11,12 +11,15 @@ export interface CanvasToolbarProps {
   showArchived: boolean;
   onToggleArchived: () => void;
   onResetViewport?: () => Viewport;
+  /** Optional slot rendered at the start of the toolbar (e.g. workspace selector). */
+  startSlot?: React.ReactNode;
 }
 
 export function CanvasToolbar({
   showArchived,
   onToggleArchived,
   onResetViewport,
+  startSlot,
 }: CanvasToolbarProps) {
   const { t } = useTranslation('web');
   const { zoomIn, zoomOut, fitView, setViewport } = useReactFlow();
@@ -42,6 +45,12 @@ export function CanvasToolbar({
 
   return (
     <div className="bg-background flex items-center gap-1 rounded-xl border px-2 py-1.5 shadow-md dark:bg-neutral-900">
+      {startSlot ? (
+        <>
+          {startSlot}
+          <div className="bg-border mx-1 h-5 w-px" />
+        </>
+      ) : null}
       {/* View controls */}
       <ToolbarButton
         onClick={onToggleArchived}
