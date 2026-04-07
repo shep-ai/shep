@@ -1,0 +1,27 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-token-optimization-layer
+
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > full pipeline with all capabilities enabled > reduces a realistic prompt with measurable token savings 2ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > full pipeline with all capabilities enabled > reduces the realistic prompt by more than 20% 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > full pipeline with all capabilities enabled > records all five capabilities in metrics.capabilitiesApplied 1ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > full pipeline with all capabilities enabled > preserves the critical error line through the full pipeline 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > full pipeline with all capabilities enabled > preserves the failing test name through the full pipeline 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > full pipeline with all capabilities enabled > preserves stack trace through the full pipeline 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > full pipeline with all capabilities enabled > records output filter lines removed greater than 0 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > full pipeline with all capabilities enabled > compression ratio is less than or equal to 1.0 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > master toggle override > returns original prompt unchanged when master toggle is off 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > per-feature override of individual capabilities > disables outputFiltering while keeping other capabilities active 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > per-feature override of individual capabilities > disables semanticCompression while keeping other capabilities active 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > per-feature override of individual capabilities > disables aliasCompression while keeping other capabilities active 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > per-feature override of individual capabilities > every capability disabled keeps prompt minimally changed 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > per-feature override of individual capabilities > per-feature override of enabled=false disables pipeline 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > per-feature override of individual capabilities > per-feature override re-enabling a single disabled capability works 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > skill routing directive injection > prepends a skill routing directive for the plan phase 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > skill routing directive injection > returns no aliasCompression header when phase has empty directive and no repeats 0ms
+ ✓ |node| tests/integration/infrastructure/services/token-optimization/prompt-optimizer-pipeline.test.ts > Token Optimization Pipeline Integration > performance budget > completes optimization of an 80KB prompt in under 50ms (warm) 13ms
+
+ Test Files  1 passed (1)
+      Tests  18 passed (18)
+   Start at  13:57:05
+   Duration  158ms (transform 52ms, setup 27ms, import 53ms, tests 20ms, environment 0ms)
+

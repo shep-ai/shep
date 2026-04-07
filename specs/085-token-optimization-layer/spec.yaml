@@ -2,17 +2,10 @@ name: "token-optimization-layer"
 number: 85
 branch: "feat/token-optimization-layer"
 oneLiner: "Unified token optimization layer to reduce LLM token consumption across the agent pipeline"
-summary: >
-  Add a Token Optimization Layer that sits between Shep's graph nodes and the LLM executors,
-  reducing token consumption through five integrated capabilities: command output filtering,
-  skill pruning with lazy loading, delta-context state diffing, semantic text compression,
-  and alias/meta-token compression. The layer hooks into the existing prompt-building and
-  executor pipeline without changing the agent-agnostic architecture.
+summary: "Add a Token Optimization Layer that sits between Shep's graph nodes and the LLM executors, reducing token consumption through five integrated capabilities: command output filtering, skill pruning with lazy loading, delta-context state diffing, semantic text compression, and alias/meta-token compression. The layer hooks into the existing prompt-building and executor pipeline without changing the agent-agnostic architecture.\n"
 phase: "Requirements"
 sizeEstimate: "L"
-
 relatedFeatures: []
-
 technologies:
   - "TypeScript"
   - "LangGraph (state graph, annotations, reducers)"
@@ -20,7 +13,6 @@ technologies:
   - "TypeSpec (domain model generation)"
   - "better-sqlite3 (persistence)"
   - "Node.js child_process (agent process spawning)"
-
 relatedLinks:
   - title: "Caveman Claude - Token-Cutting Skill"
     url: "https://dev.to/onsen/caveman-claude-the-token-cutting-skill-thats-changing-ai-workflows-4hmc"
@@ -32,7 +24,6 @@ relatedLinks:
     url: "https://arxiv.org/abs/2506.00307"
   - title: "Dynamic Compressing Prompts for Efficient Inference"
     url: "https://arxiv.org/html/2504.11004v1"
-
 openQuestions:
   - question: "Where should the optimization layer intercept the prompt pipeline?"
     resolved: true
@@ -48,7 +39,6 @@ openQuestions:
         selected: false
     selectionRationale: "A single interceptor in executeNode() is the cleanest approach because it already sits between prompt assembly and execution (line 571-584). It centralizes the optimization logic, requires no changes to individual prompt builders, and can access the full state (phase name, model, history) needed for intelligent optimization. Nodes that manually call buildExecutorOptions can opt-in separately."
     answer: "Single interceptor in executeNode()"
-
   - question: "Should skill pruning modify files on disk or filter at prompt assembly time?"
     resolved: true
     options:
@@ -63,7 +53,6 @@ openQuestions:
         selected: false
     selectionRationale: "Filtering at prompt assembly time is safest because agents (Claude Code, Cursor, etc.) read skills from the filesystem independently. However, the optimization layer cannot control what the agent reads from disk — it can only control the prompt. The practical implementation is to add a skills routing section to the prompt that lists phase-relevant skills, combined with instructions to ignore others. For agents that auto-load all .claude/skills/ content, the real savings come from injecting fewer skills at feature creation time based on feature type."
     answer: "Filter at prompt assembly time"
-
   - question: "What compression strategy should be used for semantic text compression?"
     resolved: true
     options:
@@ -78,22 +67,20 @@ openQuestions:
         selected: false
     selectionRationale: "Rule-based caveman compression is the right first step because it requires no additional LLM calls, adds zero latency, and has predictable behavior. The 'caveman Claude' pattern (removing articles, filler words, shortening phrases) has been proven effective in the community. LLM-based summarization can be added as a Phase 2 enhancement for sections where deeper compression is needed, but it should not be the default due to added cost and latency."
     answer: "Rule-based caveman compression"
-
   - question: "Should the optimization layer be enabled by default for new features?"
     resolved: true
     options:
       - option: "Enabled by default, opt-out per feature"
         description: "All new features get token optimization automatically. Users can disable via settings if they experience issues. Maximizes adoption and cost savings from day one."
-        selected: true
+        selected: false
       - option: "Disabled by default, opt-in per feature"
         description: "Conservative rollout where users must explicitly enable optimization. Safer but means most users never benefit. Suitable for experimental features."
         selected: false
       - option: "Gradual rollout via feature flag"
         description: "Start disabled, enable via feature flag for testing, then flip default. Requires feature flag infrastructure and two settings changes."
-        selected: false
+        selected: true
     selectionRationale: "Enabled by default maximizes value. The optimization layer applies deterministic, well-tested transformations — not probabilistic ones. Users who encounter edge cases can disable it per-feature. The existing settings pattern (workflow.skillInjection.enabled) provides a clean model for this. Since optimizations are layered and independently toggleable, users can disable specific capabilities without losing all benefits."
-    answer: "Enabled by default, opt-out per feature"
-
+    answer: "Gradual rollout via feature flag"
   - question: "How should delta-context diffing track state across phases?"
     resolved: true
     options:
@@ -108,7 +95,6 @@ openQuestions:
         selected: false
     selectionRationale: "Hash-based change detection via LangGraph state channels is the most natural fit. The state graph already carries metadata per phase, and adding content hashes is trivial. When a spec file is unchanged between phases, the prompt can include a compact summary (e.g., 'spec.yaml: unchanged since requirements phase, 45 lines') instead of the full content. This avoids external storage overhead while achieving meaningful savings for the common case where most files don't change between consecutive phases."
     answer: "Hash-based change detection with LangGraph state"
-
   - question: "Should token budget enforcement be included in the initial release?"
     resolved: true
     options:
@@ -123,7 +109,6 @@ openQuestions:
         selected: false
     selectionRationale: "Deferring budget enforcement to Phase 3 is the right call. The five optimization capabilities (output filtering, skill pruning, delta-context, semantic compression, alias compression) are passive reductions that cannot break correctness. Budget enforcement, by contrast, can actively prevent the agent from receiving needed context, risking task failures. It also requires calibration data (what are reasonable per-phase budgets?) that the optimization metrics will provide once Phase 1 and 2 are deployed."
     answer: "Defer to Phase 3"
-
   - question: "What granularity of optimization settings should be exposed to users?"
     resolved: true
     options:
@@ -138,297 +123,4 @@ openQuestions:
         selected: false
     selectionRationale: "Master toggle plus per-capability toggles follows the existing settings pattern (e.g., skillInjection has enabled + skills list). Each optimization capability is independent and could have edge cases, so users need the ability to disable a specific one. Detailed configuration (custom regex patterns, compression thresholds) can be added later as advanced settings if needed, but the initial release should keep it simple."
     answer: "Master toggle + per-capability toggles"
-
-content: |
-  ## Problem Statement
-
-  Shep's agent pipeline sends full, uncompressed context to the LLM on every executor call.
-  This includes complete spec/research/plan YAML files, all injected skills, raw terminal
-  output from commands (test, build, git), and repeated context across multi-phase workflows.
-  There is no filtering, pruning, or compression layer between prompt construction and LLM
-  invocation. This leads to unnecessarily high token consumption, increased cost, and slower
-  execution — especially for large features with multi-phase implementation plans.
-
-  Current pain points identified through codebase analysis:
-
-  1. **No command output filtering** — Raw test/build/git output is included verbatim in
-     prompts. A failed test run can dump thousands of lines into context.
-  2. **No skill pruning** — All injected skills are available to the agent regardless of the
-     current phase or task type. Skills are injected at feature creation time into the
-     worktree and stay there for the entire lifecycle.
-  3. **Full context resent every phase** — Each graph node reads the complete spec.yaml,
-     research.yaml, plan.yaml, and tasks.yaml from disk and includes them in the prompt,
-     even when only a small delta changed since the last phase.
-  4. **No text compression** — Prompt text is natural language with full grammar, even for
-     informational sections where semantic compression would preserve meaning.
-  5. **No token budget enforcement** — Phases run until completion or timeout with no
-     mechanism to enforce token limits or degrade gracefully when approaching budget.
-
-  ## Success Criteria
-
-  - [ ] Command output filter reduces test/build/git output tokens by 50%+ while preserving all failure-relevant information (error messages, stack traces, failing test names)
-  - [ ] Skill pruning includes only phase-relevant skills in the prompt, reducing skill token overhead by 40%+ compared to injecting all skills
-  - [ ] Delta-context reduces repeated context (spec/research/plan) tokens by 30%+ across multi-phase runs where files are unchanged between consecutive phases
-  - [ ] Semantic compression reduces informational prompt sections (instructions, constraints, guidelines) by 25%+ without degrading agent task success rate
-  - [ ] Alias compression reduces repeated long strings (file paths, enum values, policy text) by 20%+
-  - [ ] All optimizations are independently toggleable via workflow settings (master toggle + per-capability toggles)
-  - [ ] Token usage metrics are tracked and reported before/after optimization for every phase execution, stored in PhaseTiming or a dedicated optimization metrics table
-  - [ ] No regression in task success rate (measured by phase exit codes across 10+ feature runs with optimization enabled vs disabled)
-  - [ ] No regression in repair-loop count (measured by retry attempts in implement/fast-implement phases)
-  - [ ] Optimization layer adds less than 50ms latency to prompt assembly (measured via PhaseTiming.durationApiMs delta)
-  - [ ] All new services follow Clean Architecture: port interfaces in application layer, implementations in infrastructure layer, wired via DI container
-
-  ## Functional Requirements
-
-  ### FR-1: Prompt Optimization Service
-
-  The system MUST provide an `IPromptOptimizerService` interface (application port) with an
-  `optimize(prompt, context)` method that accepts a raw prompt string and phase context
-  (phase name, model ID, feature ID, agent run ID) and returns an optimized prompt string
-  plus optimization metadata (original token count estimate, optimized token count estimate,
-  capabilities applied).
-
-  ### FR-2: Command Output Filtering
-
-  The system MUST filter command output (test runners, build tools, git operations) embedded
-  in prompts by applying configurable regex-based filter policies. Each policy defines:
-  - A matcher pattern (e.g., lines matching `PASS`, `✓`, repeated blank lines)
-  - A replacement strategy: `remove`, `summarize` (replace N matching lines with a count),
-    or `truncate` (keep first/last N lines)
-  - Default policies for: Jest/Vitest test output, TypeScript build output, git diff output,
-    pnpm install output
-
-  The filter MUST preserve: error messages, stack traces, failing test names/paths,
-  compilation errors with file:line references, and any line containing `error`, `fail`,
-  `warn`, or `ENOENT` (case-insensitive).
-
-  ### FR-3: Phase-Aware Skill Routing
-
-  The system MUST maintain a skill routing table that maps workflow phases to relevant skill
-  sets. When building prompts, the system MUST include a directive listing which skills are
-  relevant for the current phase and instructing the agent to prioritize those skills.
-
-  Default routing:
-  - `analyze` / `requirements`: architecture-reviewer, domain modeling skills
-  - `research`: architecture-reviewer, technology evaluation skills
-  - `plan`: architecture-reviewer, tdd-guide, implementation-guide skills
-  - `implement` / `fast-implement`: tdd-guide, implementation-guide, framework-specific skills
-  - `merge`: git-related skills only
-  - `evidence`: testing and validation skills
-
-  The routing table MUST be configurable via settings and overridable per-feature.
-
-  ### FR-4: Delta-Context State Diffing
-
-  The system MUST track content hashes of spec files (spec.yaml, research.yaml, plan.yaml,
-  tasks.yaml, feature.yaml) in LangGraph state channels. When a spec file is unchanged
-  between consecutive phases, the prompt builder MUST include a compact summary
-  (file name, line count, last-modified phase) instead of the full file content.
-
-  The delta-context tracker MUST:
-  - Compute SHA-256 hashes of spec file contents at the start of each phase
-  - Store hashes in LangGraph state as `specFileHashes: Record<string, string>`
-  - Compare current hashes against previous phase hashes
-  - For unchanged files: replace full content with `"[file unchanged since {phase} — {lineCount} lines, hash {shortHash}]"`
-  - For changed files: include full content (no compression)
-  - Always include full content for the first phase of a run (no prior hashes)
-
-  ### FR-5: Semantic Text Compression
-
-  The system MUST apply rule-based text compression to non-code sections of prompts
-  (instruction blocks, constraint lists, guidelines). Compression rules include:
-  - Remove articles (a, an, the) where grammatically safe
-  - Shorten common instruction phrases (e.g., "you must" → "must", "make sure to" → "ensure")
-  - Remove filler words (just, simply, basically, actually, really)
-  - Collapse repeated whitespace and blank lines
-  - Abbreviate common technical terms (e.g., "repository" → "repo", "configuration" → "config")
-
-  The compressor MUST NOT modify:
-  - Code blocks (fenced with ``` or indented 4+ spaces)
-  - File paths and URLs
-  - YAML/JSON content within prompts
-  - Quoted strings
-  - User-provided content (spec file content that the agent needs to read verbatim)
-
-  ### FR-6: Alias/Meta-Token Compression
-
-  The system MUST build a session dictionary of repeated long strings (file paths, enum
-  values, repeated policy phrases) and replace them with short aliases in the prompt.
-  The dictionary MUST be prepended to the prompt so the agent can dereference aliases.
-
-  Rules:
-  - Only alias strings that appear 3+ times and are 20+ characters long
-  - Aliases use a clear format: `$A1`, `$A2`, etc.
-  - The dictionary header is formatted as: `## Aliases\n$A1 = "original string"\n...`
-  - Total dictionary size must not exceed the savings from aliasing (net-positive check)
-  - Dictionary is rebuilt per prompt (no cross-phase persistence needed)
-
-  ### FR-7: Optimization Metrics Tracking
-
-  The system MUST track optimization metrics for every phase execution:
-  - `originalTokenEstimate`: estimated tokens before optimization
-  - `optimizedTokenEstimate`: estimated tokens after optimization
-  - `savingsPercent`: percentage reduction
-  - `capabilitiesApplied`: list of capabilities that were active
-  - `outputFilterLinesRemoved`: lines removed by command output filter
-  - `deltaContextFilesSkipped`: spec files replaced with summaries
-  - `compressionRatio`: ratio for semantic compression
-  - `aliasesCreated`: number of alias substitutions
-
-  Metrics MUST be stored alongside existing PhaseTiming records (new columns or a related
-  table) and accessible via the existing phase timing query infrastructure.
-
-  ### FR-8: Optimization Settings
-
-  The system MUST add a `tokenOptimization` section to workflow settings with:
-  - `enabled`: boolean (master toggle, default: true)
-  - `outputFiltering`: boolean (default: true)
-  - `skillRouting`: boolean (default: true)
-  - `deltaContext`: boolean (default: true)
-  - `semanticCompression`: boolean (default: true)
-  - `aliasCompression`: boolean (default: true)
-
-  Settings MUST follow the existing pattern: TypeSpec-defined model, DB migration with
-  backward-compatible additive columns, mapper fallback to factory defaults when DB values
-  are null.
-
-  ### FR-9: Per-Feature Override
-
-  The system MUST allow per-feature override of optimization settings. When a feature has
-  explicit optimization settings, they take precedence over global workflow settings.
-  This follows the existing per-feature settings pattern (e.g., `commitSpecs`, `forkAndPr`).
-
-  ### FR-10: Transparent Bypass for Resume
-
-  When a phase resumes after interruption (approval gate, timeout, error), the optimization
-  layer MUST apply the same optimization settings that were active during the original
-  execution to maintain prompt consistency. The resume prefix itself MUST NOT be compressed
-  (it contains critical context for the agent to understand what happened).
-
-  ## Non-Functional Requirements
-
-  ### NFR-1: Performance
-
-  The optimization layer MUST add less than 50ms of latency to prompt assembly for a
-  typical prompt (under 100KB). This is measured as the delta in wall-clock time between
-  `buildPrompt()` completion and `executor.execute()` invocation with and without
-  optimization enabled.
-
-  ### NFR-2: Agent-Agnostic
-
-  The optimization layer MUST NOT contain any agent-specific logic. It operates on prompt
-  strings and returns prompt strings. It does not know or care whether the downstream
-  executor is Claude Code, Cursor, Copilot, Gemini, or Codex. All agent-specific behavior
-  remains in the executor adapters.
-
-  ### NFR-3: Clean Architecture Compliance
-
-  All new interfaces MUST be defined as port interfaces in `application/ports/output/services/`.
-  All implementations MUST live in `infrastructure/services/`. The optimization service
-  MUST be registered in the DI container and injected into `executeNode()` — not imported
-  directly.
-
-  ### NFR-4: Testability
-
-  Each optimization capability (output filter, skill router, delta-context, compressor,
-  alias engine) MUST be implemented as a separate, independently testable service with
-  its own unit test suite. The orchestrating `PromptOptimizerService` MUST be testable
-  with mocked capability services.
-
-  ### NFR-5: Observability
-
-  The optimization layer MUST log (at debug level) a summary of optimizations applied per
-  phase execution, including: capabilities applied, estimated token savings, and any
-  capabilities that were skipped (and why). This enables debugging when optimization
-  causes unexpected behavior.
-
-  ### NFR-6: Safety — No Information Loss for Errors
-
-  The command output filter MUST have a conservative safety policy: any line containing
-  error-related keywords (error, fail, warn, ENOENT, rejected, exception, stack, panic,
-  segfault, abort, killed, timeout, denied, unauthorized, not found, undefined, null,
-  NaN, syntax, reference, type error) MUST be preserved verbatim. When in doubt,
-  preserve the line.
-
-  ### NFR-7: Backward Compatibility
-
-  Enabling or disabling the optimization layer MUST NOT change the structure or semantics
-  of the prompt in ways that break agent behavior. The optimized prompt must be functionally
-  equivalent to the original — containing the same instructions, constraints, and data,
-  just more concisely expressed. The agent must be able to complete the same tasks with
-  the same success rate.
-
-  ### NFR-8: Database Migration Safety
-
-  All database changes (new columns for optimization metrics, settings fields) MUST be
-  additive-only migrations. No columns may be dropped or renamed. New columns MUST have
-  sensible defaults so that existing features and phase timing records remain valid.
-
-  ## Product Questions & AI Recommendations
-
-  | # | Question | AI Recommendation | Rationale |
-  | - | -------- | ----------------- | --------- |
-  | 1 | Where should the optimization layer intercept? | Single interceptor in executeNode() | Centralized, requires no prompt builder changes, has full state access |
-  | 2 | Should skill pruning modify disk or filter at prompt time? | Filter at prompt assembly time | Safer, no filesystem churn, agents read skills independently from disk |
-  | 3 | What compression strategy for semantic compression? | Rule-based caveman compression | Zero latency, no LLM cost, deterministic, proven in community |
-  | 4 | Should optimization be enabled by default? | Yes, enabled by default with opt-out | Deterministic transforms, maximizes adoption, per-capability toggles for safety |
-  | 5 | How should delta-context track state? | Hash-based change detection in LangGraph state | Natural fit for state graph, no external storage, handles common case well |
-  | 6 | Should token budgets be in initial release? | Defer to Phase 3 | Optimization capabilities are passive/safe; budgets need calibration data first |
-  | 7 | What granularity of settings? | Master toggle + per-capability toggles | Balances simplicity with surgical disable capability |
-
-  ## Affected Areas
-
-  | Area | Impact | Reasoning |
-  | ---- | ------ | --------- |
-  | `infrastructure/services/agents/feature-agent/nodes/node-helpers.ts` | High | Central `executeNode()` is the insertion point for the optimization layer — sits between prompt build and executor call |
-  | `infrastructure/services/agents/feature-agent/nodes/prompts/*.prompt.ts` | High | All prompt builders need to use delta-context and compression instead of raw file reads |
-  | `infrastructure/services/agents/streaming/streaming-executor-proxy.ts` | Medium | Output filter could intercept executor responses here before they re-enter context |
-  | `infrastructure/services/skill-injector.service.ts` | Medium | Skill pruning requires a new routing layer that controls which skills are active per phase |
-  | `infrastructure/services/agents/feature-agent/phase-timing-context.ts` | Medium | Optimization metrics extend the existing phase timing records |
-  | `infrastructure/services/agents/feature-agent/state.ts` | Medium | New state channels for delta tracking (specFileHashes) and optimization metadata |
-  | `infrastructure/di/container.ts` | Medium | New services (PromptOptimizer, OutputFilter, SkillRouter, DeltaContext, Compressor, AliasEngine) need DI registration |
-  | `application/ports/output/services/` | Medium | New port interfaces for each optimization capability |
-  | `tsp/` domain models | Low | Add TokenOptimizationConfig, OptimizationMetrics types |
-  | `infrastructure/services/settings.service.ts` | Low | Token optimization settings section |
-  | `domain/generated/output.ts` | Low | Auto-generated from TypeSpec changes |
-
-  ## Dependencies
-
-  - **Existing token tracking** (`AgentExecutionUsage`, `PhaseTiming`) — Optimization metrics extend these records
-  - **Existing skill injection** (`ISkillInjectorService`) — Skill router builds on the current injection mechanism
-  - **Existing prompt builders** (`nodes/prompts/*.prompt.ts`) — Delta-context replaces direct file reads in these builders
-  - **Existing executor interface** (`IAgentExecutor`) — Optimization layer sits before the executor, not inside it
-  - **Existing settings system** — New settings fields for token optimization config
-  - **Existing LangGraph state channels** — New channels for spec file hashes and optimization metadata
-  - **No external library dependencies** — All capabilities implemented with TypeScript standard library
-
-  ## Size Estimate
-
-  **L** — This is a multi-subsystem feature that touches the prompt pipeline, executor proxy,
-  skill system, state management, and settings. While each individual capability (output filter,
-  skill routing, delta-context, compression, alias) is an M-sized change, they share
-  infrastructure (the optimization layer abstraction, settings, DI wiring) and must be
-  integrated cohesively. The phased implementation strategy (Phase 1: output filter + skill
-  routing + delta-context, Phase 2: semantic compression + alias compression) allows
-  incremental delivery. Estimated at 1-2 weeks for full implementation across all five
-  capabilities with tests.
-
-  ## Implementation Strategy (High-Level)
-
-  The Token Optimization Layer should be implemented as a set of composable services behind a
-  unified `IPromptOptimizerService` interface, injected via DI and invoked from `executeNode()`
-  in node-helpers.ts between prompt assembly and executor invocation.
-
-  **Phase 1 (Highest ROI):**
-  - Command output filtering — regex-based policies for test/build/git output
-  - Skill routing — phase-aware skill relevance directives in prompts
-  - Delta-context — hash-based state diffing for spec file deduplication
-
-  **Phase 2 (Strong extra savings):**
-  - Semantic compression — caveman-style rule-based compression for instruction text
-  - Alias/meta-token compression — session dictionary for repeated long strings
-
-  **Phase 3 (Deferred — requires calibration data):**
-  - Token budget enforcement with degradation ladder
-  - Two-model compression pipeline (small model summarizes, large model executes)
-  - Compressed RAG chunks for large codebases
+content: "## Problem Statement\n\nShep's agent pipeline sends full, uncompressed context to the LLM on every executor call.\nThis includes complete spec/research/plan YAML files, all injected skills, raw terminal\noutput from commands (test, build, git), and repeated context across multi-phase workflows.\nThere is no filtering, pruning, or compression layer between prompt construction and LLM\ninvocation. This leads to unnecessarily high token consumption, increased cost, and slower\nexecution — especially for large features with multi-phase implementation plans.\n\nCurrent pain points identified through codebase analysis:\n\n1. **No command output filtering** — Raw test/build/git output is included verbatim in\n   prompts. A failed test run can dump thousands of lines into context.\n2. **No skill pruning** — All injected skills are available to the agent regardless of the\n   current phase or task type. Skills are injected at feature creation time into the\n   worktree and stay there for the entire lifecycle.\n3. **Full context resent every phase** — Each graph node reads the complete spec.yaml,\n   research.yaml, plan.yaml, and tasks.yaml from disk and includes them in the prompt,\n   even when only a small delta changed since the last phase.\n4. **No text compression** — Prompt text is natural language with full grammar, even for\n   informational sections where semantic compression would preserve meaning.\n5. **No token budget enforcement** — Phases run until completion or timeout with no\n   mechanism to enforce token limits or degrade gracefully when approaching budget.\n\n## Success Criteria\n\n- [ ] Command output filter reduces test/build/git output tokens by 50%+ while preserving all failure-relevant information (error messages, stack traces, failing test names)\n- [ ] Skill pruning includes only phase-relevant skills in the prompt, reducing skill token overhead by 40%+ compared to injecting all skills\n- [ ] Delta-context reduces repeated context (spec/research/plan) tokens by 30%+ across multi-phase runs where files are unchanged between consecutive phases\n- [ ] Semantic compression reduces informational prompt sections (instructions, constraints, guidelines) by 25%+ without degrading agent task success rate\n- [ ] Alias compression reduces repeated long strings (file paths, enum values, policy text) by 20%+\n- [ ] All optimizations are independently toggleable via workflow settings (master toggle + per-capability toggles)\n- [ ] Token usage metrics are tracked and reported before/after optimization for every phase execution, stored in PhaseTiming or a dedicated optimization metrics table\n- [ ] No regression in task success rate (measured by phase exit codes across 10+ feature runs with optimization enabled vs disabled)\n- [ ] No regression in repair-loop count (measured by retry attempts in implement/fast-implement phases)\n- [ ] Optimization layer adds less than 50ms latency to prompt assembly (measured via PhaseTiming.durationApiMs delta)\n- [ ] All new services follow Clean Architecture: port interfaces in application layer, implementations in infrastructure layer, wired via DI container\n\n## Functional Requirements\n\n### FR-1: Prompt Optimization Service\n\nThe system MUST provide an `IPromptOptimizerService` interface (application port) with an\n`optimize(prompt, context)` method that accepts a raw prompt string and phase context\n(phase name, model ID, feature ID, agent run ID) and returns an optimized prompt string\nplus optimization metadata (original token count estimate, optimized token count estimate,\ncapabilities applied).\n\n### FR-2: Command Output Filtering\n\nThe system MUST filter command output (test runners, build tools, git operations) embedded\nin prompts by applying configurable regex-based filter policies. Each policy defines:\n- A matcher pattern (e.g., lines matching `PASS`, `✓`, repeated blank lines)\n- A replacement strategy: `remove`, `summarize` (replace N matching lines with a count),\n  or `truncate` (keep first/last N lines)\n- Default policies for: Jest/Vitest test output, TypeScript build output, git diff output,\n  pnpm install output\n\nThe filter MUST preserve: error messages, stack traces, failing test names/paths,\ncompilation errors with file:line references, and any line containing `error`, `fail`,\n`warn`, or `ENOENT` (case-insensitive).\n\n### FR-3: Phase-Aware Skill Routing\n\nThe system MUST maintain a skill routing table that maps workflow phases to relevant skill\nsets. When building prompts, the system MUST include a directive listing which skills are\nrelevant for the current phase and instructing the agent to prioritize those skills.\n\nDefault routing:\n- `analyze` / `requirements`: architecture-reviewer, domain modeling skills\n- `research`: architecture-reviewer, technology evaluation skills\n- `plan`: architecture-reviewer, tdd-guide, implementation-guide skills\n- `implement` / `fast-implement`: tdd-guide, implementation-guide, framework-specific skills\n- `merge`: git-related skills only\n- `evidence`: testing and validation skills\n\nThe routing table MUST be configurable via settings and overridable per-feature.\n\n### FR-4: Delta-Context State Diffing\n\nThe system MUST track content hashes of spec files (spec.yaml, research.yaml, plan.yaml,\ntasks.yaml, feature.yaml) in LangGraph state channels. When a spec file is unchanged\nbetween consecutive phases, the prompt builder MUST include a compact summary\n(file name, line count, last-modified phase) instead of the full file content.\n\nThe delta-context tracker MUST:\n- Compute SHA-256 hashes of spec file contents at the start of each phase\n- Store hashes in LangGraph state as `specFileHashes: Record<string, string>`\n- Compare current hashes against previous phase hashes\n- For unchanged files: replace full content with `\"[file unchanged since {phase} — {lineCount} lines, hash {shortHash}]\"`\n- For changed files: include full content (no compression)\n- Always include full content for the first phase of a run (no prior hashes)\n\n### FR-5: Semantic Text Compression\n\nThe system MUST apply rule-based text compression to non-code sections of prompts\n(instruction blocks, constraint lists, guidelines). Compression rules include:\n- Remove articles (a, an, the) where grammatically safe\n- Shorten common instruction phrases (e.g., \"you must\" → \"must\", \"make sure to\" → \"ensure\")\n- Remove filler words (just, simply, basically, actually, really)\n- Collapse repeated whitespace and blank lines\n- Abbreviate common technical terms (e.g., \"repository\" → \"repo\", \"configuration\" → \"config\")\n\nThe compressor MUST NOT modify:\n- Code blocks (fenced with ``` or indented 4+ spaces)\n- File paths and URLs\n- YAML/JSON content within prompts\n- Quoted strings\n- User-provided content (spec file content that the agent needs to read verbatim)\n\n### FR-6: Alias/Meta-Token Compression\n\nThe system MUST build a session dictionary of repeated long strings (file paths, enum\nvalues, repeated policy phrases) and replace them with short aliases in the prompt.\nThe dictionary MUST be prepended to the prompt so the agent can dereference aliases.\n\nRules:\n- Only alias strings that appear 3+ times and are 20+ characters long\n- Aliases use a clear format: `$A1`, `$A2`, etc.\n- The dictionary header is formatted as: `## Aliases\\n$A1 = \"original string\"\\n...`\n- Total dictionary size must not exceed the savings from aliasing (net-positive check)\n- Dictionary is rebuilt per prompt (no cross-phase persistence needed)\n\n### FR-7: Optimization Metrics Tracking\n\nThe system MUST track optimization metrics for every phase execution:\n- `originalTokenEstimate`: estimated tokens before optimization\n- `optimizedTokenEstimate`: estimated tokens after optimization\n- `savingsPercent`: percentage reduction\n- `capabilitiesApplied`: list of capabilities that were active\n- `outputFilterLinesRemoved`: lines removed by command output filter\n- `deltaContextFilesSkipped`: spec files replaced with summaries\n- `compressionRatio`: ratio for semantic compression\n- `aliasesCreated`: number of alias substitutions\n\nMetrics MUST be stored alongside existing PhaseTiming records (new columns or a related\ntable) and accessible via the existing phase timing query infrastructure.\n\n### FR-8: Optimization Settings\n\nThe system MUST add a `tokenOptimization` section to workflow settings with:\n- `enabled`: boolean (master toggle, default: true)\n- `outputFiltering`: boolean (default: true)\n- `skillRouting`: boolean (default: true)\n- `deltaContext`: boolean (default: true)\n- `semanticCompression`: boolean (default: true)\n- `aliasCompression`: boolean (default: true)\n\nSettings MUST follow the existing pattern: TypeSpec-defined model, DB migration with\nbackward-compatible additive columns, mapper fallback to factory defaults when DB values\nare null.\n\n### FR-9: Per-Feature Override\n\nThe system MUST allow per-feature override of optimization settings. When a feature has\nexplicit optimization settings, they take precedence over global workflow settings.\nThis follows the existing per-feature settings pattern (e.g., `commitSpecs`, `forkAndPr`).\n\n### FR-10: Transparent Bypass for Resume\n\nWhen a phase resumes after interruption (approval gate, timeout, error), the optimization\nlayer MUST apply the same optimization settings that were active during the original\nexecution to maintain prompt consistency. The resume prefix itself MUST NOT be compressed\n(it contains critical context for the agent to understand what happened).\n\n## Non-Functional Requirements\n\n### NFR-1: Performance\n\nThe optimization layer MUST add less than 50ms of latency to prompt assembly for a\ntypical prompt (under 100KB). This is measured as the delta in wall-clock time between\n`buildPrompt()` completion and `executor.execute()` invocation with and without\noptimization enabled.\n\n### NFR-2: Agent-Agnostic\n\nThe optimization layer MUST NOT contain any agent-specific logic. It operates on prompt\nstrings and returns prompt strings. It does not know or care whether the downstream\nexecutor is Claude Code, Cursor, Copilot, Gemini, or Codex. All agent-specific behavior\nremains in the executor adapters.\n\n### NFR-3: Clean Architecture Compliance\n\nAll new interfaces MUST be defined as port interfaces in `application/ports/output/services/`.\nAll implementations MUST live in `infrastructure/services/`. The optimization service\nMUST be registered in the DI container and injected into `executeNode()` — not imported\ndirectly.\n\n### NFR-4: Testability\n\nEach optimization capability (output filter, skill router, delta-context, compressor,\nalias engine) MUST be implemented as a separate, independently testable service with\nits own unit test suite. The orchestrating `PromptOptimizerService` MUST be testable\nwith mocked capability services.\n\n### NFR-5: Observability\n\nThe optimization layer MUST log (at debug level) a summary of optimizations applied per\nphase execution, including: capabilities applied, estimated token savings, and any\ncapabilities that were skipped (and why). This enables debugging when optimization\ncauses unexpected behavior.\n\n### NFR-6: Safety — No Information Loss for Errors\n\nThe command output filter MUST have a conservative safety policy: any line containing\nerror-related keywords (error, fail, warn, ENOENT, rejected, exception, stack, panic,\nsegfault, abort, killed, timeout, denied, unauthorized, not found, undefined, null,\nNaN, syntax, reference, type error) MUST be preserved verbatim. When in doubt,\npreserve the line.\n\n### NFR-7: Backward Compatibility\n\nEnabling or disabling the optimization layer MUST NOT change the structure or semantics\nof the prompt in ways that break agent behavior. The optimized prompt must be functionally\nequivalent to the original — containing the same instructions, constraints, and data,\njust more concisely expressed. The agent must be able to complete the same tasks with\nthe same success rate.\n\n### NFR-8: Database Migration Safety\n\nAll database changes (new columns for optimization metrics, settings fields) MUST be\nadditive-only migrations. No columns may be dropped or renamed. New columns MUST have\nsensible defaults so that existing features and phase timing records remain valid.\n\n## Product Questions & AI Recommendations\n\n| # | Question | AI Recommendation | Rationale |\n| - | -------- | ----------------- | --------- |\n| 1 | Where should the optimization layer intercept? | Single interceptor in executeNode() | Centralized, requires no prompt builder changes, has full state access |\n| 2 | Should skill pruning modify disk or filter at prompt time? | Filter at prompt assembly time | Safer, no filesystem churn, agents read skills independently from disk |\n| 3 | What compression strategy for semantic compression? | Rule-based caveman compression | Zero latency, no LLM cost, deterministic, proven in community |\n| 4 | Should optimization be enabled by default? | Yes, enabled by default with opt-out | Deterministic transforms, maximizes adoption, per-capability toggles for safety |\n| 5 | How should delta-context track state? | Hash-based change detection in LangGraph state | Natural fit for state graph, no external storage, handles common case well |\n| 6 | Should token budgets be in initial release? | Defer to Phase 3 | Optimization capabilities are passive/safe; budgets need calibration data first |\n| 7 | What granularity of settings? | Master toggle + per-capability toggles | Balances simplicity with surgical disable capability |\n\n## Affected Areas\n\n| Area | Impact | Reasoning |\n| ---- | ------ | --------- |\n| `infrastructure/services/agents/feature-agent/nodes/node-helpers.ts` | High | Central `executeNode()` is the insertion point for the optimization layer — sits between prompt build and executor call |\n| `infrastructure/services/agents/feature-agent/nodes/prompts/*.prompt.ts` | High | All prompt builders need to use delta-context and compression instead of raw file reads |\n| `infrastructure/services/agents/streaming/streaming-executor-proxy.ts` | Medium | Output filter could intercept executor responses here before they re-enter context |\n| `infrastructure/services/skill-injector.service.ts` | Medium | Skill pruning requires a new routing layer that controls which skills are active per phase |\n| `infrastructure/services/agents/feature-agent/phase-timing-context.ts` | Medium | Optimization metrics extend the existing phase timing records |\n| `infrastructure/services/agents/feature-agent/state.ts` | Medium | New state channels for delta tracking (specFileHashes) and optimization metadata |\n| `infrastructure/di/container.ts` | Medium | New services (PromptOptimizer, OutputFilter, SkillRouter, DeltaContext, Compressor, AliasEngine) need DI registration |\n| `application/ports/output/services/` | Medium | New port interfaces for each optimization capability |\n| `tsp/` domain models | Low | Add TokenOptimizationConfig, OptimizationMetrics types |\n| `infrastructure/services/settings.service.ts` | Low | Token optimization settings section |\n| `domain/generated/output.ts` | Low | Auto-generated from TypeSpec changes |\n\n## Dependencies\n\n- **Existing token tracking** (`AgentExecutionUsage`, `PhaseTiming`) — Optimization metrics extend these records\n- **Existing skill injection** (`ISkillInjectorService`) — Skill router builds on the current injection mechanism\n- **Existing prompt builders** (`nodes/prompts/*.prompt.ts`) — Delta-context replaces direct file reads in these builders\n- **Existing executor interface** (`IAgentExecutor`) — Optimization layer sits before the executor, not inside it\n- **Existing settings system** — New settings fields for token optimization config\n- **Existing LangGraph state channels** — New channels for spec file hashes and optimization metadata\n- **No external library dependencies** — All capabilities implemented with TypeScript standard library\n\n## Size Estimate\n\n**L** — This is a multi-subsystem feature that touches the prompt pipeline, executor proxy,\nskill system, state management, and settings. While each individual capability (output filter,\nskill routing, delta-context, compression, alias) is an M-sized change, they share\ninfrastructure (the optimization layer abstraction, settings, DI wiring) and must be\nintegrated cohesively. The phased implementation strategy (Phase 1: output filter + skill\nrouting + delta-context, Phase 2: semantic compression + alias compression) allows\nincremental delivery. Estimated at 1-2 weeks for full implementation across all five\ncapabilities with tests.\n\n## Implementation Strategy (High-Level)\n\nThe Token Optimization Layer should be implemented as a set of composable services behind a\nunified `IPromptOptimizerService` interface, injected via DI and invoked from `executeNode()`\nin node-helpers.ts between prompt assembly and executor invocation.\n\n**Phase 1 (Highest ROI):**\n- Command output filtering — regex-based policies for test/build/git output\n- Skill routing — phase-aware skill relevance directives in prompts\n- Delta-context — hash-based state diffing for spec file deduplication\n\n**Phase 2 (Strong extra savings):**\n- Semantic compression — caveman-style rule-based compression for instruction text\n- Alias/meta-token compression — session dictionary for repeated long strings\n\n**Phase 3 (Deferred — requires calibration data):**\n- Token budget enforcement with degradation ladder\n- Two-model compression pipeline (small model summarizes, large model executes)\n- Compressed RAG chunks for large codebases\n"

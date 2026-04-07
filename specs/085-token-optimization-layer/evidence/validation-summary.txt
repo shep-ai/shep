@@ -1,0 +1,96 @@
+Token Optimization Layer — Validation Summary
+==============================================
+
+Branch: feat/token-optimization-layer
+Spec:   085-token-optimization-layer
+Date:   2026-04-07
+
+UNIT TESTS (Token Optimization)
+-------------------------------
+Command: npx vitest run tests/unit/infrastructure/services/token-optimization \
+                       tests/unit/infrastructure/di/container-token-optimization-registrations.test.ts
+
+Result: 8 test files, 201 tests passed
+Duration: 825ms
+
+Per-service breakdown:
+  - command-output-filter.service.test.ts ............ 44 tests passed
+  - semantic-compressor.service.test.ts .............. 53 tests passed
+  - prompt-optimizer.service.test.ts ................. 29 tests passed
+  - skill-routing.service.test.ts .................... 20 tests passed
+  - alias-compression.service.test.ts ................ 19 tests passed
+  - delta-context.service.test.ts .................... 18 tests passed
+  - optimization-metrics.service.test.ts ............. 11 tests passed
+  - container-token-optimization-registrations.test.ts  7 tests passed (DI wiring)
+
+INTEGRATION TESTS
+-----------------
+Command: npx vitest run tests/integration/infrastructure/services/token-optimization
+
+Result: 1 test file, 18 tests passed
+Duration: 158ms
+
+Notable validations from integration suite:
+  - reduces a realistic prompt with measurable token savings
+  - reduces the realistic prompt by more than 20%
+  - records all five capabilities in metrics.capabilitiesApplied
+  - preserves the critical error line through the full pipeline
+  - preserves the failing test name through the full pipeline
+  - preserves stack trace through the full pipeline
+  - records output filter lines removed greater than 0
+  - returns original prompt unchanged when master toggle is off
+  - per-feature override of enabled=false disables pipeline
+  - per-feature override of individual capabilities (output filter, semantic, alias)
+  - prepends a skill routing directive for the plan phase
+  - performance budget: 80KB prompt optimized in under 50ms (warm) [NFR-1]
+
+FULL UNIT TEST SUITE (regression check)
+---------------------------------------
+Command: pnpm test:unit
+Result:  392 test files, 5709 tests passed
+Duration: 40.44s
+
+BUILD
+-----
+Command: pnpm build
+Result:  succeeded (tsc -p tsconfig.build.json && tsc-alias)
+
+TYPECHECK
+---------
+Command: pnpm typecheck
+Result:  succeeded (tsc --noEmit, zero errors)
+
+LINT
+----
+Command: pnpm lint
+Result:  succeeded (eslint . --max-warnings 0 --cache, zero errors)
+
+COVERAGE OF TASKS 1-28
+----------------------
+- task-1  TypeSpec models ........... covered by domain types in output.ts
+- task-2  Settings .................. covered by settings tests + persistence
+- task-3  IPromptOptimizerService ... interface in application/ports/output/services
+- task-4  Capability port ifaces .... 6 interfaces present
+- task-5/6  Output filter ........... 44 unit tests
+- task-7/8  Skill routing ........... 20 unit tests
+- task-9/10 Delta-context ........... 18 unit tests
+- task-11   specFileHashes channel .. wired in feature-agent state
+- task-12/13 Semantic compressor .... 53 unit tests
+- task-14/15 Alias compression ...... 19 unit tests
+- task-16/17 Orchestrator ........... 29 unit tests
+- task-18  DI registrations ......... 7 container resolution tests
+- task-19  executeNode wiring ....... covered by integration test
+- task-20/21 Metrics service ........ 11 unit tests
+- task-22  Metrics in orchestrator .. covered in prompt-optimizer tests
+- task-23  Integration tests ........ 18 integration tests
+- task-24  Performance < 50ms ....... covered by perf integration test
+- task-25  pnpm validate ............ lint+typecheck pass
+- task-26  Full suite ............... 5709 tests pass
+- task-27  pnpm build ............... compilation succeeds
+- task-28  Per-feature override ..... 6+ integration tests cover overrides
+
+NOTE
+----
+This is a backend/domain feature with no UI changes. Evidence captured is
+test output and build/typecheck output, which is the appropriate evidence
+type per the project's evidence guidelines for non-UI tasks.
