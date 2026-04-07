@@ -3,6 +3,7 @@ $id: Language.yaml
 type: string
 enum:
   - en
+  - uk
   - ru
   - pt
   - es

@@ -24,3 +24,7 @@ rejectionFeedback:
     message: "still doesnt work, test yourself e2e,\nwe have currently a feature that is failing to merge:\n3d5921b1-9fa3-4563-9092-0db635bd286a\nyour goal it clicking on approve merge on it and that the merge would be susscful"
     phase: "merge"
     timestamp: "2026-04-06T11:27:13.959Z"
+  - iteration: 4
+    message: "Resolve merge conflicts"
+    phase: "merge"
+    timestamp: "2026-04-07T11:16:17.632Z"
