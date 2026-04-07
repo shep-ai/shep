@@ -1,7 +1,117 @@
 
  RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-token-optimization-layer
 
- ✓ |node| tests/unit/infrastructure/services/token-optimization/command-output-filter.service.test.ts > CommandOutputFilterService > empty and no-op inputs > should return empty output with 0 lines removed for empty input 1ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return architecture-reviewer skills for analyze phase 1ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return architecture-reviewer skills for requirements phase 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return architecture-reviewer and technology evaluation skills for research phase 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return architecture-reviewer, tdd-guide, and implementation-guide skills for plan phase 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return tdd-guide and implementation-guide skills for implement phase 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return tdd-guide and implementation-guide skills for fast-implement phase 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return git-related skills only for merge phase 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return testing and validation skills for evidence phase 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > prompt directive generation > should include relevant skill names in the directive text 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > prompt directive generation > should include phase name in the directive text 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > prompt directive generation > should include a prioritization instruction in the directive 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > prompt directive generation > should return a non-empty directive for known phases 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > unknown phase handling > should return empty skill list for unknown phase 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > unknown phase handling > should return a graceful directive for unknown phase 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > unknown phase handling > should not throw for empty phase name 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > custom routing table override > should use custom routing table when provided 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > custom routing table override > should return empty list for phases not in custom table 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > custom routing table override > should include custom skill names in the directive 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > consistency > should return the same result for repeated calls with the same phase 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > consistency > should return skills as an array of strings 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > empty and no-op inputs > should return empty string with 0 aliases for empty input 1ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > empty and no-op inputs > should return unchanged text when no strings qualify for aliasing 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > occurrence threshold > should alias a string that appears 3 times and is 20+ chars 1ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > occurrence threshold > should NOT alias a string that appears only 2 times 1ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > occurrence threshold > should alias a string that appears more than 3 times 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > length threshold > should NOT alias a string under 20 characters even if repeated 5 times 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > length threshold > should alias a string that is exactly 20 characters and appears 3 times 1ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > alias format > should assign sequential aliases $A1, $A2, $A3 1ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > alias format > should replace all occurrences of an aliased string 2ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > dictionary header > should start with "## Aliases" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > dictionary header > should list each alias with its original string in quotes 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > dictionary header > should prepend dictionary header to the compressed output 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > net-positive check > should skip aliasing when dictionary overhead exceeds savings 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > net-positive check > should return original text when only one string barely qualifies and net is negative 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > multiple qualifying strings > should alias multiple different qualifying strings independently 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > multiple qualifying strings > should order aliases by most frequent string first 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > edge cases > should handle input that is only whitespace 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > edge cases > should not create aliases that conflict with existing $A patterns in text 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > edge cases > should handle very long input with many qualifying strings 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > first phase (no prior hashes) > should return all files with full content when previous hashes are empty 2ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > first phase (no prior hashes) > should return current hashes for all files even on first phase 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > unchanged file detection > should replace unchanged file with compact summary 1ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > unchanged file detection > should include file name in the summary 1ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > unchanged file detection > should include line count in the summary 1ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > unchanged file detection > should include short hash prefix in the summary 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > unchanged file detection > should include previous phase name in the summary 1ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > unchanged file detection > should use summary format: [file unchanged since {phase} - {lineCount} lines, hash {shortHash}] 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > changed file detection > should return full content for a file with different hash 2ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > changed file detection > should return full content for a file not in previous hashes 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > hash state management > should return current hashes for all files 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > hash state management > should update hashes even for unchanged files 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > hash state management > should update hashes for changed files 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > mixed changed and unchanged files > should handle multiple files with mixed change status 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > edge cases > should handle empty file list 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > edge cases > should handle file with empty content 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > edge cases > should handle single-line file for line count 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > edge cases > should default previous phase name when not provided 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > empty and no-op inputs > should return empty string with ratio 1.0 for empty input 1ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > empty and no-op inputs > should return unchanged text for text with nothing to compress 1ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > article removal > should remove "the" from instruction text 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > article removal > should remove "a" as an article from instruction text 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > article removal > should remove "an" from instruction text 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > article removal > should handle articles at the start of a sentence 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > filler word removal > should remove "just" from instruction text 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > filler word removal > should remove "simply" from instruction text 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > filler word removal > should remove "basically" from instruction text 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > filler word removal > should remove "actually" from instruction text 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > filler word removal > should remove "really" from instruction text 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > filler word removal > should remove "currently" from instruction text 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > filler word removal > should remove multiple filler words in one pass 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "you must" to "must" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "make sure to" to "ensure" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "in order to" to "to" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "as well as" to "and" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "due to the fact that" to "because" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "it is important to" to "important:" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "please note that" to "note:" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "in addition to" to "besides" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "at this point" to "now" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "a number of" to "several" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > whitespace collapsing > should collapse multiple blank lines to a single blank line 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > whitespace collapsing > should collapse multiple spaces within a line to single space 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > whitespace collapsing > should preserve single blank lines between paragraphs 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "repository" to "repo" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "configuration" to "config" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "implementation" to "impl" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "specification" to "spec" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "function" to "fn" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "directory" to "dir" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "environment" to "env" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "dependency" to "dep" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "dependencies" to "deps" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "application" to "app" 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > code block preservation > should NOT compress text inside fenced code blocks 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > code block preservation > should handle multiple code blocks 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > code block preservation > should preserve indented code blocks (4+ spaces) 5ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > file path preservation > should NOT compress file paths like /src/foo/bar.ts 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > file path preservation > should NOT compress relative file paths like ./src/app.ts 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > file path preservation > should NOT compress Windows-style paths 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > URL preservation > should NOT compress URLs 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > URL preservation > should NOT compress HTTP URLs 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > YAML/JSON content preservation > should NOT compress YAML blocks 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > YAML/JSON content preservation > should NOT compress inline JSON objects 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > quoted string preservation > should NOT compress double-quoted strings 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > quoted string preservation > should NOT compress single-quoted strings 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > quoted string preservation > should NOT compress backtick-quoted strings 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > compression ratio calculation > should return ratio less than 1.0 for compressible text 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > compression ratio calculation > should return ratio of 1.0 for text that is only code 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > compression ratio calculation > should achieve 25%+ savings on instruction-heavy text 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > mixed content handling > should compress text outside protected regions and preserve protected regions 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/command-output-filter.service.test.ts > CommandOutputFilterService > empty and no-op inputs > should return empty output with 0 lines removed for empty input 2ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/command-output-filter.service.test.ts > CommandOutputFilterService > empty and no-op inputs > should return unchanged output with 0 lines removed when no filterable content 0ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/command-output-filter.service.test.ts > CommandOutputFilterService > empty and no-op inputs > should return unchanged output when input contains only error lines 0ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/command-output-filter.service.test.ts > CommandOutputFilterService > Jest/Vitest test output filtering > should remove PASS lines from test output 1ms
@@ -43,119 +153,9 @@
  ✓ |node| tests/unit/infrastructure/services/token-optimization/command-output-filter.service.test.ts > CommandOutputFilterService > pnpm install output filtering > should reduce verbose pnpm install progress output 0ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/command-output-filter.service.test.ts > CommandOutputFilterService > mixed content handling > should only filter within code blocks, not regular text 0ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/command-output-filter.service.test.ts > CommandOutputFilterService > mixed content handling > should handle multiple code blocks independently 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/command-output-filter.service.test.ts > CommandOutputFilterService > blank line handling > should collapse multiple consecutive blank lines into one 3ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/command-output-filter.service.test.ts > CommandOutputFilterService > token reduction effectiveness > should achieve 50%+ reduction on typical passing test suite output 1ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > empty and no-op inputs > should return empty string with 0 aliases for empty input 1ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > empty and no-op inputs > should return unchanged text when no strings qualify for aliasing 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > occurrence threshold > should alias a string that appears 3 times and is 20+ chars 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > occurrence threshold > should NOT alias a string that appears only 2 times 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > occurrence threshold > should alias a string that appears more than 3 times 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > length threshold > should NOT alias a string under 20 characters even if repeated 5 times 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > length threshold > should alias a string that is exactly 20 characters and appears 3 times 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > alias format > should assign sequential aliases $A1, $A2, $A3 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > alias format > should replace all occurrences of an aliased string 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > dictionary header > should start with "## Aliases" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > dictionary header > should list each alias with its original string in quotes 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > dictionary header > should prepend dictionary header to the compressed output 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > net-positive check > should skip aliasing when dictionary overhead exceeds savings 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > net-positive check > should return original text when only one string barely qualifies and net is negative 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > multiple qualifying strings > should alias multiple different qualifying strings independently 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > multiple qualifying strings > should order aliases by most frequent string first 1ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > edge cases > should handle input that is only whitespace 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > edge cases > should not create aliases that conflict with existing $A patterns in text 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/alias-compression.service.test.ts > AliasCompressionService > edge cases > should handle very long input with many qualifying strings 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return architecture-reviewer skills for analyze phase 1ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return architecture-reviewer skills for requirements phase 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return architecture-reviewer and technology evaluation skills for research phase 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return architecture-reviewer, tdd-guide, and implementation-guide skills for plan phase 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return tdd-guide and implementation-guide skills for implement phase 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return tdd-guide and implementation-guide skills for fast-implement phase 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return git-related skills only for merge phase 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > default routing table > should return testing and validation skills for evidence phase 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > prompt directive generation > should include relevant skill names in the directive text 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > prompt directive generation > should include phase name in the directive text 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > prompt directive generation > should include a prioritization instruction in the directive 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > prompt directive generation > should return a non-empty directive for known phases 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > unknown phase handling > should return empty skill list for unknown phase 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > unknown phase handling > should return a graceful directive for unknown phase 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > unknown phase handling > should not throw for empty phase name 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > custom routing table override > should use custom routing table when provided 1ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > custom routing table override > should return empty list for phases not in custom table 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > custom routing table override > should include custom skill names in the directive 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > consistency > should return the same result for repeated calls with the same phase 1ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/skill-routing.service.test.ts > SkillRoutingService > consistency > should return skills as an array of strings 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > first phase (no prior hashes) > should return all files with full content when previous hashes are empty 2ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > first phase (no prior hashes) > should return current hashes for all files even on first phase 1ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > unchanged file detection > should replace unchanged file with compact summary 1ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > unchanged file detection > should include file name in the summary 1ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > unchanged file detection > should include line count in the summary 1ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > unchanged file detection > should include short hash prefix in the summary 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > unchanged file detection > should include previous phase name in the summary 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > unchanged file detection > should use summary format: [file unchanged since {phase} - {lineCount} lines, hash {shortHash}] 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > changed file detection > should return full content for a file with different hash 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > changed file detection > should return full content for a file not in previous hashes 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > hash state management > should return current hashes for all files 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > hash state management > should update hashes even for unchanged files 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > hash state management > should update hashes for changed files 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > mixed changed and unchanged files > should handle multiple files with mixed change status 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > edge cases > should handle empty file list 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > edge cases > should handle file with empty content 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > edge cases > should handle single-line file for line count 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/delta-context.service.test.ts > DeltaContextService > edge cases > should default previous phase name when not provided 1ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > empty and no-op inputs > should return empty string with ratio 1.0 for empty input 2ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > empty and no-op inputs > should return unchanged text for text with nothing to compress 2ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > article removal > should remove "the" from instruction text 3ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > article removal > should remove "a" as an article from instruction text 1ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > article removal > should remove "an" from instruction text 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > article removal > should handle articles at the start of a sentence 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > filler word removal > should remove "just" from instruction text 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > filler word removal > should remove "simply" from instruction text 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > filler word removal > should remove "basically" from instruction text 1ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > filler word removal > should remove "actually" from instruction text 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > filler word removal > should remove "really" from instruction text 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > filler word removal > should remove "currently" from instruction text 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > filler word removal > should remove multiple filler words in one pass 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "you must" to "must" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "make sure to" to "ensure" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "in order to" to "to" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "as well as" to "and" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "due to the fact that" to "because" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "it is important to" to "important:" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "please note that" to "note:" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "in addition to" to "besides" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "at this point" to "now" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > phrase shortening > should shorten "a number of" to "several" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > whitespace collapsing > should collapse multiple blank lines to a single blank line 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > whitespace collapsing > should collapse multiple spaces within a line to single space 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > whitespace collapsing > should preserve single blank lines between paragraphs 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "repository" to "repo" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "configuration" to "config" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "implementation" to "impl" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "specification" to "spec" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "function" to "fn" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "directory" to "dir" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "environment" to "env" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "dependency" to "dep" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "dependencies" to "deps" 2ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > technical term abbreviation > should abbreviate "application" to "app" 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > code block preservation > should NOT compress text inside fenced code blocks 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > code block preservation > should handle multiple code blocks 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > code block preservation > should preserve indented code blocks (4+ spaces) 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > file path preservation > should NOT compress file paths like /src/foo/bar.ts 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > file path preservation > should NOT compress relative file paths like ./src/app.ts 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > file path preservation > should NOT compress Windows-style paths 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > URL preservation > should NOT compress URLs 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > URL preservation > should NOT compress HTTP URLs 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > YAML/JSON content preservation > should NOT compress YAML blocks 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > YAML/JSON content preservation > should NOT compress inline JSON objects 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > quoted string preservation > should NOT compress double-quoted strings 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > quoted string preservation > should NOT compress single-quoted strings 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > quoted string preservation > should NOT compress backtick-quoted strings 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > compression ratio calculation > should return ratio less than 1.0 for compressible text 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > compression ratio calculation > should return ratio of 1.0 for text that is only code 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > compression ratio calculation > should achieve 25%+ savings on instruction-heavy text 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/semantic-compressor.service.test.ts > SemanticCompressorService > mixed content handling > should compress text outside protected regions and preserve protected regions 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/optimization-metrics.service.test.ts > OptimizationMetricsService > record > persists all metric fields via the phase timing repository 4ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/command-output-filter.service.test.ts > CommandOutputFilterService > blank line handling > should collapse multiple consecutive blank lines into one 2ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/command-output-filter.service.test.ts > CommandOutputFilterService > token reduction effectiveness > should achieve 50%+ reduction on typical passing test suite output 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/optimization-metrics.service.test.ts > OptimizationMetricsService > record > persists all metric fields via the phase timing repository 2ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/optimization-metrics.service.test.ts > OptimizationMetricsService > record > serializes capabilitiesApplied as a JSON string 1ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/optimization-metrics.service.test.ts > OptimizationMetricsService > record > passes the phase timing ID through to the repository 0ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/optimization-metrics.service.test.ts > OptimizationMetricsService > record > does not throw when the repository update fails 1ms
@@ -163,10 +163,10 @@
  ✓ |node| tests/unit/infrastructure/services/token-optimization/optimization-metrics.service.test.ts > OptimizationMetricsService > getByPhaseTimingId > returns metrics from the stored phase timing record 0ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/optimization-metrics.service.test.ts > OptimizationMetricsService > getByPhaseTimingId > queries the repository with the supplied phase timing ID 0ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/optimization-metrics.service.test.ts > OptimizationMetricsService > getByPhaseTimingId > returns null when no phase timing exists for the ID 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/optimization-metrics.service.test.ts > OptimizationMetricsService > getByPhaseTimingId > returns null when phase timing exists but has no optimization metrics 0ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/optimization-metrics.service.test.ts > OptimizationMetricsService > getByPhaseTimingId > returns null when phase timing exists but has no optimization metrics 1ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/optimization-metrics.service.test.ts > OptimizationMetricsService > getByPhaseTimingId > returns null when the repository throws 0ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/optimization-metrics.service.test.ts > OptimizationMetricsService > getByPhaseTimingId > handles malformed capabilitiesApplied JSON gracefully 0ms
- ✓ |node| tests/unit/infrastructure/services/token-optimization/prompt-optimizer.service.test.ts > PromptOptimizerService > master toggle > returns original prompt unchanged when master toggle is off 1ms
+ ✓ |node| tests/unit/infrastructure/services/token-optimization/prompt-optimizer.service.test.ts > PromptOptimizerService > master toggle > returns original prompt unchanged when master toggle is off 3ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/prompt-optimizer.service.test.ts > PromptOptimizerService > master toggle > returns zero-savings metrics when master toggle is off 0ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/prompt-optimizer.service.test.ts > PromptOptimizerService > master toggle > preserves spec file hashes from context when master toggle is off 0ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/prompt-optimizer.service.test.ts > PromptOptimizerService > pipeline ordering with all capabilities enabled > invokes all five capability services when fully enabled 0ms
@@ -195,16 +195,16 @@
  ✓ |node| tests/unit/infrastructure/services/token-optimization/prompt-optimizer.service.test.ts > PromptOptimizerService > metrics recording > does not throw when metricsService.record rejects 0ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/prompt-optimizer.service.test.ts > PromptOptimizerService > metrics recording > still returns the optimized prompt when metricsService.record rejects 0ms
  ✓ |node| tests/unit/infrastructure/services/token-optimization/prompt-optimizer.service.test.ts > PromptOptimizerService > metrics recording > records metrics with all aggregated capability stats 0ms
- ✓ |node| tests/unit/infrastructure/di/container-token-optimization-registrations.test.ts > token optimization DI registrations > resolves ICommandOutputFilterService as CommandOutputFilterService 617ms
- ✓ |node| tests/unit/infrastructure/di/container-token-optimization-registrations.test.ts > token optimization DI registrations > resolves ISkillRoutingService as SkillRoutingService 8ms
+ ✓ |node| tests/unit/infrastructure/di/container-token-optimization-registrations.test.ts > token optimization DI registrations > resolves ICommandOutputFilterService as CommandOutputFilterService 568ms
+ ✓ |node| tests/unit/infrastructure/di/container-token-optimization-registrations.test.ts > token optimization DI registrations > resolves ISkillRoutingService as SkillRoutingService 7ms
  ✓ |node| tests/unit/infrastructure/di/container-token-optimization-registrations.test.ts > token optimization DI registrations > resolves IDeltaContextService as DeltaContextService 7ms
- ✓ |node| tests/unit/infrastructure/di/container-token-optimization-registrations.test.ts > token optimization DI registrations > resolves ISemanticCompressorService as SemanticCompressorService 8ms
- ✓ |node| tests/unit/infrastructure/di/container-token-optimization-registrations.test.ts > token optimization DI registrations > resolves IAliasCompressionService as AliasCompressionService 8ms
- ✓ |node| tests/unit/infrastructure/di/container-token-optimization-registrations.test.ts > token optimization DI registrations > resolves IPromptOptimizerService as PromptOptimizerService 7ms
- ✓ |node| tests/unit/infrastructure/di/container-token-optimization-registrations.test.ts > token optimization DI registrations > resolves IOptimizationMetricsService as OptimizationMetricsService 8ms
+ ✓ |node| tests/unit/infrastructure/di/container-token-optimization-registrations.test.ts > token optimization DI registrations > resolves ISemanticCompressorService as SemanticCompressorService 7ms
+ ✓ |node| tests/unit/infrastructure/di/container-token-optimization-registrations.test.ts > token optimization DI registrations > resolves IAliasCompressionService as AliasCompressionService 6ms
+ ✓ |node| tests/unit/infrastructure/di/container-token-optimization-registrations.test.ts > token optimization DI registrations > resolves IPromptOptimizerService as PromptOptimizerService 6ms
+ ✓ |node| tests/unit/infrastructure/di/container-token-optimization-registrations.test.ts > token optimization DI registrations > resolves IOptimizationMetricsService as OptimizationMetricsService 7ms
 
  Test Files  8 passed (8)
       Tests  201 passed (201)
-   Start at  13:56:52
-   Duration  838ms (transform 904ms, setup 250ms, import 528ms, tests 728ms, environment 1ms)
+   Start at  14:02:52
+   Duration  784ms (transform 806ms, setup 175ms, import 531ms, tests 671ms, environment 0ms)
 
