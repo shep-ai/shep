@@ -1,0 +1,134 @@
+{
+  "prompts": {
+    "selectAgent": {
+      "message": "Оберіть вашого AI-агента для кодування",
+      "choices": {
+        "claudeCode": {
+          "name": "Claude Code",
+          "description": "Anthropic Claude Code CLI"
+        },
+        "geminiCli": {
+          "name": "Gemini CLI",
+          "description": "Google Gemini CLI"
+        },
+        "codexCli": {
+          "name": "Codex CLI",
+          "description": "Термінальний агент OpenAI Codex CLI (моделі GPT)"
+        },
+        "copilotCli": {
+          "name": "Copilot CLI",
+          "description": "GitHub Copilot CLI (за замовчуванням: Claude Sonnet 4.5, потрібна підписка Copilot)"
+        },
+        "cursor": {
+          "name": "Cursor",
+          "description": "AI-агент для кодування Cursor"
+        },
+        "devMock": {
+          "name": "Dev (Mock)",
+          "description": "Локальна заглушка для розробки — бінарний файл агента не потрібен"
+        },
+        "aider": {
+          "name": "Aider",
+          "disabled": "(Незабаром)"
+        },
+        "continue": {
+          "name": "Continue",
+          "disabled": "(Незабаром)"
+        }
+      }
+    },
+    "selectIde": {
+      "message": "Оберіть бажану IDE"
+    },
+    "selectAuthMethod": {
+      "message": "Оберіть метод автентифікації",
+      "choices": {
+        "session": {
+          "name": "Використати наявну сесію",
+          "description": "Використати вбудовану автентифікацію Claude Code"
+        },
+        "token": {
+          "name": "Використати API-токен",
+          "description": "Вказати API-ключ Anthropic"
+        }
+      }
+    },
+    "enterApiKey": "Введіть ваш API-ключ Anthropic",
+    "prdReview": {
+      "reviewComplete": "Перевірку завершено{{changeLabel}}. Що ви хочете зробити?",
+      "changeLabel_one": " ({{count}} зміна)",
+      "changeLabel_other": " ({{count}} змін)",
+      "approveAndContinue": "Затвердити й продовжити",
+      "approveDescription": "Прийняти вимоги та перейти до дослідження",
+      "rejectAndIterate": "Відхилити й доопрацювати",
+      "rejectDescription": "Надати зворотний зв'язок і повторно запустити збір вимог",
+      "feedbackPrompt": "Що потрібно змінити? (зворотний зв'язок для доопрацювання)",
+      "feedbackRequired": "Зворотний зв'язок обов'язковий при відхиленні"
+    },
+    "selectLanguage": {
+      "message": "Оберіть мову інтерфейсу"
+    }
+  },
+  "wizards": {
+    "onboarding": {
+      "welcomeTitle": "Ласкаво просимо до Shep AI CLI",
+      "welcomeSubtitle": "Налаштуймо ваше середовище за 3 швидкі кроки.",
+      "prerequisiteWarning": "Необхідна умова: ",
+      "prerequisiteLabel": "GitHub CLI (gh)",
+      "prerequisiteDescription": "потрібен для повноцінних можливостей CI/CD самовідновлення.",
+      "installFrom": "Встановіть звідси: ",
+      "installUrl": "https://cli.github.com/",
+      "setupComplete": "Налаштування завершено! Ви готові використовувати Shep."
+    },
+    "agentConfig": {
+      "enterApiKey": "Введіть ваш API-ключ Anthropic"
+    },
+    "githubImport": {
+      "methodMessage": "Як ви хочете додати репозиторій GitHub?",
+      "pasteUrl": "Вставити URL GitHub",
+      "pasteUrlDescription": "Введіть URL репозиторію GitHub або скорочення owner/repo",
+      "browseRepos": "Переглянути мої репозиторії",
+      "browseReposDescription": "Знайти й обрати з ваших репозиторіїв GitHub",
+      "enterUrl": "Введіть URL репозиторію GitHub або owner/repo",
+      "urlRequired": "URL обов'язковий",
+      "invalidUrlFormat": "Невірний формат URL GitHub. Використовуйте https://github.com/owner/repo або owner/repo",
+      "selectRepo": "Оберіть репозиторій для імпорту",
+      "noRepos": "Репозиторіїв не знайдено. Переконайтеся, що у вас є репозиторії на GitHub.",
+      "cloneDestination": "Каталог для клонування (залиште порожнім для значення за замовчуванням)"
+    },
+    "mergeReview": {
+      "message": "Перегляньте злиття. Що ви хочете зробити?",
+      "approveAndMerge": "Затвердити й злити",
+      "approveDescription": "Прийняти зміни та злити гілку",
+      "reject": "Відхилити",
+      "rejectDescription": "Надати зворотний зв'язок — реалізацію буде доопрацьовано",
+      "rejectFeedback": "Що потрібно змінити перед злиттям?",
+      "approveComment": "Коментарі? (необов'язково, натисніть Enter для пропуску)",
+      "feedbackRequired": "Зворотний зв'язок обов'язковий при відхиленні"
+    },
+    "planReview": {
+      "message": "Перегляньте план реалізації. Що ви хочете зробити?",
+      "approveAndContinue": "Затвердити й продовжити",
+      "approveDescription": "Прийняти план і перейти до реалізації",
+      "rejectAndIterate": "Відхилити й доопрацювати",
+      "rejectDescription": "Надати зворотний зв'язок і повторно запустити планування",
+      "rejectFeedback": "Що потрібно змінити в плані?",
+      "approveComment": "Коментарі? (необов'язково, натисніть Enter для пропуску)",
+      "feedbackRequired": "Зворотний зв'язок обов'язковий при відхиленні"
+    },
+    "workflowDefaults": {
+      "message": "Оберіть налаштування робочого процесу за замовчуванням для нових функцій",
+      "instructions": "(Пробіл для перемикання, Enter для підтвердження)",
+      "allowPrd": "Дозволити PRD",
+      "allowPrdDescription": "Автоматично затверджувати етап вимог",
+      "allowPlan": "Дозволити план",
+      "allowPlanDescription": "Автоматично затверджувати етап планування",
+      "allowMerge": "Дозволити злиття",
+      "allowMergeDescription": "Автоматично затверджувати й зливати після реалізації",
+      "pushOnFinish": "Відправити після завершення",
+      "pushOnFinishDescription": "Відправити гілку на віддалений сервер після завершення реалізації",
+      "createPr": "Створити PR",
+      "createPrDescription": "Відкрити запит на злиття після завершення реалізації"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "@shepai/cli",
-  "version": "1.173.0",
+  "version": "1.176.0",
   "description": "Autonomous AI Native SDLC Platform - Automate the development cycle from idea to deploy",
   "type": "module",
   "license": "MIT",

@@ -98,6 +98,8 @@ describe('CleanupFeatureWorktreeUseCase', () => {
       verifyMerge: vi.fn(),
       getFailureLogs: vi.fn(),
       getRemoteUrl: vi.fn(),
+      createGitHubRepo: vi.fn(),
+      addRemote: vi.fn(),
       getFileDiffs: vi.fn(),
       getMergeableStatus: vi.fn().mockResolvedValue(undefined),
       revParse: vi.fn(),

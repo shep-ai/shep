@@ -23,6 +23,8 @@ function createTestRow(overrides: Partial<RepositoryRow> = {}): RepositoryRow {
     name: 'my-project',
     path: '/Users/test/my-project',
     remote_url: null,
+    is_fork: 0,
+    upstream_url: null,
     created_at: new Date('2025-06-01T10:00:00Z').getTime(),
     updated_at: new Date('2025-06-01T12:00:00Z').getTime(),
     deleted_at: null,
@@ -172,6 +174,79 @@ describe('Repository Mapper', () => {
       const restored = fromDatabase(row);
 
       expect(restored.remoteUrl).toBeUndefined();
+    });
+  });
+
+  describe('fork metadata (isFork, upstreamUrl)', () => {
+    it('toDatabase should map isFork=true to is_fork=1', () => {
+      const repo = createTestRepository({
+        isFork: true,
+        upstreamUrl: 'https://github.com/octocat/original',
+      });
+      const row = toDatabase(repo);
+
+      expect(row.is_fork).toBe(1);
+      expect(row.upstream_url).toBe('https://github.com/octocat/original');
+    });
+
+    it('toDatabase should map isFork=false to is_fork=0', () => {
+      const repo = createTestRepository({ isFork: false });
+      const row = toDatabase(repo);
+
+      expect(row.is_fork).toBe(0);
+    });
+
+    it('toDatabase should map undefined isFork to is_fork=0', () => {
+      const repo = createTestRepository();
+      const row = toDatabase(repo);
+
+      expect(row.is_fork).toBe(0);
+    });
+
+    it('toDatabase should map undefined upstreamUrl to null', () => {
+      const repo = createTestRepository();
+      const row = toDatabase(repo);
+
+      expect(row.upstream_url).toBeNull();
+    });
+
+    it('fromDatabase should map is_fork=1 to isFork=true', () => {
+      const row = createTestRow({
+        is_fork: 1,
+        upstream_url: 'https://github.com/octocat/original',
+      });
+      const repo = fromDatabase(row);
+
+      expect(repo.isFork).toBe(true);
+      expect(repo.upstreamUrl).toBe('https://github.com/octocat/original');
+    });
+
+    it('fromDatabase should map is_fork=0 to isFork=false (not undefined)', () => {
+      const row = createTestRow({ is_fork: 0 });
+      const repo = fromDatabase(row);
+
+      expect(repo.isFork).toBe(false);
+    });
+
+    it('fromDatabase should map null upstream_url to undefined', () => {
+      const row = createTestRow({ upstream_url: null });
+      const repo = fromDatabase(row);
+
+      expect(repo.upstreamUrl).toBeUndefined();
+    });
+
+    it('should preserve fork metadata through round-trip', () => {
+      const original = createTestRepository({
+        isFork: true,
+        upstreamUrl: 'https://github.com/octocat/original',
+        remoteUrl: 'https://github.com/contributor/fork',
+      });
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+
+      expect(restored.isFork).toBe(true);
+      expect(restored.upstreamUrl).toBe('https://github.com/octocat/original');
+      expect(restored.remoteUrl).toBe('https://github.com/contributor/fork');
     });
   });
 });

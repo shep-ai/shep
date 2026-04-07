@@ -16,7 +16,7 @@ interface ImportGitHubRepositoryInput {
 
 export async function importGitHubRepository(
   input: ImportGitHubRepositoryInput
-): Promise<{ repository?: Repository; error?: string }> {
+): Promise<{ repository?: Repository; forked?: boolean; error?: string }> {
   const { url, dest } = input;
 
   if (!url?.trim()) {
@@ -26,7 +26,7 @@ export async function importGitHubRepository(
   try {
     const useCase = resolve<ImportGitHubRepositoryUseCase>('ImportGitHubRepositoryUseCase');
     const repository = await useCase.execute({ url, dest });
-    return { repository };
+    return { repository, forked: repository.isFork === true };
   } catch (error: unknown) {
     if (error instanceof GitHubAuthError) {
       return { error: 'GitHub CLI is not authenticated. Run `gh auth login` to sign in.' };

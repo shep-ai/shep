@@ -12,6 +12,7 @@
 import 'reflect-metadata';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
+import { unlinkSync } from 'node:fs';
 import { Command } from '@langchain/langgraph';
 import { initializeContainer, container } from '@/infrastructure/di/container.js';
 import { createFeatureAgentGraph } from './feature-agent-graph.js';
@@ -361,10 +362,36 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
         graphConfig
       );
     } else if (args.resume) {
-      // Resume from error — re-invoke with initial state; LangGraph continues
-      // from the last successfully checkpointed node.
-      log('Resuming graph from error checkpoint...');
-      result = await graph.invoke(
+      // Resume from error — delete the stale checkpoint and re-invoke from
+      // scratch. Each producer node checks its completedPhases entry and skips
+      // if already done, so completed phases replay instantly. The phase that
+      // failed has its completedPhases entry cleared by routeValidation (or was
+      // never marked complete if the executor threw), so it re-executes fully.
+      //
+      // Why delete the checkpoint instead of resuming from it:
+      // When a validate/repair loop exhausts retries and throws, the checkpoint
+      // captures the validation node with maxed-out retries. Resuming from that
+      // checkpoint would re-evaluate the same conditional edge and throw again
+      // immediately — the user's retry would be stuck in an infinite loop.
+      log('Deleting stale checkpoint for fresh resume...');
+      try {
+        unlinkSync(checkpointPath);
+        log('Checkpoint deleted successfully');
+      } catch {
+        log('No checkpoint to delete (first run or already cleaned)');
+      }
+
+      // Re-create checkpointer after deleting the old DB
+      const freshCheckpointer = createCheckpointer(checkpointPath);
+      const freshGraph = args.fast
+        ? (createFastFeatureAgentGraph(
+            graphDeps as FastFeatureAgentGraphDeps,
+            freshCheckpointer
+          ) as unknown as ReturnType<typeof createFeatureAgentGraph>)
+        : createFeatureAgentGraph(graphDeps, freshCheckpointer);
+
+      log('Resuming graph with fresh checkpoint...');
+      result = await freshGraph.invoke(
         {
           featureId: args.featureId,
           repositoryPath: args.repo,

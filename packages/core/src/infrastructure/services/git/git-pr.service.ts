@@ -816,6 +816,80 @@ export class GitPrService implements IGitPrService {
     return match ? parseInt(match[1], 10) : 0;
   }
 
+  async createGitHubRepo(
+    cwd: string,
+    name: string,
+    options: { isPrivate: boolean; org?: string }
+  ): Promise<string> {
+    const repoName = options.org ? `${options.org}/${name}` : name;
+    const visibilityFlag = options.isPrivate ? '--private' : '--public';
+    const args = [
+      'repo',
+      'create',
+      repoName,
+      visibilityFlag,
+      '--source=.',
+      '--remote=origin',
+      '--push',
+    ];
+
+    try {
+      const { stdout, stderr } = await this.execFile('gh', args, { cwd });
+      // `gh repo create` emits status lines to stdout/stderr that include the
+      // created repo URL somewhere in the output (e.g. "✓ Created repository
+      // org/name on GitHub\n  https://github.com/org/name"). Scrape the first
+      // github.com URL we can find rather than returning the raw multi-line blob.
+      const combined = `${stdout}\n${stderr}`;
+      const parsedUrl = this.extractGitHubUrl(combined);
+      if (parsedUrl) {
+        return parsedUrl;
+      }
+
+      // Fall back to `gh repo view` from the cwd — after --push, origin is the
+      // authoritative source of the repo URL.
+      return await this.queryRepoUrl(cwd);
+    } catch (error) {
+      const ghError = this.parseGhError(error);
+      if (ghError.code === GitPrErrorCode.GIT_ERROR) {
+        throw new GitPrError(ghError.message, GitPrErrorCode.REPO_CREATE_FAILED, ghError.cause);
+      }
+      throw ghError;
+    }
+  }
+
+  /**
+   * Extracts the first github.com repository URL from a blob of text.
+   * Returns a normalized URL without a trailing `.git` suffix or punctuation.
+   */
+  private extractGitHubUrl(text: string): string | null {
+    const match = text.match(/https:\/\/github\.com\/[\w.-]+\/[\w.-]+/);
+    if (!match) {
+      return null;
+    }
+    return match[0].replace(/\.git$/, '').replace(/[).,;]+$/, '');
+  }
+
+  /**
+   * Queries the current repo's URL via `gh repo view --json url`. Used as a
+   * fallback when URL parsing from `gh repo create` output fails.
+   */
+  private async queryRepoUrl(cwd: string): Promise<string> {
+    const { stdout } = await this.execFile(
+      'gh',
+      ['repo', 'view', '--json', 'url', '--jq', '.url'],
+      { cwd }
+    );
+    return stdout.trim();
+  }
+
+  async addRemote(cwd: string, remoteName: string, remoteUrl: string): Promise<void> {
+    try {
+      await this.execFile('git', ['remote', 'add', remoteName, remoteUrl], { cwd });
+    } catch (error) {
+      throw this.parseGitError(error);
+    }
+  }
+
   private parseDiffStat(diffStat: string, logOutput: string): DiffSummary {
     const summaryLine = diffStat.trim().split('\n').pop() ?? '';
     const filesMatch = summaryLine.match(/(\d+)\s+files?\s+changed/);

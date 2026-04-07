@@ -1,3 +1,31 @@
+# [1.176.0](https://github.com/shep-ai/shep/compare/v1.175.1...v1.176.0) (2026-04-06)
+
+
+### Features
+
+* **tsp:** add ukrainian (uk) translation ([#535](https://github.com/shep-ai/shep/issues/535)) ([a9170fb](https://github.com/shep-ai/shep/commit/a9170fbdf081870469c58bc3433b17b000e83316))
+
+## [1.175.1](https://github.com/shep-ai/shep/compare/v1.175.0...v1.175.1) (2026-04-06)
+
+
+### Bug Fixes
+
+* **agents:** use allowedtools for v2 sdk tool permissions ([#534](https://github.com/shep-ai/shep/issues/534)) ([7c9c50e](https://github.com/shep-ai/shep/commit/7c9c50e5c1ac9759796eb403f5ed5cbbb47465fc))
+
+# [1.175.0](https://github.com/shep-ai/shep/compare/v1.174.0...v1.175.0) (2026-04-06)
+
+
+### Features
+
+* **domain:** add unified remote repository support with auto-fork ([#531](https://github.com/shep-ai/shep/issues/531)) ([64b8dfe](https://github.com/shep-ai/shep/commit/64b8dfe42022aa94bb49af2e7781b01a38e3afab)), closes [#409](https://github.com/shep-ai/shep/issues/409) [#430](https://github.com/shep-ai/shep/issues/430) [#434](https://github.com/shep-ai/shep/issues/434) [#525](https://github.com/shep-ai/shep/issues/525)
+
+# [1.174.0](https://github.com/shep-ai/shep/compare/v1.173.0...v1.174.0) (2026-04-05)
+
+
+### Features
+
+* **web:** add inventory page filters, search, grouping, and sort ([#529](https://github.com/shep-ai/shep/issues/529)) ([af82901](https://github.com/shep-ai/shep/commit/af82901941bb1ce532f1854119febe47bf139282))
+
 # [1.173.0](https://github.com/shep-ai/shep/compare/v1.172.0...v1.173.0) (2026-04-05)
 
 

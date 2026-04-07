@@ -17,6 +17,7 @@ function createMockRepo(): IRepositoryRepository {
     softDelete: vi.fn(),
     findByPathIncludingDeleted: vi.fn().mockResolvedValue(null),
     findByRemoteUrl: vi.fn().mockResolvedValue(null),
+    findByUpstreamUrl: vi.fn().mockResolvedValue(null),
     restore: vi.fn(),
     update: vi.fn(),
   };

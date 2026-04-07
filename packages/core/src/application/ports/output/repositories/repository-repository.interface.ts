@@ -14,6 +14,8 @@ export interface IRepositoryRepository {
   findByPathIncludingDeleted(path: string): Promise<Repository | null>;
   /** Find a non-deleted repository by its remote URL (normalized: lowercase, no .git suffix). */
   findByRemoteUrl(url: string): Promise<Repository | null>;
+  /** Find a non-deleted repository by its upstream URL (for fork deduplication). */
+  findByUpstreamUrl(url: string): Promise<Repository | null>;
   list(): Promise<Repository[]>;
   remove(id: string): Promise<void>;
   softDelete(id: string): Promise<void>;
@@ -22,6 +24,6 @@ export interface IRepositoryRepository {
   /** Update specific fields on an existing repository. */
   update(
     id: string,
-    fields: Partial<Pick<Repository, 'name' | 'path' | 'remoteUrl'>>
+    fields: Partial<Pick<Repository, 'name' | 'path' | 'remoteUrl' | 'isFork' | 'upstreamUrl'>>
   ): Promise<Repository>;
 }

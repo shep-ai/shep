@@ -16,6 +16,7 @@ import { Command } from 'commander';
 import { createShowCommand } from './show.command.js';
 import { createLsCommand } from './ls.command.js';
 import { createAddCommand } from './add.command.js';
+import { createInitRemoteCommand } from './init-remote.command.js';
 import { getCliI18n } from '../../i18n.js';
 
 /**
@@ -27,7 +28,8 @@ export function createRepoCommand(): Command {
     .description(t('cli:commands.repo.description'))
     .addCommand(createLsCommand())
     .addCommand(createShowCommand())
-    .addCommand(createAddCommand());
+    .addCommand(createAddCommand())
+    .addCommand(createInitRemoteCommand());
 
   return repo;
 }

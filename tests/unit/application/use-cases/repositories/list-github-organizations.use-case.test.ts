@@ -39,6 +39,11 @@ describe('ListGitHubOrganizationsUseCase', () => {
         .mockResolvedValue([createMockOrg()]),
       parseGitHubUrl: vi.fn(),
       getViewerPermission: vi.fn().mockResolvedValue('ADMIN'),
+      getAuthenticatedUser: vi.fn().mockResolvedValue('octocat'),
+      checkPushAccess: vi.fn().mockResolvedValue({ hasPushAccess: true, viewerLogin: 'octocat' }),
+      forkRepository: vi
+        .fn()
+        .mockResolvedValue({ nameWithOwner: 'octocat/my-project', alreadyExisted: false }),
     };
 
     useCase = new ListGitHubOrganizationsUseCase(mockGitHubService);

@@ -70,6 +70,18 @@ export class GitHubPermissionError extends Error {
   }
 }
 
+/**
+ * Thrown when a fork operation fails.
+ */
+export class GitHubForkError extends Error {
+  constructor(message: string, cause?: Error) {
+    super(message);
+    this.name = 'GitHubForkError';
+    Object.setPrototypeOf(this, new.target.prototype);
+    if (cause) this.cause = cause;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -130,6 +142,29 @@ export interface ParsedGitHubUrl {
   repo: string;
   /** Combined owner/repo (e.g. "octocat/my-project") */
   nameWithOwner: string;
+}
+
+/**
+ * Options for forking a repository.
+ */
+export interface ForkOptions {
+  onProgress?: (message: string) => void;
+}
+
+/**
+ * Result of checking push access on a repository.
+ */
+export interface PushAccessResult {
+  hasPushAccess: boolean;
+  viewerLogin: string;
+}
+
+/**
+ * Result of forking a repository.
+ */
+export interface ForkResult {
+  nameWithOwner: string;
+  alreadyExisted: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -208,4 +243,28 @@ export interface IGitHubRepositoryService {
    * @throws {GitHubPermissionError} if the permission check fails (e.g. gh not installed, not authenticated)
    */
   getViewerPermission(repoPath: string): Promise<string>;
+
+  /**
+   * Get the authenticated GitHub user's login.
+   * @returns The login username
+   * @throws {GitHubAuthError} if not authenticated
+   */
+  getAuthenticatedUser(): Promise<string>;
+
+  /**
+   * Check if the authenticated user has push access to a repository.
+   * @param nameWithOwner - Full owner/repo identifier
+   * @returns Push access result with viewer login
+   * @throws {GitHubPermissionError} on failure
+   */
+  checkPushAccess(nameWithOwner: string): Promise<PushAccessResult>;
+
+  /**
+   * Fork a repository to the authenticated user's account.
+   * @param nameWithOwner - Full owner/repo identifier to fork
+   * @param options - Optional progress callback
+   * @returns Fork result with the fork's nameWithOwner
+   * @throws {GitHubForkError} on failure
+   */
+  forkRepository(nameWithOwner: string, options?: ForkOptions): Promise<ForkResult>;
 }
