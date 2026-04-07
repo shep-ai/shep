@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Sparkles, FolderPlus, FolderOpen, Github, GitBranch } from 'lucide-react';
+import { FolderPlus } from 'lucide-react';
 import type { Edge, Viewport } from '@xyflow/react';
 import { useReactFlow } from '@xyflow/react';
 import { FeaturesCanvas } from '@/components/features/features-canvas';
@@ -47,6 +47,9 @@ import { useFabLayout } from '@/hooks/fab-layout-context';
 import { ControlCenterEmptyState } from './control-center-empty-state';
 import { NewProjectDialog } from './new-project-dialog';
 import { useControlCenterState } from './use-control-center-state';
+import { useCanvasEventListeners } from './use-canvas-event-listeners';
+import { useWorkspaceFitView } from './use-workspace-fit-view';
+import { useFabActions } from './use-fab-actions';
 
 const AUTO_FOCUS_OPTIONS = {
   maxZoom: 1.0,
@@ -62,7 +65,6 @@ interface ControlCenterInnerProps {
 }
 
 export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenterInnerProps) {
-  const { t } = useTranslation('web');
   const router = useRouter();
   const pathname = usePathname();
   const selectedFeatureId = useSelectedFeatureId();
@@ -294,109 +296,27 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     [handleAddRepository, focusAndOpenDrawer, focusOnNode]
   );
 
-  // Listen for global "add repository" events from the top bar button
+  // All five window-level CustomEvent listeners (add-repository, feature-
+  // created, delete/archive/unarchive requests) live in this hook so the
+  // parent component stays focused on graph state + rendering.
+  useCanvasEventListeners({
+    addRepoAndFocus,
+    createFeatureNode,
+    nodes,
+    handleDeleteFeature,
+    handleArchiveFeature,
+    handleUnarchiveFeature,
+  });
+
+  // Cleanup the drawer timer on unmount. Used to live inside the inlined
+  // shep:add-repository listener; now standalone since the listener moved.
   useEffect(() => {
-    const handler = (e: Event) => {
-      const path = (e as CustomEvent<{ path: string }>).detail.path;
-      addRepoAndFocus(path);
-    };
-    window.addEventListener('shep:add-repository', handler);
     return () => {
-      window.removeEventListener('shep:add-repository', handler);
       if (drawerTimerRef.current != null) {
         clearTimeout(drawerTimerRef.current);
       }
     };
-  }, [addRepoAndFocus]);
-
-  // Listen for create events from the create drawer (with real feature ID from server)
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (
-        e as CustomEvent<{
-          featureId: string;
-          name: string;
-          description?: string;
-          repositoryPath: string;
-          parentId?: string;
-        }>
-      ).detail;
-
-      // When a parentId is provided, connect to the parent feature node
-      // via a dependency edge instead of the repo node.
-      if (detail.parentId) {
-        const parentNodeId = `feat-${detail.parentId}`;
-        createFeatureNode(
-          parentNodeId,
-          {
-            state: 'creating',
-            featureId: detail.featureId,
-            name: detail.name,
-            description: detail.description,
-            repositoryPath: detail.repositoryPath,
-          },
-          'dependencyEdge'
-        );
-        return;
-      }
-
-      // Find the repo node to connect to
-      const repoNode = nodes.find(
-        (n) =>
-          n.type === 'repositoryNode' &&
-          (n.data as { repositoryPath?: string }).repositoryPath === detail.repositoryPath
-      );
-
-      createFeatureNode(repoNode?.id ?? null, {
-        state: 'running',
-        featureId: detail.featureId,
-        name: detail.name,
-        description: detail.description,
-        repositoryPath: detail.repositoryPath,
-      });
-    };
-    window.addEventListener('shep:feature-created', handler);
-    return () => window.removeEventListener('shep:feature-created', handler);
-  }, [nodes, createFeatureNode]);
-
-  // Listen for delete requests from the feature drawer (fires when the user
-  // confirms delete inside the drawer). Delegates to handleDeleteFeature so
-  // the canvas gets optimistic state, mutation guard, and node removal.
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const { featureId, cleanup, cascadeDelete, closePr } = (
-        e as CustomEvent<{
-          featureId: string;
-          cleanup?: boolean;
-          cascadeDelete?: boolean;
-          closePr?: boolean;
-        }>
-      ).detail;
-      handleDeleteFeature(featureId, cleanup, cascadeDelete, closePr);
-    };
-    window.addEventListener('shep:feature-delete-requested', handler);
-    return () => window.removeEventListener('shep:feature-delete-requested', handler);
-  }, [handleDeleteFeature]);
-
-  // Listen for archive requests from the feature drawer.
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const { featureId } = (e as CustomEvent<{ featureId: string }>).detail;
-      handleArchiveFeature(featureId);
-    };
-    window.addEventListener('shep:feature-archive-requested', handler);
-    return () => window.removeEventListener('shep:feature-archive-requested', handler);
-  }, [handleArchiveFeature]);
-
-  // Listen for unarchive requests from the feature drawer.
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const { featureId } = (e as CustomEvent<{ featureId: string }>).detail;
-      handleUnarchiveFeature(featureId);
-    };
-    window.addEventListener('shep:feature-unarchive-requested', handler);
-    return () => window.removeEventListener('shep:feature-unarchive-requested', handler);
-  }, [handleUnarchiveFeature]);
+  }, []);
 
   // Wire callbacks into derived node data (via ref — no re-render).
   useEffect(() => {
@@ -528,35 +448,14 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     window.dispatchEvent(new CustomEvent('shep:pick-folder'));
   }, []);
 
-  // Re-fit the viewport when the active workspace's visible node set changes
-  // (switching workspaces, or changing the active workspace's membership via
-  // the Manage dialog). The default workspace shows everything and uses the
-  // persisted viewport, so it's skipped. The first run after mount is also
-  // skipped so we don't override the user's saved viewport on initial load.
-  const workspaceFitFingerprint = useMemo(() => {
-    if (isDefaultActive) return `default`;
-    const ids = workspaceFilteredNodes
-      .map((n) => n.id)
-      .sort()
-      .join(',');
-    return `${activeWorkspace.id}:${ids}`;
-  }, [isDefaultActive, activeWorkspace.id, workspaceFilteredNodes]);
-  const prevWorkspaceFitFingerprintRef = useRef<string | null>(null);
-  useEffect(() => {
-    const prev = prevWorkspaceFitFingerprintRef.current;
-    prevWorkspaceFitFingerprintRef.current = workspaceFitFingerprint;
-    // Skip the very first run so we don't override the persisted viewport.
-    if (prev === null) return;
-    if (prev === workspaceFitFingerprint) return;
-    if (isDefaultActive) return;
-    if (workspaceFilteredNodes.length === 0) return;
-    // Defer to next frame so React Flow has committed the new node set
-    // before we measure for fitView.
-    const t = setTimeout(() => {
-      fitView(AUTO_FOCUS_OPTIONS);
-    }, 0);
-    return () => clearTimeout(t);
-  }, [workspaceFitFingerprint, isDefaultActive, workspaceFilteredNodes.length, fitView]);
+  // Re-fit the viewport when the active workspace's visible node set changes.
+  // See use-workspace-fit-view.ts for the scoping rules.
+  useWorkspaceFitView({
+    activeWorkspace,
+    isDefaultActive,
+    workspaceFilteredNodes,
+    fitView,
+  });
 
   // When the active (non-default) workspace has no members but real repos
   // exist on the canvas, show a workspace-aware empty state instead of the
@@ -602,64 +501,16 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
 
   const featureFlags = useFeatureFlags();
 
-  // (+) FAB actions — only visible on control center
-  const fabActions = useMemo<FloatingActionButtonAction[]>(() => {
-    const actions: FloatingActionButtonAction[] = [
-      {
-        id: 'new-project',
-        label: 'New project',
-        icon: <FolderPlus className="h-4 w-4" />,
-        onClick: () => {
-          clickSound.play();
-          setWorkspaceNewProjectOpen(true);
-        },
-      },
-      {
-        id: 'new-feature',
-        label: t('fab.newFeature'),
-        icon: <Sparkles className="h-4 w-4" />,
-        onClick: () => {
-          clickSound.play();
-          guardedNavigate(() => router.push('/create'));
-        },
-      },
-      {
-        id: 'add-local-repo',
-        label: t('fab.localFolder'),
-        icon: <FolderOpen className="h-4 w-4" />,
-        onClick: handlePickFolder,
-      },
-    ];
-    if (featureFlags.adoptBranch) {
-      actions.push({
-        id: 'adopt-branch',
-        label: t('fab.adoptBranch'),
-        icon: <GitBranch className="h-4 w-4" />,
-        onClick: () => {
-          guardedNavigate(() => router.push('/adopt' as Parameters<typeof router.push>[0]));
-        },
-      });
-    }
-    if (featureFlags.githubImport) {
-      actions.push({
-        id: 'add-github-repo',
-        label: t('fab.fromGithub'),
-        icon: <Github className="h-4 w-4" />,
-        onClick: () => {
-          window.dispatchEvent(new CustomEvent('shep:open-github-import'));
-        },
-      });
-    }
-    return actions;
-  }, [
-    t,
+  // (+) FAB actions — only visible on control center. Action list lives in
+  // its own hook so this component stays focused on graph state + rendering.
+  const fabActions = useFabActions({
+    router,
     clickSound,
     guardedNavigate,
-    router,
     handlePickFolder,
-    featureFlags.adoptBranch,
-    featureFlags.githubImport,
-  ]);
+    onNewProject: () => setWorkspaceNewProjectOpen(true),
+    featureFlags,
+  });
 
   const canvasToolbar = (
     <CanvasToolbar

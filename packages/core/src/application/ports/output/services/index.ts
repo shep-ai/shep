@@ -61,3 +61,9 @@ export type {
 } from './interactive-session-service.interface.js';
 export type { ISkillInjectorService, SkillInjectionResult } from './skill-injector.interface.js';
 export type { IFileSystemService } from './file-system-service.interface.js';
+export type {
+  IProjectScaffoldService,
+  ScaffoldProjectInput,
+  ScaffoldProjectResult,
+} from './project-scaffold-service.interface.js';
+export type { IAgentAuthDetectorService } from './agent-auth-detector.interface.js';

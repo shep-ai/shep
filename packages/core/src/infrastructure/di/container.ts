@@ -38,6 +38,10 @@ import type { IWorktreeService } from '../../application/ports/output/services/w
 import { WorktreeService } from '../services/git/worktree.service.js';
 import type { IFileSystemService } from '../../application/ports/output/services/file-system-service.interface.js';
 import { FileSystemService } from '../services/file-system.service.js';
+import type { IProjectScaffoldService } from '../../application/ports/output/services/project-scaffold-service.interface.js';
+import { FsProjectScaffoldService } from '../services/project-scaffold/fs-project-scaffold.service.js';
+import type { IAgentAuthDetectorService } from '../../application/ports/output/services/agent-auth-detector.interface.js';
+import { PlatformAgentAuthDetectorService } from '../services/agent-auth-detector/platform-agent-auth-detector.service.js';
 import type { IToolInstallerService } from '../../application/ports/output/services/tool-installer.service.js';
 import { ToolInstallerServiceImpl } from '../services/tool-installer/tool-installer.service.js';
 import type { IGitPrService } from '../../application/ports/output/services/git-pr-service.interface.js';
@@ -117,6 +121,8 @@ import { ListToolsUseCase } from '../../application/use-cases/tools/list-tools.u
 import { LaunchToolUseCase } from '../../application/use-cases/tools/launch-tool.use-case.js';
 import { LaunchIdeUseCase } from '../../application/use-cases/ide/launch-ide.use-case.js';
 import { AddRepositoryUseCase } from '../../application/use-cases/repositories/add-repository.use-case.js';
+import { CreateProjectUseCase } from '../../application/use-cases/projects/create-project.use-case.js';
+import { CheckAgentAuthUseCase } from '../../application/use-cases/agents/check-agent-auth.use-case.js';
 import { ListRepositoriesUseCase } from '../../application/use-cases/repositories/list-repositories.use-case.js';
 import { DeleteRepositoryUseCase } from '../../application/use-cases/repositories/delete-repository.use-case.js';
 import { ImportGitHubRepositoryUseCase } from '../../application/use-cases/repositories/import-github-repository.use-case.js';
@@ -248,6 +254,14 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.registerSingleton<IWorktreeService>('IWorktreeService', WorktreeService);
   container.registerSingleton<IFileSystemService>('IFileSystemService', FileSystemService);
+  container.registerSingleton<IProjectScaffoldService>(
+    'IProjectScaffoldService',
+    FsProjectScaffoldService
+  );
+  container.registerSingleton<IAgentAuthDetectorService>(
+    'IAgentAuthDetectorService',
+    PlatformAgentAuthDetectorService
+  );
   container.registerSingleton<ISkillInjectorService>('ISkillInjectorService', SkillInjectorService);
   container.registerSingleton<IToolInstallerService>(
     'IToolInstallerService',
@@ -402,6 +416,8 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(LaunchToolUseCase);
   container.registerSingleton(LaunchIdeUseCase);
   container.registerSingleton(AddRepositoryUseCase);
+  container.registerSingleton(CreateProjectUseCase);
+  container.registerSingleton(CheckAgentAuthUseCase);
   container.registerSingleton(ListRepositoriesUseCase);
   container.registerSingleton(DeleteRepositoryUseCase);
   container.registerSingleton(ImportGitHubRepositoryUseCase);
@@ -505,6 +521,12 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('AddRepositoryUseCase', {
     useFactory: (c) => c.resolve(AddRepositoryUseCase),
+  });
+  container.register('CreateProjectUseCase', {
+    useFactory: (c) => c.resolve(CreateProjectUseCase),
+  });
+  container.register('CheckAgentAuthUseCase', {
+    useFactory: (c) => c.resolve(CheckAgentAuthUseCase),
   });
   container.register('ListRepositoriesUseCase', {
     useFactory: (c) => c.resolve(ListRepositoriesUseCase),

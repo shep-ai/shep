@@ -3,13 +3,38 @@
 /**
  * Playground prototype: client-side workspaces.
  *
+ * ⚠️  PROTOTYPE BOUNDARY — DO NOT IMPORT FROM OUTSIDE THIS PROTOTYPE  ⚠️
+ *
  * A workspace is a named, explicit allowlist of repositories and features
  * that should appear on the canvas. The "default" workspace is special: it
  * always shows everything (its allowlists are ignored).
  *
- * Persistence: localStorage only. This is a UI prototype — no backend, no
- * domain model changes. If we promote this to a real feature, the storage
- * shape mirrors what a `Workspace` entity would look like.
+ * Persistence: localStorage only. There is no backend, no domain model, no
+ * use cases, and no infrastructure adapter. Mutation rules ("default is
+ * read-only", "default always exists", rename validation) are enforced
+ * inline rather than as domain invariants.
+ *
+ * This file deliberately violates Clean Architecture by holding domain
+ * shape (`Workspace`), application logic (mutations + invariants), and
+ * infrastructure concerns (localStorage persistence) inside a React hook.
+ * It exists ONLY to validate the workspace UX on the playground branch.
+ *
+ * Before promoting workspaces to a real feature, replace this file with:
+ *   - tsp/Workspace.tsp                                — domain entity
+ *   - application/ports/output/repositories/
+ *       workspace.repository.interface.ts              — output port
+ *   - application/use-cases/workspaces/
+ *       create-workspace.use-case.ts
+ *       rename-workspace.use-case.ts
+ *       delete-workspace.use-case.ts
+ *       set-workspace-members.use-case.ts
+ *       list-workspaces.use-case.ts
+ *       set-active-workspace.use-case.ts
+ *   - infrastructure/repositories/sqlite-workspace.repository.ts
+ *
+ * Then this hook becomes a thin client wrapper that calls server actions
+ * backed by those use cases. Until that refactor lands, the `Workspace`
+ * type defined here MUST NOT be imported from any non-prototype code.
  */
 
 import { useCallback, useEffect, useState } from 'react';
