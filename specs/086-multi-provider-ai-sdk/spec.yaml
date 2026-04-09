@@ -126,3 +126,7 @@ rejectionFeedback:
     message: "In the storybook I see you added support for auth but in the settings ui page there is no way to auth."
     phase: "merge"
     timestamp: "2026-04-09T19:31:22.256Z"
+  - iteration: 3
+    message: "update the copilot and the gemini icons as well from here\nhttps://lobehub.com/icons"
+    phase: "merge"
+    timestamp: "2026-04-09T20:03:27.454Z"
