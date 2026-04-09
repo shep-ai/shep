@@ -51,6 +51,16 @@ export function createAgentSelectConfig() {
         description: t('tui:prompts.selectAgent.choices.devMock.description'),
       },
       {
+        name: t('tui:prompts.selectAgent.choices.openRouter.name'),
+        value: AgentType.OpenRouter,
+        description: t('tui:prompts.selectAgent.choices.openRouter.description'),
+      },
+      {
+        name: t('tui:prompts.selectAgent.choices.togetherAi.name'),
+        value: AgentType.TogetherAi,
+        description: t('tui:prompts.selectAgent.choices.togetherAi.description'),
+      },
+      {
         name: t('tui:prompts.selectAgent.choices.aider.name'),
         value: AgentType.Aider,
         disabled: t('tui:prompts.selectAgent.choices.aider.disabled'),
