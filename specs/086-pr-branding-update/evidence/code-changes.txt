@@ -1,0 +1,73 @@
+CODE CHANGES FOR PR BRANDING UPDATE
+
+=== MODIFIED FILE ===
+packages/core/src/infrastructure/services/git/pr-branding.ts
+
+=== BEFORE ===
+export const PR_BRANDING =
+  'Built with Shep 🐑 [Shep Bot](https://github.com/shep-ai/shep)';
+
+=== AFTER ===
+export const PR_BRANDING =
+  '[🐑](https://github.com/shep-ai/shep) Built with [Shep.bot](https://shep.bot)';
+
+=== DETAILED COMPARISON ===
+
+Old Format:
+- Text: "Built with Shep 🐑 [Shep Bot]"
+- Links: Only Shep Bot text links to GitHub
+- Emoji: Unlinked sheep emoji
+- Style: Plain text prefix
+
+New Format:
+- Text: "[🐑] Built with [Shep.bot]"
+- Links: Sheep emoji links to GitHub repo, Shep.bot links to shep.bot domain
+- Emoji: Linked and prominent at start
+- Style: Markdown link format
+
+=== CHANGES MADE ===
+1. Moved sheep emoji (🐑) to the beginning of the branding line
+2. Wrapped emoji in markdown link: [🐑](https://github.com/shep-ai/shep)
+3. Updated "Shep Bot" to "Shep.bot" (better branding)
+4. Changed Shep.bot to link to https://shep.bot (product domain)
+5. Reordered text to: emoji + branding text
+
+=== IMPACT ANALYSIS ===
+
+Files Using This Constant:
+1. packages/core/src/infrastructure/services/git/git-pr.service.ts
+   - Uses: const body = applyPrBranding(prData.body ?? '');
+   - Impact: PR footers will now display updated branding
+
+2. packages/core/src/infrastructure/services/git/git-fork.service.ts
+   - Uses: const brandedBody = applyPrBranding(body);
+   - Impact: Fork-and-PR workflow will use updated branding
+
+3. packages/core/src/infrastructure/services/agents/feature-agent/nodes/prompts/pr-branding.ts
+   - Uses: Re-exports PR_BRANDING from canonical location
+   - Impact: Automatically inherits updated branding
+
+=== BACKWARD COMPATIBILITY ===
+✅ COMPATIBLE - The change is a data/content update only
+- No API changes
+- No function signature changes
+- No type definition changes
+- No export changes
+- Simply updates the string constant value used in PR footers
+
+The applyPrBranding() function will apply the new branding to all future PRs created by Shep.
+
+=== EXPECTED USER-FACING CHANGE ===
+When users see a Shep-generated pull request footer, it will now appear as:
+
+[🐑](https://github.com/shep-ai/shep) Built with [Shep.bot](https://shep.bot)
+
+Instead of:
+
+Built with Shep 🐑 [Shep Bot](https://github.com/shep-ai/shep)
+
+This provides:
+- Better visual hierarchy (emoji first)
+- Dual linking (GitHub repo + product site)
+- Improved markdown rendering in GitHub/GitLab/Bitbucket
+- Better branding consistency with shep.bot domain
