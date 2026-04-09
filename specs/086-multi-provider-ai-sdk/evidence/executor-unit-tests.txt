@@ -1,0 +1,237 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk[39m
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/claude-code-interactive-executor.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+[2026-04-09T17:57:00.812Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.814Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.814Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.814Z] Prompt length: 21 chars (piped via stdin)
+[2026-04-09T17:57:00.815Z] [result] 33 chars, session=sess-abc-123
+[2026-04-09T17:57:00.816Z] Process closed with code 0, result=33 chars
+[2026-04-09T17:57:00.819Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.820Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.820Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.820Z] Prompt length: 12 chars (piped via stdin)
+[2026-04-09T17:57:00.820Z] [result] 4 chars, session=session-xyz-789
+[2026-04-09T17:57:00.820Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.821Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.821Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.821Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.821Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-09T17:57:00.821Z] [result] 4 chars, session=sess-1
+[2026-04-09T17:57:00.821Z] [tokens] 1500 in / 800 out
+[2026-04-09T17:57:00.821Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.822Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.822Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.822Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.822Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.822Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.822Z] [tokens] 500 in / 200 out
+[2026-04-09T17:57:00.822Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.823Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.823Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.823Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.823Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.823Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.823Z] [tokens] 100 in / 50 out, $0.1857
+[2026-04-09T17:57:00.823Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.824Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.824Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.824Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.824Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.824Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.824Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.824Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.824Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.824Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.824Z] Prompt length: 10 chars (piped via stdin)
+[2026-04-09T17:57:00.824Z] stderr: Error: Authentication failed
+[2026-04-09T17:57:00.824Z] Process closed with code 1, result=0 chars
+[2026-04-09T17:57:00.825Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.825Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.826Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.826Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.826Z] Process error event: spawn claude ENOENT
+[2026-04-09T17:57:00.827Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --resume prev-session-id --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.827Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.827Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.827Z] Prompt length: 13 chars (piped via stdin)
+[2026-04-09T17:57:00.827Z] [result] 7 chars, session=sess-resume
+[2026-04-09T17:57:00.827Z] Process closed with code 0, result=7 chars
+[2026-04-09T17:57:00.827Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --model claude-sonnet-4-5-20250929 --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.827Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.827Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.827Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.827Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.827Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.828Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --append-system-prompt You are a code reviewer --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.828Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.828Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.828Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.828Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.828Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.828Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --allowedTools Read,Write,Bash --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.828Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.828Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.828Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.828Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.828Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.829Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --max-turns 5 --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.829Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.829Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.829Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.829Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.829Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.829Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --json-schema {"type":"object","properties":{"summary":{"type":"string"}}} --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.829Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.829Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.829Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.829Z] [result] 18 chars, session=none
+[2026-04-09T17:57:00.829Z] Process closed with code 0, result=18 chars
+[2026-04-09T17:57:00.830Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.830Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.830Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.830Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.830Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.830Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.830Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.830Z] Spawn cwd: /some/project
+[2026-04-09T17:57:00.830Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.830Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.830Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.830Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.831Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.831Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.831Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.831Z] Prompt length: 12 chars (piped via stdin)
+[2026-04-09T17:57:05.832Z] Process closed with code null, result=0 chars
+[2026-04-09T17:57:00.832Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.832Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.832Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.832Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.832Z] Process closed with code 0, result=0 chars
+[2026-04-09T17:57:00.832Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.832Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.832Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.832Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.832Z] [tool] Read {"file_path":"/src/index.ts"}
+[2026-04-09T17:57:00.832Z] [text] Let me read the file...
+[2026-04-09T17:57:00.832Z] [result] 4 chars, session=sess-1
+[2026-04-09T17:57:00.832Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.832Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.832Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.832Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.832Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.832Z] [result] 4 chars, session=sess-1
+[2026-04-09T17:57:00.832Z] [tokens] 100 in / 50 out
+[2026-04-09T17:57:00.832Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.832Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --strict-mcp-config --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.832Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.832Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.832Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.833Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.833Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.833Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.833Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.833Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.833Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.833Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.833Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.833Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.833Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.833Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.833Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.833Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.833Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.833Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --tools Bash,Read,Write --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.833Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.833Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.833Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.833Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.833Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.834Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.834Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.834Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.834Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.834Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.834Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.834Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.834Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.834Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.834Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T17:57:00.834Z] [result] 4 chars, session=none
+[2026-04-09T17:57:00.834Z] Process closed with code 0, result=4 chars
+[2026-04-09T17:57:00.836Z] Spawning: cursor-agent --yolo -p Implement feature --output-format stream-json
+[2026-04-09T17:57:00.837Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.837Z] Subprocess PID: 12345
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/dev-executor.service.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/openrouter-executor.service.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+[2026-04-09T17:57:00.870Z] Spawning: cursor-agent --yolo -p Bad prompt --output-format stream-json
+[2026-04-09T17:57:00.870Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.870Z] Subprocess PID: 12345
+[90mstderr[2m | tests/unit/infrastructure/services/agents/executors/ai-sdk-base-executor.service.test.ts[2m > [22m[2mAiSdkBaseExecutorService[2m > [22m[2merror handling[2m > [22m[2merror handling works for executeStream too
+[22m[39mAPICallError [AI_APICallError]: Unauthorized
+    at doStream [90m(/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mtests/unit/infrastructure/services/agents/executors/ai-sdk-base-executor.service.test.ts:475:17[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at fn [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mnode_modules/[4m.pnpm[24m/ai@6.0.154_zod@4.3.6/node_modules/[4mai[24m/dist/index.mjs:7241:27[90m)[39m
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mnode_modules/[4m.pnpm[24m/ai@6.0.154_zod@4.3.6/node_modules/[4mai[24m/dist/index.mjs:2279:24
+    at _retryWithExponentialBackoff [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mnode_modules/[4m.pnpm[24m/ai@6.0.154_zod@4.3.6/node_modules/[4mai[24m/dist/index.mjs:2597:12[90m)[39m
+    at streamStep [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mnode_modules/[4m.pnpm[24m/ai@6.0.154_zod@4.3.6/node_modules/[4mai[24m/dist/index.mjs:7198:17[90m)[39m
+    at fn [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mnode_modules/[4m.pnpm[24m/ai@6.0.154_zod@4.3.6/node_modules/[4mai[24m/dist/index.mjs:7610:9[90m)[39m
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mnode_modules/[4m.pnpm[24m/ai@6.0.154_zod@4.3.6/node_modules/[4mai[24m/dist/index.mjs:2279:24 {
+  cause: [90mundefined[39m,
+  url: [32m'https://api.test.com/v1/chat'[39m,
+  requestBodyValues: {},
+  statusCode: [33m401[39m,
+  responseHeaders: [90mundefined[39m,
+  responseBody: [90mundefined[39m,
+  isRetryable: [33mfalse[39m,
+  data: [90mundefined[39m,
+  [[32mSymbol(vercel.ai.error)[39m]: [33mtrue[39m,
+  [[32mSymbol(vercel.ai.error.AI_APICallError)[39m]: [33mtrue[39m
+}
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/ai-sdk-base-executor.service.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+[2026-04-09T17:57:00.880Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-09T17:57:00.880Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.880Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.900Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.900Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.900Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.900Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-09T17:57:00.900Z] Process error event: spawn claude ENOENT
+[2026-04-09T17:57:00.901Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T17:57:00.901Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.901Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.901Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-09T17:57:00.901Z] Process error event: some other error
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/claude-code-executor.test.ts [2m([22m[2m38 tests[22m[2m)[22m[32m 91[2mms[22m[39m
+[2026-04-09T17:57:00.903Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-09T17:57:00.903Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.903Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.924Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-09T17:57:00.924Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.924Z] Subprocess PID: 12345
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/together-ai-executor.service.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+[2026-04-09T17:57:00.947Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-09T17:57:00.947Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.947Z] Subprocess PID: 12345
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/copilot-cli-executor.test.ts [2m([22m[2m51 tests[22m[2m)[22m[32m 172[2mms[22m[39m
+[2026-04-09T17:57:00.969Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-09T17:57:00.969Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.969Z] Subprocess PID: 12345
+[2026-04-09T17:57:00.992Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-09T17:57:00.992Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:00.992Z] Subprocess PID: 12345
+[2026-04-09T17:57:01.004Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-09T17:57:01.004Z] Spawn cwd: (inherited)
+[2026-04-09T17:57:01.004Z] Subprocess PID: 12345
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/cursor-executor.test.ts [2m([22m[2m39 tests[22m[2m)[22m[32m 216[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/gemini-cli-executor.test.ts [2m([22m[2m43 tests[22m[2m)[22m[33m 314[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/codex-cli-executor.test.ts [2m([22m[2m49 tests[22m[2m)[22m[33m 324[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m10 passed[39m[22m[90m (10)[39m
+[2m      Tests [22m [1m[32m298 passed[39m[22m[90m (298)[39m
+[2m   Start at [22m 20:57:00
+[2m   Duration [22m 590ms[2m (transform 1.09s, setup 318ms, import 1.30s, tests 1.17s, environment 1ms)[22m
+
