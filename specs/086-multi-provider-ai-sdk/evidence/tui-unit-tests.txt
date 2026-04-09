@@ -1,11 +1,11 @@
 
-[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk[39m
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk
 
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/tui/prompts/agent-select.prompt.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/tui/wizards/agent-config.wizard.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ ✓  node  tests/unit/presentation/tui/prompts/agent-select.prompt.test.ts (8 tests) 4ms
+ ✓  node  tests/unit/presentation/tui/wizards/agent-config.wizard.test.ts (7 tests) 6ms
 
-[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
-[2m      Tests [22m [1m[32m15 passed[39m[22m[90m (15)[39m
-[2m   Start at [22m 20:57:09
-[2m   Duration [22m 121ms[2m (transform 75ms, setup 42ms, import 71ms, tests 11ms, environment 0ms)[22m
+ Test Files  2 passed (2)
+      Tests  15 passed (15)
+   Start at  21:07:13
+   Duration  119ms (transform 79ms, setup 43ms, import 71ms, tests 10ms, environment 0ms)
 

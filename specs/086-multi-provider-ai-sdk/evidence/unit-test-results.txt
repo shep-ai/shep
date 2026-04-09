@@ -3,179 +3,498 @@
 > vitest run tests/unit
 
 
-[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk[39m
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk
 
-[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2malready-running path (idempotent)[2m > [22m[2mdoes NOT spawn a new process when daemon is already alive
-[22m[39m
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > already-running path (idempotent) > does NOT spawn a new process when daemon is already alive
+
 ℹ Shep is already running at http://localhost:4050
 
 
-[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2malready-running path (idempotent)[2m > [22m[2mdoes NOT write daemon.json when daemon is already alive
-[22m[39m
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > already-running path (idempotent) > does NOT write daemon.json when daemon is already alive
+
 ℹ Shep is already running at http://localhost:4050
 
 
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/gemini-cli-executor.test.ts [2m([22m[2m43 tests[22m[2m)[22m[33m 313[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/codex-cli-executor.test.ts [2m([22m[2m49 tests[22m[2m)[22m[33m 320[2mms[22m[39m
-[2026-04-09T17:55:07.220Z] Spawning: cursor-agent --yolo -p Implement feature --output-format stream-json
-[2026-04-09T17:55:07.230Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.230Z] Subprocess PID: 12345
-[2026-04-09T17:55:07.264Z] Spawning: cursor-agent --yolo -p Bad prompt --output-format stream-json
-[2026-04-09T17:55:07.265Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.265Z] Subprocess PID: 12345
-[2026-04-09T17:55:07.276Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-09T17:55:07.276Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.276Z] Subprocess PID: 12345
-[2026-04-09T17:55:07.298Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-09T17:55:07.298Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.298Z] Subprocess PID: 12345
-[2026-04-09T17:55:07.319Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-09T17:55:07.319Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.319Z] Subprocess PID: 12345
-[2026-04-09T17:55:07.342Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-09T17:55:07.342Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.342Z] Subprocess PID: 12345
-[2026-04-09T17:55:07.363Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-09T17:55:07.363Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.363Z] Subprocess PID: 12345
-[2026-04-09T17:55:07.384Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-09T17:55:07.384Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.384Z] Subprocess PID: 12345
-[2026-04-09T17:55:07.395Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-09T17:55:07.395Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.395Z] Subprocess PID: 12345
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/cursor-executor.test.ts [2m([22m[2m39 tests[22m[2m)[22m[32m 213[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/tool-installer/tool-installer.service.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 181[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-reject-token.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 748[2mms[22m[39m
-     [33m[2m✓[22m[39m resolves RejectAgentRunUseCase via string token after initialization [33m 747[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-idempotency.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 764[2mms[22m[39m
-     [33m[2m✓[22m[39m isContainerInitialized() returns false before init [33m 744[2mms[22m[39m
-[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2mfresh-start path (no existing daemon)[2m > [22m[2mcalls findAvailablePort with DEFAULT_PORT when no port option given
-[22m[39m
+ ✓  node  tests/unit/infrastructure/services/agents/executors/gemini-cli-executor.test.ts (43 tests) 314ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/codex-cli-executor.test.ts (49 tests) 318ms
+[2026-04-09T18:05:06.035Z] Spawning: cursor-agent --yolo -p Implement feature --output-format stream-json
+[2026-04-09T18:05:06.037Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.037Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.069Z] Spawning: cursor-agent --yolo -p Bad prompt --output-format stream-json
+[2026-04-09T18:05:06.069Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.069Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.081Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-09T18:05:06.081Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.081Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.103Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-09T18:05:06.103Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.103Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.125Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-09T18:05:06.125Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.125Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.147Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-09T18:05:06.147Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.147Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.169Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-09T18:05:06.169Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.169Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.190Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-09T18:05:06.190Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.190Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.203Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-09T18:05:06.203Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.203Z] Subprocess PID: 12345
+ ✓  node  tests/unit/infrastructure/services/tool-installer/tool-installer.service.test.ts (19 tests) 179ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/cursor-executor.test.ts (39 tests) 218ms
+ ✓  node  tests/unit/infrastructure/di/container-reject-token.test.ts (1 test) 766ms
+     ✓ resolves RejectAgentRunUseCase via string token after initialization  765ms
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > calls findAvailablePort with DEFAULT_PORT when no port option given
+
 Shep Web UI
 
 ✓ Daemon spawned at http://localhost:4050
 
 
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-session-registrations.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 798[2mms[22m[39m
-     [33m[2m✓[22m[39m resolves ListAgentSessionsUseCase after initialization [33m 748[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/upgrade/upgrade-cli.use-case.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 780[2mms[22m[39m
-[2026-04-09T17:55:07.627Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-09T17:55:07.628Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.628Z] Subprocess PID: 12345
-[2026-04-09T17:55:07.628Z] Prompt length: 21 chars (piped via stdin)
-[2026-04-09T17:55:07.629Z] [result] 33 chars, session=sess-abc-123
-[2026-04-09T17:55:07.629Z] Process closed with code 0, result=33 chars
-[2026-04-09T17:55:07.631Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-09T17:55:07.631Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.631Z] Subprocess PID: 12345
-[2026-04-09T17:55:07.631Z] Prompt length: 12 chars (piped via stdin)
-[2026-04-09T17:55:07.631Z] [result] 4 chars, session=session-xyz-789
-[2026-04-09T17:55:07.631Z] Process closed with code 0, result=4 chars
-[2026-04-09T17:55:07.631Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-09T17:55:07.631Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.631Z] Subprocess PID: 12345
-[2026-04-09T17:55:07.631Z] Prompt length: 11 chars (piped via stdin)
-[2026-04-09T17:55:07.631Z] [result] 4 chars, session=sess-1
-[2026-04-09T17:55:07.631Z] [tokens] 1500 in / 800 out
-[2026-04-09T17:55:07.631Z] Process closed with code 0, result=4 chars
-[2026-04-09T17:55:07.632Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-09T17:55:07.632Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.632Z] Subprocess PID: 12345
-[2026-04-09T17:55:07.632Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-09T17:55:07.632Z] [result] 4 chars, session=none
-[2026-04-09T17:55:07.632Z] [tokens] 500 in / 200 out
-[2026-04-09T17:55:07.632Z] Process closed with code 0, result=4 chars
-[2026-04-09T17:55:07.632Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-09T17:55:07.632Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.632Z] Subprocess PID: 12345
-[2026-04-09T17:55:07.632Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-09T17:55:07.632Z] [result] 4 chars, session=none
-[2026-04-09T17:55:07.632Z] [tokens] 100 in / 50 out, $0.1857
-[2026-04-09T17:55:07.632Z] Process closed with code 0, result=4 chars
-[2026-04-09T17:55:07.632Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-09T17:55:07.632Z] Spawn cwd: (inherited)
-[2026-04-09T17:55:07.632Z] Subprocess PID: 12345
-[2026-04-09T17:55:07.632Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-09T17:55:07.632Z] [result] 4 chars, session=none
-...
-[90mstderr[2m | tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22m[2mdeployRepository server action[2m > [22m[2mreturns error when service.start throws
-[22m[39m[deployRepository] error: No dev script found in package.json Error: No dev script found in package.json
-    at Object.<anonymous> [90m(/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mtests/unit/presentation/web/actions/deploy-repository.test.ts:98:13[90m)[39m
-    at Object.Mock [as start] [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mnode_modules/[4m.pnpm[24m/@vitest+spy@4.0.18/node_modules/[4m@vitest[24m/spy/dist/index.js:285:34[90m)[39m
-    at deployRepository [90m(/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39msrc/presentation/web/app/actions/deploy-repository.ts:39:23[90m)[39m
-    at [90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mtests/unit/presentation/web/actions/deploy-repository.test.ts:101:26
-    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:145:11
-    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:915:26
-    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1243:20
-    at new Promise (<anonymous>)
-    at runWithTimeout [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1209:10[90m)[39m
-    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1653:37
+ ✓  node  tests/unit/infrastructure/di/container-idempotency.test.ts (3 tests) 785ms
+     ✓ isContainerInitialized() returns false before init  762ms
+ ✓  node  tests/unit/infrastructure/di/container-session-registrations.test.ts (6 tests) 810ms
+     ✓ resolves ListAgentSessionsUseCase after initialization  763ms
+ ✓  node  tests/unit/application/use-cases/upgrade/upgrade-cli.use-case.test.ts (16 tests) 776ms
+[2026-04-09T18:05:06.453Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.455Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.455Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.455Z] Prompt length: 21 chars (piped via stdin)
+[2026-04-09T18:05:06.456Z] [result] 33 chars, session=sess-abc-123
+[2026-04-09T18:05:06.456Z] Process closed with code 0, result=33 chars
+[2026-04-09T18:05:06.459Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.459Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.459Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.459Z] Prompt length: 12 chars (piped via stdin)
+[2026-04-09T18:05:06.460Z] [result] 4 chars, session=session-xyz-789
+[2026-04-09T18:05:06.460Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.460Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.460Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.460Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.460Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-09T18:05:06.460Z] [result] 4 chars, session=sess-1
+[2026-04-09T18:05:06.460Z] [tokens] 1500 in / 800 out
+[2026-04-09T18:05:06.460Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.461Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.461Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.461Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.461Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.461Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.461Z] [tokens] 500 in / 200 out
+[2026-04-09T18:05:06.461Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.461Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.461Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.461Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.461Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.462Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.462Z] [tokens] 100 in / 50 out, $0.1857
+[2026-04-09T18:05:06.462Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.462Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.462Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.462Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.462Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.462Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.462Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.463Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.463Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.463Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.463Z] Prompt length: 10 chars (piped via stdin)
+[2026-04-09T18:05:06.463Z] stderr: Error: Authentication failed
+[2026-04-09T18:05:06.463Z] Process closed with code 1, result=0 chars
+[2026-04-09T18:05:06.463Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.463Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.463Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.463Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.464Z] Process error event: spawn claude ENOENT
+[2026-04-09T18:05:06.464Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --resume prev-session-id --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.464Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.464Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.464Z] Prompt length: 13 chars (piped via stdin)
+[2026-04-09T18:05:06.464Z] [result] 7 chars, session=sess-resume
+[2026-04-09T18:05:06.464Z] Process closed with code 0, result=7 chars
+[2026-04-09T18:05:06.464Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --model claude-sonnet-4-5-20250929 --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.464Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.464Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.464Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.464Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.464Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.465Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --append-system-prompt You are a code reviewer --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.465Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.465Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.465Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.465Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.465Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.465Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --allowedTools Read,Write,Bash --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.465Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.465Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.465Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.465Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.465Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.465Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --max-turns 5 --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.465Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.465Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.465Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.465Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.465Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.465Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --json-schema {"type":"object","properties":{"summary":{"type":"string"}}} --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.465Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.465Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.465Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.465Z] [result] 18 chars, session=none
+[2026-04-09T18:05:06.465Z] Process closed with code 0, result=18 chars
+[2026-04-09T18:05:06.466Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.466Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.466Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.466Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.466Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.466Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.467Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.467Z] Spawn cwd: /some/project
+[2026-04-09T18:05:06.467Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.467Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.468Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.468Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.468Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.468Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.468Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.468Z] Prompt length: 12 chars (piped via stdin)
+[2026-04-09T18:05:11.469Z] Process closed with code null, result=0 chars
+[2026-04-09T18:05:06.471Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.471Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.471Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.471Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.471Z] Process closed with code 0, result=0 chars
+[2026-04-09T18:05:06.472Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.472Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.472Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.472Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.472Z] [tool] Read {"file_path":"/src/index.ts"}
+[2026-04-09T18:05:06.472Z] [text] Let me read the file...
+[2026-04-09T18:05:06.472Z] [result] 4 chars, session=sess-1
+[2026-04-09T18:05:06.472Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.472Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.472Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.472Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.472Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.472Z] [result] 4 chars, session=sess-1
+[2026-04-09T18:05:06.472Z] [tokens] 100 in / 50 out
+[2026-04-09T18:05:06.472Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.472Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --strict-mcp-config --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.472Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.472Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.472Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.472Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.472Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.473Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.473Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.473Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.473Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.473Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.473Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.473Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.473Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.473Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.473Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.473Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.473Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.473Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --tools Bash,Read,Write --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.473Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.473Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.473Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.473Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.473Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.473Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.473Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.473Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.473Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.473Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.473Z] Process closed with code 0, result=4 chars
+[2026-04-09T18:05:06.473Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.473Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.473Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.473Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-09T18:05:06.473Z] [result] 4 chars, session=none
+[2026-04-09T18:05:06.473Z] Process closed with code 0, result=4 chars
+ ✓  node  tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts (31 tests) 98ms
+ ✓  node  tests/unit/infrastructure/services/agents/agent-registry.service.test.ts (8 tests) 198ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/copilot-cli-executor.test.ts (51 tests) 175ms
+[2026-04-09T18:05:06.544Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.544Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.544Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.544Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-09T18:05:06.544Z] Process error event: spawn claude ENOENT
+[2026-04-09T18:05:06.545Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-09T18:05:06.545Z] Spawn cwd: (inherited)
+[2026-04-09T18:05:06.545Z] Subprocess PID: 12345
+[2026-04-09T18:05:06.545Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-09T18:05:06.545Z] Process error event: some other error
+ ✓  node  tests/unit/infrastructure/services/agents/executors/claude-code-executor.test.ts (38 tests) 97ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts (47 tests) 871ms
+stdout | tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts > InteractiveSessionService > stopSession > updates the session status to stopped
+[InteractiveSession] stopSession called for 274b7f7c-c5da-4ae7-a77f-c165f92f4f73 (feature: feat-1)     at InteractiveSessionService.stopSession (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/packages/core/src/infrastructure/services/interactive/interactive-session.service.ts:492:7) <-     at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts:394:21 <-     at processTicksAndRejections (node:internal/process/task_queues:105:5)
 
-[90mstderr[2m | tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22m[2mdeployRepository server action[2m > [22m[2mreturns generic error for non-Error throws
-[22m[39m[deployRepository] error: Failed to deploy repository unexpected
+stdout | tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts > InteractiveSessionService > stopSession > is idempotent — calling twice does not throw
+[InteractiveSession] stopSession called for 68ab60af-53f2-4606-8579-f11ca877ebe2 (feature: feat-1)     at InteractiveSessionService.stopSession (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/packages/core/src/infrastructure/services/interactive/interactive-session.service.ts:492:7) <-     at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts:405:21 <-     at processTicksAndRejections (node:internal/process/task_queues:105:5)
 
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-repository.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/open-shell.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 14[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/open-ide.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/feature-flags.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/parse-log-line.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/features/create-feature.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 15[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/update-settings.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-viewer-permission.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/language.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/pick-files.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/common/feature-node/derive-feature-state.test.ts [2m([22m[2m47 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-deployment-status.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/import-github-repository.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-deployment-logs.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/features/delete-feature.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 17[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/feature-create-drawer/feature-create-drawer.test.tsx [2m([22m[2m91 tests[22m[2m)[22m[33m 19943[2mms[22m[39m
-       [33m[2m✓[22m[39m accepts text in the description field [33m 396[2mms[22m[39m
-       [33m[2m✓[22m[39m enables submit button when description has content [33m 418[2mms[22m[39m
-       [33m[2m✓[22m[39m calls onSubmit with payload containing description (no name field) [33m 389[2mms[22m[39m
-       [33m[2m✓[22m[39m includes attachments array with file objects [33m 523[2mms[22m[39m
-       [33m[2m✓[22m[39m sends approvalGates with only PRD checked [33m 410[2mms[22m[39m
-       [33m[2m✓[22m[39m sends all-true approvalGates when all checkboxes are checked [33m 860[2mms[22m[39m
-       [33m[2m✓[22m[39m sends all-false approvalGates when no checkboxes are checked [33m 354[2mms[22m[39m
-       [33m[2m✓[22m[39m submits correct approvalGates after All toggle [33m 406[2mms[22m[39m
-       [33m[2m✓[22m[39m clears all form fields after submit without unmounting [33m 1202[2mms[22m[39m
-       [33m[2m✓[22m[39m clears form data on submit so next open starts fresh [33m 656[2mms[22m[39m
-       [33m[2m✓[22m[39m plays create sound on form submit [33m 592[2mms[22m[39m
-       [33m[2m✓[22m[39m submitting with fast mode on includes fast=true in payload [33m 490[2mms[22m[39m
-       [33m[2m✓[22m[39m submitting with fast mode off includes fast=false in payload [33m 374[2mms[22m[39m
-       [33m[2m✓[22m[39m fast mode resets to default after submit [33m 462[2mms[22m[39m
-       [33m[2m✓[22m[39m submits the form when Ctrl+Enter is pressed in the textarea [33m 335[2mms[22m[39m
-       [33m[2m✓[22m[39m does not submit on plain Enter (without modifier) [33m 465[2mms[22m[39m
-       [33m[2m✓[22m[39m includes sessionId in submitted payload [33m 529[2mms[22m[39m
-       [33m[2m✓[22m[39m submit button is enabled when repo is selected via combobox [33m 491[2mms[22m[39m
-       [33m[2m✓[22m[39m submit button is enabled when repositoryPath is provided (canvas flow) [33m 408[2mms[22m[39m
-       [33m[2m✓[22m[39m handleSubmit includes selectedRepoPath in payload [33m 476[2mms[22m[39m
-       [33m[2m✓[22m[39m can submit feature after adding new repo via combobox [33m 752[2mms[22m[39m
-       [33m[2m✓[22m[39m resets forkAndPr state to false when canPushDirectly changes from false to true [33m 660[2mms[22m[39m
-       [33m[2m✓[22m[39m calls getViewerPermission on repo change and updates toggle visibility [33m 433[2mms[22m[39m
-       [33m[2m✓[22m[39m excludes forkAndPr from submission payload when canPush is true [33m 411[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/stop-deployment.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-workflow-defaults.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/get-feature-phase-timings.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/list-github-repositories.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-supported-models.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/get-feature-plan.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-review-config.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/update-feature-pinned-config.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/features/inventory-filters.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/control-center-drawer/drawer-view.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/format-duration.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/list-github-organizations.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/approve-feature.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/reject-feature.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/features/control-center/derive-state.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 2[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/compare-versions.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 2[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/pick-folder.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/compose-user-input.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+stdout | tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts > InteractiveSessionService > stopSession > can stop a session that is still booting
+[InteractiveSession] stopSession called for 57e14322-4252-46d2-aec2-3922172a8e99 (feature: feat-1)     at InteractiveSessionService.stopSession (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/packages/core/src/infrastructure/services/interactive/interactive-session.service.ts:492:7) <-     at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts:414:21 <-     at processTicksAndRejections (node:internal/process/task_queues:105:5)
 
-[2m Test Files [22m [1m[32m406 passed[39m[22m[90m (406)[39m
-[2m      Tests [22m [1m[32m5883 passed[39m[22m[90m (5883)[39m
-[2m   Start at [22m 20:55:06
-[2m   Duration [22m 30.12s[2m (transform 10.64s, setup 37.88s, import 46.48s, tests 76.47s, environment 65.80s)[22m
+stdout | tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts > InteractiveSessionService > stopSession > calls close on the handle when stopping
+[InteractiveSession] stopSession called for 8c0d9fe1-137e-4013-8b9b-e6ce9169bebb (feature: feat-1)     at InteractiveSessionService.stopSession (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/packages/core/src/infrastructure/services/interactive/interactive-session.service.ts:492:7) <-     at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts:427:21 <-     at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > start/stop lifecycle > should set isRunning to true when started
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > start/stop lifecycle > should set isRunning to true when started
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > start/stop lifecycle > should set isRunning to false when stopped
+[PrSyncWatcher] Starting (poll every 30000ms)
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > start/stop lifecycle > should be no-op when start() is called while already running
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts > InteractiveSessionService > idle timeout > stops the session after the default idle timeout (15 min)
+[InteractiveSession] stopSession called for 368f7a93-18d4-4bc5-ae3f-e515feaf8a53 (feature: feat-1)     at InteractiveSessionService.stopSession (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/packages/core/src/infrastructure/services/interactive/interactive-session.service.ts:492:7) <-     at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/packages/core/src/infrastructure/services/interactive/interactive-session.service.ts:1258:17 <-     at callTimer (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/node_modules/.pnpm/vitest@4.0.18_@opentelemetry+api@1.9.0_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_light_aa59cdbaf81e3a86c6d640de00a60c1e/node_modules/vitest/dist/chunks/vi.2VT5v0um.js:2111:25)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > start/stop lifecycle > should be no-op when start() is called while already running
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > start/stop lifecycle > should poll at configured interval
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > start/stop lifecycle > should poll at configured interval
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > start/stop lifecycle > should stop polling when stop() is called
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > start/stop lifecycle > should stop polling when stop() is called
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > start/stop lifecycle > should support custom poll interval
+[PrSyncWatcher] Starting (poll every 1000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > start/stop lifecycle > should support custom poll interval
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should detect Open→Merged transition and update feature and agent run
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should detect Open→Merged transition and update feature and agent run
+[PrSyncWatcher] PR #1 status changed: Open -> Merged for "My Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should detect Open→Merged transition and update feature and agent run
+[PrSyncWatcher] CI status changed: none -> Pending for "My Feature"
+
+stderr | tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts > InteractiveSessionService > boot error handling > marks session as error when boot stream yields an error event
+[InteractiveSession] boot failed for session cb8f25c4-dfef-42fa-a092-f69bc97defab: Error: Agent error during boot: Something went wrong
+    at InteractiveSessionService.completeBootAsync (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk/packages/core/src/infrastructure/services/interactive/interactive-session.service.ts:435:21)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should detect Open→Merged transition and update feature and agent run
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should skip duplicate Maintain transition when merge node already handled it (#354)
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should skip duplicate Maintain transition when merge node already handled it (#354)
+[PrSyncWatcher] PR #1 status changed: Open -> Merged for "My Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should skip duplicate Maintain transition when merge node already handled it (#354)
+[PrSyncWatcher] Feature "My Feature" already in Maintain — skipping duplicate transition
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should skip duplicate Maintain transition when merge node already handled it (#354)
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should skip agent run update when feature has no agentRunId
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should skip agent run update when feature has no agentRunId
+[PrSyncWatcher] PR #1 status changed: Open -> Merged for "My Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should skip agent run update when feature has no agentRunId
+[PrSyncWatcher] CI status changed: none -> Pending for "My Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should skip agent run update when feature has no agentRunId
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should detect Open→Closed transition and update feature without lifecycle change
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should detect Open→Closed transition and update feature without lifecycle change
+[PrSyncWatcher] PR #2 status changed: Open -> Closed for "Closed Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should detect Open→Closed transition and update feature without lifecycle change
+[PrSyncWatcher] CI status changed: none -> Pending for "Closed Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should detect Open→Closed transition and update feature without lifecycle change
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should not call update when PR status has not changed
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should not call update when PR status has not changed
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should group features by repositoryPath for batch PR queries
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should group features by repositoryPath for batch PR queries
+[PrSyncWatcher] CI status changed: none -> Pending for "Test Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should group features by repositoryPath for batch PR queries
+[PrSyncWatcher] CI status changed: none -> Pending for "Test Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should group features by repositoryPath for batch PR queries
+[PrSyncWatcher] CI status changed: none -> Pending for "Test Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should group features by repositoryPath for batch PR queries
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should prune features that left Review from tracking map
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should prune features that left Review from tracking map
+[PrSyncWatcher] CI status changed: none -> Pending for "Test Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should prune features that left Review from tracking map
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should emit PrMerged notification with correct fields including featureId and agentRunId
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should emit PrMerged notification with correct fields including featureId and agentRunId
+[PrSyncWatcher] PR #1 status changed: Open -> Merged for "Merged Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should emit PrMerged notification with correct fields including featureId and agentRunId
+[PrSyncWatcher] CI status changed: none -> Pending for "Merged Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should emit PrMerged notification with correct fields including featureId and agentRunId
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should emit PrClosed notification with correct fields including featureId
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should emit PrClosed notification with correct fields including featureId
+[PrSyncWatcher] PR #1 status changed: Open -> Closed for "Closed Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should emit PrClosed notification with correct fields including featureId
+[PrSyncWatcher] CI status changed: none -> Pending for "Closed Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should emit PrClosed notification with correct fields including featureId
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should skip already-merged PRs during branch discovery (likely stale)
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should skip already-merged PRs during branch discovery (likely stale)
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should discover open PR by branch name and populate feature PR data
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should discover open PR by branch name and populate feature PR data
+[PrSyncWatcher] Discovered PR #10 for "External PR" via branch "feat/external"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should discover open PR by branch name and populate feature PR data
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should not update feature when no matching PR found by branch
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should not update feature when no matching PR found by branch
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should not emit duplicate notification on subsequent polls with same status
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should not emit duplicate notification on subsequent polls with same status
+[PrSyncWatcher] PR #1 status changed: Open -> Merged for "Test Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should not emit duplicate notification on subsequent polls with same status
+[PrSyncWatcher] CI status changed: none -> Pending for "Test Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > PR status polling and transition detection > should not emit duplicate notification on subsequent polls with same status
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should detect CI Pending→Success and update feature
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should detect CI Pending→Success and update feature
+[PrSyncWatcher] CI status changed: Pending -> Success for "Test Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should detect CI Pending→Success and update feature
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should detect CI Pending→Failure and update feature
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should detect CI Pending→Failure and update feature
+[PrSyncWatcher] CI status changed: Pending -> Failure for "Test Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should detect CI Pending→Failure and update feature
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should emit PrChecksPassed notification on CI success
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should emit PrChecksPassed notification on CI success
+[PrSyncWatcher] CI status changed: Pending -> Success for "CI Pass Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should emit PrChecksPassed notification on CI success
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should emit PrChecksFailed notification on CI failure
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should emit PrChecksFailed notification on CI failure
+[PrSyncWatcher] CI status changed: Pending -> Failure for "CI Fail Feature"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should emit PrChecksFailed notification on CI failure
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should not trigger update when CI status is unchanged
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should not trigger update when CI status is unchanged
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should handle getCiStatus errors gracefully and continue
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should handle getCiStatus errors gracefully and continue
+[PrSyncWatcher] PR #1 status changed: Open -> Merged for "Feature 1"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should handle getCiStatus errors gracefully and continue
+[PrSyncWatcher] CI status changed: none -> Success for "Feature 2"
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > CI status polling and transition detection > should handle getCiStatus errors gracefully and continue
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > error handling and edge cases > should not make API calls when no features are in Review
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > error handling and edge cases > should not make API calls when no features are in Review
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > error handling and edge cases > should still poll GitHub for features without PR data (for branch-based discovery)
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > error handling and edge cases > should still poll GitHub for features without PR data (for branch-based discovery)
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > error handling and edge cases > should skip features with missing repositoryPath
+[PrSyncWatcher] Starting (poll every 30000ms)
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > error handling and edge cases > should skip features with missing repositoryPath
+[PrSyncWatcher] Stopped
+
+stdout | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts > PrSyncWatcherService > error handling and edge cases > should skip feature when PR number is not found in listPrStatuses response
+[PrSyncWatcher] Starting (poll every 30000ms)
 
