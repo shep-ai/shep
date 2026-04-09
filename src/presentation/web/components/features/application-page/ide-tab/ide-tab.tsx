@@ -98,7 +98,7 @@ export function IdeTab({ applicationId }: IdeTabProps) {
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
         >
-          <span className="absolute inset-y-0 -left-1 -right-1" />
+          <span className="absolute inset-y-0 -right-1 -left-1" />
         </div>
       )}
 
@@ -108,7 +108,7 @@ export function IdeTab({ applicationId }: IdeTabProps) {
           className="border-border flex min-h-0 shrink-0 flex-col border-l"
           style={{ width: treeWidth }}
         >
-          <div className="text-muted-foreground border-border bg-muted/30 flex h-8 shrink-0 items-center justify-between border-b px-2 text-[10px] font-medium uppercase tracking-wide">
+          <div className="text-muted-foreground border-border bg-muted/30 flex h-8 shrink-0 items-center justify-between border-b px-2 text-[10px] font-medium tracking-wide uppercase">
             <span>Explorer</span>
             <button
               type="button"

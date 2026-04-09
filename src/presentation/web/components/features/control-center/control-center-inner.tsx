@@ -370,8 +370,7 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
   // present — applications are first-class top-level nodes, so creating
   // an application alone must be enough to keep the prompt empty state
   // from re-appearing on next visit.
-  const hasCanvasContent =
-    hasRepositories || nodes.some((n) => n.type === 'applicationNode');
+  const hasCanvasContent = hasRepositories || nodes.some((n) => n.type === 'applicationNode');
 
   // Publish repo state to sidebar context so AppShell can hide FAB during onboarding
   useEffect(() => {

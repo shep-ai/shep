@@ -26,9 +26,7 @@ const SAMPLE_TREE: FileTreeEntry = {
           name: 'components',
           path: 'src/components',
           isDirectory: true,
-          children: [
-            { name: 'button.tsx', path: 'src/components/button.tsx', isDirectory: false },
-          ],
+          children: [{ name: 'button.tsx', path: 'src/components/button.tsx', isDirectory: false }],
         },
       ],
     },
@@ -39,7 +37,8 @@ const SAMPLE_TREE: FileTreeEntry = {
 
 const SAMPLE_FILES: Record<string, string> = {
   'src/index.ts': "import { greet } from './utils';\n\ngreet('world');\n",
-  'src/utils.ts': "export function greet(name: string): void {\n  console.log('Hello,', name);\n}\n",
+  'src/utils.ts':
+    "export function greet(name: string): void {\n  console.log('Hello,', name);\n}\n",
   'src/components/button.tsx':
     "import * as React from 'react';\n\nexport function Button() {\n  return <button>Click me</button>;\n}\n",
   'package.json': '{\n  "name": "demo-repo",\n  "version": "0.0.1"\n}\n',

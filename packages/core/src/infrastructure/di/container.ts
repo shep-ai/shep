@@ -198,10 +198,13 @@ import { runSQLiteMigrations } from '../persistence/sqlite/migrations.js';
 import type { IInteractiveSessionRepository } from '../../application/ports/output/repositories/interactive-session-repository.interface.js';
 import type { IInteractiveMessageRepository } from '../../application/ports/output/repositories/interactive-message-repository.interface.js';
 import type { IInteractiveSessionService } from '../../application/ports/output/services/interactive-session-service.interface.js';
+import type { IWorkflowStepRepository } from '../../application/ports/output/repositories/workflow-step-repository.interface.js';
 import { SQLiteInteractiveSessionRepository } from '../repositories/sqlite-interactive-session.repository.js';
 import { SQLiteInteractiveMessageRepository } from '../repositories/sqlite-interactive-message.repository.js';
+import { SQLiteWorkflowStepRepository } from '../repositories/sqlite-workflow-step.repository.js';
 import { InteractiveSessionService } from '../services/interactive/interactive-session.service.js';
 import { FeatureContextBuilder } from '../services/interactive/feature-context.builder.js';
+import { RunWorkflowUseCase } from '../../application/use-cases/workflows/run-workflow.use-case.js';
 
 let _initialized = false;
 
@@ -713,6 +716,27 @@ export async function initializeContainer(): Promise<typeof container> {
     },
   });
 
+  container.register<IWorkflowStepRepository>('IWorkflowStepRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteWorkflowStepRepository(database);
+    },
+  });
+
+  // Boot-time recovery: any step left in `running` by a previous
+  // daemon is orphaned. Flip it to `interrupted` BEFORE any session
+  // can resolve so the UI never shows phantom "in-progress" state
+  // from a dead process.
+  const workflowStepRepoBoot =
+    container.resolve<IWorkflowStepRepository>('IWorkflowStepRepository');
+  const interruptedCount = await workflowStepRepoBoot.markAllRunningAsInterrupted();
+  if (interruptedCount > 0) {
+    // eslint-disable-next-line no-console
+    console.log(
+      `[workflow-step-recovery] marked ${interruptedCount} orphaned running step(s) as interrupted`
+    );
+  }
+
   const interactiveSessionRepo = container.resolve<IInteractiveSessionRepository>(
     'IInteractiveSessionRepository'
   );
@@ -724,7 +748,8 @@ export async function initializeContainer(): Promise<typeof container> {
     interactiveMessageRepo,
     container.resolve<IAgentExecutorFactory>('IAgentExecutorFactory'),
     container.resolve<IFeatureRepository>('IFeatureRepository'),
-    new FeatureContextBuilder()
+    new FeatureContextBuilder(),
+    workflowStepRepoBoot
   );
   container.registerInstance<IInteractiveSessionService>(
     'IInteractiveSessionService',
@@ -754,6 +779,11 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('RespondToInteractionUseCase', {
     useFactory: (c) => c.resolve(RespondToInteractionUseCase),
+  });
+
+  container.registerSingleton(RunWorkflowUseCase);
+  container.register('RunWorkflowUseCase', {
+    useFactory: (c) => c.resolve(RunWorkflowUseCase),
   });
 
   // Startup cleanup: mark any zombie sessions (booting/ready from a prior server run) as stopped

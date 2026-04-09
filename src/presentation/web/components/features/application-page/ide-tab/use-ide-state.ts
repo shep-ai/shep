@@ -164,17 +164,13 @@ export function useIdeState(applicationId: string): UseIdeStateResult {
   );
 
   const promoteFile = useCallback((path: string) => {
-    setOpenFiles((prev) =>
-      prev.map((f) => (f.path === path ? { ...f, isPreview: false } : f))
-    );
+    setOpenFiles((prev) => prev.map((f) => (f.path === path ? { ...f, isPreview: false } : f)));
   }, []);
 
   const toggleViewMode = useCallback((path: string) => {
     setOpenFiles((prev) =>
       prev.map((f) =>
-        f.path === path
-          ? { ...f, viewMode: f.viewMode === 'rendered' ? 'source' : 'rendered' }
-          : f
+        f.path === path ? { ...f, viewMode: f.viewMode === 'rendered' ? 'source' : 'rendered' } : f
       )
     );
   }, []);
@@ -186,7 +182,10 @@ export function useIdeState(applicationId: string): UseIdeStateResult {
         if (current !== path) return current;
         if (next.length === 0) return null;
         // Activate the file at the same index (or the last one).
-        const idx = Math.min(prev.findIndex((f) => f.path === path), next.length - 1);
+        const idx = Math.min(
+          prev.findIndex((f) => f.path === path),
+          next.length - 1
+        );
         return next[Math.max(0, idx)].path;
       });
       return next;
@@ -215,9 +214,7 @@ export function useIdeState(applicationId: string): UseIdeStateResult {
     try {
       await saveFileContent(applicationId, active.path, active.content);
       setOpenFiles((prev) =>
-        prev.map((f) =>
-          f.path === active.path ? { ...f, originalContent: active.content } : f
-        )
+        prev.map((f) => (f.path === active.path ? { ...f, originalContent: active.content } : f))
       );
       toast.success('Saved', { description: active.path });
     } catch (err) {

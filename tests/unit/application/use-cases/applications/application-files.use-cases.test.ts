@@ -104,16 +104,16 @@ describe('ReadApplicationFileUseCase', () => {
   });
 
   it('rejects empty paths', async () => {
-    await expect(
-      useCase.execute({ applicationId: APP_ID, path: '' })
-    ).rejects.toThrow(/path is required/i);
+    await expect(useCase.execute({ applicationId: APP_ID, path: '' })).rejects.toThrow(
+      /path is required/i
+    );
   });
 
   it('throws when the application does not exist', async () => {
     useCase = new ReadApplicationFileUseCase(makeRepo(null), fs);
-    await expect(
-      useCase.execute({ applicationId: 'missing', path: 'a.ts' })
-    ).rejects.toThrow(/application not found/i);
+    await expect(useCase.execute({ applicationId: 'missing', path: 'a.ts' })).rejects.toThrow(
+      /application not found/i
+    );
   });
 });
 

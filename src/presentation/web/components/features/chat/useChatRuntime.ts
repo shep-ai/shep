@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { ThreadMessageLike, AppendMessage } from '@assistant-ui/react';
 import { useExternalStoreRuntime } from '@assistant-ui/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { InteractiveMessage } from '@shepai/core/domain/generated/output';
+import type { InteractiveMessage, WorkflowStep } from '@shepai/core/domain/generated/output';
 import { InteractiveMessageRole } from '@shepai/core/domain/generated/output';
 
 /** Shape matching UserInteractionData from the agent executor interface. */
@@ -26,6 +26,60 @@ interface ChatState {
   sessionInfo: SessionInfo | null;
   turnStatus?: string;
   pendingInteraction?: InteractionData | null;
+  workflow?: WorkflowView | null;
+}
+
+/** Workflow view shape — mirrors the core port. */
+export interface WorkflowView {
+  workflowId: string;
+  steps: WorkflowStep[];
+  currentStepId: string | null;
+}
+
+/** Step view consumed by `StepTracker`. */
+export interface EnhancedStepState {
+  definition: {
+    id: string;
+    stepKey: string;
+    title: string;
+    description: string;
+  };
+  status: 'pending' | 'running' | 'done' | 'failed' | 'interrupted';
+  metadata: Record<string, unknown> | null;
+  toolMessages: InteractiveMessage[];
+}
+
+/** Enhanced progress consumed by `StepTracker` + `ChatTab`. */
+export interface EnhancedStepProgress {
+  hasPlan: boolean;
+  steps: EnhancedStepState[];
+  activeStepId: string | null;
+  allDone: boolean;
+}
+
+function mapStatus(s: string): EnhancedStepState['status'] {
+  switch (s) {
+    case 'pending':
+    case 'running':
+    case 'done':
+    case 'failed':
+    case 'interrupted':
+      return s;
+    default:
+      return 'pending';
+  }
+}
+
+function parseMetadata(raw: string | null | undefined): Record<string, unknown> | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 interface SessionInfo {
@@ -375,6 +429,39 @@ export function useChatRuntime(
       }
     });
 
+    es.addEventListener('workflow_step', (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data as string) as { step: WorkflowStep };
+        if (!data.step) return;
+        queryClient.setQueryData<ChatState>(chatQueryKey(featureId), (old) => {
+          if (!old) return old;
+          const existing = old.workflow;
+          const idx = existing?.steps.findIndex((s) => s.id === data.step.id) ?? -1;
+          let nextSteps: WorkflowStep[];
+          if (!existing || idx === -1) {
+            // New step row — append and re-sort by stepIndex.
+            nextSteps = [...(existing?.steps ?? []), data.step].sort(
+              (a, b) => a.stepIndex - b.stepIndex
+            );
+          } else {
+            nextSteps = existing.steps.slice();
+            nextSteps[idx] = data.step;
+          }
+          const running = nextSteps.find((s) => s.status === 'running');
+          return {
+            ...old,
+            workflow: {
+              workflowId: data.step.workflowId,
+              steps: nextSteps,
+              currentStepId: running?.id ?? null,
+            },
+          };
+        });
+      } catch {
+        // Ignore
+      }
+    });
+
     es.addEventListener('done', () => {
       setStatusLog(null);
       cancelAwaiting();
@@ -476,8 +563,76 @@ export function useChatRuntime(
   // ── Build thread messages for assistant-ui ─────────────────────────────
   const activeStreamText = streamingText ?? backendStreamingText ?? '';
 
+  // ── Step-tracker state — driven ENTIRELY by server-side workflow
+  //    rows. No text parsing. On a refresh, `chatState.workflow` is
+  //    re-read from SQLite by the backend so status is always the
+  //    truth. Messages are grouped by `stepId` (also server-written).
+  const stepProgress: EnhancedStepProgress = useMemo(() => {
+    const workflow = chatState?.workflow ?? null;
+    if (!workflow || workflow.steps.length === 0) {
+      return { hasPlan: false, steps: [], activeStepId: null, allDone: false };
+    }
+    // Group messages by their persisted stepId.
+    const byStep = new Map<string, InteractiveMessage[]>();
+    for (const m of messages) {
+      const sid = m.stepId;
+      if (!sid) continue;
+      const list = byStep.get(sid) ?? [];
+      list.push(m);
+      byStep.set(sid, list);
+    }
+    const steps: EnhancedStepState[] = workflow.steps.map((s) => ({
+      definition: {
+        id: s.id,
+        stepKey: s.stepKey,
+        title: s.title,
+        description: s.description,
+      },
+      status: mapStatus(s.status),
+      metadata: parseMetadata(s.metadata),
+      toolMessages: byStep.get(s.id) ?? [],
+    }));
+    const allDone = steps.length > 0 && steps.every((s) => s.status === 'done');
+    return {
+      hasPlan: true,
+      steps,
+      activeStepId: workflow.currentStepId,
+      allDone,
+    };
+  }, [chatState?.workflow, messages]);
+
+  // ── Initial request — the VERY first stepless user message.
+  //    The application-creation flow persists it via the
+  //    orchestrator's first `sendMessage.execute` BEFORE
+  //    `setActiveStep` is called, so it has no `stepId`. We pull
+  //    it out of the flat thread and hand it to the host page, so
+  //    the layout can render it ABOVE the step tracker — matching
+  //    the mental model "user asked X, Shep built it, then we
+  //    kept chatting".
+  const initialRequestMessage = useMemo<InteractiveMessage | null>(() => {
+    if (!stepProgress.hasPlan) return null;
+    const first = messages.find((m) => m.role === InteractiveMessageRole.user && !m.stepId);
+    return first ?? null;
+  }, [stepProgress.hasPlan, messages]);
+
   const threadMessages: ThreadMessageLike[] = useMemo(() => {
-    const chatMessages: ThreadMessageLike[] = messages.map(toThreadMessage);
+    const hasPlan = stepProgress.hasPlan;
+
+    // When the workflow is active: ONLY show messages that have no
+    // stepId — those are out-of-band conversations (typed by the
+    // user into the composer after the workflow finishes, or
+    // ambient assistant replies). Every workflow-driven message
+    // lives inside the tracker card of its owning step, so we
+    // never want it rendered as a flat bubble above the tracker.
+    //
+    // ALSO filter out `initialRequestMessage` — the host page
+    // renders it manually above the tracker, so letting it appear
+    // again in the flat thread would duplicate it.
+    const sourceMessages = hasPlan
+      ? messages.filter((m) => !m.stepId && m.id !== initialRequestMessage?.id)
+      : messages;
+
+    const chatMessages: ThreadMessageLike[] = sourceMessages.map(toThreadMessage);
 
     // Merge debug bubbles into the timeline by timestamp
     let result: ThreadMessageLike[];
@@ -516,7 +671,15 @@ export function useChatRuntime(
       result = chatMessages;
     }
 
-    // Streaming text as the last message — may include a live activity suffix
+    // When the step-tracker is active we hide ALL assistant
+    // placeholders (streaming text, status log, thinking). The
+    // tracker itself conveys progress; stacking bubbles on top of it
+    // is noise.
+    if (hasPlan) {
+      return result;
+    }
+
+    // Streaming text as the last message — may include a live activity suffix.
     if (activeStreamText.trim()) {
       const parts: { type: 'text'; text: string }[] = [{ type: 'text', text: activeStreamText }];
       // Append live activity indicator when agent is doing tool work
@@ -549,12 +712,14 @@ export function useChatRuntime(
     return result;
   }, [
     messages,
+    initialRequestMessage?.id,
     activeStreamText,
     awaitingResponse,
     sessionStatus,
     statusLog,
     options?.debugMode,
     debugEvents,
+    stepProgress.hasPlan,
   ]);
 
   // ── Status info for typing indicator ──────────────────────────────────
@@ -653,5 +818,7 @@ export function useChatRuntime(
     isChatLoading,
     pendingInteraction,
     respondToInteraction,
+    stepProgress,
+    initialRequestMessage,
   };
 }

@@ -29,6 +29,7 @@ import { InteractiveSessionService } from '@/infrastructure/services/interactive
 import { ConcurrentSessionLimitError } from '@/domain/errors/concurrent-session-limit.error.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
 import type { IInteractiveMessageRepository } from '@/application/ports/output/repositories/interactive-message-repository.interface.js';
+import type { IWorkflowStepRepository } from '@/application/ports/output/repositories/workflow-step-repository.interface.js';
 import type { IAgentExecutorFactory } from '@/application/ports/output/agents/agent-executor-factory.interface.js';
 import type {
   IInteractiveAgentExecutor,
@@ -195,6 +196,7 @@ describe('InteractiveSessionService', () => {
   let executorFactory: IAgentExecutorFactory;
   let featureRepo: IFeatureRepository;
   let contextBuilder: FeatureContextBuilder;
+  let workflowStepRepo: IWorkflowStepRepository;
   let service: InteractiveSessionService;
 
   /** Stack of fake handles the executor will return, one per createSession/resumeSession call. */
@@ -283,12 +285,24 @@ describe('InteractiveSessionService', () => {
 
     contextBuilder = new FeatureContextBuilder();
 
+    workflowStepRepo = {
+      create: vi.fn(),
+      ensureSteps: vi.fn().mockResolvedValue([]),
+      findById: vi.fn().mockResolvedValue(null),
+      listBySession: vi.fn().mockResolvedValue([]),
+      listByFeature: vi.fn().mockResolvedValue([]),
+      updateStatus: vi.fn(),
+      markAllRunningAsInterrupted: vi.fn().mockResolvedValue(0),
+      deleteByFeatureId: vi.fn(),
+    };
+
     service = new InteractiveSessionService(
       sessionRepo,
       messageRepo,
       executorFactory,
       featureRepo,
-      contextBuilder
+      contextBuilder,
+      workflowStepRepo
     );
   });
 

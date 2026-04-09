@@ -28,6 +28,7 @@ function createTestRow(overrides: Partial<InteractiveMessageRow> = {}): Interact
     session_id: 'session-001',
     role: 'user',
     content: 'What is the current implementation status?',
+    step_id: null,
     created_at: NOW.getTime(),
     updated_at: NOW.getTime(),
     ...overrides,

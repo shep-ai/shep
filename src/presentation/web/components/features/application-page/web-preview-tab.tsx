@@ -35,20 +35,24 @@ export function WebPreviewTab({ deploy }: WebPreviewTabProps) {
   // Ready — live iframe
   if (deploy.status === DeploymentState.Ready && deploy.url) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col bg-white">
+      // Outer container is themed (not hard-coded bg-white) so the
+      // URL bar gets a proper dark-mode surface underneath; only the
+      // iframe itself is forced white so the rendered app has a
+      // neutral canvas.
+      <div className="bg-background flex min-h-0 flex-1 flex-col">
         {/* Thin URL bar — shows the live URL and lets the user pop
             the preview out into a real browser tab. */}
-        <div className="border-border bg-muted/40 flex h-8 shrink-0 items-center gap-2 border-b px-2 text-[11px]">
+        <div className="border-border bg-muted/70 text-foreground flex h-8 shrink-0 items-center gap-2 border-b px-2 text-[11px] dark:bg-neutral-900">
           <span className="relative flex h-2 w-2 shrink-0">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
           </span>
-          <span className="text-muted-foreground truncate font-mono">{deploy.url}</span>
+          <span className="text-foreground/90 truncate font-mono">{deploy.url}</span>
           <div className="flex-1" />
           <button
             type="button"
             onClick={openInNewTab}
-            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-white dark:hover:bg-neutral-800"
+            className="text-muted-foreground hover:text-foreground hover:bg-background/60 inline-flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors dark:hover:bg-neutral-800"
             title="Open in a new browser tab"
           >
             <ExternalLink className="h-3 w-3" />

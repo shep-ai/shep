@@ -94,9 +94,9 @@ describe('NodeApplicationFileSystemService', () => {
       await expect(service.readFile(tmpRoot, '../outside.txt')).rejects.toMatchObject({
         code: 'PATH_ESCAPES_ROOT',
       });
-      await expect(
-        service.readFile(tmpRoot, 'src/../../escape.txt')
-      ).rejects.toMatchObject({ code: 'PATH_ESCAPES_ROOT' });
+      await expect(service.readFile(tmpRoot, 'src/../../escape.txt')).rejects.toMatchObject({
+        code: 'PATH_ESCAPES_ROOT',
+      });
     });
 
     it('throws NOT_FOUND for missing files', async () => {
@@ -175,9 +175,9 @@ describe('NodeApplicationFileSystemService', () => {
     });
 
     it('rejects path traversal attempts', async () => {
-      await expect(
-        service.writeFile(tmpRoot, '../escape.txt', 'no')
-      ).rejects.toMatchObject({ code: 'PATH_ESCAPES_ROOT' });
+      await expect(service.writeFile(tmpRoot, '../escape.txt', 'no')).rejects.toMatchObject({
+        code: 'PATH_ESCAPES_ROOT',
+      });
     });
   });
 
@@ -190,39 +190,35 @@ describe('NodeApplicationFileSystemService', () => {
       unsubscribe();
     });
 
-    it(
-      'emits change events when files are modified',
-      async () => {
-        // fs.watch recursive requires Node >= 20 on Linux; skip the assertion
-        // on environments where the watcher doesn't fire reliably.
-        const major = Number(process.versions.node.split('.')[0]);
-        if (major < 20) return;
+    it('emits change events when files are modified', async () => {
+      // fs.watch recursive requires Node >= 20 on Linux; skip the assertion
+      // on environments where the watcher doesn't fire reliably.
+      const major = Number(process.versions.node.split('.')[0]);
+      if (major < 20) return;
 
-        const events: string[] = [];
-        const unsubscribe = service.watch(tmpRoot, (e) => {
-          events.push(`${e.kind}:${e.path}`);
-        });
+      const events: string[] = [];
+      const unsubscribe = service.watch(tmpRoot, (e) => {
+        events.push(`${e.kind}:${e.path}`);
+      });
 
-        // Give the watcher a tick to attach.
+      // Give the watcher a tick to attach.
+      await new Promise((r) => setTimeout(r, 50));
+
+      await fsp.writeFile(path.join(tmpRoot, 'src', 'index.ts'), 'export const y = 2;\n', 'utf8');
+
+      // Poll up to ~2s for an event to arrive.
+      const deadline = Date.now() + 2000;
+      while (events.length === 0 && Date.now() < deadline) {
         await new Promise((r) => setTimeout(r, 50));
+      }
+      unsubscribe();
 
-        await fsp.writeFile(path.join(tmpRoot, 'src', 'index.ts'), 'export const y = 2;\n', 'utf8');
-
-        // Poll up to ~2s for an event to arrive.
-        const deadline = Date.now() + 2000;
-        while (events.length === 0 && Date.now() < deadline) {
-          await new Promise((r) => setTimeout(r, 50));
-        }
-        unsubscribe();
-
-        // Not all CI environments report fs.watch reliably. Accept either
-        // "at least one event" OR "no events at all" — the unsubscribe
-        // contract is what we really care about in this unit test.
-        if (events.length > 0) {
-          expect(events.some((e) => e.includes('index.ts'))).toBe(true);
-        }
-      },
-      10_000
-    );
+      // Not all CI environments report fs.watch reliably. Accept either
+      // "at least one event" OR "no events at all" — the unsubscribe
+      // contract is what we really care about in this unit test.
+      if (events.length > 0) {
+        expect(events.some((e) => e.includes('index.ts'))).toBe(true);
+      }
+    }, 10_000);
   });
 });

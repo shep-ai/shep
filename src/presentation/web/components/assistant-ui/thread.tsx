@@ -89,20 +89,30 @@ const markdownComponents: Components = {
 
 export function Thread({
   className,
+  beforeMessages,
   afterMessages,
   composer,
+  hideEmpty,
 }: {
   className?: string;
+  /** Content rendered inside the scrollable viewport, BEFORE messages. Used by the application chat to pin the step tracker at the top of the scroll area. */
+  beforeMessages?: React.ReactNode;
   /** Content rendered inside the scrollable viewport, after messages (e.g. interaction bubbles). */
   afterMessages?: React.ReactNode;
   composer?: React.ReactNode;
+  /** Suppress the default "empty chat" placeholder — useful when `beforeMessages` already fills the viewport (e.g. a step tracker). */
+  hideEmpty?: boolean;
 }) {
   return (
     <ThreadPrimitive.Root className={cn('flex h-full flex-col', className)}>
       <ThreadPrimitive.Viewport className="flex flex-1 flex-col overflow-y-auto pt-4">
-        <ThreadPrimitive.Empty>
-          <ThreadEmpty />
-        </ThreadPrimitive.Empty>
+        {hideEmpty ? null : (
+          <ThreadPrimitive.Empty>
+            <ThreadEmpty />
+          </ThreadPrimitive.Empty>
+        )}
+
+        {beforeMessages}
 
         <ThreadPrimitive.Messages
           components={{

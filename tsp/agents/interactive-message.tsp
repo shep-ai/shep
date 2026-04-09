@@ -105,4 +105,13 @@ model InteractiveMessage extends BaseEntity {
    */
   @doc("Full message content (finalised after streaming for assistant messages)")
   content: string;
+
+  /**
+   * Optional workflow step this message belongs to. Set by the
+   * orchestrator when a message is persisted during a workflow-driven
+   * turn so the UI can group messages under their step card.
+   * @example "7f8a9b0c-1d2e-3f4a-5b6c-7d8e9f0a1b2c"
+   */
+  @doc("Optional workflow step ID this message was produced for")
+  stepId?: string;
 }

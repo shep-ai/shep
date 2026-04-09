@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: WorkflowStepStatus.yaml
+type: string
+enum:
+  - pending
+  - running
+  - done
+  - failed
+  - interrupted
+description: Lifecycle status of a single workflow step

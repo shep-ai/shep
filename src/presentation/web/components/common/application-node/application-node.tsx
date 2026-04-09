@@ -1,8 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { LayoutGrid, Trash2 } from 'lucide-react';
+import {
+  ExternalLink,
+  LayoutGrid,
+  Loader2,
+  Play,
+  Square,
+  Trash2,
+  TriangleAlert,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import {
@@ -17,44 +25,52 @@ import {
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTurnStatus } from '@/hooks/turn-statuses-provider';
+import { useDeployAction } from '@/hooks/use-deploy-action';
+import { DeploymentState } from '@shepai/core/domain/generated/output';
 import type { ApplicationNodeData } from './application-node-config';
 
+/** Preview slot height. Roomier than the old 120px to give the live
+ *  iframe / start-preview CTA more presence on the canvas. */
+const PREVIEW_HEIGHT_PX = 180;
+
 /**
- * Pick the effective status for the card's status pill by folding the
- * LIVE interactive-session turn status into the persisted
- * `application.status`:
+ * Pick the effective status for the card's status pill. "Idle" is
+ * never shown. The fallback when nothing is actively happening is
+ * "Ready" (standby) — unless the dev server is running, in which
+ * case "Live" takes over as the persistent resting state.
  *
- *   - `processing`      → "Working"  (agent is actively running a turn)
- *   - `awaiting_input`  → "Waiting"  (agent blocked on user interaction)
- *   - `unread`          → "Ready"    (agent finished a turn you haven't read)
- *   - anything else     → fall back to `data.status` ("Idle" / "Error")
+ * Priority (highest wins):
  *
- * The persisted `application.status` column is a coarse snapshot that
- * only changes on explicit transitions; without live folding, the
- * card (and the app page top bar) was stuck saying "Idle" even while
- * the agent was clearly running tool after tool.
+ *   - `processing`      → "In Progress"  (agent actively running a turn)
+ *   - `awaiting_input`  → "Warning"      (agent blocked on user question)
+ *   - deploymentUrl set → "Live"         (dev server running at a real URL)
+ *   - persisted Error   → "Error"
+ *   - otherwise         → "Ready"        (agent finished, preview not running)
+ *
+ * Note the `unread` turn status intentionally collapses into the
+ * default branch — when the agent just finished a turn but the user
+ * hasn't scrolled back to read it, we still show Ready (or Live if
+ * the dev server is up). The user is already looking at the card,
+ * a "you have unread output" nag adds no information.
  */
 function deriveLiveStatus(
   persistedStatus: string,
-  turnStatus: string
+  turnStatus: string,
+  deploymentUrl: string | undefined
 ): { label: string; dotClass: string; pulse: boolean } {
   if (turnStatus === 'processing') {
-    return { label: 'Working', dotClass: 'bg-violet-500', pulse: true };
+    return { label: 'In Progress', dotClass: 'bg-violet-500', pulse: true };
   }
   if (turnStatus === 'awaiting_input') {
-    return { label: 'Waiting', dotClass: 'bg-amber-500', pulse: true };
+    return { label: 'Warning', dotClass: 'bg-amber-500', pulse: true };
   }
-  if (turnStatus === 'unread') {
-    return { label: 'Ready', dotClass: 'bg-emerald-500', pulse: false };
-  }
-  // Fall through to the persisted coarse status.
-  if (persistedStatus === 'Active') {
-    return { label: 'Active', dotClass: 'bg-green-500', pulse: false };
+  if (deploymentUrl) {
+    return { label: 'Live', dotClass: 'bg-emerald-500', pulse: true };
   }
   if (persistedStatus === 'Error') {
     return { label: 'Error', dotClass: 'bg-red-500', pulse: false };
   }
-  return { label: 'Idle', dotClass: 'bg-muted-foreground/40', pulse: false };
+  return { label: 'Ready', dotClass: 'bg-sky-500', pulse: false };
 }
 
 export function ApplicationNode({
@@ -78,7 +94,59 @@ export function ApplicationNode({
   // scope key is `app-<id>` — same key used everywhere else the
   // application's chat is referenced.
   const turnStatus = useTurnStatus(`app-${data.id}`);
-  const live = deriveLiveStatus(data.status, turnStatus);
+
+  // Shared dev-server deploy state — one per card. Seeded from the
+  // SSR `deploymentUrl` enrichment so running apps render as "Live"
+  // on the first paint without a client round-trip.
+  //
+  // The card's Preview button drives this hook and the `live.label`
+  // below is derived from the SAME state (via `deploy.url`), so the
+  // status pill, the preview slot, and the button are always in
+  // sync — hitting the button on one card can never leave the card
+  // itself showing a stale "Ready" state.
+  const deploy = useDeployAction({
+    targetId: data.id,
+    targetType: 'application',
+    repositoryPath: data.repositoryPath,
+    hydrateOnMount: true,
+    initialState: data.deploymentUrl
+      ? { status: DeploymentState.Ready, url: data.deploymentUrl }
+      : undefined,
+  });
+
+  // The hook is the single source of truth for the running URL.
+  //
+  // `useDeployAction({ initialState })` seeds `deploy.url` from
+  // `data.deploymentUrl` on the very first render, so we never miss
+  // an already-running dev server after SSR. But we must NOT fall
+  // back to `data.deploymentUrl` afterwards: after a Stop the hook
+  // correctly clears `deploy.url` to null, while `data.deploymentUrl`
+  // stays populated until the next `getGraphData` server refresh —
+  // and that falls-back-to-stale behaviour was the "iframe ghost"
+  // the user saw for ~3s after clicking Stop (plus it bypassed the
+  // Live hover overlay, which is gated on `deploy.status === Ready`).
+  const effectiveDeploymentUrl = deploy.url;
+
+  const live = deriveLiveStatus(data.status, turnStatus, effectiveDeploymentUrl ?? undefined);
+
+  // Clicking anything in the "card controls" zone (Preview button,
+  // open-in-new-tab) must not trigger the card's navigation-to-app
+  // click handler. A single stopPropagation wrapper keeps every
+  // control inside the card safe without individually guarding each
+  // one.
+  const stopCardClick = useCallback((e: React.MouseEvent | React.PointerEvent) => {
+    e.stopPropagation();
+  }, []);
+
+  const openPreviewInNewTab = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (effectiveDeploymentUrl) {
+        window.open(effectiveDeploymentUrl, '_blank', 'noopener,noreferrer');
+      }
+    },
+    [effectiveDeploymentUrl]
+  );
 
   return (
     <div className="group relative" style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
@@ -166,8 +234,11 @@ export function ApplicationNode({
           selected && 'border-blue-400 dark:border-amber-500/60'
         )}
       >
-        {/* Row 1: Header — icon, name, status */}
-        <div className="flex items-center gap-3 px-4 py-3">
+        {/* Row 1: Header — icon, name, status.
+            Padding matches the preview slot below so the card has
+            consistent vertical rhythm now that the preview is
+            taller. */}
+        <div className="flex items-center gap-3 px-4 py-4">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500">
             <LayoutGrid className="h-4 w-4 text-white" />
           </div>
@@ -203,51 +274,50 @@ export function ApplicationNode({
           </span>
         </div>
 
-        {/* Row 2: Preview slot — live iframe when the dev server is
-            Running, wireframe skeleton otherwise. The iframe is
-            scaled down with a CSS transform so the full browser
-            viewport fits inside the 120px preview without horizontal
-            clipping; `pointer-events-none` ensures the card stays
-            draggable and clickable (you click the card, not into the
-            running app). */}
-        <div className="px-3 pb-2">
-          <div className="bg-muted relative h-[120px] overflow-hidden rounded-lg">
-            {data.deploymentUrl ? (
-              <>
-                <iframe
-                  src={data.deploymentUrl}
-                  title={`${data.name} live preview`}
-                  // 2.5× inner size scaled to 0.4 = exactly 1.0
-                  // effective size. The iframe renders at a real
-                  // browser viewport (good enough for responsive
-                  // landing pages) and gets scaled into our slot.
-                  className="pointer-events-none absolute left-0 top-0 origin-top-left border-0 bg-white"
-                  style={{
-                    width: '250%',
-                    height: '250%',
-                    transform: 'scale(0.4)',
-                  }}
-                  // Run the app in a sandbox with only what a static
-                  // Vite dev bundle needs: same-origin (for HMR
-                  // websockets on localhost) + script execution. No
-                  // form submission, no top-level navigation, no
-                  // modal dialogs.
-                  sandbox="allow-same-origin allow-scripts"
-                  loading="lazy"
-                />
-                {/* Live badge so the user immediately sees this is
-                    real and not a mock. Sits above the iframe. */}
-                <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full border border-violet-500/40 bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-violet-700 backdrop-blur dark:text-violet-300">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-60" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-violet-500" />
-                  </span>
-                  <span>Live</span>
-                </div>
-              </>
+        {/* Row 2: Preview slot — the control hub for the dev server.
+            One rectangle carries every state:
+              - Live:    iframe + [stop][open-in-new-tab] pinned top-right
+              - Booting: centered spinner + "Starting…"
+              - Stopping: centered spinner + "Stopping…"
+              - Error:   centered triangle + error label
+              - Idle:    grayed wireframe (future: last screenshot),
+                         hover overlay with a big "Start Preview" CTA
+            `pointer-events-none` on the iframe keeps the card
+            draggable — the iframe swallows no clicks. */}
+        <div className="px-4 pb-4">
+          <div
+            className="bg-muted group/preview relative overflow-hidden rounded-lg"
+            style={{ height: PREVIEW_HEIGHT_PX }}
+          >
+            {/* ── Underlay: iframe when Live, else wireframe ───── */}
+            {effectiveDeploymentUrl ? (
+              <iframe
+                src={effectiveDeploymentUrl}
+                title={`${data.name} live preview`}
+                // 2.5× inner size scaled to 0.4 = exactly 1.0
+                // effective size. The iframe renders at a real
+                // browser viewport (good enough for responsive
+                // landing pages) and gets scaled into our slot.
+                className="pointer-events-none absolute top-0 left-0 origin-top-left border-0 bg-white"
+                style={{
+                  width: '250%',
+                  height: '250%',
+                  transform: 'scale(0.4)',
+                }}
+                // Run the app in a sandbox with only what a static
+                // Vite dev bundle needs: same-origin (for HMR
+                // websockets on localhost) + script execution. No
+                // form submission, no top-level navigation, no
+                // modal dialogs.
+                sandbox="allow-same-origin allow-scripts"
+                loading="lazy"
+              />
             ) : (
-              <>
-                {/* Wireframe skeleton mimicking a web app */}
+              // Offline underlay — grayed wireframe (placeholder for
+              // a real captured screenshot, see TODO in the
+              // components/config comment). Grayscale + low opacity
+              // signals "this is not a live image".
+              <div className="pointer-events-none absolute inset-0 opacity-50 grayscale">
                 <div
                   className="flex h-6 items-center gap-2 px-2"
                   style={{ background: 'var(--muted)' }}
@@ -257,7 +327,7 @@ export function ApplicationNode({
                   <div className="bg-muted-foreground/10 h-2 w-2 rounded-full" />
                   <div className="bg-muted-foreground/10 ms-2 h-2 w-16 rounded" />
                 </div>
-                <div className="flex h-[calc(120px-1.5rem)]">
+                <div className="flex h-[calc(100%-1.5rem)]">
                   {/* Sidebar */}
                   <div className="border-muted-foreground/5 flex w-[50px] flex-col gap-2 border-e p-2">
                     <div className="bg-muted-foreground/10 h-2 w-full rounded" />
@@ -270,15 +340,142 @@ export function ApplicationNode({
                     <div className="bg-muted-foreground/10 h-2 w-full rounded" />
                     <div className="bg-muted-foreground/10 h-2 w-5/6 rounded" />
                     <div className="bg-muted-foreground/10 h-2 w-3/4 rounded" />
+                    <div className="bg-muted-foreground/10 h-2 w-2/3 rounded" />
                   </div>
                 </div>
-              </>
+              </div>
             )}
+
+            {/* ── Overlays, pinned by deploy state ─────────────── */}
+
+            {/* Live — centered Stop + Open-in-new-tab cluster,
+                revealed on hover with an opaque dark surface.
+                NOTE: we deliberately do NOT use `backdrop-blur` on
+                top of the iframe — the iframe is rendered with
+                `transform: scale(0.4)` which rasterizes its edges
+                at subpixel boundaries, and CSS backdrop-filter
+                picks those up and produces ugly banding / bleed
+                (e.g. a stray green smudge from the real page
+                behind it). A plain opaque fill is cleaner. */}
+            {deploy.status === DeploymentState.Ready && effectiveDeploymentUrl ? (
+              <div
+                className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-neutral-900/75 opacity-0 transition-opacity duration-150 group-hover/preview:pointer-events-auto group-hover/preview:opacity-100 dark:bg-neutral-950/80"
+                onPointerDown={stopCardClick}
+                onClick={stopCardClick}
+              >
+                {/* Solid backgrounds (no /90) — sitting on top of a
+                    transform-scaled iframe, any alpha-transparent
+                    surface rasterizes with fuzzy edges. Fully
+                    opaque white/neutral fills render cleanly. */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void deploy.stop();
+                  }}
+                  disabled={deploy.stopLoading}
+                  aria-label="Stop dev server"
+                  title="Stop dev server"
+                  className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3 text-xs font-semibold text-neutral-900 shadow-md transition-colors hover:border-red-500 hover:bg-red-50 hover:text-red-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:border-red-500 dark:hover:bg-red-950 dark:hover:text-red-400"
+                >
+                  {deploy.stopLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Square className="h-3.5 w-3.5 fill-current" />
+                  )}
+                  <span>Stop</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={openPreviewInNewTab}
+                  aria-label={`Open ${data.name} in a new tab`}
+                  title={effectiveDeploymentUrl}
+                  className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3 text-xs font-semibold text-neutral-900 shadow-md transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span>Open</span>
+                </button>
+              </div>
+            ) : null}
+
+            {/* Booting — centered spinner, always visible (no hover
+                gate). Amber matches the "transient waiting" palette
+                used by the top-bar Preview button. Solid surface
+                (no backdrop-blur) to avoid rasterization artifacts. */}
+            {deploy.status === DeploymentState.Booting || deploy.deployLoading ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-100 dark:bg-neutral-900">
+                <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+                <span className="text-foreground text-xs font-medium">Starting…</span>
+              </div>
+            ) : null}
+
+            {/* Stopping — centered spinner while the Stop request
+                resolves. Separate from Booting so the label can be
+                different; visually similar otherwise. */}
+            {deploy.stopLoading && deploy.status === DeploymentState.Ready ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-900/75 dark:bg-neutral-950/80">
+                <Loader2 className="h-8 w-8 animate-spin text-neutral-100" />
+                <span className="text-xs font-medium text-neutral-100">Stopping…</span>
+              </div>
+            ) : null}
+
+            {/* Error — centered triangle + clickable retry hint.
+                Stays visible until the user retries, so a failed
+                boot doesn't silently disappear. */}
+            {!deploy.deployLoading &&
+            !deploy.stopLoading &&
+            deploy.status !== DeploymentState.Booting &&
+            deploy.status !== DeploymentState.Ready &&
+            deploy.deployError ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void deploy.deploy();
+                }}
+                onPointerDown={stopCardClick}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-100 transition-colors hover:bg-neutral-200 dark:bg-neutral-900 dark:hover:bg-neutral-800"
+              >
+                <TriangleAlert className="h-8 w-8 text-red-500" />
+                <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                  Failed — click to retry
+                </span>
+              </button>
+            ) : null}
+
+            {/* Idle — hover overlay with a big "Start Preview" CTA.
+                Appears only on hover of the preview slot (not the
+                whole card) so just hovering the card title doesn't
+                flash it. Uses the Shep AI purple palette to match
+                the page top-bar Preview button. Solid overlay so
+                edges stay crisp against the wireframe underneath. */}
+            {!effectiveDeploymentUrl &&
+              !deploy.deployLoading &&
+              deploy.status !== DeploymentState.Booting &&
+              !deploy.deployError && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-neutral-900/75 opacity-0 transition-opacity duration-150 group-hover/preview:pointer-events-auto group-hover/preview:opacity-100 dark:bg-neutral-950/80">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void deploy.deploy();
+                    }}
+                    onPointerDown={stopCardClick}
+                    className="inline-flex h-9 items-center gap-2 rounded-md border border-violet-400 bg-gradient-to-br from-indigo-500 to-violet-600 px-4 text-xs font-semibold text-white shadow-md transition-[filter] hover:brightness-110"
+                    aria-label="Start dev server preview"
+                  >
+                    <Play className="h-3.5 w-3.5 fill-current" />
+                    <span>Start Preview</span>
+                  </button>
+                </div>
+              )}
           </div>
         </div>
 
-        {/* Row 3: Bottom — repository count */}
-        <div className="px-4 pb-3">
+        {/* Row 3: Bottom — just the repository count. All deploy
+            controls (Start / Stop / Open) now live on the preview
+            slot above so the footer stays quiet. */}
+        <div className="px-4 pb-4">
           <span data-testid="application-node-repo-count" className="text-muted-foreground text-xs">
             {repoCountLabel}
           </span>

@@ -9,6 +9,8 @@ import type { IApplicationCreationPromptBuilder } from '@/application/ports/outp
 import type { IApplicationBriefStore } from '@/application/ports/output/services/application-brief-store.interface.js';
 import type { CreateProjectUseCase } from '@/application/use-cases/projects/create-project.use-case.js';
 import type { SendInteractiveMessageUseCase } from '@/application/use-cases/interactive/send-interactive-message.use-case.js';
+import type { RunWorkflowUseCase } from '@/application/use-cases/workflows/run-workflow.use-case.js';
+import type { IInteractiveSessionService } from '@/application/ports/output/services/interactive-session-service.interface.js';
 import { ApplicationStatus } from '@/domain/generated/output.js';
 
 function createMockAppRepo(): IApplicationRepository {
@@ -26,9 +28,11 @@ function createMockAppRepo(): IApplicationRepository {
 
 function createMockCreateProject(): CreateProjectUseCase {
   return {
-    execute: vi.fn().mockImplementation((input: { name: string }) =>
-      Promise.resolve({ ok: true, path: `/shep/projects/${input.name}` })
-    ),
+    execute: vi
+      .fn()
+      .mockImplementation((input: { name: string }) =>
+        Promise.resolve({ ok: true, path: `/shep/projects/${input.name}` })
+      ),
   } as unknown as CreateProjectUseCase;
 }
 
@@ -71,6 +75,8 @@ describe('CreateApplicationUseCase', () => {
   let mockPromptBuilder: IApplicationCreationPromptBuilder;
   let mockSendMessage: SendInteractiveMessageUseCase;
   let mockBriefStore: IApplicationBriefStore;
+  let mockRunWorkflow: RunWorkflowUseCase;
+  let mockSessionService: IInteractiveSessionService;
 
   beforeEach(() => {
     mockAppRepo = createMockAppRepo();
@@ -78,12 +84,18 @@ describe('CreateApplicationUseCase', () => {
     mockPromptBuilder = createMockPromptBuilder();
     mockSendMessage = createMockSendMessage();
     mockBriefStore = createMockBriefStore();
+    mockRunWorkflow = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    } as unknown as RunWorkflowUseCase;
+    mockSessionService = {} as IInteractiveSessionService;
     useCase = new CreateApplicationUseCase(
       mockAppRepo,
       mockCreateProject,
       mockPromptBuilder,
       mockSendMessage,
-      mockBriefStore
+      mockBriefStore,
+      mockRunWorkflow,
+      mockSessionService
     );
   });
 
@@ -190,10 +202,10 @@ describe('CreateApplicationUseCase', () => {
   it('does NOT send a chat message when initialPrompt is omitted', async () => {
     await useCase.execute({ description: 'a quiet app' });
     expect(mockPromptBuilder.build).not.toHaveBeenCalled();
-    expect(mockSendMessage.execute).not.toHaveBeenCalled();
+    expect(mockRunWorkflow.execute).not.toHaveBeenCalled();
   });
 
-  it('builds the split prompt and sends userMessage as chat content while systemPrompt goes to the agent SDK', async () => {
+  it('builds the split prompt and dispatches the workflow orchestrator with a brief-read kickoff wrapper', async () => {
     const result = await useCase.execute({
       description: 'A landing page',
       initialPrompt: 'A landing page',
@@ -225,25 +237,31 @@ describe('CreateApplicationUseCase', () => {
       'SYSTEM(A landing page)'
     );
 
-    // SendMessage is called with:
-    //  - content: user's verbatim request (shown in the chat bubble)
-    //  - agentKickoffOverride: a short directive telling the agent
-    //    to read the absolute brief path before anything else,
-    //    followed by the user's request. Sent to the agent on turn 1
-    //    instead of `content`, without polluting the chat transcript.
-    expect(mockSendMessage.execute).toHaveBeenCalledTimes(1);
-    const sendArgs = vi.mocked(mockSendMessage.execute).mock.calls[0]![0];
-    expect(sendArgs).toMatchObject({
+    // The orchestrator is dispatched asynchronously (fire-and-
+    // forget) with the workflow definition, featureId, worktree,
+    // visible first message, and a first-step wrapper that carries
+    // the brief-read directive. The use case returns without
+    // waiting, so we give the next microtask a chance to run
+    // before asserting.
+    await new Promise((r) => setImmediate(r));
+    expect(mockRunWorkflow.execute).toHaveBeenCalledTimes(1);
+    const runArgs = vi.mocked(mockRunWorkflow.execute).mock.calls[0]![0];
+    expect(runArgs).toMatchObject({
       featureId: `app-${result.application.id}`,
-      content: 'A landing page',
       worktreePath: result.repositoryPath,
       model: 'claude-sonnet-4-6',
       agentType: 'claude-code',
+      visibleFirstMessage: 'A landing page',
     });
-    expect(sendArgs.agentKickoffOverride).toContain(
-      `/fake/shep/application-briefs/${result.application.id}.md`
-    );
-    expect(sendArgs.agentKickoffOverride).toContain('A landing page');
+    expect(runArgs.workflow).toBeDefined();
+    // The first-step wrapper, when applied to any step prompt,
+    // produces the brief-read directive with the absolute brief
+    // path and the user's verbatim description.
+    expect(runArgs.firstStepPromptWrapper).toBeDefined();
+    const wrapped = runArgs.firstStepPromptWrapper!('STEP_PROMPT_BODY');
+    expect(wrapped).toContain(`/fake/shep/application-briefs/${result.application.id}.md`);
+    expect(wrapped).toContain('A landing page');
+    expect(wrapped).toContain('STEP_PROMPT_BODY');
   });
 
   it('trims whitespace from initialPrompt before building the prompt', async () => {
@@ -259,7 +277,7 @@ describe('CreateApplicationUseCase', () => {
   it('skips the chat message when initialPrompt is only whitespace', async () => {
     await useCase.execute({ description: 'X', initialPrompt: '   ' });
     expect(mockPromptBuilder.build).not.toHaveBeenCalled();
-    expect(mockSendMessage.execute).not.toHaveBeenCalled();
+    expect(mockRunWorkflow.execute).not.toHaveBeenCalled();
   });
 });
 

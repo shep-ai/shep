@@ -12,6 +12,8 @@ import {
   FolderOpen,
   ClipboardList,
   Cpu,
+  FilePlus,
+  FilePen,
 } from 'lucide-react';
 import type { Application, ApplicationStatus } from '@shepai/core/domain/generated/output';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
@@ -19,18 +21,17 @@ import type { ChatState } from '@shepai/core/application/ports/output/services/i
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ChatTab } from '@/components/features/chat/ChatTab';
+import { APPLICATION_CREATION_PLACEHOLDER_STEPS } from '@/components/features/chat/workflow-placeholder';
 import { TerminalTab } from '@/components/features/application-page/terminal-tab';
 import { IdeTab } from '@/components/features/application-page/ide-tab';
 import { RunDevButton } from '@/components/features/application-page/run-dev-button';
 import { WebPreviewTab } from '@/components/features/application-page/web-preview-tab';
 import { useDeployAction, type DeployActionState } from '@/hooks/use-deploy-action';
 import { useTurnStatus } from '@/hooks/turn-statuses-provider';
-import {
-  chatQueryKey,
-  fetchChatState,
-} from '@/components/features/chat/chat-state-query';
+import { chatQueryKey, fetchChatState } from '@/components/features/chat/chat-state-query';
 import { openFolder } from '@/app/actions/open-folder';
 import { getApplicationDebugPrompt } from '@/app/actions/get-application-debug-prompt';
+import { getGitRepoInfo } from '@/app/actions/get-git-log';
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                           */
@@ -52,37 +53,38 @@ const VIEW_LABELS: Record<AppView, string> = {
   web: 'Web',
 };
 
-const STATUS_DOT_CLASS: Record<ApplicationStatus, string> = {
-  Idle: 'bg-muted-foreground/40',
-  Active: 'bg-emerald-500',
-  Error: 'bg-red-500',
-};
-
 /**
- * Derive a single effective status label + dot color by folding the
- * LIVE interactive-session turn status into the persisted
- * `application.status`. MUST match the mapping in
+ * Derive a single effective status label + dot color. "Idle" is
+ * never shown. MUST match the priority order in
  * `components/common/application-node/application-node.tsx` so the
- * canvas card and the application page are in sync on every parameter.
+ * canvas card and the application page agree on every parameter.
+ *
+ * Priority (highest wins):
+ *
+ *   - `processing`      → "In Progress"  (agent actively running a turn)
+ *   - `awaiting_input`  → "Warning"      (agent blocked on user question)
+ *   - deployReady       → "Live"         (dev server running at a real URL)
+ *   - persisted Error   → "Error"
+ *   - otherwise         → "Ready"        (agent finished, preview not running)
  */
 function deriveLiveStatusPill(
   persistedStatus: ApplicationStatus,
-  turnStatus: string
+  turnStatus: string,
+  deployReady: boolean
 ): { label: string; dotClass: string; pulse: boolean } {
   if (turnStatus === 'processing') {
-    return { label: 'Working', dotClass: 'bg-violet-500', pulse: true };
+    return { label: 'In Progress', dotClass: 'bg-violet-500', pulse: true };
   }
   if (turnStatus === 'awaiting_input') {
-    return { label: 'Waiting', dotClass: 'bg-amber-500', pulse: true };
+    return { label: 'Warning', dotClass: 'bg-amber-500', pulse: true };
   }
-  if (turnStatus === 'unread') {
-    return { label: 'Ready', dotClass: 'bg-emerald-500', pulse: false };
+  if (deployReady) {
+    return { label: 'Live', dotClass: 'bg-emerald-500', pulse: true };
   }
-  return {
-    label: persistedStatus,
-    dotClass: STATUS_DOT_CLASS[persistedStatus],
-    pulse: false,
-  };
+  if (persistedStatus === 'Error') {
+    return { label: 'Error', dotClass: 'bg-red-500', pulse: false };
+  }
+  return { label: 'Ready', dotClass: 'bg-sky-500', pulse: false };
 }
 
 /* ------------------------------------------------------------------ */
@@ -147,7 +149,11 @@ function AppTopBar({
 
       <h1 className="min-w-0 truncate text-sm font-semibold">{application.name}</h1>
 
-      <StatusPill applicationId={application.id} persistedStatus={application.status} />
+      <StatusPill
+        applicationId={application.id}
+        persistedStatus={application.status}
+        deployReady={deploy.status === DeploymentState.Ready}
+      />
 
       <Divider />
 
@@ -158,10 +164,7 @@ function AppTopBar({
       <div className="flex-1" />
 
       {/* ── Live session chip (model + short session id) ─────── */}
-      <SessionChip
-        featureId={`app-${application.id}`}
-        initialChatState={initialChatState}
-      />
+      <SessionChip featureId={`app-${application.id}`} initialChatState={initialChatState} />
 
       {/* ── Copy generated prompt (debug) ───────────────────── */}
       <CopyPromptButton applicationId={application.id} />
@@ -222,10 +225,91 @@ function PathCluster({ repositoryPath }: { repositoryPath: string }) {
         <FolderOpen className="h-3 w-3" />
       </Button>
       <span className="text-muted-foreground/40">·</span>
-      <span className="flex items-center gap-1 font-mono text-[11px]">
+      <GitStatusCluster repositoryPath={repositoryPath} />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Git status cluster — branch name + added/edited file counts        */
+/* ------------------------------------------------------------------ */
+
+/** Polls git repo info for current branch + working-tree diff numbers.
+ *  Rendered inline next to the repo path so users can see at a glance
+ *  which branch the application repo is on and how many files have
+ *  been added or edited since the last commit. */
+function GitStatusCluster({ repositoryPath }: { repositoryPath: string }) {
+  const { data } = useQuery({
+    queryKey: ['git-repo-info', repositoryPath],
+    queryFn: () => getGitRepoInfo(repositoryPath, 1),
+    enabled: Boolean(repositoryPath),
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
+    staleTime: 2000,
+  });
+
+  const trimmedBranch = data?.currentBranch?.trim();
+  const branch = trimmedBranch && trimmedBranch.length > 0 ? trimmedBranch : 'main';
+  const added = data?.workingTree.untracked ?? 0;
+  const edited = data?.workingTree.modified ?? 0;
+  const hasChanges = added > 0 || edited > 0;
+
+  const handleCommit = useCallback(() => {
+    toast.info('Commit (not wired up yet)', {
+      description: `Would commit ${edited} edited / ${added} added file(s) on ${branch}`,
+    });
+  }, [added, edited, branch]);
+
+  const handleCommitPush = useCallback(() => {
+    toast.info('Commit & Push (not wired up yet)', {
+      description: `Would commit and push ${edited} edited / ${added} added file(s) on ${branch}`,
+    });
+  }, [added, edited, branch]);
+
+  return (
+    <div className="flex items-center gap-2 font-mono text-[11px]">
+      <span className="flex items-center gap-1" title={`Branch: ${branch}`}>
         <GitBranch className="h-3 w-3" />
-        main
+        {branch}
       </span>
+      {added > 0 ? (
+        <span
+          className="flex items-center gap-0.5 text-emerald-500"
+          title={`${added} added ${added === 1 ? 'file' : 'files'}`}
+        >
+          <FilePlus className="h-3 w-3" />
+          {added}
+        </span>
+      ) : null}
+      {edited > 0 ? (
+        <span
+          className="flex items-center gap-0.5 text-amber-500"
+          title={`${edited} edited ${edited === 1 ? 'file' : 'files'}`}
+        >
+          <FilePen className="h-3 w-3" />
+          {edited}
+        </span>
+      ) : null}
+      {hasChanges ? (
+        <>
+          <button
+            type="button"
+            onClick={handleCommit}
+            className="border-border bg-background text-foreground hover:bg-muted inline-flex h-6 shrink-0 items-center gap-1 rounded-md border px-2 text-[11px] font-medium transition-colors"
+            title="Commit working tree changes"
+          >
+            Commit
+          </button>
+          <button
+            type="button"
+            onClick={handleCommitPush}
+            className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-indigo-500/40 bg-indigo-500/10 px-2 text-[11px] font-medium text-indigo-600 transition-colors hover:bg-indigo-500/20 dark:text-indigo-400"
+            title="Commit and push to remote"
+          >
+            Commit &amp; Push
+          </button>
+        </>
+      ) : null}
     </div>
   );
 }
@@ -278,7 +362,7 @@ function SessionChip({
       className={cn(
         'border-border/60 bg-muted/40 text-muted-foreground inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border px-2 font-mono text-[10px] transition-colors',
         sessionId
-          ? 'hover:bg-muted cursor-pointer hover:text-foreground'
+          ? 'hover:bg-muted hover:text-foreground cursor-pointer'
           : 'cursor-default opacity-60'
       )}
       title={sessionId ? `Click to copy full session id: ${sessionId}` : 'No session yet'}
@@ -341,19 +425,22 @@ function CopyPromptButton({ applicationId }: { applicationId: string }) {
 function StatusPill({
   applicationId,
   persistedStatus,
+  deployReady,
 }: {
   applicationId: string;
   persistedStatus: ApplicationStatus;
+  deployReady: boolean;
 }) {
   // Read live turn status from the global SSE subscription and fold
-  // it onto the persisted status so the pill reflects real-time agent
-  // activity ("Working" / "Waiting" / "Ready") instead of being stuck
-  // at the coarse DB snapshot which almost always reads "Idle".
+  // it PLUS the dev-server deploy state onto the persisted status so
+  // the pill reflects real-time reality ("Working" / "Waiting" /
+  // "Unread" / "Live") instead of being stuck at the coarse DB
+  // snapshot which almost always reads "Idle".
   const turnStatus = useTurnStatus(`app-${applicationId}`);
-  const live = deriveLiveStatusPill(persistedStatus, turnStatus);
+  const live = deriveLiveStatusPill(persistedStatus, turnStatus, deployReady);
 
   return (
-    <span className="border-border/60 inline-flex h-5 shrink-0 items-center gap-1 rounded-full border px-2 text-[10px] font-medium uppercase tracking-wide">
+    <span className="border-border/60 inline-flex h-5 shrink-0 items-center gap-1 rounded-full border px-2 text-[10px] font-medium tracking-wide uppercase">
       <span
         className={cn(
           'relative flex h-1.5 w-1.5 items-center justify-center rounded-full',
@@ -465,7 +552,7 @@ function ResizableSplit({ left, right }: { left: React.ReactNode; right: React.R
         onPointerUp={onPointerUp}
       >
         {/* 8px wide invisible hit target centered on the 1px line */}
-        <span className="absolute inset-y-0 -left-1 -right-1" />
+        <span className="absolute inset-y-0 -right-1 -left-1" />
       </div>
 
       {/* Right pane — flush with top bar, no internal header */}
@@ -512,7 +599,7 @@ function ViewBody({
       <div
         className={cn(
           'absolute inset-0 flex min-h-0 flex-col',
-          activeView === 'terminal' ? 'visible' : 'invisible pointer-events-none'
+          activeView === 'terminal' ? 'visible' : 'pointer-events-none invisible'
         )}
         aria-hidden={activeView !== 'terminal'}
       >
@@ -524,7 +611,7 @@ function ViewBody({
       <div
         className={cn(
           'absolute inset-0 flex min-h-0 flex-col',
-          activeView === 'ide' ? 'visible' : 'invisible pointer-events-none'
+          activeView === 'ide' ? 'visible' : 'pointer-events-none invisible'
         )}
         aria-hidden={activeView !== 'ide'}
       >
@@ -540,7 +627,7 @@ function ViewBody({
         <div
           className={cn(
             'absolute inset-0 flex min-h-0 flex-col',
-            activeView === 'web' ? 'visible' : 'invisible pointer-events-none'
+            activeView === 'web' ? 'visible' : 'pointer-events-none invisible'
           )}
           aria-hidden={activeView !== 'web'}
         >
@@ -615,11 +702,7 @@ export function ApplicationPage({
   // on an Idle→Ready transition, not on every poll while Ready.
   const hasAutoSwitchedRef = useRef(false);
   useEffect(() => {
-    if (
-      deploy.status === DeploymentState.Ready &&
-      deploy.url &&
-      !hasAutoSwitchedRef.current
-    ) {
+    if (deploy.status === DeploymentState.Ready && deploy.url && !hasAutoSwitchedRef.current) {
       hasAutoSwitchedRef.current = true;
       setActiveView('web');
     }
@@ -656,6 +739,17 @@ export function ApplicationPage({
             initialModel={application.modelOverride}
             initialChatState={initialChatState}
             hideHeader
+            workflowPlaceholder={APPLICATION_CREATION_PLACEHOLDER_STEPS}
+            onAllStepsComplete={() => {
+              // Kick off the dev server as soon as the agent has
+              // finished the scaffold workflow. The Idle→Ready
+              // transition in the deploy hook then auto-switches
+              // the right pane to the Web preview, so the user
+              // lands on their running app with zero clicks.
+              if (deploy.status === DeploymentState.Stopped) {
+                void deploy.deploy();
+              }
+            }}
           />
         }
         right={

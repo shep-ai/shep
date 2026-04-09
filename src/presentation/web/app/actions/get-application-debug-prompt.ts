@@ -42,9 +42,7 @@ export async function getApplicationDebugPrompt(
       return { error: 'Application not found' };
     }
 
-    const builder = resolve<IApplicationCreationPromptBuilder>(
-      'IApplicationCreationPromptBuilder'
-    );
+    const builder = resolve<IApplicationCreationPromptBuilder>('IApplicationCreationPromptBuilder');
 
     const { systemPrompt, userMessage } = builder.build({
       description: application.description ?? '',

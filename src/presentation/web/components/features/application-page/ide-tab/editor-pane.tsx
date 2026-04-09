@@ -143,52 +143,52 @@ export function EditorPane({
             <div className="text-muted-foreground px-3 text-[11px]">No file open</div>
           ) : (
             openFiles.map((f) => {
-            const dirty = f.content !== f.originalContent;
-            const selected = f.path === activePath;
-            return (
-              <div
-                key={f.path}
-                role="tab"
-                aria-selected={selected}
-                onClick={() => onSelect(f.path)}
-                onDoubleClick={() => onPromote(f.path)}
-                className={cn(
-                  'group border-border flex h-8 shrink-0 cursor-pointer items-center gap-1.5 border-r px-3 text-[11px]',
-                  selected
-                    ? 'bg-background text-foreground'
-                    : 'text-muted-foreground hover:bg-muted/60'
-                )}
-                title={
-                  f.isPreview
-                    ? `${f.path} — preview (double-click tab or edit to keep open)`
-                    : f.path
-                }
-              >
-                <FileIcon className="h-3 w-3 shrink-0 text-sky-500" />
-                <span className={cn('truncate', f.isPreview && 'italic')}>
-                  {basename(f.path)}
-                </span>
-                {dirty ? (
-                  <span
-                    className="bg-primary/70 inline-block h-1.5 w-1.5 rounded-full"
-                    aria-label="Unsaved changes"
-                  />
-                ) : null}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClose(f.path);
-                  }}
-                  className="text-muted-foreground/70 hover:text-foreground ml-1 rounded-sm p-0.5"
-                  aria-label={`Close ${f.path}`}
+              const dirty = f.content !== f.originalContent;
+              const selected = f.path === activePath;
+              return (
+                <div
+                  key={f.path}
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => onSelect(f.path)}
+                  onDoubleClick={() => onPromote(f.path)}
+                  className={cn(
+                    'group border-border flex h-8 shrink-0 cursor-pointer items-center gap-1.5 border-r px-3 text-[11px]',
+                    selected
+                      ? 'bg-background text-foreground'
+                      : 'text-muted-foreground hover:bg-muted/60'
+                  )}
+                  title={
+                    f.isPreview
+                      ? `${f.path} — preview (double-click tab or edit to keep open)`
+                      : f.path
+                  }
                 >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            );
-          })
-        )}
+                  <FileIcon className="h-3 w-3 shrink-0 text-sky-500" />
+                  <span className={cn('truncate', f.isPreview && 'italic')}>
+                    {basename(f.path)}
+                  </span>
+                  {dirty ? (
+                    <span
+                      className="bg-primary/70 inline-block h-1.5 w-1.5 rounded-full"
+                      aria-label="Unsaved changes"
+                    />
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onClose(f.path);
+                    }}
+                    className="text-muted-foreground/70 hover:text-foreground ml-1 rounded-sm p-0.5"
+                    aria-label={`Close ${f.path}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              );
+            })
+          )}
         </div>
 
         {/* Right-side per-tab actions: view-mode toggle for markdown. */}
@@ -288,17 +288,17 @@ function EmptyMessage({ children }: { children: React.ReactNode }) {
  */
 const MARKDOWN_COMPONENTS: Components = {
   h1: ({ children }) => (
-    <h1 className="border-border text-foreground mb-4 mt-6 border-b pb-2 text-2xl font-semibold">
+    <h1 className="border-border text-foreground mt-6 mb-4 border-b pb-2 text-2xl font-semibold">
       {children}
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="border-border text-foreground mb-3 mt-5 border-b pb-1 text-xl font-semibold">
+    <h2 className="border-border text-foreground mt-5 mb-3 border-b pb-1 text-xl font-semibold">
       {children}
     </h2>
   ),
   h3: ({ children }) => (
-    <h3 className="text-foreground mb-2 mt-4 text-lg font-semibold">{children}</h3>
+    <h3 className="text-foreground mt-4 mb-2 text-lg font-semibold">{children}</h3>
   ),
   p: ({ children }) => <p className="my-3">{children}</p>,
   a: ({ children, href }) => (

@@ -243,7 +243,6 @@ export function ImageViewer({ applicationId, path }: ImageViewerProps) {
           </TransformComponent>
         </TransformWrapper>
       </div>
-
     </div>
   );
 }

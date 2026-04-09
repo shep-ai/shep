@@ -253,7 +253,7 @@ export function TerminalTab({ cwd, className }: TerminalTabProps) {
     <div className={`relative flex min-h-0 flex-1 flex-col bg-[#0b0d10] ${className ?? ''}`}>
       {status === 'error' && errorMessage !== null && (
         <div
-          className="absolute left-2 top-2 z-10 rounded border border-red-500/40 bg-red-950/80 px-2 py-1 text-[11px] text-red-200"
+          className="absolute top-2 left-2 z-10 rounded border border-red-500/40 bg-red-950/80 px-2 py-1 text-[11px] text-red-200"
           role="alert"
         >
           {errorMessage}

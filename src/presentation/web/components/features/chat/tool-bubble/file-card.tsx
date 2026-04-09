@@ -51,7 +51,7 @@ export function FileWriteCard({ toolName, filePath, content }: FileWriteCardProp
         </div>
         <div className="flex min-w-0 flex-col items-start">
           <span className="truncate font-mono text-[11px] font-medium">{basename}</span>
-          <span className="text-muted-foreground/70 font-mono text-[9px] uppercase tracking-wide">
+          <span className="text-muted-foreground/70 font-mono text-[9px] tracking-wide uppercase">
             {verb}
             {lineCount ? ` · ${lineCount} line${lineCount === 1 ? '' : 's'}` : ''}
           </span>
@@ -72,7 +72,7 @@ export function FileWriteCard({ toolName, filePath, content }: FileWriteCardProp
           <span className="truncate font-mono text-[11px] font-medium" title={filePath}>
             {basename}
           </span>
-          <span className="text-muted-foreground/60 shrink-0 font-mono text-[9px] uppercase tracking-wide">
+          <span className="text-muted-foreground/60 shrink-0 font-mono text-[9px] tracking-wide uppercase">
             {verb}
           </span>
         </div>

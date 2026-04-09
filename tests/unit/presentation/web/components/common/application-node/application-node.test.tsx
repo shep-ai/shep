@@ -85,17 +85,24 @@ describe('ApplicationNode', () => {
       expect(screen.getByTestId('application-node-name')).toHaveTextContent('Dashboard App');
     });
 
-    it('renders status text', () => {
+    it('renders "Ready" as the default resting label (never "Idle")', () => {
+      // With no dev server running and no in-flight agent turn, the
+      // card falls through to "Ready" — a positive standby state.
+      // The old "Idle" label was considered noise and is never shown.
       renderNode();
 
-      expect(screen.getByTestId('application-node-status-text')).toHaveTextContent('Idle');
+      expect(screen.getByTestId('application-node-status-text')).toHaveTextContent('Ready');
+      expect(screen.getByTestId('application-node-status-text')).not.toHaveTextContent('Idle');
     });
 
-    it('renders Active status with green dot', () => {
-      renderNode({ ...defaultData, status: 'Active' });
+    it('renders "Live" with an emerald dot when the dev server URL is present', () => {
+      // The card folds the live DeploymentService state into the
+      // status pill: any application whose dev server is up gets a
+      // "Live" label regardless of the persisted coarse status.
+      renderNode({ ...defaultData, deploymentUrl: 'http://localhost:5173' });
 
-      expect(screen.getByTestId('application-node-status-text')).toHaveTextContent('Active');
-      expect(screen.getByTestId('application-node-status-dot')).toHaveClass('bg-green-500');
+      expect(screen.getByTestId('application-node-status-text')).toHaveTextContent('Live');
+      expect(screen.getByTestId('application-node-status-dot')).toHaveClass('bg-emerald-500');
     });
 
     it('renders Error status with red dot', () => {

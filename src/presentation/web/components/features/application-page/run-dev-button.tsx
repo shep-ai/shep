@@ -37,9 +37,21 @@ import type { DeployActionState } from '@/hooks/use-deploy-action';
 export interface RunDevButtonProps {
   deploy: DeployActionState;
   className?: string;
+  /**
+   * Visual density of the Ready state.
+   *
+   * - `'full'` (default) — URL pill + adjacent Stop button. Used in
+   *   the application page top bar where there's horizontal room
+   *   and the URL is the most useful piece of information.
+   * - `'compact'` — just a subtle Stop button, no URL pill. Used on
+   *   the canvas application card where the running URL is already
+   *   visible as an open-in-new-tab icon on the iframe preview, so
+   *   repeating it in the button would be pure redundancy.
+   */
+  variant?: 'full' | 'compact';
 }
 
-export function RunDevButton({ deploy, className }: RunDevButtonProps) {
+export function RunDevButton({ deploy, className, variant = 'full' }: RunDevButtonProps) {
   const openUrl = useCallback(() => {
     if (deploy.url) window.open(deploy.url, '_blank', 'noopener,noreferrer');
   }, [deploy.url]);
@@ -67,7 +79,36 @@ export function RunDevButton({ deploy, className }: RunDevButtonProps) {
   }
 
   // ────────────────────────────────────────────────────────────
-  // Ready — URL pill + separate adjacent Stop button.
+  // Ready (compact) — just a subtle Stop button.
+  //
+  // Used on the canvas application card, where the running URL is
+  // already shown as an open-in-new-tab icon on the iframe preview,
+  // so repeating it in the button would be pure redundancy.
+  // ────────────────────────────────────────────────────────────
+  if (deploy.status === DeploymentState.Ready && deploy.url && variant === 'compact') {
+    return (
+      <button
+        type="button"
+        onClick={deploy.stop}
+        disabled={deploy.stopLoading}
+        className={cn(
+          'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-red-500/30 bg-red-500/5 text-red-600 transition-colors hover:border-red-500/60 hover:bg-red-500/15 dark:text-red-400',
+          className
+        )}
+        title="Stop dev server"
+        aria-label="Stop dev server"
+      >
+        {deploy.stopLoading ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <Square className="h-3 w-3 fill-current" />
+        )}
+      </button>
+    );
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // Ready (full) — URL pill + separate adjacent Stop button.
   //
   // The URL is ALWAYS the left click target (no hover-swap). A small
   // stop button sits immediately to its right, visually grouped into

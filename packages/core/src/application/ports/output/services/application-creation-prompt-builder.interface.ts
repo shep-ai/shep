@@ -50,10 +50,7 @@ export type ApplicationCreationPromptSectionKey =
   | 'userInteraction'
   | 'outputContract';
 
-export type ApplicationCreationPromptSections = Record<
-  ApplicationCreationPromptSectionKey,
-  string
->;
+export type ApplicationCreationPromptSections = Record<ApplicationCreationPromptSectionKey, string>;
 
 /**
  * Concrete, per-call workspace facts the agent must know up front so

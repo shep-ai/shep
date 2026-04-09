@@ -184,16 +184,10 @@ export class NodeApplicationFileSystemService implements IApplicationFileSystemS
     try {
       stat = await fsp.stat(abs);
     } catch {
-      throw new ApplicationFileSystemError(
-        `File not found: ${relativePath}`,
-        'NOT_FOUND'
-      );
+      throw new ApplicationFileSystemError(`File not found: ${relativePath}`, 'NOT_FOUND');
     }
     if (stat.isDirectory()) {
-      throw new ApplicationFileSystemError(
-        `Path is a directory: ${relativePath}`,
-        'IS_DIRECTORY'
-      );
+      throw new ApplicationFileSystemError(`Path is a directory: ${relativePath}`, 'IS_DIRECTORY');
     }
 
     const posixPath = toPosix(path.relative(path.resolve(rootPath), abs));
@@ -240,16 +234,10 @@ export class NodeApplicationFileSystemService implements IApplicationFileSystemS
     try {
       stat = await fsp.stat(abs);
     } catch {
-      throw new ApplicationFileSystemError(
-        `File not found: ${relativePath}`,
-        'NOT_FOUND'
-      );
+      throw new ApplicationFileSystemError(`File not found: ${relativePath}`, 'NOT_FOUND');
     }
     if (stat.isDirectory()) {
-      throw new ApplicationFileSystemError(
-        `Path is a directory: ${relativePath}`,
-        'IS_DIRECTORY'
-      );
+      throw new ApplicationFileSystemError(`Path is a directory: ${relativePath}`, 'IS_DIRECTORY');
     }
     if (stat.size > MAX_RAW_FILE_BYTES) {
       throw new ApplicationFileSystemError(

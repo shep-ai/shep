@@ -94,6 +94,11 @@ export async function GET(request: NextRequest, { params }: RouteParams): Promis
           if (chunk.done) {
             enqueue(`event: done\ndata: ${JSON.stringify({ done: true, featureId })}\n\n`);
           }
+          if (chunk.workflowStep) {
+            enqueue(
+              `event: workflow_step\ndata: ${JSON.stringify({ step: chunk.workflowStep, featureId })}\n\n`
+            );
+          }
         });
 
         function cleanup() {

@@ -20,6 +20,9 @@ import type { IApplicationCreationPromptBuilder } from '../../ports/output/servi
 import type { IApplicationBriefStore } from '../../ports/output/services/application-brief-store.interface.js';
 import type { CreateProjectUseCase } from '../projects/create-project.use-case.js';
 import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
+import type { RunWorkflowUseCase } from '../workflows/run-workflow.use-case.js';
+import type { IInteractiveSessionService } from '../../ports/output/services/interactive-session-service.interface.js';
+import { APPLICATION_CREATION_WORKFLOW } from '../../workflows/application-creation.workflow.js';
 
 /**
  * Build the very first message the agent sees on turn 1. Carries the
@@ -36,10 +39,7 @@ import type { SendInteractiveMessageUseCase } from '../interactive/send-interact
  *                   so we don't pollute the scaffolded repo.
  * @param userMessage The user's verbatim request.
  */
-export function buildKickoffDirective(args: {
-  briefPath: string;
-  userMessage: string;
-}): string {
+export function buildKickoffDirective(args: { briefPath: string; userMessage: string }): string {
   return [
     `Before you take ANY other action, use the Read tool to read \`${args.briefPath}\` in full.`,
     `That file is your complete operating brief — persona (Shep), environment facts, workflow, tech stack, quality bar, and definition of done. Treat it as your system prompt for this entire session.`,
@@ -150,7 +150,11 @@ export class CreateApplicationUseCase {
     @inject('SendInteractiveMessageUseCase')
     private readonly sendMessage: SendInteractiveMessageUseCase,
     @inject('IApplicationBriefStore')
-    private readonly briefStore: IApplicationBriefStore
+    private readonly briefStore: IApplicationBriefStore,
+    @inject('RunWorkflowUseCase')
+    private readonly runWorkflow: RunWorkflowUseCase,
+    @inject('IInteractiveSessionService')
+    private readonly sessionService: IInteractiveSessionService
   ) {}
 
   async execute(input: CreateApplicationInput): Promise<CreateApplicationResult> {
@@ -215,39 +219,90 @@ export class CreateApplicationUseCase {
       const { systemPrompt, userMessage } = this.promptBuilder.build({
         description: input.initialPrompt.trim(),
         workspace: {
-          // projectPath is already forward-slash normalized by the
-          // scaffold service, so the agent gets a clean cross-platform
-          // path it can paste into any tool call.
           workingDirectory: projectPath,
           platform: process.platform === 'win32' ? 'windows' : 'posix',
         },
       });
 
-      // 5a. Materialize the brief in Shep home. Returns the absolute
-      //     path we need to put in the kickoff directive so the agent
-      //     can `Read` it on turn 1.
+      // 5a. Materialise the brief on disk. The brief holds the
+      //     persona/environment/quality bar only — the workflow
+      //     steps live in core code, not the brief, because the
+      //     orchestrator drives them step by step.
       const briefPath = await this.briefStore.write(application.id, systemPrompt);
 
-      // 5b. Persist the user's raw description as the first chat
-      //     message (this is what shows in the UI bubble), then send
-      //     the agent-kickoff directive that augments it with the
-      //     "read the brief first" instruction. sendMessage persists
-      //     `content` verbatim, so we keep the UI clean by using
-      //     `agentKickoffOverride` (below) for the actual agent turn.
-      await this.sendMessage.execute({
-        featureId: `app-${application.id}`,
-        content: userMessage,
+      // 5b. Start the orchestrator in the background. The use case
+      //     returns immediately — the HTTP/CLI caller isn't blocked
+      //     for the 10+ minutes a full build takes. The orchestrator
+      //     will:
+      //
+      //       1. Boot the interactive session via `sendMessage`,
+      //          using step 1's prompt wrapped with the "read the
+      //          brief first" directive so the agent's turn 1
+      //          loads the brief.
+      //       2. Walk every step in order, persisting status
+      //          transitions BEFORE and AFTER each agent turn so
+      //          a refresh or crash always sees a consistent view.
+      //
+      //     We also persist the user's verbatim description as the
+      //     first chat bubble by letting `sendMessage` write it —
+      //     that happens inside the orchestrator via
+      //     `content: userMessage` on the first step.
+      const featureId = `app-${application.id}`;
+      void this.dispatchWorkflow({
+        featureId,
         worktreePath: projectPath,
+        userMessage,
+        briefPath,
         model: input.modelOverride,
         agentType: input.agentType,
-        agentKickoffOverride: buildKickoffDirective({
-          briefPath,
-          userMessage,
-        }),
       });
     }
 
     return { application, repositoryPath: projectPath };
+  }
+
+  /**
+   * Kick off the orchestrator asynchronously. Resolves the session
+   * id by booting it via the first step's send, then runs the rest
+   * of the workflow. Errors are logged — the application is
+   * already persisted, so the chat can recover even if the
+   * workflow dies.
+   */
+  private async dispatchWorkflow(args: {
+    featureId: string;
+    worktreePath: string;
+    userMessage: string;
+    briefPath: string;
+    model?: string;
+    agentType?: string;
+  }): Promise<void> {
+    try {
+      await this.runWorkflow.execute({
+        featureId: args.featureId,
+        worktreePath: args.worktreePath,
+        workflow: APPLICATION_CREATION_WORKFLOW,
+        model: args.model,
+        agentType: args.agentType,
+        // First-step wrapper: the agent's very first turn sees the
+        // "read the brief first" directive stapled onto step 1's
+        // prompt. The chat UI still shows the user's verbatim
+        // description as the first bubble — the orchestrator
+        // persists `userMessage` as the first message row before
+        // dispatching the turn.
+        firstStepPromptWrapper: (stepPrompt) =>
+          buildKickoffDirective({
+            briefPath: args.briefPath,
+            userMessage: `${args.userMessage}\n\n---\n\n${stepPrompt}`,
+          }),
+        // Persisted first bubble — the orchestrator writes this as
+        // the user message before sending the first agent turn so
+        // the chat has an immediate visual anchor.
+        visibleFirstMessage: args.userMessage,
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[create-application] workflow dispatch failed:', err);
+    }
   }
 
   /**

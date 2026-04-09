@@ -13,6 +13,7 @@
 import type {
   InteractiveSession,
   InteractiveMessage,
+  WorkflowStep,
 } from '../../../../domain/generated/output.js';
 import type { UserInteractionData } from '../agents/interactive-agent-executor.interface.js';
 
@@ -54,6 +55,14 @@ export interface StreamChunk {
    * without polling.
    */
   turnStatus?: string;
+  /**
+   * Workflow step transition — emitted by the orchestrator each time
+   * a step changes status (pending → running → done / failed /
+   * interrupted). Clients use this to update the tracker live
+   * without polling; full state is always also recoverable from
+   * `getChatState()` so a missed event is never fatal.
+   */
+  workflowStep?: WorkflowStep;
 }
 
 /**
@@ -89,6 +98,28 @@ export interface ChatState {
   turnStatus: string;
   /** Pending user interaction — agent is waiting for user response (null when no interaction pending) */
   pendingInteraction: UserInteractionData | null;
+  /**
+   * Persisted workflow view for the feature. Present when the
+   * orchestrator has materialised steps in the database; null
+   * otherwise. The client renders a step tracker from this field
+   * instead of parsing marker strings in the message stream.
+   */
+  workflow: WorkflowView | null;
+}
+
+/**
+ * Persisted workflow view for a feature — derived entirely from the
+ * `workflow_steps` table plus a trivial "which step is running"
+ * query. Because the whole shape is re-derivable from SQL, a
+ * browser refresh or daemon restart never loses progress state.
+ */
+export interface WorkflowView {
+  /** Logical workflow id (e.g. 'application-creation-v1'). */
+  workflowId: string;
+  /** Ordered step rows for the whole workflow. */
+  steps: WorkflowStep[];
+  /** ID of the step currently in `running` status, if any. */
+  currentStepId: string | null;
 }
 
 /** Live session metadata for the frontend toolbar. */
@@ -254,9 +285,7 @@ export interface IInteractiveSessionService {
    * came from. Used by the global turn-status SSE endpoint to push
    * sidebar activity indicators without polling.
    */
-  subscribeAll(
-    onChunk: (featureId: string, chunk: StreamChunk) => void
-  ): UnsubscribeFn;
+  subscribeAll(onChunk: (featureId: string, chunk: StreamChunk) => void): UnsubscribeFn;
 
   /**
    * Stop the active session for a feature. Kills the agent process.
@@ -293,4 +322,39 @@ export interface IInteractiveSessionService {
    * @param annotations - Optional per-question annotations (notes, preview)
    */
   respondToInteraction(featureId: string, answers: Record<string, string>): Promise<void>;
+
+  /**
+   * Set the currently-active workflow step for a feature. While a
+   * step is active, every message persisted via this service is
+   * tagged with the step's id, so the UI can group the conversation
+   * by step without parsing marker strings.
+   *
+   * Pass `null` (via `clearActiveStep`) when the orchestrator is
+   * between steps. The mapping is in-memory only — the DB is the
+   * source of truth for per-message `stepId`.
+   */
+  setActiveStep(featureId: string, stepId: string): void;
+
+  /** Clear the currently-active workflow step for a feature. */
+  clearActiveStep(featureId: string): void;
+
+  /**
+   * Notify subscribers of a workflow step transition. The
+   * orchestrator calls this immediately after persisting a status
+   * change so the client's live tracker updates without polling.
+   */
+  notifyWorkflowStep(featureId: string, step: WorkflowStep): void;
+
+  /**
+   * Wait until the next turn for the given feature finishes — i.e.
+   * until the next `done: true` chunk arrives on the feature
+   * subscription. Used by the orchestrator to serialise steps: send
+   * a step's prompt, then await its agent turn to fully complete
+   * before marking the step done and moving on to the next one.
+   *
+   * Resolves as soon as any `done` chunk is observed; the caller is
+   * responsible for subscribing before triggering the turn to avoid
+   * races.
+   */
+  waitForTurnDone(featureId: string, signal?: AbortSignal): Promise<void>;
 }

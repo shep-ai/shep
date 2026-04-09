@@ -19,18 +19,24 @@ import type {
 } from '../../../application/ports/output/services/interactive-session-service.interface.js';
 import type { IInteractiveSessionRepository } from '../../../application/ports/output/repositories/interactive-session-repository.interface.js';
 import type { IInteractiveMessageRepository } from '../../../application/ports/output/repositories/interactive-message-repository.interface.js';
+import type { IWorkflowStepRepository } from '../../../application/ports/output/repositories/workflow-step-repository.interface.js';
 import type { IAgentExecutorFactory } from '../../../application/ports/output/agents/agent-executor-factory.interface.js';
 import type {
   InteractiveAgentSessionHandle,
   UserInteractionData,
 } from '../../../application/ports/output/agents/interactive-agent-executor.interface.js';
 import type { IFeatureRepository } from '../../../application/ports/output/repositories/feature-repository.interface.js';
-import type { InteractiveSession, InteractiveMessage } from '../../../domain/generated/output.js';
+import type {
+  InteractiveSession,
+  InteractiveMessage,
+  WorkflowStep,
+} from '../../../domain/generated/output.js';
 import {
   InteractiveSessionStatus,
   InteractiveMessageRole,
   AgentType,
   AgentAuthMethod,
+  WorkflowStepStatus,
 } from '../../../domain/generated/output.js';
 import type { AgentConfig } from '../../../domain/generated/output.js';
 import { ConcurrentSessionLimitError } from '../../../domain/errors/concurrent-session-limit.error.js';
@@ -128,12 +134,22 @@ export class InteractiveSessionService implements IInteractiveSessionService {
    */
   private globalSubscribers = new Set<(featureId: string, chunk: StreamChunk) => void>();
 
+  /**
+   * Currently-active workflow step id per feature scope. Set by the
+   * orchestrator (`RunWorkflowUseCase`) before each agent turn and
+   * cleared between steps. `persistMessage` reads this so every row
+   * it inserts is tagged with the right `step_id`. In-memory only —
+   * the DB is the source of truth for per-message `stepId`.
+   */
+  private activeStepByFeature = new Map<string, string>();
+
   constructor(
     private readonly sessionRepo: IInteractiveSessionRepository,
     private readonly messageRepo: IInteractiveMessageRepository,
     private readonly executorFactory: IAgentExecutorFactory,
     private readonly featureRepo: IFeatureRepository,
-    private readonly contextBuilder: FeatureContextBuilder
+    private readonly contextBuilder: FeatureContextBuilder,
+    private readonly workflowStepRepo: IWorkflowStepRepository
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -344,7 +360,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       // the session is ready the moment the SDK handle exists. The user
       // will send their first message through the normal turn path.
       if (!bootPrompt) {
-        await this.updateSessionStatusAndNotify(state.sessionId, state.featureId, InteractiveSessionStatus.ready);
+        await this.updateSessionStatusAndNotify(
+          state.sessionId,
+          state.featureId,
+          InteractiveSessionStatus.ready
+        );
         void this.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
         return;
       }
@@ -463,7 +483,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
                 updatedAt: new Date(),
               };
               await this.persistMessage(greetingMsg);
-              await this.updateSessionStatusAndNotify(state.sessionId, state.featureId, InteractiveSessionStatus.ready);
+              await this.updateSessionStatusAndNotify(
+                state.sessionId,
+                state.featureId,
+                InteractiveSessionStatus.ready
+              );
 
               // If there's a pending user message, the next turn will set 'processing'.
               // Otherwise boot greeting is expected — mark idle.
@@ -501,7 +525,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
         };
         await this.persistMessage(greetingMsg);
       }
-      await this.updateSessionStatusAndNotify(state.sessionId, state.featureId, InteractiveSessionStatus.ready);
+      await this.updateSessionStatusAndNotify(
+        state.sessionId,
+        state.featureId,
+        InteractiveSessionStatus.ready
+      );
       if (!state.pendingUserContent) {
         void this.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
       }
@@ -515,7 +543,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       // eslint-disable-next-line no-console
       console.error(`[InteractiveSession] boot failed for session ${state.sessionId}:`, err);
       try {
-        await this.updateSessionStatusAndNotify(state.sessionId, state.featureId, InteractiveSessionStatus.error);
+        await this.updateSessionStatusAndNotify(
+          state.sessionId,
+          state.featureId,
+          InteractiveSessionStatus.error
+        );
       } catch {
         // Best-effort DB update
       }
@@ -843,7 +875,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
         }
         this.sessions.delete(state.sessionId);
         try {
-          await this.updateSessionStatusAndNotify(state.sessionId, state.featureId, InteractiveSessionStatus.error);
+          await this.updateSessionStatusAndNotify(
+            state.sessionId,
+            state.featureId,
+            InteractiveSessionStatus.error
+          );
         } catch {
           // Best-effort DB update
         }
@@ -877,6 +913,8 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     }
     // Also clear the cached agentSessionId so next session starts fresh
     this.stoppedAgentSessionIds.delete(featureId);
+    await this.workflowStepRepo.deleteByFeatureId(featureId);
+    this.activeStepByFeature.delete(featureId);
     return this.messageRepo.deleteByFeatureId(featureId);
   }
 
@@ -1048,7 +1086,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
             startedAt: latest.startedAt
               ? new Date(latest.startedAt as unknown as string).toISOString()
               : new Date().toISOString(),
-                lastActivityAt: latest.lastActivityAt
+            lastActivityAt: latest.lastActivityAt
               ? new Date(latest.lastActivityAt as unknown as string).toISOString()
               : new Date().toISOString(),
             totalCostUsd: latestUsage?.totalCostUsd ?? null,
@@ -1077,7 +1115,37 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     // Include pending interaction if one exists
     const pendingInteraction = state?.pendingInteraction ?? null;
 
-    return { messages, sessionStatus, streamingText, sessionInfo, turnStatus, pendingInteraction };
+    // ── Workflow view — derived entirely from the DB so a browser
+    // refresh or daemon restart sees the exact same progress state.
+    // A step row in `running` status means the orchestrator had
+    // started that step before the crash; recovery flips it to
+    // `interrupted` at boot so we never show stale "running" after
+    // the daemon dies.
+    const workflowSteps = await this.workflowStepRepo.listByFeature(featureId);
+    let workflow: ChatState['workflow'] = null;
+    if (workflowSteps.length > 0) {
+      const running = workflowSteps.find((s) => s.status === WorkflowStepStatus.running);
+      workflow = {
+        workflowId: workflowSteps[0].workflowId,
+        steps: workflowSteps,
+        currentStepId: running?.id ?? null,
+      };
+      // Derive turnStatus from the workflow: if any step is running,
+      // the agent is working — regardless of whether the in-memory
+      // session has been reloaded yet. This is the fix for "lose
+      // in-progress after refresh": the answer is always a SELECT.
+      if (running) turnStatus = 'processing';
+    }
+
+    return {
+      messages,
+      sessionStatus,
+      streamingText,
+      sessionInfo,
+      turnStatus,
+      pendingInteraction,
+      workflow,
+    };
   }
 
   subscribeByFeature(featureId: string, onChunk: (chunk: StreamChunk) => void): UnsubscribeFn {
@@ -1098,9 +1166,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     };
   }
 
-  subscribeAll(
-    onChunk: (featureId: string, chunk: StreamChunk) => void
-  ): UnsubscribeFn {
+  subscribeAll(onChunk: (featureId: string, chunk: StreamChunk) => void): UnsubscribeFn {
     this.globalSubscribers.add(onChunk);
     return () => {
       this.globalSubscribers.delete(onChunk);
@@ -1176,6 +1242,54 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
     // Clear the "Waiting for your response..." log
     state.subscribers.forEach((sub) => sub({ delta: '', done: false }));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Workflow orchestrator hooks
+  // ---------------------------------------------------------------------------
+
+  setActiveStep(featureId: string, stepId: string): void {
+    this.activeStepByFeature.set(featureId, stepId);
+  }
+
+  clearActiveStep(featureId: string): void {
+    this.activeStepByFeature.delete(featureId);
+  }
+
+  notifyWorkflowStep(featureId: string, step: WorkflowStep): void {
+    this.notifyByFeatureId(featureId, {
+      delta: '',
+      done: false,
+      workflowStep: step,
+    });
+  }
+
+  /**
+   * Resolves the next time any subscriber receives a `done: true`
+   * chunk for the given feature. The orchestrator subscribes BEFORE
+   * sending the step prompt so the resolution can't race with the
+   * agent finishing before the promise is set up.
+   */
+  async waitForTurnDone(featureId: string, signal?: AbortSignal): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(new Error('waitForTurnDone aborted'));
+        return;
+      }
+      const unsubscribe = this.subscribeByFeature(featureId, (chunk) => {
+        if (chunk.done) {
+          unsubscribe();
+          signal?.removeEventListener('abort', onAbort);
+          resolve();
+        }
+      });
+      const onAbort = () => {
+        unsubscribe();
+        signal?.removeEventListener('abort', onAbort);
+        reject(new Error('waitForTurnDone aborted'));
+      };
+      signal?.addEventListener('abort', onAbort);
+    });
   }
 
   /**
@@ -1337,13 +1451,18 @@ export class InteractiveSessionService implements IInteractiveSessionService {
   // ---------------------------------------------------------------------------
 
   /** Persist a message AND notify subscribers. Use everywhere instead of
-   *  calling `messageRepo.create` directly. */
+   *  calling `messageRepo.create` directly. The current active workflow
+   *  step for the feature (if any) is stamped onto the row so every
+   *  message is grouped under the right step card in the UI. */
   private async persistMessage(message: InteractiveMessage): Promise<void> {
-    await this.messageRepo.create(message);
-    this.notifyByFeatureId(message.featureId, {
+    const activeStepId = this.activeStepByFeature.get(message.featureId);
+    const tagged: InteractiveMessage =
+      message.stepId || !activeStepId ? message : { ...message, stepId: activeStepId };
+    await this.messageRepo.create(tagged);
+    this.notifyByFeatureId(tagged.featureId, {
       delta: '',
       done: false,
-      message,
+      message: tagged,
     });
   }
 

@@ -29,11 +29,7 @@ export class ApplicationBriefStore implements IApplicationBriefStore {
       throw new Error('ApplicationBriefStore.write: applicationId is required');
     }
 
-    const briefPath = join(
-      getShepHomeDir(),
-      APPLICATION_BRIEFS_DIRNAME,
-      `${applicationId}.md`
-    );
+    const briefPath = join(getShepHomeDir(), APPLICATION_BRIEFS_DIRNAME, `${applicationId}.md`);
 
     await mkdir(dirname(briefPath), { recursive: true });
     await writeFile(briefPath, content, 'utf-8');

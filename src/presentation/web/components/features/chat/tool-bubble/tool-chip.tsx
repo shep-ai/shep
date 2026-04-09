@@ -35,7 +35,7 @@ export function ToolChip({
       type="button"
       onClick={onToggle}
       className={cn(
-        'border-border/60 text-foreground/90 group inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-mono transition-colors',
+        'border-border/60 text-foreground/90 group inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-[11px] transition-colors',
         TINT_CLASS[tint],
         expanded && 'rounded-b-none border-b-0'
       )}

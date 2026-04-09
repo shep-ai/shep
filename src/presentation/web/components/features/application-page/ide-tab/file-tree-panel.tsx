@@ -67,8 +67,10 @@ function NodeRenderer({ node, style }: NodeRendererProps<ArboristNode>) {
     <div
       style={style}
       className={cn(
-        'flex h-6 items-center gap-1 px-1 text-[12px] cursor-pointer select-none rounded-sm',
-        node.isSelected ? 'bg-primary/10 text-foreground' : 'text-muted-foreground hover:bg-muted/60'
+        'flex h-6 cursor-pointer items-center gap-1 rounded-sm px-1 text-[12px] select-none',
+        node.isSelected
+          ? 'bg-primary/10 text-foreground'
+          : 'text-muted-foreground hover:bg-muted/60'
       )}
       onMouseDown={(e) => {
         if (e.button !== 0) return;
