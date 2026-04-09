@@ -700,6 +700,24 @@ export async function initializeContainer(): Promise<typeof container> {
   container.register('UpdateApplicationUseCase', {
     useFactory: (c) => c.resolve(UpdateApplicationUseCase),
   });
+  container.register('ListApplicationFilesUseCase', {
+    useFactory: (c) => c.resolve(ListApplicationFilesUseCase),
+  });
+  container.register('ReadApplicationFileUseCase', {
+    useFactory: (c) => c.resolve(ReadApplicationFileUseCase),
+  });
+  container.register('ReadApplicationFileRawUseCase', {
+    useFactory: (c) => c.resolve(ReadApplicationFileRawUseCase),
+  });
+  container.register('WriteApplicationFileUseCase', {
+    useFactory: (c) => c.resolve(WriteApplicationFileUseCase),
+  });
+  container.register('WatchApplicationFilesUseCase', {
+    useFactory: (c) => c.resolve(WatchApplicationFilesUseCase),
+  });
+  container.register('CreateTerminalSessionUseCase', {
+    useFactory: (c) => c.resolve(CreateTerminalSessionUseCase),
+  });
 
   // Register interactive session infrastructure
   container.register<IInteractiveSessionRepository>('IInteractiveSessionRepository', {

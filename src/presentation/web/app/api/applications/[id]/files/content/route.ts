@@ -5,11 +5,10 @@
  * Reads and writes a single text file inside an application's repository.
  */
 
-import 'reflect-metadata';
 import type { NextRequest } from 'next/server';
 import { resolve } from '@/lib/server-container';
-import { ReadApplicationFileUseCase } from '@shepai/core/application/use-cases/applications/read-application-file.use-case';
-import { WriteApplicationFileUseCase } from '@shepai/core/application/use-cases/applications/write-application-file.use-case';
+import type { ReadApplicationFileUseCase } from '@shepai/core/application/use-cases/applications/read-application-file.use-case';
+import type { WriteApplicationFileUseCase } from '@shepai/core/application/use-cases/applications/write-application-file.use-case';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +33,7 @@ export async function GET(request: NextRequest, { params }: RouteParams): Promis
       return Response.json({ error: 'path query parameter is required' }, { status: 400 });
     }
 
-    const useCase = resolve(ReadApplicationFileUseCase);
+    const useCase = resolve<ReadApplicationFileUseCase>('ReadApplicationFileUseCase');
     const result = await useCase.execute({ applicationId: id, path: pathParam });
     return Response.json(result);
   } catch (error) {
@@ -61,7 +60,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams): Promis
       return Response.json({ error: 'content must be a string' }, { status: 400 });
     }
 
-    const useCase = resolve(WriteApplicationFileUseCase);
+    const useCase = resolve<WriteApplicationFileUseCase>('WriteApplicationFileUseCase');
     await useCase.execute({
       applicationId: id,
       path: body.path,

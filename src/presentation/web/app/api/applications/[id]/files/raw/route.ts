@@ -6,10 +6,9 @@
  * other binary assets without round-tripping them through JSON.
  */
 
-import 'reflect-metadata';
 import { NextResponse, type NextRequest } from 'next/server';
 import { resolve } from '@/lib/server-container';
-import { ReadApplicationFileRawUseCase } from '@shepai/core/application/use-cases/applications/read-application-file-raw.use-case';
+import type { ReadApplicationFileRawUseCase } from '@shepai/core/application/use-cases/applications/read-application-file-raw.use-case';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +34,7 @@ export async function GET(request: NextRequest, { params }: RouteParams): Promis
       return Response.json({ error: 'path query parameter is required' }, { status: 400 });
     }
 
-    const useCase = resolve(ReadApplicationFileRawUseCase);
+    const useCase = resolve<ReadApplicationFileRawUseCase>('ReadApplicationFileRawUseCase');
     const result = await useCase.execute({ applicationId: id, path: pathParam });
 
     // Copy into a fresh ArrayBuffer so Next.js 16's BodyInit type constraint

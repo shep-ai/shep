@@ -10,10 +10,9 @@
  *   - `change` — `{ kind: 'created'|'modified'|'deleted', path, isDirectory }`
  */
 
-import 'reflect-metadata';
 import type { NextRequest } from 'next/server';
 import { resolve } from '@/lib/server-container';
-import { WatchApplicationFilesUseCase } from '@shepai/core/application/use-cases/applications/watch-application-files.use-case';
+import type { WatchApplicationFilesUseCase } from '@shepai/core/application/use-cases/applications/watch-application-files.use-case';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +24,7 @@ export async function GET(request: NextRequest, { params }: RouteParams): Promis
   const { id } = await params;
 
   let unsubscribe: (() => void) | null = null;
-  const useCase = resolve(WatchApplicationFilesUseCase);
+  const useCase = resolve<WatchApplicationFilesUseCase>('WatchApplicationFilesUseCase');
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream<Uint8Array>({

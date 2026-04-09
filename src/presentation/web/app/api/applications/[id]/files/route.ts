@@ -5,10 +5,9 @@
  * Used by the IDE tab's file explorer.
  */
 
-import 'reflect-metadata';
 import type { NextRequest } from 'next/server';
 import { resolve } from '@/lib/server-container';
-import { ListApplicationFilesUseCase } from '@shepai/core/application/use-cases/applications/list-application-files.use-case';
+import type { ListApplicationFilesUseCase } from '@shepai/core/application/use-cases/applications/list-application-files.use-case';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +18,7 @@ interface RouteParams {
 export async function GET(_request: NextRequest, { params }: RouteParams): Promise<Response> {
   try {
     const { id } = await params;
-    const useCase = resolve(ListApplicationFilesUseCase);
+    const useCase = resolve<ListApplicationFilesUseCase>('ListApplicationFilesUseCase');
     const tree = await useCase.execute({ applicationId: id });
     return Response.json({ tree });
   } catch (error) {

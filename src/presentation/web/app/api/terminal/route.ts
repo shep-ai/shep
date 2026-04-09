@@ -9,7 +9,7 @@
 
 import type { NextRequest } from 'next/server';
 import { resolve } from '@/lib/server-container';
-import { CreateTerminalSessionUseCase } from '@shepai/core/application/use-cases/terminal/create-terminal-session.use-case';
+import type { CreateTerminalSessionUseCase } from '@shepai/core/application/use-cases/terminal/create-terminal-session.use-case';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       return Response.json({ error: 'cwd is required' }, { status: 400 });
     }
 
-    const useCase = resolve(CreateTerminalSessionUseCase);
+    const useCase = resolve<CreateTerminalSessionUseCase>('CreateTerminalSessionUseCase');
     const session = useCase.execute({
       cwd: body.cwd,
       cols: typeof body.cols === 'number' ? body.cols : undefined,
