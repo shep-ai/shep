@@ -7,7 +7,7 @@ summary: >
   as new agent types. Existing CLI-based executors (Claude Code, Cursor, Codex, Copilot, Gemini) remain
   untouched. New SDK-based executors use the AI SDK's generateText/streamText/generateObject APIs and
   share a common base class that adapts AI SDK responses to the existing IAgentExecutor interface.
-phase: Analysis
+phase: Requirements
 sizeEstimate: L
 
 relatedFeatures: []
@@ -40,7 +40,96 @@ relatedLinks:
   - title: "@ai-sdk/togetherai npm"
     url: "https://www.npmjs.com/package/@ai-sdk/togetherai"
 
-openQuestions: []
+openQuestions:
+  - question: "Should SDK-based executors support interactive (multi-turn persistent process) sessions?"
+    resolved: true
+    options:
+      - option: "No interactive support"
+        description: "SDK executors only support execute() and executeStream() — no createSession/resumeSession. Interactive sessions remain Claude Code-only. Simplifies initial implementation and avoids building a stateful conversation manager on top of HTTP APIs."
+        selected: true
+      - option: "Basic conversation memory"
+        description: "Implement a lightweight message history that accumulates across calls, passing full history on each generateText call. Adds complexity but enables multi-turn workflows for SDK agents."
+        selected: false
+      - option: "Full interactive parity"
+        description: "Build IInteractiveAgentExecutor support with stdin/stdout-like semantics over HTTP. Very complex, high risk, and not needed for current SDLC workflows."
+        selected: false
+    selectionRationale: "Interactive sessions are currently only used by the chat feature and only Claude Code supports them. The SDLC workflow (plan, implement, merge) uses single-shot execute() calls. Adding interactive support is unnecessary complexity for the initial SDK integration and can be added later if needed."
+    answer: "No interactive support"
+
+  - question: "How should the curated model list for OpenRouter be managed?"
+    resolved: true
+    options:
+      - option: "Static hardcoded list"
+        description: "Hardcode a curated list of popular coding-capable models in the factory, matching the pattern used by all existing agents. Simple, predictable, no network calls needed. Requires code changes to add new models."
+        selected: true
+      - option: "Dynamic API fetch"
+        description: "Fetch available models from the OpenRouter /models API at runtime. Always up-to-date but adds network dependency, latency, caching complexity, and failure modes to what should be a fast local operation."
+        selected: false
+      - option: "Hybrid with cache"
+        description: "Ship a static list but periodically refresh from the API. Best of both worlds but significant complexity for model discovery, cache invalidation, and offline behavior."
+        selected: false
+    selectionRationale: "All existing agents use static model lists in the factory (Claude Code: 3 models, Gemini: 4, Cursor: 8, etc.). A static list is consistent with the existing pattern, works offline, has zero latency, and avoids adding a network-dependent code path to the factory. New models can be added in future releases."
+    answer: "Static hardcoded list"
+
+  - question: "Should the base SDK executor handle API key validation at construction time or at first use?"
+    resolved: true
+    options:
+      - option: "Validate at first use"
+        description: "Defer API key validation to the first execute() call. The factory creates the executor instantly, and validation errors surface as execution failures with clear error messages. Matches the pattern of CLI executors which don't validate credentials at construction."
+        selected: true
+      - option: "Validate at construction"
+        description: "Make a lightweight API call (e.g., list models) when the executor is created. Fails fast but adds latency to factory.createExecutor() and makes the factory async, breaking the current synchronous interface."
+        selected: false
+    selectionRationale: "CLI executors validate lazily — they don't check if the binary exists or credentials are valid until execute() is called. The factory interface is synchronous (createExecutor returns IAgentExecutor, not a Promise). Changing this to async would break the contract. Lazy validation is consistent, simple, and produces clear errors when the user actually tries to use the provider."
+    answer: "Validate at first use"
+
+  - question: "How should the system prompt be passed to SDK-based providers?"
+    resolved: true
+    options:
+      - option: "System message in messages array"
+        description: "Pass the system prompt as the first message with role 'system' in the messages array to generateText(). This is the standard AI SDK approach and works across all providers. The AgentExecutionOptions.systemPrompt field maps directly to this."
+        selected: true
+      - option: "Provider-specific system field"
+        description: "Use provider-specific configuration for system prompts where available (e.g., Anthropic's system parameter). More optimal for specific providers but fragments the base class with provider-specific logic."
+        selected: false
+    selectionRationale: "The AI SDK's generateText() accepts a system parameter directly that handles provider-specific mapping internally. Using the SDK's built-in system parameter keeps the base class clean and lets the SDK handle provider differences."
+    answer: "System message in messages array"
+
+  - question: "Should SDK executors report costUsd in AgentExecutionUsage?"
+    resolved: true
+    options:
+      - option: "Report tokens only"
+        description: "Report inputTokens and outputTokens from the AI SDK response.usage. Do not calculate cost. Cost calculation requires maintaining a price table per model which is complex and quickly outdated."
+        selected: true
+      - option: "Calculate cost from token counts"
+        description: "Maintain a per-model price table and calculate costUsd from token counts. Accurate but requires constant maintenance as providers change pricing."
+        selected: false
+    selectionRationale: "The AI SDK returns token counts in its response.usage but does not provide cost information. Building and maintaining a per-model price table for hundreds of OpenRouter models is impractical and would be perpetually outdated. Token counts are the reliable, provider-agnostic metric. Users can check their provider dashboard for cost tracking."
+    answer: "Report tokens only"
+
+  - question: "What error handling strategy should SDK executors use for provider API errors?"
+    resolved: true
+    options:
+      - option: "Wrap in AgentExecutionResult with error metadata"
+        description: "Catch AI SDK errors, extract HTTP status, error message, and provider-specific details. Return a failed AgentExecutionResult with error info in metadata, matching how CLI executors handle subprocess failures. Callers already handle error results."
+        selected: false
+      - option: "Throw typed errors"
+        description: "Let errors propagate as exceptions. The AI SDK throws well-structured errors (APIError with status, message, cause). Callers already have try/catch for executor failures. Throw with enhanced error messages that include provider name and HTTP status for diagnostics."
+        selected: true
+    selectionRationale: "CLI executors throw errors on subprocess failures (non-zero exit codes, timeouts) — they don't return error results. The caller code in use cases and structured agent caller already uses try/catch for executor failures. Throwing typed errors is consistent with existing behavior and provides clean stack traces for debugging."
+    answer: "Throw typed errors"
+
+  - question: "Should auth detection for SDK providers check API key validity via a test API call?"
+    resolved: true
+    options:
+      - option: "Check key presence only"
+        description: "The IAgentAuthDetectorService returns authenticated=true if an API key is present (non-empty string in AgentConfig.token). No network call. Fast, works offline, no rate limit risk. Invalid keys will fail on first execute() with a clear API error."
+        selected: true
+      - option: "Validate key with API call"
+        description: "Make a lightweight API call to verify the key is valid (e.g., list models). Catches typos early but adds latency, requires network, can hit rate limits, and introduces a failure mode for a status check."
+        selected: false
+    selectionRationale: "The auth check is called during onboarding and settings UI rendering. It must be fast and reliable. Existing CLI agents check binary presence, not credential validity — that's discovered at execution time. API key presence is sufficient for the auth status indicator. Invalid keys produce clear errors from the provider when the user tries to execute."
+    answer: "Check key presence only"
 
 content: |
   ## Problem Statement
@@ -61,167 +150,174 @@ content: |
   CLI-based path, adding OpenRouter and Together AI as the first SDK-based providers while keeping
   all existing CLI executors fully backward compatible.
 
-  ## Codebase Analysis
+  ## Success Criteria
 
-  ### Project Structure
+  ### Core Execution
+  - [ ] OpenRouter executor implements IAgentExecutor and successfully calls generateText() with a prompt
+  - [ ] Together AI executor implements IAgentExecutor and successfully calls generateText() with a prompt
+  - [ ] Both executors stream responses via streamText(), yielding AgentExecutionStreamEvent items with type progress/result
+  - [ ] Both executors report inputTokens and outputTokens in AgentExecutionUsage from AI SDK response.usage
+  - [ ] Structured output works via generateObject() with Zod schemas when outputSchema is provided in options
+  - [ ] Both executors support the systemPrompt option, passing it as the system parameter to generateText/streamText
+  - [ ] Both executors respect the timeout option, aborting the AI SDK call via AbortController after the specified duration
+  - [ ] Both executors respect the model option, selecting the specified model from the provider
 
-  The project follows Clean Architecture with four layers in `packages/core/src/`:
+  ### Domain & TypeSpec
+  - [ ] AgentType enum includes OpenRouter ("openrouter") and TogetherAi ("together-ai") values
+  - [ ] TypeSpec compiles without errors after enum additions (pnpm tsp:compile succeeds)
+  - [ ] Generated output.ts includes the new enum values and existing code still compiles
 
-  ```
-  domain/         — Core business logic, TypeSpec-generated types (AgentType, AgentConfig, etc.)
-  application/    — Use cases, output port interfaces (IAgentExecutor, IAgentExecutorFactory, etc.)
-  infrastructure/ — Implementations: executors, DI container, repositories, services
-  presentation/   — CLI, TUI, Web UI (thin layers calling use cases)
-  ```
+  ### Factory & DI Integration
+  - [ ] AgentExecutorFactory.createExecutor() returns OpenRouterExecutorService for AgentType.OpenRouter
+  - [ ] AgentExecutorFactory.createExecutor() returns TogetherAiExecutorService for AgentType.TogetherAi
+  - [ ] AgentExecutorFactory.getSupportedAgents() includes both new agent types
+  - [ ] AgentExecutorFactory.getSupportedModels() returns curated model lists for both providers
+  - [ ] AgentExecutorFactory.getCliInfo() returns entries with null/empty cmd for SDK-based agents
+  - [ ] DI container wires new executors without breaking existing registrations
 
-  TypeSpec models in `tsp/` generate `packages/core/src/domain/generated/output.ts`.
-  DI wiring lives in `packages/core/src/infrastructure/di/container.ts` (tsyringe).
+  ### Auth & Settings
+  - [ ] API key flows through existing AgentConfig.token field — no new settings schema needed
+  - [ ] Auth detection (IAgentAuthDetectorService) returns authenticated=true when token is non-empty for SDK agents
+  - [ ] Auth validation (CheckAgentAuthUseCase) reports installed=true for SDK agents (no binary needed)
+  - [ ] AGENT_METADATA in CheckAgentAuthUseCase includes entries for both new agents with null binaryName
 
-  ### Architecture Patterns
+  ### Presentation Layer
+  - [ ] TUI agent config wizard lists OpenRouter and Together AI as selectable options
+  - [ ] TUI wizard prompts for API key (token auth) when selecting either SDK provider
+  - [ ] Web UI agent settings dropdown includes OpenRouter and Together AI options
+  - [ ] Web UI shows token input field when SDK providers are selected (token auth forced)
+  - [ ] Model dropdown populates with provider-specific curated models for both agents
 
-  **Agent execution flow:**
-  1. User selects agent type via settings (stored in SQLite)
-  2. `IAgentExecutorProvider.getExecutor()` reads settings, delegates to factory
-  3. `IAgentExecutorFactory.createExecutor(agentType, authConfig)` returns cached executor
-  4. Factory uses switch statement over `AgentType` enum to instantiate the correct executor
-  5. Each executor implements `IAgentExecutor` (execute, executeStream, supportsFeature)
-  6. CLI executors spawn subprocesses via injected `SpawnFunction`
+  ### Backward Compatibility
+  - [ ] All existing CLI-based agents (claude-code, cursor, codex-cli, copilot-cli, gemini-cli, dev) work without any modification
+  - [ ] Existing settings databases require no migration — new enum values are additive
+  - [ ] IAgentExecutor interface has zero changes — new executors implement it as-is
+  - [ ] StructuredAgentCallerService works with SDK executors when supportsFeature(structuredOutput) returns true
 
-  **Key interfaces (application/ports/output/agents/):**
-  - `IAgentExecutor` — execute(prompt, options), executeStream(prompt, options), supportsFeature(feature)
-  - `IAgentExecutorFactory` — createExecutor(agentType, authConfig), getSupportedAgents(), getSupportedModels(), getCliInfo()
-  - `IAgentExecutorProvider` — getExecutor() (reads settings, delegates to factory)
-  - `IStructuredAgentCaller` — call<T>(prompt, schema, options) (native structured output or brace-depth fallback)
+  ### Test Coverage
+  - [ ] Unit tests for AiSdkBaseExecutorService with mocked AI SDK calls (generateText, streamText, generateObject)
+  - [ ] Unit tests for OpenRouterExecutorService verifying correct provider initialization
+  - [ ] Unit tests for TogetherAiExecutorService verifying correct provider initialization
+  - [ ] Unit tests for factory switch cases returning correct executor instances
+  - [ ] Unit tests for auth detection returning true when token is present, false when absent
+  - [ ] Integration test verifying factory creates and caches SDK executors per agent type
+  - [ ] All existing tests pass without modification (no breaking changes to test fixtures from new enum values)
 
-  **Current executor implementations (infrastructure/services/agents/common/executors/):**
-  - `ClaudeCodeExecutorService` — spawns `claude` CLI, parses stream-json output
-  - `CursorExecutorService` — spawns `cursor` CLI
-  - `CodexCliExecutorService` — spawns `codex` CLI with API token injection
-  - `CopilotCliExecutorService` — spawns `copilot` CLI
-  - `GeminiCliExecutorService` — spawns `gemini` CLI with API token injection
-  - `DevAgentExecutorService` — mock executor for local development (no subprocess)
+  ## Functional Requirements
 
-  **TypeSpec domain model (`tsp/common/enums/agent-config.tsp`):**
-  - `AgentType` enum: claude-code, codex-cli, copilot-cli, gemini-cli, aider, continue, cursor, dev
-  - `AgentAuthMethod` enum: session, token
-  - `AgentConfig` model: type, authMethod, token?
+  - **FR-1: AI SDK Base Executor** — Create an abstract AiSdkBaseExecutorService class that implements IAgentExecutor using the Vercel AI SDK. The constructor accepts an AI SDK LanguageModel instance (provider-agnostic). execute() delegates to generateText(), executeStream() delegates to streamText(), and when outputSchema is provided in options, execute() uses generateObject() with a Zod schema. The base class maps AI SDK responses to AgentExecutionResult (result string, usage with inputTokens/outputTokens, sessionId=undefined) and streams to AgentExecutionStreamEvent (progress events for text deltas, result event for completion).
 
-  **Structured output (`StructuredAgentCallerService`):**
-  - Checks `supportsFeature(AgentFeature.structuredOutput)`
-  - Native path: passes `outputSchema` in options, reads `metadata.structured_output`
-  - Fallback path: wraps prompt with JSON instructions, parses response with brace-depth tracking
+  - **FR-2: OpenRouter Executor** — Create OpenRouterExecutorService extending AiSdkBaseExecutorService. Instantiates the OpenRouter provider via createOpenRouter({ apiKey }) from @openrouter/ai-sdk-provider. The model is selected at execution time from options.model (default to a sensible coding model). supportsFeature() returns true for streaming, structured-output, and system-prompt; false for session-resume, tool-scoping, and session-listing.
 
-  ### Relevant Technologies
+  - **FR-3: Together AI Executor** — Create TogetherAiExecutorService extending AiSdkBaseExecutorService. Instantiates the Together AI provider via createTogetherAI({ apiKey }) from @ai-sdk/togetherai. Same feature support flags as OpenRouter. Model default should be a strong open-source coding model (e.g., a Llama variant).
 
-  - **Current AI dependencies:** `@anthropic-ai/claude-agent-sdk` (v0.2.81), `@langchain/core`, `@langchain/langgraph`
-  - **Vercel AI SDK (ai v6+):** Unified TypeScript toolkit — `generateText()`, `streamText()`, `generateObject()` with Zod schemas
-  - **@ai-sdk/togetherai:** Official AI SDK provider for Together AI (Llama, Mistral, Qwen, DeepSeek, FLUX models)
-  - **@openrouter/ai-sdk-provider:** Community provider for OpenRouter (access to 200+ models from all major vendors)
-  - **Zod:** Already a common choice for schema validation; required by AI SDK's `generateObject()`
+  - **FR-4: TypeSpec Enum Extensions** — Add OpenRouter: "openrouter" and TogetherAi: "together-ai" to the AgentType enum in tsp/common/enums/agent-config.tsp. No changes to AgentAuthMethod (token auth already exists). Regenerate output.ts via pnpm tsp:compile.
+
+  - **FR-5: Factory Integration** — Add switch cases in AgentExecutorFactory.createExecutor() for "openrouter" and "together-ai". Both cases construct the SDK-based executor with the API key from authConfig.token. Add static curated model lists: OpenRouter should include popular coding models from multiple vendors (Anthropic Claude, OpenAI GPT, Meta Llama, Google Gemini, Mistral, DeepSeek); Together AI should focus on strong open-source coding models (Llama, Qwen, DeepSeek, Mistral). getSupportedAgents() returns both new types. getCliInfo() returns entries with null cmd for SDK agents. supportsInteractive() returns false for both.
+
+  - **FR-6: DI Container Wiring** — Update the DI container to pass no additional dependencies to the factory (the factory already receives spawn; SDK executors don't need it). The factory constructs SDK executors internally using the API key from authConfig — no changes to the factory constructor signature needed.
+
+  - **FR-7: Auth Detection for SDK Agents** — Update the IAgentAuthDetectorService implementation to handle SDK agent types: return authenticated=true if AgentConfig.token is a non-empty string. No CLI binary check or network call needed.
+
+  - **FR-8: Auth Check Use Case Metadata** — Add entries to AGENT_METADATA in CheckAgentAuthUseCase for OpenRouter and Together AI: label ("OpenRouter" / "Together AI"), toolId=null (no installable CLI tool), binaryName=null. The installed field should return true for SDK agents (they don't require a local binary).
+
+  - **FR-9: TUI Wizard Updates** — Add OpenRouter and Together AI to the agent selection prompt in the TUI agent config wizard. Both should appear as enabled options (not "Coming Soon"). When selected, the wizard should force authMethod=Token and prompt for an API key.
+
+  - **FR-10: Web UI Settings Updates** — Add OpenRouter and Together AI to the AGENT_TYPE_OPTIONS array in agent-settings-section.tsx. Add both to a new TOKEN_REQUIRED_AGENTS set (similar to SESSION_ONLY_AGENTS but inverted — force token auth). When an SDK agent is selected, automatically switch authMethod to Token and show the API key input. Display helper text explaining the API key requirement.
+
+  - **FR-11: Structured Output via generateObject** — When the base SDK executor receives an outputSchema in options, convert the JSON schema to a Zod schema (or accept Zod directly if the caller provides it) and call generateObject() instead of generateText(). Return the structured object in result.metadata.structured_output, matching the convention used by the Claude Code native structured output path.
+
+  - **FR-12: Error Handling** — SDK executors throw on API errors. Errors include the provider name, HTTP status code, and provider error message. Rate limit errors (429) include the retry-after header value if present. Authentication errors (401/403) include a clear message about checking the API key. Timeout errors are thrown when AbortController triggers.
+
+  - **FR-13: Token Usage Reporting** — Map AI SDK response.usage to AgentExecutionUsage: response.usage.promptTokens → inputTokens, response.usage.completionTokens → outputTokens. Set costUsd=undefined (not calculated). Set cacheCreationInputTokens and cacheReadInputTokens to undefined (not available from all providers).
+
+  ## Non-Functional Requirements
+
+  - **NFR-1: No Breaking Changes** — Zero modifications to the IAgentExecutor, IAgentExecutorFactory, or IAgentExecutorProvider interfaces. All existing executors, use cases, and presentation layers must continue functioning identically. This is a purely additive change.
+
+  - **NFR-2: Dependency Footprint** — New npm dependencies limited to: ai (Vercel AI SDK core), @ai-sdk/togetherai, @openrouter/ai-sdk-provider. Zod is already present as a transitive dependency; if not explicitly in package.json, add it. No other new dependencies. The ai package should be tree-shakeable; only import generateText, streamText, generateObject.
+
+  - **NFR-3: Timeout Compliance** — SDK executors must respect the timeout option using AbortController. If no timeout is provided, use a sensible default (e.g., 300 seconds) to prevent hanging requests. The abort signal must be passed to the AI SDK call.
+
+  - **NFR-4: API Key Security** — API keys must never be logged, serialized to disk outside the encrypted settings database, or included in error messages. The AgentConfig.token field is already stored in SQLite — no new storage mechanism needed. Error messages referencing auth should say "API key is missing or invalid" without echoing the key.
+
+  - **NFR-5: Offline Resilience** — The factory must instantiate SDK executors without making network calls. Network failures surface only at execute() time with clear error messages (connection refused, DNS failure, timeout). The settings UI, agent selection, and model listing must all work fully offline.
+
+  - **NFR-6: Clean Architecture Compliance** — SDK provider packages (@openrouter/ai-sdk-provider, @ai-sdk/togetherai, ai) are imported ONLY in the infrastructure layer (executors). The application and domain layers have zero knowledge of the Vercel AI SDK. The base class and provider-specific executors live in infrastructure/services/agents/common/executors/.
+
+  - **NFR-7: Test Isolation** — All unit tests mock the AI SDK functions (generateText, streamText, generateObject) at the module level. No test makes real HTTP calls. Integration tests use the factory to verify correct executor instantiation but do not call execute().
+
+  - **NFR-8: Streaming Latency** — The executeStream() implementation must yield the first AgentExecutionStreamEvent within 100ms of receiving the first text delta from the AI SDK stream. No buffering of chunks beyond what the SDK provides.
+
+  - **NFR-9: Executor Caching** — The factory must cache SDK executor instances per agent type (matching existing behavior for CLI executors using the Map<string, IAgentExecutor> cache). Repeated calls to createExecutor() with the same agent type return the same instance.
+
+  - **NFR-10: Model List Maintainability** — Curated model lists should be defined as named constants (not inline arrays) in the factory, making them easy to update in future releases without touching logic code.
+
+  ## Product Questions & AI Recommendations
+
+  | # | Question | AI Recommendation | Rationale |
+  | - | -------- | ----------------- | --------- |
+  | 1 | Should SDK executors support interactive sessions? | No interactive support | Interactive sessions are only used by the chat feature and only Claude Code supports them. SDLC workflows use single-shot execute(). Adding interactive later is straightforward. |
+  | 2 | How should the OpenRouter model list be managed? | Static hardcoded list | All existing agents use static lists in the factory. Consistent, offline-capable, zero-latency. New models added in future releases. |
+  | 3 | When should API keys be validated? | At first use (lazy) | Factory is synchronous. CLI executors validate lazily. Consistent behavior, clear errors on first execute(). |
+  | 4 | How should system prompts be passed? | System message via AI SDK system parameter | AI SDK handles provider-specific mapping internally. Clean base class, no provider-specific branching. |
+  | 5 | Should SDK executors report costUsd? | Report tokens only | AI SDK doesn't provide cost. Maintaining price tables for hundreds of models is impractical. Token counts are reliable. |
+  | 6 | What error handling strategy for API errors? | Throw typed errors | CLI executors throw on failures. Callers use try/catch. Consistent behavior, clean stack traces. |
+  | 7 | Should auth detection validate keys via API call? | Check key presence only | Auth checks must be fast and offline-capable. CLI agents check binary presence, not credential validity. Invalid keys fail clearly at execution. |
 
   ## Affected Areas
 
   | Area | Impact | Reasoning |
   | ---- | ------ | --------- |
-  | `tsp/common/enums/agent-config.tsp` | High | Add `OpenRouter` and `TogetherAi` values to `AgentType` enum, add `ApiKey` to `AgentAuthMethod` if needed |
+  | `tsp/common/enums/agent-config.tsp` | High | Add OpenRouter and TogetherAi values to AgentType enum |
   | `packages/core/src/domain/generated/output.ts` | High | Auto-regenerated from TypeSpec after enum changes |
-  | `packages/core/src/infrastructure/services/agents/common/executors/` | High | New executor implementations: `openrouter-executor.service.ts`, `together-ai-executor.service.ts`, and shared `ai-sdk-base-executor.service.ts` |
-  | `packages/core/src/infrastructure/services/agents/common/agent-executor-factory.service.ts` | High | Add switch cases for new agent types, add model lists, register SDK-based executors |
-  | `packages/core/src/infrastructure/di/container.ts` | Medium | Wire new dependencies (AI SDK provider instances) into factory construction |
-  | `packages/core/src/infrastructure/services/agents/common/structured-agent-caller.service.ts` | Medium | SDK-based executors can use native `generateObject()` — structured output feature flag should be true for these |
-  | `packages/core/src/application/ports/output/agents/agent-executor.interface.ts` | Low | Interface remains unchanged — new executors implement it as-is |
-  | `packages/core/src/application/ports/output/agents/agent-executor-factory.interface.ts` | Low | May need minor updates to `getCliInfo()` (SDK providers have no CLI binary) |
-  | `tsp/domain/entities/settings.tsp` | Low | `AgentConfig` model may need an additional field for provider-specific config (base URL, API key name) |
-  | `packages/core/src/infrastructure/services/agents/common/types.ts` | Low | May need new type for AI SDK provider factory function |
-  | TUI agent selection wizard | Low | Add OpenRouter and Together AI to the agent selection list |
-  | Web UI settings page | Low | Add OpenRouter and Together AI to the agent dropdown |
-  | Auth validation service | Medium | New auth check logic for API-key-based providers (no CLI binary to validate) |
-  | `package.json` | Medium | Add new dependencies: `ai`, `@ai-sdk/togetherai`, `@openrouter/ai-sdk-provider`, `zod` |
-  | Test fixtures | Medium | All test files creating Feature/Settings objects with AgentType will need the new enum values to be valid |
-
-  ## Design Approach
-
-  ### 1. SDK-Based Executor Base Class
-
-  Create `AiSdkBaseExecutorService` that implements `IAgentExecutor` using the Vercel AI SDK:
-
-  - Constructor takes an AI SDK `LanguageModel` instance (provider-agnostic)
-  - `execute()` calls `generateText()` and maps the result to `AgentExecutionResult`
-  - `executeStream()` calls `streamText()` and yields `AgentExecutionStreamEvent` items
-  - `supportsFeature()` returns true for `structured-output`, `streaming`, `system-prompt`
-  - Structured output uses `generateObject()` with Zod schemas when `outputSchema` is provided
-
-  ### 2. Provider-Specific Executors
-
-  **OpenRouterExecutorService** extends `AiSdkBaseExecutorService`:
-  - Creates provider via `createOpenRouter({ apiKey })` from `@openrouter/ai-sdk-provider`
-  - Model selection: `openrouter.chat('anthropic/claude-3.5-sonnet')` or any OpenRouter model ID
-  - Large model catalog — getSupportedModels returns curated popular models
-
-  **TogetherAiExecutorService** extends `AiSdkBaseExecutorService`:
-  - Creates provider via `createTogetherAI({ apiKey })` from `@ai-sdk/togetherai`
-  - Model selection: `togetherai('meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo')` etc.
-  - Curated model list focused on strong coding models
-
-  ### 3. Factory and DI Integration
-
-  - Add `openrouter` and `together-ai` cases to `AgentExecutorFactory.createExecutor()` switch
-  - These cases instantiate the SDK-based executors with API key from `authConfig.token`
-  - Add model lists for both providers
-  - `getCliInfo()` returns empty/null for SDK-based agents (no CLI binary to version-check)
-
-  ### 4. TypeSpec Updates
-
-  - Add `OpenRouter: "openrouter"` and `TogetherAi: "together-ai"` to `AgentType` enum
-  - Auth for these providers is always token-based (API key required)
-
-  ### 5. Backward Compatibility
-
-  - All existing CLI-based executors remain completely untouched
-  - The `IAgentExecutor` interface does not change
-  - Settings with existing agent types continue to work
-  - The factory pattern means new providers are opt-in via settings change
-  - No migration needed for existing databases (new enum values are additive)
-
-  ## Success Criteria
-
-  - [ ] OpenRouter agent type selectable in settings (CLI, TUI, Web)
-  - [ ] Together AI agent type selectable in settings (CLI, TUI, Web)
-  - [ ] Both providers execute prompts via AI SDK's generateText()
-  - [ ] Both providers stream responses via AI SDK's streamText()
-  - [ ] Structured output works via AI SDK's generateObject() with Zod schemas
-  - [ ] Token usage (input/output tokens, cost) reported in AgentExecutionUsage
-  - [ ] API key authentication flows through existing AgentConfig.token field
-  - [ ] Auth validation checks API key presence (no CLI binary validation needed)
-  - [ ] All existing CLI-based agents continue working without modification
-  - [ ] Unit tests for both new executors with mocked AI SDK calls
-  - [ ] Integration tests verifying factory creates correct executor per type
-  - [ ] Model selection works per-provider (curated lists in factory)
+  | `packages/core/src/infrastructure/services/agents/common/executors/` | High | New executor implementations: ai-sdk-base-executor.service.ts, openrouter-executor.service.ts, together-ai-executor.service.ts |
+  | `packages/core/src/infrastructure/services/agents/common/agent-executor-factory.service.ts` | High | Add switch cases for new agent types, add model lists, update getSupportedAgents/getCliInfo |
+  | `packages/core/src/infrastructure/di/container.ts` | Low | No changes expected — factory constructs SDK executors internally |
+  | `packages/core/src/infrastructure/services/agents/common/structured-agent-caller.service.ts` | Low | No changes needed — works automatically when supportsFeature(structuredOutput) returns true |
+  | `packages/core/src/application/ports/output/agents/agent-executor.interface.ts` | None | Interface remains unchanged |
+  | `packages/core/src/application/ports/output/agents/agent-executor-factory.interface.ts` | None | Interface remains unchanged |
+  | `packages/core/src/application/use-cases/agents/check-agent-auth.use-case.ts` | Medium | Add AGENT_METADATA entries for both new agents |
+  | `packages/core/src/infrastructure/services/agents/common/agent-auth-detector.service.ts` | Medium | Add token-presence check logic for SDK agent types |
+  | `packages/core/src/infrastructure/services/agents/common/agent-validator.service.ts` | Low | Add entries that return available=true with no binary check for SDK agents |
+  | TUI agent config wizard (`agent-select.prompt.ts`, `agent-config.wizard.ts`) | Medium | Add new agents to selection list, force token auth |
+  | Web UI agent settings (`agent-settings-section.tsx`) | Medium | Add new agents to dropdown, add TOKEN_REQUIRED_AGENTS set |
+  | Web UI agent models action (`get-all-agent-models.ts`) | Low | Automatically picks up new agents from factory |
+  | `package.json` | Medium | Add ai, @ai-sdk/togetherai, @openrouter/ai-sdk-provider dependencies |
+  | Test fixtures | Medium | Existing test fixtures may need updates if they exhaustively list AgentType values |
 
   ## Dependencies
 
   **New npm packages:**
-  - `ai` (Vercel AI SDK core, v6+)
-  - `@ai-sdk/togetherai` (official Together AI provider)
-  - `@openrouter/ai-sdk-provider` (community OpenRouter provider)
-  - `zod` (schema validation, required by AI SDK's generateObject)
+  - `ai` (Vercel AI SDK core, v6+) — generateText, streamText, generateObject APIs
+  - `@ai-sdk/togetherai` (official Together AI provider for AI SDK)
+  - `@openrouter/ai-sdk-provider` (community OpenRouter provider for AI SDK)
+  - `zod` (if not already explicit — required by generateObject for schema validation)
 
   **Existing infrastructure leveraged:**
   - `IAgentExecutor` interface (no changes needed)
-  - `AgentExecutorFactory` (add switch cases)
+  - `IAgentExecutorFactory` interface (no changes needed)
+  - `AgentExecutorFactory` (add switch cases, model lists)
   - `AgentConfig.token` field (API key storage already exists)
+  - `AgentAuthMethod.Token` (token auth already exists)
   - `StructuredAgentCallerService` (works out of the box when executor reports structuredOutput support)
-  - tsyringe DI container (wire new dependencies)
+  - tsyringe DI container (minimal or no changes)
+  - Executor caching in factory (Map<string, IAgentExecutor>)
 
   ## Size Estimate
 
   **L** — This feature touches the agent execution layer end-to-end: TypeSpec enums, domain generation,
-  new executor implementations with a shared base class, factory updates, DI wiring, auth validation,
-  TUI/Web settings UI updates, and comprehensive test coverage. The AI SDK integration requires
-  understanding a new library's API surface and adapting it to the existing IAgentExecutor contract.
-  While the architecture is well-prepared for new providers, the number of files touched (15-25) and
-  the need for thorough testing across two new providers pushes this to L (week+).
+  new executor implementations with a shared base class, factory updates, auth detection, TUI/Web
+  settings UI updates, and comprehensive test coverage. The AI SDK integration requires adapting a new
+  library's API surface to the existing IAgentExecutor contract. While the architecture is well-prepared
+  for new providers (factory pattern, clean interfaces), the number of files touched (15-20) and the
+  need for thorough testing across two new providers with mocked SDK calls pushes this to L.
 
-  ---
-
-  _Analysis complete — proceed with research phase_
+  Key scope drivers:
+  - 3 new executor files (base + 2 providers) with full IAgentExecutor implementation
+  - Streaming adapter logic (AI SDK stream → AsyncIterable<AgentExecutionStreamEvent>)
+  - Structured output adapter (generateObject + Zod → metadata.structured_output)
+  - Auth detection updates across multiple services
+  - TUI and Web UI updates for agent selection and token auth forcing
+  - Comprehensive unit test suite with mocked AI SDK calls
+  - Integration tests for factory wiring
