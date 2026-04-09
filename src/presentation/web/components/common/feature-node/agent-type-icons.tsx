@@ -100,8 +100,8 @@ const agentTypeIconMap: Record<AgentTypeValue, ComponentType<IconProps>> = {
   'gemini-cli': createBrandIcon('/icons/agents/gemini-cli.jpeg', 'Gemini CLI'),
   aider: createBrandIcon('/icons/agents/aider.png', 'Aider'),
   continue: createBrandIcon('/icons/agents/continue.jpeg', 'Continue'),
-  openrouter: DefaultAgentIcon,
-  'together-ai': DefaultAgentIcon,
+  openrouter: createBrandIcon('/icons/agents/openrouter.svg', 'OpenRouter'),
+  'together-ai': createBrandIcon('/icons/agents/together-ai.svg', 'Together AI'),
   dev: DevAgentIcon,
 };
 
