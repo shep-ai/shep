@@ -410,11 +410,7 @@
     "localFolder": "Lokaler Ordner",
     "adoptBranch": "Branch übernehmen",
     "fromGithub": "Von GitHub",
-    "newApplication": "Neue Anwendung",
-    "newApplicationDescription": "Beschreiben Sie die Anwendung, die Sie erstellen möchten, und Shep richtet sie für Sie ein.",
-    "newApplicationPlaceholder": "Beschreiben Sie, was Sie erstellen möchten...",
-    "creating": "Wird erstellt...",
-    "create": "Erstellen"
+    "newApplication": "Neue Anwendung"
   },
   "chat": {
     "shepChat": "Shep Chat",

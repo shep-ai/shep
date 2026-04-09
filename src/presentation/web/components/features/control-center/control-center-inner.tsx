@@ -95,7 +95,6 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     handleDeleteRepository,
     handleDeleteApplication,
     createFeatureNode,
-    addApplication,
     showArchived,
     setShowArchived,
     setCallbacks,
@@ -326,33 +325,6 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
       }
     };
   }, []);
-
-  // Listen for application creation events from the empty state prompt overlay
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (
-        e as CustomEvent<{
-          applicationId: string;
-          name: string;
-          description?: string;
-          repositoryPath?: string;
-          status?: string;
-        }>
-      ).detail;
-
-      const appNodeId = `app-${detail.applicationId}`;
-      addApplication(appNodeId, {
-        id: detail.applicationId,
-        name: detail.name,
-        description: detail.description ?? '',
-        status: detail.status ?? 'Idle',
-        repositoryPath: detail.repositoryPath ?? '',
-        additionalPathCount: 0,
-      });
-    };
-    window.addEventListener('shep:application-created', handler);
-    return () => window.removeEventListener('shep:application-created', handler);
-  }, [addApplication]);
 
   // Wire callbacks into derived node data (via ref — no re-render).
   useEffect(() => {

@@ -38,6 +38,10 @@ yarn.lock
 .cursor
 *.code-workspace
 
+# Local agent-tool scratch dirs (not part of the project)
+.cline/
+.superpowers/
+
 # Symlinks (prettier rejects them)
 CURSOR.md
 

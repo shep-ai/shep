@@ -410,11 +410,7 @@
     "localFolder": "مجلد محلي",
     "adoptBranch": "تبني فرع",
     "fromGithub": "من GitHub",
-    "newApplication": "تطبيق جديد",
-    "newApplicationDescription": "صف التطبيق الذي تريد بناءه وسيقوم Shep بإعداده لك.",
-    "newApplicationPlaceholder": "صف ما تريد بناءه...",
-    "creating": "جارٍ الإنشاء...",
-    "create": "إنشاء"
+    "newApplication": "تطبيق جديد"
   },
   "chat": {
     "shepChat": "محادثة Shep",

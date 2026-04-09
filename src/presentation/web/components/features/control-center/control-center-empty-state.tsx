@@ -140,22 +140,11 @@ export function ControlCenterEmptyState({
           return;
         }
 
-        if (result.repositoryPath) {
-          onRepositorySelect?.(result.repositoryPath);
-        }
-
+        // Applications navigate straight to /application/${id} — no canvas
+        // flash and no companion Repository node. The canvas reloads its
+        // graph data when the user navigates back, picking the Application
+        // up from the DB via ListApplicationsUseCase.
         if (result.application) {
-          window.dispatchEvent(
-            new CustomEvent('shep:application-created', {
-              detail: {
-                applicationId: result.application.id,
-                name: result.application.name,
-                description: result.application.description,
-                repositoryPath: result.repositoryPath,
-                status: result.application.status,
-              },
-            })
-          );
           onApplicationCreated?.(result.application.id, description.trim());
         }
       } else {
