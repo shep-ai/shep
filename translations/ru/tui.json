@@ -27,6 +27,14 @@
           "name": "Dev (Mock)",
           "description": "Локальная заглушка для разработки — бинарный файл агента не требуется"
         },
+        "openRouter": {
+          "name": "OpenRouter",
+          "description": "Доступ к сотням моделей ИИ через API OpenRouter (требуется API-ключ)"
+        },
+        "togetherAi": {
+          "name": "Together AI",
+          "description": "Быстрый инференс моделей с открытым исходным кодом через API Together AI (требуется API-ключ)"
+        },
         "aider": {
           "name": "Aider",
           "disabled": "(Скоро)"

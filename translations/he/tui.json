@@ -27,6 +27,14 @@
           "name": "Dev (Mock)",
           "description": "מוק פיתוח מקומי — לא נדרש קובץ סוכן"
         },
+        "openRouter": {
+          "name": "OpenRouter",
+          "description": "גישה למאות מודלי AI דרך ממשק OpenRouter API (נדרש מפתח API)"
+        },
+        "togetherAi": {
+          "name": "Together AI",
+          "description": "הסקה מהירה של מודלים בקוד פתוח דרך ממשק Together AI API (נדרש מפתח API)"
+        },
         "aider": {
           "name": "Aider",
           "disabled": "(בקרוב)"

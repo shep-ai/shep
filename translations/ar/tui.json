@@ -27,6 +27,14 @@
           "name": "Dev (Mock)",
           "description": "محاكاة تطوير محلية — لا يتطلب ملف وكيل ثنائي"
         },
+        "openRouter": {
+          "name": "OpenRouter",
+          "description": "الوصول إلى مئات نماذج الذكاء الاصطناعي عبر واجهة برمجة تطبيقات OpenRouter (يتطلب مفتاح API)"
+        },
+        "togetherAi": {
+          "name": "Together AI",
+          "description": "استدلال سريع لنماذج مفتوحة المصدر عبر واجهة برمجة تطبيقات Together AI (يتطلب مفتاح API)"
+        },
         "aider": {
           "name": "Aider",
           "disabled": "(قريبًا)"

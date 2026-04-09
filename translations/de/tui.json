@@ -18,6 +18,14 @@
           "name": "Dev (Mock)",
           "description": "Lokaler Entwicklungs-Mock — kein Agent-Binary erforderlich"
         },
+        "openRouter": {
+          "name": "OpenRouter",
+          "description": "Zugriff auf hunderte KI-Modelle über OpenRouter API (API-Schlüssel erforderlich)"
+        },
+        "togetherAi": {
+          "name": "Together AI",
+          "description": "Schnelle Open-Source-Modellinferenz über Together AI API (API-Schlüssel erforderlich)"
+        },
         "aider": { "name": "Aider", "disabled": "(Demnächst verfügbar)" },
         "continue": { "name": "Continue", "disabled": "(Demnächst verfügbar)" }
       }
