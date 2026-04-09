@@ -252,6 +252,8 @@ function GitStatusCluster({ repositoryPath }: { repositoryPath: string }) {
   const branch = trimmedBranch && trimmedBranch.length > 0 ? trimmedBranch : 'main';
   const added = data?.workingTree.untracked ?? 0;
   const edited = data?.workingTree.modified ?? 0;
+  const insertions = data?.diffStats?.insertions ?? 0;
+  const deletions = data?.diffStats?.deletions ?? 0;
   const hasChanges = added > 0 || edited > 0;
 
   const handleCommit = useCallback(() => {
@@ -288,6 +290,15 @@ function GitStatusCluster({ repositoryPath }: { repositoryPath: string }) {
         >
           <FilePen className="h-3 w-3" />
           {edited}
+        </span>
+      ) : null}
+      {insertions > 0 || deletions > 0 ? (
+        <span
+          className="flex items-center gap-1"
+          title={`${insertions} insertions, ${deletions} deletions vs HEAD`}
+        >
+          {insertions > 0 ? <span className="text-emerald-500">+{insertions}</span> : null}
+          {deletions > 0 ? <span className="text-rose-500">-{deletions}</span> : null}
         </span>
       ) : null}
       {hasChanges ? (
