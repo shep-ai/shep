@@ -12,19 +12,27 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 
 export type ResolvedTheme = 'light' | 'dark';
 
 function readTheme(): ResolvedTheme {
-  if (typeof document === 'undefined') return 'dark';
+  if (typeof document === 'undefined') return 'light';
   return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 }
 
-export function useResolvedTheme(): ResolvedTheme {
-  const [theme, setTheme] = useState<ResolvedTheme>(() => readTheme());
+// Prefer `useLayoutEffect` on the client so the observed theme is applied
+// before paint — avoids a one-frame flash of the wrong background after
+// initial mount. On the server (where `useLayoutEffect` warns and no-ops)
+// fall back to `useEffect`.
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
-  useEffect(() => {
+export function useResolvedTheme(): ResolvedTheme {
+  // Default to `'light'` (matching the app's CSS default) so SSR / the very
+  // first client render don't paint a dark fallback in a light app.
+  const [theme, setTheme] = useState<ResolvedTheme>('light');
+
+  useIsoLayoutEffect(() => {
     const root = document.documentElement;
     const update = () => setTheme(readTheme());
     update();

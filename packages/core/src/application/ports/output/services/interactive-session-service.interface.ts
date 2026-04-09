@@ -97,7 +97,6 @@ export interface SessionInfo {
   sessionId: string | null;
   model: string | null;
   startedAt: string;
-  idleTimeoutMinutes: number;
   lastActivityAt: string;
   /** Cumulative cost in USD for this session (null if not yet tracked) */
   totalCostUsd: number | null;

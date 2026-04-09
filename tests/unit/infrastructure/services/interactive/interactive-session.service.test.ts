@@ -502,34 +502,38 @@ describe('InteractiveSessionService', () => {
   });
 
   // -------------------------------------------------------------------------
-  // idle timeout
+  // idle timeout — DISABLED
+  //
+  // The idle-eviction timer was intentionally removed: losing a live
+  // agent session under the user always feels like a bug (the agent
+  // "forgets everything" because the SDK has to cold-boot). These
+  // regression tests lock in the "sessions live forever until an
+  // explicit stop" guarantee so the timer can't sneak back in.
   // -------------------------------------------------------------------------
 
-  describe('idle timeout', () => {
-    it('stops the session after the default idle timeout (15 min)', async () => {
-      const session = await startAndBoot();
-      (sessionRepo.updateStatus as ReturnType<typeof vi.fn>).mockClear();
-
-      // Advance clock past the default 15-minute timeout
-      vi.advanceTimersByTime(15 * 60 * 1000 + 1000);
-      await flushPromises();
-
-      expect(sessionRepo.updateStatus).toHaveBeenCalledWith(
-        session.id,
-        InteractiveSessionStatus.stopped,
-        expect.any(Date)
-      );
-    });
-
-    it('does not stop the session before the timeout expires', async () => {
+  describe('session longevity (no idle eviction)', () => {
+    it('does NOT auto-stop a session after the legacy 15-minute idle window', async () => {
       await startAndBoot();
       (sessionRepo.updateStatus as ReturnType<typeof vi.fn>).mockClear();
 
-      // Advance to just before the timeout
-      vi.advanceTimersByTime(14 * 60 * 1000);
+      // Advance WELL past what used to be the eviction window. If any
+      // idle timer is still armed anywhere, this is when it would fire.
+      vi.advanceTimersByTime(30 * 60 * 1000);
       await flushPromises();
 
-      // updateStatus should NOT have been called with 'stopped' yet
+      const stoppedCalls = (sessionRepo.updateStatus as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (c) => c[1] === InteractiveSessionStatus.stopped
+      );
+      expect(stoppedCalls.length).toBe(0);
+    });
+
+    it('does NOT auto-stop a session even after hours of inactivity', async () => {
+      await startAndBoot();
+      (sessionRepo.updateStatus as ReturnType<typeof vi.fn>).mockClear();
+
+      vi.advanceTimersByTime(4 * 60 * 60 * 1000); // 4 hours
+      await flushPromises();
+
       const stoppedCalls = (sessionRepo.updateStatus as ReturnType<typeof vi.fn>).mock.calls.filter(
         (c) => c[1] === InteractiveSessionStatus.stopped
       );

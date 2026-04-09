@@ -21,7 +21,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   TransformWrapper,
   TransformComponent,
@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useResolvedTheme } from './use-resolved-theme';
 
 export interface ImageViewerProps {
   applicationId: string;
@@ -52,18 +53,26 @@ export interface ImageViewerProps {
 
 type BackgroundMode = 'checkered' | 'black' | 'white' | 'transparent';
 
-const BACKGROUND_STYLES: Record<BackgroundMode, React.CSSProperties> = {
-  checkered: {
-    backgroundImage:
-      'linear-gradient(45deg, #2a2a2a 25%, transparent 25%), linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a2a 75%), linear-gradient(-45deg, transparent 75%, #2a2a2a 75%)',
-    backgroundSize: '16px 16px',
-    backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px',
-    backgroundColor: '#1e1e1e',
-  },
-  black: { backgroundColor: '#000000' },
-  white: { backgroundColor: '#ffffff' },
-  transparent: { backgroundColor: '#1e1e1e' },
-};
+/**
+ * Build a theme-aware background-style map. In light mode the checkerboard
+ * fades to soft grey on white; in dark mode it sits on the Monaco vs-dark
+ * backdrop so images feel continuous with the editor.
+ */
+function makeBackgroundStyles(isDark: boolean): Record<BackgroundMode, React.CSSProperties> {
+  const canvasBg = isDark ? '#1e1e1e' : '#ffffff';
+  const checkerSquare = isDark ? '#2a2a2a' : '#e5e7eb';
+  return {
+    checkered: {
+      backgroundImage: `linear-gradient(45deg, ${checkerSquare} 25%, transparent 25%), linear-gradient(-45deg, ${checkerSquare} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerSquare} 75%), linear-gradient(-45deg, transparent 75%, ${checkerSquare} 75%)`,
+      backgroundSize: '16px 16px',
+      backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px',
+      backgroundColor: canvasBg,
+    },
+    black: { backgroundColor: '#000000' },
+    white: { backgroundColor: '#ffffff' },
+    transparent: { backgroundColor: canvasBg },
+  };
+}
 
 const BACKGROUND_CYCLE: BackgroundMode[] = ['checkered', 'black', 'white', 'transparent'];
 
@@ -81,6 +90,11 @@ function basename(p: string): string {
 
 export function ImageViewer({ applicationId, path }: ImageViewerProps) {
   const src = `/api/applications/${applicationId}/files/raw?path=${encodeURIComponent(path)}`;
+
+  const resolvedTheme = useResolvedTheme();
+  const isDark = resolvedTheme === 'dark';
+  const backgroundStyles = useMemo(() => makeBackgroundStyles(isDark), [isDark]);
+  const rootBgClass = isDark ? 'bg-[#1e1e1e]' : 'bg-[#ffffff]';
 
   const transformRef = useRef<ReactZoomPanPinchRef | null>(null);
   const [bgMode, setBgMode] = useState<BackgroundMode>('checkered');
@@ -149,14 +163,19 @@ export function ImageViewer({ applicationId, path }: ImageViewerProps) {
 
   if (error) {
     return (
-      <div className="flex h-full items-center justify-center bg-[#1e1e1e] text-xs text-red-400">
+      <div
+        className={cn(
+          'flex h-full items-center justify-center text-xs text-red-500 dark:text-red-400',
+          rootBgClass
+        )}
+      >
         {error}
       </div>
     );
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#1e1e1e]">
+    <div className={cn('flex h-full min-h-0 flex-col', rootBgClass)}>
       {/* Toolbar (rendered first so it sits above the canvas) */}
       <Toolbar
         scale={scale}
@@ -182,7 +201,7 @@ export function ImageViewer({ applicationId, path }: ImageViewerProps) {
       />
 
       {/* Canvas */}
-      <div className="relative min-h-0 flex-1 overflow-hidden" style={BACKGROUND_STYLES[bgMode]}>
+      <div className="relative min-h-0 flex-1 overflow-hidden" style={backgroundStyles[bgMode]}>
         <TransformWrapper
           ref={transformRef}
           initialScale={1}

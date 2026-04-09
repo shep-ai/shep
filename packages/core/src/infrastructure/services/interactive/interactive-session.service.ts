@@ -37,9 +37,6 @@ import { ConcurrentSessionLimitError } from '../../../domain/errors/concurrent-s
 import { type FeatureContextBuilder } from './feature-context.builder.js';
 import { getSettings, hasSettings } from '../settings.service.js';
 
-/** Default idle timeout if no settings are loaded (15 minutes). */
-const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
-
 /** Default concurrent session cap. */
 const DEFAULT_CAP = 3;
 
@@ -64,7 +61,6 @@ interface SessionState {
   handle: InteractiveAgentSessionHandle | null;
   /** Agent SDK session ID for resumption across service restarts. */
   agentSessionId?: string;
-  timer: NodeJS.Timeout | null;
   /** Accumulates assistant text between user turns for persistence. */
   currentAssistantBuffer: string;
   /** Accumulates tool events during a turn for rich message persistence. */
@@ -229,7 +225,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       systemPrompt,
       handle: null,
       agentSessionId: previousAgentSessionId,
-      timer: null,
       currentAssistantBuffer: '',
       toolEventsLog: [],
       subscribers: new Set(),
@@ -351,7 +346,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       if (!bootPrompt) {
         await this.updateSessionStatusAndNotify(state.sessionId, state.featureId, InteractiveSessionStatus.ready);
         void this.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
-        this.resetTimer(state);
         return;
       }
 
@@ -385,10 +379,9 @@ export class InteractiveSessionService implements IInteractiveSessionService {
             );
           }
 
-          // Any event = proof of life. Reset BOTH the idle-session
-          // timer (user inactivity) and the boot watchdog (agent
-          // inactivity).
-          this.resetTimer(state);
+          // Any event = proof of life. Reset the boot watchdog so a
+          // long-running first turn (full project scaffold) isn't
+          // killed as long as the stream keeps producing events.
           bumpBootWatchdog();
 
           switch (event.type) {
@@ -483,9 +476,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
               // Notify subscribers of end-of-turn
               this.notify(state, { delta: '', done: true });
-
-              // Start idle timer now that the session is live
-              this.resetTimer(state);
               return; // Boot complete
             }
 
@@ -517,7 +507,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       }
       state.currentAssistantBuffer = '';
       state.toolEventsLog = [];
-      this.resetTimer(state);
     } catch (err) {
       // If session was already cleaned up by stopSession, nothing more to do
       if (!this.sessions.has(state.sessionId)) return;
@@ -558,7 +547,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     state.turnQueue.length = 0;
     state.turnInProgress = false;
 
-    this.clearTimer(state);
     // Cache agentSessionId so resumption works when session restarts
     if (state.agentSessionId) {
       this.stoppedAgentSessionIds.set(state.featureId, state.agentSessionId);
@@ -608,8 +596,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     };
     await this.persistMessage(message);
 
-    // Reset idle timer on user activity
-    this.resetTimer(state);
     await this.sessionRepo.updateLastActivity(sessionId, now);
 
     // Guard: only one turn at a time per session (SDK stream is not concurrent-safe)
@@ -650,9 +636,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       try {
         for await (const event of state.handle.stream()) {
           if (abort.signal.aborted) break;
-
-          // Reset idle timer on each event received
-          this.resetTimer(state);
 
           switch (event.type) {
             case 'delta':
@@ -957,7 +940,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       const dbSession = await this.sessionRepo.findById(state.sessionId);
       if (dbSession?.status === InteractiveSessionStatus.ready) {
         // Session ready — send to agent (guarded: one turn at a time)
-        this.resetTimer(state);
         await this.sessionRepo.updateLastActivity(state.sessionId, now);
         if (state.turnInProgress) {
           state.turnQueue.push(content);
@@ -1041,7 +1023,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
         startedAt: dbSession?.startedAt
           ? new Date(dbSession.startedAt as unknown as string).toISOString()
           : new Date().toISOString(),
-        idleTimeoutMinutes: Math.round(this.getTimeoutMs() / 60_000),
         lastActivityAt: dbSession?.lastActivityAt
           ? new Date(dbSession.lastActivityAt as unknown as string).toISOString()
           : new Date().toISOString(),
@@ -1067,8 +1048,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
             startedAt: latest.startedAt
               ? new Date(latest.startedAt as unknown as string).toISOString()
               : new Date().toISOString(),
-            idleTimeoutMinutes: Math.round(this.getTimeoutMs() / 60_000),
-            lastActivityAt: latest.lastActivityAt
+                lastActivityAt: latest.lastActivityAt
               ? new Date(latest.lastActivityAt as unknown as string).toISOString()
               : new Date().toISOString(),
             totalCostUsd: latestUsage?.totalCostUsd ?? null,
@@ -1402,34 +1382,10 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     });
   }
 
-  // ---------------------------------------------------------------------------
-  // Timer helpers
-  // ---------------------------------------------------------------------------
-
-  /** Start or restart the idle timeout timer for a session. */
-  private resetTimer(state: SessionState): void {
-    this.clearTimer(state);
-    const timeoutMs = this.getTimeoutMs();
-    state.timer = setTimeout(() => {
-      void this.stopSession(state.sessionId);
-    }, timeoutMs);
-  }
-
-  /** Cancel the idle timer for a session. */
-  private clearTimer(state: SessionState): void {
-    if (state.timer !== null) {
-      clearTimeout(state.timer);
-      state.timer = null;
-    }
-  }
-
-  /** Read the auto-timeout from settings or fall back to default. */
-  private getTimeoutMs(): number {
-    if (!hasSettings()) return DEFAULT_TIMEOUT_MS;
-    const settings = getSettings();
-    const minutes = settings.interactiveAgent?.autoTimeoutMinutes ?? 15;
-    return minutes * 60 * 1000;
-  }
+  // Idle-eviction timer removed. Live agent sessions are preserved
+  // indefinitely and only stop on an explicit user action (Stop
+  // button, new session reset, server shutdown). See `stopSession`
+  // for the only teardown path.
 
   /** Read the concurrent session cap from settings or fall back to default. */
   private getCap(): number {

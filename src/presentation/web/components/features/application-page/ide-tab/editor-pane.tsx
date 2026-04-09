@@ -16,6 +16,7 @@ import remarkGfm from 'remark-gfm';
 import { Eye, FileCode, File as FileIcon, PanelRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImageViewer } from './image-viewer';
+import { useResolvedTheme } from './use-resolved-theme';
 import type { OpenFile } from './types';
 
 /** Monaco is a large client-only dependency — dynamic import with ssr:false. */
@@ -102,6 +103,12 @@ export function EditorPane({
     () => openFiles.find((f) => f.path === activePath) ?? null,
     [openFiles, activePath]
   );
+  const resolvedTheme = useResolvedTheme();
+  const isDark = resolvedTheme === 'dark';
+  const monacoTheme = isDark ? 'vs-dark' : 'vs';
+  // Background colour that matches each Monaco theme exactly, so the brief
+  // remount gap when switching files never flashes an off-tone fill.
+  const editorBgClass = isDark ? 'bg-[#1e1e1e]' : 'bg-[#ffffff]';
 
   // Ctrl/Cmd+S saves the active file.
   useEffect(() => {
@@ -219,7 +226,7 @@ export function EditorPane({
       </div>
 
       {/* Editor body */}
-      <div className="min-h-0 flex-1 bg-[#1e1e1e]">
+      <div className={cn('min-h-0 flex-1', editorBgClass)}>
         {active ? (
           active.isImage ? (
             <ImageViewer applicationId={applicationId} path={active.path} />
@@ -228,12 +235,12 @@ export function EditorPane({
           ) : active.tooLarge ? (
             <EmptyMessage>File is too large to preview</EmptyMessage>
           ) : active.isMarkdown && active.viewMode === 'rendered' ? (
-            <MarkdownPreview source={active.content} />
+            <MarkdownPreview source={active.content} isDark={isDark} />
           ) : (
             <MonacoEditor
               key={active.path}
               height="100%"
-              theme="vs-dark"
+              theme={monacoTheme}
               language={languageForPath(active.path)}
               value={active.content}
               onChange={handleChange}
@@ -273,23 +280,25 @@ function EmptyMessage({ children }: { children: React.ReactNode }) {
  * vs-dark editor backdrop so it doesn't clash when toggling source/preview.
  */
 /**
- * Stable (module-scoped) `Components` map for the markdown preview so
- * react/no-unstable-nested-components is satisfied and the subtree isn't
- * thrown away on every render.
+ * Stable (module-scoped) `Components` map for the markdown preview.
+ *
+ * Styling is expressed with Tailwind's `dark:` variants and semantic
+ * tokens (`border-border`, `text-foreground`) so the preview follows the
+ * app theme without us reading `isDark` in the render tree.
  */
 const MARKDOWN_COMPONENTS: Components = {
   h1: ({ children }) => (
-    <h1 className="mb-4 mt-6 border-b border-zinc-700 pb-2 text-2xl font-semibold text-white">
+    <h1 className="border-border text-foreground mb-4 mt-6 border-b pb-2 text-2xl font-semibold">
       {children}
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="mb-3 mt-5 border-b border-zinc-800 pb-1 text-xl font-semibold text-white">
+    <h2 className="border-border text-foreground mb-3 mt-5 border-b pb-1 text-xl font-semibold">
       {children}
     </h2>
   ),
   h3: ({ children }) => (
-    <h3 className="mb-2 mt-4 text-lg font-semibold text-white">{children}</h3>
+    <h3 className="text-foreground mb-2 mt-4 text-lg font-semibold">{children}</h3>
   ),
   p: ({ children }) => <p className="my-3">{children}</p>,
   a: ({ children, href }) => (
@@ -297,7 +306,7 @@ const MARKDOWN_COMPONENTS: Components = {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="text-sky-400 underline hover:text-sky-300"
+      className="text-sky-600 underline hover:text-sky-500 dark:text-sky-400 dark:hover:text-sky-300"
     >
       {children}
     </a>
@@ -306,14 +315,14 @@ const MARKDOWN_COMPONENTS: Components = {
   ol: ({ children }) => <ol className="my-3 ml-6 list-decimal">{children}</ol>,
   li: ({ children }) => <li className="my-1">{children}</li>,
   blockquote: ({ children }) => (
-    <blockquote className="my-3 border-l-4 border-zinc-700 pl-4 italic text-zinc-400">
+    <blockquote className="border-border text-muted-foreground my-3 border-l-4 pl-4 italic">
       {children}
     </blockquote>
   ),
   code: ({ className, children }) => {
     const inline = !className;
     return inline ? (
-      <code className="rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-[12px] text-pink-300">
+      <code className="bg-muted rounded px-1.5 py-0.5 font-mono text-[12px] text-pink-600 dark:text-pink-300">
         {children}
       </code>
     ) : (
@@ -321,25 +330,30 @@ const MARKDOWN_COMPONENTS: Components = {
     );
   },
   pre: ({ children }) => (
-    <pre className="my-4 overflow-auto rounded-md border border-zinc-800 bg-zinc-900 p-3">
+    <pre className="border-border bg-muted/60 my-4 overflow-auto rounded-md border p-3">
       {children}
     </pre>
   ),
-  hr: () => <hr className="my-6 border-zinc-800" />,
+  hr: () => <hr className="border-border my-6" />,
   table: ({ children }) => (
-    <table className="my-4 border-collapse border border-zinc-800">{children}</table>
+    <table className="border-border my-4 border-collapse border">{children}</table>
   ),
   th: ({ children }) => (
-    <th className="border border-zinc-800 bg-zinc-900 px-3 py-1 text-left font-semibold">
+    <th className="border-border bg-muted/60 border px-3 py-1 text-left font-semibold">
       {children}
     </th>
   ),
-  td: ({ children }) => <td className="border border-zinc-800 px-3 py-1">{children}</td>,
+  td: ({ children }) => <td className="border-border border px-3 py-1">{children}</td>,
 };
 
-function MarkdownPreview({ source }: { source: string }) {
+function MarkdownPreview({ source, isDark }: { source: string; isDark: boolean }) {
   return (
-    <div className="h-full overflow-auto bg-[#1e1e1e] px-8 py-6 text-[13px] text-zinc-200">
+    <div
+      className={cn(
+        'text-foreground h-full overflow-auto px-8 py-6 text-[13px]',
+        isDark ? 'bg-[#1e1e1e]' : 'bg-[#ffffff]'
+      )}
+    >
       <div className="markdown-preview mx-auto max-w-3xl leading-6">
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
           {source}

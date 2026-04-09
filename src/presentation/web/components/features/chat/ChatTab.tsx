@@ -207,7 +207,6 @@ interface SessionInfo {
   sessionId: string | null;
   model: string | null;
   startedAt: string;
-  idleTimeoutMinutes: number;
   lastActivityAt: string;
 }
 
