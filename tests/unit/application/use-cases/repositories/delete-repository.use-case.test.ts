@@ -77,6 +77,7 @@ describe('DeleteRepositoryUseCase', () => {
     } as unknown as DeleteFeatureUseCase;
     mockFileSystem = {
       removeDirectory: vi.fn().mockResolvedValue(undefined),
+      pathExists: vi.fn().mockReturnValue(true),
     };
     useCase = new DeleteRepositoryUseCase(
       mockRepo,

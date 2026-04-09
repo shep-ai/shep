@@ -252,6 +252,54 @@ describe('DeploymentService', () => {
     });
   });
 
+  describe('listAll', () => {
+    it('should return empty array when no deployments are tracked', () => {
+      expect(service.listAll()).toEqual([]);
+    });
+
+    it('should return one entry per tracked deployment with targetId and targetType', () => {
+      const secondChild = createMockChild();
+      secondChild.pid = 22222;
+      (deps.spawn as ReturnType<typeof vi.fn>)
+        .mockReturnValueOnce(mockChild)
+        .mockReturnValueOnce(secondChild);
+
+      service.start('feature-1', '/project/one', 'feature');
+      service.start('/repos/two', '/repos/two', 'repository');
+
+      const all = service.listAll();
+
+      expect(all).toHaveLength(2);
+      expect(all).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            targetId: 'feature-1',
+            targetType: 'feature',
+            state: DeploymentState.Booting,
+            url: null,
+          }),
+          expect.objectContaining({
+            targetId: '/repos/two',
+            targetType: 'repository',
+            state: DeploymentState.Booting,
+            url: null,
+          }),
+        ])
+      );
+    });
+
+    it('should omit and clean up deployments whose process is dead', () => {
+      service.start('feature-1', '/project/path', 'feature');
+
+      // Process died externally
+      (deps.isAlive as ReturnType<typeof vi.fn>).mockReturnValue(false);
+
+      expect(service.listAll()).toEqual([]);
+      // Subsequent getStatus should confirm cleanup
+      expect(service.getStatus('feature-1')).toBeNull();
+    });
+  });
+
   describe('stop', () => {
     it('should send SIGTERM to process tree via tree-kill (positive PID)', async () => {
       service.start('feature-1', '/project/path');

@@ -23,6 +23,7 @@ import { DeploymentState } from '@/domain/generated/output.js';
 import type {
   IDeploymentService,
   DeploymentStatus,
+  DeploymentStatusEntry,
   LogEntry,
 } from '@/application/ports/output/services/deployment-service.interface.js';
 import { detectDevScript } from './detect-dev-script.js';
@@ -400,6 +401,65 @@ export class DeploymentService implements IDeploymentService {
   }
 
   /**
+   * List all tracked deployments with live processes.
+   *
+   * Merges in-memory entries with any DB rows not yet re-adopted. Any
+   * dead processes encountered are cleaned up (both in-memory and DB).
+   */
+  listAll(): DeploymentStatusEntry[] {
+    const entries: DeploymentStatusEntry[] = [];
+    const seen = new Set<string>();
+
+    // 1) In-memory entries (validated for liveness)
+    for (const [targetId, entry] of this.deployments) {
+      if (!this.deps.isAlive(entry.pid)) {
+        log.info(`listAll — pid=${entry.pid} for "${targetId}" is dead, cleaning up`);
+        this.deployments.delete(targetId);
+        this.dbDelete(targetId);
+        continue;
+      }
+      seen.add(targetId);
+      entries.push({
+        targetId,
+        targetType: entry.targetType,
+        state: entry.state,
+        url: entry.url,
+      });
+    }
+
+    // 2) DB rows not yet in memory — re-adopt live ones, drop dead
+    const rows = this.dbFindAll();
+    for (const row of rows) {
+      if (seen.has(row.target_id)) continue;
+      if (!this.deps.isAlive(row.pid)) {
+        this.dbDelete(row.target_id);
+        continue;
+      }
+      const recovered: DeploymentEntry = {
+        pid: row.pid,
+        child: null,
+        state: row.state as DeploymentState,
+        url: row.url,
+        targetId: row.target_id,
+        targetPath: row.target_path,
+        targetType: row.target_type,
+        stdoutBuffer: '',
+        stderrBuffer: '',
+        logs: new LogRingBuffer(),
+      };
+      this.deployments.set(row.target_id, recovered);
+      entries.push({
+        targetId: row.target_id,
+        targetType: row.target_type,
+        state: recovered.state,
+        url: recovered.url,
+      });
+    }
+
+    return entries;
+  }
+
+  /**
    * Stop a deployment gracefully: SIGTERM → poll → SIGKILL.
    */
   async stop(targetId: string): Promise<void> {
@@ -556,6 +616,15 @@ export class DeploymentService implements IDeploymentService {
       );
     } catch {
       return null;
+    }
+  }
+
+  private dbFindAll(): DevServerRow[] {
+    if (!this.db) return [];
+    try {
+      return this.db.prepare('SELECT * FROM dev_servers').all() as DevServerRow[];
+    } catch {
+      return [];
     }
   }
 

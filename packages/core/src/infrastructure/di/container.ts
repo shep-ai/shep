@@ -56,6 +56,8 @@ import type { IDaemonService } from '../../application/ports/output/services/dae
 import { DaemonPidService } from '../services/daemon/daemon-pid.service.js';
 import type { IDeploymentService } from '../../application/ports/output/services/deployment-service.interface.js';
 import { DeploymentService } from '../services/deployment/deployment.service.js';
+import type { IShepInstanceService } from '../../application/ports/output/services/shep-instance-service.interface.js';
+import { ShepInstanceService } from '../services/shep-instance.service.js';
 import { AttachmentStorageService } from '../services/attachment-storage.service.js';
 import type { IGitHubRepositoryService } from '../../application/ports/output/services/github-repository-service.interface.js';
 import { GitHubRepositoryService } from '../services/external/github-repository.service.js';
@@ -143,6 +145,13 @@ import { RebaseFeatureOnMainUseCase } from '../../application/use-cases/features
 import { GetBranchSyncStatusUseCase } from '../../application/use-cases/features/get-branch-sync-status.use-case.js';
 import { ConflictResolutionService } from '../services/agents/conflict-resolution/conflict-resolution.service.js';
 import { AutoResolveMergedBranchesUseCase } from '../../application/use-cases/features/auto-resolve-merged-branches.use-case.js';
+
+// Deployment use cases
+import { StartFeatureDeploymentUseCase } from '../../application/use-cases/deployments/start-feature-deployment.use-case.js';
+import { StartRepositoryDeploymentUseCase } from '../../application/use-cases/deployments/start-repository-deployment.use-case.js';
+import { StopDeploymentUseCase } from '../../application/use-cases/deployments/stop-deployment.use-case.js';
+import { GetDeploymentStatusUseCase } from '../../application/use-cases/deployments/get-deployment-status.use-case.js';
+import { ListDeploymentsUseCase } from '../../application/use-cases/deployments/list-deployments.use-case.js';
 
 // Interactive session use cases
 import { StartInteractiveSessionUseCase } from '../../application/use-cases/interactive/start-interactive-session.use-case.js';
@@ -286,6 +295,7 @@ export async function initializeContainer(): Promise<typeof container> {
   deploymentService.setDatabase(db);
   deploymentService.recoverAll();
   container.registerInstance<IDeploymentService>('IDeploymentService', deploymentService);
+  container.registerSingleton<IShepInstanceService>('IShepInstanceService', ShepInstanceService);
 
   // Register agent infrastructure
   container.register<IAgentRunRepository>('IAgentRunRepository', {
@@ -449,6 +459,13 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(GetBranchSyncStatusUseCase);
   container.registerSingleton(AutoResolveMergedBranchesUseCase);
 
+  // Deployment use cases
+  container.registerSingleton(StartFeatureDeploymentUseCase);
+  container.registerSingleton(StartRepositoryDeploymentUseCase);
+  container.registerSingleton(StopDeploymentUseCase);
+  container.registerSingleton(GetDeploymentStatusUseCase);
+  container.registerSingleton(ListDeploymentsUseCase);
+
   // Session repositories (per-AgentType string tokens)
   container.register(`IAgentSessionRepository:${AgentType.ClaudeCode}`, {
     useFactory: () => new ClaudeCodeSessionRepository(),
@@ -579,6 +596,21 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('UnarchiveFeatureUseCase', {
     useFactory: (c) => c.resolve(UnarchiveFeatureUseCase),
+  });
+  container.register('StartFeatureDeploymentUseCase', {
+    useFactory: (c) => c.resolve(StartFeatureDeploymentUseCase),
+  });
+  container.register('StartRepositoryDeploymentUseCase', {
+    useFactory: (c) => c.resolve(StartRepositoryDeploymentUseCase),
+  });
+  container.register('StopDeploymentUseCase', {
+    useFactory: (c) => c.resolve(StopDeploymentUseCase),
+  });
+  container.register('GetDeploymentStatusUseCase', {
+    useFactory: (c) => c.resolve(GetDeploymentStatusUseCase),
+  });
+  container.register('ListDeploymentsUseCase', {
+    useFactory: (c) => c.resolve(ListDeploymentsUseCase),
   });
   container.register('UpgradeCliUseCase', {
     useFactory: (c) => c.resolve(UpgradeCliUseCase),

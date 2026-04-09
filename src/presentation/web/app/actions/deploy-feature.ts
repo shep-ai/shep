@@ -1,13 +1,9 @@
 'use server';
 
-import { existsSync } from 'node:fs';
 import { resolve } from '@/lib/server-container';
 import { createDeploymentLogger } from '@shepai/core/infrastructure/services/deployment/deployment-logger';
-import { computeWorktreePath } from '@shepai/core/infrastructure/services/ide-launchers/compute-worktree-path';
-import type { IFeatureRepository } from '@shepai/core/application/ports/output/repositories/feature-repository.interface';
-import type { IDeploymentService } from '@shepai/core/application/ports/output/services/deployment-service.interface';
-import { DeploymentState } from '@shepai/core/domain/generated/output';
-import { isSameShepInstance } from '@/lib/is-same-shep-instance';
+import type { StartFeatureDeploymentUseCase } from '@shepai/core/application/use-cases/deployments/start-feature-deployment.use-case';
+import type { DeploymentState } from '@shepai/core/domain/generated/output';
 
 const log = createDeploymentLogger('[deployFeature]');
 
@@ -16,46 +12,11 @@ export async function deployFeature(
 ): Promise<{ success: boolean; error?: string; state?: DeploymentState }> {
   log.info(`called — featureId="${featureId}"`);
 
-  if (!featureId?.trim()) {
-    log.warn('rejected — featureId is empty');
-    return { success: false, error: 'featureId is required' };
-  }
-
   try {
-    const featureRepo = resolve<IFeatureRepository>('IFeatureRepository');
-    const feature = await featureRepo.findById(featureId);
-
-    if (!feature) {
-      log.warn(`feature not found in repository: "${featureId}"`);
-      return { success: false, error: `Feature not found: ${featureId}` };
-    }
-
-    log.info(
-      `feature found — repositoryPath="${feature.repositoryPath}", branch="${feature.branch}"`
-    );
-
-    const worktreePath = computeWorktreePath(feature.repositoryPath, feature.branch);
-    log.info(`computed worktreePath="${worktreePath}"`);
-
-    if (!existsSync(worktreePath)) {
-      log.warn(`worktree path does not exist on disk: "${worktreePath}"`);
-      return { success: false, error: `Worktree path does not exist: ${worktreePath}` };
-    }
-
-    if (isSameShepInstance(feature.repositoryPath)) {
-      log.warn('rejected — feature belongs to the running shep instance');
-      return {
-        success: false,
-        error: 'Cannot start a dev server for features of the repository Shep is running from',
-      };
-    }
-
-    log.info('worktree path exists, calling deploymentService.start()');
-    const deploymentService = resolve<IDeploymentService>('IDeploymentService');
-    deploymentService.start(featureId, worktreePath, 'feature');
-
-    log.info('start() returned successfully — state=Booting');
-    return { success: true, state: DeploymentState.Booting };
+    const useCase = resolve<StartFeatureDeploymentUseCase>('StartFeatureDeploymentUseCase');
+    const status = await useCase.execute(featureId);
+    log.info(`start succeeded — state=${status.state}`);
+    return { success: true, state: status.state };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to deploy feature';
     log.error(`error: ${message}`, error);

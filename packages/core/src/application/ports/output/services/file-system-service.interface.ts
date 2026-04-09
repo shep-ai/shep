@@ -15,4 +15,12 @@ export interface IFileSystemService {
    * @throws Error if removal fails for reasons other than non-existence
    */
   removeDirectory(dirPath: string): Promise<void>;
+
+  /**
+   * Check whether a file or directory exists at the given absolute path.
+   *
+   * @param path - Absolute filesystem path to check
+   * @returns true if the path exists, false otherwise
+   */
+  pathExists(path: string): boolean;
 }

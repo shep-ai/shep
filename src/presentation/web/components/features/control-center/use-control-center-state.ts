@@ -22,6 +22,7 @@ import { addRepository } from '@/app/actions/add-repository';
 import { deleteRepository } from '@/app/actions/delete-repository';
 import { getFeatureMetadata } from '@/app/actions/get-feature-metadata';
 import { useAgentEventsContext } from '@/hooks/agent-events-provider';
+import { useDeploymentStatusContext } from '@/hooks/deployment-status-provider';
 import { useSoundAction } from '@/hooks/use-sound-action';
 import { createLogger } from '@/lib/logger';
 
@@ -160,6 +161,7 @@ export function useControlCenterState(
   const prevFeatureStatesRef = useRef<Map<string, FeatureNodeData['state']>>(new Map());
 
   const { events } = useAgentEventsContext();
+  const { store: deploymentStore } = useDeploymentStatusContext();
 
   useEffect(() => {
     const prevStates = prevFeatureStatesRef.current;
@@ -291,8 +293,15 @@ export function useControlCenterState(
         // doesn't trigger the Next.js "Rendering…" indicator.
         const res = await fetch('/api/graph-data');
         if (!res.ok) throw new Error(`status ${res.status}`);
-        const { nodes: freshNodes, edges: freshEdges } = await res.json();
+        const {
+          nodes: freshNodes,
+          edges: freshEdges,
+          deployments: freshDeployments,
+        } = await res.json();
         reconcile(freshNodes, freshEdges);
+        if (Array.isArray(freshDeployments)) {
+          deploymentStore.hydrate(freshDeployments);
+        }
       } catch {
         log.warn('poll fetch failed — will retry next interval');
       }
@@ -302,7 +311,7 @@ export function useControlCenterState(
       log.debug('polling disabled');
       clearInterval(timer);
     };
-  }, [reconcile, isMutating]);
+  }, [reconcile, isMutating, deploymentStore]);
 
   // onNodesChange is a no-op: nodes are derived from domain Maps.
   // Since nodesDraggable=false and elementsSelectable=false, only React Flow's
