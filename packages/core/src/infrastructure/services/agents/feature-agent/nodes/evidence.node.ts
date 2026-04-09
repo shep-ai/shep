@@ -31,7 +31,7 @@ import {
   getCompletedPhases,
   markPhaseComplete,
   readSpecFile,
-  retryExecute,
+  optimizeAndExecute,
   buildExecutorOptions,
   saveEvidenceManifest,
 } from './node-helpers.js';
@@ -136,7 +136,15 @@ export function createEvidenceNode(executor: IAgentExecutor) {
 
       try {
         log.info(`Attempt ${attempt}/${maxRetries}: executing agent at cwd=${options.cwd}`);
-        const result = await retryExecute(executor, prompt, options, { logger: log });
+        const { result } = await optimizeAndExecute(
+          executor,
+          `evidence:attempt-${attempt}`,
+          prompt,
+          options,
+          state,
+          timingId,
+          { logger: log }
+        );
         const durationMs = Date.now() - attemptStart;
         const elapsed = (durationMs / 1000).toFixed(1);
         log.info(`Attempt ${attempt}: agent complete (${result.result.length} chars, ${elapsed}s)`);

@@ -298,6 +298,63 @@ export async function retryExecute(
 }
 
 /**
+ * Optimize a prompt, execute it with retries, and record optimization metrics.
+ *
+ * This is the integration seam for nodes that do NOT flow through
+ * {@link executeNode} (fast-implement, implement, merge, evidence). Without
+ * this helper, those nodes bypass the token optimization layer entirely —
+ * which defeats the purpose of the layer because they are the phases that
+ * consume the vast majority of tokens.
+ *
+ * Behavior:
+ * - Always calls {@link optimizePromptIfEnabled}. When the optimizer context
+ *   is not set or the master toggle is disabled, that call returns the raw
+ *   prompt unchanged and `metrics: null`.
+ * - Delegates the actual execution (plus retry/backoff) to
+ *   {@link retryExecute} so the retry semantics are identical.
+ * - Calls {@link recordOptimizationMetricsIfEnabled} with the supplied
+ *   `timingId` so the `phase_timings` row is updated in place with
+ *   `original_token_estimate`, `optimized_token_estimate`, `savings_percent`,
+ *   and `capabilities_applied`.
+ * - Returns the execution result alongside the updated spec-file hashes so
+ *   the caller can persist them in the node's returned state partial —
+ *   which is what enables delta-context on subsequent phases.
+ */
+export async function optimizeAndExecute(
+  executor: IAgentExecutor,
+  nodeName: string,
+  rawPrompt: string,
+  options: AgentExecutionOptions,
+  state: FeatureAgentState,
+  timingId: string | null,
+  retryOpts?: RetryOptions
+): Promise<{
+  result: AgentExecutionResult;
+  specFileHashes: Record<string, string>;
+}> {
+  const optimization = await optimizePromptIfEnabled(
+    rawPrompt,
+    nodeName,
+    state.model,
+    state.specFileHashes
+  );
+
+  if (optimization.metrics) {
+    retryOpts?.logger?.info(
+      `Prompt optimized: ${optimization.metrics.originalTokenEstimate} → ` +
+        `${optimization.metrics.optimizedTokenEstimate} tokens ` +
+        `(${optimization.metrics.savingsPercent.toFixed(1)}% saved, ` +
+        `capabilities=${optimization.metrics.capabilitiesApplied.join(',') || 'none'})`
+    );
+  }
+
+  const result = await retryExecute(executor, optimization.prompt, options, retryOpts);
+  await recordOptimizationMetricsIfEnabled(timingId, optimization.metrics);
+
+  return { result, specFileHashes: optimization.specFileHashes };
+}
+
+/**
  * Read completed phases from feature.yaml.
  */
 export function getCompletedPhases(specDir: string): string[] {

@@ -1290,7 +1290,14 @@ describe('Settings Mapper', () => {
   });
 
   describe('fromDatabase() - token optimization', () => {
-    it('should omit tokenOptimization when all columns are default (all 1)', () => {
+    it('should always hydrate tokenOptimization from db columns, even when all columns are default (all 1)', () => {
+      // Regression: the mapper used to return {} in this case, leaving
+      // workflow.tokenOptimization undefined. Consumers — specifically
+      // prompt-optimization-context.ts::resolveConfig — read the field
+      // directly and do not fall back to factory defaults, so an
+      // undefined field silently disabled the entire optimization layer
+      // for every user running on default settings. The mapper must
+      // always populate the field from the row.
       const row = createTestRow({
         token_opt_enabled: 1,
         token_opt_output_filtering: 1,
@@ -1300,7 +1307,14 @@ describe('Settings Mapper', () => {
         token_opt_alias_compression: 1,
       });
       const settings = fromDatabase(row);
-      expect(settings.workflow.tokenOptimization).toBeUndefined();
+      expect(settings.workflow.tokenOptimization).toEqual({
+        enabled: true,
+        outputFiltering: true,
+        skillRouting: true,
+        deltaContext: true,
+        semanticCompression: true,
+        aliasCompression: true,
+      });
     });
 
     it('should reconstruct tokenOptimization when any capability is disabled', () => {
@@ -1353,8 +1367,17 @@ describe('Settings Mapper', () => {
         token_opt_alias_compression: undefined as any,
       });
       const settings = fromDatabase(row);
-      // All default to 1 (enabled), so tokenOptimization should be undefined (all defaults)
-      expect(settings.workflow.tokenOptimization).toBeUndefined();
+      // Null columns fall back to 1 (enabled) and the mapper always hydrates
+      // tokenOptimization so the optimization layer is engaged for users on
+      // default settings.
+      expect(settings.workflow.tokenOptimization).toEqual({
+        enabled: true,
+        outputFiltering: true,
+        skillRouting: true,
+        deltaContext: true,
+        semanticCompression: true,
+        aliasCompression: true,
+      });
     });
   });
 
@@ -1399,12 +1422,22 @@ describe('Settings Mapper', () => {
       expect(restored.workflow.tokenOptimization).toEqual(tokenOptimization);
     });
 
-    it('should preserve undefined tokenOptimization through round-trip as undefined (all defaults)', () => {
+    it('should hydrate tokenOptimization with factory defaults through round-trip when the original omits it', () => {
+      // Regression: the mapper used to return an undefined tokenOptimization
+      // when all db columns matched defaults, which silently disabled the
+      // entire optimization layer for users with default settings. The
+      // mapper now always hydrates the field from the row.
       const original = createTestSettings();
       const row = toDatabase(original);
       const restored = fromDatabase(row);
-      // When all defaults (enabled=true), tokenOptimization is omitted (undefined)
-      expect(restored.workflow.tokenOptimization).toBeUndefined();
+      expect(restored.workflow.tokenOptimization).toEqual({
+        enabled: true,
+        outputFiltering: true,
+        skillRouting: true,
+        deltaContext: true,
+        semanticCompression: true,
+        aliasCompression: true,
+      });
     });
   });
 });

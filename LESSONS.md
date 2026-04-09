@@ -222,3 +222,35 @@ For the same reason, `chat-tab.spec.ts` "Chat tab is absent when interactiveAgen
 Similarly, `optimistic-node-clickability.spec.ts` is gated on `test.skip(!hasFeatures, ...)` — it requires other tests to seed feature nodes in the DB before it runs. Run alone, it skips. Run with other tests, it depends on prior test side effects.
 
 These three flakes exist independently of any feature branch work. They will appear on `main` as well. Properly fixing them is a test infrastructure project.
+
+## Optional Nested Config Fields — Always Hydrate in Mappers, Never Leave Undefined
+
+When a SQLite-backed settings field is an optional nested object (e.g. `workflow.tokenOptimization`), the mapper MUST always populate it from the row columns. Returning `{}` from a helper with the comment "all defaults, factory will apply" is a trap: consumers read the field directly and have no factory fallback. An undefined field then silently disables whatever feature relies on it — for every user running on default settings.
+
+Concrete incident: `buildTokenOptimizationFromRow` in `settings.mapper.ts` returned `{}` when every `token_opt_*` column was at its default (1). Downstream, `prompt-optimization-context.ts::resolveConfig` read `settings.workflow.tokenOptimization` and short-circuited to `metrics: null` on `undefined`. Result: the entire token-optimization layer was a no-op for 100% of default-settings users, and two existing unit tests actively asserted the broken behavior (`"should omit tokenOptimization when all columns are default"`). The feature shipped "implementation-complete" without ever being exercised end-to-end in a live agent run.
+
+Rules:
+1. Mapper helpers for optional nested config MUST always return the full object hydrated from row columns — never `{}` or partial spreads that depend on factory defaults.
+2. If a consumer needs "undefined means use defaults" semantics, the consumer owns that fallback explicitly, not the mapper.
+3. Unit tests that assert a nested-config field is `undefined` after a round-trip are a code smell — the round-trip should preserve values, not erase them.
+4. Integration coverage for any feature that runs inside the agent graph MUST include at least one test that boots the real settings service + real worker wiring. Tests that mock `executeNode` or bypass `fromDatabase` will miss contract violations between layers.
+
+## Cross-Cutting Interceptors Only Cover Nodes That Actually Call Them
+
+Feature 085's token optimization layer was specified as a "single interceptor in `executeNode()` between prompt build and executor invocation". What the spec missed: not every node goes through `executeNode()`. `fast-implement`, `implement`, `merge`, and `evidence` all call `retryExecute(executor, prompt, options)` directly, bypassing the interceptor entirely. The result: the 4 SDLC planning phases (analyze, requirements, research, plan) were optimized; the 4 phases that actually consume 99% of the tokens were not.
+
+Rules:
+1. When adding a "single-interceptor" cross-cutting concern, grep for EVERY direct call to the underlying primitive (in this case `executor.execute` and `retryExecute`) and confirm each call site either flows through the interceptor or has an explicit, documented reason not to.
+2. A cross-cutting helper like `optimizeAndExecute(executor, nodeName, prompt, options, state, timingId, retryOpts)` that wraps `retryExecute` is the correct shape — it lets bypass-nodes opt in without requiring them to restructure into `executeNode()`'s shape.
+3. The single-interceptor approach assumes nodes are homogeneous. When nodes have divergent shapes (merge does CI watching, fast-implement does worktree validation, evidence parses JSON output), a helper is safer than trying to funnel everything through one orchestrator.
+
+## Subprocess-Agent Prompts Are Not the LLM's Context
+
+When the agent is a subprocess (Claude Code, Cursor, Codex), shep sends a single seed prompt to launch the session. The subprocess then manages its own multi-turn conversation, and each turn sends its OWN prompt containing the full accumulated conversation history. Those turn prompts are invisible to shep.
+
+Concrete measurement (fast-implement phase, github-stars feature on shep-website): shep seed prompt = 844 tokens. Claude Code total input across all turns = 934,060 tokens. **The optimizer sees 0.09% of the tokens actually spent.** Optimizing the 844-token seed by even a dramatic 50% saves ~420 tokens out of ~934,000 — unmeasurable in practice.
+
+Rules:
+1. When pitching token-reduction features, distinguish "tokens shep controls" from "tokens the LLM consumes". For subprocess agents, the former is a tiny fraction of the latter.
+2. The caveman-compression / skill-routing / alias-dictionary approaches are ONLY effective for agents where shep's prompt IS the prompt sent to the LLM (e.g. direct API executors). For Claude Code and similar subprocess agents, real savings must come from context engineering INSIDE the subprocess (session state, tool-result pruning, conversation compaction) — which is outside shep's reach.
+3. On small seed prompts, the optimization layer can make prompts LARGER because the skill-routing directive + alias dictionary header are fixed overhead. The net-positive check in alias compression does not account for the skill-routing header cost. Short prompts should skip the layer entirely, or the layer needs a total-net-positive gate.

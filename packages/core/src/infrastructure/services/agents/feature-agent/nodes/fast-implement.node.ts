@@ -17,7 +17,7 @@ import type { FeatureAgentState } from '../state.js';
 import {
   createNodeLogger,
   buildExecutorOptions,
-  retryExecute,
+  optimizeAndExecute,
   getCompletedPhases,
   markPhaseComplete,
 } from './node-helpers.js';
@@ -66,7 +66,15 @@ export function createFastImplementNode(executor: IAgentExecutor) {
 
       log.info(`Executing agent at cwd=${options.cwd}`);
       log.info(`Prompt length: ${prompt.length} chars`);
-      const result = await retryExecute(executor, prompt, options, { logger: log });
+      const { result, specFileHashes } = await optimizeAndExecute(
+        executor,
+        'fast-implement',
+        prompt,
+        options,
+        state,
+        timingId,
+        { logger: log }
+      );
       const durationMs = Date.now() - startTime;
       const elapsed = (durationMs / 1000).toFixed(1);
       log.info(`Complete (${result.result.length} chars, ${elapsed}s)`);
@@ -111,6 +119,7 @@ export function createFastImplementNode(executor: IAgentExecutor) {
           `[fast-implement] Evidence: ${evidence.length} record(s) captured`,
         ],
         _needsReexecution: false,
+        specFileHashes,
       };
     } catch (err: unknown) {
       if (isGraphBubbleUp(err)) throw err;

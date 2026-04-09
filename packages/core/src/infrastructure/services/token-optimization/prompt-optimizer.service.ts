@@ -160,6 +160,38 @@ export class PromptOptimizerService implements IPromptOptimizerService {
     }
 
     const optimizedTokenEstimate = estimateTokens(working);
+
+    // Total-net-positive gate. Per-capability overheads — specifically
+    // the skill-routing directive header and the alias dictionary header —
+    // are fixed costs that can exceed savings on short prompts. When that
+    // happens, returning the "optimized" prompt actively hurts: the layer
+    // makes the prompt larger in the name of making it smaller. Fall back
+    // to the original whenever the pipeline is not net-positive.
+    //
+    // Measured against the real 844-token fast-implement seed prompt on
+    // the shep-website A/B test: all-capabilities-on produced an 860-token
+    // output (-1.9%), driven by a 40-token skill-routing directive. With
+    // this gate active, such prompts pass through unchanged.
+    if (optimizedTokenEstimate >= originalTokenEstimate) {
+      const passthroughMetrics: OptimizationMetrics = {
+        originalTokenEstimate,
+        optimizedTokenEstimate: originalTokenEstimate,
+        savingsPercent: 0,
+        capabilitiesApplied: [],
+        outputFilterLinesRemoved: 0,
+        deltaContextFilesSkipped: 0,
+        compressionRatio: 1.0,
+        aliasesCreated: 0,
+      };
+      this.logSummary(context, passthroughMetrics);
+      await this.recordMetricsIfPossible(context, passthroughMetrics);
+      return {
+        prompt,
+        metrics: passthroughMetrics,
+        specFileHashes,
+      };
+    }
+
     const savingsPercent =
       originalTokenEstimate > 0
         ? ((originalTokenEstimate - optimizedTokenEstimate) / originalTokenEstimate) * 100

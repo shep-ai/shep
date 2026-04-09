@@ -353,40 +353,27 @@ function buildSkillInjectionFromRow(
 
 /**
  * Build the tokenOptimization spread from DB row columns.
- * Returns `{ tokenOptimization: { ... } }` when at least one capability is non-default,
- * or an empty object `{}` when all columns are at their default (1 = enabled), so the
- * field stays undefined and factory defaults apply.
+ *
+ * Always returns `{ tokenOptimization: { ... } }` fully hydrated from the
+ * row. Earlier versions returned `{}` when every column was at its default
+ * (all 1 = enabled), on the theory that "factory defaults would apply".
+ * But the consumers — specifically `prompt-optimization-context.ts::
+ * resolveConfig` — read `settings.workflow.tokenOptimization` directly and
+ * have no fallback to factory defaults, so an undefined field silently
+ * disabled the entire token-optimization layer for every user running on
+ * default settings. Always populate the field.
  */
-function buildTokenOptimizationFromRow(
-  row: SettingsRow
-): { tokenOptimization: TokenOptimizationConfig } | Record<string, never> {
-  const enabled = (row.token_opt_enabled ?? 1) === 1;
-  const outputFiltering = (row.token_opt_output_filtering ?? 1) === 1;
-  const skillRouting = (row.token_opt_skill_routing ?? 1) === 1;
-  const deltaContext = (row.token_opt_delta_context ?? 1) === 1;
-  const semanticCompression = (row.token_opt_semantic_compression ?? 1) === 1;
-  const aliasCompression = (row.token_opt_alias_compression ?? 1) === 1;
-
-  // All defaults — return empty so the field stays undefined (factory defaults apply)
-  if (
-    enabled &&
-    outputFiltering &&
-    skillRouting &&
-    deltaContext &&
-    semanticCompression &&
-    aliasCompression
-  ) {
-    return {};
-  }
-
+function buildTokenOptimizationFromRow(row: SettingsRow): {
+  tokenOptimization: TokenOptimizationConfig;
+} {
   return {
     tokenOptimization: {
-      enabled,
-      outputFiltering,
-      skillRouting,
-      deltaContext,
-      semanticCompression,
-      aliasCompression,
+      enabled: (row.token_opt_enabled ?? 1) === 1,
+      outputFiltering: (row.token_opt_output_filtering ?? 1) === 1,
+      skillRouting: (row.token_opt_skill_routing ?? 1) === 1,
+      deltaContext: (row.token_opt_delta_context ?? 1) === 1,
+      semanticCompression: (row.token_opt_semantic_compression ?? 1) === 1,
+      aliasCompression: (row.token_opt_alias_compression ?? 1) === 1,
     },
   };
 }

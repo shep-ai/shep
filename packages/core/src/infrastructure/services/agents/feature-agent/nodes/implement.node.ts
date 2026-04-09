@@ -20,7 +20,7 @@ import {
   shouldInterrupt,
   safeYamlLoad,
   safeYamlDump,
-  retryExecute,
+  optimizeAndExecute,
   getCompletedPhases,
   markPhaseComplete,
 } from './node-helpers.js';
@@ -196,14 +196,23 @@ export function createImplementNode(executor: IAgentExecutor) {
           });
           await updatePhasePrompt(phaseTimingId, taskPrompts.join('\n\n---\n\n'));
 
-          const results = await Promise.all(
+          const optimizedParallel = await Promise.all(
             phaseTasks.map((task, idx) => {
               log.info(
                 `  [parallel] Task ${task.id}: "${task.title}" — ${taskPrompts[idx].length} chars`
               );
-              return retryExecute(executor, taskPrompts[idx], options, retryOpts);
+              return optimizeAndExecute(
+                executor,
+                `implement:${phase.id}`,
+                taskPrompts[idx],
+                options,
+                state,
+                phaseTimingId,
+                retryOpts
+              );
             })
           );
+          const results = optimizedParallel.map((o) => o.result);
 
           for (let j = 0; j < results.length; j++) {
             log.info(
@@ -220,7 +229,15 @@ export function createImplementNode(executor: IAgentExecutor) {
           const prompt = buildImplementPhasePrompt(state, phase, phaseTasks, promptContext);
           await updatePhasePrompt(phaseTimingId, prompt);
           log.info(`Executing phase prompt — ${prompt.length} chars`);
-          const result = await retryExecute(executor, prompt, options, retryOpts);
+          const { result } = await optimizeAndExecute(
+            executor,
+            `implement:${phase.id}`,
+            prompt,
+            options,
+            state,
+            phaseTimingId,
+            retryOpts
+          );
           log.info(`Phase complete (${result.result.length} chars)`);
           phaseInputTokens = result.usage?.inputTokens ?? 0;
           phaseOutputTokens = result.usage?.outputTokens ?? 0;

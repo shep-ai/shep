@@ -109,14 +109,16 @@ function makeDeltaContextMock(override?: Partial<DeltaContextResult>): IDeltaCon
   };
 }
 
-/** Create a mock semantic compressor service. */
+/** Create a mock semantic compressor service. Uses a global replace so long
+ *  inputs with repeated 'the ' shrink meaningfully — that lets default
+ *  pipelines stay net-positive against the optimizer's net-positive gate. */
 function makeSemanticCompressorMock(
   override?: Partial<SemanticCompressionResult>
 ): ISemanticCompressorService {
   return {
     compress: vi.fn(
       (text: string): SemanticCompressionResult => ({
-        compressed: text.replace('the ', ''),
+        compressed: text.replace(/the /g, ''),
         compressionRatio: 0.8,
         ...override,
       })
@@ -147,6 +149,15 @@ function makeMetricsServiceMock(): IOptimizationMetricsService {
     getByPhaseTimingId: vi.fn().mockResolvedValue(null),
   };
 }
+
+/**
+ * A prompt long enough that the default mock pipeline produces a net-smaller
+ * output (the mocks add fixed overhead; this input has enough 'the ' for the
+ * semantic compressor to remove more than the overhead adds). Use this in
+ * tests that want the net-positive gate to NOT fire so capabilities still
+ * show up in the aggregated metrics.
+ */
+const NET_POSITIVE_INPUT = `${'the '.repeat(60)}original prompt with command output`;
 
 describe('PromptOptimizerService', () => {
   let outputFilter: ICommandOutputFilterService;
@@ -239,7 +250,7 @@ describe('PromptOptimizerService', () => {
     });
 
     it('records all enabled capabilities in metrics.capabilitiesApplied', async () => {
-      const result = await service.optimize('the prompt', baseContext());
+      const result = await service.optimize(NET_POSITIVE_INPUT, baseContext());
 
       expect(result.metrics.capabilitiesApplied).toContain('outputFiltering');
       expect(result.metrics.capabilitiesApplied).toContain('skillRouting');
@@ -306,7 +317,7 @@ describe('PromptOptimizerService', () => {
         outputFiltering: false,
         aliasCompression: false,
       };
-      const result = await service.optimize('prompt', baseContext({ config }));
+      const result = await service.optimize(NET_POSITIVE_INPUT, baseContext({ config }));
 
       expect(result.metrics.capabilitiesApplied).not.toContain('outputFiltering');
       expect(result.metrics.capabilitiesApplied).not.toContain('aliasCompression');
@@ -345,7 +356,7 @@ describe('PromptOptimizerService', () => {
         metricsService
       );
 
-      const result = await service.optimize('prompt', baseContext());
+      const result = await service.optimize(NET_POSITIVE_INPUT, baseContext());
 
       expect(result.metrics.outputFilterLinesRemoved).toBe(42);
     });
@@ -361,7 +372,7 @@ describe('PromptOptimizerService', () => {
         metricsService
       );
 
-      const result = await service.optimize('prompt', baseContext());
+      const result = await service.optimize(NET_POSITIVE_INPUT, baseContext());
 
       expect(result.metrics.compressionRatio).toBe(0.65);
     });
@@ -377,7 +388,7 @@ describe('PromptOptimizerService', () => {
         metricsService
       );
 
-      const result = await service.optimize('prompt', baseContext());
+      const result = await service.optimize(NET_POSITIVE_INPUT, baseContext());
 
       expect(result.metrics.aliasesCreated).toBe(7);
     });
@@ -492,6 +503,124 @@ describe('PromptOptimizerService', () => {
     });
   });
 
+  // --- Net-positive gate ---
+
+  describe('net-positive gate', () => {
+    // These tests exercise the total-net-positive safety check: if the
+    // optimization pipeline produces a prompt that is LARGER than the
+    // original (because per-capability overheads like the skill-routing
+    // directive and alias dictionary header exceed the savings from
+    // compression), the optimizer must return the ORIGINAL prompt — not
+    // the grown one. Otherwise the layer actively hurts short prompts
+    // while claiming "savings=0%".
+
+    it('returns the original prompt when the optimized prompt grew', async () => {
+      // Each mock adds bytes, so the final result will be larger than input.
+      outputFilter = makeOutputFilterMock({
+        filtered: 'short input [OUTPUT_FILTER_OVERHEAD_ADDED]',
+        linesRemoved: 0,
+      });
+      skillRouting = makeSkillRoutingMock({
+        relevantSkills: ['a', 'b', 'c'],
+        directive: '## Skills\nthis directive is much longer than the input and adds many tokens',
+      });
+      semanticCompressor = makeSemanticCompressorMock({
+        compressed: 'no change at all to the text here',
+        compressionRatio: 1.0,
+      });
+      aliasCompression = makeAliasCompressionMock({
+        compressed:
+          '## Aliases\n$A1 = "overhead"\n$A2 = "more overhead"\n\nno change at all to the text here',
+        dictionaryHeader: '## Aliases\n$A1 = "overhead"\n$A2 = "more overhead"\n\n',
+        aliasCount: 2,
+      });
+      service = new PromptOptimizerService(
+        outputFilter,
+        skillRouting,
+        deltaContext,
+        semanticCompressor,
+        aliasCompression,
+        metricsService
+      );
+
+      const input = 'short input';
+      const result = await service.optimize(input, baseContext());
+
+      // The prompt that actually goes to the LLM must be the ORIGINAL —
+      // not the larger "optimized" version.
+      expect(result.prompt).toBe(input);
+    });
+
+    it('reports zero savings and empty capabilities when the gate fires', async () => {
+      outputFilter = makeOutputFilterMock({
+        filtered: 'short input [OUTPUT_FILTER_OVERHEAD_ADDED]',
+        linesRemoved: 0,
+      });
+      skillRouting = makeSkillRoutingMock({
+        relevantSkills: ['a', 'b', 'c'],
+        directive: '## Skills\nthis directive is much longer than the input and adds many tokens',
+      });
+      aliasCompression = makeAliasCompressionMock({
+        compressed: '## Aliases\n$A1 = "overhead"\n$A2 = "more overhead"\n\nshort input',
+        dictionaryHeader: '## Aliases\n$A1 = "overhead"\n$A2 = "more overhead"\n\n',
+        aliasCount: 2,
+      });
+      service = new PromptOptimizerService(
+        outputFilter,
+        skillRouting,
+        deltaContext,
+        semanticCompressor,
+        aliasCompression,
+        metricsService
+      );
+
+      const result = await service.optimize('short input', baseContext());
+
+      expect(result.metrics.optimizedTokenEstimate).toBe(result.metrics.originalTokenEstimate);
+      expect(result.metrics.savingsPercent).toBe(0);
+      expect(result.metrics.capabilitiesApplied).toEqual([]);
+    });
+
+    it('keeps the optimized prompt when it is smaller than the original', async () => {
+      // A realistic compression scenario — the compressor produces a
+      // smaller output than the input, so the gate should NOT fire.
+      outputFilter = makeOutputFilterMock({
+        filtered: 'the quick brown fox jumps over',
+        linesRemoved: 0,
+      });
+      skillRouting = makeSkillRoutingMock({ relevantSkills: [], directive: '' });
+      semanticCompressor = makeSemanticCompressorMock({
+        compressed: 'quick brown fox jumps over',
+        compressionRatio: 0.85,
+      });
+      aliasCompression = makeAliasCompressionMock({
+        compressed: 'quick brown fox jumps over',
+        dictionaryHeader: '',
+        aliasCount: 0,
+      });
+      service = new PromptOptimizerService(
+        outputFilter,
+        skillRouting,
+        deltaContext,
+        semanticCompressor,
+        aliasCompression,
+        metricsService
+      );
+
+      const input =
+        'the quick brown fox jumps over the lazy dog the quick brown fox jumps over the lazy dog';
+      const result = await service.optimize(input, baseContext());
+
+      // The optimized prompt is shorter, so the gate does NOT fire.
+      expect(result.prompt).not.toBe(input);
+      expect(result.metrics.optimizedTokenEstimate).toBeLessThan(
+        result.metrics.originalTokenEstimate
+      );
+      expect(result.metrics.savingsPercent).toBeGreaterThan(0);
+      expect(result.metrics.capabilitiesApplied.length).toBeGreaterThan(0);
+    });
+  });
+
   // --- Empty prompt handling ---
 
   describe('empty input handling', () => {
@@ -563,7 +692,10 @@ describe('PromptOptimizerService', () => {
         metricsService
       );
 
-      const result = await service.optimize('the prompt', baseContext({ phaseTimingId: 'pt-123' }));
+      const result = await service.optimize(
+        NET_POSITIVE_INPUT,
+        baseContext({ phaseTimingId: 'pt-123' })
+      );
 
       expect(typeof result.prompt).toBe('string');
       expect(result.metrics.capabilitiesApplied.length).toBeGreaterThan(0);
@@ -582,7 +714,7 @@ describe('PromptOptimizerService', () => {
         metricsService
       );
 
-      await service.optimize('the prompt', baseContext({ phaseTimingId: 'pt-456' }));
+      await service.optimize(NET_POSITIVE_INPUT, baseContext({ phaseTimingId: 'pt-456' }));
 
       expect(metricsService.record).toHaveBeenCalledTimes(1);
       const recordedMetrics = (metricsService.record as ReturnType<typeof vi.fn>).mock.calls[0][1];

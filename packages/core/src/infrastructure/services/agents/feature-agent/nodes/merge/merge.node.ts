@@ -25,7 +25,7 @@ import { SdlcLifecycle, PrStatus, type CiStatus } from '@/domain/generated/outpu
 import {
   createNodeLogger,
   shouldInterrupt,
-  retryExecute,
+  optimizeAndExecute,
   buildExecutorOptions,
 } from '../node-helpers.js';
 import { reportNodeStart } from '../../heartbeat.js';
@@ -179,9 +179,16 @@ export function createMergeNode(deps: MergeNodeDeps) {
           repoUrl
         );
         await updatePhasePrompt(mergeTimingId, commitPushPrPrompt);
-        const commitResult = await retryExecute(executor, commitPushPrPrompt, options, {
-          logger: log,
-        });
+        const { result: commitResult, specFileHashes: _mergeSpecHashes } = await optimizeAndExecute(
+          executor,
+          'merge',
+          commitPushPrPrompt,
+          options,
+          state,
+          mergeTimingId,
+          { logger: log }
+        );
+        void _mergeSpecHashes;
         totalInputTokens += commitResult.usage?.inputTokens ?? 0;
         totalOutputTokens += commitResult.usage?.outputTokens ?? 0;
         totalCostUsd += commitResult.usage?.costUsd ?? 0;

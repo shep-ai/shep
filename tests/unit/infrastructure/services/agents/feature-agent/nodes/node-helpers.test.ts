@@ -12,7 +12,19 @@ import {
   buildCommitPushBlock,
   buildExecutorOptions,
   removeSpecCommitsIfNeeded,
+  optimizeAndExecute,
 } from '@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js';
+import {
+  setPromptOptimizationContext,
+  clearPromptOptimizationContext,
+} from '@/infrastructure/services/agents/feature-agent/prompt-optimization-context.js';
+import type { IPromptOptimizerService } from '@/application/ports/output/services/prompt-optimizer.interface.js';
+import type { IOptimizationMetricsService } from '@/application/ports/output/services/optimization-metrics.interface.js';
+import type {
+  IAgentExecutor,
+  AgentExecutionOptions,
+  AgentExecutionResult,
+} from '@/application/ports/output/agents/agent-executor.interface.js';
 import { initializeSettings, resetSettings } from '@/infrastructure/services/settings.service.js';
 import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
 
@@ -543,5 +555,117 @@ describe('removeSpecCommitsIfNeeded', () => {
 
     const commitsAfter = git('rev-list --count HEAD');
     expect(commitsAfter).toBe(commitsBefore);
+  });
+});
+
+describe('optimizeAndExecute', () => {
+  const makeExecutor = (
+    result: Partial<AgentExecutionResult> = {}
+  ): IAgentExecutor & {
+    lastPrompt?: string;
+    callCount: number;
+  } => {
+    const exec = {
+      agentType: 'claude-code' as const,
+      callCount: 0,
+      lastPrompt: undefined as string | undefined,
+      async execute(prompt: string, _options: AgentExecutionOptions) {
+        exec.callCount += 1;
+        exec.lastPrompt = prompt;
+        return {
+          result: 'ok',
+          usage: undefined,
+          ...result,
+        } as AgentExecutionResult;
+      },
+    };
+    return exec as unknown as IAgentExecutor & { lastPrompt?: string; callCount: number };
+  };
+
+  const baseState = {
+    model: 'claude-opus-4-6',
+    specFileHashes: { prior: 'abc' },
+  } as any;
+  const baseOptions = { cwd: '/tmp/nowhere' } as AgentExecutionOptions;
+
+  beforeEach(() => {
+    clearPromptOptimizationContext();
+    resetSettings();
+    initializeSettings(createDefaultSettings());
+  });
+
+  afterEach(() => {
+    clearPromptOptimizationContext();
+    resetSettings();
+  });
+
+  it('passes through the raw prompt when the optimizer context is not set', async () => {
+    const executor = makeExecutor();
+    const out = await optimizeAndExecute(
+      executor,
+      'fast-implement',
+      'raw prompt text',
+      baseOptions,
+      baseState,
+      'timing-1'
+    );
+
+    expect(executor.callCount).toBe(1);
+    expect(executor.lastPrompt).toBe('raw prompt text');
+    expect(out.result.result).toBe('ok');
+    // With no optimizer set, previous hashes pass through unchanged.
+    expect(out.specFileHashes).toEqual({ prior: 'abc' });
+  });
+
+  it('runs the optimizer when context is set, forwards the optimized prompt, and records metrics', async () => {
+    const recordedCalls: { timingId: string | null; metrics: unknown }[] = [];
+
+    const fakeOptimizer: IPromptOptimizerService = {
+      async optimize(prompt, ctx) {
+        return {
+          prompt: `OPT:${prompt}`,
+          metrics: {
+            originalTokenEstimate: 100,
+            optimizedTokenEstimate: 42,
+            savingsPercent: 58,
+            capabilitiesApplied: ['semanticCompression'],
+            outputFilterLinesRemoved: 0,
+            deltaContextFilesSkipped: 0,
+            compressionRatio: 0.42,
+            aliasesCreated: 0,
+          },
+          specFileHashes: { ...(ctx.previousSpecFileHashes ?? {}), fresh: 'def' },
+        };
+      },
+    };
+
+    const fakeMetrics: IOptimizationMetricsService = {
+      async record(timingId, metrics) {
+        recordedCalls.push({ timingId, metrics });
+      },
+      async getByPhaseTimingId() {
+        return null;
+      },
+    };
+
+    setPromptOptimizationContext(fakeOptimizer, fakeMetrics, 'run-1', 'feature-1');
+
+    const executor = makeExecutor();
+    const out = await optimizeAndExecute(
+      executor,
+      'fast-implement',
+      'raw prompt text',
+      baseOptions,
+      baseState,
+      'timing-1'
+    );
+
+    // Executor received the optimized prompt, not the raw one.
+    expect(executor.lastPrompt).toBe('OPT:raw prompt text');
+    // Metrics were recorded exactly once against the supplied timingId.
+    expect(recordedCalls).toHaveLength(1);
+    expect(recordedCalls[0]!.timingId).toBe('timing-1');
+    // Fresh spec-file hashes flow back out so the caller can persist them.
+    expect(out.specFileHashes).toEqual({ prior: 'abc', fresh: 'def' });
   });
 });
