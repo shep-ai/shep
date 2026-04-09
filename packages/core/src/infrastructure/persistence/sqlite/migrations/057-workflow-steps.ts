@@ -67,7 +67,15 @@ export async function up({ context: db }: MigrationParams<Db>): Promise<void> {
     'CREATE INDEX IF NOT EXISTS idx_workflow_steps_feature ON workflow_steps(feature_id, step_index)'
   );
 
-  runDdl(db, 'ALTER TABLE interactive_messages ADD COLUMN step_id TEXT');
+  // `ALTER TABLE ... ADD COLUMN` is not idempotent in SQLite — it fails
+  // with "duplicate column name" on the second run. Guard with a
+  // table_info check so re-running the migration on an already-patched
+  // database is a no-op. This matches the pattern used by migrations
+  // 035, 036, etc.
+  const messageColumns = db.pragma('table_info(interactive_messages)') as { name: string }[];
+  if (!messageColumns.some((c) => c.name === 'step_id')) {
+    runDdl(db, 'ALTER TABLE interactive_messages ADD COLUMN step_id TEXT');
+  }
   runDdl(
     db,
     'CREATE INDEX IF NOT EXISTS idx_interactive_messages_step ON interactive_messages(step_id)'

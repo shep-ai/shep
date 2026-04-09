@@ -182,18 +182,20 @@ describe('ClaudeCodeInteractiveExecutor', () => {
       }
     });
 
-    it('should forward system prompt using preset+append pattern', async () => {
+    it('should NOT forward systemPrompt to the V2 SDK (silently dropped)', async () => {
+      // The V2 Agent SDK's SDKSessionOptions type does not include a
+      // systemPrompt field — passing one is silently dropped. Callers that
+      // need to inject a system-level brief must do so via a real artifact
+      // the agent reads with its tools (see CreateApplicationUseCase and
+      // SHEP_BRIEF.md). This test guards against re-introducing the
+      // "it looks wired but nothing happens" trap.
       await executor.createSession({
         cwd: process.cwd(),
         model: 'claude-sonnet-4-6',
         systemPrompt: 'You are a helpful assistant.',
       });
 
-      expect(capturedOptions.systemPrompt).toEqual({
-        type: 'preset',
-        preset: 'claude_code',
-        append: 'You are a helpful assistant.',
-      });
+      expect(capturedOptions.systemPrompt).toBeUndefined();
     });
 
     it('should use default model when not specified', async () => {
