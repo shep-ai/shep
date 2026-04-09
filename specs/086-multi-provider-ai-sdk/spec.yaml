@@ -122,3 +122,7 @@ rejectionFeedback:
     message: "You are using the fallback icons for together and openrouter\ntake the right icons from here\nhttps://lobehub.com/icons download to the porject and store with the rest of the icons"
     phase: "merge"
     timestamp: "2026-04-09T19:13:25.693Z"
+  - iteration: 2
+    message: "In the storybook I see you added support for auth but in the settings ui page there is no way to auth."
+    phase: "merge"
+    timestamp: "2026-04-09T19:31:22.256Z"

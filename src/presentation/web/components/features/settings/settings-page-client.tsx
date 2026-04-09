@@ -18,11 +18,15 @@ import {
   Timer,
   MessageSquare,
   LayoutGrid,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import {
   Select,
@@ -33,7 +37,8 @@ import {
 } from '@/components/ui/select';
 import { updateSettingsAction } from '@/app/actions/update-settings';
 import {
-  type AgentType,
+  AgentType,
+  AgentAuthMethod,
   EditorType,
   Language,
   TerminalType,
@@ -63,6 +68,17 @@ const SHELL_OPTIONS = [
   { value: 'bash', label: 'Bash' },
   { value: 'zsh', label: 'Zsh' },
   { value: 'fish', label: 'Fish' },
+];
+
+/** Agent types that only support session-based auth (no API token). */
+const SESSION_ONLY_AGENTS = new Set<AgentType>([AgentType.CopilotCli]);
+
+/** Agent types that require token-based auth (API key only, no CLI binary). */
+const TOKEN_REQUIRED_AGENTS = new Set<AgentType>([AgentType.OpenRouter, AgentType.TogetherAi]);
+
+const AUTH_METHOD_OPTIONS = [
+  { value: AgentAuthMethod.Session, label: 'Session' },
+  { value: AgentAuthMethod.Token, label: 'Token' },
 ];
 
 const SECTIONS = [
@@ -376,6 +392,9 @@ export function SettingsPageClient({
 
   // Agent state
   const [agentType, setAgentType] = useState(settings.agent.type);
+  const [authMethod, setAuthMethod] = useState(settings.agent.authMethod);
+  const [token, setToken] = useState(settings.agent.token ?? '');
+  const [showToken, setShowToken] = useState(false);
 
   // Environment state
   const [editor, setEditor] = useState(settings.environment.defaultEditor);
@@ -749,10 +768,113 @@ export function SettingsPageClient({
                 initialAgentType={agentType}
                 initialModel={settings.models.default}
                 mode="settings"
-                onAgentModelChange={(newAgent) => setAgentType(newAgent as AgentType)}
+                onAgentModelChange={(newAgent) => {
+                  const newType = newAgent as AgentType;
+                  setAgentType(newType);
+                  // Auto-switch auth method for token-required / session-only agents
+                  if (TOKEN_REQUIRED_AGENTS.has(newType) && authMethod !== AgentAuthMethod.Token) {
+                    setAuthMethod(AgentAuthMethod.Token);
+                    save({ agent: { type: newType, authMethod: AgentAuthMethod.Token } });
+                  } else if (
+                    SESSION_ONLY_AGENTS.has(newType) &&
+                    authMethod !== AgentAuthMethod.Session
+                  ) {
+                    setAuthMethod(AgentAuthMethod.Session);
+                    save({ agent: { type: newType, authMethod: AgentAuthMethod.Session } });
+                  }
+                }}
                 className="w-55"
               />
             </SettingsRow>
+            <SettingsRow
+              label="Auth Method"
+              description="How this agent authenticates"
+              htmlFor="agent-auth-method"
+            >
+              <Select
+                value={authMethod}
+                onValueChange={(v) => {
+                  const newAuth = v as AgentAuthMethod;
+                  setAuthMethod(newAuth);
+                  const payload: Record<string, unknown> = {
+                    type: agentType,
+                    authMethod: newAuth,
+                  };
+                  if (newAuth === AgentAuthMethod.Token) {
+                    payload.token = token;
+                  }
+                  save({ agent: payload });
+                }}
+                disabled={
+                  SESSION_ONLY_AGENTS.has(agentType) || TOKEN_REQUIRED_AGENTS.has(agentType)
+                }
+              >
+                <SelectTrigger
+                  id="agent-auth-method"
+                  data-testid="agent-auth-method-select"
+                  className="w-55 cursor-pointer text-xs"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {AUTH_METHOD_OPTIONS.filter((opt) => {
+                    if (SESSION_ONLY_AGENTS.has(agentType))
+                      return opt.value === AgentAuthMethod.Session;
+                    if (TOKEN_REQUIRED_AGENTS.has(agentType))
+                      return opt.value === AgentAuthMethod.Token;
+                    return true;
+                  }).map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SettingsRow>
+            {TOKEN_REQUIRED_AGENTS.has(agentType) && (
+              <div className="border-b py-2.5 last:border-b-0">
+                <p className="text-muted-foreground text-[11px] leading-tight">
+                  This provider requires an API key for authentication. No CLI binary needed.
+                </p>
+              </div>
+            )}
+            {authMethod === AgentAuthMethod.Token && (
+              <SettingsRow label="API Token" description="Saves on blur" htmlFor="agent-token">
+                <div className="relative w-55">
+                  <Input
+                    id="agent-token"
+                    data-testid="agent-token-input"
+                    type={showToken ? 'text' : 'password'}
+                    value={token}
+                    onChange={(e) => setToken(e.target.value)}
+                    onBlur={() => {
+                      if (token !== (settings.agent.token ?? '')) {
+                        save({
+                          agent: { type: agentType, authMethod, token },
+                        });
+                      }
+                    }}
+                    placeholder="Enter your API token"
+                    className="pe-10 text-xs"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-0 right-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowToken(!showToken)}
+                    data-testid="toggle-token-visibility"
+                    aria-label={showToken ? 'Hide token' : 'Show token'}
+                  >
+                    {showToken ? (
+                      <EyeOff className="h-3.5 w-3.5" />
+                    ) : (
+                      <Eye className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </div>
+              </SettingsRow>
+            )}
           </SettingsSection>
           <SectionHint
             links={[
