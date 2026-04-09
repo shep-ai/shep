@@ -16,11 +16,13 @@
  *   - Error   → red triangle + "Retry"
  *
  * Persistence: deployment state is stored in the `dev_servers` SQLite
- * table by the core `DeploymentService` (migration 040). The page's
- * `useDeployAction({ hydrateOnMount: true })` hook reads persisted
- * state once on mount so a page reload — or even a Shep server
- * restart — still surfaces the running dev server (the service's
- * `recoverAll()` reconciles live PIDs on startup).
+ * table by the core `DeploymentService` (migration 040). The shared
+ * `DeploymentStatusProvider` is SSR-seeded with the current deployment
+ * status (via the route's `ListDeploymentsUseCase` snapshot), and the
+ * provider's `ensureHydrated` effect fills in anything the seed missed
+ * — so a page reload or even a Shep server restart still surfaces the
+ * running dev server (the service's `recoverAll()` reconciles live PIDs
+ * on startup).
  *
  * This component is purely presentational: it takes the already-
  * computed `deploy` state from `useDeployAction` so the top bar and

@@ -27,6 +27,7 @@ import type { DeploymentStatusEntry } from '@shepai/core/application/ports/outpu
 import type { DeploymentState } from '@shepai/core/domain/generated/output';
 import { deployFeature } from '@/app/actions/deploy-feature';
 import { deployRepository } from '@/app/actions/deploy-repository';
+import { deployApplication } from '@/app/actions/deploy-application';
 import { stopDeployment } from '@/app/actions/stop-deployment';
 import { getDeploymentStatus } from '@/app/actions/get-deployment-status';
 import { createLogger } from '@/lib/logger';
@@ -46,7 +47,7 @@ const ACTIVE_STATES: ReadonlySet<DeploymentState> = new Set([
 
 export interface DeployActionInput {
   targetId: string;
-  targetType: 'feature' | 'repository';
+  targetType: 'feature' | 'repository' | 'application';
   repositoryPath: string;
   branch?: string;
 }
@@ -170,7 +171,9 @@ export function DeploymentStatusProvider({
         const result =
           input.targetType === 'feature'
             ? await deployFeature(input.targetId)
-            : await deployRepository(input.repositoryPath);
+            : input.targetType === 'application'
+              ? await deployApplication(input.targetId)
+              : await deployRepository(input.repositoryPath);
         if (!result.success) {
           store.update(input.targetId, {
             deployLoading: false,

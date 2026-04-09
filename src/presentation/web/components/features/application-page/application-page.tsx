@@ -683,28 +683,21 @@ export interface ApplicationPageProps {
   initialDeployment?: InitialDeploymentSnapshot;
 }
 
-export function ApplicationPage({
-  application,
-  initialChatState,
-  initialDeployment,
-}: ApplicationPageProps) {
+export function ApplicationPage({ application, initialChatState }: ApplicationPageProps) {
   const router = useRouter();
   const [activeView, setActiveView] = useState<AppView>('ide');
 
-  // Hoisted dev-server state — ONE polling loop shared by the top-bar
-  // Preview button AND the right-pane Web iframe. SSR seeds the
-  // initial snapshot so a page refresh while a dev server is running
-  // already has the URL on first paint; `hydrateOnMount` remains as
-  // a fallback for the case where the server component couldn't
-  // reach the deployment service (e.g. test environments).
+  // Hoisted dev-server state — subscribes to the shared
+  // DeploymentStatusProvider scoped to this application's id. The server
+  // component seeds the provider with `initialDeployment` (if any) so
+  // the first paint already has the running URL; the provider's
+  // `ensureHydrated` effect fills in fresh state on mount when the seed
+  // is absent (e.g. test environments where the server couldn't reach
+  // the deployment service).
   const deploy = useDeployAction({
     targetId: application.id,
     targetType: 'application',
     repositoryPath: application.repositoryPath,
-    hydrateOnMount: true,
-    initialState: initialDeployment
-      ? { status: initialDeployment.state, url: initialDeployment.url }
-      : undefined,
   });
 
   // When the dev server transitions to Ready, auto-switch the right

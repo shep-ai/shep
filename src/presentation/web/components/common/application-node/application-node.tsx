@@ -95,9 +95,10 @@ export function ApplicationNode({
   // application's chat is referenced.
   const turnStatus = useTurnStatus(`app-${data.id}`);
 
-  // Shared dev-server deploy state — one per card. Seeded from the
-  // SSR `deploymentUrl` enrichment so running apps render as "Live"
-  // on the first paint without a client round-trip.
+  // Shared dev-server deploy state — one per card. Subscribes to the
+  // `DeploymentStatusProvider` which is SSR-seeded in the dashboard
+  // layout from `ListDeploymentsUseCase`, so running apps render as
+  // "Live" on the first paint without a client round-trip.
   //
   // The card's Preview button drives this hook and the `live.label`
   // below is derived from the SAME state (via `deploy.url`), so the
@@ -108,23 +109,17 @@ export function ApplicationNode({
     targetId: data.id,
     targetType: 'application',
     repositoryPath: data.repositoryPath,
-    hydrateOnMount: true,
-    initialState: data.deploymentUrl
-      ? { status: DeploymentState.Ready, url: data.deploymentUrl }
-      : undefined,
   });
 
   // The hook is the single source of truth for the running URL.
   //
-  // `useDeployAction({ initialState })` seeds `deploy.url` from
-  // `data.deploymentUrl` on the very first render, so we never miss
-  // an already-running dev server after SSR. But we must NOT fall
-  // back to `data.deploymentUrl` afterwards: after a Stop the hook
-  // correctly clears `deploy.url` to null, while `data.deploymentUrl`
-  // stays populated until the next `getGraphData` server refresh —
-  // and that falls-back-to-stale behaviour was the "iframe ghost"
-  // the user saw for ~3s after clicking Stop (plus it bypassed the
-  // Live hover overlay, which is gated on `deploy.status === Ready`).
+  // The shared `DeploymentStatusProvider` is seeded from SSR
+  // (`get-graph-data` → `ListDeploymentsUseCase`) so the entry for
+  // this application is already populated on the first client render,
+  // and `ensureHydrated` catches anything the SSR seed missed. On
+  // Stop the hook clears `deploy.url` to null which immediately
+  // collapses the pill from "Live" back to "Ready" — there is
+  // intentionally no secondary snapshot URL that could stay stale.
   const effectiveDeploymentUrl = deploy.url;
 
   const live = deriveLiveStatus(data.status, turnStatus, effectiveDeploymentUrl ?? undefined);

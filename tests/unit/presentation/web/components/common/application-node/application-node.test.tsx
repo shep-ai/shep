@@ -2,6 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ApplicationNode } from '@/components/common/application-node/application-node';
 import type { ApplicationNodeData } from '@/components/common/application-node/application-node-config';
+import { DeploymentStatusProvider } from '@/hooks/deployment-status-provider';
+import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
+import { DeploymentState } from '@shepai/core/domain/generated/output';
 
 // Mock @xyflow/react — ApplicationNode uses Handle and Position
 vi.mock('@xyflow/react', () => ({
@@ -73,8 +76,15 @@ const defaultData: ApplicationNodeData = {
   additionalPathCount: 0,
 };
 
-function renderNode(data: ApplicationNodeData = defaultData) {
-  return render(<ApplicationNode data={data} />);
+function renderNode(
+  data: ApplicationNodeData = defaultData,
+  initialDeployments: DeploymentStatusEntry[] = []
+) {
+  return render(
+    <DeploymentStatusProvider initialDeployments={initialDeployments}>
+      <ApplicationNode data={data} />
+    </DeploymentStatusProvider>
+  );
 }
 
 describe('ApplicationNode', () => {
@@ -98,8 +108,17 @@ describe('ApplicationNode', () => {
     it('renders "Live" with an emerald dot when the dev server URL is present', () => {
       // The card folds the live DeploymentService state into the
       // status pill: any application whose dev server is up gets a
-      // "Live" label regardless of the persisted coarse status.
-      renderNode({ ...defaultData, deploymentUrl: 'http://localhost:5173' });
+      // "Live" label regardless of the persisted coarse status. The
+      // hook subscribes to the DeploymentStatusProvider, so we seed
+      // it with a Ready entry keyed by the application id.
+      renderNode(defaultData, [
+        {
+          targetId: defaultData.id,
+          targetType: 'application',
+          state: DeploymentState.Ready,
+          url: 'http://localhost:5173',
+        },
+      ]);
 
       expect(screen.getByTestId('application-node-status-text')).toHaveTextContent('Live');
       expect(screen.getByTestId('application-node-status-dot')).toHaveClass('bg-emerald-500');

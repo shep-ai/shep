@@ -2,10 +2,14 @@ import { resolve } from '@/lib/server-container';
 import type { GetApplicationUseCase } from '@shepai/core/application/use-cases/applications/get-application.use-case';
 import type { GetInteractiveChatStateUseCase } from '@shepai/core/application/use-cases/interactive/get-interactive-chat-state.use-case';
 import type { ChatState } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
-import type { IDeploymentService } from '@shepai/core/application/ports/output/services/deployment-service.interface';
+import type {
+  DeploymentStatusEntry,
+  IDeploymentService,
+} from '@shepai/core/application/ports/output/services/deployment-service.interface';
 import { notFound } from 'next/navigation';
 import { ApplicationPage } from '@/components/features/application-page/application-page';
 import type { InitialDeploymentSnapshot } from '@/components/features/application-page/application-page';
+import { DeploymentStatusProvider } from '@/hooks/deployment-status-provider';
 
 /** Skip static pre-rendering since we need runtime DI container and server context. */
 export const dynamic = 'force-dynamic';
@@ -53,11 +57,29 @@ export default async function ApplicationRoute({ params }: { params: Promise<{ i
     initialDeployment = undefined;
   }
 
+  // Seed the provider with the current application's deployment so the
+  // store's `hydrate()` writes the initial state/url into the entry keyed
+  // by `application.id`. The application page is outside the (dashboard)
+  // route group, so it has its own provider instance rather than sharing
+  // the dashboard's.
+  const initialDeployments: DeploymentStatusEntry[] = initialDeployment
+    ? [
+        {
+          targetId: application.id,
+          targetType: 'application',
+          state: initialDeployment.state,
+          url: initialDeployment.url,
+        },
+      ]
+    : [];
+
   return (
-    <ApplicationPage
-      application={application}
-      initialChatState={initialChatState}
-      initialDeployment={initialDeployment}
-    />
+    <DeploymentStatusProvider initialDeployments={initialDeployments}>
+      <ApplicationPage
+        application={application}
+        initialChatState={initialChatState}
+        initialDeployment={initialDeployment}
+      />
+    </DeploymentStatusProvider>
   );
 }

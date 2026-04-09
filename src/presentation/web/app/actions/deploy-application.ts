@@ -5,8 +5,8 @@ import { resolve } from '@/lib/server-container';
 import { createDeploymentLogger } from '@shepai/core/infrastructure/services/deployment/deployment-logger';
 import type { IApplicationRepository } from '@shepai/core/application/ports/output/repositories/application-repository.interface';
 import type { IDeploymentService } from '@shepai/core/application/ports/output/services/deployment-service.interface';
+import type { IShepInstanceService } from '@shepai/core/application/ports/output/services/shep-instance-service.interface';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
-import { isSameShepInstance } from '@/lib/is-same-shep-instance';
 
 const log = createDeploymentLogger('[deployApplication]');
 
@@ -50,7 +50,8 @@ export async function deployApplication(
       return { success: false, error: `Repository path does not exist: ${repositoryPath}` };
     }
 
-    if (isSameShepInstance(repositoryPath)) {
+    const shepInstance = resolve<IShepInstanceService>('IShepInstanceService');
+    if (shepInstance.isSameInstance(repositoryPath)) {
       log.warn('rejected — target is the running shep instance');
       return {
         success: false,

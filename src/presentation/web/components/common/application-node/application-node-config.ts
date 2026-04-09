@@ -14,14 +14,6 @@ export interface ApplicationNodeData {
   repositoryPath: string;
   /** Number of additional repository paths beyond the primary one */
   additionalPathCount: number;
-  /**
-   * Dev-server URL when the application is currently Running (via the
-   * shared `DeploymentService`). When present, the card renders a real
-   * scaled-down iframe of the running app instead of the wireframe
-   * skeleton. Populated server-side from the persistent `dev_servers`
-   * SQLite table so a page reload still surfaces a live preview.
-   */
-  deploymentUrl?: string;
   /** Callback when the card is clicked */
   onClick?: () => void;
   /** Callback when the delete button is confirmed */
