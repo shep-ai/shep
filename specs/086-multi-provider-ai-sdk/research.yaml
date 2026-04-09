@@ -1,0 +1,516 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: multi-provider-ai-sdk
+summary: >
+  Technical research for integrating Vercel AI SDK v6 as a unified HTTP-based execution path
+  alongside existing CLI executors. Key finding: @ai-sdk/togetherai v2.x is incompatible with
+  AI SDK v6 (requires v3 model specification not yet released). Together AI will use
+  @ai-sdk/openai-compatible instead. OpenRouter uses @openrouter/ai-sdk-provider v2.5.1 which
+  is fully v6-compatible. The base executor maps AI SDK generateText/streamText/generateObject
+  to the existing IAgentExecutor interface with zero interface changes.
+
+# Relationships
+relatedFeatures: []
+
+technologies:
+  - "Vercel AI SDK (ai@^6.0.0) - core generateText/streamText/generateObject APIs"
+  - "@openrouter/ai-sdk-provider@^2.5.1 - OpenRouter community provider, AI SDK v6 compatible"
+  - "@ai-sdk/openai-compatible@^3.x - OpenAI-compatible provider for Together AI workaround"
+  - "zod@^4.3.6 - already in package.json, peer dependency of ai package"
+  - "TypeSpec - AgentType enum extensions for openrouter and together-ai"
+  - "tsyringe - DI container (no changes needed to factory registration)"
+
+relatedLinks:
+  - title: "Vercel AI SDK generateText API Reference"
+    url: "https://ai-sdk.dev/docs/reference/ai-sdk-core/generate-text"
+  - title: "Vercel AI SDK streamText API Reference"
+    url: "https://ai-sdk.dev/docs/reference/ai-sdk-core/stream-text"
+  - title: "Vercel AI SDK generateObject API Reference"
+    url: "https://ai-sdk.dev/docs/reference/ai-sdk-core/generate-object"
+  - title: "AI SDK Error Handling"
+    url: "https://ai-sdk.dev/docs/ai-sdk-core/error-handling"
+  - title: "OpenRouter AI SDK Provider"
+    url: "https://ai-sdk.dev/providers/community-providers/openrouter"
+  - title: "Together AI Provider (v5 only)"
+    url: "https://ai-sdk.dev/providers/ai-sdk-providers/togetherai"
+  - title: "OpenAI Compatible Providers"
+    url: "https://ai-sdk.dev/providers/openai-compatible-providers"
+  - title: "@ai-sdk/togetherai v6 Compatibility Issue (#11780)"
+    url: "https://github.com/vercel/ai/issues/11780"
+  - title: "@openrouter/ai-sdk-provider npm"
+    url: "https://www.npmjs.com/package/@openrouter/ai-sdk-provider"
+  - title: "AI SDK Settings (timeout, abortSignal)"
+    url: "https://ai-sdk.dev/docs/ai-sdk-core/settings"
+  - title: "AI SDK v6 Blog Post"
+    url: "https://vercel.com/blog/ai-sdk-6"
+
+# Structured technology decisions
+decisions:
+  - title: "Together AI Provider Package"
+    chosen: "@ai-sdk/openai-compatible with Together AI baseURL"
+    rejected:
+      - "@ai-sdk/togetherai - Current v2.0.41 uses v2 model specification, incompatible with AI SDK v6 which requires v3 spec. Open GitHub issue #11780 requesting v3 support has no release as of April 2026. Using this would force pinning to AI SDK v5, which is outdated and missing v6 features like the v3 Language Model Specification, improved structured output via Output.object(), and structured timeout options."
+      - "Direct HTTP calls without AI SDK - Would bypass the entire AI SDK abstraction, requiring manual HTTP client code, streaming SSE parsing, error handling, and token usage extraction. Defeats the purpose of using a unified SDK."
+    rationale: >
+      Together AI exposes an OpenAI-compatible API at https://api.together.xyz/v1. The
+      @ai-sdk/openai-compatible package (v3.x) is officially maintained by Vercel, confirmed
+      compatible with AI SDK v6, and provides createOpenAICompatible() with full chatModel()
+      support. This gives us the same generateText/streamText/generateObject API surface as
+      OpenRouter while using Together AI's infrastructure. When @ai-sdk/togetherai v3 eventually
+      ships, migration is trivial (swap createOpenAICompatible for createTogetherAI). The codebase
+      pattern of provider-agnostic LanguageModel instances means the base executor class needs
+      zero changes for this swap.
+
+  - title: "AI SDK Version"
+    chosen: "ai@^6.0.0 (v6 stable)"
+    rejected:
+      - "ai@^5.0.0 - Older major version, uses v2 model specification. Missing v3 spec features: improved agent support, structured timeout (totalMs/stepMs/chunkMs), Output.object() for structured generation, improved streaming events. Would be outdated within months."
+      - "ai@^7.0.0-beta - Pre-release (currently 7.0.0-beta.76). Unstable API surface, breaking changes between betas. Not suitable for production dependency."
+    rationale: >
+      AI SDK v6 is the current stable major version with the v3 Language Model Specification.
+      The @openrouter/ai-sdk-provider v2.5.1 explicitly peers on ai@^6.0.0. The v6 API
+      surface (generateText, streamText, generateObject) maps cleanly to our IAgentExecutor
+      interface. The timeout parameter supports both simple milliseconds and structured
+      {totalMs, stepMs, chunkMs} which is more capable than our current setTimeout approach.
+
+  - title: "Base Executor Architecture"
+    chosen: "Abstract AiSdkBaseExecutorService class with provider-injected LanguageModel"
+    rejected:
+      - "Separate executor classes with duplicated AI SDK calls - Each provider executor would independently call generateText/streamText/generateObject, duplicating response mapping, error handling, streaming conversion, and usage extraction. Violates DRY and makes adding future providers expensive."
+      - "Composition over inheritance (strategy pattern) - A non-abstract executor that accepts a provider factory function. More flexible but adds unnecessary indirection when the only variation between providers is how the LanguageModel is constructed. The current CLI executors use concrete classes, not strategies."
+    rationale: >
+      The abstract base class pattern keeps all AI SDK interaction logic (generateText mapping,
+      stream conversion, error handling, usage extraction) in one place. Concrete subclasses
+      (OpenRouterExecutorService, TogetherAiExecutorService) only override provider construction
+      and feature flags. This matches the codebase pattern where CLI executors are concrete
+      classes with shared patterns but no formal base class (their shared patterns are simpler
+      since each CLI has different JSON output formats). SDK executors share the SAME AI SDK
+      response format, making a base class the natural abstraction.
+
+  - title: "Streaming Implementation"
+    chosen: "streamText().textStream as AsyncIterable yielding AgentExecutionStreamEvent"
+    rejected:
+      - "streamText().fullStream with event-type routing - fullStream emits typed events (text, reasoning, tool-call, finish, etc.) requiring complex switch/case routing. Our AgentExecutionStreamEvent only has three types (progress/result/error). The added complexity of full event routing is unnecessary since we only need text deltas and completion."
+      - "Custom ReadableStream adapter - Wrapping the AI SDK stream in a manual ReadableStream/TransformStream pipeline. Overly complex when textStream already implements AsyncIterable directly and can be consumed with for-await-of."
+    rationale: >
+      streamText() returns a StreamTextResult whose textStream property implements both
+      AsyncIterable<string> and ReadableStream<string>. Our executeStream() returns
+      AsyncIterable<AgentExecutionStreamEvent>. The mapping is direct: each string chunk
+      from textStream becomes a progress event, and after iteration completes we await
+      result.usage and result.text to emit a final result event. This is the simplest
+      possible adapter with zero buffering — the first text delta from the provider
+      immediately yields a progress event to the caller.
+
+  - title: "Structured Output Strategy"
+    chosen: "generateObject() with Zod schema conversion from JSON Schema input"
+    rejected:
+      - "generateText() with Output.object() - The v6 preferred pattern, but requires the caller to pass a Zod schema directly. Our IAgentExecutor.execute() accepts outputSchema as a plain JSON Schema object (to stay framework-agnostic in the interface). Converting JSON Schema to Zod at the base class level and using generateObject() is simpler than adapting the Output.object() API."
+      - "Prompt-based JSON extraction (existing fallback) - The StructuredAgentCallerService already has brace-depth JSON parsing as a fallback for agents without native structured output. Using this for SDK agents would miss the opportunity for provider-enforced schema validation. generateObject() uses provider-native structured output where available (e.g., Anthropic tool_use, OpenAI response_format)."
+    rationale: >
+      The existing StructuredAgentCallerService checks executor.supportsFeature(structuredOutput)
+      and calls execute() with outputSchema if true. The base SDK executor intercepts outputSchema
+      in execute(), converts the JSON Schema to a Zod schema using zod's z.object() builder (or
+      uses the ai package's jsonSchema() wrapper for raw JSON schemas), and delegates to
+      generateObject(). This keeps the IAgentExecutor interface unchanged (outputSchema remains
+      a plain object) while gaining provider-native structured output enforcement.
+
+  - title: "Error Handling Strategy"
+    chosen: "Catch and rethrow AI SDK errors with enhanced context"
+    rejected:
+      - "Return error in AgentExecutionResult metadata - Would require callers to check result.metadata.error after every execute() call. The existing CLI executors throw on subprocess failures (non-zero exit, ENOENT, timeout). Returning errors silently would break the established contract."
+      - "Let AI SDK errors propagate unmodified - AI SDK throws well-structured errors (APICallError with statusCode, isRetryable, responseBody) but the error messages lack our provider context. Callers would see generic API errors without knowing which provider failed or what API key to check."
+    rationale: >
+      CLI executors throw errors on failures. The caller code in use cases and
+      StructuredAgentCallerService uses try/catch. Consistency requires throwing. We catch
+      APICallError, extract statusCode and isRetryable, and rethrow with enhanced messages
+      that include the provider name. For 401/403 we add guidance about checking the API key.
+      For 429 we include rate limit info. The APICallError.isInstance() type guard makes this
+      clean. Non-API errors (network, DNS, timeout) are wrapped similarly with provider context.
+
+  - title: "Token Usage Mapping"
+    chosen: "Map AI SDK LanguageModelUsage to AgentExecutionUsage with cache token details"
+    rejected:
+      - "Report only inputTokens/outputTokens, ignore details - Would lose cache hit/miss information that the AI SDK provides via inputTokenDetails.cacheReadTokens and inputTokenDetails.cacheWriteTokens. Our AgentExecutionUsage already has cacheCreationInputTokens and cacheReadInputTokens fields."
+      - "Calculate costUsd from a price table - AI SDK does not provide cost. Maintaining per-model price tables for hundreds of OpenRouter models is impractical and perpetually outdated. Token counts are the reliable metric."
+    rationale: >
+      The AI SDK v6 LanguageModelUsage includes inputTokens, outputTokens, totalTokens, plus
+      inputTokenDetails (cacheReadTokens, cacheWriteTokens) and outputTokenDetails (reasoningTokens).
+      Our AgentExecutionUsage has inputTokens, outputTokens, cacheCreationInputTokens, and
+      cacheReadInputTokens. The mapping is: usage.inputTokens -> inputTokens,
+      usage.outputTokens -> outputTokens, usage.inputTokenDetails?.cacheWriteTokens ->
+      cacheCreationInputTokens, usage.inputTokenDetails?.cacheReadTokens -> cacheReadInputTokens.
+      costUsd remains undefined. This extracts maximum value from the AI SDK response without
+      inventing data we do not have.
+
+  - title: "Timeout Implementation"
+    chosen: "Pass timeout directly to AI SDK timeout parameter"
+    rejected:
+      - "Manual AbortController with setTimeout - The pre-v6 pattern: create AbortController, setTimeout to call abort(), pass signal to generateText(). Works but reimplements what AI SDK v6 provides natively with the timeout parameter. Also requires manual cleanup of the timeout on success."
+      - "No timeout (rely on provider defaults) - Dangerous: a hanging HTTP connection would block the executor indefinitely. Our AgentExecutionOptions.timeout exists for a reason. CLI executors enforce timeouts via setTimeout + process.kill()."
+    rationale: >
+      AI SDK v6 introduced a native timeout parameter that accepts either a number (milliseconds)
+      or a structured object {totalMs, stepMs, chunkMs}. Passing our options.timeout as the
+      numeric milliseconds value delegates all abort logic to the SDK. For streaming, chunkMs
+      could detect stalled streams. If no timeout is provided in options, we use a default of
+      300000ms (5 minutes) matching reasonable API call expectations. This is simpler and more
+      robust than manual AbortController management.
+
+  - title: "Factory Caching for SDK Executors"
+    chosen: "Reuse existing Map<string, IAgentExecutor> cache in factory"
+    rejected:
+      - "No caching (new instance per call) - Would create new provider instances on every createExecutor() call. The provider constructor (createOpenRouter, createOpenAICompatible) allocates internal state. Repeated allocation is wasteful when the executor is stateless."
+      - "Separate cache for SDK vs CLI executors - Unnecessary complexity. The existing cache is keyed by agent type string. SDK executor keys (openrouter, together-ai) are distinct from CLI keys (claude-code, cursor). A single cache handles both."
+    rationale: >
+      The factory already maintains a Map<string, IAgentExecutor> cache keyed by agent type
+      string. CLI executors are cached here. Adding SDK executors to the same cache requires
+      zero new code — the existing cache-check-or-create pattern in createExecutor() handles
+      it. The SDK executor instances are stateless (no conversation memory, no process handle)
+      so caching is safe. The API key comes from authConfig at creation time and is baked into
+      the provider instance.
+
+  - title: "Auth Detection for SDK Agents"
+    chosen: "Token presence check (non-empty string in AgentConfig.token)"
+    rejected:
+      - "API call validation (e.g., list models) - Adds latency, requires network, can hit rate limits, introduces failure modes for what should be a fast status check. Auth detection is called during onboarding and settings rendering — it must be instant."
+      - "Environment variable check (OPENROUTER_API_KEY, TOGETHER_API_KEY) - These env vars are provider-specific and not how our settings system stores keys. Keys are stored in AgentConfig.token via the settings DB. Checking env vars would miss keys configured through the UI."
+    rationale: >
+      The existing auth detection for CLI agents checks binary presence and credential files.
+      SDK agents have no binary. Their credential is the API key stored in AgentConfig.token.
+      The IAgentAuthDetectorService.isAuthenticated() receives the agentType and binaryName
+      (null for SDK agents). For SDK agent types, we check if the token field is a non-empty
+      string. This is fast, offline-capable, and consistent with the conservative heuristic
+      approach used by CLI agents. Invalid keys produce clear errors at execute() time.
+
+  - title: "Model List Management"
+    chosen: "Static curated lists as named constants in factory"
+    rejected:
+      - "Dynamic API fetch from OpenRouter /models endpoint - Adds network dependency, latency, caching complexity, and failure modes to what is currently a fast synchronous method. getSupportedModels() returns string[] synchronously. Making it async would break the interface contract."
+      - "Hybrid with local cache and periodic refresh - Significant complexity for model discovery, cache invalidation, TTL management, and offline fallback. All existing agents use static lists. Consistency matters more than having the absolute latest model names."
+    rationale: >
+      All existing agents use static model lists defined as named constants in the factory file
+      (CLAUDE_CODE_MODELS, GEMINI_CLI_MODELS, CURSOR_MODELS, etc.). getSupportedModels() is
+      synchronous and returns string[]. OpenRouter has hundreds of models but users only need
+      a curated set of popular coding-capable models. Together AI similarly has dozens of models
+      but a curated coding-focused list is more useful than a raw dump. New models are added in
+      future releases. This is the established pattern and works offline with zero latency.
+
+  - title: "Web UI Token Auth Forcing"
+    chosen: "TOKEN_REQUIRED_AGENTS set mirroring SESSION_ONLY_AGENTS pattern"
+    rejected:
+      - "Provider-type enum check (SDK vs CLI) - Would require a new concept (provider type) that does not exist in the domain model. The agent type enum is the only discriminator. A simple Set<AgentType> is consistent with the existing SESSION_ONLY_AGENTS pattern."
+      - "Hardcoded if/else in the component - Less maintainable than a declarative Set. Adding future SDK providers would require modifying conditional logic instead of adding to a constant."
+    rationale: >
+      The Web UI agent-settings-section.tsx already has SESSION_ONLY_AGENTS = new Set([CopilotCli])
+      to force session auth for Copilot. Adding TOKEN_REQUIRED_AGENTS = new Set([OpenRouter,
+      TogetherAi]) follows the exact same pattern. When selectedType is in TOKEN_REQUIRED_AGENTS,
+      the auth method dropdown is disabled and forced to Token, and the API key input is always
+      shown. This is symmetric with how SESSION_ONLY_AGENTS forces Session auth.
+
+  - title: "Check Agent Auth Use Case Updates"
+    chosen: "Add SDK agents to AGENT_METADATA with null toolId and binaryName, return installed=true"
+    rejected:
+      - "Skip AGENT_METADATA and handle SDK agents with a separate code path - Would fragment the auth check logic into CLI and SDK branches. The existing metadata-driven approach (lookup -> tool check -> auth check) is clean. SDK agents simply have null toolId which triggers the early-return path (same as dev, aider, continue)."
+      - "Add a new sdkProvider field to AGENT_METADATA - Unnecessary complexity. The null toolId convention already handles agents with no installable binary. SDK agents follow the same pattern as the existing coming-soon agents (Aider, Continue) which also have null toolId."
+    rationale: >
+      The CheckAgentAuthUseCase has an AGENT_METADATA record mapping agent types to {label,
+      toolId, binaryName}. When toolId is null, the use case returns installed=true and
+      authenticated=true immediately (no tool check, no auth detection needed). This is the
+      existing pattern for dev, Aider, and Continue. For SDK agents, we add entries with
+      label set to the display name, toolId=null, binaryName=null. The auth check for
+      token presence happens at a different layer (IAgentAuthDetectorService) which the
+      use case calls only when toolId is non-null. For SDK agents, the settings UI enforces
+      token auth, and execution-time errors handle invalid keys.
+
+# Open questions (resolved during research)
+openQuestions:
+  - question: "Should we use AI SDK v5 or v6 given the @ai-sdk/togetherai compatibility issue?"
+    resolved: true
+    options:
+      - option: "Use AI SDK v6 with @ai-sdk/openai-compatible for Together AI"
+        description: "Use the stable v6 release and work around the @ai-sdk/togetherai incompatibility by using @ai-sdk/openai-compatible with Together AI's OpenAI-compatible API endpoint. This gives us v6 features (v3 model spec, structured timeout, improved streaming) for all providers."
+        selected: true
+      - option: "Use AI SDK v5 to keep @ai-sdk/togetherai native support"
+        description: "Pin to v5 where @ai-sdk/togetherai v2.x works natively. Loses v6 features and will need a major version bump migration later."
+        selected: false
+      - option: "Wait for @ai-sdk/togetherai v3 release"
+        description: "Delay the feature until the official Together AI provider ships v3 compatibility. Unknown timeline — the GitHub issue (#11780) has been open since January 2026 with no release."
+        selected: false
+    selectionRationale: >
+      AI SDK v6 is the current stable major version. The @openrouter/ai-sdk-provider v2.5.1
+      explicitly peers on ai@^6.0.0. Using v5 would create version conflicts with OpenRouter.
+      The @ai-sdk/openai-compatible workaround is officially maintained by Vercel, confirmed
+      v6-compatible, and Together AI's API is fully OpenAI-compatible. When @ai-sdk/togetherai
+      v3 ships, swapping createOpenAICompatible for createTogetherAI is a one-line change in
+      the executor constructor. No architecture changes needed.
+
+  - question: "How should the base executor handle JSON Schema to Zod conversion for generateObject?"
+    resolved: true
+    options:
+      - option: "Use ai package's jsonSchema() wrapper"
+        description: "The ai package exports a jsonSchema() function that wraps a raw JSON Schema object into a format accepted by generateObject(). No manual Zod schema construction needed. The AI SDK handles provider-specific schema mapping internally."
+        selected: true
+      - option: "Build Zod schema programmatically from JSON Schema"
+        description: "Parse the JSON Schema object and construct a Zod schema using z.object(), z.string(), z.number(), etc. Full control but complex recursive mapping, and fragile for edge cases (allOf, oneOf, nested refs)."
+        selected: false
+      - option: "Require callers to pass Zod schemas directly"
+        description: "Change the IAgentExecutor interface to accept Zod schemas in outputSchema. Would require modifying the interface (breaking NFR-1) and coupling the application layer to Zod."
+        selected: false
+    selectionRationale: >
+      The ai package exports jsonSchema() specifically for this use case. It accepts a raw
+      JSON Schema object and produces a schema that generateObject() can use. This keeps the
+      IAgentExecutor interface unchanged (outputSchema remains a plain object) and avoids
+      complex JSON-Schema-to-Zod conversion code. The ai package handles provider-specific
+      mapping internally (e.g., Anthropic tool_use, OpenAI response_format).
+
+  - question: "What npm dependencies should be added and at what versions?"
+    resolved: true
+    options:
+      - option: "ai@^6.0.0, @openrouter/ai-sdk-provider@^2.5.1, @ai-sdk/openai-compatible@^3.x"
+        description: "Three packages: the AI SDK core, the OpenRouter community provider (v6 compatible), and the OpenAI-compatible provider for Together AI. Zod is already present at ^4.3.6. No @ai-sdk/togetherai since it is incompatible with v6."
+        selected: true
+      - option: "ai@^6.0.0, @openrouter/ai-sdk-provider@^2.5.1, @ai-sdk/togetherai@^2.0.41"
+        description: "Would include the native Together AI provider. But v2.x is incompatible with AI SDK v6 — it throws 'Unsupported model version v3' at runtime."
+        selected: false
+      - option: "ai@^5.0.0, @openrouter/ai-sdk-provider@^1.x, @ai-sdk/togetherai@^2.0.41"
+        description: "Pin everything to v5-compatible versions. Works but is outdated and @openrouter/ai-sdk-provider v2.5.1 (current) peers on ai@^6.0.0, creating version conflicts."
+        selected: false
+    selectionRationale: >
+      The dependency set is driven by two constraints: (1) @openrouter/ai-sdk-provider v2.5.1
+      peers on ai@^6.0.0, and (2) @ai-sdk/togetherai does not support v6. The only viable
+      combination is ai@^6.0.0 + @openrouter/ai-sdk-provider + @ai-sdk/openai-compatible.
+      Zod ^4.3.6 is already in the root package.json and satisfies ai's peer requirement of
+      zod@^3.25.0 || ^4.0.0. Total new packages: 3. All added to packages/core/package.json
+      (or root package.json where existing deps live).
+
+# Markdown content (the full research document)
+content: |
+  ## Status
+
+  - **Phase:** Research (Complete)
+  - **Updated:** 2026-04-09
+
+  ## Critical Finding: @ai-sdk/togetherai v6 Incompatibility
+
+  The original spec listed `@ai-sdk/togetherai` as a dependency. **This package is NOT compatible
+  with AI SDK v6.** The current version (2.0.41) uses the v2 model specification while AI SDK v6
+  requires v3. An open GitHub issue (#11780, opened Jan 2026) requests v3 support but no release
+  exists as of April 2026.
+
+  **Workaround:** Together AI exposes an OpenAI-compatible API. We use `@ai-sdk/openai-compatible`
+  (officially maintained by Vercel, v6-compatible) with Together AI's base URL. Migration to a
+  native `@ai-sdk/togetherai` v3 when released is a one-line change.
+
+  ## Technology Decisions
+
+  ### 1. Together AI Provider Package
+
+  **Chosen:** `@ai-sdk/openai-compatible` with `baseURL: 'https://api.together.xyz/v1'`
+
+  **Rejected:**
+  - `@ai-sdk/togetherai` — v2.0.41 incompatible with AI SDK v6 (v2 model spec vs required v3)
+  - Direct HTTP calls — defeats purpose of unified SDK abstraction
+
+  **Rationale:** Together AI's API is OpenAI-compatible. The `@ai-sdk/openai-compatible` package
+  is Vercel-maintained and v6-compatible. When native v3 support ships, migration is trivial.
+
+  ### 2. AI SDK Version
+
+  **Chosen:** `ai@^6.0.0` (current stable)
+
+  **Rejected:**
+  - `ai@^5.0.0` — outdated, conflicts with `@openrouter/ai-sdk-provider@^2.5.1` which peers on v6
+  - `ai@^7.0.0-beta` — pre-release, unstable API surface
+
+  **Rationale:** v6 is stable, has the v3 Language Model Specification, structured timeout support,
+  and is what the OpenRouter provider targets.
+
+  ### 3. Base Executor Architecture
+
+  **Chosen:** Abstract `AiSdkBaseExecutorService` class with provider-injected `LanguageModel`
+
+  **Rejected:**
+  - Duplicated AI SDK calls per executor — violates DRY
+  - Strategy pattern via composition — unnecessary indirection for this use case
+
+  **Rationale:** All AI SDK interaction (response mapping, streaming, errors, usage) lives in the
+  base class. Subclasses only construct the provider and declare feature flags. This matches how
+  the CLI executors are structured (concrete classes per agent) but formalizes the shared logic
+  that SDK executors have in common.
+
+  ### 4. Streaming Implementation
+
+  **Chosen:** `streamText().textStream` as `AsyncIterable<string>` → `AgentExecutionStreamEvent`
+
+  **Rejected:**
+  - `fullStream` with event routing — unnecessary complexity for our 3-type event model
+  - Custom ReadableStream adapter — over-engineering
+
+  **Rationale:** `textStream` is already `AsyncIterable<string>`. Each chunk maps to a `progress`
+  event. After iteration, `await result.usage` provides the final `result` event. Zero buffering,
+  minimal latency.
+
+  ### 5. Structured Output
+
+  **Chosen:** `generateObject()` with `jsonSchema()` wrapper from `ai` package
+
+  **Rejected:**
+  - Programmatic JSON-Schema-to-Zod conversion — complex, fragile edge cases
+  - Requiring Zod schemas from callers — breaks the interface contract
+
+  **Rationale:** The `ai` package exports `jsonSchema()` which wraps raw JSON Schema objects for
+  use with `generateObject()`. No interface changes needed.
+
+  ### 6. Error Handling
+
+  **Chosen:** Catch AI SDK errors, enhance with provider context, rethrow
+
+  **Rejected:**
+  - Return errors in result metadata — breaks established throw-on-failure contract
+  - Unmodified error propagation — lacks provider context for diagnostics
+
+  **Rationale:** CLI executors throw. `APICallError.isInstance(error)` type guard enables clean
+  extraction of statusCode, isRetryable, responseBody. Enhanced messages include provider name
+  and specific guidance for 401/403/429.
+
+  ### 7. Timeout
+
+  **Chosen:** Native AI SDK `timeout` parameter (milliseconds)
+
+  **Rejected:**
+  - Manual AbortController + setTimeout — reimplements what SDK provides natively
+  - No timeout — dangerous for hanging connections
+
+  **Rationale:** AI SDK v6 `timeout` parameter handles abort signal creation and cleanup
+  internally. Accepts number (ms) or structured `{totalMs, stepMs, chunkMs}`.
+
+  ## Library Analysis
+
+  | Library | Version | Purpose | Decision | Reasoning |
+  | ------- | ------- | ------- | -------- | --------- |
+  | `ai` | ^6.0.0 | AI SDK core (generateText, streamText, generateObject) | **Use** | Current stable, v3 model spec, required by OpenRouter provider |
+  | `@openrouter/ai-sdk-provider` | ^2.5.1 | OpenRouter provider | **Use** | Community-maintained, peers on ai@^6.0.0, fully compatible |
+  | `@ai-sdk/openai-compatible` | ^3.x | Together AI via OpenAI-compatible API | **Use** | Vercel-maintained, v6 compatible, clean workaround for missing togetherai v3 |
+  | `@ai-sdk/togetherai` | 2.0.41 | Native Together AI provider | **Reject** | Incompatible with AI SDK v6 (v2 model spec, open issue #11780) |
+  | `zod` | ^4.3.6 | Schema validation for generateObject | **Already present** | In root package.json, satisfies ai peer dep (zod@^3.25.0 or ^4.0.0) |
+
+  ## Security Considerations
+
+  - **API Key Handling:** Keys stored in AgentConfig.token via encrypted SQLite settings DB.
+    Never logged, serialized to disk outside DB, or echoed in error messages. Error messages
+    say "API key is missing or invalid" without revealing the key value.
+  - **No New Storage Mechanism:** API keys use the existing token field. No new secrets storage.
+  - **Network Boundary:** SDK executors make outbound HTTPS calls to provider APIs. No inbound
+    server or open ports. All calls use the provider's default HTTPS endpoints.
+  - **Dependency Supply Chain:** Three new npm packages from established publishers (Vercel for
+    ai and openai-compatible, OpenRouter team for their provider). All are MIT or Apache-2.0
+    licensed. Lock file pins exact versions.
+
+  ## Performance Implications
+
+  - **No Cold-Start Cost:** Factory instantiates SDK executors synchronously (no API validation
+    call). First network roundtrip happens at execute() time, matching CLI executor behavior.
+  - **Streaming Latency:** textStream yields text deltas directly from the provider's SSE stream
+    with no intermediate buffering. First AgentExecutionStreamEvent should arrive within ~100ms
+    of the first provider chunk.
+  - **Executor Caching:** SDK executor instances are cached per agent type in the factory's
+    existing Map cache. No repeated provider construction.
+  - **Memory:** AI SDK provider instances are lightweight (config + fetch function). No persistent
+    connections or connection pools. Each generateText/streamText call is an independent HTTP request.
+
+  ## Architecture Notes
+
+  ### File Placement (Clean Architecture)
+
+  All SDK-specific code lives in `infrastructure/services/agents/common/executors/`:
+  - `ai-sdk-base-executor.service.ts` — Abstract base class
+  - `openrouter-executor.service.ts` — OpenRouter concrete executor
+  - `together-ai-executor.service.ts` — Together AI concrete executor
+
+  The `ai`, `@openrouter/ai-sdk-provider`, and `@ai-sdk/openai-compatible` packages are
+  imported ONLY in these infrastructure files. Application and domain layers have zero knowledge
+  of the Vercel AI SDK.
+
+  ### Integration Points
+
+  1. **TypeSpec:** Add `OpenRouter: "openrouter"` and `TogetherAi: "together-ai"` to AgentType enum
+  2. **Factory:** Add switch cases, model lists, update getSupportedAgents/getCliInfo/getSupportedModels
+  3. **Auth Detector:** Add token-presence check for SDK agent types
+  4. **CheckAgentAuthUseCase:** Add AGENT_METADATA entries with null toolId/binaryName
+  5. **Agent Validator:** Add SDK agents to AGENT_BINARY_MAP as undefined (or handle with early return)
+  6. **TUI Wizard:** Add agent options, force token auth
+  7. **Web UI:** Add AGENT_TYPE_OPTIONS entries, add TOKEN_REQUIRED_AGENTS set
+  8. **DI Container:** No changes needed — factory constructs SDK executors internally
+
+  ### Existing Patterns Preserved
+
+  - `IAgentExecutor` interface: zero changes
+  - `IAgentExecutorFactory` interface: zero changes
+  - `AgentConfig.token`: already stores API keys
+  - `AgentAuthMethod.Token`: already exists
+  - Factory caching: reuses existing Map<string, IAgentExecutor>
+  - Static model lists: follows CLAUDE_CODE_MODELS / GEMINI_CLI_MODELS pattern
+  - Feature flags: `supportsFeature()` with Set<string>
+
+  ### AI SDK API Mapping
+
+  | IAgentExecutor Method | AI SDK Function | Key Mapping |
+  | --------------------- | --------------- | ----------- |
+  | `execute(prompt, opts)` | `generateText({model, prompt, system, timeout})` | `result.text` -> `AgentExecutionResult.result` |
+  | `execute(prompt, {outputSchema})` | `generateObject({model, prompt, schema: jsonSchema(outputSchema)})` | `result.object` -> `metadata.structured_output` |
+  | `executeStream(prompt, opts)` | `streamText({model, prompt, system, timeout})` | `textStream` chunks -> progress events |
+  | `supportsFeature(streaming)` | N/A | Always true for SDK executors |
+  | `supportsFeature(structuredOutput)` | N/A | Always true (generateObject available) |
+  | `supportsFeature(systemPrompt)` | N/A | Always true (system param in all calls) |
+  | `supportsFeature(sessionResume)` | N/A | Always false (no persistent process) |
+
+  ### Token Usage Mapping
+
+  | AI SDK LanguageModelUsage | AgentExecutionUsage | Notes |
+  | ------------------------- | ------------------- | ----- |
+  | `usage.inputTokens` | `inputTokens` | Direct mapping |
+  | `usage.outputTokens` | `outputTokens` | Direct mapping |
+  | `usage.inputTokenDetails?.cacheWriteTokens` | `cacheCreationInputTokens` | May be undefined per provider |
+  | `usage.inputTokenDetails?.cacheReadTokens` | `cacheReadInputTokens` | May be undefined per provider |
+  | N/A | `costUsd` | Always undefined (not calculable) |
+  | N/A | `numTurns` | Always undefined (single-shot) |
+
+  ### Error Handling Mapping
+
+  | AI SDK Error | Handling | User-Facing Message |
+  | ------------ | -------- | ------------------- |
+  | `APICallError` (401/403) | Rethrow with provider name | "OpenRouter: Authentication failed. Check your API key in settings." |
+  | `APICallError` (429) | Rethrow with retry info | "OpenRouter: Rate limit exceeded. Retry after {retryAfter}s." |
+  | `APICallError` (5xx) | Rethrow with provider name | "OpenRouter: Server error (HTTP {status}). The provider may be experiencing issues." |
+  | Timeout (abort) | Rethrow as timeout error | "OpenRouter: Request timed out after {timeout}ms." |
+  | Network error | Rethrow with guidance | "OpenRouter: Connection failed. Check your internet connection." |
+
+  ## Curated Model Lists (Proposed)
+
+  ### OpenRouter Models
+  Popular coding-capable models accessible via a single API key:
+  - `anthropic/claude-sonnet-4.5` — Anthropic Claude
+  - `anthropic/claude-haiku-4.5` — Fast Anthropic model
+  - `openai/gpt-5.4` — OpenAI latest
+  - `openai/gpt-5.2` — OpenAI balanced
+  - `meta-llama/llama-4-maverick` — Meta open source
+  - `meta-llama/llama-4-scout` — Meta efficient
+  - `google/gemini-3-flash` — Google fast
+  - `google/gemini-3-pro` — Google capable
+  - `deepseek/deepseek-chat-v3-0324` — DeepSeek coding
+  - `mistralai/mistral-large-latest` — Mistral flagship
+
+  ### Together AI Models
+  Fast open-source model inference, coding-focused:
+  - `meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8` — Llama 4 Maverick
+  - `meta-llama/Meta-Llama-3.3-70B-Instruct-Turbo` — Llama 3.3 70B fast
+  - `Qwen/Qwen2.5-Coder-32B-Instruct` — Qwen coding specialist
+  - `deepseek-ai/DeepSeek-V3` — DeepSeek V3
+  - `deepseek-ai/DeepSeek-R1` — DeepSeek reasoning
+  - `mistralai/Mistral-Small-24B-Instruct-2501` — Mistral Small efficient
+  - `google/gemma-2-27b-it` — Google Gemma 2
+  - `codellama/CodeLlama-70b-Instruct-hf` — Code Llama specialist
+
+  ---
+
+  _Research complete. Ready for planning phase._
