@@ -15,6 +15,36 @@ vi.mock('@/hooks/agent-events-provider', () => ({
   }),
 }));
 
+const stubUnsubscribe = () => {
+  /* stub */
+};
+const STABLE_EMPTY_ENTRY = {
+  status: null,
+  url: null,
+  targetType: null,
+  hydrated: false,
+  deployLoading: false,
+  stopLoading: false,
+  deployError: null,
+};
+const deploymentStatusStub = {
+  store: {
+    hydrate: vi.fn(),
+    getEntry: vi.fn(() => STABLE_EMPTY_ENTRY),
+    update: vi.fn(),
+    setStatus: vi.fn(),
+    subscribe: vi.fn(() => stubUnsubscribe),
+    subscribeAll: vi.fn(() => stubUnsubscribe),
+  },
+  deploy: vi.fn(),
+  stop: vi.fn(),
+  ensureHydrated: vi.fn(),
+};
+vi.mock('@/hooks/deployment-status-provider', () => ({
+  useDeploymentStatusContext: () => deploymentStatusStub,
+  useDeploymentStatusContextOptional: () => deploymentStatusStub,
+}));
+
 vi.mock('@/app/actions/agent-setup-flag', () => ({
   isAgentSetupComplete: vi.fn(() => Promise.resolve(false)),
 }));
