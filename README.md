@@ -1,3 +1,5 @@
+![Shep](docs/screenshots/shep-card.jpg)
+
 <div align="center">
 
 <h1>
