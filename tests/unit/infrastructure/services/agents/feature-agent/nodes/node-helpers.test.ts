@@ -428,6 +428,66 @@ describe('buildExecutorOptions', () => {
     const options = buildExecutorOptions(baseState as any);
     expect(options.cwd).toBe('/tmp/repo');
   });
+
+  // --- Caveman mode directive wiring ---
+
+  it('does not attach a systemPrompt when caveman mode is disabled (default)', () => {
+    const settings = createDefaultSettings();
+    initializeSettings(settings);
+
+    const options = buildExecutorOptions(baseState as any);
+    expect(options.systemPrompt).toBeUndefined();
+  });
+
+  it('attaches the default caveman directive as systemPrompt when caveman mode is enabled', () => {
+    const settings = createDefaultSettings();
+    settings.workflow.cavemanMode = { enabled: true };
+    initializeSettings(settings);
+
+    const options = buildExecutorOptions(baseState as any);
+    expect(typeof options.systemPrompt).toBe('string');
+    expect(options.systemPrompt!.toLowerCase()).toContain('caveman');
+  });
+
+  it('attaches a custom caveman directive when provided in settings', () => {
+    const settings = createDefaultSettings();
+    settings.workflow.cavemanMode = {
+      enabled: true,
+      directive: 'be terse. output valid json only.',
+    };
+    initializeSettings(settings);
+
+    const options = buildExecutorOptions(baseState as any);
+    expect(options.systemPrompt).toBe('be terse. output valid json only.');
+  });
+
+  it('exempts the merge node from caveman mode even when enabled', () => {
+    // Regression: merge writes commit messages and PR bodies for humans.
+    // The caveman style there produces unreadable commits.
+    const settings = createDefaultSettings();
+    settings.workflow.cavemanMode = { enabled: true };
+    initializeSettings(settings);
+
+    const options = buildExecutorOptions(baseState as any, undefined, 'merge');
+    expect(options.systemPrompt).toBeUndefined();
+  });
+
+  it('caveman directive is attached for fast-implement when enabled', () => {
+    const settings = createDefaultSettings();
+    settings.workflow.cavemanMode = { enabled: true };
+    initializeSettings(settings);
+
+    const options = buildExecutorOptions(baseState as any, undefined, 'fast-implement');
+    expect(typeof options.systemPrompt).toBe('string');
+    expect(options.systemPrompt!.toLowerCase()).toContain('caveman');
+  });
+
+  it('caveman directive falls back to undefined when settings are not initialized', () => {
+    // Don't initialize settings — buildExecutorOptions must not crash
+    // and must not attach a systemPrompt when settings are unavailable.
+    const options = buildExecutorOptions(baseState as any);
+    expect(options.systemPrompt).toBeUndefined();
+  });
 });
 
 describe('removeSpecCommitsIfNeeded', () => {

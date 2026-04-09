@@ -25,6 +25,7 @@ import type {
   FeatureFlags,
   SkillInjectionConfig,
   TokenOptimizationConfig,
+  CavemanModeConfig,
 } from '../generated/output';
 import {
   AgentType,
@@ -212,6 +213,14 @@ export function createDefaultSettings(): Settings {
     aliasCompression: true,
   };
 
+  // Caveman mode is disabled by default. Users opt in explicitly because
+  // the directive changes the agent's output style globally across every
+  // phase (except merge, which is always exempt at enforcement time to
+  // keep commit messages and PR bodies readable).
+  const cavemanMode: CavemanModeConfig = {
+    enabled: false,
+  };
+
   const workflow: WorkflowConfig = {
     openPrOnImplementationComplete: false,
     approvalGateDefaults,
@@ -222,6 +231,7 @@ export function createDefaultSettings(): Settings {
     autoArchiveDelayMinutes: 10,
     skillInjection,
     tokenOptimization,
+    cavemanMode,
   };
 
   const featureFlags: FeatureFlags = {

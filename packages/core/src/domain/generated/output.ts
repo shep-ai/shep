@@ -469,6 +469,20 @@ export type TokenOptimizationConfig = {
 };
 
 /**
+ * Caveman system-prompt directive configuration (optional, disabled by default)
+ */
+export type CavemanModeConfig = {
+  /**
+   * Master toggle for caveman directive injection (default: false)
+   */
+  enabled: boolean;
+  /**
+   * Optional custom directive text (undefined = use factory default)
+   */
+  directive?: string;
+};
+
+/**
  * Global workflow configuration defaults
  */
 export type WorkflowConfig = {
@@ -540,6 +554,10 @@ export type WorkflowConfig = {
    * Token optimization configuration (optional, enabled by default)
    */
   tokenOptimization?: TokenOptimizationConfig;
+  /**
+   * Caveman mode configuration (optional, disabled by default)
+   */
+  cavemanMode?: CavemanModeConfig;
 };
 export enum AgentType {
   ClaudeCode = 'claude-code',

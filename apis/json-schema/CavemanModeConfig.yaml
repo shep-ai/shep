@@ -1,0 +1,14 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CavemanModeConfig.yaml
+type: object
+properties:
+  enabled:
+    type: boolean
+    default: false
+    description: "Master toggle for caveman directive injection (default: false)"
+  directive:
+    type: string
+    description: Optional custom directive text (undefined = use factory default)
+required:
+  - enabled
+description: Caveman system-prompt directive configuration (optional, disabled by default)

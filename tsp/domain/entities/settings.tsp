@@ -375,6 +375,38 @@ model TokenOptimizationConfig {
   aliasCompression: boolean = true;
 }
 
+/**
+ * Caveman mode — appends a terse-style directive to the Claude Code
+ * subprocess system prompt on every turn. Unlike the `TokenOptimizationConfig`
+ * layer which only processes shep's seed prompt, this directive affects
+ * Claude Code's INTERNAL conversation for the entire session: every
+ * assistant response is terser, and because each turn's conversation
+ * history is re-sent on the next turn, savings compound across turns.
+ *
+ * Operates via the `--append-system-prompt` flag on the `claude` CLI.
+ * Disabled by default because it changes the agent's output style
+ * globally, which may not be desirable for every user.
+ *
+ * The `merge` node is ALWAYS exempt from caveman mode even when the
+ * master toggle is on, because merge writes commit messages and PR
+ * bodies that humans read — caveman style there produces unreadable
+ * commit messages.
+ */
+@doc("Caveman system-prompt directive configuration (optional, disabled by default)")
+model CavemanModeConfig {
+  @doc("Master toggle for caveman directive injection (default: false)")
+  enabled: boolean = false;
+
+  /**
+   * Optional override for the caveman directive text. When undefined,
+   * the factory default is used — a terse-style instruction that tells
+   * the agent to drop filler, articles, pleasantries and hedging while
+   * keeping technical substance and code blocks unchanged.
+   */
+  @doc("Optional custom directive text (undefined = use factory default)")
+  directive?: string;
+}
+
 @doc("Global workflow configuration defaults")
 model WorkflowConfig {
   /**
@@ -479,6 +511,16 @@ model WorkflowConfig {
    */
   @doc("Token optimization configuration (optional, enabled by default)")
   tokenOptimization?: TokenOptimizationConfig;
+
+  /**
+   * Caveman mode — injects a terse-style directive into Claude Code's
+   * system prompt on every turn via `--append-system-prompt`. Shrinks
+   * the agent's own output and compounds across turns. Disabled by
+   * default because it changes output style globally. The `merge` node
+   * is exempt even when enabled.
+   */
+  @doc("Caveman mode configuration (optional, disabled by default)")
+  cavemanMode?: CavemanModeConfig;
 }
 
 @doc("AI coding agent configuration")

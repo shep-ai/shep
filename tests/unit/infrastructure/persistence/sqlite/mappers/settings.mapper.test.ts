@@ -174,6 +174,8 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     token_opt_delta_context: 1,
     token_opt_semantic_compression: 1,
     token_opt_alias_compression: 1,
+    caveman_mode_enabled: 0,
+    caveman_mode_directive: null,
     ...overrides,
   };
 }
@@ -1438,6 +1440,91 @@ describe('Settings Mapper', () => {
         semanticCompression: true,
         aliasCompression: true,
       });
+    });
+  });
+
+  describe('caveman mode', () => {
+    // These round-trip tests exercise the same "always hydrate the field"
+    // contract that the tokenOptimization mapper learned the hard way.
+    // The consumer (buildExecutorOptions) reads workflow.cavemanMode
+    // directly with no fallback, so the mapper must never leave it
+    // undefined — even when all columns are at their defaults.
+
+    it('maps cavemanMode.enabled=true to caveman_mode_enabled=1', () => {
+      const settings = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          cavemanMode: { enabled: true },
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.caveman_mode_enabled).toBe(1);
+      expect(row.caveman_mode_directive).toBeNull();
+    });
+
+    it('maps cavemanMode.enabled=false to caveman_mode_enabled=0', () => {
+      const settings = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          cavemanMode: { enabled: false },
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.caveman_mode_enabled).toBe(0);
+    });
+
+    it('maps cavemanMode.directive to caveman_mode_directive column', () => {
+      const settings = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          cavemanMode: { enabled: true, directive: 'be terse. only valid json.' },
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.caveman_mode_directive).toBe('be terse. only valid json.');
+    });
+
+    it('hydrates cavemanMode from the row with default-off when columns are at defaults', () => {
+      const row = createTestRow({ caveman_mode_enabled: 0, caveman_mode_directive: null });
+      const settings = fromDatabase(row);
+      expect(settings.workflow.cavemanMode).toEqual({ enabled: false });
+    });
+
+    it('hydrates cavemanMode.enabled=true when the column is 1', () => {
+      const row = createTestRow({ caveman_mode_enabled: 1, caveman_mode_directive: null });
+      const settings = fromDatabase(row);
+      expect(settings.workflow.cavemanMode).toEqual({ enabled: true });
+    });
+
+    it('hydrates the custom directive from the row when present', () => {
+      const row = createTestRow({
+        caveman_mode_enabled: 1,
+        caveman_mode_directive: 'custom terse instructions',
+      });
+      const settings = fromDatabase(row);
+      expect(settings.workflow.cavemanMode).toEqual({
+        enabled: true,
+        directive: 'custom terse instructions',
+      });
+    });
+
+    it('round-trips a fully populated cavemanMode through toDatabase and fromDatabase', () => {
+      const cavemanMode = { enabled: true, directive: 'short. terse. technical.' };
+      const original = createTestSettings({
+        workflow: { ...createTestSettings().workflow, cavemanMode },
+      });
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+      expect(restored.workflow.cavemanMode).toEqual(cavemanMode);
+    });
+
+    it('always hydrates cavemanMode even when the original is default (regression)', () => {
+      const original = createTestSettings();
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+      // Must be the hydrated object, never undefined — mirrors the
+      // tokenOptimization lesson from commit 3e32a55f.
+      expect(restored.workflow.cavemanMode).toEqual({ enabled: false });
     });
   });
 });

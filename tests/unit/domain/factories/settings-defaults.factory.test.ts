@@ -406,6 +406,9 @@ describe('createDefaultSettings', () => {
           semanticCompression: true,
           aliasCompression: true,
         },
+        cavemanMode: {
+          enabled: false,
+        },
       });
     });
   });

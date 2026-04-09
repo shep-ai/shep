@@ -12,6 +12,7 @@
  */
 
 import type {
+  CavemanModeConfig,
   Settings,
   SkillInjectionConfig,
   SkillSource,
@@ -147,6 +148,10 @@ export interface SettingsRow {
   token_opt_delta_context: number;
   token_opt_semantic_compression: number;
   token_opt_alias_compression: number;
+
+  // Caveman mode config (added in migration 056)
+  caveman_mode_enabled: number;
+  caveman_mode_directive: string | null;
 }
 
 /**
@@ -285,6 +290,10 @@ export function toDatabase(settings: Settings): SettingsRow {
       (settings.workflow.tokenOptimization?.semanticCompression ?? true) ? 1 : 0,
     token_opt_alias_compression:
       (settings.workflow.tokenOptimization?.aliasCompression ?? true) ? 1 : 0,
+
+    // Caveman mode config (default: disabled, no custom directive)
+    caveman_mode_enabled: settings.workflow.cavemanMode?.enabled ? 1 : 0,
+    caveman_mode_directive: settings.workflow.cavemanMode?.directive ?? null,
   };
 }
 
@@ -379,6 +388,25 @@ function buildTokenOptimizationFromRow(row: SettingsRow): {
 }
 
 /**
+ * Build the cavemanMode spread from DB row columns. Always returns
+ * `{ cavemanMode: { ... } }` fully hydrated from the row — never `{}`
+ * and never undefined. See `buildTokenOptimizationFromRow` for the
+ * detailed rationale (mapper consumers read the field directly and
+ * have no factory-defaults fallback, so leaving it undefined would
+ * silently suppress the feature).
+ */
+function buildCavemanModeFromRow(row: SettingsRow): { cavemanMode: CavemanModeConfig } {
+  return {
+    cavemanMode: {
+      enabled: (row.caveman_mode_enabled ?? 0) === 1,
+      ...(row.caveman_mode_directive !== null && row.caveman_mode_directive !== undefined
+        ? { directive: row.caveman_mode_directive }
+        : {}),
+    },
+  };
+}
+
+/**
  * Maps database row to Settings domain object.
  * Reconstructs nested objects and converts types from SQL.
  *
@@ -461,6 +489,7 @@ export function fromDatabase(row: SettingsRow): Settings {
       ...buildAnalyzeRepoTimeoutsFromRow(row),
       ...buildSkillInjectionFromRow(row),
       ...buildTokenOptimizationFromRow(row),
+      ...buildCavemanModeFromRow(row),
       ciWatchEnabled: row.ci_watch_enabled !== 0,
       enableEvidence: row.workflow_enable_evidence === 1,
       commitEvidence: row.workflow_commit_evidence === 1,

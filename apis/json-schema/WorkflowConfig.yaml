@@ -70,6 +70,9 @@ properties:
   tokenOptimization:
     $ref: TokenOptimizationConfig.yaml
     description: Token optimization configuration (optional, enabled by default)
+  cavemanMode:
+    $ref: CavemanModeConfig.yaml
+    description: Caveman mode configuration (optional, disabled by default)
 required:
   - openPrOnImplementationComplete
   - approvalGateDefaults

@@ -28,6 +28,7 @@ import {
   optimizePromptIfEnabled,
   recordOptimizationMetricsIfEnabled,
 } from '../prompt-optimization-context.js';
+import { resolveCavemanDirective } from '../caveman-directive.js';
 import { updateNodeLifecycle } from '../lifecycle-context.js';
 import { getLogPrefix, setCurrentPhase } from '../log-context.js';
 
@@ -112,11 +113,26 @@ export function buildExecutorOptions(
 ): AgentExecutionOptions {
   const stage = nodeName ?? state.currentNode ?? '';
   const stageTimeout = getStageTimeoutMs(stage);
+
+  // Caveman mode — resolve a terse system-prompt directive from settings.
+  // The claude-code executor forwards `options.systemPrompt` to the
+  // `--append-system-prompt` CLI flag, which persists across every turn
+  // of the Claude Code session. Returns undefined (and the flag is
+  // skipped entirely) when caveman mode is off, settings are not
+  // initialized, or the current node is in CAVEMAN_EXEMPT_NODES.
+  const cavemanConfig = hasSettings() ? getSettings().workflow?.cavemanMode : undefined;
+  const systemPrompt = resolveCavemanDirective(
+    stage,
+    cavemanConfig?.enabled ?? false,
+    cavemanConfig?.directive
+  );
+
   return {
     cwd: state.worktreePath || state.repositoryPath,
     maxTurns: 5000,
     timeout: stageTimeout,
     ...(state.model ? { model: state.model } : {}),
+    ...(systemPrompt !== undefined ? { systemPrompt } : {}),
     ...overrides,
   };
 }
