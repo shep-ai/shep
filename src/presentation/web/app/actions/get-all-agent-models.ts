@@ -22,6 +22,8 @@ const AGENT_LABELS: Record<string, string> = {
   'copilot-cli': 'Copilot CLI',
   cursor: 'Cursor CLI',
   'gemini-cli': 'Gemini CLI',
+  openrouter: 'OpenRouter',
+  'together-ai': 'Together AI',
   dev: 'Demo',
 };
 
@@ -32,6 +34,8 @@ const AGENT_ORDER: Record<string, number> = {
   'copilot-cli': 2,
   cursor: 3,
   'gemini-cli': 4,
+  openrouter: 5,
+  'together-ai': 6,
   dev: 99,
 };
 
