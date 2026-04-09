@@ -40,8 +40,12 @@ import type { IWorktreeService } from '../../application/ports/output/services/w
 import { WorktreeService } from '../services/git/worktree.service.js';
 import type { IFileSystemService } from '../../application/ports/output/services/file-system-service.interface.js';
 import { FileSystemService } from '../services/file-system.service.js';
+import type { IApplicationBriefStore } from '../../application/ports/output/services/application-brief-store.interface.js';
+import { ApplicationBriefStore } from '../services/filesystem/application-brief.store.js';
 import type { IProjectScaffoldService } from '../../application/ports/output/services/project-scaffold-service.interface.js';
 import { FsProjectScaffoldService } from '../services/project-scaffold/fs-project-scaffold.service.js';
+import type { IApplicationCreationPromptBuilder } from '../../application/ports/output/services/application-creation-prompt-builder.interface.js';
+import { ApplicationCreationPromptBuilder } from '../services/agents/application-creation/application-creation-prompt.builder.js';
 import type { IAgentAuthDetectorService } from '../../application/ports/output/services/agent-auth-detector.interface.js';
 import { PlatformAgentAuthDetectorService } from '../services/agent-auth-detector/platform-agent-auth-detector.service.js';
 import type { IToolInstallerService } from '../../application/ports/output/services/tool-installer.service.js';
@@ -65,6 +69,16 @@ import type { IGitHubRepositoryService } from '../../application/ports/output/se
 import { GitHubRepositoryService } from '../services/external/github-repository.service.js';
 import type { IBrowserOpener } from '../../application/ports/output/services/i-browser-opener.js';
 import { BrowserOpenerService } from '../services/browser-opener.service.js';
+import type { ITerminalSessionService } from '../../application/ports/output/services/terminal-session-service.interface.js';
+import { PtyTerminalSessionService } from '../services/terminal/pty-terminal-session.service.js';
+import { CreateTerminalSessionUseCase } from '../../application/use-cases/terminal/create-terminal-session.use-case.js';
+import type { IApplicationFileSystemService } from '../../application/ports/output/services/application-file-system-service.interface.js';
+import { NodeApplicationFileSystemService } from '../services/filesystem/node-application-file-system.service.js';
+import { ListApplicationFilesUseCase } from '../../application/use-cases/applications/list-application-files.use-case.js';
+import { ReadApplicationFileUseCase } from '../../application/use-cases/applications/read-application-file.use-case.js';
+import { ReadApplicationFileRawUseCase } from '../../application/use-cases/applications/read-application-file-raw.use-case.js';
+import { WriteApplicationFileUseCase } from '../../application/use-cases/applications/write-application-file.use-case.js';
+import { WatchApplicationFilesUseCase } from '../../application/use-cases/applications/watch-application-files.use-case.js';
 
 // Agent infrastructure interfaces and implementations
 import type { IAgentExecutorFactory } from '../../application/ports/output/agents/agent-executor-factory.interface.js';
@@ -279,9 +293,17 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.registerSingleton<IWorktreeService>('IWorktreeService', WorktreeService);
   container.registerSingleton<IFileSystemService>('IFileSystemService', FileSystemService);
+  container.registerSingleton<IApplicationBriefStore>(
+    'IApplicationBriefStore',
+    ApplicationBriefStore
+  );
   container.registerSingleton<IProjectScaffoldService>(
     'IProjectScaffoldService',
     FsProjectScaffoldService
+  );
+  container.registerSingleton<IApplicationCreationPromptBuilder>(
+    'IApplicationCreationPromptBuilder',
+    ApplicationCreationPromptBuilder
   );
   container.registerSingleton<IAgentAuthDetectorService>(
     'IAgentAuthDetectorService',
@@ -303,6 +325,14 @@ export async function initializeContainer(): Promise<typeof container> {
     JsonDrivenIdeLauncherService
   );
   container.registerSingleton<IDaemonService>('IDaemonService', DaemonPidService);
+  container.registerSingleton<IApplicationFileSystemService>(
+    'IApplicationFileSystemService',
+    NodeApplicationFileSystemService
+  );
+  container.registerSingleton<ITerminalSessionService>(
+    'ITerminalSessionService',
+    PtyTerminalSessionService
+  );
   container.registerSingleton(AttachmentStorageService);
   container.register('AttachmentStorageService', { useToken: AttachmentStorageService });
   const deploymentService = new DeploymentService();
@@ -446,6 +476,12 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(ListToolsUseCase);
   container.registerSingleton(LaunchToolUseCase);
   container.registerSingleton(LaunchIdeUseCase);
+  container.registerSingleton(CreateTerminalSessionUseCase);
+  container.registerSingleton(ListApplicationFilesUseCase);
+  container.registerSingleton(ReadApplicationFileUseCase);
+  container.registerSingleton(ReadApplicationFileRawUseCase);
+  container.registerSingleton(WriteApplicationFileUseCase);
+  container.registerSingleton(WatchApplicationFilesUseCase);
   container.registerSingleton(AddRepositoryUseCase);
   container.registerSingleton(CreateProjectUseCase);
   container.registerSingleton(CheckAgentAuthUseCase);

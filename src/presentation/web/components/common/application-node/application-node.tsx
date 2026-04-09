@@ -16,13 +16,46 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTurnStatus } from '@/hooks/turn-statuses-provider';
 import type { ApplicationNodeData } from './application-node-config';
 
-const STATUS_DOT_CLASSES: Record<string, string> = {
-  Active: 'bg-green-500',
-  Error: 'bg-red-500',
-};
-const STATUS_DOT_DEFAULT = 'bg-muted-foreground/40';
+/**
+ * Pick the effective status for the card's status pill by folding the
+ * LIVE interactive-session turn status into the persisted
+ * `application.status`:
+ *
+ *   - `processing`      → "Working"  (agent is actively running a turn)
+ *   - `awaiting_input`  → "Waiting"  (agent blocked on user interaction)
+ *   - `unread`          → "Ready"    (agent finished a turn you haven't read)
+ *   - anything else     → fall back to `data.status` ("Idle" / "Error")
+ *
+ * The persisted `application.status` column is a coarse snapshot that
+ * only changes on explicit transitions; without live folding, the
+ * card (and the app page top bar) was stuck saying "Idle" even while
+ * the agent was clearly running tool after tool.
+ */
+function deriveLiveStatus(
+  persistedStatus: string,
+  turnStatus: string
+): { label: string; dotClass: string; pulse: boolean } {
+  if (turnStatus === 'processing') {
+    return { label: 'Working', dotClass: 'bg-violet-500', pulse: true };
+  }
+  if (turnStatus === 'awaiting_input') {
+    return { label: 'Waiting', dotClass: 'bg-amber-500', pulse: true };
+  }
+  if (turnStatus === 'unread') {
+    return { label: 'Ready', dotClass: 'bg-emerald-500', pulse: false };
+  }
+  // Fall through to the persisted coarse status.
+  if (persistedStatus === 'Active') {
+    return { label: 'Active', dotClass: 'bg-green-500', pulse: false };
+  }
+  if (persistedStatus === 'Error') {
+    return { label: 'Error', dotClass: 'bg-red-500', pulse: false };
+  }
+  return { label: 'Idle', dotClass: 'bg-muted-foreground/40', pulse: false };
+}
 
 export function ApplicationNode({
   data,
@@ -41,7 +74,11 @@ export function ApplicationNode({
   const totalRepoCount = 1 + data.additionalPathCount;
   const repoCountLabel = totalRepoCount === 1 ? '1 repository' : `${totalRepoCount} repositories`;
 
-  const statusDotClass = STATUS_DOT_CLASSES[data.status] ?? STATUS_DOT_DEFAULT;
+  // Live session turn status from the global SSE subscription. The
+  // scope key is `app-<id>` — same key used everywhere else the
+  // application's chat is referenced.
+  const turnStatus = useTurnStatus(`app-${data.id}`);
+  const live = deriveLiveStatus(data.status, turnStatus);
 
   return (
     <div className="group relative" style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
@@ -143,45 +180,100 @@ export function ApplicationNode({
           <span className="ms-auto flex shrink-0 items-center gap-1.5">
             <span
               data-testid="application-node-status-dot"
-              className={cn('h-2 w-2 rounded-full', statusDotClass)}
-            />
+              className={cn(
+                'relative flex h-2 w-2 items-center justify-center rounded-full',
+                live.dotClass
+              )}
+            >
+              {live.pulse ? (
+                <span
+                  className={cn(
+                    'absolute inline-flex h-full w-full animate-ping rounded-full opacity-60',
+                    live.dotClass
+                  )}
+                />
+              ) : null}
+            </span>
             <span
               data-testid="application-node-status-text"
               className="text-muted-foreground text-xs"
             >
-              {data.status}
+              {live.label}
             </span>
           </span>
         </div>
 
-        {/* Row 2: Screenshot placeholder */}
+        {/* Row 2: Preview slot — live iframe when the dev server is
+            Running, wireframe skeleton otherwise. The iframe is
+            scaled down with a CSS transform so the full browser
+            viewport fits inside the 120px preview without horizontal
+            clipping; `pointer-events-none` ensures the card stays
+            draggable and clickable (you click the card, not into the
+            running app). */}
         <div className="px-3 pb-2">
-          <div className="bg-muted h-[120px] overflow-hidden rounded-lg">
-            {/* Wireframe skeleton mimicking a web app */}
-            <div
-              className="flex h-6 items-center gap-2 px-2"
-              style={{ background: 'var(--muted)' }}
-            >
-              <div className="bg-muted-foreground/10 h-2 w-2 rounded-full" />
-              <div className="bg-muted-foreground/10 h-2 w-2 rounded-full" />
-              <div className="bg-muted-foreground/10 h-2 w-2 rounded-full" />
-              <div className="bg-muted-foreground/10 ms-2 h-2 w-16 rounded" />
-            </div>
-            <div className="flex h-[calc(120px-1.5rem)]">
-              {/* Sidebar */}
-              <div className="border-muted-foreground/5 flex w-[50px] flex-col gap-2 border-e p-2">
-                <div className="bg-muted-foreground/10 h-2 w-full rounded" />
-                <div className="bg-muted-foreground/10 h-2 w-3/4 rounded" />
-                <div className="bg-muted-foreground/10 h-2 w-full rounded" />
-              </div>
-              {/* Main content */}
-              <div className="flex flex-1 flex-col gap-2 p-3">
-                <div className="bg-muted-foreground/10 h-2.5 w-2/3 rounded" />
-                <div className="bg-muted-foreground/10 h-2 w-full rounded" />
-                <div className="bg-muted-foreground/10 h-2 w-5/6 rounded" />
-                <div className="bg-muted-foreground/10 h-2 w-3/4 rounded" />
-              </div>
-            </div>
+          <div className="bg-muted relative h-[120px] overflow-hidden rounded-lg">
+            {data.deploymentUrl ? (
+              <>
+                <iframe
+                  src={data.deploymentUrl}
+                  title={`${data.name} live preview`}
+                  // 2.5× inner size scaled to 0.4 = exactly 1.0
+                  // effective size. The iframe renders at a real
+                  // browser viewport (good enough for responsive
+                  // landing pages) and gets scaled into our slot.
+                  className="pointer-events-none absolute left-0 top-0 origin-top-left border-0 bg-white"
+                  style={{
+                    width: '250%',
+                    height: '250%',
+                    transform: 'scale(0.4)',
+                  }}
+                  // Run the app in a sandbox with only what a static
+                  // Vite dev bundle needs: same-origin (for HMR
+                  // websockets on localhost) + script execution. No
+                  // form submission, no top-level navigation, no
+                  // modal dialogs.
+                  sandbox="allow-same-origin allow-scripts"
+                  loading="lazy"
+                />
+                {/* Live badge so the user immediately sees this is
+                    real and not a mock. Sits above the iframe. */}
+                <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full border border-violet-500/40 bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-violet-700 backdrop-blur dark:text-violet-300">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-60" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-violet-500" />
+                  </span>
+                  <span>Live</span>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Wireframe skeleton mimicking a web app */}
+                <div
+                  className="flex h-6 items-center gap-2 px-2"
+                  style={{ background: 'var(--muted)' }}
+                >
+                  <div className="bg-muted-foreground/10 h-2 w-2 rounded-full" />
+                  <div className="bg-muted-foreground/10 h-2 w-2 rounded-full" />
+                  <div className="bg-muted-foreground/10 h-2 w-2 rounded-full" />
+                  <div className="bg-muted-foreground/10 ms-2 h-2 w-16 rounded" />
+                </div>
+                <div className="flex h-[calc(120px-1.5rem)]">
+                  {/* Sidebar */}
+                  <div className="border-muted-foreground/5 flex w-[50px] flex-col gap-2 border-e p-2">
+                    <div className="bg-muted-foreground/10 h-2 w-full rounded" />
+                    <div className="bg-muted-foreground/10 h-2 w-3/4 rounded" />
+                    <div className="bg-muted-foreground/10 h-2 w-full rounded" />
+                  </div>
+                  {/* Main content */}
+                  <div className="flex flex-1 flex-col gap-2 p-3">
+                    <div className="bg-muted-foreground/10 h-2.5 w-2/3 rounded" />
+                    <div className="bg-muted-foreground/10 h-2 w-full rounded" />
+                    <div className="bg-muted-foreground/10 h-2 w-5/6 rounded" />
+                    <div className="bg-muted-foreground/10 h-2 w-3/4 rounded" />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

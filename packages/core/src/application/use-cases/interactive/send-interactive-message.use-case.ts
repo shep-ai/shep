@@ -20,6 +20,24 @@ export interface SendInteractiveMessageInput {
   worktreePath: string;
   model?: string;
   agentType?: string;
+  /**
+   * Optional system prompt for the agent SDK. Kept on the input for
+   * forward-compatibility, but NOTE: the Claude Agent SDK V2 session
+   * API (`unstable_v2_createSession`) does not honor this field — any
+   * value passed here is silently dropped by the SDK. Application
+   * creation instead delivers its brief via {@link agentKickoffOverride}
+   * + a `SHEP_BRIEF.md` file in the cwd (see `CreateApplicationUseCase`).
+   */
+  systemPrompt?: string;
+  /**
+   * When set AND this call boots a new session, this string is sent
+   * to the agent as the FIRST-turn content instead of `content`. The
+   * UI still shows `content` as the user's first bubble; the agent
+   * sees `agentKickoffOverride`. Used to inject a hidden directive
+   * (e.g. "read SHEP_BRIEF.md before anything else") without
+   * cluttering the chat transcript.
+   */
+  agentKickoffOverride?: string;
 }
 
 /**
@@ -42,7 +60,9 @@ export class SendInteractiveMessageUseCase {
       input.content,
       input.worktreePath,
       input.model,
-      input.agentType
+      input.agentType,
+      input.systemPrompt,
+      input.agentKickoffOverride
     );
   }
 }

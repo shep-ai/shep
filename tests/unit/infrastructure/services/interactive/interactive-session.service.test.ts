@@ -231,6 +231,7 @@ describe('InteractiveSessionService', () => {
       countActiveSessions: vi.fn().mockResolvedValue(0),
       updateAgentSessionId: vi.fn().mockResolvedValue(undefined),
       getAgentSessionId: vi.fn().mockResolvedValue(null),
+      findLatestAgentSessionIdForFeature: vi.fn().mockResolvedValue(null),
       updateTurnStatus: vi.fn().mockResolvedValue(undefined),
       getTurnStatuses: vi.fn().mockResolvedValue(new Map()),
       getAllActiveTurnStatuses: vi.fn().mockResolvedValue(new Map()),
@@ -693,6 +694,35 @@ describe('InteractiveSessionService', () => {
           role: InteractiveMessageRole.assistant,
           content: 'Hello! I can help with that.',
         });
+      });
+
+      // Regression: https://github.com/shep-ai/shep — the Application
+      // flow calls sendUserMessage with a systemPrompt AND no existing
+      // session. An earlier version set pendingUserContent AFTER
+      // startSession returned, but the async completeBootAsync was
+      // already reading it as undefined and (because systemPrompt was
+      // set) falling into the "stay silent, wait for user" branch.
+      // Result: the agent never saw the kickoff message and the app
+      // just sat idle. Fix: pendingUserContent is now set inside
+      // startSession itself, before completeBootAsync is dispatched.
+      it('sends the kickoff user message to the agent handle when systemPrompt is supplied', async () => {
+        // Use a distinct feature ID so we start from a clean slate
+        await service.sendUserMessage(
+          'app-race-test',
+          'Build me a landing page',
+          '/wt',
+          undefined,
+          undefined,
+          'SYSTEM_PROMPT_FOR_SHEP'
+        );
+        await flushPromises();
+
+        const fh = latestHandle();
+        // The boot prompt handed to the agent MUST be the user content,
+        // not an empty string. An empty string would prove the race
+        // condition is back.
+        expect(fh.sendMock).toHaveBeenCalledWith('Build me a landing page');
+        expect(fh.sendMock).not.toHaveBeenCalledWith('');
       });
     });
 

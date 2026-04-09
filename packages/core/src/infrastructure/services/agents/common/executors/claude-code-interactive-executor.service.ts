@@ -177,6 +177,21 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
         }
       : undefined;
 
+    // NOTE: The V2 Agent SDK `SDKSessionOptions` type does NOT include
+    // a `systemPrompt` field — anything we pass there is silently
+    // dropped by the SDK. We learned this the hard way: our earlier
+    // attempts to deliver a custom Shep brief via this option never
+    // reached the agent. Callers that need to inject a system-level
+    // brief must do so via a real artifact the agent reads with its
+    // tools (see `CreateApplicationUseCase` which writes
+    // `SHEP_BRIEF.md` into the cwd and points the agent to it in the
+    // first-turn kickoff message).
+    //
+    // `options.systemPrompt` is still accepted at the port level for
+    // forward compatibility but is intentionally NOT forwarded here —
+    // doing so would re-create the "it looks wired but nothing happens"
+    // trap for future readers.
+
     return {
       model: options.model ?? DEFAULT_MODEL,
       // Auto-allow all standard tools at the CLI level. This replaces the V1
@@ -187,14 +202,6 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
       // AskUserQuestion while auto-allowing any unlisted tools as a fallback.
       ...(canUseTool ? { canUseTool } : {}),
       env: cleanEnv,
-      // Forward system prompt using preset+append pattern
-      ...(options.systemPrompt && {
-        systemPrompt: {
-          type: 'preset' as const,
-          preset: 'claude_code' as const,
-          append: options.systemPrompt,
-        },
-      }),
     };
   }
 

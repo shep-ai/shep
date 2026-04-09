@@ -42,15 +42,10 @@ interface SessionInfo {
 
 // ── API helpers ─────────────────────────────────────────────────────────────
 
-async function fetchChatState(featureId: string): Promise<ChatState> {
-  const res = await fetch(`/api/interactive/chat/${featureId}/messages`);
-  if (!res.ok) {
-    // eslint-disable-next-line no-console
-    console.error(`[ChatState] fetch failed: ${res.status}`, await res.text().catch(() => ''));
-    throw new Error(`Failed to fetch chat state: ${res.status}`);
-  }
-  return res.json() as Promise<ChatState>;
-}
+// Shared query key + fetcher live in chat-state-query so the top bar
+// can subscribe to the SAME cached entry as this hook. Single source
+// of truth, one SSE stream updates every consumer.
+import { chatQueryKey, fetchChatState } from './chat-state-query';
 
 async function postMessage(
   featureId: string,
@@ -80,12 +75,6 @@ function toThreadMessage(msg: InteractiveMessage): ThreadMessageLike {
   };
 }
 
-// ── Query key ───────────────────────────────────────────────────────────────
-
-function chatQueryKey(featureId: string) {
-  return ['chat-messages', featureId] as const;
-}
-
 // ── Status info for the typing indicator ────────────────────────────────────
 
 export interface ChatStatus {
@@ -108,6 +97,12 @@ export interface ChatRuntimeOptions {
   agentType?: string;
   /** When true, inject debug bubbles showing SSE events, session info, etc. */
   debugMode?: boolean;
+  /**
+   * Optional SSR-loaded chat state used as the TanStack Query `initialData`.
+   * When provided the hook renders immediately with those messages and the
+   * background refetch only confirms / updates them.
+   */
+  initialChatState?: ChatState;
 }
 
 /** A debug event captured from SSE for display in debug mode. */
@@ -149,11 +144,27 @@ export function useChatRuntime(
     ]);
   }, []);
 
-  // ── TanStack Query: fetch messages from backend ─────────────────────────
+  // ── TanStack Query: initial fetch only ─────────────────────────────────
+  //
+  // NO periodic polling. The chat state is event-driven:
+  //   - Initial state comes from `initialData` (SSR) or the one-shot
+  //     queryFn call on mount.
+  //   - All subsequent updates are pushed via the SSE stream effect
+  //     below, which mutates the cache directly (message / session_status
+  //     / turn_status events).
+  //   - On SSE reconnect, the `open` listener invalidates this query
+  //     once, forcing a fresh fetch to catch any missed events.
+  //
+  // This replaces the old 3s `refetchInterval` — no more bandwidth
+  // burning and no more stale-UI windows. Robustness comes from
+  // reconnect-fetch + idempotent cache merges by message id.
   const { data: chatState, isLoading: isChatLoading } = useQuery({
     queryKey: chatQueryKey(featureId),
     queryFn: () => fetchChatState(featureId),
-    refetchInterval: 3000, // Fallback polling every 3s
+    initialData: options?.initialChatState,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   // Auto-mark as read when chat tab is open and turn status is 'unread'
@@ -234,6 +245,48 @@ export function useChatRuntime(
     const es = new EventSource(`/api/interactive/chat/${featureId}/stream`);
     eventSourceRef.current = es;
 
+    /**
+     * Idempotent cache mutation helpers — called from SSE handlers.
+     * These must never throw on missing state because the cache may be
+     * mid-hydration when the first event lands. All updates are
+     * position/id-based so duplicate events across reconnects are
+     * harmless.
+     */
+    const mergeMessage = (msg: InteractiveMessage) => {
+      queryClient.setQueryData<ChatState>(chatQueryKey(featureId), (old) => {
+        const base = old ?? {
+          messages: [],
+          sessionStatus: null,
+          streamingText: null,
+          sessionInfo: null,
+        };
+        // Skip if we already have this message (dedupe by id). Also drop
+        // any optimistic entry with the same content — the server copy
+        // replaces it.
+        const existing = base.messages.find((m) => m.id === msg.id);
+        if (existing) return base;
+        const withoutOptimistic = base.messages.filter(
+          (m) =>
+            !(m.id.startsWith('optimistic-') && m.role === msg.role && m.content === msg.content)
+        );
+        return { ...base, messages: [...withoutOptimistic, msg] };
+      });
+    };
+
+    const mergeSessionStatus = (status: string) => {
+      queryClient.setQueryData<ChatState>(chatQueryKey(featureId), (old) => {
+        if (!old) return old;
+        return { ...old, sessionStatus: status };
+      });
+    };
+
+    const mergeTurnStatus = (turnStatus: string) => {
+      queryClient.setQueryData<ChatState>(chatQueryKey(featureId), (old) => {
+        if (!old) return old;
+        return { ...old, turnStatus };
+      });
+    };
+
     es.addEventListener('delta', (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data as string) as { delta: string };
@@ -259,8 +312,9 @@ export function useChatRuntime(
       } catch {
         // Ignore
       }
-      // Tool events are already persisted to DB — just refetch to show them
-      void queryClient.invalidateQueries({ queryKey: chatQueryKey(featureId) });
+      // The matching `message` event (emitted by the service alongside
+      // the activity when a tool message is persisted) handles the
+      // cache update — no refetch needed here.
     });
 
     es.addEventListener('log', (event: MessageEvent) => {
@@ -288,20 +342,63 @@ export function useChatRuntime(
       }
     });
 
+    es.addEventListener('message', (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data as string) as { message: InteractiveMessage };
+        if (data.message) {
+          mergeMessage(data.message);
+          // When an assistant message arrives, the "Thinking…" bubble
+          // should fall away.
+          if (data.message.role === InteractiveMessageRole.assistant) {
+            cancelAwaiting();
+          }
+        }
+      } catch {
+        // Ignore
+      }
+    });
+
+    es.addEventListener('session_status', (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data as string) as { sessionStatus: string };
+        if (data.sessionStatus) mergeSessionStatus(data.sessionStatus);
+      } catch {
+        // Ignore
+      }
+    });
+
+    es.addEventListener('turn_status', (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data as string) as { turnStatus: string };
+        if (data.turnStatus) mergeTurnStatus(data.turnStatus);
+      } catch {
+        // Ignore
+      }
+    });
+
     es.addEventListener('done', () => {
       setStatusLog(null);
       cancelAwaiting();
       pushDebug('turn_done');
       // Agent turn completed — clear any lingering interaction state
       setPendingInteraction(null);
-      // Refetch first, THEN clear local streaming state so there's no gap
-      void queryClient.invalidateQueries({ queryKey: chatQueryKey(featureId) }).then(() => {
-        setStreamingText('');
-      });
+      // Streaming text is superseded by the persisted assistant `message`
+      // event that fires alongside `done`. Clear our local buffer.
+      setStreamingText('');
+    });
+
+    // Robustness: after any successful (re)connect, refetch the chat
+    // state ONCE to catch any events that may have been missed while
+    // the connection was down. The browser's EventSource auto-reconnects
+    // on drops; this handler fires on every successful open including
+    // post-error re-opens.
+    es.addEventListener('open', () => {
+      void queryClient.invalidateQueries({ queryKey: chatQueryKey(featureId) });
     });
 
     es.onerror = () => {
-      // SSE dropped — the 3s polling handles reliability
+      // Browser auto-reconnects. The `open` listener above will refetch
+      // state on recovery. Nothing to do here.
     };
 
     return () => {
@@ -360,8 +457,22 @@ export function useChatRuntime(
   // ── Derive running state ────────────────────────────────────────────────
   // Note: sendMutation.isPending is excluded — the 600ms awaitingResponse
   // timer provides a smooth transition without flicker.
+  //
+  // `turnStatus === 'processing'` is critical for surfaces that post the
+  // first user message server-side (e.g. Application chat, where
+  // createApplication sends the kickoff via SendInteractiveMessageUseCase
+  // before the user ever lands on the page). In those flows the client
+  // never calls sendMutation, so `awaitingResponse` is never set and
+  // `sessionStatus` might already be 'ready' by the time the UI hydrates,
+  // leaving a dead zone with no indicator while the agent is actively
+  // working. Reading turnStatus from the backend closes that gap.
+  const backendTurnStatus = chatState?.turnStatus;
   const isRunning =
-    awaitingResponse || !!streamingText || !!statusLog || sessionStatus === 'booting';
+    awaitingResponse ||
+    !!streamingText ||
+    !!statusLog ||
+    sessionStatus === 'booting' ||
+    backendTurnStatus === 'processing';
 
   // ── Build thread messages for assistant-ui ─────────────────────────────
   const activeStreamText = streamingText ?? backendStreamingText ?? '';

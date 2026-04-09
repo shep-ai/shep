@@ -17,7 +17,12 @@ import type {
 import type { UserInteractionData } from '../agents/interactive-agent-executor.interface.js';
 
 /**
- * A single streaming chunk forwarded from agent stdout to an SSE consumer.
+ * A single streaming chunk forwarded from the interactive session to an
+ * SSE consumer. One shape carries every kind of real-time update the UI
+ * needs — text deltas, tool activity, interaction requests, AND every
+ * persisted-state change (new messages, session/turn status transitions)
+ * — so the client can rely on SSE as the single source of truth and
+ * drop all periodic polling.
  */
 export interface StreamChunk {
   /** Incremental output text from the agent */
@@ -30,6 +35,25 @@ export interface StreamChunk {
   activity?: StreamActivity;
   /** Pending user interaction (AskUserQuestion) — agent is waiting for user response */
   interaction?: UserInteractionData;
+  /**
+   * A newly persisted message (user or assistant, including tool-event
+   * messages). Emitted ONCE per `messageRepo.create` call so subscribers
+   * can append it to their local cache without refetching the whole
+   * history. Idempotent on the client by `message.id`.
+   */
+  message?: InteractiveMessage;
+  /**
+   * Session lifecycle transition: 'booting' → 'ready' → 'error' / 'stopped'.
+   * Emitted ONCE per `sessionRepo.updateStatus` call.
+   */
+  sessionStatus?: string;
+  /**
+   * Turn activity transition: 'idle' / 'processing' / 'unread' /
+   * 'awaiting_input'. Emitted ONCE per `sessionRepo.updateTurnStatus`
+   * call. This is what drives the client's "Thinking…" indicator
+   * without polling.
+   */
+  turnStatus?: string;
 }
 
 /**
@@ -118,7 +142,9 @@ export interface IInteractiveSessionService {
     featureId: string,
     worktreePath: string,
     model?: string,
-    agentType?: string
+    agentType?: string,
+    systemPrompt?: string,
+    initialUserMessage?: string
   ): Promise<InteractiveSession>;
 
   /**
@@ -184,6 +210,13 @@ export interface IInteractiveSessionService {
    * - If session is booting: queues the message
    * - If no session: boots one and queues the message
    *
+   * @param systemPrompt - Optional per-scope system prompt for the agent
+   *   SDK. When provided (and the call boots a new session), the service
+   *   uses this instead of the default feature-context prompt. Lets
+   *   Application/Repository/Global chats each supply their own
+   *   scope-appropriate instructions without the service needing to
+   *   know anything about the scope shape.
+   *
    * @returns The persisted user message
    */
   sendUserMessage(
@@ -191,7 +224,17 @@ export interface IInteractiveSessionService {
     content: string,
     worktreePath: string,
     model?: string,
-    agentType?: string
+    agentType?: string,
+    systemPrompt?: string,
+    /**
+     * When provided AND this call boots a new session, the agent's
+     * very first turn content is `agentKickoffOverride` instead of
+     * `content`. The UI still shows `content` in the user's first
+     * bubble — this is purely the agent-side text. Used by the
+     * application-creation flow to inject a "read SHEP_BRIEF.md
+     * first" directive without polluting the chat transcript.
+     */
+    agentKickoffOverride?: string
   ): Promise<InteractiveMessage>;
 
   /**
@@ -205,6 +248,16 @@ export interface IInteractiveSessionService {
    * Resolves the active session internally.
    */
   subscribeByFeature(featureId: string, onChunk: (chunk: StreamChunk) => void): UnsubscribeFn;
+
+  /**
+   * Subscribe to real-time chunks for EVERY active session, regardless
+   * of feature. Each chunk is paired with the feature scope key it
+   * came from. Used by the global turn-status SSE endpoint to push
+   * sidebar activity indicators without polling.
+   */
+  subscribeAll(
+    onChunk: (featureId: string, chunk: StreamChunk) => void
+  ): UnsubscribeFn;
 
   /**
    * Stop the active session for a feature. Kills the agent process.

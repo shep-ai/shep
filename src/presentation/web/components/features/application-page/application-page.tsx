@@ -2,39 +2,422 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, LayoutGrid } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import {
+  ArrowLeft,
+  LayoutGrid,
+  GitBranch,
+  Copy,
+  FolderOpen,
+  ClipboardList,
+  Cpu,
+} from 'lucide-react';
 import type { Application, ApplicationStatus } from '@shepai/core/domain/generated/output';
+import { DeploymentState } from '@shepai/core/domain/generated/output';
+import type { ChatState } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChatTab } from '@/components/features/chat/ChatTab';
+import { TerminalTab } from '@/components/features/application-page/terminal-tab';
+import { IdeTab } from '@/components/features/application-page/ide-tab';
+import { RunDevButton } from '@/components/features/application-page/run-dev-button';
+import { WebPreviewTab } from '@/components/features/application-page/web-preview-tab';
+import { useDeployAction, type DeployActionState } from '@/hooks/use-deploy-action';
+import { useTurnStatus } from '@/hooks/turn-statuses-provider';
+import {
+  chatQueryKey,
+  fetchChatState,
+} from '@/components/features/chat/chat-state-query';
+import { openFolder } from '@/app/actions/open-folder';
+import { getApplicationDebugPrompt } from '@/app/actions/get-application-debug-prompt';
 
 /* ------------------------------------------------------------------ */
-/*  Status badge                                                       */
+/*  Constants                                                           */
 /* ------------------------------------------------------------------ */
+
+/** Single source of truth for top-bar height. Both panes hang off this
+ *  so nothing misaligns horizontally between left and right. */
+const TOP_BAR_HEIGHT_CLASS = 'h-11';
+
+const MIN_LEFT_PX = 400;
+const MIN_RIGHT_PX = 400;
+const INITIAL_LEFT_FRACTION = 0.4;
+
+const VIEW_TABS = ['ide', 'terminal', 'web'] as const;
+type AppView = (typeof VIEW_TABS)[number];
+const VIEW_LABELS: Record<AppView, string> = {
+  ide: 'IDE',
+  terminal: 'Terminal',
+  web: 'Web',
+};
 
 const STATUS_DOT_CLASS: Record<ApplicationStatus, string> = {
   Idle: 'bg-muted-foreground/40',
-  Active: 'bg-green-500',
+  Active: 'bg-emerald-500',
   Error: 'bg-red-500',
 };
 
-function StatusBadge({ status }: { status: ApplicationStatus }) {
+/**
+ * Derive a single effective status label + dot color by folding the
+ * LIVE interactive-session turn status into the persisted
+ * `application.status`. MUST match the mapping in
+ * `components/common/application-node/application-node.tsx` so the
+ * canvas card and the application page are in sync on every parameter.
+ */
+function deriveLiveStatusPill(
+  persistedStatus: ApplicationStatus,
+  turnStatus: string
+): { label: string; dotClass: string; pulse: boolean } {
+  if (turnStatus === 'processing') {
+    return { label: 'Working', dotClass: 'bg-violet-500', pulse: true };
+  }
+  if (turnStatus === 'awaiting_input') {
+    return { label: 'Waiting', dotClass: 'bg-amber-500', pulse: true };
+  }
+  if (turnStatus === 'unread') {
+    return { label: 'Ready', dotClass: 'bg-emerald-500', pulse: false };
+  }
+  return {
+    label: persistedStatus,
+    dotClass: STATUS_DOT_CLASS[persistedStatus],
+    pulse: false,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Short path helper                                                  */
+/* ------------------------------------------------------------------ */
+
+/** Collapse a long absolute path to just its last segment. */
+function shortPath(path: string): string {
+  const normalized = path.replace(/\\/g, '/').replace(/\/+$/, '');
+  const idx = normalized.lastIndexOf('/');
+  return idx === -1 ? normalized : normalized.slice(idx + 1);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Top bar — one sleek line, inspired by Claude Code                  */
+/* ------------------------------------------------------------------ */
+
+interface AppTopBarProps {
+  application: Application;
+  activeView: AppView;
+  onViewChange: (view: AppView) => void;
+  onBack: () => void;
+  /** SSR-seeded chat state — used to initialize the session chip so it
+   *  shows any already-captured sessionId/model before SSE updates
+   *  arrive. Optional: the chip falls back to "—" when absent. */
+  initialChatState?: ChatState;
+  /** Shared dev-server deploy state (hoisted in ApplicationPage so the
+   *  top-bar Preview button and the right-pane Web iframe use a single
+   *  polling loop). */
+  deploy: DeployActionState;
+}
+
+function AppTopBar({
+  application,
+  activeView,
+  onViewChange,
+  onBack,
+  initialChatState,
+  deploy,
+}: AppTopBarProps) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium">
-      <span className={cn('h-2 w-2 rounded-full', STATUS_DOT_CLASS[status])} />
-      {status}
+    <header
+      className={cn(
+        'bg-background/95 supports-[backdrop-filter]:bg-background/70 sticky top-0 z-20 flex shrink-0 items-center gap-2 border-b px-3 backdrop-blur',
+        TOP_BAR_HEIGHT_CLASS
+      )}
+    >
+      {/* ── Left: back + identity ───────────────────────────────── */}
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label="Back to canvas"
+        onClick={onBack}
+        className="h-7 w-7"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+      </Button>
+
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-violet-500">
+        <LayoutGrid className="h-3 w-3 text-white" />
+      </div>
+
+      <h1 className="min-w-0 truncate text-sm font-semibold">{application.name}</h1>
+
+      <StatusPill applicationId={application.id} persistedStatus={application.status} />
+
+      <Divider />
+
+      {/* ── Middle: repo path + copy/open + branch ────────────── */}
+      <PathCluster repositoryPath={application.repositoryPath} />
+
+      {/* ── Spacer ──────────────────────────────────────────────── */}
+      <div className="flex-1" />
+
+      {/* ── Live session chip (model + short session id) ─────── */}
+      <SessionChip
+        featureId={`app-${application.id}`}
+        initialChatState={initialChatState}
+      />
+
+      {/* ── Copy generated prompt (debug) ───────────────────── */}
+      <CopyPromptButton applicationId={application.id} />
+
+      {/* ── Preview (install + npm run dev, persistent) ─── */}
+      <RunDevButton deploy={deploy} />
+
+      {/* ── View switcher ─────────────────────────────────────── */}
+      <ViewSwitcher active={activeView} onChange={onViewChange} />
+    </header>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Path cluster — short path + copy + open-in-file-manager            */
+/* ------------------------------------------------------------------ */
+
+function PathCluster({ repositoryPath }: { repositoryPath: string }) {
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(repositoryPath);
+      toast.success('Path copied', { description: repositoryPath });
+    } catch {
+      toast.error('Failed to copy path');
+    }
+  }, [repositoryPath]);
+
+  const handleOpen = useCallback(async () => {
+    const result = await openFolder(repositoryPath);
+    if (!result.success) {
+      toast.error('Could not open folder', { description: result.error });
+    }
+  }, [repositoryPath]);
+
+  return (
+    <div className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs">
+      <span className="truncate font-mono text-[11px]" title={repositoryPath}>
+        {shortPath(repositoryPath)}
+      </span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="text-muted-foreground hover:text-foreground h-5 w-5"
+        onClick={handleCopy}
+        aria-label="Copy path"
+        title="Copy path"
+      >
+        <Copy className="h-3 w-3" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="text-muted-foreground hover:text-foreground h-5 w-5"
+        onClick={handleOpen}
+        aria-label="Open in file manager"
+        title="Open in file manager"
+      >
+        <FolderOpen className="h-3 w-3" />
+      </Button>
+      <span className="text-muted-foreground/40">·</span>
+      <span className="flex items-center gap-1 font-mono text-[11px]">
+        <GitBranch className="h-3 w-3" />
+        main
+      </span>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Session chip — model + short session id, live via shared query     */
+/* ------------------------------------------------------------------ */
+
+function SessionChip({
+  featureId,
+  initialChatState,
+}: {
+  featureId: string;
+  initialChatState?: ChatState;
+}) {
+  // Reads from the SAME TanStack Query cache entry the chat tab uses.
+  // The `message`/`session_status`/`turn_status` SSE events inside
+  // ChatTab's useChatRuntime mutate this cache directly, so the chip
+  // updates live as the session transitions booting → ready and the
+  // SDK reports back its assigned session id.
+  const { data: chatState } = useQuery({
+    queryKey: chatQueryKey(featureId),
+    queryFn: () => fetchChatState(featureId),
+    initialData: initialChatState,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  const sessionInfo = chatState?.sessionInfo;
+  const sessionId = sessionInfo?.sessionId ?? null;
+  const model = sessionInfo?.model ?? null;
+  const shortId = sessionId ? sessionId.slice(0, 8) : null;
+
+  const handleCopy = useCallback(async () => {
+    if (!sessionId) return;
+    try {
+      await navigator.clipboard.writeText(sessionId);
+      toast.success('Session ID copied', { description: sessionId });
+    } catch {
+      toast.error('Failed to copy session id');
+    }
+  }, [sessionId]);
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      disabled={!sessionId}
+      className={cn(
+        'border-border/60 bg-muted/40 text-muted-foreground inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border px-2 font-mono text-[10px] transition-colors',
+        sessionId
+          ? 'hover:bg-muted cursor-pointer hover:text-foreground'
+          : 'cursor-default opacity-60'
+      )}
+      title={sessionId ? `Click to copy full session id: ${sessionId}` : 'No session yet'}
+      aria-label={sessionId ? 'Copy session id' : 'No active session'}
+    >
+      <Cpu className="h-3 w-3 opacity-60" />
+      <span className="font-medium">{model ?? 'agent'}</span>
+      <span className="text-muted-foreground/50">·</span>
+      <span>{shortId ?? '—'}</span>
+    </button>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Copy prompt — debug dump of the full generated system+user prompt  */
+/* ------------------------------------------------------------------ */
+
+function CopyPromptButton({ applicationId }: { applicationId: string }) {
+  const [busy, setBusy] = useState(false);
+
+  const handleClick = useCallback(async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const result = await getApplicationDebugPrompt(applicationId);
+      if (result.error || !result.combined) {
+        toast.error('Failed to build prompt', { description: result.error });
+        return;
+      }
+      await navigator.clipboard.writeText(result.combined);
+      const systemLen = result.systemPrompt?.length ?? 0;
+      const userLen = result.userMessage?.length ?? 0;
+      toast.success('Prompt copied to clipboard', {
+        description: `${systemLen} chars system + ${userLen} chars user`,
+      });
+    } catch (err) {
+      toast.error('Failed to copy prompt', {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setBusy(false);
+    }
+  }, [applicationId, busy]);
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={handleClick}
+      disabled={busy}
+      className="text-muted-foreground hover:text-foreground h-7 w-7"
+      aria-label="Copy full generated prompt (debug)"
+      title="Copy full generated prompt (debug) — system + user message"
+    >
+      <ClipboardList className="h-3.5 w-3.5" />
+    </Button>
+  );
+}
+
+function StatusPill({
+  applicationId,
+  persistedStatus,
+}: {
+  applicationId: string;
+  persistedStatus: ApplicationStatus;
+}) {
+  // Read live turn status from the global SSE subscription and fold
+  // it onto the persisted status so the pill reflects real-time agent
+  // activity ("Working" / "Waiting" / "Ready") instead of being stuck
+  // at the coarse DB snapshot which almost always reads "Idle".
+  const turnStatus = useTurnStatus(`app-${applicationId}`);
+  const live = deriveLiveStatusPill(persistedStatus, turnStatus);
+
+  return (
+    <span className="border-border/60 inline-flex h-5 shrink-0 items-center gap-1 rounded-full border px-2 text-[10px] font-medium uppercase tracking-wide">
+      <span
+        className={cn(
+          'relative flex h-1.5 w-1.5 items-center justify-center rounded-full',
+          live.dotClass
+        )}
+      >
+        {live.pulse ? (
+          <span
+            className={cn(
+              'absolute inline-flex h-full w-full animate-ping rounded-full opacity-60',
+              live.dotClass
+            )}
+          />
+        ) : null}
+      </span>
+      {live.label}
     </span>
+  );
+}
+
+function Divider() {
+  return <span className="bg-border/60 mx-1 h-4 w-px shrink-0" />;
+}
+
+function ViewSwitcher({
+  active,
+  onChange,
+}: {
+  active: AppView;
+  onChange: (view: AppView) => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Right pane view"
+      className="bg-muted/60 flex items-center rounded-md p-0.5"
+    >
+      {VIEW_TABS.map((v) => {
+        const selected = v === active;
+        return (
+          <button
+            key={v}
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            onClick={() => onChange(v)}
+            className={cn(
+              'h-6 cursor-pointer rounded-sm px-2.5 text-[11px] font-medium transition-colors',
+              selected
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            {VIEW_LABELS[v]}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
 /*  Resizable split panel                                              */
 /* ------------------------------------------------------------------ */
-
-const MIN_LEFT_PX = 400;
-const MIN_RIGHT_PX = 400;
-const INITIAL_LEFT_FRACTION = 0.4;
 
 function ResizableSplit({ left, right }: { left: React.ReactNode; right: React.ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -64,57 +447,109 @@ function ResizableSplit({ left, right }: { left: React.ReactNode; right: React.R
 
   return (
     <div ref={containerRef} className="flex min-h-0 flex-1">
-      {/* Left panel */}
+      {/* Left pane — flush with top bar, no internal header */}
       <div
-        className="min-h-0 overflow-auto"
+        className="flex min-h-0 flex-col overflow-hidden"
         style={{ flexBasis: `${leftFraction * 100}%`, flexShrink: 0 }}
       >
         {left}
       </div>
 
-      {/* Divider */}
+      {/* Divider — 1px line, hover thickens for grip */}
       <div
         role="separator"
         aria-orientation="vertical"
-        className="hover:bg-muted/60 active:bg-muted flex w-1.5 shrink-0 cursor-col-resize items-center justify-center"
+        className="group border-border hover:bg-primary/20 relative w-px shrink-0 cursor-col-resize border-l transition-colors"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
       >
-        <div className="bg-border h-8 w-0.5 rounded-full" />
+        {/* 8px wide invisible hit target centered on the 1px line */}
+        <span className="absolute inset-y-0 -left-1 -right-1" />
       </div>
 
-      {/* Right panel */}
-      <div className="min-h-0 flex-1 overflow-auto">{right}</div>
+      {/* Right pane — flush with top bar, no internal header */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{right}</div>
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  View selector (right panel)                                        */
+/*  Right-pane views                                                    */
 /* ------------------------------------------------------------------ */
 
-function ViewSelector() {
+/**
+ * Right-pane view body.
+ *
+ * The Terminal tab is kept mounted (just hidden) when not active so its
+ * PTY session, scrollback, and running processes survive tab switches.
+ * Other views are placeholders until implemented.
+ */
+function ViewBody({
+  activeView,
+  applicationId,
+  terminalCwd,
+  deploy,
+}: {
+  activeView: AppView;
+  applicationId: string;
+  terminalCwd: string;
+  deploy: DeployActionState;
+}) {
+  // Mount the Web iframe as soon as there's a URL — even if the user
+  // is currently on IDE / Terminal — so the preview session doesn't
+  // tear down when switching tabs. Once the app has been Previewed
+  // at least once, the iframe stays alive in the background.
+  const hasWebContent =
+    deploy.status === DeploymentState.Ready ||
+    deploy.status === DeploymentState.Booting ||
+    deploy.deployLoading ||
+    !!deploy.deployError;
+
   return (
-    <Tabs defaultValue="ide" className="flex h-full flex-col">
-      <div className="border-b px-4 py-2">
-        <TabsList>
-          <TabsTrigger value="ide">IDE</TabsTrigger>
-          <TabsTrigger value="terminal">Terminal</TabsTrigger>
-          <TabsTrigger value="web">Web</TabsTrigger>
-        </TabsList>
+    <div className="relative flex min-h-0 flex-1">
+      {/* Terminal — always mounted to preserve the PTY session. */}
+      <div
+        className={cn(
+          'absolute inset-0 flex min-h-0 flex-col',
+          activeView === 'terminal' ? 'visible' : 'invisible pointer-events-none'
+        )}
+        aria-hidden={activeView !== 'terminal'}
+      >
+        <TerminalTab cwd={terminalCwd} />
       </div>
 
-      <TabsContent value="ide" className="flex flex-1 items-center justify-center">
-        <p className="text-muted-foreground text-sm">IDE view coming soon</p>
-      </TabsContent>
-      <TabsContent value="terminal" className="flex flex-1 items-center justify-center">
-        <p className="text-muted-foreground text-sm">Terminal coming soon</p>
-      </TabsContent>
-      <TabsContent value="web" className="flex flex-1 items-center justify-center">
-        <p className="text-muted-foreground text-sm">Web preview coming soon</p>
-      </TabsContent>
-    </Tabs>
+      {/* IDE — also kept mounted so open tabs and scroll position survive
+          tab switches between IDE / Terminal / Web. */}
+      <div
+        className={cn(
+          'absolute inset-0 flex min-h-0 flex-col',
+          activeView === 'ide' ? 'visible' : 'invisible pointer-events-none'
+        )}
+        aria-hidden={activeView !== 'ide'}
+      >
+        <IdeTab applicationId={applicationId} />
+      </div>
+
+      {/* Web — iframe the running dev server. Kept mounted once we
+          have meaningful deploy state so switching tabs doesn't tear
+          down the preview session. When there's no deploy activity
+          yet we still render the empty state (only while visible)
+          so the user sees the "Run" CTA. */}
+      {hasWebContent ? (
+        <div
+          className={cn(
+            'absolute inset-0 flex min-h-0 flex-col',
+            activeView === 'web' ? 'visible' : 'invisible pointer-events-none'
+          )}
+          aria-hidden={activeView !== 'web'}
+        >
+          <WebPreviewTab deploy={deploy} />
+        </div>
+      ) : (
+        activeView === 'web' && <WebPreviewTab deploy={deploy} />
+      )}
+    </div>
   );
 }
 
@@ -122,64 +557,96 @@ function ViewSelector() {
 /*  ApplicationPage                                                    */
 /* ------------------------------------------------------------------ */
 
-export interface ApplicationPageProps {
-  application: Application;
-  /** When provided, auto-sends this as the first chat message on mount. */
-  initialPrompt?: string;
+/**
+ * Snapshot of the application's live dev-server state at the moment
+ * the server component rendered. Used to seed `useDeployAction` so
+ * the top-bar Preview button and the right-pane Web iframe are both
+ * correct on the very first client paint — no "No dev server
+ * running" flash, no client-side round-trip latency.
+ */
+export interface InitialDeploymentSnapshot {
+  state: DeploymentState;
+  url: string | null;
 }
 
-export function ApplicationPage({ application, initialPrompt }: ApplicationPageProps) {
+export interface ApplicationPageProps {
+  application: Application;
+  /**
+   * SSR-loaded chat state for this application — seeds the TanStack Query
+   * cache inside ChatTab so the initial user message (posted on the server
+   * by createApplication before navigation) renders on first paint.
+   */
+  initialChatState?: ChatState;
+  /**
+   * SSR-loaded dev-server deployment snapshot. When present and
+   * non-Stopped, skips the client-side hydration fetch — the first
+   * paint already shows the running URL.
+   */
+  initialDeployment?: InitialDeploymentSnapshot;
+}
+
+export function ApplicationPage({
+  application,
+  initialChatState,
+  initialDeployment,
+}: ApplicationPageProps) {
   const router = useRouter();
-  const [promptSent, setPromptSent] = useState(false);
+  const [activeView, setActiveView] = useState<AppView>('ide');
 
-  // Auto-send the initial prompt as the first chat message
+  // Hoisted dev-server state — ONE polling loop shared by the top-bar
+  // Preview button AND the right-pane Web iframe. SSR seeds the
+  // initial snapshot so a page refresh while a dev server is running
+  // already has the URL on first paint; `hydrateOnMount` remains as
+  // a fallback for the case where the server component couldn't
+  // reach the deployment service (e.g. test environments).
+  const deploy = useDeployAction({
+    targetId: application.id,
+    targetType: 'application',
+    repositoryPath: application.repositoryPath,
+    hydrateOnMount: true,
+    initialState: initialDeployment
+      ? { status: initialDeployment.state, url: initialDeployment.url }
+      : undefined,
+  });
+
+  // When the dev server transitions to Ready, auto-switch the right
+  // pane to the Web tab the first time it happens so the user
+  // immediately sees their app without an extra click. Only triggers
+  // on an Idle→Ready transition, not on every poll while Ready.
+  const hasAutoSwitchedRef = useRef(false);
   useEffect(() => {
-    if (!initialPrompt || promptSent) return;
-    setPromptSent(true);
+    if (
+      deploy.status === DeploymentState.Ready &&
+      deploy.url &&
+      !hasAutoSwitchedRef.current
+    ) {
+      hasAutoSwitchedRef.current = true;
+      setActiveView('web');
+    }
+    if (deploy.status !== DeploymentState.Ready) {
+      hasAutoSwitchedRef.current = false;
+    }
+  }, [deploy.status, deploy.url]);
 
-    // Small delay to let the ChatTab mount and initialize
-    const timer = setTimeout(async () => {
-      try {
-        await fetch(`/api/interactive/chat/app-${application.id}/messages`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: initialPrompt,
-            worktreePath: application.repositoryPath,
-            model: application.modelOverride,
-            agentType: application.agentType,
-          }),
-        });
-      } catch {
-        // Chat component will handle retries
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [initialPrompt, promptSent, application]);
+  // Back → control center. We navigate AND refresh so the dashboard layout
+  // re-runs `getGraphData()` server-side. Without `router.refresh()` the
+  // App Router serves the cached RSC from when the user was last on `/`,
+  // which does NOT include the application they just created.
+  const handleBack = useCallback(() => {
+    router.push('/');
+    router.refresh();
+  }, [router]);
 
   return (
     <div className="bg-background flex h-dvh flex-col">
-      {/* Sticky header */}
-      <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 flex items-center gap-3 border-b px-4 py-3 backdrop-blur">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Back to canvas"
-          onClick={() => router.push('/')}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500">
-          <LayoutGrid className="h-4 w-4 text-white" />
-        </div>
-
-        <h1 className="min-w-0 truncate text-lg font-bold">{application.name}</h1>
-
-        <StatusBadge status={application.status} />
-      </header>
-
-      {/* Split layout */}
+      <AppTopBar
+        application={application}
+        activeView={activeView}
+        onViewChange={setActiveView}
+        onBack={handleBack}
+        initialChatState={initialChatState}
+        deploy={deploy}
+      />
       <ResizableSplit
         left={
           <ChatTab
@@ -187,9 +654,18 @@ export function ApplicationPage({ application, initialPrompt }: ApplicationPageP
             worktreePath={application.repositoryPath}
             initialAgent={application.agentType}
             initialModel={application.modelOverride}
+            initialChatState={initialChatState}
+            hideHeader
           />
         }
-        right={<ViewSelector />}
+        right={
+          <ViewBody
+            activeView={activeView}
+            applicationId={application.id}
+            terminalCwd={application.repositoryPath}
+            deploy={deploy}
+          />
+        }
       />
     </div>
   );

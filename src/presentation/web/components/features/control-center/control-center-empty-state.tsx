@@ -78,7 +78,7 @@ const BUILD_MODE_CONFIG: Record<
 
 export interface ControlCenterEmptyStateProps {
   onRepositorySelect?: (path: string) => void;
-  onApplicationCreated?: (applicationId: string, initialPrompt: string) => void;
+  onApplicationCreated?: (applicationId: string) => void;
   onClose?: () => void;
   className?: string;
 }
@@ -128,10 +128,16 @@ export function ControlCenterEmptyState({
 
     try {
       if (buildMode === 'application') {
+        // The server action creates the app AND synchronously posts the
+        // user's prompt as the first interactive chat message, so when we
+        // navigate, /application/[id] SSR-loads chat state and the message
+        // is visible on first paint. No prompt in the URL, no extra
+        // round trip on the client.
         const result = await createApplication({
           description: description.trim(),
           agentType: overrideAgent,
           modelOverride: overrideModel,
+          initialPrompt: description.trim(),
         });
 
         if (result.error) {
@@ -140,12 +146,8 @@ export function ControlCenterEmptyState({
           return;
         }
 
-        // Applications navigate straight to /application/${id} — no canvas
-        // flash and no companion Repository node. The canvas reloads its
-        // graph data when the user navigates back, picking the Application
-        // up from the DB via ListApplicationsUseCase.
         if (result.application) {
-          onApplicationCreated?.(result.application.id, description.trim());
+          onApplicationCreated?.(result.application.id);
         }
       } else {
         const result = await createProjectAndFeature({

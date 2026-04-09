@@ -1,20 +1,21 @@
 import { resolve } from '@/lib/server-container';
 import type { GetApplicationUseCase } from '@shepai/core/application/use-cases/applications/get-application.use-case';
+import type { GetInteractiveChatStateUseCase } from '@shepai/core/application/use-cases/interactive/get-interactive-chat-state.use-case';
+import type { ChatState } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
+import type { IDeploymentService } from '@shepai/core/application/ports/output/services/deployment-service.interface';
 import { notFound } from 'next/navigation';
 import { ApplicationPage } from '@/components/features/application-page/application-page';
+import type { InitialDeploymentSnapshot } from '@/components/features/application-page/application-page';
 
 /** Skip static pre-rendering since we need runtime DI container and server context. */
 export const dynamic = 'force-dynamic';
 
 export default async function ApplicationRoute({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ prompt?: string }>;
 }) {
   const { id } = await params;
-  const { prompt } = await searchParams;
   const getApp = resolve<GetApplicationUseCase>('GetApplicationUseCase');
   const application = await getApp.execute(id);
 
@@ -22,5 +23,45 @@ export default async function ApplicationRoute({
     notFound();
   }
 
-  return <ApplicationPage application={application} initialPrompt={prompt} />;
+  // SSR-load the interactive chat state so the first user message (posted
+  // by createApplication before navigation) renders on first paint — no
+  // client-side fetch delay between mount and the message appearing.
+  const getChatState = resolve<GetInteractiveChatStateUseCase>('GetInteractiveChatStateUseCase');
+  let initialChatState: ChatState | undefined;
+  try {
+    initialChatState = await getChatState.execute({ featureId: `app-${application.id}` });
+  } catch {
+    // If chat state lookup fails (e.g. no session yet) ChatTab falls back
+    // to fetching on mount. Not fatal.
+    initialChatState = undefined;
+  }
+
+  // SSR-load the dev-server deployment status too. Before this, on a
+  // page refresh while a dev server was running, we rendered the
+  // empty-state "No dev server running" for a split second until the
+  // client-side `hydrateOnMount` fetch returned. With the server
+  // reading `DeploymentService.getStatus()` up front — it's a cheap
+  // in-memory map lookup against state that was already reconciled
+  // from SQLite on startup — the first paint already knows the URL
+  // and the iframe loads instantly.
+  let initialDeployment: InitialDeploymentSnapshot | undefined;
+  try {
+    const deploymentService = resolve<IDeploymentService>('IDeploymentService');
+    const status = deploymentService.getStatus(application.id);
+    if (status && status.state !== 'Stopped') {
+      initialDeployment = { state: status.state, url: status.url };
+    }
+  } catch {
+    // Deployment service may not be registered in test environments —
+    // fall back to client-side hydration.
+    initialDeployment = undefined;
+  }
+
+  return (
+    <ApplicationPage
+      application={application}
+      initialChatState={initialChatState}
+      initialDeployment={initialDeployment}
+    />
+  );
 }

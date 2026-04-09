@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AssistantRuntimeProvider } from '@assistant-ui/react';
 import { Trash2, Cpu } from 'lucide-react';
+import type { ChatState } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
 import { cn } from '@/lib/utils';
 import { Thread } from '@/components/assistant-ui/thread';
 import { useAttachments } from '@/hooks/use-attachments';
@@ -20,11 +21,30 @@ export interface ChatTabProps {
   initialAgent?: string;
   /** Seed the model override (e.g. from an Application's modelOverride) */
   initialModel?: string;
+  /**
+   * Optional SSR-loaded chat state — seeds the query cache so messages
+   * already persisted server-side render on first paint without a fetch.
+   */
+  initialChatState?: ChatState;
+  /**
+   * When true, skip rendering the internal session-info/clear toolbar.
+   * The hosting page is expected to surface this info elsewhere (e.g.
+   * the ApplicationPage top bar). Lets left/right panes start flush
+   * with the top bar — no mismatched inner toolbar heights.
+   */
+  hideHeader?: boolean;
 }
 
 const IS_DEV = process.env.NODE_ENV === 'development';
 
-export function ChatTab({ featureId, worktreePath, initialAgent, initialModel }: ChatTabProps) {
+export function ChatTab({
+  featureId,
+  worktreePath,
+  initialAgent,
+  initialModel,
+  initialChatState,
+  hideHeader,
+}: ChatTabProps) {
   const [overrideAgent, setOverrideAgent] = useState<string | undefined>(initialAgent);
   const [overrideModel, setOverrideModel] = useState<string | undefined>(initialModel);
   const [debugMode, setDebugMode] = useState(false);
@@ -53,6 +73,7 @@ export function ChatTab({ featureId, worktreePath, initialAgent, initialModel }:
     model: overrideModel,
     agentType: overrideAgent,
     debugMode,
+    initialChatState,
   });
 
   const handlePickFiles = useCallback(async () => {
@@ -113,14 +134,18 @@ export function ChatTab({ featureId, worktreePath, initialAgent, initialModel }:
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* Header bar — session info + stop/clear */}
-      <ChatHeader
-        sessionInfo={sessionInfo}
-        isAgentActive={status.isRunning}
-        onClear={clearChat}
-        debugMode={debugMode}
-        onDebugToggle={IS_DEV ? setDebugMode : undefined}
-      />
+      {/* Header bar — session info + stop/clear.
+       *  Hidden when the hosting page wants a flush layout (e.g.
+       *  ApplicationPage surfaces session info in its own top bar). */}
+      {hideHeader ? null : (
+        <ChatHeader
+          sessionInfo={sessionInfo}
+          isAgentActive={status.isRunning}
+          onClear={clearChat}
+          debugMode={debugMode}
+          onDebugToggle={IS_DEV ? setDebugMode : undefined}
+        />
+      )}
       <div className="flex min-h-0 flex-1 flex-col">
         {isChatLoading ? (
           <ChatSkeleton />

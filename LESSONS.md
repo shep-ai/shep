@@ -257,3 +257,15 @@ When a deterministic git operation (like `localMergeSquash`) encounters merge co
 4. The agent has full coding capabilities and can resolve merge markers, regenerate lock files, etc.
 
 **Pattern:** `try { programmaticMerge() } catch (err) { if (isConflict(err)) agentMerge(conflictDetails) else throw err }`
+
+## Next.js API Routes That Import tsyringe Use Cases MUST Import reflect-metadata
+
+Turbopack externalizes `tsyringe` and `reflect-metadata` via `serverExternalPackages` and loads API route modules lazily in their own module graph. If a route imports a `@injectable()` use case class directly and does NOT explicitly import `reflect-metadata` as a side-effect, the route hits `Error: tsyringe requires a reflect polyfill` at runtime — only when the route is first hit, not at build time.
+
+**Fix:** At the top of every API route file that imports a tsyringe-decorated class, add:
+```ts
+import 'reflect-metadata';
+```
+before any other import. This does NOT apply to routes that only `resolve<T>('StringToken')` without importing the class itself — those don't evaluate tsyringe's decorators in the route's module graph.
+
+**Prevention:** When creating a new API route under `src/presentation/web/app/api/` that imports a use case class from `@shepai/core`, the very first line must be `import 'reflect-metadata';`.

@@ -61,6 +61,18 @@ export type {
 } from './interactive-session-service.interface.js';
 export type { ISkillInjectorService, SkillInjectionResult } from './skill-injector.interface.js';
 export type { IFileSystemService } from './file-system-service.interface.js';
+export type { IApplicationBriefStore } from './application-brief-store.interface.js';
+export type {
+  IApplicationFileSystemService,
+  FileTreeEntry,
+  ReadFileResult,
+  ReadFileBufferResult,
+  FileChangeKind,
+  FileChangeEvent,
+  FileChangeListener,
+  UnsubscribeFn as FileWatchUnsubscribeFn,
+} from './application-file-system-service.interface.js';
+export { ApplicationFileSystemError } from './application-file-system-service.interface.js';
 export type {
   IProjectScaffoldService,
   ScaffoldProjectInput,
@@ -69,3 +81,10 @@ export type {
 export type { IAgentAuthDetectorService } from './agent-auth-detector.interface.js';
 export type { IDesktopNotifier } from './i-desktop-notifier.js';
 export type { IBrowserOpener } from './i-browser-opener.js';
+export type {
+  ITerminalSessionService,
+  CreateTerminalSessionInput,
+  CreatedTerminalSession,
+  TerminalOutputListener,
+  TerminalExitListener,
+} from './terminal-session-service.interface.js';

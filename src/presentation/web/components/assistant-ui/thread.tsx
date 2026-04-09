@@ -14,6 +14,7 @@ import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import { ToolBubble, parseToolEvent } from '@/components/features/chat/tool-bubble';
 import {
   SendHorizontal,
   CircleStop,
@@ -230,6 +231,31 @@ function UserMessageText({ text }: { text: string }) {
 // ── Assistant message ───────────────────────────────────────────────────────
 
 const AssistantMessage: FC = () => {
+  // Peek at the raw message content to decide whether this is a
+  // tool-event message (Bash / Read / Write / Edit / …). Tool events
+  // render as a compact chip + expanded preview — they should NOT be
+  // wrapped in the normal assistant bubble shell (that adds bulky
+  // padding, avatar, background, and copy button). Everything else
+  // falls through to the regular bubble.
+  const message = useMessage();
+  const firstPart = message?.content?.[0];
+  const rawText = firstPart && 'text' in firstPart ? firstPart.text : '';
+  const toolEvent = rawText ? parseToolEvent(rawText) : null;
+
+  if (toolEvent) {
+    return (
+      <MessagePrimitive.Root className="group flex w-full items-start gap-2.5 px-4 py-0.5">
+        {/* Keep the avatar slot for visual rhythm but use a smaller inline icon */}
+        <div className="text-muted-foreground/40 mt-1 flex h-6 w-6 shrink-0 items-center justify-center">
+          <Bot className="h-3 w-3" />
+        </div>
+        <div className="flex min-w-0 flex-1 items-center py-0.5">
+          <ToolBubble text={rawText} />
+        </div>
+      </MessagePrimitive.Root>
+    );
+  }
+
   return (
     <MessagePrimitive.Root className="group flex w-full items-start gap-2.5 px-4 py-0.5">
       {/* Avatar */}
