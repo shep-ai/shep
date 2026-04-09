@@ -22,6 +22,8 @@ import { DevAgentExecutorService } from './executors/dev-executor.service.js';
 import { GeminiCliExecutorService } from './executors/gemini-cli-executor.service.js';
 import { CodexCliExecutorService } from './executors/codex-cli-executor.service.js';
 import { CopilotCliExecutorService } from './executors/copilot-cli-executor.service.js';
+import { OpenRouterExecutorService } from './executors/openrouter-executor.service.js';
+import { TogetherAiExecutorService } from './executors/together-ai-executor.service.js';
 import type { SpawnFunction } from './types.js';
 
 /**
@@ -71,6 +73,12 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
       case 'copilot-cli':
         executor = new CopilotCliExecutorService(this.spawn, _authConfig);
         break;
+      case 'openrouter':
+        executor = new OpenRouterExecutorService(_authConfig.token ?? '');
+        break;
+      case 'together-ai':
+        executor = new TogetherAiExecutorService(_authConfig.token ?? '');
+        break;
       default:
         throw new Error(
           `Unsupported agent type: ${agentType}. Supported: ${this.getSupportedAgents().join(', ')}`
@@ -94,6 +102,8 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
       'gemini-cli' as AgentType,
       'codex-cli' as AgentType,
       'copilot-cli' as AgentType,
+      'openrouter' as AgentType,
+      'together-ai' as AgentType,
     ];
   }
 
@@ -126,6 +136,10 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
         return CODEX_CLI_MODELS;
       case 'copilot-cli':
         return COPILOT_CLI_MODELS;
+      case 'openrouter':
+        return OPENROUTER_MODELS;
+      case 'together-ai':
+        return TOGETHER_AI_MODELS;
       default:
         return [];
     }
@@ -211,4 +225,30 @@ const COPILOT_CLI_MODELS = [
   'gpt-5.3-codex',
   'gpt-5.4',
   'gpt-5.4-mini',
+];
+
+// OpenRouter — popular coding-capable models from multiple vendors
+const OPENROUTER_MODELS: string[] = [
+  'anthropic/claude-sonnet-4.5',
+  'anthropic/claude-haiku-4.5',
+  'openai/gpt-5.4',
+  'openai/gpt-5.2',
+  'meta-llama/llama-4-maverick',
+  'meta-llama/llama-4-scout',
+  'google/gemini-3-flash',
+  'google/gemini-3-pro',
+  'deepseek/deepseek-chat-v3-0324',
+  'mistralai/mistral-large-latest',
+];
+
+// Together AI — fast open-source model inference, coding-focused
+const TOGETHER_AI_MODELS: string[] = [
+  'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8',
+  'meta-llama/Meta-Llama-3.3-70B-Instruct-Turbo',
+  'Qwen/Qwen2.5-Coder-32B-Instruct',
+  'deepseek-ai/DeepSeek-V3',
+  'deepseek-ai/DeepSeek-R1',
+  'mistralai/Mistral-Small-24B-Instruct-2501',
+  'google/gemma-2-27b-it',
+  'codellama/CodeLlama-70b-Instruct-hf',
 ];
