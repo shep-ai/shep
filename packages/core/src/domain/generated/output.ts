@@ -516,6 +516,8 @@ export enum AgentType {
   Aider = 'aider',
   Continue = 'continue',
   Cursor = 'cursor',
+  OpenRouter = 'openrouter',
+  TogetherAi = 'together-ai',
   Dev = 'dev',
 }
 export enum AgentAuthMethod {

@@ -7,8 +7,8 @@
  *
  * ## Supported Agents
  *
- * Claude Code, Codex CLI, Copilot CLI, and Cursor are fully supported. Other agents
- * (Gemini CLI, Aider, Continue) are listed for future
+ * Claude Code, Codex CLI, Copilot CLI, Cursor, OpenRouter, and Together AI are fully
+ * supported. Other agents (Gemini CLI, Aider, Continue) are listed for future
  * extensibility and appear as "Coming Soon" in the TUI wizard.
  */
 /**
@@ -19,6 +19,8 @@
  * codex-cli    ← Currently supported
  * copilot-cli  ← Currently supported
  * cursor       ← Currently supported
+ * openrouter   ← Currently supported (SDK-based, HTTP API)
+ * together-ai  ← Currently supported (SDK-based, HTTP API)
  * gemini-cli   ← Coming Soon
  * aider        ← Coming Soon
  * continue     ← Coming Soon
@@ -74,6 +76,23 @@ enum AgentType {
    */
   @doc("Cursor AI coding agent")
   Cursor: "cursor",
+
+  /**
+   * OpenRouter API provider.
+   * Supported — SDK-based executor using the Vercel AI SDK over HTTP.
+   * Provides access to multiple model vendors (Anthropic, OpenAI, Meta, Google, etc.)
+   * through a single API key.
+   */
+  @doc("OpenRouter multi-provider API")
+  OpenRouter: "openrouter",
+
+  /**
+   * Together AI API provider.
+   * Supported — SDK-based executor using the Vercel AI SDK over HTTP.
+   * Fast inference for open-source models (Llama, Qwen, DeepSeek, Mistral, etc.).
+   */
+  @doc("Together AI open-source model inference")
+  TogetherAi: "together-ai",
 
   /**
    * Local development mock executor.

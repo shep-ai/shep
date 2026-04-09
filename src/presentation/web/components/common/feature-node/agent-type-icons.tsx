@@ -11,6 +11,8 @@ export type AgentTypeValue =
   | 'gemini-cli'
   | 'aider'
   | 'continue'
+  | 'openrouter'
+  | 'together-ai'
   | 'dev';
 
 type IconProps = SVGProps<SVGSVGElement> & { className?: string };
@@ -98,6 +100,8 @@ const agentTypeIconMap: Record<AgentTypeValue, ComponentType<IconProps>> = {
   'gemini-cli': createBrandIcon('/icons/agents/gemini-cli.jpeg', 'Gemini CLI'),
   aider: createBrandIcon('/icons/agents/aider.png', 'Aider'),
   continue: createBrandIcon('/icons/agents/continue.jpeg', 'Continue'),
+  openrouter: DefaultAgentIcon,
+  'together-ai': DefaultAgentIcon,
   dev: DevAgentIcon,
 };
 
@@ -110,6 +114,8 @@ export const agentTypeLabels: Record<AgentTypeValue, string> = {
   'gemini-cli': 'Gemini CLI',
   aider: 'Aider',
   continue: 'Continue',
+  openrouter: 'OpenRouter',
+  'together-ai': 'Together AI',
   dev: 'Demo',
 };
 
