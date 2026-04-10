@@ -184,6 +184,8 @@ export function AgentModelPicker({
         <PopoverContent
           className="z-[70] w-(--radix-popover-trigger-width) overflow-hidden p-0"
           align="start"
+          side="bottom"
+          avoidCollisions={false}
         >
           {/* Sliding container — both panels side by side, translateX controlled by level */}
           <div
@@ -191,7 +193,12 @@ export function AgentModelPicker({
             style={{ transform: `translateX(${level === 1 ? '-50%' : '0%'})`, width: '200%' }}
           >
             {/* ── Level 1: Agent list ── */}
-            <div className="w-1/2 shrink-0">
+            <div
+              className={cn(
+                'max-h-53.75 w-1/2 shrink-0 overflow-y-auto',
+                level === 1 && 'h-0 overflow-hidden'
+              )}
+            >
               <div className="text-muted-foreground border-b px-3 py-2 text-xs font-medium">
                 Select agent
               </div>
@@ -238,7 +245,12 @@ export function AgentModelPicker({
             </div>
 
             {/* ── Level 2: Model list for selected agent ── */}
-            <div className="w-1/2 shrink-0">
+            <div
+              className={cn(
+                'max-h-53.75 w-1/2 shrink-0 overflow-y-auto',
+                level === 0 && 'h-0 overflow-hidden'
+              )}
+            >
               {activeGroup ? (
                 <>
                   {/* Back header */}
