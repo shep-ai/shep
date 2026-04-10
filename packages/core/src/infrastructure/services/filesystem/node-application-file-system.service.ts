@@ -295,7 +295,13 @@ export class NodeApplicationFileSystemService implements IApplicationFileSystemS
           const topSegment = rel.split('/')[0];
           if (ALWAYS_IGNORED_DIRS.has(topSegment)) return;
 
-          let kind: FileChangeEvent['kind'] = 'modified';
+          // `kind` is always assigned in the try/catch below — either
+          // 'modified' if the path still exists on disk, or 'deleted'
+          // if the stat fails. Initialising it here with a placeholder
+          // would be dead code that lint correctly flags as a useless
+          // assignment. The `!` on the read below acknowledges that
+          // both branches set it before listener() runs.
+          let kind: FileChangeEvent['kind'];
           let isDirectory = false;
           try {
             const st = fs.statSync(path.join(absRoot, rel));
