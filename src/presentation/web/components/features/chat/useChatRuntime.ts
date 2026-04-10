@@ -55,6 +55,14 @@ export interface EnhancedStepProgress {
   steps: EnhancedStepState[];
   activeStepId: string | null;
   allDone: boolean;
+  /**
+   * Short live-status string ("Thinking…", "Reading file X", a chunk
+   * of the agent's streaming reply) that the running step card shows
+   * inline next to its spinner. NEVER rendered as a flat bubble — the
+   * step tracker is the only allowed surface for in-progress activity
+   * while a workflow is active.
+   */
+  liveStatus: string | null;
 }
 
 function mapStatus(s: string): EnhancedStepState['status'] {
@@ -508,8 +516,17 @@ export function useChatRuntime(
 
       const previous = queryClient.getQueryData<ChatState>(chatQueryKey(featureId));
 
-      // Optimistically add user message
+      // Optimistically add user message. CRITICAL: spread `old` first
+      // and only override `messages` (and clear `streamingText`). The
+      // earlier version rebuilt the object field-by-field and silently
+      // dropped `workflow` + `turnStatus`, which made `hasPlan` flip
+      // to false for one render, briefly expanding the workflow step
+      // tracker (it lost its `collapsedSummary` flag when allDone
+      // turned undefined) before the next refetch reinstated it. The
+      // user saw a flicker of the full step list every time they typed
+      // a follow-up message after the workflow finished.
       queryClient.setQueryData<ChatState>(chatQueryKey(featureId), (old) => ({
+        ...(old ?? { sessionStatus: 'booting', sessionInfo: null }),
         messages: [
           ...(old?.messages ?? []),
           {
@@ -521,9 +538,7 @@ export function useChatRuntime(
             updatedAt: new Date(),
           },
         ],
-        sessionStatus: old?.sessionStatus ?? 'booting',
         streamingText: null,
-        sessionInfo: old?.sessionInfo ?? null,
       }));
 
       return { previous };
@@ -570,13 +585,26 @@ export function useChatRuntime(
   const stepProgress: EnhancedStepProgress = useMemo(() => {
     const workflow = chatState?.workflow ?? null;
     if (!workflow || workflow.steps.length === 0) {
-      return { hasPlan: false, steps: [], activeStepId: null, allDone: false };
+      return {
+        hasPlan: false,
+        steps: [],
+        activeStepId: null,
+        allDone: false,
+        liveStatus: null,
+      };
     }
-    // Group messages by their persisted stepId.
+    // Group messages by their persisted stepId. Only assistant messages
+    // are surfaced in the tracker — the orchestrator persists each step's
+    // prompt as a `user`-role row with the step's id (RunWorkflowUseCase
+    // step 2+) and that row is an internal orchestration detail, not
+    // something the user typed or the agent produced. Including it would
+    // inflate every step's badge count by 1 and dump the raw prompt into
+    // the expanded body.
     const byStep = new Map<string, InteractiveMessage[]>();
     for (const m of messages) {
       const sid = m.stepId;
       if (!sid) continue;
+      if (m.role !== InteractiveMessageRole.assistant) continue;
       const list = byStep.get(sid) ?? [];
       list.push(m);
       byStep.set(sid, list);
@@ -593,13 +621,46 @@ export function useChatRuntime(
       toolMessages: byStep.get(s.id) ?? [],
     }));
     const allDone = steps.length > 0 && steps.every((s) => s.status === 'done');
+    // Live status string for the running step card. Order of fallback
+    // mirrors the old flat-thread streaming bubble: tool / status log
+    // first (most informative — "Reading file X"), then a short prefix
+    // of the streaming reply text, then the generic "Thinking…" while
+    // we wait for the first chunk. Truncated to one line so it fits
+    // inline next to the spinner.
+    const trimmedStream = backendStreamingText?.trim() ?? '';
+    const trimmedLocal = streamingText?.trim() ?? '';
+    const streamPreview = (trimmedLocal || trimmedStream).split('\n')[0]?.slice(0, 80) ?? '';
+    let liveStatus: string | null = null;
+    if (allDone) {
+      liveStatus = null;
+    } else if (statusLog) {
+      liveStatus = statusLog;
+    } else if (streamPreview) {
+      liveStatus = streamPreview;
+    } else if (
+      backendTurnStatus === 'processing' ||
+      awaitingResponse ||
+      sessionStatus === 'booting'
+    ) {
+      liveStatus = sessionStatus === 'booting' ? 'Waking up…' : 'Thinking…';
+    }
     return {
       hasPlan: true,
       steps,
       activeStepId: workflow.currentStepId,
       allDone,
+      liveStatus,
     };
-  }, [chatState?.workflow, messages]);
+  }, [
+    chatState?.workflow,
+    messages,
+    statusLog,
+    streamingText,
+    backendStreamingText,
+    backendTurnStatus,
+    awaitingResponse,
+    sessionStatus,
+  ]);
 
   // ── Initial request — the VERY first stepless user message.
   //    The application-creation flow persists it via the
@@ -618,18 +679,38 @@ export function useChatRuntime(
   const threadMessages: ThreadMessageLike[] = useMemo(() => {
     const hasPlan = stepProgress.hasPlan;
 
-    // When the workflow is active: ONLY show messages that have no
-    // stepId — those are out-of-band conversations (typed by the
-    // user into the composer after the workflow finishes, or
-    // ambient assistant replies). Every workflow-driven message
-    // lives inside the tracker card of its owning step, so we
-    // never want it rendered as a flat bubble above the tracker.
+    // When a workflow is active and STILL RUNNING: hide stepless
+    // assistant messages from the flat thread. These exist because of
+    // a small race window in the orchestrator — the agent can start
+    // streaming and persist a chunk before `setActiveStep` is called,
+    // leaving an assistant row with no stepId that would otherwise
+    // render as a stray bubble below the tracker. While the workflow
+    // is running, the running step's own card is the only legal
+    // surface for in-progress agent output.
     //
-    // ALSO filter out `initialRequestMessage` — the host page
-    // renders it manually above the tracker, so letting it appear
-    // again in the flat thread would duplicate it.
+    // Once the workflow is DONE (`allDone`), the orchestrator has
+    // called its final `clearActiveStep`. From this point on, every
+    // new assistant message is a legitimate follow-up reply to a
+    // user-typed prompt, and MUST be visible in the flat thread —
+    // otherwise the chat appears to ignore the user. The previous
+    // version of this filter dropped them too and that's what looked
+    // like "agent is ignoring me" after the build completed.
+    //
+    // The user's very first message (`initialRequestMessage`) is
+    // always filtered out — the host page pins it above the tracker
+    // via `<InitialRequestBubble>` so leaving it in the flat thread
+    // would duplicate it.
+    const workflowRunning = hasPlan && !stepProgress.allDone;
     const sourceMessages = hasPlan
-      ? messages.filter((m) => !m.stepId && m.id !== initialRequestMessage?.id)
+      ? messages.filter((m) => {
+          if (m.id === initialRequestMessage?.id) return false;
+          if (m.stepId) return false; // step-tagged messages live inside their card
+          if (workflowRunning && m.role === InteractiveMessageRole.assistant) {
+            // Race-window leftover — see comment above.
+            return false;
+          }
+          return true;
+        })
       : messages;
 
     const chatMessages: ThreadMessageLike[] = sourceMessages.map(toThreadMessage);
@@ -720,6 +801,7 @@ export function useChatRuntime(
     options?.debugMode,
     debugEvents,
     stepProgress.hasPlan,
+    stepProgress.allDone,
   ]);
 
   // ── Status info for typing indicator ──────────────────────────────────
@@ -796,10 +878,23 @@ export function useChatRuntime(
   );
 
   // ── Build assistant-ui runtime ──────────────────────────────────────────
+  // While a workflow is RUNNING, assistant-ui's `isRunning=true` would
+  // auto-inject an empty assistant placeholder bubble at the bottom of
+  // the thread (its built-in "thinking" indicator). The step tracker
+  // already conveys progress via the running step's spinner + live
+  // status, so that placeholder would just float as a hollow bubble.
+  // Force `isRunning=false` for the duration of the workflow so
+  // assistant-ui keeps its hands off the viewport.
+  //
+  // Once the workflow is DONE, hand control back to assistant-ui so
+  // its thinking indicator works normally for follow-up replies the
+  // user types into the composer after the build is finished.
+  const workflowInFlight = stepProgress.hasPlan && !stepProgress.allDone;
+  const runtimeIsRunning = workflowInFlight ? false : isRunning;
   const runtime = useExternalStoreRuntime({
     messages: threadMessages,
     convertMessage: useCallback((msg: ThreadMessageLike): ThreadMessageLike => msg, []),
-    isRunning,
+    isRunning: runtimeIsRunning,
     onNew,
     onCancel: useCallback(async () => {
       setStreamingText('');

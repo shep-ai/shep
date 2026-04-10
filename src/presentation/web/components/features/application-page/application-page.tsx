@@ -750,7 +750,19 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
               // transition in the deploy hook then auto-switches
               // the right pane to the Web preview, so the user
               // lands on their running app with zero clicks.
-              if (deploy.status === DeploymentState.Stopped) {
+              //
+              // Important: the provider's default entry is
+              // `{ status: null }` when no dev server has ever run
+              // for this application, NOT `'Stopped'`. The previous
+              // `=== 'Stopped'` check silently did nothing on the
+              // very first completion of a freshly created app,
+              // which is exactly when auto-preview matters most.
+              // Trigger as long as we're not already Booting/Ready.
+              if (
+                deploy.status !== DeploymentState.Ready &&
+                deploy.status !== DeploymentState.Booting &&
+                !deploy.deployLoading
+              ) {
                 void deploy.deploy();
               }
             }}

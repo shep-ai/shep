@@ -1,10 +1,16 @@
 /**
  * Application-creation workflow definition.
  *
- * The nine steps Shep walks every new application through, with the
+ * The eight steps Shep walks every new application through, with the
  * friendly non-technical title/description the user sees in the
  * tracker card AND the focused agent-facing prompt the orchestrator
  * sends for that step.
+ *
+ * History note: an earlier version had separate `plan` and `content`
+ * steps. They produced agent text confirmations with no actual tool
+ * work, leaving lonely "title-only" cards in the tracker. Both have
+ * been folded into the `components` step which now plans, builds,
+ * and writes real content in a single agent turn.
  *
  * Key design notes:
  *   - The orchestrator (`RunWorkflowUseCase`) sends each step's
@@ -36,7 +42,7 @@ export interface WorkflowDefinition {
   steps: WorkflowStepDefinition[];
 }
 
-export const APPLICATION_CREATION_WORKFLOW_ID = 'application-creation-v1';
+export const APPLICATION_CREATION_WORKFLOW_ID = 'application-creation-v2';
 
 /**
  * The canonical application-creation workflow. Bumping the `id`
@@ -78,33 +84,17 @@ export const APPLICATION_CREATION_WORKFLOW: WorkflowDefinition = {
       ].join('\n'),
     },
     {
-      stepKey: 'plan',
-      title: 'Sketching the app',
-      description: 'Planning screens and data',
-      prompt: [
-        'Plan the app internally: what screens, what components, what data shapes. Do NOT write any code in this step and do NOT share the plan with the user — keep it for yourself so you can build confidently in the next step.',
-        '',
-        'Reply with a single short plain-English sentence confirming you have a plan.',
-      ].join('\n'),
-    },
-    {
       stepKey: 'components',
       title: 'Building the pieces',
-      description: 'Creating reusable parts',
+      description: 'Designing and creating reusable parts',
       prompt: [
-        'Build the leaf components first — every one is a real `.tsx` file under `src/`. Work bottom-up: small reusable pieces before whole pages. Do not wire routing or full-page composition in this step.',
+        "Plan the app first — what screens it has, what reusable components those screens need, what data shapes flow between them. Keep the plan in your head; do NOT share it with the user, the next step's output is what they will see.",
         '',
-        'When you have the core components drafted, reply with a one-sentence confirmation.',
-      ].join('\n'),
-    },
-    {
-      stepKey: 'content',
-      title: 'Adding realistic content',
-      description: 'Writing copy and sample data',
-      prompt: [
-        'Populate the components with realistic content: real-sounding names, dates, prices, copy. Lorem ipsum is forbidden.',
+        'Then build the leaf components bottom-up. Every component is a real `.tsx` file under `src/`. Small reusable pieces first, then larger compositions. Do NOT wire routing or full-page composition here — that is the next step.',
         '',
-        'Reply with a one-sentence confirmation when the content is in.',
+        'Populate every component with realistic, hand-crafted content the moment you create it: real-sounding names, dates, prices, copy. Lorem ipsum is FORBIDDEN.',
+        '',
+        'When the components are drafted with their real content, reply with a one-sentence confirmation.',
       ].join('\n'),
     },
     {

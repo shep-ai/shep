@@ -2,7 +2,7 @@
  * Client-side mirror of the application-creation workflow's
  * user-facing step titles + descriptions. Used to render a
  * placeholder tracker BEFORE the backend orchestrator has written
- * the real `workflow_steps` rows — the user sees all 9 pending
+ * the real `workflow_steps` rows — the user sees all 8 pending
  * cards the instant they land on the application page, instead
  * of a blank area that suddenly pops into existence a few
  * hundred milliseconds later.
@@ -30,12 +30,10 @@ export const APPLICATION_CREATION_PLACEHOLDER_STEPS: PlaceholderStep[] = [
     title: 'Installing design tools',
     description: 'Adding Tailwind and essentials',
   },
-  { stepKey: 'plan', title: 'Sketching the app', description: 'Planning screens and data' },
-  { stepKey: 'components', title: 'Building the pieces', description: 'Creating reusable parts' },
   {
-    stepKey: 'content',
-    title: 'Adding realistic content',
-    description: 'Writing copy and sample data',
+    stepKey: 'components',
+    title: 'Building the pieces',
+    description: 'Designing and creating reusable parts',
   },
   { stepKey: 'wire', title: 'Connecting everything', description: 'Wiring navigation and forms' },
   {

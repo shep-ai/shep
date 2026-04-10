@@ -119,7 +119,11 @@ describe('CreateApplicationUseCase', () => {
     );
 
     expect(result.application.slug).toBe(arg.name);
-    expect(result.application.name).toMatch(/^Rest Api Users [0-9a-f]{6}$/i);
+    // The human-readable name is derived from the BASE slug only — the
+    // random hex tag stays on `slug` (and the worktree path) where it
+    // exists for uniqueness, but the user-facing title is clean. Names
+    // are allowed to duplicate; uniqueness is enforced on `slug`.
+    expect(result.application.name).toBe('Rest Api Users');
     expect(result.repositoryPath).toBe(`/shep/projects/${arg.name}`);
   });
 

@@ -225,6 +225,8 @@ export function ChatTab({
                       collapsedSummary={
                         stepProgress.hasPlan === true && stepProgress.allDone === true
                       }
+                      activeStepId={stepProgress.activeStepId}
+                      liveStatus={stepProgress.liveStatus}
                     />
                   </>
                 ) : undefined
@@ -255,7 +257,7 @@ export function ChatTab({
 // the real user bubble in `thread.tsx` so the swap is invisible.
 function InitialRequestBubble({ text }: { text: string }) {
   return (
-    <div className="group flex w-full items-start gap-2.5 px-4 py-0.5">
+    <div className="group animate-in fade-in-0 slide-in-from-top-1 flex w-full items-start gap-2.5 px-4 py-0.5 duration-300 ease-out">
       <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-500/15">
         <User className="h-3.5 w-3.5 text-violet-500" />
       </div>

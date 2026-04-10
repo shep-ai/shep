@@ -167,10 +167,13 @@ export class CreateApplicationUseCase {
     //    astronomically rare case where two random tags do clash.
     const { slug, projectPath } = await this.allocateUniqueSlugAndScaffold(baseSlug);
 
-    // 3. Generate display name from slug (title-case). The random tag is
-    //    visible in the title — that's intentional so users can disambiguate
-    //    multiple apps spawned from the same description at a glance.
-    const name = toTitleCase(slug);
+    // 3. Generate the human-readable display name from the BASE slug
+    //    only — the random hex tag is an internal disambiguator that
+    //    lives on the `slug` field (and the worktree path), and must
+    //    NEVER bleed into the user-visible title. Names are allowed to
+    //    duplicate; uniqueness is enforced on `slug`. Users can rename
+    //    afterwards via the application page.
+    const name = toTitleCase(baseSlug);
 
     // 4. Create Application record
     const now = new Date();

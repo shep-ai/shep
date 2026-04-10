@@ -157,7 +157,7 @@ const UserMessage: FC = () => {
   }
 
   return (
-    <MessagePrimitive.Root className="group flex w-full items-start gap-2.5 px-4 py-0.5">
+    <MessagePrimitive.Root className="group animate-in fade-in-0 slide-in-from-bottom-1 flex w-full items-start gap-2.5 px-4 py-0.5 duration-300 ease-out">
       {/* User avatar */}
       <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-500/15">
         <User className="h-3.5 w-3.5 text-violet-500" />
@@ -200,7 +200,7 @@ function InteractionResponseMessage({ text }: { text: string }) {
   if (!parsed) return null;
 
   return (
-    <MessagePrimitive.Root className="group flex w-full items-start gap-2.5 px-4 py-0.5">
+    <MessagePrimitive.Root className="group animate-in fade-in-0 slide-in-from-bottom-1 flex w-full items-start gap-2.5 px-4 py-0.5 duration-300 ease-out">
       <div className="bg-muted flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
         <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
       </div>
@@ -254,7 +254,7 @@ const AssistantMessage: FC = () => {
 
   if (toolEvent) {
     return (
-      <MessagePrimitive.Root className="group flex w-full items-start gap-2.5 px-4 py-0.5">
+      <MessagePrimitive.Root className="group animate-in fade-in-0 slide-in-from-bottom-1 flex w-full items-start gap-2.5 px-4 py-0.5 duration-300 ease-out">
         {/* Keep the avatar slot for visual rhythm but use a smaller inline icon */}
         <div className="text-muted-foreground/40 mt-1 flex h-6 w-6 shrink-0 items-center justify-center">
           <Bot className="h-3 w-3" />
@@ -267,7 +267,7 @@ const AssistantMessage: FC = () => {
   }
 
   return (
-    <MessagePrimitive.Root className="group flex w-full items-start gap-2.5 px-4 py-0.5">
+    <MessagePrimitive.Root className="group animate-in fade-in-0 slide-in-from-bottom-1 flex w-full items-start gap-2.5 px-4 py-0.5 duration-300 ease-out">
       {/* Avatar */}
       <div className="bg-muted flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
         <Bot className="text-muted-foreground h-3.5 w-3.5" />
