@@ -409,6 +409,9 @@ describe('createDefaultSettings', () => {
         cavemanMode: {
           enabled: false,
         },
+        subprocessFilter: {
+          enabled: false,
+        },
       });
     });
   });

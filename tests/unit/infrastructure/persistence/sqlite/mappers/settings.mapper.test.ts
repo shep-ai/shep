@@ -176,6 +176,7 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     token_opt_alias_compression: 1,
     caveman_mode_enabled: 0,
     caveman_mode_directive: null,
+    subprocess_filter_enabled: 0,
     ...overrides,
   };
 }
@@ -1522,9 +1523,44 @@ describe('Settings Mapper', () => {
       const original = createTestSettings();
       const row = toDatabase(original);
       const restored = fromDatabase(row);
-      // Must be the hydrated object, never undefined — mirrors the
-      // tokenOptimization lesson from commit 3e32a55f.
       expect(restored.workflow.cavemanMode).toEqual({ enabled: false });
+    });
+  });
+
+  describe('subprocess filter', () => {
+    it('maps subprocessFilter.enabled=true to subprocess_filter_enabled=1', () => {
+      const settings = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          subprocessFilter: { enabled: true },
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.subprocess_filter_enabled).toBe(1);
+    });
+
+    it('maps subprocessFilter.enabled=false to subprocess_filter_enabled=0', () => {
+      const settings = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          subprocessFilter: { enabled: false },
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.subprocess_filter_enabled).toBe(0);
+    });
+
+    it('hydrates subprocessFilter from the row', () => {
+      const row = createTestRow({ subprocess_filter_enabled: 1 });
+      const settings = fromDatabase(row);
+      expect(settings.workflow.subprocessFilter).toEqual({ enabled: true });
+    });
+
+    it('always hydrates subprocessFilter even at defaults (regression)', () => {
+      const original = createTestSettings();
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+      expect(restored.workflow.subprocessFilter).toEqual({ enabled: false });
     });
   });
 });

@@ -359,6 +359,17 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
     // this variable and refuses to start if it's set.
 
     const { CLAUDECODE: _, ...cleanEnv } = process.env;
+
+    // Subprocess output filter — prepend the shim directory to PATH so
+    // commands like `git`, `npm`, `pnpm` are intercepted by shep-filter
+    // wrapper scripts. The shim dir is passed via options so this
+    // executor stays settings-agnostic (the caller resolves the setting).
+    if (options?.subprocessFilterShimDir) {
+      const shimDir = options.subprocessFilterShimDir;
+      cleanEnv.PATH = `${shimDir}:${cleanEnv.PATH ?? ''}`;
+      cleanEnv.SHEP_FILTER_SHIM_DIR = shimDir;
+    }
+
     spawnOpts.env = cleanEnv;
 
     return spawnOpts;

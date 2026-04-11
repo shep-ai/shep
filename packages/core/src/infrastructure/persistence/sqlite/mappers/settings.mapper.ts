@@ -16,6 +16,7 @@ import type {
   Settings,
   SkillInjectionConfig,
   SkillSource,
+  SubprocessFilterConfig,
   TokenOptimizationConfig,
 } from '../../../../domain/generated/output.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
@@ -152,6 +153,9 @@ export interface SettingsRow {
   // Caveman mode config (added in migration 056)
   caveman_mode_enabled: number;
   caveman_mode_directive: string | null;
+
+  // Subprocess filter config (added in migration 057)
+  subprocess_filter_enabled: number;
 }
 
 /**
@@ -294,6 +298,9 @@ export function toDatabase(settings: Settings): SettingsRow {
     // Caveman mode config (default: disabled, no custom directive)
     caveman_mode_enabled: settings.workflow.cavemanMode?.enabled ? 1 : 0,
     caveman_mode_directive: settings.workflow.cavemanMode?.directive ?? null,
+
+    // Subprocess filter config (default: disabled)
+    subprocess_filter_enabled: settings.workflow.subprocessFilter?.enabled ? 1 : 0,
   };
 }
 
@@ -407,6 +414,20 @@ function buildCavemanModeFromRow(row: SettingsRow): { cavemanMode: CavemanModeCo
 }
 
 /**
+ * Build the subprocessFilter spread from DB row columns. Always returns
+ * `{ subprocessFilter: { ... } }` fully hydrated — never undefined.
+ */
+function buildSubprocessFilterFromRow(row: SettingsRow): {
+  subprocessFilter: SubprocessFilterConfig;
+} {
+  return {
+    subprocessFilter: {
+      enabled: (row.subprocess_filter_enabled ?? 0) === 1,
+    },
+  };
+}
+
+/**
  * Maps database row to Settings domain object.
  * Reconstructs nested objects and converts types from SQL.
  *
@@ -490,6 +511,7 @@ export function fromDatabase(row: SettingsRow): Settings {
       ...buildSkillInjectionFromRow(row),
       ...buildTokenOptimizationFromRow(row),
       ...buildCavemanModeFromRow(row),
+      ...buildSubprocessFilterFromRow(row),
       ciWatchEnabled: row.ci_watch_enabled !== 0,
       enableEvidence: row.workflow_enable_evidence === 1,
       commitEvidence: row.workflow_commit_evidence === 1,

@@ -93,6 +93,14 @@ export interface AgentExecutionOptions {
   disableMcp?: boolean;
   /** Restrict available built-in tools via --tools flag */
   tools?: string[];
+  /**
+   * Absolute path to the shep-filter shim directory to prepend to PATH.
+   * When set, the executor prepends this directory to the subprocess
+   * PATH so that commands like `git`, `npm`, `pnpm` are intercepted
+   * by shep-filter wrapper scripts that pipe output through token-
+   * reducing filters before Claude Code ingests the results.
+   */
+  subprocessFilterShimDir?: string;
 }
 
 /**

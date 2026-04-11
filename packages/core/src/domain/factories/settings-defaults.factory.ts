@@ -26,6 +26,7 @@ import type {
   SkillInjectionConfig,
   TokenOptimizationConfig,
   CavemanModeConfig,
+  SubprocessFilterConfig,
 } from '../generated/output';
 import {
   AgentType,
@@ -221,6 +222,10 @@ export function createDefaultSettings(): Settings {
     enabled: false,
   };
 
+  const subprocessFilter: SubprocessFilterConfig = {
+    enabled: false,
+  };
+
   const workflow: WorkflowConfig = {
     openPrOnImplementationComplete: false,
     approvalGateDefaults,
@@ -232,6 +237,7 @@ export function createDefaultSettings(): Settings {
     skillInjection,
     tokenOptimization,
     cavemanMode,
+    subprocessFilter,
   };
 
   const featureFlags: FeatureFlags = {

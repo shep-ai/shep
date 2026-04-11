@@ -407,6 +407,25 @@ model CavemanModeConfig {
   directive?: string;
 }
 
+/**
+ * Subprocess output filter — intercepts Bash tool commands (git, npm, pnpm)
+ * inside the Claude Code subprocess via PATH shadow and filters their output
+ * before it enters the conversation history. Unlike the TokenOptimizationConfig
+ * layer which only touches shep's seed prompt, this filter operates on the
+ * tool results that Claude Code ingests turn after turn — the same layer
+ * where the vast majority of input tokens are consumed.
+ *
+ * Disabled by default. When enabled, shep creates a per-worker temp directory
+ * containing wrapper scripts for supported commands, prepends it to PATH in
+ * the subprocess env, and each wrapper pipes the real command's output through
+ * a Node.js filter before returning it to Claude Code.
+ */
+@doc("Subprocess output filter configuration (optional, disabled by default)")
+model SubprocessFilterConfig {
+  @doc("Master toggle for subprocess output filtering (default: false)")
+  enabled: boolean = false;
+}
+
 @doc("Global workflow configuration defaults")
 model WorkflowConfig {
   /**
@@ -521,6 +540,14 @@ model WorkflowConfig {
    */
   @doc("Caveman mode configuration (optional, disabled by default)")
   cavemanMode?: CavemanModeConfig;
+
+  /**
+   * Subprocess output filter — intercepts Bash tool commands inside the
+   * Claude Code subprocess via PATH shadow and filters their output
+   * before it enters conversation history.
+   */
+  @doc("Subprocess output filter configuration (optional, disabled by default)")
+  subprocessFilter?: SubprocessFilterConfig;
 }
 
 @doc("AI coding agent configuration")

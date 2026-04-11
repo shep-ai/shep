@@ -29,6 +29,7 @@ import {
   recordOptimizationMetricsIfEnabled,
 } from '../prompt-optimization-context.js';
 import { resolveCavemanDirective } from '../caveman-directive.js';
+import { resolveSubprocessFilterShimDir } from '../subprocess-filter-context.js';
 import { updateNodeLifecycle } from '../lifecycle-context.js';
 import { getLogPrefix, setCurrentPhase } from '../log-context.js';
 
@@ -127,12 +128,23 @@ export function buildExecutorOptions(
     cavemanConfig?.directive
   );
 
+  // Subprocess output filter — resolve the shim directory path when
+  // enabled in settings. The shim dir is created lazily on first call
+  // and reused for the lifetime of the worker process.
+  const subprocessFilterConfig = hasSettings()
+    ? getSettings().workflow?.subprocessFilter
+    : undefined;
+  const subprocessFilterShimDir = resolveSubprocessFilterShimDir(
+    subprocessFilterConfig?.enabled ?? false
+  );
+
   return {
     cwd: state.worktreePath || state.repositoryPath,
     maxTurns: 5000,
     timeout: stageTimeout,
     ...(state.model ? { model: state.model } : {}),
     ...(systemPrompt !== undefined ? { systemPrompt } : {}),
+    ...(subprocessFilterShimDir !== undefined ? { subprocessFilterShimDir } : {}),
     ...overrides,
   };
 }

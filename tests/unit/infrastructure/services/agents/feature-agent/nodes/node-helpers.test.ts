@@ -18,6 +18,7 @@ import {
   setPromptOptimizationContext,
   clearPromptOptimizationContext,
 } from '@/infrastructure/services/agents/feature-agent/prompt-optimization-context.js';
+import { clearSubprocessFilterContext } from '@/infrastructure/services/agents/feature-agent/subprocess-filter-context.js';
 import type { IPromptOptimizerService } from '@/application/ports/output/services/prompt-optimizer.interface.js';
 import type { IOptimizationMetricsService } from '@/application/ports/output/services/optimization-metrics.interface.js';
 import type {
@@ -345,6 +346,7 @@ describe('isRejectionPayload', () => {
 describe('buildExecutorOptions', () => {
   afterEach(() => {
     resetSettings();
+    clearSubprocessFilterContext();
   });
 
   const baseState = {
@@ -487,6 +489,26 @@ describe('buildExecutorOptions', () => {
     // and must not attach a systemPrompt when settings are unavailable.
     const options = buildExecutorOptions(baseState as any);
     expect(options.systemPrompt).toBeUndefined();
+  });
+
+  // --- Subprocess filter shim dir wiring ---
+
+  it('does not attach subprocessFilterShimDir when subprocess filter is disabled (default)', () => {
+    const settings = createDefaultSettings();
+    initializeSettings(settings);
+
+    const options = buildExecutorOptions(baseState as any);
+    expect(options.subprocessFilterShimDir).toBeUndefined();
+  });
+
+  it('attaches subprocessFilterShimDir when subprocess filter is enabled', () => {
+    const settings = createDefaultSettings();
+    settings.workflow.subprocessFilter = { enabled: true };
+    initializeSettings(settings);
+
+    const options = buildExecutorOptions(baseState as any);
+    expect(typeof options.subprocessFilterShimDir).toBe('string');
+    expect(options.subprocessFilterShimDir!.length).toBeGreaterThan(0);
   });
 });
 

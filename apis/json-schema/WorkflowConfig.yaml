@@ -73,6 +73,9 @@ properties:
   cavemanMode:
     $ref: CavemanModeConfig.yaml
     description: Caveman mode configuration (optional, disabled by default)
+  subprocessFilter:
+    $ref: SubprocessFilterConfig.yaml
+    description: Subprocess output filter configuration (optional, disabled by default)
 required:
   - openPrOnImplementationComplete
   - approvalGateDefaults

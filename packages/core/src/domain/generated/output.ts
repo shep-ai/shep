@@ -483,6 +483,16 @@ export type CavemanModeConfig = {
 };
 
 /**
+ * Subprocess output filter configuration (optional, disabled by default)
+ */
+export type SubprocessFilterConfig = {
+  /**
+   * Master toggle for subprocess output filtering (default: false)
+   */
+  enabled: boolean;
+};
+
+/**
  * Global workflow configuration defaults
  */
 export type WorkflowConfig = {
@@ -558,6 +568,10 @@ export type WorkflowConfig = {
    * Caveman mode configuration (optional, disabled by default)
    */
   cavemanMode?: CavemanModeConfig;
+  /**
+   * Subprocess output filter configuration (optional, disabled by default)
+   */
+  subprocessFilter?: SubprocessFilterConfig;
 };
 export enum AgentType {
   ClaudeCode = 'claude-code',

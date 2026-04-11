@@ -1,0 +1,11 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SubprocessFilterConfig.yaml
+type: object
+properties:
+  enabled:
+    type: boolean
+    default: false
+    description: "Master toggle for subprocess output filtering (default: false)"
+required:
+  - enabled
+description: Subprocess output filter configuration (optional, disabled by default)
