@@ -12,7 +12,7 @@ summary: >
   /v1/models endpoint, surface free-model badges, and add search to the picker
   when the catalog grows beyond a threshold. Fallback to a curated default list
   when the API is unreachable or unauthenticated.
-phase: Requirements
+phase: Research
 sizeEstimate: M
 
 # Relationships

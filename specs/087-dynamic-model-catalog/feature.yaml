@@ -3,18 +3,18 @@ feature:
   name: 'dynamic-model-catalog'
   number: 87
   branch: 'feat/087-dynamic-model-catalog'
-  lifecycle: 'research'
+  lifecycle: 'planning'
   createdAt: '2026-04-10T07:42:26Z'
 
 status:
-  phase: 'research'
+  phase: 'planning'
   progress:
     completed: 0
     total: 0
     percentage: 0
   currentTask: null
-  lastUpdated: '2026-04-10T07:42:26Z'
-  lastUpdatedBy: 'shep-kit:new-feature'
+  lastUpdated: '2026-04-11T00:00:00Z'
+  lastUpdatedBy: 'shep-kit:research'
 
 validation:
   lastRun: null
@@ -30,6 +30,9 @@ checkpoints:
   - phase: 'feature-created'
     completedAt: '2026-04-10T07:42:26Z'
     completedBy: 'shep-kit:new-feature'
+  - phase: 'research-complete'
+    completedAt: '2026-04-11T00:00:00Z'
+    completedBy: 'shep-kit:research'
 
 errors:
   current: null
