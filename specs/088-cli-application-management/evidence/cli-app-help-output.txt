@@ -1,0 +1,72 @@
+$ shep app --help
+
+Usage: shep app [options] [command]
+
+Manage applications
+
+Options:
+  -h, --help                   display help for command
+
+Commands:
+  ls                           List applications
+  show <id>                    Display details of an application
+  new [options] <description>  Create a new application
+  del [options] <id>           Delete an application
+  help [command]               display help for command
+
+================================================================================
+
+$ shep app new --help
+
+Usage: shep app new [options] <description>
+
+Create a new application
+
+Arguments:
+  description      Application description
+
+Options:
+  --agent <type>   Agent type override
+  --model <model>  LLM model override (e.g. claude-opus-4-6)
+  --no-start       Create without starting an agent session
+  -h, --help       display help for command
+
+================================================================================
+
+$ shep app ls --help
+
+Usage: shep app ls [options]
+
+List applications
+
+Options:
+  -h, --help  display help for command
+
+================================================================================
+
+$ shep app show --help
+
+Usage: shep app show [options] <id>
+
+Display details of an application
+
+Arguments:
+  id          Application ID, slug, or prefix
+
+Options:
+  -h, --help  display help for command
+
+================================================================================
+
+$ shep app del --help
+
+Usage: shep app del [options] <id>
+
+Delete an application
+
+Arguments:
+  id           Application ID, slug, or prefix
+
+Options:
+  -f, --force  Skip confirmation prompt
+  -h, --help   display help for command
