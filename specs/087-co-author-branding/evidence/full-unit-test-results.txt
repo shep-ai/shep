@@ -3,501 +3,498 @@
 > vitest run tests/unit
 
 
- RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding[39m
 
- ✓  node  tests/unit/infrastructure/services/agents/executors/gemini-cli-executor.test.ts (43 tests) 470ms
- ✓  node  tests/unit/infrastructure/services/agents/executors/codex-cli-executor.test.ts (49 tests) 731ms
- ✓  node  tests/unit/application/use-cases/upgrade/upgrade-cli.use-case.test.ts (16 tests) 942ms
-[2026-04-12T16:35:57.235Z] Spawning: cursor-agent --yolo -p Implement feature --output-format stream-json
-[2026-04-12T16:35:57.238Z] Spawn cwd: (inherited)
-[2026-04-12T16:35:57.238Z] Subprocess PID: 12345
-[2026-04-12T16:35:57.327Z] Spawning: cursor-agent --yolo -p Bad prompt --output-format stream-json
-[2026-04-12T16:35:57.327Z] Spawn cwd: (inherited)
-[2026-04-12T16:35:57.327Z] Subprocess PID: 12345
-[2026-04-12T16:35:57.338Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-12T16:35:57.338Z] Spawn cwd: (inherited)
-[2026-04-12T16:35:57.339Z] Subprocess PID: 12345
-stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > already-running path (idempotent) > does NOT spawn a new process when daemon is already alive
-
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/filesystem/node-application-file-system.service.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 166[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/agent-registry.service.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 243[2mms[22m[39m
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2malready-running path (idempotent)[2m > [22m[2mdoes NOT spawn a new process when daemon is already alive
+[22m[39m
 ℹ Shep is already running at http://localhost:4050
 
 
-stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > already-running path (idempotent) > does NOT write daemon.json when daemon is already alive
-
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2malready-running path (idempotent)[2m > [22m[2mdoes NOT write daemon.json when daemon is already alive
+[22m[39m
 ℹ Shep is already running at http://localhost:4050
 
 
-[2026-04-12T16:35:57.364Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-12T16:35:57.364Z] Spawn cwd: (inherited)
-[2026-04-12T16:35:57.364Z] Subprocess PID: 12345
-[2026-04-12T16:35:57.398Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-12T16:35:57.398Z] Spawn cwd: (inherited)
-[2026-04-12T16:35:57.399Z] Subprocess PID: 12345
-[2026-04-12T16:35:57.422Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-12T16:35:57.422Z] Spawn cwd: (inherited)
-[2026-04-12T16:35:57.422Z] Subprocess PID: 12345
-[2026-04-12T16:35:57.446Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-12T16:35:57.446Z] Spawn cwd: (inherited)
-[2026-04-12T16:35:57.446Z] Subprocess PID: 12345
-[2026-04-12T16:35:57.472Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-12T16:35:57.472Z] Spawn cwd: (inherited)
-[2026-04-12T16:35:57.472Z] Subprocess PID: 12345
-[2026-04-12T16:35:57.487Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-12T16:35:57.487Z] Spawn cwd: (inherited)
-[2026-04-12T16:35:57.487Z] Subprocess PID: 12345
- ✓  node  tests/unit/infrastructure/services/agents/executors/cursor-executor.test.ts (39 tests) 351ms
-stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > calls findAvailablePort with DEFAULT_PORT when no port option given
-
+[2026-04-12T16:43:16.597Z] [analyze] Starting...
+[2026-04-12T16:43:16.602Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.602Z] [analyze] Prompt length: 4303 chars
+[2026-04-12T16:43:16.602Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.606Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.606Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.607Z] [requirements] Starting...
+[2026-04-12T16:43:16.608Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.608Z] [requirements] Prompt length: 5551 chars
+[2026-04-12T16:43:16.608Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.608Z] [requirements] Interrupting for human approval
+[2026-04-12T16:43:16.613Z] [analyze] Starting...
+[2026-04-12T16:43:16.613Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.613Z] [analyze] Prompt length: 4303 chars
+[2026-04-12T16:43:16.613Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.616Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.616Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.622Z] [requirements] Starting...
+[2026-04-12T16:43:16.623Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.623Z] [requirements] Prompt length: 5551 chars
+[2026-04-12T16:43:16.623Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.625Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.625Z] [validate:spec.yaml] Validation passed
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/domain/factories/spec-yaml-parser.test.ts [2m([22m[2m80 tests[22m[2m)[22m[32m 84[2mms[22m[39m
+[2026-04-12T16:43:16.626Z] [research] Starting...
+[2026-04-12T16:43:16.626Z] [research] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.626Z] [research] Prompt length: 5508 chars
+[2026-04-12T16:43:16.626Z] [research] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.627Z] [validate:research.yaml] Validating research.yaml
+[2026-04-12T16:43:16.627Z] [validate:research.yaml] Validation passed
+[2026-04-12T16:43:16.628Z] [plan] Starting...
+[2026-04-12T16:43:16.628Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.628Z] [plan] Prompt length: 6560 chars
+[2026-04-12T16:43:16.628Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.629Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-12T16:43:16.630Z] [validate:plan+tasks] Validation passed
+[2026-04-12T16:43:16.630Z] [implement] Starting implementation phase orchestration
+[2026-04-12T16:43:16.631Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-12T16:43:16.631Z] [implement] Executing phase prompt — 2367 chars
+[2026-04-12T16:43:16.631Z] [implement] Phase complete (20 chars)
+[2026-04-12T16:43:16.631Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-12T16:43:16.631Z] [evidence] Starting evidence collection
+[2026-04-12T16:43:16.632Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.632Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.632Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.632Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:43:16.632Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.632Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.632Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.632Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:43:16.632Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.632Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.632Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.632Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+[2026-04-12T16:43:16.638Z] [analyze] Starting...
+[2026-04-12T16:43:16.638Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.638Z] [analyze] Prompt length: 4342 chars
+[2026-04-12T16:43:16.638Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.639Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.639Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.639Z] [requirements] Starting...
+[2026-04-12T16:43:16.639Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.639Z] [requirements] Prompt length: 5590 chars
+[2026-04-12T16:43:16.639Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.640Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.640Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.641Z] [research] Starting...
+[2026-04-12T16:43:16.641Z] [research] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.641Z] [research] Prompt length: 5547 chars
+[2026-04-12T16:43:16.641Z] [research] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.641Z] [validate:research.yaml] Validating research.yaml
+[2026-04-12T16:43:16.641Z] [validate:research.yaml] Validation passed
+[2026-04-12T16:43:16.642Z] [plan] Starting...
+[2026-04-12T16:43:16.642Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.642Z] [plan] Prompt length: 6638 chars
+[2026-04-12T16:43:16.642Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.642Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-12T16:43:16.642Z] [validate:plan+tasks] Validation passed
+[2026-04-12T16:43:16.643Z] [implement] Starting implementation phase orchestration
+[2026-04-12T16:43:16.643Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-12T16:43:16.643Z] [implement] Executing phase prompt — 2367 chars
+[2026-04-12T16:43:16.643Z] [implement] Phase complete (20 chars)
+[2026-04-12T16:43:16.643Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-12T16:43:16.643Z] [evidence] Starting evidence collection
+[2026-04-12T16:43:16.643Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.643Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.643Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.643Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:43:16.644Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.644Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.644Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.644Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.644Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.644Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.644Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:43:16.644Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+[2026-04-12T16:43:16.646Z] [analyze] Starting...
+[2026-04-12T16:43:16.646Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.646Z] [analyze] Prompt length: 4303 chars
+[2026-04-12T16:43:16.646Z] [analyze] ERROR: Executor failed (after 0.0s)
+[2026-04-12T16:43:16.650Z] [analyze] Starting...
+[2026-04-12T16:43:16.650Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.650Z] [analyze] Prompt length: 4303 chars
+[2026-04-12T16:43:16.650Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.651Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.651Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.653Z] [requirements] Starting...
+[2026-04-12T16:43:16.653Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.653Z] [requirements] Prompt length: 5551 chars
+[2026-04-12T16:43:16.653Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.655Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.655Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.656Z] [research] Starting...
+[2026-04-12T16:43:16.656Z] [research] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.656Z] [research] Prompt length: 5508 chars
+[2026-04-12T16:43:16.656Z] [research] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.656Z] [validate:research.yaml] Validating research.yaml
+[2026-04-12T16:43:16.657Z] [validate:research.yaml] Validation passed
+[2026-04-12T16:43:16.657Z] [plan] Starting...
+[2026-04-12T16:43:16.657Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.657Z] [plan] Prompt length: 6560 chars
+[2026-04-12T16:43:16.657Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.658Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-12T16:43:16.658Z] [validate:plan+tasks] Validation passed
+[2026-04-12T16:43:16.658Z] [implement] Starting implementation phase orchestration
+[2026-04-12T16:43:16.658Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-12T16:43:16.658Z] [implement] Executing phase prompt — 2367 chars
+[2026-04-12T16:43:16.658Z] [implement] Phase complete (20 chars)
+[2026-04-12T16:43:16.658Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-12T16:43:16.659Z] [evidence] Starting evidence collection
+[2026-04-12T16:43:16.659Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.659Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.659Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.659Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.659Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.659Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.659Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.659Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.659Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.659Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:43:16.659Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:43:16.659Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+[2026-04-12T16:43:16.661Z] [analyze] Starting...
+[2026-04-12T16:43:16.661Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.661Z] [analyze] Prompt length: 4303 chars
+[2026-04-12T16:43:16.661Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.661Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.661Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.662Z] [requirements] Starting...
+[2026-04-12T16:43:16.662Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.662Z] [requirements] Prompt length: 5551 chars
+[2026-04-12T16:43:16.662Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.662Z] [requirements] Interrupting for human approval
+[2026-04-12T16:43:16.663Z] [analyze] Starting...
+[2026-04-12T16:43:16.663Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.663Z] [analyze] Prompt length: 4303 chars
+[2026-04-12T16:43:16.663Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.663Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.663Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.664Z] [requirements] Starting...
+[2026-04-12T16:43:16.664Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.664Z] [requirements] Prompt length: 5551 chars
+[2026-04-12T16:43:16.664Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.664Z] [requirements] Interrupting for human approval
+[2026-04-12T16:43:16.671Z] [requirements] Starting...
+[2026-04-12T16:43:16.671Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.671Z] [requirements] Prompt length: 5551 chars
+[2026-04-12T16:43:16.671Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.671Z] [requirements] Interrupting for human approval
+[2026-04-12T16:43:16.672Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.672Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.672Z] [research] Starting...
+[2026-04-12T16:43:16.672Z] [research] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.672Z] [research] Prompt length: 5508 chars
+[2026-04-12T16:43:16.672Z] [research] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.673Z] [validate:research.yaml] Validating research.yaml
+[2026-04-12T16:43:16.673Z] [validate:research.yaml] Validation passed
+[2026-04-12T16:43:16.673Z] [plan] Starting...
+[2026-04-12T16:43:16.673Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.673Z] [plan] Prompt length: 6560 chars
+[2026-04-12T16:43:16.673Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.673Z] [plan] Interrupting for human approval
+[2026-04-12T16:43:16.675Z] [analyze] Starting...
+[2026-04-12T16:43:16.675Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.675Z] [analyze] Prompt length: 4303 chars
+[2026-04-12T16:43:16.675Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.676Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.676Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.676Z] [requirements] Starting...
+[2026-04-12T16:43:16.676Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.676Z] [requirements] Prompt length: 5551 chars
+[2026-04-12T16:43:16.676Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.677Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.677Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.677Z] [research] Starting...
+[2026-04-12T16:43:16.677Z] [research] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.677Z] [research] Prompt length: 5508 chars
+[2026-04-12T16:43:16.677Z] [research] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.678Z] [validate:research.yaml] Validating research.yaml
+[2026-04-12T16:43:16.678Z] [validate:research.yaml] Validation passed
+[2026-04-12T16:43:16.678Z] [plan] Starting...
+[2026-04-12T16:43:16.678Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.678Z] [plan] Prompt length: 6560 chars
+[2026-04-12T16:43:16.678Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.679Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-12T16:43:16.679Z] [validate:plan+tasks] Validation passed
+[2026-04-12T16:43:16.679Z] [implement] Starting implementation phase orchestration
+[2026-04-12T16:43:16.679Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-12T16:43:16.679Z] [implement] Executing phase prompt — 2367 chars
+[2026-04-12T16:43:16.679Z] [implement] Phase complete (20 chars)
+[2026-04-12T16:43:16.679Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-12T16:43:16.679Z] [evidence] Starting evidence collection
+[2026-04-12T16:43:16.679Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.679Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.679Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.679Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.679Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.679Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.679Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:43:16.679Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:43:16.679Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.679Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.679Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.679Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+[2026-04-12T16:43:16.681Z] [analyze] Starting...
+[2026-04-12T16:43:16.681Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.681Z] [analyze] Prompt length: 4303 chars
+[2026-04-12T16:43:16.681Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.682Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.682Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.682Z] [requirements] Starting...
+[2026-04-12T16:43:16.682Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.682Z] [requirements] Prompt length: 5551 chars
+[2026-04-12T16:43:16.682Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.683Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.683Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.684Z] [research] Starting...
+[2026-04-12T16:43:16.685Z] [research] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.685Z] [research] Prompt length: 5508 chars
+[2026-04-12T16:43:16.685Z] [research] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.685Z] [validate:research.yaml] Validating research.yaml
+[2026-04-12T16:43:16.685Z] [validate:research.yaml] Validation passed
+[2026-04-12T16:43:16.686Z] [plan] Starting...
+[2026-04-12T16:43:16.686Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.686Z] [plan] Prompt length: 6560 chars
+[2026-04-12T16:43:16.686Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.686Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-12T16:43:16.686Z] [validate:plan+tasks] Validation passed
+[2026-04-12T16:43:16.687Z] [implement] Starting implementation phase orchestration
+[2026-04-12T16:43:16.687Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-12T16:43:16.687Z] [implement] Executing phase prompt — 2367 chars
+[2026-04-12T16:43:16.687Z] [implement] Phase complete (20 chars)
+[2026-04-12T16:43:16.687Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-12T16:43:16.687Z] [evidence] Starting evidence collection
+[2026-04-12T16:43:16.687Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.687Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.687Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.687Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:43:16.687Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:43:16.687Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.687Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.687Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.687Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.687Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.687Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.687Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+[2026-04-12T16:43:16.689Z] [analyze] Starting...
+[2026-04-12T16:43:16.689Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.689Z] [analyze] Prompt length: 4303 chars
+[2026-04-12T16:43:16.689Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.690Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.690Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.690Z] [requirements] Starting...
+[2026-04-12T16:43:16.690Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.690Z] [requirements] Prompt length: 5551 chars
+[2026-04-12T16:43:16.690Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.691Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.691Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.691Z] [research] Starting...
+[2026-04-12T16:43:16.691Z] [research] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.691Z] [research] Prompt length: 5508 chars
+[2026-04-12T16:43:16.691Z] [research] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.692Z] [validate:research.yaml] Validating research.yaml
+[2026-04-12T16:43:16.692Z] [validate:research.yaml] Validation passed
+[2026-04-12T16:43:16.692Z] [plan] Starting...
+[2026-04-12T16:43:16.692Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.692Z] [plan] Prompt length: 6560 chars
+[2026-04-12T16:43:16.692Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.692Z] [plan] Interrupting for human approval
+[2026-04-12T16:43:16.694Z] [analyze] Starting...
+[2026-04-12T16:43:16.694Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.694Z] [analyze] Prompt length: 4306 chars
+[2026-04-12T16:43:16.694Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.694Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.694Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.695Z] [requirements] Starting...
+[2026-04-12T16:43:16.695Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.695Z] [requirements] Prompt length: 5554 chars
+[2026-04-12T16:43:16.695Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.696Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.696Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.696Z] [research] Starting...
+[2026-04-12T16:43:16.696Z] [research] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.696Z] [research] Prompt length: 5321 chars
+[2026-04-12T16:43:16.696Z] [research] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.697Z] [validate:research.yaml] Validating research.yaml
+[2026-04-12T16:43:16.697Z] [validate:research.yaml] ERROR: Validation failed: Missing required string field 'summary'; Missing required string field 'content'; Missing required array field 'decisions'
+[2026-04-12T16:43:16.698Z] [repair:research.yaml] Repairing research.yaml (attempt 1)
+[2026-04-12T16:43:16.698Z] [repair:research.yaml] Repair complete (20 chars)
+[2026-04-12T16:43:16.698Z] [validate:research.yaml] Validating research.yaml
+[2026-04-12T16:43:16.698Z] [validate:research.yaml] ERROR: Validation failed: Missing required string field 'summary'; Missing required string field 'content'; Missing required array field 'decisions'
+[2026-04-12T16:43:16.698Z] [repair:research.yaml] Repairing research.yaml (attempt 2)
+[2026-04-12T16:43:16.699Z] [repair:research.yaml] Repair complete (20 chars)
+[2026-04-12T16:43:16.699Z] [validate:research.yaml] Validating research.yaml
+[2026-04-12T16:43:16.699Z] [validate:research.yaml] ERROR: Validation failed: Missing required string field 'summary'; Missing required string field 'content'; Missing required array field 'decisions'
+[2026-04-12T16:43:16.699Z] [routeValidation] Clearing completed phase 'research' so retry re-runs the agent
+[2026-04-12T16:43:16.701Z] [analyze] Starting...
+[2026-04-12T16:43:16.701Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.701Z] [analyze] Prompt length: 4327 chars
+[2026-04-12T16:43:16.701Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.701Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.701Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.702Z] [requirements] Starting...
+[2026-04-12T16:43:16.702Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.702Z] [requirements] Prompt length: 5575 chars
+[2026-04-12T16:43:16.702Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.702Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:43:16.702Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:43:16.703Z] [research] Starting...
+[2026-04-12T16:43:16.703Z] [research] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.703Z] [research] Prompt length: 5532 chars
+[2026-04-12T16:43:16.703Z] [research] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.703Z] [validate:research.yaml] Validating research.yaml
+[2026-04-12T16:43:16.703Z] [validate:research.yaml] Validation passed
+[2026-04-12T16:43:16.704Z] [plan] Starting...
+[2026-04-12T16:43:16.704Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.704Z] [plan] Prompt length: 6608 chars
+[2026-04-12T16:43:16.704Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.704Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-12T16:43:16.704Z] [validate:plan+tasks] Validation passed
+[2026-04-12T16:43:16.705Z] [implement] Starting implementation phase orchestration
+[2026-04-12T16:43:16.705Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-12T16:43:16.705Z] [implement] Executing phase prompt — 2367 chars
+[2026-04-12T16:43:16.705Z] [implement] Phase complete (20 chars)
+[2026-04-12T16:43:16.705Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-12T16:43:16.705Z] [evidence] Starting evidence collection
+[2026-04-12T16:43:16.705Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.705Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.705Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.705Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:43:16.705Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.705Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.705Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.705Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-12T16:43:16.705Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-12T16:43:16.705Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-04-12T16:43:16.705Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:43:16.705Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/langgraph/feature-agent-graph.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 124[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/codex-cli-executor.test.ts [2m([22m[2m49 tests[22m[2m)[22m[33m 329[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/domain/factories/spec-yaml-artifact-parsing.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 83[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/upgrade/upgrade-cli.use-case.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 786[2mms[22m[39m
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2mfresh-start path (no existing daemon)[2m > [22m[2mcalls findAvailablePort with DEFAULT_PORT when no port option given
+[22m[39m
 Shep Web UI
 
 ✓ Daemon spawned at http://localhost:4050
 
 
- ✓  node  tests/unit/infrastructure/services/agents/agent-registry.service.test.ts (8 tests) 1153ms
-       ✓ should pre-register the analyze-repository agent  1148ms
- ✓  node  tests/unit/presentation/cli/commands/upgrade.command.test.ts (26 tests) 2447ms
-stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > calls findAvailablePort with the provided port override
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/spec-yaml-backward-compatibility.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 129[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts [2m([22m[2m31 tests[22m[2m)[22m[32m 89[2mms[22m[39m
+[90mstdout[2m | tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts[2m > [22m[2mInteractiveSessionService[2m > [22m[2mstopSession[2m > [22m[2mupdates the session status to stopped
+[22m[39m[InteractiveSession] stopSession called for 56bda0e0-c1a9-449b-8e4b-128ab4d3a166 (feature: feat-1)     at InteractiveSessionService.stopSession (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/packages/core/src/infrastructure/services/interactive/interactive-session.service.ts:571:7) <-     at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts:409:21 <-     at processTicksAndRejections (node:internal/process/task_queues:105:5)
 
+[90mstdout[2m | tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts[2m > [22m[2mInteractiveSessionService[2m > [22m[2mstopSession[2m > [22m[2mis idempotent — calling twice does not throw
+[22m[39m[InteractiveSession] stopSession called for ebfd2252-ca59-40dc-83f8-e0b1ed82a9ad (feature: feat-1)     at InteractiveSessionService.stopSession (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/packages/core/src/infrastructure/services/interactive/interactive-session.service.ts:571:7) <-     at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts:420:21 <-     at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+[90mstdout[2m | tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts[2m > [22m[2mInteractiveSessionService[2m > [22m[2mstopSession[2m > [22m[2mcan stop a session that is still booting
+[22m[39m[InteractiveSession] stopSession called for 0f1fef30-f9e5-4e23-88ad-267148a6f7cd (feature: feat-1)     at InteractiveSessionService.stopSession (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/packages/core/src/infrastructure/services/interactive/interactive-session.service.ts:571:7) <-     at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts:429:21 <-     at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+[90mstdout[2m | tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts[2m > [22m[2mInteractiveSessionService[2m > [22m[2mstopSession[2m > [22m[2mcalls close on the handle when stopping
+[22m[39m[InteractiveSession] stopSession called for d83d7b05-3da3-416a-a18a-183ff532dfff (feature: feat-1)     at InteractiveSessionService.stopSession (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/packages/core/src/infrastructure/services/interactive/interactive-session.service.ts:571:7) <-     at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts:442:21 <-     at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+[90mstderr[2m | tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts[2m > [22m[2mInteractiveSessionService[2m > [22m[2mboot error handling[2m > [22m[2mmarks session as error when boot stream yields an error event
+[22m[39m[InteractiveSession] boot failed for session c85e5f25-8265-490d-b776-1768fe905594: Error: Agent error during boot: Something went wrong
+    at InteractiveSessionService.completeBootAsync [90m(/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/[39mpackages/core/src/infrastructure/services/interactive/interactive-session.service.ts:507:21[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/copilot-cli-executor.test.ts [2m([22m[2m51 tests[22m[2m)[22m[32m 174[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts [2m([22m[2m42 tests[22m[2m)[22m[32m 66[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/feat/new.command.test.ts [2m([22m[2m46 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-reject-token.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1255[2mms[22m[39m
+     [33m[2m✓[22m[39m resolves RejectAgentRunUseCase via string token after initialization [33m 1254[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-idempotency.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1293[2mms[22m[39m
+     [33m[2m✓[22m[39m isContainerInitialized() returns false before init [33m 1253[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-session-registrations.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1325[2mms[22m[39m
+     [33m[2m✓[22m[39m resolves ListAgentSessionsUseCase after initialization [33m 1254[2mms[22m[39m
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2mfresh-start path (no existing daemon)[2m > [22m[2mcalls findAvailablePort with the provided port override
+[22m[39m
 Shep Web UI
 
 ✓ Daemon spawned at http://localhost:8080
 
 
- ✓  node  tests/unit/infrastructure/services/tool-installer/tool-installer.service.test.ts (19 tests) 348ms
- ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts (59 tests) 273ms
-stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > spawns the daemon process using process.execPath and _serve args
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould set isRunning to true when started
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
-Shep Web UI
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould set isRunning to true when started
+[22m[39m[PrSyncWatcher] Stopped
 
-✓ Daemon spawned at http://localhost:4050
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould set isRunning to false when stopped
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+[PrSyncWatcher] Stopped
 
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould be no-op when start() is called while already running
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
- ✓  node  tests/unit/infrastructure/services/agents/executors/copilot-cli-executor.test.ts (51 tests) 528ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts (49 tests) 2482ms
-     ✓ should soft-reset spec commits when commitSpecs=false  782ms
-     ✓ should not modify commits when commitSpecs=true  453ms
-     ✓ should not modify commits for non-spec phases  530ms
-     ✓ should be a no-op when agent did not commit spec files  686ms
-stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > propagates process.execArgv to the child
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould be no-op when start() is called while already running
+[22m[39m[PrSyncWatcher] Stopped
 
-Shep Web UI
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould poll at configured interval
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
-✓ Daemon spawned at http://localhost:4050
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould poll at configured interval
+[22m[39m[PrSyncWatcher] Stopped
 
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould stop polling when stop() is called
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
- ✓  node  tests/unit/infrastructure/services/filesystem/node-application-file-system.service.test.ts (21 tests) 901ms
-stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > spawns with detached: true
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould stop polling when stop() is called
+[22m[39m[PrSyncWatcher] Stopped
 
-Shep Web UI
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould support custom poll interval
+[22m[39m[PrSyncWatcher] Starting (poll every 1000ms)
 
-✓ Daemon spawned at http://localhost:4050
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould support custom poll interval
+[22m[39m[PrSyncWatcher] Stopped
 
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Merged transition and update feature and agent run
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
- ✓  node  tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts (31 tests) 623ms
-stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > spawns with windowsHide: true to suppress console window on Windows
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Merged transition and update feature and agent run
+[22m[39m[PrSyncWatcher] PR #1 status changed: Open -> Merged for "My Feature"
 
-Shep Web UI
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Merged transition and update feature and agent run
+[22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "My Feature"
 
-✓ Daemon spawned at http://localhost:4050
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Merged transition and update feature and agent run
+[22m[39m[PrSyncWatcher] Stopped
 
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip duplicate Maintain transition when merge node already handled it (#354)
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
- ✓  node  tests/unit/domain/factories/spec-yaml-parser.test.ts (80 tests) 764ms
-     ✓ should parse without throwing  410ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts (81 tests) 233ms
-stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > spawns with stdout and stderr redirected to log file fd
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip duplicate Maintain transition when merge node already handled it (#354)
+[22m[39m[PrSyncWatcher] PR #1 status changed: Open -> Merged for "My Feature"
 
-Shep Web UI
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip duplicate Maintain transition when merge node already handled it (#354)
+[22m[39m[PrSyncWatcher] Feature "My Feature" already in Maintain — skipping duplicate transition
 
-✓ Daemon spawned at http://localhost:4050
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip duplicate Maintain transition when merge node already handled it (#354)
+[22m[39m[PrSyncWatcher] Stopped
 
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip agent run update when feature has no agentRunId
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
-[2026-04-12T16:36:01.129Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.157Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.157Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.157Z] Prompt length: 21 chars (piped via stdin)
-[2026-04-12T16:36:01.159Z] [result] 33 chars, session=sess-abc-123
-[2026-04-12T16:36:01.160Z] Process closed with code 0, result=33 chars
-[2026-04-12T16:36:01.166Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.167Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.167Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.167Z] Prompt length: 12 chars (piped via stdin)
-[2026-04-12T16:36:01.167Z] [result] 4 chars, session=session-xyz-789
-[2026-04-12T16:36:01.167Z] Process closed with code 0, result=4 chars
-[2026-04-12T16:36:01.168Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.168Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.168Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.168Z] Prompt length: 11 chars (piped via stdin)
-[2026-04-12T16:36:01.168Z] [result] 4 chars, session=sess-1
-[2026-04-12T16:36:01.168Z] [tokens] 1500 in / 800 out
-[2026-04-12T16:36:01.168Z] Process closed with code 0, result=4 chars
-[2026-04-12T16:36:01.170Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.186Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.186Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.186Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-12T16:36:01.186Z] [result] 4 chars, session=none
-[2026-04-12T16:36:01.186Z] [tokens] 500 in / 200 out
-[2026-04-12T16:36:01.186Z] Process closed with code 0, result=4 chars
-[2026-04-12T16:36:01.200Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.200Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.200Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.200Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-12T16:36:01.204Z] [result] 4 chars, session=none
-[2026-04-12T16:36:01.204Z] [tokens] 100 in / 50 out, $0.1857
-[2026-04-12T16:36:01.204Z] Process closed with code 0, result=4 chars
-[2026-04-12T16:36:01.205Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.205Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.206Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.206Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-12T16:36:01.209Z] [result] 4 chars, session=none
-[2026-04-12T16:36:01.219Z] Process closed with code 0, result=4 chars
-[2026-04-12T16:36:01.230Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.230Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.230Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.230Z] Prompt length: 10 chars (piped via stdin)
-[2026-04-12T16:36:01.231Z] stderr: Error: Authentication failed
-[2026-04-12T16:36:01.231Z] Process closed with code 1, result=0 chars
-[2026-04-12T16:36:01.232Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.232Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.232Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.232Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-12T16:36:01.233Z] Process error event: spawn claude ENOENT
-[2026-04-12T16:36:01.234Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --resume prev-session-id --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.234Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.235Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.235Z] Prompt length: 13 chars (piped via stdin)
-[2026-04-12T16:36:01.235Z] [result] 7 chars, session=sess-resume
-[2026-04-12T16:36:01.235Z] Process closed with code 0, result=7 chars
-[2026-04-12T16:36:01.236Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --model claude-sonnet-4-5-20250929 --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.236Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.236Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.236Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-12T16:36:01.236Z] [result] 4 chars, session=none
-[2026-04-12T16:36:01.236Z] Process closed with code 0, result=4 chars
-[2026-04-12T16:36:01.237Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --append-system-prompt You are a code reviewer --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.237Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.237Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.237Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-12T16:36:01.237Z] [result] 4 chars, session=none
-[2026-04-12T16:36:01.238Z] Process closed with code 0, result=4 chars
-[2026-04-12T16:36:01.238Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --allowedTools Read,Write,Bash --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.238Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.238Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.238Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-12T16:36:01.239Z] [result] 4 chars, session=none
-[2026-04-12T16:36:01.239Z] Process closed with code 0, result=4 chars
-[2026-04-12T16:36:01.240Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --max-turns 5 --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.240Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.240Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.240Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-12T16:36:01.241Z] [result] 4 chars, session=none
-[2026-04-12T16:36:01.241Z] Process closed with code 0, result=4 chars
-[2026-04-12T16:36:01.243Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --json-schema {"type":"object","properties":{"summary":{"type":"string"}}} --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.243Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.243Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.243Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-12T16:36:01.243Z] [result] 18 chars, session=none
-[2026-04-12T16:36:01.243Z] Process closed with code 0, result=18 chars
-[2026-04-12T16:36:01.245Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.245Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.245Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.245Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-12T16:36:01.245Z] [result] 4 chars, session=none
-[2026-04-12T16:36:01.245Z] Process closed with code 0, result=4 chars
-[2026-04-12T16:36:01.252Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.252Z] Spawn cwd: /some/project
-[2026-04-12T16:36:01.253Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.253Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-12T16:36:01.253Z] [result] 4 chars, session=none
-[2026-04-12T16:36:01.253Z] Process closed with code 0, result=4 chars
-[2026-04-12T16:36:01.266Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.266Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.266Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.266Z] Prompt length: 12 chars (piped via stdin)
-[2026-04-12T16:36:06.267Z] Process closed with code null, result=0 chars
-[2026-04-12T16:36:01.281Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.281Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.281Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.281Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-12T16:36:01.282Z] Process closed with code 0, result=0 chars
-[2026-04-12T16:36:01.286Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.286Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.286Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.286Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-12T16:36:01.286Z] [tool] Read {"file_path":"/src/index.ts"}
-[2026-04-12T16:36:01.286Z] [text] Let me read the file...
-[2026-04-12T16:36:01.286Z] [result] 4 chars, session=sess-1
-[2026-04-12T16:36:01.286Z] Process closed with code 0, result=4 chars
-[2026-04-12T16:36:01.288Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.288Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.288Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.288Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-12T16:36:01.288Z] [result] 4 chars, session=sess-1
-[2026-04-12T16:36:01.288Z] [tokens] 100 in / 50 out
-[2026-04-12T16:36:01.288Z] Process closed with code 0, result=4 chars
-[2026-04-12T16:36:01.289Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --strict-mcp-config --verbose --include-partial-messages --no-chrome
-[2026-04-12T16:36:01.289Z] Spawn cwd: (inherited)
-[2026-04-12T16:36:01.289Z] Subprocess PID: 12345
-[2026-04-12T16:36:01.289Z] Prompt length: 4 chars (piped via stdin)
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip agent run update when feature has no agentRunId
+[22m[39m[PrSyncWatcher] PR #1 status changed: Open -> Merged for "My Feature"
 
-... [truncated - 3857 lines total - showing first 240 and last 260 lines] ...
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip agent run update when feature has no agentRunId
+[22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "My Feature"
 
- ✓  web  tests/unit/presentation/web/features/control-center/control-center-empty-state.test.tsx (4 tests) 700ms
-     ✓ renders the prompt-first onboarding page directly  360ms
- ✓  web  tests/unit/presentation/web/layouts/sidebar.test.tsx (5 tests) 1150ms
-     ✓ highlights active nav item based on pathname prop  588ms
- ✓  web  tests/unit/presentation/web/hooks/use-graph-state.test.tsx (24 tests) 668ms
-stderr | tests/unit/presentation/web/lib/skills.test.ts > getSkills > skips skills with malformed frontmatter
-Skipping skill "bad-skill": invalid or missing frontmatter in SKILL.md
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip agent run update when feature has no agentRunId
+[22m[39m[PrSyncWatcher] Stopped
 
- ✓  web  tests/unit/presentation/web/lib/skills.test.ts (48 tests) 318ms
- ✓  web  tests/unit/presentation/web/components/common/product-decisions-summary/product-decisions-summary.test.tsx (9 tests) 543ms
- ✓  web  tests/unit/presentation/web/features/version-page-client.test.tsx (2 tests) 1095ms
-     ✓ renders version info  981ms
- ✓  web  tests/unit/presentation/web/common/repository-node/repository-node.test.tsx (7 tests) 817ms
-     ✓ renders repository name  332ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/diff-view.test.tsx (13 tests) 701ms
- ✓  web  tests/unit/presentation/web/components/common/feature-drawer/use-feature-actions.test.ts (24 tests) 320ms
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
- ✓  web  tests/unit/presentation/web/hooks/use-notifications.test.ts (9 tests) 261ms
- ✓  web  tests/unit/presentation/web/hooks/use-agent-events.test.ts (13 tests) 211ms
- ✓  web  tests/unit/presentation/web/hooks/use-version.test.ts (4 tests) 216ms
- ✓  web  tests/unit/presentation/web/components/common/repository-node/use-repository-actions.test.ts (15 tests) 263ms
- ✓  web  tests/unit/presentation/web/api/tools-install.test.ts (4 tests) 188ms
- ✓  web  tests/unit/presentation/web/api/directory-list.test.ts (16 tests) 216ms
- ✓  web  tests/unit/presentation/web/components/common/inline-attachments/inline-attachments.test.tsx (13 tests) 391ms
- ✓  web  tests/unit/presentation/web/lib/rtl-fonts.test.ts (7 tests) 153ms
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
- ✓  web  tests/unit/presentation/web/app-layout-integration.test.tsx (4 tests) 405ms
-     ✓ renders DashboardLayout with sidebar nav items  310ms
- ✓  web  tests/unit/presentation/web/api/deployment-logs-sse.test.ts (10 tests) 186ms
- ✓  web  tests/unit/presentation/web/common/feature-status-group.test.tsx (3 tests) 268ms
- ✓  web  tests/unit/presentation/web/components/common/tech-decisions-review/tech-decisions-review-sound.test.tsx (2 tests) 642ms
-     ✓ plays expand sound when toggling alternatives open  462ms
- ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-tree-table.test.tsx (3 tests) 355ms
- ✓  web  tests/unit/presentation/web/hooks/sidebar-features-context.test.tsx (11 tests) 201ms
- ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/use-tab-data-fetch.test.ts (16 tests) 156ms
- ✓  web  tests/unit/presentation/web/hooks/use-drawer-sync.test.ts (11 tests) 112ms
- ✓  web  tests/unit/presentation/web/hooks/use-deploy-action.test.tsx (7 tests) 243ms
- ✓  web  tests/unit/presentation/web/common/sidebar-section-header.test.tsx (3 tests) 302ms
- ✓  web  tests/unit/presentation/web/components/features/settings/database-settings-section.test.tsx (4 tests) 285ms
- ✓  web  tests/unit/presentation/web/hooks/use-sound-action.test.ts (28 tests) 286ms
- ✓  web  tests/unit/presentation/web/components/common/ci-status-badge/ci-status-badge.test.tsx (3 tests) 254ms
- ✓  web  tests/unit/presentation/web/badge.test.tsx (3 tests) 210ms
- ✓  web  tests/unit/presentation/web/api/tools-install-stream.test.ts (4 tests) 211ms
- ✓  web  tests/unit/presentation/web/use-theme.test.tsx (6 tests) 173ms
- ✓  web  tests/unit/presentation/web/common/loading-skeleton.test.tsx (9 tests) 244ms
-stderr | tests/unit/presentation/web/actions/deploy-repository.test.ts > deployRepository server action > returns {success:false, error} when the use case throws a validation error
-[deployRepository] error: repositoryPath must be an absolute path Error: repositoryPath must be an absolute path
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/tests/unit/presentation/web/actions/deploy-repository.test.ts:37:35
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
-    at new Promise (<anonymous>)
-    at runWithTimeout (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1209:10)
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:37
-    at Traces.$ (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
-    at trace (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
-    at runTest (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:12)
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Closed transition and update feature without lifecycle change
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
-stderr | tests/unit/presentation/web/actions/deploy-repository.test.ts > deployRepository server action > returns a generic error for non-Error throws
-[deployRepository] error: Failed to deploy repository boom
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Closed transition and update feature without lifecycle change
+[22m[39m[PrSyncWatcher] PR #2 status changed: Open -> Closed for "Closed Feature"
 
- ✓  web  tests/unit/presentation/web/hooks/use-viewport-persistence.test.ts (21 tests) 151ms
- ✓  web  tests/unit/presentation/web/actions/deploy-repository.test.ts (3 tests) 11ms
- ✓  web  tests/unit/presentation/web/common/elapsed-time.test.tsx (5 tests) 224ms
- ✓  web  tests/unit/presentation/web/i18n.test.tsx (7 tests) 168ms
- ✓  web  tests/unit/presentation/web/lib/feature-flags.test.ts (14 tests) 10ms
- ✓  web  tests/unit/presentation/web/actions/open-shell.test.ts (17 tests) 20ms
- ✓  web  tests/unit/presentation/web/smoke-imports.test.ts (5 tests) 32ms
- ✓  web  tests/unit/presentation/web/hooks/use-tool-install-stream.test.ts (6 tests) 200ms
- ✓  web  tests/unit/presentation/web/app/build-graph-nodes.test.ts (18 tests) 160ms
- ✓  web  tests/unit/presentation/web/actions/open-folder.test.ts (12 tests) 102ms
-stderr | tests/unit/presentation/web/actions/deploy-feature.test.ts > deployFeature server action > returns {success:false, error} when the use case throws
-[deployFeature] error: Feature not found: nonexistent-id Error: Feature not found: nonexistent-id
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/tests/unit/presentation/web/actions/deploy-feature.test.ts:37:35
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
-    at new Promise (<anonymous>)
-    at runWithTimeout (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1209:10)
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:37
-    at Traces.$ (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
-    at trace (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
-    at runTest (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:12)
-
-stderr | tests/unit/presentation/web/actions/deploy-feature.test.ts > deployFeature server action > returns a generic error for non-Error throws
-[deployFeature] error: Failed to deploy feature unexpected
-
- ✓  web  tests/unit/presentation/web/actions/deploy-feature.test.ts (3 tests) 9ms
- ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/build-grouped-tree.test.ts (18 tests) 93ms
- ✓  web  tests/unit/presentation/web/actions/open-ide.test.ts (9 tests) 14ms
- ✓  web  tests/unit/presentation/web/actions/features/create-feature.test.ts (21 tests) 54ms
- ✓  web  tests/unit/presentation/web/lib/derive-graph.test.ts (15 tests) 184ms
- ✓  web  tests/unit/presentation/web/common/feature-node/derive-feature-state.test.ts (47 tests) 11ms
- ✓  web  tests/unit/presentation/web/actions/merge-review/get-merge-review-data.test.ts (23 tests) 93ms
- ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts (24 tests) 101ms
- ✓  web  tests/unit/presentation/web/app/actions/import-github-repository.test.ts (9 tests) 9ms
- ✓  web  tests/unit/presentation/web/api/version.test.ts (4 tests) 40ms
- ✓  web  tests/unit/presentation/web/chat/tool-bubble-detect.test.ts (25 tests) 29ms
- ✓  web  tests/unit/presentation/web/actions/update-model.test.ts (8 tests) 60ms
- ✓  web  tests/unit/presentation/web/lib/parse-log-line.test.ts (25 tests) 72ms
- ✓  web  tests/unit/presentation/web/actions/pick-files.test.ts (4 tests) 26ms
- ✓  web  tests/unit/presentation/web/actions/get-feature-drawer-data.test.ts (7 tests) 14ms
- ✓  web  tests/unit/presentation/web/hooks/deployment-status-store.test.ts (9 tests) 8ms
- ✓  web  tests/unit/presentation/web/actions/update-feature-pinned-config.test.ts (7 tests) 9ms
- ✓  web  tests/unit/presentation/web/actions/reject-feature.test.ts (12 tests) 24ms
- ✓  web  tests/unit/presentation/web/actions/get-viewer-permission.test.ts (8 tests) 9ms
- ✓  web  tests/unit/presentation/web/actions/load-settings.test.ts (3 tests) 16ms
- ✓  web  tests/unit/presentation/web/actions/stop-deployment.test.ts (4 tests) 6ms
- ✓  web  tests/unit/presentation/web/actions/get-workflow-defaults.test.ts (4 tests) 7ms
- ✓  web  tests/unit/presentation/web/actions/approve-feature.test.ts (7 tests) 7ms
- ✓  web  tests/unit/presentation/web/actions/update-settings.test.ts (6 tests) 8ms
- ✓  web  tests/unit/presentation/web/actions/get-supported-models.test.ts (6 tests) 7ms
- ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/build-tree-data.test.ts (8 tests) 163ms
- ✓  web  tests/unit/presentation/web/actions/get-deployment-logs.test.ts (5 tests) 6ms
- ✓  web  tests/unit/presentation/web/app/actions/get-feature-phase-timings.test.ts (8 tests) 9ms
- ✓  web  tests/unit/presentation/web/actions/get-deployment-status.test.ts (2 tests) 5ms
- ✓  web  tests/unit/presentation/web/components/common/control-center-drawer/drawer-view.test.ts (10 tests) 6ms
- ✓  web  tests/unit/presentation/web/app/actions/get-feature-plan.test.ts (8 tests) 6ms
- ✓  web  tests/unit/presentation/web/app/actions/list-github-repositories.test.ts (7 tests) 8ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review-config.test.ts (11 tests) 5ms
- ✓  web  tests/unit/presentation/web/actions/pick-folder.test.ts (4 tests) 7ms
- ✓  web  tests/unit/presentation/web/app/actions/list-github-organizations.test.ts (4 tests) 5ms
- ✓  web  tests/unit/presentation/web/lib/language.test.ts (11 tests) 9ms
- ✓  web  tests/unit/presentation/web/actions/features/delete-feature.test.ts (8 tests) 11ms
- ✓  web  tests/unit/presentation/web/features/control-center/derive-state.test.ts (6 tests) 12ms
- ✓  web  tests/unit/presentation/web/lib/format-duration.test.ts (9 tests) 6ms
- ✓  web  tests/unit/presentation/web/actions/compose-user-input.test.ts (7 tests) 7ms
- ✓  web  tests/unit/presentation/web/lib/compare-versions.test.ts (7 tests) 5ms
- ✓  web  tests/unit/presentation/web/components/common/feature-create-drawer/feature-create-drawer.test.tsx (91 tests) 136969ms
-       ✓ renders the drawer header when open  2174ms
-       ✓ does not render a feature name input  993ms
-       ✓ renders description textarea with updated label  1405ms
-       ✓ renders attach files button  1447ms
-       ✓ renders cancel and submit buttons  1150ms
-       ✓ accepts text in the description field  6760ms
-       ✓ disables submit button when description is empty  719ms
-       ✓ enables submit button when description has content  5981ms
-       ✓ disables submit button when description is only whitespace  2063ms
-       ✓ calls onSubmit with payload containing description (no name field)  6288ms
-       ✓ includes attachments array with file objects  6614ms
-       ✓ sends approvalGates with only PRD checked  6099ms
-       ✓ sends all-true approvalGates when all checkboxes are checked  8751ms
-       ✓ sends all-false approvalGates when no checkboxes are checked  5964ms
-       ✓ resets all switches to defaults after close and reopen  2724ms
-       ✓ disables description textarea when isSubmitting  910ms
-       ✓ disables add files button when isSubmitting  1272ms
-       ✓ shows "Creating..." on submit button when isSubmitting  1340ms
-       ✓ disables cancel button when isSubmitting  1475ms
-       ✓ renders "APPROVE" section title  945ms
-       ✓ renders 3 approval switches and an All toggle button  907ms
-       ✓ all switches are unchecked by default  551ms
-       ✓ all switches are disabled when isSubmitting=true  696ms
-       ✓ clicking PRD switch toggles it on  1335ms
-       ✓ clicking All button selects all switches when none are selected  843ms
-       ✓ clicking All button selects all when some are selected  852ms
-       ✓ clicking All button deselects all when all are selected  970ms
-       ✓ submits correct approvalGates after All toggle  3332ms
-       ✓ calls onClose when cancel button is clicked  447ms
-       ✓ calls onClose when close (X) button is clicked  619ms
-       ✓ clears all form fields after submit without unmounting  6210ms
-       ✓ clears form data on submit so next open starts fresh  2973ms
-       ✓ calls pickFiles and displays attachment chip  867ms
-       ✓ displays file size  678ms
-       ✓ supports multiple file selections across multiple picks  1313ms
-       ✓ removes attachment when remove button is clicked  1457ms
-       ✓ shows multiple attachment chips  834ms
-       ✓ does not add files when user cancels the picker  607ms
-       ✓ does not add duplicate files when the same file is picked again  1254ms
-       ✓ handles pickFiles error gracefully  650ms
-       ✓ plays create sound on form submit  2098ms
-       ✓ renders fast mode switch with label  335ms
-       ✓ fast mode is checked by default (no workflowDefaults)  465ms
-       ✓ fast mode respects workflowDefaults.fast=true  393ms
-       ✓ fast mode respects workflowDefaults.fast=false  315ms
-       ✓ toggling fast mode checkbox updates form state  738ms
-       ✓ submitting with fast mode on includes fast=true in payload  3328ms
-       ✓ submitting with fast mode off includes fast=false in payload  3381ms
-       ✓ fast mode checkbox has accessible label  352ms
-       ✓ fast mode checkbox is disabled when isSubmitting  494ms
-       ✓ fast mode resets to default after submit  2589ms
-       ✓ submits the form when Ctrl+Enter is pressed in the textarea  2062ms
-       ✓ submits the form when Meta+Enter is pressed in the textarea  2057ms
-       ✓ does not submit when description is empty and Ctrl+Enter is pressed  521ms
-       ✓ does not submit when isSubmitting and Ctrl+Enter is pressed  361ms
-       ✓ does not submit on plain Enter (without modifier)  2159ms
-       ✓ shows attachment chip after dropping a valid file  775ms
-       ✓ shows inline error for files exceeding 10 MB without calling upload API  560ms
-       ✓ shows inline error for disallowed file extensions  535ms
-       ✓ applies drag-over class on dragenter and removes it on dragleave  661ms
-       ✓ shows attachment chip after pasting an image from clipboard  623ms
-       ✓ includes sessionId in the upload request  770ms
-       ✓ includes sessionId in submitted payload  2455ms
-       ✓ does not show repository combobox when repositoryPath matches an active repo  394ms
-       ✓ submit button is disabled when no repo selected and repositoryPath is empty  996ms
-       ✓ submit button is enabled when repo is selected via combobox  1066ms
-       ✓ submit button is enabled when repositoryPath is provided (canvas flow)  592ms
-       ✓ handleSubmit includes selectedRepoPath in payload  1314ms
-       ✓ filters repositories by name when typing in search input  351ms
-       ✓ filters repositories by path when typing in search input  382ms
-       ✓ shows empty state message when no repos match search  548ms
-       ✓ shows check icon for selected repository  571ms
-       ✓ renders "Add new repository..." item in the combobox dropdown  389ms
-       ✓ renders "Add new repository..." item even with zero repos  321ms
-       ✓ clicking "Add new repository..." opens folder picker and adds repo  663ms
-       ✓ does nothing when folder picker is cancelled  468ms
-       ✓ shows inline error when addRepository server action fails  390ms
-       ✓ can submit feature after adding new repo via combobox  1185ms
-       ✓ resets forkAndPr state to false when canPushDirectly changes from false to true  1976ms
-       ✓ reverts push and openPr to defaults when canPushDirectly becomes true  617ms
-       ✓ reverts commitSpecs to default (true) when canPushDirectly becomes true  635ms
-       ✓ calls getViewerPermission on repo change and updates toggle visibility  1121ms
-       ✓ excludes forkAndPr from submission payload when canPush is true  999ms
-
- Test Files  418 passed (418)
-      Tests  5981 passed (5981)
-   Start at  19:35:54
-   Duration  181.26s (transform 58.65s, setup 184.09s, import 266.88s, tests 507.61s, environment 373.70s)
-
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Closed transition and update feature without lifecycle change
