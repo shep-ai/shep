@@ -1,117 +1,52 @@
 name: 🐛 Bug Report
 description: Report a bug or unexpected behavior in Shep AI CLI
 title: '[Bug]: '
-labels: ['bug', 'triage']
+labels: ['bug']
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thanks for taking the time to report this bug! Please fill out the form below to help us investigate.
-
   - type: textarea
     id: description
     attributes:
-      label: Bug Description
-      description: A clear and concise description of what the bug is.
-      placeholder: "When I run 'shep feat new ...', the daemon crashes with..."
-    validations:
-      required: true
-
-  - type: textarea
-    id: repro-steps
-    attributes:
-      label: Steps to Reproduce
-      description: Provide detailed steps to reproduce the bug.
+      label: What happened?
+      description: Describe the bug. Include steps to reproduce, what you expected, and what actually happened.
       placeholder: |
-        1. Run `shep` to start the daemon
-        2. Execute `shep feat new "add dark mode"`
-        3. Click "Implement" in the web UI
-        4. Observe error in terminal
+        When I run `shep feat new "add dark mode"`, the daemon crashes with...
+
+        Steps:
+        1. Run `shep`
+        2. ...
+
+        Expected: Feature should be created
+        Actual: Daemon crashes
     validations:
       required: true
-
-  - type: textarea
-    id: expected
-    attributes:
-      label: Expected Behavior
-      description: What did you expect to happen?
-      placeholder: 'Feature should be created and implementation should start.'
-    validations:
-      required: true
-
-  - type: textarea
-    id: actual
-    attributes:
-      label: Actual Behavior
-      description: What actually happened?
-      placeholder: "Daemon crashes with 'TypeError: Cannot read property...'."
-    validations:
-      required: true
-
-  - type: input
-    id: version
-    attributes:
-      label: Shep Version
-      description: Output of `shep --version`
-      placeholder: 'e.g., 1.155.0'
-    validations:
-      required: true
-
-  - type: input
-    id: node-version
-    attributes:
-      label: Node.js Version
-      description: Output of `node --version`
-      placeholder: 'e.g., v22.0.0'
-    validations:
-      required: true
-
-  - type: dropdown
-    id: os
-    attributes:
-      label: Operating System
-      description: What OS are you using?
-      options:
-        - macOS
-        - Linux (Ubuntu)
-        - Linux (Debian)
-        - Linux (Fedora)
-        - Linux (Arch)
-        - Linux (Other)
-        - Windows 10
-        - Windows 11
-        - Other
-    validations:
-      required: true
-
-  - type: dropdown
-    id: agent
-    attributes:
-      label: AI Agent
-      description: Which AI coding agent are you using?
-      options:
-        - Claude Code
-        - Cursor CLI
-        - Gemini CLI
-        - Other
-        - Not applicable
-    validations:
-      required: false
 
   - type: textarea
     id: logs
     attributes:
       label: Relevant Logs
-      description: |
-        Please paste any relevant logs from:
-        - Terminal output when running `shep`
-        - Web UI console (browser DevTools)
-        - Log files in `~/.shep/logs/`
-      placeholder: |
-        ```
-        Paste logs here (use triple backticks for formatting)
-        ```
+      description: Paste any relevant terminal output, errors, or log files (~/.shep/logs/).
       render: shell
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Shep Version
+      description: Output of `shep --version` (optional but helpful)
+      placeholder: 'e.g., 1.180.0'
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - macOS
+        - Linux
+        - Windows
+        - Other
     validations:
       required: false
 
@@ -119,24 +54,6 @@ body:
     id: additional
     attributes:
       label: Additional Context
-      description: |
-        Add any other context about the problem here:
-        - Screenshots
-        - Repository type (Next.js, React, Express, etc.)
-        - Relevant configuration from `~/.shep/config.json`
-      placeholder: "I'm working with a Next.js 16 app..."
+      description: Screenshots, repo type, config, Node.js version, AI agent used, etc.
     validations:
       required: false
-
-  - type: checkboxes
-    id: checks
-    attributes:
-      label: Pre-submission Checklist
-      description: Please confirm the following before submitting
-      options:
-        - label: I have searched existing issues to avoid duplicates
-          required: true
-        - label: I am using the latest version of Shep AI CLI (`shep upgrade`)
-          required: false
-        - label: I have included all required information above
-          required: true
