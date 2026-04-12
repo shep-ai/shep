@@ -40,7 +40,17 @@ import {
 } from '@shepai/core/domain/generated/output';
 import { getEditorTypeIcon } from '@/components/common/editor-type-icons';
 import { AgentModelPicker } from '@/components/features/settings/AgentModelPicker';
-import { LanguageSettingsSection } from '@/components/features/settings/language-settings-section';
+const LANGUAGE_OPTIONS = [
+  { value: Language.English, nativeName: 'English' },
+  { value: Language.Ukrainian, nativeName: 'Українська' },
+  { value: Language.Russian, nativeName: 'Русский' },
+  { value: Language.Portuguese, nativeName: 'Português' },
+  { value: Language.Spanish, nativeName: 'Español' },
+  { value: Language.Arabic, nativeName: 'العربية' },
+  { value: Language.Hebrew, nativeName: 'עברית' },
+  { value: Language.French, nativeName: 'Français' },
+  { value: Language.German, nativeName: 'Deutsch' },
+];
 import { TimeoutSlider } from '@/components/features/settings/timeout-slider';
 import type {
   Settings,
@@ -361,7 +371,7 @@ export function SettingsPageClient({
   dbFileSize,
   availableTerminals,
 }: SettingsPageClientProps) {
-  const { t } = useTranslation('web');
+  const { t, i18n: i18nInstance } = useTranslation('web');
   const { showSaving, showSaved, save } = useSaveIndicator();
   const featureFlags = settings.featureFlags ?? {
     skills: false,
@@ -373,6 +383,18 @@ export function SettingsPageClient({
     reactFileManager: false,
     inventory: false,
   };
+
+  // Language state
+  const [language, setLanguage] = useState(settings.user?.preferredLanguage ?? Language.English);
+
+  function handleLanguageChange(value: string) {
+    setLanguage(value as Language);
+    i18nInstance.changeLanguage(value);
+    const dir = value === 'ar' || value === 'he' ? 'rtl' : 'ltr';
+    document.documentElement.lang = value;
+    document.documentElement.dir = dir;
+    save({ user: { preferredLanguage: value } });
+  }
 
   // Agent state
   const [agentType, setAgentType] = useState(settings.agent.type);
@@ -724,9 +746,27 @@ export function SettingsPageClient({
           id="section-language"
           className="grid scroll-mt-18 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[1fr_280px]"
         >
-          <LanguageSettingsSection
-            language={settings.user?.preferredLanguage ?? Language.English}
-          />
+          <SettingsSection
+            icon={Globe}
+            title={t('settings.language.title')}
+            description={t('settings.language.description')}
+            testId="language-settings-section"
+          >
+            <SettingsRow label={t('settings.language.label')} htmlFor="display-language">
+              <Select value={language} onValueChange={handleLanguageChange}>
+                <SelectTrigger id="display-language" data-testid="language-select" className="w-44">
+                  <SelectValue placeholder={t('settings.language.placeholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.nativeName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SettingsRow>
+          </SettingsSection>
         </div>
 
         {/* ── Agent ── */}
