@@ -654,7 +654,8 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
               addRepoAndFocus(path);
             }}
             onApplicationCreated={(appId) => {
-              setShowCreatePrompt(false);
+              // Navigate first — keep overlay mounted to avoid canvas flash.
+              // The overlay unmounts when the route changes.
               router.push(`/application/${appId}`);
             }}
             onClose={() => setShowCreatePrompt(false)}
