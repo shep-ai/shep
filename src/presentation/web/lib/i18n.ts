@@ -12,6 +12,8 @@ import { initReactI18next } from 'react-i18next';
 // Import all language translations inline
 import commonEn from '../../../../translations/en/common.json';
 import webEn from '../../../../translations/en/web.json';
+import commonUk from '../../../../translations/uk/common.json';
+import webUk from '../../../../translations/uk/web.json';
 import commonRu from '../../../../translations/ru/common.json';
 import webRu from '../../../../translations/ru/web.json';
 import commonPt from '../../../../translations/pt/common.json';
@@ -46,6 +48,7 @@ function createI18nInstance(): i18n {
     ns: [...NAMESPACES],
     resources: {
       en: { common: commonEn, web: webEn },
+      uk: { common: commonUk, web: webUk },
       ru: { common: commonRu, web: webRu },
       pt: { common: commonPt, web: webPt },
       es: { common: commonEs, web: webEs },
