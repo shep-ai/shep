@@ -200,6 +200,7 @@ import { ManageCommentsUseCase } from '../../application/use-cases/comments/mana
 import { ManageSavedViewsUseCase } from '../../application/use-cases/saved-views/manage-saved-views.use-case.js';
 import { ManageCustomPropertiesUseCase } from '../../application/use-cases/custom-properties/manage-custom-properties.use-case.js';
 import { ListActivityLogUseCase } from '../../application/use-cases/activity-log/list-activity-log.use-case.js';
+import { GlobalSearchUseCase } from '../../application/use-cases/search/global-search.use-case.js';
 
 // Deployment use cases
 import { StartFeatureDeploymentUseCase } from '../../application/use-cases/deployments/start-feature-deployment.use-case.js';
@@ -632,6 +633,7 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(ManageSavedViewsUseCase);
   container.registerSingleton(ManageCustomPropertiesUseCase);
   container.registerSingleton(ListActivityLogUseCase);
+  container.registerSingleton(GlobalSearchUseCase);
 
   // Session repositories (per-AgentType string tokens)
   container.register(`IAgentSessionRepository:${AgentType.ClaudeCode}`, {
@@ -876,6 +878,9 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('ListActivityLogUseCase', {
     useFactory: (c) => c.resolve(ListActivityLogUseCase),
+  });
+  container.register('GlobalSearchUseCase', {
+    useFactory: (c) => c.resolve(GlobalSearchUseCase),
   });
 
   // Register interactive session infrastructure

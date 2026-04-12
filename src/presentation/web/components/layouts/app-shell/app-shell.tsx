@@ -8,6 +8,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layouts/app-sidebar';
 import { ReactFileManagerDialog } from '@/components/common/react-file-manager-dialog';
 import { GlobalChatPopup } from '@/components/features/chat/ChatSheet';
+import { GlobalSearchDialog } from '@/components/features/search/global-search-dialog';
 import { pickFolder } from '@/components/common/add-repository-button/pick-folder';
 import { GitHubImportDialog } from '@/components/common/github-import-dialog';
 import { AgentEventsProvider } from '@/hooks/agent-events-provider';
@@ -121,6 +122,8 @@ function AppShellInner({ children, sidebarOpen }: AppShellProps) {
           <main className="h-full">{children}</main>
           {/* Global chat popup — fixed, visible across all pages */}
           <GlobalChatPopup />
+          {/* Global search dialog — Cmd+K / Ctrl+K */}
+          <GlobalSearchDialog />
           {featureFlags.githubImport ? (
             <GitHubImportDialog
               open={githubDialogOpen}
