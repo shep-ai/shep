@@ -81,6 +81,18 @@ vi.mock('@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js', 
         return executor.execute(prompt);
       }
     ),
+  optimizeAndExecute: vi
+    .fn()
+    .mockImplementation(
+      async (
+        executor: { execute: (p: string) => Promise<unknown> },
+        _nodeName: string,
+        prompt: string
+      ) => ({
+        result: await executor.execute(prompt),
+        specFileHashes: {},
+      })
+    ),
   buildExecutorOptions: vi.fn().mockReturnValue({ cwd: '/tmp/worktree', maxTurns: 5000 }),
 }));
 
@@ -201,17 +213,21 @@ describe('createEvidenceNode', () => {
     });
 
     it('should pass executor options from buildExecutorOptions', async () => {
-      const { retryExecute } = await import(
+      const { optimizeAndExecute } = await import(
         '@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js'
       );
       const node = createEvidenceNode(executor);
-      await node(baseState());
+      const state = baseState();
+      await node(state);
 
-      expect(retryExecute).toHaveBeenCalledWith(
+      expect(optimizeAndExecute).toHaveBeenCalledWith(
         executor,
+        expect.stringContaining('evidence'),
         'evidence collection prompt',
         { cwd: '/tmp/worktree', maxTurns: 5000 },
-        expect.objectContaining({ logger: expect.anything() })
+        state,
+        expect.anything(),
+        expect.anything()
       );
     });
   });

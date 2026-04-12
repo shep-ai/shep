@@ -1,0 +1,45 @@
+=== CI Pipeline: build-electron Job ===
+
+165:  build-electron:
+308:      - build-electron
+366:      - build-electron
+
+=== Full Job Definition ===
+  build-electron:
+
+=== Matrix Strategy ===
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run tsp:compile
+--
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+=== Artifact Upload Steps ===
+
+      - name: Upload Electron artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_pattern }}
+          if-no-files-found: error
+          retention-days: 7
+
+  # ===========================================================================
+  # Security: Gitleaks Secret Detection
+  # Uses gitleaks CLI directly (free, open source) instead of gitleaks-action
+  # which requires a paid license for organizations

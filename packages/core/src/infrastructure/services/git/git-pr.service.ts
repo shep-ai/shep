@@ -252,6 +252,25 @@ export class GitPrService implements IGitPrService {
     hasRemote = false
   ): Promise<void> {
     try {
+      // Clean up any stale merge/rebase state and dirty index BEFORE checkout.
+      // A previous failed merge may have left the repo in a merge state, causing
+      // "you need to resolve your current index first" on checkout.
+      try {
+        await this.execFile('git', ['merge', '--abort'], { cwd });
+      } catch {
+        // No merge in progress — expected, non-fatal
+      }
+      try {
+        await this.execFile('git', ['reset', '--hard', 'HEAD'], { cwd });
+      } catch {
+        // Reset failure is non-fatal
+      }
+      try {
+        await this.execFile('git', ['clean', '-fd'], { cwd });
+      } catch {
+        // Clean failure is non-fatal
+      }
+
       // Fetch latest from remote if available
       if (hasRemote) {
         try {
@@ -273,16 +292,52 @@ export class GitPrService implements IGitPrService {
         }
       }
 
-      // Clean untracked files that may conflict with the merge (e.g. files created
-      // by a prior agent call that leaked into the original repo directory)
+      // Squash merge the feature branch.
+      // git merge --squash writes conflict info to STDOUT (not stderr), so the
+      // error.message from execFile won't contain "CONFLICT". We must check
+      // error.stdout to detect conflicts and include it in diagnostics.
       try {
-        await this.execFile('git', ['clean', '-fd'], { cwd });
-      } catch {
-        // Clean failure is non-fatal
-      }
+        await this.execFile('git', ['merge', '--squash', featureBranch], { cwd });
+      } catch (mergeError: unknown) {
+        // Abort the in-progress merge to leave the repo clean
+        try {
+          await this.execFile('git', ['merge', '--abort'], { cwd });
+        } catch {
+          // merge --abort may fail if there's no merge in progress; non-fatal
+          try {
+            await this.execFile('git', ['reset', '--merge'], { cwd });
+          } catch {
+            // Last-resort cleanup; non-fatal
+          }
+        }
 
-      // Squash merge the feature branch
-      await this.execFile('git', ['merge', '--squash', featureBranch], { cwd });
+        // Check stdout for CONFLICT text (git merge --squash puts it there, not stderr)
+        const stdout = (mergeError as { stdout?: string })?.stdout ?? '';
+        const stderr = (mergeError as { stderr?: string })?.stderr ?? '';
+        const combined = `${stdout}\n${stderr}`;
+        const mergeMsg = mergeError instanceof Error ? mergeError.message : String(mergeError);
+
+        if (
+          combined.includes('CONFLICT') ||
+          combined.includes('conflict') ||
+          mergeMsg.includes('CONFLICT') ||
+          mergeMsg.includes('conflict')
+        ) {
+          throw new GitPrError(
+            `Merge conflict while squash-merging ${featureBranch} into ${baseBranch}: ${combined.trim()}`,
+            GitPrErrorCode.MERGE_CONFLICT,
+            mergeError instanceof Error ? mergeError : undefined
+          );
+        }
+
+        // Include stdout in the error for better diagnostics
+        const detail = combined.trim() || mergeMsg;
+        throw new GitPrError(
+          `Local squash merge failed: ${detail}`,
+          GitPrErrorCode.GIT_ERROR,
+          mergeError instanceof Error ? mergeError : undefined
+        );
+      }
 
       // Commit the squash merge (skip if nothing to commit — branches may be equivalent)
       const { stdout: status } = await this.execFile('git', ['status', '--porcelain'], { cwd });
@@ -309,15 +364,11 @@ export class GitPrService implements IGitPrService {
         // Branch deletion failure is non-fatal (branch may have already been deleted)
       }
     } catch (error) {
+      // Re-throw GitPrErrors as-is (already properly classified above)
+      if (error instanceof GitPrError) throw error;
+
       const message = error instanceof Error ? error.message : String(error);
       const cause = error instanceof Error ? error : undefined;
-      if (message.includes('CONFLICT') || message.includes('conflict')) {
-        throw new GitPrError(
-          `Merge conflict while squash-merging ${featureBranch} into ${baseBranch}: ${message}`,
-          GitPrErrorCode.MERGE_CONFLICT,
-          cause
-        );
-      }
       throw new GitPrError(
         `Local squash merge failed: ${message}`,
         GitPrErrorCode.GIT_ERROR,
@@ -763,6 +814,80 @@ export class GitPrService implements IGitPrService {
   private parsePrNumberFromUrl(url: string): number {
     const match = url.match(/\/pull\/(\d+)/);
     return match ? parseInt(match[1], 10) : 0;
+  }
+
+  async createGitHubRepo(
+    cwd: string,
+    name: string,
+    options: { isPrivate: boolean; org?: string }
+  ): Promise<string> {
+    const repoName = options.org ? `${options.org}/${name}` : name;
+    const visibilityFlag = options.isPrivate ? '--private' : '--public';
+    const args = [
+      'repo',
+      'create',
+      repoName,
+      visibilityFlag,
+      '--source=.',
+      '--remote=origin',
+      '--push',
+    ];
+
+    try {
+      const { stdout, stderr } = await this.execFile('gh', args, { cwd });
+      // `gh repo create` emits status lines to stdout/stderr that include the
+      // created repo URL somewhere in the output (e.g. "✓ Created repository
+      // org/name on GitHub\n  https://github.com/org/name"). Scrape the first
+      // github.com URL we can find rather than returning the raw multi-line blob.
+      const combined = `${stdout}\n${stderr}`;
+      const parsedUrl = this.extractGitHubUrl(combined);
+      if (parsedUrl) {
+        return parsedUrl;
+      }
+
+      // Fall back to `gh repo view` from the cwd — after --push, origin is the
+      // authoritative source of the repo URL.
+      return await this.queryRepoUrl(cwd);
+    } catch (error) {
+      const ghError = this.parseGhError(error);
+      if (ghError.code === GitPrErrorCode.GIT_ERROR) {
+        throw new GitPrError(ghError.message, GitPrErrorCode.REPO_CREATE_FAILED, ghError.cause);
+      }
+      throw ghError;
+    }
+  }
+
+  /**
+   * Extracts the first github.com repository URL from a blob of text.
+   * Returns a normalized URL without a trailing `.git` suffix or punctuation.
+   */
+  private extractGitHubUrl(text: string): string | null {
+    const match = text.match(/https:\/\/github\.com\/[\w.-]+\/[\w.-]+/);
+    if (!match) {
+      return null;
+    }
+    return match[0].replace(/\.git$/, '').replace(/[).,;]+$/, '');
+  }
+
+  /**
+   * Queries the current repo's URL via `gh repo view --json url`. Used as a
+   * fallback when URL parsing from `gh repo create` output fails.
+   */
+  private async queryRepoUrl(cwd: string): Promise<string> {
+    const { stdout } = await this.execFile(
+      'gh',
+      ['repo', 'view', '--json', 'url', '--jq', '.url'],
+      { cwd }
+    );
+    return stdout.trim();
+  }
+
+  async addRemote(cwd: string, remoteName: string, remoteUrl: string): Promise<void> {
+    try {
+      await this.execFile('git', ['remote', 'add', remoteName, remoteUrl], { cwd });
+    } catch (error) {
+      throw this.parseGitError(error);
+    }
   }
 
   private parseDiffStat(diffStat: string, logOutput: string): DiffSummary {

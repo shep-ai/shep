@@ -382,7 +382,10 @@
   "repositoryNode": {
     "removeRepository": "הסרת מאגר",
     "removeConfirmTitle": "להסיר מאגר?",
-    "removeConfirmDescription": "פעולה זו תסיר את <strong>{{name}}</strong> ואת כל הפיצ'רים שלו מסביבת העבודה. הקבצים על הדיסק לא ייפגעו.",
+    "removeConfirmDescription": "פעולה זו תסיר את <strong>{{name}}</strong> ואת כל הפיצ'רים שלו מסביבת העבודה.",
+    "removeConfirmDescriptionKeepFiles": "קבצי המאגר על הדיסק לא ייפגעו.",
+    "removeConfirmDescriptionDeleteFiles": "תיקיית המאגר על הדיסק תימחק לצמיתות. לא ניתן לבטל פעולה זו.",
+    "deleteFromDiskLabel": "מחק גם את תיקיית המאגר מהדיסק",
     "cancel": "ביטול",
     "remove": "הסרה",
     "openInIde": "פתיחה ב-IDE",
@@ -406,7 +409,8 @@
     "newFeature": "פיצ'ר חדש",
     "localFolder": "תיקייה מקומית",
     "adoptBranch": "אימוץ ענף",
-    "fromGithub": "מ-GitHub"
+    "fromGithub": "מ-GitHub",
+    "newApplication": "אפליקציה חדשה"
   },
   "chat": {
     "shepChat": "צ'אט Shep",

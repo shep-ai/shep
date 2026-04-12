@@ -1,0 +1,69 @@
+Feature: 085-retry-rerun-agent
+Evidence: Terminal output demonstrating retry-rerun behavior
+Date: 2026-04-06T11:04:39Z
+
+== What the fix does ==
+When a validate/repair loop exhausts retries:
+1. routeValidation clears the producer's completedPhases entry (so the agent re-runs)
+2. Worker deletes the stale checkpoint DB on resume-from-error (so LangGraph starts fresh)
+
+== Test proving fix #1: clearCompletedPhase on validation exhaustion ==
+From feature-agent-graph.test.ts:
+  "validation retry clears completed phase for re-run > should clear producer
+   completed phase when validation retries are exhausted"
+
+Actual vitest verbose output:
+  ✓ tests/unit/infrastructure/services/agents/langgraph/feature-agent-graph.test.ts
+    > createFeatureAgentGraph > validation retry clears completed phase for re-run
+    > should clear producer completed phase when validation retries are exhausted  8ms
+
+This test verifies that when routeValidation detects maxed-out retries, it calls
+clearCompletedPhase() for the producer node before throwing. On the next resume,
+executeNode's completedPhases guard will NOT skip the producer, so the agent
+re-runs from scratch instead of returning empty output.
+
+== Test proving fix #2: fresh checkpoint on resume-from-error ==
+From feature-agent-worker.test.ts:
+  "runWorker > should create fresh graph and checkpointer when resuming from error"
+
+Actual vitest verbose output:
+  ✓ tests/unit/infrastructure/services/agents/feature-agent-worker.test.ts
+    > runWorker > should create fresh graph and checkpointer when resuming
+    from error  0ms
+
+Worker log output during test (captured from verbose run):
+  [WORKER] Starting worker — full command:
+    feature-agent-worker --feature-id feat-1 --run-id run-1 --repo /repo --spec-dir /specs --resume --thread-id thread-abc
+  [WORKER] Initializing container...
+  [WORKER] Loading settings...
+  [WORKER] Creating executor from configured agent settings...
+  [WORKER] Creating checkpointer at ~/.shep/checkpoints/thread-abc.db (thread: thread-abc)
+  [WORKER] Updating status to running (PID 54998)...
+  [WORKER] Deleting stale checkpoint for fresh resume...
+  [WORKER] No checkpoint to delete (first run or already cleaned)
+  [WORKER] Resuming graph with fresh checkpoint...
+  [WORKER] Graph invocation completed. Error: none
+  [WORKER] Run marked as completed
+
+This test confirms that on resume-from-error:
+1. Worker attempts to delete stale checkpoint DB via unlinkSync
+2. A fresh SqliteSaver checkpointer is created
+3. A fresh graph is compiled with the new checkpointer
+4. The graph is invoked from START (not from the stale checkpoint)
+5. Completed phases skip instantly via the completedPhases guard
+
+== Code changes summary ==
+1. feature-agent-graph.ts:
+   - routeValidation() now accepts a producerNode parameter
+   - When retries exhaust, calls clearCompletedPhase(specDir, producerNode)
+   - All 4 validation edges pass their producer node name:
+     * validate_spec_analyze -> 'analyze'
+     * validate_spec_requirements -> 'requirements'
+     * validate_research -> 'research'
+     * validate_plan_tasks -> 'plan'
+
+2. feature-agent-worker.ts:
+   - Resume-from-error path now deletes stale checkpoint DB (unlinkSync)
+   - Creates fresh checkpointer and fresh graph after deletion
+   - Invokes the fresh graph (completed phases skip via completedPhases guard)
+   - Resume-from-interrupt path unchanged (uses existing checkpoint + Command)

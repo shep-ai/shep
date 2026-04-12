@@ -26,9 +26,9 @@ export class SQLiteInteractiveMessageRepository implements IInteractiveMessageRe
     this.db
       .prepare(
         `INSERT INTO interactive_messages
-          (id, feature_id, session_id, role, content, created_at, updated_at)
+          (id, feature_id, session_id, role, content, step_id, created_at, updated_at)
          VALUES
-          (@id, @feature_id, @session_id, @role, @content, @created_at, @updated_at)`
+          (@id, @feature_id, @session_id, @role, @content, @step_id, @created_at, @updated_at)`
       )
       .run(row);
   }

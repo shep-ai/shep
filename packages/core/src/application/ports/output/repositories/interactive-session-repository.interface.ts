@@ -75,6 +75,20 @@ export interface IInteractiveSessionRepository {
   getAgentSessionId(id: string): Promise<string | null>;
 
   /**
+   * Return the most recent non-null `agent_session_id` across ALL
+   * sessions for this feature, regardless of status. Used by the
+   * session service to resume the same agent conversation across
+   * reboots — even when an intervening boot failed (so the latest
+   * session row has no agentSessionId), the last known good
+   * agentSessionId is still found and reused.
+   *
+   * Returns `null` if no session for the feature has ever captured
+   * an agentSessionId (e.g. brand new feature, first boot, or every
+   * boot has failed before the agent reported its sessionId).
+   */
+  findLatestAgentSessionIdForFeature(featureId: string): Promise<string | null>;
+
+  /**
    * Update the turn status for a session.
    * Values: 'idle' | 'processing' | 'unread'
    */

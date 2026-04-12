@@ -37,7 +37,10 @@ export async function getFeatureTreeData(): Promise<{
   const listFeatures = resolve<ListFeaturesUseCase>('ListFeaturesUseCase');
   const listRepos = resolve<ListRepositoriesUseCase>('ListRepositoriesUseCase');
 
-  const [features, repositories] = await Promise.all([listFeatures.execute(), listRepos.execute()]);
+  const [features, repositories] = await Promise.all([
+    listFeatures.execute({ includeArchived: true }),
+    listRepos.execute(),
+  ]);
 
   const repoByPath = new Map<string, { name: string; remoteUrl?: string }>();
   for (const repo of repositories) {

@@ -589,6 +589,41 @@ describe('runWorker', () => {
     expect(firstArg.error).toBeUndefined();
   });
 
+  it('should create fresh graph and checkpointer when resuming from error', async () => {
+    // Mock a secondary graph invoke (for the fresh graph)
+    const freshGraphInvoke = vi.fn().mockResolvedValue({
+      currentNode: 'implement',
+      messages: ['[implement] done'],
+      error: null,
+    });
+    mockCreateFeatureAgentGraph.mockReturnValue({ invoke: freshGraphInvoke });
+
+    await runWorker({
+      featureId: 'feat-1',
+      runId: 'run-1',
+      repo: '/repo',
+      specDir: '/specs',
+      resume: true,
+      resumeFromInterrupt: false,
+      threadId: 'thread-abc',
+    });
+
+    // Should create checkpointer twice: once initially, once for the fresh graph
+    expect(mockCreateCheckpointer).toHaveBeenCalledTimes(2);
+
+    // Should create the graph twice: once initially, once for the fresh graph
+    expect(mockCreateFeatureAgentGraph).toHaveBeenCalledTimes(2);
+
+    // The fresh graph should be invoked with the state (not the original graph)
+    expect(freshGraphInvoke).toHaveBeenCalledWith(
+      expect.objectContaining({
+        featureId: 'feat-1',
+        repositoryPath: '/repo',
+      }),
+      expect.anything()
+    );
+  });
+
   it('should handle graph returning error state', async () => {
     mockGraphInvoke.mockResolvedValue({
       currentNode: 'analyze',

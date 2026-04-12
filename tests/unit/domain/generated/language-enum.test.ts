@@ -2,20 +2,24 @@
  * Language Enum Unit Tests
  *
  * Verifies the Language enum generated from TypeSpec contains all
- * 8 supported language values with correct ISO 639-1 codes.
+ * 9 supported language values with correct ISO 639-1 codes.
  */
 
 import { describe, it, expect } from 'vitest';
 import { Language } from '@/domain/generated/output.js';
 
 describe('Language enum', () => {
-  it('should have exactly 8 values', () => {
+  it('should have exactly 9 values', () => {
     const values = Object.values(Language);
-    expect(values).toHaveLength(8);
+    expect(values).toHaveLength(9);
   });
 
   it('should map English to "en"', () => {
     expect(Language.English).toBe('en');
+  });
+
+  it('should map Ukrainian to "uk"', () => {
+    expect(Language.Ukrainian).toBe('uk');
   });
 
   it('should map Russian to "ru"', () => {
@@ -49,7 +53,7 @@ describe('Language enum', () => {
   it('should contain all expected ISO 639-1 codes', () => {
     const values = Object.values(Language);
     expect(values).toEqual(
-      expect.arrayContaining(['en', 'ru', 'pt', 'es', 'ar', 'he', 'fr', 'de'])
+      expect.arrayContaining(['en', 'uk', 'ru', 'pt', 'es', 'ar', 'he', 'fr', 'de'])
     );
   });
 });

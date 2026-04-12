@@ -1,0 +1,500 @@
+
+> @shepai/cli@1.169.0 test:unit /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-sidenav-plus-alignment
+> vitest run tests/unit
+
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-sidenav-plus-alignment[39m
+
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2malready-running path (idempotent)[2m > [22m[2mdoes NOT spawn a new process when daemon is already alive
+[22m[39m
+ℹ Shep is already running at http://localhost:4050
+
+
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2malready-running path (idempotent)[2m > [22m[2mdoes NOT write daemon.json when daemon is already alive
+[22m[39m
+ℹ Shep is already running at http://localhost:4050
+
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/gemini-cli-executor.test.ts [2m([22m[2m43 tests[22m[2m)[22m[33m 323[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/codex-cli-executor.test.ts [2m([22m[2m49 tests[22m[2m)[22m[33m 329[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/upgrade/upgrade-cli.use-case.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 369[2mms[22m[39m
+[2026-04-05T20:02:49.158Z] Spawning: cursor-agent --yolo -p Implement feature --output-format stream-json
+[2026-04-05T20:02:49.160Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.160Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.208Z] Spawning: cursor-agent --yolo -p Bad prompt --output-format stream-json
+[2026-04-05T20:02:49.208Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.208Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.220Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-05T20:02:49.221Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.221Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.245Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-05T20:02:49.245Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.245Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.268Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-05T20:02:49.268Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.268Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.290Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-05T20:02:49.290Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.290Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.312Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-05T20:02:49.312Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.312Z] Subprocess PID: 12345
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/tool-installer/tool-installer.service.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 190[2mms[22m[39m
+[2026-04-05T20:02:49.335Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-05T20:02:49.335Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.335Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.348Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-05T20:02:49.348Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.348Z] Subprocess PID: 12345
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/agent-registry.service.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 224[2mms[22m[39m
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2mfresh-start path (no existing daemon)[2m > [22m[2mcalls findAvailablePort with DEFAULT_PORT when no port option given
+[22m[39m
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/cursor-executor.test.ts [2m([22m[2m39 tests[22m[2m)[22m[32m 256[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/domain/factories/spec-yaml-parser.test.ts [2m([22m[2m80 tests[22m[2m)[22m[32m 87[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/upgrade.command.test.ts [2m([22m[2m23 tests[22m[2m)[22m[33m 995[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-reject-token.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1118[2mms[22m[39m
+     [33m[2m✓[22m[39m resolves RejectAgentRunUseCase via string token after initialization [33m 1117[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-idempotency.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1149[2mms[22m[39m
+     [33m[2m✓[22m[39m isContainerInitialized() returns false before init [33m 1115[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-session-registrations.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1170[2mms[22m[39m
+     [33m[2m✓[22m[39m resolves ListAgentSessionsUseCase after initialization [33m 1114[2mms[22m[39m
+[2026-04-05T20:02:49.732Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.734Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.734Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.734Z] Prompt length: 21 chars (piped via stdin)
+[2026-04-05T20:02:49.736Z] [result] 33 chars, session=sess-abc-123
+[2026-04-05T20:02:49.736Z] Process closed with code 0, result=33 chars
+[2026-04-05T20:02:49.737Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.738Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.738Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.738Z] Prompt length: 12 chars (piped via stdin)
+[2026-04-05T20:02:49.738Z] [result] 4 chars, session=session-xyz-789
+[2026-04-05T20:02:49.738Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.738Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.738Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.738Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.738Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-05T20:02:49.738Z] [result] 4 chars, session=sess-1
+[2026-04-05T20:02:49.738Z] [tokens] 1500 in / 800 out
+[2026-04-05T20:02:49.738Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.739Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.739Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.739Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.739Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.739Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.739Z] [tokens] 500 in / 200 out
+[2026-04-05T20:02:49.739Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.739Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.739Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.739Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.739Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.739Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.739Z] [tokens] 100 in / 50 out, $0.1857
+[2026-04-05T20:02:49.739Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.739Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.739Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.739Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.739Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.739Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.739Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.740Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.740Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.740Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.740Z] Prompt length: 10 chars (piped via stdin)
+[2026-04-05T20:02:49.741Z] stderr: Error: Authentication failed
+[2026-04-05T20:02:49.741Z] Process closed with code 1, result=0 chars
+[2026-04-05T20:02:49.741Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.741Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.741Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.741Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.741Z] Process error event: spawn claude ENOENT
+[2026-04-05T20:02:49.742Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --resume prev-session-id --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.742Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.742Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.742Z] Prompt length: 13 chars (piped via stdin)
+[2026-04-05T20:02:49.742Z] [result] 7 chars, session=sess-resume
+[2026-04-05T20:02:49.742Z] Process closed with code 0, result=7 chars
+[2026-04-05T20:02:49.744Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --model claude-sonnet-4-5-20250929 --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.744Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.744Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.744Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.744Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.744Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.744Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --append-system-prompt You are a code reviewer --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.744Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.744Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.745Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.745Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.745Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.745Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --allowedTools Read,Write,Bash --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.745Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.745Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.745Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.746Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.746Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.747Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --max-turns 5 --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.747Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.747Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.747Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.747Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.747Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.748Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --json-schema {"type":"object","properties":{"summary":{"type":"string"}}} --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.748Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.748Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.748Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.748Z] [result] 18 chars, session=none
+[2026-04-05T20:02:49.748Z] Process closed with code 0, result=18 chars
+[2026-04-05T20:02:49.749Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.749Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.749Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.749Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.749Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.749Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.749Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.749Z] Spawn cwd: /some/project
+[2026-04-05T20:02:49.749Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.749Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.749Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.749Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.750Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.750Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.750Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.750Z] Prompt length: 12 chars (piped via stdin)
+[2026-04-05T20:02:54.751Z] Process closed with code null, result=0 chars
+[2026-04-05T20:02:49.751Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.751Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.751Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.751Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.751Z] Process closed with code 0, result=0 chars
+[2026-04-05T20:02:49.751Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.751Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.751Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.751Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.751Z] [tool] Read {"file_path":"/src/index.ts"}
+[2026-04-05T20:02:49.751Z] [text] Let me read the file...
+[2026-04-05T20:02:49.751Z] [result] 4 chars, session=sess-1
+[2026-04-05T20:02:49.751Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.751Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.751Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.751Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.751Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.751Z] [result] 4 chars, session=sess-1
+[2026-04-05T20:02:49.751Z] [tokens] 100 in / 50 out
+[2026-04-05T20:02:49.751Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.752Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --strict-mcp-config --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.752Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.752Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.752Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.752Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.752Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.752Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.752Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.752Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.752Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.752Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.752Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.752Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.752Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.752Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.752Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.752Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.752Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.753Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --tools Bash,Read,Write --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.753Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.753Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.753Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.753Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.753Z] Process closed with code 0, result=4 chars
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/spec-yaml-backward-compatibility.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 132[2mms[22m[39m
+[2026-04-05T20:02:49.753Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.753Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.753Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.753Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.753Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.753Z] Process closed with code 0, result=4 chars
+[2026-04-05T20:02:49.753Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.753Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.753Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.753Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-05T20:02:49.754Z] [result] 4 chars, session=none
+[2026-04-05T20:02:49.754Z] Process closed with code 0, result=4 chars
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould set isRunning to true when started
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould set isRunning to true when started
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould set isRunning to false when stopped
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould be no-op when start() is called while already running
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould be no-op when start() is called while already running
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould poll at configured interval
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould poll at configured interval
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould stop polling when stop() is called
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould stop polling when stop() is called
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould support custom poll interval
+[22m[39m[PrSyncWatcher] Starting (poll every 1000ms)
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts [2m([22m[2m31 tests[22m[2m)[22m[32m 103[2mms[22m[39m
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould support custom poll interval
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Merged transition and update feature and agent run
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Merged transition and update feature and agent run
+[22m[39m[PrSyncWatcher] PR #1 status changed: Open -> Merged for "My Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Merged transition and update feature and agent run
+[22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "My Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Merged transition and update feature and agent run
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip duplicate Maintain transition when merge node already handled it (#354)
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip duplicate Maintain transition when merge node already handled it (#354)
+[22m[39m[PrSyncWatcher] PR #1 status changed: Open -> Merged for "My Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip duplicate Maintain transition when merge node already handled it (#354)
+[22m[39m[PrSyncWatcher] Feature "My Feature" already in Maintain — skipping duplicate transition
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip duplicate Maintain transition when merge node already handled it (#354)
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstderr[2m | tests/unit/infrastructure/services/deployment/deployment.service.test.ts[2m > [22m[2mDeploymentService[2m > [22m[2mstart[2m > [22m[2mshould throw when detectDevScript fails
+[22m[39m[DeploymentService] Dev script detection failed: No package.json found
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip agent run update when feature has no agentRunId
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip agent run update when feature has no agentRunId
+[22m[39m[PrSyncWatcher] PR #1 status changed: Open -> Merged for "My Feature"
+
+[90mstderr[2m | tests/unit/infrastructure/services/deployment/deployment.service.test.ts[2m > [22m[2mDeploymentService[2m > [22m[2mstart[2m > [22m[2mshould throw when spawn returns no pid
+[22m[39m[DeploymentService] spawn() returned no PID — process failed to start
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip agent run update when feature has no agentRunId
+[22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "My Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip agent run update when feature has no agentRunId
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Closed transition and update feature without lifecycle change
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Closed transition and update feature without lifecycle change
+[22m[39m[PrSyncWatcher] PR #2 status changed: Open -> Closed for "Closed Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Closed transition and update feature without lifecycle change
+[22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "Closed Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Closed transition and update feature without lifecycle change
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould not call update when PR status has not changed
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould not call update when PR status has not changed
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould group features by repositoryPath for batch PR queries
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould group features by repositoryPath for batch PR queries
+[22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "Test Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould group features by repositoryPath for batch PR queries
+[22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "Test Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould group features by repositoryPath for batch PR queries
+[22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "Test Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould group features by repositoryPath for batch PR queries
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould prune features that left Review from tracking map
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould prune features that left Review from tracking map
+[22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "Test Feature"
+
+[90mstderr[2m | tests/unit/infrastructure/services/deployment/deployment.service.test.ts[2m > [22m[2mDeploymentService[2m > [22m[2mstop[2m > [22m[2mshould send SIGKILL after timeout if process still alive
+[22m[39m[DeploymentService] stop("feature-1") — process did not exit after 5000ms, escalating to SIGKILL
+
+[90mstderr[2m | tests/unit/infrastructure/services/deployment/deployment.service.test.ts[2m > [22m[2mDeploymentService[2m > [22m[2mprocess exit handler[2m > [22m[2mshould remove entry from Map when process exits spontaneously
+[22m[39m[DeploymentService] Process exited while still in Booting state — dev server likely crashed on startup (code=1, signal=null).
+[DeploymentService] [feature-1] No output captured from the process.
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould prune features that left Review from tracking map
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrMerged notification with correct fields including featureId and agentRunId
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrMerged notification with correct fields including featureId and agentRunId
+[22m[39m[PrSyncWatcher] PR #1 status changed: Open -> Merged for "Merged Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrMerged notification with correct fields including featureId and agentRunId
+[22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "Merged Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrMerged notification with correct fields including featureId and agentRunId
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstderr[2m | tests/unit/infrastructure/services/deployment/deployment.service.test.ts[2m > [22m[2mDeploymentService[2m > [22m[2mstopAll[2m > [22m[2mshould clear the deployment map
+[22m[39m[DeploymentService] Process exited while still in Booting state — dev server likely crashed on startup (code=null, signal=SIGKILL).
+[DeploymentService] [feature-1] No output captured from the process.
+
+[2026-04-05T20:02:49.823Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.823Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.823Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.823Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-05T20:02:49.823Z] Process error event: spawn claude ENOENT
+[2026-04-05T20:02:49.823Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-05T20:02:49.823Z] Spawn cwd: (inherited)
+[2026-04-05T20:02:49.823Z] Subprocess PID: 12345
+[2026-04-05T20:02:49.823Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-05T20:02:49.823Z] Process error event: some other error
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrClosed notification with correct fields including featureId
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrClosed notification with correct fields including featureId
+[22m[39m[PrSyncWatcher] PR #1 status changed: Open -> Closed for "Closed Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrClosed notification with correct fields including featureId
+[22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "Closed Feature"
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/claude-code-executor.test.ts [2m([22m[2m38 tests[22m[2m)[22m[32m 98[2mms[22m[39m
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrClosed notification with correct fields including featureId
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip already-merged PRs during branch discovery (likely stale)
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip already-merged PRs during branch discovery (likely stale)
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould discover open PR by branch name and populate feature PR data
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould discover open PR by branch name and populate feature PR data
+[22m[39m[PrSyncWatcher] Discovered PR #10 for "External PR" via branch "feat/external"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould discover open PR by branch name and populate feature PR data
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould not update feature when no matching PR found by branch
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould not update feature when no matching PR found by branch
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould not emit duplicate notification on subsequent polls with same status
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould not emit duplicate notification on subsequent polls with same status
+[22m[39m[PrSyncWatcher] PR #1 status changed: Open -> Merged for "Test Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould not emit duplicate notification on subsequent polls with same status
+[22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "Test Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould not emit duplicate notification on subsequent polls with same status
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould detect CI Pending→Success and update feature
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould detect CI Pending→Success and update feature
+[22m[39m[PrSyncWatcher] CI status changed: Pending -> Success for "Test Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould detect CI Pending→Success and update feature
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould detect CI Pending→Failure and update feature
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould detect CI Pending→Failure and update feature
+[22m[39m[PrSyncWatcher] CI status changed: Pending -> Failure for "Test Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould detect CI Pending→Failure and update feature
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould emit PrChecksPassed notification on CI success
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould emit PrChecksPassed notification on CI success
+[22m[39m[PrSyncWatcher] CI status changed: Pending -> Success for "CI Pass Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould emit PrChecksPassed notification on CI success
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould emit PrChecksFailed notification on CI failure
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould emit PrChecksFailed notification on CI failure
+[22m[39m[PrSyncWatcher] CI status changed: Pending -> Failure for "CI Fail Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould emit PrChecksFailed notification on CI failure
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould not trigger update when CI status is unchanged
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould not trigger update when CI status is unchanged
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstderr[2m | tests/unit/infrastructure/services/deployment/deployment.service.test.ts[2m > [22m[2mDeploymentService[2m > [22m[2mrecoverAll[2m > [22m[2mshould skip re-spawn when target directory has no package.json
+[22m[39m[DeploymentService] Skipping re-spawn for "repo-1" — no package.json at "/project/path"
+
+[90mstderr[2m | tests/unit/infrastructure/services/deployment/deployment.service.test.ts[2m > [22m[2mDeploymentService[2m > [22m[2mrecoverAll[2m > [22m[2mshould not block other recoveries when one re-spawn fails
+[22m[39m[DeploymentService] Dev script detection failed: No package.json
+[DeploymentService] Failed to re-spawn "repo-bad": Error: No package.json
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould handle getCiStatus errors gracefully and continue
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould handle getCiStatus errors gracefully and continue
+[22m[39m[PrSyncWatcher] PR #1 status changed: Open -> Merged for "Feature 1"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould handle getCiStatus errors gracefully and continue
+[22m[39m[PrSyncWatcher] CI status changed: none -> Success for "Feature 2"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould handle getCiStatus errors gracefully and continue
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould not make API calls when no features are in Review
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould not make API calls when no features are in Review
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould still poll GitHub for features without PR data (for branch-based discovery)
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould still poll GitHub for features without PR data (for branch-based discovery)
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould skip features with missing repositoryPath
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould skip features with missing repositoryPath

@@ -23,6 +23,7 @@ export interface InteractiveMessageRow {
   session_id: string | null;
   role: string;
   content: string;
+  step_id: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -38,6 +39,7 @@ export function toDatabase(message: InteractiveMessage): InteractiveMessageRow {
     session_id: message.sessionId ?? null,
     role: message.role,
     content: message.content,
+    step_id: message.stepId ?? null,
     created_at: message.createdAt instanceof Date ? message.createdAt.getTime() : message.createdAt,
     updated_at: message.updatedAt instanceof Date ? message.updatedAt.getTime() : message.updatedAt,
   };
@@ -56,5 +58,6 @@ export function fromDatabase(row: InteractiveMessageRow): InteractiveMessage {
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     ...(row.session_id !== null && { sessionId: row.session_id }),
+    ...(row.step_id !== null && { stepId: row.step_id }),
   };
 }

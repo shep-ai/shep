@@ -14,6 +14,9 @@ properties:
   content:
     type: string
     description: Full message content (finalised after streaming for assistant messages)
+  stepId:
+    type: string
+    description: Optional workflow step ID this message was produced for
 required:
   - featureId
   - role

@@ -12,8 +12,8 @@ import {
 } from '@/application/ports/output/services/git-pr-service.interface';
 
 describe('GitPrErrorCode', () => {
-  it('should define all 11 error codes', () => {
-    expect(Object.keys(GitPrErrorCode)).toHaveLength(11);
+  it('should define all 13 error codes', () => {
+    expect(Object.keys(GitPrErrorCode)).toHaveLength(13);
   });
 
   it.each([
@@ -28,6 +28,8 @@ describe('GitPrErrorCode', () => {
     'PR_NOT_FOUND',
     'REBASE_CONFLICT',
     'SYNC_FAILED',
+    'REMOTE_ALREADY_EXISTS',
+    'REPO_CREATE_FAILED',
   ] as const)('should have %s error code', (code) => {
     expect(GitPrErrorCode[code]).toBe(code);
   });
@@ -135,6 +137,10 @@ describe('IGitPrService', () => {
     const mock: IGitPrService = {
       hasRemote: async () => true,
       getRemoteUrl: async () => 'https://github.com/org/repo',
+      createGitHubRepo: async () => 'https://github.com/org/repo',
+      addRemote: async () => {
+        /* noop */
+      },
       getDefaultBranch: async () => 'main',
       hasUncommittedChanges: async () => false,
       commitAll: async () => 'abc123',
@@ -200,6 +206,8 @@ describe('IGitPrService', () => {
     const methodNames: (keyof IGitPrService)[] = [
       'hasRemote',
       'getRemoteUrl',
+      'createGitHubRepo',
+      'addRemote',
       'getDefaultBranch',
       'hasUncommittedChanges',
       'commitAll',
@@ -230,7 +238,7 @@ describe('IGitPrService', () => {
       'stashDrop',
     ];
 
-    expect(methodNames).toHaveLength(30);
+    expect(methodNames).toHaveLength(32);
     for (const name of methodNames) {
       expect(typeof mock[name]).toBe('function');
     }

@@ -98,8 +98,8 @@ export async function getGitRepoInfo(
     git(repositoryPath, ['stash', 'list']),
     // 6: working tree status
     git(repositoryPath, ['status', '--porcelain']),
-    // 7: diff stats (uncommitted)
-    git(repositoryPath, ['diff', '--shortstat']),
+    // 7: diff stats (uncommitted — includes staged + unstaged vs HEAD)
+    git(repositoryPath, ['diff', 'HEAD', '--shortstat']),
   ]);
 
   const val = (i: number) => (results[i].status === 'fulfilled' ? results[i].value : '');

@@ -61,6 +61,7 @@ const nextConfig: NextConfig = {
     'tsyringe',
     'reflect-metadata',
     'better-sqlite3',
+    'node-pty',
     'node:os',
     'node:child_process',
     'node:fs',

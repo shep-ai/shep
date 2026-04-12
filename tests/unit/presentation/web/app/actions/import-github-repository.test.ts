@@ -43,7 +43,7 @@ describe('importGitHubRepository', () => {
 
     const result = await importGitHubRepository({ url: 'https://github.com/owner/my-repo' });
 
-    expect(result).toEqual({ repository: repo });
+    expect(result).toEqual({ repository: repo, forked: false });
     expect(mockExecute).toHaveBeenCalledWith({
       url: 'https://github.com/owner/my-repo',
       dest: undefined,

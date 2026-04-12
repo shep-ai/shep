@@ -1,5 +1,19 @@
 # Lessons Learned
 
+## Auth-Detection Checks Must Match the Tool's Real Storage + Real CLI
+
+`check-agent-auth.ts` was reporting **Claude Code needs authentication** even though the user was logged in. Two stacked bugs:
+
+1. **Wrong credential location on macOS.** Claude Code stores OAuth credentials in the **macOS Keychain** under service `Claude Code-credentials`, NOT in `~/.claude/.credentials.json` (that file only exists on Linux/Windows). The tier-1 file check always failed on darwin. Fix: on macOS, also probe Keychain via `security find-generic-password -s "Claude Code-credentials"`.
+2. **Hallucinated CLI subcommand.** Tier 2 ran `claude auth status` to "verify" credentials. That subcommand does not exist — Claude Code interprets `auth status` as a prompt and starts an **interactive** session, which then gets killed by the 5s `execFile` timeout, returning exit≠0 and a false negative. Fix: removed tier 2 for `claude-code` entirely; trust tier 1.
+
+**Rule:** Before writing any auth/install detection check, verify two things on a real machine of every supported platform:
+
+- **Storage**: where does the tool actually persist credentials on this OS? (file path, env var, OS keychain, registry — these differ per platform).
+- **CLI surface**: does the subcommand you're calling actually exist and run **non-interactively** with a meaningful exit code? Run it in a subshell with a short timeout and inspect both the output and the exit code before trusting it. Don't assume `<tool> auth status` exists just because `gh` and `git` have it.
+
+If a tool has no non-interactive auth-check command, don't fake one — trust the storage check and stop.
+
 ## Per-Feature Settings Must Flow Through All Layers
 
 When the create drawer sends per-feature settings (e.g. `forkAndPr`, `commitSpecs`, `ciWatchEnabled`), they must be wired through EVERY layer:
@@ -254,3 +268,59 @@ Rules:
 1. When pitching token-reduction features, distinguish "tokens shep controls" from "tokens the LLM consumes". For subprocess agents, the former is a tiny fraction of the latter.
 2. The caveman-compression / skill-routing / alias-dictionary approaches are ONLY effective for agents where shep's prompt IS the prompt sent to the LLM (e.g. direct API executors). For Claude Code and similar subprocess agents, real savings must come from context engineering INSIDE the subprocess (session state, tool-result pruning, conversation compaction) — which is outside shep's reach.
 3. On small seed prompts, the optimization layer can make prompts LARGER because the skill-routing directive + alias dictionary header are fixed overhead. The net-positive check in alias compression does not account for the skill-routing header cost. Short prompts should skip the layer entirely, or the layer needs a total-net-positive gate.
+
+## Retry After Validation Exhaustion Must Clear CompletedPhases AND Checkpoint
+
+When a validate/repair loop exhausts retries and throws, the producer node's `completedPhases` entry must be cleared **before** the throw. Without this, on resume the producer skips via the `completedPhases.includes(nodeName)` guard, validation fails again immediately, and the user's retry is stuck in an infinite loop.
+
+Additionally, the worker's resume-from-error path must **delete the stale checkpoint DB** and create a fresh graph. The checkpoint captures the validation node with maxed-out `validationRetries` in state. Resuming from that checkpoint re-evaluates the same conditional edge with the same exhausted counter and throws immediately.
+
+**The two-part fix:**
+1. `routeValidation` clears the producer's `completedPhases` entry before throwing (so `executeNode` re-runs the agent)
+2. Worker deletes checkpoint DB on resume-from-error, then re-creates graph and checkpointer from scratch (so LangGraph starts fresh from `START`, but completed phases skip instantly via `completedPhases` guard)
+
+**Root cause pattern:** `markPhaseComplete` runs before validation, and LangGraph checkpoints the producer node as "completed" after it returns without throwing. The repair node can only fix formatting — it cannot generate content from scratch. Empty/unfilled output + repair loop + checkpoint = permanent stuck state.
+
+## git merge --squash Writes Conflict Info to stdout, Not stderr
+
+Node's `execFile` error only includes stderr in `error.message`. But `git merge --squash` writes conflict information (including "CONFLICT") to **stdout**, not stderr. The stderr is empty on conflict.
+
+**What happened:** `localMergeSquash()` caught the error and checked `error.message.includes('CONFLICT')` — which never matched because the CONFLICT text was in `error.stdout`. Every conflict was misclassified as a generic `GIT_ERROR` instead of `MERGE_CONFLICT`, and the error message lacked useful diagnostics.
+
+**Rule:** When catching errors from `execFile`, always check `error.stdout` in addition to `error.message` and `error.stderr`. Different git commands send error details to different streams.
+
+**Additional fix:** After a failed `git merge --squash`, the repo is left in a merge state. Always `git merge --abort` (or `git reset --merge` as fallback) in the error handler to leave the repo clean. Also `git reset --hard HEAD` before the merge to handle dirty tracked files that `git clean -fd` doesn't remove.
+
+## Clean Up Stale Git State BEFORE Checkout, Not After
+
+When a multi-step git operation fails mid-way (e.g. squash merge), it can leave the repo in a dirty merge/rebase state. The **next** invocation must clean up this stale state **before** attempting `git checkout`, not after.
+
+**What happened:** `localMergeSquash` ran `git checkout main` first, then `git reset --hard HEAD` + `git clean -fd`. But a previous failed merge had left the repo in a merge state, so checkout failed with "you need to resolve your current index first".
+
+**Rule:** In any multi-step git workflow, ALWAYS run cleanup first: `git merge --abort` (non-fatal), `git reset --hard HEAD` (non-fatal), `git clean -fd` (non-fatal) — THEN `git checkout`. The cleanup must be idempotent and non-fatal (catch and swallow errors) since there may or may not be stale state to clean up.
+
+## Programmatic Git Operations Should Fall Back to Agent on Conflict
+
+When a deterministic git operation (like `localMergeSquash`) encounters merge conflicts, don't just throw and crash the entire workflow. Instead, catch the specific `MERGE_CONFLICT` error and fall back to agent-based resolution.
+
+**What happened:** `localMergeSquash` properly detected conflicts (via stdout) and threw `GitPrError(MERGE_CONFLICT)`, but the merge node let this error propagate, crashing the workflow. The user had to manually intervene. Meanwhile, the agent executor was available and capable of resolving conflicts.
+
+**Rule:** For any programmatic git operation that can fail on conflicts, wrap it in a try/catch that:
+1. Catches the specific conflict error type (e.g. `GitPrErrorCode.MERGE_CONFLICT`)
+2. Lets non-conflict errors propagate normally
+3. Falls back to an agent call with a prompt that describes the conflict and instructs resolution
+4. The agent has full coding capabilities and can resolve merge markers, regenerate lock files, etc.
+
+**Pattern:** `try { programmaticMerge() } catch (err) { if (isConflict(err)) agentMerge(conflictDetails) else throw err }`
+
+## Next.js API Routes That Import tsyringe Use Cases MUST Import reflect-metadata
+
+Turbopack externalizes `tsyringe` and `reflect-metadata` via `serverExternalPackages` and loads API route modules lazily in their own module graph. If a route imports a `@injectable()` use case class directly and does NOT explicitly import `reflect-metadata` as a side-effect, the route hits `Error: tsyringe requires a reflect polyfill` at runtime — only when the route is first hit, not at build time.
+
+**Fix:** At the top of every API route file that imports a tsyringe-decorated class, add:
+```ts
+import 'reflect-metadata';
+```
+before any other import. This does NOT apply to routes that only `resolve<T>('StringToken')` without importing the class itself — those don't evaluate tsyringe's decorators in the route's module graph.
+
+**Prevention:** When creating a new API route under `src/presentation/web/app/api/` that imports a use case class from `@shepai/core`, the very first line must be `import 'reflect-metadata';`.

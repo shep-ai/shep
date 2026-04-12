@@ -15,6 +15,36 @@ vi.mock('@/hooks/agent-events-provider', () => ({
   }),
 }));
 
+const stubUnsubscribe = () => {
+  /* stub */
+};
+const STABLE_EMPTY_ENTRY = {
+  status: null,
+  url: null,
+  targetType: null,
+  hydrated: false,
+  deployLoading: false,
+  stopLoading: false,
+  deployError: null,
+};
+const deploymentStatusStub = {
+  store: {
+    hydrate: vi.fn(),
+    getEntry: vi.fn(() => STABLE_EMPTY_ENTRY),
+    update: vi.fn(),
+    setStatus: vi.fn(),
+    subscribe: vi.fn(() => stubUnsubscribe),
+    subscribeAll: vi.fn(() => stubUnsubscribe),
+  },
+  deploy: vi.fn(),
+  stop: vi.fn(),
+  ensureHydrated: vi.fn(),
+};
+vi.mock('@/hooks/deployment-status-provider', () => ({
+  useDeploymentStatusContext: () => deploymentStatusStub,
+  useDeploymentStatusContextOptional: () => deploymentStatusStub,
+}));
+
 vi.mock('@/app/actions/agent-setup-flag', () => ({
   isAgentSetupComplete: vi.fn(() => Promise.resolve(false)),
 }));
@@ -62,6 +92,18 @@ vi.mock('next/image', () => ({
   default: function MockImage(props: Record<string, unknown>) {
     return <img {...props} />;
   },
+}));
+
+vi.mock('@/app/actions/create-project-and-feature', () => ({
+  createProjectAndFeature: vi.fn(() => Promise.resolve({ error: 'Not available in test' })),
+}));
+
+vi.mock('@/app/actions/create-application', () => ({
+  createApplication: vi.fn(() => Promise.resolve({ error: 'Not available in test' })),
+}));
+
+vi.mock('@/app/actions/check-all-agents-status', () => ({
+  checkAllAgentsStatus: vi.fn(() => Promise.resolve({ 'claude-code': true })),
 }));
 
 vi.mock('@/hooks/use-turn-statuses', () => ({
@@ -134,8 +176,8 @@ describe('ControlCenter', () => {
     await waitFor(() => {
       expect(screen.getByTestId('control-center-empty-state')).toBeInTheDocument();
     });
-    // Agent setup wizard is shown first — repo section is gated behind it
-    expect(screen.getByTestId('welcome-agent-setup')).toBeInTheDocument();
+    // Prompt-first onboarding is shown directly (no wizard gate)
+    expect(screen.getByText('What do you want to build?')).toBeInTheDocument();
   });
 
   it('renders feature nodes when initialNodes has feature nodes', () => {

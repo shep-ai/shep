@@ -37,8 +37,18 @@ cp "$TARBALL_PATH" "$DOCKER_CTX/"
 docker build -q -t "$IMAGE_TAG" -f - "$DOCKER_CTX" <<'DOCKERFILE'
 FROM node:22-slim
 WORKDIR /app
+# node-pty has no linux prebuilts on v1.1.x so its postinstall falls
+# back to node-gyp which needs python3 + a C++ toolchain. Install just
+# enough to let the native module compile during npm install -g. Same
+# set real end users will need on a minimal Linux host.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        python3 \
+        make \
+        g++ \
+    && rm -rf /var/lib/apt/lists/*
 COPY shepai-cli-*.tgz /app/
-RUN npm install -g /app/shepai-cli-*.tgz 2>&1 | tail -3
+RUN npm install -g /app/shepai-cli-*.tgz 2>&1 | tail -10
 RUN mkdir -p /root/.shep
 DOCKERFILE
 

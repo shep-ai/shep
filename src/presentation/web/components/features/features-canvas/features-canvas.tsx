@@ -12,9 +12,11 @@ import { FeatureNode } from '@/components/common/feature-node';
 import type { FeatureNodeType, FeatureNodeData } from '@/components/common/feature-node';
 import { RepositoryNode } from '@/components/common/repository-node';
 import type { RepositoryNodeType, RepositoryNodeData } from '@/components/common/repository-node';
+import { ApplicationNode } from '@/components/common/application-node/application-node';
+import type { ApplicationNodeType } from '@/components/common/application-node/application-node-config';
 import { DependencyEdge } from './dependency-edge';
 
-export type CanvasNodeType = FeatureNodeType | RepositoryNodeType;
+export type CanvasNodeType = FeatureNodeType | RepositoryNodeType | ApplicationNodeType;
 
 export interface FeaturesCanvasProps {
   nodes: CanvasNodeType[];
@@ -56,6 +58,7 @@ export function FeaturesCanvas({
     () => ({
       featureNode: FeatureNode,
       repositoryNode: RepositoryNode,
+      applicationNode: ApplicationNode,
     }),
     []
   );
@@ -170,7 +173,7 @@ export function FeaturesCanvas({
           color="#b8bcc4"
           className="dark:[&_circle]:!fill-white/[0.1]"
         />
-        {!isEmpty && toolbar ? (
+        {toolbar && !isEmpty ? (
           <Panel position="top-right" className="!me-3 !mt-3">
             {toolbar}
           </Panel>
@@ -185,6 +188,11 @@ export function FeaturesCanvas({
         >
           <div className="pointer-events-auto h-full w-full">{overlayContent}</div>
         </div>
+      ) : null}
+      {/* Toolbar rendered above the empty-state overlay so the workspace
+          selector remains usable while an empty workspace is shown. */}
+      {toolbar && isEmpty ? (
+        <div className="pointer-events-auto absolute end-3 top-3 z-20">{toolbar}</div>
       ) : null}
     </div>
   );

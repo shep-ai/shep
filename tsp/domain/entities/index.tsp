@@ -26,3 +26,4 @@ import "./feature-status.tsp";
 import "./tool.tsp";
 import "./notification-event.tsp";
 import "./repository.tsp";
+import "./application.tsp";

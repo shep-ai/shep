@@ -121,38 +121,6 @@ describe('WelcomeAgentSetup', () => {
     });
   });
 
-  it('renders GitHub CLI prerequisite notice on agent selection step', async () => {
-    render(<WelcomeAgentSetup onComplete={onComplete} />);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('gh-cli-notice')).toBeInTheDocument();
-    });
-
-    expect(screen.getByText(/GitHub CLI \(gh\)/)).toBeInTheDocument();
-    expect(screen.getByText(/CI\/CD self-healing/)).toBeInTheDocument();
-
-    const link = screen.getByRole('link', { name: /install it here/i });
-    expect(link).toHaveAttribute('href', 'https://cli.github.com/');
-    expect(link).toHaveAttribute('target', '_blank');
-  });
-
-  it('hides GitHub CLI notice on model selection step', async () => {
-    const user = userEvent.setup();
-    render(<WelcomeAgentSetup onComplete={onComplete} />);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('gh-cli-notice')).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByTestId('agent-option-claude-code'));
-
-    await waitFor(() => {
-      expect(screen.getByTestId('model-list')).toBeInTheDocument();
-    });
-
-    expect(screen.queryByTestId('gh-cli-notice')).not.toBeInTheDocument();
-  });
-
   it('shows loading state initially', () => {
     render(<WelcomeAgentSetup onComplete={onComplete} />);
     expect(screen.getByText('Loading agents…')).toBeInTheDocument();

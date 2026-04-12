@@ -89,7 +89,7 @@ vi.mock('@/infrastructure/services/filesystem/shep-directory.service.js', () => 
 // Global mock child — reassigned per test in beforeEach
 let mockChild: MockChild;
 
-// ---- IDaemonService mock + BrowserOpenerService mock ----
+// ---- IDaemonService mock + IBrowserOpener mock ----
 const { mockDaemonService, mockBrowserOpen } = vi.hoisted(() => {
   const mockDaemonService = {
     read: vi.fn(),
@@ -101,16 +101,11 @@ const { mockDaemonService, mockBrowserOpen } = vi.hoisted(() => {
   return { mockDaemonService, mockBrowserOpen };
 });
 
-vi.mock('@/infrastructure/services/browser-opener.service.js', () => ({
-  BrowserOpenerService: vi.fn().mockImplementation(function () {
-    return { open: mockBrowserOpen };
-  }),
-}));
-
 vi.mock('@/infrastructure/di/container.js', () => ({
   container: {
     resolve: vi.fn().mockImplementation((token: string) => {
       if (token === 'IDaemonService') return mockDaemonService;
+      if (token === 'IBrowserOpener') return { open: mockBrowserOpen };
       throw new Error(`Unknown token: ${token}`);
     }),
   },
@@ -145,7 +140,6 @@ vi.mock('src/presentation/cli/ui/index.js', () => ({
 }));
 
 import { findAvailablePort } from '@/infrastructure/services/port.service.js';
-import { BrowserOpenerService } from '@/infrastructure/services/browser-opener.service.js';
 import { startDaemon } from '../../../../src/presentation/cli/commands/daemon/start-daemon.js';
 
 describe('startDaemon()', () => {
@@ -280,7 +274,6 @@ describe('startDaemon()', () => {
     it('opens the browser with the correct URL', async () => {
       (findAvailablePort as ReturnType<typeof vi.fn>).mockResolvedValue(4050);
       await startDaemon();
-      expect(BrowserOpenerService).toHaveBeenCalled();
       expect(mockBrowserOpen).toHaveBeenCalledWith('http://localhost:4050');
     });
 

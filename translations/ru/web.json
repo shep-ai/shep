@@ -382,7 +382,10 @@
   "repositoryNode": {
     "removeRepository": "Удалить репозиторий",
     "removeConfirmTitle": "Удалить репозиторий?",
-    "removeConfirmDescription": "Это удалит <strong>{{name}}</strong> и все его функции из рабочего пространства. Файлы на диске не будут затронуты.",
+    "removeConfirmDescription": "Это удалит <strong>{{name}}</strong> и все его функции из рабочего пространства.",
+    "removeConfirmDescriptionKeepFiles": "Файлы репозитория на диске не будут затронуты.",
+    "removeConfirmDescriptionDeleteFiles": "Папка репозитория на диске будет удалена безвозвратно. Это действие нельзя отменить.",
+    "deleteFromDiskLabel": "Также удалить папку репозитория с диска",
     "cancel": "Отмена",
     "remove": "Удалить",
     "openInIde": "Открыть в IDE",
@@ -406,7 +409,8 @@
     "newFeature": "Новая функция",
     "localFolder": "Локальная папка",
     "adoptBranch": "Принять ветку",
-    "fromGithub": "Из GitHub"
+    "fromGithub": "Из GitHub",
+    "newApplication": "Новое приложение"
   },
   "chat": {
     "shepChat": "Shep Чат",

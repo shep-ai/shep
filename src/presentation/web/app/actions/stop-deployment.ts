@@ -1,19 +1,14 @@
 'use server';
 
 import { resolve } from '@/lib/server-container';
-import type { IDeploymentService } from '@shepai/core/application/ports/output/services/deployment-service.interface';
+import type { StopDeploymentUseCase } from '@shepai/core/application/use-cases/deployments/stop-deployment.use-case';
 
 export async function stopDeployment(
   targetId: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!targetId?.trim()) {
-    return { success: false, error: 'targetId is required' };
-  }
-
   try {
-    const deploymentService = resolve<IDeploymentService>('IDeploymentService');
-    await deploymentService.stop(targetId);
-
+    const useCase = resolve<StopDeploymentUseCase>('StopDeploymentUseCase');
+    await useCase.execute(targetId);
     return { success: true };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to stop deployment';

@@ -1,411 +1,465 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
-  FolderOpen,
-  Copy,
-  Check,
+  SendHorizontal,
+  Paperclip,
   Loader2,
-  CheckCircle2,
-  AlertCircle,
-  Terminal,
+  LayoutGrid,
+  Zap,
+  ClipboardList,
   ChevronDown,
-  ExternalLink,
+  Check,
+  X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { pickFolder } from '@/components/common/add-repository-button/pick-folder';
-import { ReactFileManagerDialog } from '@/components/common/react-file-manager-dialog';
-import { useFeatureFlags } from '@/hooks/feature-flags-context';
-import { isAgentSetupComplete } from '@/app/actions/agent-setup-flag';
-import { checkAgentAuth } from '@/app/actions/check-agent-auth';
-import type { AgentAuthStatus } from '@/app/actions/check-agent-auth';
-import { checkToolStatus } from '@/app/actions/check-tool-status';
-import type { ToolStatusResult, ToolStatusEntry } from '@/app/actions/check-tool-status';
-import { WelcomeAgentSetup } from './welcome-agent-setup';
+import { createProjectAndFeature } from '@/app/actions/create-project-and-feature';
+import { createApplication } from '@/app/actions/create-application';
+import { AgentModelPicker } from '@/components/features/settings/AgentModelPicker';
+import { AttachmentChip } from '@/components/common/attachment-chip';
+import { ShepLogo } from '@/components/common/shep-logo';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useAttachments } from '@/hooks/use-attachments';
+
+type BuildMode = 'application' | 'fast' | 'spec';
+
+const BUILD_MODES: BuildMode[] = ['application', 'fast', 'spec'];
+
+const BUILD_MODE_CONFIG: Record<
+  BuildMode,
+  {
+    icon: React.ElementType;
+    label: string;
+    placeholder: string;
+    suggestions: string[];
+  }
+> = {
+  application: {
+    icon: LayoutGrid,
+    label: 'Application',
+    placeholder: 'Build a modern e-commerce storefront with product catalog...',
+    suggestions: [
+      'A landing page with hero, features, and pricing sections',
+      'Full-stack SaaS app with auth, billing, and dashboard',
+      'Mobile-first social media app with real-time chat',
+      'Personal portfolio with blog and project showcase',
+    ],
+  },
+  fast: {
+    icon: Zap,
+    label: 'Fast',
+    placeholder: 'Add a dark mode toggle to the settings page...',
+    suggestions: [
+      'Add pagination to the users list endpoint',
+      'Fix the broken logout redirect',
+      'Add input validation to the signup form',
+      'Refactor the API error handling middleware',
+    ],
+  },
+  spec: {
+    icon: ClipboardList,
+    label: 'Spec Driven',
+    placeholder: 'Implement a role-based access control system with audit logging...',
+    suggestions: [
+      'OAuth2 authentication with SSO and MFA support',
+      'Event-driven notification system with email and push',
+      'REST API with versioning, rate limiting, and OpenAPI docs',
+      'Data pipeline with ETL, validation, and monitoring',
+    ],
+  },
+};
 
 export interface ControlCenterEmptyStateProps {
   onRepositorySelect?: (path: string) => void;
+  onApplicationCreated?: (applicationId: string) => void;
+  onClose?: () => void;
   className?: string;
 }
 
-const commands = ['cd ~/my-repo', 'shep feat new "sleek dashboard"'];
-
 export function ControlCenterEmptyState({
   onRepositorySelect,
+  onApplicationCreated,
+  onClose,
   className,
 }: ControlCenterEmptyStateProps) {
   const { t } = useTranslation('web');
-  const [copied, setCopied] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [showReactPicker, setShowReactPicker] = useState(false);
-  const [agentReady, setAgentReady] = useState<boolean | null>(null);
-  const [authStatus, setAuthStatus] = useState<AgentAuthStatus | null>(null);
-  const [cliExpanded, setCliExpanded] = useState(false);
-  const [toolStatus, setToolStatus] = useState<ToolStatusResult | null>(null);
-  const { reactFileManager: useReactFileManager } = useFeatureFlags();
+  const [description, setDescription] = useState('');
+  const [overrideAgent, setOverrideAgent] = useState<string | undefined>(undefined);
+  const [overrideModel, setOverrideModel] = useState<string | undefined>(undefined);
+  const [buildMode, setBuildMode] = useState<BuildMode>('application');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const att = useAttachments();
 
-  useEffect(() => {
-    isAgentSetupComplete().then((done) => {
-      setAgentReady(done);
+  // Circular mode switching with Shift+Tab, close overlay with Escape
+  const cycleBuildMode = useCallback(() => {
+    setBuildMode((prev) => {
+      const idx = BUILD_MODES.indexOf(prev);
+      return BUILD_MODES[(idx + 1) % BUILD_MODES.length];
     });
   }, []);
 
   useEffect(() => {
-    if (!agentReady) return;
-    checkAgentAuth().then(setAuthStatus);
-    checkToolStatus().then(setToolStatus);
-  }, [agentReady]);
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && onClose) onClose();
+      if (e.key === 'Tab' && e.shiftKey) {
+        e.preventDefault();
+        cycleBuildMode();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [onClose, cycleBuildMode]);
 
-  async function handlePickerClick() {
-    if (loading) return;
+  const handleSubmit = useCallback(async () => {
+    if (!description.trim() || submitting) return;
 
-    if (useReactFileManager) {
-      setShowReactPicker(true);
-      return;
-    }
+    setSubmitting(true);
+    setError(null);
 
-    setLoading(true);
     try {
-      const path = await pickFolder();
-      if (path) {
-        onRepositorySelect?.(path);
+      if (buildMode === 'application') {
+        // The server action creates the app AND synchronously posts the
+        // user's prompt as the first interactive chat message, so when we
+        // navigate, /application/[id] SSR-loads chat state and the message
+        // is visible on first paint. No prompt in the URL, no extra
+        // round trip on the client.
+        const result = await createApplication({
+          description: description.trim(),
+          agentType: overrideAgent,
+          modelOverride: overrideModel,
+          initialPrompt: description.trim(),
+        });
+
+        if (result.error) {
+          setError(result.error);
+          setSubmitting(false);
+          return;
+        }
+
+        if (result.application) {
+          onApplicationCreated?.(result.application.id);
+        }
+      } else {
+        const result = await createProjectAndFeature({
+          description: description.trim(),
+          attachments: att.completedAttachments.map((a) => ({
+            path: a.path,
+            name: a.name,
+            notes: a.notes,
+          })),
+          agentType: overrideAgent,
+          model: overrideModel,
+          fast: buildMode === 'fast',
+        });
+
+        if (result.error) {
+          setError(result.error);
+          setSubmitting(false);
+          return;
+        }
+
+        if (result.repositoryPath) {
+          onRepositorySelect?.(result.repositoryPath);
+        }
+
+        if (result.feature && result.repositoryPath) {
+          window.dispatchEvent(
+            new CustomEvent('shep:feature-created', {
+              detail: {
+                featureId: result.feature.id,
+                name: result.feature.name,
+                description: result.feature.description,
+                repositoryPath: result.repositoryPath,
+              },
+            })
+          );
+        }
       }
     } catch {
-      // Native picker failed — fall back to React file manager
-      setShowReactPicker(true);
-    } finally {
-      setLoading(false);
+      setError('Something went wrong. Please try again.');
+      setSubmitting(false);
     }
-  }
+  }, [
+    description,
+    submitting,
+    buildMode,
+    att.completedAttachments,
+    overrideAgent,
+    overrideModel,
+    onRepositorySelect,
+    onApplicationCreated,
+  ]);
 
-  function handleReactPickerSelect(path: string | null) {
-    if (path) {
-      onRepositorySelect?.(path);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleSubmit();
+      }
+    },
+    [handleSubmit]
+  );
+
+  const handlePickFiles = useCallback(async () => {
+    try {
+      const res = await fetch('/api/dialog/pick-files');
+      if (!res.ok) return;
+      const data = (await res.json()) as { paths?: string[] };
+      if (!data.paths?.length) return;
+      for (const filePath of data.paths) {
+        const uploadRes = await fetch('/api/attachments/upload-from-path', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: filePath, sessionId: 'onboarding' }),
+        });
+        if (!uploadRes.ok) continue;
+        const uploaded = (await uploadRes.json()) as {
+          id: string;
+          name: string;
+          size: number;
+          mimeType: string;
+          path: string;
+        };
+        att.addAttachment(uploaded);
+      }
+    } catch {
+      // Native picker not available — ignore
     }
-    setShowReactPicker(false);
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- att.addAttachment is stable
+  }, [att.addAttachment]);
 
-  const handleCopy = useCallback(async () => {
-    await navigator.clipboard.writeText(commands.join('\n'));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleSuggestionClick = useCallback((suggestion: string) => {
+    setDescription(suggestion);
+    textareaRef.current?.focus();
   }, []);
 
-  const handleAgentSetupComplete = useCallback(() => {
-    setAgentReady(true);
-  }, []);
-
-  const handleRetryAuth = useCallback(() => {
-    setAuthStatus(null);
-    checkAgentAuth().then(setAuthStatus);
-  }, []);
-
-  if (agentReady === null) return null;
+  const modeConfig = BUILD_MODE_CONFIG[buildMode];
+  const ModeIcon = modeConfig.icon;
 
   return (
     <div
       data-testid="control-center-empty-state"
       className={cn(
-        'relative flex h-full w-full flex-col items-center justify-center px-8',
+        'relative flex h-full w-full flex-col items-center justify-center overflow-hidden px-8',
         className
       )}
     >
-      {/* Vertically centered content */}
-      {!agentReady ? (
-        /* Agent setup wizard — owns its own hero */
-        <WelcomeAgentSetup onComplete={handleAgentSetupComplete} />
-      ) : (
-        /* Repository step — fade in to match wizard transitions */
-        <div className="animate-in fade-in flex w-full max-w-md flex-col items-center duration-300">
-          <h1 className="text-foreground/90 text-center text-5xl font-extralight tracking-tight">
-            {t('emptyState.addProject')}
-          </h1>
-          <p className="text-muted-foreground mt-3 text-center text-lg leading-relaxed font-light">
-            {t('emptyState.addProjectDescription')}
-            <br />
-            {t('emptyState.addProjectDescriptionLine2')}
-          </p>
+      {/* Gradient background — covers canvas dots */}
+      <div className="onboard-bg pointer-events-none absolute inset-0 animate-[onboard-fade-in_1.2s_ease-out_both]" />
 
-          {/* Status checklist */}
-          <div className="mt-8 flex w-full flex-col gap-3">
-            <AgentAuthBanner status={authStatus} onRetry={handleRetryAuth} />
-            <ToolStatusRow
-              label={t('emptyState.git')}
-              status={toolStatus?.git ?? null}
-              missingHint={t('emptyState.gitRequired')}
-            />
-            <ToolStatusRow
-              label={t('emptyState.githubCli')}
-              status={toolStatus?.gh ?? null}
-              missingHint={t('emptyState.githubCliRequired')}
-            />
-          </div>
-          {/* Primary CTA */}
-          <button
-            type="button"
-            data-testid="empty-state-add-repository"
-            onClick={handlePickerClick}
-            disabled={loading}
-            className="bg-foreground text-background hover:bg-foreground/90 mt-10 flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl px-6 py-4 text-base font-medium shadow-lg transition-all duration-200 hover:shadow-xl active:scale-[0.98] disabled:cursor-wait disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <FolderOpen className="h-5 w-5" />
-            )}
-            {loading ? t('emptyState.opening') : t('emptyState.chooseFolder')}
-          </button>
+      {/* Close button — only shown when used as overlay */}
+      {onClose ? (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="text-muted-foreground hover:text-foreground hover:bg-accent/50 absolute top-4 right-4 z-10 cursor-pointer rounded p-1.5 transition-colors"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      ) : null}
 
-          {/* Subtitle under CTA */}
-          <p className="text-muted-foreground/60 mt-3 text-center text-sm">
-            {t('emptyState.folderHint')}
-          </p>
-        </div>
-      )}
-
-      {/* CLI toggle — anchored to bottom, doesn't shift centered content */}
-      {agentReady ? (
+      <div className="relative flex w-full max-w-2xl flex-col items-center">
+        {/* Shep Logo */}
         <div
-          className="absolute bottom-8 flex flex-col items-center"
-          style={{
-            animationDelay: '400ms',
-            animationDuration: '600ms',
-            animationFillMode: 'both',
-          }}
+          className="mb-6 animate-[onboard-logo_0.8s_cubic-bezier(0.16,1,0.3,1)_both]"
+          style={{ animationDelay: '0ms' }}
         >
-          <button
-            type="button"
-            onClick={() => setCliExpanded(!cliExpanded)}
-            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5 transition-colors duration-200"
-          >
-            <Terminal className="h-3.5 w-3.5" />
-            <span className="text-sm">{t('emptyState.orUseCli')}</span>
-            <ChevronDown
-              className={cn(
-                'h-3.5 w-3.5 transition-transform duration-200',
-                cliExpanded ? '' : 'rotate-180'
-              )}
-            />
-          </button>
-
-          {cliExpanded ? (
-            <div className="animate-in fade-in slide-in-from-top-1 mt-3 w-80 duration-200">
-              <div
-                data-testid="cli-code-block"
-                className="relative rounded-xl bg-zinc-900 px-5 py-4 font-mono text-[13px] leading-relaxed text-zinc-400"
-              >
-                <button
-                  type="button"
-                  data-testid="cli-code-block-copy"
-                  onClick={handleCopy}
-                  className="absolute top-3 right-3 cursor-pointer rounded-md p-1.5 text-zinc-600 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
-                  aria-label={t('emptyState.copyCommands')}
-                >
-                  {copied ? (
-                    <Check className="h-3.5 w-3.5 text-emerald-400" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                </button>
-                <div className="space-y-1">
-                  {commands.map((cmd) => (
-                    <div key={cmd} className="whitespace-nowrap">
-                      <span className="text-zinc-600 select-none">$ </span>
-                      <span className="text-zinc-300">{cmd}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : null}
+          <ShepLogo size={72} className="text-foreground" />
         </div>
-      ) : null}
-      <ReactFileManagerDialog
-        open={showReactPicker}
-        onOpenChange={(open) => {
-          if (!open) setShowReactPicker(false);
-        }}
-        onSelect={handleReactPickerSelect}
-      />
-    </div>
-  );
-}
 
-/** Status row for the AI agent (Claude Code, etc.) */
-function AgentAuthBanner({
-  status,
-  onRetry,
-}: {
-  status: AgentAuthStatus | null;
-  onRetry: () => void;
-}) {
-  const { t } = useTranslation('web');
-
-  if (!status) {
-    return (
-      <ChecklistRow icon={<Loader2 className="text-muted-foreground/50 h-4 w-4 animate-spin" />}>
-        <span className="text-muted-foreground/50 text-sm">{t('emptyState.checkingSetup')}</span>
-      </ChecklistRow>
-    );
-  }
-
-  if (status.installed && status.authenticated) {
-    return (
-      <ChecklistRow icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />}>
-        <span className="text-sm text-emerald-600 dark:text-emerald-400">
-          {t('emptyState.ready', { label: status.label })}
-        </span>
-      </ChecklistRow>
-    );
-  }
-
-  if (!status.installed) {
-    return (
-      <ChecklistRow icon={<AlertCircle className="h-4 w-4 text-amber-500" />}>
-        <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
-          {t('emptyState.notInstalled', { label: status.label })}
-        </span>
-        {status.installCommand ? <CopyableCommand command={status.installCommand} /> : null}
-        <button
-          type="button"
-          onClick={onRetry}
-          className="text-xs text-amber-600 underline underline-offset-2 hover:text-amber-800 dark:text-amber-400"
+        {/* Hero text */}
+        <h1
+          className="text-foreground animate-[onboard-fade-up_0.7s_cubic-bezier(0.16,1,0.3,1)_both] text-center text-5xl font-extralight tracking-tight"
+          style={{ animationDelay: '120ms' }}
         >
-          {t('emptyState.reCheck')}
-        </button>
-      </ChecklistRow>
-    );
-  }
+          What do you want to build?
+        </h1>
+        <p
+          className="text-muted-foreground mt-3 animate-[onboard-fade-up_0.7s_cubic-bezier(0.16,1,0.3,1)_both] text-center text-lg leading-relaxed font-light"
+          style={{ animationDelay: '220ms' }}
+        >
+          Describe your idea and Shep creates the project for you.
+        </p>
 
-  return (
-    <ChecklistRow icon={<AlertCircle className="h-4 w-4 text-amber-500" />}>
-      <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
-        {t('emptyState.needsAuth', { label: status.label })}
-      </span>
-      {status.authCommand ? <CopyableCommand command={status.authCommand} /> : null}
-      <div className="flex items-center gap-3">
-        {status.binaryName ? (
-          <button
-            type="button"
-            data-testid="auth-banner-open-terminal"
-            onClick={async () => {
-              try {
-                const toolId =
-                  status.agentType === 'claude-code' ? 'claude-code' : status.agentType;
-                await fetch(`/api/tools/${toolId}/launch`, { method: 'POST' });
-              } catch {
-                /* best effort */
-              }
-            }}
-            className="flex items-center gap-1 text-xs font-medium text-amber-600 underline underline-offset-2 hover:text-amber-800 dark:text-amber-400"
+        {/* Prompt box */}
+        <div
+          className="mt-10 w-full animate-[onboard-fade-up_0.7s_cubic-bezier(0.16,1,0.3,1)_both]"
+          style={{ animationDelay: '350ms' }}
+        >
+          <div
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            onDragEnter={att.handleDragEnter}
+            onDragLeave={att.handleDragLeave}
+            onDragOver={att.handleDragOver}
+            onDrop={att.handleDrop}
+            className={cn(
+              'flex flex-col rounded-xl border transition-all duration-200',
+              'border-border/60 bg-background shadow-sm dark:border-white/10 dark:bg-white/[0.04]',
+              isFocused &&
+                'ring-ring/50 border-ring shadow-md ring-[3px] dark:border-orange-500/40 dark:ring-orange-500/25',
+              att.isDragOver && 'border-primary/50 bg-primary/5',
+              submitting && 'opacity-70'
+            )}
           >
-            <Terminal className="h-3 w-3" />
-            {t('emptyState.open', { label: status.label })}
-          </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={onRetry}
-          className="text-xs text-amber-600 underline underline-offset-2 hover:text-amber-800 dark:text-amber-400"
+            {/* Textarea — supports paste for images */}
+            <textarea
+              ref={textareaRef}
+              rows={2}
+              autoFocus
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onPaste={att.handlePaste}
+              placeholder={modeConfig.placeholder}
+              disabled={submitting}
+              className="text-foreground placeholder:text-muted-foreground/60 max-h-[10rem] min-h-[4.5rem] w-full resize-none border-0 bg-transparent px-4 py-3.5 text-sm leading-relaxed focus:outline-none disabled:cursor-not-allowed"
+            />
+
+            {/* Attachment chips */}
+            {att.attachments.length > 0 ? (
+              <div className="flex shrink-0 items-center gap-2.5 overflow-x-auto overflow-y-visible px-5 pt-2 pb-2">
+                {att.attachments.map((file) => (
+                  <AttachmentChip
+                    key={file.id}
+                    name={file.name}
+                    size={file.size}
+                    mimeType={file.mimeType}
+                    path={file.path}
+                    onRemove={() => att.removeAttachment(file.id)}
+                    loading={file.loading}
+                    notes={file.notes}
+                    onNotesChange={(notes) => att.updateNotes(file.id, notes)}
+                  />
+                ))}
+              </div>
+            ) : null}
+
+            {/* Upload error */}
+            {att.uploadError ? (
+              <p className="text-destructive px-4 pb-2 text-xs">{att.uploadError}</p>
+            ) : null}
+
+            {/* Controls bar */}
+            <div className="border-border/60 flex shrink-0 items-center gap-3 border-t px-3 py-2 dark:border-white/10">
+              <AgentModelPicker
+                initialAgentType={overrideAgent ?? 'claude-code'}
+                initialModel={overrideModel ?? 'claude-sonnet-4-6'}
+                mode="override"
+                showInstallStatus
+                onAgentModelChange={(agent, model) => {
+                  setOverrideAgent(agent);
+                  setOverrideModel(model);
+                }}
+                className="w-55"
+              />
+              <div className="flex-1" />
+
+              {/* Build mode dropdown — Shift+Tab to cycle */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    data-testid="build-mode-selector"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
+                  >
+                    <span
+                      key={buildMode}
+                      className="flex animate-[onboard-fade-up_0.25s_ease-out_both] items-center gap-1.5"
+                    >
+                      <ModeIcon className="h-3.5 w-3.5" />
+                      {modeConfig.label}
+                    </span>
+                    <ChevronDown className="h-3 w-3 opacity-50" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[160px]">
+                  {BUILD_MODES.map((mode) => {
+                    const cfg = BUILD_MODE_CONFIG[mode];
+                    const Icon = cfg.icon;
+                    const isActive = buildMode === mode;
+                    return (
+                      <DropdownMenuItem
+                        key={mode}
+                        onClick={() => setBuildMode(mode)}
+                        data-testid={`build-mode-${mode}`}
+                        className="flex items-center gap-2"
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        <span className="flex-1">{cfg.label}</span>
+                        {isActive ? <Check className="text-foreground h-3.5 w-3.5" /> : null}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={handlePickFiles}
+                    disabled={submitting}
+                    aria-label={t('chat.attachFiles')}
+                    className="text-muted-foreground hover:text-foreground cursor-pointer rounded p-1 transition-colors disabled:opacity-50"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">{t('chat.attachFiles')}</TooltipContent>
+              </Tooltip>
+
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!description.trim() || submitting}
+                className={cn(
+                  'bg-foreground text-background inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg',
+                  'hover:bg-foreground/90 disabled:pointer-events-none disabled:opacity-30',
+                  'transition-all duration-150'
+                )}
+              >
+                {submitting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <SendHorizontal className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {error ? <p className="text-destructive mt-2 text-center text-sm">{error}</p> : null}
+        </div>
+
+        {/* Suggestion chips — re-animate on mode change */}
+        <div
+          key={buildMode}
+          className="mt-6 flex animate-[onboard-fade-up_0.4s_ease-out_both] flex-wrap justify-center gap-2"
         >
-          {t('emptyState.reCheck')}
-        </button>
+          {modeConfig.suggestions.map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              onClick={() => handleSuggestionClick(suggestion)}
+              disabled={submitting}
+              className="text-muted-foreground hover:text-foreground border-border/60 hover:border-border hover:bg-accent/50 cursor-pointer rounded-full border px-3.5 py-1.5 text-xs transition-all duration-150 disabled:opacity-50 dark:border-white/10 dark:hover:border-white/20 dark:hover:bg-white/[0.06]"
+            >
+              {suggestion}
+            </button>
+          ))}
+        </div>
       </div>
-    </ChecklistRow>
-  );
-}
-
-/** Status row for system tools (git, gh) */
-function ToolStatusRow({
-  label,
-  status,
-  missingHint,
-}: {
-  label: string;
-  status: ToolStatusEntry | null;
-  missingHint: string;
-}) {
-  const { t } = useTranslation('web');
-
-  if (!status) {
-    return (
-      <ChecklistRow icon={<Loader2 className="text-muted-foreground/50 h-4 w-4 animate-spin" />}>
-        <span className="text-muted-foreground/50 text-sm">
-          {t('emptyState.checking', { label })}
-        </span>
-      </ChecklistRow>
-    );
-  }
-
-  if (status.installed) {
-    return (
-      <ChecklistRow icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />}>
-        <span className="flex items-baseline gap-2">
-          <span className="text-sm text-emerald-600 dark:text-emerald-400">
-            {t('emptyState.ready', { label })}
-          </span>
-          {status.version ? (
-            <span className="text-muted-foreground/40 text-xs">v{status.version}</span>
-          ) : null}
-        </span>
-      </ChecklistRow>
-    );
-  }
-
-  return (
-    <ChecklistRow icon={<AlertCircle className="h-4 w-4 text-amber-500" />}>
-      <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
-        {t('emptyState.notFound', { label })}
-      </span>
-      <span className="text-muted-foreground/50 text-xs">{missingHint}</span>
-      {status.installCommand ? <CopyableCommand command={status.installCommand} /> : null}
-      {status.installUrl ? (
-        <a
-          href={status.installUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-amber-600 underline underline-offset-2 hover:text-amber-800 dark:text-amber-400"
-        >
-          {t('emptyState.docs')} <ExternalLink className="h-3 w-3" />
-        </a>
-      ) : null}
-    </ChecklistRow>
-  );
-}
-
-/** Checklist row: icon pinned left, children stacked vertically and fill width */
-function ChecklistRow({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div className="animate-in fade-in flex items-start gap-2.5">
-      <div className="mt-0.5 shrink-0">{icon}</div>
-      <div className="flex min-w-0 flex-1 flex-col gap-1">{children}</div>
     </div>
-  );
-}
-
-/** Compact copyable command block — fills available row width */
-function CopyableCommand({ command }: { command: string }) {
-  const [copied, setCopied] = useState(false);
-
-  return (
-    <button
-      type="button"
-      onClick={async () => {
-        await navigator.clipboard.writeText(command);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }}
-      className="group/cmd flex cursor-pointer items-center justify-between gap-2 rounded-md bg-zinc-100 py-1 ps-2.5 pe-2 text-start transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700"
-    >
-      <code className="min-w-0 truncate text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-300">
-        {command}
-      </code>
-      {copied ? (
-        <Check className="h-3 w-3 shrink-0 text-emerald-500" />
-      ) : (
-        <Copy className="h-3 w-3 shrink-0 text-zinc-400 opacity-0 transition-opacity group-hover/cmd:opacity-100" />
-      )}
-    </button>
   );
 }

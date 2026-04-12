@@ -1,0 +1,17 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-electron-desktop-wrapper[39m
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/update-checker.test.ts[2m > [22mcheckForUpdates[2m > [22mfetches GitHub API and detects newer version[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/update-checker.test.ts[2m > [22mcheckForUpdates[2m > [22msends no IPC when current version is latest[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/update-checker.test.ts[2m > [22mcheckForUpdates[2m > [22msends no IPC when current version is newer[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/update-checker.test.ts[2m > [22mcheckForUpdates[2m > [22mcatches network errors silently[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/update-checker.test.ts[2m > [22mcheckForUpdates[2m > [22mhandles non-OK HTTP response silently[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/update-checker.test.ts[2m > [22mcheckForUpdates[2m > [22mruns after 10-second delay[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/update-checker.test.ts[2m > [22mcheckForUpdates[2m > [22mhandles tag_name without v prefix[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/electron/update-checker.test.ts[2m > [22mcheckForUpdates[2m > [22mhandles invalid tag_name gracefully[32m 1[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m8 passed[39m[22m[90m (8)[39m
+[2m   Start at [22m 03:42:07
+[2m   Duration [22m 573ms[2m (transform 219ms, setup 209ms, import 66ms, tests 22ms, environment 0ms)[22m
+

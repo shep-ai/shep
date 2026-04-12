@@ -1,12 +1,9 @@
 'use server';
 
-import { existsSync } from 'node:fs';
-import { isAbsolute } from 'node:path';
 import { resolve } from '@/lib/server-container';
 import { createDeploymentLogger } from '@shepai/core/infrastructure/services/deployment/deployment-logger';
-import type { IDeploymentService } from '@shepai/core/application/ports/output/services/deployment-service.interface';
-import { DeploymentState } from '@shepai/core/domain/generated/output';
-import { isSameShepInstance } from '@/lib/is-same-shep-instance';
+import type { StartRepositoryDeploymentUseCase } from '@shepai/core/application/use-cases/deployments/start-repository-deployment.use-case';
+import type { DeploymentState } from '@shepai/core/domain/generated/output';
 
 const log = createDeploymentLogger('[deployRepository]');
 
@@ -15,31 +12,11 @@ export async function deployRepository(
 ): Promise<{ success: boolean; error?: string; state?: DeploymentState }> {
   log.info(`called — repositoryPath="${repositoryPath}"`);
 
-  if (!repositoryPath || !isAbsolute(repositoryPath)) {
-    log.warn('rejected — not an absolute path');
-    return { success: false, error: 'repositoryPath must be an absolute path' };
-  }
-
   try {
-    if (!existsSync(repositoryPath)) {
-      log.warn(`directory does not exist: "${repositoryPath}"`);
-      return { success: false, error: `Directory does not exist: ${repositoryPath}` };
-    }
-
-    if (isSameShepInstance(repositoryPath)) {
-      log.warn('rejected — target is the running shep instance');
-      return {
-        success: false,
-        error: 'Cannot start a dev server for the repository Shep is running from',
-      };
-    }
-
-    log.info('directory exists, calling deploymentService.start()');
-    const deploymentService = resolve<IDeploymentService>('IDeploymentService');
-    deploymentService.start(repositoryPath, repositoryPath, 'repository');
-
-    log.info('start() returned successfully — state=Booting');
-    return { success: true, state: DeploymentState.Booting };
+    const useCase = resolve<StartRepositoryDeploymentUseCase>('StartRepositoryDeploymentUseCase');
+    const status = await useCase.execute(repositoryPath);
+    log.info(`start succeeded — state=${status.state}`);
+    return { success: true, state: status.state };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to deploy repository';
     log.error(`error: ${message}`, error);

@@ -14,11 +14,18 @@ export interface LayoutOptions {
   nodesep?: number;
 }
 
-/** Canonical layout defaults for the control-center canvas. */
+/**
+ * Canonical layout defaults for the control-center canvas.
+ *
+ * `nodesep` is the gap between nodes in the SAME rank (vertical
+ * gap in the LR layout we use). Bumped from 30 → 48 so the taller
+ * application cards (~300px) get obvious breathing room when
+ * stacked — 30px looked cramped enough that cards felt touching.
+ */
 export const CANVAS_LAYOUT_DEFAULTS: LayoutOptions = {
   direction: 'LR',
   ranksep: 200,
-  nodesep: 30,
+  nodesep: 48,
 };
 
 /** Returns canvas layout defaults with direction adjusted for text direction. */
@@ -26,10 +33,27 @@ export function getCanvasLayoutDefaults(dir: 'ltr' | 'rtl' = 'ltr'): LayoutOptio
   return { ...CANVAS_LAYOUT_DEFAULTS, direction: dir === 'rtl' ? 'RL' : 'LR' };
 }
 
-/** Known node-type dimensions for the canvas node types */
+/**
+ * Known node-type dimensions for the canvas node types.
+ *
+ * `applicationNode` dimensions MUST track the real rendered card
+ * height — dagre uses them to compute rank/node spacing, and if
+ * they're understated the cards overlap on screen. Current card:
+ *   - header        py-4 (16+16) + 32px content           ≈ 64px
+ *   - preview       py-4 top + 180px slot + pb-4 bottom   ≈ 196px
+ *   - footer        pb-4 + 16px text                      ≈ 32px
+ *   - border                                                 2px
+ *   ─────────────────────────────────────────────────────────────
+ *   Total                                                  ≈ 294px
+ *
+ * Rounded up to 300 with a bit of headroom for shadow and selected
+ * border animation. Bump this alongside PREVIEW_HEIGHT_PX in
+ * `application-node.tsx` whenever the card changes size.
+ */
 const NODE_DIMENSIONS: Record<string, { width: number; height: number }> = {
   featureNode: { width: 388, height: 140 },
   repositoryNode: { width: 400, height: 140 },
+  applicationNode: { width: 416, height: 300 },
 };
 
 function getNodeSize(

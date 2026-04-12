@@ -4,12 +4,23 @@
  * Deletes a Repository and all its child features.
  * Each feature is properly cleaned up (agent runs cancelled, worktrees removed)
  * via DeleteFeatureUseCase before the repository is soft-deleted.
+ *
+ * Optionally removes the repository directory from disk when
+ * {@link DeleteRepositoryOptions.deleteFromDisk} is true. The DB soft-delete
+ * always runs first so the repository disappears from queries even if the
+ * filesystem removal fails.
  */
 
 import { injectable, inject } from 'tsyringe';
 import type { IRepositoryRepository } from '../../ports/output/repositories/repository-repository.interface.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
+import type { IFileSystemService } from '../../ports/output/services/file-system-service.interface.js';
 import { DeleteFeatureUseCase } from '../features/delete-feature.use-case.js';
+
+export interface DeleteRepositoryOptions {
+  /** When true, recursively remove the repository directory from disk. */
+  deleteFromDisk?: boolean;
+}
 
 @injectable()
 export class DeleteRepositoryUseCase {
@@ -19,10 +30,12 @@ export class DeleteRepositoryUseCase {
     @inject('IFeatureRepository')
     private readonly featureRepo: IFeatureRepository,
     @inject(DeleteFeatureUseCase)
-    private readonly deleteFeature: DeleteFeatureUseCase
+    private readonly deleteFeature: DeleteFeatureUseCase,
+    @inject('IFileSystemService')
+    private readonly fileSystem: IFileSystemService
   ) {}
 
-  async execute(id: string): Promise<void> {
+  async execute(id: string, options?: DeleteRepositoryOptions): Promise<void> {
     const repository = await this.repositoryRepo.findById(id);
     if (!repository) {
       throw new Error(`Repository not found: "${id}"`);
@@ -39,5 +52,9 @@ export class DeleteRepositoryUseCase {
     }
 
     await this.repositoryRepo.softDelete(id);
+
+    if (options?.deleteFromDisk) {
+      await this.fileSystem.removeDirectory(repository.path);
+    }
   }
 }

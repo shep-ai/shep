@@ -382,7 +382,10 @@
   "repositoryNode": {
     "removeRepository": "Supprimer le dépôt",
     "removeConfirmTitle": "Supprimer le dépôt ?",
-    "removeConfirmDescription": "Cela supprimera <strong>{{name}}</strong> et toutes ses fonctionnalités de l'espace de travail. Les fichiers sur le disque ne seront pas affectés.",
+    "removeConfirmDescription": "Cela supprimera <strong>{{name}}</strong> et toutes ses fonctionnalités de l'espace de travail.",
+    "removeConfirmDescriptionKeepFiles": "Les fichiers du dépôt sur le disque ne seront pas affectés.",
+    "removeConfirmDescriptionDeleteFiles": "Le dossier du dépôt sur le disque sera supprimé définitivement. Cette action est irréversible.",
+    "deleteFromDiskLabel": "Supprimer également le dossier du dépôt du disque",
     "cancel": "Annuler",
     "remove": "Supprimer",
     "openInIde": "Ouvrir dans l'IDE",
@@ -406,7 +409,8 @@
     "newFeature": "Nouvelle fonctionnalité",
     "localFolder": "Dossier local",
     "adoptBranch": "Adopter une branche",
-    "fromGithub": "Depuis GitHub"
+    "fromGithub": "Depuis GitHub",
+    "newApplication": "Nouvelle application"
   },
   "chat": {
     "shepChat": "Shep Chat",

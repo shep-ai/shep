@@ -4,16 +4,17 @@ import { IS_WINDOWS } from '@shepai/core/infrastructure/platform';
 import { resolve } from '@/lib/server-container';
 import type { ListFeaturesUseCase } from '@shepai/core/application/use-cases/features/list-features.use-case';
 import type { ListRepositoriesUseCase } from '@shepai/core/application/use-cases/repositories/list-repositories.use-case';
+import type { ListApplicationsUseCase } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 import type { AutoResolveMergedBranchesUseCase } from '@shepai/core/application/use-cases/features/auto-resolve-merged-branches.use-case';
 import type { IAgentRunRepository } from '@shepai/core/application/ports/output/agents/agent-run-repository.interface';
-import type { IDeploymentService } from '@shepai/core/application/ports/output/services/deployment-service.interface';
+import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
+import type { ListDeploymentsUseCase } from '@shepai/core/application/use-cases/deployments/list-deployments.use-case';
 import type { Repository } from '@shepai/core/domain/generated/output';
 import { getSettings } from '@shepai/core/infrastructure/services/settings.service';
 import { layoutWithDagre, getCanvasLayoutDefaults } from '@/lib/layout-with-dagre';
 import { getLanguagePreference } from '@/lib/language';
 import { buildGraphNodes } from '@/app/build-graph-nodes';
 import type { CanvasNodeType } from '@/components/features/features-canvas';
-import type { FeatureNodeData } from '@/components/common/feature-node';
 import type { Edge } from '@xyflow/react';
 
 const execFileAsync = promisify(execFileCb);
@@ -136,16 +137,29 @@ function getRepoGitInfo(repo: Repository): GitInfoResult {
   return { status: 'ready', data: cached.data };
 }
 
-export async function getGraphData(): Promise<{ nodes: CanvasNodeType[]; edges: Edge[] }> {
+export async function getGraphData(): Promise<{
+  nodes: CanvasNodeType[];
+  edges: Edge[];
+  deployments: DeploymentStatusEntry[];
+}> {
   const listFeatures = resolve<ListFeaturesUseCase>('ListFeaturesUseCase');
   const listRepos = resolve<ListRepositoriesUseCase>('ListRepositoriesUseCase');
   const agentRunRepo = resolve<IAgentRunRepository>('IAgentRunRepository');
 
+  // Resolve ListApplicationsUseCase — may not be registered in older environments
+  let listApplications: ListApplicationsUseCase | null = null;
+  try {
+    listApplications = resolve<ListApplicationsUseCase>('ListApplicationsUseCase');
+  } catch {
+    // Use case not registered — skip application nodes
+  }
+
   // Always include archived features so the client has full data for instant
   // show/hide toggle without a server round-trip (NFR-3).
-  const [features, repositories] = await Promise.all([
+  const [features, repositories, applications] = await Promise.all([
     listFeatures.execute({ includeArchived: true }),
     listRepos.execute(),
+    listApplications ? listApplications.execute() : Promise.resolve([]),
   ]);
 
   // Read git info from cache (zero git calls). Stale entries trigger
@@ -189,30 +203,21 @@ export async function getGraphData(): Promise<{ nodes: CanvasNodeType[]; edges: 
     ciWatchEnabled: workflow.ciWatchEnabled,
     repoGitInfo: repoGitInfoMap,
     repoGitStatus: repoGitStatusMap,
+    applications,
   });
 
-  // Enrich feature nodes with deployment status
-  let deploymentService: IDeploymentService | null = null;
+  // Load all live deployments via the use case. The client-side
+  // DeploymentStatusProvider hydrates from this list so node/drawer state
+  // survives a page refresh and stays in sync across components.
+  let deployments: DeploymentStatusEntry[] = [];
   try {
-    deploymentService = resolve<IDeploymentService>('IDeploymentService');
+    const listDeployments = resolve<ListDeploymentsUseCase>('ListDeploymentsUseCase');
+    deployments = await listDeployments.execute();
   } catch {
-    // Deployment service may not be registered — skip enrichment
-  }
-
-  if (deploymentService) {
-    for (const node of nodes) {
-      if (node.type !== 'featureNode') continue;
-      const data = node.data as FeatureNodeData;
-      const status = deploymentService.getStatus(data.featureId);
-      if (status && status.state !== 'Stopped') {
-        data.deployment = {
-          status: status.state,
-          ...(status.url && { url: status.url }),
-        };
-      }
-    }
+    // Use case not registered — leave deployments empty
   }
 
   const { dir } = getLanguagePreference();
-  return layoutWithDagre(nodes, edges, getCanvasLayoutDefaults(dir));
+  const laidOut = layoutWithDagre(nodes, edges, getCanvasLayoutDefaults(dir));
+  return { ...laidOut, deployments };
 }

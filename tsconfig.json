@@ -45,6 +45,7 @@
   "include": [
     "src/**/*",
     "packages/core/src/**/*",
+    "packages/electron/src/**/*",
     "tests/**/*",
     "types/**/*",
     "vitest.config.ts",

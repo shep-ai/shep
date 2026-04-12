@@ -1,0 +1,32 @@
+COMMIT INFORMATION FOR PR BRANDING UPDATE
+
+Commit: 2d9f06cd205e0b48a626a3f2d794d774d791d937
+Author: Ariel Shadkhan <shad.ariel@gmail.com>
+Date: Thu Apr 9 19:01:27 2026 +0300
+
+Message:
+feat(web): update pr branding footer to markdown format
+
+Change PR branding from 'Built with Shep 🐑 [Shep Bot]' to
+'[🐑](https://github.com/shep-ai/shep) Built with [Shep.bot](https://shep.bot)'
+to improve visual presentation and link clarity in pull requests.
+
+FILE CHANGES:
+- packages/core/src/infrastructure/services/git/pr-branding.ts
+
+DETAILED CHANGES:
+Old branding: 'Built with Shep 🐑 [Shep Bot](https://github.com/shep-ai/shep)'
+New branding: '[🐑](https://github.com/shep-ai/shep) Built with [Shep.bot](https://shep.bot)'
+
+Key improvements:
+1. Sheep emoji now links to GitHub repository: [🐑](https://github.com/shep-ai/shep)
+2. "Shep.bot" now links to https://shep.bot instead of just the GitHub repo
+3. Format improved for markdown rendering in pull requests
+4. Better visual hierarchy and branding clarity
+
+USAGE CONTEXT:
+- Applied via applyPrBranding() function when creating pull requests
+- Used in GitPrService when generating PR bodies
+- Also used in GitForkService for fork-and-PR workflow
+
+The change is minimal (1 line, 1 insertion) but delivers improved branding visibility and link clarity in PR footers.

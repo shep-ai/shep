@@ -14,7 +14,7 @@
  *   4. Wait briefly to confirm the child is alive; surface stderr on crash
  *   5. Write daemon.json atomically via IDaemonService
  *   6. Print formatted URL to stdout
- *   7. Open browser via BrowserOpenerService
+ *   7. Open browser via IBrowserOpener (resolved from DI container)
  */
 
 import { spawn } from 'node:child_process';
@@ -22,10 +22,10 @@ import { closeSync, openSync, renameSync, existsSync } from 'node:fs';
 import http from 'node:http';
 import { container } from '@/infrastructure/di/container.js';
 import { findAvailablePort, DEFAULT_PORT } from '@/infrastructure/services/port.service.js';
-import { BrowserOpenerService } from '@/infrastructure/services/browser-opener.service.js';
 import { getDaemonLogPath } from '@/infrastructure/services/filesystem/shep-directory.service.js';
 import { fmt, messages, spinner } from '../../ui/index.js';
 import type { IDaemonService } from '@/application/ports/output/services/daemon-service.interface.js';
+import type { IBrowserOpener } from '@/application/ports/output/services/i-browser-opener.js';
 import { getCliI18n } from '../../i18n.js';
 
 /** How long to wait (ms) after spawn to verify the child is still alive. */
@@ -141,7 +141,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<void> 
   }
   messages.newline();
 
-  const opener = new BrowserOpenerService({ warn: messages.warning });
+  const opener = container.resolve<IBrowserOpener>('IBrowserOpener');
   opener.open(url);
 }
 

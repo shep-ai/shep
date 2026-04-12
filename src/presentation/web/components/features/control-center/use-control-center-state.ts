@@ -12,6 +12,7 @@ import {
   getCanvasLayoutDefaults,
   type LayoutDirection,
 } from '@/lib/layout-with-dagre';
+import type { ApplicationNodeData } from '@/components/common/application-node/application-node-config';
 import { archiveFeature } from '@/app/actions/archive-feature';
 import { deleteFeature } from '@/app/actions/delete-feature';
 import { resumeFeature } from '@/app/actions/resume-feature';
@@ -20,8 +21,10 @@ import { stopFeature } from '@/app/actions/stop-feature';
 import { unarchiveFeature } from '@/app/actions/unarchive-feature';
 import { addRepository } from '@/app/actions/add-repository';
 import { deleteRepository } from '@/app/actions/delete-repository';
+import { deleteApplication } from '@/app/actions/delete-application';
 import { getFeatureMetadata } from '@/app/actions/get-feature-metadata';
 import { useAgentEventsContext } from '@/hooks/agent-events-provider';
+import { useDeploymentStatusContext } from '@/hooks/deployment-status-provider';
 import { useSoundAction } from '@/hooks/use-sound-action';
 import { createLogger } from '@/lib/logger';
 
@@ -57,12 +60,18 @@ export interface ControlCenterState {
   handleStartFeature: (featureId: string) => void;
   handleStopFeature: (featureId: string) => void;
   handleUnarchiveFeature: (featureId: string) => void;
-  handleDeleteRepository: (repositoryId: string) => Promise<void>;
+  handleDeleteRepository: (
+    repositoryId: string,
+    options?: { deleteFromDisk?: boolean }
+  ) => Promise<void>;
+  handleDeleteApplication: (applicationId: string) => Promise<void>;
   createFeatureNode: (
     sourceNodeId: string | null,
     dataOverride?: Partial<FeatureNodeData>,
     edgeType?: string
   ) => string;
+  /** Add an application node to the canvas optimistically. */
+  addApplication: (nodeId: string, data: ApplicationNodeData) => void;
   /** Whether archived features are shown on the canvas. */
   showArchived: boolean;
   /** Toggle archived feature visibility. */
@@ -106,6 +115,8 @@ export function useControlCenterState(
     getFeatureRepositoryPath,
     getRepositoryData,
     getRepoMapSize,
+    addApplication: addApplicationToMap,
+    removeApplication,
     setCallbacks,
     beginMutation,
     endMutation,
@@ -157,6 +168,7 @@ export function useControlCenterState(
   const prevFeatureStatesRef = useRef<Map<string, FeatureNodeData['state']>>(new Map());
 
   const { events } = useAgentEventsContext();
+  const { store: deploymentStore } = useDeploymentStatusContext();
 
   useEffect(() => {
     const prevStates = prevFeatureStatesRef.current;
@@ -288,8 +300,15 @@ export function useControlCenterState(
         // doesn't trigger the Next.js "Rendering…" indicator.
         const res = await fetch('/api/graph-data');
         if (!res.ok) throw new Error(`status ${res.status}`);
-        const { nodes: freshNodes, edges: freshEdges } = await res.json();
+        const {
+          nodes: freshNodes,
+          edges: freshEdges,
+          deployments: freshDeployments,
+        } = await res.json();
         reconcile(freshNodes, freshEdges);
+        if (Array.isArray(freshDeployments)) {
+          deploymentStore.hydrate(freshDeployments);
+        }
       } catch {
         log.warn('poll fetch failed — will retry next interval');
       }
@@ -299,7 +318,7 @@ export function useControlCenterState(
       log.debug('polling disabled');
       clearInterval(timer);
     };
-  }, [reconcile, isMutating]);
+  }, [reconcile, isMutating, deploymentStore]);
 
   // onNodesChange is a no-op: nodes are derived from domain Maps.
   // Since nodesDraggable=false and elementsSelectable=false, only React Flow's
@@ -528,7 +547,7 @@ export function useControlCenterState(
   );
 
   const handleDeleteRepository = useCallback(
-    async (repositoryId: string) => {
+    async (repositoryId: string, options?: { deleteFromDisk?: boolean }) => {
       const repoNodeId = `repo-${repositoryId}`;
 
       // Find children of this repo via edges
@@ -561,7 +580,9 @@ export function useControlCenterState(
       }
 
       try {
-        const result = await deleteRepository(repositoryId);
+        const result = await deleteRepository(repositoryId, {
+          deleteFromDisk: options?.deleteFromDisk === true,
+        });
         if (!result.success) {
           toast.error(result.error ?? 'Failed to remove repository');
           rollback();
@@ -585,6 +606,31 @@ export function useControlCenterState(
       beginMutation,
       endMutation,
     ]
+  );
+
+  const handleDeleteApplication = useCallback(
+    async (applicationId: string) => {
+      const appNodeId = `app-${applicationId}`;
+
+      // Optimistic: remove application node
+      beginMutation();
+      removeApplication(appNodeId);
+      deleteSound.play();
+
+      try {
+        const result = await deleteApplication(applicationId);
+        if (result.error) {
+          toast.error(result.error);
+          // Rollback would require storing the previous data; for now we let
+          // the next polling reconcile restore it if the delete actually failed.
+        }
+      } catch {
+        toast.error('Failed to delete application');
+      } finally {
+        endMutation();
+      }
+    },
+    [deleteSound, removeApplication, beginMutation, endMutation]
   );
 
   const handleLayout = useCallback(
@@ -670,7 +716,9 @@ export function useControlCenterState(
     handleStopFeature,
     handleUnarchiveFeature,
     handleDeleteRepository,
+    handleDeleteApplication,
     createFeatureNode,
+    addApplication: addApplicationToMap,
     showArchived,
     setShowArchived,
     getFeatureRepositoryPath,

@@ -118,6 +118,25 @@ export class SQLiteInteractiveSessionRepository implements IInteractiveSessionRe
     return row?.agent_session_id ?? null;
   }
 
+  async findLatestAgentSessionIdForFeature(featureId: string): Promise<string | null> {
+    // Return the most recent NON-NULL agent_session_id for this feature
+    // across ALL session rows, regardless of status. Ordering by
+    // created_at DESC ensures we pick up the latest successful boot
+    // even if an intervening session failed to capture an
+    // agentSessionId.
+    const row = this.db
+      .prepare(
+        `SELECT agent_session_id
+         FROM interactive_sessions
+         WHERE feature_id = ?
+           AND agent_session_id IS NOT NULL
+         ORDER BY created_at DESC
+         LIMIT 1`
+      )
+      .get(featureId) as { agent_session_id: string | null } | undefined;
+    return row?.agent_session_id ?? null;
+  }
+
   async updateTurnStatus(id: string, turnStatus: string): Promise<void> {
     this.db
       .prepare(

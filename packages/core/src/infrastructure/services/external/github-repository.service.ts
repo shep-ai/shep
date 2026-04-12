@@ -17,10 +17,14 @@ import type {
   ListUserRepositoriesOptions,
   CloneOptions,
   ParsedGitHubUrl,
+  ForkOptions,
+  PushAccessResult,
+  ForkResult,
 } from '../../../application/ports/output/services/github-repository-service.interface.js';
 import {
   GitHubAuthError,
   GitHubCloneError,
+  GitHubForkError,
   GitHubPermissionError,
   GitHubRepoListError,
   GitHubUrlParseError,
@@ -254,6 +258,64 @@ export class GitHubRepositoryService implements IGitHubRepositoryService {
         `Failed to check repository permission: ${cause?.message ?? String(error)}`,
         cause
       );
+    }
+  }
+
+  async getAuthenticatedUser(): Promise<string> {
+    try {
+      const { stdout } = await this.execFile('gh', ['api', 'user', '--jq', '.login']);
+      return stdout.trim();
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      throw new GitHubAuthError(`Failed to get authenticated user: ${err.message}`, err);
+    }
+  }
+
+  async checkPushAccess(nameWithOwner: string): Promise<PushAccessResult> {
+    try {
+      const viewerLogin = await this.getAuthenticatedUser();
+      const { stdout } = await this.execFile('gh', [
+        'api',
+        `repos/${nameWithOwner}`,
+        '--jq',
+        '.permissions.push',
+      ]);
+      return {
+        hasPushAccess: stdout.trim() === 'true',
+        viewerLogin,
+      };
+    } catch (error) {
+      if (error instanceof GitHubAuthError) throw error;
+      const err = error instanceof Error ? error : new Error(String(error));
+      throw new GitHubPermissionError(
+        `Failed to check push access for ${nameWithOwner}: ${err.message}`,
+        err
+      );
+    }
+  }
+
+  async forkRepository(nameWithOwner: string, options?: ForkOptions): Promise<ForkResult> {
+    try {
+      options?.onProgress?.(`Forking ${nameWithOwner}...`);
+      const { stdout, stderr } = await this.execFile('gh', [
+        'repo',
+        'fork',
+        nameWithOwner,
+        '--clone=false',
+      ]);
+      const combined = `${stdout}\n${stderr}`;
+      const alreadyExisted = combined.toLowerCase().includes('already exists');
+
+      // Extract fork nameWithOwner from output
+      // gh repo fork outputs the fork URL like "https://github.com/user/repo"
+      const urlMatch = combined.match(/github\.com\/([^\s/]+\/[^\s/]+)/);
+      const forkNwo = urlMatch ? urlMatch[1].replace(/\.git$/, '') : nameWithOwner;
+
+      options?.onProgress?.(alreadyExisted ? 'Using existing fork' : 'Fork created');
+      return { nameWithOwner: forkNwo, alreadyExisted };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      throw new GitHubForkError(`Failed to fork ${nameWithOwner}: ${err.message}`, err);
     }
   }
 

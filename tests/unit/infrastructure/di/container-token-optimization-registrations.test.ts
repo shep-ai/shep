@@ -24,9 +24,9 @@ vi.mock('better-sqlite3', () => ({
     pragma: vi.fn(),
     exec: vi.fn(),
     prepare: vi.fn().mockReturnValue({
-      run: vi.fn(),
+      run: vi.fn().mockReturnValue({ changes: 0 }),
       get: vi.fn(),
-      all: vi.fn(),
+      all: vi.fn().mockReturnValue([]),
     }),
   }),
 }));
@@ -36,9 +36,9 @@ vi.mock('../../../../packages/core/src/infrastructure/persistence/sqlite/connect
     pragma: vi.fn(),
     exec: vi.fn(),
     prepare: vi.fn().mockReturnValue({
-      run: vi.fn(),
+      run: vi.fn().mockReturnValue({ changes: 0 }),
       get: vi.fn(),
-      all: vi.fn(),
+      all: vi.fn().mockReturnValue([]),
     }),
   }),
 }));

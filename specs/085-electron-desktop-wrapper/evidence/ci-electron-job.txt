@@ -1,0 +1,154 @@
+=== CI Workflow: Electron Build Job ===
+File: .github/workflows/ci.yml
+
+  build-electron:
+    name: Electron (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - os: macos-latest
+            build_cmd: 'build:mac'
+            artifact_pattern: 'packages/electron/release/*.dmg'
+            artifact_name: 'electron-mac'
+          - os: windows-latest
+            build_cmd: 'build:win'
+            artifact_pattern: 'packages/electron/release/*.exe'
+            artifact_name: 'electron-win'
+          - os: ubuntu-latest
+            build_cmd: 'build:linux'
+            artifact_pattern: 'packages/electron/release/*.AppImage'
+            artifact_name: 'electron-linux'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build web UI and CLI
+        run: pnpm run build:release
+
+      - name: Build Electron installer
+        run: pnpm --filter @shepai/electron ${{ matrix.build_cmd }}
+
+      - name: Upload Electron artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_pattern }}
+          if-no-files-found: error
+          retention-days: 7
+
+  # ===========================================================================
+  # Security: Gitleaks Secret Detection
+  # Uses gitleaks CLI directly (free, open source) instead of gitleaks-action
+  # which requires a paid license for organizations
+  # ===========================================================================
+  security-gitleaks:
+
+=== Full build-electron job configuration ===
+  build-electron:
+    name: Electron (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - os: macos-latest
+            build_cmd: 'build:mac'
+            artifact_pattern: 'packages/electron/release/*.dmg'
+            artifact_name: 'electron-mac'
+          - os: windows-latest
+            build_cmd: 'build:win'
+            artifact_pattern: 'packages/electron/release/*.exe'
+            artifact_name: 'electron-win'
+          - os: ubuntu-latest
+            build_cmd: 'build:linux'
+            artifact_pattern: 'packages/electron/release/*.AppImage'
+            artifact_name: 'electron-linux'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build web UI and CLI
+        run: pnpm run build:release
+
+      - name: Build Electron installer
+        run: pnpm --filter @shepai/electron ${{ matrix.build_cmd }}
+
+      - name: Upload Electron artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_pattern }}
+          if-no-files-found: error
+          retention-days: 7
+
+  # ===========================================================================
+  # Security: Gitleaks Secret Detection
+  # Uses gitleaks CLI directly (free, open source) instead of gitleaks-action
+  # which requires a paid license for organizations
+  # ===========================================================================
+  security-gitleaks:
+    name: Gitleaks
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install gitleaks
+        run: |
+          GITLEAKS_VERSION="8.18.4"
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz
+          sudo mv gitleaks /usr/local/bin/
+
+      - name: Gitleaks secret scan
+        run: gitleaks detect --source . --verbose --redact
+
+  # ===========================================================================
+  # Security: Semgrep SAST
+  # ===========================================================================
+  security-semgrep:
+    name: Semgrep
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Semgrep SAST scan
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/typescript
+            p/javascript
+            p/security-audit
+
+  # ===========================================================================
+  # Security Summary Comment (PRs only)
+  # Posts aggregated security scan results as a PR comment
+  # ===========================================================================
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs:
+      - security-gitleaks

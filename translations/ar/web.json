@@ -382,7 +382,10 @@
   "repositoryNode": {
     "removeRepository": "إزالة المستودع",
     "removeConfirmTitle": "إزالة المستودع؟",
-    "removeConfirmDescription": "سيؤدي هذا إلى إزالة <strong>{{name}}</strong> وجميع ميزاته من مساحة العمل. لن تتأثر الملفات على القرص.",
+    "removeConfirmDescription": "سيؤدي هذا إلى إزالة <strong>{{name}}</strong> وجميع ميزاته من مساحة العمل.",
+    "removeConfirmDescriptionKeepFiles": "لن تتأثر ملفات المستودع على القرص.",
+    "removeConfirmDescriptionDeleteFiles": "سيتم حذف مجلد المستودع من القرص نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
+    "deleteFromDiskLabel": "حذف مجلد المستودع من القرص أيضًا",
     "cancel": "إلغاء",
     "remove": "إزالة",
     "openInIde": "فتح في IDE",
@@ -406,7 +409,8 @@
     "newFeature": "ميزة جديدة",
     "localFolder": "مجلد محلي",
     "adoptBranch": "تبني فرع",
-    "fromGithub": "من GitHub"
+    "fromGithub": "من GitHub",
+    "newApplication": "تطبيق جديد"
   },
   "chat": {
     "shepChat": "محادثة Shep",

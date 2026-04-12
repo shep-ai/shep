@@ -29,6 +29,7 @@ import { InteractiveSessionService } from '@/infrastructure/services/interactive
 import { ConcurrentSessionLimitError } from '@/domain/errors/concurrent-session-limit.error.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
 import type { IInteractiveMessageRepository } from '@/application/ports/output/repositories/interactive-message-repository.interface.js';
+import type { IWorkflowStepRepository } from '@/application/ports/output/repositories/workflow-step-repository.interface.js';
 import type { IAgentExecutorFactory } from '@/application/ports/output/agents/agent-executor-factory.interface.js';
 import type {
   IInteractiveAgentExecutor,
@@ -195,6 +196,7 @@ describe('InteractiveSessionService', () => {
   let executorFactory: IAgentExecutorFactory;
   let featureRepo: IFeatureRepository;
   let contextBuilder: FeatureContextBuilder;
+  let workflowStepRepo: IWorkflowStepRepository;
   let service: InteractiveSessionService;
 
   /** Stack of fake handles the executor will return, one per createSession/resumeSession call. */
@@ -231,6 +233,7 @@ describe('InteractiveSessionService', () => {
       countActiveSessions: vi.fn().mockResolvedValue(0),
       updateAgentSessionId: vi.fn().mockResolvedValue(undefined),
       getAgentSessionId: vi.fn().mockResolvedValue(null),
+      findLatestAgentSessionIdForFeature: vi.fn().mockResolvedValue(null),
       updateTurnStatus: vi.fn().mockResolvedValue(undefined),
       getTurnStatuses: vi.fn().mockResolvedValue(new Map()),
       getAllActiveTurnStatuses: vi.fn().mockResolvedValue(new Map()),
@@ -282,12 +285,24 @@ describe('InteractiveSessionService', () => {
 
     contextBuilder = new FeatureContextBuilder();
 
+    workflowStepRepo = {
+      create: vi.fn(),
+      ensureSteps: vi.fn().mockResolvedValue([]),
+      findById: vi.fn().mockResolvedValue(null),
+      listBySession: vi.fn().mockResolvedValue([]),
+      listByFeature: vi.fn().mockResolvedValue([]),
+      updateStatus: vi.fn(),
+      markAllRunningAsInterrupted: vi.fn().mockResolvedValue(0),
+      deleteByFeatureId: vi.fn(),
+    };
+
     service = new InteractiveSessionService(
       sessionRepo,
       messageRepo,
       executorFactory,
       featureRepo,
-      contextBuilder
+      contextBuilder,
+      workflowStepRepo
     );
   });
 
@@ -501,34 +516,38 @@ describe('InteractiveSessionService', () => {
   });
 
   // -------------------------------------------------------------------------
-  // idle timeout
+  // idle timeout — DISABLED
+  //
+  // The idle-eviction timer was intentionally removed: losing a live
+  // agent session under the user always feels like a bug (the agent
+  // "forgets everything" because the SDK has to cold-boot). These
+  // regression tests lock in the "sessions live forever until an
+  // explicit stop" guarantee so the timer can't sneak back in.
   // -------------------------------------------------------------------------
 
-  describe('idle timeout', () => {
-    it('stops the session after the default idle timeout (15 min)', async () => {
-      const session = await startAndBoot();
-      (sessionRepo.updateStatus as ReturnType<typeof vi.fn>).mockClear();
-
-      // Advance clock past the default 15-minute timeout
-      vi.advanceTimersByTime(15 * 60 * 1000 + 1000);
-      await flushPromises();
-
-      expect(sessionRepo.updateStatus).toHaveBeenCalledWith(
-        session.id,
-        InteractiveSessionStatus.stopped,
-        expect.any(Date)
-      );
-    });
-
-    it('does not stop the session before the timeout expires', async () => {
+  describe('session longevity (no idle eviction)', () => {
+    it('does NOT auto-stop a session after the legacy 15-minute idle window', async () => {
       await startAndBoot();
       (sessionRepo.updateStatus as ReturnType<typeof vi.fn>).mockClear();
 
-      // Advance to just before the timeout
-      vi.advanceTimersByTime(14 * 60 * 1000);
+      // Advance WELL past what used to be the eviction window. If any
+      // idle timer is still armed anywhere, this is when it would fire.
+      vi.advanceTimersByTime(30 * 60 * 1000);
       await flushPromises();
 
-      // updateStatus should NOT have been called with 'stopped' yet
+      const stoppedCalls = (sessionRepo.updateStatus as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (c) => c[1] === InteractiveSessionStatus.stopped
+      );
+      expect(stoppedCalls.length).toBe(0);
+    });
+
+    it('does NOT auto-stop a session even after hours of inactivity', async () => {
+      await startAndBoot();
+      (sessionRepo.updateStatus as ReturnType<typeof vi.fn>).mockClear();
+
+      vi.advanceTimersByTime(4 * 60 * 60 * 1000); // 4 hours
+      await flushPromises();
+
       const stoppedCalls = (sessionRepo.updateStatus as ReturnType<typeof vi.fn>).mock.calls.filter(
         (c) => c[1] === InteractiveSessionStatus.stopped
       );
@@ -693,6 +712,35 @@ describe('InteractiveSessionService', () => {
           role: InteractiveMessageRole.assistant,
           content: 'Hello! I can help with that.',
         });
+      });
+
+      // Regression: https://github.com/shep-ai/shep — the Application
+      // flow calls sendUserMessage with a systemPrompt AND no existing
+      // session. An earlier version set pendingUserContent AFTER
+      // startSession returned, but the async completeBootAsync was
+      // already reading it as undefined and (because systemPrompt was
+      // set) falling into the "stay silent, wait for user" branch.
+      // Result: the agent never saw the kickoff message and the app
+      // just sat idle. Fix: pendingUserContent is now set inside
+      // startSession itself, before completeBootAsync is dispatched.
+      it('sends the kickoff user message to the agent handle when systemPrompt is supplied', async () => {
+        // Use a distinct feature ID so we start from a clean slate
+        await service.sendUserMessage(
+          'app-race-test',
+          'Build me a landing page',
+          '/wt',
+          undefined,
+          undefined,
+          'SYSTEM_PROMPT_FOR_SHEP'
+        );
+        await flushPromises();
+
+        const fh = latestHandle();
+        // The boot prompt handed to the agent MUST be the user content,
+        // not an empty string. An empty string would prove the race
+        // condition is back.
+        expect(fh.sendMock).toHaveBeenCalledWith('Build me a landing page');
+        expect(fh.sendMock).not.toHaveBeenCalledWith('');
       });
     });
 

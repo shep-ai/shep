@@ -62,7 +62,12 @@ export default {
     [
       '@semantic-release/github',
       {
-        assets: [{ path: 'CHANGELOG.md', label: 'Changelog' }],
+        assets: [
+          { path: 'CHANGELOG.md', label: 'Changelog' },
+          { path: 'electron-artifacts/*.dmg', label: 'Shep macOS (DMG)' },
+          { path: 'electron-artifacts/*.exe', label: 'Shep Windows (Installer)' },
+          { path: 'electron-artifacts/*.AppImage', label: 'Shep Linux (AppImage)' },
+        ],
         successComment: false,
         failComment: false,
       },

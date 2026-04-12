@@ -22,7 +22,7 @@ export interface RepositoryNodeData {
   gitInfoStatus?: 'loading' | 'ready' | 'not-a-repo';
   onClick?: () => void;
   onAdd?: () => void;
-  onDelete?: (repositoryId: string) => void;
+  onDelete?: (repositoryId: string, options?: { deleteFromDisk?: boolean }) => void;
   showHandles?: boolean;
   /** When true, the "+" add-feature button shows a pulse attention animation. */
   pulseAdd?: boolean;

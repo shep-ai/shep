@@ -1,0 +1,19 @@
+Full Unit Test Suite — pnpm test:unit (Vitest v4.0.18)
+=====================================================
+Ran: 2026-04-06T12:46:27Z
+Branch: feat/fix-squash-merge
+
+ Test Files  386 passed (386)
+      Tests  5545 passed (5545)
+   Start at  12:46:27
+   Duration  94.54s (transform 24.30s, setup 123.85s, import 139.13s, tests 239.81s, environment 231.40s)
+
+Key localMergeSquash tests verified (from git-pr.service.test.ts, 6/6 passing):
+  ✓ should perform squash merge successfully
+  ✓ should detect conflict from stdout and throw MERGE_CONFLICT
+  ✓ should abort merge on failure to leave repo clean
+  ✓ should fall back to reset --merge if merge --abort fails
+  ✓ should reset tracked files before merge
+  ✓ should fetch and pull when hasRemote=true
+
+All 5545 tests across 386 test files passed — zero regressions.

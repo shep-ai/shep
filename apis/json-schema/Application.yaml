@@ -1,0 +1,40 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Application.yaml
+type: object
+properties:
+  name:
+    type: string
+    description: Human-readable application name
+  slug:
+    type: string
+    description: URL-friendly identifier (unique)
+  description:
+    type: string
+    description: Original user prompt / purpose description
+  repositoryPath:
+    type: string
+    description: Absolute path to the primary repository
+  additionalPaths:
+    type: array
+    items:
+      type: string
+    description: Additional linked repository/directory paths (JSON array)
+  agentType:
+    type: string
+    description: Chosen agent executor type override
+  modelOverride:
+    type: string
+    description: Chosen model override
+  status:
+    $ref: ApplicationStatus.yaml
+    description: Current application status
+required:
+  - name
+  - slug
+  - description
+  - repositoryPath
+  - additionalPaths
+  - status
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: A persistent AI-powered application workspace

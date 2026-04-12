@@ -6,10 +6,12 @@ import type { Edge, Position } from '@xyflow/react';
 import type { CanvasNodeType } from '@/components/features/features-canvas';
 import type { FeatureNodeData } from '@/components/common/feature-node';
 import type { RepositoryNodeData } from '@/components/common/repository-node';
+import type { ApplicationNodeData } from '@/components/common/application-node/application-node-config';
 import {
   deriveGraph,
   type FeatureEntry,
   type RepoEntry,
+  type ApplicationEntry,
   type GraphCallbacks,
 } from '@/lib/derive-graph';
 import { layoutWithDagre, getCanvasLayoutDefaults } from '@/lib/layout-with-dagre';
@@ -49,6 +51,10 @@ export interface UseGraphStateReturn {
   getRepositoryData: (nodeId: string) => RepositoryNodeData | undefined;
   /** Stable lookup: get the current number of repositories in the domain Map. */
   getRepoMapSize: () => number;
+  /** Add an application node. */
+  addApplication: (nodeId: string, data: ApplicationNodeData) => void;
+  /** Remove an application node. */
+  removeApplication: (nodeId: string) => void;
   /** Update callbacks injected into node data (does NOT trigger re-render). */
   setCallbacks: (callbacks: GraphCallbacks) => void;
   /**
@@ -73,6 +79,7 @@ function parseMaps(
 ): {
   featureMap: Map<string, FeatureEntry>;
   repoMap: Map<string, RepoEntry>;
+  applicationMap: Map<string, ApplicationEntry>;
 } {
   // Build parentNodeId map from dependency edges
   const parentByChild = new Map<string, string>();
@@ -84,6 +91,7 @@ function parseMaps(
 
   const featureMap = new Map<string, FeatureEntry>();
   const repoMap = new Map<string, RepoEntry>();
+  const applicationMap = new Map<string, ApplicationEntry>();
 
   for (const node of initialNodes) {
     if (node.type === 'featureNode') {
@@ -97,10 +105,15 @@ function parseMaps(
         nodeId: node.id,
         data: node.data as RepositoryNodeData,
       });
+    } else if (node.type === 'applicationNode') {
+      applicationMap.set(node.id, {
+        nodeId: node.id,
+        data: node.data as ApplicationNodeData,
+      });
     }
   }
 
-  return { featureMap, repoMap };
+  return { featureMap, repoMap, applicationMap };
 }
 
 type FeatureDataUpdates = Partial<
@@ -147,6 +160,9 @@ export function useGraphState(
 
   const [featureMap, setFeatureMap] = useState<Map<string, FeatureEntry>>(init.featureMap);
   const [repoMap, setRepoMap] = useState<Map<string, RepoEntry>>(init.repoMap);
+  const [applicationMap, setApplicationMap] = useState<Map<string, ApplicationEntry>>(
+    init.applicationMap
+  );
   const [pendingMap, setPendingMap] = useState<Map<string, FeatureEntry>>(
     new Map<string, FeatureEntry>()
   );
@@ -194,6 +210,10 @@ export function useGraphState(
       onStartFeature: (featureId) => callbacksRef.current.onStartFeature?.(featureId),
       onArchiveFeature: (featureId) => callbacksRef.current.onArchiveFeature?.(featureId),
       onUnarchiveFeature: (featureId) => callbacksRef.current.onUnarchiveFeature?.(featureId),
+      onApplicationClick: (applicationId) =>
+        callbacksRef.current.onApplicationClick?.(applicationId),
+      onApplicationDelete: (applicationId) =>
+        callbacksRef.current.onApplicationDelete?.(applicationId),
     }),
     []
   );
@@ -219,8 +239,8 @@ export function useGraphState(
 
   // Derive graph from domain Maps (runs on every Map change, but dagre only on topology change)
   const derived = useMemo(
-    () => deriveGraph(visibleFeatureMap, repoMap, pendingMap, stableCallbacks),
-    [visibleFeatureMap, repoMap, pendingMap, stableCallbacks]
+    () => deriveGraph(visibleFeatureMap, repoMap, pendingMap, stableCallbacks, applicationMap),
+    [visibleFeatureMap, repoMap, pendingMap, stableCallbacks, applicationMap]
   );
 
   // Cache dagre layout positions — only re-run when node set or edge connections change
@@ -422,6 +442,13 @@ export function useGraphState(
       if (mapsEqual(currentRepoMap, merged)) return currentRepoMap;
       return merged;
     });
+
+    // Reconcile applicationMap
+    const { applicationMap: newApplicationMap } = parseMaps(newNodes, newEdges);
+    setApplicationMap((currentAppMap) => {
+      if (mapsEqual(currentAppMap, newApplicationMap)) return currentAppMap;
+      return newApplicationMap;
+    });
   }, []);
 
   const updateFeature = useCallback((featureNodeId: string, updates: FeatureDataUpdates) => {
@@ -527,6 +554,23 @@ export function useGraphState(
     []
   );
 
+  const addApplication = useCallback((nodeId: string, data: ApplicationNodeData) => {
+    setApplicationMap((prev) => {
+      const next = new Map(prev);
+      next.set(nodeId, { nodeId, data });
+      return next;
+    });
+  }, []);
+
+  const removeApplication = useCallback((nodeId: string) => {
+    setApplicationMap((prev) => {
+      if (!prev.has(nodeId)) return prev;
+      const next = new Map(prev);
+      next.delete(nodeId);
+      return next;
+    });
+  }, []);
+
   const getFeatureRepositoryPath = useCallback((featureNodeId: string): string | undefined => {
     return featureMapRef.current.get(featureNodeId)?.data.repositoryPath;
   }, []);
@@ -583,6 +627,8 @@ export function useGraphState(
     getFeatureRepositoryPath,
     getRepositoryData,
     getRepoMapSize,
+    addApplication,
+    removeApplication,
     setCallbacks,
     beginMutation,
     endMutation,

@@ -1,0 +1,36 @@
+feature:
+  id: '085-playground-prototypes'
+  name: 'playground-prototypes'
+  number: 85
+  branch: 'feat/playground-prototypes'
+  lifecycle: 'research'
+  createdAt: '2026-04-06T11:53:32Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-04-06T11:53:32Z'
+  lastUpdatedBy: 'shep-kit:new-feature'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-04-06T11:53:32Z'
+    completedBy: 'shep-kit:new-feature'
+
+errors:
+  current: null
+  history: []

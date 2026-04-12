@@ -7,3 +7,5 @@ packages:
   - 'packages/core'
   # Web UI package
   - 'src/presentation/web'
+  # Electron desktop app
+  - 'packages/electron'

@@ -72,6 +72,8 @@
   /* Animation */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-collapsible-down: collapsible-down 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-collapsible-up: collapsible-up 0.18s cubic-bezier(0.7, 0, 0.84, 0);
   --animate-spinner: spinner 0.8s linear infinite;
   --animate-indeterminate-progress: indeterminate-progress 1.5s ease-in-out infinite;
   --animate-option-highlight: option-highlight 1.5s ease-out;
@@ -130,6 +132,32 @@
   }
   to {
     height: 0;
+  }
+}
+
+/* Radix Collapsible — exposes a different CSS variable than Accordion
+ * does, so it gets its own pair of keyframes. Used by the workflow
+ * step cards in StepTracker so the expand/collapse glides instead of
+ * snapping. */
+@keyframes collapsible-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes collapsible-up {
+  from {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
   }
 }
 
@@ -361,6 +389,59 @@
 
 .folder-row {
   animation: folder-row-in 200ms ease-out both;
+}
+
+/* ─── Onboarding prompt entrance ──────────────────────────────────────────── */
+@keyframes onboard-logo {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes onboard-fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes onboard-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ─── Onboarding background ───────────────────────────────────────────────── */
+/* Light: warm white with a violet bloom at the bottom.                      */
+/* Dark: deep black with a warm orange glow — bold, not shy.                 */
+.onboard-bg {
+  background: radial-gradient(
+      ellipse 130% 55% at 50% 105%,
+      rgba(237, 189, 58, 0.18),
+      transparent 65%
+    ),
+    #f4f4f6;
+}
+
+:is(.dark) .onboard-bg {
+  background: radial-gradient(
+      ellipse 130% 55% at 50% 105%,
+      rgba(234, 121, 23, 0.329),
+      transparent 65%
+    ),
+    #0a0a0c;
 }
 
 /* ── RTL font overrides — applied dynamically when language is Arabic or Hebrew ── */

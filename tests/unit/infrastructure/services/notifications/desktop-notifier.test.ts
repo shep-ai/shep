@@ -16,10 +16,16 @@ vi.mock('node-notifier', () => ({
 
 import notifier from 'node-notifier';
 import { DesktopNotifier } from '@/infrastructure/services/notifications/desktop-notifier.js';
+import type { IDesktopNotifier } from '@/application/ports/output/services/i-desktop-notifier.js';
 
 const mockNotify = vi.mocked(notifier.notify);
 
 describe('DesktopNotifier', () => {
+  it('should be assignable to IDesktopNotifier', () => {
+    const notif: IDesktopNotifier = new DesktopNotifier();
+    expect(notif.send).toBeTypeOf('function');
+  });
+
   let desktopNotifier: DesktopNotifier;
 
   beforeEach(() => {

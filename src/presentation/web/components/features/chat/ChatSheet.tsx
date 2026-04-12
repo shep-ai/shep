@@ -10,6 +10,7 @@ import { ChatDotIndicator } from './ChatDotIndicator';
 import { useTurnStatus } from '@/hooks/turn-statuses-provider';
 import { useFabLayout } from '@/hooks/fab-layout-context';
 import { useSidebar } from '@/components/ui/sidebar';
+import { useSidebarFeaturesContext } from '@/hooks/sidebar-features-context';
 
 // ── Persistent global chat popup (draggable + resizable) ──────────────────
 
@@ -65,6 +66,7 @@ export function GlobalChatPopup() {
   const globalChatTurnStatus = useTurnStatus('global');
   const { swapPosition } = useFabLayout();
   const { state: sidebarState } = useSidebar();
+  const { hasRepositories } = useSidebarFeaturesContext();
 
   // Position/size — initialized from localStorage
   // eslint-disable-next-line react/hook-use-state -- wrapped setters below
@@ -402,55 +404,57 @@ export function GlobalChatPopup() {
         </div>
       ) : null}
 
-      {/* Chat FAB — default: end corner (right in LTR); swapped: start corner tracking sidebar */}
-      <ChatFabWrapper
-        swapPosition={swapPosition}
-        sidebarState={sidebarState}
-        isMaximized={isMaximized}
-      >
-        <Button
-          size="icon"
-          onClick={toggle}
-          className={cn(
-            'relative h-14 w-14 rounded-full shadow-lg',
-            'transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95',
-            isOpen
-              ? 'bg-violet-600 text-white hover:bg-violet-500'
-              : 'bg-violet-500 text-white hover:bg-violet-400 dark:bg-violet-500 dark:hover:bg-violet-400',
-            // Animated states when chat is closed
-            !isOpen && globalChatTurnStatus === 'processing' && 'chat-fab-spinning',
-            !isOpen && globalChatTurnStatus === 'unread' && 'chat-fab-glow-unread',
-            !isOpen && globalChatTurnStatus === 'awaiting_input' && 'chat-fab-glow-awaiting'
-          )}
+      {/* Chat FAB — hidden during onboarding (no repos), shown after first project */}
+      {!hasRepositories ? null : (
+        <ChatFabWrapper
+          swapPosition={swapPosition}
+          sidebarState={sidebarState}
+          isMaximized={isMaximized}
         >
-          <MessageSquare
+          <Button
+            size="icon"
+            onClick={toggle}
             className={cn(
-              'absolute h-7 w-7 stroke-[2.5] transition-all duration-200',
-              isOpen ? 'scale-0 rotate-90 opacity-0' : 'scale-100 rotate-0 opacity-100'
+              'relative h-14 w-14 rounded-full shadow-lg',
+              'transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95',
+              isOpen
+                ? 'bg-violet-600 text-white hover:bg-violet-500'
+                : 'bg-violet-500 text-white hover:bg-violet-400 dark:bg-violet-500 dark:hover:bg-violet-400',
+              // Animated states when chat is closed
+              !isOpen && globalChatTurnStatus === 'processing' && 'chat-fab-spinning',
+              !isOpen && globalChatTurnStatus === 'unread' && 'chat-fab-glow-unread',
+              !isOpen && globalChatTurnStatus === 'awaiting_input' && 'chat-fab-glow-awaiting'
             )}
-          />
-          <X
-            className={cn(
-              'absolute h-6 w-6 stroke-[2.5] transition-all duration-200',
-              isOpen ? 'scale-100 rotate-0 opacity-100' : 'scale-0 -rotate-90 opacity-0'
-            )}
-          />
-          {!isOpen && <ChatDotIndicator status={globalChatTurnStatus} className="end-0 top-0" />}
-        </Button>
-        {/* Tooltip — slides up on hover */}
-        <div className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 translate-y-1 opacity-0 transition-all duration-200 group-hover/fab:translate-y-0 group-hover/fab:opacity-100">
-          <div className="bg-foreground rounded-lg px-3 py-1.5 text-center shadow-lg">
-            <p className="text-background text-xs font-medium whitespace-nowrap">
-              {t('chat.shepChat')}
-            </p>
-            <p className="text-background/50 mt-0.5 flex items-center justify-center gap-1 text-[10px]">
-              <kbd className="bg-background/15 rounded px-1 py-px font-mono">⌘</kbd>
-              <kbd className="bg-background/15 rounded px-1 py-px font-mono">⇧</kbd>
-              <kbd className="bg-background/15 rounded px-1 py-px font-mono">K</kbd>
-            </p>
+          >
+            <MessageSquare
+              className={cn(
+                'absolute h-7 w-7 stroke-[2.5] transition-all duration-200',
+                isOpen ? 'scale-0 rotate-90 opacity-0' : 'scale-100 rotate-0 opacity-100'
+              )}
+            />
+            <X
+              className={cn(
+                'absolute h-6 w-6 stroke-[2.5] transition-all duration-200',
+                isOpen ? 'scale-100 rotate-0 opacity-100' : 'scale-0 -rotate-90 opacity-0'
+              )}
+            />
+            {!isOpen && <ChatDotIndicator status={globalChatTurnStatus} className="end-0 top-0" />}
+          </Button>
+          {/* Tooltip — slides up on hover */}
+          <div className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 translate-y-1 opacity-0 transition-all duration-200 group-hover/fab:translate-y-0 group-hover/fab:opacity-100">
+            <div className="bg-foreground rounded-lg px-3 py-1.5 text-center shadow-lg">
+              <p className="text-background text-xs font-medium whitespace-nowrap">
+                {t('chat.shepChat')}
+              </p>
+              <p className="text-background/50 mt-0.5 flex items-center justify-center gap-1 text-[10px]">
+                <kbd className="bg-background/15 rounded px-1 py-px font-mono">⌘</kbd>
+                <kbd className="bg-background/15 rounded px-1 py-px font-mono">⇧</kbd>
+                <kbd className="bg-background/15 rounded px-1 py-px font-mono">K</kbd>
+              </p>
+            </div>
           </div>
-        </div>
-      </ChatFabWrapper>
+        </ChatFabWrapper>
+      )}
     </>
   );
 }

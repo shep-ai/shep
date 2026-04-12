@@ -82,6 +82,18 @@ vi.mock('@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js', 
       async (executor: { execute: (p: string) => Promise<unknown> }, prompt: string) =>
         executor.execute(prompt)
     ),
+  optimizeAndExecute: vi
+    .fn()
+    .mockImplementation(
+      async (
+        executor: { execute: (p: string) => Promise<unknown> },
+        _nodeName: string,
+        prompt: string
+      ) => ({
+        result: await executor.execute(prompt),
+        specFileHashes: {},
+      })
+    ),
   buildExecutorOptions: vi.fn().mockReturnValue({ cwd: '/tmp/worktree', maxTurns: 50 }),
 }));
 
@@ -434,14 +446,16 @@ describe('createMergeNode — CI watch/fix loop', () => {
     });
 
     it('should invoke retryExecute with the fix prompt after CI failure', async () => {
-      const { retryExecute } = await import(
+      const { retryExecute, optimizeAndExecute } = await import(
         '@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js'
       );
       const node = createMergeNode(deps);
       await node(baseState({ push: true }));
 
-      // retryExecute called: commit-push-pr + ci-watch + ci-fix + ci-watch-after-fix = 4
-      expect(retryExecute).toHaveBeenCalledTimes(4);
+      // optimizeAndExecute: commit-push-pr (1 call)
+      // retryExecute: ci-watch + ci-fix + ci-watch-after-fix (3 calls)
+      expect(optimizeAndExecute).toHaveBeenCalledTimes(1);
+      expect(retryExecute).toHaveBeenCalledTimes(3);
     });
 
     it('should append one CiFixRecord with outcome=fixed when CI passes after first fix', async () => {

@@ -33,6 +33,14 @@ export interface DeploymentStatus {
   url: string | null;
 }
 
+/** Status snapshot including the target identifier, returned by listAll(). */
+export interface DeploymentStatusEntry extends DeploymentStatus {
+  /** Unique identifier for the deployment target (featureId or repositoryPath). */
+  targetId: string;
+  /** Type of target ('feature' or 'repository'). */
+  targetType: string;
+}
+
 /**
  * Port interface for managing local dev server deployments.
  *
@@ -83,6 +91,17 @@ export interface IDeploymentService {
    * @returns Status snapshot with state and url, or null if no deployment exists
    */
   getStatus(targetId: string): DeploymentStatus | null;
+
+  /**
+   * List all currently tracked deployments (both in-memory and persisted in DB)
+   * that have a live process. Dead deployments are cleaned up as a side effect.
+   *
+   * Used by ListDeploymentsUseCase for bulk hydration on page load and
+   * shared-state synchronization across client components.
+   *
+   * @returns Array of status entries keyed by targetId (never null; empty when no deployments)
+   */
+  listAll(): DeploymentStatusEntry[];
 
   /**
    * Force-stop all tracked deployments immediately.

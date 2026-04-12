@@ -1,3 +1,88 @@
+# [1.181.0](https://github.com/shep-ai/shep/compare/v1.180.0...v1.181.0) (2026-04-12)
+
+
+### Features
+
+* **config:** simplify github issue templates for easier bug reporting ([#547](https://github.com/shep-ai/shep/issues/547)) ([a577725](https://github.com/shep-ai/shep/commit/a577725b1e3864bb69f11f9896da53abbc446886))
+
+# [1.180.0](https://github.com/shep-ai/shep/compare/v1.179.1...v1.180.0) (2026-04-10)
+
+
+### Features
+
+* **web:** add application entity with canvas node and full-page view ([#536](https://github.com/shep-ai/shep/issues/536)) ([95317a9](https://github.com/shep-ai/shep/commit/95317a9e735463adae4b2e4f334da3df708d9ee8))
+
+## [1.179.1](https://github.com/shep-ai/shep/compare/v1.179.0...v1.179.1) (2026-04-09)
+
+
+### Bug Fixes
+
+* **web:** share dev server state across nodes and drawers ([#542](https://github.com/shep-ai/shep/issues/542)) ([5e2344d](https://github.com/shep-ai/shep/commit/5e2344d6136d81d2dc732bd1bcdf97b60afb0950))
+
+# [1.179.0](https://github.com/shep-ai/shep/compare/v1.178.1...v1.179.0) (2026-04-09)
+
+
+### Features
+
+* **web:** update pr branding footer to markdown format ([#543](https://github.com/shep-ai/shep/issues/543)) ([4c06d02](https://github.com/shep-ai/shep/commit/4c06d02d27411438e00b903dd247555d714fc134))
+
+## [1.178.1](https://github.com/shep-ai/shep/compare/v1.178.0...v1.178.1) (2026-04-09)
+
+
+### Bug Fixes
+
+* **domain:** fix local squash merge conflict handling and stale state cleanup ([#532](https://github.com/shep-ai/shep/issues/532)) ([b57802e](https://github.com/shep-ai/shep/commit/b57802ef1a6584dca02777f002862a58c8440b04))
+
+# [1.178.0](https://github.com/shep-ai/shep/compare/v1.177.0...v1.178.0) (2026-04-07)
+
+
+### Features
+
+* **web:** workspaces prototype with new-project flow ([#540](https://github.com/shep-ai/shep/issues/540)) ([9759c84](https://github.com/shep-ai/shep/commit/9759c84b407342f2b3a00eaf68a640fbeb4eff08))
+
+# [1.177.0](https://github.com/shep-ai/shep/compare/v1.176.0...v1.177.0) (2026-04-07)
+
+
+### Features
+
+* **config:** package shep web ui as native desktop app using electron ([#530](https://github.com/shep-ai/shep/issues/530)) ([1ff9926](https://github.com/shep-ai/shep/commit/1ff99265bdeccd5e199967e664d5a188c3dd9af3))
+* **agents:** re-run agent on retry when validation exhausts repair attempts ([#533](https://github.com/shep-ai/shep/issues/533)) ([3cfa099](https://github.com/shep-ai/shep/commit/3cfa09939a1d2fc19ab72db22d3a235430e832cb))
+
+# [1.176.0](https://github.com/shep-ai/shep/compare/v1.175.1...v1.176.0) (2026-04-06)
+
+
+### Features
+
+* **tsp:** add ukrainian (uk) translation ([#535](https://github.com/shep-ai/shep/issues/535)) ([a9170fb](https://github.com/shep-ai/shep/commit/a9170fbdf081870469c58bc3433b17b000e83316))
+
+## [1.175.1](https://github.com/shep-ai/shep/compare/v1.175.0...v1.175.1) (2026-04-06)
+
+
+### Bug Fixes
+
+* **agents:** use allowedtools for v2 sdk tool permissions ([#534](https://github.com/shep-ai/shep/issues/534)) ([7c9c50e](https://github.com/shep-ai/shep/commit/7c9c50e5c1ac9759796eb403f5ed5cbbb47465fc))
+
+# [1.175.0](https://github.com/shep-ai/shep/compare/v1.174.0...v1.175.0) (2026-04-06)
+
+
+### Features
+
+* **domain:** add unified remote repository support with auto-fork ([#531](https://github.com/shep-ai/shep/issues/531)) ([64b8dfe](https://github.com/shep-ai/shep/commit/64b8dfe42022aa94bb49af2e7781b01a38e3afab)), closes [#409](https://github.com/shep-ai/shep/issues/409) [#430](https://github.com/shep-ai/shep/issues/430) [#434](https://github.com/shep-ai/shep/issues/434) [#525](https://github.com/shep-ai/shep/issues/525)
+
+# [1.174.0](https://github.com/shep-ai/shep/compare/v1.173.0...v1.174.0) (2026-04-05)
+
+
+### Features
+
+* **web:** add inventory page filters, search, grouping, and sort ([#529](https://github.com/shep-ai/shep/issues/529)) ([af82901](https://github.com/shep-ai/shep/commit/af82901941bb1ce532f1854119febe47bf139282))
+
+# [1.173.0](https://github.com/shep-ai/shep/compare/v1.172.0...v1.173.0) (2026-04-05)
+
+
+### Features
+
+* **web:** add right margin to sidenav repo plus button for scrollbar clearance ([#528](https://github.com/shep-ai/shep/issues/528)) ([3402902](https://github.com/shep-ai/shep/commit/3402902d129dd5c56716d1bfeef310d6a432db49))
+
 # [1.172.0](https://github.com/shep-ai/shep/compare/v1.171.0...v1.172.0) (2026-04-05)
 
 

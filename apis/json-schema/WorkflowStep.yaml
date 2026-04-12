@@ -1,0 +1,53 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: WorkflowStep.yaml
+type: object
+properties:
+  sessionId:
+    type: string
+    description: Parent interactive session id
+  featureId:
+    type: string
+    description: "Polymorphic scope key: matches InteractiveMessage.featureId"
+  workflowId:
+    type: string
+    description: Logical workflow id (e.g. 'application-creation-v1')
+  stepKey:
+    type: string
+    description: Stable key inside the workflow (e.g. 'scaffold', 'deps')
+  stepIndex:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Order of this step within the workflow, starting at 0
+  title:
+    type: string
+    description: Non-technical title shown to the user
+  description:
+    type: string
+    description: Non-technical subtitle shown to the user
+  status:
+    $ref: WorkflowStepStatus.yaml
+    description: Current lifecycle status
+  startedAt:
+    type: string
+    format: date-time
+    description: When the step transitioned to running
+  finishedAt:
+    type: string
+    format: date-time
+    description: When the step transitioned to done/failed/interrupted
+  metadata:
+    type: string
+    description: JSON blob with summary, details, error — populated when done/failed
+required:
+  - sessionId
+  - featureId
+  - workflowId
+  - stepKey
+  - stepIndex
+  - title
+  - description
+  - status
+allOf:
+  - $ref: BaseEntity.yaml
+description: A persisted step of a multi-step workflow executed inside an interactive session

@@ -1,13 +1,22 @@
 /**
  * Feature-scoped SSE stream for real-time chat updates.
  *
- * Resolves the active session for the feature internally.
- * Emits:
- *   - `delta` events with token chunks
- *   - `log` events for tool use / thinking
- *   - `done` events at end-of-turn
+ * This is the single source of truth for chat state changes on the
+ * client — the React side drops periodic polling and relies entirely
+ * on these events plus a one-shot fetch per (re)connection.
  *
- * `featureId` is a polymorphic scope key: a feature UUID, "repo-<id>", or "global".
+ * Emits named events:
+ *   - `delta`         — token chunks (streaming assistant text)
+ *   - `log`           — tool use / thinking status text
+ *   - `activity`      — structured tool_use / tool_result events
+ *   - `interaction`   — agent is asking the user a question
+ *   - `message`       — a newly persisted user/assistant/tool message
+ *   - `session_status`— session lifecycle transition
+ *   - `turn_status`   — turn activity transition (drives "Thinking…")
+ *   - `done`          — end-of-turn marker
+ *
+ * `featureId` is a polymorphic scope key: a feature UUID, `app-<id>`,
+ * `repo-<id>`, or `global`.
  */
 
 import type { NextRequest } from 'next/server';
@@ -48,28 +57,47 @@ export async function GET(request: NextRequest, { params }: RouteParams): Promis
         }, 15_000);
 
         const unsubscribe = service.subscribeByFeature(featureId, (chunk) => {
-          if (chunk.done) {
-            enqueue(`event: done\ndata: ${JSON.stringify({ done: true, featureId })}\n\n`);
-          } else if (chunk.interaction) {
-            // Agent is asking the user a question — emit interaction event
+          // A single chunk may carry multiple independent signals (e.g.
+          // a `log` alongside an `activity`). Emit every field that is
+          // present — order is fixed so clients can rely on it.
+          if (chunk.message) {
+            enqueue(
+              `event: message\ndata: ${JSON.stringify({ message: chunk.message, featureId })}\n\n`
+            );
+          }
+          if (chunk.sessionStatus) {
+            enqueue(
+              `event: session_status\ndata: ${JSON.stringify({ sessionStatus: chunk.sessionStatus, featureId })}\n\n`
+            );
+          }
+          if (chunk.turnStatus) {
+            enqueue(
+              `event: turn_status\ndata: ${JSON.stringify({ turnStatus: chunk.turnStatus, featureId })}\n\n`
+            );
+          }
+          if (chunk.interaction) {
             enqueue(
               `event: interaction\ndata: ${JSON.stringify({ interaction: chunk.interaction, featureId })}\n\n`
             );
-            if (chunk.log) {
-              enqueue(`event: log\ndata: ${JSON.stringify({ log: chunk.log, featureId })}\n\n`);
-            }
-          } else if (chunk.activity) {
+          }
+          if (chunk.activity) {
             enqueue(
               `event: activity\ndata: ${JSON.stringify({ activity: chunk.activity, featureId })}\n\n`
             );
-            // Also send log for the status indicator
-            if (chunk.log) {
-              enqueue(`event: log\ndata: ${JSON.stringify({ log: chunk.log, featureId })}\n\n`);
-            }
-          } else if (chunk.log) {
+          }
+          if (chunk.log) {
             enqueue(`event: log\ndata: ${JSON.stringify({ log: chunk.log, featureId })}\n\n`);
-          } else if (chunk.delta) {
+          }
+          if (chunk.delta) {
             enqueue(`event: delta\ndata: ${JSON.stringify({ delta: chunk.delta, featureId })}\n\n`);
+          }
+          if (chunk.done) {
+            enqueue(`event: done\ndata: ${JSON.stringify({ done: true, featureId })}\n\n`);
+          }
+          if (chunk.workflowStep) {
+            enqueue(
+              `event: workflow_step\ndata: ${JSON.stringify({ step: chunk.workflowStep, featureId })}\n\n`
+            );
           }
         });
 

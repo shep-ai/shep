@@ -4,9 +4,9 @@
 # All jobs run in parallel. Release only runs on push to main.
 #
 # Pipeline Structure:
-#   ┌──────┬───────────┬─────────────────┬─────────────────┬─────────┬─────────┬───────────┐
-#   │ Lint │ Typecheck │ Unit (lin+win)  │ E2E CLI (l+w)   │ E2E TUI │ E2E Web │ Storybook │
-#   └──────┴───────────┴─────────────────┴─────────────────┴─────────┴─────────┴───────────┘
+#   ┌──────┬───────────┬─────────────────┬─────────────────┬─────────┬─────────┬───────────┬─────────────────────┐
+#   │ Lint │ Typecheck │ Unit (lin+win)  │ E2E CLI (l+w)   │ E2E TUI │ E2E Web │ Storybook │ Electron (m+w+l)    │
+#   └──────┴───────────┴─────────────────┴─────────────────┴─────────┴─────────┴───────────┴─────────────────────┘
 #   ┌──────────┬─────────┐
 #   │ Gitleaks │ Semgrep │
 #   └──────────┴─────────┘
@@ -158,6 +158,54 @@ jobs:
       - run: pnpm run build:storybook
 
   # ===========================================================================
+  # Electron Desktop App Build
+  # Builds Electron installers for macOS, Windows, and Linux in parallel.
+  # Artifacts are uploaded for PR inspection; release job publishes them.
+  # ===========================================================================
+  build-electron:
+    name: Electron (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - os: macos-latest
+            build_cmd: 'build:mac'
+            artifact_pattern: 'packages/electron/release/*.dmg'
+            artifact_name: 'electron-mac'
+          - os: windows-latest
+            build_cmd: 'build:win'
+            artifact_pattern: 'packages/electron/release/*.exe'
+            artifact_name: 'electron-win'
+          - os: ubuntu-latest
+            build_cmd: 'build:linux'
+            artifact_pattern: 'packages/electron/release/*.AppImage'
+            artifact_name: 'electron-linux'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build web UI and CLI
+        run: pnpm run build:release
+
+      - name: Build Electron installer
+        run: pnpm --filter @shepai/electron ${{ matrix.build_cmd }}
+
+      - name: Upload Electron artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_pattern }}
+          if-no-files-found: error
+          retention-days: 7
+
+  # ===========================================================================
   # Security: Gitleaks Secret Detection
   # Uses gitleaks CLI directly (free, open source) instead of gitleaks-action
   # which requires a paid license for organizations
@@ -257,6 +305,7 @@ jobs:
       - test-e2e-tui
       - test-e2e-web
       - storybook-build
+      - build-electron
       - security-gitleaks
       - security-semgrep
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]')
@@ -284,6 +333,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build:release
 
+      - name: Download Electron artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: electron-artifacts
+          pattern: electron-*
+          merge-multiple: true
+
       - name: Run semantic-release
         id: semantic
         env:
@@ -307,6 +363,7 @@ jobs:
       - test-e2e-tui
       - test-e2e-web
       - storybook-build
+      - build-electron
       - security-gitleaks
       - security-semgrep
     if: github.event_name == 'pull_request'

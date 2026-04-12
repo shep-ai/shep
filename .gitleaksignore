@@ -1,3 +1,5 @@
 dc0ca49a66f0ffe3ce9b37bd283513bb714ecada:src/presentation/web/components/common/feature-drawer/feature-drawer.stories.tsx:generic-api-key:124
 42204c37eaad7947bf332782e4609f6480593abb:tests/unit/infrastructure/services/agents/executors/cursor-executor.test.ts:generic-api-key:599
 3173676049f52fb4ff16805d1c50c27e652b7b75:tests/unit/infrastructure/services/messaging/content-sanitizer.test.ts:generic-api-key:24
+cbe61f9d8b22bc0176339855f08b06ceee68fb49:src/presentation/web/components/features/settings/agent-settings-section.stories.tsx:generic-api-key:68
+cbe61f9d8b22bc0176339855f08b06ceee68fb49:src/presentation/web/components/features/settings/agent-settings-section.stories.tsx:generic-api-key:78

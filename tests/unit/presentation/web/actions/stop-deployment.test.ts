@@ -2,7 +2,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockStop = vi.fn();
+const mockExecute = vi.fn();
 const mockResolve = vi.fn();
 vi.mock('@/lib/server-container', () => ({
   resolve: (token: string) => mockResolve(token),
@@ -15,47 +15,41 @@ const { stopDeployment } = await import(
 describe('stopDeployment server action', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockStop.mockResolvedValue(undefined);
+    mockExecute.mockResolvedValue(undefined);
     mockResolve.mockImplementation((token: string) => {
-      if (token === 'IDeploymentService') {
-        return { stop: mockStop };
+      if (token === 'StopDeploymentUseCase') {
+        return { execute: mockExecute };
       }
       return {};
     });
   });
 
-  it('calls service.stop with targetId', async () => {
+  it('resolves StopDeploymentUseCase and delegates execution', async () => {
     const result = await stopDeployment('feat-123');
 
-    expect(mockResolve).toHaveBeenCalledWith('IDeploymentService');
-    expect(mockStop).toHaveBeenCalledWith('feat-123');
+    expect(mockResolve).toHaveBeenCalledWith('StopDeploymentUseCase');
+    expect(mockExecute).toHaveBeenCalledWith('feat-123');
     expect(result).toEqual({ success: true });
   });
 
-  it('works with repositoryPath as targetId', async () => {
-    const result = await stopDeployment('/home/user/project');
+  it('returns {success:false} when the use case throws a validation error', async () => {
+    mockExecute.mockRejectedValue(new Error('targetId is required'));
 
-    expect(mockStop).toHaveBeenCalledWith('/home/user/project');
-    expect(result).toEqual({ success: true });
-  });
-
-  it('returns error for empty targetId', async () => {
     const result = await stopDeployment('');
 
     expect(result).toEqual({ success: false, error: 'targetId is required' });
-    expect(mockStop).not.toHaveBeenCalled();
   });
 
-  it('returns error when service.stop throws', async () => {
-    mockStop.mockRejectedValue(new Error('Process already exited'));
+  it('returns {success:false} when the use case throws a runtime error', async () => {
+    mockExecute.mockRejectedValue(new Error('Process already exited'));
 
     const result = await stopDeployment('feat-123');
 
     expect(result).toEqual({ success: false, error: 'Process already exited' });
   });
 
-  it('returns generic error for non-Error throws', async () => {
-    mockStop.mockRejectedValue('unexpected');
+  it('returns a generic error message for non-Error throws', async () => {
+    mockExecute.mockRejectedValue('unexpected');
 
     const result = await stopDeployment('feat-123');
 

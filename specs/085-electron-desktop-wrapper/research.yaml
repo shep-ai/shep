@@ -1,0 +1,631 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "electron-desktop-wrapper"
+summary: >
+  Technical research for packaging the shep Next.js web UI as a native Electron desktop app.
+  Key decisions cover the Electron main-process bootstrap (replicating the _serve/dev-server pattern),
+  Next.js integration via custom server on localhost, native module rebuilding for better-sqlite3,
+  conditional DI adapter registration for backward-compatible Electron-specific services,
+  system tray with background mode, and cross-platform packaging via electron-builder.
+
+relatedFeatures: []
+
+technologies:
+  - "Electron 35.x"
+  - "electron-builder 26.x"
+  - "@electron/rebuild"
+  - "electron-window-state"
+  - "Next.js 16"
+  - "better-sqlite3 (native addon)"
+  - "tsyringe (DI container)"
+  - "pnpm workspaces"
+  - "node-notifier (unchanged)"
+  - "contextBridge / preload scripts"
+
+relatedLinks:
+  - title: "Electron Documentation"
+    url: "https://www.electronjs.org/docs/latest"
+  - title: "electron-builder Configuration"
+    url: "https://www.electron.build/configuration.html"
+  - title: "Electron Security Best Practices"
+    url: "https://www.electronjs.org/docs/latest/tutorial/security"
+  - title: "Electron Context Isolation"
+    url: "https://www.electronjs.org/docs/latest/tutorial/context-isolation"
+  - title: "Electron Tray API"
+    url: "https://www.electronjs.org/docs/latest/api/tray"
+  - title: "electron-window-state"
+    url: "https://github.com/mawie81/electron-window-state"
+  - title: "@electron/rebuild"
+    url: "https://github.com/electron/rebuild"
+  - title: "Electron + Next.js RSC Pattern"
+    url: "https://github.com/kirill-konshin/next-electron-rsc"
+  - title: "Building Electron App with Next.js (DoltHub)"
+    url: "https://www.dolthub.com/blog/2024-09-11-building-an-electron-app-with-nextjs/"
+  - title: "electron-builder with better-sqlite3"
+    url: "https://dev.to/arindam1997007/a-step-by-step-guide-to-integrating-better-sqlite3-with-electron-js-app-using-create-react-app-3k16"
+
+decisions:
+  - title: "Next.js Integration Strategy"
+    chosen: "Custom server approach — start Next.js via WebServerService on a dynamic localhost port, load in BrowserWindow"
+    rejected:
+      - "next-electron-rsc (serverless/no-port approach) — eliminates the HTTP server entirely and uses protocol handlers. Elegant but incompatible with the existing architecture where the entire backend (DI container, watchers, SSE routes) runs behind an HTTP server. The web UI's SSE agent-events route, server actions, and API routes all assume an HTTP server. Rewriting the server layer is out of scope and breaks backward compatibility."
+      - "Standalone output + static serving — Next.js standalone mode outputs a minimal server.js, but it cannot trace custom server files and does not support the current WebServerService pattern that uses next() programmatically."
+    rationale: >
+      The codebase already has a proven pattern for embedding Next.js: dev-server.ts and _serve.command.ts
+      both initialize the DI container, start watchers, and launch Next.js on a localhost port. The Electron
+      main process should replicate this exact pattern — call initializeContainer(), initialize settings,
+      start watchers, resolve the web directory, start WebServerService on a dynamic port, and load
+      http://localhost:<port> in a BrowserWindow. This reuses 100% of existing infrastructure code with
+      zero modifications. The WebServerService.start() method handles both dev and production modes.
+      The only Electron-specific addition is a resolveWebDirForElectron() function in packages/electron/
+      that resolves the packaged web directory from the ASAR/resources path.
+
+  - title: "Electron Main Process Bootstrap Sequence"
+    chosen: "Replicate _serve + dev-server.ts pattern in packages/electron/src/main.ts"
+    rejected:
+      - "Spawn _serve as a child process — spawning shep _serve --port <N> as a detached process like start-daemon.ts does. Adds process management complexity (monitoring, restart, IPC), doubles memory usage, and breaks the single-process model that makes shutdown clean. The daemon spawn pattern exists for the CLI's background mode where the parent exits; Electron stays alive, so in-process is simpler."
+      - "Import and call _serve command handler directly — importing the CLI command's action function. Couples Electron to the CLI presentation layer and its Commander.js context. The bootstrap logic should be extracted into a shared utility or replicated in Electron's own main.ts."
+    rationale: >
+      The bootstrap sequence is well-defined across dev-server.ts (lines 71-114) and _serve.command.ts
+      (lines 69-111). Both follow the same pattern: (1) initializeContainer(), (2) expose container on
+      globalThis.__shepContainer, (3) InitializeSettingsUseCase + initializeSettings(), (4) start
+      notification watcher, (5) start PR sync watcher, (6) start auto-archive watcher, (7) start
+      web server on a port, (8) register graceful shutdown handlers. The Electron main.ts replicates
+      this pattern in its app.on('ready') handler. Before the web server is ready, a splash/loading
+      window shows progress. Once the server responds, the main BrowserWindow loads the URL.
+
+  - title: "DI Container Override Strategy for Electron Adapters"
+    chosen: "Post-initialization re-registration using tsyringe's natural token replacement"
+    rejected:
+      - "Add an 'options' parameter to initializeContainer() — modifying the existing function signature to accept an optional config for Electron-specific registrations. Violates the backward compatibility requirement (NFR-11/12) and modifies core code."
+      - "Create a separate initializeElectronContainer() — fully duplicated container setup. Introduces duplication and drift risk as the container evolves. Every new registration in the main container would need to be mirrored."
+    rationale: >
+      tsyringe's container.register() naturally replaces previous registrations for the same token.
+      This is already used in the codebase (e.g., mock executor factory at container.ts line 284
+      uses process.env.SHEP_MOCK_EXECUTOR to conditionally register). The Electron bootstrap calls
+      initializeContainer() first (unchanged), then calls container.register() to override specific
+      tokens with Electron adapters. For example: container.register('DesktopNotifier', { useFactory:
+      () => new ElectronDesktopNotifier() }) replaces the node-notifier-based DesktopNotifier.
+      This requires zero changes to initializeContainer() or any existing code.
+
+  - title: "Desktop Notification Adapter Pattern"
+    chosen: "ElectronDesktopNotifier subscribes directly to NotificationEventBus, independent of NotificationService"
+    rejected:
+      - "Modify NotificationService to detect Electron and call Electron Notification API — adds runtime if/else inside an existing service, violates Clean Architecture (infrastructure aware of presentation context), breaks testability."
+      - "Replace node-notifier globally with Electron Notification API — breaks CLI and non-Electron contexts. node-notifier is a dependency of the root package; removing it has cascading effects even if currently disabled."
+      - "Override DesktopNotifier DI token and re-enable in NotificationService — the NotificationService currently has desktop notification path commented out (line 59). Re-enabling it requires modifying NotificationService, which violates backward compatibility."
+    rationale: >
+      The best approach is for the ElectronDesktopNotifier to subscribe directly to the NotificationEventBus
+      (the globalThis singleton via Symbol.for('shep:notification-bus')). This is the same bus that
+      NotificationService.notify() emits to. The Electron adapter listens for 'notification' events and
+      creates Electron Notification objects with the event title and body. This requires ZERO changes to
+      NotificationService — it continues to emit events to the bus for in-app toasts, and the Electron
+      adapter independently picks them up for native OS notifications. The adapter only exists in the
+      Electron context. In CLI/web context, nothing listens for native notifications. The IDesktopNotifier
+      port interface is still created for API consistency, and the existing DesktopNotifier implements it
+      unchanged.
+
+  - title: "Browser Opener Adapter Pattern"
+    chosen: "New IBrowserOpener port interface in core, ElectronBrowserOpener in packages/electron/, register in DI"
+    rejected:
+      - "Add Electron detection inside BrowserOpenerService.open() — runtime branching inside infrastructure service, violates Clean Architecture, couples core to Electron."
+      - "Skip browser opener integration entirely — misses the opportunity to focus the existing BrowserWindow instead of launching an external browser when the web UI triggers a 'open in browser' action."
+    rationale: >
+      BrowserOpenerService is currently NOT registered in the DI container — it is instantiated directly
+      in start-daemon.ts (line 144) and ui.command.ts (line 127). To support Electron's adapter pattern,
+      it needs to be registered in the DI container under a token (e.g., 'IBrowserOpener'). Create an
+      IBrowserOpener interface with open(url): void. The existing BrowserOpenerService implements it
+      with zero logic changes. Register BrowserOpenerService as the default. The Electron bootstrap
+      overrides with ElectronBrowserOpener that calls mainWindow.focus() + mainWindow.loadURL(url)
+      or shell.openExternal(url) depending on whether the URL is the app's own URL.
+
+  - title: "Web Directory Resolution for Packaged Electron App"
+    chosen: "Separate resolveWebDirForElectron() function in packages/electron/ that handles ASAR/resources paths"
+    rejected:
+      - "Modify the existing resolveWebDir() to add Electron paths — adds Electron-specific logic to core infrastructure code, violates NFR-11 (no Electron imports or conditional logic in core)."
+      - "Use environment variable to override web dir path — fragile, requires careful coordination between electron-builder config and runtime code. Path resolution should be deterministic based on the running context."
+    rationale: >
+      The existing resolveWebDir() (web-server.service.ts lines 45-78) uses import.meta.dirname-relative
+      paths that won't work inside an Electron ASAR package. In a packaged Electron app, the web UI bundle
+      lives in app.getAppPath()/resources/ or similar. The Electron main.ts calls its own
+      resolveWebDirForElectron() which checks process.resourcesPath + '/web/' for the production packaged
+      path, or falls back to development paths during Electron dev mode. The resolved {dir, dev} is then
+      passed to WebServerService.start(port, dir, dev) — the existing service works unchanged because it
+      just receives a directory path.
+
+  - title: "System Tray Implementation"
+    chosen: "Cross-platform Tray with template images on macOS, ICO on Windows, PNG on Linux"
+    rejected:
+      - "Skip system tray entirely — quitting on window close stops all watchers and breaks the 'always monitoring' experience. The spec explicitly requires tray with background mode (FR-4, FR-5)."
+      - "Use a third-party tray library — Electron's built-in Tray API is mature and covers all platforms. No need for an abstraction layer."
+    rationale: >
+      Electron's built-in Tray class handles all three platforms. macOS requires template images
+      (filename ending in Template.png, black + alpha channel only) for proper menu bar rendering in
+      both light and dark modes. Windows uses ICO format. Linux uses StatusNotifierItem with
+      libappindicator fallback. The tray context menu provides Show Window and Quit actions.
+      Window close (BrowserWindow 'close' event) calls event.preventDefault() + win.hide() to minimize
+      to tray. The app.on('window-all-closed') handler does NOT call app.quit() — keeping the app alive.
+      The actual quit path is: tray menu Quit -> app.quit() -> 'before-quit' event sets a flag ->
+      BrowserWindow 'close' allows through -> graceful shutdown sequence runs.
+
+  - title: "Window State Persistence"
+    chosen: "electron-window-state library"
+    rejected:
+      - "electron-store for manual state management — requires manually tracking x, y, width, height, display, maximized state, and handling multi-monitor edge cases (window opens on a now-disconnected display). electron-window-state handles all of this."
+      - "Custom JSON file persistence — reimplements what electron-window-state already does. No benefit over the established library."
+    rationale: >
+      electron-window-state is a focused, well-maintained library specifically designed for this use case.
+      It tracks window bounds, display ID, maximized/fullscreen state, and handles edge cases like
+      windows positioned off-screen after monitor changes. It integrates with BrowserWindow via
+      manage(win) which attaches the necessary event listeners. This avoids pulling in the heavier
+      electron-store dependency when all we need is window state.
+
+  - title: "Splash Screen During Server Startup"
+    chosen: "Frameless BrowserWindow loading a local HTML file with progress indicator"
+    rejected:
+      - "No splash screen — users see a blank window for 2-5 seconds while Next.js initializes. Poor UX, especially on first launch when migrations run. The spec's NFR-1 requires a loading splash screen."
+      - "Native OS splash screen — Electron doesn't have a built-in splash screen API. Some platforms support native splash images but they're static and not controllable from JavaScript."
+    rationale: >
+      A small frameless BrowserWindow (e.g., 400x300) loads a local HTML file bundled in packages/electron/
+      showing the shep logo and a progress message. The splash window is created immediately on app.ready.
+      The main bootstrap runs in the background. Once the web server responds to a health check, the
+      main BrowserWindow is created, loads the URL, and the splash window is closed. This provides
+      immediate visual feedback and keeps cold start perceived latency low.
+
+  - title: "Electron Version"
+    chosen: "Electron 35.x (latest stable with Node.js 22 LTS)"
+    rejected:
+      - "Electron 41.x (latest stable, Node.js 24.14.0) — Node.js 24 is not yet Active LTS and the project requires Node >=22. Using Electron 41 would mean the packaged app runs a Node.js version different from the project's minimum requirement. Also, Electron 41 had a recent CVE (CVE-2026-34780) in beta releases regarding context isolation bypass."
+      - "Electron 33.x — would work with Node.js 20 but the project already requires Node >=22. Using a newer Electron that matches the project's Node.js version ensures native addon ABI compatibility."
+    rationale: >
+      The project requires Node.js >=22. Electron 35.x ships with Node.js 22.x (matching the project's
+      engine requirement) and Chromium 134. This ensures better-sqlite3 compiled for Node 22 ABI works
+      correctly after @electron/rebuild. Using the same major Node.js version as the project reduces
+      native addon compatibility issues. Electron 35.x is a stable release line with well-tested
+      electron-builder support.
+
+  - title: "Update Check Mechanism"
+    chosen: "Direct GitHub Releases API query on app startup with in-app notification banner"
+    rejected:
+      - "electron-updater (full auto-update) — requires code signing on all platforms. The spec resolves open question #3 with pragmatic manual approach. No code signing initially means electron-updater's signature verification would fail."
+      - "update.electronjs.org service — designed for auto-update with signed binaries. Overkill for a version-check notification."
+    rationale: >
+      On app startup, the main process fetches https://api.github.com/repos/{owner}/{repo}/releases/latest
+      and compares the tag version against the app's current version (from package.json). If a newer
+      version exists, an IPC message is sent to the renderer which displays an in-app notification
+      banner with a download link. This requires no code signing, no update infrastructure, and
+      degrades gracefully when offline (NFR-10). The check runs once on startup with a 10-second
+      delay to not block the UI.
+
+  - title: "Packaging Configuration"
+    chosen: "electron-builder 26.x with YAML config, asarUnpack for better-sqlite3"
+    rejected:
+      - "Electron Forge — official toolchain but smaller community, requires more configuration for native module rebuilding and auto-update. The spec already resolved this question in favor of electron-builder."
+      - "Manual packaging with Electron Packager — low-level tool, requires building installer configuration manually for each platform. electron-builder handles this declaratively."
+    rationale: >
+      electron-builder 26.x is the latest stable release with comprehensive support for all three target
+      platforms. Configuration lives in electron-builder.yml in packages/electron/. Key settings:
+      (1) npmRebuild: true to rebuild better-sqlite3 against Electron's Node.js ABI,
+      (2) asarUnpack: ['**/node_modules/better-sqlite3/**'] because native .node binaries cannot load
+      from inside ASAR archives, (3) mac.target: dmg, win.target: nsis, linux.target: AppImage.
+      The build copies the pre-built web UI (from pnpm build:web:prod output) into the Electron
+      app's resources directory.
+
+  - title: "Workspace Package Structure"
+    chosen: "New pnpm workspace package at packages/electron/ with its own package.json and tsconfig.json"
+    rejected:
+      - "Top-level electron/ directory — breaks the established monorepo convention where packages live under packages/. Makes dependency management less clean."
+      - "Add Electron dependencies to root package.json — pollutes the CLI package with Electron deps (~120MB). Users installing @shepai/cli via npm would download Electron unnecessarily."
+    rationale: >
+      The project uses pnpm workspaces with packages under packages/core and src/presentation/web.
+      Adding packages/electron follows the convention. pnpm-workspace.yaml gets a new entry:
+      'packages/electron'. The package imports @shepai/core via workspace protocol for container
+      initialization, settings, watchers, and all core services. Electron-specific dependencies
+      (electron, electron-builder, @electron/rebuild, electron-window-state) are isolated to this
+      package's devDependencies.
+
+  - title: "IPC and Preload Script Design"
+    chosen: "Minimal contextBridge API exposing version info, update status, and window controls"
+    rejected:
+      - "Expose full ipcRenderer to renderer — major security vulnerability. Electron docs explicitly warn against this pattern."
+      - "No preload script at all — the renderer needs to know the app version (for update notifications) and may need window control APIs. Without a preload bridge, there's no way to pass this information securely."
+    rationale: >
+      Following Electron security best practices (NFR-4), the preload script uses contextBridge to
+      expose a minimal 'shepElectron' API to the renderer: (1) getVersion() — returns the app version,
+      (2) onUpdateAvailable(callback) — receives update notifications from main process,
+      (3) windowControls — minimize(), close(), isElectron: true. The web UI can check
+      window.shepElectron?.isElectron to conditionally render Electron-specific UI elements
+      (e.g., update banner). All IPC goes through typed channels with validation in the main process
+      handler. nodeIntegration: false (default in Electron 20+), contextIsolation: true (default),
+      sandbox: true (default).
+
+  - title: "CI Pipeline for Electron Builds"
+    chosen: "New parallel job in ci.yml that builds Electron installers on macOS, Windows, and Linux runners"
+    rejected:
+      - "Separate workflow file for Electron builds — adds coordination complexity. The existing ci.yml already has parallel jobs; adding one more follows the pattern."
+      - "Build only on release — would mean PRs that break the Electron build aren't caught until merge. Building on every PR catches issues early."
+    rationale: >
+      A new 'build-electron' job in .github/workflows/ci.yml runs in parallel with existing jobs.
+      It uses a matrix strategy for os: [macos-latest, windows-latest, ubuntu-latest]. Steps:
+      (1) checkout, (2) setup pnpm + node, (3) pnpm install, (4) pnpm build:release (builds the
+      web UI that Electron packages), (5) cd packages/electron and run electron-builder --publish never.
+      On tagged releases (the existing 'release' job), the Electron build uploads installers as
+      GitHub Release assets. The build runs in parallel with lint/test/typecheck so it doesn't add
+      to the critical path (NFR-6). Expected per-platform build time: 3-5 minutes.
+
+  - title: "Daemon Coexistence and Port Conflict Detection"
+    chosen: "Check if port is in use before starting web server; show error dialog if daemon is already running"
+    rejected:
+      - "Automatic port negotiation (find next available) — could lead to confusion with two instances serving different ports. Better to detect the conflict and let the user decide."
+      - "Kill existing daemon and take over — destructive. The user may intentionally have the daemon running for CLI access."
+    rationale: >
+      The existing findAvailablePort() in port.service.ts tries ports starting from 4050. The Electron
+      app uses the same function. Before starting, it checks if port 4050 is already in use (daemon
+      running). If so, it shows a dialog: 'Shep daemon is already running on port 4050. Open the
+      existing instance or start on a different port?' Options: (1) Open existing — loads
+      http://localhost:4050 in BrowserWindow (connecting to the running daemon's web server),
+      (2) Start new — finds the next available port. Both the Electron app and CLI share the same
+      ~/.shep/ data directory and SQLite database. SQLite WAL mode (configured in connection.ts
+      line 56) supports concurrent readers and the existing single-writer semantics handle
+      concurrent write attempts via SQLite's built-in locking.
+
+openQuestions:
+  - question: "Should the Electron app re-enable desktop notifications via the DesktopNotifier or use a completely separate notification path?"
+    resolved: true
+    options:
+      - option: "Override DesktopNotifier token with ElectronDesktopNotifier and re-enable in NotificationService"
+        description: "The Electron adapter replaces the DI token. The NotificationService's desktop notification path (currently commented out at line 59) would need to be re-enabled, or the Electron adapter listens to the notification bus directly. This requires modifying NotificationService — which violates backward compatibility."
+        selected: false
+      - option: "ElectronDesktopNotifier listens to NotificationEventBus directly, independent of NotificationService"
+        description: "The Electron adapter subscribes to the globalThis notification bus in the main process. When events arrive, it creates Electron Notification objects. This is completely independent of NotificationService — no modifications needed. The adapter is wired up in Electron bootstrap only."
+        selected: true
+      - option: "Skip native notifications entirely in Electron, rely on in-app toasts"
+        description: "The web UI already shows in-app toasts via SSE. In an Electron BrowserWindow, these toasts are visible. Native OS notifications add value when the app is minimized to tray (toasts aren't visible). Skipping misses a key UX benefit of the desktop app."
+        selected: false
+    selectionRationale: >
+      The best approach is for the ElectronDesktopNotifier to subscribe directly to the NotificationEventBus
+      (the globalThis singleton). This is the same bus that NotificationService.notify() emits to. The
+      Electron adapter listens for 'notification' events and creates Electron Notification objects with
+      the event title and body. This requires ZERO changes to NotificationService — it continues to
+      emit events to the bus for in-app toasts, and the Electron adapter independently picks them up
+      for native OS notifications. The adapter only exists in the Electron context. In CLI/web context,
+      nothing listens for native notifications (DesktopNotifier is disabled). Full backward compatibility.
+
+  - question: "How should the Electron build handle the Next.js web UI bundle?"
+    resolved: true
+    options:
+      - option: "Run pnpm build:web:prod as a pre-build step, copy output to packages/electron/resources/web/"
+        description: "The existing build:web:prod script builds Next.js and copies .next output to web/ at the project root. The Electron build copies this to its resources directory. Requires the web build to run first (dependency in CI)."
+        selected: true
+      - option: "Build Next.js inside the Electron packaging step"
+        description: "Run the Next.js build as part of electron-builder's beforeBuild hook. Keeps everything in one step but couples the web build to Electron packaging and makes debugging harder."
+        selected: false
+      - option: "Use Next.js standalone output mode"
+        description: "Set output: 'standalone' in next.config.ts to produce a minimal self-contained server. Standalone mode generates a separate server.js that doesn't trace custom server files, which conflicts with the current WebServerService pattern that uses next() programmatically."
+        selected: false
+    selectionRationale: >
+      The existing build:web:prod script (package.json) already produces a production-ready web/ directory
+      with the .next output. The Electron build simply copies this directory into the packaged app's
+      resources. In the CI pipeline, pnpm build:release (which includes build:web:prod) runs first,
+      then the Electron build step packages the result. This keeps the web build and Electron packaging
+      as separate, independently debuggable steps. The resolveWebDirForElectron() function in the
+      Electron package knows to look for resources/web/.next in the packaged app.
+
+  - question: "How should the Electron app handle the globalThis.__shepContainer pattern used by the web UI?"
+    resolved: true
+    options:
+      - option: "Set globalThis.__shepContainer in the Electron main process before starting the web server"
+        description: "The Electron main process runs in the same Node.js context as the Next.js server. Setting globalThis.__shepContainer after initializeContainer() makes it available to Next.js server actions and API routes, exactly as dev-server.ts does at line 80."
+        selected: true
+      - option: "Pass the container via environment variable or IPC"
+        description: "Not feasible — the container is a complex object graph with class instances, not serializable. Environment variables can only carry strings."
+        selected: false
+      - option: "Have the web UI initialize its own container"
+        description: "Wasteful — creates a second database connection, second set of services, second set of watchers. Defeats the purpose of sharing state between the main process and web server."
+        selected: false
+    selectionRationale: >
+      The existing pattern at dev-server.ts line 80 is exactly right:
+      (globalThis as Record<string, unknown>).__shepContainer = container. This works because Next.js
+      server-side code (server actions, API routes, instrumentation) runs in the same Node.js process
+      as the code that started it. The Electron main process starts Next.js via WebServerService which
+      calls next() in-process. All server-side Next.js code can access globalThis.__shepContainer.
+      The Electron bootstrap sets this after initializeContainer() and before starting the web server,
+      matching the exact pattern that dev-server.ts and _serve.command.ts use.
+
+content: |
+  ## Technology Decisions
+
+  ### 1. Next.js Integration Strategy
+
+  **Chosen:** Custom server approach — start Next.js via WebServerService on a dynamic localhost port, load in BrowserWindow
+
+  **Rejected:**
+  - next-electron-rsc (serverless/no-port approach) — incompatible with the existing HTTP-based architecture (SSE routes, server actions, API endpoints all assume an HTTP server)
+  - Standalone output + static serving — standalone mode's server.js doesn't support the current WebServerService pattern that uses next() programmatically
+
+  **Rationale:** The codebase has a proven pattern in both dev-server.ts and _serve.command.ts for embedding Next.js. The Electron main process replicates this pattern: initializeContainer() → start watchers → WebServerService.start(port, dir, dev) → load http://localhost:port in BrowserWindow. Zero modifications to existing code.
+
+  ### 2. Electron Main Process Bootstrap
+
+  **Chosen:** Replicate _serve + dev-server.ts bootstrap pattern in packages/electron/src/main.ts
+
+  **Rejected:**
+  - Spawn _serve as child process — doubles memory, adds IPC complexity, complicates shutdown
+  - Import CLI command handler directly — couples Electron to Commander.js CLI context
+
+  **Rationale:** The bootstrap sequence from dev-server.ts (lines 71-114) is the template:
+  1. `initializeContainer()` — DB + migrations + all services
+  2. `globalThis.__shepContainer = container` — expose to Next.js server actions
+  3. `InitializeSettingsUseCase` + `initializeSettings()` — load/create settings
+  4. Initialize and start notification watcher
+  5. Initialize and start PR sync watcher
+  6. Initialize and start auto-archive watcher
+  7. Start WebServerService on dynamic port
+  8. Register graceful shutdown (stop watchers → stop web server → close DB)
+
+  The Electron main.ts adds: splash screen before step 1, BrowserWindow creation after step 7, system tray setup, and IPC handlers.
+
+  ### 3. DI Container Override Strategy
+
+  **Chosen:** Post-initialization re-registration using tsyringe's natural token replacement
+
+  **Rejected:**
+  - Modify initializeContainer() signature — breaks backward compatibility
+  - Duplicate container initialization — drift risk
+
+  **Rationale:** tsyringe's `container.register()` replaces previous registrations for the same token. Already proven in the codebase (container.ts line 284: conditional mock executor). Pattern:
+  ```
+  await initializeContainer();  // unchanged
+  // Override specific tokens for Electron context
+  container.register('DesktopNotifier', { useFactory: () => new ElectronDesktopNotifier() });
+  container.register('IBrowserOpener', { useFactory: () => new ElectronBrowserOpener(mainWindow) });
+  ```
+
+  ### 4. Desktop Notification Adapter
+
+  **Chosen:** ElectronDesktopNotifier subscribes directly to NotificationEventBus, independent of NotificationService
+
+  **Rejected:**
+  - Modify NotificationService to re-enable desktop path — changes existing service behavior
+  - Replace node-notifier globally — breaks CLI context
+  - Override DesktopNotifier token and re-enable in NotificationService — requires modifying NotificationService
+
+  **Rationale:** The NotificationEventBus (globalThis singleton via Symbol.for('shep:notification-bus')) emits 'notification' events whenever NotificationService.notify() is called. The ElectronDesktopNotifier subscribes to this bus in the Electron main process and creates Electron Notification objects. Zero changes to NotificationService. The IDesktopNotifier port interface is still created for API consistency, and the existing DesktopNotifier implements it unchanged.
+
+  ### 5. Browser Opener Adapter
+
+  **Chosen:** New IBrowserOpener port interface, register BrowserOpenerService in DI, override in Electron context
+
+  **Rejected:**
+  - Add Electron detection inside BrowserOpenerService — violates Clean Architecture
+  - Skip browser opener integration — misses UX opportunity
+
+  **Rationale:** BrowserOpenerService is currently NOT in the DI container (instantiated directly in start-daemon.ts and ui.command.ts). Need to: (1) create IBrowserOpener interface, (2) register BrowserOpenerService as default, (3) override with ElectronBrowserOpener in Electron context. The Electron adapter focuses the existing BrowserWindow or calls shell.openExternal() for external URLs.
+
+  ### 6. Web Directory Resolution
+
+  **Chosen:** Separate resolveWebDirForElectron() in packages/electron/
+
+  **Rejected:**
+  - Modify existing resolveWebDir() — adds Electron logic to core
+  - Environment variable override — fragile
+
+  **Rationale:** In a packaged Electron app, the web UI lives at `process.resourcesPath + '/web/'`. The existing resolveWebDir() uses import.meta.dirname-relative paths that don't work in ASAR packages. The Electron-specific function checks the packaged path first, then falls back to development paths for Electron dev mode.
+
+  ### 7. System Tray
+
+  **Chosen:** Cross-platform Tray with platform-specific icons, minimize-to-tray on close
+
+  **Rationale:** Electron's built-in Tray API. macOS: template images (xxxTemplate.png). Windows: ICO. Linux: StatusNotifierItem. Close event prevents default and hides window. Quit via tray menu or Cmd+Q triggers full shutdown.
+
+  ### 8. Window State Persistence
+
+  **Chosen:** electron-window-state library
+
+  **Rejected:**
+  - electron-store (manual) — more code for the same result
+  - Custom JSON persistence — reimplements existing library
+
+  **Rationale:** Focused library that handles bounds, display, maximized state, and multi-monitor edge cases out of the box.
+
+  ### 9. Electron Version
+
+  **Chosen:** Electron 35.x (Node.js 22 LTS)
+
+  **Rejected:**
+  - Electron 41.x (Node.js 24) — Node 24 is not Active LTS, ABI mismatch risk with project's Node 22 requirement
+  - Electron 33.x (Node.js 20) — below project's Node >=22 requirement
+
+  **Rationale:** Matches the project's Node.js 22 engine requirement. better-sqlite3 compiled for Node 22 ABI works after @electron/rebuild.
+
+  ### 10. Update Check Mechanism
+
+  **Chosen:** GitHub Releases API query on startup with in-app notification
+
+  **Rejected:**
+  - electron-updater — requires code signing (not in scope for initial release)
+  - update.electronjs.org — designed for signed auto-update
+
+  **Rationale:** Simple HTTP fetch to GitHub API, compare semver, show banner in renderer via IPC if newer version exists. Degrades gracefully offline.
+
+  ### 11. Packaging
+
+  **Chosen:** electron-builder 26.x with YAML config
+
+  **Key config:** npmRebuild: true, asarUnpack for better-sqlite3, targets: dmg (mac), nsis (win), AppImage (linux)
+
+  ### 12. Workspace Structure
+
+  **Chosen:** packages/electron/ as a new pnpm workspace member
+
+  **Rationale:** Follows existing convention (packages/core/). Isolates Electron deps. Uses workspace protocol to import @shepai/core.
+
+  ### 13. IPC and Preload Script Design
+
+  **Chosen:** Minimal contextBridge API exposing version info, update status, and window controls
+
+  **Rejected:**
+  - Expose full ipcRenderer to renderer — security vulnerability
+  - No preload script — no way to pass version/update info to renderer
+
+  **Rationale:** Follows Electron security best practices (NFR-4). Exposes a minimal 'shepElectron' API via contextBridge: getVersion(), onUpdateAvailable(callback), windowControls, isElectron flag. nodeIntegration: false, contextIsolation: true, sandbox: true (all Electron 20+ defaults).
+
+  ### 14. CI Pipeline
+
+  **Chosen:** New parallel job in ci.yml with matrix strategy for macOS, Windows, Linux
+
+  **Rejected:**
+  - Separate workflow file — coordination complexity
+  - Build only on release — misses catching Electron build breakage on PRs
+
+  **Rationale:** Runs in parallel with existing CI jobs. Builds Electron installers on every PR (without publishing). On tagged releases, uploads installers as GitHub Release assets.
+
+  ### 15. Daemon Coexistence
+
+  **Chosen:** Port conflict detection with user dialog (connect to existing or start new)
+
+  **Rejected:**
+  - Auto port negotiation — confusing with multiple instances
+  - Kill existing daemon — destructive
+
+  **Rationale:** Check port 4050 on startup. If in use, dialog offers to connect to existing daemon or start on a new port. SQLite WAL mode handles concurrent access.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | electron 35.x | Desktop app framework | Use | Matches Node.js 22 LTS requirement, stable |
+  | electron-builder 26.x | Packaging and distribution | Use | Mature, YAML config, handles all three platforms |
+  | @electron/rebuild | Rebuild native addons for Electron ABI | Use | Required for better-sqlite3 to load in Electron |
+  | electron-window-state | Window position/size persistence | Use | Focused library, handles multi-monitor edge cases |
+  | next-electron-rsc | Serverless Next.js in Electron | Reject | Incompatible with HTTP-based architecture (SSE, server actions) |
+  | electron-store | General key-value persistence | Reject | Overkill — only need window state, which electron-window-state covers |
+  | electron-updater | Auto-update with signature verification | Reject (for now) | Requires code signing; use GitHub Releases API check instead |
+  | update-electron-app | Auto-update helper | Reject (for now) | Same code signing requirement |
+  | node-notifier | OS desktop notifications | Keep unchanged | Stays in root package, used by existing DesktopNotifier, not modified |
+
+  ## Security Considerations
+
+  ### Renderer Process Isolation
+  - `nodeIntegration: false` (Electron 20+ default) — renderer has no Node.js access
+  - `contextIsolation: true` (Electron 20+ default) — preload runs in isolated context
+  - `sandbox: true` (Electron 20+ default) — OS-level sandbox for renderer
+  - All main-process access goes through contextBridge preload script
+
+  ### Preload API Surface
+  Minimal API exposed via `window.shepElectron`:
+  - `getVersion()` — read-only app version string
+  - `onUpdateAvailable(callback)` — receive update notification from main
+  - `windowControls.minimize()` / `.close()` — window management
+  - `isElectron: true` — feature detection flag
+
+  ### Content Security Policy
+  - The BrowserWindow loads `http://localhost:<port>` — a local Next.js server
+  - CSP allows self-origin scripts and styles
+  - No remote content is loaded in the main window
+  - External URLs (update download links) open via shell.openExternal(), not in the app window
+
+  ### IPC Validation
+  - All IPC channels are typed and validated in the main process handler
+  - The renderer cannot invoke arbitrary main-process functions
+  - IPC channel names use a 'shep:' prefix to avoid conflicts
+
+  ### Native Module Safety
+  - better-sqlite3 is the only native addon, loaded in the main process (not renderer)
+  - Database file is in ~/.shep/data with 0o700 directory permissions (set by ensureShepDirectory())
+  - WAL mode and defensive pragma are already configured
+
+  ## Performance Implications
+
+  ### Cold Start Time (NFR-1: < 5 seconds)
+  - Electron app launch: ~500ms
+  - DI container + migrations: ~500ms (first run may be longer with migration backfills)
+  - Next.js server prepare(): ~2-3 seconds (production mode, pre-built)
+  - Total expected: ~3-4 seconds with splash screen masking the wait
+  - Splash screen shows immediately, main window appears when server is ready
+
+  ### Memory Usage (NFR-2: < 300MB RSS)
+  - Electron baseline: ~150MB (main + renderer processes)
+  - Next.js server (production): ~50-80MB
+  - SQLite + watchers: ~10-20MB
+  - Total expected: ~220-250MB — within budget
+
+  ### Installer Size (NFR-3: < 250MB compressed)
+  - Electron runtime: ~120MB compressed
+  - Node.js (bundled with Electron): included in runtime
+  - Next.js web bundle (.next): ~30-50MB
+  - better-sqlite3 native addon: ~5MB
+  - App code: ~5MB
+  - Total expected: ~160-180MB compressed — within budget
+
+  ### Background Mode
+  - When minimized to tray, the BrowserWindow is hidden (not destroyed)
+  - Renderer process is suspended by Chromium's background throttling
+  - Main process continues running watchers at their normal intervals (3s, 30s, 60s)
+  - Memory usage drops slightly as renderer is throttled but stays mostly constant
+
+  ## Architecture Notes
+
+  ### Layer Placement
+  The Electron app is a new **presentation layer**, sitting alongside CLI, TUI, and Web:
+  ```
+  src/presentation/cli/     — CLI (existing)
+  src/presentation/web/     — Web UI (existing)
+  packages/electron/        — Electron desktop (new)
+  packages/core/            — Core (unchanged except new port interfaces)
+  ```
+
+  ### Core Changes (Minimal)
+  Only two additions to packages/core/:
+  1. `application/ports/output/services/i-desktop-notifier.ts` — new interface matching DesktopNotifier.send(title, body)
+  2. `application/ports/output/services/i-browser-opener.ts` — new interface matching BrowserOpenerService.open(url)
+
+  Existing classes add `implements IDesktopNotifier` / `implements IBrowserOpener` with zero logic changes. BrowserOpenerService gets registered in the DI container (it currently isn't).
+
+  ### packages/electron/ Structure
+  ```
+  packages/electron/
+  ├── package.json              # Electron + electron-builder deps
+  ├── tsconfig.json             # Extends root tsconfig
+  ├── electron-builder.yml      # Packaging configuration
+  ├── src/
+  │   ├── main.ts               # Electron main process entry
+  │   ├── preload.ts            # contextBridge preload script
+  │   ├── splash.html           # Loading screen
+  │   ├── bootstrap.ts          # DI container init + watcher startup
+  │   ├── resolve-web-dir.ts    # Electron-specific web dir resolution
+  │   ├── tray.ts               # System tray setup
+  │   ├── update-checker.ts     # GitHub Releases version check
+  │   ├── adapters/
+  │   │   ├── electron-desktop-notifier.ts
+  │   │   └── electron-browser-opener.ts
+  │   └── ipc/
+  │       └── channels.ts       # IPC channel definitions + handlers
+  └── resources/
+      ├── icon.icns             # macOS app icon
+      ├── icon.ico              # Windows app icon
+      ├── icon.png              # Linux app icon
+      ├── trayTemplate.png      # macOS tray (template image)
+      ├── trayTemplate@2x.png   # macOS tray retina
+      ├── tray.ico              # Windows tray
+      └── tray.png              # Linux tray
+  ```
+
+  ### Dependency Flow
+  ```
+  packages/electron/ → imports → @shepai/core (workspace protocol)
+                     → uses    → initializeContainer(), container, settings, watchers
+                     → reads   → ~/.shep/ data directory (shared with CLI)
+  ```
+
+  Electron NEVER imports from `src/presentation/cli/` or `src/presentation/web/`. It only imports from `@shepai/core` (the core package).
+
+  ### Backward Compatibility Verification
+  After implementation, the following MUST pass unchanged:
+  - `pnpm test:unit` — all core and web unit tests
+  - `pnpm test:int` — all integration tests
+  - `pnpm test:e2e` — all Playwright e2e tests
+  - `pnpm build` — CLI build
+  - `pnpm build:release` — full release build including web
+  - `pnpm validate` — lint, format, typecheck, tsp compile

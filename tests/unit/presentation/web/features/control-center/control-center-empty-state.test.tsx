@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 vi.mock('@/app/actions/get-all-agent-models', () => ({
   getAllAgentModels: vi.fn(() =>
@@ -17,17 +18,8 @@ vi.mock('@/app/actions/update-agent-and-model', () => ({
   updateAgentAndModel: vi.fn(() => Promise.resolve({ ok: true })),
 }));
 
-vi.mock('@/app/actions/check-agent-auth', () => ({
-  checkAgentAuth: vi.fn(() =>
-    Promise.resolve({
-      agentType: 'claude-code',
-      installed: true,
-      authenticated: true,
-      label: 'Claude Code',
-      binaryName: 'claude',
-      authCommand: null,
-    })
-  ),
+vi.mock('@/app/actions/check-all-agents-status', () => ({
+  checkAllAgentsStatus: vi.fn(() => Promise.resolve({ 'claude-code': true, dev: true })),
 }));
 
 vi.mock('@/components/common/feature-node/agent-type-icons', () => ({
@@ -52,42 +44,45 @@ vi.mock('next/image', () => ({
   },
 }));
 
-vi.mock('@/app/actions/agent-setup-flag', () => ({
-  isAgentSetupComplete: vi.fn(() => Promise.resolve(false)),
+vi.mock('@/app/actions/create-project-and-feature', () => ({
+  createProjectAndFeature: vi.fn(() => Promise.resolve({ error: 'Not available in test' })),
 }));
 
-vi.mock('@/components/common/add-repository-button/pick-folder', () => ({
-  pickFolder: vi.fn(() => Promise.resolve(null)),
+vi.mock('@/app/actions/create-application', () => ({
+  createApplication: vi.fn(() => Promise.resolve({ error: 'Not available in test' })),
 }));
 
 import { ControlCenterEmptyState } from '@/components/features/control-center/control-center-empty-state';
 
+function Wrapper({ children }: { children: React.ReactNode }) {
+  return <TooltipProvider>{children}</TooltipProvider>;
+}
+
 describe('ControlCenterEmptyState', () => {
-  it('renders agent setup first, not repo section', async () => {
-    render(<ControlCenterEmptyState />);
+  it('renders the prompt-first onboarding page directly', async () => {
+    render(<ControlCenterEmptyState />, { wrapper: Wrapper });
 
     await waitFor(() => {
-      expect(screen.getByTestId('welcome-agent-setup')).toBeInTheDocument();
-    });
-
-    // Repo section should not be visible yet
-    expect(screen.queryByTestId('empty-state-add-repository')).not.toBeInTheDocument();
-  });
-
-  it('renders page header', async () => {
-    render(<ControlCenterEmptyState />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Choose your agent')).toBeInTheDocument();
+      expect(screen.getByText('What do you want to build?')).toBeInTheDocument();
     });
   });
 
-  it('applies custom className', async () => {
-    render(<ControlCenterEmptyState className="custom-class" />);
+  it('renders Shep logo', () => {
+    render(<ControlCenterEmptyState />, { wrapper: Wrapper });
+    expect(screen.getByTestId('control-center-empty-state')).toBeInTheDocument();
+  });
+
+  it('renders suggestion chips', async () => {
+    render(<ControlCenterEmptyState />, { wrapper: Wrapper });
 
     await waitFor(() => {
-      expect(screen.getByTestId('control-center-empty-state')).toBeInTheDocument();
+      expect(screen.getByText(/landing page/i)).toBeInTheDocument();
+      expect(screen.getByText(/SaaS app/i)).toBeInTheDocument();
     });
+  });
+
+  it('applies custom className', () => {
+    render(<ControlCenterEmptyState className="custom-class" />, { wrapper: Wrapper });
     expect(screen.getByTestId('control-center-empty-state')).toHaveClass('custom-class');
   });
 });

@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RepositoryNode } from '@/components/common/repository-node/repository-node';
@@ -93,21 +94,70 @@ vi.mock('radix-ui', () => ({
       <div {...props}>{children}</div>
     ),
   },
+  Label: {
+    Root: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
+      <label {...props}>{children}</label>
+    ),
+  },
+  Checkbox: {
+    Root: ({
+      children,
+      checked,
+      onCheckedChange,
+      ...props
+    }: React.PropsWithChildren<{
+      checked?: boolean;
+      onCheckedChange?: (checked: boolean) => void;
+      [key: string]: unknown;
+    }>) => (
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={checked}
+        onClick={() => onCheckedChange?.(!checked)}
+        {...props}
+      >
+        {children}
+      </button>
+    ),
+    Indicator: ({ children }: React.PropsWithChildren) => <>{children}</>,
+  },
 }));
 
-// Mock shadcn Dialog — controlled by `open` prop
-vi.mock('@/components/ui/dialog', () => ({
-  Dialog: ({ children, open }: { children: React.ReactNode; open?: boolean }) =>
-    open ? <>{children}</> : null,
-  DialogContent: ({ children }: { children: React.ReactNode }) => (
-    <div role="dialog">{children}</div>
-  ),
-  DialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
-  DialogDescription: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
-  DialogClose: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+// Mock shadcn Dialog — controlled by `open` prop, propagates close via onOpenChange
+vi.mock('@/components/ui/dialog', () => {
+  const DialogContext = React.createContext<((open: boolean) => void) | undefined>(undefined);
+  return {
+    Dialog: ({
+      children,
+      open,
+      onOpenChange,
+    }: {
+      children: React.ReactNode;
+      open?: boolean;
+      onOpenChange?: (open: boolean) => void;
+    }) =>
+      open ? (
+        <DialogContext.Provider value={onOpenChange}>{children}</DialogContext.Provider>
+      ) : null,
+    DialogContent: ({ children }: { children: React.ReactNode }) => (
+      <div role="dialog">{children}</div>
+    ),
+    DialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    DialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    DialogTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
+    DialogDescription: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
+    DialogClose: ({ children }: { children: React.ReactElement<{ onClick?: () => void }> }) => {
+      const close = React.useContext(DialogContext);
+      return React.cloneElement(children, {
+        onClick: () => {
+          children.props.onClick?.();
+          close?.(false);
+        },
+      });
+    },
+  };
+});
 
 vi.mock('@/components/ui/button', () => ({
   Button: ({
@@ -322,7 +372,34 @@ describe('RepositoryNode', () => {
       expect(onDelete).not.toHaveBeenCalled();
 
       fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
-      expect(onDelete).toHaveBeenCalledWith('repo-abc');
+      expect(onDelete).toHaveBeenCalledWith('repo-abc', { deleteFromDisk: false });
+    });
+
+    it('passes deleteFromDisk: true when the toggle is checked before confirming', () => {
+      const onDelete = vi.fn();
+      renderNode({ ...dataWithRepoPath, id: 'repo-abc', onDelete });
+
+      fireEvent.click(screen.getByTestId('repository-node-delete-button'));
+      fireEvent.click(screen.getByTestId('repository-node-delete-from-disk-checkbox'));
+      fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+
+      expect(onDelete).toHaveBeenCalledWith('repo-abc', { deleteFromDisk: true });
+    });
+
+    it('resets the deleteFromDisk toggle when the dialog is reopened', () => {
+      const onDelete = vi.fn();
+      renderNode({ ...dataWithRepoPath, id: 'repo-abc', onDelete });
+
+      // Open, check, cancel
+      fireEvent.click(screen.getByTestId('repository-node-delete-button'));
+      fireEvent.click(screen.getByTestId('repository-node-delete-from-disk-checkbox'));
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      // Reopen, confirm — should be false again
+      fireEvent.click(screen.getByTestId('repository-node-delete-button'));
+      fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+
+      expect(onDelete).toHaveBeenCalledWith('repo-abc', { deleteFromDisk: false });
     });
 
     it('does not call onDelete when cancel is clicked', () => {

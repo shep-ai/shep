@@ -382,7 +382,10 @@
   "repositoryNode": {
     "removeRepository": "Remove repository",
     "removeConfirmTitle": "Remove repository?",
-    "removeConfirmDescription": "This will remove <strong>{{name}}</strong> and all its features from your workspace. The repository files on disk won't be affected.",
+    "removeConfirmDescription": "This will remove <strong>{{name}}</strong> and all its features from your workspace.",
+    "removeConfirmDescriptionKeepFiles": "The repository files on disk won't be affected.",
+    "removeConfirmDescriptionDeleteFiles": "The repository folder on disk will be permanently deleted. This cannot be undone.",
+    "deleteFromDiskLabel": "Also delete the repository folder from disk",
     "cancel": "Cancel",
     "remove": "Remove",
     "openInIde": "Open in IDE",
@@ -406,7 +409,8 @@
     "newFeature": "New Feature",
     "localFolder": "Local Folder",
     "adoptBranch": "Adopt Branch",
-    "fromGithub": "From GitHub"
+    "fromGithub": "From GitHub",
+    "newApplication": "New Application"
   },
   "chat": {
     "shepChat": "Shep Chat",

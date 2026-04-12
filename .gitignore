@@ -44,6 +44,10 @@ playwright/.cache/
 *.swo
 *~
 
+# Local agent-tool scratch dirs (not part of the project)
+.cline/
+.superpowers/
+
 # =============================================================================
 # OS files
 # =============================================================================

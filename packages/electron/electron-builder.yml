@@ -1,0 +1,88 @@
+# electron-builder configuration
+# Docs: https://www.electron.build/configuration.html
+
+appId: 'ai.shep.desktop'
+productName: 'Shep'
+copyright: 'Copyright © 2024-2026 Shep AI'
+
+# The compiled JS output directory
+directories:
+  buildResources: 'resources'
+  output: 'release'
+  app: '.'
+
+# Use the compiled JS entry point
+files:
+  - 'dist/**/*'
+  - 'resources/**/*'
+  - 'package.json'
+  - '!src/**/*'
+  - '!scripts/**/*'
+  - '!tsconfig*.json'
+  - '!electron-builder.yml'
+  - '!**/*.ts'
+  - '!dist/**/*.map'
+
+# Rebuild native modules (better-sqlite3) for Electron's Node.js ABI
+npmRebuild: true
+
+# Native .node binaries cannot load from inside ASAR archives
+asar: true
+asarUnpack:
+  - '**/node_modules/better-sqlite3/**'
+  - '**/node_modules/bindings/**'
+  - '**/node_modules/file-uri-to-path/**'
+
+# Copy the pre-built web UI into the packaged app's resources
+extraResources:
+  - from: '../../web'
+    to: 'web'
+    filter:
+      - '**/*'
+      - '!**/*.map'
+
+# macOS configuration
+mac:
+  target:
+    - target: 'dmg'
+      arch:
+        - 'x64'
+        - 'arm64'
+  icon: 'resources/icon.icns'
+  category: 'public.app-category.developer-tools'
+  darkModeSupport: true
+
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: 'link'
+      path: '/Applications'
+
+# Windows configuration
+win:
+  target:
+    - target: 'nsis'
+      arch:
+        - 'x64'
+  icon: 'resources/icon.ico'
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: 'resources/icon.ico'
+  uninstallerIcon: 'resources/icon.ico'
+
+# Linux configuration
+linux:
+  target:
+    - target: 'AppImage'
+      arch:
+        - 'x64'
+  icon: 'resources/icon.png'
+  category: 'Development'
+  synopsis: 'Autonomous AI Native SDLC Platform'
+  description: 'Shep — AI-powered software development lifecycle automation'

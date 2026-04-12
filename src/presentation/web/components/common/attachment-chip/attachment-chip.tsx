@@ -105,11 +105,8 @@ export function AttachmentChip({
               )}
             </div>
             {notes ? (
-              <TooltipContent
-                side="bottom"
-                className="max-w-[220px] border border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100"
-              >
-                <p className="line-clamp-3 text-xs leading-snug">{notes}</p>
+              <TooltipContent side="top" sideOffset={10} className="z-[80] max-w-[220px]">
+                <p className="line-clamp-5 text-xs leading-snug whitespace-pre-wrap">{notes}</p>
               </TooltipContent>
             ) : null}
           </Tooltip>
@@ -140,16 +137,21 @@ export function AttachmentChip({
                 </a>
               </div>
               {onNotesChange ? (
-                <Textarea
-                  placeholder="Add notes about this image…"
-                  value={notes ?? ''}
-                  onChange={(e) => onNotesChange(e.target.value)}
-                  rows={2}
-                  className="resize-none text-sm"
-                  aria-label="Image notes"
-                />
+                <div className="flex flex-col gap-1">
+                  <Textarea
+                    placeholder="Add notes about this image…"
+                    value={notes ?? ''}
+                    onChange={(e) => onNotesChange(e.target.value)}
+                    rows={2}
+                    className="resize-none text-sm"
+                    aria-label="Image notes"
+                  />
+                  {notes?.trim() ? (
+                    <span className="text-muted-foreground text-xs">Auto-saved</span>
+                  ) : null}
+                </div>
               ) : notes ? (
-                <p className="text-muted-foreground text-sm">{notes}</p>
+                <p className="text-muted-foreground text-sm whitespace-pre-wrap">{notes}</p>
               ) : null}
             </div>
           </DialogContent>

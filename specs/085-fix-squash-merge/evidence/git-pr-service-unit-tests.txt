@@ -1,0 +1,78 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-squash-merge
+
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should return branch from remote HEAD when available 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should fall back to local main branch when remote HEAD fails 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should fall back to local master branch when main does not exist 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should pick most recently committed branch when both main and master exist 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should fall back to git config init.defaultBranch 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should NOT use current branch when in a feature worktree 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should use current branch in main worktree as last resort 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should throw when all fallbacks fail 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > hasUncommittedChanges > should return true when git status has output 2ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > hasUncommittedChanges > should return false when git status is empty 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > hasUncommittedChanges > should return false when git status is whitespace only 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > commitAll > should stage all changes, commit, and return SHA 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > commitAll > should throw GitPrError with GIT_ERROR on failure 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > push > should call git push origin branch 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > push > should add --set-upstream flag when setUpstream is true 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > push > should throw GitPrError with MERGE_CONFLICT when stderr contains rejected 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > push > should throw GitPrError with AUTH_FAILURE on auth errors 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should parse pr.yaml and pass title/body to gh pr create 3ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should apply Shep branding to the PR body 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should strip Claude Code branding from PR body 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should throw GitPrError with GH_NOT_FOUND when gh is not found 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should call gh pr merge without --delete-branch and attempt remote branch cleanup 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should call gh pr merge with specified strategy 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should not throw when remote branch deletion fails 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should throw GitPrError with MERGE_FAILED on merge failure 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergeBranch > should checkout target, merge source, and push 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergeBranch > should throw GitPrError with MERGE_CONFLICT on conflict 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > deleteBranch > should delete local branch 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > deleteBranch > should also delete remote when deleteRemote is true 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should parse gh run list JSON output 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should return pending when no runs found 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should throw GitPrError when gh command fails 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should throw GitPrError with GH_NOT_FOUND when gh is not installed 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should return pending when conclusion is null 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should resolve run ID via gh run list then watch it 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return pending when no runs exist for the branch 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return failure when gh run watch exits non-zero (exit code message) 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return failure when gh run watch exits non-zero with real execFile error format 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should include stdout in logExcerpt when CI fails with real execFile error 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should throw GIT_ERROR for genuine errors (not CI failure) 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should throw GitPrError with CI_TIMEOUT on timeout 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return success when gh run watch exits 0 even if stdout lacks "success" keyword 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return success when gh run watch exits 0 with empty stdout 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should pass timeout option to exec 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getPrDiffSummary > should parse git diff --stat and log correctly 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should parse a unified diff with modified, added, and deleted files 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should return empty array for empty diff output 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should parse renamed files 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should parse diff line numbers correctly 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should throw GitPrError when git command fails 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should call gh pr list with correct arguments including headRefName 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should normalize state from UPPERCASE to PrStatus enum values 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should return empty array when no PRs exist 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should throw GitPrError on gh CLI failure 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should throw GitPrError with AUTH_FAILURE on auth errors 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return true when feature branch is ancestor of base branch (true merge) 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return true for squash merge (not ancestor but no diff) 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return false when neither true merge nor squash merge 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should fall back to remote tracking branch when local ref is deleted 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return false when both local and remote refs are gone 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return true when tree differs but base branch advanced from premergeBaseSha 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return false when tree differs and base branch has not advanced 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should not check premergeBaseSha when not provided 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should perform squash merge successfully 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should detect conflict from stdout and throw MERGE_CONFLICT 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should abort merge on failure to leave repo clean 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should fall back to reset --merge if merge --abort fails 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should reset tracked files before merge 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should fetch and pull when hasRemote=true 0ms
+
+ Test Files  1 passed (1)
+      Tests  69 passed (69)
+   Start at  12:48:36
+   Duration  261ms (transform 118ms, setup 34ms, import 130ms, tests 20ms, environment 0ms)
+

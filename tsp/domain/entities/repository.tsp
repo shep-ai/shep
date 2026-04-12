@@ -27,4 +27,10 @@ model Repository extends SoftDeletableEntity {
 
   @doc("Remote GitHub URL this repository was cloned from (normalized: lowercase, no .git suffix)")
   remoteUrl?: string;
+
+  @doc("Whether this repository was auto-forked by shep because the user lacked push access")
+  isFork?: boolean;
+
+  @doc("Original upstream URL when isFork is true (normalized: lowercase, no .git suffix)")
+  upstreamUrl?: string;
 }

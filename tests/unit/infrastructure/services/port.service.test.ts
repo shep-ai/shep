@@ -19,7 +19,23 @@ import {
 describe('Port Service', () => {
   describe('isPortAvailable', () => {
     it('should return true for an available port', async () => {
-      const result = await isPortAvailable(49152);
+      // Use a port in the ephemeral range that's less likely to be in use
+      // Get OS to pick an available one by binding to port 0
+      const server = net.createServer();
+      const availablePort = await new Promise<number>((resolve) => {
+        server.listen(0, '127.0.0.1', () => {
+          const addr = server.address();
+          if (addr && typeof addr !== 'string') {
+            resolve(addr.port);
+          }
+        });
+      });
+      server.close();
+
+      // Give the OS a moment to release the port
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const result = await isPortAvailable(availablePort);
       expect(result).toBe(true);
     });
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import { Handle, Position } from '@xyflow/react';
 import {
@@ -249,7 +249,12 @@ export function FeatureNode({
             <AlertDialogHeader>
               <AlertDialogTitle>{t('featureNode.archiveConfirmTitle')}</AlertDialogTitle>
               <AlertDialogDescription>
-                {t('featureNode.archiveConfirmDescription', { name: data.name })}
+                <Trans
+                  t={t}
+                  i18nKey="featureNode.archiveConfirmDescription"
+                  values={{ name: data.name }}
+                  components={{ strong: <strong /> }}
+                />
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

@@ -209,6 +209,9 @@
         "injectSkillsOption": "Inject curated skills into the worktree",
         "noInjectSkillsOption": "Skip skill injection for this invocation",
         "attachOption": "إرفاق ملف (قابل للتكرار)",
+        "remoteOption": "GitHub URL or owner/repo — clone (or fork) then create feature",
+        "remoteConflict": "Cannot use --remote with --repo. --remote clones the repo first.",
+        "forkedInfo": "Auto-forked (no push access to original)",
         "parentNotFound": "الميزة الأصلية غير موجودة: {{id}}",
         "attachmentNotFound": "المرفق غير موجود: {{path}}",
         "spinnerText": "جارٍ التفكير",
@@ -437,6 +440,15 @@
         "supportedFormats": "التنسيقات المدعومة: https://github.com/owner/repo أو git@github.com:owner/repo.git أو owner/repo",
         "cloneFailed": "فشل الاستنساخ: {{error}}",
         "failedToImport": "فشل استيراد المستودع"
+      },
+      "initRemote": {
+        "description": "Create a GitHub repository from the current local repo",
+        "nameArgument": "Repository name (defaults to directory name)",
+        "publicOption": "Create a public repository (default: private)",
+        "orgOption": "GitHub organization to create the repo under",
+        "created": "GitHub repository created: {{name}}",
+        "urlLabel": "URL:",
+        "failed": "Failed to create GitHub repository"
       },
       "ls": {
         "description": "عرض المستودعات المتتبعة",

@@ -63,7 +63,7 @@ export function RepoGroup({
               onAddFeature();
             }}
             className={cn(
-              'text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent shrink-0 rounded-md p-1 opacity-0 transition-all duration-100 group-hover/repo:opacity-100',
+              'text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent mr-2 shrink-0 rounded-md p-1 opacity-0 transition-all duration-100 group-hover/repo:opacity-100',
               'focus-visible:ring-ring focus-visible:opacity-100 focus-visible:ring-1 focus-visible:outline-none'
             )}
             aria-label={`Add feature to ${repoName}`}

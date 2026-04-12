@@ -8,7 +8,7 @@
 
 /** The branding line to append to PR bodies. */
 export const PR_BRANDING =
-  'Built with Shep \uD83D\uDC11 [Shep Bot](https://github.com/shep-ai/shep)';
+  '[🐑](https://github.com/shep-ai/shep) Built with [Shep.bot](https://shep.bot)';
 
 /**
  * Pattern matching common AI-tool attribution footers that should be

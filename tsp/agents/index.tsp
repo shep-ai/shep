@@ -89,3 +89,6 @@ import "./agent-session.tsp";
 // Per-feature interactive chat session models
 import "./interactive-session.tsp";
 import "./interactive-message.tsp";
+
+// Persistent workflow step tracking
+import "./workflow-step.tsp";

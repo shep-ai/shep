@@ -26,8 +26,21 @@ Object.defineProperty(globalThis, 'localStorage', {
 });
 
 // Mock ResizeObserver for Radix UI components (tooltips, popovers, etc.)
-// Must use a class so it can be called with `new`
+// and for any component that observes its own container (IDE file tree,
+// xterm terminal, etc.).
+//
+// The constructor accepts (and ignores) the callback so the signature
+// matches the real browser API — otherwise static analysers look at
+// this polyfill's implicit zero-arg default constructor, see the
+// production `new ResizeObserver(cb)` calls, and flag them as passing
+// a superfluous argument. Matching the real API shape here keeps the
+// code-quality bot happy without weakening test behaviour.
 globalThis.ResizeObserver = class ResizeObserver {
+  constructor(_callback: ResizeObserverCallback) {
+    // Callback is intentionally stored nowhere — these tests don't
+    // exercise real layout-change delivery, they just need
+    // `new ResizeObserver(fn).observe(el)` to not throw.
+  }
   observe = vi.fn();
   unobserve = vi.fn();
   disconnect = vi.fn();

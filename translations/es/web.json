@@ -382,7 +382,10 @@
   "repositoryNode": {
     "removeRepository": "Eliminar repositorio",
     "removeConfirmTitle": "¿Eliminar repositorio?",
-    "removeConfirmDescription": "Esto eliminará <strong>{{name}}</strong> y todas sus funciones del espacio de trabajo. Los archivos en disco no se verán afectados.",
+    "removeConfirmDescription": "Esto eliminará <strong>{{name}}</strong> y todas sus funciones del espacio de trabajo.",
+    "removeConfirmDescriptionKeepFiles": "Los archivos del repositorio en disco no se verán afectados.",
+    "removeConfirmDescriptionDeleteFiles": "La carpeta del repositorio en disco se eliminará permanentemente. Esta acción no se puede deshacer.",
+    "deleteFromDiskLabel": "Eliminar también la carpeta del repositorio del disco",
     "cancel": "Cancelar",
     "remove": "Eliminar",
     "openInIde": "Abrir en IDE",
@@ -406,7 +409,8 @@
     "newFeature": "Nueva función",
     "localFolder": "Carpeta local",
     "adoptBranch": "Adoptar rama",
-    "fromGithub": "Desde GitHub"
+    "fromGithub": "Desde GitHub",
+    "newApplication": "Nueva Aplicación"
   },
   "chat": {
     "shepChat": "Shep Chat",

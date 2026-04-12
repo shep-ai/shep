@@ -30,6 +30,8 @@ export default tseslint.config(
     ignores: [
       // Build outputs
       'dist/**',
+      'packages/*/dist/**',
+      'packages/*/release/**',
       'build/**',
       'web/**',
       '**/.next/**',

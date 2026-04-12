@@ -14,6 +14,7 @@ import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import { ToolBubble, parseToolEvent } from '@/components/features/chat/tool-bubble';
 import {
   SendHorizontal,
   CircleStop,
@@ -88,20 +89,30 @@ const markdownComponents: Components = {
 
 export function Thread({
   className,
+  beforeMessages,
   afterMessages,
   composer,
+  hideEmpty,
 }: {
   className?: string;
+  /** Content rendered inside the scrollable viewport, BEFORE messages. Used by the application chat to pin the step tracker at the top of the scroll area. */
+  beforeMessages?: React.ReactNode;
   /** Content rendered inside the scrollable viewport, after messages (e.g. interaction bubbles). */
   afterMessages?: React.ReactNode;
   composer?: React.ReactNode;
+  /** Suppress the default "empty chat" placeholder — useful when `beforeMessages` already fills the viewport (e.g. a step tracker). */
+  hideEmpty?: boolean;
 }) {
   return (
     <ThreadPrimitive.Root className={cn('flex h-full flex-col', className)}>
       <ThreadPrimitive.Viewport className="flex flex-1 flex-col overflow-y-auto pt-4">
-        <ThreadPrimitive.Empty>
-          <ThreadEmpty />
-        </ThreadPrimitive.Empty>
+        {hideEmpty ? null : (
+          <ThreadPrimitive.Empty>
+            <ThreadEmpty />
+          </ThreadPrimitive.Empty>
+        )}
+
+        {beforeMessages}
 
         <ThreadPrimitive.Messages
           components={{
@@ -146,7 +157,7 @@ const UserMessage: FC = () => {
   }
 
   return (
-    <MessagePrimitive.Root className="group flex w-full items-start gap-2.5 px-4 py-0.5">
+    <MessagePrimitive.Root className="group animate-in fade-in-0 slide-in-from-bottom-1 flex w-full items-start gap-2.5 px-4 py-0.5 duration-300 ease-out">
       {/* User avatar */}
       <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-500/15">
         <User className="h-3.5 w-3.5 text-violet-500" />
@@ -189,7 +200,7 @@ function InteractionResponseMessage({ text }: { text: string }) {
   if (!parsed) return null;
 
   return (
-    <MessagePrimitive.Root className="group flex w-full items-start gap-2.5 px-4 py-0.5">
+    <MessagePrimitive.Root className="group animate-in fade-in-0 slide-in-from-bottom-1 flex w-full items-start gap-2.5 px-4 py-0.5 duration-300 ease-out">
       <div className="bg-muted flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
         <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
       </div>
@@ -230,8 +241,33 @@ function UserMessageText({ text }: { text: string }) {
 // ── Assistant message ───────────────────────────────────────────────────────
 
 const AssistantMessage: FC = () => {
+  // Peek at the raw message content to decide whether this is a
+  // tool-event message (Bash / Read / Write / Edit / …). Tool events
+  // render as a compact chip + expanded preview — they should NOT be
+  // wrapped in the normal assistant bubble shell (that adds bulky
+  // padding, avatar, background, and copy button). Everything else
+  // falls through to the regular bubble.
+  const message = useMessage();
+  const firstPart = message?.content?.[0];
+  const rawText = firstPart && 'text' in firstPart ? firstPart.text : '';
+  const toolEvent = rawText ? parseToolEvent(rawText) : null;
+
+  if (toolEvent) {
+    return (
+      <MessagePrimitive.Root className="group animate-in fade-in-0 slide-in-from-bottom-1 flex w-full items-start gap-2.5 px-4 py-0.5 duration-300 ease-out">
+        {/* Keep the avatar slot for visual rhythm but use a smaller inline icon */}
+        <div className="text-muted-foreground/40 mt-1 flex h-6 w-6 shrink-0 items-center justify-center">
+          <Bot className="h-3 w-3" />
+        </div>
+        <div className="flex min-w-0 flex-1 items-center py-0.5">
+          <ToolBubble text={rawText} />
+        </div>
+      </MessagePrimitive.Root>
+    );
+  }
+
   return (
-    <MessagePrimitive.Root className="group flex w-full items-start gap-2.5 px-4 py-0.5">
+    <MessagePrimitive.Root className="group animate-in fade-in-0 slide-in-from-bottom-1 flex w-full items-start gap-2.5 px-4 py-0.5 duration-300 ease-out">
       {/* Avatar */}
       <div className="bg-muted flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
         <Bot className="text-muted-foreground h-3.5 w-3.5" />

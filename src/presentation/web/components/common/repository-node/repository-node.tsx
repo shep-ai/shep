@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { useRouter } from 'next/navigation';
 import {
@@ -19,7 +19,7 @@ import {
   RotateCcw,
   MessageSquare,
 } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { ActionButton } from '@/components/common/action-button';
 import {
@@ -32,6 +32,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDeployAction } from '@/hooks/use-deploy-action';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
@@ -59,6 +61,10 @@ export function RepositoryNode({
   const sourceHandlePos = isRtl ? Position.Left : Position.Right;
   const featureFlags = useFeatureFlags();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteFromDisk, setDeleteFromDisk] = useState(false);
+  useEffect(() => {
+    if (confirmOpen) setDeleteFromDisk(false);
+  }, [confirmOpen]);
   const repoScopeId = data.id ? `repo-${data.id}` : `repo-${data.name}`;
   const chatTurnStatus = useTurnStatus(repoScopeId);
   const actions = useRepositoryActions(
@@ -149,22 +155,46 @@ export function RepositoryNode({
           </div>
 
           <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-            <DialogContent className="max-w-xs">
+            <DialogContent className="max-w-sm">
               <DialogHeader>
                 <DialogTitle>{t('repositoryNode.removeConfirmTitle')}</DialogTitle>
                 <DialogDescription>
-                  {t('repositoryNode.removeConfirmDescription', { name: data.name })}
+                  <Trans
+                    t={t}
+                    i18nKey="repositoryNode.removeConfirmDescription"
+                    values={{ name: data.name }}
+                    components={{ strong: <strong /> }}
+                  />{' '}
+                  {deleteFromDisk
+                    ? t('repositoryNode.removeConfirmDescriptionDeleteFiles')
+                    : t('repositoryNode.removeConfirmDescriptionKeepFiles')}
                 </DialogDescription>
               </DialogHeader>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="repository-delete-from-disk"
+                  checked={deleteFromDisk}
+                  onCheckedChange={(checked) => setDeleteFromDisk(checked === true)}
+                  data-testid="repository-node-delete-from-disk-checkbox"
+                  aria-label={t('repositoryNode.deleteFromDiskLabel')}
+                />
+                <Label
+                  htmlFor="repository-delete-from-disk"
+                  className="cursor-pointer text-sm font-normal"
+                >
+                  {t('repositoryNode.deleteFromDiskLabel')}
+                </Label>
+              </div>
               <DialogFooter className="grid grid-cols-2 gap-2 sm:flex-none">
                 <DialogClose asChild>
                   <Button variant="outline">{t('repositoryNode.cancel')}</Button>
                 </DialogClose>
                 <Button
                   variant="destructive"
+                  data-testid="repository-node-delete-confirm-button"
                   onClick={() => {
                     setConfirmOpen(false);
-                    data.onDelete?.(data.id!);
+                    data.onDelete?.(data.id!, { deleteFromDisk });
                   }}
                 >
                   {t('repositoryNode.remove')}

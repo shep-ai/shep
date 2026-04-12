@@ -110,7 +110,6 @@ async function mockChatApis(page: Page): Promise<void> {
                 sessionId: TEST_SESSION_ID,
                 model: 'claude-sonnet-4-6',
                 startedAt: new Date().toISOString(),
-                idleTimeoutMinutes: 30,
                 lastActivityAt: new Date().toISOString(),
               }
             : null,

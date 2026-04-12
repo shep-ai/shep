@@ -207,6 +207,9 @@ describe('IGitHubRepositoryService', () => {
         nameWithOwner: 'octocat/my-project',
       }),
       getViewerPermission: async () => 'ADMIN',
+      getAuthenticatedUser: async () => 'octocat',
+      checkPushAccess: async () => ({ hasPushAccess: true, viewerLogin: 'octocat' }),
+      forkRepository: async () => ({ nameWithOwner: 'octocat/my-project', alreadyExisted: false }),
     };
 
     const methodNames: (keyof IGitHubRepositoryService)[] = [
