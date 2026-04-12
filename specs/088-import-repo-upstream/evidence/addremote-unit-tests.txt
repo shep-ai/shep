@@ -54,8 +54,8 @@
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should call gh pr list with correct arguments including headRefName 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should normalize state from UPPERCASE to PrStatus enum values 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should return empty array when no PRs exist 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should throw GitPrError on gh CLI failure 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should throw GitPrError with AUTH_FAILURE on auth errors 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should throw GitPrError on gh CLI failure 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should throw GitPrError with AUTH_FAILURE on auth errors 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return true when feature branch is ancestor of base branch (true merge) 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return true for squash merge (not ancestor but no diff) 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return false when neither true merge nor squash merge 0ms
@@ -84,6 +84,6 @@
 
  Test Files  1 passed (1)
       Tests  80 passed (80)
-   Start at  21:48:17
-   Duration  341ms (transform 153ms, setup 40ms, import 171ms, tests 23ms, environment 0ms)
+   Start at  21:51:44
+   Duration  321ms (transform 152ms, setup 42ms, import 161ms, tests 20ms, environment 0ms)
 
