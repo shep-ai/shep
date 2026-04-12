@@ -885,8 +885,14 @@ export class GitPrService implements IGitPrService {
   async addRemote(cwd: string, remoteName: string, remoteUrl: string): Promise<void> {
     try {
       await this.execFile('git', ['remote', 'add', remoteName, remoteUrl], { cwd });
-    } catch (error) {
-      throw this.parseGitError(error);
+    } catch {
+      // Remote may already exist (e.g. gh repo clone auto-adds upstream for forks)
+      // — update its URL instead of failing.
+      try {
+        await this.execFile('git', ['remote', 'set-url', remoteName, remoteUrl], { cwd });
+      } catch (setUrlError) {
+        throw this.parseGitError(setUrlError);
+      }
     }
   }
 

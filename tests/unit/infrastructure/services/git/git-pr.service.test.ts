@@ -1343,8 +1343,24 @@ describe('GitPrService', () => {
       );
     });
 
-    it('should wrap underlying git errors in GitPrError', async () => {
-      vi.mocked(mockExec).mockRejectedValueOnce(new Error('remote upstream already exists'));
+    it('should fall back to set-url when remote already exists', async () => {
+      vi.mocked(mockExec)
+        .mockRejectedValueOnce(new Error('remote upstream already exists'))
+        .mockResolvedValueOnce({ stdout: '', stderr: '' });
+
+      await service.addRemote('/repo', 'upstream', 'https://github.com/x/y');
+
+      expect(mockExec).toHaveBeenCalledWith(
+        'git',
+        ['remote', 'set-url', 'upstream', 'https://github.com/x/y'],
+        { cwd: '/repo' }
+      );
+    });
+
+    it('should throw GitPrError when both add and set-url fail', async () => {
+      vi.mocked(mockExec)
+        .mockRejectedValueOnce(new Error('remote upstream already exists'))
+        .mockRejectedValueOnce(new Error('no such remote'));
 
       await expect(
         service.addRemote('/repo', 'upstream', 'https://github.com/x/y')

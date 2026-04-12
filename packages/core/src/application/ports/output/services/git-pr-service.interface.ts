@@ -186,7 +186,7 @@ export interface IGitPrService {
   ): Promise<string>;
 
   /**
-   * Add a git remote to the local repository.
+   * Add a git remote to the local repository, or update its URL if it already exists.
    *
    * @param cwd - Working directory path
    * @param remoteName - Name for the remote (e.g. "origin")
