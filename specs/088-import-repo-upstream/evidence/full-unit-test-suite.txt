@@ -1,0 +1,12 @@
+Full Unit Test Suite — pnpm test:unit
+====================================
+
+Run Date: 2026-04-12
+
+Result:
+ Test Files  418 passed (418)
+      Tests  5964 passed (5964)
+   Duration  ~66s
+
+All 418 test files pass with 5964 total tests.
+No failures, no regressions from the addRemote fix.
