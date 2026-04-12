@@ -1,34 +1,34 @@
+$ pnpm vitest run --reporter=verbose tests/unit/presentation/cli/commands/app/
 
-[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cli-application-management[39m
+ RUN  v4.0.18
 
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/resolve-application.test.ts[2m > [22mresolveApplication[2m > [22mshould resolve by exact ID[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/resolve-application.test.ts[2m > [22mresolveApplication[2m > [22mshould resolve by slug when exact ID not found[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/resolve-application.test.ts[2m > [22mresolveApplication[2m > [22mshould resolve by prefix when ID and slug not found[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/resolve-application.test.ts[2m > [22mresolveApplication[2m > [22mshould return error when multiple applications match prefix[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/resolve-application.test.ts[2m > [22mresolveApplication[2m > [22mshould return error when no application found[32m 0[2mms[22m[39m
-⠋ Creating application...                          ⠋ Creating application...                          ⠋ Creating application...                          ⠋ Creating application...                          ⠋ Creating application...                           [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/ls.command.test.ts[2m > [22mapp ls command[2m > [22mshould create a command named "ls" with correct description[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/ls.command.test.ts[2m > [22mapp ls command[2m > [22mshould resolve ListApplicationsUseCase from container[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/ls.command.test.ts[2m > [22mapp ls command[2m > [22mshould render table with application data[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/ls.command.test.ts[2m > [22mapp ls command[2m > [22mshould show "No applications found" when list is empty[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/ls.command.test.ts[2m > [22mapp ls command[2m > [22mshould show 8-char ID prefix in table[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/ls.command.test.ts[2m > [22mapp ls command[2m > [22mshould set process.exitCode = 1 on error[32m 1[2mms[22m[39m
-⠋ Creating application...                           [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/new.command.test.ts[2m > [22mapp new command[2m > [22mshould create a command named "new" with correct description[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/new.command.test.ts[2m > [22mapp new command[2m > [22mshould create an application with description[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/new.command.test.ts[2m > [22mapp new command[2m > [22mshould display application details after creation[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/new.command.test.ts[2m > [22mapp new command[2m > [22mshould pass agent type when --agent is specified[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/new.command.test.ts[2m > [22mapp new command[2m > [22mshould pass model when --model is specified[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/new.command.test.ts[2m > [22mapp new command[2m > [22mshould not send initialPrompt when --no-start is specified[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/new.command.test.ts[2m > [22mapp new command[2m > [22mshould set process.exitCode = 1 on error[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/show.command.test.ts[2m > [22mapp show command[2m > [22mshould create a command named "show" with argument <id>[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/show.command.test.ts[2m > [22mapp show command[2m > [22mshould render application details when resolved successfully[32m 11[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/show.command.test.ts[2m > [22mapp show command[2m > [22mshould display timestamps section[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/show.command.test.ts[2m > [22mapp show command[2m > [22mshould display configuration section[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/show.command.test.ts[2m > [22mapp show command[2m > [22mshould show error and set exitCode when application not found[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/show.command.test.ts[2m > [22mapp show command[2m > [22mshould handle unexpected errors with try/catch[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/presentation/cli/commands/app/show.command.test.ts[2m > [22mapp show command[2m > [22mshould show deletedAt when present[32m 0[2mms[22m[39m
+ ✓ tests/unit/presentation/cli/commands/app/resolve-application.test.ts > resolveApplication > should resolve by exact ID 1ms
+ ✓ tests/unit/presentation/cli/commands/app/resolve-application.test.ts > resolveApplication > should resolve by slug when exact ID not found 0ms
+ ✓ tests/unit/presentation/cli/commands/app/resolve-application.test.ts > resolveApplication > should resolve by prefix when ID and slug not found 0ms
+ ✓ tests/unit/presentation/cli/commands/app/resolve-application.test.ts > resolveApplication > should return error when multiple applications match prefix 1ms
+ ✓ tests/unit/presentation/cli/commands/app/resolve-application.test.ts > resolveApplication > should return error when no application found 0ms
+ ✓ tests/unit/presentation/cli/commands/app/ls.command.test.ts > app ls command > should create a command named "ls" with correct description 2ms
+ ✓ tests/unit/presentation/cli/commands/app/ls.command.test.ts > app ls command > should resolve ListApplicationsUseCase from container 2ms
+ ✓ tests/unit/presentation/cli/commands/app/ls.command.test.ts > app ls command > should render table with application data 1ms
+ ✓ tests/unit/presentation/cli/commands/app/ls.command.test.ts > app ls command > should show "No applications found" when list is empty 0ms
+ ✓ tests/unit/presentation/cli/commands/app/ls.command.test.ts > app ls command > should show 8-char ID prefix in table 0ms
+ ✓ tests/unit/presentation/cli/commands/app/ls.command.test.ts > app ls command > should set process.exitCode = 1 on error 1ms
+ ✓ tests/unit/presentation/cli/commands/app/new.command.test.ts > app new command > should create a command named "new" with correct description 2ms
+ ✓ tests/unit/presentation/cli/commands/app/new.command.test.ts > app new command > should create an application with description 2ms
+ ✓ tests/unit/presentation/cli/commands/app/new.command.test.ts > app new command > should display application details after creation 1ms
+ ✓ tests/unit/presentation/cli/commands/app/new.command.test.ts > app new command > should pass agent type when --agent is specified 0ms
+ ✓ tests/unit/presentation/cli/commands/app/new.command.test.ts > app new command > should pass model when --model is specified 0ms
+ ✓ tests/unit/presentation/cli/commands/app/new.command.test.ts > app new command > should not send initialPrompt when --no-start is specified 0ms
+ ✓ tests/unit/presentation/cli/commands/app/new.command.test.ts > app new command > should set process.exitCode = 1 on error 1ms
+ ✓ tests/unit/presentation/cli/commands/app/show.command.test.ts > app show command > should create a command named "show" with argument <id> 2ms
+ ✓ tests/unit/presentation/cli/commands/app/show.command.test.ts > app show command > should render application details when resolved successfully 12ms
+ ✓ tests/unit/presentation/cli/commands/app/show.command.test.ts > app show command > should display timestamps section 1ms
+ ✓ tests/unit/presentation/cli/commands/app/show.command.test.ts > app show command > should display configuration section 1ms
+ ✓ tests/unit/presentation/cli/commands/app/show.command.test.ts > app show command > should show error and set exitCode when application not found 0ms
+ ✓ tests/unit/presentation/cli/commands/app/show.command.test.ts > app show command > should handle unexpected errors with try/catch 1ms
+ ✓ tests/unit/presentation/cli/commands/app/show.command.test.ts > app show command > should show deletedAt when present 0ms
 
-[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
-[2m      Tests [22m [1m[32m25 passed[39m[22m[90m (25)[39m
-[2m   Start at [22m 20:44:52
-[2m   Duration [22m 464ms[2m (transform 432ms, setup 119ms, import 1.08s, tests 35ms, environment 0ms)[22m
-
+ Test Files  4 passed (4)
+      Tests  25 passed (25)
+   Start at  20:51:53
+   Duration  513ms (transform 466ms, setup 153ms, import 1.18s, tests 35ms, environment 0ms)
