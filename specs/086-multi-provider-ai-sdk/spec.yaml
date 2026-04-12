@@ -130,3 +130,7 @@ rejectionFeedback:
     message: "update the copilot and the gemini icons as well from here\nhttps://lobehub.com/icons"
     phase: "merge"
     timestamp: "2026-04-09T20:03:27.454Z"
+  - iteration: 4
+    message: "Add support to local ollama as well"
+    phase: "merge"
+    timestamp: "2026-04-12T16:17:30.697Z"

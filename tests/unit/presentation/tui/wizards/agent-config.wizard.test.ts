@@ -149,4 +149,18 @@ describe('agentConfigWizard', () => {
     expect(mockSelect).toHaveBeenCalledTimes(2);
     expect(mockPassword).not.toHaveBeenCalled();
   });
+
+  it('should show auth method prompt for Ollama (no token required)', async () => {
+    mockSelect.mockResolvedValueOnce('ollama'); // agent type
+    mockSelect.mockResolvedValueOnce('session'); // auth method
+
+    const result = await agentConfigWizard();
+
+    expect(result).toEqual({
+      type: 'ollama',
+      authMethod: 'session',
+    });
+    expect(mockSelect).toHaveBeenCalledTimes(2);
+    expect(mockPassword).not.toHaveBeenCalled();
+  });
 });

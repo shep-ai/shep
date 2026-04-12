@@ -26,6 +26,10 @@
           "name": "Together AI",
           "description": "Schnelle Open-Source-Modellinferenz über Together AI API (API-Schlüssel erforderlich)"
         },
+        "ollama": {
+          "name": "Ollama",
+          "description": "Lokale LLMs über Ollama ausführen (kein API-Schlüssel erforderlich, läuft auf localhost)"
+        },
         "aider": { "name": "Aider", "disabled": "(Demnächst verfügbar)" },
         "continue": { "name": "Continue", "disabled": "(Demnächst verfügbar)" }
       }

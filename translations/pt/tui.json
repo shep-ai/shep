@@ -35,6 +35,10 @@
           "name": "Together AI",
           "description": "Inferência rápida de modelos open-source via API Together AI (requer chave API)"
         },
+        "ollama": {
+          "name": "Ollama",
+          "description": "Executar LLMs locais via Ollama (não requer chave API, roda em localhost)"
+        },
         "aider": {
           "name": "Aider",
           "disabled": "(Em Breve)"

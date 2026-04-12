@@ -35,6 +35,10 @@
           "name": "Together AI",
           "description": "Fast open-source model inference via Together AI API (requires API key)"
         },
+        "ollama": {
+          "name": "Ollama",
+          "description": "Run local LLMs via Ollama (no API key required, runs on localhost)"
+        },
         "aider": {
           "name": "Aider",
           "disabled": "(Coming Soon)"

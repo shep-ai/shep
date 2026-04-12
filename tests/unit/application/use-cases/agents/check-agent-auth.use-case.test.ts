@@ -189,4 +189,22 @@ describe('CheckAgentAuthUseCase', () => {
     expect(listTools.execute).not.toHaveBeenCalled();
     expect(detector.isAuthenticated).not.toHaveBeenCalled();
   });
+
+  it('marks Ollama as ready without calling list-tools (null toolId)', async () => {
+    mockGetSettings.mockReturnValue(makeSettings(AgentType.Ollama));
+
+    const result = await useCase.execute();
+
+    expect(result).toEqual({
+      agentType: AgentType.Ollama,
+      installed: true,
+      authenticated: true,
+      label: 'Ollama',
+      binaryName: null,
+      installCommand: null,
+      authCommand: null,
+    });
+    expect(listTools.execute).not.toHaveBeenCalled();
+    expect(detector.isAuthenticated).not.toHaveBeenCalled();
+  });
 });

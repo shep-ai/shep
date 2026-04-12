@@ -35,6 +35,10 @@
           "name": "Together AI",
           "description": "הסקה מהירה של מודלים בקוד פתוח דרך ממשק Together AI API (נדרש מפתח API)"
         },
+        "ollama": {
+          "name": "Ollama",
+          "description": "הרצת מודלי LLM מקומיים דרך Ollama (לא נדרש מפתח API, רץ על localhost)"
+        },
         "aider": {
           "name": "Aider",
           "disabled": "(בקרוב)"

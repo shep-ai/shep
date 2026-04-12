@@ -27,6 +27,7 @@ const AGENT_TYPE_OPTIONS = [
   { value: AgentType.GeminiCli, label: 'Gemini CLI' },
   { value: AgentType.OpenRouter, label: 'OpenRouter' },
   { value: AgentType.TogetherAi, label: 'Together AI' },
+  { value: AgentType.Ollama, label: 'Ollama' },
   { value: AgentType.Aider, label: 'Aider' },
   { value: AgentType.Continue, label: 'Continue' },
   { value: AgentType.Dev, label: 'Dev' },

@@ -108,6 +108,7 @@ export class PlatformAgentAuthDetectorService implements IAgentAuthDetectorServi
       // SDK-based agents — no binary check, auth enforced at settings layer via token requirement
       case AgentType.OpenRouter:
       case AgentType.TogetherAi:
+      case AgentType.Ollama:
       // falls through
       default:
         // dev, aider, continue, codex-cli — assume no auth needed

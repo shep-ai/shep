@@ -15,6 +15,7 @@ import { CodexCliExecutorService } from '@/infrastructure/services/agents/common
 import { CopilotCliExecutorService } from '@/infrastructure/services/agents/common/executors/copilot-cli-executor.service.js';
 import { OpenRouterExecutorService } from '@/infrastructure/services/agents/common/executors/openrouter-executor.service.js';
 import { TogetherAiExecutorService } from '@/infrastructure/services/agents/common/executors/together-ai-executor.service.js';
+import { OllamaExecutorService } from '@/infrastructure/services/agents/common/executors/ollama-executor.service.js';
 import type { SpawnFunction } from '@/infrastructure/services/agents/common/types.js';
 import { AgentType, AgentAuthMethod } from '@/domain/generated/output.js';
 import type { AgentConfig } from '@/domain/generated/output.js';
@@ -228,6 +229,31 @@ describe('AgentExecutorFactory', () => {
       expect(executor1).toBe(executor2);
     });
 
+    it('should create OllamaExecutorService for ollama type', () => {
+      const config: AgentConfig = {
+        type: AgentType.Ollama,
+        authMethod: AgentAuthMethod.Session,
+      };
+
+      const executor = factory.createExecutor(AgentType.Ollama, config);
+
+      expect(executor).toBeDefined();
+      expect(executor).toBeInstanceOf(OllamaExecutorService);
+      expect(executor.agentType).toBe(AgentType.Ollama);
+    });
+
+    it('should cache ollama executor instances', () => {
+      const config: AgentConfig = {
+        type: AgentType.Ollama,
+        authMethod: AgentAuthMethod.Session,
+      };
+
+      const executor1 = factory.createExecutor(AgentType.Ollama, config);
+      const executor2 = factory.createExecutor(AgentType.Ollama, config);
+
+      expect(executor1).toBe(executor2);
+    });
+
     it('should pass empty string when token is undefined for SDK executors', () => {
       const config: AgentConfig = {
         type: AgentType.OpenRouter,
@@ -265,7 +291,8 @@ describe('AgentExecutorFactory', () => {
       expect(supported).toContain('dev');
       expect(supported).toContain('openrouter');
       expect(supported).toContain('together-ai');
-      expect(supported).toHaveLength(8);
+      expect(supported).toContain('ollama');
+      expect(supported).toHaveLength(9);
     });
 
     it('should not include unsupported agents', () => {
@@ -295,13 +322,15 @@ describe('AgentExecutorFactory', () => {
       expect(copilotInfo!.versionArgs).toEqual(['--version']);
     });
 
-    it('should not include SDK agents (openrouter, together-ai) since they have no CLI binary', () => {
+    it('should not include SDK agents (openrouter, together-ai, ollama) since they have no CLI binary', () => {
       const cliInfos = factory.getCliInfo();
       const openrouterInfo = cliInfos.find((info) => info.agentType === AgentType.OpenRouter);
       const togetherInfo = cliInfos.find((info) => info.agentType === AgentType.TogetherAi);
+      const ollamaInfo = cliInfos.find((info) => info.agentType === AgentType.Ollama);
 
       expect(openrouterInfo).toBeUndefined();
       expect(togetherInfo).toBeUndefined();
+      expect(ollamaInfo).toBeUndefined();
     });
   });
 
@@ -413,6 +442,23 @@ describe('AgentExecutorFactory', () => {
       ]);
     });
 
+    it('should return ollama model list with 9 models', () => {
+      const models = factory.getSupportedModels(AgentType.Ollama);
+
+      expect(models).toHaveLength(9);
+      expect(models).toEqual([
+        'llama3.2',
+        'llama3.1',
+        'codellama',
+        'deepseek-coder-v2',
+        'qwen2.5-coder',
+        'mistral',
+        'gemma2',
+        'phi3',
+        'starcoder2',
+      ]);
+    });
+
     it('should return empty array for dev agent', () => {
       const models = factory.getSupportedModels(AgentType.Dev);
 
@@ -440,6 +486,10 @@ describe('AgentExecutorFactory', () => {
 
     it('should return false for together-ai', () => {
       expect(factory.supportsInteractive(AgentType.TogetherAi)).toBe(false);
+    });
+
+    it('should return false for ollama', () => {
+      expect(factory.supportsInteractive(AgentType.Ollama)).toBe(false);
     });
   });
 });

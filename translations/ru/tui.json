@@ -35,6 +35,10 @@
           "name": "Together AI",
           "description": "Быстрый инференс моделей с открытым исходным кодом через API Together AI (требуется API-ключ)"
         },
+        "ollama": {
+          "name": "Ollama",
+          "description": "Запуск локальных LLM через Ollama (API-ключ не требуется, работает на localhost)"
+        },
         "aider": {
           "name": "Aider",
           "disabled": "(Скоро)"

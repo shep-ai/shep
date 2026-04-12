@@ -518,6 +518,7 @@ export enum AgentType {
   Cursor = 'cursor',
   OpenRouter = 'openrouter',
   TogetherAi = 'together-ai',
+  Ollama = 'ollama',
   Dev = 'dev',
 }
 export enum AgentAuthMethod {

@@ -61,6 +61,11 @@ export function createAgentSelectConfig() {
         description: t('tui:prompts.selectAgent.choices.togetherAi.description'),
       },
       {
+        name: t('tui:prompts.selectAgent.choices.ollama.name'),
+        value: AgentType.Ollama,
+        description: t('tui:prompts.selectAgent.choices.ollama.description'),
+      },
+      {
         name: t('tui:prompts.selectAgent.choices.aider.name'),
         value: AgentType.Aider,
         disabled: t('tui:prompts.selectAgent.choices.aider.disabled'),

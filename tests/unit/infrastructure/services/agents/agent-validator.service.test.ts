@@ -224,5 +224,14 @@ describe('AgentValidatorService', () => {
       expect(result.error).toBeUndefined();
       expect(mockExec).not.toHaveBeenCalled();
     });
+
+    it('should return available with version "sdk" for ollama without calling execFn', async () => {
+      const result = await service.isAvailable(AgentType.Ollama);
+
+      expect(result.available).toBe(true);
+      expect(result.version).toBe('sdk');
+      expect(result.error).toBeUndefined();
+      expect(mockExec).not.toHaveBeenCalled();
+    });
   });
 });

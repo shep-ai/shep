@@ -27,6 +27,7 @@ import { CodexCliExecutorService } from './executors/codex-cli-executor.service.
 import { CopilotCliExecutorService } from './executors/copilot-cli-executor.service.js';
 import { OpenRouterExecutorService } from './executors/openrouter-executor.service.js';
 import { TogetherAiExecutorService } from './executors/together-ai-executor.service.js';
+import { OllamaExecutorService } from './executors/ollama-executor.service.js';
 import type { SpawnFunction } from './types.js';
 
 /**
@@ -93,6 +94,9 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
       case 'together-ai':
         executor = new TogetherAiExecutorService(_authConfig.token ?? '');
         break;
+      case 'ollama':
+        executor = new OllamaExecutorService(_authConfig.token ?? undefined);
+        break;
       default:
         throw new Error(
           `Unsupported agent type: ${agentType}. Supported: ${this.getSupportedAgents().join(', ')}`
@@ -118,6 +122,7 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
       'copilot-cli' as AgentType,
       'openrouter' as AgentType,
       'together-ai' as AgentType,
+      'ollama' as AgentType,
     ];
   }
 
@@ -154,6 +159,8 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
         return OPENROUTER_MODELS;
       case 'together-ai':
         return TOGETHER_AI_MODELS;
+      case 'ollama':
+        return OLLAMA_MODELS;
       default:
         return [];
     }
@@ -293,4 +300,17 @@ const TOGETHER_AI_MODELS: string[] = [
   'mistralai/Mistral-Small-24B-Instruct-2501',
   'google/gemma-2-27b-it',
   'codellama/CodeLlama-70b-Instruct-hf',
+];
+
+// Ollama — popular local models for coding and general use
+const OLLAMA_MODELS: string[] = [
+  'llama3.2',
+  'llama3.1',
+  'codellama',
+  'deepseek-coder-v2',
+  'qwen2.5-coder',
+  'mistral',
+  'gemma2',
+  'phi3',
+  'starcoder2',
 ];

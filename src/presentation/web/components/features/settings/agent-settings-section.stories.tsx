@@ -79,3 +79,12 @@ export const TogetherAi: Story = {
     },
   },
 };
+
+export const Ollama: Story = {
+  args: {
+    agent: {
+      type: AgentType.Ollama,
+      authMethod: AgentAuthMethod.Session,
+    },
+  },
+};

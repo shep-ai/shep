@@ -109,4 +109,14 @@ describe('AgentSettingsSection', () => {
     );
     expect(screen.getByText(/requires an API key/i)).toBeDefined();
   });
+
+  it('renders Ollama with session auth (no token required)', () => {
+    render(
+      <AgentSettingsSection
+        agent={{ type: AgentType.Ollama, authMethod: AgentAuthMethod.Session }}
+      />
+    );
+    expect(screen.getByTestId('agent-type-select')).toBeDefined();
+    expect(screen.queryByTestId('agent-token-input')).toBeNull();
+  });
 });

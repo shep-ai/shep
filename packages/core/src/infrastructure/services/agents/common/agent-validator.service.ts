@@ -59,7 +59,7 @@ export class AgentValidatorService implements IAgentValidator {
     if (agentType === 'dev') return { available: true, version: 'dev' };
 
     // SDK-based agents require no binary — always available (auth checked at execution time)
-    if (agentType === 'openrouter' || agentType === 'together-ai') {
+    if (agentType === 'openrouter' || agentType === 'together-ai' || agentType === 'ollama') {
       return { available: true, version: 'sdk' };
     }
 

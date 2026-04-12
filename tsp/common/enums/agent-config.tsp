@@ -7,8 +7,8 @@
  *
  * ## Supported Agents
  *
- * Claude Code, Codex CLI, Copilot CLI, Cursor, OpenRouter, and Together AI are fully
- * supported. Other agents (Gemini CLI, Aider, Continue) are listed for future
+ * Claude Code, Codex CLI, Copilot CLI, Cursor, OpenRouter, Together AI, and Ollama are
+ * fully supported. Other agents (Gemini CLI, Aider, Continue) are listed for future
  * extensibility and appear as "Coming Soon" in the TUI wizard.
  */
 /**
@@ -21,6 +21,7 @@
  * cursor       ← Currently supported
  * openrouter   ← Currently supported (SDK-based, HTTP API)
  * together-ai  ← Currently supported (SDK-based, HTTP API)
+ * ollama       ← Currently supported (SDK-based, local inference)
  * gemini-cli   ← Coming Soon
  * aider        ← Coming Soon
  * continue     ← Coming Soon
@@ -93,6 +94,14 @@ enum AgentType {
    */
   @doc("Together AI open-source model inference")
   TogetherAi: "together-ai",
+
+  /**
+   * Ollama local LLM runtime.
+   * Supported — SDK-based executor using OpenAI-compatible API.
+   * Runs locally with no external API key required.
+   */
+  @doc("Ollama local LLM runtime")
+  Ollama: "ollama",
 
   /**
    * Local development mock executor.

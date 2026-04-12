@@ -67,6 +67,7 @@ const AGENT_METADATA: Record<string, AgentMetadata> = {
   [AgentType.Dev]: { label: 'Demo', toolId: null, binaryName: null },
   [AgentType.OpenRouter]: { label: 'OpenRouter', toolId: null, binaryName: null },
   [AgentType.TogetherAi]: { label: 'Together AI', toolId: null, binaryName: null },
+  [AgentType.Ollama]: { label: 'Ollama', toolId: null, binaryName: null },
 };
 
 const UNKNOWN_RESULT: CheckAgentAuthResult = {

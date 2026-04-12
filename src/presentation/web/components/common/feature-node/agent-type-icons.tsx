@@ -13,6 +13,7 @@ export type AgentTypeValue =
   | 'continue'
   | 'openrouter'
   | 'together-ai'
+  | 'ollama'
   | 'dev';
 
 type IconProps = SVGProps<SVGSVGElement> & { className?: string };
@@ -102,6 +103,7 @@ const agentTypeIconMap: Record<AgentTypeValue, ComponentType<IconProps>> = {
   continue: createBrandIcon('/icons/agents/continue.jpeg', 'Continue'),
   openrouter: createBrandIcon('/icons/agents/openrouter.svg', 'OpenRouter'),
   'together-ai': createBrandIcon('/icons/agents/together-ai.svg', 'Together AI'),
+  ollama: createBrandIcon('/icons/agents/ollama.svg', 'Ollama'),
   dev: DevAgentIcon,
 };
 
@@ -116,6 +118,7 @@ export const agentTypeLabels: Record<AgentTypeValue, string> = {
   continue: 'Continue',
   openrouter: 'OpenRouter',
   'together-ai': 'Together AI',
+  ollama: 'Ollama',
   dev: 'Demo',
 };
 
