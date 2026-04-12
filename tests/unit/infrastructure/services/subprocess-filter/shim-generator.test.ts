@@ -39,9 +39,11 @@ describe('createShimDirectory', () => {
       const shimPath = join(result.path, cmd);
       expect(existsSync(shimPath)).toBe(true);
 
-      // Check executable permission (owner execute bit)
-      const stat = statSync(shimPath);
-      expect(stat.mode & 0o100).toBeTruthy();
+      // Check executable permission (owner execute bit) — skip on Windows
+      if (process.platform !== 'win32') {
+        const stat = statSync(shimPath);
+        expect(stat.mode & 0o100).toBeTruthy();
+      }
 
       // Check content
       const content = readFileSync(shimPath, 'utf-8');
