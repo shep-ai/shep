@@ -1,22 +1,11 @@
-# Feature Specification (YAML)
-# This is the source of truth. Markdown is auto-generated from this file.
-
-name: project-management-spec
+name: "project-management-spec"
 number: 87
 branch: "feat/087-project-management-spec"
 oneLiner: "Add Plane-like project management capabilities to Shep — issues, sprints, boards, docs, triage, and analytics"
-summary: >
-  Add a comprehensive project management system to Shep inspired by Plane (open-source Jira/Linear alternative).
-  This encompasses projects, work items with custom types and properties, cycles/sprints, modules/epics,
-  kanban/list/table/timeline/calendar views, pages/wiki, intake/triage, analytics dashboards, time tracking,
-  notifications, and AI-powered features — all integrated into Shep's existing Clean Architecture with
-  TypeSpec-first domain models, use-case-driven application layer, and multi-presentation support (CLI, TUI, Web).
-phase: Requirements
-sizeEstimate: XL
-
-# Relationships
+summary: "Add a comprehensive project management system to Shep inspired by Plane (open-source Jira/Linear alternative). This encompasses projects, work items with custom types and properties, cycles/sprints, modules/epics, kanban/list/table/timeline/calendar views, pages/wiki, intake/triage, analytics dashboards, time tracking, notifications, and AI-powered features — all integrated into Shep's existing Clean Architecture with TypeSpec-first domain models, use-case-driven application layer, and multi-presentation support (CLI, TUI, Web).\n"
+phase: "Planning"
+sizeEstimate: "XL"
 relatedFeatures: []
-
 technologies:
   - "TypeSpec (domain model definitions)"
   - "TypeScript (application logic)"
@@ -39,7 +28,6 @@ technologies:
   - "@dnd-kit (drag-and-drop for views)"
   - "SQLite FTS5 (full-text search)"
   - "papaparse (CSV import/export)"
-
 relatedLinks:
   - title: "Plane GitHub Repository"
     url: "https://github.com/makeplane/plane"
@@ -51,24 +39,21 @@ relatedLinks:
     url: "https://plane.so/ai"
   - title: "Plane Pricing (feature tiers)"
     url: "https://plane.so/pricing"
-
-# Open questions (resolved with AI recommendations)
 openQuestions:
   - question: "Should the Project entity be a child of Application (workspace) or a standalone top-level entity?"
     resolved: true
     options:
       - option: "Child of Application"
         description: "Projects live inside an Application (workspace). Application already exists as the top-level container in Shep. This preserves existing hierarchy, avoids a new top-level concept, and maps naturally to Plane's Workspace->Project relationship."
-        selected: true
+        selected: false
       - option: "Standalone top-level entity"
         description: "Projects exist independently of Applications. Simpler initial model but creates a parallel hierarchy and doesn't leverage the existing Application entity."
-        selected: false
+        selected: true
       - option: "Merge with Application"
         description: "Treat Application as both workspace and project (1:1). Simplest model but loses the ability to have multiple projects per workspace."
         selected: false
     selectionRationale: "Application already serves as the workspace concept in Shep. Making Project a child of Application preserves the existing hierarchy, avoids introducing a new top-level entity, and maps directly to Plane's Workspace->Project model. A future migration to multi-workspace is simpler from this starting point."
-    answer: "Child of Application"
-
+    answer: "Standalone top-level entity"
   - question: "How should work items relate to existing Feature entities?"
     resolved: true
     options:
@@ -83,7 +68,6 @@ openQuestions:
         selected: false
     selectionRationale: "Feature is deeply embedded as Shep's aggregate root with 95+ use cases, agent orchestration, and lifecycle management. Refactoring it would be extremely high-risk. WorkItem as a separate entity keeps the blast radius contained while allowing optional linking between PM work items and SDLC features via a relation."
     answer: "Separate parallel entity"
-
   - question: "What rich text editor should be used for the Pages/Wiki feature?"
     resolved: true
     options:
@@ -98,7 +82,6 @@ openQuestions:
         selected: false
     selectionRationale: "TipTap provides the best balance of extensibility, React integration, and Yjs CRDT support for collaborative editing. It's what Plane uses, which validates it for this exact use case. The extension system makes adding custom blocks (embeds, mentions, work item references) straightforward."
     answer: "TipTap"
-
   - question: "What charting library should be used for analytics dashboards?"
     resolved: true
     options:
@@ -113,7 +96,6 @@ openQuestions:
         selected: false
     selectionRationale: "Recharts is the most idiomatic choice for a React 19 / Next.js 16 application. Its declarative, composable API aligns with React patterns. It covers all required chart types (bar, line, area, pie/donut for analytics) and has the smallest bundle impact."
     answer: "Recharts"
-
   - question: "Should the MVP (Phase 1) include multi-user support or remain single-developer?"
     resolved: true
     options:
@@ -125,7 +107,6 @@ openQuestions:
         selected: false
     selectionRationale: "Shep is currently a single-developer tool. Adding multi-user support in Phase 1 would require authentication infrastructure, session management, and permission checks across every use case — none of which exist today. Starting single-user keeps the MVP focused on PM functionality. The data model should still include userId fields with a hardcoded default to make the future migration to multi-user non-breaking."
     answer: "Single-developer MVP"
-
   - question: "How should work item identifiers be generated?"
     resolved: true
     options:
@@ -140,7 +121,6 @@ openQuestions:
         selected: false
     selectionRationale: "Project-prefixed sequential IDs (e.g., PROJ-1) are the industry standard for issue trackers. They're memorable, greppable in commit messages and PR titles, and provide project context at a glance. The per-project counter is a simple SQLite column with an atomic increment on insert."
     answer: "Project prefix + auto-increment"
-
   - question: "What drag-and-drop library should be used across views?"
     resolved: true
     options:
@@ -155,7 +135,6 @@ openQuestions:
         selected: false
     selectionRationale: "@dnd-kit is the modern standard for React DnD. It's accessible, performant, and actively maintained. react-beautiful-dnd is deprecated, and React DnD requires too much boilerplate for the sortable list and kanban patterns needed across all five view types."
     answer: "@dnd-kit"
-
   - question: "Should work item states be fully customizable per project or use a fixed state model?"
     resolved: true
     options:
@@ -170,7 +149,6 @@ openQuestions:
         selected: false
     selectionRationale: "Fixed state groups with customizable states within each group is the proven pattern from Plane and Linear. It gives users naming and ordering flexibility while preserving the semantic meaning needed for analytics (e.g., 'Completed' group states count as done for burndown). Each project gets default states (Backlog, Todo, In Progress, Done, Cancelled) that can be renamed, reordered, or extended."
     answer: "Customizable with fixed groups"
-
   - question: "Should the Board view use React Flow or a custom grid layout?"
     resolved: true
     options:
@@ -182,7 +160,6 @@ openQuestions:
         selected: false
     selectionRationale: "React Flow excels at graph/node visualization (feature dependency graphs, canvas views) but a kanban board is fundamentally a columnar layout with DnD between columns. A custom grid with @dnd-kit is simpler, more performant, and produces a more natural kanban UX. React Flow should be reserved for the Timeline (Gantt) view where its node/edge model fits better."
     answer: "Custom grid with @dnd-kit"
-
   - question: "How should file attachments be stored?"
     resolved: true
     options:
@@ -197,28 +174,26 @@ openQuestions:
         selected: false
     selectionRationale: "For a single-developer MVP, local filesystem storage is the simplest and most reliable option. No external service dependencies, works fully offline, and keeps the database lean. The storage abstraction (IAttachmentStorage port) should be defined so that S3 can be swapped in later when multi-user support is added in Phase 6."
     answer: "Local filesystem"
-
   - question: "Should custom properties (custom fields) be included in Phase 1 MVP or deferred?"
     resolved: true
     options:
       - option: "Defer to Phase 4"
         description: "Phase 1 MVP includes only built-in properties (title, description, state, priority, assignees, labels, dates, estimate). Custom properties add significant schema complexity (EAV pattern or JSON columns) and UI complexity (dynamic form rendering). Deferring keeps MVP focused."
-        selected: true
+        selected: false
       - option: "Include in Phase 1"
         description: "Build the custom property system from the start. Ensures the data model is flexible from day one but adds 3-4 additional entities, dynamic form generation, and schema validation complexity to the MVP."
-        selected: false
+        selected: true
     selectionRationale: "Custom properties (Text, Number, Dropdown, Boolean, Date, Member Picker) add substantial domain complexity (CustomProperty, CustomPropertyValue entities, dynamic validation, dynamic form rendering). The built-in properties cover 90% of single-developer needs. Deferring custom properties to Phase 4 keeps the MVP sharply focused on core PM functionality."
-    answer: "Defer to Phase 4"
-
+    answer: "Include in Phase 1"
   - question: "What estimate system should be the default for new projects?"
     resolved: true
     options:
       - option: "Points (Fibonacci)"
         description: "Fibonacci sequence (1, 2, 3, 5, 8, 13, 21). Industry standard for agile estimation. Natural logarithmic scale reflects estimation uncertainty at larger sizes."
-        selected: true
+        selected: false
       - option: "Categories (T-shirt)"
         description: "XS, S, M, L, XL. Easy for non-technical stakeholders but doesn't aggregate numerically for burndown charts."
-        selected: false
+        selected: true
       - option: "Time-based (hours)"
         description: "Direct time estimates. Precise but encourages micro-management and is consistently shown to be less accurate than relative estimation."
         selected: false
@@ -226,8 +201,7 @@ openQuestions:
         description: "Estimates disabled by default, user opts in. Simpler MVP but means analytics like velocity charts don't work until configured."
         selected: false
     selectionRationale: "Fibonacci points are the most widely used estimation system in agile development. They aggregate naturally for velocity and burndown charts, and the non-linear scale appropriately captures estimation uncertainty. The system should be configurable per-project (Phase 3) but Fibonacci is the sensible default."
-    answer: "Points (Fibonacci)"
-
+    answer: "Categories (T-shirt)"
   - question: "How should the Timeline (Gantt) view render dependency lines?"
     resolved: true
     options:
@@ -242,7 +216,6 @@ openQuestions:
         selected: false
     selectionRationale: "React Flow is already a project dependency and handles edge rendering, routing, and interactivity. Using it as an overlay for dependency lines on the Gantt chart leverages existing infrastructure while the timeline grid itself can be a custom component. This avoids reimplementing edge logic from scratch."
     answer: "React Flow overlay"
-
   - question: "Should intake/triage be a separate entity or a special work item state?"
     resolved: true
     options:
@@ -254,367 +227,18 @@ openQuestions:
         selected: false
     selectionRationale: "A separate IntakeItem entity provides clean separation between unvetted requests and committed work items. The conversion from IntakeItem to WorkItem is an explicit acceptance action that sets appropriate defaults. This matches Plane's model and keeps the work item table focused on actual project work."
     answer: "Separate IntakeItem entity"
-
   - question: "Should the CLI presentation layer support all five view layouts or a subset?"
     resolved: true
     options:
       - option: "List and Table only"
         description: "CLI supports list view (grouped text output) and table view (formatted columns). Board, Calendar, and Timeline are inherently visual and don't translate well to terminal output. CLI focuses on CRUD operations and filtering."
-        selected: true
+        selected: false
       - option: "All five layouts"
         description: "Attempt to render all layouts in the terminal. Board could use ASCII columns, Calendar could use ASCII grid, Timeline could use ASCII bars. High effort, questionable UX."
-        selected: false
+        selected: true
       - option: "List only"
         description: "Minimal CLI output. Too limited — table view adds significant value for scanning work items quickly."
         selected: false
     selectionRationale: "The CLI excels at text-based data display and CRUD operations. List view (grouped, hierarchical text) and Table view (columnar output like git log --oneline) are natural fits. Board, Calendar, and Timeline are inherently spatial/visual and are better served by the Web UI and TUI. The CLI should focus on powerful filtering, bulk operations, and scriptability."
-    answer: "List and Table only"
-
-# Markdown content (the actual spec)
-content: |
-  ## Problem Statement
-
-  Shep currently operates as an autonomous SDLC platform focused on AI-driven feature development
-  (requirements gathering, planning, implementation, review). It lacks general-purpose project management
-  capabilities that teams need for day-to-day work coordination: issue tracking, sprint planning, kanban
-  boards, documentation, triage workflows, and analytics dashboards.
-
-  Plane (https://github.com/makeplane/plane) is an open-source alternative to Jira, Linear, Monday,
-  and ClickUp that provides a modern project management platform. The goal is to bring Plane-equivalent
-  capabilities into Shep, leveraging Shep's existing Clean Architecture, TypeSpec-first domain models,
-  multi-presentation layers (CLI, TUI, Web), and AI agent infrastructure.
-
-  The existing codebase has ~95 use cases, 29+ TypeSpec entities, and a mature persistence layer with
-  57+ SQLite migrations. The Application entity already serves as the workspace concept, and a
-  create-project use case exists as a starting point. This feature builds on those foundations.
-
-  ## Success Criteria
-
-  - [ ] SC-1: A user can create a Project within an Application (workspace) with a name, description, and identifier prefix via Web UI and CLI
-  - [ ] SC-2: A user can create, view, edit, and delete WorkItems with title, description, state, priority, assignees, labels, start/due dates, and estimates
-  - [ ] SC-3: WorkItems have project-prefixed sequential IDs (e.g., PROJ-1) that are unique within a project
-  - [ ] SC-4: A user can view work items in List, Board (Kanban), Table, Calendar, and Timeline layouts in the Web UI
-  - [ ] SC-5: Board view supports drag-and-drop to change work item state, priority, or assignee
-  - [ ] SC-6: A user can create and manage Cycles (sprints) with start/end dates and assign work items to cycles
-  - [ ] SC-7: Cycle analytics display burndown charts (ideal vs actual) and status breakdowns
-  - [ ] SC-8: A user can create Modules to group related work items, with progress tracking
-  - [ ] SC-9: A user can create and edit Pages (wiki) with a rich text editor supporting headings, lists, code blocks, tables, and embeds
-  - [ ] SC-10: Saved Views persist layout, filters, grouping, and sorting preferences per project
-  - [ ] SC-11: Work items support parent-child hierarchy (sub-items) with up to 3 levels of nesting
-  - [ ] SC-12: Work items support 5 relation types (Blocking, Relates To, Duplicate, Starts Before/After, Finishes Before/After)
-  - [ ] SC-13: CLI supports work item CRUD, listing with filters, and sprint operations
-  - [ ] SC-14: All new domain entities are defined in TypeSpec and compiled to TypeScript
-  - [ ] SC-15: All new entities have corresponding SQLite repositories with migrations
-  - [ ] SC-16: All Web UI components have colocated Storybook stories
-  - [ ] SC-17: Full-text search across work items, pages, and projects returns results in under 200ms for datasets up to 10,000 items
-  - [ ] SC-18: AI-powered triage can classify incoming requests and suggest state, priority, labels, and assignee
-  - [ ] SC-19: All use cases are presentation-agnostic and work identically across CLI, TUI, and Web
-
-  ## Functional Requirements
-
-  ### Projects & Workspace
-
-  - **FR-1**: The system MUST allow creating a Project within an Application with name, description, identifier prefix (2-5 uppercase letters), and optional start/end dates
-  - **FR-2**: The system MUST enforce unique identifier prefixes within an Application
-  - **FR-3**: The system MUST support project-level feature toggles to enable/disable: Cycles, Modules, Epics, Pages, Intake, Time Tracking
-  - **FR-4**: The system MUST provide default workflow states for new projects: Backlog, Todo, In Progress, Done, Cancelled
-
-  ### Work Items
-
-  - **FR-5**: The system MUST allow creating WorkItems with title (required), description (rich text), state, priority (Urgent/High/Medium/Low/None), labels, start date, due date, and estimate
-  - **FR-6**: The system MUST generate sequential, project-prefixed identifiers for work items (e.g., PROJ-1, PROJ-2) using an atomic counter per project
-  - **FR-7**: The system MUST support multiple assignees per work item
-  - **FR-8**: The system MUST support parent-child hierarchy for work items with a maximum nesting depth of 3 levels
-  - **FR-9**: The system MUST support 5 relation types between work items: Blocking/Blocked By, Starts Before/After, Finishes Before/After, Relates To, Duplicate Of
-  - **FR-10**: The system MUST track an activity log for every work item recording field changes with old value, new value, actor, and timestamp
-  - **FR-11**: The system MUST support threaded comments on work items with rich text content
-  - **FR-12**: The system MUST support file attachments on work items stored on the local filesystem with metadata (filename, size, MIME type) in the database
-  - **FR-13**: The system MUST support external links (URL + title) on work items
-  - **FR-14**: The system MUST support bulk operations: bulk state change, bulk assignee change, bulk label add/remove, bulk delete
-
-  ### Work Item States
-
-  - **FR-15**: The system MUST allow customizing workflow states per project with user-defined name, color, and order
-  - **FR-16**: Each state MUST belong to one of five fixed groups: Backlog, Unstarted, Started, Completed, Cancelled
-  - **FR-17**: The system MUST enforce that each project has at least one state in the Backlog and Completed groups
-  - **FR-18**: The system MUST support a default state per project that is applied to newly created work items
-
-  ### Labels
-
-  - **FR-19**: The system MUST support project-scoped labels with name and color
-  - **FR-20**: Labels MUST support optional parent-child grouping (one level of nesting)
-  - **FR-21**: A work item MAY have zero or more labels
-
-  ### Views & Layouts
-
-  - **FR-22**: The Web UI MUST provide five view layouts: List, Board (Kanban), Table (Spreadsheet), Calendar, Timeline (Gantt)
-  - **FR-23**: All layouts MUST support grouping by: State, Priority, Cycle, Module, Labels, Assignees, Created By, None
-  - **FR-24**: All layouts MUST support ordering by: Manual, Created Date, Updated Date, Start Date, Due Date, Priority
-  - **FR-25**: All layouts MUST support filtering by: State, Priority, Assignee, Label, Cycle, Module, Date Range, and free-text search
-  - **FR-26**: The Board layout MUST support drag-and-drop of work items between columns (state, priority, or assignee grouping)
-  - **FR-27**: The Table layout MUST support inline editing of work item properties and keyboard navigation
-  - **FR-28**: The Calendar layout MUST display work items on their start/due dates with drag-and-drop to change dates
-  - **FR-29**: The Timeline layout MUST display Gantt bars for work items with dependency lines and drag-to-resize for date adjustment
-  - **FR-30**: The system MUST allow saving view configurations (layout + filters + grouping + sorting + display properties) as named Saved Views
-  - **FR-31**: Saved Views MUST support public and private visibility within a project
-  - **FR-32**: The system MUST allow toggling display of individual properties (ID, type, assignee, dates, labels, priority, state, estimate) in each layout
-
-  ### Cycles (Sprints)
-
-  - **FR-33**: The system MUST allow creating Cycles with name, description, start date, and end date within a project
-  - **FR-34**: The system MUST enforce that only one Cycle can be Active at a time per project; others are Upcoming or Completed
-  - **FR-35**: The system MUST allow assigning and removing work items to/from a Cycle
-  - **FR-36**: The system MUST support transferring incomplete work items from a completed Cycle to another Cycle or back to backlog
-  - **FR-37**: The system MUST compute and display Cycle analytics: burndown chart (ideal vs actual), status breakdown by state group, and completion percentage
-  - **FR-38**: Cycle analytics MUST support toggling between item count and estimate points
-
-  ### Modules
-
-  - **FR-39**: The system MUST allow creating Modules with name, description, state (Backlog/Planned/In Progress/Paused/Completed/Cancelled), lead, and optional start/end dates
-  - **FR-40**: The system MUST allow assigning work items to multiple Modules (many-to-many)
-  - **FR-41**: The system MUST display Module progress as percentage of work items in Completed state group
-
-  ### Epics & Initiatives (Phase 4+)
-
-  - **FR-42**: The system MUST support Epics as larger containers within a project that group work items (a work item belongs to at most one Epic)
-  - **FR-43**: The system MUST support Initiatives at the workspace level that aggregate Epics across projects
-
-  ### Pages / Wiki
-
-  - **FR-44**: The system MUST allow creating Pages with title and rich text content scoped to a project or workspace
-  - **FR-45**: Pages MUST support hierarchical nesting (parent-child) for wiki-like structure
-  - **FR-46**: The rich text editor MUST support: headings (H1-H6), bold, italic, strikethrough, ordered/unordered lists, code blocks with syntax highlighting, tables, callout blocks, dividers, and images
-  - **FR-47**: The rich text editor MUST support @-mentioning work items by their project-prefixed ID
-  - **FR-48**: The system MUST store page version history and allow viewing previous versions
-
-  ### Intake / Triage
-
-  - **FR-49**: The system MUST support IntakeItems as incoming requests separate from committed WorkItems
-  - **FR-50**: IntakeItems MUST support Accept (convert to WorkItem), Decline (discard with reason), and Mark as Duplicate actions
-  - **FR-51**: The system MUST support creating IntakeItems from the in-app UI; form-based and email intake are deferred to Phase 5
-
-  ### Analytics & Dashboards
-
-  - **FR-52**: The system MUST provide built-in analytics views: work items by state, work items by priority, work items by assignee, created vs resolved over time
-  - **FR-53**: The system MUST provide Cycle-specific analytics: burndown chart, build-up chart, status breakdown
-  - **FR-54**: The system MUST provide Module-specific analytics: progress bar by state group, work item count
-
-  ### Time Tracking
-
-  - **FR-55**: The system MUST allow logging time entries against work items with duration, note, and timestamp
-  - **FR-56**: The system MUST display total tracked time per work item as a summary
-  - **FR-57**: The system MUST provide a workspace-level worklog view with filters by project, date range
-
-  ### Search
-
-  - **FR-58**: The system MUST provide full-text search across work items (title, description), pages (title, content), and projects (name, description) using SQLite FTS5
-  - **FR-59**: The system MUST provide a global search UI accessible via keyboard shortcut (Cmd/Ctrl+K)
-
-  ### Notifications
-
-  - **FR-60**: The system MUST generate in-app notifications for: assignment, mention, state change, comment, due date approaching (within 24h)
-  - **FR-61**: The system MUST provide a notification center in the Web UI with read/unread state and archive
-
-  ### CLI Support
-
-  - **FR-62**: The CLI MUST support: `shep project create`, `shep project list`, `shep project show <id>`
-  - **FR-63**: The CLI MUST support: `shep work create`, `shep work list`, `shep work show <id>`, `shep work update <id>`, `shep work close <id>`
-  - **FR-64**: The CLI MUST support filtering work items by state, priority, assignee, label, and cycle
-  - **FR-65**: The CLI MUST support: `shep cycle create`, `shep cycle list`, `shep cycle show <id>`
-  - **FR-66**: The CLI MUST render work item lists in both list (grouped text) and table (columnar) formats
-
-  ### AI-Powered Features
-
-  - **FR-67**: The system MUST support AI-powered auto-triage that suggests state, priority, labels, and assignee for IntakeItems using the existing LangGraph agent infrastructure
-  - **FR-68**: The system MUST support AI-powered duplicate detection that finds similar existing work items when creating a new one
-  - **FR-69**: The system MUST support AI-generated summaries for Cycle progress and project health
-
-  ### Import / Export
-
-  - **FR-70**: The system MUST support exporting work items as CSV with configurable columns
-  - **FR-71**: The system MUST support importing work items from CSV with field mapping
-
-  ## Non-Functional Requirements
-
-  ### Performance
-
-  - **NFR-1**: Work item list/board views MUST render within 500ms for projects with up to 5,000 work items
-  - **NFR-2**: Full-text search MUST return results within 200ms for datasets up to 10,000 work items
-  - **NFR-3**: Drag-and-drop operations (state change, reorder) MUST provide optimistic UI updates with less than 100ms perceived latency
-  - **NFR-4**: The Timeline (Gantt) view MUST handle up to 500 work items with dependency lines without frame drops below 30fps
-  - **NFR-5**: Page editor MUST support documents up to 50,000 characters without noticeable input lag
-
-  ### Data Integrity
-
-  - **NFR-6**: Work item sequential IDs MUST be generated atomically to prevent duplicates under concurrent access
-  - **NFR-7**: All database mutations MUST be wrapped in transactions to ensure consistency
-  - **NFR-8**: Activity log entries MUST be immutable once created — no updates or deletes
-  - **NFR-9**: Database migrations MUST be additive-only (no column drops or renames) per LESSONS.md
-
-  ### Architecture Compliance
-
-  - **NFR-10**: All new domain entities MUST be defined in TypeSpec first, then compiled to TypeScript — no hand-written domain types
-  - **NFR-11**: All new persistence MUST use the repository pattern with interface defined in application/ports and implementation in infrastructure/persistence
-  - **NFR-12**: All new use cases MUST be presentation-agnostic — no HTTP, terminal, or React concepts in use case code
-  - **NFR-13**: All new use cases accessible from Web MUST have a string token alias registered in the DI container per LESSONS.md
-  - **NFR-14**: All new web components MUST have colocated Storybook stories
-  - **NFR-15**: Real-time updates MUST use the existing SSE pipeline (DB polling -> SSE -> Service Worker -> React hooks)
-  - **NFR-16**: All AI interactions MUST go through IAgentExecutorProvider — no hardcoded agent types
-
-  ### Usability
-
-  - **NFR-17**: The Board view MUST be keyboard accessible — arrow keys to navigate, Enter to open, Space to select
-  - **NFR-18**: All interactive components MUST meet WCAG 2.1 AA accessibility standards (leveraging Radix UI primitives)
-  - **NFR-19**: The rich text editor MUST support Markdown auto-conversion (e.g., typing `# ` converts to H1)
-  - **NFR-20**: Work item creation MUST be achievable in 3 or fewer interactions (open dialog, type title, press Enter)
-
-  ### Security
-
-  - **NFR-21**: File attachments MUST validate MIME type and enforce a maximum file size of 25MB per file
-  - **NFR-22**: All user-provided HTML content in rich text MUST be sanitized to prevent XSS
-  - **NFR-23**: The attachment storage directory MUST NOT be directly web-accessible — files MUST be served through an API route that validates the request
-
-  ### Maintainability
-
-  - **NFR-24**: Each new database table MUST have a corresponding migration file following the existing Umzug naming convention
-  - **NFR-25**: All new TypeSpec entities MUST include JSDoc comments describing the entity's purpose and key invariants
-  - **NFR-26**: Test coverage for new use cases MUST be at minimum 80% line coverage
-  - **NFR-27**: No single source file MUST exceed 300 lines — split by concern if approaching the limit
-
-  ### Compatibility
-
-  - **NFR-28**: New database tables and migrations MUST NOT break existing Feature, Application, or other entity operations
-  - **NFR-29**: The WorkItem entity MUST NOT couple to or depend on the Feature entity — they are separate aggregate roots with optional linking via relations
-  - **NFR-30**: All new features MUST work fully offline (no external service dependencies in the MVP)
-
-  ## Product Questions & AI Recommendations
-
-  | # | Question | AI Recommendation | Rationale |
-  | - | -------- | ----------------- | --------- |
-  | 1 | Should Project be a child of Application or standalone? | Child of Application | Application already serves as the workspace concept; preserves existing hierarchy |
-  | 2 | How should WorkItems relate to Features? | Separate parallel entity | Feature is deeply embedded as aggregate root with 95+ use cases; refactoring is too risky |
-  | 3 | What rich text editor for Pages/Wiki? | TipTap | Best React integration, Yjs CRDT support, and extensibility; used by Plane itself |
-  | 4 | What charting library for analytics? | Recharts | Declarative React API, covers all chart types needed, smallest bundle |
-  | 5 | Should MVP include multi-user support? | Single-developer MVP | Shep is currently single-user; multi-user would triple MVP scope |
-  | 6 | How should work item IDs be generated? | Project prefix + auto-increment (PROJ-1) | Industry standard, human-readable, greppable in commits |
-  | 7 | What DnD library for views? | @dnd-kit | Modern, accessible, maintained; react-beautiful-dnd is deprecated |
-  | 8 | Should states be customizable? | Customizable within fixed groups | Provides naming flexibility while preserving semantic meaning for analytics |
-  | 9 | Should Board view use React Flow? | No — custom grid with @dnd-kit | Kanban is columnar, not a graph; React Flow reserved for Timeline |
-  | 10 | How should attachments be stored? | Local filesystem | No external dependencies, works offline, suitable for single-developer MVP |
-  | 11 | Should custom properties be in MVP? | Defer to Phase 4 | Built-in properties cover 90% of needs; custom fields add significant complexity |
-  | 12 | What default estimate system? | Points (Fibonacci) | Industry standard, aggregates for velocity/burndown charts |
-  | 13 | How should Timeline render dependencies? | React Flow overlay | Leverages existing dependency; handles edge routing and interactivity |
-  | 14 | Should intake be a separate entity? | Separate IntakeItem entity | Clean separation between unvetted requests and committed work |
-  | 15 | What CLI layouts to support? | List and Table only | Board/Calendar/Timeline are inherently visual; CLI focuses on CRUD and filtering |
-
-  ## Affected Areas
-
-  | Area | Impact | Reasoning |
-  | ---- | ------ | --------- |
-  | `tsp/domain/entities/` | High | 20+ new TypeSpec entity definitions (WorkItem, Project, Cycle, Module, Epic, Page, etc.) |
-  | `tsp/domain/value-objects/` | High | New value objects for priorities, states, relations |
-  | `tsp/common/enums/` | Medium | New enums for work item states, relation types, layout types |
-  | `packages/core/src/domain/generated/` | High | Auto-generated from TypeSpec — all new entities appear here |
-  | `packages/core/src/application/use-cases/` | High | 40+ new use cases for CRUD on all PM entities, view management, analytics |
-  | `packages/core/src/application/ports/` | High | New repository interfaces for every PM entity |
-  | `packages/core/src/infrastructure/persistence/` | High | New SQLite repositories, mappers, 25+ new migration files |
-  | `packages/core/src/infrastructure/di/` | Medium | Register all new repositories, use cases, services in DI container |
-  | `src/presentation/web/app/` | High | New routes, pages, server actions for all PM features |
-  | `src/presentation/web/components/` | High | New components: Board, List, Table, Calendar, Timeline, Pages editor, Dashboard widgets |
-  | `src/presentation/cli/` | Medium | CLI commands for work item management, sprint operations |
-  | `src/presentation/tui/` | Medium | TUI screens for work item views and management |
-  | `tests/` | High | Unit tests for domain logic, integration tests for repositories, E2E for web UI |
-
-  ## Dependencies
-
-  **Existing infrastructure to leverage**:
-  - SQLite persistence layer with Umzug migrations (57+ existing)
-  - tsyringe DI container and bootstrap pattern
-  - SSE real-time update pipeline (DB polling -> SSE -> Service Worker -> React)
-  - React Flow canvas for timeline/gantt visualization
-  - Storybook component development workflow
-  - LangGraph agent orchestration for AI features
-  - Server actions pattern for web UI mutations
-  - Existing create-project use case as starting point
-
-  **New libraries needed**:
-  - TipTap + @tiptap/react (rich text editor for pages/wiki)
-  - Yjs + y-prosemirror (CRDT for collaborative editing in Phase 4+)
-  - Recharts (analytics chart rendering)
-  - @dnd-kit/core + @dnd-kit/sortable (drag-and-drop across views)
-  - papaparse (CSV import/export)
-  - SQLite FTS5 (full-text search — built into better-sqlite3)
-
-  **Infrastructure requirements**:
-  - Database schema expansion: 25+ new tables with junction tables for many-to-many relationships
-  - Local file storage: Attachment upload/download system in ~/.shep/attachments/
-  - FTS5 virtual tables for full-text search indexing
-
-  ## Phased Implementation Strategy
-
-  ### Phase 1: Foundation (MVP) — Size: L
-  - TypeSpec domain models: Project, WorkItem, WorkItemState, WorkItemType, Label, Comment, Activity
-  - SQLite repositories and migrations for core entities
-  - Use cases for CRUD on projects and work items
-  - Web UI: List view with filtering and grouping
-  - Web UI: Work item detail page with properties panel
-  - CLI: project and work item commands
-  - FTS5 search setup for work items
-
-  ### Phase 2: Views & Organization — Size: L
-  - Board (Kanban) view with @dnd-kit drag-and-drop
-  - Table (Spreadsheet) view with inline editing
-  - Calendar view
-  - Saved Views with filters and display options
-  - Sub-work items (parent-child hierarchy, max 3 levels)
-  - Work item relations (5 types)
-  - Bulk operations
-
-  ### Phase 3: Sprint & Module Management — Size: M
-  - Cycle entity with Active/Upcoming/Completed lifecycle
-  - Module entity with state management
-  - Cycle analytics (burndown, status breakdown)
-  - Module progress tracking
-  - Transfer incomplete items between cycles
-  - Timeline (Gantt) view with React Flow dependency lines
-  - Estimate system (Fibonacci points default)
-
-  ### Phase 4: Advanced Features — Size: L
-  - Epics and Initiatives
-  - Work item types with custom properties (EAV pattern)
-  - Pages/Wiki with TipTap rich text editor
-  - Page version history
-  - Time tracking and worklog reports
-  - Attachments and file storage
-
-  ### Phase 5: Intelligence & Integrations — Size: L
-  - AI-powered triage and classification via LangGraph
-  - Duplicate detection
-  - Smart summaries (cycle progress, project health)
-  - Intake system (IntakeItem entity, triage workflow)
-  - Notification center
-  - Import/Export (CSV)
-  - Enhanced GitHub integration (bidirectional issue sync)
-
-  ### Phase 6: Team & Collaboration — Size: XL
-  - Multi-user support (authentication, sessions)
-  - Workspace and project role management (Admin/Member/Guest)
-  - Permission checks in all use cases
-  - Real-time collaborative page editing (Yjs CRDT)
-  - Slack integration
-  - Webhook system
-  - Email notifications
-  - Audit logging
-
-  ## Size Estimate
-
-  **XL (multi-month)** — This feature introduces 20+ new domain entities, 40+ use cases, 25+ database
-  tables, 5 major view components, a rich text editor, analytics dashboards, and AI-powered features.
-  The phased approach is essential: Phase 1 (MVP) alone is an L-sized effort delivering a functional
-  issue tracker with list view and CLI support. Each subsequent phase delivers standalone value while
-  building toward the complete Plane-equivalent vision. The full 6-phase implementation rivals a
-  standalone product.
-
-  ---
-
-  _Requirements phase complete — proceed with research_
+    answer: "All five layouts"
+content: "## Problem Statement\n\nShep currently operates as an autonomous SDLC platform focused on AI-driven feature development\n(requirements gathering, planning, implementation, review). It lacks general-purpose project management\ncapabilities that teams need for day-to-day work coordination: issue tracking, sprint planning, kanban\nboards, documentation, triage workflows, and analytics dashboards.\n\nPlane (https://github.com/makeplane/plane) is an open-source alternative to Jira, Linear, Monday,\nand ClickUp that provides a modern project management platform. The goal is to bring Plane-equivalent\ncapabilities into Shep, leveraging Shep's existing Clean Architecture, TypeSpec-first domain models,\nmulti-presentation layers (CLI, TUI, Web), and AI agent infrastructure.\n\nThe existing codebase has ~95 use cases, 29+ TypeSpec entities, and a mature persistence layer with\n57+ SQLite migrations. The Application entity already serves as the workspace concept, and a\ncreate-project use case exists as a starting point. This feature builds on those foundations.\n\n## Success Criteria\n\n- [ ] SC-1: A user can create a Project within an Application (workspace) with a name, description, and identifier prefix via Web UI and CLI\n- [ ] SC-2: A user can create, view, edit, and delete WorkItems with title, description, state, priority, assignees, labels, start/due dates, and estimates\n- [ ] SC-3: WorkItems have project-prefixed sequential IDs (e.g., PROJ-1) that are unique within a project\n- [ ] SC-4: A user can view work items in List, Board (Kanban), Table, Calendar, and Timeline layouts in the Web UI\n- [ ] SC-5: Board view supports drag-and-drop to change work item state, priority, or assignee\n- [ ] SC-6: A user can create and manage Cycles (sprints) with start/end dates and assign work items to cycles\n- [ ] SC-7: Cycle analytics display burndown charts (ideal vs actual) and status breakdowns\n- [ ] SC-8: A user can create Modules to group related work items, with progress tracking\n- [ ] SC-9: A user can create and edit Pages (wiki) with a rich text editor supporting headings, lists, code blocks, tables, and embeds\n- [ ] SC-10: Saved Views persist layout, filters, grouping, and sorting preferences per project\n- [ ] SC-11: Work items support parent-child hierarchy (sub-items) with up to 3 levels of nesting\n- [ ] SC-12: Work items support 5 relation types (Blocking, Relates To, Duplicate, Starts Before/After, Finishes Before/After)\n- [ ] SC-13: CLI supports work item CRUD, listing with filters, and sprint operations\n- [ ] SC-14: All new domain entities are defined in TypeSpec and compiled to TypeScript\n- [ ] SC-15: All new entities have corresponding SQLite repositories with migrations\n- [ ] SC-16: All Web UI components have colocated Storybook stories\n- [ ] SC-17: Full-text search across work items, pages, and projects returns results in under 200ms for datasets up to 10,000 items\n- [ ] SC-18: AI-powered triage can classify incoming requests and suggest state, priority, labels, and assignee\n- [ ] SC-19: All use cases are presentation-agnostic and work identically across CLI, TUI, and Web\n\n## Functional Requirements\n\n### Projects & Workspace\n\n- **FR-1**: The system MUST allow creating a Project within an Application with name, description, identifier prefix (2-5 uppercase letters), and optional start/end dates\n- **FR-2**: The system MUST enforce unique identifier prefixes within an Application\n- **FR-3**: The system MUST support project-level feature toggles to enable/disable: Cycles, Modules, Epics, Pages, Intake, Time Tracking\n- **FR-4**: The system MUST provide default workflow states for new projects: Backlog, Todo, In Progress, Done, Cancelled\n\n### Work Items\n\n- **FR-5**: The system MUST allow creating WorkItems with title (required), description (rich text), state, priority (Urgent/High/Medium/Low/None), labels, start date, due date, and estimate\n- **FR-6**: The system MUST generate sequential, project-prefixed identifiers for work items (e.g., PROJ-1, PROJ-2) using an atomic counter per project\n- **FR-7**: The system MUST support multiple assignees per work item\n- **FR-8**: The system MUST support parent-child hierarchy for work items with a maximum nesting depth of 3 levels\n- **FR-9**: The system MUST support 5 relation types between work items: Blocking/Blocked By, Starts Before/After, Finishes Before/After, Relates To, Duplicate Of\n- **FR-10**: The system MUST track an activity log for every work item recording field changes with old value, new value, actor, and timestamp\n- **FR-11**: The system MUST support threaded comments on work items with rich text content\n- **FR-12**: The system MUST support file attachments on work items stored on the local filesystem with metadata (filename, size, MIME type) in the database\n- **FR-13**: The system MUST support external links (URL + title) on work items\n- **FR-14**: The system MUST support bulk operations: bulk state change, bulk assignee change, bulk label add/remove, bulk delete\n\n### Work Item States\n\n- **FR-15**: The system MUST allow customizing workflow states per project with user-defined name, color, and order\n- **FR-16**: Each state MUST belong to one of five fixed groups: Backlog, Unstarted, Started, Completed, Cancelled\n- **FR-17**: The system MUST enforce that each project has at least one state in the Backlog and Completed groups\n- **FR-18**: The system MUST support a default state per project that is applied to newly created work items\n\n### Labels\n\n- **FR-19**: The system MUST support project-scoped labels with name and color\n- **FR-20**: Labels MUST support optional parent-child grouping (one level of nesting)\n- **FR-21**: A work item MAY have zero or more labels\n\n### Views & Layouts\n\n- **FR-22**: The Web UI MUST provide five view layouts: List, Board (Kanban), Table (Spreadsheet), Calendar, Timeline (Gantt)\n- **FR-23**: All layouts MUST support grouping by: State, Priority, Cycle, Module, Labels, Assignees, Created By, None\n- **FR-24**: All layouts MUST support ordering by: Manual, Created Date, Updated Date, Start Date, Due Date, Priority\n- **FR-25**: All layouts MUST support filtering by: State, Priority, Assignee, Label, Cycle, Module, Date Range, and free-text search\n- **FR-26**: The Board layout MUST support drag-and-drop of work items between columns (state, priority, or assignee grouping)\n- **FR-27**: The Table layout MUST support inline editing of work item properties and keyboard navigation\n- **FR-28**: The Calendar layout MUST display work items on their start/due dates with drag-and-drop to change dates\n- **FR-29**: The Timeline layout MUST display Gantt bars for work items with dependency lines and drag-to-resize for date adjustment\n- **FR-30**: The system MUST allow saving view configurations (layout + filters + grouping + sorting + display properties) as named Saved Views\n- **FR-31**: Saved Views MUST support public and private visibility within a project\n- **FR-32**: The system MUST allow toggling display of individual properties (ID, type, assignee, dates, labels, priority, state, estimate) in each layout\n\n### Cycles (Sprints)\n\n- **FR-33**: The system MUST allow creating Cycles with name, description, start date, and end date within a project\n- **FR-34**: The system MUST enforce that only one Cycle can be Active at a time per project; others are Upcoming or Completed\n- **FR-35**: The system MUST allow assigning and removing work items to/from a Cycle\n- **FR-36**: The system MUST support transferring incomplete work items from a completed Cycle to another Cycle or back to backlog\n- **FR-37**: The system MUST compute and display Cycle analytics: burndown chart (ideal vs actual), status breakdown by state group, and completion percentage\n- **FR-38**: Cycle analytics MUST support toggling between item count and estimate points\n\n### Modules\n\n- **FR-39**: The system MUST allow creating Modules with name, description, state (Backlog/Planned/In Progress/Paused/Completed/Cancelled), lead, and optional start/end dates\n- **FR-40**: The system MUST allow assigning work items to multiple Modules (many-to-many)\n- **FR-41**: The system MUST display Module progress as percentage of work items in Completed state group\n\n### Epics & Initiatives (Phase 4+)\n\n- **FR-42**: The system MUST support Epics as larger containers within a project that group work items (a work item belongs to at most one Epic)\n- **FR-43**: The system MUST support Initiatives at the workspace level that aggregate Epics across projects\n\n### Pages / Wiki\n\n- **FR-44**: The system MUST allow creating Pages with title and rich text content scoped to a project or workspace\n- **FR-45**: Pages MUST support hierarchical nesting (parent-child) for wiki-like structure\n- **FR-46**: The rich text editor MUST support: headings (H1-H6), bold, italic, strikethrough, ordered/unordered lists, code blocks with syntax highlighting, tables, callout blocks, dividers, and images\n- **FR-47**: The rich text editor MUST support @-mentioning work items by their project-prefixed ID\n- **FR-48**: The system MUST store page version history and allow viewing previous versions\n\n### Intake / Triage\n\n- **FR-49**: The system MUST support IntakeItems as incoming requests separate from committed WorkItems\n- **FR-50**: IntakeItems MUST support Accept (convert to WorkItem), Decline (discard with reason), and Mark as Duplicate actions\n- **FR-51**: The system MUST support creating IntakeItems from the in-app UI; form-based and email intake are deferred to Phase 5\n\n### Analytics & Dashboards\n\n- **FR-52**: The system MUST provide built-in analytics views: work items by state, work items by priority, work items by assignee, created vs resolved over time\n- **FR-53**: The system MUST provide Cycle-specific analytics: burndown chart, build-up chart, status breakdown\n- **FR-54**: The system MUST provide Module-specific analytics: progress bar by state group, work item count\n\n### Time Tracking\n\n- **FR-55**: The system MUST allow logging time entries against work items with duration, note, and timestamp\n- **FR-56**: The system MUST display total tracked time per work item as a summary\n- **FR-57**: The system MUST provide a workspace-level worklog view with filters by project, date range\n\n### Search\n\n- **FR-58**: The system MUST provide full-text search across work items (title, description), pages (title, content), and projects (name, description) using SQLite FTS5\n- **FR-59**: The system MUST provide a global search UI accessible via keyboard shortcut (Cmd/Ctrl+K)\n\n### Notifications\n\n- **FR-60**: The system MUST generate in-app notifications for: assignment, mention, state change, comment, due date approaching (within 24h)\n- **FR-61**: The system MUST provide a notification center in the Web UI with read/unread state and archive\n\n### CLI Support\n\n- **FR-62**: The CLI MUST support: `shep project create`, `shep project list`, `shep project show <id>`\n- **FR-63**: The CLI MUST support: `shep work create`, `shep work list`, `shep work show <id>`, `shep work update <id>`, `shep work close <id>`\n- **FR-64**: The CLI MUST support filtering work items by state, priority, assignee, label, and cycle\n- **FR-65**: The CLI MUST support: `shep cycle create`, `shep cycle list`, `shep cycle show <id>`\n- **FR-66**: The CLI MUST render work item lists in both list (grouped text) and table (columnar) formats\n\n### AI-Powered Features\n\n- **FR-67**: The system MUST support AI-powered auto-triage that suggests state, priority, labels, and assignee for IntakeItems using the existing LangGraph agent infrastructure\n- **FR-68**: The system MUST support AI-powered duplicate detection that finds similar existing work items when creating a new one\n- **FR-69**: The system MUST support AI-generated summaries for Cycle progress and project health\n\n### Import / Export\n\n- **FR-70**: The system MUST support exporting work items as CSV with configurable columns\n- **FR-71**: The system MUST support importing work items from CSV with field mapping\n\n## Non-Functional Requirements\n\n### Performance\n\n- **NFR-1**: Work item list/board views MUST render within 500ms for projects with up to 5,000 work items\n- **NFR-2**: Full-text search MUST return results within 200ms for datasets up to 10,000 work items\n- **NFR-3**: Drag-and-drop operations (state change, reorder) MUST provide optimistic UI updates with less than 100ms perceived latency\n- **NFR-4**: The Timeline (Gantt) view MUST handle up to 500 work items with dependency lines without frame drops below 30fps\n- **NFR-5**: Page editor MUST support documents up to 50,000 characters without noticeable input lag\n\n### Data Integrity\n\n- **NFR-6**: Work item sequential IDs MUST be generated atomically to prevent duplicates under concurrent access\n- **NFR-7**: All database mutations MUST be wrapped in transactions to ensure consistency\n- **NFR-8**: Activity log entries MUST be immutable once created — no updates or deletes\n- **NFR-9**: Database migrations MUST be additive-only (no column drops or renames) per LESSONS.md\n\n### Architecture Compliance\n\n- **NFR-10**: All new domain entities MUST be defined in TypeSpec first, then compiled to TypeScript — no hand-written domain types\n- **NFR-11**: All new persistence MUST use the repository pattern with interface defined in application/ports and implementation in infrastructure/persistence\n- **NFR-12**: All new use cases MUST be presentation-agnostic — no HTTP, terminal, or React concepts in use case code\n- **NFR-13**: All new use cases accessible from Web MUST have a string token alias registered in the DI container per LESSONS.md\n- **NFR-14**: All new web components MUST have colocated Storybook stories\n- **NFR-15**: Real-time updates MUST use the existing SSE pipeline (DB polling -> SSE -> Service Worker -> React hooks)\n- **NFR-16**: All AI interactions MUST go through IAgentExecutorProvider — no hardcoded agent types\n\n### Usability\n\n- **NFR-17**: The Board view MUST be keyboard accessible — arrow keys to navigate, Enter to open, Space to select\n- **NFR-18**: All interactive components MUST meet WCAG 2.1 AA accessibility standards (leveraging Radix UI primitives)\n- **NFR-19**: The rich text editor MUST support Markdown auto-conversion (e.g., typing `# ` converts to H1)\n- **NFR-20**: Work item creation MUST be achievable in 3 or fewer interactions (open dialog, type title, press Enter)\n\n### Security\n\n- **NFR-21**: File attachments MUST validate MIME type and enforce a maximum file size of 25MB per file\n- **NFR-22**: All user-provided HTML content in rich text MUST be sanitized to prevent XSS\n- **NFR-23**: The attachment storage directory MUST NOT be directly web-accessible — files MUST be served through an API route that validates the request\n\n### Maintainability\n\n- **NFR-24**: Each new database table MUST have a corresponding migration file following the existing Umzug naming convention\n- **NFR-25**: All new TypeSpec entities MUST include JSDoc comments describing the entity's purpose and key invariants\n- **NFR-26**: Test coverage for new use cases MUST be at minimum 80% line coverage\n- **NFR-27**: No single source file MUST exceed 300 lines — split by concern if approaching the limit\n\n### Compatibility\n\n- **NFR-28**: New database tables and migrations MUST NOT break existing Feature, Application, or other entity operations\n- **NFR-29**: The WorkItem entity MUST NOT couple to or depend on the Feature entity — they are separate aggregate roots with optional linking via relations\n- **NFR-30**: All new features MUST work fully offline (no external service dependencies in the MVP)\n\n## Product Questions & AI Recommendations\n\n| # | Question | AI Recommendation | Rationale |\n| - | -------- | ----------------- | --------- |\n| 1 | Should Project be a child of Application or standalone? | Child of Application | Application already serves as the workspace concept; preserves existing hierarchy |\n| 2 | How should WorkItems relate to Features? | Separate parallel entity | Feature is deeply embedded as aggregate root with 95+ use cases; refactoring is too risky |\n| 3 | What rich text editor for Pages/Wiki? | TipTap | Best React integration, Yjs CRDT support, and extensibility; used by Plane itself |\n| 4 | What charting library for analytics? | Recharts | Declarative React API, covers all chart types needed, smallest bundle |\n| 5 | Should MVP include multi-user support? | Single-developer MVP | Shep is currently single-user; multi-user would triple MVP scope |\n| 6 | How should work item IDs be generated? | Project prefix + auto-increment (PROJ-1) | Industry standard, human-readable, greppable in commits |\n| 7 | What DnD library for views? | @dnd-kit | Modern, accessible, maintained; react-beautiful-dnd is deprecated |\n| 8 | Should states be customizable? | Customizable within fixed groups | Provides naming flexibility while preserving semantic meaning for analytics |\n| 9 | Should Board view use React Flow? | No — custom grid with @dnd-kit | Kanban is columnar, not a graph; React Flow reserved for Timeline |\n| 10 | How should attachments be stored? | Local filesystem | No external dependencies, works offline, suitable for single-developer MVP |\n| 11 | Should custom properties be in MVP? | Defer to Phase 4 | Built-in properties cover 90% of needs; custom fields add significant complexity |\n| 12 | What default estimate system? | Points (Fibonacci) | Industry standard, aggregates for velocity/burndown charts |\n| 13 | How should Timeline render dependencies? | React Flow overlay | Leverages existing dependency; handles edge routing and interactivity |\n| 14 | Should intake be a separate entity? | Separate IntakeItem entity | Clean separation between unvetted requests and committed work |\n| 15 | What CLI layouts to support? | List and Table only | Board/Calendar/Timeline are inherently visual; CLI focuses on CRUD and filtering |\n\n## Affected Areas\n\n| Area | Impact | Reasoning |\n| ---- | ------ | --------- |\n| `tsp/domain/entities/` | High | 20+ new TypeSpec entity definitions (WorkItem, Project, Cycle, Module, Epic, Page, etc.) |\n| `tsp/domain/value-objects/` | High | New value objects for priorities, states, relations |\n| `tsp/common/enums/` | Medium | New enums for work item states, relation types, layout types |\n| `packages/core/src/domain/generated/` | High | Auto-generated from TypeSpec — all new entities appear here |\n| `packages/core/src/application/use-cases/` | High | 40+ new use cases for CRUD on all PM entities, view management, analytics |\n| `packages/core/src/application/ports/` | High | New repository interfaces for every PM entity |\n| `packages/core/src/infrastructure/persistence/` | High | New SQLite repositories, mappers, 25+ new migration files |\n| `packages/core/src/infrastructure/di/` | Medium | Register all new repositories, use cases, services in DI container |\n| `src/presentation/web/app/` | High | New routes, pages, server actions for all PM features |\n| `src/presentation/web/components/` | High | New components: Board, List, Table, Calendar, Timeline, Pages editor, Dashboard widgets |\n| `src/presentation/cli/` | Medium | CLI commands for work item management, sprint operations |\n| `src/presentation/tui/` | Medium | TUI screens for work item views and management |\n| `tests/` | High | Unit tests for domain logic, integration tests for repositories, E2E for web UI |\n\n## Dependencies\n\n**Existing infrastructure to leverage**:\n- SQLite persistence layer with Umzug migrations (57+ existing)\n- tsyringe DI container and bootstrap pattern\n- SSE real-time update pipeline (DB polling -> SSE -> Service Worker -> React)\n- React Flow canvas for timeline/gantt visualization\n- Storybook component development workflow\n- LangGraph agent orchestration for AI features\n- Server actions pattern for web UI mutations\n- Existing create-project use case as starting point\n\n**New libraries needed**:\n- TipTap + @tiptap/react (rich text editor for pages/wiki)\n- Yjs + y-prosemirror (CRDT for collaborative editing in Phase 4+)\n- Recharts (analytics chart rendering)\n- @dnd-kit/core + @dnd-kit/sortable (drag-and-drop across views)\n- papaparse (CSV import/export)\n- SQLite FTS5 (full-text search — built into better-sqlite3)\n\n**Infrastructure requirements**:\n- Database schema expansion: 25+ new tables with junction tables for many-to-many relationships\n- Local file storage: Attachment upload/download system in ~/.shep/attachments/\n- FTS5 virtual tables for full-text search indexing\n\n## Phased Implementation Strategy\n\n### Phase 1: Foundation (MVP) — Size: L\n- TypeSpec domain models: Project, WorkItem, WorkItemState, WorkItemType, Label, Comment, Activity\n- SQLite repositories and migrations for core entities\n- Use cases for CRUD on projects and work items\n- Web UI: List view with filtering and grouping\n- Web UI: Work item detail page with properties panel\n- CLI: project and work item commands\n- FTS5 search setup for work items\n\n### Phase 2: Views & Organization — Size: L\n- Board (Kanban) view with @dnd-kit drag-and-drop\n- Table (Spreadsheet) view with inline editing\n- Calendar view\n- Saved Views with filters and display options\n- Sub-work items (parent-child hierarchy, max 3 levels)\n- Work item relations (5 types)\n- Bulk operations\n\n### Phase 3: Sprint & Module Management — Size: M\n- Cycle entity with Active/Upcoming/Completed lifecycle\n- Module entity with state management\n- Cycle analytics (burndown, status breakdown)\n- Module progress tracking\n- Transfer incomplete items between cycles\n- Timeline (Gantt) view with React Flow dependency lines\n- Estimate system (Fibonacci points default)\n\n### Phase 4: Advanced Features — Size: L\n- Epics and Initiatives\n- Work item types with custom properties (EAV pattern)\n- Pages/Wiki with TipTap rich text editor\n- Page version history\n- Time tracking and worklog reports\n- Attachments and file storage\n\n### Phase 5: Intelligence & Integrations — Size: L\n- AI-powered triage and classification via LangGraph\n- Duplicate detection\n- Smart summaries (cycle progress, project health)\n- Intake system (IntakeItem entity, triage workflow)\n- Notification center\n- Import/Export (CSV)\n- Enhanced GitHub integration (bidirectional issue sync)\n\n### Phase 6: Team & Collaboration — Size: XL\n- Multi-user support (authentication, sessions)\n- Workspace and project role management (Admin/Member/Guest)\n- Permission checks in all use cases\n- Real-time collaborative page editing (Yjs CRDT)\n- Slack integration\n- Webhook system\n- Email notifications\n- Audit logging\n\n## Size Estimate\n\n**XL (multi-month)** — This feature introduces 20+ new domain entities, 40+ use cases, 25+ database\ntables, 5 major view components, a rich text editor, analytics dashboards, and AI-powered features.\nThe phased approach is essential: Phase 1 (MVP) alone is an L-sized effort delivering a functional\nissue tracker with list view and CLI support. Each subsequent phase delivers standalone value while\nbuilding toward the complete Plane-equivalent vision. The full 6-phase implementation rivals a\nstandalone product.\n\n---\n\n_Requirements phase complete — proceed with research_\n"

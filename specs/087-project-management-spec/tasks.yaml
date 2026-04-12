@@ -1,0 +1,1734 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "project-management-spec"
+summary: >
+  53 tasks across 6 phases implementing Plane-like project management for Shep.
+  Phase 1 (Foundation) has 20 tasks covering TypeSpec entities, migrations, repositories,
+  use cases, List view, CLI commands, and FTS5 search. Phase 2 (Views) has 10 tasks for
+  Board/Table/Calendar views with DnD, relations, and bulk operations. Phase 3 (Sprints)
+  has 8 tasks for Cycles, Modules, analytics, and Timeline view. Phase 4 (Advanced) has
+  7 tasks for Pages/Wiki, Epics, attachments, and time tracking. Phase 5 (Intelligence)
+  has 5 tasks for AI triage, notifications, and import/export. Phase 6 (Collaboration)
+  has 3 tasks for multi-user support.
+
+relatedFeatures: []
+technologies: []
+relatedLinks:
+  - title: "Plane GitHub Repository"
+    url: "https://github.com/makeplane/plane"
+  - title: "SQLite FTS5 Documentation"
+    url: "https://www.sqlite.org/fts5.html"
+
+tasks:
+  # ===========================================================================
+  # PHASE 1: Foundation — Domain, Persistence & MVP Views
+  # ===========================================================================
+
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Define PM enums in TypeSpec"
+    description: >
+      Create tsp/common/enums/work-item-enums.tsp with all PM-related enums: Priority
+      (Urgent, High, Medium, Low, None), StateGroup (Backlog, Unstarted, Started, Completed,
+      Cancelled), RelationType (Blocking, RelatesTo, Duplicate, StartsBefore, FinishesBefore),
+      EstimateType (None, Category, Points), WorkItemTypeName (Task, Bug, Story, Feature),
+      CycleStatus (Upcoming, Active, Completed), ModuleStatus (Backlog, Planned, InProgress,
+      Paused, Completed, Cancelled), IntakeStatus (Pending, Accepted, Declined, Duplicate),
+      NotificationType (Assignment, Mention, StateChange, Comment, DueDateApproaching),
+      CustomPropertyType (Text, Number, Dropdown, Boolean, Date, MemberPicker), ViewLayout
+      (List, Board, Table, Calendar, Timeline). Update tsp/main.tsp to import the new file.
+      Run pnpm tsp:compile to verify.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "All enum values match the spec requirements"
+      - "pnpm tsp:compile succeeds without errors"
+      - "Generated output.ts contains all enum types"
+    tdd:
+      red:
+        - "Write a type test that imports the generated enums and asserts expected values exist (e.g., Priority.Urgent === 'Urgent')"
+      green:
+        - "Create the TypeSpec enum file with all enums"
+        - "Update tsp/main.tsp to import the new file"
+        - "Run pnpm tsp:compile"
+      refactor:
+        - "Verify enum naming consistency with existing codebase enums"
+    estimatedEffort: "1h"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Define PmProject entity in TypeSpec"
+    description: >
+      Create tsp/domain/entities/pm-project.tsp extending SoftDeletableEntity with fields:
+      name (string), slug (string), description (string), identifierPrefix (string, 2-5
+      uppercase letters), workItemCounter (integer, default 0), estimateType (EstimateType),
+      applicationId (optional string FK), startDate (optional utcDateTime), endDate (optional
+      utcDateTime), featureToggles (JSON object for cycles/modules/epics/pages/intake/timeTracking
+      enabled booleans). Import in main.tsp and compile.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "PmProject type is generated in output.ts with all fields"
+      - "Fields use correct types (optional fields are nullable)"
+      - "pnpm tsp:compile succeeds"
+    tdd:
+      red:
+        - "Write type assertion test that PmProject has expected shape from generated output"
+      green:
+        - "Create pm-project.tsp with entity definition"
+        - "Update main.tsp imports"
+        - "Compile TypeSpec"
+      refactor:
+        - "Add JSDoc comments for entity purpose and invariants per NFR-25"
+    estimatedEffort: "30min"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Define WorkItemState and WorkItemType entities in TypeSpec"
+    description: >
+      Create tsp/domain/entities/work-item-state.tsp extending SoftDeletableEntity: projectId
+      (string FK), name (string), color (string, hex), displayOrder (integer), stateGroup
+      (StateGroup enum), isDefault (boolean). Create tsp/domain/entities/work-item-type.tsp
+      extending SoftDeletableEntity: projectId (string FK), name (WorkItemTypeName enum),
+      description (optional string), icon (optional string), isDefault (boolean).
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Both entities generated in output.ts"
+      - "stateGroup field uses the StateGroup enum type"
+      - "pnpm tsp:compile succeeds"
+    tdd:
+      red:
+        - "Write type assertion tests for WorkItemState and WorkItemType shapes"
+      green:
+        - "Create both .tsp files with entity definitions"
+        - "Compile TypeSpec"
+      refactor:
+        - "Add JSDoc for entity invariants (e.g., each project needs at least one Backlog and Completed state)"
+    estimatedEffort: "30min"
+
+  - id: "task-4"
+    phaseId: "phase-1"
+    title: "Define Label entity in TypeSpec"
+    description: >
+      Create tsp/domain/entities/label.tsp extending SoftDeletableEntity: projectId (string FK),
+      name (string), color (string, hex), parentId (optional string FK for one-level nesting).
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Label type generated in output.ts"
+      - "parentId is optional for one-level nesting"
+      - "pnpm tsp:compile succeeds"
+    tdd:
+      red:
+        - "Write type assertion test for Label shape"
+      green:
+        - "Create label.tsp"
+        - "Compile TypeSpec"
+      refactor:
+        - "Add JSDoc about parent-child label grouping"
+    estimatedEffort: "15min"
+
+  - id: "task-5"
+    phaseId: "phase-1"
+    title: "Define WorkItem entity and value objects in TypeSpec"
+    description: >
+      Create tsp/domain/entities/work-item.tsp extending SoftDeletableEntity: projectId (string),
+      sequenceId (integer), identifierPrefix (string, denormalized from project), title (string),
+      description (optional string for rich text JSON), stateId (string FK), priority (Priority enum),
+      parentId (optional string FK for sub-items, max 3 levels), sortOrder (float64 for manual
+      ordering), startDate (optional utcDateTime), dueDate (optional utcDateTime), estimateValue
+      (optional string), customPropertyValues (optional string for JSON). Create value objects:
+      tsp/domain/value-objects/activity-entry.tsp (workItemId, fieldName, oldValue, newValue,
+      actorId, createdAt), tsp/domain/value-objects/custom-property.tsp (projectId, name,
+      propertyType as CustomPropertyType, options as optional JSON string, isRequired boolean).
+    state: "Todo"
+    dependencies:
+      - "task-2"
+      - "task-3"
+    acceptanceCriteria:
+      - "WorkItem type generated with all fields"
+      - "ActivityEntry and CustomProperty value objects generated"
+      - "Priority field uses Priority enum"
+      - "pnpm tsp:compile succeeds"
+    tdd:
+      red:
+        - "Write type assertion tests for WorkItem, ActivityEntry, and CustomProperty shapes"
+      green:
+        - "Create work-item.tsp and both value object .tsp files"
+        - "Update main.tsp"
+        - "Compile TypeSpec"
+      refactor:
+        - "Add JSDoc for WorkItem aggregate invariants (sequential ID, max 3 nesting levels)"
+    estimatedEffort: "45min"
+
+  - id: "task-6"
+    phaseId: "phase-1"
+    title: "Define Comment, SavedView, and remaining Phase 1 entities in TypeSpec"
+    description: >
+      Create tsp/domain/entities/comment.tsp extending SoftDeletableEntity: workItemId (string FK),
+      parentId (optional string FK for threading), content (string, rich text JSON), authorId
+      (string). Create tsp/domain/entities/saved-view.tsp extending SoftDeletableEntity:
+      projectId (string FK), name (string), description (optional string), isPublic (boolean),
+      layout (ViewLayout enum), configuration (string, JSON blob for filters/grouping/sorting).
+      Create tsp/domain/value-objects/work-item-relation.tsp: sourceWorkItemId, targetWorkItemId,
+      relationType (RelationType enum). Compile all.
+    state: "Todo"
+    dependencies:
+      - "task-5"
+    acceptanceCriteria:
+      - "Comment, SavedView, WorkItemRelation types generated"
+      - "All FK fields properly typed"
+      - "pnpm tsp:compile succeeds with all Phase 1 entities"
+    tdd:
+      red:
+        - "Write type assertion tests for Comment, SavedView, and WorkItemRelation shapes"
+      green:
+        - "Create all three .tsp files"
+        - "Final tsp:compile for Phase 1 domain model"
+      refactor:
+        - "Review all entity JSDoc comments for completeness"
+    estimatedEffort: "30min"
+
+  - id: "task-7"
+    phaseId: "phase-1"
+    title: "Create pm_projects migration and repository"
+    description: >
+      Create migration 058-create-pm-projects.ts with the pm_projects table: id TEXT PK, name TEXT
+      NOT NULL, slug TEXT NOT NULL, description TEXT, identifier_prefix TEXT NOT NULL, work_item_counter
+      INTEGER NOT NULL DEFAULT 0, estimate_type TEXT NOT NULL DEFAULT 'Category', application_id TEXT
+      (optional FK), start_date INTEGER, end_date INTEGER, feature_toggles TEXT (JSON), created_at
+      INTEGER NOT NULL, updated_at INTEGER NOT NULL, deleted_at INTEGER. Add unique index on
+      identifier_prefix WHERE deleted_at IS NULL. Create the IPmProjectRepository interface, mapper,
+      and SQLite repository implementation. Register in DI container.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "Migration creates table idempotently with existence check"
+      - "Unique index on identifier_prefix (soft-delete aware)"
+      - "Repository implements create, findById, findBySlug, list, update, softDelete"
+      - "Mapper correctly converts between domain and DB row formats"
+      - "DI registration includes string token alias for web access"
+      - "Integration test: create project with all fields, read back, verify all values match"
+    tdd:
+      red:
+        - "Write integration test: create a PmProject with non-default values, read back, assert all fields match"
+        - "Write integration test: verify unique identifier_prefix constraint"
+        - "Write integration test: soft delete and verify findById returns null unless includeDeleted"
+      green:
+        - "Create migration 058"
+        - "Create IPmProjectRepository interface"
+        - "Create pm-project.mapper.ts"
+        - "Create sqlite-pm-project.repository.ts"
+        - "Register in container.ts with string token"
+        - "Register migration in migrations/index.ts"
+      refactor:
+        - "Verify SQL INSERT lists ALL columns (per LESSONS.md — missing columns silently use defaults)"
+        - "Extract common repository patterns if applicable"
+    estimatedEffort: "2h"
+
+  - id: "task-8"
+    phaseId: "phase-1"
+    title: "Create work_item_states migration and repository"
+    description: >
+      Create migration 059-create-work-item-states.ts with table: id TEXT PK, project_id TEXT NOT
+      NULL FK, name TEXT NOT NULL, color TEXT NOT NULL, display_order INTEGER NOT NULL, state_group
+      TEXT NOT NULL, is_default INTEGER NOT NULL DEFAULT 0, created_at INTEGER, updated_at INTEGER,
+      deleted_at INTEGER. Index on project_id. Create IWorkItemStateRepository interface, mapper,
+      and SQLite implementation. Add method to seed default states for a new project (Backlog, Todo,
+      In Progress, Done, Cancelled).
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "Migration creates table with FK to pm_projects"
+      - "Repository supports CRUD plus reorder (update display_order for multiple states atomically)"
+      - "seedDefaultStates method creates 5 default states mapped to correct state groups"
+      - "Integration test: create states, reorder, verify order persists"
+    tdd:
+      red:
+        - "Write integration test: seed default states for a project, verify 5 states created with correct groups"
+        - "Write integration test: reorder states, read back, verify new order"
+        - "Write integration test: cannot delete last state in Backlog or Completed group"
+      green:
+        - "Create migration 059"
+        - "Create IWorkItemStateRepository interface with seedDefaults + reorder methods"
+        - "Create mapper and repository implementation"
+        - "Register in DI"
+      refactor:
+        - "Ensure reorder uses a single transaction for atomicity"
+    estimatedEffort: "1.5h"
+
+  - id: "task-9"
+    phaseId: "phase-1"
+    title: "Create labels migration and repository"
+    description: >
+      Create migration 060-create-labels.ts with table: id TEXT PK, project_id TEXT NOT NULL FK,
+      name TEXT NOT NULL, color TEXT NOT NULL, parent_id TEXT (optional FK to labels.id for one-level
+      nesting), created_at INTEGER, updated_at INTEGER, deleted_at INTEGER. Unique index on
+      (project_id, name) WHERE deleted_at IS NULL. Create ILabelRepository, mapper, and
+      implementation.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "Migration creates table with self-referencing FK for parent"
+      - "Unique constraint on project_id + name"
+      - "Repository supports CRUD with parent-child listing"
+      - "Integration test: create label with parent, list by project, verify hierarchy"
+    tdd:
+      red:
+        - "Write integration test: create parent label, create child label, list by project returns both with correct parentId"
+        - "Write integration test: duplicate name in same project fails"
+      green:
+        - "Create migration 060"
+        - "Create ILabelRepository, mapper, repository"
+        - "Register in DI"
+      refactor:
+        - "Verify soft-delete awareness in unique constraint"
+    estimatedEffort: "1h"
+
+  - id: "task-10"
+    phaseId: "phase-1"
+    title: "Create work_items migration and repository with sequential ID generation"
+    description: >
+      Create migration 061-create-work-items.ts: id TEXT PK, project_id TEXT NOT NULL FK,
+      sequence_id INTEGER NOT NULL, identifier_prefix TEXT NOT NULL (denormalized), title TEXT
+      NOT NULL, description TEXT, state_id TEXT NOT NULL FK, priority TEXT NOT NULL DEFAULT 'None',
+      parent_id TEXT (FK to self), sort_order REAL NOT NULL DEFAULT 0, start_date INTEGER,
+      due_date INTEGER, estimate_value TEXT, custom_property_values TEXT (JSON), created_at INTEGER,
+      updated_at INTEGER, deleted_at INTEGER. Unique index on (project_id, sequence_id). Indexes
+      on state_id, priority, due_date, parent_id. Create migration 062-create-work-item-junctions.ts
+      for work_item_labels (work_item_id, label_id) and work_item_assignees (work_item_id,
+      assignee_id) junction tables. Create IWorkItemRepository with atomic create (increment
+      project counter + insert) and filtering methods.
+    state: "Todo"
+    dependencies:
+      - "task-8"
+      - "task-9"
+    acceptanceCriteria:
+      - "Atomic sequential ID: counter increment + insert in one transaction"
+      - "Human-readable ID computed as identifierPrefix + '-' + sequenceId"
+      - "Junction tables for labels and assignees with proper FKs"
+      - "Repository supports create, findById, findByIdentifier (e.g., PROJ-1), list with filters"
+      - "List supports filtering by state, priority, assignee, label, date range"
+      - "Integration test: create 3 work items, verify sequential IDs PROJ-1, PROJ-2, PROJ-3"
+    tdd:
+      red:
+        - "Write integration test: create work item, verify sequence_id is 1 and project counter is 1"
+        - "Write integration test: create 3 items rapidly, verify IDs are sequential with no gaps"
+        - "Write integration test: find by identifier string 'PROJ-2' returns correct item"
+        - "Write integration test: list with state filter returns only matching items"
+        - "Write integration test: assign labels and assignees via junction tables, verify on read"
+      green:
+        - "Create migration 061 (work_items)"
+        - "Create migration 062 (junction tables)"
+        - "Create IWorkItemRepository interface with filter types"
+        - "Create work-item.mapper.ts handling junction table joins"
+        - "Create sqlite-work-item.repository.ts with atomic counter increment"
+        - "Register in DI"
+      refactor:
+        - "Verify all INSERT columns match mapper output (LESSONS.md critical check)"
+        - "Extract filter-building SQL into helper methods for readability"
+    estimatedEffort: "3h"
+
+  - id: "task-11"
+    phaseId: "phase-1"
+    title: "Create comments and activity_log migrations and repositories"
+    description: >
+      Create migration 063-create-comments.ts: id, work_item_id FK, parent_id (threading),
+      content TEXT, author_id TEXT, created_at, updated_at, deleted_at. Create migration
+      064-create-activity-log.ts: id, work_item_id FK, field_name TEXT, old_value TEXT,
+      new_value TEXT, actor_id TEXT, created_at INTEGER. Activity log is append-only — no
+      UPDATE or DELETE (NFR-8). Create both repository interfaces and implementations.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "Comment repository supports threaded comments (parent-child)"
+      - "Activity log repository is append-only: only create and list methods"
+      - "Activity log records per-field changes"
+      - "Integration test: create threaded comments, list by work item, verify tree structure"
+      - "Integration test: log activity entries, verify immutability (no update/delete methods)"
+    tdd:
+      red:
+        - "Write integration test: create comment with parent, list by work_item, verify threading"
+        - "Write integration test: log 3 activity entries for a work item field change, list returns all in order"
+        - "Write test verifying IActivityLogRepository has no update or delete methods (compile-time)"
+      green:
+        - "Create migrations 063 and 064"
+        - "Create ICommentRepository and IActivityLogRepository interfaces"
+        - "Create mappers and repository implementations"
+        - "Register in DI"
+      refactor:
+        - "Verify activity_log has NO update/delete SQL statements"
+    estimatedEffort: "1.5h"
+
+  - id: "task-12"
+    phaseId: "phase-1"
+    title: "Create saved_views and custom_properties migrations and repositories"
+    description: >
+      Create migration 065-create-saved-views.ts: id, project_id FK, name, description,
+      is_public INTEGER, layout TEXT, configuration TEXT (JSON), created_by TEXT, created_at,
+      updated_at, deleted_at. Create migration 066-create-custom-properties.ts: id, project_id FK,
+      name, property_type TEXT, options TEXT (JSON for dropdown choices), is_required INTEGER,
+      display_order INTEGER, created_at, updated_at, deleted_at. Create both repository interfaces
+      and implementations.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "SavedView stores full configuration as JSON blob"
+      - "CustomProperty supports all 6 property types"
+      - "Layout column is indexed for filtering views by type"
+      - "Integration test: create saved view, update configuration, read back JSON"
+      - "Integration test: create custom property, verify type and options stored correctly"
+    tdd:
+      red:
+        - "Write integration test: create saved view with complex JSON configuration, read back and verify"
+        - "Write integration test: create dropdown custom property with options array, verify on read"
+      green:
+        - "Create migrations 065 and 066"
+        - "Create repository interfaces, mappers, and implementations"
+        - "Register in DI"
+      refactor:
+        - "Validate JSON structure in mapper before DB write"
+    estimatedEffort: "1.5h"
+
+  - id: "task-13"
+    phaseId: "phase-1"
+    title: "Create FTS5 virtual tables migration"
+    description: >
+      Create migration 067-create-fts5-indexes.ts: FTS5 virtual tables for work_items_fts
+      (title, description) and pm_projects_fts (name, description). Create INSERT/UPDATE/DELETE
+      triggers on the source tables to keep FTS indexes synchronized. Add a SearchRepository
+      interface and implementation that queries FTS5 with BM25 ranking.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "FTS5 virtual tables created for work items and projects"
+      - "Triggers keep FTS indexes synchronized on INSERT, UPDATE, DELETE"
+      - "Search returns ranked results with BM25 scoring"
+      - "Prefix search (term*) works for autocomplete"
+      - "Integration test: create work items, search by partial title, verify ranked results"
+      - "Integration test: update work item title, verify search reflects the change"
+    tdd:
+      red:
+        - "Write integration test: insert 5 work items with different titles, search for partial match, verify ranking"
+        - "Write integration test: update a title, search again, verify updated content is found"
+        - "Write integration test: delete a work item, verify it no longer appears in search results"
+      green:
+        - "Create migration 067 with FTS5 tables and triggers"
+        - "Create ISearchRepository interface"
+        - "Create sqlite search repository querying FTS5"
+        - "Register in DI"
+      refactor:
+        - "Sanitize user search input for FTS5 syntax (escape special characters)"
+    estimatedEffort: "2h"
+
+  - id: "task-14"
+    phaseId: "phase-1"
+    title: "Implement Project CRUD use cases"
+    description: >
+      Create use cases under pm/projects/: CreatePmProject (validates identifier prefix uniqueness,
+      seeds default states via WorkItemState repository, creates default work item types),
+      ListPmProjects, GetPmProject, UpdatePmProject, DeletePmProject (soft delete). Each use case
+      follows the existing pattern: @injectable, inject repository via DI, return Success/Failure
+      result type.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+      - "task-8"
+    acceptanceCriteria:
+      - "CreatePmProject validates prefix format (2-5 uppercase letters)"
+      - "CreatePmProject validates prefix uniqueness within workspace"
+      - "CreatePmProject seeds 5 default states and default work item types"
+      - "All use cases are presentation-agnostic (no HTTP/terminal concepts)"
+      - "All use cases registered in DI with string token aliases"
+      - "Unit test: create project with valid/invalid inputs"
+      - "Unit test: duplicate prefix returns error"
+    tdd:
+      red:
+        - "Write unit test: CreatePmProject with valid input returns success with project ID"
+        - "Write unit test: CreatePmProject with empty name returns error"
+        - "Write unit test: CreatePmProject with invalid prefix (lowercase, too long) returns error"
+        - "Write unit test: CreatePmProject with duplicate prefix returns error"
+        - "Write unit test: ListPmProjects returns all non-deleted projects"
+        - "Write unit test: DeletePmProject soft-deletes (not hard delete)"
+      green:
+        - "Implement all 5 use cases with proper validation"
+        - "Register in DI container with string token aliases"
+      refactor:
+        - "Extract prefix validation into a shared validator"
+        - "Ensure error messages are user-friendly"
+    estimatedEffort: "2h"
+
+  - id: "task-15"
+    phaseId: "phase-1"
+    title: "Implement WorkItem CRUD use cases"
+    description: >
+      Create use cases under pm/work-items/: CreateWorkItem (generates sequential ID, validates
+      state exists, logs activity), ListWorkItems (with full filter support — state, priority,
+      assignee, label, date range, free text), GetWorkItem (includes labels, assignees, parent),
+      UpdateWorkItem (logs field changes to activity log), DeleteWorkItem (soft delete, logs
+      activity), SearchWorkItems (wraps FTS5 search).
+    state: "Todo"
+    dependencies:
+      - "task-10"
+      - "task-11"
+      - "task-14"
+    acceptanceCriteria:
+      - "CreateWorkItem generates sequential ID atomically"
+      - "CreateWorkItem logs creation activity entry"
+      - "UpdateWorkItem diffs old vs new values and logs per-field activity entries"
+      - "ListWorkItems supports all filter dimensions from FR-25"
+      - "GetWorkItem returns full work item with related data (labels, assignees)"
+      - "SearchWorkItems uses FTS5 with ranked results"
+      - "All use cases presentation-agnostic and DI-registered with string tokens"
+    tdd:
+      red:
+        - "Write unit test: CreateWorkItem returns work item with sequential ID"
+        - "Write unit test: CreateWorkItem with invalid stateId returns error"
+        - "Write unit test: UpdateWorkItem changes state, verify activity log entry with old/new values"
+        - "Write unit test: ListWorkItems with state filter returns only matching items"
+        - "Write unit test: ListWorkItems with multiple filters (AND logic)"
+        - "Write unit test: SearchWorkItems returns ranked results"
+      green:
+        - "Implement all 6 use cases"
+        - "Register in DI with string tokens"
+      refactor:
+        - "Extract activity logging into a helper service to avoid duplication across update paths"
+        - "Extract filter-building logic into a shared utility"
+    estimatedEffort: "3h"
+
+  - id: "task-16"
+    phaseId: "phase-1"
+    title: "Implement State, Label, Comment, SavedView, and CustomProperty use cases"
+    description: >
+      Create CRUD use cases for remaining Phase 1 entities: states/ (create, list, update, delete,
+      reorder), labels/ (create, list, update, delete), comments/ (create, list, update, delete),
+      views/ (create, list, update, delete), custom-properties/ (create, list, update, delete).
+      State deletion must enforce that at least one state remains in Backlog and Completed groups.
+    state: "Todo"
+    dependencies:
+      - "task-11"
+      - "task-12"
+      - "task-14"
+    acceptanceCriteria:
+      - "State delete validates minimum group constraints (FR-17)"
+      - "State reorder updates display_order atomically"
+      - "Label delete cascades (removes junction entries)"
+      - "Comment supports threaded replies"
+      - "SavedView stores configuration as JSON"
+      - "CustomProperty validates type-specific constraints"
+      - "All use cases registered with string tokens"
+    tdd:
+      red:
+        - "Write unit test: delete last Completed state returns error"
+        - "Write unit test: reorder states updates all display_order values"
+        - "Write unit test: create comment with parentId for threading"
+        - "Write unit test: create saved view with full configuration JSON"
+        - "Write unit test: create custom property with Dropdown type and options"
+      green:
+        - "Implement all CRUD use cases for 5 entities (20 use cases total)"
+        - "Register all in DI with string tokens"
+      refactor:
+        - "Extract common CRUD patterns if duplication emerges across entity use cases"
+    estimatedEffort: "3h"
+
+  - id: "task-17"
+    phaseId: "phase-1"
+    title: "Create web server actions for PM entities"
+    description: >
+      Create server actions under actions/pm/: project-actions.ts (createProject, listProjects,
+      getProject, updateProject, deleteProject), work-item-actions.ts (createWorkItem, listWorkItems,
+      getWorkItem, updateWorkItem, deleteWorkItem, searchWorkItems), state-actions.ts, label-actions.ts,
+      comment-actions.ts, view-actions.ts. Each action resolves the use case from DI container using
+      string tokens, calls execute, and returns the result.
+    state: "Todo"
+    dependencies:
+      - "task-14"
+      - "task-15"
+      - "task-16"
+    acceptanceCriteria:
+      - "Each server action resolves use case via container.resolve('UseCaseStringToken')"
+      - "Server actions import reflect-metadata at the top (per LESSONS.md)"
+      - "Actions handle both success and failure results from use cases"
+      - "All PM server actions are grouped under actions/pm/ directory"
+    tdd: null
+    estimatedEffort: "1.5h"
+
+  - id: "task-18"
+    phaseId: "phase-1"
+    title: "Build List view and work item detail page in Web UI"
+    description: >
+      Create the List view component tree: list-view.tsx (main container with grouping/sorting),
+      list-view-group.tsx (collapsible group header), list-view-item.tsx (single work item row
+      showing ID, title, state badge, priority badge, assignees, due date). Create shared components:
+      priority-badge.tsx, state-badge.tsx, label-badge.tsx, view-switcher.tsx (tabs for switching
+      layouts), filter-bar.tsx, grouping-selector.tsx. Create work item detail page: work-item-detail.tsx
+      (full page with properties panel, activity feed, comment thread). Create work-item-create-dialog.tsx
+      (modal for quick creation — title + Enter). Wire into routes: projects/[projectId]/work-items/page.tsx
+      and work-items/[workItemId]/page.tsx. Create Storybook stories for all components.
+    state: "Todo"
+    dependencies:
+      - "task-17"
+    acceptanceCriteria:
+      - "List view renders work items grouped by state (default)"
+      - "Grouping switchable to priority, assignee, label, none (FR-23)"
+      - "Filter bar supports state, priority, assignee, label, text search (FR-25)"
+      - "Work item detail shows all properties in side panel"
+      - "Activity feed displays field changes chronologically"
+      - "Comment thread supports replies"
+      - "Create dialog allows title-only creation in 3 interactions (NFR-20)"
+      - "Every component has a colocated .stories.tsx file"
+    tdd:
+      red:
+        - "Write Storybook stories first that render components with mock data"
+        - "Write test: list view renders correct number of items for mock data"
+        - "Write test: filter bar filters items by state"
+        - "Write test: create dialog submits on Enter key"
+      green:
+        - "Implement all list view components"
+        - "Implement shared badge and filter components"
+        - "Implement work item detail page"
+        - "Implement create dialog"
+        - "Wire routes"
+      refactor:
+        - "Extract common styling patterns"
+        - "Ensure keyboard accessibility per NFR-17"
+    estimatedEffort: "5h"
+
+  - id: "task-19"
+    phaseId: "phase-1"
+    title: "Build global search UI with Cmd+K shortcut"
+    description: >
+      Create search-command.tsx component using Radix UI Command pattern (or existing cmdk
+      dependency). Global keyboard shortcut Cmd/Ctrl+K opens the search dialog. Queries FTS5
+      via SearchWorkItems use case. Displays results grouped by entity type (work items, projects).
+      Navigate with arrow keys, Enter opens the selected item.
+    state: "Todo"
+    dependencies:
+      - "task-13"
+      - "task-17"
+    acceptanceCriteria:
+      - "Cmd/Ctrl+K opens search dialog from anywhere in the PM UI"
+      - "Debounced input (200ms) queries FTS5"
+      - "Results grouped by type with BM25 ranking"
+      - "Arrow key navigation and Enter to open"
+      - "Storybook story for search command component"
+    tdd:
+      red:
+        - "Write Storybook story with mock search results"
+        - "Write test: typing triggers debounced search after 200ms"
+        - "Write test: results render grouped by entity type"
+      green:
+        - "Implement search-command.tsx"
+        - "Wire keyboard shortcut in layout"
+        - "Connect to search server action"
+      refactor:
+        - "Ensure search input sanitizes FTS5 special characters"
+    estimatedEffort: "2h"
+
+  - id: "task-20"
+    phaseId: "phase-1"
+    title: "Build CLI commands for projects and work items"
+    description: >
+      Create CLI commands under commands/pm/: project.command.ts (create, list, show), work-item.command.ts
+      (create, list, show, update, close). List command supports --state, --priority, --assignee, --label
+      filters. Output in list format (grouped text) and table format (columnar). Register commands in
+      CLI command index.
+    state: "Todo"
+    dependencies:
+      - "task-14"
+      - "task-15"
+    acceptanceCriteria:
+      - "shep project create prompts for name and prefix"
+      - "shep project list shows all projects with ID and name"
+      - "shep work create accepts --project, --title, --priority flags"
+      - "shep work list supports --state, --priority, --assignee, --label filters"
+      - "shep work list renders in both list and table formats (--format flag)"
+      - "shep work show displays full work item details"
+      - "shep work close sets state to first Completed group state"
+      - "Commands registered in CLI index"
+    tdd:
+      red:
+        - "Write unit test: project create command calls CreatePmProject use case with correct input"
+        - "Write unit test: work list command passes filter flags to ListWorkItems use case"
+        - "Write unit test: work close command calls UpdateWorkItem with completed state"
+      green:
+        - "Implement project.command.ts"
+        - "Implement work-item.command.ts"
+        - "Register in commands/index.ts"
+      refactor:
+        - "Extract common CLI output formatting into shared helpers"
+    estimatedEffort: "2h"
+
+  # ===========================================================================
+  # PHASE 2: Views & Organization — Board, Table, Calendar, Relations
+  # ===========================================================================
+
+  - id: "task-21"
+    phaseId: "phase-2"
+    title: "Install @dnd-kit and build Board (Kanban) view"
+    description: >
+      Install @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities. Build the Board view component
+      tree: board-view.tsx (DndContext wrapper with column layout), board-column.tsx (SortableContext
+      for within-column reordering), board-card.tsx (draggable work item card). Support grouping by
+      state (default), priority, or assignee as column headers. Drag between columns to change the
+      grouped property. Optimistic UI updates with server action persistence.
+    state: "Todo"
+    dependencies:
+      - "task-18"
+    acceptanceCriteria:
+      - "@dnd-kit packages installed"
+      - "Board renders columns grouped by state (default)"
+      - "Drag card between columns updates work item state"
+      - "Drag within column reorders items"
+      - "Optimistic UI: card moves instantly, persists async (NFR-3 < 100ms)"
+      - "Keyboard accessible: arrow keys to navigate, Space to pick up (NFR-17)"
+      - "Storybook stories for board view, column, and card"
+    tdd:
+      red:
+        - "Write Storybook stories for board with mock data across 4 state columns"
+        - "Write test: dropping card on different column calls updateWorkItem with new stateId"
+        - "Write test: board renders correct number of columns matching state count"
+      green:
+        - "Install @dnd-kit packages"
+        - "Implement board-view, board-column, board-card components"
+        - "Wire DnD event handlers to server actions"
+      refactor:
+        - "Optimize with React.memo on card components to minimize re-renders"
+        - "Add CSS transitions for smooth drag animations"
+    estimatedEffort: "4h"
+
+  - id: "task-22"
+    phaseId: "phase-2"
+    title: "Build Table (Spreadsheet) view with inline editing"
+    description: >
+      Build the Table view: table-view.tsx (full-width table with resizable columns),
+      table-cell-editor.tsx (inline editing on double-click or Enter). Support columns for: ID,
+      title, state, priority, assignees, labels, start date, due date, estimate. Inline editing
+      for title, state (dropdown), priority (dropdown), dates (date picker). Keyboard navigation:
+      arrow keys between cells, Enter to edit, Escape to cancel.
+    state: "Todo"
+    dependencies:
+      - "task-18"
+    acceptanceCriteria:
+      - "Table renders all work items with configurable visible columns (FR-32)"
+      - "Inline editing for text, dropdown, and date fields (FR-27)"
+      - "Arrow key navigation between cells"
+      - "Changes persist via UpdateWorkItem server action"
+      - "Storybook stories"
+    tdd:
+      red:
+        - "Write Storybook stories with mock table data"
+        - "Write test: double-click cell enters edit mode"
+        - "Write test: Enter key saves edit, Escape cancels"
+        - "Write test: arrow keys navigate between cells"
+      green:
+        - "Implement table-view and table-cell-editor components"
+        - "Wire inline edit saves to server actions"
+      refactor:
+        - "Add column resize persistence in saved views"
+    estimatedEffort: "3h"
+
+  - id: "task-23"
+    phaseId: "phase-2"
+    title: "Build Calendar view with drag-to-reschedule"
+    description: >
+      Build the Calendar view: calendar-view.tsx (monthly grid), calendar-day-cell.tsx (day cell
+      with work items positioned on start/due dates). Support drag-and-drop to move work items
+      between dates (updates start_date or due_date). Show work items spanning multiple days as
+      bars across cells.
+    state: "Todo"
+    dependencies:
+      - "task-21"
+    acceptanceCriteria:
+      - "Calendar renders monthly grid with work items on their dates (FR-28)"
+      - "Drag work item to different date updates the date field"
+      - "Multi-day items render as spanning bars"
+      - "Navigation to previous/next month"
+      - "Storybook stories"
+    tdd:
+      red:
+        - "Write Storybook stories with mock calendar data spanning multiple dates"
+        - "Write test: work item with start and due date renders spanning bar"
+        - "Write test: drag to new date calls updateWorkItem with new date"
+      green:
+        - "Implement calendar-view and calendar-day-cell"
+        - "Integrate @dnd-kit for date-change drops"
+      refactor:
+        - "Optimize rendering for months with many items"
+    estimatedEffort: "3h"
+
+  - id: "task-24"
+    phaseId: "phase-2"
+    title: "Create work_item_relations migration and repository"
+    description: >
+      Create migration 068-create-work-item-relations.ts: id TEXT PK, source_work_item_id TEXT FK,
+      target_work_item_id TEXT FK, relation_type TEXT NOT NULL (RelationType enum), created_at
+      INTEGER. Unique constraint on (source, target, type). Create IWorkItemRelationRepository,
+      mapper, and implementation. Add parent-child nesting support (max 3 levels enforced in
+      use case, not DB).
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "Relation table supports all 5 relation types (FR-9)"
+      - "Unique constraint prevents duplicate relations"
+      - "Repository supports create, delete, listByWorkItem"
+      - "Integration test: create Blocking relation, list from both sides"
+    tdd:
+      red:
+        - "Write integration test: create relation, list by source work item, verify target"
+        - "Write integration test: list by target work item, verify inverse relation"
+        - "Write integration test: duplicate relation fails"
+      green:
+        - "Create migration 068"
+        - "Create interface, mapper, and repository"
+        - "Register in DI"
+      refactor:
+        - "Ensure bidirectional listing (Blocking returns as Blocked By from target side)"
+    estimatedEffort: "1.5h"
+
+  - id: "task-25"
+    phaseId: "phase-2"
+    title: "Implement relation and sub-item use cases"
+    description: >
+      Create use cases: CreateWorkItemRelation (validates no self-reference, checks circular
+      blocking), DeleteWorkItemRelation, ListWorkItemRelations. Add sub-item support to
+      CreateWorkItem and UpdateWorkItem: validate parent exists, enforce max 3 nesting levels
+      by walking the parent chain.
+    state: "Todo"
+    dependencies:
+      - "task-15"
+      - "task-24"
+    acceptanceCriteria:
+      - "Cannot create self-referencing relation"
+      - "Cannot create circular Blocking chain"
+      - "Sub-items enforce max 3 levels (FR-8)"
+      - "Unit test: creating 4th nesting level returns error"
+      - "Unit test: circular blocking detection"
+    tdd:
+      red:
+        - "Write unit test: create relation with self-reference returns error"
+        - "Write unit test: A blocks B, B blocks C, C blocks A returns circular error"
+        - "Write unit test: parent at depth 3, adding child returns max depth error"
+      green:
+        - "Implement relation use cases with validation"
+        - "Add depth validation to work item create/update"
+        - "Register in DI"
+      refactor:
+        - "Extract cycle detection into a reusable graph utility"
+    estimatedEffort: "2h"
+
+  - id: "task-26"
+    phaseId: "phase-2"
+    title: "Implement bulk operations use case"
+    description: >
+      Create BulkUpdateWorkItems use case supporting: bulk state change, bulk assignee
+      add/remove, bulk label add/remove, bulk delete. Takes array of work item IDs and
+      the operation to apply. All updates in a single transaction. Logs activity for each
+      affected item.
+    state: "Todo"
+    dependencies:
+      - "task-15"
+    acceptanceCriteria:
+      - "Bulk state change updates all items in one transaction (FR-14)"
+      - "Bulk operations log activity per item"
+      - "Invalid IDs in the batch return partial failure with details"
+      - "Unit test: bulk state change on 5 items"
+    tdd:
+      red:
+        - "Write unit test: bulk state change on 5 items, verify all updated"
+        - "Write unit test: bulk label add, verify junction entries created"
+        - "Write unit test: one invalid ID in batch, others still succeed"
+      green:
+        - "Implement BulkUpdateWorkItems use case"
+        - "Register in DI"
+      refactor:
+        - "Ensure transaction wraps all operations for atomicity"
+    estimatedEffort: "1.5h"
+
+  - id: "task-27"
+    phaseId: "phase-2"
+    title: "Integrate views into project layout with view switcher"
+    description: >
+      Wire the view-switcher component to toggle between List, Board, Table, Calendar views
+      on the work items page. Each view shares the same data from ListWorkItems use case.
+      Filter bar state is shared across views (changing filter in Board persists when switching
+      to Table). Implement Saved Views CRUD in the UI: save current filter/layout/grouping as
+      a named view, load saved views from dropdown.
+    state: "Todo"
+    dependencies:
+      - "task-21"
+      - "task-22"
+      - "task-23"
+    acceptanceCriteria:
+      - "View switcher renders tabs for all available layouts"
+      - "Switching views preserves filter state"
+      - "Save current view configuration as named saved view"
+      - "Load saved view restores layout + filters + grouping"
+      - "Dynamic import for non-List views to reduce initial bundle"
+    tdd:
+      red:
+        - "Write test: switching view layout preserves active filters"
+        - "Write test: saving view persists configuration, loading restores it"
+      green:
+        - "Wire view switcher to route state"
+        - "Implement saved view save/load UI"
+        - "Add dynamic imports for Board, Table, Calendar"
+      refactor:
+        - "Consolidate view state management into a custom hook"
+    estimatedEffort: "2h"
+
+  - id: "task-28"
+    phaseId: "phase-2"
+    title: "Add relation and sub-item UI to work item detail"
+    description: >
+      Extend work item detail page with: relations section (list existing, add new via dropdown),
+      sub-items section (list children, add new sub-item inline). Sub-items show indentation
+      and parent breadcrumb. Relation badges show type (Blocking, Relates To, etc.) with link
+      to related item.
+    state: "Todo"
+    dependencies:
+      - "task-25"
+      - "task-18"
+    acceptanceCriteria:
+      - "Relations section shows all related work items with type badges"
+      - "Add relation dialog with type selector and work item picker"
+      - "Sub-items list with indentation up to 3 levels"
+      - "Add sub-item inline creates child work item"
+      - "Storybook stories for relation and sub-item sections"
+    tdd:
+      red:
+        - "Write Storybook stories with mock relations and sub-items"
+        - "Write test: add relation calls createWorkItemRelation with correct type"
+      green:
+        - "Extend work item detail with relations section"
+        - "Add sub-items section"
+        - "Wire to relation server actions"
+      refactor:
+        - "Extract work item picker into reusable component"
+    estimatedEffort: "2h"
+
+  - id: "task-29"
+    phaseId: "phase-2"
+    title: "Build bulk operations UI"
+    description: >
+      Add multi-select mode to List and Table views: checkbox per item, select all, bulk action
+      toolbar appears on selection. Toolbar shows: Change State, Change Assignee, Add Label,
+      Remove Label, Delete. Each action opens a confirmation dialog and calls BulkUpdateWorkItems.
+    state: "Todo"
+    dependencies:
+      - "task-26"
+      - "task-18"
+    acceptanceCriteria:
+      - "Checkbox selection in List and Table views"
+      - "Bulk action toolbar appears on selection"
+      - "Confirmation dialog before destructive actions"
+      - "Success/failure toast notifications"
+    tdd:
+      red:
+        - "Write test: selecting items shows bulk toolbar"
+        - "Write test: bulk state change sends correct IDs and state"
+      green:
+        - "Add selection state to List and Table views"
+        - "Implement bulk action toolbar"
+        - "Wire to bulk update server action"
+      refactor:
+        - "Extract selection state into shared hook"
+    estimatedEffort: "2h"
+
+  - id: "task-30"
+    phaseId: "phase-2"
+    title: "Add web server actions for Phase 2 features and update CLI"
+    description: >
+      Create server actions for relations (create, delete, list), bulk operations, and saved
+      views. Update CLI work-item command with: --parent flag for sub-items, relation subcommand
+      (shep work relate <id> --blocks <id>). Add board/calendar ASCII rendering to CLI list
+      (best-effort per spec decision).
+    state: "Todo"
+    dependencies:
+      - "task-25"
+      - "task-26"
+      - "task-20"
+    acceptanceCriteria:
+      - "Server actions for relations and bulk ops"
+      - "CLI supports --parent flag for creating sub-items"
+      - "CLI shep work relate command creates relations"
+      - "CLI --format board renders ASCII column layout (best effort)"
+    tdd:
+      red:
+        - "Write unit test: CLI relate command calls CreateWorkItemRelation"
+        - "Write unit test: CLI --parent flag passes parentId to CreateWorkItem"
+      green:
+        - "Create server actions"
+        - "Extend CLI commands"
+      refactor:
+        - "Ensure CLI help text documents all new flags"
+    estimatedEffort: "1.5h"
+
+  # ===========================================================================
+  # PHASE 3: Sprint & Module Management — Cycles, Analytics, Timeline
+  # ===========================================================================
+
+  - id: "task-31"
+    phaseId: "phase-3"
+    title: "Define Cycle and Module entities in TypeSpec, create migrations and repositories"
+    description: >
+      Create tsp/domain/entities/cycle.tsp extending SoftDeletableEntity: projectId, name,
+      description, status (CycleStatus enum), startDate, endDate. Create tsp/domain/entities/pm-module.tsp:
+      projectId, name, description, status (ModuleStatus enum), leadId (optional), startDate,
+      endDate. Create migrations 069-create-cycles.ts (cycles table + cycle_work_items junction)
+      and 070-create-modules.ts (pm_modules table + module_work_items junction). Create repository
+      interfaces and implementations.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "Cycle and Module entities compiled from TypeSpec"
+      - "Junction tables for many-to-many work item associations"
+      - "Cycle repository enforces single Active cycle per project (FR-34)"
+      - "Module repository supports many-to-many (work item in multiple modules)"
+      - "Integration tests for CRUD + junction operations"
+    tdd:
+      red:
+        - "Write integration test: create cycle, add work items, list items in cycle"
+        - "Write integration test: activate cycle when another is active returns error"
+        - "Write integration test: create module, add same work item to 2 modules"
+      green:
+        - "Create TypeSpec entities, compile"
+        - "Create migrations 069 and 070"
+        - "Create interfaces, mappers, repositories"
+        - "Register in DI"
+      refactor:
+        - "Extract junction table operations into shared helper"
+    estimatedEffort: "3h"
+
+  - id: "task-32"
+    phaseId: "phase-3"
+    title: "Implement Cycle use cases with transfer logic"
+    description: >
+      Create use cases: CreateCycle, ListCycles, GetCycle, UpdateCycle, DeleteCycle,
+      AddItemsToCycle, RemoveItemsFromCycle, TransferCycleItems (move incomplete items
+      from completed cycle to another cycle or backlog). Enforce single Active cycle.
+      Auto-complete cycle when end date passes.
+    state: "Todo"
+    dependencies:
+      - "task-31"
+      - "task-15"
+    acceptanceCriteria:
+      - "Only one Active cycle per project (FR-34)"
+      - "TransferCycleItems moves items not in Completed group to target (FR-36)"
+      - "All use cases registered with string tokens"
+    tdd:
+      red:
+        - "Write unit test: activate cycle when one is already active returns error"
+        - "Write unit test: transfer incomplete items from completed cycle to new cycle"
+        - "Write unit test: transfer leaves completed items in original cycle"
+      green:
+        - "Implement all 8 cycle use cases"
+        - "Register in DI"
+      refactor:
+        - "Extract active cycle validation into shared method"
+    estimatedEffort: "2.5h"
+
+  - id: "task-33"
+    phaseId: "phase-3"
+    title: "Implement Module use cases"
+    description: >
+      Create use cases: CreateModule, ListModules, GetModule, UpdateModule, DeleteModule,
+      AddItemsToModule, RemoveItemsFromModule. Module progress computed as percentage of
+      assigned work items in Completed state group.
+    state: "Todo"
+    dependencies:
+      - "task-31"
+      - "task-15"
+    acceptanceCriteria:
+      - "Module progress computed from Completed group items (FR-41)"
+      - "Work items can belong to multiple modules (FR-40)"
+      - "All use cases registered with string tokens"
+    tdd:
+      red:
+        - "Write unit test: module progress with 3/5 items completed = 60%"
+        - "Write unit test: same work item in 2 modules"
+      green:
+        - "Implement all 7 module use cases"
+        - "Register in DI"
+      refactor:
+        - "Extract progress calculation into domain service"
+    estimatedEffort: "2h"
+
+  - id: "task-34"
+    phaseId: "phase-3"
+    title: "Install Recharts and build analytics use cases and dashboard"
+    description: >
+      Install recharts. Create analytics use cases: GetCycleBurndown (ideal line vs actual
+      completion over time), GetProjectBreakdown (items by state, priority, assignee),
+      GetModuleProgress (progress bars per module). Build web components: burndown-chart.tsx,
+      status-breakdown.tsx. Wire into projects/[projectId]/analytics/page.tsx.
+    state: "Todo"
+    dependencies:
+      - "task-32"
+      - "task-33"
+    acceptanceCriteria:
+      - "Recharts installed"
+      - "Burndown chart shows ideal vs actual lines (FR-37)"
+      - "Status breakdown shows bar/pie by state group (FR-52)"
+      - "Toggle between item count and estimate points (FR-38)"
+      - "Storybook stories for all chart components"
+    tdd:
+      red:
+        - "Write unit test: burndown use case returns data points for each day of cycle"
+        - "Write unit test: project breakdown aggregates by state group correctly"
+        - "Write Storybook stories for charts with mock data"
+      green:
+        - "Install recharts"
+        - "Implement analytics use cases"
+        - "Build chart components"
+        - "Wire analytics page"
+      refactor:
+        - "Extract chart data transformation into separate utility functions"
+    estimatedEffort: "3h"
+
+  - id: "task-35"
+    phaseId: "phase-3"
+    title: "Build Cycle and Module management panels in Web UI"
+    description: >
+      Build cycle-panel.tsx (list cycles, active indicator, add/remove items, transfer dialog)
+      and module-panel.tsx (list modules with progress bars, add/remove items). Wire into
+      project layout sidebar. Add cycle and module server actions.
+    state: "Todo"
+    dependencies:
+      - "task-32"
+      - "task-33"
+      - "task-17"
+    acceptanceCriteria:
+      - "Cycle panel shows Active/Upcoming/Completed cycles"
+      - "Add/remove work items from cycle via drag or dialog"
+      - "Transfer dialog for completed cycle shows incomplete items"
+      - "Module panel shows modules with progress percentage"
+      - "Storybook stories for both panels"
+    tdd:
+      red:
+        - "Write Storybook stories for cycle and module panels with mock data"
+        - "Write test: adding item to cycle calls addItemsToCycle action"
+      green:
+        - "Implement cycle-panel and module-panel components"
+        - "Create cycle and module server actions"
+        - "Wire into project layout"
+      refactor:
+        - "Consolidate item-addition UI pattern between cycle and module panels"
+    estimatedEffort: "3h"
+
+  - id: "task-36"
+    phaseId: "phase-3"
+    title: "Build Timeline (Gantt) view with React Flow dependency lines"
+    description: >
+      Build timeline-view.tsx (custom Gantt grid with date axis and swim lanes), gantt-bar.tsx
+      (horizontal bar per work item, draggable ends for date adjustment), dependency-overlay.tsx
+      (React Flow overlay rendering dependency edges between bars). Support zoom levels (day,
+      week, month). Drag bar ends to adjust start/due dates.
+    state: "Todo"
+    dependencies:
+      - "task-24"
+      - "task-21"
+    acceptanceCriteria:
+      - "Gantt bars positioned by start/due date (FR-29)"
+      - "Dependency lines rendered via React Flow overlay (decision from research)"
+      - "Drag bar ends to resize (adjust dates)"
+      - "Zoom levels: day, week, month"
+      - "Performance: 500 items at 30fps (NFR-4)"
+      - "Storybook stories"
+    tdd:
+      red:
+        - "Write Storybook story with mock Gantt data and dependencies"
+        - "Write test: bar width corresponds to date range"
+        - "Write test: dependency line connects correct bars"
+      green:
+        - "Implement timeline-view with date grid"
+        - "Implement gantt-bar with drag-to-resize"
+        - "Implement dependency-overlay with React Flow edges"
+      refactor:
+        - "Virtualize bar rendering for large datasets"
+        - "Only render visible dependency edges"
+    estimatedEffort: "4h"
+
+  - id: "task-37"
+    phaseId: "phase-3"
+    title: "Add CLI cycle commands and estimate system configuration"
+    description: >
+      Add cycle.command.ts to CLI: create, list, show, add-items, transfer. Add estimate
+      configuration to project settings (T-shirt categories default, switchable to Fibonacci
+      per project). Add estimate display to work item list/detail views.
+    state: "Todo"
+    dependencies:
+      - "task-32"
+      - "task-20"
+    acceptanceCriteria:
+      - "shep cycle create/list/show commands work"
+      - "shep cycle add-items adds work items to active cycle"
+      - "Project settings page allows estimate type switch"
+      - "Work item views display estimate values"
+    tdd:
+      red:
+        - "Write unit test: cycle create command calls CreateCycle use case"
+        - "Write unit test: estimate type change persists in project settings"
+      green:
+        - "Implement cycle CLI commands"
+        - "Add estimate configuration to project settings UI"
+        - "Display estimates in views"
+      refactor:
+        - "Extract cycle CLI formatting into reusable helpers"
+    estimatedEffort: "2h"
+
+  - id: "task-38"
+    phaseId: "phase-3"
+    title: "Extend SSE pipeline for PM real-time updates"
+    description: >
+      Extend the existing SSE pipeline to emit events for PM entity changes: work item state
+      changes, new comments, cycle transitions, bulk updates. React hooks subscribe to PM events
+      for live board/list updates. Uses existing DB polling pattern — add PM tables to the delta
+      detection.
+    state: "Todo"
+    dependencies:
+      - "task-15"
+    acceptanceCriteria:
+      - "SSE emits events for work item CRUD operations"
+      - "Board view updates in real-time when work item state changes"
+      - "Comment thread updates live when new comment is added"
+      - "No new infrastructure — extends existing SSE pipeline"
+    tdd:
+      red:
+        - "Write integration test: create work item, verify SSE event emitted"
+        - "Write test: React hook receives state change event and re-renders"
+      green:
+        - "Add PM entity polling to SSE delta detection"
+        - "Create PM event types"
+        - "Create React hooks for PM event subscription"
+      refactor:
+        - "Deduplicate event handling pattern with existing agent events"
+    estimatedEffort: "2h"
+
+  # ===========================================================================
+  # PHASE 4: Advanced Features — Pages, Epics, Attachments, Time Tracking
+  # ===========================================================================
+
+  - id: "task-39"
+    phaseId: "phase-4"
+    title: "Define Page, Epic, Attachment, TimeEntry entities in TypeSpec and create migrations"
+    description: >
+      Create TypeSpec entities: page.tsp (projectId, title, content as string for TipTap JSON,
+      parentId for hierarchy), page-version.tsp (pageId, content, versionNumber, createdAt),
+      epic.tsp (projectId, name, description, status), pm-attachment.tsp (workItemId, filename,
+      mimeType, fileSize, storagePath), time-entry.tsp (workItemId, duration in minutes, note,
+      loggedAt). Create migrations 071-075. Create all repositories.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "All entities compiled from TypeSpec"
+      - "Migrations create tables with proper FKs and indexes"
+      - "Page supports hierarchical nesting via parentId"
+      - "Page version stores full content snapshots"
+      - "Attachment stores filesystem path (not file content)"
+      - "All repositories implemented and registered in DI"
+    tdd:
+      red:
+        - "Write integration test: create page with content, create version, verify version history"
+        - "Write integration test: create attachment metadata, verify all fields persist"
+        - "Write integration test: log time entry, list by work item"
+      green:
+        - "Create TypeSpec entities, compile"
+        - "Create migrations 071-075"
+        - "Create interfaces, mappers, repositories"
+        - "Register in DI"
+      refactor:
+        - "Verify migration idempotency"
+    estimatedEffort: "3h"
+
+  - id: "task-40"
+    phaseId: "phase-4"
+    title: "Install TipTap and build Pages/Wiki editor"
+    description: >
+      Install @tiptap/react, @tiptap/starter-kit, @tiptap/extension-table,
+      @tiptap/extension-code-block-lowlight, @tiptap/extension-mention. Build page-editor.tsx
+      with rich text editing (headings H1-H6, bold, italic, strikethrough, lists, code blocks
+      with syntax highlighting, tables, callout blocks, dividers, images). Add @-mention support
+      for work items by project-prefixed ID. Build page-sidebar.tsx for hierarchical page
+      navigation. Wire page CRUD use cases and server actions.
+    state: "Todo"
+    dependencies:
+      - "task-39"
+    acceptanceCriteria:
+      - "TipTap packages installed"
+      - "Editor supports all formatting from FR-46"
+      - "@-mention autocomplete for work items (FR-47)"
+      - "Content stored as TipTap JSON, not HTML"
+      - "Page version created on save (FR-48)"
+      - "Page sidebar shows hierarchical tree"
+      - "Markdown auto-conversion (NFR-19)"
+      - "Storybook stories"
+    tdd:
+      red:
+        - "Write Storybook story for editor with sample content"
+        - "Write test: saving creates page version"
+        - "Write test: @-mention triggers work item search"
+      green:
+        - "Install TipTap packages"
+        - "Implement page-editor with extensions"
+        - "Implement page-sidebar"
+        - "Create page use cases and server actions"
+      refactor:
+        - "Extract TipTap extension configuration into separate file"
+    estimatedEffort: "4h"
+
+  - id: "task-41"
+    phaseId: "phase-4"
+    title: "Implement attachment upload/download/delete with local filesystem storage"
+    description: >
+      Create IAttachmentStorage port interface and LocalAttachmentStorageService implementation.
+      Files stored in ~/.shep/attachments/<project-id>/<uuid>.<ext>. Create use cases:
+      UploadAttachment (validate MIME type, enforce 25MB limit, store file, create metadata),
+      DownloadAttachment (read file, return stream), DeleteAttachment (remove file + metadata).
+      Create API route for serving attachments via validated request. Create server actions.
+    state: "Todo"
+    dependencies:
+      - "task-39"
+    acceptanceCriteria:
+      - "Files stored by UUID name (not user-supplied) for path traversal prevention (NFR-23)"
+      - "MIME type validated via magic bytes, not just extension (NFR-21)"
+      - "25MB file size limit enforced"
+      - "API route serves files (not directly web-accessible)"
+      - "Delete removes file from disk and DB metadata"
+      - "Integration test: upload, download, verify content matches"
+    tdd:
+      red:
+        - "Write integration test: upload file, download, verify content matches"
+        - "Write unit test: reject file over 25MB"
+        - "Write unit test: reject executable MIME types"
+        - "Write integration test: delete removes file from disk"
+      green:
+        - "Create IAttachmentStorage interface"
+        - "Create LocalAttachmentStorageService"
+        - "Create upload/download/delete use cases"
+        - "Create API route"
+        - "Create server actions"
+        - "Register in DI"
+      refactor:
+        - "Ensure storage path uses path.join() for cross-platform (LESSONS.md)"
+    estimatedEffort: "3h"
+
+  - id: "task-42"
+    phaseId: "phase-4"
+    title: "Implement Epic use cases and UI"
+    description: >
+      Create Epic CRUD use cases. A work item belongs to at most one Epic (FR-42). Epic view
+      shows all assigned work items with progress. Add Epic selector to work item detail and
+      create dialog.
+    state: "Todo"
+    dependencies:
+      - "task-39"
+      - "task-18"
+    acceptanceCriteria:
+      - "Epic CRUD use cases working"
+      - "Work item can be assigned to one epic"
+      - "Epic shows progress (items completed / total)"
+      - "Epic selector in work item UI"
+    tdd:
+      red:
+        - "Write unit test: assign work item to epic"
+        - "Write unit test: assign same item to second epic returns error"
+        - "Write unit test: epic progress calculation"
+      green:
+        - "Implement epic use cases"
+        - "Add epic assignment to work item"
+        - "Build epic list UI"
+      refactor:
+        - "Reuse module progress pattern for epic progress"
+    estimatedEffort: "2h"
+
+  - id: "task-43"
+    phaseId: "phase-4"
+    title: "Implement time tracking use cases and worklog UI"
+    description: >
+      Create use cases: LogTimeEntry (duration, note, timestamp against work item), ListTimeEntries
+      (by work item or by project with date range filter), DeleteTimeEntry. Display total tracked
+      time per work item. Build workspace-level worklog view with filters.
+    state: "Todo"
+    dependencies:
+      - "task-39"
+      - "task-17"
+    acceptanceCriteria:
+      - "Log time against work item with duration and note (FR-55)"
+      - "Total tracked time displayed on work item detail (FR-56)"
+      - "Workspace-level worklog with project and date filters (FR-57)"
+      - "All use cases registered with string tokens"
+    tdd:
+      red:
+        - "Write unit test: log time entry, verify duration stored correctly"
+        - "Write unit test: total time aggregation across multiple entries"
+        - "Write unit test: list time entries with date range filter"
+      green:
+        - "Implement time tracking use cases"
+        - "Add time display to work item detail"
+        - "Build worklog view"
+      refactor:
+        - "Format duration in human-readable form (e.g., '2h 30m')"
+    estimatedEffort: "2h"
+
+  - id: "task-44"
+    phaseId: "phase-4"
+    title: "Build project settings page"
+    description: >
+      Build settings page for each project: name, description, identifier prefix (read-only
+      after creation), feature toggles (enable/disable cycles, modules, epics, pages, intake,
+      time tracking per FR-3), estimate type configuration, default state, danger zone (delete
+      project).
+    state: "Todo"
+    dependencies:
+      - "task-14"
+      - "task-17"
+    acceptanceCriteria:
+      - "All project settings editable"
+      - "Feature toggles show/hide corresponding sidebar items"
+      - "Identifier prefix shown but not editable"
+      - "Delete project with confirmation dialog"
+      - "Storybook story for settings page"
+    tdd:
+      red:
+        - "Write test: toggling feature flag hides sidebar item"
+        - "Write test: update project name persists"
+      green:
+        - "Build settings page"
+        - "Wire to update project server action"
+      refactor:
+        - "Extract settings sections into sub-components"
+    estimatedEffort: "2h"
+
+  - id: "task-45"
+    phaseId: "phase-4"
+    title: "Add FTS5 index for pages and extend global search"
+    description: >
+      Add pages_fts FTS5 virtual table to migration 067 (or create new migration if already
+      applied). Create triggers for pages table. Extend SearchRepository and search UI to
+      include pages in results.
+    state: "Todo"
+    dependencies:
+      - "task-13"
+      - "task-39"
+    acceptanceCriteria:
+      - "Pages searchable via global Cmd+K"
+      - "Page title and content indexed"
+      - "Search results show pages alongside work items and projects"
+    tdd:
+      red:
+        - "Write integration test: create page, search by content, verify found"
+      green:
+        - "Add pages FTS5 table and triggers"
+        - "Extend search repository"
+        - "Extend search UI results"
+      refactor:
+        - "Consolidate FTS trigger creation logic"
+    estimatedEffort: "1h"
+
+  # ===========================================================================
+  # PHASE 5: Intelligence & Integrations
+  # ===========================================================================
+
+  - id: "task-46"
+    phaseId: "phase-5"
+    title: "Define IntakeItem and Notification entities, create migrations and repositories"
+    description: >
+      Create TypeSpec entities for IntakeItem (source, title, description, status as IntakeStatus,
+      triageNotes) and Notification (recipientId, type as NotificationType, title, body, isRead,
+      referenceId, referenceType). Create migrations 075-076. Create repositories.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "IntakeItem supports Pending/Accepted/Declined/Duplicate statuses"
+      - "Notification supports all 5 types (FR-60)"
+      - "Integration tests for CRUD"
+    tdd:
+      red:
+        - "Write integration test: create intake item, accept it, verify work item created"
+        - "Write integration test: create notification, mark read, verify state"
+      green:
+        - "Create TypeSpec entities, compile"
+        - "Create migrations"
+        - "Create repositories"
+        - "Register in DI"
+      refactor:
+        - "Verify migration numbering is correct"
+    estimatedEffort: "2h"
+
+  - id: "task-47"
+    phaseId: "phase-5"
+    title: "Implement intake triage use cases and AI auto-triage"
+    description: >
+      Create use cases: CreateIntakeItem, ListIntakeItems, AcceptIntakeItem (converts to WorkItem),
+      DeclineIntakeItem, AutoTriageIntakeItem (uses LangGraph agent to suggest state, priority,
+      labels, assignee), DetectDuplicates (finds similar existing work items using FTS5 +
+      embedding similarity).
+    state: "Todo"
+    dependencies:
+      - "task-46"
+      - "task-15"
+      - "task-13"
+    acceptanceCriteria:
+      - "AcceptIntakeItem creates WorkItem from intake data (FR-50)"
+      - "DeclineIntakeItem records reason (FR-50)"
+      - "AutoTriage uses IAgentExecutorProvider (no hardcoded agent types per NFR-16)"
+      - "DetectDuplicates returns ranked similar items (FR-68)"
+    tdd:
+      red:
+        - "Write unit test: accept intake creates work item with correct fields"
+        - "Write unit test: decline records reason"
+        - "Write unit test: auto-triage calls agent executor and returns suggestions"
+        - "Write unit test: duplicate detection returns similar items ranked"
+      green:
+        - "Implement all intake use cases"
+        - "Implement AI triage via IAgentExecutorProvider"
+        - "Implement duplicate detection"
+        - "Register in DI"
+      refactor:
+        - "Extract triage suggestion mapping to helper"
+    estimatedEffort: "3h"
+
+  - id: "task-48"
+    phaseId: "phase-5"
+    title: "Build notification center and intake triage UI"
+    description: >
+      Create notification use cases: ListNotifications, MarkNotificationRead. Generate
+      notifications on: assignment, mention, state change, comment, due date within 24h.
+      Build notification center in web UI (bell icon, dropdown with read/unread, archive).
+      Build intake page with triage workflow (review, accept/decline, AI suggestions).
+    state: "Todo"
+    dependencies:
+      - "task-46"
+      - "task-47"
+    acceptanceCriteria:
+      - "Notification bell shows unread count"
+      - "Notification dropdown lists recent notifications"
+      - "Click notification navigates to referenced entity"
+      - "Intake page shows pending items with AI triage suggestions"
+      - "Accept/Decline workflow with confirmation"
+      - "Storybook stories"
+    tdd:
+      red:
+        - "Write test: unread count matches notification state"
+        - "Write Storybook stories for notification center"
+        - "Write Storybook stories for intake triage view"
+      green:
+        - "Implement notification use cases and generation hooks"
+        - "Build notification center component"
+        - "Build intake triage page"
+      refactor:
+        - "Debounce notification generation for bulk operations"
+    estimatedEffort: "3h"
+
+  - id: "task-49"
+    phaseId: "phase-5"
+    title: "Implement CSV import/export and AI summaries"
+    description: >
+      Install papaparse. Create use cases: ExportWorkItemsCsv (configurable columns, returns
+      CSV string), ImportWorkItemsCsv (field mapping, validation, bulk create). Create AI
+      summary use cases: GetAiCycleSummary, GetAiProjectHealth (via IAgentExecutorProvider).
+      Build import/export UI.
+    state: "Todo"
+    dependencies:
+      - "task-15"
+      - "task-32"
+    acceptanceCriteria:
+      - "Export generates valid CSV with selected columns (FR-70)"
+      - "Import parses CSV, maps fields, creates work items (FR-71)"
+      - "Import validates data and reports row-level errors"
+      - "AI cycle summary provides natural language progress report (FR-69)"
+      - "AI project health assesses overall status"
+    tdd:
+      red:
+        - "Write unit test: export 5 items as CSV, verify header and row format"
+        - "Write unit test: import CSV with field mapping creates correct items"
+        - "Write unit test: import with invalid rows returns per-row errors"
+        - "Write unit test: AI summary calls agent executor with correct context"
+      green:
+        - "Install papaparse"
+        - "Implement export and import use cases"
+        - "Implement AI summary use cases"
+        - "Build import/export UI"
+      refactor:
+        - "Stream large CSV exports instead of building in memory"
+    estimatedEffort: "3h"
+
+  - id: "task-50"
+    phaseId: "phase-5"
+    title: "Update all CLI commands for Phase 5 features"
+    description: >
+      Add CLI commands for intake (shep intake list, shep intake accept, shep intake decline).
+      Add export command (shep work export --format csv). Add notification listing (shep
+      notifications list). Update help text across all PM commands.
+    state: "Todo"
+    dependencies:
+      - "task-47"
+      - "task-49"
+      - "task-20"
+    acceptanceCriteria:
+      - "Intake CLI commands work"
+      - "Export to CSV from CLI"
+      - "Notification listing in CLI"
+    tdd:
+      red:
+        - "Write unit test: intake accept command calls AcceptIntakeItem"
+        - "Write unit test: export command produces CSV output"
+      green:
+        - "Implement CLI commands"
+        - "Register in command index"
+      refactor:
+        - "Ensure consistent output formatting across all PM CLI commands"
+    estimatedEffort: "1.5h"
+
+  # ===========================================================================
+  # PHASE 6: Team & Collaboration (High-Level Tasks)
+  # ===========================================================================
+
+  - id: "task-51"
+    phaseId: "phase-6"
+    title: "Implement authentication and session management"
+    description: >
+      Add User entity, authentication infrastructure (sessions, tokens), login/register flows.
+      Add userId to all PM entities for ownership tracking. Backfill existing data with default
+      user. This is a foundational task for all Phase 6 features.
+    state: "Todo"
+    dependencies:
+      - "task-15"
+    acceptanceCriteria:
+      - "User entity defined in TypeSpec"
+      - "Login/register flows in Web UI"
+      - "Session management with secure tokens"
+      - "userId tracked on all PM entity mutations"
+    tdd:
+      red:
+        - "Write integration test: register user, login, verify session"
+        - "Write unit test: create work item records actor userId"
+      green:
+        - "Create User entity and migration"
+        - "Implement auth service"
+        - "Add userId tracking"
+      refactor:
+        - "Ensure backward compatibility with single-user data"
+    estimatedEffort: "6h"
+
+  - id: "task-52"
+    phaseId: "phase-6"
+    title: "Implement workspace/project roles and permission checks"
+    description: >
+      Add Role (Admin, Member, Guest) and Permission entities. Create middleware/decorator
+      pattern for permission checks in use cases. Workspace-level and project-level roles.
+      Permission checks in all PM use cases.
+    state: "Todo"
+    dependencies:
+      - "task-51"
+    acceptanceCriteria:
+      - "Three roles: Admin (full), Member (CRUD), Guest (read-only)"
+      - "Permission checks in all use cases"
+      - "Role management UI in project settings"
+      - "Unauthorized actions return clear error"
+    tdd:
+      red:
+        - "Write unit test: Guest cannot create work items"
+        - "Write unit test: Member can create but not delete project"
+        - "Write unit test: Admin can do everything"
+      green:
+        - "Create Role/Permission entities and migration"
+        - "Add permission check decorator/middleware"
+        - "Apply to all use cases"
+      refactor:
+        - "Extract permission check into reusable decorator"
+    estimatedEffort: "5h"
+
+  - id: "task-53"
+    phaseId: "phase-6"
+    title: "Add collaborative editing, integrations, and audit logging"
+    description: >
+      Install Yjs and y-prosemirror for real-time collaborative page editing. Add Slack
+      integration webhook. Implement audit logging for security-sensitive operations. Add
+      email notification support. Migrate attachment storage to support S3-compatible backends.
+    state: "Todo"
+    dependencies:
+      - "task-52"
+      - "task-40"
+    acceptanceCriteria:
+      - "Multiple users can edit a page simultaneously with CRDT sync"
+      - "Slack webhook sends notifications for configurable events"
+      - "Audit log records auth, permission, and admin actions"
+      - "Attachment storage swappable between local and S3"
+    tdd:
+      red:
+        - "Write integration test: two clients edit same page, verify convergence"
+        - "Write integration test: audit log records admin action"
+      green:
+        - "Install Yjs packages"
+        - "Implement collaborative editing"
+        - "Build Slack integration"
+        - "Build audit logging"
+        - "Abstract attachment storage"
+      refactor:
+        - "Ensure all integrations respect the IAgentExecutorProvider pattern"
+    estimatedEffort: "8h"
+
+totalEstimate: "120h"
+openQuestions: []
+
+content: |
+  ## Summary
+
+  This task breakdown covers 53 tasks across 6 phases, totaling approximately 120 hours of
+  implementation effort.
+
+  **Phase 1 (Foundation, 20 tasks, ~35h)** establishes the entire domain model in TypeSpec,
+  creates all core database tables (migrations 058-067), implements repositories with mappers,
+  builds CRUD use cases for Projects, WorkItems, States, Labels, Comments, Activity Log,
+  Saved Views, and Custom Properties, delivers the List view and work item detail page in
+  the Web UI, sets up FTS5 full-text search, and adds CLI commands for projects and work items.
+  This phase proves the full vertical slice from TypeSpec through persistence through presentation.
+
+  **Phase 2 (Views, 10 tasks, ~22h)** installs @dnd-kit and builds the Board (Kanban), Table
+  (Spreadsheet), and Calendar views with drag-and-drop support. Adds work item relations (5 types),
+  sub-items with depth validation, bulk operations, saved views integration, and the view switcher
+  that ties all layouts together.
+
+  **Phase 3 (Sprints, 8 tasks, ~21h)** introduces Cycles and Modules with full lifecycle management,
+  installs Recharts for analytics dashboards (burndown, status breakdown), builds the Timeline (Gantt)
+  view with React Flow dependency lines, extends the SSE pipeline for real-time PM updates, and adds
+  CLI cycle commands.
+
+  **Phase 4 (Advanced, 7 tasks, ~17h)** installs TipTap for the Pages/Wiki rich text editor with
+  @-mention support and version history, implements Epics for large-scale grouping, adds file
+  attachment upload/download with local filesystem storage and security validation, implements time
+  tracking with worklog views, and builds the project settings page.
+
+  **Phase 5 (Intelligence, 5 tasks, ~13h)** creates the Intake/Triage system with AI-powered
+  auto-classification via LangGraph, builds the notification center, implements CSV import/export,
+  and adds AI-generated cycle and project health summaries.
+
+  **Phase 6 (Collaboration, 3 tasks, ~19h)** adds authentication and session management, implements
+  workspace/project roles with permission checks across all use cases, and delivers collaborative
+  page editing with Yjs CRDT, Slack integration, and audit logging.
+
+  The ordering ensures each phase builds on completed infrastructure from prior phases. Phase 1
+  must complete first as the foundation. Within phases, tasks are ordered by dependency — TypeSpec
+  entities before migrations, migrations before repositories, repositories before use cases, use
+  cases before presentation layers.
+
+  ---
+
+  _Task breakdown complete — ready for implementation_

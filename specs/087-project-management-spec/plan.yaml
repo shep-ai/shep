@@ -1,0 +1,558 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "project-management-spec"
+summary: >
+  Implementation plan for adding Plane-like project management to Shep. Follows a 6-phase
+  rollout: Phase 1 builds the domain foundation (TypeSpec entities, SQLite persistence,
+  core use cases, List view, CLI); Phase 2 adds visual views (Board/Table/Calendar) with
+  @dnd-kit drag-and-drop; Phase 3 introduces Cycles/Modules with Recharts analytics and
+  Timeline/Gantt view; Phase 4 delivers Pages/Wiki with TipTap, Epics, Attachments, and
+  Time Tracking; Phase 5 adds AI-powered triage, notifications, and import/export; Phase 6
+  brings multi-user collaboration. All work follows existing Clean Architecture patterns —
+  TypeSpec-first domain models, repository ports, DI-registered use cases, and
+  presentation-agnostic APIs.
+
+relatedFeatures: []
+
+technologies:
+  - "TypeSpec (domain model definitions — existing)"
+  - "TypeScript (application logic — existing)"
+  - "Next.js 16 (web UI — existing)"
+  - "React 19 (components — existing)"
+  - "React Flow / @xyflow/react v12 (timeline dependency lines — existing)"
+  - "TailwindCSS 4 (styling — existing)"
+  - "Radix UI (accessible primitives — existing)"
+  - "SQLite / better-sqlite3 (persistence — existing)"
+  - "tsyringe (dependency injection — existing)"
+  - "Zod (schema validation — existing)"
+  - "SSE / Server-Sent Events (real-time updates — existing)"
+  - "Umzug v3 (migration framework — existing)"
+  - "LangGraph (AI agent orchestration — existing)"
+  - "Playwright (E2E testing — existing)"
+  - "Vitest (unit/integration testing — existing)"
+  - "Storybook + @storybook/react-vite (component docs — existing)"
+  - "lucide-react (icons — existing)"
+  - "sonner (toast notifications — existing)"
+  - "@dnd-kit/core + @dnd-kit/sortable (drag-and-drop — NEW, Phase 2)"
+  - "Recharts (analytics charts — NEW, Phase 3)"
+  - "TipTap + @tiptap/react (rich text editor — NEW, Phase 4)"
+  - "papaparse (CSV import/export — NEW, Phase 5)"
+  - "Yjs CRDT + y-prosemirror (collaborative editing — NEW, Phase 6)"
+  - "SQLite FTS5 (full-text search — built into better-sqlite3, NEW usage)"
+
+relatedLinks:
+  - title: "Plane GitHub Repository"
+    url: "https://github.com/makeplane/plane"
+  - title: "Plane Documentation"
+    url: "https://docs.plane.so/"
+  - title: "@dnd-kit Documentation"
+    url: "https://dndkit.com/"
+  - title: "TipTap Documentation"
+    url: "https://tiptap.dev/"
+  - title: "Recharts Documentation"
+    url: "https://recharts.org/"
+  - title: "SQLite FTS5 Documentation"
+    url: "https://www.sqlite.org/fts5.html"
+
+phases:
+  - id: "phase-1"
+    name: "Foundation — Domain, Persistence & MVP Views"
+    description: >
+      Establishes the entire domain model in TypeSpec (Project, WorkItem, WorkItemState, Label,
+      Comment, ActivityEntry, SavedView, CustomProperty), creates all SQLite migrations and
+      repositories, implements core CRUD use cases, delivers the List view in the Web UI with
+      filtering/grouping, a work item detail page, CLI commands for project and work item
+      management, and FTS5 full-text search. This phase is the prerequisite for everything
+      that follows — it defines the data foundation and proves the end-to-end vertical slice
+      from TypeSpec through persistence through presentation.
+    parallel: false
+
+  - id: "phase-2"
+    name: "Views & Organization — Board, Table, Calendar, Relations"
+    description: >
+      Installs @dnd-kit and builds the Board (Kanban), Table (Spreadsheet), and Calendar views
+      with drag-and-drop support. Adds sub-work items (parent-child hierarchy, max 3 levels),
+      work item relations (5 types), bulk operations, and the Saved Views CRUD. This phase
+      transforms the MVP from a basic list into a multi-layout project management tool.
+    parallel: false
+
+  - id: "phase-3"
+    name: "Sprint & Module Management — Cycles, Analytics, Timeline"
+    description: >
+      Introduces Cycle (sprint) and Module entities with full lifecycle management. Installs
+      Recharts and builds analytics dashboards (burndown charts, status breakdowns, velocity).
+      Delivers the Timeline (Gantt) view using React Flow for dependency line rendering.
+      Adds the configurable estimate system (T-shirt categories default, Fibonacci option).
+    parallel: false
+
+  - id: "phase-4"
+    name: "Advanced Features — Pages, Epics, Attachments, Time Tracking"
+    description: >
+      Installs TipTap and builds the Pages/Wiki editor with rich text support, page hierarchy,
+      version history, and @-mention of work items. Introduces Epic and Initiative entities
+      for large-scale grouping. Adds file attachment storage (local filesystem with metadata
+      in SQLite) and time tracking with worklog reports.
+    parallel: false
+
+  - id: "phase-5"
+    name: "Intelligence & Integrations — AI Triage, Notifications, Import/Export"
+    description: >
+      Builds the IntakeItem entity with triage workflow. Integrates LangGraph agents for
+      auto-classification (state, priority, labels, assignee suggestion) and duplicate
+      detection. Adds the notification center (in-app notifications for assignments, mentions,
+      state changes, due dates). Implements CSV import/export with papaparse. Adds AI-generated
+      cycle and project health summaries.
+    parallel: false
+
+  - id: "phase-6"
+    name: "Team & Collaboration — Multi-User, Real-Time Editing, Integrations"
+    description: >
+      Adds authentication, session management, workspace/project roles (Admin/Member/Guest),
+      and permission checks across all use cases. Installs Yjs for real-time collaborative
+      page editing. Adds Slack integration, webhook system, email notifications, and audit
+      logging. Migrates attachment storage from local filesystem to S3-compatible backend.
+    parallel: false
+
+filesToCreate:
+  # TypeSpec domain entities
+  - "tsp/domain/entities/pm-project.tsp"
+  - "tsp/domain/entities/work-item.tsp"
+  - "tsp/domain/entities/work-item-state.tsp"
+  - "tsp/domain/entities/work-item-type.tsp"
+  - "tsp/domain/entities/label.tsp"
+  - "tsp/domain/entities/comment.tsp"
+  - "tsp/domain/entities/saved-view.tsp"
+  - "tsp/domain/entities/cycle.tsp"
+  - "tsp/domain/entities/pm-module.tsp"
+  - "tsp/domain/entities/page.tsp"
+  - "tsp/domain/entities/page-version.tsp"
+  - "tsp/domain/entities/epic.tsp"
+  - "tsp/domain/entities/initiative.tsp"
+  - "tsp/domain/entities/intake-item.tsp"
+  - "tsp/domain/entities/notification.tsp"
+  - "tsp/domain/entities/pm-attachment.tsp"
+  # TypeSpec value objects
+  - "tsp/domain/value-objects/activity-entry.tsp"
+  - "tsp/domain/value-objects/time-entry.tsp"
+  - "tsp/domain/value-objects/custom-property.tsp"
+  - "tsp/domain/value-objects/work-item-relation.tsp"
+  # TypeSpec enums
+  - "tsp/common/enums/work-item-enums.tsp"
+  # Repository port interfaces (Phase 1)
+  - "packages/core/src/application/ports/output/repositories/pm-project-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/work-item-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/work-item-state-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/label-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/comment-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/activity-log-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/saved-view-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/custom-property-repository.interface.ts"
+  # Repository port interfaces (Phase 2+)
+  - "packages/core/src/application/ports/output/repositories/work-item-relation-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/cycle-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/pm-module-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/page-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/pm-attachment-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/intake-item-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/notification-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/time-entry-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/epic-repository.interface.ts"
+  # Storage port
+  - "packages/core/src/application/ports/output/services/attachment-storage.interface.ts"
+  # SQLite repositories (Phase 1)
+  - "packages/core/src/infrastructure/repositories/sqlite-pm-project.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-work-item.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-work-item-state.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-label.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-comment.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-activity-log.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-saved-view.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-custom-property.repository.ts"
+  # SQLite repositories (Phase 2+)
+  - "packages/core/src/infrastructure/repositories/sqlite-work-item-relation.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-cycle.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-pm-module.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-page.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-pm-attachment.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-intake-item.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-notification.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-time-entry.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-epic.repository.ts"
+  # Mappers (Phase 1)
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/pm-project.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/work-item.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/work-item-state.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/label.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/comment.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/activity-log.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/saved-view.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/custom-property.mapper.ts"
+  # Mappers (Phase 2+)
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/work-item-relation.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/cycle.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/pm-module.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/page.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/pm-attachment.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/intake-item.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/notification.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/time-entry.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/epic.mapper.ts"
+  # Migrations (Phase 1)
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/058-create-pm-projects.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/059-create-work-item-states.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/060-create-labels.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/061-create-work-items.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/062-create-work-item-junctions.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/063-create-comments.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/064-create-activity-log.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/065-create-saved-views.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/066-create-custom-properties.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/067-create-fts5-indexes.ts"
+  # Migrations (Phase 2)
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/068-create-work-item-relations.ts"
+  # Migrations (Phase 3)
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/069-create-cycles.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/070-create-modules.ts"
+  # Migrations (Phase 4)
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/071-create-pages.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/072-create-attachments.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/073-create-time-entries.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/074-create-epics.ts"
+  # Migrations (Phase 5)
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/075-create-intake-items.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/076-create-notifications.ts"
+  # Use cases (Phase 1 — projects)
+  - "packages/core/src/application/use-cases/pm/projects/create-pm-project.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/projects/list-pm-projects.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/projects/get-pm-project.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/projects/update-pm-project.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/projects/delete-pm-project.use-case.ts"
+  # Use cases (Phase 1 — work items)
+  - "packages/core/src/application/use-cases/pm/work-items/create-work-item.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/work-items/list-work-items.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/work-items/get-work-item.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/work-items/update-work-item.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/work-items/delete-work-item.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/work-items/search-work-items.use-case.ts"
+  # Use cases (Phase 1 — states)
+  - "packages/core/src/application/use-cases/pm/states/create-work-item-state.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/states/list-work-item-states.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/states/update-work-item-state.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/states/delete-work-item-state.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/states/reorder-work-item-states.use-case.ts"
+  # Use cases (Phase 1 — labels)
+  - "packages/core/src/application/use-cases/pm/labels/create-label.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/labels/list-labels.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/labels/update-label.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/labels/delete-label.use-case.ts"
+  # Use cases (Phase 1 — comments)
+  - "packages/core/src/application/use-cases/pm/comments/create-comment.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/comments/list-comments.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/comments/update-comment.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/comments/delete-comment.use-case.ts"
+  # Use cases (Phase 1 — views)
+  - "packages/core/src/application/use-cases/pm/views/create-saved-view.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/views/list-saved-views.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/views/update-saved-view.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/views/delete-saved-view.use-case.ts"
+  # Use cases (Phase 1 — custom properties)
+  - "packages/core/src/application/use-cases/pm/custom-properties/create-custom-property.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/custom-properties/list-custom-properties.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/custom-properties/update-custom-property.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/custom-properties/delete-custom-property.use-case.ts"
+  # Use cases (Phase 2)
+  - "packages/core/src/application/use-cases/pm/work-items/bulk-update-work-items.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/work-items/create-work-item-relation.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/work-items/delete-work-item-relation.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/work-items/list-work-item-relations.use-case.ts"
+  # Use cases (Phase 3 — cycles)
+  - "packages/core/src/application/use-cases/pm/cycles/create-cycle.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/cycles/list-cycles.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/cycles/get-cycle.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/cycles/update-cycle.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/cycles/delete-cycle.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/cycles/add-items-to-cycle.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/cycles/remove-items-from-cycle.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/cycles/transfer-cycle-items.use-case.ts"
+  # Use cases (Phase 3 — modules)
+  - "packages/core/src/application/use-cases/pm/modules/create-module.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/modules/list-modules.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/modules/get-module.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/modules/update-module.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/modules/delete-module.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/modules/add-items-to-module.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/modules/remove-items-from-module.use-case.ts"
+  # Use cases (Phase 3 — analytics)
+  - "packages/core/src/application/use-cases/pm/analytics/get-cycle-burndown.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/analytics/get-project-breakdown.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/analytics/get-module-progress.use-case.ts"
+  # Use cases (Phase 4)
+  - "packages/core/src/application/use-cases/pm/pages/create-page.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/pages/list-pages.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/pages/get-page.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/pages/update-page.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/pages/delete-page.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/pages/get-page-versions.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/attachments/upload-attachment.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/attachments/download-attachment.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/attachments/delete-attachment.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/time-tracking/log-time-entry.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/time-tracking/list-time-entries.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/time-tracking/delete-time-entry.use-case.ts"
+  # Use cases (Phase 5)
+  - "packages/core/src/application/use-cases/pm/intake/create-intake-item.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/intake/list-intake-items.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/intake/accept-intake-item.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/intake/decline-intake-item.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/intake/auto-triage-intake-item.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/intake/detect-duplicates.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/notifications/list-notifications.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/notifications/mark-notification-read.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/import-export/export-work-items-csv.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/import-export/import-work-items-csv.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/analytics/get-ai-cycle-summary.use-case.ts"
+  - "packages/core/src/application/use-cases/pm/analytics/get-ai-project-health.use-case.ts"
+  # Attachment storage infrastructure
+  - "packages/core/src/infrastructure/services/local-attachment-storage.service.ts"
+  # Web UI components (Phase 1)
+  - "src/presentation/web/components/pm/list-view/list-view.tsx"
+  - "src/presentation/web/components/pm/list-view/list-view.stories.tsx"
+  - "src/presentation/web/components/pm/list-view/list-view-group.tsx"
+  - "src/presentation/web/components/pm/list-view/list-view-item.tsx"
+  - "src/presentation/web/components/pm/work-item-detail/work-item-detail.tsx"
+  - "src/presentation/web/components/pm/work-item-detail/work-item-detail.stories.tsx"
+  - "src/presentation/web/components/pm/work-item-detail/work-item-properties-panel.tsx"
+  - "src/presentation/web/components/pm/work-item-detail/work-item-activity-feed.tsx"
+  - "src/presentation/web/components/pm/work-item-detail/work-item-comment-thread.tsx"
+  - "src/presentation/web/components/pm/work-item-form/work-item-create-dialog.tsx"
+  - "src/presentation/web/components/pm/work-item-form/work-item-create-dialog.stories.tsx"
+  - "src/presentation/web/components/pm/shared/priority-badge.tsx"
+  - "src/presentation/web/components/pm/shared/state-badge.tsx"
+  - "src/presentation/web/components/pm/shared/label-badge.tsx"
+  - "src/presentation/web/components/pm/shared/view-switcher.tsx"
+  - "src/presentation/web/components/pm/shared/filter-bar.tsx"
+  - "src/presentation/web/components/pm/shared/filter-bar.stories.tsx"
+  - "src/presentation/web/components/pm/shared/grouping-selector.tsx"
+  - "src/presentation/web/components/pm/shared/search-command.tsx"
+  - "src/presentation/web/components/pm/shared/search-command.stories.tsx"
+  # Web UI components (Phase 2)
+  - "src/presentation/web/components/pm/board-view/board-view.tsx"
+  - "src/presentation/web/components/pm/board-view/board-view.stories.tsx"
+  - "src/presentation/web/components/pm/board-view/board-column.tsx"
+  - "src/presentation/web/components/pm/board-view/board-card.tsx"
+  - "src/presentation/web/components/pm/table-view/table-view.tsx"
+  - "src/presentation/web/components/pm/table-view/table-view.stories.tsx"
+  - "src/presentation/web/components/pm/table-view/table-cell-editor.tsx"
+  - "src/presentation/web/components/pm/calendar-view/calendar-view.tsx"
+  - "src/presentation/web/components/pm/calendar-view/calendar-view.stories.tsx"
+  - "src/presentation/web/components/pm/calendar-view/calendar-day-cell.tsx"
+  # Web UI components (Phase 3)
+  - "src/presentation/web/components/pm/timeline-view/timeline-view.tsx"
+  - "src/presentation/web/components/pm/timeline-view/timeline-view.stories.tsx"
+  - "src/presentation/web/components/pm/timeline-view/gantt-bar.tsx"
+  - "src/presentation/web/components/pm/timeline-view/dependency-overlay.tsx"
+  - "src/presentation/web/components/pm/cycle-panel/cycle-panel.tsx"
+  - "src/presentation/web/components/pm/cycle-panel/cycle-panel.stories.tsx"
+  - "src/presentation/web/components/pm/module-panel/module-panel.tsx"
+  - "src/presentation/web/components/pm/module-panel/module-panel.stories.tsx"
+  - "src/presentation/web/components/pm/analytics-dashboard/burndown-chart.tsx"
+  - "src/presentation/web/components/pm/analytics-dashboard/burndown-chart.stories.tsx"
+  - "src/presentation/web/components/pm/analytics-dashboard/status-breakdown.tsx"
+  - "src/presentation/web/components/pm/analytics-dashboard/status-breakdown.stories.tsx"
+  # Web UI components (Phase 4)
+  - "src/presentation/web/components/pm/page-editor/page-editor.tsx"
+  - "src/presentation/web/components/pm/page-editor/page-editor.stories.tsx"
+  - "src/presentation/web/components/pm/page-editor/page-sidebar.tsx"
+  # Web UI routes (Phase 1+)
+  - "src/presentation/web/app/projects/page.tsx"
+  - "src/presentation/web/app/projects/layout.tsx"
+  - "src/presentation/web/app/projects/[projectId]/page.tsx"
+  - "src/presentation/web/app/projects/[projectId]/layout.tsx"
+  - "src/presentation/web/app/projects/[projectId]/work-items/page.tsx"
+  - "src/presentation/web/app/projects/[projectId]/work-items/[workItemId]/page.tsx"
+  - "src/presentation/web/app/projects/[projectId]/cycles/page.tsx"
+  - "src/presentation/web/app/projects/[projectId]/modules/page.tsx"
+  - "src/presentation/web/app/projects/[projectId]/pages/page.tsx"
+  - "src/presentation/web/app/projects/[projectId]/pages/[pageId]/page.tsx"
+  - "src/presentation/web/app/projects/[projectId]/settings/page.tsx"
+  - "src/presentation/web/app/projects/[projectId]/analytics/page.tsx"
+  - "src/presentation/web/app/projects/[projectId]/intake/page.tsx"
+  # Web server actions
+  - "src/presentation/web/app/actions/pm/project-actions.ts"
+  - "src/presentation/web/app/actions/pm/work-item-actions.ts"
+  - "src/presentation/web/app/actions/pm/state-actions.ts"
+  - "src/presentation/web/app/actions/pm/label-actions.ts"
+  - "src/presentation/web/app/actions/pm/comment-actions.ts"
+  - "src/presentation/web/app/actions/pm/view-actions.ts"
+  - "src/presentation/web/app/actions/pm/cycle-actions.ts"
+  - "src/presentation/web/app/actions/pm/module-actions.ts"
+  - "src/presentation/web/app/actions/pm/page-actions.ts"
+  - "src/presentation/web/app/actions/pm/attachment-actions.ts"
+  - "src/presentation/web/app/actions/pm/intake-actions.ts"
+  - "src/presentation/web/app/actions/pm/analytics-actions.ts"
+  # API routes
+  - "src/presentation/web/app/api/pm/attachments/[attachmentId]/route.ts"
+  - "src/presentation/web/app/api/pm/search/route.ts"
+  # CLI commands
+  - "src/presentation/cli/commands/pm/project.command.ts"
+  - "src/presentation/cli/commands/pm/work-item.command.ts"
+  - "src/presentation/cli/commands/pm/cycle.command.ts"
+  # Tests (Phase 1 — representative subset; full list in tasks.yaml)
+  - "packages/core/tests/unit/use-cases/pm/projects/create-pm-project.use-case.test.ts"
+  - "packages/core/tests/unit/use-cases/pm/work-items/create-work-item.use-case.test.ts"
+  - "packages/core/tests/unit/use-cases/pm/work-items/list-work-items.use-case.test.ts"
+  - "packages/core/tests/unit/use-cases/pm/states/create-work-item-state.use-case.test.ts"
+  - "packages/core/tests/unit/use-cases/pm/labels/create-label.use-case.test.ts"
+  - "packages/core/tests/unit/use-cases/pm/comments/create-comment.use-case.test.ts"
+  - "packages/core/tests/integration/repositories/sqlite-pm-project.repository.test.ts"
+  - "packages/core/tests/integration/repositories/sqlite-work-item.repository.test.ts"
+  - "packages/core/tests/integration/repositories/sqlite-work-item-state.repository.test.ts"
+  - "packages/core/tests/integration/repositories/sqlite-label.repository.test.ts"
+  - "packages/core/tests/integration/repositories/sqlite-comment.repository.test.ts"
+  - "packages/core/tests/integration/repositories/sqlite-activity-log.repository.test.ts"
+  - "packages/core/tests/integration/repositories/sqlite-saved-view.repository.test.ts"
+  - "packages/core/tests/integration/repositories/sqlite-custom-property.repository.test.ts"
+
+filesToModify:
+  - "tsp/main.tsp"
+  - "packages/core/src/infrastructure/di/container.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/index.ts"
+  - "src/presentation/web/app/layout.tsx"
+  - "src/presentation/cli/commands/index.ts"
+
+openQuestions: []
+
+content: |
+  ## Architecture Overview
+
+  The project management feature integrates into Shep's existing Clean Architecture as a new
+  domain vertical. It follows the same four-layer pattern used by Features, Applications, and
+  all other entities:
+
+  ```
+  Presentation (CLI commands, Web routes/actions, TUI screens)
+       |  calls use cases via DI container
+       v
+  Application (pm/ use-case directory tree, port interfaces)
+       |  depends on domain types + port interfaces
+       v
+  Domain (TypeSpec-generated types in output.ts)
+       ^  implemented by
+       |
+  Infrastructure (SQLite repos, mappers, migrations, DI registration)
+  ```
+
+  All PM entities are **new aggregate roots** — Project, WorkItem, Cycle, Module, Page, etc. —
+  that coexist alongside the existing Feature and Application aggregates. They share the same
+  SQLite database, DI container, SSE pipeline, and web/CLI infrastructure but have no hard
+  coupling to existing entities.
+
+  The `pm/` namespace under `use-cases/` keeps all PM logic organized separately from existing
+  SDLC use cases, preventing cross-contamination while using the same architectural patterns.
+
+  ### Key Architectural Boundaries
+
+  - **WorkItem is NOT Feature**: These are separate aggregate roots with independent lifecycles.
+    An optional junction table (`work_item_feature_links`) allows linking when desired, but
+    neither depends on the other.
+
+  - **PmProject is standalone**: Unlike Application (which manages AI agent sessions), PmProject
+    is a lightweight container for PM work. It has an optional `applicationId` FK for linking
+    but no hard dependency. Named `PmProject` to avoid collision with the existing
+    `CreateProjectUseCase` which handles filesystem project scaffolding.
+
+  - **Single database, separate tables**: All PM tables live in the same SQLite database.
+    Shared transactions, WAL mode, and connection. No separate database needed.
+
+  - **Shared SSE pipeline**: Real-time updates flow through the existing SSE infrastructure.
+    PM events are added as new event types alongside existing agent events.
+
+  ## Key Design Decisions
+
+  ### 1. TypeSpec-First Domain Modeling
+
+  All 15+ PM entities are defined in TypeSpec extending `SoftDeletableEntity`, following the
+  one-entity-per-file convention. Enums go in `tsp/common/enums/work-item-enums.tsp`. Running
+  `pnpm tsp:compile` generates TypeScript types consumed by the application layer. No hand-written
+  domain types — this is mandatory per CLAUDE.md.
+
+  ### 2. Project-Prefixed Sequential Work Item IDs
+
+  Work items get IDs like `PROJ-42` via an atomic counter on the pm_projects table:
+  `UPDATE pm_projects SET work_item_counter = work_item_counter + 1 WHERE id = ? RETURNING work_item_counter`
+  inside the same transaction that creates the work item. SQLite single-writer guarantees atomicity.
+
+  ### 3. Customizable States with Fixed Semantic Groups
+
+  Five groups (Backlog, Unstarted, Started, Completed, Cancelled) provide the semantic foundation
+  for burndown charts, velocity, and completion tracking. Users customize state names, colors, and
+  ordering within groups. Default states created automatically for new projects.
+
+  ### 4. Custom Properties via JSON Column
+
+  A `custom_properties` table defines schema per project. Work items store values in a
+  `custom_property_values` JSON column keyed by property ID. Avoids EAV performance issues while
+  keeping schema stable. SQLite `json_extract()` enables filtering.
+
+  ### 5. Purpose-Built View Components
+
+  Each layout (List, Board, Table, Calendar, Timeline) is a dedicated React component tree sharing
+  the same use case API. Board uses @dnd-kit, Timeline uses React Flow overlay. Layout is purely a
+  presentation concern — all data flows through the same use cases.
+
+  ### 6. FTS5 Full-Text Search
+
+  SQLite FTS5 virtual tables with trigger-based sync provide sub-200ms ranked search. BM25 scoring,
+  prefix search for autocomplete, no external dependencies. Triggers keep indexes synchronized
+  automatically with source tables.
+
+  ### 7. Naming Conventions to Avoid Collisions
+
+  - `PmProject` / `pm_projects` (avoids existing `projects` table used by CreateProjectUseCase)
+  - `PmModule` / `pm_modules` (avoids TypeScript `module` keyword conflicts)
+  - `PmAttachment` / `pm_attachments` (avoids existing Attachment value object on Feature)
+  - All PM use cases live under `use-cases/pm/` namespace
+
+  ## Implementation Strategy
+
+  The six phases are ordered by dependency and user value:
+
+  **Phase 1 (Foundation)** must come first — everything depends on the domain model, database schema,
+  and core CRUD. Delivers a functional issue tracker with List view and CLI.
+
+  **Phase 2 (Views)** builds on Phase 1's data layer to add Board, Table, Calendar with DnD.
+  This is what makes the tool usable day-to-day.
+
+  **Phase 3 (Sprints)** adds time-boxed iteration management. Meaningless without work items and
+  views from Phases 1-2.
+
+  **Phase 4 (Advanced)** introduces Pages/Wiki, Epics, attachments, time tracking — enhances but
+  doesn't block the core PM workflow.
+
+  **Phase 5 (Intelligence)** layers AI on top of the stable PM foundation. Requires the full data
+  model to be useful.
+
+  **Phase 6 (Collaboration)** adds multi-user — deliberately last because it requires auth
+  infrastructure that doesn't exist today.
+
+  Each phase delivers standalone value.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | 18+ migrations overwhelm runner | Each is idempotent; test full sequence in integration tests early |
+  | TypeSpec compilation fails with 15+ new files | Add entities 1-2 at a time, compile after each |
+  | Work item counter races | SQLite single-writer prevents this; verify with concurrent insert test |
+  | FTS5 index drift | Trigger-based sync is atomic; integration test verifies consistency |
+  | Existing tests break from new migrations | Additive-only tables; run full suite after each migration |
+  | DI container bloat (40+ new use cases) | Dedicated `registerPmDependencies()` function |
+  | Web bundle size growth | Dynamic imports for view components; List view loads eagerly only |
+  | Performance at 5,000 work items | Cursor pagination, virtual scrolling, indexed filter columns |
+  | Collision with existing create-project use case | Distinct naming: CreatePmProjectUseCase vs CreateProjectUseCase |
+  | New required fields break test fixtures | Use optional fields with defaults per LESSONS.md |
+
+  ---
+
+  _Plan phase complete — proceed with task breakdown_
