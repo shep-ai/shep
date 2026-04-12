@@ -1,0 +1,831 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "project-management-spec"
+summary: >
+  Comprehensive technical research for adding Plane-like project management to Shep.
+  Key decisions: TypeSpec-first domain modeling for 20+ new entities, SQLite persistence
+  with FTS5 for search, @dnd-kit for drag-and-drop views, TipTap for rich text editing,
+  Recharts for analytics, custom grid kanban with React Flow reserved for Timeline/Gantt.
+  All new entities follow existing Clean Architecture patterns with repository ports,
+  DI-registered use cases, and presentation-agnostic APIs.
+
+relatedFeatures: []
+
+technologies:
+  - "TypeSpec (domain model definitions — existing)"
+  - "TypeScript (application logic — existing)"
+  - "Next.js 16 (web UI — existing)"
+  - "React 19 (components — existing)"
+  - "React Flow / @xyflow/react v12 (timeline/gantt dependency lines — existing)"
+  - "TailwindCSS 4 (styling — existing)"
+  - "Radix UI (accessible primitives — existing)"
+  - "SQLite / better-sqlite3 (persistence — existing)"
+  - "tsyringe (dependency injection — existing)"
+  - "Zod (schema validation — existing)"
+  - "SSE / Server-Sent Events (real-time updates — existing pipeline)"
+  - "Umzug v3 (migration framework — existing)"
+  - "LangGraph (AI agent orchestration — existing)"
+  - "Playwright (E2E testing — existing)"
+  - "Vitest (unit/integration testing — existing)"
+  - "Storybook + @storybook/react-vite (component docs — existing)"
+  - "TipTap + @tiptap/react (rich text editor — NEW, Phase 4)"
+  - "Yjs CRDT + y-prosemirror (collaborative editing — NEW, Phase 6)"
+  - "Recharts (analytics charts — NEW, Phase 3)"
+  - "@dnd-kit/core + @dnd-kit/sortable (drag-and-drop — NEW, Phase 2)"
+  - "papaparse (CSV import/export — NEW, Phase 5)"
+  - "SQLite FTS5 (full-text search — built into better-sqlite3, NEW usage)"
+
+relatedLinks:
+  - title: "Plane GitHub Repository"
+    url: "https://github.com/makeplane/plane"
+  - title: "Plane Documentation"
+    url: "https://docs.plane.so/"
+  - title: "@dnd-kit Documentation"
+    url: "https://dndkit.com/"
+  - title: "TipTap Documentation"
+    url: "https://tiptap.dev/"
+  - title: "Recharts Documentation"
+    url: "https://recharts.org/"
+  - title: "SQLite FTS5 Documentation"
+    url: "https://www.sqlite.org/fts5.html"
+  - title: "better-sqlite3 API"
+    url: "https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md"
+
+decisions:
+  - title: "Domain Model Strategy — TypeSpec Entity Design"
+    chosen: "Extend existing TypeSpec patterns with new entity files per aggregate, using SoftDeletableEntity base for all PM entities"
+    rejected:
+      - "Hand-written TypeScript types — violates mandatory TypeSpec-first rule; generated output.ts must be the source of domain types"
+      - "Single monolithic TypeSpec file for all PM entities — existing pattern is one entity per .tsp file; a single file would be unmaintainable at 20+ entities"
+      - "Separate TypeSpec namespace/package for PM entities — adds unnecessary compilation complexity; all domain entities currently live in the same tsp/domain/ tree"
+    rationale: >
+      The codebase mandates TypeSpec-first domain modeling. All existing entities (Application, Feature,
+      Plan, Task, Repository) follow the one-entity-per-file convention in tsp/domain/entities/ and extend
+      SoftDeletableEntity or BaseEntity. New PM entities (Project, WorkItem, Cycle, Module, Page, Label,
+      WorkItemState, etc.) must follow this same pattern. Enums go in tsp/common/enums/ and value objects
+      in tsp/domain/value-objects/. The generated output.ts produces intersection types that the rest of
+      the codebase consumes.
+
+  - title: "Project Entity Relationship — Standalone vs Child of Application"
+    chosen: "Standalone top-level entity with optional applicationId foreign key"
+    rejected:
+      - "Strict child of Application — would require an Application to exist before creating any project, adding friction for users who just want PM features without the AI workspace concept"
+      - "Merge Project into Application — loses the ability to have multiple projects; Application serves a different purpose (AI workspace with agent sessions)"
+    rationale: >
+      The spec resolves this as standalone. While Application serves as the workspace concept, making
+      Project strictly dependent on Application would couple PM functionality to the AI workspace
+      lifecycle. A standalone Project with an optional applicationId FK allows projects to exist
+      independently while still being linkable to Applications. This keeps the blast radius contained
+      and allows PM features to work without requiring the full Application setup. The existing
+      create-project use case (filesystem scaffold) is unrelated infrastructure that remains unchanged.
+
+  - title: "WorkItem vs Feature Relationship"
+    chosen: "Separate parallel aggregate roots with optional linking via a relation table"
+    rejected:
+      - "Refactor Feature to be a WorkItem type — Feature is deeply embedded as the aggregate root across 95+ use cases, agent orchestration, and all presentation layers; refactoring risk is extreme"
+      - "WorkItem wraps Feature with containment — adds indirection to the already-complex Feature lifecycle and couples two independent concerns"
+    rationale: >
+      Feature is the central aggregate root in Shep with 95+ use cases, agent infrastructure,
+      SDLC lifecycle management, and deep integration across CLI/TUI/Web. Refactoring it would
+      touch virtually every file in the codebase. WorkItem as a separate aggregate root with its
+      own repository, use cases, and lifecycle keeps the blast radius contained. An optional
+      work_item_feature_links junction table allows users to connect PM work items to SDLC features
+      when desired, without coupling the two systems.
+
+  - title: "Work Item Identifier Generation"
+    chosen: "Project-prefixed sequential counter stored as a column on the projects table, incremented atomically via SQLite"
+    rejected:
+      - "UUID-only identifiers — terrible UX; users cannot reference work items in conversation, commit messages, or PR titles"
+      - "Global auto-increment across all projects — loses project context in the identifier; less human-readable"
+      - "Application-level sequence table — unnecessary indirection; the counter belongs on the project row itself"
+    rationale: >
+      Industry-standard pattern from Jira/Linear/Plane. A work_item_counter INTEGER column on the
+      projects table is atomically incremented using UPDATE projects SET work_item_counter =
+      work_item_counter + 1 WHERE id = ? RETURNING work_item_counter inside the same transaction
+      that creates the work item. SQLite's single-writer model guarantees atomicity. The resulting
+      ID (e.g., PROJ-42) is stored as a computed field on the work item row for fast lookup.
+      better-sqlite3's synchronous API makes this trivially safe.
+
+  - title: "Database Schema Design — Table Strategy"
+    chosen: "Dedicated tables per entity with junction tables for many-to-many, following existing migration patterns"
+    rejected:
+      - "JSON columns for nested entities — loses queryability, makes filtering and aggregation impossible at the SQL level"
+      - "Entity-Attribute-Value (EAV) for all properties — too flexible, poor query performance, difficult to maintain; EAV only appropriate for custom properties"
+      - "Single work_items table with type discriminator — different work item types may need different schemas in Phase 4; separate tables per type would be needed eventually"
+    rationale: >
+      The existing codebase uses dedicated tables (features, applications, plans, tasks) with JSON
+      columns only for truly nested data (messages array, related_artifacts array). PM entities have
+      clear relational structure that benefits from proper tables: projects, work_items, work_item_states,
+      labels, cycles, modules, pages, comments, activity_log, attachments, work_item_labels (junction),
+      work_item_assignees (junction), cycle_work_items (junction), module_work_items (junction),
+      work_item_relations. Each gets its own migration file following the existing NNN-description.ts
+      naming convention starting after migration 057.
+
+  - title: "Custom Properties Implementation (Phase 1 inclusion)"
+    chosen: "JSON column on work_items table for custom property values with a custom_properties definition table per project"
+    rejected:
+      - "Full EAV pattern with separate rows per property value — high query complexity, poor performance for listing work items with all their custom values"
+      - "Defer entirely to Phase 4 — spec explicitly includes custom properties in Phase 1; the data model should support them from the start even if UI is minimal"
+      - "Dynamic ALTER TABLE to add columns per custom property — SQLite migration nightmare; schema changes per user action is unsustainable"
+    rationale: >
+      A custom_properties table defines the schema (name, type, project_id, options for dropdowns),
+      and a JSON column custom_property_values on work_items stores the actual values as a JSON object
+      keyed by property ID. This avoids the performance problems of EAV while keeping the schema
+      stable. JSON extraction functions in SQLite (json_extract) allow filtering on custom property
+      values when needed. The custom_properties definition table ensures validation rules are
+      enforceable at the application layer.
+
+  - title: "Work Item State Model"
+    chosen: "Customizable states within five fixed semantic groups (Backlog, Unstarted, Started, Completed, Cancelled)"
+    rejected:
+      - "Fully customizable states with no grouping — makes analytics (burndown, velocity, completion percentage) impossible without user-defined group mappings"
+      - "Fixed predefined states (Todo, In Progress, Done) — too rigid for diverse workflows; users need naming and ordering flexibility"
+    rationale: >
+      Fixed state groups provide the semantic foundation needed for analytics (burndown charts count
+      Completed group items, velocity tracks Started→Completed transitions). Within each group, users
+      can create custom state names, colors, and ordering. Default states for new projects: Backlog
+      (Backlog group), Todo (Unstarted), In Progress (Started), Done (Completed), Cancelled (Cancelled).
+      This matches Plane's proven model and Linear's approach. The work_item_states table stores:
+      id, project_id, name, color, display_order, state_group (enum), is_default (boolean).
+
+  - title: "Board View Implementation"
+    chosen: "Custom CSS Grid/Flexbox layout with @dnd-kit for drag-and-drop between columns"
+    rejected:
+      - "React Flow canvas for kanban — React Flow's graph/node model is designed for directed graphs, not columnar layouts; forcing nodes into columns requires fighting the library's paradigm"
+      - "react-beautiful-dnd — officially deprecated by Atlassian, no longer maintained; would introduce tech debt from day one"
+      - "React DnD (HTML5 backend) — too low-level; requires significant boilerplate for sortable lists and kanban columns; HTML5 backend has mobile DnD limitations"
+    rationale: >
+      A kanban board is fundamentally a columnar layout with drag-and-drop between columns. @dnd-kit
+      provides the modern, accessible, performant DnD primitives needed: SortableContext for within-column
+      reordering, DndContext for cross-column moves, and collision detection strategies for natural drop
+      targets. CSS Grid handles the column layout. This is simpler and more performant than forcing React
+      Flow into a columnar paradigm. React Flow is reserved for the Timeline (Gantt) view where its
+      node/edge model naturally fits dependency line rendering.
+
+  - title: "Timeline (Gantt) View — Dependency Line Rendering"
+    chosen: "React Flow as an overlay layer for dependency edges on top of a custom timeline grid"
+    rejected:
+      - "Raw SVG path rendering — requires implementing edge routing, collision avoidance, arrow rendering, and interactive edge creation from scratch"
+      - "CSS-only connector lines — cannot handle complex routing, crossing lines, or interactive edge creation/deletion"
+    rationale: >
+      React Flow (@xyflow/react v12) is already installed and used in the codebase for the feature
+      dependency canvas. It handles edge rendering, arrow styles, path routing, and interactive edge
+      creation. Using it as an overlay for Gantt dependency lines leverages existing infrastructure.
+      The timeline grid itself (date axis, swim lanes, Gantt bars) is a custom component; only the
+      dependency lines between bars use React Flow's edge rendering. This avoids reimplementing edge
+      logic while keeping the timeline layout custom-built for the Gantt use case.
+
+  - title: "Rich Text Editor for Pages/Wiki"
+    chosen: "TipTap (@tiptap/react) with ProseMirror core"
+    rejected:
+      - "Raw ProseMirror — maximum control but requires significantly more boilerplate; no React bindings out of the box"
+      - "Plate (formerly Slate plugins) — Yjs integration less mature than TipTap; API has undergone breaking changes; smaller community"
+      - "Lexical (Meta) — newer, less battle-tested for production PM tools; extension ecosystem smaller than TipTap"
+    rationale: >
+      TipTap provides the best balance of extensibility, React integration, and future Yjs CRDT support
+      for collaborative editing. It is used by Plane itself, validating it for this exact use case. The
+      modular extension system makes adding custom blocks (work item embeds, @-mentions by project-prefixed
+      ID, callout blocks) straightforward. TipTap's headless architecture works well with Radix UI and
+      TailwindCSS for consistent styling. Deferred to Phase 4 per the phasing strategy but the data model
+      (pages table with content stored as TipTap JSON) should be designed now.
+
+  - title: "Analytics Charting Library"
+    chosen: "Recharts"
+    rejected:
+      - "Victory — more opinionated API, heavier bundle, less commonly used in the React ecosystem"
+      - "Chart.js + react-chartjs-2 — Canvas-based imperative API does not fit React's declarative model; SSR support limited in Next.js"
+      - "D3 (raw) — too low-level for standard chart types; requires significant boilerplate for bar/line/area/pie charts"
+    rationale: >
+      Recharts is the most idiomatic charting library for a React 19 / Next.js 16 application. Its
+      declarative, composable API (BarChart, LineChart, AreaChart, PieChart as React components) aligns
+      perfectly with React patterns. It covers all chart types needed for PM analytics: burndown (line),
+      status breakdown (bar/pie), velocity (area), and created-vs-resolved (line). Tree-shakeable with
+      the smallest bundle impact among the alternatives. Deferred to Phase 3 when Cycle analytics are
+      introduced.
+
+  - title: "Drag-and-Drop Library"
+    chosen: "@dnd-kit/core + @dnd-kit/sortable"
+    rejected:
+      - "react-beautiful-dnd — officially deprecated by Atlassian; no longer maintained"
+      - "React DnD — low-level, requires significant boilerplate for common patterns; HTML5 backend has mobile limitations"
+      - "Native HTML5 drag and drop — no React integration, inconsistent across browsers, no accessibility support"
+    rationale: >
+      @dnd-kit is the modern standard for React DnD. It is accessible (keyboard DnD support), performant
+      (uses CSS transforms, not layout reflows), tree-shakeable, and actively maintained. The sortable
+      preset handles within-column reordering while the core context handles cross-column moves — exactly
+      the pattern needed for kanban boards, calendar drag, and table row reordering. Deferred to Phase 2
+      when Board view is introduced.
+
+  - title: "Full-Text Search Implementation"
+    chosen: "SQLite FTS5 virtual tables with triggers to keep the index synchronized"
+    rejected:
+      - "LIKE queries on text columns — O(n) scan, no ranking, does not scale to 10,000+ items per NFR-2"
+      - "External search service (Elasticsearch, MeiliSearch) — adds infrastructure dependency; violates the offline-first, no-external-services constraint"
+      - "Application-level in-memory index — memory overhead scales linearly; lost on restart; not persistent"
+    rationale: >
+      FTS5 is built into better-sqlite3 and requires no external dependencies. It provides ranked
+      full-text search with BM25 scoring, snippet extraction, and sub-200ms performance for datasets
+      up to 10,000+ items (NFR-2). Implementation: create FTS5 virtual tables for work_items_fts
+      (title + description), pages_fts (title + content), and projects_fts (name + description).
+      Use INSERT/UPDATE/DELETE triggers on the source tables to keep FTS indexes synchronized
+      automatically. The MATCH operator provides efficient full-text queries with ranking.
+
+  - title: "Attachment Storage Strategy"
+    chosen: "Local filesystem storage in ~/.shep/attachments/<project-id>/ with metadata in SQLite"
+    rejected:
+      - "S3-compatible object storage — adds external infrastructure dependency; does not work offline"
+      - "SQLite BLOB columns — bloats database, degrades backup performance, limits file size practically"
+      - "Base64 encoding in TEXT columns — 33% storage overhead, same bloat problems as BLOB"
+    rationale: >
+      For a single-developer MVP, local filesystem storage is the simplest and most reliable option.
+      No external service dependencies, works fully offline, and keeps the database lean. File metadata
+      (filename, size, MIME type, storage path) lives in the attachments table. An IAttachmentStorage
+      port interface abstracts the storage mechanism so S3 can be swapped in during Phase 6 (multi-user).
+      Files are served through an API route that validates the request — the storage directory is never
+      directly web-accessible (NFR-23). Maximum file size enforced at 25MB (NFR-21).
+
+  - title: "Real-Time Updates for PM Entities"
+    chosen: "Extend existing SSE pipeline (DB polling -> SSE -> Service Worker -> React hooks) to include PM entity change events"
+    rejected:
+      - "WebSocket server — adds new infrastructure; SSE pipeline already exists and works well for the single-user case"
+      - "Polling from React components directly — duplicates the existing SSE infrastructure; higher latency and server load"
+      - "Build a separate event system for PM — unnecessary duplication; the existing SSE pipeline is designed to be extensible"
+    rationale: >
+      The codebase already has a mature SSE pipeline: /api/agent-events endpoint polls the database,
+      detects deltas, and streams events through a Service Worker to React hooks. This pipeline should
+      be extended (not duplicated) to emit PM-related events: work item state changes, new comments,
+      cycle transitions, etc. The same delta-detection pattern works: compare current DB state against
+      a per-connection cache and emit only changes. This provides real-time board updates, notification
+      delivery, and cross-tab consistency with zero new infrastructure.
+
+  - title: "Estimate System Default"
+    chosen: "T-shirt categories (XS, S, M, L, XL) as default with configurable switch to Fibonacci points per project"
+    rejected:
+      - "Time-based hours as default — encourages micro-management; consistently less accurate than relative estimation"
+      - "No default (estimates disabled) — analytics features like velocity charts would not work until manually configured"
+      - "Fibonacci only — while better for aggregation, T-shirt sizes are more accessible for single-developer use and align with the spec answer"
+    rationale: >
+      The spec resolves this as T-shirt categories. For a single-developer MVP, T-shirt sizing (XS, S,
+      M, L, XL) is simpler and more accessible. The data model stores estimate_type (enum: None, Category,
+      Points) and estimate_value (TEXT — either a category label or numeric string) on work items. A
+      project-level setting controls the default type. For Phase 3 analytics, categories can be mapped
+      to numeric values (XS=1, S=2, M=3, L=5, XL=8) for burndown aggregation. This makes the switch
+      to Fibonacci points seamless since the mapping is configuration, not schema change.
+
+  - title: "CLI View Support Scope"
+    chosen: "All five layouts attempted in CLI per spec, with List and Table as primary and Board/Calendar/Timeline as best-effort ASCII renderings"
+    rejected:
+      - "List and Table only — spec explicitly resolves this as 'All five layouts'; the CLI should attempt all views even if spatial ones are approximations"
+      - "List only — too limited; table view adds significant value for scanning work items quickly"
+    rationale: >
+      The spec answer selects all five layouts for CLI. Practically, List (grouped text with indentation)
+      and Table (columnar output using box-drawing characters or tabulator-tables which is already
+      installed) are natural fits. Board can render as ASCII columns, Calendar as a monthly grid with
+      markers, and Timeline as horizontal bar charts. The CLI should focus on powerful filtering, bulk
+      operations, and scriptability while providing the visual layouts as a convenience. The Web UI
+      remains the primary interface for spatial views.
+
+  - title: "Intake/Triage Entity Design"
+    chosen: "Separate IntakeItem entity with explicit conversion to WorkItem on acceptance"
+    rejected:
+      - "Special Triage state group on WorkItem — pollutes the work item list with unvetted requests; makes filtering and analytics more complex"
+      - "Intake as a boolean flag on WorkItem — loses the distinction between committed work and incoming requests; no separate triage workflow"
+    rationale: >
+      A separate IntakeItem entity provides clean separation between unvetted requests and committed
+      work items. The intake_items table stores the raw request with source, description, and triage
+      status (Pending, Accepted, Declined, Duplicate). When accepted, a use case creates a new WorkItem
+      from the IntakeItem data and links them. This keeps the work_items table focused on actual project
+      work and allows dedicated triage views and workflows. Matches Plane's model.
+
+  - title: "Page Content Storage Format"
+    chosen: "TipTap JSON (ProseMirror document model) stored as TEXT in SQLite with HTML rendering on read"
+    rejected:
+      - "Raw HTML storage — XSS risk, difficult to transform/query, lossy round-tripping with editor state"
+      - "Markdown storage — loses rich formatting, custom blocks, and embeds that TipTap supports"
+      - "ProseMirror binary format — not human-readable, difficult to debug, no advantage over JSON for our scale"
+    rationale: >
+      TipTap uses ProseMirror's document model internally, which serializes to a well-defined JSON
+      structure. Storing this JSON directly preserves full fidelity of the editor state (custom nodes,
+      marks, attributes) without lossy conversion. The JSON can be rendered to HTML on read using
+      TipTap's generateHTML() for display contexts that do not need the full editor. Page version
+      history stores each version's JSON content, enabling diff and restore. Content sanitization
+      (NFR-22) is applied at the TipTap extension level, not on raw HTML.
+
+  - title: "Migration Numbering Strategy"
+    chosen: "Continue sequential numbering from 058 onward, one migration per logical schema change"
+    rejected:
+      - "Batch all PM tables into a single migration — violates the one-migration-per-change convention; makes rollback granularity poor"
+      - "Reset numbering or use timestamps — breaks the existing sequential convention; would confuse Umzug ordering"
+    rationale: >
+      The latest migration is 057-workflow-steps.ts. New PM migrations start at 058 and continue
+      sequentially. Each migration creates one or two closely related tables. Estimated migration
+      sequence: 058-create-projects, 059-create-work-item-states, 060-create-labels,
+      061-create-work-items, 062-create-work-item-labels-junction, 063-create-work-item-assignees,
+      064-create-work-item-relations, 065-create-comments, 066-create-activity-log,
+      067-create-attachments, 068-create-fts5-indexes. All migrations must be additive-only per
+      LESSONS.md — no column drops or renames.
+
+openQuestions:
+  - question: "Should the work_items table use a single-table-inheritance pattern or separate tables for different work item types?"
+    resolved: true
+    options:
+      - option: "Single table with type discriminator column"
+        description: "All work items (Task, Bug, Story, Epic) share one table with a 'type' column. Simpler queries, no JOINs for basic listings. Custom properties handled via JSON column. May have sparse columns if types diverge significantly."
+        selected: true
+      - option: "Separate tables per work item type"
+        description: "Dedicated tables for tasks, bugs, stories, etc. Strong typing per table but requires UNION queries for cross-type listings and more complex migration management."
+        selected: false
+      - option: "Base table with type-specific extension tables"
+        description: "Shared base columns in work_items, type-specific columns in work_item_tasks, work_item_bugs, etc. Best normalization but adds JOIN overhead to every query and complicates the mapper layer."
+        selected: false
+    selectionRationale: >
+      For Phase 1, all work item types share the same core fields (title, description, state, priority,
+      assignees, labels, dates, estimate). The type column is an enum discriminator that controls which
+      UI template/icon is used. Custom type-specific fields are handled through the custom_properties
+      JSON column. This avoids the query complexity of multi-table inheritance while keeping the door
+      open for type-specific behavior via the type discriminator. The existing codebase uses single-table
+      patterns (features table handles all feature types).
+
+  - question: "How should the activity log capture field changes — per-field rows or JSON diff objects?"
+    resolved: true
+    options:
+      - option: "Per-field rows in activity_log table"
+        description: "Each field change is a separate row: (work_item_id, field_name, old_value, new_value, actor_id, timestamp). Easy to query specific field history but generates many rows for bulk updates."
+        selected: true
+      - option: "JSON diff object per change event"
+        description: "Each activity row stores a JSON object with all changed fields: {field: {old, new}, ...}. Fewer rows but harder to query specific field history and requires JSON parsing."
+        selected: false
+      - option: "Full snapshot per change"
+        description: "Store the complete work item state as JSON on each change. Simplest to implement but storage-heavy and makes field-level history queries expensive."
+        selected: false
+    selectionRationale: >
+      Per-field rows allow efficient queries like 'show all state changes for this work item' or
+      'who changed the priority?' without JSON parsing. The activity_log table schema:
+      (id, work_item_id, field_name, old_value TEXT, new_value TEXT, actor_id, created_at).
+      Values are stored as text representations regardless of original type. For bulk operations
+      that change multiple fields, multiple rows are inserted in the same transaction. This matches
+      the pattern used by Plane and Linear for their activity feeds.
+
+  - question: "Should saved views store filter criteria as structured columns or as a serialized JSON blob?"
+    resolved: true
+    options:
+      - option: "Serialized JSON blob"
+        description: "Store the entire view configuration (layout, filters, grouping, sorting, display properties) as a single JSON TEXT column. Maximum flexibility for evolving the filter schema without migrations."
+        selected: true
+      - option: "Structured columns per filter type"
+        description: "Separate columns for layout, group_by, sort_by, filter_states, filter_priorities, etc. Enables SQL-level querying of view configs but requires migrations for every new filter dimension."
+        selected: false
+      - option: "Normalized filter rows in a junction table"
+        description: "saved_view_filters table with (view_id, filter_type, filter_value) rows. Most normalized but adds JOIN complexity and makes loading a view configuration expensive."
+        selected: false
+    selectionRationale: >
+      View configurations are opaque blobs consumed by the presentation layer — there is no need to
+      query individual filter criteria at the SQL level. A JSON column provides maximum flexibility:
+      new filter types can be added without schema migrations, and the entire configuration is loaded
+      and parsed in a single read. The saved_views table schema: (id, project_id, name, description,
+      is_public, layout, configuration JSON, created_by, created_at, updated_at). The layout column
+      is a separate indexed column for filtering views by type.
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-04-12
+
+  ## Technology Decisions
+
+  ### 1. Domain Model Strategy — TypeSpec Entity Design
+
+  **Chosen:** Extend existing TypeSpec patterns with new entity files per aggregate, using SoftDeletableEntity base
+
+  **Rejected:**
+  - Hand-written TypeScript types — violates mandatory TypeSpec-first rule
+  - Single monolithic TypeSpec file — unmaintainable at 20+ entities
+  - Separate TypeSpec namespace — unnecessary compilation complexity
+
+  **Rationale:** All existing entities (Application, Feature, Plan, Task, Repository) follow one-entity-per-file in tsp/domain/entities/ extending SoftDeletableEntity or BaseEntity. New PM entities must follow this pattern. Enums in tsp/common/enums/, value objects in tsp/domain/value-objects/.
+
+  ### 2. Project Entity Relationship
+
+  **Chosen:** Standalone top-level entity with optional applicationId FK
+
+  **Rejected:**
+  - Strict child of Application — would require Application existence before any project, adding friction
+  - Merge into Application — loses multi-project capability
+
+  **Rationale:** Standalone Project with optional applicationId allows PM features to work independently while remaining linkable to the Application workspace when desired.
+
+  ### 3. WorkItem vs Feature Relationship
+
+  **Chosen:** Separate parallel aggregate roots with optional linking via relation table
+
+  **Rejected:**
+  - Refactor Feature to WorkItem type — 95+ use cases at risk
+  - WorkItem wraps Feature — unnecessary coupling and indirection
+
+  **Rationale:** Feature is deeply embedded as Shep's aggregate root. WorkItem as a separate aggregate keeps blast radius contained while allowing optional linking.
+
+  ### 4. Work Item Identifier Generation
+
+  **Chosen:** Project-prefixed sequential counter on projects table (e.g., PROJ-42)
+
+  **Rejected:**
+  - UUID-only — terrible UX
+  - Global auto-increment — loses project context
+  - Separate sequence table — unnecessary indirection
+
+  **Rationale:** Atomic increment via UPDATE ... RETURNING inside the work item creation transaction. SQLite single-writer guarantees safety.
+
+  ### 5. Database Schema — Table Strategy
+
+  **Chosen:** Dedicated tables per entity with junction tables for many-to-many
+
+  **Rejected:**
+  - JSON columns for nested entities — loses queryability
+  - EAV for all properties — poor performance
+  - Single discriminated table — different types need different schemas
+
+  **Rationale:** Follows existing pattern (features, applications, plans tables). Estimated 15+ new tables with junction tables for labels, assignees, cycles, and modules.
+
+  ### 6. Custom Properties Implementation
+
+  **Chosen:** JSON column on work_items for values + custom_properties definition table per project
+
+  **Rejected:**
+  - Full EAV rows per value — high query complexity
+  - Defer to Phase 4 — spec includes in Phase 1
+  - Dynamic ALTER TABLE — unsustainable schema changes
+
+  **Rationale:** Avoids EAV performance issues. json_extract() enables filtering. Definition table enforces validation rules.
+
+  ### 7. Work Item State Model
+
+  **Chosen:** Customizable states within five fixed semantic groups
+
+  **Rejected:**
+  - Fully customizable (no groups) — breaks analytics
+  - Fixed predefined states — too rigid
+
+  **Rationale:** Groups (Backlog, Unstarted, Started, Completed, Cancelled) provide semantic foundation for burndown, velocity, and completion calculations.
+
+  ### 8. Board View Implementation
+
+  **Chosen:** Custom CSS Grid + @dnd-kit
+
+  **Rejected:**
+  - React Flow canvas — graph model is overkill for columnar layout
+  - react-beautiful-dnd — deprecated by Atlassian
+  - React DnD — too low-level
+
+  **Rationale:** @dnd-kit provides modern, accessible DnD primitives. SortableContext for in-column reordering, DndContext for cross-column moves.
+
+  ### 9. Timeline (Gantt) Dependency Lines
+
+  **Chosen:** React Flow overlay on custom timeline grid
+
+  **Rejected:**
+  - Raw SVG paths — requires reimplementing edge routing
+  - CSS-only connectors — no complex routing support
+
+  **Rationale:** React Flow v12 already installed. Handles edge routing, arrows, and interactive edge creation. Timeline grid is custom; only dependency lines use React Flow.
+
+  ### 10. Rich Text Editor
+
+  **Chosen:** TipTap (@tiptap/react) with ProseMirror core
+
+  **Rejected:**
+  - Raw ProseMirror — too much boilerplate, no React bindings
+  - Plate (Slate plugins) — less mature Yjs integration
+  - Lexical (Meta) — smaller extension ecosystem
+
+  **Rationale:** Best balance of extensibility, React integration, and Yjs CRDT support. Used by Plane itself. Phase 4 delivery.
+
+  ### 11. Analytics Charts
+
+  **Chosen:** Recharts
+
+  **Rejected:**
+  - Victory — heavier bundle, less common
+  - Chart.js — imperative API, poor SSR
+  - D3 raw — too low-level
+
+  **Rationale:** Declarative React API, covers all chart types (burndown, status breakdown, velocity). Smallest bundle. Phase 3 delivery.
+
+  ### 12. Full-Text Search
+
+  **Chosen:** SQLite FTS5 virtual tables with sync triggers
+
+  **Rejected:**
+  - LIKE queries — O(n), no ranking
+  - External search service — violates offline constraint
+  - In-memory index — lost on restart
+
+  **Rationale:** Built into better-sqlite3. BM25 ranking, sub-200ms for 10K+ items. Triggers keep index synchronized automatically.
+
+  ### 13. Attachment Storage
+
+  **Chosen:** Local filesystem (~/.shep/attachments/) with metadata in SQLite
+
+  **Rejected:**
+  - S3 — external dependency, no offline
+  - SQLite BLOB — database bloat
+  - Base64 TEXT — 33% overhead
+
+  **Rationale:** Simple, offline-first, keeps DB lean. IAttachmentStorage port allows S3 swap in Phase 6.
+
+  ### 14. Real-Time Updates
+
+  **Chosen:** Extend existing SSE pipeline
+
+  **Rejected:**
+  - WebSocket server — unnecessary new infrastructure
+  - Direct component polling — duplicates existing SSE
+  - Separate PM event system — unnecessary duplication
+
+  **Rationale:** Existing SSE pipeline (DB polling -> SSE -> Service Worker -> React hooks) is extensible. Add PM entity events alongside existing agent events.
+
+  ### 15. Page Content Storage
+
+  **Chosen:** TipTap JSON (ProseMirror document model) as TEXT in SQLite
+
+  **Rejected:**
+  - Raw HTML — XSS risk, lossy round-tripping
+  - Markdown — loses rich formatting
+  - Binary format — not human-readable
+
+  **Rationale:** Preserves full editor state fidelity. Renders to HTML via generateHTML(). Version history stores JSON snapshots.
+
+  ### 16. Migration Strategy
+
+  **Chosen:** Sequential numbering from 058, one migration per logical change
+
+  **Rejected:**
+  - Single batch migration — poor rollback granularity
+  - Timestamp-based — breaks existing convention
+
+  **Rationale:** Continues from 057-workflow-steps.ts. Additive-only per LESSONS.md. Estimated 11+ migrations for Phase 1.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Phase | Reasoning |
+  | ------- | ------- | -------- | ----- | --------- |
+  | @xyflow/react v12 | Timeline dependency lines | Use (existing) | Phase 3 | Already installed; handles edge routing and interactivity |
+  | @dagrejs/dagre | Graph layout | Use (existing) | Phase 3 | Already installed; may be used for timeline layout |
+  | @dnd-kit/core | Drag-and-drop context | Install | Phase 2 | Modern, accessible, performant DnD primitives |
+  | @dnd-kit/sortable | Sortable list preset | Install | Phase 2 | Within-column reordering for board/table views |
+  | @dnd-kit/utilities | DnD utility hooks | Install | Phase 2 | CSS transform utilities for smooth drag animations |
+  | @tiptap/react | Rich text editor React bindings | Install | Phase 4 | Headless ProseMirror wrapper with React integration |
+  | @tiptap/starter-kit | Core editor extensions | Install | Phase 4 | Bundled essentials: bold, italic, headings, lists, code |
+  | @tiptap/extension-table | Table extension | Install | Phase 4 | Required for wiki-style table editing |
+  | @tiptap/extension-code-block-lowlight | Syntax highlighting | Install | Phase 4 | Code blocks with language-aware highlighting |
+  | @tiptap/extension-mention | @-mention support | Install | Phase 4 | Work item mentions by project-prefixed ID |
+  | recharts | Analytics charts | Install | Phase 3 | Declarative React charting (burndown, velocity, breakdown) |
+  | papaparse | CSV import/export | Install | Phase 5 | Browser/Node CSV parsing with streaming support |
+  | yjs | CRDT framework | Install | Phase 6 | Collaborative editing foundation for multi-user |
+  | y-prosemirror | Yjs ProseMirror binding | Install | Phase 6 | Bridges Yjs CRDT with TipTap editor |
+  | tabulator-tables | CLI table rendering | Use (existing) | Phase 1 | Already installed; use for CLI table view |
+  | lucide-react | Icons | Use (existing) | Phase 1 | Already installed; consistent icon set |
+  | sonner | Toast notifications | Use (existing) | Phase 1 | Already installed; use for PM action feedback |
+  | react-beautiful-dnd | DnD (deprecated) | Reject | - | Deprecated by Atlassian; no longer maintained |
+  | React DnD | DnD (low-level) | Reject | - | Too much boilerplate; HTML5 backend has mobile issues |
+  | Chart.js | Charts | Reject | - | Imperative API; poor SSR; doesn't fit React model |
+  | Victory | Charts | Reject | - | Heavier bundle; less common in React ecosystem |
+  | Lexical | Rich text editor | Reject | - | Smaller extension ecosystem; less battle-tested for PM |
+  | Plate (Slate) | Rich text editor | Reject | - | Less mature Yjs integration; API instability |
+  | Elasticsearch | Search | Reject | - | External dependency; violates offline-first constraint |
+
+  ## Security Considerations
+
+  ### File Attachment Security (NFR-21, NFR-23)
+  - **MIME type validation**: Validate file MIME type on upload using magic bytes, not just file extension. Reject executable types (.exe, .sh, .bat, .cmd).
+  - **File size limit**: Enforce 25MB max per file at the server action level before writing to disk.
+  - **Path traversal prevention**: Attachments stored by UUID filename (not user-supplied name) in ~/.shep/attachments/<project-id>/. User-supplied filename stored only in DB metadata.
+  - **No direct web access**: Attachment directory must NOT be in the Next.js public/ folder. Files served exclusively through an API route that validates the request.
+  - **Cleanup on delete**: When a work item is deleted, associated attachment files must be cleaned up from disk (or marked for garbage collection).
+
+  ### Rich Text Content Security (NFR-22)
+  - **XSS prevention**: TipTap's extension system naturally sanitizes content by only allowing registered node types and marks. Unknown HTML tags are stripped during parsing.
+  - **Output sanitization**: When rendering stored TipTap JSON to HTML (for non-editor contexts), use TipTap's generateHTML() which only produces markup for registered extensions.
+  - **No raw HTML storage**: Content is stored as TipTap's JSON document model, not raw HTML. This eliminates stored XSS vectors.
+  - **User input in comments**: Comments also use TipTap JSON. Plain text fallback for CLI-created comments.
+
+  ### SQL Injection Prevention
+  - **Prepared statements**: All database queries must use parameterized prepared statements with ? placeholders, following the existing codebase pattern.
+  - **No string interpolation in SQL**: Never concatenate user input into SQL strings.
+  - **FTS5 queries**: Use parameterized MATCH queries; user search input must be sanitized for FTS5 syntax (escape special characters like ^, *, OR, AND, NOT).
+
+  ### Data Integrity
+  - **Foreign key enforcement**: PRAGMA foreign_keys = ON is already set in connection.ts. All new FK relationships will be enforced.
+  - **Atomic ID generation**: Work item counter increment and insert happen in the same SQLite transaction. Single-writer model prevents race conditions.
+  - **Immutable activity log**: No UPDATE or DELETE operations on the activity_log table. Append-only by design (NFR-8).
+
+  ## Performance Implications
+
+  ### Work Item List/Board Rendering (NFR-1: < 500ms for 5,000 items)
+  - **Pagination**: List and Table views must use cursor-based pagination (LIMIT + OFFSET or keyset pagination) rather than loading all items.
+  - **Indexed queries**: Create indexes on work_items(project_id, state_id), work_items(project_id, priority), work_items(project_id, due_date) for fast filtering.
+  - **Optimistic UI**: Board drag-and-drop must update local state immediately, then persist. Use React state + useTransition for non-blocking updates.
+  - **Virtual scrolling**: For Table view with 5,000+ items, use virtualized rendering (only render visible rows). The existing tabulator-tables library supports this.
+
+  ### Full-Text Search (NFR-2: < 200ms for 10,000 items)
+  - **FTS5 indexing**: Separate FTS5 virtual tables for work items, pages, and projects. BM25 ranking provides relevance scoring.
+  - **Trigger-based sync**: INSERT/UPDATE/DELETE triggers keep FTS indexes synchronized without application-level code.
+  - **Prefix search**: FTS5 supports prefix queries (search-term*) for autocomplete/type-ahead.
+  - **Debounced search**: UI search input should debounce at 200ms before querying to avoid excessive DB calls.
+
+  ### Drag-and-Drop Performance (NFR-3: < 100ms perceived latency)
+  - **CSS transforms**: @dnd-kit uses CSS transforms for drag animations, avoiding layout reflows.
+  - **Optimistic updates**: State change on drop is applied to React state immediately. Server action persists asynchronously.
+  - **Minimal re-renders**: Use React.memo and useMemo for board column components. Only the affected columns should re-render on drag.
+
+  ### Timeline/Gantt View (NFR-4: 500 items at 30fps)
+  - **Virtualized rendering**: Only render Gantt bars visible in the current viewport. Use IntersectionObserver or manual viewport calculations.
+  - **React Flow edge optimization**: Limit visible dependency edges to those connected to currently visible bars. Use React Flow's onlyRenderVisibleElements option.
+  - **Canvas-based rendering**: If React Flow overlay proves too slow for 500+ items, fall back to a canvas-based edge renderer.
+
+  ### Database Performance
+  - **WAL mode**: Already enabled (PRAGMA journal_mode = WAL). Provides better read concurrency.
+  - **Indexes**: Every FK column and commonly filtered column must have an index. Create composite indexes for common query patterns.
+  - **Transaction batching**: Bulk operations (bulk state change, bulk assign) must execute all updates in a single transaction.
+  - **Prepared statement caching**: Reuse prepared statements within repository methods (better-sqlite3 caches by SQL string).
+
+  ## Architecture Notes
+
+  ### Clean Architecture Compliance
+
+  All new PM code must follow the existing four-layer architecture:
+
+  ```
+  Presentation (CLI, TUI, Web)
+       ↓ calls
+  Application (Use Cases, Port Interfaces)
+       ↓ depends on
+  Domain (TypeSpec-generated types, business rules)
+       ↑ implemented by
+  Infrastructure (SQLite repos, services, DI)
+  ```
+
+  **Key rules:**
+  - Use cases are the ONLY entry point from presentation to core logic
+  - Repositories implement port interfaces defined in application/ports/
+  - No infrastructure imports in application or domain layers
+  - All use cases must be presentation-agnostic (no HTTP, terminal, or React concepts)
+
+  ### DI Container Registration Pattern
+
+  New PM repositories and use cases must be registered in container.ts:
+
+  ```
+  // Repository (factory pattern)
+  container.register<IWorkItemRepository>('IWorkItemRepository', {
+    useFactory: (c) => new SQLiteWorkItemRepository(c.resolve('Database'))
+  });
+
+  // Use case (singleton)
+  container.registerSingleton(CreateWorkItemUseCase);
+
+  // String token alias (for web server actions)
+  container.register('CreateWorkItemUseCase', {
+    useFactory: (c) => c.resolve(CreateWorkItemUseCase)
+  });
+  ```
+
+  String token aliases are MANDATORY for any use case callable from web routes (LESSONS.md).
+
+  ### New File Structure
+
+  ```
+  tsp/domain/entities/
+    project.tsp
+    work-item.tsp
+    work-item-state.tsp
+    cycle.tsp
+    module.tsp
+    label.tsp
+    page.tsp
+    comment.tsp
+    intake-item.tsp
+    saved-view.tsp
+
+  tsp/domain/value-objects/
+    work-item-relation.tsp
+    activity-entry.tsp
+    time-entry.tsp
+    custom-property.tsp
+
+  tsp/common/enums/
+    work-item-enums.tsp  (Priority, StateGroup, RelationType, EstimateType, etc.)
+
+  packages/core/src/application/ports/output/repositories/
+    project-repository.interface.ts
+    work-item-repository.interface.ts
+    work-item-state-repository.interface.ts
+    cycle-repository.interface.ts
+    module-repository.interface.ts
+    label-repository.interface.ts
+    page-repository.interface.ts
+    comment-repository.interface.ts
+    saved-view-repository.interface.ts
+    activity-log-repository.interface.ts
+
+  packages/core/src/application/use-cases/pm/
+    projects/  (create, list, update, delete, get)
+    work-items/ (create, list, update, delete, get, bulk-update, search)
+    states/    (create, list, update, delete, reorder)
+    labels/    (create, list, update, delete)
+    cycles/    (create, list, update, delete, add-items, remove-items, transfer)
+    modules/   (create, list, update, delete, add-items, remove-items)
+    pages/     (create, list, update, delete, get-versions)
+    views/     (create, list, update, delete)
+    comments/  (create, list, update, delete)
+    analytics/ (cycle-burndown, project-breakdown, etc.)
+
+  packages/core/src/infrastructure/repositories/
+    sqlite-project.repository.ts
+    sqlite-work-item.repository.ts
+    sqlite-work-item-state.repository.ts
+    sqlite-cycle.repository.ts
+    sqlite-module.repository.ts
+    sqlite-label.repository.ts
+    sqlite-page.repository.ts
+    sqlite-comment.repository.ts
+    sqlite-saved-view.repository.ts
+    sqlite-activity-log.repository.ts
+
+  packages/core/src/infrastructure/persistence/sqlite/
+    mappers/
+      project.mapper.ts
+      work-item.mapper.ts
+      ... (one per entity)
+    migrations/
+      058-create-projects.ts
+      059-create-work-item-states.ts
+      060-create-labels.ts
+      061-create-work-items.ts
+      062-create-work-item-junctions.ts
+      063-create-work-item-relations.ts
+      064-create-comments.ts
+      065-create-activity-log.ts
+      066-create-cycles.ts
+      067-create-modules.ts
+      068-create-saved-views.ts
+      069-create-pages.ts
+      070-create-fts5-indexes.ts
+      071-create-attachments.ts
+      072-create-intake-items.ts
+      073-create-custom-properties.ts
+      074-create-notifications.ts
+      075-create-time-entries.ts
+
+  src/presentation/web/app/projects/
+    [projectId]/
+      work-items/
+      cycles/
+      modules/
+      pages/
+      settings/
+      analytics/
+
+  src/presentation/web/components/pm/
+    board-view/
+    list-view/
+    table-view/
+    calendar-view/
+    timeline-view/
+    work-item-detail/
+    work-item-form/
+    cycle-panel/
+    module-panel/
+    page-editor/ (Phase 4)
+    analytics-dashboard/ (Phase 3)
+
+  src/presentation/cli/commands/pm/
+    project.command.ts
+    work-item.command.ts
+    cycle.command.ts
+  ```
+
+  ### Estimated Entity Count
+
+  **Phase 1 (MVP):** ~10 entities, ~20 use cases, ~10 migrations
+  - Project, WorkItem, WorkItemState, Label, Comment, ActivityEntry, SavedView, CustomProperty, CustomPropertyValue
+
+  **Phase 2:** +3 entities, +15 use cases, +3 migrations
+  - WorkItemRelation, BulkOperation views
+
+  **Phase 3:** +3 entities, +10 use cases, +4 migrations
+  - Cycle, Module, CycleWorkItem, ModuleWorkItem
+
+  **Phase 4:** +3 entities, +8 use cases, +3 migrations
+  - Page, PageVersion, Attachment, Epic
+
+  **Phase 5:** +3 entities, +8 use cases, +3 migrations
+  - IntakeItem, Notification, ImportExportJob
+
+  **Phase 6:** +4 entities, +10 use cases, +4 migrations
+  - User, Role, Permission, AuditLog
+
+  ---
+
+  _Research phase complete — proceed with planning_
