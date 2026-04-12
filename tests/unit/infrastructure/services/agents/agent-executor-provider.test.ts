@@ -28,6 +28,7 @@ describe('AgentExecutorProvider', () => {
       getSupportedAgents: vi.fn(),
       getCliInfo: vi.fn().mockReturnValue([]),
       getSupportedModels: vi.fn().mockReturnValue([]),
+      listAvailableModels: vi.fn().mockResolvedValue([]),
       createInteractiveExecutor: vi.fn(),
       supportsInteractive: vi.fn().mockReturnValue(false),
     };

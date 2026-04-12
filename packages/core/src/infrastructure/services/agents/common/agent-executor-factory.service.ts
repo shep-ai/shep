@@ -14,7 +14,10 @@ import type { IInteractiveAgentExecutor } from '../../../../application/ports/ou
 import type {
   IAgentExecutorFactory,
   AgentCliInfo,
+  AgentModelListing,
 } from '../../../../application/ports/output/agents/agent-executor-factory.interface.js';
+import { OpenRouterModelCatalogService } from './model-catalogs/openrouter-model-catalog.service.js';
+import { TogetherAiModelCatalogService } from './model-catalogs/together-ai-model-catalog.service.js';
 import { ClaudeCodeExecutorService } from './executors/claude-code-executor.service.js';
 import { ClaudeCodeInteractiveExecutor } from './executors/claude-code-interactive-executor.service.js';
 import { CursorExecutorService } from './executors/cursor-executor.service.js';
@@ -34,11 +37,22 @@ import type { SpawnFunction } from './types.js';
  */
 export class AgentExecutorFactory implements IAgentExecutorFactory {
   private readonly cache = new Map<string, IAgentExecutor>();
+  private readonly openRouterCatalog: OpenRouterModelCatalogService;
+  private readonly togetherAiCatalog: TogetherAiModelCatalogService;
 
   /**
    * @param spawn - Spawn function for creating subprocesses (injectable for testing).
+   * @param openRouterCatalog - Optional OpenRouter catalog (defaults to new instance).
+   * @param togetherAiCatalog - Optional Together AI catalog (defaults to new instance).
    */
-  constructor(private readonly spawn: SpawnFunction) {}
+  constructor(
+    private readonly spawn: SpawnFunction,
+    openRouterCatalog?: OpenRouterModelCatalogService,
+    togetherAiCatalog?: TogetherAiModelCatalogService
+  ) {
+    this.openRouterCatalog = openRouterCatalog ?? new OpenRouterModelCatalogService();
+    this.togetherAiCatalog = togetherAiCatalog ?? new TogetherAiModelCatalogService();
+  }
 
   /**
    * Create (or return cached) executor for the specified agent type.
@@ -143,6 +157,34 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
       default:
         return [];
     }
+  }
+
+  /**
+   * List models available for the given agent type. For OpenRouter and
+   * Together AI this hits the provider's catalog API (cached). For all other
+   * agents it wraps the static list returned by {@link getSupportedModels}.
+   */
+  async listAvailableModels(
+    agentType: AgentType,
+    authConfig?: AgentConfig
+  ): Promise<AgentModelListing[]> {
+    const key = agentType as string;
+    const trimmed = authConfig?.token?.trim();
+    const token = trimmed && trimmed.length > 0 ? trimmed : undefined;
+
+    if (key === 'openrouter') {
+      const dynamic = await this.openRouterCatalog.listModels(token);
+      if (dynamic.length > 0) return dynamic;
+      return OPENROUTER_MODELS.map((id) => ({ id }));
+    }
+
+    if (key === 'together-ai') {
+      const dynamic = await this.togetherAiCatalog.listModels(token);
+      if (dynamic.length > 0) return dynamic;
+      return TOGETHER_AI_MODELS.map((id) => ({ id }));
+    }
+
+    return this.getSupportedModels(agentType).map((id) => ({ id }));
   }
 
   /**

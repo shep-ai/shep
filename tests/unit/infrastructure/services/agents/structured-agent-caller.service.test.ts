@@ -42,6 +42,7 @@ describe('StructuredAgentCallerService', () => {
     mockFactory = {
       createExecutor: vi.fn().mockReturnValue(mockExecutor),
       getSupportedModels: vi.fn().mockReturnValue([]),
+      listAvailableModels: vi.fn().mockResolvedValue([]),
       getSupportedAgents: vi.fn().mockReturnValue([]),
       getCliInfo: vi.fn().mockReturnValue(undefined),
       createInteractiveExecutor: vi.fn(),

@@ -34,6 +34,25 @@ export interface AgentCliInfo {
 }
 
 /**
+ * Rich model listing returned by dynamic model catalogs.
+ * Used by providers that expose a model discovery API (e.g. OpenRouter, Together AI).
+ */
+export interface AgentModelListing {
+  /** Provider-specific model identifier (e.g. 'anthropic/claude-sonnet-4.5'). */
+  id: string;
+  /** Human-friendly display name, if the provider supplies one. */
+  displayName?: string;
+  /** Short description of the model. */
+  description?: string;
+  /** Context window size in tokens. */
+  contextLength?: number;
+  /** True if the model is billed at $0 (free tier). */
+  isFree?: boolean;
+  /** Vendor / organization (e.g. 'anthropic', 'meta-llama'). */
+  vendor?: string;
+}
+
+/**
  * Port interface for creating agent executor instances.
  *
  * Implementations must:
@@ -74,6 +93,24 @@ export interface IAgentExecutorFactory {
    * @returns Array of model identifier strings, or empty array for unknown/dev agents
    */
   getSupportedModels(agentType: AgentType): string[];
+
+  /**
+   * List models available for the given agent type, enriched with metadata
+   * when the provider exposes a discovery API (OpenRouter, Together AI).
+   *
+   * For providers that expose a model catalog API, this fetches the full
+   * current list over HTTP (cached in-process with a short TTL). For static
+   * providers, it returns the same identifiers as {@link getSupportedModels}
+   * wrapped as listings with only the `id` field populated.
+   *
+   * Callers MUST pass the provider's auth config when one is required — some
+   * catalogs (e.g. OpenRouter) require a token to return the full list.
+   *
+   * @param agentType - The agent type to query
+   * @param authConfig - Optional auth config supplying an API token
+   * @returns Promise resolving to available model listings (possibly empty)
+   */
+  listAvailableModels(agentType: AgentType, authConfig?: AgentConfig): Promise<AgentModelListing[]>;
 
   /**
    * Create an interactive executor for multi-turn agent sessions.

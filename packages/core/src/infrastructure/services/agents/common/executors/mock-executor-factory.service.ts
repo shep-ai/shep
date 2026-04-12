@@ -11,6 +11,7 @@ import type { IInteractiveAgentExecutor } from '../../../../../application/ports
 import type {
   IAgentExecutorFactory,
   AgentCliInfo,
+  AgentModelListing,
 } from '../../../../../application/ports/output/agents/agent-executor-factory.interface.js';
 import { MockAgentExecutorService } from './mock-executor.service.js';
 
@@ -30,6 +31,13 @@ export class MockAgentExecutorFactory implements IAgentExecutorFactory {
   }
 
   getSupportedModels(_agentType: AgentType): string[] {
+    return [];
+  }
+
+  async listAvailableModels(
+    _agentType: AgentType,
+    _authConfig?: AgentConfig
+  ): Promise<AgentModelListing[]> {
     return [];
   }
 

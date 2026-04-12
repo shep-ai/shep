@@ -34,3 +34,4 @@ export type {
   InteractiveAgentEvent,
   InteractiveAgentSessionHandle,
 } from './interactive-agent-executor.interface.js';
+export type { CatalogEntry } from './model-catalog.types.js';
