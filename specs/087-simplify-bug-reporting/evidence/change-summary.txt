@@ -1,0 +1,41 @@
+=== GitHub Issue Template Simplification — Change Summary ===
+
+Branch: feat/simplify-bug-reporting
+Commit: 2ab45ee2 feat(config): simplify github issue templates for easier bug reporting
+
+=== Files Changed ===
+ .github/ISSUE_TEMPLATE/bug-report.yml       | 125 +++++-----------------------
+ .github/ISSUE_TEMPLATE/config.yml           |   2 +-
+ .github/ISSUE_TEMPLATE/docs-improvement.yml | 104 +++--------------------
+ .github/ISSUE_TEMPLATE/feature-request.yml  | 105 ++++-------------------
+ 4 files changed, 48 insertions(+), 288 deletions(-)
+
+=== Key Simplifications ===
+
+1. bug-report.yml:
+   - Consolidated description/repro/expected/actual into single 'What happened?' field
+   - Made version, OS, AI agent fields optional (not required)
+   - Removed pre-submission checklist
+   - Removed 'triage' label from auto-assignment
+   - Simplified OS dropdown (macOS/Linux/Windows/Other)
+
+2. config.yml:
+   - Enabled blank issues (blank_issues_enabled: true)
+
+3. docs-improvement.yml:
+   - Consolidated fields into single 'What needs improving?' textarea
+   - Removed documentation type dropdown, audience dropdown
+   - Removed contribution checkboxes and pre-submission checklist
+   - Made document location optional
+
+4. feature-request.yml:
+   - Consolidated problem/solution/alternatives into single 'What would you like?' textarea
+   - Simplified category dropdown (fewer options)
+   - Removed priority dropdown, use cases, mockups fields
+   - Removed pre-submission checklist
+
+=== Line Count Comparison ===
+  bug-report.yml: 142 → 59 lines
+  config.yml: 11 → 11 lines
+  docs-improvement.yml: 113 → 33 lines
+  feature-request.yml: 118 → 41 lines
