@@ -24,6 +24,22 @@ import type { IRepositoryRepository } from '../../application/ports/output/repos
 import { SQLiteRepositoryRepository } from '../repositories/sqlite-repository.repository.js';
 import type { IApplicationRepository } from '../../application/ports/output/repositories/application-repository.interface.js';
 import { SQLiteApplicationRepository } from '../repositories/sqlite-application.repository.js';
+import type { IPmProjectRepository } from '../../application/ports/output/repositories/pm-project-repository.interface.js';
+import { SQLitePmProjectRepository } from '../repositories/sqlite-pm-project.repository.js';
+import type { IWorkItemRepository } from '../../application/ports/output/repositories/work-item-repository.interface.js';
+import { SQLiteWorkItemRepository } from '../repositories/sqlite-work-item.repository.js';
+import type { IWorkItemStateRepository } from '../../application/ports/output/repositories/work-item-state-repository.interface.js';
+import { SQLiteWorkItemStateRepository } from '../repositories/sqlite-work-item-state.repository.js';
+import type { ILabelRepository } from '../../application/ports/output/repositories/label-repository.interface.js';
+import { SQLiteLabelRepository } from '../repositories/sqlite-label.repository.js';
+import type { ICommentRepository } from '../../application/ports/output/repositories/comment-repository.interface.js';
+import { SQLiteCommentRepository } from '../repositories/sqlite-comment.repository.js';
+import type { ISavedViewRepository } from '../../application/ports/output/repositories/saved-view-repository.interface.js';
+import { SQLiteSavedViewRepository } from '../repositories/sqlite-saved-view.repository.js';
+import type { ICustomPropertyRepository } from '../../application/ports/output/repositories/custom-property-repository.interface.js';
+import { SQLiteCustomPropertyRepository } from '../repositories/sqlite-custom-property.repository.js';
+import type { IActivityLogRepository } from '../../application/ports/output/repositories/activity-log-repository.interface.js';
+import { SQLiteActivityLogRepository } from '../repositories/sqlite-activity-log.repository.js';
 
 // Validator interfaces and implementations
 import type { IAgentValidator } from '../../application/ports/output/agents/agent-validator.interface.js';
@@ -255,6 +271,63 @@ export async function initializeContainer(): Promise<typeof container> {
     useFactory: (c) => {
       const database = c.resolve<Database.Database>('Database');
       return new SQLiteApplicationRepository(database);
+    },
+  });
+
+  // PM repositories
+  container.register<IPmProjectRepository>('IPmProjectRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePmProjectRepository(database);
+    },
+  });
+
+  container.register<IWorkItemRepository>('IWorkItemRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteWorkItemRepository(database);
+    },
+  });
+
+  container.register<IWorkItemStateRepository>('IWorkItemStateRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteWorkItemStateRepository(database);
+    },
+  });
+
+  container.register<ILabelRepository>('ILabelRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteLabelRepository(database);
+    },
+  });
+
+  container.register<ICommentRepository>('ICommentRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteCommentRepository(database);
+    },
+  });
+
+  container.register<ISavedViewRepository>('ISavedViewRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteSavedViewRepository(database);
+    },
+  });
+
+  container.register<ICustomPropertyRepository>('ICustomPropertyRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteCustomPropertyRepository(database);
+    },
+  });
+
+  container.register<IActivityLogRepository>('IActivityLogRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteActivityLogRepository(database);
     },
   });
 
