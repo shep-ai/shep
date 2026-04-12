@@ -181,7 +181,7 @@ export function AppSidebar({
             icon={FolderKanban}
             label="Projects"
             href="/projects"
-            active={pathname.startsWith('/projects')}
+            active={pathname?.startsWith('/projects') ?? false}
           />
           {featureFlags.skills ? (
             <SidebarNavItem

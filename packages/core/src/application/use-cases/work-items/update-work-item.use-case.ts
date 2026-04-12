@@ -84,6 +84,15 @@ export class UpdateWorkItemUseCase {
       await trackChange('priority', existing.priority, input.priority);
     }
     if (input.parentId !== undefined) {
+      if (input.parentId) {
+        if (input.parentId === workItemId) {
+          return { ok: false, error: 'A work item cannot be its own parent.' };
+        }
+        const depth = await this.getAncestorDepth(input.parentId);
+        if (depth >= 3) {
+          return { ok: false, error: 'Maximum nesting depth of 3 levels exceeded.' };
+        }
+      }
       fields.parentId = input.parentId;
     }
     if (input.sortOrder !== undefined) {
@@ -105,5 +114,17 @@ export class UpdateWorkItemUseCase {
 
     await this.workItemRepo.update(workItemId, fields);
     return { ok: true };
+  }
+
+  private async getAncestorDepth(parentId: string): Promise<number> {
+    let depth = 0;
+    let currentId: string | undefined = parentId;
+    while (currentId) {
+      depth++;
+      if (depth > 3) return depth;
+      const parent = await this.workItemRepo.findById(currentId);
+      currentId = parent?.parentId;
+    }
+    return depth;
   }
 }

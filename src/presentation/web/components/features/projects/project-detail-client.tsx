@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, FolderKanban } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,11 @@ import type {
 } from '@shepai/core/domain/generated/output';
 import { WorkItemRow } from './work-item-row';
 import { CreateWorkItemDialog } from './create-work-item-dialog';
+import { ViewSwitcher, type ViewMode } from '@/components/pm/view-switcher/view-switcher';
+import { BoardView } from '@/components/pm/board-view/board-view';
+import { TableView } from '@/components/pm/table-view/table-view';
+import { CalendarView } from '@/components/pm/calendar-view/calendar-view';
+import { updateWorkItem } from '@/app/actions/update-work-item';
 
 export interface ProjectDetailClientProps {
   project: PmProject;
@@ -30,11 +35,12 @@ export function ProjectDetailClient({
   project,
   workItems: initialWorkItems,
   states,
-  labels: _labels,
+  labels,
   className,
 }: ProjectDetailClientProps) {
   const [workItems, setWorkItems] = useState<WorkItem[]>(initialWorkItems);
   const [groupBy, setGroupBy] = useState<GroupBy>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const router = useRouter();
 
@@ -71,6 +77,22 @@ export function ProjectDetailClient({
     setShowCreateDialog(false);
   };
 
+  const handleWorkItemUpdate = useCallback(
+    async (workItemId: string, fields: Record<string, unknown>) => {
+      // Optimistic local update
+      setWorkItems((prev) => prev.map((wi) => (wi.id === workItemId ? { ...wi, ...fields } : wi)));
+      await updateWorkItem(workItemId, fields);
+    },
+    []
+  );
+
+  const handleCardClick = useCallback(
+    (workItem: WorkItem) => {
+      router.push(`/projects/${project.slug}/items/${workItem.id}`);
+    },
+    [router, project.slug]
+  );
+
   return (
     <div data-testid="project-detail-client" className={cn('space-y-4', className)}>
       <div className="flex items-center justify-between">
@@ -91,74 +113,109 @@ export function ProjectDetailClient({
           </Badge>
           <span className="text-muted-foreground text-[10px]">{workItems.length} items</span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-7 text-xs"
-          onClick={() => setShowCreateDialog(true)}
-          data-testid="create-work-item-btn"
-        >
-          <Plus className="mr-1 h-3 w-3" />
-          New Item
-        </Button>
+        <div className="flex items-center gap-2">
+          <ViewSwitcher activeView={viewMode} onViewChange={setViewMode} />
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => setShowCreateDialog(true)}
+            data-testid="create-work-item-btn"
+          >
+            <Plus className="mr-1 h-3 w-3" />
+            New Item
+          </Button>
+        </div>
       </div>
 
       {project.description ? (
         <p className="text-muted-foreground text-xs">{project.description}</p>
       ) : null}
 
-      <Tabs
-        value={groupBy}
-        onValueChange={(v) => setGroupBy(v as GroupBy)}
-        data-testid="work-items-tabs"
-      >
-        <TabsList className="h-7">
-          <TabsTrigger value="all" className="px-2.5 text-xs">
-            All
-          </TabsTrigger>
-          <TabsTrigger value="state" className="px-2.5 text-xs">
-            By State
-          </TabsTrigger>
-          <TabsTrigger value="priority" className="px-2.5 text-xs">
-            By Priority
-          </TabsTrigger>
-        </TabsList>
+      {viewMode === 'list' && (
+        <Tabs
+          value={groupBy}
+          onValueChange={(v) => setGroupBy(v as GroupBy)}
+          data-testid="work-items-tabs"
+        >
+          <TabsList className="h-7">
+            <TabsTrigger value="all" className="px-2.5 text-xs">
+              All
+            </TabsTrigger>
+            <TabsTrigger value="state" className="px-2.5 text-xs">
+              By State
+            </TabsTrigger>
+            <TabsTrigger value="priority" className="px-2.5 text-xs">
+              By Priority
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value={groupBy} className="mt-3">
-          {workItems.length === 0 ? (
-            <div
-              data-testid="work-items-empty"
-              className="text-muted-foreground flex flex-col items-center justify-center py-12 text-center"
-            >
-              <FolderKanban className="mb-2 h-6 w-6 opacity-20" />
-              <p className="text-xs">No work items yet. Create your first work item.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {grouped.map(({ label, items }) => (
-                <div key={label} data-testid={`work-item-group-${label}`}>
-                  {groupBy !== 'all' && (
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className="text-xs font-medium">{label}</span>
-                      <span className="text-muted-foreground text-[10px]">{items.length}</span>
+          <TabsContent value={groupBy} className="mt-3">
+            {workItems.length === 0 ? (
+              <div
+                data-testid="work-items-empty"
+                className="text-muted-foreground flex flex-col items-center justify-center py-12 text-center"
+              >
+                <FolderKanban className="mb-2 h-6 w-6 opacity-20" />
+                <p className="text-xs">No work items yet. Create your first work item.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {grouped.map(({ label, items }) => (
+                  <div key={label} data-testid={`work-item-group-${label}`}>
+                    {groupBy !== 'all' && (
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="text-xs font-medium">{label}</span>
+                        <span className="text-muted-foreground text-[10px]">{items.length}</span>
+                      </div>
+                    )}
+                    <div className="divide-y rounded-lg border">
+                      {items.map((wi) => (
+                        <WorkItemRow
+                          key={wi.id}
+                          workItem={wi}
+                          state={stateMap.get(wi.stateId)}
+                          projectPrefix={project.identifierPrefix}
+                        />
+                      ))}
                     </div>
-                  )}
-                  <div className="divide-y rounded-lg border">
-                    {items.map((wi) => (
-                      <WorkItemRow
-                        key={wi.id}
-                        workItem={wi}
-                        state={stateMap.get(wi.stateId)}
-                        projectPrefix={project.identifierPrefix}
-                      />
-                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {viewMode === 'board' && (
+        <BoardView
+          workItems={workItems}
+          states={states}
+          projectPrefix={project.identifierPrefix}
+          onWorkItemUpdate={handleWorkItemUpdate}
+          onCardClick={handleCardClick}
+        />
+      )}
+
+      {viewMode === 'table' && (
+        <TableView
+          workItems={workItems}
+          states={states}
+          labels={labels}
+          projectPrefix={project.identifierPrefix}
+          onWorkItemUpdate={handleWorkItemUpdate}
+        />
+      )}
+
+      {viewMode === 'calendar' && (
+        <CalendarView
+          workItems={workItems}
+          states={states}
+          projectPrefix={project.identifierPrefix}
+          onWorkItemUpdate={handleWorkItemUpdate}
+          onItemClick={handleCardClick}
+        />
+      )}
 
       <CreateWorkItemDialog
         open={showCreateDialog}

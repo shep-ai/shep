@@ -50,6 +50,17 @@ export class CreateWorkItemUseCase {
       stateId = defaultState.id;
     }
 
+    if (input.parentId) {
+      const parent = await this.workItemRepo.findById(input.parentId);
+      if (!parent) {
+        return { ok: false, error: `Parent work item not found: "${input.parentId}"` };
+      }
+      const depth = await this.getAncestorDepth(input.parentId);
+      if (depth >= 3) {
+        return { ok: false, error: 'Maximum nesting depth of 3 levels exceeded.' };
+      }
+    }
+
     const sequenceId = await this.projectRepo.incrementWorkItemCounter(input.projectId);
 
     const now = new Date();
@@ -84,5 +95,17 @@ export class CreateWorkItemUseCase {
     });
 
     return { ok: true, workItem };
+  }
+
+  private async getAncestorDepth(parentId: string): Promise<number> {
+    let depth = 0;
+    let currentId: string | undefined = parentId;
+    while (currentId) {
+      depth++;
+      if (depth > 3) return depth;
+      const parent = await this.workItemRepo.findById(currentId);
+      currentId = parent?.parentId;
+    }
+    return depth;
   }
 }

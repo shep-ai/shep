@@ -28,6 +28,8 @@ export interface CreateWorkItemDialogProps {
   projectId: string;
   states: WorkItemState[];
   onCreated: (workItem: WorkItem) => void;
+  /** Optional parent work item ID for creating sub-items */
+  parentId?: string;
 }
 
 export function CreateWorkItemDialog({
@@ -36,6 +38,7 @@ export function CreateWorkItemDialog({
   projectId,
   states,
   onCreated,
+  parentId,
 }: CreateWorkItemDialogProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -54,6 +57,7 @@ export function CreateWorkItemDialog({
         description: description || undefined,
         stateId: stateId || undefined,
         priority: priority || undefined,
+        parentId: parentId ?? undefined,
       });
       if (result.error) {
         setError(result.error);
@@ -73,7 +77,7 @@ export function CreateWorkItemDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-testid="create-work-item-dialog">
         <DialogHeader>
-          <DialogTitle>Create Work Item</DialogTitle>
+          <DialogTitle>{parentId ? 'Create Sub-item' : 'Create Work Item'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">

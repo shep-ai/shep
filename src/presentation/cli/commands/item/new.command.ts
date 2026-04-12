@@ -6,6 +6,7 @@
  * Usage:
  *   shep item new <project>
  *   shep item new <project> --title "Fix login bug" --priority high
+ *   shep item new <project> --title "Sub-task" --parent PROJ-42
  */
 
 import { Command } from 'commander';
@@ -13,6 +14,7 @@ import { input, select } from '@inquirer/prompts';
 import { container } from '@/infrastructure/di/container.js';
 import { GetPmProjectUseCase } from '@/application/use-cases/pm-projects/get-pm-project.use-case.js';
 import { CreateWorkItemUseCase } from '@/application/use-cases/work-items/create-work-item.use-case.js';
+import { GetWorkItemUseCase } from '@/application/use-cases/work-items/get-work-item.use-case.js';
 import { Priority } from '@/domain/generated/output.js';
 import { colors, messages } from '../../ui/index.js';
 
@@ -20,6 +22,7 @@ interface NewOptions {
   title?: string;
   priority?: string;
   description?: string;
+  parent?: string;
 }
 
 const PRIORITY_CHOICES = [
@@ -37,6 +40,7 @@ export function createNewCommand(): Command {
     .option('-t, --title <title>', 'Work item title')
     .option('-p, --priority <priority>', 'Priority (none, low, medium, high, urgent)')
     .option('-d, --description <description>', 'Work item description')
+    .option('--parent <identifier>', 'Parent work item identifier (e.g. PROJ-42)')
     .action(async (projectSlug: string, options: NewOptions) => {
       try {
         const getProject = container.resolve(GetPmProjectUseCase);
@@ -71,12 +75,25 @@ export function createNewCommand(): Command {
           });
         }
 
+        let parentId: string | undefined;
+        if (options.parent) {
+          const getItem = container.resolve(GetWorkItemUseCase);
+          const parentResult = await getItem.execute(options.parent);
+          if (!parentResult.ok) {
+            messages.error(`Parent work item not found: "${options.parent}"`);
+            process.exitCode = 1;
+            return;
+          }
+          parentId = parentResult.workItem.id;
+        }
+
         const useCase = container.resolve(CreateWorkItemUseCase);
         const result = await useCase.execute({
           projectId: project.id,
           title,
           priority,
           description: options.description,
+          parentId,
         });
 
         if (!result.ok) {
@@ -91,6 +108,9 @@ export function createNewCommand(): Command {
         console.log(`  ${colors.muted('ID:')}       ${wi.identifierPrefix}-${wi.sequenceId}`);
         console.log(`  ${colors.muted('Title:')}    ${wi.title}`);
         console.log(`  ${colors.muted('Priority:')} ${wi.priority}`);
+        if (options.parent) {
+          console.log(`  ${colors.muted('Parent:')}   ${options.parent}`);
+        }
         messages.newline();
       } catch (error) {
         if (

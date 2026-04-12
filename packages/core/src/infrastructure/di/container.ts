@@ -40,6 +40,8 @@ import type { ICustomPropertyRepository } from '../../application/ports/output/r
 import { SQLiteCustomPropertyRepository } from '../repositories/sqlite-custom-property.repository.js';
 import type { IActivityLogRepository } from '../../application/ports/output/repositories/activity-log-repository.interface.js';
 import { SQLiteActivityLogRepository } from '../repositories/sqlite-activity-log.repository.js';
+import type { IWorkItemRelationRepository } from '../../application/ports/output/repositories/work-item-relation-repository.interface.js';
+import { SQLiteWorkItemRelationRepository } from '../repositories/sqlite-work-item-relation.repository.js';
 
 // Validator interfaces and implementations
 import type { IAgentValidator } from '../../application/ports/output/agents/agent-validator.interface.js';
@@ -201,6 +203,10 @@ import { ManageSavedViewsUseCase } from '../../application/use-cases/saved-views
 import { ManageCustomPropertiesUseCase } from '../../application/use-cases/custom-properties/manage-custom-properties.use-case.js';
 import { ListActivityLogUseCase } from '../../application/use-cases/activity-log/list-activity-log.use-case.js';
 import { GlobalSearchUseCase } from '../../application/use-cases/search/global-search.use-case.js';
+import { CreateWorkItemRelationUseCase } from '../../application/use-cases/work-item-relations/create-work-item-relation.use-case.js';
+import { DeleteWorkItemRelationUseCase } from '../../application/use-cases/work-item-relations/delete-work-item-relation.use-case.js';
+import { ListWorkItemRelationsUseCase } from '../../application/use-cases/work-item-relations/list-work-item-relations.use-case.js';
+import { BulkUpdateWorkItemsUseCase } from '../../application/use-cases/work-items/bulk-update-work-items.use-case.js';
 
 // Deployment use cases
 import { StartFeatureDeploymentUseCase } from '../../application/use-cases/deployments/start-feature-deployment.use-case.js';
@@ -347,6 +353,13 @@ export async function initializeContainer(): Promise<typeof container> {
     useFactory: (c) => {
       const database = c.resolve<Database.Database>('Database');
       return new SQLiteActivityLogRepository(database);
+    },
+  });
+
+  container.register<IWorkItemRelationRepository>('IWorkItemRelationRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteWorkItemRelationRepository(database);
     },
   });
 
@@ -634,6 +647,10 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(ManageCustomPropertiesUseCase);
   container.registerSingleton(ListActivityLogUseCase);
   container.registerSingleton(GlobalSearchUseCase);
+  container.registerSingleton(CreateWorkItemRelationUseCase);
+  container.registerSingleton(DeleteWorkItemRelationUseCase);
+  container.registerSingleton(ListWorkItemRelationsUseCase);
+  container.registerSingleton(BulkUpdateWorkItemsUseCase);
 
   // Session repositories (per-AgentType string tokens)
   container.register(`IAgentSessionRepository:${AgentType.ClaudeCode}`, {
@@ -881,6 +898,18 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('GlobalSearchUseCase', {
     useFactory: (c) => c.resolve(GlobalSearchUseCase),
+  });
+  container.register('CreateWorkItemRelationUseCase', {
+    useFactory: (c) => c.resolve(CreateWorkItemRelationUseCase),
+  });
+  container.register('DeleteWorkItemRelationUseCase', {
+    useFactory: (c) => c.resolve(DeleteWorkItemRelationUseCase),
+  });
+  container.register('ListWorkItemRelationsUseCase', {
+    useFactory: (c) => c.resolve(ListWorkItemRelationsUseCase),
+  });
+  container.register('BulkUpdateWorkItemsUseCase', {
+    useFactory: (c) => c.resolve(BulkUpdateWorkItemsUseCase),
   });
 
   // Register interactive session infrastructure
