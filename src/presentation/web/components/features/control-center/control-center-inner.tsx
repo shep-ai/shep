@@ -575,6 +575,7 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
         onPaneClick={handleClearDrawers}
         onMoveEnd={handleMoveEnd}
         toolbar={canvasToolbar}
+        showToolbarOnEmpty={workspaceFilteredEmpty}
         emptyState={emptyStateNode}
       />
       {/* (+) FAB — bottom-left, moves with sidebar */}
