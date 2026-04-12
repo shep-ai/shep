@@ -514,7 +514,6 @@
         "descriptionArgument": "Application description",
         "agentOption": "Agent type override",
         "modelOption": "LLM model override (e.g. claude-opus-4-6)",
-        "noStartOption": "Create without starting an agent session",
         "spinnerText": "Creating application",
         "appCreated": "Application created",
         "idLabel": "ID:",

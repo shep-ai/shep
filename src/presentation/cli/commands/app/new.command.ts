@@ -22,7 +22,6 @@ import { getCliI18n } from '../../i18n.js';
 interface NewOptions {
   agent?: string;
   model?: string;
-  start?: boolean;
 }
 
 export function createNewCommand(): Command {
@@ -32,7 +31,6 @@ export function createNewCommand(): Command {
     .argument('<description>', t('cli:commands.app.new.descriptionArgument'))
     .option('--agent <type>', t('cli:commands.app.new.agentOption'))
     .option('--model <model>', t('cli:commands.app.new.modelOption'))
-    .option('--no-start', t('cli:commands.app.new.noStartOption'))
     .action(async (description: string, options: NewOptions) => {
       try {
         const useCase = container.resolve(CreateApplicationUseCase);
@@ -41,7 +39,7 @@ export function createNewCommand(): Command {
             description,
             agentType: options.agent,
             modelOverride: options.model,
-            initialPrompt: options.start !== false ? description : undefined,
+            initialPrompt: description,
           })
         );
 

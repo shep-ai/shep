@@ -126,19 +126,6 @@ describe('app new command', () => {
     );
   });
 
-  it('should not send initialPrompt when --no-start is specified', async () => {
-    const app = makeApplication();
-    mockExecute.mockResolvedValue({
-      application: app,
-      repositoryPath: app.repositoryPath,
-    });
-
-    const cmd = createNewCommand();
-    await cmd.parseAsync(['Build a todo list app', '--no-start'], { from: 'user' });
-
-    expect(mockExecute).toHaveBeenCalledWith(expect.objectContaining({ initialPrompt: undefined }));
-  });
-
   it('should set process.exitCode = 1 on error', async () => {
     mockExecute.mockRejectedValue(new Error('Slug allocation failed'));
 
