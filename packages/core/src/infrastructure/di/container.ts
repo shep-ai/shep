@@ -183,6 +183,24 @@ import { GetApplicationUseCase } from '../../application/use-cases/applications/
 import { DeleteApplicationUseCase } from '../../application/use-cases/applications/delete-application.use-case.js';
 import { UpdateApplicationUseCase } from '../../application/use-cases/applications/update-application.use-case.js';
 
+// PM use cases
+import { CreatePmProjectUseCase } from '../../application/use-cases/pm-projects/create-pm-project.use-case.js';
+import { ListPmProjectsUseCase } from '../../application/use-cases/pm-projects/list-pm-projects.use-case.js';
+import { GetPmProjectUseCase } from '../../application/use-cases/pm-projects/get-pm-project.use-case.js';
+import { UpdatePmProjectUseCase } from '../../application/use-cases/pm-projects/update-pm-project.use-case.js';
+import { DeletePmProjectUseCase } from '../../application/use-cases/pm-projects/delete-pm-project.use-case.js';
+import { CreateWorkItemUseCase } from '../../application/use-cases/work-items/create-work-item.use-case.js';
+import { ListWorkItemsUseCase } from '../../application/use-cases/work-items/list-work-items.use-case.js';
+import { GetWorkItemUseCase } from '../../application/use-cases/work-items/get-work-item.use-case.js';
+import { UpdateWorkItemUseCase } from '../../application/use-cases/work-items/update-work-item.use-case.js';
+import { DeleteWorkItemUseCase } from '../../application/use-cases/work-items/delete-work-item.use-case.js';
+import { ManageWorkItemStatesUseCase } from '../../application/use-cases/work-item-states/manage-work-item-states.use-case.js';
+import { ManageLabelsUseCase } from '../../application/use-cases/labels/manage-labels.use-case.js';
+import { ManageCommentsUseCase } from '../../application/use-cases/comments/manage-comments.use-case.js';
+import { ManageSavedViewsUseCase } from '../../application/use-cases/saved-views/manage-saved-views.use-case.js';
+import { ManageCustomPropertiesUseCase } from '../../application/use-cases/custom-properties/manage-custom-properties.use-case.js';
+import { ListActivityLogUseCase } from '../../application/use-cases/activity-log/list-activity-log.use-case.js';
+
 // Deployment use cases
 import { StartFeatureDeploymentUseCase } from '../../application/use-cases/deployments/start-feature-deployment.use-case.js';
 import { StartRepositoryDeploymentUseCase } from '../../application/use-cases/deployments/start-repository-deployment.use-case.js';
@@ -597,6 +615,24 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(GetDeploymentStatusUseCase);
   container.registerSingleton(ListDeploymentsUseCase);
 
+  // PM use cases
+  container.registerSingleton(CreatePmProjectUseCase);
+  container.registerSingleton(ListPmProjectsUseCase);
+  container.registerSingleton(GetPmProjectUseCase);
+  container.registerSingleton(UpdatePmProjectUseCase);
+  container.registerSingleton(DeletePmProjectUseCase);
+  container.registerSingleton(CreateWorkItemUseCase);
+  container.registerSingleton(ListWorkItemsUseCase);
+  container.registerSingleton(GetWorkItemUseCase);
+  container.registerSingleton(UpdateWorkItemUseCase);
+  container.registerSingleton(DeleteWorkItemUseCase);
+  container.registerSingleton(ManageWorkItemStatesUseCase);
+  container.registerSingleton(ManageLabelsUseCase);
+  container.registerSingleton(ManageCommentsUseCase);
+  container.registerSingleton(ManageSavedViewsUseCase);
+  container.registerSingleton(ManageCustomPropertiesUseCase);
+  container.registerSingleton(ListActivityLogUseCase);
+
   // Session repositories (per-AgentType string tokens)
   container.register(`IAgentSessionRepository:${AgentType.ClaudeCode}`, {
     useFactory: () => new ClaudeCodeSessionRepository(),
@@ -790,6 +826,56 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('CreateTerminalSessionUseCase', {
     useFactory: (c) => c.resolve(CreateTerminalSessionUseCase),
+  });
+
+  // PM use case string-token aliases for web routes
+  container.register('CreatePmProjectUseCase', {
+    useFactory: (c) => c.resolve(CreatePmProjectUseCase),
+  });
+  container.register('ListPmProjectsUseCase', {
+    useFactory: (c) => c.resolve(ListPmProjectsUseCase),
+  });
+  container.register('GetPmProjectUseCase', {
+    useFactory: (c) => c.resolve(GetPmProjectUseCase),
+  });
+  container.register('UpdatePmProjectUseCase', {
+    useFactory: (c) => c.resolve(UpdatePmProjectUseCase),
+  });
+  container.register('DeletePmProjectUseCase', {
+    useFactory: (c) => c.resolve(DeletePmProjectUseCase),
+  });
+  container.register('CreateWorkItemUseCase', {
+    useFactory: (c) => c.resolve(CreateWorkItemUseCase),
+  });
+  container.register('ListWorkItemsUseCase', {
+    useFactory: (c) => c.resolve(ListWorkItemsUseCase),
+  });
+  container.register('GetWorkItemUseCase', {
+    useFactory: (c) => c.resolve(GetWorkItemUseCase),
+  });
+  container.register('UpdateWorkItemUseCase', {
+    useFactory: (c) => c.resolve(UpdateWorkItemUseCase),
+  });
+  container.register('DeleteWorkItemUseCase', {
+    useFactory: (c) => c.resolve(DeleteWorkItemUseCase),
+  });
+  container.register('ManageWorkItemStatesUseCase', {
+    useFactory: (c) => c.resolve(ManageWorkItemStatesUseCase),
+  });
+  container.register('ManageLabelsUseCase', {
+    useFactory: (c) => c.resolve(ManageLabelsUseCase),
+  });
+  container.register('ManageCommentsUseCase', {
+    useFactory: (c) => c.resolve(ManageCommentsUseCase),
+  });
+  container.register('ManageSavedViewsUseCase', {
+    useFactory: (c) => c.resolve(ManageSavedViewsUseCase),
+  });
+  container.register('ManageCustomPropertiesUseCase', {
+    useFactory: (c) => c.resolve(ManageCustomPropertiesUseCase),
+  });
+  container.register('ListActivityLogUseCase', {
+    useFactory: (c) => c.resolve(ListActivityLogUseCase),
   });
 
   // Register interactive session infrastructure
