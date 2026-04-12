@@ -1,0 +1,86 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding
+
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > when gates is undefined > returns false for any node 13ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > fully autonomous (all 3 gates true) > returns false for any node when all gates are true 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > fully autonomous (all 3 gates true) > does NOT skip all interrupts when only 2 of 3 gates are true 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > requirements node > interrupts when allowPrd is false 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > requirements node > does not interrupt when allowPrd is true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > plan node > interrupts when allowPlan is false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > plan node > does not interrupt when allowPlan is true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > implement node > never interrupts (implementation always proceeds to merge) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > merge node > interrupts when allowMerge is false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > merge node > does not interrupt when allowMerge is true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > unknown nodes > returns false for nodes without gates (e.g. analyze, research) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > clearCompletedPhase > removes the given phase from completedPhases 8ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > clearCompletedPhase > is a no-op when phase is not in completedPhases 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > clearCompletedPhase > handles missing feature.yaml gracefully 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > clearCompletedPhase > handles missing completedPhases array gracefully 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should include local verification before push when push=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should NOT include local verification when push=false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should include commit instructions 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should prohibit git stash when push=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should prohibit git reset when push=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should prohibit git checkout -- when push=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should prohibit git restore when push=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should prohibit git clean when push=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should instruct to proceed with commit+push if unrelated tests fail 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should skip verification but still push when skipVerification=true and push=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should not include push when skipVerification=true but push=false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should include --no-verify in commit command when skipVerification=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should NOT include --no-verify when skipVerification is false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should include Shep Bot co-author trailer instruction 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should instruct NOT to include Claude co-author trailer 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > isRejectionPayload > returns true for valid rejection payload 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > isRejectionPayload > returns false for approval payload 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > isRejectionPayload > returns false for null 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > isRejectionPayload > returns false for undefined 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > isRejectionPayload > returns false for string 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > isRejectionPayload > returns false when rejected is not true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses default timeout (1_800_000ms) when settings are not initialized 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses default timeout when stageTimeoutMs is not set in settings 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses per-stage timeout from settings when set 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses default timeout when per-stage timeout is not set for current node 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses dedicated fast-implement timeout from settings when set 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > falls back to default when fast-implement timeout is not set 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > allows override to take precedence over settings 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses worktreePath as cwd when available 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses repositoryPath as cwd when worktreePath is empty 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should always include commit instructions 89ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include push instructions when push=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include push instructions when openPr=true (implied push) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include PR creation instructions when openPr=true 8ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include push instructions when push=false and openPr=false 52ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include PR instructions when openPr=false 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include spec context 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include branch names 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should instruct agent to write commit message from diff 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should not instruct agent to update feature.yaml (PR data persisted via DB) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include local verification step before pushing when push=true 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include local verification step when not pushing 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should forbid git pull and rebase before pushing 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should be deterministic (same input = same output) 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should forbid source code modification when no rejection feedback 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include Shep branding instruction when openPr=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include branding instruction when openPr=false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include Shep Bot co-author trailer in commit instructions 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should instruct NOT to include Claude co-author trailer 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should instruct agent to modify source code when rejection feedback exists 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include repository path 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include branch names 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include conflict details 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include commit message 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should instruct checkout, merge, and conflict resolution steps 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include Shep Bot co-author trailer in squash merge commit instruction 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should forbid pushing 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should be deterministic (same input = same output) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should soft-reset spec commits when commitSpecs=false 1521ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should not modify commits when commitSpecs=true 693ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should not modify commits for non-spec phases 632ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should be a no-op when agent did not commit spec files 460ms
+
+ Test Files  2 passed (2)
+      Tests  77 passed (77)
+   Start at  19:31:39
+   Duration  6.15s (transform 1.01s, setup 467ms, import 5.36s, tests 3.52s, environment 0ms)
+

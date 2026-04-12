@@ -1,0 +1,500 @@
+
+> @shepai/cli@1.180.0 test:unit /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting
+> vitest run tests/unit
+
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting
+
+ ✓  node  tests/unit/infrastructure/services/agents/executors/codex-cli-executor.test.ts (49 tests) 389ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/gemini-cli-executor.test.ts (43 tests) 404ms
+ ✓  node  tests/unit/application/use-cases/upgrade/upgrade-cli.use-case.test.ts (16 tests) 852ms
+[2026-04-12T16:31:29.707Z] Spawning: cursor-agent --yolo -p Implement feature --output-format stream-json
+[2026-04-12T16:31:29.708Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:29.708Z] Subprocess PID: 12345
+[2026-04-12T16:31:29.741Z] Spawning: cursor-agent --yolo -p Bad prompt --output-format stream-json
+[2026-04-12T16:31:29.741Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:29.741Z] Subprocess PID: 12345
+[2026-04-12T16:31:29.752Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-12T16:31:29.752Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:29.752Z] Subprocess PID: 12345
+[2026-04-12T16:31:29.800Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-12T16:31:29.800Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:29.800Z] Subprocess PID: 12345
+[2026-04-12T16:31:29.841Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-12T16:31:29.841Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:29.842Z] Subprocess PID: 12345
+[2026-04-12T16:31:29.864Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-12T16:31:29.864Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:29.864Z] Subprocess PID: 12345
+[2026-04-12T16:31:29.889Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-12T16:31:29.889Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:29.889Z] Subprocess PID: 12345
+[2026-04-12T16:31:29.913Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-12T16:31:29.913Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:29.913Z] Subprocess PID: 12345
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > already-running path (idempotent) > does NOT spawn a new process when daemon is already alive
+
+ℹ Shep is already running at http://localhost:4050
+
+
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > already-running path (idempotent) > does NOT write daemon.json when daemon is already alive
+
+ℹ Shep is already running at http://localhost:4050
+
+
+[2026-04-12T16:31:29.932Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-12T16:31:29.932Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:29.932Z] Subprocess PID: 12345
+ ✓  node  tests/unit/infrastructure/services/agents/executors/cursor-executor.test.ts (39 tests) 278ms
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > calls findAvailablePort with DEFAULT_PORT when no port option given
+
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+ ✓  node  tests/unit/presentation/cli/commands/upgrade.command.test.ts (26 tests) 2333ms
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > calls findAvailablePort with the provided port override
+
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:8080
+
+
+ ✓  node  tests/unit/infrastructure/services/agents/executors/copilot-cli-executor.test.ts (51 tests) 498ms
+ ✓  node  tests/unit/infrastructure/services/agents/agent-registry.service.test.ts (8 tests) 1572ms
+       ✓ should pre-register the analyze-repository agent  1560ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts (47 tests) 1859ms
+     ✓ should soft-reset spec commits when commitSpecs=false  467ms
+     ✓ should not modify commits when commitSpecs=true  425ms
+     ✓ should not modify commits for non-spec phases  428ms
+     ✓ should be a no-op when agent did not commit spec files  517ms
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > spawns the daemon process using process.execPath and _serve args
+
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+ ✓  node  tests/unit/infrastructure/spec-yaml-backward-compatibility.test.ts (4 tests) 545ms
+     ✓ should validate current feature spec.yaml against schema  419ms
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > propagates process.execArgv to the child
+
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+ ✓  node  tests/unit/infrastructure/services/tool-installer/tool-installer.service.test.ts (19 tests) 198ms
+ ✓  node  tests/unit/infrastructure/services/filesystem/node-application-file-system.service.test.ts (21 tests) 498ms
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > spawns with detached: true
+
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+ ✓  node  tests/unit/domain/factories/spec-yaml-artifact-parsing.test.ts (4 tests) 587ms
+     ✓ spec.yaml parses into FeatureArtifact with all required fields  573ms
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > spawns with windowsHide: true to suppress console window on Windows
+
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+[2026-04-12T16:31:33.285Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.288Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.288Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.288Z] Prompt length: 21 chars (piped via stdin)
+[2026-04-12T16:31:33.290Z] [result] 33 chars, session=sess-abc-123
+[2026-04-12T16:31:33.290Z] Process closed with code 0, result=33 chars
+[2026-04-12T16:31:33.294Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.294Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.294Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.294Z] Prompt length: 12 chars (piped via stdin)
+[2026-04-12T16:31:33.294Z] [result] 4 chars, session=session-xyz-789
+[2026-04-12T16:31:33.294Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.295Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.295Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.295Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.295Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-12T16:31:33.296Z] [result] 4 chars, session=sess-1
+[2026-04-12T16:31:33.296Z] [tokens] 1500 in / 800 out
+[2026-04-12T16:31:33.296Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.297Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.297Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.297Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.297Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.297Z] [result] 4 chars, session=none
+[2026-04-12T16:31:33.297Z] [tokens] 500 in / 200 out
+[2026-04-12T16:31:33.297Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.298Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.298Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.298Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.298Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.298Z] [result] 4 chars, session=none
+[2026-04-12T16:31:33.298Z] [tokens] 100 in / 50 out, $0.1857
+[2026-04-12T16:31:33.298Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.362Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.373Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.373Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.373Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.374Z] [result] 4 chars, session=none
+[2026-04-12T16:31:33.374Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.409Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.409Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.409Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.409Z] Prompt length: 10 chars (piped via stdin)
+[2026-04-12T16:31:33.426Z] stderr: Error: Authentication failed
+[2026-04-12T16:31:33.428Z] Process closed with code 1, result=0 chars
+[2026-04-12T16:31:33.432Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.432Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.432Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.432Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.433Z] Process error event: spawn claude ENOENT
+[2026-04-12T16:31:33.433Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --resume prev-session-id --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.433Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.438Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.439Z] Prompt length: 13 chars (piped via stdin)
+[2026-04-12T16:31:33.451Z] [result] 7 chars, session=sess-resume
+[2026-04-12T16:31:33.451Z] Process closed with code 0, result=7 chars
+[2026-04-12T16:31:33.463Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --model claude-sonnet-4-5-20250929 --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.463Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.468Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.468Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.470Z] [result] 4 chars, session=none
+[2026-04-12T16:31:33.470Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.496Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --append-system-prompt You are a code reviewer --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.496Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.496Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.496Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.496Z] [result] 4 chars, session=none
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > spawns with stdout and stderr redirected to log file fd
+
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+[2026-04-12T16:31:33.521Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.530Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --allowedTools Read,Write,Bash --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.530Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.530Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.530Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.531Z] [result] 4 chars, session=none
+[2026-04-12T16:31:33.531Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.533Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --max-turns 5 --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.533Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.533Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.533Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.538Z] [result] 4 chars, session=none
+[2026-04-12T16:31:33.538Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.539Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --json-schema {"type":"object","properties":{"summary":{"type":"string"}}} --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.539Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.539Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.539Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.539Z] [result] 18 chars, session=none
+[2026-04-12T16:31:33.539Z] Process closed with code 0, result=18 chars
+[2026-04-12T16:31:33.540Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.540Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.540Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.540Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.540Z] [result] 4 chars, session=none
+[2026-04-12T16:31:33.540Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.542Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.542Z] Spawn cwd: /some/project
+[2026-04-12T16:31:33.542Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.542Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.542Z] [result] 4 chars, session=none
+[2026-04-12T16:31:33.542Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.550Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.550Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.550Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.550Z] Prompt length: 12 chars (piped via stdin)
+[2026-04-12T16:31:38.551Z] Process closed with code null, result=0 chars
+[2026-04-12T16:31:33.601Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.601Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.601Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.601Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.602Z] Process closed with code 0, result=0 chars
+[2026-04-12T16:31:33.602Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.602Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.602Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.602Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.602Z] [tool] Read {"file_path":"/src/index.ts"}
+[2026-04-12T16:31:33.602Z] [text] Let me read the file...
+[2026-04-12T16:31:33.602Z] [result] 4 chars, session=sess-1
+[2026-04-12T16:31:33.602Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.602Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.602Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.602Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.602Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.602Z] [result] 4 chars, session=sess-1
+[2026-04-12T16:31:33.602Z] [tokens] 100 in / 50 out
+[2026-04-12T16:31:33.602Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.603Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --strict-mcp-config --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.603Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.603Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.603Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.603Z] [result] 4 chars, session=none
+[2026-04-12T16:31:33.603Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.603Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.603Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.603Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.603Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.603Z] [result] 4 chars, session=none
+[2026-04-12T16:31:33.603Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.603Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.603Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.603Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.603Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.603Z] [result] 4 chars, session=none
+[2026-04-12T16:31:33.603Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.604Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --tools Bash,Read,Write --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.604Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.604Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.604Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.604Z] [result] 4 chars, session=none
+[2026-04-12T16:31:33.604Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.604Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.604Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.604Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.604Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.604Z] [result] 4 chars, session=none
+[2026-04-12T16:31:33.604Z] Process closed with code 0, result=4 chars
+[2026-04-12T16:31:33.604Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.604Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.604Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.604Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-12T16:31:33.604Z] [result] 4 chars, session=none
+[2026-04-12T16:31:33.604Z] Process closed with code 0, result=4 chars
+ ✓  node  tests/unit/translations/language-switching.test.ts (43 tests) 303ms
+[2026-04-12T16:31:33.794Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.794Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.794Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.794Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-12T16:31:33.794Z] Process error event: spawn claude ENOENT
+[2026-04-12T16:31:33.826Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-12T16:31:33.826Z] Spawn cwd: (inherited)
+[2026-04-12T16:31:33.826Z] Subprocess PID: 12345
+[2026-04-12T16:31:33.826Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-12T16:31:33.826Z] Process error event: some other error
+ ✓  node  tests/unit/infrastructure/services/agents/executors/claude-code-executor.test.ts (38 tests) 568ms
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > opens the log file for appending
+
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+ ✓  node  tests/unit/infrastructure/di/container-reject-token.test.ts (1 test) 6584ms
+     ✓ resolves RejectAgentRunUseCase via string token after initialization  6583ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts (59 tests) 146ms
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > calls child.unref() after the settle check
+
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+ ✓  node  tests/unit/infrastructure/di/container-idempotency.test.ts (3 tests) 6792ms
+     ✓ isContainerInitialized() returns false before init  6439ms
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > writes daemon.json with pid, port, and startedAt
+
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+ ✓  node  tests/unit/infrastructure/di/container-session-registrations.test.ts (6 tests) 7232ms
+     ✓ resolves ListAgentSessionsUseCase after initialization  6300ms
+     ✓ resolves IAgentSessionRepository:codex-cli as CodexCliSessionRepository  309ms
+ ✓  node  tests/unit/use-cases/features/adopt-branch.use-case.test.ts (21 tests) 202ms
+[2026-04-12T16:31:35.405Z] [analyze] Starting...
+[2026-04-12T16:31:35.410Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.410Z] [analyze] Prompt length: 4087 chars
+[2026-04-12T16:31:35.410Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.443Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:31:35.468Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:31:35.487Z] [requirements] Starting...
+[2026-04-12T16:31:35.502Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.502Z] [requirements] Prompt length: 5335 chars
+[2026-04-12T16:31:35.502Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.502Z] [requirements] Interrupting for human approval
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > writes a valid ISO 8601 timestamp to startedAt
+
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+ ✓  node  tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts (31 tests) 506ms
+[2026-04-12T16:31:35.554Z] [analyze] Starting...
+[2026-04-12T16:31:35.554Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.554Z] [analyze] Prompt length: 4087 chars
+[2026-04-12T16:31:35.554Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.557Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:31:35.557Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:31:35.560Z] [requirements] Starting...
+[2026-04-12T16:31:35.561Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.561Z] [requirements] Prompt length: 5335 chars
+[2026-04-12T16:31:35.562Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.570Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:31:35.571Z] [validate:spec.yaml] Validation passed
+ ✓  node  tests/unit/application/use-cases/agents/get-agent-session.use-case.test.ts (8 tests) 35ms
+[2026-04-12T16:31:35.646Z] [research] Starting...
+[2026-04-12T16:31:35.646Z] [research] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.646Z] [research] Prompt length: 5292 chars
+[2026-04-12T16:31:35.646Z] [research] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.648Z] [validate:research.yaml] Validating research.yaml
+[2026-04-12T16:31:35.649Z] [validate:research.yaml] Validation passed
+[2026-04-12T16:31:35.651Z] [plan] Starting...
+[2026-04-12T16:31:35.652Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.652Z] [plan] Prompt length: 6344 chars
+[2026-04-12T16:31:35.652Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.668Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-12T16:31:35.668Z] [validate:plan+tasks] Validation passed
+[2026-04-12T16:31:35.671Z] [implement] Starting implementation phase orchestration
+[2026-04-12T16:31:35.671Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-12T16:31:35.672Z] [implement] Executing phase prompt — 2367 chars
+[2026-04-12T16:31:35.672Z] [implement] Phase complete (20 chars)
+[2026-04-12T16:31:35.672Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-12T16:31:35.672Z] [evidence] Starting evidence collection
+[2026-04-12T16:31:35.673Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.673Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.673Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-12T16:31:35.673Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.673Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.673Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-12T16:31:35.674Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.674Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.674Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-04-12T16:31:35.673Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:31:35.674Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:31:35.674Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+ ✓  node  tests/unit/presentation/cli/commands/session/show.command.test.ts (16 tests) 367ms
+[2026-04-12T16:31:35.819Z] [analyze] Starting...
+[2026-04-12T16:31:35.819Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.819Z] [analyze] Prompt length: 4126 chars
+[2026-04-12T16:31:35.819Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.823Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:31:35.823Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:31:35.825Z] [requirements] Starting...
+[2026-04-12T16:31:35.825Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.825Z] [requirements] Prompt length: 5374 chars
+[2026-04-12T16:31:35.825Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.826Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:31:35.826Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:31:35.827Z] [research] Starting...
+[2026-04-12T16:31:35.831Z] [research] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.831Z] [research] Prompt length: 5331 chars
+[2026-04-12T16:31:35.831Z] [research] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.834Z] [validate:research.yaml] Validating research.yaml
+[2026-04-12T16:31:35.834Z] [validate:research.yaml] Validation passed
+[2026-04-12T16:31:35.835Z] [plan] Starting...
+[2026-04-12T16:31:35.835Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.835Z] [plan] Prompt length: 6422 chars
+[2026-04-12T16:31:35.835Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.836Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-12T16:31:35.836Z] [validate:plan+tasks] Validation passed
+[2026-04-12T16:31:35.837Z] [implement] Starting implementation phase orchestration
+[2026-04-12T16:31:35.838Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-12T16:31:35.838Z] [implement] Executing phase prompt — 2367 chars
+[2026-04-12T16:31:35.838Z] [implement] Phase complete (20 chars)
+[2026-04-12T16:31:35.838Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-12T16:31:35.838Z] [evidence] Starting evidence collection
+[2026-04-12T16:31:35.838Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.838Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.838Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-12T16:31:35.838Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.838Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.838Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-12T16:31:35.840Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.840Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.840Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+ ✓  node  tests/unit/translations/translation-completeness.test.ts (139 tests) 473ms
+[2026-04-12T16:31:35.838Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:31:35.838Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:31:35.840Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+[2026-04-12T16:31:35.901Z] [analyze] Starting...
+[2026-04-12T16:31:35.902Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.902Z] [analyze] Prompt length: 4087 chars
+[2026-04-12T16:31:35.902Z] [analyze] ERROR: Executor failed (after 0.0s)
+[2026-04-12T16:31:35.987Z] [analyze] Starting...
+[2026-04-12T16:31:35.987Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:35.987Z] [analyze] Prompt length: 4087 chars
+[2026-04-12T16:31:35.987Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:35.988Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:31:35.988Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:31:36.007Z] [requirements] Starting...
+[2026-04-12T16:31:36.007Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:36.007Z] [requirements] Prompt length: 5335 chars
+[2026-04-12T16:31:36.007Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:36.031Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:31:36.031Z] [validate:spec.yaml] Validation passed
+stdout | tests/unit/commands/daemon/start-daemon.test.ts > startDaemon() > fresh-start path (no existing daemon) > opens the browser with the correct URL
+
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+[2026-04-12T16:31:36.034Z] [research] Starting...
+[2026-04-12T16:31:36.034Z] [research] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:36.034Z] [research] Prompt length: 5292 chars
+[2026-04-12T16:31:36.034Z] [research] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:36.035Z] [validate:research.yaml] Validating research.yaml
+[2026-04-12T16:31:36.035Z] [validate:research.yaml] Validation passed
+[2026-04-12T16:31:36.054Z] [plan] Starting...
+[2026-04-12T16:31:36.054Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:36.054Z] [plan] Prompt length: 6344 chars
+[2026-04-12T16:31:36.054Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:36.061Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-12T16:31:36.061Z] [validate:plan+tasks] Validation passed
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge.node.test.ts (38 tests) 299ms
+[2026-04-12T16:31:36.087Z] [implement] Starting implementation phase orchestration
+[2026-04-12T16:31:36.087Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-12T16:31:36.088Z] [implement] Executing phase prompt — 2367 chars
+[2026-04-12T16:31:36.088Z] [implement] Phase complete (20 chars)
+[2026-04-12T16:31:36.088Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-12T16:31:36.088Z] [evidence] Starting evidence collection
+[2026-04-12T16:31:36.088Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-12T16:31:36.088Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-12T16:31:36.088Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-12T16:31:36.088Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-12T16:31:36.088Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-12T16:31:36.088Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-12T16:31:36.089Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-12T16:31:36.089Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-12T16:31:36.089Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-04-12T16:31:36.095Z] [analyze] Starting...
+[2026-04-12T16:31:36.095Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:36.095Z] [analyze] Prompt length: 4087 chars
+[2026-04-12T16:31:36.095Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:36.088Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:31:36.088Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-12T16:31:36.089Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+[2026-04-12T16:31:36.159Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:31:36.161Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:31:36.162Z] [requirements] Starting...
+[2026-04-12T16:31:36.163Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:36.163Z] [requirements] Prompt length: 5335 chars
+[2026-04-12T16:31:36.163Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:36.163Z] [requirements] Interrupting for human approval
+[2026-04-12T16:31:36.171Z] [analyze] Starting...
+[2026-04-12T16:31:36.171Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:36.171Z] [analyze] Prompt length: 4087 chars
+[2026-04-12T16:31:36.171Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:36.172Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-12T16:31:36.174Z] [validate:spec.yaml] Validation passed
+[2026-04-12T16:31:36.200Z] [requirements] Starting...
+[2026-04-12T16:31:36.200Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:36.200Z] [requirements] Prompt length: 5335 chars
+[2026-04-12T16:31:36.200Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:36.200Z] [requirements] Interrupting for human approval
+[2026-04-12T16:31:36.292Z] [requirements] Starting...
+[2026-04-12T16:31:36.292Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-12T16:31:36.292Z] [requirements] Prompt length: 5335 chars
+[2026-04-12T16:31:36.292Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-12T16:31:36.292Z] [requirements] Interrupting for human approval
