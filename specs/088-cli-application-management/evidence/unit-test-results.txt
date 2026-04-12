@@ -1,4 +1,4 @@
-$ pnpm vitest run --reporter=verbose tests/unit/presentation/cli/commands/app/
+$ pnpm vitest run tests/unit/presentation/cli/commands/app/
 
  RUN  v4.0.18
 
@@ -30,5 +30,5 @@ $ pnpm vitest run --reporter=verbose tests/unit/presentation/cli/commands/app/
 
  Test Files  4 passed (4)
       Tests  25 passed (25)
-   Start at  20:51:53
-   Duration  513ms (transform 466ms, setup 153ms, import 1.18s, tests 35ms, environment 0ms)
+   Start at  20:54:50
+   Duration  649ms (transform 547ms, setup 132ms, import 1.51s, tests 66ms, environment 0ms)
