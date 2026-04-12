@@ -20,6 +20,12 @@ export const Default: Story = {
   },
 };
 
+export const Ukrainian: Story = {
+  args: {
+    language: Language.Ukrainian,
+  },
+};
+
 export const Russian: Story = {
   args: {
     language: Language.Russian,
