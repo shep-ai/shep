@@ -1,0 +1,500 @@
+    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+
+stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > basic rendering > renders repository count as plural for multiple repos
+[DeploymentStatusProvider] ensureHydrated failed for "app-1" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
+    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
+    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
+    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+
+stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > card width > uses fixed w-[26rem] class on the main card element
+[DeploymentStatusProvider] ensureHydrated failed for "app-1" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
+    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
+    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
+    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+
+stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > click handling > calls onClick when card is clicked
+[DeploymentStatusProvider] ensureHydrated failed for "app-1" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
+    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
+    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
+    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+
+stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > click handling > calls onClick when Enter key is pressed
+[DeploymentStatusProvider] ensureHydrated failed for "app-1" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
+    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
+    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
+    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+
+stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > delete button > renders delete button when onDelete and id are provided
+[DeploymentStatusProvider] ensureHydrated failed for "app-abc" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
+    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
+    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
+    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+
+stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > delete button > does not render delete button when onDelete is absent
+[DeploymentStatusProvider] ensureHydrated failed for "app-1" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
+    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
+    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
+    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+
+stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > delete button > opens confirmation dialog when delete button is clicked
+[DeploymentStatusProvider] ensureHydrated failed for "app-abc" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
+    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
+    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
+    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+
+stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > delete button > calls onDelete only after confirming in the dialog
+[DeploymentStatusProvider] ensureHydrated failed for "app-abc" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
+    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
+    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
+    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+
+stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > delete button > does not call onDelete when cancel is clicked
+[DeploymentStatusProvider] ensureHydrated failed for "app-abc" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
+    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
+    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
+    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+
+stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > delete button > delete button click does not trigger parent onClick
+[DeploymentStatusProvider] ensureHydrated failed for "app-abc" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
+    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
+    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
+    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+
+stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > handles > always renders handles for edge connections
+[DeploymentStatusProvider] ensureHydrated failed for "app-1" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
+    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
+    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
+    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+
+ ✓  web  tests/unit/presentation/web/components/common/application-node/application-node.test.tsx (16 tests) 570ms
+ ✓  web  tests/unit/presentation/web/hooks/use-cli-upgrade.test.ts (10 tests) 435ms
+ ✓  web  tests/unit/presentation/web/layouts/sidebar.test.tsx (5 tests) 250ms
+ ✓  web  tests/unit/presentation/web/features/skills/skill-list.test.tsx (7 tests) 384ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/notification-settings-section.test.tsx (6 tests) 326ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/components/common/theme-toggle/theme-toggle.test.tsx (7 tests) 426ms
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/features/control-center/control-center.test.tsx (3 tests) 467ms
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/features/control-center/use-control-center-state.test.tsx (36 tests) 283ms
+ ✓  web  tests/unit/presentation/web/button.test.tsx (8 tests) 327ms
+ ✓  web  tests/unit/presentation/web/common/feature-node/feature-sessions-dropdown.test.tsx (7 tests) 334ms
+ ✓  web  tests/unit/presentation/web/hooks/use-npm-version-check.test.ts (6 tests) 305ms
+ ✓  web  tests/unit/presentation/web/common/feature-list-item.test.tsx (5 tests) 237ms
+ ✓  web  tests/unit/presentation/web/components/common/control-center-drawer/feature-drawer-client.test.tsx (2 tests) 329ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/hooks/use-deployment-logs.test.ts (15 tests) 281ms
+ ✓  web  tests/unit/presentation/web/components/common/deployment-status-badge/deployment-status-badge.test.tsx (13 tests) 359ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/common/sidebar-nav-item.test.tsx (4 tests) 352ms
+ ✓  web  tests/unit/presentation/web/features/skills/skill-card.test.tsx (16 tests) 294ms
+ ✓  web  tests/unit/presentation/web/common/empty-state.test.tsx (9 tests) 237ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/feature-flags-settings-section.test.tsx (4 tests) 173ms
+Not implemented: navigation to another Document
+ ✓  web  tests/unit/presentation/web/components/common/sidebar-nav-item/sidebar-nav-item.test.tsx (1 test) 237ms
+ ✓  web  tests/unit/presentation/web/layouts/dashboard-layout.test.tsx (6 tests) 345ms
+ ✓  web  tests/unit/presentation/web/layouts/header.test.tsx (5 tests) 241ms
+ ✓  web  tests/unit/presentation/web/components/ui/sidebar-persistence.test.tsx (9 tests) 299ms
+ ✓  web  tests/unit/presentation/web/components/common/attachment-card/attachment-card.test.tsx (3 tests) 227ms
+ ✓  web  tests/unit/presentation/web/common/page-header.test.tsx (8 tests) 264ms
+ ✓  web  tests/unit/presentation/web/common/repository-node/repository-node.test.tsx (7 tests) 204ms
+ ✓  web  tests/unit/presentation/web/components/common/action-button/action-button-sound.test.tsx (2 tests) 199ms
+ ✓  web  tests/unit/presentation/web/alert.test.tsx (4 tests) 230ms
+ ✓  web  tests/unit/presentation/web/card.test.tsx (7 tests) 248ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/plan-tab.test.tsx (13 tests) 235ms
+ ✓  web  tests/unit/presentation/web/input.test.tsx (7 tests) 259ms
+ ✓  web  tests/unit/presentation/web/components/common/sidebar-collapse-toggle/sidebar-collapse-toggle.test.tsx (2 tests) 290ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer/use-feature-actions.test.ts (24 tests) 97ms
+ ✓  web  tests/unit/presentation/web/components/common/product-decisions-summary/product-decisions-summary.test.tsx (9 tests) 173ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/diff-view.test.tsx (13 tests) 227ms
+ ✓  web  tests/unit/presentation/web/common/feature-status-badges.test.tsx (5 tests) 120ms
+ ✓  web  tests/unit/presentation/web/hooks/use-graph-state.test.tsx (24 tests) 143ms
+ ✓  web  tests/unit/presentation/web/features/control-center/control-center-empty-state.test.tsx (4 tests) 165ms
+stderr | tests/unit/presentation/web/lib/skills.test.ts > getSkills > skips skills with malformed frontmatter
+Skipping skill "bad-skill": invalid or missing frontmatter in SKILL.md
+
+ ✓  web  tests/unit/presentation/web/lib/skills.test.ts (48 tests) 135ms
+ ✓  web  tests/unit/presentation/web/api/directory-list.test.ts (16 tests) 71ms
+ ✓  web  tests/unit/presentation/web/features/version-page-client.test.tsx (2 tests) 292ms
+ ✓  web  tests/unit/presentation/web/components/common/inline-attachments/inline-attachments.test.tsx (13 tests) 109ms
+ ✓  web  tests/unit/presentation/web/actions/open-folder.test.ts (12 tests) 8ms
+ ✓  web  tests/unit/presentation/web/hooks/use-version.test.ts (4 tests) 103ms
+ ✓  web  tests/unit/presentation/web/hooks/use-sound-action.test.ts (28 tests) 44ms
+ ✓  web  tests/unit/presentation/web/lib/rtl-fonts.test.ts (7 tests) 31ms
+ ✓  web  tests/unit/presentation/web/hooks/use-agent-events.test.ts (13 tests) 89ms
+ ✓  web  tests/unit/presentation/web/i18n.test.tsx (7 tests) 51ms
+ ✓  web  tests/unit/presentation/web/components/common/repository-node/use-repository-actions.test.ts (15 tests) 81ms
+ ✓  web  tests/unit/presentation/web/api/tools-install.test.ts (4 tests) 63ms
+ ✓  web  tests/unit/presentation/web/api/deployment-logs-sse.test.ts (10 tests) 64ms
+ ✓  web  tests/unit/presentation/web/components/common/tech-decisions-review/tech-decisions-review-sound.test.tsx (2 tests) 105ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/use-tab-data-fetch.test.ts (16 tests) 171ms
+ ✓  web  tests/unit/presentation/web/common/loading-skeleton.test.tsx (9 tests) 74ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/app-layout-integration.test.tsx (4 tests) 112ms
+ ✓  web  tests/unit/presentation/web/common/feature-status-group.test.tsx (3 tests) 121ms
+ ✓  web  tests/unit/presentation/web/hooks/sidebar-features-context.test.tsx (11 tests) 53ms
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/hooks/use-notifications.test.ts (9 tests) 72ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-tree-table.test.tsx (3 tests) 49ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/database-settings-section.test.tsx (4 tests) 89ms
+ ✓  web  tests/unit/presentation/web/api/tools-install-stream.test.ts (4 tests) 63ms
+ ✓  web  tests/unit/presentation/web/components/common/ci-status-badge/ci-status-badge.test.tsx (3 tests) 53ms
+ ✓  web  tests/unit/presentation/web/common/elapsed-time.test.tsx (5 tests) 57ms
+ ✓  web  tests/unit/presentation/web/hooks/use-drawer-sync.test.ts (11 tests) 89ms
+ ✓  web  tests/unit/presentation/web/hooks/use-tool-install-stream.test.ts (6 tests) 98ms
+ ✓  web  tests/unit/presentation/web/app/build-graph-nodes.test.ts (18 tests) 42ms
+ ✓  web  tests/unit/presentation/web/hooks/use-deploy-action.test.tsx (7 tests) 129ms
+ ✓  web  tests/unit/presentation/web/use-theme.test.tsx (6 tests) 64ms
+ ✓  web  tests/unit/presentation/web/hooks/deployment-status-store.test.ts (9 tests) 6ms
+ ✓  web  tests/unit/presentation/web/badge.test.tsx (3 tests) 98ms
+stderr | tests/unit/presentation/web/actions/deploy-repository.test.ts > deployRepository server action > returns {success:false, error} when the use case throws a validation error
+[deployRepository] error: repositoryPath must be an absolute path Error: repositoryPath must be an absolute path
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/tests/unit/presentation/web/actions/deploy-repository.test.ts:37:35
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
+    at trace (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+stderr | tests/unit/presentation/web/actions/deploy-repository.test.ts > deployRepository server action > returns a generic error for non-Error throws
+[deployRepository] error: Failed to deploy repository boom
+
+ ✓  web  tests/unit/presentation/web/actions/deploy-repository.test.ts (3 tests) 9ms
+ ✓  web  tests/unit/presentation/web/hooks/use-viewport-persistence.test.ts (21 tests) 190ms
+ ✓  web  tests/unit/presentation/web/actions/open-shell.test.ts (17 tests) 19ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/build-grouped-tree.test.ts (18 tests) 36ms
+ ✓  web  tests/unit/presentation/web/common/sidebar-section-header.test.tsx (3 tests) 251ms
+ ✓  web  tests/unit/presentation/web/smoke-imports.test.ts (5 tests) 52ms
+ ✓  web  tests/unit/presentation/web/actions/update-feature-pinned-config.test.ts (7 tests) 9ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review-config.test.ts (11 tests) 13ms
+ ✓  web  tests/unit/presentation/web/actions/features/create-feature.test.ts (21 tests) 68ms
+ ✓  web  tests/unit/presentation/web/actions/merge-review/get-merge-review-data.test.ts (23 tests) 62ms
+ ✓  web  tests/unit/presentation/web/actions/reject-feature.test.ts (12 tests) 7ms
+ ✓  web  tests/unit/presentation/web/chat/tool-bubble-detect.test.ts (25 tests) 9ms
+ ✓  web  tests/unit/presentation/web/actions/approve-feature.test.ts (7 tests) 6ms
+stderr | tests/unit/presentation/web/actions/deploy-feature.test.ts > deployFeature server action > returns {success:false, error} when the use case throws
+[deployFeature] error: Feature not found: nonexistent-id Error: Feature not found: nonexistent-id
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/tests/unit/presentation/web/actions/deploy-feature.test.ts:37:35
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
+    at trace (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+stderr | tests/unit/presentation/web/actions/deploy-feature.test.ts > deployFeature server action > returns a generic error for non-Error throws
+[deployFeature] error: Failed to deploy feature unexpected
+
+ ✓  web  tests/unit/presentation/web/actions/deploy-feature.test.ts (3 tests) 13ms
+ ✓  web  tests/unit/presentation/web/actions/get-viewer-permission.test.ts (8 tests) 8ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/build-tree-data.test.ts (8 tests) 21ms
+ ✓  web  tests/unit/presentation/web/lib/feature-flags.test.ts (14 tests) 7ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts (24 tests) 100ms
+ ✓  web  tests/unit/presentation/web/actions/update-settings.test.ts (6 tests) 6ms
+ ✓  web  tests/unit/presentation/web/lib/parse-log-line.test.ts (25 tests) 6ms
+ ✓  web  tests/unit/presentation/web/actions/get-supported-models.test.ts (6 tests) 7ms
+ ✓  web  tests/unit/presentation/web/app/actions/get-feature-plan.test.ts (8 tests) 74ms
+ ✓  web  tests/unit/presentation/web/lib/language.test.ts (11 tests) 7ms
+ ✓  web  tests/unit/presentation/web/actions/get-feature-drawer-data.test.ts (7 tests) 6ms
+ ✓  web  tests/unit/presentation/web/app/actions/list-github-organizations.test.ts (4 tests) 5ms
+ ✓  web  tests/unit/presentation/web/actions/features/delete-feature.test.ts (8 tests) 7ms
+ ✓  web  tests/unit/presentation/web/app/actions/get-feature-phase-timings.test.ts (8 tests) 7ms
+ ✓  web  tests/unit/presentation/web/actions/get-workflow-defaults.test.ts (4 tests) 83ms
+ ✓  web  tests/unit/presentation/web/lib/derive-graph.test.ts (15 tests) 63ms
+ ✓  web  tests/unit/presentation/web/lib/format-duration.test.ts (9 tests) 3ms
+ ✓  web  tests/unit/presentation/web/actions/get-deployment-logs.test.ts (5 tests) 6ms
+ ✓  web  tests/unit/presentation/web/api/version.test.ts (4 tests) 9ms
+ ✓  web  tests/unit/presentation/web/actions/stop-deployment.test.ts (4 tests) 6ms
+ ✓  web  tests/unit/presentation/web/actions/open-ide.test.ts (9 tests) 6ms
+ ✓  web  tests/unit/presentation/web/actions/get-deployment-status.test.ts (2 tests) 29ms
+ ✓  web  tests/unit/presentation/web/actions/pick-files.test.ts (4 tests) 9ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-create-drawer/feature-create-drawer.test.tsx (91 tests) 31455ms
+       ✓ accepts text in the description field  640ms
+       ✓ enables submit button when description has content  415ms
+       ✓ disables submit button when description is only whitespace  301ms
+       ✓ calls onSubmit with payload containing description (no name field)  529ms
+       ✓ includes attachments array with file objects  523ms
+       ✓ sends approvalGates with only PRD checked  518ms
+       ✓ sends all-true approvalGates when all checkboxes are checked  895ms
+       ✓ sends all-false approvalGates when no checkboxes are checked  560ms
+       ✓ submits correct approvalGates after All toggle  627ms
+       ✓ clears all form fields after submit without unmounting  1216ms
+       ✓ clears form data on submit so next open starts fresh  566ms
+       ✓ removes attachment when remove button is clicked  353ms
+       ✓ plays create sound on form submit  538ms
+       ✓ submitting with fast mode on includes fast=true in payload  543ms
+       ✓ submitting with fast mode off includes fast=false in payload  415ms
+       ✓ fast mode resets to default after submit  734ms
+       ✓ submits the form when Ctrl+Enter is pressed in the textarea  327ms
+       ✓ submits the form when Meta+Enter is pressed in the textarea  552ms
+       ✓ does not submit on plain Enter (without modifier)  427ms
+       ✓ includes sessionId in submitted payload  572ms
+       ✓ submit button is disabled when no repo selected and repositoryPath is empty  370ms
+       ✓ submit button is enabled when repo is selected via combobox  805ms
+       ✓ submit button is enabled when repositoryPath is provided (canvas flow)  540ms
+       ✓ handleSubmit includes selectedRepoPath in payload  561ms
+       ✓ filters repositories by path when typing in search input  389ms
+       ✓ shows empty state message when no repos match search  368ms
+       ✓ shows check icon for selected repository  427ms
+       ✓ shows inline error when addRepository server action fails  314ms
+       ✓ can submit feature after adding new repo via combobox  1390ms
+       ✓ renders Fork & PR toggle when canPushDirectly is false  332ms
+       ✓ resets forkAndPr state to false when canPushDirectly changes from false to true  2284ms
+       ✓ reverts push and openPr to defaults when canPushDirectly becomes true  1121ms
+       ✓ reverts commitSpecs to default (true) when canPushDirectly becomes true  623ms
+       ✓ calls getViewerPermission on repo change and updates toggle visibility  1425ms
+       ✓ excludes forkAndPr from submission payload when canPush is true  1893ms
+ ✓  web  tests/unit/presentation/web/features/control-center/derive-state.test.ts (6 tests) 20ms
+ ✓  web  tests/unit/presentation/web/actions/update-model.test.ts (8 tests) 7ms
+ ✓  web  tests/unit/presentation/web/actions/load-settings.test.ts (3 tests) 7ms
+ ✓  web  tests/unit/presentation/web/app/actions/import-github-repository.test.ts (9 tests) 7ms
+ ✓  web  tests/unit/presentation/web/actions/compose-user-input.test.ts (7 tests) 5ms
+ ✓  web  tests/unit/presentation/web/common/feature-node/derive-feature-state.test.ts (47 tests) 56ms
+ ✓  web  tests/unit/presentation/web/app/actions/list-github-repositories.test.ts (7 tests) 7ms
+ ✓  web  tests/unit/presentation/web/lib/compare-versions.test.ts (7 tests) 3ms
+ ✓  web  tests/unit/presentation/web/actions/pick-folder.test.ts (4 tests) 3ms
+ ✓  web  tests/unit/presentation/web/components/common/control-center-drawer/drawer-view.test.ts (10 tests) 6ms
+
+ Test Files  418 passed (418)
+      Tests  5963 passed (5963)
+   Start at  19:23:49
+   Duration  50.99s (transform 21.77s, setup 67.67s, import 85.51s, tests 116.53s, environment 115.45s)
+
