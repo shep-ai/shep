@@ -164,7 +164,7 @@ const UserMessage: FC = () => {
       </div>
 
       <div className="flex max-w-[85%] min-w-0 flex-col gap-0.5">
-        <div className="text-foreground mt-px overflow-hidden rounded-2xl rounded-tl-sm border border-violet-500/15 bg-violet-500/8 px-4 py-2 text-sm leading-relaxed break-words shadow-sm backdrop-blur-md">
+        <div className="text-foreground mt-px overflow-hidden rounded-2xl rounded-tl-sm border border-violet-500/15 bg-violet-500/8 px-4 py-2 text-sm leading-relaxed break-words shadow-sm backdrop-blur-md dark:bg-violet-500/15">
           <MessagePrimitive.Content components={{ Text: UserMessageText }} />
         </div>
 
@@ -274,7 +274,7 @@ const AssistantMessage: FC = () => {
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="bg-muted/50 text-foreground mt-px overflow-hidden rounded-2xl rounded-tl-sm border border-white/5 px-4 py-2 text-sm leading-relaxed break-words shadow-sm backdrop-blur-md">
+        <div className="bg-muted/50 text-foreground mt-px overflow-hidden rounded-2xl rounded-tl-sm border border-white/5 px-4 py-2 text-sm leading-relaxed break-words shadow-sm backdrop-blur-md dark:bg-neutral-800/60">
           <MessagePrimitive.Content components={{ Text: AssistantMessageText }} />
         </div>
 

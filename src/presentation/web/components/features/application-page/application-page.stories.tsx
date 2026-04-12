@@ -11,6 +11,7 @@ const baseApp: Application = {
   repositoryPath: '/home/user/projects/my-todo-app',
   additionalPaths: [],
   status: ApplicationStatus.Idle,
+  setupComplete: false,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };

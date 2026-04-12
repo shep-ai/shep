@@ -1784,6 +1784,14 @@ export type Application = SoftDeletableEntity & {
    * Current application status
    */
   status: ApplicationStatus;
+  /**
+   * Whether the initial setup workflow has completed successfully
+   */
+  setupComplete: boolean;
+  /**
+   * Persistent agent SDK session ID — set once on first session boot, never changes
+   */
+  agentSessionId?: string;
 };
 
 /**

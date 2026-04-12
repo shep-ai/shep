@@ -55,6 +55,8 @@ export interface ChatTabProps {
    * later.
    */
   workflowPlaceholder?: PlaceholderStep[];
+  /** Called when the user clicks Continue on an interrupted workflow step. */
+  onResumeWorkflow?: () => void;
 }
 
 const IS_DEV = process.env.NODE_ENV === 'development';
@@ -68,6 +70,7 @@ export function ChatTab({
   hideHeader,
   onAllStepsComplete,
   workflowPlaceholder,
+  onResumeWorkflow,
 }: ChatTabProps) {
   const [overrideAgent, setOverrideAgent] = useState<string | undefined>(initialAgent);
   const [overrideModel, setOverrideModel] = useState<string | undefined>(initialModel);
@@ -163,9 +166,11 @@ export function ChatTab({
         toolMessages: [],
       }));
   const showTracker = trackerSteps.length > 0;
+  const workflowInFlight = stepProgress.hasPlan === true && stepProgress.allDone !== true;
 
   const composer = (
     <ChatComposer
+      disabled={workflowInFlight}
       attachments={att.attachments}
       isDragOver={att.isDragOver}
       uploadError={att.uploadError}
@@ -206,7 +211,7 @@ export function ChatTab({
           onDebugToggle={IS_DEV ? setDebugMode : undefined}
         />
       )}
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col dark:bg-neutral-900/40">
         {isChatLoading ? (
           <ChatSkeleton />
         ) : (
@@ -227,6 +232,7 @@ export function ChatTab({
                       }
                       activeStepId={stepProgress.activeStepId}
                       liveStatus={stepProgress.liveStatus}
+                      onRetry={onResumeWorkflow}
                     />
                   </>
                 ) : undefined

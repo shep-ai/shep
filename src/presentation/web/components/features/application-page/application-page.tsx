@@ -1,11 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
-  ArrowLeft,
   LayoutGrid,
   GitBranch,
   Copy,
@@ -14,12 +13,24 @@ import {
   Cpu,
   FilePlus,
   FilePen,
+  Trash2,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import type { Application, ApplicationStatus } from '@shepai/core/domain/generated/output';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
 import type { ChatState } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { deleteApplication } from '@/app/actions/delete-application';
 import { ChatTab } from '@/components/features/chat/ChatTab';
 import { APPLICATION_CREATION_PLACEHOLDER_STEPS } from '@/components/features/chat/workflow-placeholder';
 import { TerminalTab } from '@/components/features/application-page/terminal-tab';
@@ -28,6 +39,7 @@ import { RunDevButton } from '@/components/features/application-page/run-dev-but
 import { WebPreviewTab } from '@/components/features/application-page/web-preview-tab';
 import { useDeployAction, type DeployActionState } from '@/hooks/use-deploy-action';
 import { useTurnStatus } from '@/hooks/turn-statuses-provider';
+import { deriveAppLiveStatus } from '@/lib/derive-app-status';
 import { chatQueryKey, fetchChatState } from '@/components/features/chat/chat-state-query';
 import { openFolder } from '@/app/actions/open-folder';
 import { getApplicationDebugPrompt } from '@/app/actions/get-application-debug-prompt';
@@ -53,39 +65,8 @@ const VIEW_LABELS: Record<AppView, string> = {
   web: 'Web',
 };
 
-/**
- * Derive a single effective status label + dot color. "Idle" is
- * never shown. MUST match the priority order in
- * `components/common/application-node/application-node.tsx` so the
- * canvas card and the application page agree on every parameter.
- *
- * Priority (highest wins):
- *
- *   - `processing`      → "In Progress"  (agent actively running a turn)
- *   - `awaiting_input`  → "Warning"      (agent blocked on user question)
- *   - deployReady       → "Live"         (dev server running at a real URL)
- *   - persisted Error   → "Error"
- *   - otherwise         → "Ready"        (agent finished, preview not running)
- */
-function deriveLiveStatusPill(
-  persistedStatus: ApplicationStatus,
-  turnStatus: string,
-  deployReady: boolean
-): { label: string; dotClass: string; pulse: boolean } {
-  if (turnStatus === 'processing') {
-    return { label: 'In Progress', dotClass: 'bg-violet-500', pulse: true };
-  }
-  if (turnStatus === 'awaiting_input') {
-    return { label: 'Warning', dotClass: 'bg-amber-500', pulse: true };
-  }
-  if (deployReady) {
-    return { label: 'Live', dotClass: 'bg-emerald-500', pulse: true };
-  }
-  if (persistedStatus === 'Error') {
-    return { label: 'Error', dotClass: 'bg-red-500', pulse: false };
-  }
-  return { label: 'Ready', dotClass: 'bg-sky-500', pulse: false };
-}
+/* Status derivation is shared with canvas nodes and application cards
+ * via `lib/derive-app-status.ts` — single source of truth. */
 
 /* ------------------------------------------------------------------ */
 /*  Short path helper                                                  */
@@ -106,7 +87,8 @@ interface AppTopBarProps {
   application: Application;
   activeView: AppView;
   onViewChange: (view: AppView) => void;
-  onBack: () => void;
+  /** When true the agent is actively running — disable preview controls. */
+  agentRunning: boolean;
   /** SSR-seeded chat state — used to initialize the session chip so it
    *  shows any already-captured sessionId/model before SSE updates
    *  arrive. Optional: the chip falls back to "—" when absent. */
@@ -121,7 +103,7 @@ function AppTopBar({
   application,
   activeView,
   onViewChange,
-  onBack,
+  agentRunning,
   initialChatState,
   deploy,
 }: AppTopBarProps) {
@@ -132,17 +114,7 @@ function AppTopBar({
         TOP_BAR_HEIGHT_CLASS
       )}
     >
-      {/* ── Left: back + identity ───────────────────────────────── */}
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label="Back to canvas"
-        onClick={onBack}
-        className="h-7 w-7"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-      </Button>
-
+      {/* ── Left: identity ────────────────────────────────────── */}
       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-violet-500">
         <LayoutGrid className="h-3 w-3 text-white" />
       </div>
@@ -164,16 +136,27 @@ function AppTopBar({
       <div className="flex-1" />
 
       {/* ── Live session chip (model + short session id) ─────── */}
-      <SessionChip featureId={`app-${application.id}`} initialChatState={initialChatState} />
+      <SessionChip
+        featureId={`app-${application.id}`}
+        initialChatState={initialChatState}
+        persistedSessionId={application.agentSessionId}
+      />
 
       {/* ── Copy generated prompt (debug) ───────────────────── */}
       <CopyPromptButton applicationId={application.id} />
 
+      {/* ── Delete ─────────────────────────────────────────── */}
+      <DeleteButton applicationId={application.id} applicationName={application.name} />
+
       {/* ── Preview (install + npm run dev, persistent) ─── */}
-      <RunDevButton deploy={deploy} />
+      <RunDevButton deploy={deploy} disabled={agentRunning} />
 
       {/* ── View switcher ─────────────────────────────────────── */}
-      <ViewSwitcher active={activeView} onChange={onViewChange} />
+      <ViewSwitcher
+        active={activeView}
+        onChange={onViewChange}
+        disabledTabs={agentRunning ? ['web'] : []}
+      />
     </header>
   );
 }
@@ -332,15 +315,13 @@ function GitStatusCluster({ repositoryPath }: { repositoryPath: string }) {
 function SessionChip({
   featureId,
   initialChatState,
+  persistedSessionId,
 }: {
   featureId: string;
   initialChatState?: ChatState;
+  /** Agent session ID persisted on the Application entity — stable across restarts. */
+  persistedSessionId?: string;
 }) {
-  // Reads from the SAME TanStack Query cache entry the chat tab uses.
-  // The `message`/`session_status`/`turn_status` SSE events inside
-  // ChatTab's useChatRuntime mutate this cache directly, so the chip
-  // updates live as the session transitions booting → ready and the
-  // SDK reports back its assigned session id.
   const { data: chatState } = useQuery({
     queryKey: chatQueryKey(featureId),
     queryFn: () => fetchChatState(featureId),
@@ -351,7 +332,9 @@ function SessionChip({
   });
 
   const sessionInfo = chatState?.sessionInfo;
-  const sessionId = sessionInfo?.sessionId ?? null;
+  // Prefer the persisted ID from the Application entity (always available),
+  // fall back to the live session info (only available while session is active).
+  const sessionId = persistedSessionId ?? sessionInfo?.sessionId ?? null;
   const model = sessionInfo?.model ?? null;
   const shortId = sessionId ? sessionId.slice(0, 8) : null;
 
@@ -433,6 +416,62 @@ function CopyPromptButton({ applicationId }: { applicationId: string }) {
   );
 }
 
+function DeleteButton({
+  applicationId,
+  applicationName,
+}: {
+  applicationId: string;
+  applicationName: string;
+}) {
+  const router = useRouter();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setConfirmOpen(true)}
+        className="text-muted-foreground hover:text-destructive h-7 w-7"
+        aria-label="Delete application"
+        title="Delete application"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </Button>
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Delete application?</DialogTitle>
+            <DialogDescription>
+              This will permanently remove <strong>{applicationName}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="grid grid-cols-2 gap-2 sm:flex-none">
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                setConfirmOpen(false);
+                const result = await deleteApplication(applicationId);
+                if (result.error) {
+                  toast.error('Failed to delete', { description: result.error });
+                } else {
+                  toast.success('Application deleted');
+                  router.push('/applications');
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function StatusPill({
   applicationId,
   persistedStatus,
@@ -448,7 +487,7 @@ function StatusPill({
   // "Unread" / "Live") instead of being stuck at the coarse DB
   // snapshot which almost always reads "Idle".
   const turnStatus = useTurnStatus(`app-${applicationId}`);
-  const live = deriveLiveStatusPill(persistedStatus, turnStatus, deployReady);
+  const live = deriveAppLiveStatus(persistedStatus, turnStatus, deployReady);
 
   return (
     <span className="border-border/60 inline-flex h-5 shrink-0 items-center gap-1 rounded-full border px-2 text-[10px] font-medium tracking-wide uppercase">
@@ -479,9 +518,11 @@ function Divider() {
 function ViewSwitcher({
   active,
   onChange,
+  disabledTabs = [],
 }: {
   active: AppView;
   onChange: (view: AppView) => void;
+  disabledTabs?: AppView[];
 }) {
   return (
     <div
@@ -491,18 +532,22 @@ function ViewSwitcher({
     >
       {VIEW_TABS.map((v) => {
         const selected = v === active;
+        const disabled = disabledTabs.includes(v);
         return (
           <button
             key={v}
             type="button"
             role="tab"
             aria-selected={selected}
+            aria-disabled={disabled}
+            disabled={disabled}
             onClick={() => onChange(v)}
             className={cn(
-              'h-6 cursor-pointer rounded-sm px-2.5 text-[11px] font-medium transition-colors',
-              selected
+              'h-6 rounded-sm px-2.5 text-[11px] font-medium transition-colors',
+              disabled ? 'text-muted-foreground/40 cursor-not-allowed' : 'cursor-pointer',
+              !disabled && selected
                 ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                : !disabled && 'text-muted-foreground hover:text-foreground'
             )}
           >
             {VIEW_LABELS[v]}
@@ -684,7 +729,6 @@ export interface ApplicationPageProps {
 }
 
 export function ApplicationPage({ application, initialChatState }: ApplicationPageProps) {
-  const router = useRouter();
   const [activeView, setActiveView] = useState<AppView>('ide');
 
   // Hoisted dev-server state — subscribes to the shared
@@ -699,6 +743,44 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
     targetType: 'application',
     repositoryPath: application.repositoryPath,
   });
+
+  // ── Agent-running detection ────────────────────────────────
+  // While the agent is processing, the dev server is likely being
+  // modified — disable preview and auto-restart when done.
+  const turnStatus = useTurnStatus(`app-${application.id}`);
+  const agentRunning = turnStatus === 'processing';
+  const prevAgentRunningRef = useRef(false);
+
+  // Track whether the dev server was running before the agent started,
+  // so we only restart it (not cold-start) after the agent finishes.
+  const wasRunningBeforeAgentRef = useRef(false);
+
+  useEffect(() => {
+    const wasRunning = prevAgentRunningRef.current;
+    prevAgentRunningRef.current = agentRunning;
+
+    if (agentRunning && !wasRunning) {
+      // Agent just started — stop the dev server if running, remember
+      // that it was running so we can restart after.
+      if (deploy.status === DeploymentState.Ready || deploy.status === DeploymentState.Booting) {
+        wasRunningBeforeAgentRef.current = true;
+        void deploy.stop();
+      }
+      // Switch away from web tab while agent works
+      if (activeView === 'web') {
+        setActiveView('ide');
+      }
+    }
+
+    if (!agentRunning && wasRunning) {
+      // Agent just finished — restart the dev server if it was
+      // previously running.
+      if (wasRunningBeforeAgentRef.current) {
+        wasRunningBeforeAgentRef.current = false;
+        void deploy.deploy();
+      }
+    }
+  }, [agentRunning, deploy, activeView]);
 
   // When the dev server transitions to Ready, auto-switch the right
   // pane to the Web tab the first time it happens so the user
@@ -715,22 +797,22 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
     }
   }, [deploy.status, deploy.url]);
 
-  // Back → control center. We navigate AND refresh so the dashboard layout
-  // re-runs `getGraphData()` server-side. Without `router.refresh()` the
-  // App Router serves the cached RSC from when the user was last on `/`,
-  // which does NOT include the application they just created.
-  const handleBack = useCallback(() => {
-    router.push('/');
-    router.refresh();
-  }, [router]);
+  // Prevent switching to web tab while agent is running
+  const handleViewChange = useCallback(
+    (view: AppView) => {
+      if (view === 'web' && agentRunning) return;
+      setActiveView(view);
+    },
+    [agentRunning]
+  );
 
   return (
     <div className="bg-background flex h-dvh flex-col">
       <AppTopBar
         application={application}
         activeView={activeView}
-        onViewChange={setActiveView}
-        onBack={handleBack}
+        onViewChange={handleViewChange}
+        agentRunning={agentRunning}
         initialChatState={initialChatState}
         deploy={deploy}
       />
@@ -744,6 +826,9 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
             initialChatState={initialChatState}
             hideHeader
             workflowPlaceholder={APPLICATION_CREATION_PLACEHOLDER_STEPS}
+            onResumeWorkflow={() => {
+              void fetch(`/api/applications/${application.id}/resume`, { method: 'POST' });
+            }}
             onAllStepsComplete={() => {
               // Kick off the dev server as soon as the agent has
               // finished the scaffold workflow. The Idle→Ready

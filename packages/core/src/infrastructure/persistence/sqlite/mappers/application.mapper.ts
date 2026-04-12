@@ -24,6 +24,8 @@ export interface ApplicationRow {
   agent_type: string | null;
   model_override: string | null;
   status: string;
+  setup_complete: number;
+  agent_session_id: string | null;
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
@@ -43,6 +45,8 @@ export function toDatabase(app: Application): ApplicationRow {
     agent_type: app.agentType ?? null,
     model_override: app.modelOverride ?? null,
     status: app.status,
+    setup_complete: app.setupComplete ? 1 : 0,
+    agent_session_id: app.agentSessionId ?? null,
     created_at: app.createdAt instanceof Date ? app.createdAt.getTime() : app.createdAt,
     updated_at: app.updatedAt instanceof Date ? app.updatedAt.getTime() : app.updatedAt,
     deleted_at: app.deletedAt
@@ -67,6 +71,8 @@ export function fromDatabase(row: ApplicationRow): Application {
     agentType: row.agent_type ?? undefined,
     modelOverride: row.model_override ?? undefined,
     status: row.status as Application['status'],
+    setupComplete: row.setup_complete === 1,
+    agentSessionId: row.agent_session_id ?? undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     deletedAt: row.deleted_at ? new Date(row.deleted_at) : undefined,

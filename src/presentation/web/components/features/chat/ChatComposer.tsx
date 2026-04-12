@@ -23,6 +23,8 @@ export interface ChatComposerProps {
   onPickFiles: () => void;
   /** Agent/model picker rendered in the controls row. */
   agentPicker?: React.ReactNode;
+  /** When true, the composer is visually disabled and input is blocked. */
+  disabled?: boolean;
 }
 
 export function ChatComposer({
@@ -38,13 +40,16 @@ export function ChatComposer({
   onNotesChange,
   onPickFiles,
   agentPicker,
+  disabled,
 }: ChatComposerProps) {
   const { t } = useTranslation('web');
   const [isFocused, setIsFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <ComposerPrimitive.Root className="shrink-0 border-t p-3">
+    <ComposerPrimitive.Root
+      className={cn('shrink-0 border-t p-3', disabled && 'pointer-events-none opacity-50')}
+    >
       <div
         onDragEnter={onDragEnter}
         onDragLeave={onDragLeave}
