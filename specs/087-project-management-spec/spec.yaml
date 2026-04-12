@@ -1,0 +1,573 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: project-management-spec
+number: 87
+branch: "feat/087-project-management-spec"
+oneLiner: "Add Plane-like project management capabilities to Shep — issues, sprints, boards, docs, triage, and analytics"
+summary: >
+  Add a comprehensive project management system to Shep inspired by Plane (open-source Jira/Linear alternative).
+  This encompasses workspaces, projects, issues/work items with custom types and properties, cycles/sprints,
+  modules/epics, kanban/list/table/timeline/calendar views, pages/wiki, intake/triage, analytics dashboards,
+  time tracking, notifications, permissions, integrations (GitHub/Slack), and AI-powered features — all
+  integrated into Shep's existing Clean Architecture with TypeSpec-first domain models, use-case-driven
+  application layer, and multi-presentation support (CLI, TUI, Web).
+phase: Analysis
+sizeEstimate: XL
+
+# Relationships
+relatedFeatures: []
+
+technologies:
+  - "TypeSpec (domain model definitions)"
+  - "TypeScript (application logic)"
+  - "Next.js 16 (web UI)"
+  - "React 19 (components)"
+  - "React Flow / @xyflow/react (canvas/graph visualization)"
+  - "TailwindCSS 4 (styling)"
+  - "Radix UI (accessible component primitives)"
+  - "SQLite / better-sqlite3 (persistence)"
+  - "tsyringe (dependency injection)"
+  - "Zod (schema validation)"
+  - "SSE / Server-Sent Events (real-time updates)"
+  - "Yjs CRDT (collaborative editing for pages/wiki)"
+  - "LangGraph (AI agent orchestration)"
+  - "Playwright (E2E testing)"
+  - "Vitest (unit/integration testing)"
+  - "Storybook (component documentation)"
+
+relatedLinks:
+  - title: "Plane GitHub Repository"
+    url: "https://github.com/makeplane/plane"
+  - title: "Plane Documentation"
+    url: "https://docs.plane.so/"
+  - title: "Plane API Reference"
+    url: "https://developers.plane.so/api-reference/introduction"
+  - title: "Plane AI Features"
+    url: "https://plane.so/ai"
+  - title: "Plane Pricing (feature tiers)"
+    url: "https://plane.so/pricing"
+
+# Open questions (must be resolved before implementation)
+openQuestions:
+  - "How should the project management domain coexist with the existing Feature/Plan/Task SDLC domain — parallel hierarchy or unified model?"
+  - "Should workspaces map to Shep applications, or introduce a new top-level entity?"
+  - "Which Plane features are MVP vs later phases — full scope is enormous (XL+)?"
+  - "Should collaborative editing (Yjs CRDT) be built from scratch or use an existing library like Hocuspocus?"
+  - "How should the permission/role system integrate with Shep's existing single-developer model?"
+  - "Should the intake/triage system leverage Shep's existing agent infrastructure for AI triage?"
+  - "What is the migration strategy for existing Shep data (features, plans, tasks) into the new PM model?"
+  - "Should custom fields use a JSON column approach or dedicated tables per field type?"
+  - "How should the GitHub integration differ from Plane's — Shep already has deep git integration?"
+  - "Should the analytics/dashboard system use a charting library (e.g., Recharts, Victory) or custom SVG rendering?"
+
+# Markdown content (the actual spec)
+content: |
+  ## Problem Statement
+
+  Shep currently operates as an autonomous SDLC platform focused on AI-driven feature development
+  (requirements gathering, planning, implementation, review). It lacks general-purpose project management
+  capabilities that teams need for day-to-day work coordination: issue tracking, sprint planning, kanban
+  boards, documentation, triage workflows, and analytics dashboards.
+
+  Plane (https://github.com/makeplane/plane) is an open-source alternative to Jira, Linear, Monday,
+  and ClickUp that provides a modern project management platform. The goal is to bring Plane-equivalent
+  capabilities into Shep, leveraging Shep's existing Clean Architecture, TypeSpec-first domain models,
+  multi-presentation layers (CLI, TUI, Web), and AI agent infrastructure.
+
+  This spec is a **design-only document** — no implementation. It maps Plane's complete feature set
+  to Shep's architecture and establishes the blueprint for phased implementation.
+
+  ## Codebase Analysis
+
+  ### Project Structure
+
+  Shep follows a monorepo structure with pnpm workspaces:
+
+  | Directory | Purpose |
+  | --------- | ------- |
+  | `packages/core/src/domain/` | Domain entities (generated from TypeSpec) |
+  | `packages/core/src/application/` | Use cases, port interfaces, application services |
+  | `packages/core/src/infrastructure/` | SQLite repositories, DI container, external services |
+  | `src/presentation/cli/` | Commander.js CLI commands |
+  | `src/presentation/tui/` | Ink-based terminal UI |
+  | `src/presentation/web/` | Next.js 16 web application with React 19 |
+  | `tsp/` | TypeSpec definitions (source of truth for all domain types) |
+  | `specs/` | Feature specifications (YAML-driven workflow) |
+  | `tests/` | Unit, integration, and E2E test suites |
+
+  ### Architecture Patterns
+
+  **Clean Architecture (four layers, dependencies point inward):**
+  - **Domain**: Pure entities and value objects — no external dependencies
+  - **Application**: Use cases orchestrate domain logic; define port interfaces for infrastructure
+  - **Infrastructure**: Implements ports — SQLite repositories, agent services, git operations, DI bootstrap
+  - **Presentation**: Thin UI layer (CLI, TUI, Web) — calls use cases only, no business logic
+
+  **Key patterns in use:**
+  - TypeSpec-first: All domain models defined in `tsp/`, compiled to `packages/core/src/domain/generated/output.ts`
+  - Repository pattern: `IFeatureRepository`, `ISettingsRepository`, etc. with SQLite implementations
+  - Dependency injection: tsyringe container with constructor injection; string token aliases for web server actions
+  - Agent-agnostic design: All AI interactions through `IAgentExecutorProvider`
+  - SSE real-time updates: DB polling (500ms) -> SSE endpoint -> Service Worker -> React hooks -> UI
+  - Spec-driven development: Every feature starts with YAML specs before any code
+
+  **Existing domain entities relevant to PM:**
+  - `Feature` (aggregate root): Central SDLC work unit with lifecycle states
+  - `Plan`: Implementation plan with tasks and requirements
+  - `Task`: Discrete work unit with dependencies and action items
+  - `ActionItem`: Atomic step within a task with acceptance criteria
+  - `Application`: Persistent workspace for app building
+  - `Repository`: Source code repository reference
+
+  ### Relevant Technologies
+
+  - **Next.js 16 + React 19**: Web UI with App Router, server actions, SSE streaming
+  - **React Flow (@xyflow/react 12)**: Canvas visualization for feature graph — extensible for PM boards
+  - **TailwindCSS 4 + Radix UI**: Styling and accessible component primitives
+  - **SQLite (better-sqlite3)**: Embedded database with Umzug migrations (57+ existing migrations)
+  - **tsyringe**: DI container for all layers
+  - **LangGraph**: Agent orchestration for AI-powered features
+  - **Storybook**: Component documentation (mandatory for all web components)
+
+  ## Feature Mapping: Plane Capabilities -> Shep Design
+
+  ### 1. Workspaces & Projects
+
+  **Plane model**: Workspace (top-level org) -> Projects (containers for work items)
+
+  **Shep mapping**:
+  - Shep's `Application` entity maps naturally to Workspace
+  - Introduce a new `Project` entity within an Application
+  - Projects contain: work items, states, labels, cycles, modules, pages, views, intake config
+  - Project-level feature toggles (cycles, modules, epics, pages, intake, time tracking)
+
+  **New TypeSpec entities needed**:
+  - `Project` (name, description, identifier prefix, state, lead, members, start/end dates, feature toggles)
+  - `ProjectMember` (user reference, role: Admin/Member/Guest, joined date)
+  - `ProjectState` (Draft, Planning, Execution, Monitoring, Completed, Cancelled — or custom)
+
+  ### 2. Work Items (Issues)
+
+  **Plane model**: Work items with rich properties, types, sub-items, relations, and collaboration
+
+  **Shep mapping**:
+  - New `WorkItem` entity (replaces the concept of standalone issues)
+  - Sequential identifier per project (e.g., PROJ-1, PROJ-2)
+  - Supports parent-child hierarchy (sub-work items)
+
+  **Built-in properties**:
+  | Property | Type | Notes |
+  | -------- | ---- | ----- |
+  | Title | string | Required; summary of work |
+  | Description | rich text | File uploads, embeds, mentions |
+  | State | WorkItemState | Position in workflow (customizable per project) |
+  | Priority | enum | Urgent, High, Medium, Low, None |
+  | Assignees | Member[] | Multiple assignees supported |
+  | Labels | Label[] | Project-scoped with grouping |
+  | Start Date | date | When work begins |
+  | Due Date | date | Target completion |
+  | Cycle | Cycle? | Link to sprint/cycle |
+  | Modules | Module[] | Associate with modules |
+  | Parent | WorkItem? | Parent-child hierarchy |
+  | Estimate | number/category | Points, t-shirt sizes, or time |
+  | Tracked Time | duration | Logged time entries |
+  | Links | ExternalLink[] | Related URLs |
+  | Attachments | Attachment[] | File uploads |
+
+  **Work Item Types & Custom Properties**:
+  - Default type: "Issue"
+  - Custom types: Bug, Feature, Content, etc. with icons and colors
+  - Custom properties per type: Text, Number, Dropdown (single/multi), Boolean, Date, Member Picker
+  - Properties can be mandatory or optional, active or inactive
+
+  **Relations & Dependencies** (6 types):
+  1. Blocking / Blocked By (Finish-to-Start)
+  2. Starts Before / Starts After (Start-to-Start)
+  3. Finishes Before / Finishes After (Finish-to-Finish)
+  4. Relates To (contextual link)
+  5. Duplicate Of (redundancy marker)
+
+  **TypeSpec entities needed**:
+  - `WorkItem` (aggregate root with all built-in properties)
+  - `WorkItemType` (name, icon, color, custom properties schema)
+  - `WorkItemState` (name, color, group: Backlog/Unstarted/Started/Completed/Cancelled, order)
+  - `WorkItemRelation` (source, target, relation type)
+  - `Label` (name, color, parent label for grouping)
+  - `CustomProperty` (name, type, options, required flag, active flag)
+  - `CustomPropertyValue` (work item reference, property reference, value)
+  - `Attachment` (filename, size, mime type, storage path)
+  - `ExternalLink` (url, title)
+  - `Comment` (body, author, timestamps, thread support)
+  - `Activity` (work item, field changed, old value, new value, actor, timestamp)
+
+  ### 3. Views & Layouts
+
+  **Plane model**: Five layouts (List, Board/Kanban, Calendar, Table/Spreadsheet, Timeline/Gantt)
+
+  **Shep mapping**:
+  - Reuse React Flow canvas infrastructure for Board and Timeline views
+  - New components for List, Table, and Calendar layouts
+  - All layouts share the same data source (work items filtered/grouped/sorted)
+
+  **Layout specifications**:
+
+  | Layout | Component | Key Features |
+  | ------ | --------- | ------------ |
+  | List | WorkItemList | Grouped by property, drag-and-drop reorder, hierarchy display |
+  | Board | WorkItemBoard | Kanban columns by state/priority/assignee, DnD between columns |
+  | Table | WorkItemTable | Spreadsheet-like, inline editing, keyboard nav, bulk operations |
+  | Calendar | WorkItemCalendar | Date grid, DnD to change dates, month/week toggle |
+  | Timeline | WorkItemTimeline | Gantt bars, dependency lines, drag to adjust dates |
+
+  **Display options** (shared across layouts):
+  - Group by: State, Priority, Cycle, Module, Labels, Assignees, Created By, None
+  - Sub-group by: Same options
+  - Order by: Manual, Created, Updated, Start Date, Due Date, Priority
+  - Toggleable display properties: ID, Type, Assignee, Dates, Labels, Priority, State, etc.
+  - Show/hide sub-work items, empty groups
+
+  **Saved Views**:
+  - `View` entity: Layout + filters + display settings + name
+  - Project-scoped or workspace-scoped
+  - Public/private visibility
+  - Favorites for sidebar quick access
+
+  ### 4. Cycles (Sprints)
+
+  **Plane model**: Time-boxed periods with burndown charts and analytics
+
+  **Shep mapping**:
+  - New `Cycle` entity within a Project
+  - Only one active cycle at a time; others are Upcoming or Completed
+  - Transfer incomplete items between cycles
+
+  **TypeSpec entities needed**:
+  - `Cycle` (name, description, start date, end date, status: Active/Upcoming/Completed, project ref)
+  - `CycleWorkItem` (junction: cycle + work item)
+
+  **Analytics (per cycle)**:
+  - Burndown chart (ideal vs actual)
+  - Build-up chart (completion progress)
+  - Status breakdown (items by state)
+  - Point vs count toggle
+
+  ### 5. Modules & Epics
+
+  **Plane model**: Modules group related work; Epics are larger containers spanning projects
+
+  **Shep mapping**:
+  - `Module` entity: Focused grouping within a project (work items can be in multiple modules)
+  - `Epic` entity: Larger container — a work item can belong to only one epic
+  - Epics aggregate into `Initiative` entities at workspace level
+
+  **TypeSpec entities needed**:
+  - `Module` (name, description, state: Backlog/Planned/InProgress/Paused/Completed/Cancelled, lead, dates)
+  - `ModuleWorkItem` (junction: module + work item)
+  - `Epic` (name, description, state, progress tracking, custom properties, project ref)
+  - `Initiative` (name, description, state: Draft/Planned/Active/Completed/Closed, lead, labels, timeline)
+  - `InitiativeEpic` (junction: initiative + epic)
+
+  ### 6. Pages & Wiki
+
+  **Plane model**: Project-scoped pages with rich editor; workspace-scoped wiki
+
+  **Shep mapping**:
+  - `Page` entity: Rich text document within a project or workspace
+  - Hierarchical (nested pages) for wiki structure
+  - Real-time collaborative editing via Yjs CRDT
+  - Rich editor with 16+ block types, embeds (Figma, YouTube, etc.), mentions
+
+  **TypeSpec entities needed**:
+  - `Page` (title, content as JSON/ADF, parent page ref, project or workspace scope, author, visibility)
+  - `PageVersion` (content snapshot, timestamp, contributor)
+
+  **Editor features**:
+  - Headings (H1-H6), bold, italic, strikethrough, color, alignment
+  - Code blocks, tables, callouts, dividers
+  - File uploads (images, videos, documents)
+  - Embeds: Figma, YouTube, Loom, Google Docs, Draw.io
+  - Work item mentions via @ symbol
+  - Markdown auto-conversion
+  - Version history with diff and restore
+
+  ### 7. Intake / Triage
+
+  **Plane model**: Channels (in-app, forms, email) -> Triage state -> Accept/Decline/Duplicate
+
+  **Shep mapping**:
+  - `IntakeItem` entity: Incoming request before it becomes a work item
+  - Triage workflow: items land in a dedicated triage state, then get accepted into project workflow or declined
+  - Leverage Shep's AI agent infrastructure for automatic triage (classify, label, assign, route)
+
+  **TypeSpec entities needed**:
+  - `IntakeItem` (title, description, source: InApp/Form/Email, status: Pending/Accepted/Declined/Duplicate)
+  - `IntakeForm` (project ref, fields configuration, public URL)
+  - `IntakeConfig` (project ref, responsible person, auto-triage settings)
+
+  ### 8. Analytics & Dashboards
+
+  **Plane model**: Workspace/project/cycle/module analytics with custom dashboards
+
+  **Shep mapping**:
+  - Dashboard entity with configurable widgets
+  - Widget types: Bar, Line, Area, Donut, Pie charts, Number counters
+  - Data sources: work items grouped by type/priority/assignee/state/label
+  - Metrics: count or estimate points
+  - AI-powered dashboard generation and insight reading
+
+  **TypeSpec entities needed**:
+  - `Dashboard` (name, project scope or workspace scope, layout)
+  - `DashboardWidget` (type, data config, visual config, position, size)
+
+  **Built-in analytics views**:
+  - Overview: Active users, project counts, work item totals
+  - Work items: State breakdown, Created vs Resolved over time
+  - Cycles: Progress scatter plot, burndown comparisons
+  - Modules: Pipeline view (by state), progress scatter plot
+
+  ### 9. Time Tracking
+
+  **Plane model**: Per-work-item time logging with workspace-level worklog reports
+
+  **Shep mapping**:
+  - `TimeEntry` entity: Hours/minutes logged against a work item with notes
+  - Workspace-level worklog view with filters (user, project, date range)
+  - Export as CSV/Excel
+
+  **TypeSpec entities needed**:
+  - `TimeEntry` (work item ref, user, duration, note, logged at)
+
+  ### 10. Notifications
+
+  **Plane model**: In-app inbox, email, Slack notifications
+
+  **Shep mapping**:
+  - `Notification` entity: Tracks events (assigned, mentioned, state changed, commented)
+  - In-app notification center in web UI
+  - Notification preferences per user
+  - Leverage existing SSE infrastructure for real-time delivery
+
+  **TypeSpec entities needed**:
+  - `Notification` (type, target entity, actor, read status, archived, snoozed until)
+  - `NotificationPreference` (channel: InApp/Email/Slack, event types enabled)
+
+  ### 11. Permissions & Roles
+
+  **Plane model**: Workspace roles (Admin/Member/Guest) + Project roles (Admin/Member/Guest)
+
+  **Shep mapping**:
+  - Currently Shep is single-developer focused — this is a significant expansion
+  - `WorkspaceMember` with role enum
+  - `ProjectMember` with role enum
+  - Permission checks in use cases (not presentation layer)
+  - Higher permission wins when both workspace and project roles exist
+
+  **TypeSpec entities needed**:
+  - `WorkspaceRole` enum (Admin, Member, Guest)
+  - `ProjectRole` enum (Admin, Member, Guest)
+  - `WorkspaceMember` (user ref, role, joined date)
+  - Permission matrix defined as domain logic
+
+  ### 12. Integrations
+
+  **GitHub Integration** (enhanced from Shep's existing git support):
+  - Bidirectional issue sync (Plane label triggers)
+  - PR state -> work item state mapping
+  - Branch/commit/PR linking to work items
+  - Auto-state updates from PR references (e.g., [PROJ-123] in PR title)
+
+  **Slack Integration**:
+  - Create work items from Slack messages
+  - Bidirectional comment sync
+  - Project notification channels
+  - AI agent mentions (@Plane equivalent)
+
+  **Webhook System**:
+  - Event types: WorkItem, Project, Cycle, Module, Comment (CRUD actions)
+  - HMAC-SHA256 signature verification
+  - Retry with exponential backoff
+
+  ### 13. Estimates
+
+  **Plane model**: Three systems — Points, Categories, Time
+
+  **Shep mapping**:
+  - `EstimateSystem` entity per project
+  - Point-based: Linear, Fibonacci, Squares, Custom
+  - Category-based: T-shirt sizes, Easy-to-Hard, Custom
+  - Time-based: Hours with custom increments
+
+  **TypeSpec entities needed**:
+  - `EstimateSystem` (type: Points/Categories/Time, values, project ref, active flag)
+
+  ### 14. Search
+
+  - Global search across workspace: projects, work items, cycles, modules, pages
+  - Full-text search with SQLite FTS5
+  - Keyboard shortcut access
+  - Natural language search via AI agent
+
+  ### 15. Import / Export
+
+  **Import from**: Jira, Linear, Asana, ClickUp, Monday, CSV
+  **Export**: CSV/JSON for work items, Excel/CSV for time tracking, analytics export
+
+  ### 16. AI-Powered Features
+
+  Leveraging Shep's existing LangGraph agent infrastructure:
+  - **Auto-triage**: Classify incoming requests, suggest properties, route to projects
+  - **Duplicate detection**: Match new items against existing backlog
+  - **Smart summaries**: Cycle progress, project health, initiative status
+  - **Dashboard generation**: Describe needs in natural language, AI creates widgets
+  - **Writing assistance**: Draft generation, summarize, expand, paraphrase in pages
+  - **Natural language queries**: Ask questions about workspace data
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `tsp/domain/entities/` | High | 25+ new TypeSpec entity definitions (WorkItem, Project, Cycle, Module, Epic, Page, etc.) |
+  | `tsp/domain/value-objects/` | High | New value objects for priorities, states, relations, custom property types |
+  | `tsp/common/` | Medium | New enums for work item states, relation types, role types, layout types |
+  | `packages/core/src/domain/generated/` | High | Auto-generated from TypeSpec — all new entities appear here |
+  | `packages/core/src/application/use-cases/` | High | 50+ new use cases for CRUD on all PM entities, view management, analytics |
+  | `packages/core/src/application/ports/` | High | New repository interfaces for every PM entity |
+  | `packages/core/src/infrastructure/persistence/` | High | New SQLite repositories, mappers, 30+ new migration files |
+  | `packages/core/src/infrastructure/di/` | Medium | Register all new repositories, use cases, services in DI container |
+  | `src/presentation/web/app/` | High | New routes, pages, server actions for all PM features |
+  | `src/presentation/web/components/` | High | New components: Board, List, Table, Calendar, Timeline, Pages editor, Dashboard widgets |
+  | `src/presentation/cli/` | Medium | CLI commands for work item management, sprint operations |
+  | `src/presentation/tui/` | Medium | TUI screens for work item views and management |
+  | `tests/` | High | Unit tests for domain logic, integration tests for repositories, E2E for web UI |
+
+  ## Dependencies
+
+  **Existing infrastructure to leverage**:
+  - SQLite persistence layer with Umzug migrations
+  - tsyringe DI container and bootstrap pattern
+  - SSE real-time update pipeline (DB polling -> SSE -> Service Worker -> React)
+  - React Flow canvas for board/timeline visualization
+  - Storybook component development workflow
+  - LangGraph agent orchestration for AI features
+  - Server actions pattern for web UI mutations
+
+  **New libraries likely needed**:
+  - Rich text editor: TipTap or ProseMirror (for pages/wiki with collaborative editing)
+  - Yjs + y-prosemirror (CRDT for real-time collaboration)
+  - Date library: date-fns or dayjs (calendar/timeline views)
+  - Charting library: Recharts or Victory (analytics dashboards)
+  - DnD library: @dnd-kit (drag-and-drop across all views)
+  - Gantt/Timeline: Custom build on React Flow or dedicated library
+  - Full-text search: SQLite FTS5 extension
+  - CSV parsing: papaparse (import/export)
+  - Excel export: exceljs or xlsx
+
+  **Infrastructure requirements**:
+  - Database schema expansion: 30+ new tables, junction tables for many-to-many relationships
+  - File storage: Attachment upload/download system (local filesystem or S3-compatible)
+  - WebSocket or SSE enhancement: Real-time collaborative editing requires persistent connections
+  - Background jobs: Recurring work item creation, auto-archive, auto-close stale items
+
+  ## Database Schema Overview
+
+  **Core tables** (new):
+  - `projects` — Project definitions within a workspace
+  - `project_members` — User-project role assignments
+  - `work_items` — Central issue/task table
+  - `work_item_types` — Custom work item type definitions
+  - `work_item_states` — Per-project workflow states
+  - `work_item_relations` — Blocking, relates-to, duplicate-of links
+  - `labels` — Project-scoped labels with optional parent grouping
+  - `custom_properties` — Custom field definitions per work item type
+  - `custom_property_values` — Custom field values per work item
+  - `comments` — Threaded comments on work items
+  - `activities` — Change log per work item
+  - `cycles` — Sprint/cycle definitions
+  - `cycle_work_items` — Cycle-to-work-item junction
+  - `modules` — Module definitions
+  - `module_work_items` — Module-to-work-item junction
+  - `epics` — Epic definitions
+  - `initiatives` — Workspace-level initiative groupings
+  - `initiative_epics` — Initiative-to-epic junction
+  - `pages` — Rich text documents
+  - `page_versions` — Version history snapshots
+  - `intake_items` — Triage queue entries
+  - `intake_forms` — Public form configurations
+  - `time_entries` — Time logged per work item
+  - `notifications` — User notification records
+  - `notification_preferences` — Per-user notification settings
+  - `dashboards` — Custom dashboard definitions
+  - `dashboard_widgets` — Widget configurations per dashboard
+  - `views` — Saved view configurations (layout + filters + display)
+  - `estimate_systems` — Per-project estimate configurations
+  - `attachments` — File attachment metadata
+  - `external_links` — URL links on work items
+  - `webhooks` — Webhook endpoint configurations
+  - `webhook_events` — Webhook delivery log
+
+  ## Phased Implementation Strategy
+
+  Given the massive scope, implementation should be broken into phases:
+
+  ### Phase 1: Foundation (MVP)
+  - TypeSpec domain models for Project, WorkItem, WorkItemState, Label, Comment, Activity
+  - SQLite repositories and migrations for core entities
+  - Use cases for CRUD operations on projects and work items
+  - Web UI: List view with basic filtering and grouping
+  - Web UI: Work item detail page with properties panel
+  - CLI: Basic work item commands (create, list, update, close)
+
+  ### Phase 2: Views & Organization
+  - Board (Kanban) view with drag-and-drop
+  - Table (Spreadsheet) view with inline editing
+  - Calendar view
+  - Saved views with filters and display options
+  - Labels, priorities, assignees management
+  - Sub-work items (parent-child hierarchy)
+
+  ### Phase 3: Sprint & Module Management
+  - Cycle/Sprint entity with active/upcoming/completed lifecycle
+  - Module entity with state management
+  - Cycle and module analytics (burndown, progress charts)
+  - Transfer incomplete items between cycles
+  - Timeline (Gantt) view with dependency lines
+
+  ### Phase 4: Advanced Features
+  - Epics and Initiatives
+  - Work item types with custom properties
+  - Relations and dependencies (6 types)
+  - Pages/Wiki with rich text editor
+  - Real-time collaborative editing (Yjs)
+  - Time tracking and worklog reports
+
+  ### Phase 5: Intelligence & Integrations
+  - AI-powered triage and classification
+  - Duplicate detection
+  - Smart summaries and dashboard generation
+  - Enhanced GitHub integration (bidirectional sync)
+  - Slack integration
+  - Webhook system
+  - Notification center
+  - Import/Export tools
+
+  ### Phase 6: Team & Permissions
+  - Workspace and project role management
+  - Permission checks throughout use cases
+  - Teamspaces
+  - Guest access
+  - Audit logging
+
+  ## Size Estimate
+
+  **XL (multi-month)** — This is the largest feature set that could be added to Shep. It introduces
+  25+ new domain entities, 50+ use cases, 30+ database tables, 5 major view components, a rich text
+  editor, real-time collaboration, analytics dashboards, and integration systems. Even broken into
+  phases, the MVP alone (Phase 1) is an L-sized effort. The full feature set rivals an entire
+  standalone product (Plane itself is 500K+ lines of code across Python/Django backend and
+  Next.js/React frontend). The phased approach is essential — each phase delivers standalone value
+  while building toward the complete vision.
+
+  ---
+
+  _Generated by feature agent — analysis phase complete, proceed with research_
