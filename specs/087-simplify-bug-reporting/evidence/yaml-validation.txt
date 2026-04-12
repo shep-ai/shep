@@ -1,6 +1,9 @@
+=== YAML Validation Results ===
+Validated: 2026-04-12
+
 ✓ .github/ISSUE_TEMPLATE/bug-report.yml — valid YAML
 ✓ .github/ISSUE_TEMPLATE/config.yml — valid YAML
 ✓ .github/ISSUE_TEMPLATE/docs-improvement.yml — valid YAML
 ✓ .github/ISSUE_TEMPLATE/feature-request.yml — valid YAML
 
-All templates are valid YAML ✓
+All 4 templates are valid YAML ✓

@@ -1,500 +1,429 @@
-    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
-    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
-    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
-    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+=== Unit Test Results ===
+Run: 2026-04-12
+Command: pnpm test:unit
 
-stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > basic rendering > renders repository count as plural for multiple repos
-[DeploymentStatusProvider] ensureHydrated failed for "app-1" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
-    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
-    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
-    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
-    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
-    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
-    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
-    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
-
-stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > card width > uses fixed w-[26rem] class on the main card element
-[DeploymentStatusProvider] ensureHydrated failed for "app-1" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
-    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
-    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
-    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
-    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
-    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
-    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
-    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
-
-stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > click handling > calls onClick when card is clicked
-[DeploymentStatusProvider] ensureHydrated failed for "app-1" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
-    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
-    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
-    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
-    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
-    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
-    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
-    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
-
-stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > click handling > calls onClick when Enter key is pressed
-[DeploymentStatusProvider] ensureHydrated failed for "app-1" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
-    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
-    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
-    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
-    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
-    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
-    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
-    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
-
-stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > delete button > renders delete button when onDelete and id are provided
-[DeploymentStatusProvider] ensureHydrated failed for "app-abc" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
-    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
-    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
-    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
-    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
-    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
-    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
-    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
-
-stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > delete button > does not render delete button when onDelete is absent
-[DeploymentStatusProvider] ensureHydrated failed for "app-1" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
-    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
-    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
-    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
-    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
-    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
-    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
-    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
-
-stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > delete button > opens confirmation dialog when delete button is clicked
-[DeploymentStatusProvider] ensureHydrated failed for "app-abc" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
-    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
-    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
-    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
-    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
-    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
-    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
-    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
-
-stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > delete button > calls onDelete only after confirming in the dialog
-[DeploymentStatusProvider] ensureHydrated failed for "app-abc" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
-    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
-    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
-    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
-    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
-    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
-    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
-    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
-
-stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > delete button > does not call onDelete when cancel is clicked
-[DeploymentStatusProvider] ensureHydrated failed for "app-abc" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
-    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
-    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
-    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
-    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
-    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
-    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
-    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
-
-stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > delete button > delete button click does not trigger parent onClick
-[DeploymentStatusProvider] ensureHydrated failed for "app-abc" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
-    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
-    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
-    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
-    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
-    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
-    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
-    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
-
-stderr | tests/unit/presentation/web/components/common/application-node/application-node.test.tsx > ApplicationNode > handles > always renders handles for edge connections
-[DeploymentStatusProvider] ensureHydrated failed for "app-1" Error: DI container not available. Ensure the CLI bootstrap or dev-server has initialized it.
-    at resolve (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/lib/server-container.ts:30:11)
-    at getDeploymentStatus (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/app/actions/get-deployment-status.ts:8:19)
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:155:32
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/deployment-status-provider.tsx:161:7
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/src/presentation/web/hooks/use-deploy-action.ts:59:19
-    at Object.react_stack_bottom_frame (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
-    at runWithFiberInDEV (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
-    at commitHookEffectListMount (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
-    at commitHookPassiveMountEffects (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
-    at commitPassiveMountOnFiber (/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/react-dom@19.2.4_react@19.2.4/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
-
- ✓  web  tests/unit/presentation/web/components/common/application-node/application-node.test.tsx (16 tests) 570ms
- ✓  web  tests/unit/presentation/web/hooks/use-cli-upgrade.test.ts (10 tests) 435ms
- ✓  web  tests/unit/presentation/web/layouts/sidebar.test.tsx (5 tests) 250ms
- ✓  web  tests/unit/presentation/web/features/skills/skill-list.test.tsx (7 tests) 384ms
- ✓  web  tests/unit/presentation/web/components/features/settings/notification-settings-section.test.tsx (6 tests) 326ms
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
- ✓  web  tests/unit/presentation/web/components/common/theme-toggle/theme-toggle.test.tsx (7 tests) 426ms
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
- ✓  web  tests/unit/presentation/web/features/control-center/control-center.test.tsx (3 tests) 467ms
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
- ✓  web  tests/unit/presentation/web/features/control-center/use-control-center-state.test.tsx (36 tests) 283ms
- ✓  web  tests/unit/presentation/web/button.test.tsx (8 tests) 327ms
- ✓  web  tests/unit/presentation/web/common/feature-node/feature-sessions-dropdown.test.tsx (7 tests) 334ms
- ✓  web  tests/unit/presentation/web/hooks/use-npm-version-check.test.ts (6 tests) 305ms
- ✓  web  tests/unit/presentation/web/common/feature-list-item.test.tsx (5 tests) 237ms
- ✓  web  tests/unit/presentation/web/components/common/control-center-drawer/feature-drawer-client.test.tsx (2 tests) 329ms
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
- ✓  web  tests/unit/presentation/web/hooks/use-deployment-logs.test.ts (15 tests) 281ms
- ✓  web  tests/unit/presentation/web/components/common/deployment-status-badge/deployment-status-badge.test.tsx (13 tests) 359ms
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
- ✓  web  tests/unit/presentation/web/common/sidebar-nav-item.test.tsx (4 tests) 352ms
- ✓  web  tests/unit/presentation/web/features/skills/skill-card.test.tsx (16 tests) 294ms
- ✓  web  tests/unit/presentation/web/common/empty-state.test.tsx (9 tests) 237ms
- ✓  web  tests/unit/presentation/web/components/features/settings/feature-flags-settings-section.test.tsx (4 tests) 173ms
-Not implemented: navigation to another Document
- ✓  web  tests/unit/presentation/web/components/common/sidebar-nav-item/sidebar-nav-item.test.tsx (1 test) 237ms
- ✓  web  tests/unit/presentation/web/layouts/dashboard-layout.test.tsx (6 tests) 345ms
- ✓  web  tests/unit/presentation/web/layouts/header.test.tsx (5 tests) 241ms
- ✓  web  tests/unit/presentation/web/components/ui/sidebar-persistence.test.tsx (9 tests) 299ms
- ✓  web  tests/unit/presentation/web/components/common/attachment-card/attachment-card.test.tsx (3 tests) 227ms
- ✓  web  tests/unit/presentation/web/common/page-header.test.tsx (8 tests) 264ms
- ✓  web  tests/unit/presentation/web/common/repository-node/repository-node.test.tsx (7 tests) 204ms
- ✓  web  tests/unit/presentation/web/components/common/action-button/action-button-sound.test.tsx (2 tests) 199ms
- ✓  web  tests/unit/presentation/web/alert.test.tsx (4 tests) 230ms
- ✓  web  tests/unit/presentation/web/card.test.tsx (7 tests) 248ms
- ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/plan-tab.test.tsx (13 tests) 235ms
- ✓  web  tests/unit/presentation/web/input.test.tsx (7 tests) 259ms
- ✓  web  tests/unit/presentation/web/components/common/sidebar-collapse-toggle/sidebar-collapse-toggle.test.tsx (2 tests) 290ms
- ✓  web  tests/unit/presentation/web/components/common/feature-drawer/use-feature-actions.test.ts (24 tests) 97ms
- ✓  web  tests/unit/presentation/web/components/common/product-decisions-summary/product-decisions-summary.test.tsx (9 tests) 173ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/diff-view.test.tsx (13 tests) 227ms
- ✓  web  tests/unit/presentation/web/common/feature-status-badges.test.tsx (5 tests) 120ms
- ✓  web  tests/unit/presentation/web/hooks/use-graph-state.test.tsx (24 tests) 143ms
- ✓  web  tests/unit/presentation/web/features/control-center/control-center-empty-state.test.tsx (4 tests) 165ms
-stderr | tests/unit/presentation/web/lib/skills.test.ts > getSkills > skips skills with malformed frontmatter
-Skipping skill "bad-skill": invalid or missing frontmatter in SKILL.md
-
- ✓  web  tests/unit/presentation/web/lib/skills.test.ts (48 tests) 135ms
- ✓  web  tests/unit/presentation/web/api/directory-list.test.ts (16 tests) 71ms
- ✓  web  tests/unit/presentation/web/features/version-page-client.test.tsx (2 tests) 292ms
- ✓  web  tests/unit/presentation/web/components/common/inline-attachments/inline-attachments.test.tsx (13 tests) 109ms
- ✓  web  tests/unit/presentation/web/actions/open-folder.test.ts (12 tests) 8ms
- ✓  web  tests/unit/presentation/web/hooks/use-version.test.ts (4 tests) 103ms
- ✓  web  tests/unit/presentation/web/hooks/use-sound-action.test.ts (28 tests) 44ms
- ✓  web  tests/unit/presentation/web/lib/rtl-fonts.test.ts (7 tests) 31ms
- ✓  web  tests/unit/presentation/web/hooks/use-agent-events.test.ts (13 tests) 89ms
- ✓  web  tests/unit/presentation/web/i18n.test.tsx (7 tests) 51ms
- ✓  web  tests/unit/presentation/web/components/common/repository-node/use-repository-actions.test.ts (15 tests) 81ms
- ✓  web  tests/unit/presentation/web/api/tools-install.test.ts (4 tests) 63ms
- ✓  web  tests/unit/presentation/web/api/deployment-logs-sse.test.ts (10 tests) 64ms
- ✓  web  tests/unit/presentation/web/components/common/tech-decisions-review/tech-decisions-review-sound.test.tsx (2 tests) 105ms
- ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/use-tab-data-fetch.test.ts (16 tests) 171ms
- ✓  web  tests/unit/presentation/web/common/loading-skeleton.test.tsx (9 tests) 74ms
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
- ✓  web  tests/unit/presentation/web/app-layout-integration.test.tsx (4 tests) 112ms
- ✓  web  tests/unit/presentation/web/common/feature-status-group.test.tsx (3 tests) 121ms
- ✓  web  tests/unit/presentation/web/hooks/sidebar-features-context.test.tsx (11 tests) 53ms
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's play() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
-Not implemented: HTMLMediaElement's pause() method
- ✓  web  tests/unit/presentation/web/hooks/use-notifications.test.ts (9 tests) 72ms
- ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-tree-table.test.tsx (3 tests) 49ms
- ✓  web  tests/unit/presentation/web/components/features/settings/database-settings-section.test.tsx (4 tests) 89ms
- ✓  web  tests/unit/presentation/web/api/tools-install-stream.test.ts (4 tests) 63ms
- ✓  web  tests/unit/presentation/web/components/common/ci-status-badge/ci-status-badge.test.tsx (3 tests) 53ms
- ✓  web  tests/unit/presentation/web/common/elapsed-time.test.tsx (5 tests) 57ms
- ✓  web  tests/unit/presentation/web/hooks/use-drawer-sync.test.ts (11 tests) 89ms
- ✓  web  tests/unit/presentation/web/hooks/use-tool-install-stream.test.ts (6 tests) 98ms
- ✓  web  tests/unit/presentation/web/app/build-graph-nodes.test.ts (18 tests) 42ms
- ✓  web  tests/unit/presentation/web/hooks/use-deploy-action.test.tsx (7 tests) 129ms
- ✓  web  tests/unit/presentation/web/use-theme.test.tsx (6 tests) 64ms
- ✓  web  tests/unit/presentation/web/hooks/deployment-status-store.test.ts (9 tests) 6ms
- ✓  web  tests/unit/presentation/web/badge.test.tsx (3 tests) 98ms
-stderr | tests/unit/presentation/web/actions/deploy-repository.test.ts > deployRepository server action > returns {success:false, error} when the use case throws a validation error
-[deployRepository] error: repositoryPath must be an absolute path Error: repositoryPath must be an absolute path
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/tests/unit/presentation/web/actions/deploy-repository.test.ts:37:35
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
-    at new Promise (<anonymous>)
-    at runWithTimeout (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1209:10)
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:37
-    at Traces.$ (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
-    at trace (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
-    at runTest (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:12)
-
-stderr | tests/unit/presentation/web/actions/deploy-repository.test.ts > deployRepository server action > returns a generic error for non-Error throws
-[deployRepository] error: Failed to deploy repository boom
-
- ✓  web  tests/unit/presentation/web/actions/deploy-repository.test.ts (3 tests) 9ms
- ✓  web  tests/unit/presentation/web/hooks/use-viewport-persistence.test.ts (21 tests) 190ms
- ✓  web  tests/unit/presentation/web/actions/open-shell.test.ts (17 tests) 19ms
- ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/build-grouped-tree.test.ts (18 tests) 36ms
- ✓  web  tests/unit/presentation/web/common/sidebar-section-header.test.tsx (3 tests) 251ms
- ✓  web  tests/unit/presentation/web/smoke-imports.test.ts (5 tests) 52ms
- ✓  web  tests/unit/presentation/web/actions/update-feature-pinned-config.test.ts (7 tests) 9ms
- ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review-config.test.ts (11 tests) 13ms
- ✓  web  tests/unit/presentation/web/actions/features/create-feature.test.ts (21 tests) 68ms
- ✓  web  tests/unit/presentation/web/actions/merge-review/get-merge-review-data.test.ts (23 tests) 62ms
- ✓  web  tests/unit/presentation/web/actions/reject-feature.test.ts (12 tests) 7ms
- ✓  web  tests/unit/presentation/web/chat/tool-bubble-detect.test.ts (25 tests) 9ms
- ✓  web  tests/unit/presentation/web/actions/approve-feature.test.ts (7 tests) 6ms
-stderr | tests/unit/presentation/web/actions/deploy-feature.test.ts > deployFeature server action > returns {success:false, error} when the use case throws
-[deployFeature] error: Feature not found: nonexistent-id Error: Feature not found: nonexistent-id
-    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/tests/unit/presentation/web/actions/deploy-feature.test.ts:37:35
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
-    at new Promise (<anonymous>)
-    at runWithTimeout (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1209:10)
-    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:37
-    at Traces.$ (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
-    at trace (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
-    at runTest (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-simplify-bug-reporting/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:12)
-
-stderr | tests/unit/presentation/web/actions/deploy-feature.test.ts > deployFeature server action > returns a generic error for non-Error throws
-[deployFeature] error: Failed to deploy feature unexpected
-
- ✓  web  tests/unit/presentation/web/actions/deploy-feature.test.ts (3 tests) 13ms
- ✓  web  tests/unit/presentation/web/actions/get-viewer-permission.test.ts (8 tests) 8ms
- ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/build-tree-data.test.ts (8 tests) 21ms
- ✓  web  tests/unit/presentation/web/lib/feature-flags.test.ts (14 tests) 7ms
- ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts (24 tests) 100ms
- ✓  web  tests/unit/presentation/web/actions/update-settings.test.ts (6 tests) 6ms
- ✓  web  tests/unit/presentation/web/lib/parse-log-line.test.ts (25 tests) 6ms
- ✓  web  tests/unit/presentation/web/actions/get-supported-models.test.ts (6 tests) 7ms
- ✓  web  tests/unit/presentation/web/app/actions/get-feature-plan.test.ts (8 tests) 74ms
- ✓  web  tests/unit/presentation/web/lib/language.test.ts (11 tests) 7ms
- ✓  web  tests/unit/presentation/web/actions/get-feature-drawer-data.test.ts (7 tests) 6ms
- ✓  web  tests/unit/presentation/web/app/actions/list-github-organizations.test.ts (4 tests) 5ms
- ✓  web  tests/unit/presentation/web/actions/features/delete-feature.test.ts (8 tests) 7ms
- ✓  web  tests/unit/presentation/web/app/actions/get-feature-phase-timings.test.ts (8 tests) 7ms
- ✓  web  tests/unit/presentation/web/actions/get-workflow-defaults.test.ts (4 tests) 83ms
- ✓  web  tests/unit/presentation/web/lib/derive-graph.test.ts (15 tests) 63ms
- ✓  web  tests/unit/presentation/web/lib/format-duration.test.ts (9 tests) 3ms
- ✓  web  tests/unit/presentation/web/actions/get-deployment-logs.test.ts (5 tests) 6ms
- ✓  web  tests/unit/presentation/web/api/version.test.ts (4 tests) 9ms
- ✓  web  tests/unit/presentation/web/actions/stop-deployment.test.ts (4 tests) 6ms
- ✓  web  tests/unit/presentation/web/actions/open-ide.test.ts (9 tests) 6ms
- ✓  web  tests/unit/presentation/web/actions/get-deployment-status.test.ts (2 tests) 29ms
+=== Test File Results ===
+ ✓  node  tests/unit/infrastructure/services/agents/agent-registry.service.test.ts (8 tests) 292ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/codex-cli-executor.test.ts (49 tests) 340ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/gemini-cli-executor.test.ts (43 tests) 317ms
+ ✓  node  tests/unit/application/use-cases/upgrade/upgrade-cli.use-case.test.ts (16 tests) 785ms
+ ✓  node  tests/unit/infrastructure/services/filesystem/node-application-file-system.service.test.ts (21 tests) 181ms
+ ✓  node  tests/unit/domain/factories/spec-yaml-parser.test.ts (80 tests) 101ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/feature-agent-graph.test.ts (17 tests) 185ms
+ ✓  node  tests/unit/infrastructure/di/container-reject-token.test.ts (1 test) 1464ms
+ ✓  node  tests/unit/infrastructure/di/container-idempotency.test.ts (3 tests) 1496ms
+ ✓  node  tests/unit/infrastructure/di/container-session-registrations.test.ts (6 tests) 1558ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/cursor-executor.test.ts (39 tests) 229ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts (47 tests) 1276ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/fast-feature-agent-graph.test.ts (13 tests) 90ms
+ ✓  node  tests/unit/infrastructure/spec-yaml-backward-compatibility.test.ts (4 tests) 205ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts (79 tests) 27ms
+ ✓  node  tests/unit/commands/daemon/stop-daemon.test.ts (16 tests) 22ms
+ ✓  node  tests/unit/infrastructure/services/tool-installer/tool-installer.service.test.ts (19 tests) 182ms
+ ✓  node  tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts (31 tests) 108ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/copilot-cli-executor.test.ts (51 tests) 202ms
+ ✓  node  tests/unit/infrastructure/services/deployment/deployment.service.test.ts (33 tests) 39ms
+ ✓  node  tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts (42 tests) 96ms
+ ✓  node  tests/unit/infrastructure/services/daemon/daemon-pid.service.test.ts (11 tests) 25ms
+ ✓  node  tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts (55 tests) 80ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/new.command.test.ts (46 tests) 53ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/dev-executor.service.test.ts (21 tests) 30ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/claude-code-executor.test.ts (38 tests) 118ms
+ ✓  node  tests/unit/application/use-cases/features/delete-feature.use-case.test.ts (36 tests) 32ms
+ ✓  node  tests/unit/presentation/cli/commands/upgrade.command.test.ts (26 tests) 2287ms
+ ✓  node  tests/unit/domain/factories/spec-yaml-artifact-parsing.test.ts (4 tests) 156ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/analyze-repository-graph.test.ts (12 tests) 72ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge.node.test.ts (38 tests) 100ms
+ ✓  node  tests/unit/infrastructure/services/notifications/notification-watcher.service.test.ts (25 tests) 73ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge.node.ci-watch.test.ts (33 tests) 54ms
+ ✓  node  tests/unit/translations/translation-completeness.test.ts (139 tests) 103ms
+ ✓  node  tests/unit/infrastructure/services/deployment/deployment.service.logs.test.ts (18 tests) 30ms
+ ✓  node  tests/unit/presentation/cli/commands/repo/show.command.test.ts (9 tests) 49ms
+ ✓  node  tests/unit/translations/language-switching.test.ts (43 tests) 113ms
+ ✓  node  tests/unit/presentation/cli/commands/install.command.test.ts (27 tests) 54ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/del.command.test.ts (19 tests) 66ms
+ ✓  node  tests/unit/presentation/cli/commands/ide-open.command.test.ts (14 tests) 26ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/evidence.node.test.ts (38 tests) 83ms
+ ✓  node  tests/unit/commands/status.command.test.ts (12 tests) 82ms
+ ✓  node  tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts (12 tests) 20ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts (20 tests) 69ms
+ ✓  node  tests/unit/application/use-cases/features/auto-resolve-merged-branches.use-case.test.ts (15 tests) 89ms
+ ✓  node  tests/unit/commands/stop.command.test.ts (11 tests) 48ms
+ ✓  node  tests/unit/presentation/tui/wizards/agent-config.wizard.test.ts (4 tests) 12ms
+ ✓  node  tests/unit/electron/bootstrap.test.ts (13 tests) 16ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/nodes/fast-implement.node.test.ts (29 tests) 35ms
+ ✓  node  tests/unit/presentation/cli/commands/session/show.command.test.ts (16 tests) 121ms
+ ✓  node  tests/unit/infrastructure/services/agents/sessions/codex-cli-session.repository.test.ts (22 tests) 59ms
+ ✓  node  tests/unit/scripts/spec-validate.test.ts (16 tests) 68ms
+ ✓  node  tests/unit/commands/feat/adopt.command.test.ts (12 tests) 32ms
+ ✓  node  tests/unit/electron/main.test.ts (33 tests) 65ms
+ ✓  node  tests/unit/infrastructure/services/port.service.test.ts (9 tests) 68ms
+ ✓  node  tests/unit/presentation/tui/wizards/github-import.wizard.test.ts (19 tests) 29ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent-worker.test.ts (34 tests) 90ms
+ ✓  node  tests/unit/infrastructure/services/git/git-fork.service.test.ts (17 tests) 55ms
+ ✓  node  tests/unit/application/use-cases/repositories/import-github-repository.use-case.test.ts (27 tests) 19ms
+ ✓  node  tests/unit/application/use-cases/features/create-feature.use-case.test.ts (57 tests) 98ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/show.command.test.ts (11 tests) 48ms
+ ✓  node  tests/unit/presentation/cli/commands/settings/agent.command.test.ts (11 tests) 24ms
+ ✓  node  tests/unit/presentation/cli/commands/settings/init.command.test.ts (4 tests) 20ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts (41 tests) 16ms
+ ✓  node  tests/unit/presentation/cli/commands/settings/model.command.test.ts (10 tests) 17ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/ls.command.test.ts (25 tests) 45ms
+ ✓  node  tests/unit/presentation/tui/prompts/prd-review-summary.prompt.test.ts (5 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/features/create/create-feature-from-remote.use-case.test.ts (20 tests) 16ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts (18 tests) 55ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/evidence-output-parser.test.ts (65 tests) 29ms
+ ✓  node  tests/unit/infrastructure/services/git/worktree.service.test.ts (30 tests) 16ms
+ ✓  node  tests/unit/use-cases/features/create/metadata-generator.test.ts (24 tests) 35ms
+ ✓  node  tests/unit/domain/generated/spec-artifact-schema-mapping.test.ts (133 tests) 15ms
+ ✓  node  tests/unit/commands/_serve.command.test.ts (12 tests) 74ms
+ ✓  node  tests/unit/infrastructure/agents/feature-agent/node-helpers-yaml.test.ts (24 tests) 20ms
+ ✓  node  tests/unit/application/use-cases/repositories/list-repositories.use-case.test.ts (2 tests) 4ms
+ ✓  node  tests/unit/use-cases/features/adopt-branch.use-case.test.ts (21 tests) 108ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/start.command.test.ts (6 tests) 24ms
+ ✓  node  tests/unit/infrastructure/services/agents/streaming/event-channel.test.ts (8 tests) 39ms
+ ✓  node  tests/unit/presentation/cli/commands/repo/add.command.test.ts (17 tests) 35ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/review.command.test.ts (7 tests) 30ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts (13 tests) 16ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts (20 tests) 43ms
+ ✓  node  tests/unit/application/use-cases/tools/validate-tool-availability.use-case.test.ts (5 tests) 10ms
+ ✓  node  tests/unit/presentation/cli/commands/session/ls.command.test.ts (14 tests) 87ms
+ ✓  node  tests/unit/presentation/cli/commands/ui.command.test.ts (14 tests) 27ms
+ ✓  node  tests/unit/infrastructure/services/skill-injector.service.test.ts (21 tests) 24ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/approve.command.test.ts (4 tests) 19ms
+ ✓  node  tests/unit/application/ports/agent-runtime.interface.test.ts (11 tests) 9ms
+ ✓  node  tests/unit/infrastructure/services/external/github-repository.service.test.ts (32 tests) 21ms
+ ✓  node  tests/unit/scripts/spec-generate-md.test.ts (12 tests) 24ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/resolve-waiting-feature.test.ts (9 tests) 15ms
+ ✓  node  tests/unit/application/use-cases/features/auto-archive-completed.use-case.test.ts (9 tests) 46ms
+ ✓  node  tests/unit/infrastructure/services/agents/agent-runner.service.test.ts (23 tests) 36ms
+ ✓  node  tests/unit/infrastructure/services/agents/heartbeat.test.ts (3 tests) 29ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/claude-code-interactive-executor.test.ts (11 tests) 11ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts (81 tests) 21ms
+ ✓  node  tests/unit/infrastructure/services/agents/conflict-resolution/conflict-resolution.service.test.ts (12 tests) 69ms
+ ✓  node  tests/unit/application/use-cases/features/resume-feature.use-case.test.ts (19 tests) 70ms
+ ✓  node  tests/unit/infrastructure/services/agents/agent-executor-factory.test.ts (26 tests) 16ms
+ ✓  node  tests/unit/commands/daemon/start-daemon.test.ts (18 tests) 6575ms
+ ✓  node  tests/unit/presentation/cli/i18n.test.ts (8 tests) 13ms
+ ✓  node  tests/unit/infrastructure/services/attachment-storage.service.test.ts (11 tests) 34ms
+ ✓  node  tests/unit/presentation/cli/commands/restart.command.test.ts (14 tests) 69ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts (59 tests) 142ms
+ ✓  node  tests/unit/application/use-cases/agents/get-agent-session.use-case.test.ts (8 tests) 103ms
+ ✓  node  tests/unit/infrastructure/services/ide-launchers/json-driven-ide-launcher.service.test.ts (22 tests) 43ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts (17 tests) 13ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/feature.mapper.test.ts (26 tests) 10ms
+ ✓  node  tests/unit/domain/factories/settings-defaults.factory.test.ts (36 tests) 17ms
+ ✓  node  tests/unit/presentation/cli/commands/log-viewer.test.ts (5 tests) 32ms
+ ✓  node  tests/unit/infrastructure/services/shep-instance.service.test.ts (7 tests) 49ms
+ ✓  node  tests/unit/application/use-cases/repositories/init-remote-repository.use-case.test.ts (14 tests) 46ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/archive.command.test.ts (8 tests) 19ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/logs.command.test.ts (6 tests) 13ms
+ ✓  node  tests/unit/electron/update-checker.test.ts (8 tests) 15ms
+ ✓  node  tests/unit/application/use-cases/applications/create-application.use-case.test.ts (13 tests) 15ms
+ ✓  node  tests/unit/infrastructure/services/file-dialog.service.test.ts (21 tests) 15ms
+ ✓  node  tests/unit/infrastructure/services/auto-archive/auto-archive-watcher.service.test.ts (12 tests) 11ms
+ ✓  node  tests/unit/commands/index.integration.test.ts (12 tests) 31ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent-process.service.test.ts (18 tests) 40ms
+ ✓  node  tests/unit/application/use-cases/agents/configure-agent.use-case.test.ts (11 tests) 13ms
+ ✓  node  tests/unit/application/use-cases/repositories/delete-repository.use-case.test.ts (10 tests) 13ms
+ ✓  node  tests/unit/application/use-cases/agents/reject-agent-run.use-case.test.ts (10 tests) 10ms
+ ✓  node  tests/unit/presentation/cli/commands/settings/ide.command.test.ts (10 tests) 52ms
+ ✓  node  tests/unit/use-cases/features/branch-name-utils.test.ts (33 tests) 5ms
+ ✓  node  tests/unit/electron/adapters/electron-desktop-notifier.test.ts (8 tests) 43ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/validate.node.test.ts (8 tests) 27ms
+ ✓  node  tests/unit/application/use-cases/agents/list-agent-sessions.use-case.test.ts (9 tests) 9ms
+ ✓  node  tests/unit/presentation/cli/commands/settings/show.command.test.ts (6 tests) 14ms
+ ✓  node  tests/unit/infrastructure/services/agents/structured-agent-caller.service.test.ts (15 tests) 52ms
+ ✓  node  tests/unit/infrastructure/services/folder-dialog.service.test.ts (20 tests) 14ms
+ ✓  node  tests/unit/presentation/tui/wizards/prd-review.wizard.test.ts (5 tests) 23ms
+ ✓  node  tests/unit/electron/resolve-web-dir.test.ts (8 tests) 9ms
+ ✓  node  tests/unit/electron/tray.test.ts (17 tests) 10ms
+ ✓  node  tests/unit/presentation/tui/i18n.test.ts (6 tests) 42ms
+ ✓  node  tests/unit/application/use-cases/agents/run-agent.use-case.test.ts (9 tests) 33ms
+ ✓  node  tests/unit/presentation/cli/commands/run.command.test.ts (10 tests) 41ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts (25 tests) 19ms
+ ✓  node  tests/unit/presentation/cli/ui/output.test.ts (11 tests) 22ms
+ ✓  node  tests/unit/application/use-cases/features/update-feature-pinned-config.use-case.test.ts (11 tests) 53ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/reject.command.test.ts (6 tests) 23ms
+ ✓  node  tests/unit/application/use-cases/deployments/start-repository-deployment.use-case.test.ts (4 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/deployments/start-feature-deployment.use-case.test.ts (6 tests) 9ms
+ ✓  node  tests/unit/application/use-cases/agents/approve-agent-run.use-case.test.ts (10 tests) 26ms
+ ✓  node  tests/unit/infrastructure/services/agents/lifecycle-context.test.ts (10 tests) 8ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts (20 tests) 12ms
+ ✓  node  tests/unit/infrastructure/services/notifications/notification.service.test.ts (7 tests) 9ms
+ ✓  node  tests/unit/electron/ipc/channels.test.ts (9 tests) 63ms
+ ✓  node  tests/unit/electron/adapters/electron-browser-opener.test.ts (9 tests) 7ms
+ ✓  node  tests/unit/presentation/cli/commands/repo/ls.command.test.ts (8 tests) 50ms
+ ✓  node  tests/unit/commands/start.command.test.ts (9 tests) 70ms
+ ✓  node  tests/unit/infrastructure/services/notifications/desktop-notifier.test.ts (9 tests) 34ms
+ ✓  node  tests/unit/presentation/tui/wizards/onboarding/onboarding.wizard.test.ts (7 tests) 30ms
+ ✓  node  tests/unit/infrastructure/services/agents/agent-validator.service.test.ts (14 tests) 20ms
+ ✓  node  tests/unit/application/use-cases/agents/show-agent-run.use-case.test.ts (8 tests) 20ms
+ ✓  node  tests/unit/infrastructure/services/browser-opener.service.test.ts (13 tests) 9ms
+ ✓  node  tests/unit/electron/preload.test.ts (8 tests) 9ms
+ ✓  node  tests/unit/application/use-cases/applications/application-files.use-cases.test.ts (11 tests) 41ms
+ ✓  node  tests/unit/infrastructure/services/git/worktree.service.add-existing.test.ts (8 tests) 9ms
+ ✓  node  tests/unit/application/use-cases/agents/reject-agent-run-iteration.test.ts (11 tests) 26ms
+ ✓  node  tests/unit/application/use-cases/ide/launch-ide.use-case.test.ts (8 tests) 6ms
+ ✓  node  tests/unit/infrastructure/services/agents/application-creation/application-creation-prompt.builder.test.ts (15 tests) 7ms
+ ✓  node  tests/unit/application/use-cases/features/poll-upstream-pr.use-case.test.ts (8 tests) 9ms
+ ✓  node  tests/unit/infrastructure/services/tool-installer/tool-metadata.test.ts (9 tests) 8ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/unarchive.command.test.ts (5 tests) 33ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/write-spec-file-atomic.test.ts (4 tests) 5ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/application.mapper.test.ts (24 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/agents/review-feature.use-case.test.ts (8 tests) 14ms
+ ✓  node  tests/unit/infrastructure/services/agents/agent-executor-provider.test.ts (5 tests) 14ms
+ ✓  node  tests/unit/infrastructure/services/web-server.service.test.ts (12 tests) 34ms
+ ✓  node  tests/unit/application/use-cases/repositories/sync-repository-main.use-case.test.ts (4 tests) 11ms
+ ✓  node  tests/unit/infrastructure/services/external/github-repository.service.getViewerPermission.test.ts (9 tests) 16ms
+ ✓  node  tests/unit/use-cases/features/create/slug-resolver.test.ts (8 tests) 10ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts (17 tests) 6ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/requirements-prompt.test.ts (8 tests) 9ms
+ ✓  node  tests/unit/infrastructure/services/agents/phase-timing-context.test.ts (20 tests) 12ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/repair.node.test.ts (7 tests) 8ms
+ ✓  node  tests/unit/electron/port-conflict.test.ts (5 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/agents/approve-agent-run-payload.test.ts (5 tests) 10ms
+ ✓  node  tests/unit/application/use-cases/update-settings.use-case.test.ts (12 tests) 12ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts (36 tests) 18ms
+ ✓  node  tests/unit/infrastructure/services/notifications/notification-bus.test.ts (6 tests) 11ms
+ ✓  node  tests/unit/application/use-cases/projects/create-project.use-case.test.ts (13 tests) 8ms
+ ✓  node  tests/unit/presentation/tui/prompts/agent-select.prompt.test.ts (4 tests) 7ms
+ ✓  node  tests/unit/application/use-cases/load-settings.use-case.test.ts (6 tests) 10ms
+ ✓  node  tests/unit/application/ports/agent-executor.interface.test.ts (11 tests) 8ms
+ ✓  node  tests/unit/infrastructure/services/external/github-issue.service.test.ts (6 tests) 9ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts (24 tests) 5ms
+ ✓  node  tests/unit/application/use-cases/agents/delete-agent-run.use-case.test.ts (5 tests) 10ms
+ ✓  node  tests/unit/application/use-cases/repositories/add-repository.use-case.test.ts (8 tests) 14ms
+ ✓  node  tests/unit/application/use-cases/features/unarchive-feature.use-case.test.ts (11 tests) 19ms
+ ✓  node  tests/unit/domain/prd-approval-types.test.ts (8 tests) 5ms
+ ✓  node  tests/unit/application/use-cases/features/list-features.use-case.test.ts (5 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/settings/complete-onboarding.use-case.test.ts (6 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/agents/stop-agent-run.use-case.test.ts (5 tests) 19ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.getFailureLogs.test.ts (5 tests) 7ms
+ ✓  node  tests/unit/electron/app-wiring.test.ts (5 tests) 7ms
+ ✓  node  tests/unit/application/services/agents/agent-session-repository.registry.test.ts (4 tests) 6ms
+ ✓  node  tests/unit/presentation/cli/commands/repo/resolve-repository.test.ts (6 tests) 9ms
+ ✓  node  tests/unit/application/use-cases/deployments/stop-deployment.use-case.test.ts (3 tests) 6ms
+ ✓  node  tests/unit/domain/generated/language-enum.test.ts (11 tests) 9ms
+ ✓  node  tests/unit/infrastructure/services/interactive/feature-context.builder.test.ts (10 tests) 7ms
+ ✓  node  tests/unit/application/use-cases/initialize-settings.use-case.test.ts (8 tests) 6ms
+ ✓  node  tests/unit/application/use-cases/features/update/update-feature-lifecycle.use-case.test.ts (4 tests) 11ms
+ ✓  node  tests/unit/infrastructure/services/agents/streaming/streaming-executor-proxy.test.ts (8 tests) 13ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts (18 tests) 11ms
+ ✓  node  tests/unit/infrastructure/services/deployment/parse-port.test.ts (13 tests) 5ms
+ ✓  node  tests/unit/infrastructure/services/shep-directory.service.test.ts (2 tests) 3ms
+ ✓  node  tests/unit/translations/translation-files.test.ts (16 tests) 13ms
+ ✓  node  tests/unit/presentation/tui/wizards/onboarding/steps/workflow-defaults.step.test.ts (5 tests) 10ms
+ ✓  node  tests/unit/infrastructure/services/settings-service-update.test.ts (4 tests) 6ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts (20 tests) 13ms
+ ✓  node  tests/unit/infrastructure/services/external/jira-ticket.service.test.ts (7 tests) 13ms
+ ✓  node  tests/unit/application/ports/output/services/github-repository-service.interface.test.ts (26 tests) 8ms
+ ✓  node  tests/unit/presentation/cli/commands/session/index.command.test.ts (5 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/agents/list-agent-runs.use-case.test.ts (4 tests) 11ms
+ ✓  node  tests/unit/application/use-cases/features/show-feature.use-case.test.ts (6 tests) 15ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/plan.schema.test.ts (9 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/deployments/list-deployments.use-case.test.ts (2 tests) 7ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts (19 tests) 7ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/validation.test.ts (10 tests) 6ms
+ ✓  node  tests/unit/infrastructure/services/agents/sessions/stub-session.repository.test.ts (6 tests) 4ms
+ ✓  node  tests/unit/application/use-cases/agents/check-agent-auth.use-case.test.ts (7 tests) 12ms
+ ✓  node  tests/unit/application/use-cases/tools/install-tool.use-case.test.ts (6 tests) 9ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/commit-specs-flag.test.ts (8 tests) 8ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-session.mapper.test.ts (8 tests) 3ms
+ ✓  node  tests/unit/application/use-cases/features/get-branch-sync-status.use-case.test.ts (6 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/repositories/list-github-repositories.use-case.test.ts (6 tests) 13ms
+ ✓  node  tests/unit/infrastructure/services/deployment/log-ring-buffer.test.ts (15 tests) 8ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts (8 tests) 4ms
+ ✓  node  tests/unit/application/use-cases/deployments/get-deployment-status.use-case.test.ts (3 tests) 6ms
+ ✓  node  tests/unit/infrastructure/services/cross-platform-deps.test.ts (3 tests) 5ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/show-phase-timing-rejections.test.ts (6 tests) 8ms
+ ✓  node  tests/unit/application/ports/output/services/git-pr-service.interface.test.ts (26 tests) 9ms
+ ✓  node  tests/unit/domain/generated/skill-injection-types.test.ts (8 tests) 6ms
+ ✓  node  tests/unit/application/ports/output/services/ide-launcher-service.interface.test.ts (7 tests) 4ms
+ ✓  node  tests/unit/application/use-cases/agents/validate-agent-auth.use-case.test.ts (5 tests) 8ms
+ ✓  node  tests/unit/infrastructure/services/agents/conflict-resolution/conflict-resolution.prompt.test.ts (10 tests) 4ms
+ ✓  node  tests/unit/presentation/cli/ui/tables.test.ts (8 tests) 4ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-message.mapper.test.ts (7 tests) 5ms
+ ✓  node  tests/unit/application/use-cases/tools/list-tools.use-case.test.ts (4 tests) 9ms
+ ✓  node  tests/unit/application/use-cases/terminal/create-terminal-session.use-case.test.ts (3 tests) 7ms
+ ✓  node  tests/unit/presentation/tui/prompts/prd-review-question.prompt.test.ts (7 tests) 7ms
+ ✓  node  tests/unit/application/use-cases/repositories/list-github-organizations.use-case.test.ts (4 tests) 8ms
+ ✓  node  tests/unit/domain/factories/settings-defaults-onboarding.test.ts (3 tests) 6ms
+ ✓  node  tests/unit/infrastructure/services/ide-launchers/compute-worktree-path.test.ts (6 tests) 9ms
+ ✓  node  tests/unit/infrastructure/services/git/get-branch-sync-status.test.ts (4 tests) 30ms
+ ✓  node  tests/unit/application/use-cases/tools/launch-tool.use-case.test.ts (4 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/settings/check-onboarding-status.use-case.test.ts (2 tests) 4ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts (10 tests) 6ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/research.schema.test.ts (5 tests) 6ms
+ ✓  node  tests/unit/domain/errors/session-not-found.error.test.ts (4 tests) 4ms
+ ✓  node  tests/unit/application/ports/external-issue-fetcher.interface.test.ts (4 tests) 5ms
+ ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts (8 tests) 4ms
+ ✓  node  tests/unit/domain/lifecycle-gates.test.ts (3 tests) 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts (17 tests) 4ms
+ ✓  node  tests/unit/domain/generated/agent-type-copilot-cli.test.ts (2 tests) 3ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge.prompt.test.ts (6 tests) 5ms
+ ✓  node  tests/unit/domain/generated/agent-type-codex-cli.test.ts (2 tests) 3ms
+ ✓  web  tests/unit/presentation/web/common/feature-node/feature-node.test.tsx (51 tests) 1699ms
+ ✓  web  tests/unit/presentation/web/components/common/reject-feedback-dialog/reject-feedback-dialog.test.tsx (17 tests) 2944ms
+ ✓  web  tests/unit/presentation/web/components/common/repository-node/repository-node.test.tsx (44 tests) 3673ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/settings-page-client.test.tsx (8 tests) 3579ms
+ ✓  web  tests/unit/presentation/web/components/common/add-repository-button/add-repository-button.test.tsx (15 tests) 3776ms
+ ✓  web  tests/unit/presentation/web/features/skills/skills-page-client.test.tsx (15 tests) 3532ms
+ ✓  web  tests/unit/presentation/web/components/common/delete-feature-dialog/delete-feature-dialog.test.tsx (31 tests) 4046ms
+ ✓  web  tests/unit/presentation/web/features/control-center/welcome-agent-setup.test.tsx (6 tests) 1490ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx (33 tests) 4942ms
+ ✓  web  tests/unit/presentation/web/features/application-page/use-ide-state.test.ts (11 tests) 1109ms
+ ✓  web  tests/unit/presentation/web/components/common/github-import-dialog/github-url-input.test.tsx (10 tests) 1448ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/workflow-settings-section.test.tsx (15 tests) 1741ms
+ ✓  web  tests/unit/presentation/web/components/common/prd-questionnaire/prd-questionnaire.test.tsx (25 tests) 3170ms
+ ✓  web  tests/unit/presentation/web/layouts/app-sidebar.test.tsx (10 tests) 1915ms
+ ✓  web  tests/unit/presentation/web/features/features-canvas/features-canvas.test.tsx (20 tests) 2128ms
+ ✓  web  tests/unit/presentation/web/features/skills/skill-detail-drawer.test.tsx (16 tests) 2344ms
+ ✓  web  tests/unit/presentation/web/components/common/github-import-dialog/github-repo-browser.test.tsx (12 tests) 1864ms
+ ✓  web  tests/unit/presentation/web/components/features/tools/tool-detail-drawer.test.tsx (11 tests) 1496ms
+ ✓  web  tests/unit/presentation/web/components/common/base-drawer/base-drawer.test.tsx (21 tests) 1032ms
+ ✓  web  tests/unit/presentation/web/components/common/drawer-action-bar/drawer-action-bar.test.tsx (6 tests) 938ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx (38 tests) 1367ms
+ ✓  web  tests/unit/presentation/web/components/common/github-import-dialog/github-import-dialog.test.tsx (6 tests) 1098ms
+ ✓  web  tests/unit/presentation/web/components/common/tech-decisions-review/tech-decisions-review.test.tsx (13 tests) 1103ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/AgentModelPicker.test.tsx (4 tests) 841ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/overview-tab.test.tsx (45 tests) 979ms
+ ✓  web  tests/unit/presentation/web/components/common/application-node/application-node.test.tsx (16 tests) 881ms
+ ✓  web  tests/unit/presentation/web/common/version-badge.test.tsx (8 tests) 748ms
+ ✓  web  tests/unit/presentation/web/components/common/open-action-menu/open-action-menu.test.tsx (9 tests) 814ms
+ ✓  web  tests/unit/presentation/web/components/common/task-progress-view/task-progress-view.test.tsx (16 tests) 717ms
+ ✓  web  tests/unit/presentation/web/components/ui/radix-rtl.test.tsx (8 tests) 793ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/activity-tab.test.tsx (35 tests) 687ms
+ ✓  web  tests/unit/presentation/web/components/common/prd-questionnaire/prd-questionnaire-sound.test.tsx (4 tests) 897ms
+ ✓  web  tests/unit/presentation/web/features/control-center/control-center.test.tsx (3 tests) 897ms
+ ✓  web  tests/unit/presentation/web/components/features/control-center/control-center-integration.test.tsx (15 tests) 1014ms
+ ✓  web  tests/unit/presentation/web/hooks/use-cli-upgrade.test.ts (10 tests) 612ms
+ ✓  web  tests/unit/presentation/web/components/common/server-log-viewer/server-log-viewer.test.tsx (12 tests) 1874ms
+ ✓  web  tests/unit/presentation/web/common/floating-action-button.test.tsx (10 tests) 1667ms
+ ✓  web  tests/unit/presentation/web/common/repo-group.test.tsx (11 tests) 1098ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/agent-settings-section.test.tsx (7 tests) 1199ms
+ ✓  web  tests/unit/presentation/web/layouts/app-shell.test.tsx (9 tests) 1020ms
+ ✓  web  tests/unit/presentation/web/components/common/theme-toggle/theme-toggle.test.tsx (7 tests) 645ms
+ ✓  web  tests/unit/presentation/web/features/skills/category-filter.test.tsx (10 tests) 688ms
+ ✓  web  tests/unit/presentation/web/features/skills/skill-list.test.tsx (7 tests) 580ms
+ ✓  web  tests/unit/presentation/web/components/common/action-button/action-button.test.tsx (14 tests) 649ms
+ ✓  web  tests/unit/presentation/web/components/common/deployment-status-badge/deployment-status-badge.test.tsx (13 tests) 625ms
+ ✓  web  tests/unit/presentation/web/layouts/dashboard-layout.test.tsx (6 tests) 533ms
+ ✓  web  tests/unit/presentation/web/common/sidebar-nav-item.test.tsx (4 tests) 550ms
+ ✓  web  tests/unit/presentation/web/common/feature-node/feature-sessions-dropdown.test.tsx (7 tests) 798ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/environment-settings-section.test.tsx (7 tests) 979ms
+ ✓  web  tests/unit/presentation/web/components/common/control-center-drawer/feature-drawer-client.test.tsx (2 tests) 690ms
+ ✓  web  tests/unit/presentation/web/button.test.tsx (8 tests) 735ms
+ ✓  web  tests/unit/presentation/web/hooks/use-npm-version-check.test.ts (6 tests) 318ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/branch-sync-status.test.tsx (12 tests) 714ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/notification-settings-section.test.tsx (6 tests) 601ms
+ ✓  web  tests/unit/presentation/web/components/ui/sidebar-persistence.test.tsx (9 tests) 567ms
+ ✓  web  tests/unit/presentation/web/features/skills/skill-card.test.tsx (16 tests) 553ms
+ ✓  web  tests/unit/presentation/web/features/version-page-client.test.tsx (2 tests) 557ms
+ ✓  web  tests/unit/presentation/web/hooks/use-deployment-logs.test.ts (15 tests) 278ms
+ ✓  web  tests/unit/presentation/web/components/common/sidebar-collapse-toggle/sidebar-collapse-toggle.test.tsx (2 tests) 528ms
+ ✓  web  tests/unit/presentation/web/features/control-center/use-control-center-state.test.tsx (36 tests) 523ms
+ ✓  web  tests/unit/presentation/web/common/page-header.test.tsx (8 tests) 663ms
+ ✓  web  tests/unit/presentation/web/input.test.tsx (7 tests) 631ms
+ ✓  web  tests/unit/presentation/web/common/sidebar-section-header.test.tsx (3 tests) 148ms
+ ✓  web  tests/unit/presentation/web/card.test.tsx (7 tests) 578ms
+ ✓  web  tests/unit/presentation/web/layouts/sidebar.test.tsx (5 tests) 693ms
+ ✓  web  tests/unit/presentation/web/layouts/header.test.tsx (5 tests) 582ms
+ ✓  web  tests/unit/presentation/web/components/common/sidebar-nav-item/sidebar-nav-item.test.tsx (1 test) 414ms
+ ✓  web  tests/unit/presentation/web/common/empty-state.test.tsx (9 tests) 456ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/plan-tab.test.tsx (13 tests) 229ms
+ ✓  web  tests/unit/presentation/web/alert.test.tsx (4 tests) 424ms
+ ✓  web  tests/unit/presentation/web/common/feature-list-item.test.tsx (5 tests) 582ms
+ ✓  web  tests/unit/presentation/web/hooks/use-viewport-persistence.test.ts (21 tests) 105ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/diff-view.test.tsx (13 tests) 286ms
+ ✓  web  tests/unit/presentation/web/components/common/attachment-card/attachment-card.test.tsx (3 tests) 356ms
+ ✓  web  tests/unit/presentation/web/components/common/product-decisions-summary/product-decisions-summary.test.tsx (9 tests) 181ms
+ ✓  web  tests/unit/presentation/web/common/repository-node/repository-node.test.tsx (7 tests) 339ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/use-tab-data-fetch.test.ts (16 tests) 306ms
+ ✓  web  tests/unit/presentation/web/components/common/action-button/action-button-sound.test.tsx (2 tests) 654ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/feature-flags-settings-section.test.tsx (4 tests) 363ms
+ ✓  web  tests/unit/presentation/web/hooks/use-graph-state.test.tsx (24 tests) 362ms
+ ✓  web  tests/unit/presentation/web/lib/skills.test.ts (48 tests) 257ms
+ ✓  web  tests/unit/presentation/web/hooks/use-deploy-action.test.tsx (7 tests) 154ms
+ ✓  web  tests/unit/presentation/web/features/control-center/control-center-empty-state.test.tsx (4 tests) 432ms
+ ✓  web  tests/unit/presentation/web/common/feature-status-group.test.tsx (3 tests) 132ms
+ ✓  web  tests/unit/presentation/web/app-layout-integration.test.tsx (4 tests) 167ms
+ ✓  web  tests/unit/presentation/web/common/feature-status-badges.test.tsx (5 tests) 289ms
+ ✓  web  tests/unit/presentation/web/components/common/inline-attachments/inline-attachments.test.tsx (13 tests) 263ms
+ ✓  web  tests/unit/presentation/web/hooks/use-version.test.ts (4 tests) 99ms
+ ✓  web  tests/unit/presentation/web/hooks/use-tool-install-stream.test.ts (6 tests) 89ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts (24 tests) 9ms
+ ✓  web  tests/unit/presentation/web/components/common/tech-decisions-review/tech-decisions-review-sound.test.tsx (2 tests) 276ms
+ ✓  web  tests/unit/presentation/web/actions/get-workflow-defaults.test.ts (4 tests) 4ms
+ ✓  web  tests/unit/presentation/web/badge.test.tsx (3 tests) 156ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer/use-feature-actions.test.ts (24 tests) 211ms
+ ✓  web  tests/unit/presentation/web/hooks/use-drawer-sync.test.ts (11 tests) 131ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/database-settings-section.test.tsx (4 tests) 245ms
+ ✓  web  tests/unit/presentation/web/hooks/use-agent-events.test.ts (13 tests) 223ms
+ ✓  web  tests/unit/presentation/web/api/directory-list.test.ts (16 tests) 207ms
+ ✓  web  tests/unit/presentation/web/app/actions/get-feature-plan.test.ts (8 tests) 6ms
+ ✓  web  tests/unit/presentation/web/components/common/repository-node/use-repository-actions.test.ts (15 tests) 147ms
+ ✓  web  tests/unit/presentation/web/api/deployment-logs-sse.test.ts (10 tests) 214ms
+ ✓  web  tests/unit/presentation/web/api/tools-install.test.ts (4 tests) 142ms
+ ✓  web  tests/unit/presentation/web/hooks/use-notifications.test.ts (9 tests) 129ms
+ ✓  web  tests/unit/presentation/web/common/loading-skeleton.test.tsx (9 tests) 99ms
+ ✓  web  tests/unit/presentation/web/api/tools-install-stream.test.ts (4 tests) 77ms
+ ✓  web  tests/unit/presentation/web/actions/features/create-feature.test.ts (21 tests) 13ms
+ ✓  web  tests/unit/presentation/web/use-theme.test.tsx (6 tests) 79ms
+ ✓  web  tests/unit/presentation/web/lib/derive-graph.test.ts (15 tests) 28ms
+ ✓  web  tests/unit/presentation/web/actions/merge-review/get-merge-review-data.test.ts (23 tests) 18ms
+ ✓  web  tests/unit/presentation/web/common/elapsed-time.test.tsx (5 tests) 137ms
+ ✓  web  tests/unit/presentation/web/common/feature-node/derive-feature-state.test.ts (47 tests) 10ms
+ ✓  web  tests/unit/presentation/web/hooks/sidebar-features-context.test.tsx (11 tests) 61ms
+ ✓  web  tests/unit/presentation/web/components/common/ci-status-badge/ci-status-badge.test.tsx (3 tests) 90ms
+ ✓  web  tests/unit/presentation/web/smoke-imports.test.ts (5 tests) 28ms
+ ✓  web  tests/unit/presentation/web/i18n.test.tsx (7 tests) 48ms
+ ✓  web  tests/unit/presentation/web/actions/get-deployment-status.test.ts (2 tests) 4ms
+ ✓  web  tests/unit/presentation/web/hooks/use-sound-action.test.ts (28 tests) 81ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-tree-table.test.tsx (3 tests) 74ms
+ ✓  web  tests/unit/presentation/web/actions/open-shell.test.ts (17 tests) 16ms
+ ✓  web  tests/unit/presentation/web/app/build-graph-nodes.test.ts (18 tests) 69ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/build-grouped-tree.test.ts (18 tests) 42ms
+ ✓  web  tests/unit/presentation/web/lib/rtl-fonts.test.ts (7 tests) 81ms
+ ✓  web  tests/unit/presentation/web/features/control-center/derive-state.test.ts (6 tests) 5ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/build-tree-data.test.ts (8 tests) 9ms
+ ✓  web  tests/unit/presentation/web/actions/deploy-feature.test.ts (3 tests) 27ms
+ ✓  web  tests/unit/presentation/web/actions/deploy-repository.test.ts (3 tests) 10ms
+ ✓  web  tests/unit/presentation/web/api/version.test.ts (4 tests) 8ms
+ ✓  web  tests/unit/presentation/web/actions/open-folder.test.ts (12 tests) 7ms
+ ✓  web  tests/unit/presentation/web/actions/update-feature-pinned-config.test.ts (7 tests) 10ms
+ ✓  web  tests/unit/presentation/web/actions/get-viewer-permission.test.ts (8 tests) 4ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review-config.test.ts (11 tests) 6ms
+ ✓  web  tests/unit/presentation/web/chat/tool-bubble-detect.test.ts (25 tests) 8ms
  ✓  web  tests/unit/presentation/web/actions/pick-files.test.ts (4 tests) 9ms
- ✓  web  tests/unit/presentation/web/components/common/feature-create-drawer/feature-create-drawer.test.tsx (91 tests) 31455ms
-       ✓ accepts text in the description field  640ms
-       ✓ enables submit button when description has content  415ms
-       ✓ disables submit button when description is only whitespace  301ms
-       ✓ calls onSubmit with payload containing description (no name field)  529ms
-       ✓ includes attachments array with file objects  523ms
-       ✓ sends approvalGates with only PRD checked  518ms
-       ✓ sends all-true approvalGates when all checkboxes are checked  895ms
-       ✓ sends all-false approvalGates when no checkboxes are checked  560ms
-       ✓ submits correct approvalGates after All toggle  627ms
-       ✓ clears all form fields after submit without unmounting  1216ms
-       ✓ clears form data on submit so next open starts fresh  566ms
-       ✓ removes attachment when remove button is clicked  353ms
-       ✓ plays create sound on form submit  538ms
-       ✓ submitting with fast mode on includes fast=true in payload  543ms
-       ✓ submitting with fast mode off includes fast=false in payload  415ms
-       ✓ fast mode resets to default after submit  734ms
-       ✓ submits the form when Ctrl+Enter is pressed in the textarea  327ms
-       ✓ submits the form when Meta+Enter is pressed in the textarea  552ms
-       ✓ does not submit on plain Enter (without modifier)  427ms
-       ✓ includes sessionId in submitted payload  572ms
-       ✓ submit button is disabled when no repo selected and repositoryPath is empty  370ms
-       ✓ submit button is enabled when repo is selected via combobox  805ms
-       ✓ submit button is enabled when repositoryPath is provided (canvas flow)  540ms
-       ✓ handleSubmit includes selectedRepoPath in payload  561ms
-       ✓ filters repositories by path when typing in search input  389ms
-       ✓ shows empty state message when no repos match search  368ms
-       ✓ shows check icon for selected repository  427ms
-       ✓ shows inline error when addRepository server action fails  314ms
-       ✓ can submit feature after adding new repo via combobox  1390ms
-       ✓ renders Fork & PR toggle when canPushDirectly is false  332ms
-       ✓ resets forkAndPr state to false when canPushDirectly changes from false to true  2284ms
-       ✓ reverts push and openPr to defaults when canPushDirectly becomes true  1121ms
-       ✓ reverts commitSpecs to default (true) when canPushDirectly becomes true  623ms
-       ✓ calls getViewerPermission on repo change and updates toggle visibility  1425ms
-       ✓ excludes forkAndPr from submission payload when canPush is true  1893ms
- ✓  web  tests/unit/presentation/web/features/control-center/derive-state.test.ts (6 tests) 20ms
- ✓  web  tests/unit/presentation/web/actions/update-model.test.ts (8 tests) 7ms
- ✓  web  tests/unit/presentation/web/actions/load-settings.test.ts (3 tests) 7ms
- ✓  web  tests/unit/presentation/web/app/actions/import-github-repository.test.ts (9 tests) 7ms
- ✓  web  tests/unit/presentation/web/actions/compose-user-input.test.ts (7 tests) 5ms
- ✓  web  tests/unit/presentation/web/common/feature-node/derive-feature-state.test.ts (47 tests) 56ms
+ ✓  web  tests/unit/presentation/web/actions/update-model.test.ts (8 tests) 9ms
+ ✓  web  tests/unit/presentation/web/actions/load-settings.test.ts (3 tests) 5ms
+ ✓  web  tests/unit/presentation/web/lib/feature-flags.test.ts (14 tests) 10ms
+ ✓  web  tests/unit/presentation/web/actions/features/delete-feature.test.ts (8 tests) 8ms
  ✓  web  tests/unit/presentation/web/app/actions/list-github-repositories.test.ts (7 tests) 7ms
- ✓  web  tests/unit/presentation/web/lib/compare-versions.test.ts (7 tests) 3ms
+ ✓  web  tests/unit/presentation/web/actions/get-supported-models.test.ts (6 tests) 6ms
+ ✓  web  tests/unit/presentation/web/lib/language.test.ts (11 tests) 7ms
+ ✓  web  tests/unit/presentation/web/app/actions/import-github-repository.test.ts (9 tests) 8ms
+ ✓  web  tests/unit/presentation/web/actions/get-feature-drawer-data.test.ts (7 tests) 8ms
+ ✓  web  tests/unit/presentation/web/hooks/deployment-status-store.test.ts (9 tests) 6ms
+ ✓  web  tests/unit/presentation/web/actions/open-ide.test.ts (9 tests) 7ms
+ ✓  web  tests/unit/presentation/web/actions/update-settings.test.ts (6 tests) 6ms
+ ✓  web  tests/unit/presentation/web/actions/get-deployment-logs.test.ts (5 tests) 5ms
+ ✓  web  tests/unit/presentation/web/actions/reject-feature.test.ts (12 tests) 8ms
+ ✓  web  tests/unit/presentation/web/app/actions/get-feature-phase-timings.test.ts (8 tests) 7ms
+ ✓  web  tests/unit/presentation/web/actions/stop-deployment.test.ts (4 tests) 5ms
+ ✓  web  tests/unit/presentation/web/lib/parse-log-line.test.ts (25 tests) 11ms
+ ✓  web  tests/unit/presentation/web/actions/approve-feature.test.ts (7 tests) 7ms
+ ✓  web  tests/unit/presentation/web/components/common/control-center-drawer/drawer-view.test.ts (10 tests) 5ms
+ ✓  web  tests/unit/presentation/web/actions/compose-user-input.test.ts (7 tests) 4ms
+ ✓  web  tests/unit/presentation/web/app/actions/list-github-organizations.test.ts (4 tests) 5ms
  ✓  web  tests/unit/presentation/web/actions/pick-folder.test.ts (4 tests) 3ms
- ✓  web  tests/unit/presentation/web/components/common/control-center-drawer/drawer-view.test.ts (10 tests) 6ms
+ ✓  web  tests/unit/presentation/web/lib/format-duration.test.ts (9 tests) 3ms
+ ✓  web  tests/unit/presentation/web/lib/compare-versions.test.ts (7 tests) 4ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-create-drawer/feature-create-drawer.test.tsx (91 tests) 49833ms
 
+=== Summary ===
  Test Files  418 passed (418)
       Tests  5963 passed (5963)
-   Start at  19:23:49
-   Duration  50.99s (transform 21.77s, setup 67.67s, import 85.51s, tests 116.53s, environment 115.45s)
-
+   Start at  19:26:50
+   Duration  65.94s (transform 19.49s, setup 76.87s, import 98.08s, tests 169.09s, environment 160.75s)
