@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: WorkItemTypeName.yaml
+type: string
+enum:
+  - Task
+  - Bug
+  - Story
+  - Feature
+description: Classification of work item types

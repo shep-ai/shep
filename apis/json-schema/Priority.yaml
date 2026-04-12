@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Priority.yaml
+type: string
+enum:
+  - Urgent
+  - High
+  - Medium
+  - Low
+  - None
+description: Priority level for work items

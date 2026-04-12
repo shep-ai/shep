@@ -1,0 +1,26 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ActivityEntry.yaml
+type: object
+properties:
+  workItemId:
+    $ref: UUID.yaml
+    description: Work item this activity belongs to
+  fieldName:
+    type: string
+    description: Name of the field that changed (e.g., 'state', 'priority', 'title')
+  oldValue:
+    type: string
+    description: Previous value as text (null for creation events)
+  newValue:
+    type: string
+    description: New value as text
+  actorId:
+    type: string
+    description: ID of the actor who made the change
+required:
+  - workItemId
+  - fieldName
+  - actorId
+allOf:
+  - $ref: BaseEntity.yaml
+description: An immutable record of a field change on a work item

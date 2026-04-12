@@ -1,0 +1,35 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SavedView.yaml
+type: object
+properties:
+  projectId:
+    $ref: UUID.yaml
+    description: Project this view belongs to
+  name:
+    type: string
+    description: Display name for the saved view
+  description:
+    type: string
+    description: Optional description
+  isPublic:
+    type: boolean
+    default: false
+    description: Whether this view is visible to all project members
+  layout:
+    $ref: ViewLayout.yaml
+    description: Layout type for this view
+  configuration:
+    type: string
+    description: Full view configuration as JSON (filters, grouping, sorting, display properties)
+  createdBy:
+    type: string
+    description: ID of the user who created this view
+required:
+  - projectId
+  - name
+  - isPublic
+  - layout
+  - configuration
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: A saved view configuration for work items in a project

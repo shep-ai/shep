@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: IntakeStatus.yaml
+type: string
+enum:
+  - Pending
+  - Accepted
+  - Declined
+  - Duplicate
+description: Triage status for incoming intake requests

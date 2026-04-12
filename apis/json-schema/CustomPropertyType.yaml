@@ -1,0 +1,11 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CustomPropertyType.yaml
+type: string
+enum:
+  - Text
+  - Number
+  - Dropdown
+  - Boolean
+  - Date
+  - MemberPicker
+description: Data type for custom properties on work items

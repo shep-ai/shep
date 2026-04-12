@@ -1,0 +1,35 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CustomProperty.yaml
+type: object
+properties:
+  projectId:
+    $ref: UUID.yaml
+    description: Project this property belongs to
+  name:
+    type: string
+    description: Display name for the property
+  propertyType:
+    $ref: CustomPropertyType.yaml
+    description: Data type of the property value
+  options:
+    type: string
+    description: JSON array of options for Dropdown type (e.g., '["Option A", "Option B"]')
+  isRequired:
+    type: boolean
+    default: false
+    description: Whether this property is required on work items
+  displayOrder:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 0
+    description: Position in the property list for ordering
+required:
+  - projectId
+  - name
+  - propertyType
+  - isRequired
+  - displayOrder
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: A user-defined custom field schema for work items in a project

@@ -1,0 +1,23 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Comment.yaml
+type: object
+properties:
+  workItemId:
+    $ref: UUID.yaml
+    description: Work item this comment belongs to
+  parentId:
+    $ref: UUID.yaml
+    description: Parent comment ID for threading (null for top-level comments)
+  content:
+    type: string
+    description: Comment content — rich text JSON or plain text
+  authorId:
+    type: string
+    description: ID of the comment author
+required:
+  - workItemId
+  - content
+  - authorId
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: A threaded comment on a work item

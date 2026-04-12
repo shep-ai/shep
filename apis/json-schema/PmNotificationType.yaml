@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PmNotificationType.yaml
+type: string
+enum:
+  - Assignment
+  - Mention
+  - StateChange
+  - Comment
+  - DueDateApproaching
+description: Type of project management notification

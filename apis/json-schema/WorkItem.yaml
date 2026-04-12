@@ -1,0 +1,60 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: WorkItem.yaml
+type: object
+properties:
+  projectId:
+    $ref: UUID.yaml
+    description: Project this work item belongs to
+  sequenceId:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Sequential number within the project (e.g., 42 in PROJ-42)
+  identifierPrefix:
+    type: string
+    description: Denormalized project prefix for display (e.g., 'PROJ')
+  title:
+    type: string
+    description: Work item title (required)
+  description:
+    type: string
+    description: Rich text description stored as JSON (TipTap/ProseMirror format)
+  stateId:
+    $ref: UUID.yaml
+    description: Current workflow state ID
+  priority:
+    $ref: Priority.yaml
+    default: None
+    description: Priority level
+  parentId:
+    $ref: UUID.yaml
+    description: Parent work item ID for sub-item hierarchy (max 3 levels)
+  sortOrder:
+    type: number
+    default: 0
+    description: Manual sort order (float64 for insertion between items)
+  startDate:
+    type: string
+    format: date-time
+    description: Planned start date
+  dueDate:
+    type: string
+    format: date-time
+    description: Target due date
+  estimateValue:
+    type: string
+    description: Estimate value — category label (XS/S/M/L/XL) or numeric string
+  customPropertyValues:
+    type: string
+    description: Custom property values as JSON object keyed by property ID
+required:
+  - projectId
+  - sequenceId
+  - identifierPrefix
+  - title
+  - stateId
+  - priority
+  - sortOrder
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: A unit of work within a project — issue, task, bug, or story

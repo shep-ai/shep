@@ -1,0 +1,11 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ModuleStatus.yaml
+type: string
+enum:
+  - Backlog
+  - Planned
+  - InProgress
+  - Paused
+  - Completed
+  - Cancelled
+description: Lifecycle status of a module

@@ -1,0 +1,35 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: WorkItemState.yaml
+type: object
+properties:
+  projectId:
+    $ref: UUID.yaml
+    description: Project this state belongs to
+  name:
+    type: string
+    description: Display name for the state (e.g., 'In Review', 'QA Testing')
+  color:
+    type: string
+    description: Hex color code for UI rendering (e.g., '#3b82f6')
+  displayOrder:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Position in the state list for ordering
+  stateGroup:
+    $ref: StateGroup.yaml
+    description: Semantic group this state belongs to — used for analytics and burndown
+  isDefault:
+    type: boolean
+    default: false
+    description: Whether this is the default state for new work items in the project
+required:
+  - projectId
+  - name
+  - color
+  - displayOrder
+  - stateGroup
+  - isDefault
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: A customizable workflow state within a project, belonging to a fixed semantic group

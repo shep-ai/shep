@@ -1,0 +1,20 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: WorkItemRelation.yaml
+type: object
+properties:
+  sourceWorkItemId:
+    $ref: UUID.yaml
+    description: Source work item ID (the 'from' side)
+  targetWorkItemId:
+    $ref: UUID.yaml
+    description: Target work item ID (the 'to' side)
+  relationType:
+    $ref: RelationType.yaml
+    description: Type of relationship
+required:
+  - sourceWorkItemId
+  - targetWorkItemId
+  - relationType
+allOf:
+  - $ref: BaseEntity.yaml
+description: A directional relationship between two work items

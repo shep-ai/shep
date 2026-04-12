@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: StateGroup.yaml
+type: string
+enum:
+  - Backlog
+  - Unstarted
+  - Started
+  - Completed
+  - Cancelled
+description: Semantic group for work item states — fixed set for analytics

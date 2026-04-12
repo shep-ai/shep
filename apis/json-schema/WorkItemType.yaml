@@ -1,0 +1,27 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: WorkItemType.yaml
+type: object
+properties:
+  projectId:
+    $ref: UUID.yaml
+    description: Project this type belongs to
+  name:
+    $ref: WorkItemTypeName.yaml
+    description: Type name (Task, Bug, Story, Feature)
+  description:
+    type: string
+    description: Optional description of when to use this type
+  icon:
+    type: string
+    description: Optional icon identifier for UI rendering
+  isDefault:
+    type: boolean
+    default: false
+    description: Whether this is the default type for new work items
+required:
+  - projectId
+  - name
+  - isDefault
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: A work item type classification within a project

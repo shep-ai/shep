@@ -1,0 +1,49 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PmProject.yaml
+type: object
+properties:
+  name:
+    type: string
+    description: Human-readable project name
+  slug:
+    type: string
+    description: URL-friendly identifier derived from name
+  description:
+    type: string
+    description: Project description
+  identifierPrefix:
+    type: string
+    description: Short prefix for work item IDs (2-5 uppercase letters, e.g., PROJ)
+  workItemCounter:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 0
+    description: Atomic counter for sequential work item ID generation
+  estimateType:
+    $ref: EstimateType.yaml
+    default: Category
+    description: Estimation system used by this project
+  applicationId:
+    $ref: UUID.yaml
+    description: Optional link to an Application (AI workspace)
+  startDate:
+    type: string
+    format: date-time
+    description: Project start date
+  endDate:
+    type: string
+    format: date-time
+    description: Project end date
+  featureToggles:
+    type: string
+    description: Feature toggles JSON — enables/disables cycles, modules, epics, pages, intake, time tracking
+required:
+  - name
+  - slug
+  - identifierPrefix
+  - workItemCounter
+  - estimateType
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: A project management container for work items, cycles, and modules
