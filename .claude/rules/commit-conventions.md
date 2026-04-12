@@ -58,7 +58,7 @@ If you include a body or footer:
 - Trailers (recommended for metadata) MUST use `Token: value` format, e.g.:
   - `BREAKING CHANGE: ...`
   - `Refs: #123`
-  - `Co-authored-by: Name <email>`
+  - `Co-Authored-By: Shep Bot <shep-agent@users.noreply.github.com>`
 
 ## Output constraints
 
