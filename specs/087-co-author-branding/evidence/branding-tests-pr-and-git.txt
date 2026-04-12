@@ -1,11 +1,11 @@
 
  RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding
 
- ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts > PR_BRANDING > should contain the Shep branding text 1ms
+ ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts > PR_BRANDING > should contain the Shep branding text 2ms
  ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts > COMMIT_CO_AUTHOR > should contain Shep Bot attribution 0ms
  ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts > COMMIT_CO_AUTHOR > should not contain Claude attribution 0ms
- ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts > applyPrBranding > should append Shep branding to a plain body 0ms
- ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts > applyPrBranding > should strip Claude Code branding and add Shep branding 0ms
+ ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts > applyPrBranding > should append Shep branding to a plain body 1ms
+ ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts > applyPrBranding > should strip Claude Code branding and add Shep branding 1ms
  ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts > applyPrBranding > should strip Claude Code branding without emoji prefix 0ms
  ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts > applyPrBranding > should strip Claude Co-Authored-By trailers from PR body 0ms
  ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts > applyPrBranding > should strip Claude Opus Co-Authored-By trailers from PR body 0ms
@@ -20,61 +20,107 @@
  ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts > applyCommitBranding > should not duplicate co-author if already present 0ms
  ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts > applyCommitBranding > should handle message with body before co-author 0ms
  ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts > applyCommitBranding > should trim trailing whitespace before appending co-author 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should return branch from remote HEAD when available 1ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should fall back to local main branch when remote HEAD fails 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.getFailureLogs.test.ts > GitPrService.getFailureLogs > should return full output when under logMaxChars limit 8ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.getFailureLogs.test.ts > GitPrService.getFailureLogs > should truncate output and append notice when over logMaxChars limit 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.getFailureLogs.test.ts > GitPrService.getFailureLogs > should use default logMaxChars of 50_000 when not provided 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.getFailureLogs.test.ts > GitPrService.getFailureLogs > should throw GitPrError when gh command fails 7ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.getFailureLogs.test.ts > GitPrService.getFailureLogs > should throw GitPrError with GIT_ERROR on generic gh failure 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > syncMain > should use git fetch origin main when on a feature branch 15ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > syncMain > should use git pull --ff-only when on the main branch 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > syncMain > should succeed silently when main is already up-to-date 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > syncMain > should throw GitPrError with SYNC_FAILED when local main has diverged (non-fast-forward) 5ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > syncMain > should throw GitPrError with SYNC_FAILED when branch has diverged 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > syncMain > should include actionable guidance in diverged error message 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > syncMain > should throw GitPrError with GIT_ERROR on generic git failure 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseOnMain > should throw GIT_ERROR when worktree is dirty 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseOnMain > should include guidance about committing or stashing in dirty worktree error 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseOnMain > should succeed on clean rebase (no conflicts) 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseOnMain > should throw REBASE_CONFLICT when rebase encounters conflicts 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseOnMain > should include conflicted file list in REBASE_CONFLICT error message 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseOnMain > should detect "could not apply" as rebase conflict 3ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseOnMain > should throw BRANCH_NOT_FOUND when feature branch does not exist 2ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseOnMain > should checkout the feature branch before rebasing 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseOnMain > should call git rebase with origin/<baseBranch> as target 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseOnMain > should still throw REBASE_CONFLICT even if getConflictedFiles fails 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > getConflictedFiles > should return list of conflicted files from git diff output 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > getConflictedFiles > should return empty array when no conflicts exist 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > getConflictedFiles > should return empty array when stdout is empty string 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > getConflictedFiles > should normalize backslashes to forward slashes for cross-platform support 4ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > getConflictedFiles > should throw GitPrError on git failure 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > stageFiles > should call git add for the provided file paths 2ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > stageFiles > should throw GitPrError on failure 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseContinue > should call git rebase --continue with GIT_EDITOR=true 2ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseContinue > should throw REBASE_CONFLICT when continue encounters new conflicts 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseContinue > should throw GitPrError on generic failure 2ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseAbort > should call git rebase --abort 2ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > rebaseAbort > should throw GitPrError on failure 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > stash > should return true when changes are stashed 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > stash > should return false when no local changes to save 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > stash > should throw GitPrError on failure 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > stashPop > should call git stash pop 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > stashPop > should throw GitPrError on failure 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > stashDrop > should call git stash drop 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > stashDrop > should throw GitPrError on failure 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > parseGitError — rebase/sync error classification > should classify "non-fast-forward" error as SYNC_FAILED via syncMain 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > parseGitError — rebase/sync error classification > should classify "diverged" error as SYNC_FAILED via syncMain 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > parseGitError — rebase/sync error classification > should still classify "rejected" as MERGE_CONFLICT (regression) 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > parseGitError — rebase/sync error classification > should still classify auth errors correctly (regression) 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts > GitPrService — Rebase & Sync > parseGitError — rebase/sync error classification > should classify generic errors as GIT_ERROR (regression) 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should return branch from remote HEAD when available 3ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should fall back to local main branch when remote HEAD fails 1ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should fall back to local master branch when main does not exist 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should pick most recently committed branch when both main and master exist 1ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should fall back to git config init.defaultBranch 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should NOT use current branch when in a feature worktree 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should fall back to git config init.defaultBranch 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should NOT use current branch when in a feature worktree 3ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should use current branch in main worktree as last resort 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should throw when all fallbacks fail 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > hasUncommittedChanges > should return true when git status has output 1ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > hasUncommittedChanges > should return false when git status is empty 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > hasUncommittedChanges > should return false when git status is whitespace only 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > commitAll > should stage all changes, commit, and return SHA 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > commitAll > should throw GitPrError with GIT_ERROR on failure 1ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > push > should call git push origin branch 1ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > push > should add --set-upstream flag when setUpstream is true 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > commitAll > should stage all changes, commit, and return SHA 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > commitAll > should throw GitPrError with GIT_ERROR on failure 26ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > push > should call git push origin branch 9ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > push > should add --set-upstream flag when setUpstream is true 1ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > push > should throw GitPrError with MERGE_CONFLICT when stderr contains rejected 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > push > should throw GitPrError with AUTH_FAILURE on auth errors 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should parse pr.yaml and pass title/body to gh pr create 3ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should apply Shep branding to the PR body 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should strip Claude Code branding from PR body 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should parse pr.yaml and pass title/body to gh pr create 12ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should apply Shep branding to the PR body 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should strip Claude Code branding from PR body 6ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should throw GitPrError with GH_NOT_FOUND when gh is not found 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should call gh pr merge without --delete-branch and attempt remote branch cleanup 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should call gh pr merge with specified strategy 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should not throw when remote branch deletion fails 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should throw GitPrError with MERGE_FAILED on merge failure 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergeBranch > should checkout target, merge source, and push 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergeBranch > should throw GitPrError with MERGE_CONFLICT on conflict 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > deleteBranch > should delete local branch 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should call gh pr merge without --delete-branch and attempt remote branch cleanup 9ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should call gh pr merge with specified strategy 7ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should not throw when remote branch deletion fails 6ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should throw GitPrError with MERGE_FAILED on merge failure 15ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergeBranch > should checkout target, merge source, and push 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergeBranch > should throw GitPrError with MERGE_CONFLICT on conflict 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > deleteBranch > should delete local branch 1ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > deleteBranch > should also delete remote when deleteRemote is true 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should parse gh run list JSON output 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should parse gh run list JSON output 1ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should return pending when no runs found 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should throw GitPrError when gh command fails 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should throw GitPrError with GH_NOT_FOUND when gh is not installed 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should return pending when conclusion is null 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should resolve run ID via gh run list then watch it 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return pending when no runs exist for the branch 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return failure when gh run watch exits non-zero (exit code message) 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should resolve run ID via gh run list then watch it 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return pending when no runs exist for the branch 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return failure when gh run watch exits non-zero (exit code message) 1ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return failure when gh run watch exits non-zero with real execFile error format 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should include stdout in logExcerpt when CI fails with real execFile error 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should throw GIT_ERROR for genuine errors (not CI failure) 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should throw GitPrError with CI_TIMEOUT on timeout 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should throw GitPrError with CI_TIMEOUT on timeout 1ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return success when gh run watch exits 0 even if stdout lacks "success" keyword 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return success when gh run watch exits 0 with empty stdout 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should pass timeout option to exec 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getPrDiffSummary > should parse git diff --stat and log correctly 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should parse a unified diff with modified, added, and deleted files 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getPrDiffSummary > should parse git diff --stat and log correctly 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should parse a unified diff with modified, added, and deleted files 2ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should return empty array for empty diff output 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should parse renamed files 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should parse diff line numbers correctly 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should throw GitPrError when git command fails 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should call gh pr list with correct arguments including headRefName 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should normalize state from UPPERCASE to PrStatus enum values 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should return empty array when no PRs exist 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should return empty array when no PRs exist 2ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should throw GitPrError on gh CLI failure 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should throw GitPrError with AUTH_FAILURE on auth errors 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should throw GitPrError with AUTH_FAILURE on auth errors 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return true when feature branch is ancestor of base branch (true merge) 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return true for squash merge (not ancestor but no diff) 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return false when neither true merge nor squash merge 0ms
@@ -98,89 +144,12 @@
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createGitHubRepo > should fall back to gh repo view when stdout has no URL 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createGitHubRepo > should include org prefix when org option is provided 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createGitHubRepo > should use --public when isPrivate is false 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createGitHubRepo > should throw GitPrError with REPO_CREATE_FAILED when gh repo create fails 0ms
- ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > addRemote > should run git remote add with the given name and URL 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createGitHubRepo > should throw GitPrError with REPO_CREATE_FAILED when gh repo create fails 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > addRemote > should run git remote add with the given name and URL 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > addRemote > should wrap underlying git errors in GitPrError 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should always include commit instructions 2ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include push instructions when push=true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include push instructions when openPr=true (implied push) 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include PR creation instructions when openPr=true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include push instructions when push=false and openPr=false 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include PR instructions when openPr=false 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include spec context 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include branch names 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should instruct agent to write commit message from diff 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should not instruct agent to update feature.yaml (PR data persisted via DB) 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include local verification step before pushing when push=true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include local verification step when not pushing 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should forbid git pull and rebase before pushing 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should be deterministic (same input = same output) 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should forbid source code modification when no rejection feedback 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include Shep branding instruction when openPr=true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include branding instruction when openPr=false 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include Shep Bot co-author trailer in commit instructions 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should instruct NOT to include Claude co-author trailer 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should instruct agent to modify source code when rejection feedback exists 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include repository path 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include branch names 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include conflict details 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include commit message 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should instruct checkout, merge, and conflict resolution steps 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include Shep Bot co-author trailer in squash merge commit instruction 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should forbid pushing 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should be deterministic (same input = same output) 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > when gates is undefined > returns false for any node 1ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > fully autonomous (all 3 gates true) > returns false for any node when all gates are true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > fully autonomous (all 3 gates true) > does NOT skip all interrupts when only 2 of 3 gates are true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > requirements node > interrupts when allowPrd is false 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > requirements node > does not interrupt when allowPrd is true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > plan node > interrupts when allowPlan is false 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > plan node > does not interrupt when allowPlan is true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > implement node > never interrupts (implementation always proceeds to merge) 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > merge node > interrupts when allowMerge is false 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > merge node > does not interrupt when allowMerge is true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > unknown nodes > returns false for nodes without gates (e.g. analyze, research) 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > clearCompletedPhase > removes the given phase from completedPhases 3ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > clearCompletedPhase > is a no-op when phase is not in completedPhases 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > clearCompletedPhase > handles missing feature.yaml gracefully 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > clearCompletedPhase > handles missing completedPhases array gracefully 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should include local verification before push when push=true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should NOT include local verification when push=false 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should include commit instructions 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should prohibit git stash when push=true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should prohibit git reset when push=true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should prohibit git checkout -- when push=true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should prohibit git restore when push=true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should prohibit git clean when push=true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should instruct to proceed with commit+push if unrelated tests fail 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should skip verification but still push when skipVerification=true and push=true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should not include push when skipVerification=true but push=false 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should include --no-verify in commit command when skipVerification=true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should NOT include --no-verify when skipVerification is false 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should include Shep Bot co-author trailer instruction 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should instruct NOT to include Claude co-author trailer 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > isRejectionPayload > returns true for valid rejection payload 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > isRejectionPayload > returns false for approval payload 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > isRejectionPayload > returns false for null 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > isRejectionPayload > returns false for undefined 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > isRejectionPayload > returns false for string 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > isRejectionPayload > returns false when rejected is not true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses default timeout (1_800_000ms) when settings are not initialized 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses default timeout when stageTimeoutMs is not set in settings 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses per-stage timeout from settings when set 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses default timeout when per-stage timeout is not set for current node 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses dedicated fast-implement timeout from settings when set 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > falls back to default when fast-implement timeout is not set 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > allows override to take precedence over settings 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses worktreePath as cwd when available 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses repositoryPath as cwd when worktreePath is empty 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should soft-reset spec commits when commitSpecs=false 244ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should not modify commits when commitSpecs=true 134ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should not modify commits for non-spec phases 142ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should be a no-op when agent did not commit spec files 172ms
 
  Test Files  4 passed (4)
-      Tests  177 passed (177)
-   Start at  19:31:15
-   Duration  1.18s (transform 486ms, setup 149ms, import 921ms, tests 729ms, environment 0ms)
+      Tests  146 passed (146)
+   Start at  19:35:42
+   Duration  875ms (transform 1.12s, setup 307ms, import 1.54s, tests 220ms, environment 0ms)
 

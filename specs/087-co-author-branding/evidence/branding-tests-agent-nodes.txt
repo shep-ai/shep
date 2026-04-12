@@ -1,10 +1,135 @@
 
  RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-co-author-branding
 
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > when gates is undefined > returns false for any node 13ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > fully autonomous (all 3 gates true) > returns false for any node when all gates are true 2ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > fully autonomous (all 3 gates true) > does NOT skip all interrupts when only 2 of 3 gates are true 1ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > requirements node > interrupts when allowPrd is false 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > safeYamlLoad > parses valid YAML normally 7ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > safeYamlLoad > handles list items with unquoted braces 98ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > includes the full failure logs verbatim 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > includes the conventional commit message format: fix(ci): attempt N/max 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > includes the branch name in push instruction 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > includes attempt number context 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > includes push instruction after commit 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > instructs executor to diagnose the failure 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > is deterministic (same input = same output) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts > buildCiWatchFixPrompt > contains different commit format strings for different attempt numbers 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > safeYamlLoad > handles multiple list items with braces 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > safeYamlLoad > does not double-quote already quoted items 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > safeYamlLoad > throws on genuinely invalid YAML without braces 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > shouldInterrupt > no gates (undefined) > should never interrupt when gates are undefined 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > shouldInterrupt > interactive gates (allowPrd=false, allowPlan=false) > should NOT interrupt on analyze node 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > shouldInterrupt > interactive gates (allowPrd=false, allowPlan=false) > should interrupt on requirements node 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > shouldInterrupt > interactive gates (allowPrd=false, allowPlan=false) > should NOT interrupt on research node 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > shouldInterrupt > interactive gates (allowPrd=false, allowPlan=false) > should interrupt on plan node 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > shouldInterrupt > interactive gates (allowPrd=false, allowPlan=false) > should NOT interrupt on implement node 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > shouldInterrupt > allow-prd gates (allowPrd=true, allowPlan=false) > should NOT interrupt on analyze node 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > shouldInterrupt > allow-prd gates (allowPrd=true, allowPlan=false) > should NOT interrupt on requirements node 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > shouldInterrupt > allow-prd gates (allowPrd=true, allowPlan=false) > should NOT interrupt on research node 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > shouldInterrupt > allow-prd gates (allowPrd=true, allowPlan=false) > should interrupt on plan node 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > shouldInterrupt > allow-prd gates (allowPrd=true, allowPlan=false) > should NOT interrupt on implement node 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > shouldInterrupt > allow-all gates (allowPrd=true, allowPlan=true, allowMerge=true) > should never interrupt 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > classifyError > retryable-api errors > should classify API 400 tool_use.name error as retryable-api 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > classifyError > retryable-api errors > should classify API 429 rate limit as retryable-api 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > classifyError > retryable-api errors > should classify API 529 overloaded as retryable-api 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > classifyError > retryable-api errors > should classify API 500 server error as retryable-api 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > classifyError > retryable-network errors > should classify ECONNREFUSED as retryable-network 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > classifyError > retryable-network errors > should classify ETIMEDOUT as retryable-network 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > classifyError > retryable-network errors > should classify ENOTFOUND as retryable-network 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > classifyError > retryable-network errors > should classify network timeout as retryable-network 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > classifyError > non-retryable errors - timeouts > should classify agent execution timeout as non-retryable 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > classifyError > non-retryable errors > should classify generic process exit as non-retryable 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > classifyError > non-retryable errors > should classify ENOENT as non-retryable 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > classifyError > non-retryable errors > should classify SyntaxError as non-retryable 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > classifyError > unknown errors > should classify unrecognized message as unknown 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > classifyError > unknown errors > should classify empty string as unknown 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > retryExecute > should return result on first successful attempt 5ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > retryExecute > should retry on retryable-api error and succeed 3ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > retryExecute > should retry on retryable-network error and succeed 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > retryExecute > should NOT retry on non-retryable error 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > retryExecute > should retry unknown errors (treated as retryable) 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > retryExecute > should fail after max attempts exhausted 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > retryExecute > should use exponential backoff delays (2s, 4s, 8s) 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > retryExecute > should use configurable max attempts 7ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > retryExecute > should use configurable base delay 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > buildExecutorOptions > should return cwd from worktreePath when available 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > buildExecutorOptions > should return cwd from repositoryPath when worktreePath is empty 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > buildExecutorOptions > should include maxTurns of 5000 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > buildExecutorOptions > should include model when state has model set 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > buildExecutorOptions > should not include model when state has no model 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > getCompletedPhases > should return empty array when feature.yaml has no completedPhases 3ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > getCompletedPhases > should return completedPhases array from feature.yaml 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > getCompletedPhases > should return empty array when feature.yaml does not exist 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > getCompletedPhases > should return empty array when completedPhases is not an array 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > markPhaseComplete > should add phaseId to completedPhases in feature.yaml 16ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > markPhaseComplete > should not duplicate phaseId if already present 14ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > markPhaseComplete > should append to existing completedPhases 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > markPhaseComplete > should not throw when feature.yaml does not exist 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > buildResumeContext > should return empty string when resumeReason is undefined 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > buildResumeContext > should return empty string when resumeReason is empty string 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > buildResumeContext > should return resume context block for interrupted reason 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > buildResumeContext > should return resume context block for failed reason 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > buildResumeContext > should return resume context block for crashed reason 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts > buildResumeContext > should end with double newline for clean prompt concatenation 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > includes the branch name 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > instructs to list ALL runs with gh run list 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > instructs to check ALL runs not just one 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > instructs to use --interval 20 for gh run watch 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > requires CI_STATUS: PASSED output on success 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > requires CI_STATUS: FAILED output on failure 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > instructs to verify all runs after watching 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > includes --json fields for run listing 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > is deterministic (same input = same output) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts > buildCiWatchPrompt > does not contain repo-specific references 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should always include commit instructions 4ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include push instructions when push=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include push instructions when openPr=true (implied push) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include PR creation instructions when openPr=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include push instructions when push=false and openPr=false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include PR instructions when openPr=false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include spec context 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include branch names 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should instruct agent to write commit message from diff 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should not instruct agent to update feature.yaml (PR data persisted via DB) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include local verification step before pushing when push=true 16ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include local verification step when not pushing 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should forbid git pull and rebase before pushing 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should be deterministic (same input = same output) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should forbid source code modification when no rejection feedback 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include Shep branding instruction when openPr=true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include branding instruction when openPr=false 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include Shep Bot co-author trailer in commit instructions 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should instruct NOT to include Claude co-author trailer 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should instruct agent to modify source code when rejection feedback exists 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include repository path 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include branch names 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include conflict details 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include commit message 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should instruct checkout, merge, and conflict resolution steps 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include Shep Bot co-author trailer in squash merge commit instruction 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should forbid pushing 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should be deterministic (same input = same output) 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should include an evidence section when state.evidence is non-empty 4ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should NOT include an evidence section when state.evidence is empty 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should render screenshot evidence as inline image markdown 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should render video evidence as a markdown link 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should render test output evidence as a fenced code block with description 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should render terminal recording evidence as a markdown link 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should render multiple evidence items in order 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should include taskRef when present on evidence 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should include evidence section even when openPr is false (commit-only mode) 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should use absolute raw.githubusercontent.com URLs when repoUrl is provided 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should convert SSH remote URLs to raw.githubusercontent.com URLs 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should fall back to relative paths when repoUrl is not provided 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should use absolute URLs for video evidence when repoUrl is provided 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > buildCommitPushPrPrompt — evidence rendering > should keep relative paths for test output even when repoUrl is provided 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > parseGitHubOwnerRepo > should parse HTTPS GitHub URLs 1ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > parseGitHubOwnerRepo > should parse HTTPS GitHub URLs with .git suffix 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > parseGitHubOwnerRepo > should parse SSH GitHub URLs 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > parseGitHubOwnerRepo > should parse SSH GitHub URLs without .git suffix 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > parseGitHubOwnerRepo > should return null for non-GitHub URLs 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts > parseGitHubOwnerRepo > should return null for invalid URLs 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > when gates is undefined > returns false for any node 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > fully autonomous (all 3 gates true) > returns false for any node when all gates are true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > fully autonomous (all 3 gates true) > does NOT skip all interrupts when only 2 of 3 gates are true 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > requirements node > interrupts when allowPrd is false 0ms
  ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > requirements node > does not interrupt when allowPrd is true 0ms
  ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > plan node > interrupts when allowPlan is false 0ms
  ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > plan node > does not interrupt when allowPlan is true 0ms
@@ -12,8 +137,8 @@
  ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > merge node > interrupts when allowMerge is false 0ms
  ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > merge node > does not interrupt when allowMerge is true 0ms
  ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > shouldInterrupt > unknown nodes > returns false for nodes without gates (e.g. analyze, research) 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > clearCompletedPhase > removes the given phase from completedPhases 8ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > clearCompletedPhase > is a no-op when phase is not in completedPhases 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > clearCompletedPhase > removes the given phase from completedPhases 5ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > clearCompletedPhase > is a no-op when phase is not in completedPhases 16ms
  ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > clearCompletedPhase > handles missing feature.yaml gracefully 0ms
  ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > clearCompletedPhase > handles missing completedPhases array gracefully 1ms
  ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildCommitPushBlock > should include local verification before push when push=true 0ms
@@ -46,41 +171,13 @@
  ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > allows override to take precedence over settings 0ms
  ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses worktreePath as cwd when available 0ms
  ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > buildExecutorOptions > uses repositoryPath as cwd when worktreePath is empty 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should always include commit instructions 89ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include push instructions when push=true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include push instructions when openPr=true (implied push) 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include PR creation instructions when openPr=true 8ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include push instructions when push=false and openPr=false 52ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include PR instructions when openPr=false 1ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include spec context 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include branch names 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should instruct agent to write commit message from diff 1ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should not instruct agent to update feature.yaml (PR data persisted via DB) 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include local verification step before pushing when push=true 1ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include local verification step when not pushing 1ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should forbid git pull and rebase before pushing 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should be deterministic (same input = same output) 1ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should forbid source code modification when no rejection feedback 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include Shep branding instruction when openPr=true 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should NOT include branding instruction when openPr=false 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should include Shep Bot co-author trailer in commit instructions 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should instruct NOT to include Claude co-author trailer 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildCommitPushPrPrompt > should instruct agent to modify source code when rejection feedback exists 2ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include repository path 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include branch names 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include conflict details 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include commit message 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should instruct checkout, merge, and conflict resolution steps 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should include Shep Bot co-author trailer in squash merge commit instruction 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should forbid pushing 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts > buildLocalSquashMergePrompt > should be deterministic (same input = same output) 0ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should soft-reset spec commits when commitSpecs=false 1521ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should not modify commits when commitSpecs=true 693ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should not modify commits for non-spec phases 632ms
- ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should be a no-op when agent did not commit spec files 460ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should soft-reset spec commits when commitSpecs=false 521ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should not modify commits when commitSpecs=true 376ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should not modify commits for non-spec phases 383ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts > removeSpecCommitsIfNeeded > should be a no-op when agent did not commit spec files 732ms
 
- Test Files  2 passed (2)
-      Tests  77 passed (77)
-   Start at  19:31:39
-   Duration  6.15s (transform 1.01s, setup 467ms, import 5.36s, tests 3.52s, environment 0ms)
+ Test Files  6 passed (6)
+      Tests  174 passed (174)
+   Start at  19:35:47
+   Duration  3.39s (transform 1.47s, setup 468ms, import 6.12s, tests 2.28s, environment 1ms)
 
