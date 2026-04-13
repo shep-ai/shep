@@ -1,6 +1,6 @@
 import type { DependencyContainer } from 'tsyringe';
 import { promisify } from 'node:util';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 
 import { IS_WINDOWS } from '../../platform.js';
 
@@ -26,6 +26,7 @@ import { LocalAttachmentStorageService } from '../../services/storage/local-atta
 import type { IPluginHealthChecker } from '../../../application/ports/output/services/plugin-health-checker.interface.js';
 import { PluginHealthCheckerService } from '../../services/plugin/plugin-health-checker.service.js';
 import type { IMcpServerManager } from '../../../application/ports/output/services/mcp-server-manager.interface.js';
+import { McpServerManagerService } from '../../services/plugin/mcp-server-manager.service.js';
 import type { IPluginCatalog } from '../../../application/ports/output/services/plugin-catalog.interface.js';
 import { StaticPluginCatalog } from '../../services/plugin/plugin-catalog.js';
 import type { IWebhookService } from '../../../application/ports/output/services/webhook.interface.js';
@@ -166,17 +167,9 @@ export function registerServices(container: DependencyContainer): void {
     'IPluginHealthChecker',
     PluginHealthCheckerService
   );
-  // IMcpServerManager: no-op placeholder until Phase 4 implementation.
-  // RemovePluginUseCase injects it but does not call methods yet.
-  container.register<IMcpServerManager>('IMcpServerManager', {
-    useFactory: () =>
-      ({
-        startServersForFeature: () => Promise.resolve(),
-        stopServersForFeature: () => Promise.resolve(),
-        getActiveServers: () => [],
-        generateMcpConfigPath: () => Promise.resolve(null),
-      }) as IMcpServerManager,
-  });
+  // SpawnFunction token for McpServerManagerService (uses child_process.spawn)
+  container.register('SpawnFunction', { useValue: spawn });
+  container.registerSingleton<IMcpServerManager>('IMcpServerManager', McpServerManagerService);
 
   // IWebServerService is registered as a lazy proxy to avoid importing `next`
   // (~80ms) for non-web commands. The actual service is loaded on first method call.
