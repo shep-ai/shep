@@ -34,6 +34,11 @@ export function WorkItemRow({ workItem, state, projectPrefix }: WorkItemRowProps
         />
       ) : null}
       <span className="min-w-0 flex-1 truncate text-xs">{workItem.title}</span>
+      {workItem.estimateValue ? (
+        <Badge variant="outline" className="shrink-0 font-mono text-[10px]">
+          {workItem.estimateValue}
+        </Badge>
+      ) : null}
       {workItem.priority && workItem.priority !== 'None' ? (
         <Badge
           variant="secondary"

@@ -89,7 +89,7 @@ export function WorkItemDetailClient({
       </div>
 
       {/* Details grid */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         <div className="space-y-1">
           <span className="text-muted-foreground text-[10px] font-medium uppercase">
             Start Date
@@ -103,6 +103,10 @@ export function WorkItemDetailClient({
           <p className="text-xs">
             {workItem.dueDate ? new Date(workItem.dueDate).toLocaleDateString() : '—'}
           </p>
+        </div>
+        <div className="space-y-1">
+          <span className="text-muted-foreground text-[10px] font-medium uppercase">Estimate</span>
+          <p className="text-xs">{workItem.estimateValue ?? '—'}</p>
         </div>
       </div>
 

@@ -25,6 +25,7 @@ import { AnalyticsDashboard } from '@/components/pm/analytics/analytics-dashboar
 import { TimelineViewWrapper } from '@/components/pm/timeline-view/timeline-view-wrapper';
 import { CyclePanel } from '@/components/pm/cycle-panel/cycle-panel';
 import { ModulePanel } from '@/components/pm/module-panel/module-panel';
+import { EstimateSettings } from '@/components/pm/estimate-settings/estimate-settings';
 import { updateWorkItem } from '@/app/actions/update-work-item';
 
 export interface ProjectDetailClientProps {
@@ -246,6 +247,7 @@ export function ProjectDetailClient({
             <ModulePanel projectId={project.id} modules={modules} onModulesChange={setModules} />
           </div>
           <AnalyticsDashboard projectId={project.id} cycles={cycles} />
+          <EstimateSettings projectId={project.id} currentEstimateType={project.estimateType} />
         </div>
       )}
 

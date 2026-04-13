@@ -48,6 +48,7 @@ import { createUpgradeCommand } from './commands/upgrade.command.js';
 import { createToolsCommand } from './commands/tools.command.js';
 import { createProjectCommand } from './commands/project/index.js';
 import { createItemCommand } from './commands/item/index.js';
+import { createCycleCommand } from './commands/cycle/index.js';
 import { messages } from './ui/index.js';
 
 // Daemon lifecycle commands
@@ -134,6 +135,7 @@ async function bootstrap() {
     program.addCommand(createToolsCommand());
     program.addCommand(createProjectCommand());
     program.addCommand(createItemCommand());
+    program.addCommand(createCycleCommand());
     program.addCommand(createUpgradeCommand());
 
     // Daemon lifecycle commands (task-9)
