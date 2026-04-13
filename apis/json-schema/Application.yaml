@@ -54,7 +54,8 @@ properties:
     description: Error message from the last failed deployment attempt
   lastDeployedAt:
     type: string
-    description: Unix millisecond timestamp of the last deployment attempt (success or failure)
+    format: date-time
+    description: Timestamp of the last deployment attempt (success or failure)
 required:
   - name
   - slug
