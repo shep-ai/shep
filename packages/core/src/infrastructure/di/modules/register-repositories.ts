@@ -103,6 +103,10 @@ import { SQLiteSdlcTaskRepository } from '../../repositories/sqlite-sdlc-task.re
 import type { ISdlcSubTaskRepository } from '../../../application/ports/output/repositories/sdlc-subtask-repository.interface.js';
 import { SQLiteSdlcSubTaskRepository } from '../../repositories/sqlite-sdlc-subtask.repository.js';
 
+// Plugin (AI tool plugin system) repositories
+import type { IPluginRepository } from '../../../application/ports/output/repositories/plugin-repository.interface.js';
+import { SQLitePluginRepository } from '../../repositories/sqlite-plugin.repository.js';
+
 /**
  * Register all SQLite-backed repositories.
  *
@@ -303,5 +307,10 @@ export function registerRepositories(container: DependencyContainer): void {
   });
   container.register<ISdlcSubTaskRepository>('ISdlcSubTaskRepository', {
     useFactory: (c) => new SQLiteSdlcSubTaskRepository(c.resolve<Database.Database>('Database')),
+  });
+
+  // ─── Plugin (AI tool plugin system) repositories ──────────────────────
+  container.register<IPluginRepository>('IPluginRepository', {
+    useFactory: (c) => new SQLitePluginRepository(c.resolve<Database.Database>('Database')),
   });
 }

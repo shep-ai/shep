@@ -23,6 +23,11 @@ import type { IApplicationScaffolder } from '../../../application/ports/output/s
 import { BunShadcnScaffolder } from '../../services/scaffolding/bun-shadcn-scaffolder.service.js';
 import type { IAttachmentStorage } from '../../../application/ports/output/services/attachment-storage.interface.js';
 import { LocalAttachmentStorageService } from '../../services/storage/local-attachment-storage.service.js';
+import type { IPluginHealthChecker } from '../../../application/ports/output/services/plugin-health-checker.interface.js';
+import { PluginHealthCheckerService } from '../../services/plugin/plugin-health-checker.service.js';
+import type { IMcpServerManager } from '../../../application/ports/output/services/mcp-server-manager.interface.js';
+import type { IPluginCatalog } from '../../../application/ports/output/services/plugin-catalog.interface.js';
+import { StaticPluginCatalog } from '../../services/plugin/plugin-catalog.js';
 import type { IWebhookService } from '../../../application/ports/output/services/webhook.interface.js';
 import { NoopWebhookService } from '../../services/integrations/noop-webhook.service.js';
 import type Database from 'better-sqlite3';
@@ -154,6 +159,24 @@ export function registerServices(container: DependencyContainer): void {
 
   container.registerSingleton<IAgentValidator>('IAgentValidator', AgentValidatorService);
   container.registerSingleton<IVersionService>('IVersionService', VersionService);
+
+  // ─── Plugin (AI tool plugin system) services ──────────────────────────
+  container.registerSingleton<IPluginCatalog>('IPluginCatalog', StaticPluginCatalog);
+  container.registerSingleton<IPluginHealthChecker>(
+    'IPluginHealthChecker',
+    PluginHealthCheckerService
+  );
+  // IMcpServerManager: no-op placeholder until Phase 4 implementation.
+  // RemovePluginUseCase injects it but does not call methods yet.
+  container.register<IMcpServerManager>('IMcpServerManager', {
+    useFactory: () =>
+      ({
+        startServersForFeature: () => Promise.resolve(),
+        stopServersForFeature: () => Promise.resolve(),
+        getActiveServers: () => [],
+        generateMcpConfigPath: () => Promise.resolve(null),
+      }) as IMcpServerManager,
+  });
 
   // IWebServerService is registered as a lazy proxy to avoid importing `next`
   // (~80ms) for non-web commands. The actual service is loaded on first method call.
