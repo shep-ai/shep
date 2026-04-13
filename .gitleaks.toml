@@ -1,0 +1,13 @@
+[extend]
+# Use the default gitleaks config as the base
+useDefault = true
+
+[allowlist]
+description = "Allow mock/test tokens in Storybook stories and test files"
+
+paths = [
+  '''\.stories\.tsx$''',
+  '''\.stories\.ts$''',
+  '''\.test\.ts$''',
+  '''\.test\.tsx$''',
+]
