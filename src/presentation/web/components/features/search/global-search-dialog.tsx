@@ -77,7 +77,7 @@ export function GlobalSearchDialog({ className }: GlobalSearchDialogProps) {
       setOpen(false);
       setQuery('');
       setResults([]);
-      router.push(result.url);
+      router.push(result.url as never);
     },
     [router]
   );
