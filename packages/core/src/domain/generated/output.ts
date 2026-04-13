@@ -2249,6 +2249,119 @@ export type PmAttachment = SoftDeletableEntity & {
    */
   storagePath: string;
 };
+export enum IntakeStatus {
+  Pending = 'Pending',
+  Accepted = 'Accepted',
+  Declined = 'Declined',
+  Duplicate = 'Duplicate',
+}
+
+/**
+ * Incoming request awaiting triage — separate from committed WorkItems
+ */
+export type IntakeItem = SoftDeletableEntity & {
+  /**
+   * Project this intake item belongs to
+   */
+  projectId: UUID;
+  /**
+   * Title of the incoming request
+   */
+  title: string;
+  /**
+   * Description of the incoming request (plain text or rich text JSON)
+   */
+  description?: string;
+  /**
+   * Source of the intake (e.g., 'manual', 'email', 'api')
+   */
+  source: string;
+  /**
+   * Triage status of the intake item
+   */
+  status: IntakeStatus;
+  /**
+   * Notes from the triage process (AI or human)
+   */
+  triageNotes?: string;
+  /**
+   * Suggested state ID from AI triage
+   */
+  suggestedStateId?: UUID;
+  /**
+   * Suggested priority from AI triage
+   */
+  suggestedPriority?: string;
+  /**
+   * Suggested label IDs from AI triage (JSON array)
+   */
+  suggestedLabels?: string;
+  /**
+   * Suggested assignee ID from AI triage
+   */
+  suggestedAssigneeId?: string;
+  /**
+   * ID of the work item created on acceptance
+   */
+  resultingWorkItemId?: UUID;
+  /**
+   * Reason for declining the intake item
+   */
+  declineReason?: string;
+  /**
+   * ID of the existing work item this is a duplicate of
+   */
+  duplicateOfWorkItemId?: UUID;
+};
+export enum PmNotificationType {
+  Assignment = 'Assignment',
+  Mention = 'Mention',
+  StateChange = 'StateChange',
+  Comment = 'Comment',
+  DueDateApproaching = 'DueDateApproaching',
+}
+
+/**
+ * In-app notification for project management events
+ */
+export type PmNotification = SoftDeletableEntity & {
+  /**
+   * Project this notification belongs to
+   */
+  projectId: UUID;
+  /**
+   * User ID of the notification recipient
+   */
+  recipientId: string;
+  /**
+   * Type of notification event
+   */
+  type: PmNotificationType;
+  /**
+   * Short title for the notification
+   */
+  title: string;
+  /**
+   * Detailed notification body text
+   */
+  body?: string;
+  /**
+   * Whether the notification has been read
+   */
+  isRead: boolean;
+  /**
+   * Whether the notification has been archived
+   */
+  isArchived: boolean;
+  /**
+   * ID of the referenced entity (work item, comment, etc.)
+   */
+  referenceId?: UUID;
+  /**
+   * Type of the referenced entity (e.g., 'WorkItem', 'Comment', 'IntakeItem')
+   */
+  referenceType?: string;
+};
 
 /**
  * Single installation suggestion for a tool
@@ -3220,19 +3333,6 @@ export type PrdQuestionnaireData = {
    */
   finalAction: PrdFinalAction;
 };
-export enum IntakeStatus {
-  Pending = 'Pending',
-  Accepted = 'Accepted',
-  Declined = 'Declined',
-  Duplicate = 'Duplicate',
-}
-export enum PmNotificationType {
-  Assignment = 'Assignment',
-  Mention = 'Mention',
-  StateChange = 'StateChange',
-  Comment = 'Comment',
-  DueDateApproaching = 'DueDateApproaching',
-}
 export enum AgentFeature {
   sessionResume = 'session-resume',
   streaming = 'streaming',

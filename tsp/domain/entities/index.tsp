@@ -40,3 +40,5 @@ import "./page.tsp";
 import "./page-version.tsp";
 import "./epic.tsp";
 import "./pm-attachment.tsp";
+import "./intake-item.tsp";
+import "./notification.tsp";

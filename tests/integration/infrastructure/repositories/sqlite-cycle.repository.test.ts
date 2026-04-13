@@ -26,7 +26,7 @@ describe('SQLiteCycleRepository', () => {
 
   const NOW = new Date('2026-04-01T10:00:00Z');
   const PROJECT_ID = 'proj-001';
-  const STATE_ID = 'state-001';
+  let STATE_ID = 'state-001';
 
   function createTestProject(overrides: Partial<PmProject> = {}): PmProject {
     return {
@@ -87,7 +87,7 @@ describe('SQLiteCycleRepository', () => {
     const states = await stateRepo.listByProject(PROJECT_ID);
     const todoState = states.find((s) => s.name === 'Todo');
     if (todoState) {
-      (STATE_ID as string) = todoState.id;
+      STATE_ID = todoState.id;
     }
   });
 

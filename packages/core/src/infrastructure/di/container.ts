@@ -56,6 +56,10 @@ import type { IPmAttachmentRepository } from '../../application/ports/output/rep
 import { SQLitePmAttachmentRepository } from '../repositories/sqlite-pm-attachment.repository.js';
 import type { ITimeEntryRepository } from '../../application/ports/output/repositories/time-entry-repository.interface.js';
 import { SQLiteTimeEntryRepository } from '../repositories/sqlite-time-entry.repository.js';
+import type { IIntakeItemRepository } from '../../application/ports/output/repositories/intake-item-repository.interface.js';
+import { SQLiteIntakeItemRepository } from '../repositories/sqlite-intake-item.repository.js';
+import type { INotificationRepository } from '../../application/ports/output/repositories/notification-repository.interface.js';
+import { SQLiteNotificationRepository } from '../repositories/sqlite-notification.repository.js';
 
 // Validator interfaces and implementations
 import type { IAgentValidator } from '../../application/ports/output/agents/agent-validator.interface.js';
@@ -470,6 +474,20 @@ export async function initializeContainer(): Promise<typeof container> {
     useFactory: (c) => {
       const database = c.resolve<Database.Database>('Database');
       return new SQLiteTimeEntryRepository(database);
+    },
+  });
+
+  container.register<IIntakeItemRepository>('IIntakeItemRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteIntakeItemRepository(database);
+    },
+  });
+
+  container.register<INotificationRepository>('INotificationRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteNotificationRepository(database);
     },
   });
 

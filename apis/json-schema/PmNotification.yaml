@@ -1,0 +1,41 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PmNotification.yaml
+type: object
+properties:
+  projectId:
+    $ref: UUID.yaml
+    description: Project this notification belongs to
+  recipientId:
+    type: string
+    description: User ID of the notification recipient
+  type:
+    $ref: PmNotificationType.yaml
+    description: Type of notification event
+  title:
+    type: string
+    description: Short title for the notification
+  body:
+    type: string
+    description: Detailed notification body text
+  isRead:
+    type: boolean
+    description: Whether the notification has been read
+  isArchived:
+    type: boolean
+    description: Whether the notification has been archived
+  referenceId:
+    $ref: UUID.yaml
+    description: ID of the referenced entity (work item, comment, etc.)
+  referenceType:
+    type: string
+    description: Type of the referenced entity (e.g., 'WorkItem', 'Comment', 'IntakeItem')
+required:
+  - projectId
+  - recipientId
+  - type
+  - title
+  - isRead
+  - isArchived
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: In-app notification for project management events

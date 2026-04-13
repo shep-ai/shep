@@ -1,0 +1,51 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: IntakeItem.yaml
+type: object
+properties:
+  projectId:
+    $ref: UUID.yaml
+    description: Project this intake item belongs to
+  title:
+    type: string
+    description: Title of the incoming request
+  description:
+    type: string
+    description: Description of the incoming request (plain text or rich text JSON)
+  source:
+    type: string
+    description: Source of the intake (e.g., 'manual', 'email', 'api')
+  status:
+    $ref: IntakeStatus.yaml
+    description: Triage status of the intake item
+  triageNotes:
+    type: string
+    description: Notes from the triage process (AI or human)
+  suggestedStateId:
+    $ref: UUID.yaml
+    description: Suggested state ID from AI triage
+  suggestedPriority:
+    type: string
+    description: Suggested priority from AI triage
+  suggestedLabels:
+    type: string
+    description: Suggested label IDs from AI triage (JSON array)
+  suggestedAssigneeId:
+    type: string
+    description: Suggested assignee ID from AI triage
+  resultingWorkItemId:
+    $ref: UUID.yaml
+    description: ID of the work item created on acceptance
+  declineReason:
+    type: string
+    description: Reason for declining the intake item
+  duplicateOfWorkItemId:
+    $ref: UUID.yaml
+    description: ID of the existing work item this is a duplicate of
+required:
+  - projectId
+  - title
+  - source
+  - status
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: Incoming request awaiting triage — separate from committed WorkItems
