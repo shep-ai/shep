@@ -10,15 +10,17 @@ import { GetAgentSessionUseCase } from '@/application/use-cases/agents/get-agent
 import { SessionNotFoundError } from '@/domain/errors/session-not-found.error.js';
 import type { AgentSessionRepositoryRegistry } from '@/application/services/agents/agent-session-repository.registry.js';
 import type { IAgentSessionRepository } from '@/application/ports/output/agents/agent-session-repository.interface.js';
-import type { AgentSession } from '@/domain/generated/output.js';
+import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
+import type { AgentSession, Settings } from '@/domain/generated/output.js';
 import { AgentType } from '@/domain/generated/output.js';
 
-// Mock getSettings — use string literal to avoid hoisting issues
-vi.mock('@/infrastructure/services/settings.service.js', () => ({
-  getSettings: vi.fn().mockReturnValue({
-    agent: { type: 'claude-code' },
-  }),
-}));
+function makeSettingsRepo(agentType = 'claude-code'): ISettingsRepository {
+  return {
+    initialize: vi.fn().mockResolvedValue(undefined),
+    load: vi.fn().mockResolvedValue({ agent: { type: agentType } } as unknown as Settings),
+    update: vi.fn().mockResolvedValue(undefined),
+  };
+}
 
 function createMockSession(overrides?: Partial<AgentSession>): AgentSession {
   return {
@@ -38,6 +40,7 @@ describe('GetAgentSessionUseCase', () => {
   let useCase: GetAgentSessionUseCase;
   let mockRegistry: AgentSessionRepositoryRegistry;
   let mockRepository: IAgentSessionRepository;
+  let mockSettingsRepository: ISettingsRepository;
 
   beforeEach(() => {
     mockRepository = {
@@ -50,7 +53,9 @@ describe('GetAgentSessionUseCase', () => {
       getRepository: vi.fn().mockReturnValue(mockRepository),
     } as unknown as AgentSessionRepositoryRegistry;
 
-    useCase = new GetAgentSessionUseCase(mockRegistry);
+    mockSettingsRepository = makeSettingsRepo();
+
+    useCase = new GetAgentSessionUseCase(mockRegistry, mockSettingsRepository);
   });
 
   it('should return the session when findById returns a session', async () => {

@@ -62,7 +62,7 @@ describe('Onboarding flow (integration)', () => {
     initializeSettings(settings);
 
     // Fresh settings → onboarding should be incomplete
-    const checkUseCase = new CheckOnboardingStatusUseCase();
+    const checkUseCase = new CheckOnboardingStatusUseCase(repository);
     const { isComplete } = await checkUseCase.execute();
 
     expect(isComplete).toBe(false);
@@ -83,7 +83,7 @@ describe('Onboarding flow (integration)', () => {
     initializeSettings(updated);
 
     // Now onboarding should be complete
-    const checkUseCase = new CheckOnboardingStatusUseCase();
+    const checkUseCase = new CheckOnboardingStatusUseCase(repository);
     const { isComplete } = await checkUseCase.execute();
 
     expect(isComplete).toBe(true);
@@ -106,7 +106,7 @@ describe('Onboarding flow (integration)', () => {
     initializeSettings(reloaded!);
 
     // Second run should see onboarding as complete (wizard must NOT appear)
-    const checkUseCase = new CheckOnboardingStatusUseCase();
+    const checkUseCase = new CheckOnboardingStatusUseCase(repository);
     const { isComplete } = await checkUseCase.execute();
 
     expect(isComplete).toBe(true);

@@ -167,6 +167,7 @@ import { LoadSettingsUseCase } from '../../application/use-cases/settings/load-s
 import { UpdateSettingsUseCase } from '../../application/use-cases/settings/update-settings.use-case.js';
 import { CompleteOnboardingUseCase } from '../../application/use-cases/settings/complete-onboarding.use-case.js';
 import { CompleteWebOnboardingUseCase } from '../../application/use-cases/settings/complete-web-onboarding.use-case.js';
+import { CheckOnboardingStatusUseCase } from '../../application/use-cases/settings/check-onboarding-status.use-case.js';
 import { ConfigureAgentUseCase } from '../../application/use-cases/agents/configure-agent.use-case.js';
 import { ValidateAgentAuthUseCase } from '../../application/use-cases/agents/validate-agent-auth.use-case.js';
 import { RunAgentUseCase } from '../../application/use-cases/agents/run-agent.use-case.js';
@@ -883,6 +884,7 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(UpdateSettingsUseCase);
   container.registerSingleton(CompleteOnboardingUseCase);
   container.registerSingleton(CompleteWebOnboardingUseCase);
+  container.registerSingleton(CheckOnboardingStatusUseCase);
   container.registerSingleton(ConfigureAgentUseCase);
   container.registerSingleton(ValidateAgentAuthUseCase);
   container.registerSingleton(RunAgentUseCase);
