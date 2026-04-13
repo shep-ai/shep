@@ -39,8 +39,11 @@ import { FeatureAgentLifecyclePublisher } from './feature-agent-lifecycle-publis
 import { FeatureAgentGateQuestionPublisher } from './feature-agent-gate-question-publisher.js';
 import { FeatureAgentSupervisorGateEvaluator } from './feature-agent-supervisor-gate-evaluator.js';
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
+import type { IPluginRepository } from '@/application/ports/output/repositories/plugin-repository.interface.js';
+import type { IMcpServerManager } from '@/application/ports/output/services/mcp-server-manager.interface.js';
 import { UpdateFeatureLifecycleUseCase } from '@/application/use-cases/features/update/update-feature-lifecycle.use-case.js';
 import { CleanupFeatureWorktreeUseCase } from '@/application/use-cases/features/cleanup-feature-worktree.use-case.js';
+import { startPluginServers, stopPluginServers } from './plugin-startup.js';
 
 import type { ApprovalGates } from '@/domain/generated/output.js';
 
@@ -246,6 +249,10 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     executor = await executorProvider.getExecutor();
   }
 
+  // Resolve plugin dependencies for MCP server lifecycle
+  const pluginRepository = container.resolve<IPluginRepository>('IPluginRepository');
+  const mcpServerManager = container.resolve<IMcpServerManager>('IMcpServerManager');
+
   // Resolve merge node dependencies
   const gitPrService = container.resolve<IGitPrService>('IGitPrService');
   const featureRepository = container.resolve<IFeatureRepository>('IFeatureRepository');
@@ -355,6 +362,14 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   };
   await lifecyclePublisher.publishStarted(lifecycleScope);
 
+  // Start MCP servers for enabled plugins (degrades gracefully on failure)
+  const mcpConfigPath = await startPluginServers(
+    args.featureId,
+    pluginRepository,
+    mcpServerManager,
+    log
+  );
+
   try {
     const graphConfig = { configurable: { thread_id: checkpointId } };
 
@@ -433,6 +448,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
           ...(args.approvalGates ? { approvalGates: args.approvalGates } : {}),
           ...(args.model ? { model: args.model } : {}),
           ...(args.resumeReason ? { resumeReason: args.resumeReason } : {}),
+          ...(mcpConfigPath ? { mcpConfigPath } : {}),
           push: args.push ?? false,
           openPr: args.openPr ?? false,
           forkAndPr: args.forkAndPr ?? false,
@@ -457,6 +473,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
           specDir: args.specDir,
           ...(args.approvalGates ? { approvalGates: args.approvalGates } : {}),
           ...(args.model ? { model: args.model } : {}),
+          ...(mcpConfigPath ? { mcpConfigPath } : {}),
           push: args.push ?? false,
           openPr: args.openPr ?? false,
           forkAndPr: args.forkAndPr ?? false,
@@ -567,6 +584,9 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
 
     await recordLifecycleEvent('run:failed');
     log('Run marked as failed');
+  } finally {
+    // Stop MCP plugin servers regardless of success/failure/interrupt
+    await stopPluginServers(args.featureId, mcpServerManager, log);
   }
 }
 
