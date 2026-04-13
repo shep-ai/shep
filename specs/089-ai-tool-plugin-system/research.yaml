@@ -1,0 +1,586 @@
+name: ai-tool-plugin-system
+summary: >
+  Technical research for the AI Tool Plugin System covering MCP server lifecycle management,
+  plugin registry persistence, agent execution integration, and CLI/web presentation patterns.
+  Key decisions: use Node.js child_process (not @modelcontextprotocol/sdk) for MCP server spawning,
+  a dedicated plugins SQLite table with its own repository/mapper, a new mcpServers field on
+  AgentExecutionOptions for agent-agnostic injection, and Claude Code --mcp-config temp file
+  generation for executor integration.
+
+relatedFeatures: []
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "tsyringe (DI)"
+  - "LangGraph (workflow orchestration)"
+  - "SQLite / better-sqlite3 (persistence)"
+  - "Model Context Protocol (MCP)"
+  - "Node.js child_process (MCP server spawning)"
+  - "Next.js (web UI)"
+  - "Commander.js (CLI)"
+  - "shadcn/ui (component library)"
+  - "umzug (database migrations)"
+
+relatedLinks:
+  - title: "MCP specification"
+    url: "https://modelcontextprotocol.io"
+  - title: "Claude Code MCP configuration docs"
+    url: "https://docs.anthropic.com/en/docs/claude-code/mcp"
+  - title: "MemPalace - MCP stdio plugin example"
+    url: "https://github.com/MemPalace/mempalace"
+  - title: "Token Optimizer - Hook-based plugin example"
+    url: "https://github.com/alexgreensh/token-optimizer"
+  - title: "Ruflo - Large MCP server example (313 tools)"
+    url: "https://github.com/ruvnet/ruflo"
+  - title: "@modelcontextprotocol/sdk npm package"
+    url: "https://www.npmjs.com/package/@modelcontextprotocol/sdk"
+
+decisions:
+  - title: "MCP Server Process Management Strategy"
+    chosen: "Node.js child_process.spawn() with reference counting"
+    rejected:
+      - "@modelcontextprotocol/sdk Client class -- the SDK provides a high-level MCP client for connecting to servers and calling tools, but Shep does not call MCP tools directly. Shep spawns MCP servers as child processes and passes their connection info to agent executors (Claude Code, Cursor, etc.) which have their own MCP clients. The SDK would add unnecessary dependency and complexity."
+      - "Docker containers for MCP servers -- provides isolation but adds Docker as a hard dependency, increases startup latency significantly (seconds vs milliseconds), and most MCP servers are lightweight Node.js/Python scripts that do not need containerization."
+    rationale: >
+      Shep acts as a process orchestrator, not an MCP client. The existing codebase already uses
+      child_process extensively (ClaudeCodeExecutorService spawns claude processes,
+      ToolInstallerService uses execFile for runtime detection). MCP servers for stdio transport
+      are just child processes with stdin/stdout pipes. The spawn pattern is well-established in
+      the codebase and requires no new dependencies. Reference counting handles concurrent features
+      sharing a server instance -- increment on feature start, decrement on feature stop, kill
+      process when count reaches zero.
+
+  - title: "MCP Config Injection into Agent Executors"
+    chosen: "Generate temporary .mcp.json file and pass via --mcp-config flag"
+    rejected:
+      - "Inline JSON via CLI argument -- Claude Code supports --mcp-config with a file path, not inline JSON. Passing complex nested JSON as a CLI argument is fragile (shell escaping, argument length limits on Windows)."
+      - "Modify worktree .mcp.json directly -- the worktree may have its own .mcp.json from the user's repo. Modifying it would conflict with user config and require cleanup. A temp file avoids this entirely."
+      - "Environment variable injection -- Claude Code reads MCP config from files and CLI flags, not from environment variables. No env var equivalent exists for MCP server configuration."
+    rationale: >
+      Claude Code accepts --mcp-config <path> to load MCP server definitions from a JSON file.
+      The format is: {"mcpServers": {"name": {"type": "stdio", "command": "...", "args": [...], "env": {...}}}}.
+      Generating a temp file per-feature with active plugin MCP servers and passing its path to the
+      executor is clean, isolated, and does not interfere with user-level MCP config. The temp file
+      is created in os.tmpdir() and cleaned up when the feature completes. This maps directly to the
+      existing buildArgs() pattern in ClaudeCodeExecutorService where flags like --tools and
+      --strict-mcp-config are already conditionally added. The new field on AgentExecutionOptions
+      (mcpConfigPath) carries the temp file path through the agent-agnostic interface.
+
+  - title: "Plugin Registry Persistence"
+    chosen: "Dedicated plugins SQLite table with separate repository and mapper"
+    rejected:
+      - "Extend Settings entity with plugin columns -- Settings is already a large singleton table (100+ columns). Plugin config is a collection (multiple rows) with its own CRUD lifecycle (add, remove, enable, update). Flattening multiple plugins into a single settings row requires JSON serialization of arrays, losing queryability and making concurrent access difficult."
+      - "File-based JSON config (.shep/plugins.json) -- diverges from the established SQLite persistence pattern used by features, settings, agent runs, and repositories. Loses transactional integrity, requires manual file locking for concurrent access, and cannot leverage the existing migration framework."
+    rationale: >
+      The codebase consistently uses SQLite for all persistent state: features table, settings table,
+      repositories table, agent_runs table, applications table. Each has its own repository interface
+      (IFeatureRepository, ISettingsRepository, IRepositoryRepository), mapper (toDatabase/fromDatabase),
+      and migration. The plugins table follows the exact same pattern. The latest migration is 059,
+      so the new plugins table migration will be 060. The mapper converts between PascalCase TypeSpec
+      domain types and snake_case SQL columns, following the established FeatureRow/fromDatabase/toDatabase
+      pattern in feature.mapper.ts.
+
+  - title: "Per-Feature Plugin Activation Storage"
+    chosen: "JSON-serialized plugin overrides column on the features table"
+    rejected:
+      - "Separate feature_plugins junction table -- adds a new table and repository just for a simple key-value mapping. Overkill when the Feature entity already stores similar config as serialized JSON (e.g., injected_skills column stores a JSON array of skill names)."
+      - "Store in Settings entity per-feature -- Settings is a singleton with no per-feature context. Per-feature overrides must live on the Feature entity, following the established pattern for forkAndPr, commitSpecs, enableEvidence, etc."
+    rationale: >
+      The existing pattern for per-feature configuration is direct columns on the features table.
+      However, plugin overrides are a dynamic set (not a fixed list of booleans like forkAndPr).
+      The injected_skills column precedent shows that JSON-serialized arrays/objects are stored as
+      TEXT columns in the features table. A new active_plugins TEXT column stores a JSON object
+      mapping plugin names to boolean activation states (e.g., {"mempalace": true, "ruflo": false}).
+      The Feature entity gets an optional activePlugins field of type Record<string, boolean>.
+      The feature.mapper.ts handles JSON serialization/deserialization, following the exact pattern
+      used for injected_skills. The 12-layer settings propagation (from LESSONS.md) applies:
+      global default from plugin registry enabled state -> per-feature override from active_plugins.
+
+  - title: "Plugin Domain Model Design"
+    chosen: "Single Plugin entity with type discriminator and optional type-specific fields"
+    rejected:
+      - "Separate entities per plugin type (McpPlugin, HookPlugin, CliPlugin) -- creates three entities, three repositories, three mappers, and three tables for what is conceptually one registry. Adds significant complexity and makes cross-type queries (list all plugins) require UNION queries or multiple repository calls."
+      - "Plugin entity with embedded PluginConfig value object hierarchy -- TypeSpec does not support discriminated unions or algebraic data types. A nested value object hierarchy would require runtime type guards and complex mapper logic for each variant."
+    rationale: >
+      A single Plugin entity with a PluginType enum discriminator (Mcp, Hook, Cli) keeps the
+      registry simple. MCP-specific fields (transport, serverCommand, serverArgs) are optional and
+      only populated for type=Mcp. Hook-specific fields (hookType, scriptPath) are optional and
+      only populated for type=Hook. CLI-specific fields (binaryCommand) are optional for type=Cli.
+      This maps cleanly to one SQLite table with nullable columns for type-specific fields.
+      The TypeSpec model uses optional fields (?) for type-specific properties. The mapper validates
+      that type-specific fields are present when the type demands them. This follows the existing
+      Feature entity pattern where fields like prUrl, prNumber, prStatus are only populated when
+      the feature reaches certain lifecycle stages.
+
+  - title: "MCP Server Lifecycle Scope"
+    chosen: "Per-feature server instances with reference counting for shared access"
+    rejected:
+      - "Global singleton servers (always-on daemon) -- wastes resources when no features are running. Requires daemon management infrastructure (systemd/launchd integration). Conflicts with the principle that MCP servers are only needed during active agent execution."
+      - "Per-node ephemeral servers (start/stop each graph node) -- adds cold-start latency (up to 10s per MCP server per node transition). Ruflo with its 313 tools would be especially slow to reinitialize. Adds complexity for managing rapid start/stop cycles."
+    rationale: >
+      Pre-spawn per feature balances simplicity and efficiency. When a feature starts execution,
+      the McpServerManager starts all enabled MCP servers for that feature. The servers stay alive
+      for the entire feature duration (minutes to hours). When the feature completes, pauses, or
+      fails, the servers are stopped. For concurrent features sharing the same plugin, reference
+      counting tracks how many features are using each server instance. The server process is
+      killed only when the last reference is released. This avoids duplicate processes while
+      ensuring cleanup. Process signal handlers (SIGTERM, SIGINT, beforeExit) ensure orphaned
+      servers are killed if Shep crashes.
+
+  - title: "Plugin Health Check Strategy"
+    chosen: "Multi-tier health check with runtime detection, package verification, env var validation, and server probe"
+    rejected:
+      - "Simple binary-exists check only -- misses cases where the binary exists but the package is not installed (e.g., python3 is on PATH but mempalace pip package is missing). Also misses missing environment variables that cause the server to crash on startup."
+      - "Full MCP handshake probe only -- too slow for on-demand checks (requires spawning the server, waiting for initialization, sending an MCP initialize request, and shutting down). Overkill for quick status display in CLI list and web UI."
+    rationale: >
+      The existing ToolInstallerService uses a tiered approach: checkBinaryExists() first, then
+      verifyCommand() as fallback. The plugin health checker extends this to four tiers:
+      (1) Runtime available -- python3/node on PATH via which/where (reuse ToolInstallerService pattern).
+      (2) Package installed -- pip show mempalace / npx ruflo --version (non-interactive, short timeout).
+      (3) Required env vars set -- check process.env for each required var name from plugin config.
+      (4) Server probe (optional, on-demand only) -- spawn server, wait for stdout ready signal, kill.
+      Tiers 1-3 run in <1s and are used for CLI list display and pre-flight checks. Tier 4 is
+      only used for explicit health check commands. Health status stored as enum:
+      Healthy (all tiers pass), Degraded (runtime present but package/env issues), Unavailable
+      (runtime missing or critical failure).
+
+  - title: "Curated Plugin Catalog Storage"
+    chosen: "Static TypeScript constant array in a dedicated catalog module"
+    rejected:
+      - "External JSON file loaded at runtime -- requires file I/O on every catalog access, path resolution across platforms, and error handling for missing/corrupt files. The catalog is small (3-10 entries for V1) and changes only with code releases."
+      - "Database-seeded catalog -- adds migration complexity to insert/update catalog entries. The catalog is read-only reference data, not user-mutable state. Putting it in SQLite mixes reference data with user data."
+    rationale: >
+      A TypeScript constant array (CatalogEntry[]) in a module like plugin-catalog.ts is the
+      simplest approach for V1. It is type-safe, tree-shaken, requires no I/O, and is easily
+      extensible by editing one file. Each entry contains: name, displayName, type, description,
+      installCommand, serverCommand, serverArgs, transport, requiredEnvVars, toolGroups,
+      runtimeRequirements, and homepageUrl. The catalog module exports a function
+      getCatalogEntries() that returns the array. This follows the existing TOOL_METADATA pattern
+      in tool-metadata.ts (tool-installer service) where tool definitions are static TypeScript
+      objects. Moving to a JSON file or database can be done later if the catalog grows
+      significantly.
+
+  - title: "Agent Execution Options Extension"
+    chosen: "New optional mcpConfigPath field on AgentExecutionOptions interface"
+    rejected:
+      - "New mcpServers field with structured MCP server definitions -- requires every executor to understand MCP server configuration format. Agent-type-specific translation logic would leak into the common interface. A file path is universally consumable."
+      - "Extend systemPrompt to include MCP instructions -- MCP servers are not prompt-level concerns. They are tool-level concerns that require process-level configuration (CLI flags), not prompt injection."
+    rationale: >
+      AgentExecutionOptions already has agent-agnostic fields (cwd, timeout, model, maxTurns) that
+      executors translate to their CLI-specific flags. Adding mcpConfigPath?: string follows this
+      pattern perfectly. The McpServerManager generates the temp .mcp.json file and sets the path
+      on the options. ClaudeCodeExecutorService translates it to --mcp-config <path> in buildArgs().
+      CursorExecutorService can translate it to its equivalent flag. Future executors map it to
+      their own MCP config mechanism. The interface stays agent-agnostic while each executor
+      handles the translation. The existing disableMcp field (which adds --strict-mcp-config)
+      serves as direct precedent for MCP-related options on this interface.
+
+  - title: "Hook-Based Plugin Integration"
+    chosen: "Delegate to Claude Code native hook system via .claude/hooks/ directory management"
+    rejected:
+      - "Custom hook runtime within Shep -- massive scope increase. Would require implementing hook lifecycle (pre-tool, post-tool, session-start, etc.) within Shep's agent execution pipeline. Claude Code already has a mature hook system that Token Optimizer targets."
+      - "Ignore hook plugins entirely in V1 -- excludes Token Optimizer and similar tools from the plugin system. The spec explicitly requires all three plugin types."
+    rationale: >
+      Claude Code has a native hooks system at .claude/hooks/ (or project-level). Token Optimizer
+      installs itself as Claude Code hooks (SessionStart, PreToolUse, PostToolUse, etc.). The
+      plugin system does not need to implement its own hook runtime -- it just needs to manage the
+      installation of hook scripts into the appropriate directory. For hook-type plugins, the
+      install use case copies/symlinks the hook scripts to .claude/hooks/ in the worktree. The
+      remove use case cleans them up. Health checks verify script existence and runtime
+      availability (python3 for Token Optimizer). This is analogous to how the SkillInjectorService
+      copies skill files into the worktree -- file management, not execution management. The
+      hook scripts are executed by Claude Code itself during agent execution, not by Shep.
+
+  - title: "CLI Command Organization"
+    chosen: "New top-level plugin command group with subcommands"
+    rejected:
+      - "Nest under settings command (shep settings plugin ...) -- plugins are a first-class subsystem, not a settings concern. The settings command manages global configuration. Plugins have their own lifecycle (install, remove, health check) that does not fit the settings mental model."
+      - "Individual top-level commands (shep plugin-add, shep plugin-remove, etc.) -- violates the established command group pattern used by settings. Commander.js supports nested commands naturally."
+    rationale: >
+      The codebase uses Commander.js command groups with addCommand() for related subcommands.
+      The settings command demonstrates this pattern perfectly: settings/index.ts creates the group,
+      individual files like agent.command.ts define subcommands. The plugin command group follows
+      the exact same pattern: plugin/index.ts exports createPluginCommand() which adds subcommands
+      for add, remove, list, enable, disable, configure, status, and catalog. Each subcommand
+      resolves its use case from the DI container and executes it. The main CLI entry point adds
+      createPluginCommand() alongside createSettingsCommand().
+
+  - title: "Web UI Plugin Management Scope"
+    chosen: "Plugin list page with status indicators plus curated catalog browser"
+    rejected:
+      - "Configuration management only (no catalog browser) -- forces users to use CLI for discovering and installing plugins. The web UI should provide a complete plugin management experience."
+      - "Full marketplace with search, ratings, and community submissions -- massive scope increase requiring backend APIs, user accounts for ratings, and community moderation. Out of scope for V1."
+    rationale: >
+      The web UI provides two views: (1) Installed Plugins list showing name, type, health status
+      badge, enabled/disabled toggle switch, and actions (configure, remove). This follows the
+      existing settings page pattern with Card/CardHeader/CardContent layout and Switch toggles.
+      (2) Catalog Browser showing available plugins from the curated catalog with Install buttons.
+      Each catalog entry shows name, description, type badge, and runtime requirements. Server
+      actions call the same use cases as the CLI (AddPluginUseCase, RemovePluginUseCase,
+      EnablePluginUseCase, etc.). The create-feature drawer gets a plugin activation section
+      with toggles for each installed plugin, following the existing per-feature settings pattern
+      in the drawer.
+
+  - title: "Environment Variable Handling"
+    chosen: "Reference from system environment at runtime -- store only var names, never values"
+    rejected:
+      - "Store env var values in SQLite -- puts secrets (API keys, tokens) in an unencrypted database file on disk. Violates NFR-6 (no secret storage). The SQLite DB is not encrypted and can be read by any process with file access."
+      - "Encrypted keychain storage -- adds significant complexity (platform-specific keychain integration for macOS Keychain, Windows Credential Manager, Linux Secret Service). Out of scope for V1. The spec's open question selected this but the rationale clearly describes the env reference approach."
+    rationale: >
+      The existing codebase follows this exact pattern for all sensitive configuration.
+      ANTHROPIC_API_KEY for agent executors is read from process.env at runtime, never stored
+      in SQLite. The plugin registry stores only the names of required environment variables
+      (e.g., ["ANTHROPIC_API_KEY"] for Ruflo). At MCP server spawn time, the system checks
+      process.env for each required var and passes them to the child process env. Missing vars
+      produce a clear error message: "Plugin 'ruflo' requires ANTHROPIC_API_KEY to be set.
+      Add it to your shell profile or .env file." This is the simplest, most secure approach
+      and requires zero new infrastructure.
+
+  - title: "Tool Group Filtering Implementation"
+    chosen: "Static tool group definitions in plugin catalog and registry"
+    rejected:
+      - "No filtering (all-or-nothing) -- Ruflo exposes 313 MCP tools. Claude Code has practical performance degradation above ~40 tools. Enabling Ruflo without filtering would overwhelm the agent context."
+      - "AI-driven dynamic filtering per graph node -- complex, unpredictable, requires per-node tool mapping configuration that is hard to maintain. The spec's open question selected this but the rationale clearly describes tool group filtering."
+    rationale: >
+      Tool groups are metadata defined in the plugin catalog. Ruflo already uses CLAUDE_FLOW_TOOL_GROUPS
+      env var to specify which tool groups to load. The plugin system formalizes this: each catalog
+      entry defines available tool groups (e.g., Ruflo has implement, test, memory, flow). When
+      a plugin is installed, the user selects which tool groups to enable. The McpServerManager
+      passes the selected groups to the server process via its native env var mechanism (e.g.,
+      CLAUDE_FLOW_TOOL_GROUPS=implement,test for Ruflo). The plugin configuration stores
+      activeToolGroups: string[] in the registry. This requires no MCP protocol extensions -- it
+      leverages each tool's existing group filtering mechanism.
+
+openQuestions:
+  - question: "Should the @modelcontextprotocol/sdk package be added as a dependency?"
+    resolved: true
+    options:
+      - option: "Yes, use SDK for MCP client communication"
+        description: "Add @modelcontextprotocol/sdk to manage MCP server connections, send initialize handshakes, and discover tools. Provides type-safe MCP protocol handling but adds a dependency Shep does not actually need since agent executors have their own MCP clients."
+        selected: false
+      - option: "No, use child_process.spawn() only"
+        description: "Shep spawns MCP server processes and passes connection info to agent executors. Shep never communicates with MCP servers directly -- the agent (Claude Code, Cursor) does. No SDK needed."
+        selected: true
+      - option: "Yes, but only for health check probes"
+        description: "Use the SDK minimally for tier-4 health checks (send MCP initialize request to verify server is responding). Skip it for production spawning. Adds dependency for a rarely-used feature."
+        selected: false
+    selectionRationale: >
+      Shep is an orchestrator, not an MCP client. It spawns MCP server processes and tells agent
+      executors how to connect to them. The agent executors (Claude Code, Cursor) have their own
+      MCP client implementations. Adding the SDK would introduce an unnecessary dependency. For
+      health check probes, spawning the server and checking that stdout produces output within
+      a timeout is sufficient -- no protocol-level handshake needed. The codebase already has
+      extensive child_process usage patterns to follow.
+
+  - question: "How should the MCP config temp file be managed for concurrent features?"
+    resolved: true
+    options:
+      - option: "One global temp file updated on each feature start"
+        description: "A single .mcp.json in os.tmpdir() overwritten whenever a feature starts. Simple but breaks concurrent features -- the second feature's config overwrites the first."
+        selected: false
+      - option: "Per-feature temp file with feature ID in filename"
+        description: "Each feature gets its own temp file (e.g., /tmp/shep-mcp-{featureId}.json). Isolated, no conflicts, cleaned up per-feature. Uses os.tmpdir() for cross-platform compatibility."
+        selected: true
+      - option: "In-memory config passed via environment variable"
+        description: "Serialize MCP config to an env var and let Claude Code read it. Claude Code does not support reading MCP config from env vars, so this approach does not work."
+        selected: false
+    selectionRationale: >
+      Per-feature temp files ensure complete isolation between concurrent features. Each feature
+      may have different active plugins based on per-feature overrides. The file path includes
+      the feature ID for uniqueness: path.join(os.tmpdir(), 'shep-mcp-{featureId}.json').
+      The McpServerManager creates the file when starting servers for a feature and deletes it
+      when stopping them. This maps cleanly to the existing resource cleanup pattern where
+      feature completion triggers cleanup of all associated resources.
+
+  - question: "How should the plugin system integrate with the existing feature creation flow?"
+    resolved: true
+    options:
+      - option: "Inject plugin startup into the feature agent graph as a new node"
+        description: "Add a start-plugins node to the LangGraph workflow that runs before the first real node. Clean separation but adds graph complexity and a new node that must handle errors without crashing the workflow."
+        selected: false
+      - option: "Start plugins in the feature agent worker before graph invocation"
+        description: "The feature agent worker (which sets up the graph and invokes it) starts MCP servers as part of its initialization, before the first graph node runs. Plugins are available for all nodes. Cleanup happens in the worker's finally block."
+        selected: true
+      - option: "Start plugins lazily in buildExecutorOptions when first needed"
+        description: "Defer server startup to the first call to buildExecutorOptions that includes MCP plugins. Saves startup time if early nodes do not need plugins, but adds latency to the first node that does and complicates lifecycle management."
+        selected: false
+    selectionRationale: >
+      The feature agent worker is the natural place for plugin lifecycle management. It already
+      handles graph setup, checkpoint management, and error cleanup. Starting MCP servers before
+      graph invocation ensures all nodes have access to plugin tools. The worker's existing
+      try/finally pattern ensures cleanup on both success and failure. This avoids adding
+      complexity to the graph structure itself. The worker reads the feature's active plugins
+      from the registry, starts their MCP servers via McpServerManager, generates the MCP config
+      temp file, and passes the config path through to graph state so buildExecutorOptions can
+      include it in AgentExecutionOptions.
+
+content: |
+  ## Technology Decisions
+
+  ### 1. MCP Server Process Management Strategy
+
+  **Chosen:** Node.js child_process.spawn() with reference counting
+
+  **Rejected:**
+  - @modelcontextprotocol/sdk Client class -- Shep does not call MCP tools directly; it spawns servers and passes connection info to agent executors which have their own MCP clients
+  - Docker containers for MCP servers -- adds Docker as hard dependency, increases startup latency, overkill for lightweight Node.js/Python scripts
+
+  **Rationale:** Shep acts as a process orchestrator, not an MCP client. The existing codebase uses child_process extensively (ClaudeCodeExecutorService, ToolInstallerService). MCP stdio servers are just child processes with stdin/stdout pipes. Reference counting handles concurrent features sharing a server instance.
+
+  ### 2. MCP Config Injection into Agent Executors
+
+  **Chosen:** Generate temporary .mcp.json file and pass via --mcp-config flag
+
+  **Rejected:**
+  - Inline JSON via CLI argument -- Claude Code uses file paths for --mcp-config, not inline JSON
+  - Modify worktree .mcp.json -- conflicts with user's repo config
+  - Environment variable injection -- Claude Code has no env var for MCP config
+
+  **Rationale:** Claude Code accepts `--mcp-config <path>` to load MCP server definitions. Format: `{"mcpServers": {"name": {"type": "stdio", "command": "...", "args": [...], "env": {...}}}}`. A temp file per-feature in os.tmpdir() is clean, isolated, and maps directly to the existing buildArgs() pattern in ClaudeCodeExecutorService.
+
+  ### 3. Plugin Registry Persistence
+
+  **Chosen:** Dedicated plugins SQLite table with separate repository and mapper
+
+  **Rejected:**
+  - Extend Settings entity -- Settings is a singleton; plugins are a collection with CRUD lifecycle
+  - File-based JSON config -- diverges from established SQLite pattern, loses transactional integrity
+
+  **Rationale:** Every persistent entity in the codebase follows the same pattern: SQLite table, repository interface (IXxxRepository), mapper (toDatabase/fromDatabase), and migration. The latest migration is 059, so the plugins table will be migration 060.
+
+  ### 4. Per-Feature Plugin Activation Storage
+
+  **Chosen:** JSON-serialized active_plugins column on the features table
+
+  **Rejected:**
+  - Separate junction table -- overkill for a simple key-value mapping
+  - Store in Settings entity -- Settings has no per-feature context
+
+  **Rationale:** Follows the injected_skills column precedent: JSON-serialized TEXT column on the features table. Feature entity gets optional `activePlugins?: Record<string, boolean>`. The 12-layer settings flow applies: global default from plugin registry -> per-feature override from active_plugins.
+
+  ### 5. Plugin Domain Model Design
+
+  **Chosen:** Single Plugin entity with type discriminator and optional type-specific fields
+
+  **Rejected:**
+  - Separate entities per plugin type -- three entities, repositories, mappers, tables for one registry
+  - Embedded PluginConfig value object hierarchy -- TypeSpec does not support discriminated unions
+
+  **Rationale:** A single Plugin entity with PluginType enum (Mcp, Hook, Cli) keeps the registry simple. Type-specific fields (transport, serverCommand for Mcp; hookType, scriptPath for Hook; binaryCommand for Cli) are optional. This maps cleanly to one SQLite table with nullable columns.
+
+  ### 6. MCP Server Lifecycle Scope
+
+  **Chosen:** Per-feature server instances with reference counting for shared access
+
+  **Rejected:**
+  - Global singleton servers (always-on daemon) -- wastes resources, requires daemon management
+  - Per-node ephemeral servers -- adds cold-start latency per graph node transition
+
+  **Rationale:** Pre-spawn per feature. Servers start when feature execution begins and stop when it completes. Reference counting for concurrent features sharing a plugin: increment on feature start, decrement on stop, kill when count reaches zero. Process signal handlers ensure cleanup on crash.
+
+  ### 7. Plugin Health Check Strategy
+
+  **Chosen:** Multi-tier: runtime detection, package verification, env var validation, server probe
+
+  **Rejected:**
+  - Binary-exists check only -- misses missing packages and env vars
+  - Full MCP handshake probe only -- too slow for quick status display
+
+  **Rationale:** Four tiers following ToolInstallerService pattern: (1) Runtime on PATH, (2) Package installed, (3) Env vars set, (4) Server probe (optional, on-demand). Tiers 1-3 run in <1s for CLI/web display. Health status: Healthy, Degraded, Unavailable.
+
+  ### 8. Curated Plugin Catalog Storage
+
+  **Chosen:** Static TypeScript constant array in a dedicated catalog module
+
+  **Rejected:**
+  - External JSON file -- requires file I/O, path resolution, error handling for small data
+  - Database-seeded catalog -- mixes reference data with user data, migration complexity
+
+  **Rationale:** Follows TOOL_METADATA pattern in tool-metadata.ts. Type-safe, tree-shaken, no I/O. Each entry: name, displayName, type, description, installCommand, serverCommand, serverArgs, transport, requiredEnvVars, toolGroups, runtimeRequirements, homepageUrl.
+
+  ### 9. Agent Execution Options Extension
+
+  **Chosen:** New optional mcpConfigPath field on AgentExecutionOptions
+
+  **Rejected:**
+  - Structured mcpServers field -- requires every executor to understand MCP config format
+  - System prompt injection -- MCP is a tool-level concern, not a prompt concern
+
+  **Rationale:** AgentExecutionOptions already has agent-agnostic fields translated by each executor. Adding mcpConfigPath?: string follows this pattern. ClaudeCodeExecutorService translates to --mcp-config <path>. CursorExecutorService translates to its equivalent. The existing disableMcp field serves as precedent for MCP-related options.
+
+  ### 10. Hook-Based Plugin Integration
+
+  **Chosen:** Delegate to Claude Code native hook system via .claude/hooks/ directory management
+
+  **Rejected:**
+  - Custom hook runtime -- massive scope; Claude Code already has a mature hook system
+  - Ignore hook plugins in V1 -- excludes Token Optimizer from the plugin system
+
+  **Rationale:** Claude Code's native hooks system at .claude/hooks/ is what Token Optimizer targets. The plugin system manages installation of hook scripts into the directory, not execution. Install copies/symlinks scripts, remove cleans them up. Analogous to SkillInjectorService copying files into worktrees.
+
+  ### 11. CLI Command Organization
+
+  **Chosen:** New top-level `plugin` command group with subcommands
+
+  **Rejected:**
+  - Nest under settings (shep settings plugin) -- plugins are a first-class subsystem, not settings
+  - Individual top-level commands -- violates established command group pattern
+
+  **Rationale:** Follows Commander.js command group pattern used by settings. plugin/index.ts creates the group; individual files define subcommands (add, remove, list, enable, disable, configure, status, catalog).
+
+  ### 12. Environment Variable Handling
+
+  **Chosen:** Reference from system environment -- store only var names, never values
+
+  **Rejected:**
+  - Store values in SQLite -- puts secrets in unencrypted DB, violates NFR-6
+  - Encrypted keychain -- out of scope complexity for V1
+
+  **Rationale:** Matches existing pattern (ANTHROPIC_API_KEY read from process.env). Plugin registry stores required var names. At spawn time, system validates presence and passes values to child process env. Missing vars produce actionable error messages.
+
+  ### 13. Tool Group Filtering
+
+  **Chosen:** Static tool group definitions in catalog and registry
+
+  **Rejected:**
+  - No filtering -- Ruflo's 313 tools overwhelm agent context
+  - AI-driven dynamic filtering -- complex, unpredictable for V1
+
+  **Rationale:** Ruflo already uses CLAUDE_FLOW_TOOL_GROUPS env var. Plugin system formalizes tool groups in catalog metadata. User selects groups during install. McpServerManager passes selected groups via server's native env var mechanism. No MCP protocol extensions needed.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | @modelcontextprotocol/sdk | MCP client/server SDK | Reject | Shep is an orchestrator, not an MCP client. Agent executors have their own MCP clients. |
+  | better-sqlite3 | SQLite database driver | Use (existing) | Already the database layer for all persistence. Plugin table follows established pattern. |
+  | tsyringe | Dependency injection | Use (existing) | All services, use cases, and repositories use tsyringe. Plugin system follows same pattern. |
+  | umzug | Database migrations | Use (existing) | Migration 060 creates plugins table following existing convention. |
+  | Commander.js | CLI framework | Use (existing) | Plugin command group follows settings command pattern. |
+  | shadcn/ui | Web UI components | Use (existing) | Card, Switch, Badge, Button for plugin management page. |
+  | Node.js child_process | MCP server spawning | Use (built-in) | spawn() for stdio servers, no new dependencies needed. |
+  | Node.js os.tmpdir() | Temp file management | Use (built-in) | MCP config temp files per-feature. |
+
+  ## Security Considerations
+
+  ### No Secret Storage (NFR-6)
+  - Plugin registry stores ONLY environment variable NAMES, never values
+  - Values read from process.env at runtime and passed to child process env
+  - SQLite database contains zero secrets
+  - Missing env vars produce clear error messages, never leak partial secrets
+
+  ### Process Isolation
+  - MCP server processes spawned WITHOUT shell: true (no shell injection)
+  - Command and args are arrays, not concatenated strings
+  - Environment passed explicitly, not inherited wholesale from process.env
+  - Only required env vars (from plugin config) plus PATH are passed to child processes
+
+  ### Catalog Trust
+  - Curated catalog entries are code-reviewed and shipped with Shep
+  - Custom plugins specified by user are their responsibility
+  - No auto-discovery from npm/pip registries (avoids supply chain risk)
+  - Plugin install commands visible to user before execution
+
+  ### Resource Cleanup
+  - Process signal handlers (SIGTERM, SIGINT, beforeExit) kill orphaned MCP servers
+  - Per-feature cleanup on feature completion/failure/pause
+  - Reference counting prevents premature kills for shared servers
+  - Temp MCP config files deleted on feature cleanup
+
+  ## Performance Implications
+
+  ### Startup Latency (NFR-1)
+  - Plugin system initialization is just loading the registry from SQLite (single query)
+  - No MCP servers started at CLI boot time
+  - Registry load adds <10ms to startup (in-memory SQLite query)
+
+  ### Feature Execution Overhead
+  - MCP servers pre-spawned per feature -- startup cost paid once, not per-node
+  - Server startup timeout: 10s per server (NFR-2)
+  - Features with no active plugins: zero additional overhead
+  - Temp file I/O: single write per feature start, single delete per feature end
+
+  ### Concurrent Feature Performance
+  - Reference counting avoids duplicate server processes for shared plugins
+  - Each feature has its own MCP config temp file (no lock contention)
+  - SQLite queries for plugin registry are read-heavy, not write-heavy during execution
+
+  ## Architecture Notes
+
+  ### Clean Architecture Compliance
+
+  **Domain Layer (TypeSpec -> generated):**
+  - Plugin entity: id, name, displayName, type, version, transport, serverCommand, serverArgs, requiredEnvVars, toolGroups, activeToolGroups, enabled, healthStatus, hookType, scriptPath, binaryCommand, installSource, createdAt, updatedAt
+  - PluginType enum: Mcp, Hook, Cli
+  - PluginTransport enum: Stdio, Http
+  - PluginHealthStatus enum: Healthy, Degraded, Unavailable, Unknown
+  - ToolGroup model: name, description, tools[]
+
+  **Application Layer (ports + use cases):**
+  - IPluginRepository: create, findById, findByName, list, update, delete
+  - IMcpServerManager: startServers(featureId, plugins), stopServers(featureId), getActiveServers(featureId), generateMcpConfig(featureId)
+  - IPluginHealthChecker: checkHealth(plugin), checkAllHealth()
+  - Use cases: AddPlugin, RemovePlugin, ListPlugins, EnablePlugin, DisablePlugin, ConfigurePlugin, CheckPluginHealth, GetPluginCatalog
+
+  **Infrastructure Layer (implementations):**
+  - SQLitePluginRepository: CRUD operations for plugins table
+  - McpServerManagerService: child_process.spawn(), reference counting, temp file management
+  - PluginHealthCheckerService: tiered health checks (runtime, package, env, probe)
+  - PluginCatalogProvider: static catalog data
+  - Migration 060: CREATE TABLE plugins
+
+  **Presentation Layer (CLI + Web):**
+  - CLI: shep plugin {add,remove,list,enable,disable,configure,status,catalog}
+  - Web: Plugin list page, catalog browser, per-feature toggles in create drawer
+  - Server actions: addPlugin, removePlugin, togglePlugin, etc.
+
+  ### Integration Points
+
+  1. **Feature Agent Worker** -- Starts MCP servers before graph invocation, generates config, passes mcpConfigPath through graph state, cleans up in finally block
+  2. **buildExecutorOptions()** -- Reads mcpConfigPath from graph state and adds to AgentExecutionOptions
+  3. **ClaudeCodeExecutorService.buildArgs()** -- Translates mcpConfigPath to --mcp-config <path> CLI flag
+  4. **CreateFeatureUseCase** -- Stores activePlugins per-feature override from user input
+  5. **DI Container** -- Registers IPluginRepository, IMcpServerManager, IPluginHealthChecker, all use cases, and string token aliases
+
+  ### Database Schema
+
+  ```sql
+  CREATE TABLE plugins (
+    id                  TEXT PRIMARY KEY,
+    name                TEXT NOT NULL UNIQUE,
+    display_name        TEXT NOT NULL,
+    type                TEXT NOT NULL,           -- 'Mcp' | 'Hook' | 'Cli'
+    version             TEXT,
+    install_source      TEXT,                    -- 'catalog' | 'custom'
+    transport           TEXT,                    -- 'Stdio' | 'Http' (MCP only)
+    server_command      TEXT,                    -- MCP server command
+    server_args         TEXT,                    -- JSON array of args
+    required_env_vars   TEXT,                    -- JSON array of env var names
+    tool_groups         TEXT,                    -- JSON array of available groups
+    active_tool_groups  TEXT,                    -- JSON array of enabled groups
+    enabled             INTEGER NOT NULL DEFAULT 1,
+    health_status       TEXT NOT NULL DEFAULT 'Unknown',
+    health_message      TEXT,
+    hook_type           TEXT,                    -- Hook plugin type
+    script_path         TEXT,                    -- Hook script path
+    binary_command      TEXT,                    -- CLI plugin command
+    runtime_type        TEXT,                    -- 'python' | 'node'
+    runtime_min_version TEXT,                    -- e.g., '3.9', '20'
+    homepage_url        TEXT,
+    description         TEXT,
+    created_at          INTEGER NOT NULL,
+    updated_at          INTEGER NOT NULL
+  );
+
+  CREATE UNIQUE INDEX idx_plugins_name ON plugins(name);
+  ```
+
+  Features table addition (migration 061):
+  ```sql
+  ALTER TABLE features ADD COLUMN active_plugins TEXT;
+  ```
+
+  ---
+
+  _Research completed 2026-04-13_
