@@ -268,6 +268,18 @@ import { LogTimeEntryUseCase } from '../../application/use-cases/time-entries/lo
 import { ListTimeEntriesUseCase } from '../../application/use-cases/time-entries/list-time-entries.use-case.js';
 import { DeleteTimeEntryUseCase } from '../../application/use-cases/time-entries/delete-time-entry.use-case.js';
 
+// Intake use cases
+import { CreateIntakeItemUseCase } from '../../application/use-cases/intake/create-intake-item.use-case.js';
+import { ListIntakeItemsUseCase } from '../../application/use-cases/intake/list-intake-items.use-case.js';
+import { AcceptIntakeItemUseCase } from '../../application/use-cases/intake/accept-intake-item.use-case.js';
+import { DeclineIntakeItemUseCase } from '../../application/use-cases/intake/decline-intake-item.use-case.js';
+import { AutoTriageIntakeItemUseCase } from '../../application/use-cases/intake/auto-triage-intake-item.use-case.js';
+import { DetectDuplicatesUseCase } from '../../application/use-cases/intake/detect-duplicates.use-case.js';
+
+// Notification use cases
+import { ListNotificationsUseCase } from '../../application/use-cases/notifications/list-notifications.use-case.js';
+import { MarkNotificationReadUseCase } from '../../application/use-cases/notifications/mark-notification-read.use-case.js';
+
 // Analytics use cases
 import { GetCycleBurndownUseCase } from '../../application/use-cases/analytics/get-cycle-burndown.use-case.js';
 import { GetProjectBreakdownUseCase } from '../../application/use-cases/analytics/get-project-breakdown.use-case.js';
@@ -831,6 +843,26 @@ export async function initializeContainer(): Promise<typeof container> {
   container.register('ListTimeEntriesUseCase', { useToken: ListTimeEntriesUseCase });
   container.registerSingleton(DeleteTimeEntryUseCase);
   container.register('DeleteTimeEntryUseCase', { useToken: DeleteTimeEntryUseCase });
+
+  // Intake use cases
+  container.registerSingleton(CreateIntakeItemUseCase);
+  container.register('CreateIntakeItemUseCase', { useToken: CreateIntakeItemUseCase });
+  container.registerSingleton(ListIntakeItemsUseCase);
+  container.register('ListIntakeItemsUseCase', { useToken: ListIntakeItemsUseCase });
+  container.registerSingleton(AcceptIntakeItemUseCase);
+  container.register('AcceptIntakeItemUseCase', { useToken: AcceptIntakeItemUseCase });
+  container.registerSingleton(DeclineIntakeItemUseCase);
+  container.register('DeclineIntakeItemUseCase', { useToken: DeclineIntakeItemUseCase });
+  container.registerSingleton(AutoTriageIntakeItemUseCase);
+  container.register('AutoTriageIntakeItemUseCase', { useToken: AutoTriageIntakeItemUseCase });
+  container.registerSingleton(DetectDuplicatesUseCase);
+  container.register('DetectDuplicatesUseCase', { useToken: DetectDuplicatesUseCase });
+
+  // Notification use cases
+  container.registerSingleton(ListNotificationsUseCase);
+  container.register('ListNotificationsUseCase', { useToken: ListNotificationsUseCase });
+  container.registerSingleton(MarkNotificationReadUseCase);
+  container.register('MarkNotificationReadUseCase', { useToken: MarkNotificationReadUseCase });
 
   // Analytics use cases
   container.registerSingleton(GetCycleBurndownUseCase);
