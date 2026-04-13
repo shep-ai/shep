@@ -3,6 +3,7 @@ import type { GetPmProjectUseCase } from '@shepai/core/application/use-cases/pm-
 import type { ListWorkItemsUseCase } from '@shepai/core/application/use-cases/work-items/list-work-items.use-case';
 import type { ManageWorkItemStatesUseCase } from '@shepai/core/application/use-cases/work-item-states/manage-work-item-states.use-case';
 import type { ManageLabelsUseCase } from '@shepai/core/application/use-cases/labels/manage-labels.use-case';
+import type { ListCyclesUseCase } from '@shepai/core/application/use-cases/cycles/list-cycles.use-case';
 import { ProjectDetailClient } from '@/components/features/projects/project-detail-client';
 
 /** Skip static pre-rendering since we need runtime DI container and server context. */
@@ -26,10 +27,11 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   }
 
   const project = result.project;
-  const [workItems, states, labels] = await Promise.all([
+  const [workItems, states, labels, cycles] = await Promise.all([
     resolve<ListWorkItemsUseCase>('ListWorkItemsUseCase').execute(project.id),
     resolve<ManageWorkItemStatesUseCase>('ManageWorkItemStatesUseCase').list(project.id),
     resolve<ManageLabelsUseCase>('ManageLabelsUseCase').list(project.id),
+    resolve<ListCyclesUseCase>('ListCyclesUseCase').execute(project.id),
   ]);
 
   return (
@@ -39,6 +41,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         workItems={workItems}
         states={states}
         labels={labels}
+        cycles={cycles}
       />
     </div>
   );

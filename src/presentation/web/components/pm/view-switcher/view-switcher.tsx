@@ -1,16 +1,17 @@
 'use client';
 
-import { LayoutList, Kanban, Table2, CalendarDays } from 'lucide-react';
+import { LayoutList, Kanban, Table2, CalendarDays, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
-export type ViewMode = 'list' | 'board' | 'table' | 'calendar';
+export type ViewMode = 'list' | 'board' | 'table' | 'calendar' | 'analytics';
 
 const VIEW_OPTIONS: { mode: ViewMode; label: string; icon: typeof LayoutList }[] = [
   { mode: 'list', label: 'List', icon: LayoutList },
   { mode: 'board', label: 'Board', icon: Kanban },
   { mode: 'table', label: 'Table', icon: Table2 },
   { mode: 'calendar', label: 'Calendar', icon: CalendarDays },
+  { mode: 'analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
 export interface ViewSwitcherProps {

@@ -12,6 +12,7 @@ import type {
   WorkItem,
   WorkItemState,
   Label,
+  Cycle,
 } from '@shepai/core/domain/generated/output';
 import { WorkItemRow } from './work-item-row';
 import { CreateWorkItemDialog } from './create-work-item-dialog';
@@ -19,6 +20,7 @@ import { ViewSwitcher, type ViewMode } from '@/components/pm/view-switcher/view-
 import { BoardView } from '@/components/pm/board-view/board-view';
 import { TableView } from '@/components/pm/table-view/table-view';
 import { CalendarView } from '@/components/pm/calendar-view/calendar-view';
+import { AnalyticsDashboard } from '@/components/pm/analytics/analytics-dashboard';
 import { updateWorkItem } from '@/app/actions/update-work-item';
 
 export interface ProjectDetailClientProps {
@@ -26,6 +28,7 @@ export interface ProjectDetailClientProps {
   workItems: WorkItem[];
   states: WorkItemState[];
   labels: Label[];
+  cycles?: Cycle[];
   className?: string;
 }
 
@@ -36,6 +39,7 @@ export function ProjectDetailClient({
   workItems: initialWorkItems,
   states,
   labels,
+  cycles = [],
   className,
 }: ProjectDetailClientProps) {
   const [workItems, setWorkItems] = useState<WorkItem[]>(initialWorkItems);
@@ -216,6 +220,8 @@ export function ProjectDetailClient({
           onItemClick={handleCardClick}
         />
       )}
+
+      {viewMode === 'analytics' && <AnalyticsDashboard projectId={project.id} cycles={cycles} />}
 
       <CreateWorkItemDialog
         open={showCreateDialog}
