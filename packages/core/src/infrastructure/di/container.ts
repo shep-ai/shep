@@ -212,6 +212,30 @@ import { DeleteWorkItemRelationUseCase } from '../../application/use-cases/work-
 import { ListWorkItemRelationsUseCase } from '../../application/use-cases/work-item-relations/list-work-item-relations.use-case.js';
 import { BulkUpdateWorkItemsUseCase } from '../../application/use-cases/work-items/bulk-update-work-items.use-case.js';
 
+// Cycle use cases
+import { CreateCycleUseCase } from '../../application/use-cases/cycles/create-cycle.use-case.js';
+import { ListCyclesUseCase } from '../../application/use-cases/cycles/list-cycles.use-case.js';
+import { GetCycleUseCase } from '../../application/use-cases/cycles/get-cycle.use-case.js';
+import { UpdateCycleUseCase } from '../../application/use-cases/cycles/update-cycle.use-case.js';
+import { DeleteCycleUseCase } from '../../application/use-cases/cycles/delete-cycle.use-case.js';
+import { AddItemsToCycleUseCase } from '../../application/use-cases/cycles/add-items-to-cycle.use-case.js';
+import { RemoveItemsFromCycleUseCase } from '../../application/use-cases/cycles/remove-items-from-cycle.use-case.js';
+import { TransferCycleItemsUseCase } from '../../application/use-cases/cycles/transfer-cycle-items.use-case.js';
+
+// Module use cases
+import { CreateModuleUseCase } from '../../application/use-cases/modules/create-module.use-case.js';
+import { ListModulesUseCase } from '../../application/use-cases/modules/list-modules.use-case.js';
+import { GetModuleUseCase } from '../../application/use-cases/modules/get-module.use-case.js';
+import { UpdateModuleUseCase } from '../../application/use-cases/modules/update-module.use-case.js';
+import { DeleteModuleUseCase } from '../../application/use-cases/modules/delete-module.use-case.js';
+import { AddItemsToModuleUseCase } from '../../application/use-cases/modules/add-items-to-module.use-case.js';
+import { RemoveItemsFromModuleUseCase } from '../../application/use-cases/modules/remove-items-from-module.use-case.js';
+
+// Analytics use cases
+import { GetCycleBurndownUseCase } from '../../application/use-cases/analytics/get-cycle-burndown.use-case.js';
+import { GetProjectBreakdownUseCase } from '../../application/use-cases/analytics/get-project-breakdown.use-case.js';
+import { GetModuleProgressUseCase } from '../../application/use-cases/analytics/get-module-progress.use-case.js';
+
 // Deployment use cases
 import { StartFeatureDeploymentUseCase } from '../../application/use-cases/deployments/start-feature-deployment.use-case.js';
 import { StartRepositoryDeploymentUseCase } from '../../application/use-cases/deployments/start-repository-deployment.use-case.js';
@@ -670,6 +694,30 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(ListWorkItemRelationsUseCase);
   container.registerSingleton(BulkUpdateWorkItemsUseCase);
 
+  // Cycle use cases
+  container.registerSingleton(CreateCycleUseCase);
+  container.registerSingleton(ListCyclesUseCase);
+  container.registerSingleton(GetCycleUseCase);
+  container.registerSingleton(UpdateCycleUseCase);
+  container.registerSingleton(DeleteCycleUseCase);
+  container.registerSingleton(AddItemsToCycleUseCase);
+  container.registerSingleton(RemoveItemsFromCycleUseCase);
+  container.registerSingleton(TransferCycleItemsUseCase);
+
+  // Module use cases
+  container.registerSingleton(CreateModuleUseCase);
+  container.registerSingleton(ListModulesUseCase);
+  container.registerSingleton(GetModuleUseCase);
+  container.registerSingleton(UpdateModuleUseCase);
+  container.registerSingleton(DeleteModuleUseCase);
+  container.registerSingleton(AddItemsToModuleUseCase);
+  container.registerSingleton(RemoveItemsFromModuleUseCase);
+
+  // Analytics use cases
+  container.registerSingleton(GetCycleBurndownUseCase);
+  container.registerSingleton(GetProjectBreakdownUseCase);
+  container.registerSingleton(GetModuleProgressUseCase);
+
   // Session repositories (per-AgentType string tokens)
   container.register(`IAgentSessionRepository:${AgentType.ClaudeCode}`, {
     useFactory: () => new ClaudeCodeSessionRepository(),
@@ -928,6 +976,66 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('BulkUpdateWorkItemsUseCase', {
     useFactory: (c) => c.resolve(BulkUpdateWorkItemsUseCase),
+  });
+
+  // Cycle use case string-token aliases
+  container.register('CreateCycleUseCase', {
+    useFactory: (c) => c.resolve(CreateCycleUseCase),
+  });
+  container.register('ListCyclesUseCase', {
+    useFactory: (c) => c.resolve(ListCyclesUseCase),
+  });
+  container.register('GetCycleUseCase', {
+    useFactory: (c) => c.resolve(GetCycleUseCase),
+  });
+  container.register('UpdateCycleUseCase', {
+    useFactory: (c) => c.resolve(UpdateCycleUseCase),
+  });
+  container.register('DeleteCycleUseCase', {
+    useFactory: (c) => c.resolve(DeleteCycleUseCase),
+  });
+  container.register('AddItemsToCycleUseCase', {
+    useFactory: (c) => c.resolve(AddItemsToCycleUseCase),
+  });
+  container.register('RemoveItemsFromCycleUseCase', {
+    useFactory: (c) => c.resolve(RemoveItemsFromCycleUseCase),
+  });
+  container.register('TransferCycleItemsUseCase', {
+    useFactory: (c) => c.resolve(TransferCycleItemsUseCase),
+  });
+
+  // Module use case string-token aliases
+  container.register('CreateModuleUseCase', {
+    useFactory: (c) => c.resolve(CreateModuleUseCase),
+  });
+  container.register('ListModulesUseCase', {
+    useFactory: (c) => c.resolve(ListModulesUseCase),
+  });
+  container.register('GetModuleUseCase', {
+    useFactory: (c) => c.resolve(GetModuleUseCase),
+  });
+  container.register('UpdateModuleUseCase', {
+    useFactory: (c) => c.resolve(UpdateModuleUseCase),
+  });
+  container.register('DeleteModuleUseCase', {
+    useFactory: (c) => c.resolve(DeleteModuleUseCase),
+  });
+  container.register('AddItemsToModuleUseCase', {
+    useFactory: (c) => c.resolve(AddItemsToModuleUseCase),
+  });
+  container.register('RemoveItemsFromModuleUseCase', {
+    useFactory: (c) => c.resolve(RemoveItemsFromModuleUseCase),
+  });
+
+  // Analytics use case string-token aliases
+  container.register('GetCycleBurndownUseCase', {
+    useFactory: (c) => c.resolve(GetCycleBurndownUseCase),
+  });
+  container.register('GetProjectBreakdownUseCase', {
+    useFactory: (c) => c.resolve(GetProjectBreakdownUseCase),
+  });
+  container.register('GetModuleProgressUseCase', {
+    useFactory: (c) => c.resolve(GetModuleProgressUseCase),
   });
 
   // Register interactive session infrastructure
