@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, FolderKanban } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,11 @@ import { CyclePanel } from '@/components/pm/cycle-panel/cycle-panel';
 import { ModulePanel } from '@/components/pm/module-panel/module-panel';
 import { EstimateSettings } from '@/components/pm/estimate-settings/estimate-settings';
 import { updateWorkItem } from '@/app/actions/update-work-item';
+import { listWorkItems } from '@/app/actions/list-work-items';
+import { listCycles } from '@/app/actions/list-cycles';
+import { listModules } from '@/app/actions/list-modules';
+import { usePmEvents } from '@/hooks/use-pm-events';
+import type { PmEvent } from '@/app/api/pm-events/route';
 
 export interface ProjectDetailClientProps {
   project: PmProject;
@@ -56,6 +61,31 @@ export function ProjectDetailClient({
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const router = useRouter();
+
+  // Real-time updates via SSE — debounced refetch on PM entity changes
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handlePmEvent = useCallback(
+    (event: PmEvent) => {
+      // Debounce: batch rapid events into a single refetch
+      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = setTimeout(async () => {
+        if (event.eventType.startsWith('work_item_')) {
+          const result = await listWorkItems(project.id);
+          if (result.workItems) setWorkItems(result.workItems);
+        } else if (event.eventType.startsWith('cycle_')) {
+          const result = await listCycles(project.id);
+          if (result.cycles) setCycles(result.cycles);
+        } else if (event.eventType.startsWith('module_')) {
+          const result = await listModules(project.id);
+          if (result.modules) setModules(result.modules);
+        }
+      }, 300);
+    },
+    [project.id]
+  );
+
+  usePmEvents({ projectId: project.id, onEvent: handlePmEvent });
 
   const stateMap = useMemo(() => new Map(states.map((s) => [s.id, s])), [states]);
 
