@@ -150,13 +150,31 @@ phases:
     taskIds: [t-48, t-49, t-50]
 
   - id: phase-12
-    name: "Verification + E2E"
+    name: "Verification + E2E (web)"
     description: >
       Run the full local verification gate (lint, typecheck, test:unit, test:int,
       tsp:compile, build, build:storybook). Add one Playwright smoke test that stubs the
       Cloudflare provider and asserts Deploy transitions from NotDeployed to Deployed.
     parallel: false
     taskIds: [t-51, t-52]
+
+  - id: phase-13
+    name: "CLI Application commands (reuse use cases)"
+    description: >
+      Ship CLI parity for every Application + cloud-deploy + git-remote operation.
+      Reuses existing use cases; ZERO logic duplication. Every command is a thin
+      Commander.js adapter that resolves the same use case the Web API route already
+      calls and formats input/output for the terminal. Adds three CLI subcommand groups:
+      `shep app cloud-providers ...` (list/connect/github-login), `shep app deploy ...`
+      (initiate/status), and `shep app git ...` (create-remote). Also fills the Application
+      lifecycle gap by adding a `shep app show` enhancement plus the existing
+      ls/show/new/del commands. The `deploy` command streams progress to the terminal by
+      subscribing to the same in-process `ICloudDeploymentEventBus` that the SSE route
+      consumes (no DB polling, no parallel transport). Mandatory TDD: unit tests for
+      command output formatters + a CLI e2e test under `tests/e2e/cli/` that drives the
+      command surface via the existing CLI runner harness.
+    parallel: false
+    taskIds: [t-53, t-54, t-55, t-56, t-57, t-58]
 
 filesToCreate:
   # TypeSpec
@@ -243,8 +261,24 @@ filesToCreate:
   - src/presentation/web/hooks/use-dev-server-coordinator.ts
   - src/presentation/web/lib/shared/sdlc-lifecycle-node.ts
 
-  # E2E
+  # E2E (web)
   - src/presentation/web/e2e/cloud-deploy.spec.ts
+
+  # CLI commands (phase 13 — thin Commander adapters that reuse existing use cases)
+  - src/presentation/cli/commands/app/deploy/index.ts
+  - src/presentation/cli/commands/app/deploy/initiate.command.ts
+  - src/presentation/cli/commands/app/deploy/status.command.ts
+  - src/presentation/cli/commands/app/cloud-providers/index.ts
+  - src/presentation/cli/commands/app/cloud-providers/ls.command.ts
+  - src/presentation/cli/commands/app/cloud-providers/connect.command.ts
+  - src/presentation/cli/commands/app/cloud-providers/github-login.command.ts
+  - src/presentation/cli/commands/app/git/index.ts
+  - src/presentation/cli/commands/app/git/create-remote.command.ts
+  - src/presentation/cli/commands/app/shared/format-cloud-status.ts
+  - src/presentation/cli/commands/app/shared/format-cloud-providers.ts
+
+  # CLI e2e tests
+  - tests/e2e/cli/app-cloud-deploy.test.ts
 
 filesToModify:
   - tsp/domain/entities/application.tsp
@@ -258,6 +292,7 @@ filesToModify:
   - src/presentation/web/app/actions/deploy-application.ts  # refactor to thin action
   - src/presentation/web/components/features/application-page/application-page.tsx  # split + dev-server hook + commit buttons
   - src/presentation/web/app/api/agent-events/route.ts  # extract orchestration into use case
+  - src/presentation/cli/commands/app/index.ts  # register cloud-providers + deploy + git subcommands
 
 openQuestions: []
 
@@ -266,8 +301,9 @@ content: |
 
   - **Phase:** Planning complete
   - **Updated:** 2026-04-13
-  - **Task count:** 52 tasks across 12 phases
+  - **Task count:** 58 tasks across 13 phases
   - **Includes:** full v1 feature work + fixes for 13 clean-arch violations found during research
+    + CLI parity for Application + cloud-deploy + git-remote (phase 13, zero logic duplication)
 
   ## Architecture Overview
 
@@ -391,7 +427,13 @@ content: |
       hiding `isProcessAlive` behind a port, adding an InteractiveSessionEventType
       TypeSpec enum, extracting the shared SdlcLifecycle→node mapping, and routing
       console output through ILogger.
-  12. **Verify** — the full CI gate must pass locally, plus one Playwright smoke test.
+  12. **Verify (web)** — the full CI gate must pass locally, plus one Playwright smoke test.
+  13. **CLI parity** — thin Commander adapters for every Application, cloud-deploy, and
+      git-remote use case. Comes last because it depends on the use cases (phase 7) and
+      DI wiring (phase 8) being stable, and because it should reuse the exact same
+      `ICloudDeploymentEventBus` registered in phase 8 to stream deploy progress to the
+      terminal. Zero new business logic — every command resolves an existing use case
+      via `container.resolve(...)` and only handles input parsing + terminal formatting.
 
   ### Parallelization strategy
 
@@ -404,7 +446,7 @@ content: |
   ## Files to Create / Modify
 
   See `filesToCreate` and `filesToModify` arrays at the top of this file.
-  Total: 58 new files, 11 modified files.
+  Total: 70 new files (58 web/core + 12 CLI), 12 modified files.
 
   ## Testing Strategy (TDD: Tests FIRST)
 
