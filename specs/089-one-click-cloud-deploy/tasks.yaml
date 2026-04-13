@@ -1,8 +1,10 @@
 name: "one-click-cloud-deploy"
 summary: >
-  Task breakdown for 089-one-click-cloud-deploy. 52 tasks across 12 phases. Combines
+  Task breakdown for 089-one-click-cloud-deploy. 58 tasks across 13 phases. Combines
   the new cloud-deploy + git-remote feature with the 13 clean-arch violations from
-  research, each mapped to the phase that already touches the relevant file.
+  research, plus a final CLI parity phase that ships thin Commander adapters for every
+  Application + cloud-deploy + git-remote use case. The CLI phase reuses existing use
+  cases verbatim — zero logic duplication.
 
 phase: "implementation"
 updatedAt: "2026-04-14"
@@ -931,24 +933,206 @@ tasks:
       - "All CI runs on the feature branch green"
     estimatedEffort: "M"
 
-totalEstimate: "XL (52 tasks, ~2-3 weeks of focused work)"
+  # ─────────────────────── Phase 13: CLI Application commands (reuse use cases) ───────────────────────
+  # Every task in this phase is a thin Commander adapter that resolves an existing
+  # use case via container.resolve(...) and handles only input parsing + terminal
+  # output. ZERO new business logic, ZERO new use cases.
+  - id: t-53
+    title: "CLI: shep app cloud-providers ls + connect (reuse use cases)"
+    description: >
+      Add a new `cloud-providers` subcommand group under `shep app` and register it on
+      the existing app command. Two subcommands:
+      `shep app cloud-providers ls` — thin adapter that resolves
+      ListCloudProvidersUseCase (t-23) and renders a table via the existing
+      `renderListView` UI helper (icon column, name, enabled, connected). Supports
+      --json flag for machine-readable output.
+      `shep app cloud-providers connect <provider> [--token <t>]` — resolves
+      ConnectCloudProviderUseCase (t-24). When --token is omitted and stdin is a TTY,
+      prompts for the token via @inquirer/prompts password input. Maps the use case's
+      domain errors (invalid token, disabled provider) to messages.error + exit code 1.
+      Files: src/presentation/cli/commands/app/cloud-providers/{index,ls,connect}.command.ts
+      and src/presentation/cli/commands/app/shared/format-cloud-providers.ts for the
+      shared row formatter.
+      Modifies src/presentation/cli/commands/app/index.ts to register the new group.
+      MUST NOT import from infrastructure/ — only the use cases via the DI container,
+      and domain types for argument shapes.
+    state: "Todo"
+    dependencies: ["t-23", "t-24", "t-31"]
+    tdd:
+      red:
+        - "Unit test for format-cloud-providers row formatter: rendering covers connected/not-connected/disabled rows"
+        - "Unit test for the connect command: when --token is provided, the use case is invoked with the right shape and a 1 exit code is set on rejection"
+      green:
+        - "Implement the two thin command files + shared formatter"
+      refactor:
+        - "Extract any duplicated provider-name → label helper into the shared formatter"
+    acceptanceCriteria:
+      - "Tests green"
+      - "Both commands import only use cases + domain types (no infrastructure imports)"
+      - "Running `shep app cloud-providers ls` lists exactly the providers returned by the existing use case"
+    estimatedEffort: "M"
+
+  - id: t-54
+    title: "CLI: shep app cloud-providers github-login (reuse EnsureGhAuthenticatedUseCase)"
+    description: >
+      Add `shep app cloud-providers github-login` subcommand. Resolves
+      EnsureGhAuthenticatedUseCase (t-27) first — if already authenticated, prints a
+      success message and exits 0. Otherwise spawns `gh auth login --web` via the same
+      IGhCliLauncher port that the web route from t-36 uses (resolved from the DI
+      container — the port already exists from phase 9), then polls
+      EnsureGhAuthenticatedUseCase every 1.5s with a CLI spinner until authenticated
+      or a 2-minute timeout elapses. Output formatting only — the polling loop is in
+      the command file because it is presentation behavior; no use case is added.
+      Files: src/presentation/cli/commands/app/cloud-providers/github-login.command.ts
+    state: "Todo"
+    dependencies: ["t-27", "t-31", "t-36"]
+    tdd:
+      red:
+        - "Unit test: when EnsureGhAuthenticatedUseCase initially returns {authenticated: true}, the command prints success without invoking the launcher"
+        - "Unit test: timeout path exits with code 1 and an explicit timeout message"
+      green:
+        - "Implement the command using a fake clock + injected use cases for testing"
+      refactor:
+        - "Extract the polling loop into a tiny CLI-local helper if reused"
+    acceptanceCriteria:
+      - "Tests green"
+      - "Command imports only use cases and the IGhCliLauncher port from application/ports"
+    estimatedEffort: "M"
+
+  - id: t-55
+    title: "CLI: shep app deploy initiate + status (stream via ICloudDeploymentEventBus)"
+    description: >
+      Add a new `deploy` subcommand group under `shep app` with two subcommands:
+      `shep app deploy <app-id> [--provider <provider>]` — resolves an Application via
+      the existing resolveApplication helper, optionally calls SelectCloudProviderUseCase
+      (t-25) when --provider is supplied, then resolves InitiateCloudDeploymentUseCase
+      (t-26) and invokes it. Streams progress to the terminal by subscribing to the
+      ICloudDeploymentEventBus port (t-12, t-15) — the SAME in-process bus the SSE route
+      consumes. Renders an ora spinner that updates on each `cloud_deployment.updated`
+      event for the current application id; on Deployed, prints the URL chip + exits 0;
+      on Failed, prints the error + exits 1.
+      `shep app deploy status <app-id>` — thin adapter that resolves
+      GetCloudDeploymentStatusUseCase (t-27) and renders a single-section detail view.
+      Supports --json. Reuses resolveApplication.ts.
+      Files: src/presentation/cli/commands/app/deploy/{index,initiate,status}.command.ts
+      and src/presentation/cli/commands/app/shared/format-cloud-status.ts for shared
+      status-to-label/colour mapping. Streaming subscription MUST come from the
+      DI-resolved ICloudDeploymentEventBus instance — never poll the database, never
+      reach into infrastructure directly.
+    state: "Todo"
+    dependencies: ["t-25", "t-26", "t-27", "t-15", "t-31"]
+    tdd:
+      red:
+        - "Unit test: the initiate command subscribes to the event bus before invoking the use case and unsubscribes on completion"
+        - "Unit test: status transitions from Uploading → Deploying → Deployed produce the expected spinner state changes"
+        - "Unit test: a Failed event sets exit code 1 and surfaces the error message"
+        - "Unit test for format-cloud-status: every CloudDeploymentStatus enum value maps to a non-empty label"
+      green:
+        - "Implement both commands + shared formatter using fakes for the use cases and a fake event bus"
+      refactor:
+        - "Extract the subscribe-then-await helper if both initiate and a future watch command would share it"
+    acceptanceCriteria:
+      - "Tests green"
+      - "No console.log inside use cases (CLI handles all rendering)"
+      - "Command files import only application use cases + the ICloudDeploymentEventBus port"
+      - "Database is never queried directly from the command — all reads go through GetCloudDeploymentStatusUseCase"
+    estimatedEffort: "L"
+
+  - id: t-56
+    title: "CLI: shep app git create-remote (reuse CreateGitRemoteUseCase + interactive gh fallback)"
+    description: >
+      Add a new `git` subcommand group under `shep app` with one subcommand:
+      `shep app git create-remote <app-id>` — resolves the Application via
+      resolveApplication, then resolves CreateGitRemoteUseCase (t-27). On the typed
+      GhNotAuthenticatedError, prompts the user to run gh login interactively (using
+      @inquirer/prompts confirm) and on confirm delegates to the same
+      github-login.command.ts flow from t-54, then retries CreateGitRemoteUseCase once.
+      On success prints the remote URL.
+      Files: src/presentation/cli/commands/app/git/{index,create-remote}.command.ts
+      Modifies src/presentation/cli/commands/app/index.ts to register the new group.
+    state: "Todo"
+    dependencies: ["t-27", "t-31", "t-54"]
+    tdd:
+      red:
+        - "Unit test: happy path resolves the use case and prints the remote URL"
+        - "Unit test: GhNotAuthenticatedError triggers the gh-login fallback and a retry"
+        - "Unit test: a second auth failure exits 1 with the typed error message"
+      green:
+        - "Implement the command using fakes for the use case"
+      refactor:
+        - "Reuse the gh-login helper from t-54 instead of duplicating the polling loop"
+    acceptanceCriteria:
+      - "Tests green"
+      - "Command imports only use cases + domain error types"
+    estimatedEffort: "M"
+
+  - id: t-57
+    title: "CLI e2e: tests/e2e/cli/app-cloud-deploy.test.ts"
+    description: >
+      Add a single e2e test under tests/e2e/cli/ that drives the new commands via the
+      existing CLI runner harness in tests/helpers/cli (mirrors tests/e2e/cli/feat.test.ts).
+      Seeds an isolated SHEP_HOME, registers a fake CloudflarePages provider via
+      container override, then runs `shep app cloud-providers ls`, `shep app cloud-providers
+      connect cloudflare-pages --token fake`, `shep app deploy <id> --provider cloudflare-pages`,
+      and `shep app deploy status <id>`. Asserts the terminal output contains the
+      expected status transitions and final URL chip. Container override pattern matches
+      the test seam introduced in t-51 for the Playwright smoke test.
+    state: "Todo"
+    dependencies: ["t-53", "t-54", "t-55", "t-56", "t-51"]
+    tdd:
+      red:
+        - "Write the failing e2e flow first against the empty command files"
+      green:
+        - "Wire the container override + run all four CLI invocations in sequence"
+      refactor:
+        - "Extract any duplicated assertion helper into tests/helpers/cli"
+    acceptanceCriteria:
+      - "pnpm test:e2e:cli passes the new file"
+      - "Test runs in <15s on Linux + Windows runners"
+    estimatedEffort: "M"
+
+  - id: t-58
+    title: "CLI typecheck/lint/test sweep + i18n strings"
+    description: >
+      Run pnpm typecheck + pnpm lint + pnpm test:unit and fix any drift. Add CLI i18n
+      strings under src/presentation/cli/i18n for every new command/argument/help text
+      following the existing pattern (cli:commands.app.cloudProviders.*,
+      cli:commands.app.deploy.*, cli:commands.app.git.*). Verify the new commands appear
+      in `shep app --help`. Final acceptance gate before t-52's full CI gate is rerun.
+    state: "Todo"
+    dependencies: ["t-53", "t-54", "t-55", "t-56", "t-57"]
+    tdd: null
+    acceptanceCriteria:
+      - "pnpm typecheck clean"
+      - "pnpm lint clean"
+      - "pnpm test:unit green"
+      - "`shep app --help` lists cloud-providers, deploy, git subcommands"
+      - "Every new command has a localized description"
+    estimatedEffort: "S"
+
+totalEstimate: "XL (58 tasks, ~2.5-3.5 weeks of focused work)"
 
 openQuestions: []
 
 content: |
   ## Summary
 
-  52 tasks across 12 phases. Combines the full v1 cloud-deploy + git-remote feature
+  58 tasks across 13 phases. Combines the full v1 cloud-deploy + git-remote feature
   with integrated fixes for all 13 clean-arch violations found during research (each
-  mapped to the phase that naturally touches the file). Phases 4, 6, 7, 9, 10 run
-  parallel-where-possible with explicit inter-task dependencies. Every phase with
-  executable code follows mandatory RED → GREEN → REFACTOR TDD cycles.
+  mapped to the phase that naturally touches the file), plus a final phase that ships
+  CLI parity for every Application + cloud-deploy + git-remote use case via thin
+  Commander adapters. The CLI phase reuses every existing use case verbatim — zero new
+  business logic, zero new use cases, zero database polling (deploy progress streams
+  via the same in-process ICloudDeploymentEventBus the SSE route uses).
+  Phases 4, 6, 7, 9, 10 run parallel-where-possible with explicit inter-task
+  dependencies. Every phase with executable code follows mandatory RED → GREEN → REFACTOR
+  TDD cycles.
 
   ## Acceptance Checklist
 
   Before marking feature complete:
 
-  - [ ] All 52 tasks completed
+  - [ ] All 58 tasks completed
   - [ ] `pnpm lint` clean
   - [ ] `pnpm format:check` clean
   - [ ] `pnpm typecheck` clean
@@ -958,6 +1142,9 @@ content: |
   - [ ] `pnpm build` successful
   - [ ] `pnpm build:storybook` successful
   - [ ] `pnpm test:e2e` passes the new cloud-deploy smoke test
+  - [ ] `pnpm test:e2e:cli` passes the new app-cloud-deploy CLI flow
+  - [ ] `shep app --help` lists cloud-providers, deploy, and git subcommands
+  - [ ] CLI commands import only application use cases + domain types (no infrastructure)
   - [ ] Manual smoke: connect Cloudflare token → deploy → see live URL chip → refresh → state rehydrates
   - [ ] Manual smoke: create GitHub repo button → gh auth flow → remote chip appears
   - [ ] Every new component has a colocated .stories.tsx
