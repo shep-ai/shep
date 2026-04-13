@@ -38,11 +38,11 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
         <div className="flex items-center gap-2">
           <LayoutGrid className="text-muted-foreground h-4 w-4" />
           <h1 className="text-sm font-bold tracking-tight">Applications</h1>
-          {!isLoading && (
+          {!isLoading ? (
             <span className="text-muted-foreground text-[10px]">
               {applications.length} {applications.length === 1 ? 'app' : 'apps'}
             </span>
-          )}
+          ) : null}
         </div>
 
         {isLoading ? (
