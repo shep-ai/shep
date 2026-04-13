@@ -11,7 +11,12 @@ import type Database from 'better-sqlite3';
 import { createInMemoryDatabase, tableExists } from '../../../helpers/database.helper.js';
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
 import { SQLiteApplicationRepository } from '@/infrastructure/repositories/sqlite-application.repository.js';
-import { ApplicationStatus, type Application } from '@/domain/generated/output.js';
+import {
+  ApplicationStatus,
+  CloudDeploymentProvider,
+  CloudDeploymentStatus,
+  type Application,
+} from '@/domain/generated/output.js';
 
 describe('SQLiteApplicationRepository', () => {
   let db: Database.Database;
@@ -265,6 +270,83 @@ describe('SQLiteApplicationRepository', () => {
       const result = await repository.list();
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('app-001');
+    });
+  });
+
+  describe('cloud-deploy fields (spec 089)', () => {
+    it('persists and loads gitRemoteUrl', async () => {
+      await repository.create(createTestApplication());
+      await repository.update('app-001', { gitRemoteUrl: 'https://github.com/user/repo' });
+      const found = await repository.findById('app-001');
+      expect(found!.gitRemoteUrl).toBe('https://github.com/user/repo');
+    });
+
+    it('persists and loads cloudDeploymentProvider and cloudDeploymentStatus', async () => {
+      await repository.create(createTestApplication());
+      await repository.update('app-001', {
+        cloudDeploymentProvider: CloudDeploymentProvider.CloudflarePages,
+        cloudDeploymentStatus: CloudDeploymentStatus.Deployed,
+      });
+      const found = await repository.findById('app-001');
+      expect(found!.cloudDeploymentProvider).toBe(CloudDeploymentProvider.CloudflarePages);
+      expect(found!.cloudDeploymentStatus).toBe(CloudDeploymentStatus.Deployed);
+    });
+
+    it('persists deployment metadata (id, url, error, lastDeployedAt)', async () => {
+      await repository.create(createTestApplication());
+      const deployedAt = new Date('2026-04-14T10:00:00Z');
+      await repository.update('app-001', {
+        cloudDeploymentId: 'dep-abc',
+        cloudDeploymentUrl: 'https://my-app.pages.dev',
+        cloudDeploymentError: 'transient error',
+        lastDeployedAt: deployedAt,
+      });
+      const found = await repository.findById('app-001');
+      expect(found!.cloudDeploymentId).toBe('dep-abc');
+      expect(found!.cloudDeploymentUrl).toBe('https://my-app.pages.dev');
+      expect(found!.cloudDeploymentError).toBe('transient error');
+      expect((found!.lastDeployedAt as Date).getTime()).toBe(deployedAt.getTime());
+    });
+
+    it('updating one cloud field does not zero the others', async () => {
+      await repository.create(createTestApplication());
+      await repository.update('app-001', {
+        cloudDeploymentProvider: CloudDeploymentProvider.CloudflarePages,
+        cloudDeploymentStatus: CloudDeploymentStatus.Deployed,
+        cloudDeploymentUrl: 'https://live.example/',
+      });
+      await repository.update('app-001', {
+        cloudDeploymentStatus: CloudDeploymentStatus.Failed,
+        cloudDeploymentError: 'bad token',
+      });
+      const found = await repository.findById('app-001');
+      expect(found!.cloudDeploymentProvider).toBe(CloudDeploymentProvider.CloudflarePages);
+      expect(found!.cloudDeploymentStatus).toBe(CloudDeploymentStatus.Failed);
+      expect(found!.cloudDeploymentUrl).toBe('https://live.example/');
+      expect(found!.cloudDeploymentError).toBe('bad token');
+    });
+
+    it('round-trips cloud fields via create()', async () => {
+      const now = new Date('2026-04-14T10:00:00Z');
+      await repository.create(
+        createTestApplication({
+          id: 'app-full',
+          slug: 'full',
+          gitRemoteUrl: 'https://github.com/u/f',
+          cloudDeploymentProvider: CloudDeploymentProvider.CloudflarePages,
+          cloudDeploymentStatus: CloudDeploymentStatus.Deployed,
+          cloudDeploymentId: 'dep-1',
+          cloudDeploymentUrl: 'https://f.pages.dev',
+          lastDeployedAt: now,
+        })
+      );
+      const found = await repository.findById('app-full');
+      expect(found!.gitRemoteUrl).toBe('https://github.com/u/f');
+      expect(found!.cloudDeploymentProvider).toBe(CloudDeploymentProvider.CloudflarePages);
+      expect(found!.cloudDeploymentStatus).toBe(CloudDeploymentStatus.Deployed);
+      expect(found!.cloudDeploymentId).toBe('dep-1');
+      expect(found!.cloudDeploymentUrl).toBe('https://f.pages.dev');
+      expect((found!.lastDeployedAt as Date).getTime()).toBe(now.getTime());
     });
   });
 });

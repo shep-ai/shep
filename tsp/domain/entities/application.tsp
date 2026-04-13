@@ -85,6 +85,6 @@ model Application extends SoftDeletableEntity {
   @doc("Error message from the last failed deployment attempt")
   cloudDeploymentError?: string;
 
-  @doc("Unix millisecond timestamp of the last deployment attempt (success or failure)")
-  lastDeployedAt?: int64;
+  @doc("Timestamp of the last deployment attempt (success or failure)")
+  lastDeployedAt?: utcDateTime;
 }

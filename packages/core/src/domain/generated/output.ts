@@ -1840,9 +1840,9 @@ export type Application = SoftDeletableEntity & {
    */
   cloudDeploymentError?: string;
   /**
-   * Unix millisecond timestamp of the last deployment attempt (success or failure)
+   * Timestamp of the last deployment attempt (success or failure)
    */
-  lastDeployedAt?: bigint;
+  lastDeployedAt?: any;
 };
 export enum EstimateType {
   None = 'None',
