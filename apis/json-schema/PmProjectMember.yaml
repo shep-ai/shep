@@ -1,0 +1,20 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PmProjectMember.yaml
+type: object
+properties:
+  projectId:
+    $ref: UUID.yaml
+    description: ID of the project this membership belongs to
+  userId:
+    $ref: UUID.yaml
+    description: ID of the user who is a member
+  role:
+    $ref: ProjectRole.yaml
+    description: Role determining the user's permissions within the project
+required:
+  - projectId
+  - userId
+  - role
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: Links a user to a project with a specific role for access control

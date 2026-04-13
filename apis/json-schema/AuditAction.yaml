@@ -1,0 +1,15 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: AuditAction.yaml
+type: string
+enum:
+  - UserRegistered
+  - UserLoggedIn
+  - UserLoggedOut
+  - SessionInvalidated
+  - MemberAdded
+  - MemberRemoved
+  - RoleChanged
+  - ProjectSettingsChanged
+  - ProjectDeleted
+  - BulkOperation
+description: Category of auditable action for the audit log

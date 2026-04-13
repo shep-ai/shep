@@ -1,0 +1,24 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PmUser.yaml
+type: object
+properties:
+  email:
+    type: string
+    description: User's email address — unique identifier for login
+  passwordHash:
+    type: string
+    description: Bcrypt-hashed password — never exposed to presentation layer
+  displayName:
+    type: string
+    description: Display name shown in UI (avatars, assignments, comments)
+  isSystemUser:
+    type: boolean
+    description: Whether this is the default system user created for single-user backward compatibility
+required:
+  - email
+  - passwordHash
+  - displayName
+  - isSystemUser
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: A user account in the project management system

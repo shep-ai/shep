@@ -254,6 +254,63 @@ enum CustomPropertyType {
 }
 
 /**
+ * Project Role
+ *
+ * Roles that a user can have within a project.
+ * Determines permission levels for project operations.
+ */
+@doc("User role within a project")
+enum ProjectRole {
+  @doc("Full control — manage members, settings, and all content")
+  Admin: "Admin",
+
+  @doc("Create, read, update work items and related entities")
+  Member: "Member",
+
+  @doc("Read-only access to project content")
+  Guest: "Guest",
+}
+
+/**
+ * Audit Action
+ *
+ * Categories of auditable actions in the system.
+ * Used by the audit log to classify security-relevant events.
+ */
+@doc("Category of auditable action for the audit log")
+enum AuditAction {
+  @doc("User registered an account")
+  UserRegistered: "UserRegistered",
+
+  @doc("User logged in")
+  UserLoggedIn: "UserLoggedIn",
+
+  @doc("User logged out")
+  UserLoggedOut: "UserLoggedOut",
+
+  @doc("User session expired or was invalidated")
+  SessionInvalidated: "SessionInvalidated",
+
+  @doc("Member added to a project")
+  MemberAdded: "MemberAdded",
+
+  @doc("Member removed from a project")
+  MemberRemoved: "MemberRemoved",
+
+  @doc("Member role changed within a project")
+  RoleChanged: "RoleChanged",
+
+  @doc("Project settings modified")
+  ProjectSettingsChanged: "ProjectSettingsChanged",
+
+  @doc("Project deleted")
+  ProjectDeleted: "ProjectDeleted",
+
+  @doc("Bulk operation performed")
+  BulkOperation: "BulkOperation",
+}
+
+/**
  * View Layout
  *
  * Available layout types for displaying work items in the UI.

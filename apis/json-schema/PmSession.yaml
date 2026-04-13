@@ -1,0 +1,21 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PmSession.yaml
+type: object
+properties:
+  userId:
+    $ref: UUID.yaml
+    description: ID of the user who owns this session
+  token:
+    type: string
+    description: Secure session token used for authentication
+  expiresAt:
+    type: string
+    format: date-time
+    description: When this session expires — after this time, the session is invalid
+required:
+  - userId
+  - token
+  - expiresAt
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: An authenticated user session with a secure token and expiry

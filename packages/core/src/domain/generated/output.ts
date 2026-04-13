@@ -2364,6 +2364,111 @@ export type PmNotification = SoftDeletableEntity & {
 };
 
 /**
+ * A user account in the project management system
+ */
+export type PmUser = SoftDeletableEntity & {
+  /**
+   * User's email address — unique identifier for login
+   */
+  email: string;
+  /**
+   * Bcrypt-hashed password — never exposed to presentation layer
+   */
+  passwordHash: string;
+  /**
+   * Display name shown in UI (avatars, assignments, comments)
+   */
+  displayName: string;
+  /**
+   * Whether this is the default system user created for single-user backward compatibility
+   */
+  isSystemUser: boolean;
+};
+
+/**
+ * An authenticated user session with a secure token and expiry
+ */
+export type PmSession = SoftDeletableEntity & {
+  /**
+   * ID of the user who owns this session
+   */
+  userId: UUID;
+  /**
+   * Secure session token used for authentication
+   */
+  token: string;
+  /**
+   * When this session expires — after this time, the session is invalid
+   */
+  expiresAt: any;
+};
+export enum ProjectRole {
+  Admin = 'Admin',
+  Member = 'Member',
+  Guest = 'Guest',
+}
+
+/**
+ * Links a user to a project with a specific role for access control
+ */
+export type PmProjectMember = SoftDeletableEntity & {
+  /**
+   * ID of the project this membership belongs to
+   */
+  projectId: UUID;
+  /**
+   * ID of the user who is a member
+   */
+  userId: UUID;
+  /**
+   * Role determining the user's permissions within the project
+   */
+  role: ProjectRole;
+};
+export enum AuditAction {
+  UserRegistered = 'UserRegistered',
+  UserLoggedIn = 'UserLoggedIn',
+  UserLoggedOut = 'UserLoggedOut',
+  SessionInvalidated = 'SessionInvalidated',
+  MemberAdded = 'MemberAdded',
+  MemberRemoved = 'MemberRemoved',
+  RoleChanged = 'RoleChanged',
+  ProjectSettingsChanged = 'ProjectSettingsChanged',
+  ProjectDeleted = 'ProjectDeleted',
+  BulkOperation = 'BulkOperation',
+}
+
+/**
+ * Immutable audit log entry recording a security-relevant action
+ */
+export type PmAuditLog = BaseEntity & {
+  /**
+   * ID of the user who performed the action
+   */
+  actorId: UUID;
+  /**
+   * Category of the audited action
+   */
+  action: AuditAction;
+  /**
+   * ID of the target entity (project, user, etc.) — optional
+   */
+  targetId?: UUID;
+  /**
+   * Type of the target entity (e.g., 'PmProject', 'PmUser', 'PmProjectMember')
+   */
+  targetType?: string;
+  /**
+   * JSON metadata with action-specific details (old/new values, etc.)
+   */
+  metadata?: string;
+  /**
+   * IP address or client identifier of the actor — optional
+   */
+  ipAddress?: string;
+};
+
+/**
  * Single installation suggestion for a tool
  */
 export type InstallationSuggestion = {

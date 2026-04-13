@@ -1,0 +1,28 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PmAuditLog.yaml
+type: object
+properties:
+  actorId:
+    $ref: UUID.yaml
+    description: ID of the user who performed the action
+  action:
+    $ref: AuditAction.yaml
+    description: Category of the audited action
+  targetId:
+    $ref: UUID.yaml
+    description: ID of the target entity (project, user, etc.) — optional
+  targetType:
+    type: string
+    description: Type of the target entity (e.g., 'PmProject', 'PmUser', 'PmProjectMember')
+  metadata:
+    type: string
+    description: JSON metadata with action-specific details (old/new values, etc.)
+  ipAddress:
+    type: string
+    description: IP address or client identifier of the actor — optional
+required:
+  - actorId
+  - action
+allOf:
+  - $ref: BaseEntity.yaml
+description: Immutable audit log entry recording a security-relevant action

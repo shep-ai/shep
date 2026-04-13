@@ -60,6 +60,14 @@ import type { IIntakeItemRepository } from '../../application/ports/output/repos
 import { SQLiteIntakeItemRepository } from '../repositories/sqlite-intake-item.repository.js';
 import type { INotificationRepository } from '../../application/ports/output/repositories/notification-repository.interface.js';
 import { SQLiteNotificationRepository } from '../repositories/sqlite-notification.repository.js';
+import type { IPmUserRepository } from '../../application/ports/output/repositories/pm-user-repository.interface.js';
+import { SQLitePmUserRepository } from '../repositories/sqlite-pm-user.repository.js';
+import type { IPmSessionRepository } from '../../application/ports/output/repositories/pm-session-repository.interface.js';
+import { SQLitePmSessionRepository } from '../repositories/sqlite-pm-session.repository.js';
+import type { IPmProjectMemberRepository } from '../../application/ports/output/repositories/pm-project-member-repository.interface.js';
+import { SQLitePmProjectMemberRepository } from '../repositories/sqlite-pm-project-member.repository.js';
+import type { IPmAuditLogRepository } from '../../application/ports/output/repositories/pm-audit-log-repository.interface.js';
+import { SQLitePmAuditLogRepository } from '../repositories/sqlite-pm-audit-log.repository.js';
 
 // Validator interfaces and implementations
 import type { IAgentValidator } from '../../application/ports/output/agents/agent-validator.interface.js';
@@ -284,6 +292,22 @@ import { MarkNotificationReadUseCase } from '../../application/use-cases/notific
 import { ExportWorkItemsCsvUseCase } from '../../application/use-cases/import-export/export-work-items-csv.use-case.js';
 import { ImportWorkItemsCsvUseCase } from '../../application/use-cases/import-export/import-work-items-csv.use-case.js';
 
+// Auth use cases
+import { RegisterUserUseCase } from '../../application/use-cases/auth/register-user.use-case.js';
+import { LoginUserUseCase } from '../../application/use-cases/auth/login-user.use-case.js';
+import { LogoutUserUseCase } from '../../application/use-cases/auth/logout-user.use-case.js';
+import { ValidateSessionUseCase } from '../../application/use-cases/auth/validate-session.use-case.js';
+
+// Project member use cases
+import { AddProjectMemberUseCase } from '../../application/use-cases/project-members/add-project-member.use-case.js';
+import { RemoveProjectMemberUseCase } from '../../application/use-cases/project-members/remove-project-member.use-case.js';
+import { UpdateProjectMemberRoleUseCase } from '../../application/use-cases/project-members/update-project-member-role.use-case.js';
+import { ListProjectMembersUseCase } from '../../application/use-cases/project-members/list-project-members.use-case.js';
+
+// Audit use cases
+import { CreateAuditLogUseCase } from '../../application/use-cases/audit/create-audit-log.use-case.js';
+import { ListAuditLogsUseCase } from '../../application/use-cases/audit/list-audit-logs.use-case.js';
+
 // Analytics use cases
 import { GetCycleBurndownUseCase } from '../../application/use-cases/analytics/get-cycle-burndown.use-case.js';
 import { GetProjectBreakdownUseCase } from '../../application/use-cases/analytics/get-project-breakdown.use-case.js';
@@ -506,6 +530,34 @@ export async function initializeContainer(): Promise<typeof container> {
     useFactory: (c) => {
       const database = c.resolve<Database.Database>('Database');
       return new SQLiteNotificationRepository(database);
+    },
+  });
+
+  container.register<IPmUserRepository>('IPmUserRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePmUserRepository(database);
+    },
+  });
+
+  container.register<IPmSessionRepository>('IPmSessionRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePmSessionRepository(database);
+    },
+  });
+
+  container.register<IPmProjectMemberRepository>('IPmProjectMemberRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePmProjectMemberRepository(database);
+    },
+  });
+
+  container.register<IPmAuditLogRepository>('IPmAuditLogRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePmAuditLogRepository(database);
     },
   });
 
@@ -869,6 +921,34 @@ export async function initializeContainer(): Promise<typeof container> {
   container.register('ListNotificationsUseCase', { useToken: ListNotificationsUseCase });
   container.registerSingleton(MarkNotificationReadUseCase);
   container.register('MarkNotificationReadUseCase', { useToken: MarkNotificationReadUseCase });
+
+  // Auth use cases
+  container.registerSingleton(RegisterUserUseCase);
+  container.register('RegisterUserUseCase', { useToken: RegisterUserUseCase });
+  container.registerSingleton(LoginUserUseCase);
+  container.register('LoginUserUseCase', { useToken: LoginUserUseCase });
+  container.registerSingleton(LogoutUserUseCase);
+  container.register('LogoutUserUseCase', { useToken: LogoutUserUseCase });
+  container.registerSingleton(ValidateSessionUseCase);
+  container.register('ValidateSessionUseCase', { useToken: ValidateSessionUseCase });
+
+  // Project member use cases
+  container.registerSingleton(AddProjectMemberUseCase);
+  container.register('AddProjectMemberUseCase', { useToken: AddProjectMemberUseCase });
+  container.registerSingleton(RemoveProjectMemberUseCase);
+  container.register('RemoveProjectMemberUseCase', { useToken: RemoveProjectMemberUseCase });
+  container.registerSingleton(UpdateProjectMemberRoleUseCase);
+  container.register('UpdateProjectMemberRoleUseCase', {
+    useToken: UpdateProjectMemberRoleUseCase,
+  });
+  container.registerSingleton(ListProjectMembersUseCase);
+  container.register('ListProjectMembersUseCase', { useToken: ListProjectMembersUseCase });
+
+  // Audit use cases
+  container.registerSingleton(CreateAuditLogUseCase);
+  container.register('CreateAuditLogUseCase', { useToken: CreateAuditLogUseCase });
+  container.registerSingleton(ListAuditLogsUseCase);
+  container.register('ListAuditLogsUseCase', { useToken: ListAuditLogsUseCase });
 
   // Import/Export use cases
   container.registerSingleton(ExportWorkItemsCsvUseCase);
