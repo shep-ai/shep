@@ -61,6 +61,7 @@ function createMockGitPrService(): IGitPrService {
     getRemoteUrl: vi.fn(),
     createGitHubRepo: vi.fn(),
     addRemote: vi.fn(),
+    pull: vi.fn(),
     getDefaultBranch: vi.fn().mockResolvedValue('main'),
     revParse: vi.fn(),
     hasUncommittedChanges: vi.fn(),

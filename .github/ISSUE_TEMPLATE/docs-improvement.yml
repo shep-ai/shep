@@ -1,28 +1,17 @@
 name: 📚 Documentation Improvement
 description: Suggest improvements to documentation, guides, or examples
 title: '[Docs]: '
-labels: ['documentation', 'triage']
+labels: ['documentation']
 body:
-  - type: markdown
+  - type: textarea
+    id: description
     attributes:
-      value: |
-        Thanks for helping improve our documentation! Clear docs make Shep more accessible to everyone.
+      label: What needs improving?
+      description: Describe what's confusing, outdated, missing, or incorrect and where.
+      placeholder: |
+        The "Quick Start" section in README.md doesn't explain what happens on first run...
 
-  - type: dropdown
-    id: doc-type
-    attributes:
-      label: Documentation Type
-      description: What type of documentation needs improvement?
-      options:
-        - README
-        - Getting Started Guide
-        - CLI Reference
-        - Architecture Docs
-        - API Documentation
-        - Contributing Guide
-        - Code Comments / JSDoc
-        - Examples / Tutorials
-        - Other
+        Suggestion: Add a subsection explaining the setup wizard.
     validations:
       required: true
 
@@ -30,84 +19,15 @@ body:
     id: doc-location
     attributes:
       label: Document Location
-      description: Link or file path to the documentation that needs improvement
-      placeholder: 'e.g., README.md, docs/guides/getting-started.md, or https://...'
-    validations:
-      required: true
-
-  - type: textarea
-    id: issue
-    attributes:
-      label: What's Unclear or Missing?
-      description: Describe what's confusing, outdated, missing, or incorrect.
-      placeholder: |
-        The "Quick Start" section says to run `shep`, but doesn't explain:
-        - What happens on first run
-        - How to configure the AI agent
-        - Where the web UI opens
-    validations:
-      required: true
-
-  - type: textarea
-    id: suggestion
-    attributes:
-      label: Suggested Improvement
-      description: How would you improve this documentation?
-      placeholder: |
-        Add a new subsection "First Run Onboarding" that:
-        1. Shows the setup wizard screenshot
-        2. Explains each configuration step
-        3. Links to detailed agent configuration docs
-        4. Clarifies that the browser auto-opens to localhost:4050
-    validations:
-      required: true
-
-  - type: dropdown
-    id: audience
-    attributes:
-      label: Target Audience
-      description: Who would benefit most from this improvement?
-      options:
-        - New users (first time using Shep)
-        - Intermediate users (familiar with basics)
-        - Advanced users (power users, customization)
-        - Contributors (developers contributing to Shep)
-        - All audiences
+      description: Link or file path to the documentation (optional)
+      placeholder: 'e.g., README.md, docs/guides/getting-started.md'
     validations:
       required: false
 
   - type: textarea
-    id: context
+    id: additional
     attributes:
       label: Additional Context
-      description: |
-        Any other context that might help:
-        - Why you needed this information
-        - What you were trying to accomplish
-        - Where else you looked for this info
-        - Examples from other projects' docs
-      placeholder: 'I was trying to set up Shep for the first time and got stuck at...'
+      description: Why you needed this info, what you were trying to accomplish, examples from other projects, etc.
     validations:
       required: false
-
-  - type: checkboxes
-    id: contribution
-    attributes:
-      label: Contribution
-      description: Would you like to contribute this improvement yourself?
-      options:
-        - label: I'd like to submit a PR to fix this (we'll help guide you!)
-          required: false
-        - label: I can provide additional details if needed
-          required: false
-
-  - type: checkboxes
-    id: checks
-    attributes:
-      label: Pre-submission Checklist
-      description: Please confirm the following before submitting
-      options:
-        - label: I have searched existing issues to avoid duplicates
-          required: true
-        - label: I have checked the latest version of the documentation
-          required: false

@@ -478,6 +478,69 @@
         "notFound": "מאגר לא נמצא: {{id}}"
       }
     },
+    "app": {
+      "description": "Manage applications",
+      "ls": {
+        "description": "List applications",
+        "title": "Applications",
+        "idColumn": "ID",
+        "nameColumn": "Name",
+        "statusColumn": "Status",
+        "pathColumn": "Path",
+        "createdColumn": "Created",
+        "noApps": "No applications found",
+        "failedToList": "Failed to list applications"
+      },
+      "show": {
+        "description": "Display details of an application",
+        "idArgument": "Application ID, slug, or prefix",
+        "title": "Application: {{name}}",
+        "nameLabel": "Name",
+        "slugLabel": "Slug",
+        "statusLabel": "Status",
+        "descriptionLabel": "Description",
+        "pathLabel": "Path",
+        "configTitle": "Configuration",
+        "agentLabel": "Agent",
+        "modelLabel": "Model",
+        "timestampsTitle": "Timestamps",
+        "createdLabel": "Created",
+        "updatedLabel": "Updated",
+        "deletedLabel": "Deleted",
+        "failedToShow": "Failed to show application"
+      },
+      "new": {
+        "description": "Create a new application",
+        "descriptionArgument": "Application description",
+        "agentOption": "Agent type override",
+        "modelOption": "LLM model override (e.g. claude-opus-4-6)",
+        "spinnerText": "Creating application",
+        "appCreated": "Application created",
+        "idLabel": "ID:",
+        "nameLabel": "Name:",
+        "slugLabel": "Slug:",
+        "pathLabel": "Path:",
+        "statusLabel": "Status:",
+        "agentLabel": "Agent:",
+        "modelLabel": "Model:",
+        "failedToCreate": "Failed to create application"
+      },
+      "del": {
+        "description": "Delete an application",
+        "idArgument": "Application ID, slug, or prefix",
+        "forceOption": "Skip confirmation prompt",
+        "confirmDelete": "Delete application \"{{name}}\"?",
+        "cancelled": "Cancelled",
+        "appDeleted": "Application deleted",
+        "nameLabel": "Name:",
+        "slugLabel": "Slug:",
+        "failedToDelete": "Failed to delete application"
+      },
+      "resolve": {
+        "multipleMatch": "Multiple applications match prefix \"{{id}}\": {{matches}}",
+        "notFound": "Application not found: {{id}}"
+      }
+    },
     "agent": {
       "description": "נהל וצפה בהרצות סוכן",
       "show": {

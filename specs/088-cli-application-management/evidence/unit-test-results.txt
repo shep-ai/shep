@@ -1,0 +1,34 @@
+$ pnpm vitest run tests/unit/presentation/cli/commands/app/
+
+ RUN  v4.0.18
+
+ ✓ tests/unit/presentation/cli/commands/app/resolve-application.test.ts > resolveApplication > should resolve by exact ID 1ms
+ ✓ tests/unit/presentation/cli/commands/app/resolve-application.test.ts > resolveApplication > should resolve by slug when exact ID not found 0ms
+ ✓ tests/unit/presentation/cli/commands/app/resolve-application.test.ts > resolveApplication > should resolve by prefix when ID and slug not found 0ms
+ ✓ tests/unit/presentation/cli/commands/app/resolve-application.test.ts > resolveApplication > should return error when multiple applications match prefix 1ms
+ ✓ tests/unit/presentation/cli/commands/app/resolve-application.test.ts > resolveApplication > should return error when no application found 0ms
+ ✓ tests/unit/presentation/cli/commands/app/ls.command.test.ts > app ls command > should create a command named "ls" with correct description 2ms
+ ✓ tests/unit/presentation/cli/commands/app/ls.command.test.ts > app ls command > should resolve ListApplicationsUseCase from container 2ms
+ ✓ tests/unit/presentation/cli/commands/app/ls.command.test.ts > app ls command > should render table with application data 1ms
+ ✓ tests/unit/presentation/cli/commands/app/ls.command.test.ts > app ls command > should show "No applications found" when list is empty 0ms
+ ✓ tests/unit/presentation/cli/commands/app/ls.command.test.ts > app ls command > should show 8-char ID prefix in table 0ms
+ ✓ tests/unit/presentation/cli/commands/app/ls.command.test.ts > app ls command > should set process.exitCode = 1 on error 1ms
+ ✓ tests/unit/presentation/cli/commands/app/new.command.test.ts > app new command > should create a command named "new" with correct description 2ms
+ ✓ tests/unit/presentation/cli/commands/app/new.command.test.ts > app new command > should create an application with description 2ms
+ ✓ tests/unit/presentation/cli/commands/app/new.command.test.ts > app new command > should display application details after creation 1ms
+ ✓ tests/unit/presentation/cli/commands/app/new.command.test.ts > app new command > should pass agent type when --agent is specified 0ms
+ ✓ tests/unit/presentation/cli/commands/app/new.command.test.ts > app new command > should pass model when --model is specified 0ms
+ ✓ tests/unit/presentation/cli/commands/app/new.command.test.ts > app new command > should not send initialPrompt when --no-start is specified 0ms
+ ✓ tests/unit/presentation/cli/commands/app/new.command.test.ts > app new command > should set process.exitCode = 1 on error 1ms
+ ✓ tests/unit/presentation/cli/commands/app/show.command.test.ts > app show command > should create a command named "show" with argument <id> 2ms
+ ✓ tests/unit/presentation/cli/commands/app/show.command.test.ts > app show command > should render application details when resolved successfully 12ms
+ ✓ tests/unit/presentation/cli/commands/app/show.command.test.ts > app show command > should display timestamps section 1ms
+ ✓ tests/unit/presentation/cli/commands/app/show.command.test.ts > app show command > should display configuration section 1ms
+ ✓ tests/unit/presentation/cli/commands/app/show.command.test.ts > app show command > should show error and set exitCode when application not found 0ms
+ ✓ tests/unit/presentation/cli/commands/app/show.command.test.ts > app show command > should handle unexpected errors with try/catch 1ms
+ ✓ tests/unit/presentation/cli/commands/app/show.command.test.ts > app show command > should show deletedAt when present 0ms
+
+ Test Files  4 passed (4)
+      Tests  25 passed (25)
+   Start at  20:54:50
+   Duration  649ms (transform 547ms, setup 132ms, import 1.51s, tests 66ms, environment 0ms)

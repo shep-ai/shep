@@ -19,6 +19,14 @@ import type { IRepositoryRepository } from '@/application/ports/output/repositor
 import type { AddRepositoryUseCase } from '@/application/use-cases/repositories/add-repository.use-case.js';
 import type { Repository } from '@/domain/generated/output.js';
 
+vi.mock('node:fs', async (importOriginal) => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return { ...actual, existsSync: vi.fn().mockReturnValue(false) };
+});
+
+import { existsSync } from 'node:fs';
+
 function createMockRepository(overrides?: Partial<Repository>): Repository {
   return {
     id: 'repo-1',
@@ -80,6 +88,8 @@ describe('ImportGitHubRepositoryUseCase', () => {
 
     mockGitPrService = {
       addRemote: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      getRemoteUrl: vi.fn<() => Promise<string | null>>().mockResolvedValue(null),
+      pull: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     } as unknown as IGitPrService;
 
     useCase = new ImportGitHubRepositoryUseCase(
@@ -553,6 +563,91 @@ describe('ImportGitHubRepositoryUseCase', () => {
       expect(cloneCall[1]).not.toMatch(/^~/);
       // Should end with my-repos/my-project
       expect(cloneCall[1]).toMatch(/[/\\]my-repos[/\\]my-project$/);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Existing directory handling
+  // ---------------------------------------------------------------------------
+
+  describe('existing directory handling', () => {
+    it('should pull instead of clone when destination exists with same remote', async () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(mockGitPrService.getRemoteUrl).mockResolvedValue(
+        'https://github.com/octocat/my-project'
+      );
+
+      await useCase.execute({
+        url: 'https://github.com/octocat/my-project',
+        dest: '/repos/my-project',
+      });
+
+      expect(mockGitPrService.getRemoteUrl).toHaveBeenCalledWith('/repos/my-project');
+      expect(mockGitPrService.pull).toHaveBeenCalledWith('/repos/my-project');
+      expect(mockGitHubService.cloneRepository).not.toHaveBeenCalled();
+    });
+
+    it('should clone to suffixed directory when destination exists with different remote', async () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(mockGitPrService.getRemoteUrl).mockResolvedValue(
+        'https://github.com/other-org/different-repo'
+      );
+
+      await useCase.execute({
+        url: 'https://github.com/octocat/my-project',
+        dest: '/repos/my-project',
+      });
+
+      // Should have cloned to a different directory (with hash suffix)
+      const cloneCall = vi.mocked(mockGitHubService.cloneRepository).mock.calls[0];
+      expect(cloneCall[1]).toMatch(/^\/repos\/my-project-[a-f0-9]{6}$/);
+      expect(mockGitPrService.pull).not.toHaveBeenCalled();
+    });
+
+    it('should clone to suffixed directory when destination exists but is not a git repo', async () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(mockGitPrService.getRemoteUrl).mockResolvedValue(null);
+
+      await useCase.execute({
+        url: 'https://github.com/octocat/my-project',
+        dest: '/repos/my-project',
+      });
+
+      const cloneCall = vi.mocked(mockGitHubService.cloneRepository).mock.calls[0];
+      expect(cloneCall[1]).toMatch(/^\/repos\/my-project-[a-f0-9]{6}$/);
+      expect(mockGitPrService.pull).not.toHaveBeenCalled();
+    });
+
+    it('should treat remotes as same regardless of .git suffix and case', async () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(mockGitPrService.getRemoteUrl).mockResolvedValue(
+        'https://github.com/Octocat/My-Project.git'
+      );
+
+      await useCase.execute({
+        url: 'https://github.com/octocat/my-project',
+        dest: '/repos/my-project',
+      });
+
+      expect(mockGitPrService.pull).toHaveBeenCalled();
+      expect(mockGitHubService.cloneRepository).not.toHaveBeenCalled();
+    });
+
+    it('should clone normally when destination does not exist', async () => {
+      vi.mocked(existsSync).mockReturnValue(false);
+
+      await useCase.execute({
+        url: 'https://github.com/octocat/my-project',
+        dest: '/repos/my-project',
+      });
+
+      expect(mockGitHubService.cloneRepository).toHaveBeenCalledWith(
+        'octocat/my-project',
+        '/repos/my-project',
+        undefined
+      );
+      expect(mockGitPrService.getRemoteUrl).not.toHaveBeenCalled();
+      expect(mockGitPrService.pull).not.toHaveBeenCalled();
     });
   });
 });

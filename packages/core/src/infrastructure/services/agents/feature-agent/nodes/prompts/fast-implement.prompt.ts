@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import yaml from 'js-yaml';
 import { readSpecFile } from '../node-helpers.js';
 import type { FeatureAgentState } from '../../state.js';
+import { COMMIT_CO_AUTHOR } from '../../../../git/pr-branding.js';
 
 /**
  * Read a file from the worktree, returning empty string if not found.
@@ -189,7 +190,9 @@ ${userQuery}
 3. Run the test suite and fix any failures
 4. Run the linter and fix any issues
 5. Ensure the project builds successfully
-6. Commit your work with descriptive conventional commit messages (e.g. \`feat(scope): description\`)
+6. Commit your work with descriptive conventional commit messages and include the Shep Bot co-author trailer:
+   - e.g. \`git commit -m "feat(scope): description" -m "" -m "${COMMIT_CO_AUTHOR}"\`
+   - Do NOT include any other Co-Authored-By trailer (e.g. Claude) — only the Shep Bot trailer above
    - Commit incrementally as you complete logical units of work — do NOT wait until the end
    - Each commit should be a coherent, working unit${state.push ? `\n7. Push to remote after committing: \`git push -u origin HEAD\`\n   - Do NOT wait for or watch CI — just push and finish` : ''}
 

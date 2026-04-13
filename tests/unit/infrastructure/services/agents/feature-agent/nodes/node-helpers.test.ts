@@ -302,6 +302,25 @@ describe('buildCommitPushBlock', () => {
     });
     expect(result).not.toContain('--no-verify');
   });
+
+  it('should include Shep Bot co-author trailer instruction', () => {
+    const result = buildCommitPushBlock({
+      push: false,
+      files: ['spec.yaml'],
+      commitHint: 'docs(specs): update spec',
+    });
+    expect(result).toContain('Shep Bot');
+    expect(result).toContain('shep-agent@users.noreply.github.com');
+  });
+
+  it('should instruct NOT to include Claude co-author trailer', () => {
+    const result = buildCommitPushBlock({
+      push: false,
+      files: ['spec.yaml'],
+      commitHint: 'docs(specs): update spec',
+    });
+    expect(result).toContain('Do NOT include any other Co-Authored-By trailer');
+  });
 });
 
 describe('isRejectionPayload', () => {

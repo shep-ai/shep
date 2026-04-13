@@ -1,0 +1,34 @@
+feature:
+  id: "088-import-repo-upstream"
+  name: "import-repo-upstream"
+  number: 88
+  branch: "feat/088-import-repo-upstream"
+  lifecycle: "research"
+  createdAt: "2026-04-12T18:20:40Z"
+status:
+  phase: "research"
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: "2026-04-12T18:20:40Z"
+  lastUpdatedBy: "feature-agent"
+  completedPhases:
+    - "evidence"
+    - "fast-implement"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-04-12T18:20:40Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []

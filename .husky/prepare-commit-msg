@@ -1,0 +1,26 @@
+#!/bin/sh
+# Prepare-commit-msg hook — enforce Shep Bot co-author branding
+#
+# Strips any "Co-Authored-By: Claude ..." trailers that Claude Code
+# automatically appends and replaces them with the Shep Bot trailer.
+# This mirrors the logic in pr-branding.ts applyCommitBranding().
+
+COMMIT_MSG_FILE="$1"
+SHEP_TRAILER="Co-Authored-By: Shep Bot <shep-agent@users.noreply.github.com>"
+
+# Cross-platform in-place sed — GNU sed uses `-i`, BSD/macOS sed needs `-i ''`.
+# Use a temp file fallback that works on both flavors.
+sed_inplace() {
+  _expr="$1"
+  _file="$2"
+  _tmp="$(mktemp)"
+  sed -E "$_expr" "$_file" > "$_tmp" && mv "$_tmp" "$_file"
+}
+
+# Strip any Claude co-author trailers (case-insensitive)
+sed_inplace '/^[Cc]o-[Aa]uthored-[Bb]y:[[:space:]]*Claude.*<noreply@anthropic\.com>/d' "$COMMIT_MSG_FILE"
+
+# Append Shep Bot co-author if not already present
+if ! grep -qF "$SHEP_TRAILER" "$COMMIT_MSG_FILE"; then
+  printf '\n\n%s\n' "$SHEP_TRAILER" >> "$COMMIT_MSG_FILE"
+fi

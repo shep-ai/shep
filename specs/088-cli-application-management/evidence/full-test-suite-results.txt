@@ -1,0 +1,8 @@
+$ pnpm test:unit (full suite)
+
+ Test Files  422 passed (422)
+      Tests  5988 passed (5988)
+   Start at  21:02:30
+   Duration  86.70s (transform 39.95s, setup 91.30s, import 177.68s, tests 192.04s, environment 158.69s)
+
+No failures. All 5988 tests across 422 test files pass with zero regressions.

@@ -76,6 +76,7 @@ describe('AdoptBranchUseCase', () => {
       getRemoteUrl: vi.fn().mockResolvedValue(null),
       createGitHubRepo: vi.fn(),
       addRemote: vi.fn(),
+      pull: vi.fn().mockResolvedValue(undefined),
       getDefaultBranch: vi.fn().mockResolvedValue('main'),
       revParse: vi.fn().mockResolvedValue('abc123'),
       hasUncommittedChanges: vi.fn().mockResolvedValue(false),

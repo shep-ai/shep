@@ -1,97 +1,34 @@
 name: 💡 Feature Request
 description: Suggest a new feature or enhancement for Shep AI CLI
 title: '[Feature]: '
-labels: ['enhancement', 'triage']
+labels: ['enhancement']
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thanks for suggesting a feature! Please describe what you'd like to see added to Shep AI CLI.
-
   - type: textarea
-    id: problem
+    id: description
     attributes:
-      label: Problem Statement
-      description: Is your feature request related to a problem? Describe the problem you're trying to solve.
-      placeholder: "I'm frustrated when I have to manually... It would be great if Shep could..."
+      label: What would you like?
+      description: Describe the feature, the problem it solves, and how you imagine it working.
+      placeholder: |
+        I'd like Shep to support X because...
+
+        Example usage:
+        1. Run `shep ...`
+        2. ...
     validations:
       required: true
-
-  - type: textarea
-    id: solution
-    attributes:
-      label: Proposed Solution
-      description: Describe the solution you'd like to see implemented.
-      placeholder: |
-        Add a new command `shep feat clone <id>` that:
-        1. Duplicates an existing feature
-        2. Creates a new git worktree
-        3. Preserves the PRD but resets implementation state
-    validations:
-      required: true
-
-  - type: textarea
-    id: alternatives
-    attributes:
-      label: Alternatives Considered
-      description: Have you considered any alternative solutions or workarounds?
-      placeholder: |
-        - Manually copy files between worktrees (too manual)
-        - Use git cherry-pick (doesn't reset state)
-        - Just create a new feature from scratch (loses context)
-    validations:
-      required: false
 
   - type: dropdown
     id: category
     attributes:
-      label: Feature Category
-      description: Which area of Shep would this feature affect?
+      label: Area
+      description: Which part of Shep would this affect?
       options:
-        - CLI commands
-        - Web UI / Dashboard
-        - TUI (Terminal UI)
+        - CLI
+        - Web UI
         - Agent integration
         - Feature lifecycle
-        - Repository management
         - Configuration / Settings
-        - Documentation
         - Other
-    validations:
-      required: true
-
-  - type: dropdown
-    id: priority
-    attributes:
-      label: Priority
-      description: How important is this feature to you?
-      options:
-        - Critical (blocking my workflow)
-        - High (would significantly improve my workflow)
-        - Medium (nice to have)
-        - Low (minor convenience)
-    validations:
-      required: false
-
-  - type: textarea
-    id: use-cases
-    attributes:
-      label: Use Cases
-      description: Describe specific use cases or scenarios where this feature would be helpful.
-      placeholder: |
-        1. When working on similar features across multiple repos
-        2. When A/B testing different implementations of the same feature
-        3. When teaching Shep patterns by cloning successful features
-    validations:
-      required: false
-
-  - type: textarea
-    id: mockups
-    attributes:
-      label: Mockups or Examples
-      description: |
-        If applicable, add mockups, screenshots, or examples of similar features in other tools.
-        Drag and drop images here or paste URLs.
     validations:
       required: false
 
@@ -99,20 +36,6 @@ body:
     id: additional
     attributes:
       label: Additional Context
-      description: Add any other context, links, or references about the feature request.
-      placeholder: 'This feature exists in X tool as..., I found this related discussion at...'
+      description: Alternatives considered, mockups, links, priority, etc.
     validations:
       required: false
-
-  - type: checkboxes
-    id: checks
-    attributes:
-      label: Pre-submission Checklist
-      description: Please confirm the following before submitting
-      options:
-        - label: I have searched existing issues and discussions to avoid duplicates
-          required: true
-        - label: This feature aligns with Shep's goal of autonomous SDLC automation
-          required: false
-        - label: I am willing to help test this feature if implemented
-          required: false

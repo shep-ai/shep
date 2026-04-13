@@ -1,0 +1,10 @@
+=== YAML Validation Results ===
+Validated: 2026-04-12
+Tool: js-yaml (via Node.js)
+
+PASS: .github/ISSUE_TEMPLATE/bug-report.yml — valid YAML
+PASS: .github/ISSUE_TEMPLATE/config.yml — valid YAML
+PASS: .github/ISSUE_TEMPLATE/docs-improvement.yml — valid YAML
+PASS: .github/ISSUE_TEMPLATE/feature-request.yml — valid YAML
+
+All 4 templates are valid YAML.
