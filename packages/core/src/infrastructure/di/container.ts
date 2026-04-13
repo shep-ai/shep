@@ -248,6 +248,11 @@ import { GetPageUseCase } from '../../application/use-cases/pages/get-page.use-c
 import { UpdatePageUseCase } from '../../application/use-cases/pages/update-page.use-case.js';
 import { DeletePageUseCase } from '../../application/use-cases/pages/delete-page.use-case.js';
 
+// Attachment use cases
+import { UploadAttachmentUseCase } from '../../application/use-cases/pm-attachments/upload-attachment.use-case.js';
+import { ListAttachmentsUseCase } from '../../application/use-cases/pm-attachments/list-attachments.use-case.js';
+import { DeleteAttachmentUseCase } from '../../application/use-cases/pm-attachments/delete-attachment.use-case.js';
+
 // Analytics use cases
 import { GetCycleBurndownUseCase } from '../../application/use-cases/analytics/get-cycle-burndown.use-case.js';
 import { GetProjectBreakdownUseCase } from '../../application/use-cases/analytics/get-project-breakdown.use-case.js';
@@ -771,6 +776,14 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(GetPageUseCase);
   container.registerSingleton(UpdatePageUseCase);
   container.registerSingleton(DeletePageUseCase);
+
+  // Attachment use cases
+  container.registerSingleton(UploadAttachmentUseCase);
+  container.register('UploadAttachmentUseCase', { useToken: UploadAttachmentUseCase });
+  container.registerSingleton(ListAttachmentsUseCase);
+  container.register('ListAttachmentsUseCase', { useToken: ListAttachmentsUseCase });
+  container.registerSingleton(DeleteAttachmentUseCase);
+  container.register('DeleteAttachmentUseCase', { useToken: DeleteAttachmentUseCase });
 
   // Analytics use cases
   container.registerSingleton(GetCycleBurndownUseCase);

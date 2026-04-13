@@ -6,10 +6,16 @@ import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import type { PmProject, WorkItem, WorkItemState } from '@shepai/core/domain/generated/output';
+import type {
+  PmProject,
+  WorkItem,
+  WorkItemState,
+  PmAttachment,
+} from '@shepai/core/domain/generated/output';
 import type { WorkItemRelation } from '@shepai/core/application/ports/output/repositories/work-item-relation-repository.interface';
 import { WorkItemRelationsPanel } from '@/components/pm/relations/work-item-relations-panel';
 import { SubItemsSection } from '@/components/pm/sub-items/sub-items-section';
+import { AttachmentList } from '@/components/pm/attachments/attachment-list';
 
 const PRIORITY_COLORS: Record<string, string> = {
   Urgent: 'bg-red-500/10 text-red-500',
@@ -25,6 +31,7 @@ export interface WorkItemDetailClientProps {
   allWorkItems: WorkItem[];
   states: WorkItemState[];
   relations: WorkItemRelation[];
+  attachments: PmAttachment[];
   className?: string;
 }
 
@@ -34,6 +41,7 @@ export function WorkItemDetailClient({
   allWorkItems,
   states,
   relations,
+  attachments,
   className,
 }: WorkItemDetailClientProps) {
   const router = useRouter();
@@ -131,6 +139,11 @@ export function WorkItemDetailClient({
         projectPrefix={project.identifierPrefix}
         initialRelations={relations}
       />
+
+      <hr className="border-border" />
+
+      {/* Attachments */}
+      <AttachmentList workItemId={workItem.id} attachments={attachments} />
     </div>
   );
 }

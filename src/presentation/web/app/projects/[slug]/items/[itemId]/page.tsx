@@ -4,6 +4,7 @@ import type { GetWorkItemUseCase } from '@shepai/core/application/use-cases/work
 import type { ListWorkItemsUseCase } from '@shepai/core/application/use-cases/work-items/list-work-items.use-case';
 import type { ManageWorkItemStatesUseCase } from '@shepai/core/application/use-cases/work-item-states/manage-work-item-states.use-case';
 import type { ListWorkItemRelationsUseCase } from '@shepai/core/application/use-cases/work-item-relations/list-work-item-relations.use-case';
+import type { ListAttachmentsUseCase } from '@shepai/core/application/use-cases/pm-attachments/list-attachments.use-case';
 import { WorkItemDetailClient } from './work-item-detail-client';
 
 export const dynamic = 'force-dynamic';
@@ -41,10 +42,11 @@ export default async function WorkItemDetailPage({ params }: WorkItemDetailPageP
 
   const workItem = workItemResult.workItem;
 
-  const [allWorkItems, states, relationsResult] = await Promise.all([
+  const [allWorkItems, states, relationsResult, attachmentsResult] = await Promise.all([
     resolve<ListWorkItemsUseCase>('ListWorkItemsUseCase').execute(project.id),
     resolve<ManageWorkItemStatesUseCase>('ManageWorkItemStatesUseCase').list(project.id),
     resolve<ListWorkItemRelationsUseCase>('ListWorkItemRelationsUseCase').execute(workItem.id),
+    resolve<ListAttachmentsUseCase>('ListAttachmentsUseCase').execute(workItem.id),
   ]);
 
   return (
@@ -55,6 +57,7 @@ export default async function WorkItemDetailPage({ params }: WorkItemDetailPageP
         allWorkItems={allWorkItems}
         states={states}
         relations={relationsResult}
+        attachments={attachmentsResult.attachments}
       />
     </div>
   );
