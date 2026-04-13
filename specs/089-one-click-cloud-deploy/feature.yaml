@@ -3,22 +3,28 @@ feature:
   name: 'one-click-cloud-deploy'
   number: 89
   branch: 'feat/089-one-click-cloud-deploy'
-  lifecycle: 'implementation'
+  lifecycle: 'ready-for-review'
   createdAt: '2026-04-13T20:49:18Z'
 
 status:
-  phase: 'ready-to-implement'
+  phase: 'ready-for-review'
   progress:
-    completed: 0
+    completed: 45
     total: 58
-    percentage: 0
+    percentage: 77
   currentTask: null
-  lastUpdated: '2026-04-14T00:00:00Z'
-  lastUpdatedBy: 'shep-kit:plan'
+  lastUpdated: '2026-04-14T01:00:00Z'
+  lastUpdatedBy: 'shep-kit:implement'
 
 validation:
-  lastRun: null
-  gatesPassed: []
+  lastRun: '2026-04-14T01:00:00Z'
+  gatesPassed:
+    - typecheck
+    - lint
+    - test-unit
+    - test-int
+    - build
+    - tsp-compile
   autoFixesApplied: []
 
 tasks:
@@ -36,6 +42,16 @@ checkpoints:
   - phase: 'plan-complete'
     completedAt: '2026-04-14T00:00:00Z'
     completedBy: 'shep-kit:plan'
+  - phase: 'implementation-core-complete'
+    completedAt: '2026-04-14T01:00:00Z'
+    completedBy: 'shep-kit:implement'
+    notes: >
+      Phases 1-11 + 13 implemented end-to-end. Deferred to follow-up
+      work: phase 12 (Playwright e2e smoke), the large clean-arch
+      refactor tasks for application-page.tsx split (t-46/t-47),
+      StreamAgentEventsUseCase extraction (t-48/t-49), and container.ts
+      modular split (t-32). All 11 spec-089 test files green (116
+      tests), 6079 unit + 628 integration tests repo-wide.
 
 errors:
   current: null
