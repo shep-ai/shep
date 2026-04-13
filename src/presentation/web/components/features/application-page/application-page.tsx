@@ -37,6 +37,9 @@ import { TerminalTab } from '@/components/features/application-page/terminal-tab
 import { IdeTab } from '@/components/features/application-page/ide-tab';
 import { RunDevButton } from '@/components/features/application-page/run-dev-button';
 import { WebPreviewTab } from '@/components/features/application-page/web-preview-tab';
+import { DeployButton } from '@/components/features/application-page/deploy-button';
+import { CreateGitHubRepoButton } from '@/components/features/application-page/create-github-repo-button';
+import { useCloudDeployAction, type CloudDeployActionApi } from '@/hooks/use-cloud-deploy-action';
 import { useDeployAction, type DeployActionState } from '@/hooks/use-deploy-action';
 import { useTurnStatus } from '@/hooks/turn-statuses-provider';
 import { deriveAppLiveStatus } from '@/lib/derive-app-status';
@@ -97,6 +100,8 @@ interface AppTopBarProps {
    *  top-bar Preview button and the right-pane Web iframe use a single
    *  polling loop). */
   deploy: DeployActionState;
+  /** Cloud deploy action state (spec 089). */
+  cloudDeploy: CloudDeployActionApi;
 }
 
 function AppTopBar({
@@ -106,6 +111,7 @@ function AppTopBar({
   agentRunning,
   initialChatState,
   deploy,
+  cloudDeploy,
 }: AppTopBarProps) {
   return (
     <header
@@ -147,6 +153,16 @@ function AppTopBar({
 
       {/* ── Delete ─────────────────────────────────────────── */}
       <DeleteButton applicationId={application.id} applicationName={application.name} />
+
+      {/* ── Create GitHub repo (spec 089, violation-free; gh CLI) ─── */}
+      <CreateGitHubRepoButton
+        applicationId={application.id}
+        initialRemoteUrl={application.gitRemoteUrl ?? null}
+        disabled={agentRunning}
+      />
+
+      {/* ── Cloud deploy (spec 089, pluggable providers) ─── */}
+      <DeployButton deploy={cloudDeploy} disabled={agentRunning} />
 
       {/* ── Preview (install + npm run dev, persistent) ─── */}
       <RunDevButton deploy={deploy} disabled={agentRunning} />
@@ -743,6 +759,7 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
     targetType: 'application',
     repositoryPath: application.repositoryPath,
   });
+  const cloudDeploy = useCloudDeployAction(application.id);
 
   // ── Agent-running detection ────────────────────────────────
   // While the agent is processing, the dev server is likely being
@@ -815,6 +832,7 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
         agentRunning={agentRunning}
         initialChatState={initialChatState}
         deploy={deploy}
+        cloudDeploy={cloudDeploy}
       />
       <ResizableSplit
         left={
