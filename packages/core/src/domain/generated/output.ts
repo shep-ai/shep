@@ -2136,6 +2136,121 @@ export type PmModule = SoftDeletableEntity & {
 };
 
 /**
+ * A wiki/documentation page within a project
+ */
+export type Page = SoftDeletableEntity & {
+  /**
+   * Project this page belongs to
+   */
+  projectId: UUID;
+  /**
+   * Page title
+   */
+  title: string;
+  /**
+   * Rich text content stored as TipTap JSON (ProseMirror document model)
+   */
+  content?: string;
+  /**
+   * Parent page ID for hierarchical nesting (null for top-level pages)
+   */
+  parentId?: UUID;
+  /**
+   * Display order among sibling pages
+   */
+  sortOrder: float64;
+  /**
+   * Whether this page is marked as a favorite
+   */
+  isFavorite: boolean;
+};
+
+/**
+ * An immutable content snapshot of a page at a specific version
+ */
+export type PageVersion = BaseEntity & {
+  /**
+   * Page this version belongs to
+   */
+  pageId: UUID;
+  /**
+   * Sequential version number within the page
+   */
+  versionNumber: number;
+  /**
+   * Page title at this version
+   */
+  title: string;
+  /**
+   * Full content snapshot as TipTap JSON
+   */
+  content?: string;
+};
+export enum EpicStatus {
+  Backlog = 'Backlog',
+  Planned = 'Planned',
+  InProgress = 'InProgress',
+  Completed = 'Completed',
+  Cancelled = 'Cancelled',
+}
+
+/**
+ * A large container within a project that groups related work items
+ */
+export type Epic = SoftDeletableEntity & {
+  /**
+   * Project this epic belongs to
+   */
+  projectId: UUID;
+  /**
+   * Epic name
+   */
+  name: string;
+  /**
+   * Optional description of the epic's scope and goals
+   */
+  description?: string;
+  /**
+   * Current lifecycle status
+   */
+  status: EpicStatus;
+  /**
+   * Planned start date
+   */
+  startDate?: any;
+  /**
+   * Target end date
+   */
+  endDate?: any;
+};
+
+/**
+ * File attachment metadata for a work item — file stored on local filesystem
+ */
+export type PmAttachment = SoftDeletableEntity & {
+  /**
+   * Work item this attachment belongs to
+   */
+  workItemId: UUID;
+  /**
+   * Original filename as provided by the user
+   */
+  filename: string;
+  /**
+   * MIME type of the file (validated via magic bytes)
+   */
+  mimeType: string;
+  /**
+   * File size in bytes (max 25MB = 26214400)
+   */
+  fileSize: number;
+  /**
+   * Absolute path to the file on disk
+   */
+  storagePath: string;
+};
+
+/**
  * Single installation suggestion for a tool
  */
 export type InstallationSuggestion = {
@@ -2324,6 +2439,28 @@ export type WorkItemRelation = BaseEntity & {
    * Type of relationship
    */
   relationType: RelationType;
+};
+
+/**
+ * A record of time logged against a work item
+ */
+export type TimeEntry = BaseEntity & {
+  /**
+   * Work item this time entry is logged against
+   */
+  workItemId: UUID;
+  /**
+   * Duration of work in minutes
+   */
+  durationMinutes: number;
+  /**
+   * Optional note describing the work performed
+   */
+  note?: string;
+  /**
+   * When the work was performed
+   */
+  loggedAt: any;
 };
 export enum AgentStatus {
   Idle = 'Idle',

@@ -36,3 +36,7 @@ import "./comment.tsp";
 import "./saved-view.tsp";
 import "./cycle.tsp";
 import "./pm-module.tsp";
+import "./page.tsp";
+import "./page-version.tsp";
+import "./epic.tsp";
+import "./pm-attachment.tsp";

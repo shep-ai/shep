@@ -1,0 +1,30 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PmAttachment.yaml
+type: object
+properties:
+  workItemId:
+    $ref: UUID.yaml
+    description: Work item this attachment belongs to
+  filename:
+    type: string
+    description: Original filename as provided by the user
+  mimeType:
+    type: string
+    description: MIME type of the file (validated via magic bytes)
+  fileSize:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: File size in bytes (max 25MB = 26214400)
+  storagePath:
+    type: string
+    description: Absolute path to the file on disk
+required:
+  - workItemId
+  - filename
+  - mimeType
+  - fileSize
+  - storagePath
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: File attachment metadata for a work item — file stored on local filesystem

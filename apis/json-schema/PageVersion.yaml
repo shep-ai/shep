@@ -1,0 +1,25 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PageVersion.yaml
+type: object
+properties:
+  pageId:
+    $ref: UUID.yaml
+    description: Page this version belongs to
+  versionNumber:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Sequential version number within the page
+  title:
+    type: string
+    description: Page title at this version
+  content:
+    type: string
+    description: Full content snapshot as TipTap JSON
+required:
+  - pageId
+  - versionNumber
+  - title
+allOf:
+  - $ref: BaseEntity.yaml
+description: An immutable content snapshot of a page at a specific version

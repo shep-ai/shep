@@ -1,0 +1,32 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Epic.yaml
+type: object
+properties:
+  projectId:
+    $ref: UUID.yaml
+    description: Project this epic belongs to
+  name:
+    type: string
+    description: Epic name
+  description:
+    type: string
+    description: Optional description of the epic's scope and goals
+  status:
+    $ref: EpicStatus.yaml
+    default: Backlog
+    description: Current lifecycle status
+  startDate:
+    type: string
+    format: date-time
+    description: Planned start date
+  endDate:
+    type: string
+    format: date-time
+    description: Target end date
+required:
+  - projectId
+  - name
+  - status
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: A large container within a project that groups related work items

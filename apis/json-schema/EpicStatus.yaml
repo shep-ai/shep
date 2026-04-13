@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: EpicStatus.yaml
+type: string
+enum:
+  - Backlog
+  - Planned
+  - InProgress
+  - Completed
+  - Cancelled
+description: Lifecycle status of an epic

@@ -1,0 +1,26 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: TimeEntry.yaml
+type: object
+properties:
+  workItemId:
+    $ref: UUID.yaml
+    description: Work item this time entry is logged against
+  durationMinutes:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Duration of work in minutes
+  note:
+    type: string
+    description: Optional note describing the work performed
+  loggedAt:
+    type: string
+    format: date-time
+    description: When the work was performed
+required:
+  - workItemId
+  - durationMinutes
+  - loggedAt
+allOf:
+  - $ref: BaseEntity.yaml
+description: A record of time logged against a work item

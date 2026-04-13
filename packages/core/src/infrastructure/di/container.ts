@@ -46,6 +46,16 @@ import type { ICycleRepository } from '../../application/ports/output/repositori
 import { SQLiteCycleRepository } from '../repositories/sqlite-cycle.repository.js';
 import type { IPmModuleRepository } from '../../application/ports/output/repositories/pm-module-repository.interface.js';
 import { SQLitePmModuleRepository } from '../repositories/sqlite-pm-module.repository.js';
+import type { IPageRepository } from '../../application/ports/output/repositories/page-repository.interface.js';
+import { SQLitePageRepository } from '../repositories/sqlite-page.repository.js';
+import type { IPageVersionRepository } from '../../application/ports/output/repositories/page-version-repository.interface.js';
+import { SQLitePageVersionRepository } from '../repositories/sqlite-page-version.repository.js';
+import type { IEpicRepository } from '../../application/ports/output/repositories/epic-repository.interface.js';
+import { SQLiteEpicRepository } from '../repositories/sqlite-epic.repository.js';
+import type { IPmAttachmentRepository } from '../../application/ports/output/repositories/pm-attachment-repository.interface.js';
+import { SQLitePmAttachmentRepository } from '../repositories/sqlite-pm-attachment.repository.js';
+import type { ITimeEntryRepository } from '../../application/ports/output/repositories/time-entry-repository.interface.js';
+import { SQLiteTimeEntryRepository } from '../repositories/sqlite-time-entry.repository.js';
 
 // Validator interfaces and implementations
 import type { IAgentValidator } from '../../application/ports/output/agents/agent-validator.interface.js';
@@ -402,6 +412,41 @@ export async function initializeContainer(): Promise<typeof container> {
     useFactory: (c) => {
       const database = c.resolve<Database.Database>('Database');
       return new SQLitePmModuleRepository(database);
+    },
+  });
+
+  container.register<IPageRepository>('IPageRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePageRepository(database);
+    },
+  });
+
+  container.register<IPageVersionRepository>('IPageVersionRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePageVersionRepository(database);
+    },
+  });
+
+  container.register<IEpicRepository>('IEpicRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteEpicRepository(database);
+    },
+  });
+
+  container.register<IPmAttachmentRepository>('IPmAttachmentRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePmAttachmentRepository(database);
+    },
+  });
+
+  container.register<ITimeEntryRepository>('ITimeEntryRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteTimeEntryRepository(database);
     },
   });
 

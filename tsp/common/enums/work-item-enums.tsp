@@ -161,6 +161,29 @@ enum ModuleStatus {
 }
 
 /**
+ * Epic Status
+ *
+ * Lifecycle states for epics (large work containers).
+ */
+@doc("Lifecycle status of an epic")
+enum EpicStatus {
+  @doc("Not yet planned")
+  Backlog: "Backlog",
+
+  @doc("Scheduled for work")
+  Planned: "Planned",
+
+  @doc("Actively being worked on")
+  InProgress: "InProgress",
+
+  @doc("All work finished")
+  Completed: "Completed",
+
+  @doc("Abandoned or no longer relevant")
+  Cancelled: "Cancelled",
+}
+
+/**
  * Intake Status
  *
  * Triage states for incoming requests (IntakeItem).

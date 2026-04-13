@@ -1,0 +1,32 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Page.yaml
+type: object
+properties:
+  projectId:
+    $ref: UUID.yaml
+    description: Project this page belongs to
+  title:
+    type: string
+    description: Page title
+  content:
+    type: string
+    description: Rich text content stored as TipTap JSON (ProseMirror document model)
+  parentId:
+    $ref: UUID.yaml
+    description: Parent page ID for hierarchical nesting (null for top-level pages)
+  sortOrder:
+    type: number
+    default: 0
+    description: Display order among sibling pages
+  isFavorite:
+    type: boolean
+    default: false
+    description: Whether this page is marked as a favorite
+required:
+  - projectId
+  - title
+  - sortOrder
+  - isFavorite
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: A wiki/documentation page within a project
