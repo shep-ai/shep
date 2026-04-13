@@ -22,6 +22,7 @@ import { BoardView } from '@/components/pm/board-view/board-view';
 import { TableView } from '@/components/pm/table-view/table-view';
 import { CalendarView } from '@/components/pm/calendar-view/calendar-view';
 import { AnalyticsDashboard } from '@/components/pm/analytics/analytics-dashboard';
+import { TimelineViewWrapper } from '@/components/pm/timeline-view/timeline-view-wrapper';
 import { CyclePanel } from '@/components/pm/cycle-panel/cycle-panel';
 import { ModulePanel } from '@/components/pm/module-panel/module-panel';
 import { updateWorkItem } from '@/app/actions/update-work-item';
@@ -224,6 +225,16 @@ export function ProjectDetailClient({
           states={states}
           projectPrefix={project.identifierPrefix}
           onWorkItemUpdate={handleWorkItemUpdate}
+          onItemClick={handleCardClick}
+        />
+      )}
+
+      {viewMode === 'timeline' && (
+        <TimelineViewWrapper
+          projectId={project.id}
+          workItems={workItems}
+          states={states}
+          projectPrefix={project.identifierPrefix}
           onItemClick={handleCardClick}
         />
       )}
