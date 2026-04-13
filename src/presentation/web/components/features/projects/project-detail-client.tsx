@@ -13,6 +13,7 @@ import type {
   WorkItemState,
   Label,
   Cycle,
+  PmModule,
 } from '@shepai/core/domain/generated/output';
 import { WorkItemRow } from './work-item-row';
 import { CreateWorkItemDialog } from './create-work-item-dialog';
@@ -21,6 +22,8 @@ import { BoardView } from '@/components/pm/board-view/board-view';
 import { TableView } from '@/components/pm/table-view/table-view';
 import { CalendarView } from '@/components/pm/calendar-view/calendar-view';
 import { AnalyticsDashboard } from '@/components/pm/analytics/analytics-dashboard';
+import { CyclePanel } from '@/components/pm/cycle-panel/cycle-panel';
+import { ModulePanel } from '@/components/pm/module-panel/module-panel';
 import { updateWorkItem } from '@/app/actions/update-work-item';
 
 export interface ProjectDetailClientProps {
@@ -29,6 +32,7 @@ export interface ProjectDetailClientProps {
   states: WorkItemState[];
   labels: Label[];
   cycles?: Cycle[];
+  modules?: PmModule[];
   className?: string;
 }
 
@@ -39,10 +43,13 @@ export function ProjectDetailClient({
   workItems: initialWorkItems,
   states,
   labels,
-  cycles = [],
+  cycles: initialCycles = [],
+  modules: initialModules = [],
   className,
 }: ProjectDetailClientProps) {
   const [workItems, setWorkItems] = useState<WorkItem[]>(initialWorkItems);
+  const [cycles, setCycles] = useState<Cycle[]>(initialCycles);
+  const [modules, setModules] = useState<PmModule[]>(initialModules);
   const [groupBy, setGroupBy] = useState<GroupBy>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -221,7 +228,15 @@ export function ProjectDetailClient({
         />
       )}
 
-      {viewMode === 'analytics' && <AnalyticsDashboard projectId={project.id} cycles={cycles} />}
+      {viewMode === 'analytics' && (
+        <div className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <CyclePanel projectId={project.id} cycles={cycles} onCyclesChange={setCycles} />
+            <ModulePanel projectId={project.id} modules={modules} onModulesChange={setModules} />
+          </div>
+          <AnalyticsDashboard projectId={project.id} cycles={cycles} />
+        </div>
+      )}
 
       <CreateWorkItemDialog
         open={showCreateDialog}
