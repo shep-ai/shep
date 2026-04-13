@@ -93,6 +93,8 @@ export interface FeatureRow {
   injected_skills: string | null;
   // Bedrock memory opt-in
   bedrock_enabled: number;
+  // Plugin activation overrides (JSON object: {pluginName: boolean})
+  active_plugins: string | null;
   // Soft delete
   deleted_at: number | null;
   created_at: number;
@@ -166,6 +168,11 @@ export function toDatabase(feature: Feature): FeatureRow {
     injected_skills: feature.injectedSkills?.length ? JSON.stringify(feature.injectedSkills) : null,
     // Bedrock memory opt-in
     bedrock_enabled: feature.bedrockEnabled ? 1 : 0,
+    // Plugin activation overrides
+    active_plugins:
+      feature.activePlugins && Object.keys(feature.activePlugins).length > 0
+        ? JSON.stringify(feature.activePlugins)
+        : null,
     // Soft delete
     deleted_at:
       feature.deletedAt instanceof Date ? feature.deletedAt.getTime() : (feature.deletedAt ?? null),
@@ -251,6 +258,10 @@ export function fromDatabase(row: FeatureRow): Feature {
     ...(row.injected_skills != null && { injectedSkills: JSON.parse(row.injected_skills) }),
     // Bedrock memory opt-in
     bedrockEnabled: row.bedrock_enabled === 1,
+    // Plugin activation overrides
+    ...(row.active_plugins != null && {
+      activePlugins: JSON.parse(row.active_plugins) as Record<string, boolean>,
+    }),
     // Soft delete
     ...(row.deleted_at != null && { deletedAt: new Date(row.deleted_at) }),
   };
