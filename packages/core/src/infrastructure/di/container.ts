@@ -14,6 +14,7 @@
 import 'reflect-metadata';
 import { container } from 'tsyringe';
 import type Database from 'better-sqlite3';
+import nodePath from 'node:path';
 
 // Repository interfaces and implementations
 import type { ISettingsRepository } from '../../application/ports/output/repositories/settings.repository.interface.js';
@@ -68,6 +69,12 @@ import type { IPmProjectMemberRepository } from '../../application/ports/output/
 import { SQLitePmProjectMemberRepository } from '../repositories/sqlite-pm-project-member.repository.js';
 import type { IPmAuditLogRepository } from '../../application/ports/output/repositories/pm-audit-log-repository.interface.js';
 import { SQLitePmAuditLogRepository } from '../repositories/sqlite-pm-audit-log.repository.js';
+
+// Attachment storage and integration services
+import type { IAttachmentStorage } from '../../application/ports/output/services/attachment-storage.interface.js';
+import { LocalAttachmentStorageService } from '../services/storage/local-attachment-storage.service.js';
+import type { IWebhookService } from '../../application/ports/output/services/webhook.interface.js';
+import { NoopWebhookService } from '../services/integrations/noop-webhook.service.js';
 
 // Validator interfaces and implementations
 import type { IAgentValidator } from '../../application/ports/output/agents/agent-validator.interface.js';
@@ -307,6 +314,7 @@ import { ListProjectMembersUseCase } from '../../application/use-cases/project-m
 // Audit use cases
 import { CreateAuditLogUseCase } from '../../application/use-cases/audit/create-audit-log.use-case.js';
 import { ListAuditLogsUseCase } from '../../application/use-cases/audit/list-audit-logs.use-case.js';
+import { SendWebhookUseCase } from '../../application/use-cases/integrations/send-webhook.use-case.js';
 
 // Analytics use cases
 import { GetCycleBurndownUseCase } from '../../application/use-cases/analytics/get-cycle-burndown.use-case.js';
@@ -599,6 +607,17 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.registerSingleton<IWorktreeService>('IWorktreeService', WorktreeService);
   container.registerSingleton<IFileSystemService>('IFileSystemService', FileSystemService);
+  container.registerSingleton<IWebhookService>('IWebhookService', NoopWebhookService);
+
+  // Attachment storage — derives path from database directory
+  container.register<IAttachmentStorage>('IAttachmentStorage', {
+    useFactory: () => {
+      const dbFilename = db.name;
+      const dbDir = dbFilename ? nodePath.dirname(dbFilename) : '.shep';
+      const storagePath = nodePath.join(dbDir, 'attachments');
+      return new LocalAttachmentStorageService(storagePath);
+    },
+  });
   container.registerSingleton<IApplicationBriefStore>(
     'IApplicationBriefStore',
     ApplicationBriefStore
@@ -949,6 +968,10 @@ export async function initializeContainer(): Promise<typeof container> {
   container.register('CreateAuditLogUseCase', { useToken: CreateAuditLogUseCase });
   container.registerSingleton(ListAuditLogsUseCase);
   container.register('ListAuditLogsUseCase', { useToken: ListAuditLogsUseCase });
+
+  // Integration use cases
+  container.registerSingleton(SendWebhookUseCase);
+  container.register('SendWebhookUseCase', { useToken: SendWebhookUseCase });
 
   // Import/Export use cases
   container.registerSingleton(ExportWorkItemsCsvUseCase);
