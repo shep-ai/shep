@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { FolderKanban, FileText, Search } from 'lucide-react';
+import { FolderKanban, FileText, Search, BookOpen } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   Command,
@@ -16,7 +16,7 @@ import {
 import { globalSearch } from '@/app/actions/global-search';
 
 interface SearchResult {
-  type: 'project' | 'workItem';
+  type: 'project' | 'workItem' | 'page';
   id: string;
   title: string;
   subtitle?: string;
@@ -92,6 +92,7 @@ export function GlobalSearchDialog({ className }: GlobalSearchDialogProps) {
 
   const projectResults = results.filter((r) => r.type === 'project');
   const workItemResults = results.filter((r) => r.type === 'workItem');
+  const pageResults = results.filter((r) => r.type === 'page');
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -101,7 +102,7 @@ export function GlobalSearchDialog({ className }: GlobalSearchDialogProps) {
       >
         <Command className={className}>
           <CommandInput
-            placeholder="Search projects and work items..."
+            placeholder="Search projects, work items, and pages..."
             value={query}
             onChange={handleQueryChange}
             data-testid="global-search-input"
@@ -158,10 +159,37 @@ export function GlobalSearchDialog({ className }: GlobalSearchDialogProps) {
                 ))}
               </CommandGroup>
             ) : null}
+            {pageResults.length > 0 ? (
+              <>
+                {projectResults.length > 0 || workItemResults.length > 0 ? (
+                  <CommandSeparator />
+                ) : null}
+                <CommandGroup>
+                  <div className="text-muted-foreground px-2 py-1.5 text-[10px] font-medium">
+                    Pages
+                  </div>
+                  {pageResults.map((result) => (
+                    <CommandItem
+                      key={result.id}
+                      onClick={() => handleSelect(result)}
+                      data-testid={`search-result-${result.id}`}
+                    >
+                      <BookOpen className="mr-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                      <span className="flex-1 truncate text-xs">{result.title}</span>
+                      {result.subtitle ? (
+                        <span className="text-muted-foreground ml-2 shrink-0 font-mono text-[10px]">
+                          {result.subtitle}
+                        </span>
+                      ) : null}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </>
+            ) : null}
             {!query.trim() && !loading ? (
               <div className="text-muted-foreground py-6 text-center text-xs">
                 <Search className="mx-auto mb-2 h-5 w-5 opacity-20" />
-                <p>Type to search projects and work items</p>
+                <p>Type to search projects, work items, and pages</p>
                 <p className="mt-1 text-[10px]">
                   Press{' '}
                   <kbd className="bg-muted rounded px-1 py-0.5 font-mono text-[10px]">

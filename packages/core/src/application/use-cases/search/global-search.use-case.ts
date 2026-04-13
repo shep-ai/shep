@@ -2,7 +2,7 @@ import { injectable, inject } from 'tsyringe';
 import type Database from 'better-sqlite3';
 
 export interface SearchResult {
-  type: 'project' | 'workItem';
+  type: 'project' | 'workItem' | 'page';
   id: string;
   title: string;
   subtitle?: string;
@@ -76,6 +76,35 @@ export class GlobalSearchUseCase {
         title: row.title,
         subtitle: `${row.identifier_prefix}-${row.sequence_id}`,
         url: `/projects/${row.project_slug}`,
+      });
+    }
+
+    // Search pages
+    const pageRows = this.db
+      .prepare(
+        `SELECT pg.id, pg.title, p.slug AS project_slug, p.identifier_prefix
+         FROM pages_fts fts
+         JOIN pages pg ON pg.id = fts.page_id
+         JOIN pm_projects p ON p.id = pg.project_id
+         WHERE pages_fts MATCH ?
+         AND pg.deleted_at IS NULL
+         AND p.deleted_at IS NULL
+         LIMIT ?`
+      )
+      .all(ftsQuery, limit) as {
+      id: string;
+      title: string;
+      project_slug: string;
+      identifier_prefix: string;
+    }[];
+
+    for (const row of pageRows) {
+      results.push({
+        type: 'page',
+        id: row.id,
+        title: row.title,
+        subtitle: row.identifier_prefix,
+        url: `/projects/${row.project_slug}/pages`,
       });
     }
 
