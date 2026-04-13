@@ -1,0 +1,897 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "ai-tool-plugin-system"
+summary: >
+  30 tasks across 6 phases implementing the AI tool plugin system from domain models
+  through web UI. Each task follows TDD cycles (RED-GREEN-REFACTOR) and is ordered by
+  dependency.
+
+relatedFeatures: []
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "tsyringe (DI)"
+  - "SQLite / better-sqlite3"
+  - "Node.js child_process"
+  - "Commander.js"
+  - "Next.js"
+  - "shadcn/ui"
+
+relatedLinks:
+  - title: "Model Context Protocol specification"
+    url: "https://modelcontextprotocol.io"
+  - title: "Claude Code MCP configuration docs"
+    url: "https://docs.anthropic.com/en/docs/claude-code/mcp"
+
+tasks:
+  # ============================================================
+  # Phase 1: Domain Foundation
+  # ============================================================
+
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Define Plugin enums in TypeSpec"
+    description: >
+      Create tsp/common/enums/plugin.tsp with PluginType (Mcp, Hook, Cli),
+      PluginTransport (Stdio, Http), and PluginHealthStatus (Healthy, Degraded,
+      Unavailable, Unknown) enums. Add import to tsp/common/enums/index.tsp.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "PluginType enum has exactly three members: Mcp, Hook, Cli"
+      - "PluginTransport enum has exactly two members: Stdio, Http"
+      - "PluginHealthStatus enum has exactly four members: Healthy, Degraded, Unavailable, Unknown"
+      - "Enums are exported from tsp/common/enums/index.tsp"
+      - "pnpm tsp:compile succeeds without errors"
+    tdd:
+      red:
+        - "Run pnpm tsp:compile and verify it succeeds (baseline)"
+      green:
+        - "Create tsp/common/enums/plugin.tsp with the three enums"
+        - "Add import to tsp/common/enums/index.tsp"
+        - "Run pnpm tsp:compile and verify enums appear in generated output.ts"
+      refactor:
+        - "Ensure doc annotations follow existing enum style (e.g., tool.tsp)"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Define Plugin entity and ToolGroup model in TypeSpec"
+    description: >
+      Create tsp/domain/entities/plugin.tsp with the Plugin entity extending BaseEntity.
+      Fields: name, displayName, type (PluginType), version?, installSource?, transport?,
+      serverCommand?, serverArgs?, requiredEnvVars?, toolGroups?, activeToolGroups?,
+      enabled (default true), healthStatus (default Unknown), healthMessage?, hookType?,
+      scriptPath?, binaryCommand?, runtimeType?, runtimeMinVersion?, homepageUrl?, description?.
+      Also define ToolGroup model with name, description?, tools? fields.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Plugin entity extends BaseEntity with all specified fields"
+      - "All MCP-specific fields (transport, serverCommand, serverArgs) are optional"
+      - "All Hook-specific fields (hookType, scriptPath) are optional"
+      - "All CLI-specific fields (binaryCommand) are optional"
+      - "ToolGroup model has name, description, and tools fields"
+      - "pnpm tsp:compile generates Plugin and ToolGroup types in output.ts"
+    tdd:
+      red:
+        - "Run pnpm tsp:compile -- verify no Plugin type in output.ts yet"
+      green:
+        - "Create tsp/domain/entities/plugin.tsp with Plugin entity and ToolGroup model"
+        - "Import plugin enums from ../../common/enums/plugin.tsp"
+        - "Run pnpm tsp:compile and verify Plugin and ToolGroup appear in output.ts"
+      refactor:
+        - "Ensure doc annotations are comprehensive (follow tool.tsp and feature.tsp style)"
+        - "Verify field naming consistency with existing entities"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Add activePlugins field to Feature entity in TypeSpec"
+    description: >
+      Add an optional activePlugins field to the Feature entity in
+      tsp/domain/entities/feature.tsp. Type is Record<string, boolean>
+      (or a simple key-value model) for per-feature plugin activation overrides.
+      Compile and verify the generated type includes the new field.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "Feature entity has optional activePlugins field"
+      - "Field type supports mapping plugin names to boolean activation state"
+      - "pnpm tsp:compile succeeds and Feature type includes activePlugins"
+      - "No existing test fixtures break (field is optional)"
+    tdd:
+      red:
+        - "Verify Feature type in output.ts does not have activePlugins"
+      green:
+        - "Add activePlugins?: Record<string, boolean> to Feature in TypeSpec"
+        - "Run pnpm tsp:compile and verify field appears in generated output"
+      refactor:
+        - "Add doc annotation explaining the field purpose and JSON storage format"
+
+  # ============================================================
+  # Phase 2: Persistence Layer
+  # ============================================================
+
+  - id: "task-4"
+    phaseId: "phase-2"
+    title: "Create plugins table migration (060)"
+    description: >
+      Create migration 060-create-plugins-table.ts in the SQLite migrations directory.
+      The plugins table stores all plugin registry data with columns matching the Plugin
+      entity. JSON columns for arrays (server_args, required_env_vars, tool_groups,
+      active_tool_groups). Additive-only migration per LESSONS.md.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "Migration file follows existing naming convention (060-create-plugins-table.ts)"
+      - "CREATE TABLE plugins with all columns matching the Plugin entity"
+      - "UNIQUE index on name column"
+      - "JSON columns are TEXT type for arrays/objects"
+      - "Timestamps are INTEGER (unix milliseconds)"
+      - "enabled is INTEGER NOT NULL DEFAULT 1"
+      - "health_status is TEXT NOT NULL DEFAULT 'Unknown'"
+      - "Migration is additive-only (CREATE TABLE, no DROP/RENAME)"
+    tdd:
+      red:
+        - "Write integration test that runs migration and verifies table exists with correct columns"
+      green:
+        - "Create migration 060 with the CREATE TABLE statement and unique index"
+      refactor:
+        - "Verify column types match existing table conventions (features, settings)"
+
+  - id: "task-5"
+    phaseId: "phase-2"
+    title: "Create active_plugins column migration (061)"
+    description: >
+      Create migration 061-add-active-plugins-to-features.ts that adds an active_plugins
+      TEXT column to the features table. Additive-only. The column stores a JSON object
+      mapping plugin names to boolean activation state.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+    acceptanceCriteria:
+      - "Migration adds active_plugins TEXT column to features table"
+      - "Column is nullable (no NOT NULL constraint)"
+      - "Migration is additive-only (ALTER TABLE ADD COLUMN)"
+      - "Existing feature rows are unaffected (NULL default)"
+    tdd:
+      red:
+        - "Write integration test that verifies active_plugins column does not exist before migration"
+      green:
+        - "Create migration 061 with ALTER TABLE features ADD COLUMN active_plugins TEXT"
+      refactor:
+        - "Ensure migration follows existing ALTER TABLE pattern from migration 055+"
+
+  - id: "task-6"
+    phaseId: "phase-2"
+    title: "Create PluginRow mapper"
+    description: >
+      Create plugin.mapper.ts with PluginRow interface, toDatabase(), and fromDatabase()
+      functions. Handles camelCase/snake_case conversion, JSON serialization for array
+      fields (serverArgs, requiredEnvVars, toolGroups, activeToolGroups), and date
+      conversion (unix milliseconds). Follow feature.mapper.ts pattern exactly.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+    acceptanceCriteria:
+      - "PluginRow interface matches plugins table columns (snake_case)"
+      - "toDatabase() converts Plugin domain object to PluginRow"
+      - "fromDatabase() converts PluginRow to Plugin domain object"
+      - "Array fields serialized as JSON TEXT in toDatabase"
+      - "Array fields deserialized from JSON in fromDatabase with null safety"
+      - "Dates stored as INTEGER (unix milliseconds)"
+      - "Boolean enabled field maps to INTEGER 0/1"
+    tdd:
+      red:
+        - "Write unit test: toDatabase(pluginFixture) returns correct PluginRow with snake_case keys and JSON arrays"
+        - "Write unit test: fromDatabase(pluginRow) returns correct Plugin with camelCase keys and parsed arrays"
+        - "Write unit test: round-trip toDatabase then fromDatabase preserves all fields"
+      green:
+        - "Implement PluginRow interface, toDatabase(), fromDatabase()"
+      refactor:
+        - "Extract shared JSON serialization helpers if duplicating feature.mapper.ts logic"
+
+  - id: "task-7"
+    phaseId: "phase-2"
+    title: "Create IPluginRepository interface and SQLitePluginRepository"
+    description: >
+      Define IPluginRepository port interface with CRUD methods: create, findById,
+      findByName, list, update, delete. Implement SQLitePluginRepository following
+      the SQLiteFeatureRepository pattern with hardcoded INSERT/UPDATE SQL.
+    state: "Todo"
+    dependencies:
+      - "task-6"
+    acceptanceCriteria:
+      - "IPluginRepository interface in application/ports/output/repositories/"
+      - "Methods: create, findById, findByName, list, update, delete"
+      - "SQLitePluginRepository implements all methods"
+      - "INSERT SQL includes ALL columns from PluginRow"
+      - "UPDATE SQL SET clause includes ALL mutable columns"
+      - "findByName returns null when not found"
+      - "list returns all plugins ordered by name"
+      - "delete removes by id"
+      - "Repository exported from ports index"
+    tdd:
+      red:
+        - "Write integration test: create a plugin, findByName returns it"
+        - "Write integration test: create, update, findById returns updated values"
+        - "Write integration test: create, delete, findById returns null"
+        - "Write integration test: list returns all created plugins ordered by name"
+      green:
+        - "Create IPluginRepository interface"
+        - "Implement SQLitePluginRepository with all CRUD methods"
+        - "Export from ports index"
+      refactor:
+        - "Verify INSERT column list matches PluginRow exactly (per LESSONS.md)"
+        - "Verify UPDATE SET clause matches PluginRow exactly"
+
+  - id: "task-8"
+    phaseId: "phase-2"
+    title: "Extend Feature mapper and repository for activePlugins"
+    description: >
+      Add active_plugins to FeatureRow interface in feature.mapper.ts. Update toDatabase()
+      to JSON.stringify activePlugins. Update fromDatabase() to JSON.parse active_plugins.
+      Add active_plugins to INSERT and UPDATE SQL in sqlite-feature.repository.ts.
+    state: "Todo"
+    dependencies:
+      - "task-5"
+    acceptanceCriteria:
+      - "FeatureRow has active_plugins: string | null field"
+      - "toDatabase serializes activePlugins to JSON or null"
+      - "fromDatabase deserializes active_plugins from JSON with null safety"
+      - "INSERT SQL column list includes active_plugins"
+      - "UPDATE SQL SET clause includes active_plugins"
+      - "Integration test: create feature with activePlugins, read back, values match"
+    tdd:
+      red:
+        - "Write integration test: create feature with activePlugins={mempalace: true}, findById returns matching activePlugins"
+      green:
+        - "Add active_plugins to FeatureRow, toDatabase(), fromDatabase()"
+        - "Add active_plugins to INSERT column list and values in repository create()"
+        - "Add active_plugins to UPDATE SET clause in repository update()"
+      refactor:
+        - "Follow injected_skills serialization pattern exactly"
+
+  # ============================================================
+  # Phase 3: Core Services and Use Cases
+  # ============================================================
+
+  - id: "task-9"
+    phaseId: "phase-3"
+    title: "Create IMcpServerManager and IPluginHealthChecker port interfaces"
+    description: >
+      Define IMcpServerManager with methods: startServersForFeature, stopServersForFeature,
+      getActiveServers, generateMcpConfigPath. Define IPluginHealthChecker with methods:
+      checkHealth, checkAllHealth. Both in application/ports/output/services/. Export from index.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "IMcpServerManager interface has startServersForFeature(featureId, plugins), stopServersForFeature(featureId), getActiveServers(featureId), generateMcpConfigPath(featureId)"
+      - "IPluginHealthChecker interface has checkHealth(plugin), checkAllHealth()"
+      - "Both interfaces in application/ports/output/services/"
+      - "Both exported from services/index.ts"
+    tdd: null
+
+  - id: "task-10"
+    phaseId: "phase-3"
+    title: "Create curated plugin catalog"
+    description: >
+      Create plugin-catalog.ts with a static TypeScript constant array of CatalogEntry
+      objects. V1 entries: MemPalace (MCP stdio, Python 3.9+), Token Optimizer (Hook,
+      Python 3.8+), Ruflo (MCP stdio, Node 20+, requires ANTHROPIC_API_KEY).
+      Export getCatalogEntries() function.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "CatalogEntry type with name, displayName, type, description, installCommand, serverCommand, serverArgs, transport, requiredEnvVars, toolGroups, runtimeType, runtimeMinVersion, homepageUrl"
+      - "At least 3 entries: mempalace, token-optimizer, ruflo"
+      - "MemPalace: type=Mcp, transport=Stdio, command=python -m mempalace.mcp_server, runtime=python 3.9+"
+      - "Token Optimizer: type=Hook, runtime=python 3.8+"
+      - "Ruflo: type=Mcp, transport=Stdio, command=npx ruflo@latest mcp start, runtime=node 20+, envVars=[ANTHROPIC_API_KEY]"
+      - "getCatalogEntries() returns the array"
+      - "getCatalogEntry(name) returns a single entry or undefined"
+    tdd:
+      red:
+        - "Write unit test: getCatalogEntries() returns array with length >= 3"
+        - "Write unit test: getCatalogEntry('mempalace') returns MemPalace entry with correct fields"
+        - "Write unit test: getCatalogEntry('nonexistent') returns undefined"
+      green:
+        - "Create CatalogEntry type and static constant array"
+        - "Implement getCatalogEntries() and getCatalogEntry()"
+      refactor:
+        - "Ensure catalog data matches real tool documentation (verify commands)"
+
+  - id: "task-11"
+    phaseId: "phase-3"
+    title: "Implement GetPluginCatalog use case"
+    description: >
+      Create GetPluginCatalogUseCase that returns the curated catalog entries.
+      Optionally cross-references with installed plugins to show install status.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+      - "task-7"
+    acceptanceCriteria:
+      - "execute() returns catalog entries with isInstalled boolean for each"
+      - "Cross-references IPluginRepository to determine installed status"
+      - "Injectable via tsyringe with @inject for dependencies"
+    tdd:
+      red:
+        - "Write unit test: execute() returns all catalog entries"
+        - "Write unit test: installed plugin shows isInstalled=true"
+        - "Write unit test: uninstalled plugin shows isInstalled=false"
+      green:
+        - "Implement GetPluginCatalogUseCase with IPluginRepository dependency"
+      refactor:
+        - "Ensure return type is well-defined (not leaking internal types)"
+
+  - id: "task-12"
+    phaseId: "phase-3"
+    title: "Implement AddPlugin use case"
+    description: >
+      Create AddPluginUseCase that handles both catalog-based and custom plugin
+      installation. For catalog plugins, looks up metadata from catalog. For custom,
+      accepts type, command, args, transport. Creates a Plugin entity and persists
+      via IPluginRepository. Runs health check after creation.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+      - "task-7"
+    acceptanceCriteria:
+      - "execute(name) installs from catalog if name matches a catalog entry"
+      - "execute({name, type, command, ...}) installs a custom plugin"
+      - "Throws if plugin name already exists in registry"
+      - "Creates Plugin entity with all fields populated from catalog or input"
+      - "Persists via IPluginRepository.create()"
+      - "Returns the created Plugin"
+    tdd:
+      red:
+        - "Write unit test: execute('mempalace') creates plugin with catalog metadata"
+        - "Write unit test: execute({name:'custom', type:'Mcp', ...}) creates custom plugin"
+        - "Write unit test: execute('mempalace') throws when already installed"
+      green:
+        - "Implement AddPluginUseCase with IPluginRepository and catalog dependencies"
+      refactor:
+        - "Extract input validation to a helper if complex"
+
+  - id: "task-13"
+    phaseId: "phase-3"
+    title: "Implement RemovePlugin use case"
+    description: >
+      Create RemovePluginUseCase that stops any running MCP servers for the plugin,
+      removes the plugin record from the registry, and returns success/failure.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+      - "task-9"
+    acceptanceCriteria:
+      - "execute(pluginName) removes the plugin from the registry"
+      - "Calls IMcpServerManager to stop any running servers for this plugin"
+      - "Throws if plugin not found"
+      - "Returns the removed plugin for confirmation"
+    tdd:
+      red:
+        - "Write unit test: execute('mempalace') removes plugin and returns it"
+        - "Write unit test: execute('nonexistent') throws not found error"
+        - "Write unit test: calls stopServersForFeature for each active feature using the plugin"
+      green:
+        - "Implement RemovePluginUseCase with IPluginRepository and IMcpServerManager"
+      refactor:
+        - "Ensure cleanup is thorough (all references cleaned)"
+
+  - id: "task-14"
+    phaseId: "phase-3"
+    title: "Implement ListPlugins use case"
+    description: >
+      Create ListPluginsUseCase that returns all registered plugins from the repository
+      with their current health status.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "execute() returns all plugins from repository"
+      - "Optionally filters by type or enabled status"
+      - "Returns Plugin[] with health status included"
+    tdd:
+      red:
+        - "Write unit test: execute() returns empty array when no plugins"
+        - "Write unit test: execute() returns all plugins after adding several"
+        - "Write unit test: execute({enabled: true}) filters to enabled only"
+      green:
+        - "Implement ListPluginsUseCase with IPluginRepository"
+      refactor:
+        - "Ensure return type is consistent with other list use cases"
+
+  - id: "task-15"
+    phaseId: "phase-3"
+    title: "Implement EnablePlugin and DisablePlugin use cases"
+    description: >
+      Create EnablePluginUseCase and DisablePluginUseCase that toggle the enabled
+      field on a plugin. Both update the plugin record in the repository.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "EnablePluginUseCase.execute(name) sets enabled=true and persists"
+      - "DisablePluginUseCase.execute(name) sets enabled=false and persists"
+      - "Both throw if plugin not found"
+      - "Both return the updated Plugin"
+    tdd:
+      red:
+        - "Write unit test: enable on disabled plugin returns enabled=true"
+        - "Write unit test: disable on enabled plugin returns enabled=false"
+        - "Write unit test: enable on nonexistent plugin throws"
+      green:
+        - "Implement both use cases with IPluginRepository"
+      refactor:
+        - "Consider extracting shared toggle logic if implementations are near-identical"
+
+  - id: "task-16"
+    phaseId: "phase-3"
+    title: "Implement ConfigurePlugin use case"
+    description: >
+      Create ConfigurePluginUseCase that updates plugin configuration: active tool groups,
+      custom server args, or other mutable fields. Validates that tool groups are valid
+      for the plugin (exist in toolGroups array).
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "execute(name, {activeToolGroups}) updates active tool groups"
+      - "Validates that each active group exists in the plugin toolGroups"
+      - "Throws on invalid group name"
+      - "Throws if plugin not found"
+      - "Returns updated Plugin"
+    tdd:
+      red:
+        - "Write unit test: configure with valid tool groups updates activeToolGroups"
+        - "Write unit test: configure with invalid group name throws"
+        - "Write unit test: configure nonexistent plugin throws"
+      green:
+        - "Implement ConfigurePluginUseCase with IPluginRepository"
+      refactor:
+        - "Ensure validation messages are actionable"
+
+  - id: "task-17"
+    phaseId: "phase-3"
+    title: "Implement PluginHealthCheckerService"
+    description: >
+      Implement IPluginHealthChecker with tiered health checks: (1) runtime on PATH
+      via which/where, (2) package installed check, (3) required env vars present in
+      process.env, (4) optional server probe. Follow ToolInstallerService pattern for
+      runtime detection.
+    state: "Todo"
+    dependencies:
+      - "task-9"
+    acceptanceCriteria:
+      - "checkHealth(plugin) returns PluginHealthStatus and message"
+      - "Tier 1: detects python3/node on PATH (reuse ToolInstallerService patterns)"
+      - "Tier 2: verifies package installed (pip show / npx check)"
+      - "Tier 3: validates required env vars are set in process.env"
+      - "Returns Healthy when all tiers pass"
+      - "Returns Degraded when runtime present but package/env issues"
+      - "Returns Unavailable when runtime missing"
+      - "checkAllHealth() checks all registered plugins"
+    tdd:
+      red:
+        - "Write unit test: checkHealth with all tiers passing returns Healthy"
+        - "Write unit test: checkHealth with missing runtime returns Unavailable"
+        - "Write unit test: checkHealth with missing env var returns Degraded"
+        - "Write unit test: checkAllHealth checks each plugin"
+      green:
+        - "Implement PluginHealthCheckerService with tiered checks"
+        - "Use child_process.execFile for runtime detection (short timeout)"
+      refactor:
+        - "Extract runtime detection utilities if reusable beyond plugins"
+
+  - id: "task-18"
+    phaseId: "phase-3"
+    title: "Implement CheckPluginHealth use case"
+    description: >
+      Create CheckPluginHealthUseCase that runs health checks on a specific plugin
+      or all plugins. Updates health status in the repository after check.
+    state: "Todo"
+    dependencies:
+      - "task-17"
+      - "task-7"
+    acceptanceCriteria:
+      - "execute(name) checks health of named plugin and updates status in repository"
+      - "execute() with no args checks all plugins"
+      - "Returns health check results"
+    tdd:
+      red:
+        - "Write unit test: execute('mempalace') calls health checker and updates repo"
+        - "Write unit test: execute() checks all and updates each"
+      green:
+        - "Implement CheckPluginHealthUseCase"
+      refactor:
+        - "Ensure health status updates are atomic"
+
+  - id: "task-19"
+    phaseId: "phase-3"
+    title: "Register all plugin services and use cases in DI container"
+    description: >
+      Register IPluginRepository, IMcpServerManager, IPluginHealthChecker, and all
+      eight plugin use cases in the DI container. Add string token aliases for web
+      access per LESSONS.md.
+    state: "Todo"
+    dependencies:
+      - "task-12"
+      - "task-13"
+      - "task-14"
+      - "task-15"
+      - "task-16"
+      - "task-18"
+      - "task-11"
+    acceptanceCriteria:
+      - "IPluginRepository registered as singleton with SQLitePluginRepository"
+      - "IPluginHealthChecker registered as singleton with PluginHealthCheckerService"
+      - "IMcpServerManager registered as singleton (placeholder until Phase 4)"
+      - "All eight use cases registered as singletons"
+      - "String token aliases added for all use cases (for web server actions)"
+      - "Container resolves all plugin dependencies without errors"
+    tdd:
+      red:
+        - "Write integration test: container.resolve(AddPluginUseCase) succeeds"
+        - "Write integration test: container.resolve('ListPluginsUseCase') returns instance via string alias"
+      green:
+        - "Add all registrations and aliases to container.ts"
+      refactor:
+        - "Group plugin registrations in a clearly commented block"
+
+  # ============================================================
+  # Phase 4: MCP Server Lifecycle and Agent Integration
+  # ============================================================
+
+  - id: "task-20"
+    phaseId: "phase-4"
+    title: "Implement McpServerManagerService"
+    description: >
+      Implement IMcpServerManager using child_process.spawn() for MCP server processes.
+      Features: start/stop servers per-feature, reference counting for shared servers,
+      per-feature temp .mcp.json file generation, process signal cleanup handlers.
+    state: "Todo"
+    dependencies:
+      - "task-9"
+      - "task-7"
+    acceptanceCriteria:
+      - "startServersForFeature spawns MCP server processes for enabled plugins"
+      - "Passes required env vars from process.env to child process"
+      - "Reference counting increments for each feature using same plugin"
+      - "stopServersForFeature decrements reference count, kills process at zero"
+      - "generateMcpConfigPath creates temp .mcp.json with active server definitions"
+      - "Temp file format: {mcpServers: {name: {type, command, args, env}}}"
+      - "Process signal handlers (SIGTERM, SIGINT, beforeExit) kill all managed servers"
+      - "Server startup timeout of 10 seconds (mark unhealthy if exceeded)"
+    tdd:
+      red:
+        - "Write unit test: startServersForFeature spawns child processes for each MCP plugin"
+        - "Write unit test: stopServersForFeature kills processes when refcount reaches zero"
+        - "Write unit test: reference counting prevents premature kill with concurrent features"
+        - "Write unit test: generateMcpConfigPath creates valid JSON file in os.tmpdir()"
+        - "Write unit test: stopServersForFeature deletes the temp config file"
+      green:
+        - "Implement McpServerManagerService with spawn, refcount, and temp file logic"
+      refactor:
+        - "Extract temp file management to a helper"
+        - "Ensure all process handles are properly tracked for cleanup"
+
+  - id: "task-21"
+    phaseId: "phase-4"
+    title: "Add mcpConfigPath to AgentExecutionOptions"
+    description: >
+      Add optional mcpConfigPath field to AgentExecutionOptions interface.
+      This carries the path to the per-feature .mcp.json temp file through the
+      agent-agnostic interface.
+    state: "Todo"
+    dependencies:
+      - "task-20"
+    acceptanceCriteria:
+      - "AgentExecutionOptions has optional mcpConfigPath?: string field"
+      - "Field is documented with JSDoc explaining its purpose"
+      - "Existing code unaffected (field is optional)"
+    tdd:
+      red:
+        - "Verify AgentExecutionOptions does not have mcpConfigPath field"
+      green:
+        - "Add mcpConfigPath?: string to AgentExecutionOptions"
+      refactor:
+        - "Add JSDoc with usage example"
+
+  - id: "task-22"
+    phaseId: "phase-4"
+    title: "Inject --mcp-config flag in ClaudeCodeExecutorService"
+    description: >
+      Modify buildArgs() in ClaudeCodeExecutorService to add --mcp-config <path>
+      when options.mcpConfigPath is set. This tells Claude Code to load plugin
+      MCP servers from the generated temp file.
+    state: "Todo"
+    dependencies:
+      - "task-21"
+    acceptanceCriteria:
+      - "buildArgs() includes --mcp-config <path> when mcpConfigPath is set"
+      - "Flag is NOT added when mcpConfigPath is undefined"
+      - "Flag works alongside existing --strict-mcp-config (disableMcp)"
+      - "When both mcpConfigPath and disableMcp are set, both flags are included"
+    tdd:
+      red:
+        - "Write unit test: buildArgs with mcpConfigPath includes --mcp-config <path>"
+        - "Write unit test: buildArgs without mcpConfigPath does not include --mcp-config"
+        - "Write unit test: buildArgs with both mcpConfigPath and disableMcp includes both flags"
+      green:
+        - "Add conditional mcpConfigPath flag to buildArgs()"
+      refactor:
+        - "Ensure flag order is consistent with other conditional flags"
+
+  - id: "task-23"
+    phaseId: "phase-4"
+    title: "Add mcpConfigPath to feature agent state and buildExecutorOptions"
+    description: >
+      Add mcpConfigPath channel to FeatureAgentState annotations. Modify
+      buildExecutorOptions() in node-helpers.ts to include mcpConfigPath from state
+      in the returned AgentExecutionOptions.
+    state: "Todo"
+    dependencies:
+      - "task-21"
+    acceptanceCriteria:
+      - "FeatureAgentState has mcpConfigPath annotation channel"
+      - "buildExecutorOptions() includes mcpConfigPath from state when present"
+      - "Existing nodes are unaffected (field is optional in state)"
+    tdd:
+      red:
+        - "Write unit test: buildExecutorOptions with mcpConfigPath in state includes it in result"
+        - "Write unit test: buildExecutorOptions without mcpConfigPath in state omits it"
+      green:
+        - "Add mcpConfigPath to state annotations"
+        - "Include in buildExecutorOptions return value"
+      refactor:
+        - "Ensure state channel declaration follows existing pattern"
+
+  - id: "task-24"
+    phaseId: "phase-4"
+    title: "Integrate plugin startup into feature agent worker"
+    description: >
+      Modify feature-agent-worker.ts to start MCP servers before graph invocation
+      and stop them in the finally block. Read feature activePlugins from the
+      repository, resolve enabled plugins, call McpServerManager.startServersForFeature(),
+      and pass mcpConfigPath through to graph input state.
+    state: "Todo"
+    dependencies:
+      - "task-20"
+      - "task-23"
+      - "task-8"
+    acceptanceCriteria:
+      - "Worker reads feature activePlugins from repository at startup"
+      - "Resolves enabled plugins (global default + per-feature override)"
+      - "Calls McpServerManager.startServersForFeature() before graph invocation"
+      - "Passes mcpConfigPath to graph input state"
+      - "Calls McpServerManager.stopServersForFeature() in finally block"
+      - "Plugin failures do not crash the worker (graceful degradation, NFR-8)"
+      - "Plugin startup logs are written to worker log file"
+    tdd:
+      red:
+        - "Write integration test: worker with active MCP plugins passes mcpConfigPath to graph state"
+        - "Write integration test: worker cleans up MCP servers in finally block"
+        - "Write integration test: MCP server startup failure does not prevent graph execution"
+      green:
+        - "Add plugin startup logic to worker initialization"
+        - "Add plugin cleanup to worker finally block"
+        - "Pass mcpConfigPath through to graph input"
+      refactor:
+        - "Extract plugin resolution logic to a helper function"
+        - "Ensure error handling follows graceful degradation pattern"
+
+  # ============================================================
+  # Phase 5: CLI Commands
+  # ============================================================
+
+  - id: "task-25"
+    phaseId: "phase-5"
+    title: "Create plugin command group and add/remove/list subcommands"
+    description: >
+      Create the plugin command group following the settings command pattern.
+      Implement add, remove, and list subcommands. add supports both catalog name
+      and custom plugin options. list displays plugins in a table with status.
+      Register plugin command in the main CLI entry point.
+    state: "Todo"
+    dependencies:
+      - "task-19"
+    acceptanceCriteria:
+      - "createPluginCommand() returns Commander command group"
+      - "shep plugin add <name> calls AddPluginUseCase"
+      - "shep plugin add --name X --type mcp --command Y --transport stdio calls AddPluginUseCase with custom input"
+      - "shep plugin remove <name> calls RemovePluginUseCase"
+      - "shep plugin list calls ListPluginsUseCase and displays table"
+      - "Plugin command registered in main CLI entry point"
+      - "All commands resolve use cases from DI container"
+    tdd:
+      red:
+        - "Write unit test: createPluginCommand returns a Command with name 'plugin'"
+        - "Write unit test: add subcommand resolves AddPluginUseCase and calls execute"
+      green:
+        - "Create plugin/index.ts with createPluginCommand()"
+        - "Create add.command.ts, remove.command.ts, list.command.ts"
+        - "Register in main CLI commands/index.ts"
+      refactor:
+        - "Ensure error messages are user-friendly (not raw stack traces)"
+        - "Follow existing command output formatting patterns"
+
+  - id: "task-26"
+    phaseId: "phase-5"
+    title: "Create enable/disable/configure/status/catalog CLI subcommands"
+    description: >
+      Implement the remaining five CLI subcommands. enable/disable toggle activation.
+      configure sets tool groups. status shows detailed health check results.
+      catalog lists available plugins from the curated catalog.
+    state: "Todo"
+    dependencies:
+      - "task-25"
+    acceptanceCriteria:
+      - "shep plugin enable <name> calls EnablePluginUseCase"
+      - "shep plugin disable <name> calls DisablePluginUseCase"
+      - "shep plugin configure <name> --tool-groups X,Y calls ConfigurePluginUseCase"
+      - "shep plugin status <name> calls CheckPluginHealthUseCase and shows detailed results"
+      - "shep plugin catalog calls GetPluginCatalogUseCase and displays table"
+      - "All commands handle errors gracefully with user-friendly messages"
+    tdd:
+      red:
+        - "Write unit test: enable subcommand resolves use case and calls execute"
+        - "Write unit test: catalog subcommand displays catalog entries in table format"
+      green:
+        - "Create enable.command.ts, disable.command.ts, configure.command.ts, status.command.ts, catalog.command.ts"
+        - "Register in plugin/index.ts"
+      refactor:
+        - "Extract shared table formatting logic if duplicated across list/catalog/status"
+
+  # ============================================================
+  # Phase 6: Web UI
+  # ============================================================
+
+  - id: "task-27"
+    phaseId: "phase-6"
+    title: "Create plugin server actions"
+    description: >
+      Create server actions for plugin management: list-plugins, add-plugin,
+      remove-plugin, toggle-plugin, get-plugin-catalog, check-plugin-health,
+      configure-plugin. Each resolves use case by string token from DI container.
+    state: "Todo"
+    dependencies:
+      - "task-19"
+    acceptanceCriteria:
+      - "All server actions use 'use server' directive"
+      - "Resolve use cases via container.resolve<T>('StringToken')"
+      - "Return serializable data (no class instances)"
+      - "Handle errors with try/catch and return error state"
+      - "Follow existing server action patterns (e.g., list-features.ts)"
+    tdd:
+      red:
+        - "Write unit test: list-plugins action returns plugin array"
+        - "Write unit test: add-plugin action creates and returns plugin"
+      green:
+        - "Create all seven server action files in app/actions/"
+      refactor:
+        - "Ensure consistent error handling across all actions"
+
+  - id: "task-28"
+    phaseId: "phase-6"
+    title: "Create plugin list component with status badges and toggles"
+    description: >
+      Create PluginList component showing installed plugins in a Card layout with
+      status badge (Healthy/Degraded/Unavailable), enabled/disabled Switch toggle,
+      and action buttons (configure, remove). Include Storybook stories file.
+    state: "Todo"
+    dependencies:
+      - "task-27"
+    acceptanceCriteria:
+      - "PluginList displays each plugin with name, type, description, status badge"
+      - "Switch toggle calls toggle-plugin server action"
+      - "Status badge uses green/yellow/red colors for Healthy/Degraded/Unavailable"
+      - "Remove button calls remove-plugin server action with confirmation"
+      - "Empty state shown when no plugins installed"
+      - "Colocated .stories.tsx file with multiple states (empty, loaded, mixed status)"
+    tdd:
+      red:
+        - "Write Storybook story: PluginList with no plugins shows empty state"
+        - "Write Storybook story: PluginList with 3 plugins shows cards with correct badges"
+      green:
+        - "Create PluginList component using shadcn Card, Switch, Badge"
+        - "Create plugin-list.stories.tsx"
+      refactor:
+        - "Extract PluginCard as a subcomponent if PluginList grows large"
+
+  - id: "task-29"
+    phaseId: "phase-6"
+    title: "Create plugin catalog browser component"
+    description: >
+      Create PluginCatalog component showing curated catalog entries with Install
+      buttons. Shows name, description, type, runtime requirements. Install button
+      calls add-plugin server action. Already-installed plugins show Installed badge
+      instead of Install button. Include Storybook stories file.
+    state: "Todo"
+    dependencies:
+      - "task-27"
+    acceptanceCriteria:
+      - "PluginCatalog displays catalog entries with name, description, type badge, runtime info"
+      - "Install button calls add-plugin server action"
+      - "Already-installed plugins show Installed badge instead of button"
+      - "Loading state while installing"
+      - "Colocated .stories.tsx file"
+    tdd:
+      red:
+        - "Write Storybook story: PluginCatalog with 3 entries, none installed"
+        - "Write Storybook story: PluginCatalog with 1 installed, 2 available"
+      green:
+        - "Create PluginCatalog component using shadcn Card, Button, Badge"
+        - "Create plugin-catalog.stories.tsx"
+      refactor:
+        - "Ensure consistent styling with existing components"
+
+  - id: "task-30"
+    phaseId: "phase-6"
+    title: "Create plugins page and add per-feature plugin toggles"
+    description: >
+      Create the /plugins page combining PluginList and PluginCatalog with tabs.
+      Add navigation link to the dashboard layout sidebar. Add per-feature plugin
+      activation toggles to the create-feature drawer, following existing per-feature
+      settings patterns.
+    state: "Todo"
+    dependencies:
+      - "task-28"
+      - "task-29"
+    acceptanceCriteria:
+      - "Plugins page at /plugins with Installed and Catalog tabs"
+      - "Navigation link added to dashboard sidebar"
+      - "Create-feature drawer has plugin activation section with toggles"
+      - "Per-feature plugin toggles pass activePlugins to create-feature server action"
+      - "Page follows existing layout patterns (header, content area)"
+    tdd:
+      red:
+        - "Write Storybook story: Plugins page with both tabs"
+      green:
+        - "Create app/plugins/page.tsx with tab layout"
+        - "Add navigation link to dashboard layout"
+        - "Add plugin section to create-feature drawer"
+      refactor:
+        - "Ensure responsive layout on mobile"
+        - "Verify accessibility (keyboard navigation, screen reader labels)"
+
+totalEstimate: "40-50h"
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  The implementation is structured in 6 phases with 30 tasks, progressing from domain
+  foundation through persistence, core services, MCP lifecycle management, CLI commands,
+  and web UI.
+
+  Phase 1 establishes the domain vocabulary in TypeSpec -- Plugin entity, enums, and the
+  ToolGroup model -- which all other layers depend on. Phase 2 builds the persistence layer
+  with two additive-only migrations (plugins table and features.active_plugins column),
+  the PluginRow mapper, and SQLitePluginRepository. Phase 3 is the largest phase, creating
+  the port interfaces, curated catalog, health checker, and all eight use cases plus DI
+  container wiring with string token aliases.
+
+  Phase 4 tackles the most complex piece: MCP server lifecycle management with
+  child_process.spawn(), reference counting, per-feature temp .mcp.json generation, and
+  integration into the agent execution pipeline (AgentExecutionOptions, ClaudeCodeExecutorService,
+  feature agent worker). Phase 5 adds the CLI plugin command group with 8 subcommands
+  following the settings command pattern. Phase 6 completes the feature with web UI
+  components (plugin list, catalog browser), server actions, the plugins page, and
+  per-feature plugin toggles in the create-feature drawer.
+
+  Each task follows TDD: write failing tests first (RED), implement minimally (GREEN),
+  then clean up (REFACTOR). The ordering ensures no task depends on a later task.
+  Critical lessons from LESSONS.md are baked into specific tasks -- INSERT/UPDATE SQL
+  completeness (task 7-8), string token aliases (task 19), per-feature settings flow
+  (task 24), and additive-only migrations (tasks 4-5).
+
+  ---
+
+  _Task breakdown created 2026-04-13_
