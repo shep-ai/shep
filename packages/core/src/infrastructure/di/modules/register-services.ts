@@ -67,6 +67,9 @@ import { NotificationService } from '../../services/notifications/notification.s
 import { getNotificationBus } from '../../services/notifications/notification-bus.js';
 import type { IConflictResolutionService } from '../../../application/ports/output/services/conflict-resolution.interface.js';
 import { ConflictResolutionService } from '../../services/agents/conflict-resolution/conflict-resolution.service.js';
+import type { IPluginHealthChecker } from '../../../application/ports/output/services/plugin-health-checker.interface.js';
+import { PluginHealthCheckerService } from '../../services/plugin/plugin-health-checker.service.js';
+import type { IMcpServerManager } from '../../../application/ports/output/services/mcp-server-manager.interface.js';
 import type { ILogger } from '../../../application/ports/output/services/logger.interface.js';
 import { ConsoleLogger } from '../../services/logging/console-logger.js';
 import type { IOperationLogService } from '../../../application/ports/output/services/operation-log-service.interface.js';
@@ -252,6 +255,23 @@ export function registerServices(container: DependencyContainer): void {
   container.register('AttachmentStorageService', { useToken: AttachmentStorageService });
   container.register('IAttachmentStorageService', { useToken: AttachmentStorageService });
   container.registerSingleton<IShepInstanceService>('IShepInstanceService', ShepInstanceService);
+
+  // ─── AI tool plugin system services ───────────────────────────────────
+  container.registerSingleton<IPluginHealthChecker>(
+    'IPluginHealthChecker',
+    PluginHealthCheckerService
+  );
+  // IMcpServerManager: no-op placeholder until Phase 4 implementation.
+  // RemovePluginUseCase injects it but does not call methods yet.
+  container.register<IMcpServerManager>('IMcpServerManager', {
+    useFactory: () =>
+      ({
+        startServersForFeature: () => Promise.resolve(),
+        stopServersForFeature: () => Promise.resolve(),
+        getActiveServers: () => [],
+        generateMcpConfigPath: () => Promise.resolve(null),
+      }) as IMcpServerManager,
+  });
 
   // Notification services
   const notificationBus = getNotificationBus();

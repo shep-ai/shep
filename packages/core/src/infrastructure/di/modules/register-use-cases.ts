@@ -118,6 +118,16 @@ import { UpdateSdlcTaskStatusUseCase } from '../../../application/use-cases/sdlc
 import { ReorderSdlcTaskUseCase } from '../../../application/use-cases/sdlc-board/reorder-sdlc-task.use-case.js';
 import { UpdateSdlcSubTaskStatusUseCase } from '../../../application/use-cases/sdlc-board/update-sdlc-subtask-status.use-case.js';
 
+// AI tool plugin system use cases
+import { AddPluginUseCase } from '../../../application/use-cases/plugins/add-plugin.use-case.js';
+import { RemovePluginUseCase } from '../../../application/use-cases/plugins/remove-plugin.use-case.js';
+import { ListPluginsUseCase } from '../../../application/use-cases/plugins/list-plugins.use-case.js';
+import { EnablePluginUseCase } from '../../../application/use-cases/plugins/enable-plugin.use-case.js';
+import { DisablePluginUseCase } from '../../../application/use-cases/plugins/disable-plugin.use-case.js';
+import { ConfigurePluginUseCase } from '../../../application/use-cases/plugins/configure-plugin.use-case.js';
+import { CheckPluginHealthUseCase } from '../../../application/use-cases/plugins/check-plugin-health.use-case.js';
+import { GetPluginCatalogUseCase } from '../../../application/use-cases/plugins/get-plugin-catalog.use-case.js';
+
 // Bedrock integration (feature 098) use cases
 import { EnableBedrockForApplicationUseCase } from '../../../application/use-cases/applications/enable-bedrock-for-application.use-case.js';
 import { RunBedrockLifecycleUseCase } from '../../../application/use-cases/applications/run-bedrock-lifecycle.use-case.js';
@@ -516,6 +526,16 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(ReorderSdlcTaskUseCase);
   container.registerSingleton(UpdateSdlcSubTaskStatusUseCase);
 
+  // Plugin use cases
+  container.registerSingleton(AddPluginUseCase);
+  container.registerSingleton(RemovePluginUseCase);
+  container.registerSingleton(ListPluginsUseCase);
+  container.registerSingleton(EnablePluginUseCase);
+  container.registerSingleton(DisablePluginUseCase);
+  container.registerSingleton(ConfigurePluginUseCase);
+  container.registerSingleton(CheckPluginHealthUseCase);
+  container.registerSingleton(GetPluginCatalogUseCase);
+
   // ─── Bedrock integration (feature 098) use cases ────────────────────────
   container.registerSingleton(EnableBedrockForApplicationUseCase);
   container.registerSingleton(RunBedrockLifecycleUseCase);
@@ -562,5 +582,31 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('UpdateSdlcSubTaskStatusUseCase', {
     useFactory: (c) => c.resolve(UpdateSdlcSubTaskStatusUseCase),
+  });
+
+  // ─── AI tool plugin system string aliases ───────────────────────────────
+  container.register('AddPluginUseCase', {
+    useFactory: (c) => c.resolve(AddPluginUseCase),
+  });
+  container.register('RemovePluginUseCase', {
+    useFactory: (c) => c.resolve(RemovePluginUseCase),
+  });
+  container.register('ListPluginsUseCase', {
+    useFactory: (c) => c.resolve(ListPluginsUseCase),
+  });
+  container.register('EnablePluginUseCase', {
+    useFactory: (c) => c.resolve(EnablePluginUseCase),
+  });
+  container.register('DisablePluginUseCase', {
+    useFactory: (c) => c.resolve(DisablePluginUseCase),
+  });
+  container.register('ConfigurePluginUseCase', {
+    useFactory: (c) => c.resolve(ConfigurePluginUseCase),
+  });
+  container.register('CheckPluginHealthUseCase', {
+    useFactory: (c) => c.resolve(CheckPluginHealthUseCase),
+  });
+  container.register('GetPluginCatalogUseCase', {
+    useFactory: (c) => c.resolve(GetPluginCatalogUseCase),
   });
 }
