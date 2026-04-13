@@ -24,7 +24,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
-import type { DeploymentState } from '@shepai/core/domain/generated/output';
+import { DeploymentState } from '@shepai/core/domain/generated/output';
 import { deployFeature } from '@/app/actions/deploy-feature';
 import { deployRepository } from '@/app/actions/deploy-repository';
 import { deployApplication } from '@/app/actions/deploy-application';
@@ -41,9 +41,9 @@ const log = createLogger('[DeploymentStatusProvider]');
 
 const POLL_INTERVAL_MS = 3000;
 const ACTIVE_STATES: ReadonlySet<DeploymentState> = new Set([
-  'Booting',
-  'Ready',
-] as DeploymentState[]);
+  DeploymentState.Booting,
+  DeploymentState.Ready,
+]);
 
 export interface DeployActionInput {
   targetId: string;
@@ -107,7 +107,7 @@ export function DeploymentStatusProvider({
           stopPolling(targetId);
           return;
         }
-        if (!result || result.state === 'Stopped') {
+        if (!result || result.state === DeploymentState.Stopped) {
           store.setStatus(targetId, null);
           stopPolling(targetId);
           return;

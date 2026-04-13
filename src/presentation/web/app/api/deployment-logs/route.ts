@@ -16,6 +16,7 @@ import type {
   IDeploymentService,
   LogEntry,
 } from '@shepai/core/application/ports/output/services/deployment-service.interface';
+import type { ILogger } from '@shepai/core/application/ports/output/services/logger.interface';
 
 // Force dynamic — SSE streams must never be statically optimized or cached
 export const dynamic = 'force-dynamic';
@@ -102,8 +103,10 @@ export function GET(request: Request): Response {
       },
     });
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('[SSE route] GET /api/deployment-logs error:', error);
+    const logger = resolve<ILogger>('ILogger');
+    logger.error('[SSE route] GET /api/deployment-logs error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return new Response(JSON.stringify({ error: String(error) }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
