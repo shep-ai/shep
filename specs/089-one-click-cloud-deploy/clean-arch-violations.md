@@ -294,3 +294,167 @@ A dedicated follow-up PR (`feat/090-clean-arch-cleanup` or similar) scoped purel
 - **#17c**: add ports for `node-helpers`, `phase-timing-context`, `conflict-resolution`, `attachment-storage` (each is a 1–2 file change)
 
 The invasive refactors (#1–#10, #12) should each get their own PR so CI review remains tractable.
+
+---
+
+## Phase 3 — Phase-14 re-audit (application layer only)
+
+Post-implementation re-audit of `packages/core/src/application/` on 2026-04-14 to verify:
+1. No regressions from the 089 cloud-deploy feature work.
+2. Error relocation promises fulfilled (all 6 errors moved from application ports to domain/errors/).
+3. Presentation routes correctly use type-only imports for use cases.
+4. New cloud-deploy use cases follow clean architecture.
+
+**Result: Only 1 new finding (console.warn in cleanup-feature-worktree.use-case.ts — part of existing #13 pattern).**
+
+### 21. Additional `console.warn` calls in cleanup-feature-worktree use case
+- **File:** `packages/core/src/application/use-cases/features/cleanup-feature-worktree.use-case.ts:43,49,58,72`
+- **Severity:** Minor
+- **Observation:** Four `console.warn` calls with eslint-disable comments (lines 43, 49, 58, 72) performing error logging in the use case layer. This follows the same pattern as #13 (console.* in application layer). The calls are prefixed with contextual tags (`[CleanupFeatureWorktreeUseCase]`) and log legitimate failure states (worktree remove, prune, branch deletion), but should use the injected `ILogger` port instead of raw `console`.
+- **Suggested fix:** Inject `ILogger` as a dependency and replace all four `console.warn` calls with `this.logger.warn()`. Batch this cleanup into the #13 migration task (t-71).
+- **Found during:** clean-arch-audit
+
+---
+
+## Phase-14 re-audit summary
+
+**New findings:** 1 (already tracked as part of #13 pattern)
+**Outstanding violations:** 20 (unchanged)
+**New code quality (cloud-deploy use cases):** ALL CLEAN (6/6 use cases)
+
+### Status changes
+
+- **#19 / #19a (RESOLVED)** — All six cloud-deploy error classes successfully relocated to `domain/errors/`:
+  - `ApplicationNotFoundError` → `domain/errors/application-not-found.error.ts`
+  - `ApplicationNotReadyError` → `domain/errors/application-not-ready.error.ts`
+  - `NoProviderSelectedError` → `domain/errors/no-provider-selected.error.ts`
+  - `BuildOutputNotFoundError` → `domain/errors/build-output-not-found.error.ts`
+  - `CloudProviderNotConnectedError` → `domain/errors/cloud-provider-not-connected.error.ts`
+  - `ProviderNotImplementedError` → `domain/errors/provider-not-implemented.error.ts`
+  - Cloud-deployment-provider.interface.ts no longer hosts error classes.
+  - All importers updated (select-provider, initiate-deploy, get-status, create-git-remote, ensure-gh-authenticated, connect-provider use cases).
+
+- **Cloud-deploy routes (VERIFIED CLEAN)**
+  - `/api/applications/[id]/cloud-deploy/initiate/route.ts`: Uses `type` import for use case ✓
+  - Error classes imported as values from domain/ ✓
+  - No infrastructure leakage ✓
+  - No singletons ✓
+  - No magic literals ✓
+
+- **Application layer net change:** SAME SHAPE
+  - No new violations introduced by 089 feature work.
+  - Pre-existing violations (#1-#20) remain outstanding.
+  - One new minor finding (console.warn in cleanup-feature-worktree) bundled with existing #13 task.
+
+**Verdict:** Phase-14 cloud-deploy implementation maintains clean architecture discipline. All new code is in compliance. Error relocation promise fulfilled. Application layer is neither worse nor better than the prior audit — the 20 outstanding violations remain, but no new architectural debt was incurred by this feature.
+
+---
+
+## Phase-14 re-audit (domain layer) — 2026-04-14
+
+Fresh domain-layer audit of `packages/core/src/domain/` to verify:
+1. Six new error classes follow clean architecture pattern.
+2. No outward imports (from infrastructure/, application/, presentation/, or external I/O libraries).
+3. No decorators, singletons, console calls, or magic literals.
+
+**Finding:** Domain layer contains a critical pre-existing violation not captured in the prior audit (#20). The violation exists in a factory predating feature 089 and was missed because the prior grep only checked for `infrastructure/` and `application/` imports, not `node:*` built-ins or module-level singletons.
+
+### 22. Domain factory imports Node.js I/O libraries (filesystem, crypto, path, URL)
+- **File:** `packages/core/src/domain/factories/spec-yaml-parser.ts:9-15,29-40,45-49`
+- **Severity:** Critical
+- **Observation:** The spec-yaml-parser factory imports `node:fs` (`existsSync`, `readdirSync`, `readFileSync`), `node:path` (`dirname`, `join`), `node:crypto` (`randomUUID`), and `node:url` (`fileURLToPath`) to perform file I/O at initialization. Domain layer must have **zero external dependencies** including Node.js built-ins for I/O. Per the rule: "domain/` must contain only pure TypeScript + domain-internal imports." This file performs schema resolution by searching the filesystem — that's an infrastructure concern. Additionally, the file is used inside a browser context (TypeSpec compilation), making Node.js imports problematic for universal code.
+- **Suggested fix:** Move `spec-yaml-parser.ts` to `infrastructure/factories/` or `infrastructure/services/spec-parser/`. Define a port in `application/ports/output/services/spec-parser.interface.ts` for parsing (input: YAML string, output: typed artifact). Use cases and CLI/Web call through the port, never directly importing the parser. Inject the implementation.
+- **Found during:** clean-arch-audit (t-62 phase-14 cleanup)
+
+### 23. Domain factory contains module-level singleton with lazy getter
+- **File:** `packages/core/src/domain/factories/spec-yaml-parser.ts:57-63`
+- **Severity:** Major
+- **Observation:** Lines 57-62 define a module-level mutable variable `let _ajv: Ajv2020 | null = null` with a lazy-getter function `getValidator()` that initializes and caches an AJV validator on first call. This is a singleton pattern explicitly banned outside infrastructure bootstrapping. Singletons in core layers prevent testing (shared state across test runs), make dependency injection impossible, and break the rule "No singletons or module-level mutable state outside infrastructure bootstrapping."
+- **Suggested fix:** When moving to infrastructure, inject the AJV validator (or a parser service wrapping it) via DI instead of lazy-loading it in the factory. Tests inject a mock parser. The singleton initialization moves to `infrastructure/di/container.ts` where it belongs.
+- **Found during:** clean-arch-audit (t-62 phase-14 cleanup)
+
+---
+
+## Phase-14 domain-layer audit summary
+
+**New findings:** 2 (Critical + Major severity — both pre-existing, not introduced by 089)
+
+**Six new error classes (verified CLEAN):**
+- `ApplicationNotFoundError` — 14 lines, zero imports, follows `SessionNotFoundError` pattern exactly ✓
+- `ApplicationNotReadyError` — 14 lines, zero imports ✓
+- `NoProviderSelectedError` — 15 lines, zero imports ✓
+- `BuildOutputNotFoundError` — 17 lines, zero imports ✓
+- `CloudProviderNotConnectedError` — 14 lines, zero imports ✓
+- `ProviderNotImplementedError` — 14 lines, zero imports ✓
+
+**Domain-layer verdict:** The six new error classes are architecturally clean and correctly placed. However, the audit revealed that finding #20 ("Domain layer is clean") was incomplete — it missed the pre-existing violations in `spec-yaml-parser.ts` because the prior scan only checked for `infrastructure/` and `application/` imports, not Node.js built-in I/O libraries or singletons. The dependency rule is still mostly respected (no outer-to-inner cross-layer imports), but the domain layer contains two violations of the "pure code, no I/O, no singletons" requirements.
+
+
+## Phase-14 re-audit (presentation layer) — 2026-04-14
+
+Fresh audit of `src/presentation/` to verify:
+1. New cloud-deploy UI components follow mandatory storybook rule.
+2. No new infrastructure imports in routes or actions.
+3. No magic string literals for domain concepts.
+4. No console.* calls in presentation layer.
+
+**Result: 5 NEW findings, all Minor severity.**
+
+### 24. React component missing colocated .stories.tsx file
+- **File:** `src/presentation/web/components/features/application-page/connect-provider-modal.tsx:1-100`
+- **Severity:** Major
+- **Observation:** The `ConnectProviderModal` React component (token paste dialog for cloud providers) has no colocated `.stories.tsx` file. Per the MANDATORY rule: "Every web UI component MUST have a colocated `.stories.tsx` file. Commits without stories will be rejected."
+- **Suggested fix:** Create `src/presentation/web/components/features/application-page/connect-provider-modal.stories.tsx` with stories for idle state, loading state, error state, and success states.
+- **Found during:** clean-arch-audit
+
+### 25. React component missing colocated .stories.tsx file
+- **File:** `src/presentation/web/components/features/application-page/provider-dropdown.tsx:1-80`
+- **Severity:** Major
+- **Observation:** The `ProviderDropdown` React component (cloud-provider selection dropdown) has no colocated `.stories.tsx` file. Violates the mandatory storybook rule.
+- **Suggested fix:** Create `src/presentation/web/components/features/application-page/provider-dropdown.stories.tsx` with stories for enabled/disabled/connected/disconnected providers and user interactions.
+- **Found during:** clean-arch-audit
+
+### 26. console.error call in SSE route
+- **File:** `src/presentation/web/app/api/deployment-logs/route.ts:106`
+- **Severity:** Minor
+- **Observation:** `console.error('[SSE route] GET /api/deployment-logs error:', error)` with an `// eslint-disable-next-line no-console` comment. Presentation layer should not reach for raw `console` when error logging is needed. The ILogger port exists (shipped in phase 4).
+- **Suggested fix:** Replace with a call to an injected `ILogger` port, following the pattern in new cloud-deploy use cases.
+- **Found during:** clean-arch-audit
+
+### 27. Magic string literals for DeploymentState enum
+- **File:** `src/presentation/web/hooks/deployment-status-provider.tsx:44-46`
+- **Severity:** Minor
+- **Observation:** Lines 44-46 define `const ACTIVE_STATES: ReadonlySet<DeploymentState> = new Set(['Booting', 'Ready'] as DeploymentState[])` using raw string literals instead of the TypeSpec-generated enum values `DeploymentState.Booting` and `DeploymentState.Ready`.
+- **Suggested fix:** Replace with `new Set([DeploymentState.Booting, DeploymentState.Ready])`.
+- **Found during:** clean-arch-audit
+
+### 28. Magic string literal for DeploymentState enum
+- **File:** `src/presentation/web/hooks/deployment-status-provider.tsx:110`
+- **Severity:** Minor
+- **Observation:** Line 110: `if (!result || result.state === 'Stopped')` uses the raw string literal `'Stopped'` instead of `DeploymentState.Stopped`.
+- **Suggested fix:** Replace with `result.state === DeploymentState.Stopped`.
+- **Found during:** clean-arch-audit
+
+---
+
+## Phase-14 presentation-layer audit summary
+
+**New findings:** 5 (2 Major / 3 Minor)
+
+**Cloud-deploy routes (VERIFIED CLEAN):**
+- `/api/cloud-providers/route.ts` — uses use case correctly ✓
+- `/api/applications/[id]/cloud-deploy/select-provider/route.ts` — uses use case correctly ✓
+- `/api/applications/[id]/cloud-deploy/status/route.ts` — uses use case correctly ✓
+- `/api/applications/[id]/cloud-deploy/initiate/route.ts` — fire-and-forget pattern, uses use case correctly ✓
+- CLI deploy commands — uses use case + event bus correctly ✓
+
+**Cloud-deploy React components:**
+- `DeployButton` — clean, has stories ✓
+- `DeploymentStatusBadge` — clean, has stories ✓
+- `useCloudDeployAction` hook — clean, no infrastructure imports ✓
+- `DeploymentStatusProvider` hook — clean except for 2 magic literals (#27, #28) ✓
+
+**New code quality:** Cloud-deploy feature maintains overall clean architecture. Routes use use-case boundary correctly. Components have minimal business logic. Two components violate the mandatory storybook rule (Major severity). Three instances of magic literals for domain enums (Minor).
+
+**Verdict:** Phase-14 cloud-deploy presentation code is architecturally sound but has 5 quality/completeness findings. The two missing story files are release blockers per the codebase rule. The magic-literal findings are minor stylistic improvements. No dependency-rule violations detected in new code.
+
