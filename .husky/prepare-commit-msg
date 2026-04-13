@@ -1,0 +1,20 @@
+#!/bin/sh
+# Prepare-commit-msg hook — enforce Shep Bot co-author branding
+#
+# Strips any "Co-Authored-By: Claude ..." trailers that Claude Code
+# automatically appends and replaces them with the Shep Bot trailer.
+# This mirrors the logic in pr-branding.ts applyCommitBranding().
+
+COMMIT_MSG_FILE="$1"
+SHEP_TRAILER="Co-Authored-By: Shep Bot <shep-agent@users.noreply.github.com>"
+
+# Strip any Claude co-author trailers (case-insensitive)
+sed -i '' -E '/^[Cc]o-[Aa]uthored-[Bb]y:[[:space:]]*Claude.*<noreply@anthropic\.com>/d' "$COMMIT_MSG_FILE"
+
+# Remove any trailing blank lines left behind
+sed -i '' -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$COMMIT_MSG_FILE"
+
+# Append Shep Bot co-author if not already present
+if ! grep -qF "$SHEP_TRAILER" "$COMMIT_MSG_FILE"; then
+  printf '\n\n%s\n' "$SHEP_TRAILER" >> "$COMMIT_MSG_FILE"
+fi
