@@ -9,7 +9,7 @@
 import { injectable, inject } from 'tsyringe';
 import { platform } from 'node:os';
 import type { IIdeLauncherService } from '../../ports/output/services/ide-launcher-service.interface.js';
-import { TOOL_METADATA } from '../../../infrastructure/services/tool-installer/tool-metadata.js';
+import type { IToolMetadataProvider } from '../../ports/output/services/tool-metadata-provider.interface.js';
 
 export interface LaunchToolInput {
   toolId: string;
@@ -35,11 +35,13 @@ function resolvePlatformString(
 export class LaunchToolUseCase {
   constructor(
     @inject('IIdeLauncherService')
-    private readonly ideLauncherService: IIdeLauncherService
+    private readonly ideLauncherService: IIdeLauncherService,
+    @inject('IToolMetadataProvider')
+    private readonly toolMetadata: IToolMetadataProvider
   ) {}
 
   async execute({ toolId, directoryPath, headless }: LaunchToolInput): Promise<LaunchToolResult> {
-    const metadata = TOOL_METADATA[toolId];
+    const metadata = this.toolMetadata.getToolById(toolId);
     if (!metadata) {
       return { ok: false, code: 'tool_not_found', message: `Tool '${toolId}' not found` };
     }

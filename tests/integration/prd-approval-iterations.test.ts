@@ -18,6 +18,26 @@ import { RejectAgentRunUseCase } from '@/application/use-cases/agents/reject-age
 import { ApproveAgentRunUseCase } from '@/application/use-cases/agents/approve-agent-run.use-case.js';
 import { ReviewFeatureUseCase } from '@/application/use-cases/agents/review-feature.use-case.js';
 import { computeWorktreePath } from '@/infrastructure/services/ide-launchers/compute-worktree-path.js';
+import type { IWorktreePathProvider } from '@/application/ports/output/services/worktree-path-provider.interface.js';
+import type { INodeHelpers } from '@/application/ports/output/services/node-helpers.interface.js';
+import type { IPhaseTimingContext } from '@/application/ports/output/services/phase-timing-context.interface.js';
+import { NodeHelpersAdapter } from '@/infrastructure/services/agents/feature-agent/nodes/node-helpers.adapter.js';
+
+function createFakeWorktreePaths(): IWorktreePathProvider {
+  return {
+    getWorktreePath: (repo: string, branch: string) => computeWorktreePath(repo, branch),
+  };
+}
+
+function createRealNodeHelpers(): INodeHelpers {
+  return new NodeHelpersAdapter();
+}
+
+function createFakePhaseTimingContext(): IPhaseTimingContext {
+  return {
+    recordLifecycleEvent: vi.fn().mockResolvedValue(undefined),
+  };
+}
 
 // --- Mock Factories ---
 
@@ -158,7 +178,10 @@ describe('PRD Approval Iterations (Integration)', () => {
         mockRunRepo as any,
         mockProcessService as any,
         mockFeatureRepo as any,
-        mockTimingRepo as any
+        mockTimingRepo as any,
+        createFakeWorktreePaths(),
+        createRealNodeHelpers(),
+        createFakePhaseTimingContext()
       );
 
       const result = await useCase.execute('run-001', 'Please add error handling');
@@ -222,7 +245,9 @@ describe('PRD Approval Iterations (Integration)', () => {
         mockRunRepo as any,
         mockProcessService as any,
         mockFeatureRepo as any,
-        mockTimingRepo as any
+        mockTimingRepo as any,
+        createFakeWorktreePaths(),
+        createRealNodeHelpers()
       );
 
       const approvalPayload: PrdApprovalPayload = {
@@ -280,7 +305,9 @@ describe('PRD Approval Iterations (Integration)', () => {
         mockRunRepo as any,
         mockProcessService as any,
         mockFeatureRepo as any,
-        mockTimingRepo as any
+        mockTimingRepo as any,
+        createFakeWorktreePaths(),
+        createRealNodeHelpers()
       );
 
       const result = await useCase.execute('run-001');
@@ -316,7 +343,10 @@ describe('PRD Approval Iterations (Integration)', () => {
         mockRunRepo as any,
         mockProcessService as any,
         mockFeatureRepo as any,
-        mockTimingRepo as any
+        mockTimingRepo as any,
+        createFakeWorktreePaths(),
+        createRealNodeHelpers(),
+        createFakePhaseTimingContext()
       );
 
       // Execute 3 sequential rejections
@@ -372,7 +402,10 @@ describe('PRD Approval Iterations (Integration)', () => {
         mockRunRepo as any,
         mockProcessService as any,
         mockFeatureRepo as any,
-        mockTimingRepo as any
+        mockTimingRepo as any,
+        createFakeWorktreePaths(),
+        createRealNodeHelpers(),
+        createFakePhaseTimingContext()
       );
 
       const result = await useCase.execute('run-001', 'Fix 5');

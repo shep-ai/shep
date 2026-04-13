@@ -8,7 +8,7 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GetAgentSessionUseCase } from '@/application/use-cases/agents/get-agent-session.use-case.js';
 import { SessionNotFoundError } from '@/domain/errors/session-not-found.error.js';
-import type { AgentSessionRepositoryRegistry } from '@/application/services/agents/agent-session-repository.registry.js';
+import type { IAgentSessionRepositoryRegistry } from '@/application/ports/output/agents/agent-session-repository-registry.interface.js';
 import type { IAgentSessionRepository } from '@/application/ports/output/agents/agent-session-repository.interface.js';
 import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
 import type { AgentSession, Settings } from '@/domain/generated/output.js';
@@ -38,7 +38,7 @@ function createMockSession(overrides?: Partial<AgentSession>): AgentSession {
 
 describe('GetAgentSessionUseCase', () => {
   let useCase: GetAgentSessionUseCase;
-  let mockRegistry: AgentSessionRepositoryRegistry;
+  let mockRegistry: IAgentSessionRepositoryRegistry;
   let mockRepository: IAgentSessionRepository;
   let mockSettingsRepository: ISettingsRepository;
 
@@ -51,7 +51,7 @@ describe('GetAgentSessionUseCase', () => {
 
     mockRegistry = {
       getRepository: vi.fn().mockReturnValue(mockRepository),
-    } as unknown as AgentSessionRepositoryRegistry;
+    } as unknown as IAgentSessionRepositoryRegistry;
 
     mockSettingsRepository = makeSettingsRepo();
 

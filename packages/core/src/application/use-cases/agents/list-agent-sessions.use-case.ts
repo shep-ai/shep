@@ -9,7 +9,7 @@
 import { injectable, inject } from 'tsyringe';
 import type { AgentSession, AgentType } from '../../../domain/generated/output.js';
 import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
-import { AgentSessionRepositoryRegistry } from '../../services/agents/agent-session-repository.registry.js';
+import type { IAgentSessionRepositoryRegistry } from '../../ports/output/agents/agent-session-repository-registry.interface.js';
 
 export interface ListAgentSessionsInput {
   /** Agent type to query; falls back to configured default when omitted */
@@ -21,8 +21,8 @@ export interface ListAgentSessionsInput {
 @injectable()
 export class ListAgentSessionsUseCase {
   constructor(
-    @inject(AgentSessionRepositoryRegistry)
-    private readonly registry: AgentSessionRepositoryRegistry,
+    @inject('IAgentSessionRepositoryRegistry')
+    private readonly registry: IAgentSessionRepositoryRegistry,
     @inject('ISettingsRepository')
     private readonly settingsRepository: ISettingsRepository
   ) {}

@@ -13,7 +13,7 @@
  * when the user lands on the application page.
  *
  * Keep this in sync with
- * `packages/core/src/application/workflows/application-creation.workflow.ts`.
+ * `packages/core/src/application/use-cases/applications/application-creation.workflow.ts`.
  * The real steps replace the placeholder as soon as the first
  * `workflow_step` SSE chunk arrives.
  */

@@ -3,15 +3,18 @@ import { mkdirSync, writeFileSync, renameSync, rmSync, existsSync, readdirSync }
 import { join, basename } from 'path';
 import { createHash, randomUUID } from 'crypto';
 import type { Attachment } from '../../domain/generated/output.js';
+import type {
+  IAttachmentStorageService,
+  StoredAttachment,
+} from '../../application/ports/output/services/feature-attachment-storage.interface.js';
 import { getShepHomeDir } from './filesystem/shep-directory.service.js';
 
-/** Attachment record extended with SHA-256 hash for dedup tracking. */
-export interface StoredAttachment extends Attachment {
-  sha256: string;
-}
+// Re-export the port's StoredAttachment shape to preserve the existing type
+// surface for legacy consumers that import it from this module.
+export type { StoredAttachment };
 
 @injectable()
-export class AttachmentStorageService {
+export class AttachmentStorageService implements IAttachmentStorageService {
   /** In-memory dedup index: sessionId -> Map<sha256, StoredAttachment> */
   private readonly dedupIndex = new Map<string, Map<string, StoredAttachment>>();
 

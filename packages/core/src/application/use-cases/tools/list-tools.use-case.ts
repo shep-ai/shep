@@ -11,7 +11,7 @@ import { injectable, inject } from 'tsyringe';
 import { platform } from 'node:os';
 import type { ToolInstallationStatus } from '../../../domain/generated/output.js';
 import type { IToolInstallerService } from '../../ports/output/services/index.js';
-import { TOOL_METADATA } from '../../../infrastructure/services/tool-installer/tool-metadata.js';
+import type { IToolMetadataProvider } from '../../ports/output/services/tool-metadata-provider.interface.js';
 
 export interface ToolItem {
   id: string;
@@ -46,11 +46,13 @@ function resolvePlatformString(
 export class ListToolsUseCase {
   constructor(
     @inject('IToolInstallerService')
-    private readonly toolInstallerService: IToolInstallerService
+    private readonly toolInstallerService: IToolInstallerService,
+    @inject('IToolMetadataProvider')
+    private readonly toolMetadata: IToolMetadataProvider
   ) {}
 
   async execute(): Promise<ListToolsResult> {
-    const entries = Object.entries(TOOL_METADATA);
+    const entries = this.toolMetadata.getAllEntries();
     const currentPlatform = platform();
 
     const results = await Promise.all(

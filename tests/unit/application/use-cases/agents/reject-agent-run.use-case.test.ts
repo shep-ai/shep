@@ -11,7 +11,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentRunStatus } from '@/domain/generated/output.js';
 import type { AgentRun } from '@/domain/generated/output.js';
 import { RejectAgentRunUseCase } from '@/application/use-cases/agents/reject-agent-run.use-case.js';
-import { recordLifecycleEvent } from '@/infrastructure/services/agents/feature-agent/phase-timing-context.js';
 
 // Mock fs, js-yaml, and writeSpecFileAtomic
 vi.mock('node:fs', () => ({
@@ -25,17 +24,28 @@ vi.mock('js-yaml', () => ({
   },
 }));
 
-vi.mock('@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js', () => ({
-  writeSpecFileAtomic: vi.fn(),
-}));
+import type { IWorktreePathProvider } from '@/application/ports/output/services/worktree-path-provider.interface.js';
+import type { INodeHelpers } from '@/application/ports/output/services/node-helpers.interface.js';
+import type { IPhaseTimingContext } from '@/application/ports/output/services/phase-timing-context.interface.js';
 
-vi.mock('@/infrastructure/services/agents/feature-agent/phase-timing-context.js', () => ({
-  recordLifecycleEvent: vi.fn(),
-}));
+function createFakeWorktreePaths(): IWorktreePathProvider {
+  return {
+    getWorktreePath: vi.fn().mockReturnValue('/computed/worktree/path'),
+  };
+}
 
-vi.mock('@/infrastructure/services/ide-launchers/compute-worktree-path.js', () => ({
-  computeWorktreePath: vi.fn().mockReturnValue('/computed/worktree/path'),
-}));
+function createFakeNodeHelpers(): INodeHelpers {
+  return {
+    writeSpecFileAtomic: vi.fn(),
+    safeYamlDump: vi.fn().mockReturnValue('yaml'),
+  };
+}
+
+function createFakePhaseTimingContext(): IPhaseTimingContext {
+  return {
+    recordLifecycleEvent: vi.fn().mockResolvedValue(undefined),
+  };
+}
 
 function createMockRunRepository() {
   return {
@@ -102,6 +112,7 @@ describe('RejectAgentRunUseCase', () => {
   let mockProcessService: ReturnType<typeof createMockProcessService>;
   let mockFeatureRepo: ReturnType<typeof createMockFeatureRepository>;
   let mockTimingRepo: ReturnType<typeof createMockTimingRepository>;
+  let fakePhaseTimingContext: IPhaseTimingContext;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -109,6 +120,7 @@ describe('RejectAgentRunUseCase', () => {
     mockProcessService = createMockProcessService();
     mockFeatureRepo = createMockFeatureRepository();
     mockTimingRepo = createMockTimingRepository();
+    fakePhaseTimingContext = createFakePhaseTimingContext();
     mockFeatureRepo.findById.mockResolvedValue({
       id: 'feat-001',
       name: 'test-feature',
@@ -123,7 +135,10 @@ describe('RejectAgentRunUseCase', () => {
       mockRunRepo as any,
       mockProcessService as any,
       mockFeatureRepo as any,
-      mockTimingRepo as any
+      mockTimingRepo as any,
+      createFakeWorktreePaths(),
+      createFakeNodeHelpers(),
+      fakePhaseTimingContext
     );
   });
 
@@ -147,7 +162,11 @@ describe('RejectAgentRunUseCase', () => {
 
     await useCase.execute('run-001', 'Needs more detail');
 
-    expect(recordLifecycleEvent).toHaveBeenCalledWith('run:rejected', 'run-001', mockTimingRepo);
+    expect(fakePhaseTimingContext.recordLifecycleEvent).toHaveBeenCalledWith(
+      'run:rejected',
+      'run-001',
+      mockTimingRepo
+    );
   });
 
   it('should resume the same run with its persisted switched agentType and modelId', async () => {

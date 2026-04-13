@@ -6,7 +6,7 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentSessionRepositoryRegistry } from '@/application/services/agents/agent-session-repository.registry.js';
+import { AgentSessionRepositoryRegistry } from '@/infrastructure/services/agents/agent-session-repository.registry.js';
 import type { IAgentSessionRepository } from '@/application/ports/output/agents/agent-session-repository.interface.js';
 import { AgentType } from '@/domain/generated/output.js';
 

@@ -9,7 +9,7 @@
 import { injectable, inject } from 'tsyringe';
 import type { AgentSession, AgentType } from '../../../domain/generated/output.js';
 import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
-import { AgentSessionRepositoryRegistry } from '../../services/agents/agent-session-repository.registry.js';
+import type { IAgentSessionRepositoryRegistry } from '../../ports/output/agents/agent-session-repository-registry.interface.js';
 import { SessionNotFoundError } from '../../../domain/errors/session-not-found.error.js';
 
 export interface GetAgentSessionInput {
@@ -24,8 +24,8 @@ export interface GetAgentSessionInput {
 @injectable()
 export class GetAgentSessionUseCase {
   constructor(
-    @inject(AgentSessionRepositoryRegistry)
-    private readonly registry: AgentSessionRepositoryRegistry,
+    @inject('IAgentSessionRepositoryRegistry')
+    private readonly registry: IAgentSessionRepositoryRegistry,
     @inject('ISettingsRepository')
     private readonly settingsRepository: ISettingsRepository
   ) {}

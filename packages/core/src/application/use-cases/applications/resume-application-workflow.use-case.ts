@@ -17,7 +17,7 @@ import type { IWorkflowStepRepository } from '../../ports/output/repositories/wo
 import type { IInteractiveSessionService } from '../../ports/output/services/interactive-session-service.interface.js';
 import type { IInteractiveSessionRepository } from '../../ports/output/repositories/interactive-session-repository.interface.js';
 import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
-import { APPLICATION_CREATION_WORKFLOW } from '../../workflows/application-creation.workflow.js';
+import { APPLICATION_CREATION_WORKFLOW } from './application-creation.workflow.js';
 
 export interface ResumeApplicationWorkflowInput {
   applicationId: string;

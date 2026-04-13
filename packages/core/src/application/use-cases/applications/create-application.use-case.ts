@@ -24,7 +24,7 @@ import type { CreateProjectUseCase } from '../projects/create-project.use-case.j
 import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
 import type { RunWorkflowUseCase } from '../workflows/run-workflow.use-case.js';
 import type { IInteractiveSessionRepository } from '../../ports/output/repositories/interactive-session-repository.interface.js';
-import { APPLICATION_CREATION_WORKFLOW } from '../../workflows/application-creation.workflow.js';
+import { APPLICATION_CREATION_WORKFLOW } from './application-creation.workflow.js';
 
 /**
  * Build the very first message the agent sees on turn 1. Carries the

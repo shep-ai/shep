@@ -36,7 +36,7 @@ import type { ISkillInjectorService } from '../../../ports/output/services/skill
 import type { ISettingsRepository } from '../../../ports/output/repositories/settings.repository.interface.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import { POST_IMPLEMENTATION } from '../../../../domain/lifecycle-gates.js';
-import { AttachmentStorageService } from '../../../../infrastructure/services/attachment-storage.service.js';
+import type { IAttachmentStorageService } from '../../../ports/output/services/feature-attachment-storage.interface.js';
 import { MetadataGenerator } from './metadata-generator.js';
 import { SlugResolver } from './slug-resolver.js';
 import type { CreateFeatureInput, CreateFeatureResult, CreateRecordResult } from './types.js';
@@ -62,8 +62,8 @@ export class CreateFeatureUseCase {
     private readonly repositoryRepo: IRepositoryRepository,
     @inject('IGitPrService')
     private readonly gitPrService: IGitPrService,
-    @inject(AttachmentStorageService)
-    private readonly attachmentStorage: AttachmentStorageService,
+    @inject('IAttachmentStorageService')
+    private readonly attachmentStorage: IAttachmentStorageService,
     @inject('IAgentValidator')
     private readonly agentValidator: IAgentValidator,
     @inject('ISkillInjectorService')

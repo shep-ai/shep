@@ -9,17 +9,24 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js', () => ({
-  writeSpecFileAtomic: vi.fn(),
-}));
-
-vi.mock('@/infrastructure/services/ide-launchers/compute-worktree-path.js', () => ({
-  computeWorktreePath: vi.fn().mockReturnValue('/computed/worktree/path'),
-}));
-
 import { AgentRunStatus } from '@/domain/generated/output.js';
 import type { AgentRun } from '@/domain/generated/output.js';
 import { ApproveAgentRunUseCase } from '@/application/use-cases/agents/approve-agent-run.use-case.js';
+import type { IWorktreePathProvider } from '@/application/ports/output/services/worktree-path-provider.interface.js';
+import type { INodeHelpers } from '@/application/ports/output/services/node-helpers.interface.js';
+
+function createFakeWorktreePaths(): IWorktreePathProvider {
+  return {
+    getWorktreePath: vi.fn().mockReturnValue('/computed/worktree/path'),
+  };
+}
+
+function createFakeNodeHelpers(): INodeHelpers {
+  return {
+    writeSpecFileAtomic: vi.fn(),
+    safeYamlDump: vi.fn().mockReturnValue(''),
+  };
+}
 
 function createMockRunRepository() {
   return {
@@ -102,7 +109,9 @@ describe('ApproveAgentRunUseCase', () => {
       mockRunRepo as any,
       mockProcessService as any,
       mockFeatureRepo as any,
-      mockTimingRepo as any
+      mockTimingRepo as any,
+      createFakeWorktreePaths(),
+      createFakeNodeHelpers()
     );
   });
 

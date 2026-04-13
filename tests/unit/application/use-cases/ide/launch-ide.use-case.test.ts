@@ -14,16 +14,12 @@ import type {
   IIdeLauncherService,
   LaunchIdeResult,
 } from '@/application/ports/output/services/ide-launcher-service.interface.js';
-
-vi.mock('@/infrastructure/services/ide-launchers/compute-worktree-path.js', () => ({
-  computeWorktreePath: vi.fn((_repoPath: string, branch: string) => `/mock/wt/${branch}`),
-}));
-
-import { computeWorktreePath } from '@/infrastructure/services/ide-launchers/compute-worktree-path.js';
+import type { IWorktreePathProvider } from '@/application/ports/output/services/worktree-path-provider.interface.js';
 
 describe('LaunchIdeUseCase', () => {
   let useCase: LaunchIdeUseCase;
   let mockService: IIdeLauncherService;
+  let mockWorktreePaths: IWorktreePathProvider;
 
   const successResult: LaunchIdeResult = {
     ok: true,
@@ -41,7 +37,13 @@ describe('LaunchIdeUseCase', () => {
       checkAvailability: vi.fn<(editorId: string) => Promise<boolean>>().mockResolvedValue(true),
     };
 
-    useCase = new LaunchIdeUseCase(mockService);
+    mockWorktreePaths = {
+      getWorktreePath: vi
+        .fn<(repoPath: string, branch: string) => string>()
+        .mockImplementation((_repoPath, branch) => `/mock/wt/${branch}`),
+    };
+
+    useCase = new LaunchIdeUseCase(mockService, mockWorktreePaths);
   });
 
   describe('worktree path computation', () => {
@@ -52,7 +54,7 @@ describe('LaunchIdeUseCase', () => {
         branch: 'feat/my-feature',
       });
 
-      expect(computeWorktreePath).toHaveBeenCalledWith('/repo', 'feat/my-feature');
+      expect(mockWorktreePaths.getWorktreePath).toHaveBeenCalledWith('/repo', 'feat/my-feature');
       expect(mockService.launch).toHaveBeenCalledWith('vscode', '/mock/wt/feat/my-feature');
     });
 
@@ -62,7 +64,7 @@ describe('LaunchIdeUseCase', () => {
         repositoryPath: '/my/repo',
       });
 
-      expect(computeWorktreePath).not.toHaveBeenCalled();
+      expect(mockWorktreePaths.getWorktreePath).not.toHaveBeenCalled();
       expect(mockService.launch).toHaveBeenCalledWith('cursor', '/my/repo');
     });
   });

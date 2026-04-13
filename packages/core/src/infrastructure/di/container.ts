@@ -103,6 +103,8 @@ import type { IAgentAuthDetectorService } from '../../application/ports/output/s
 import { PlatformAgentAuthDetectorService } from '../services/agent-auth-detector/platform-agent-auth-detector.service.js';
 import type { IToolInstallerService } from '../../application/ports/output/services/tool-installer.service.js';
 import { ToolInstallerServiceImpl } from '../services/tool-installer/tool-installer.service.js';
+import type { IToolMetadataProvider } from '../../application/ports/output/services/tool-metadata-provider.interface.js';
+import { ToolMetadataProvider } from '../services/tool-installer/tool-metadata.provider.js';
 import type { IGitPrService } from '../../application/ports/output/services/git-pr-service.interface.js';
 import { GitPrService } from '../services/git/git-pr.service.js';
 import type { IGitForkService } from '../../application/ports/output/services/git-fork-service.interface.js';
@@ -111,6 +113,10 @@ import type { ISkillInjectorService } from '../../application/ports/output/servi
 import { SkillInjectorService } from '../services/skill-injector.service.js';
 import type { IIdeLauncherService } from '../../application/ports/output/services/ide-launcher-service.interface.js';
 import { JsonDrivenIdeLauncherService } from '../services/ide-launchers/json-driven-ide-launcher.service.js';
+import type { IWorktreePathProvider } from '../../application/ports/output/services/worktree-path-provider.interface.js';
+import { WorktreePathProvider } from '../services/ide-launchers/worktree-path.provider.js';
+import type { INodeHelpers } from '../../application/ports/output/services/node-helpers.interface.js';
+import { NodeHelpersAdapter } from '../services/agents/feature-agent/nodes/node-helpers.adapter.js';
 import type { IDaemonService } from '../../application/ports/output/services/daemon-service.interface.js';
 import { DaemonPidService } from '../services/daemon/daemon-pid.service.js';
 import type { IDeploymentService } from '../../application/ports/output/services/deployment-service.interface.js';
@@ -141,6 +147,7 @@ import type { IAgentRegistry } from '../../application/ports/output/agents/agent
 import type { IAgentRunner } from '../../application/ports/output/agents/agent-runner.interface.js';
 import type { IAgentRunRepository } from '../../application/ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '../../application/ports/output/agents/phase-timing-repository.interface.js';
+import type { IPhaseTimingContext } from '../../application/ports/output/services/phase-timing-context.interface.js';
 import type { IFeatureAgentProcessService } from '../../application/ports/output/agents/feature-agent-process.interface.js';
 import type { ISpecInitializerService } from '../../application/ports/output/services/spec-initializer.interface.js';
 import type { ISpecArtifactParser } from '../../application/ports/output/services/spec-artifact-parser.interface.js';
@@ -153,6 +160,7 @@ import { AgentRegistryService } from '../services/agents/common/agent-registry.s
 import { AgentRunnerService } from '../services/agents/common/agent-runner.service.js';
 import { SQLiteAgentRunRepository } from '../repositories/agent-run.repository.js';
 import { SQLitePhaseTimingRepository } from '../repositories/sqlite-phase-timing.repository.js';
+import { PhaseTimingContextAdapter } from '../services/agents/feature-agent/phase-timing-context.adapter.js';
 import { FeatureAgentProcessService } from '../services/agents/feature-agent/feature-agent-process.service.js';
 import { SpecInitializerService } from '../services/spec/spec-initializer.service.js';
 import { SpecYamlParserService } from '../services/spec/spec-yaml-parser.service.js';
@@ -216,6 +224,7 @@ import { SyncRepositoryMainUseCase } from '../../application/use-cases/repositor
 import { RebaseFeatureOnMainUseCase } from '../../application/use-cases/features/rebase-feature-on-main.use-case.js';
 import { GetBranchSyncStatusUseCase } from '../../application/use-cases/features/get-branch-sync-status.use-case.js';
 import { ConflictResolutionService } from '../services/agents/conflict-resolution/conflict-resolution.service.js';
+import type { IConflictResolutionService } from '../../application/ports/output/services/conflict-resolution.interface.js';
 import { AutoResolveMergedBranchesUseCase } from '../../application/use-cases/features/auto-resolve-merged-branches.use-case.js';
 import { CreateApplicationUseCase } from '../../application/use-cases/applications/create-application.use-case.js';
 import { ListApplicationsUseCase } from '../../application/use-cases/applications/list-applications.use-case.js';
@@ -347,7 +356,8 @@ import { RespondToInteractionUseCase } from '../../application/use-cases/interac
 import { ClaudeCodeSessionRepository } from '../services/agents/sessions/claude-code-session.repository.js';
 import { CodexCliSessionRepository } from '../services/agents/sessions/codex-cli-session.repository.js';
 import { StubSessionRepository } from '../services/agents/sessions/stub-session.repository.js';
-import { AgentSessionRepositoryRegistry } from '../../application/services/agents/agent-session-repository.registry.js';
+import { AgentSessionRepositoryRegistry } from '../services/agents/agent-session-repository.registry.js';
+import type { IAgentSessionRepositoryRegistry } from '../../application/ports/output/agents/agent-session-repository-registry.interface.js';
 import { ListAgentSessionsUseCase } from '../../application/use-cases/agents/list-agent-sessions.use-case.js';
 import { GetAgentSessionUseCase } from '../../application/use-cases/agents/get-agent-session.use-case.js';
 import { AgentType } from '../../domain/generated/output.js';
@@ -739,6 +749,7 @@ export async function initializeContainer(): Promise<typeof container> {
     'IToolInstallerService',
     ToolInstallerServiceImpl
   );
+  container.registerSingleton<IToolMetadataProvider>('IToolMetadataProvider', ToolMetadataProvider);
   container.registerSingleton<IGitPrService>('IGitPrService', GitPrService);
   container.registerSingleton<IGitForkService>('IGitForkService', GitForkService);
   container.registerSingleton<IGitHubRepositoryService>(
@@ -749,6 +760,8 @@ export async function initializeContainer(): Promise<typeof container> {
     'IIdeLauncherService',
     JsonDrivenIdeLauncherService
   );
+  container.registerSingleton<IWorktreePathProvider>('IWorktreePathProvider', WorktreePathProvider);
+  container.registerSingleton<INodeHelpers>('INodeHelpers', NodeHelpersAdapter);
   container.registerSingleton<IDaemonService>('IDaemonService', DaemonPidService);
   container.registerSingleton<IApplicationFileSystemService>(
     'IApplicationFileSystemService',
@@ -760,6 +773,7 @@ export async function initializeContainer(): Promise<typeof container> {
   );
   container.registerSingleton(AttachmentStorageService);
   container.register('AttachmentStorageService', { useToken: AttachmentStorageService });
+  container.register('IAttachmentStorageService', { useToken: AttachmentStorageService });
   const deploymentService = new DeploymentService();
   deploymentService.setDatabase(db);
   deploymentService.recoverAll();
@@ -780,6 +794,11 @@ export async function initializeContainer(): Promise<typeof container> {
       return new SQLitePhaseTimingRepository(database);
     },
   });
+
+  container.registerSingleton<IPhaseTimingContext>(
+    'IPhaseTimingContext',
+    PhaseTimingContextAdapter
+  );
 
   if (process.env.SHEP_MOCK_EXECUTOR === '1') {
     container.register<IAgentExecutorFactory>('IAgentExecutorFactory', {
@@ -937,10 +956,10 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(ArchiveFeatureUseCase);
   container.registerSingleton(UnarchiveFeatureUseCase);
   container.registerSingleton(UpgradeCliUseCase);
-  container.registerSingleton(ConflictResolutionService);
-  container.register('ConflictResolutionService', {
-    useFactory: (c) => c.resolve(ConflictResolutionService),
-  });
+  container.registerSingleton<IConflictResolutionService>(
+    'IConflictResolutionService',
+    ConflictResolutionService
+  );
   container.registerSingleton(SyncRepositoryMainUseCase);
   container.registerSingleton(RebaseFeatureOnMainUseCase);
   container.registerSingleton(GetBranchSyncStatusUseCase);
@@ -1118,7 +1137,10 @@ export async function initializeContainer(): Promise<typeof container> {
     useFactory: () => new StubSessionRepository(AgentType.CopilotCli),
   });
 
-  container.registerSingleton(AgentSessionRepositoryRegistry);
+  container.registerSingleton<IAgentSessionRepositoryRegistry>(
+    'IAgentSessionRepositoryRegistry',
+    AgentSessionRepositoryRegistry
+  );
   container.registerSingleton(ListAgentSessionsUseCase);
   container.registerSingleton(GetAgentSessionUseCase);
 

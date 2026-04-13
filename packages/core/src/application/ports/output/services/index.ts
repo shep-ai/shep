@@ -89,3 +89,11 @@ export type {
   TerminalOutputListener,
   TerminalExitListener,
 } from './terminal-session-service.interface.js';
+export type { IWorktreePathProvider } from './worktree-path-provider.interface.js';
+export type { IToolMetadataProvider, ToolMetadata } from './tool-metadata-provider.interface.js';
+export type { IPhaseTimingContext } from './phase-timing-context.interface.js';
+export type { IAttachmentStorage } from './attachment-storage.interface.js';
+export type {
+  IAttachmentStorageService,
+  StoredAttachment,
+} from './feature-attachment-storage.interface.js';

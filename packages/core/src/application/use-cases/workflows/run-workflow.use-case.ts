@@ -34,7 +34,7 @@ import type { IInteractiveSessionService } from '../../ports/output/services/int
 import type { IInteractiveSessionRepository } from '../../ports/output/repositories/interactive-session-repository.interface.js';
 import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
 import { WorkflowStepStatus, type WorkflowStep } from '../../../domain/generated/output.js';
-import type { WorkflowDefinition } from '../../workflows/application-creation.workflow.js';
+import type { WorkflowDefinition } from '../applications/application-creation.workflow.js';
 
 /** Per-step usage snapshot. All fields are cumulative session totals
  *  captured BEFORE or AFTER a step runs; a diff between two snapshots

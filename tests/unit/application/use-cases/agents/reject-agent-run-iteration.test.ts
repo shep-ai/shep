@@ -10,7 +10,7 @@ import { AgentRunStatus } from '@/domain/generated/output.js';
 import type { AgentRun } from '@/domain/generated/output.js';
 import { RejectAgentRunUseCase } from '@/application/use-cases/agents/reject-agent-run.use-case.js';
 
-// Mock fs, js-yaml, and writeSpecFileAtomic
+// Mock fs and js-yaml so the use case can read a fake spec file
 vi.mock('node:fs', () => ({
   readFileSync: vi.fn(),
 }));
@@ -19,26 +19,34 @@ vi.mock('js-yaml', () => ({
   default: { load: vi.fn(), dump: vi.fn() },
 }));
 
-vi.mock('@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js', () => ({
-  writeSpecFileAtomic: vi.fn(),
-  safeYamlDump: vi.fn(),
-}));
+import type { IWorktreePathProvider } from '@/application/ports/output/services/worktree-path-provider.interface.js';
+import type { INodeHelpers } from '@/application/ports/output/services/node-helpers.interface.js';
+import type { IPhaseTimingContext } from '@/application/ports/output/services/phase-timing-context.interface.js';
 
-vi.mock('@/infrastructure/services/ide-launchers/compute-worktree-path.js', () => ({
-  computeWorktreePath: vi.fn().mockReturnValue('/computed/worktree/path'),
-}));
+function createFakeWorktreePaths(): IWorktreePathProvider {
+  return {
+    getWorktreePath: vi.fn().mockReturnValue('/computed/worktree/path'),
+  };
+}
+
+function createFakeNodeHelpers(): INodeHelpers {
+  return {
+    writeSpecFileAtomic: vi.fn(),
+    safeYamlDump: vi.fn().mockImplementation((v) => v as unknown as string),
+  };
+}
+
+function createFakePhaseTimingContext(): IPhaseTimingContext {
+  return {
+    recordLifecycleEvent: vi.fn().mockResolvedValue(undefined),
+  };
+}
 
 import { readFileSync } from 'node:fs';
 import yaml from 'js-yaml';
-import {
-  writeSpecFileAtomic,
-  safeYamlDump,
-} from '@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js';
 
 const mockReadFileSync = vi.mocked(readFileSync);
 const mockYamlLoad = vi.mocked(yaml.load);
-const mockSafeYamlDump = vi.mocked(safeYamlDump);
-const mockWriteSpecFileAtomic = vi.mocked(writeSpecFileAtomic);
 
 function createMockRunRepository() {
   return {
@@ -105,6 +113,7 @@ describe('RejectAgentRunUseCase (iteration support)', () => {
   let mockProcessService: ReturnType<typeof createMockProcessService>;
   let mockFeatureRepo: ReturnType<typeof createMockFeatureRepository>;
   let mockTimingRepo: ReturnType<typeof createMockTimingRepository>;
+  let fakeNodeHelpers: INodeHelpers;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -112,6 +121,7 @@ describe('RejectAgentRunUseCase (iteration support)', () => {
     mockProcessService = createMockProcessService();
     mockFeatureRepo = createMockFeatureRepository();
     mockTimingRepo = createMockTimingRepository();
+    fakeNodeHelpers = createFakeNodeHelpers();
     mockFeatureRepo.findById.mockResolvedValue({
       id: 'feat-001',
       name: 'test-feature',
@@ -126,7 +136,10 @@ describe('RejectAgentRunUseCase (iteration support)', () => {
       mockRunRepo as any,
       mockProcessService as any,
       mockFeatureRepo as any,
-      mockTimingRepo as any
+      mockTimingRepo as any,
+      createFakeWorktreePaths(),
+      fakeNodeHelpers,
+      createFakePhaseTimingContext()
     );
   });
 
@@ -134,7 +147,6 @@ describe('RejectAgentRunUseCase (iteration support)', () => {
     mockRunRepo.findById.mockResolvedValue(createWaitingRun());
     mockReadFileSync.mockReturnValue('yaml-content');
     mockYamlLoad.mockReturnValue({ openQuestions: [] });
-    mockSafeYamlDump.mockReturnValue('updated-yaml');
 
     const result = await useCase.execute('run-001', 'Please add error handling');
 
@@ -148,16 +160,16 @@ describe('RejectAgentRunUseCase (iteration support)', () => {
     mockRunRepo.findById.mockResolvedValue(createWaitingRun());
     mockReadFileSync.mockReturnValue('yaml-content');
     mockYamlLoad.mockReturnValue({ openQuestions: [] });
-    mockSafeYamlDump.mockReturnValue('updated-yaml');
 
     await useCase.execute('run-001', 'Add validation');
 
-    const dumpCall = mockSafeYamlDump.mock.calls[0][0] as any;
+    const dumpCall = (fakeNodeHelpers.safeYamlDump as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as any;
     expect(dumpCall.rejectionFeedback).toHaveLength(1);
     expect(dumpCall.rejectionFeedback[0].iteration).toBe(1);
     expect(dumpCall.rejectionFeedback[0].message).toBe('Add validation');
     expect(dumpCall.rejectionFeedback[0].timestamp).toBeDefined();
-    expect(mockWriteSpecFileAtomic).toHaveBeenCalled();
+    expect(fakeNodeHelpers.writeSpecFileAtomic).toHaveBeenCalled();
   });
 
   it('should compute correct iteration from existing feedback', async () => {
@@ -170,7 +182,6 @@ describe('RejectAgentRunUseCase (iteration support)', () => {
         { iteration: 2, message: 'Second fix', timestamp: '2026-01-02T00:00:00.000Z' },
       ],
     });
-    mockSafeYamlDump.mockReturnValue('updated-yaml');
 
     const result = await useCase.execute('run-001', 'Third fix');
 
@@ -190,7 +201,6 @@ describe('RejectAgentRunUseCase (iteration support)', () => {
         { iteration: 4, message: 'Fix 4', timestamp: '' },
       ],
     });
-    mockSafeYamlDump.mockReturnValue('updated-yaml');
 
     const result = await useCase.execute('run-001', 'Fix 5');
 
@@ -202,7 +212,6 @@ describe('RejectAgentRunUseCase (iteration support)', () => {
     mockRunRepo.findById.mockResolvedValue(createWaitingRun());
     mockReadFileSync.mockReturnValue('yaml-content');
     mockYamlLoad.mockReturnValue({ openQuestions: [] });
-    mockSafeYamlDump.mockReturnValue('updated-yaml');
 
     await useCase.execute('run-001', 'Fix something');
 
@@ -217,7 +226,6 @@ describe('RejectAgentRunUseCase (iteration support)', () => {
     mockRunRepo.findById.mockResolvedValue(createWaitingRun());
     mockReadFileSync.mockReturnValue('yaml-content');
     mockYamlLoad.mockReturnValue({ openQuestions: [] });
-    mockSafeYamlDump.mockReturnValue('updated-yaml');
 
     await useCase.execute('run-001', 'Fix something');
 
@@ -292,7 +300,6 @@ describe('RejectAgentRunUseCase (iteration support)', () => {
     ]);
     mockReadFileSync.mockReturnValue('yaml-content');
     mockYamlLoad.mockReturnValue({ openQuestions: [] });
-    mockSafeYamlDump.mockReturnValue('updated-yaml');
 
     await useCase.execute('run-001', 'Fix something');
 

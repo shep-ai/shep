@@ -304,6 +304,27 @@ export default tseslint.config(
   },
 
   // =============================================================================
+  // Clean Architecture — application layer must not import infrastructure
+  // =============================================================================
+  {
+    files: ['packages/core/src/application/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/infrastructure/**', '**/infrastructure/*'],
+              message:
+                'Application layer must not import from infrastructure. Use a port interface in application/ports/ and inject via DI.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // =============================================================================
   // Prettier compatibility (must be last)
   // =============================================================================
   prettierConfig
