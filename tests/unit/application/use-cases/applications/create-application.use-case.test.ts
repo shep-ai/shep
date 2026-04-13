@@ -13,6 +13,7 @@ import type { CreateProjectUseCase } from '@/application/use-cases/projects/crea
 import type { SendInteractiveMessageUseCase } from '@/application/use-cases/interactive/send-interactive-message.use-case.js';
 import type { RunWorkflowUseCase } from '@/application/use-cases/workflows/run-workflow.use-case.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
+import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 import { ApplicationStatus } from '@/domain/generated/output.js';
 
 function createMockAppRepo(): IApplicationRepository {
@@ -102,6 +103,7 @@ describe('CreateApplicationUseCase', () => {
   let mockSessionRepo: IInteractiveSessionRepository;
   let mockScaffolder: IApplicationScaffolder;
   let mockMessageRepo: IInteractiveMessageRepository;
+  let mockLogger: ILogger;
 
   beforeEach(() => {
     mockAppRepo = createMockAppRepo();
@@ -117,6 +119,12 @@ describe('CreateApplicationUseCase', () => {
     } as unknown as IInteractiveSessionRepository;
     mockScaffolder = createMockScaffolder();
     mockMessageRepo = createMockMessageRepo();
+    mockLogger = {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
     useCase = new CreateApplicationUseCase(
       mockAppRepo,
       mockCreateProject,
@@ -126,7 +134,8 @@ describe('CreateApplicationUseCase', () => {
       mockRunWorkflow,
       mockSessionRepo,
       mockScaffolder,
-      mockMessageRepo
+      mockMessageRepo,
+      mockLogger
     );
   });
 

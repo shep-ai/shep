@@ -20,10 +20,12 @@ import type { IApplicationCreationPromptBuilder } from '../../ports/output/servi
 import type { IApplicationBriefStore } from '../../ports/output/services/application-brief-store.interface.js';
 import type { IApplicationScaffolder } from '../../ports/output/services/application-scaffolder.interface.js';
 import type { IInteractiveMessageRepository } from '../../ports/output/repositories/interactive-message-repository.interface.js';
+import type { ILogger } from '../../ports/output/services/logger.interface.js';
 import type { CreateProjectUseCase } from '../projects/create-project.use-case.js';
 import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
 import type { RunWorkflowUseCase } from '../workflows/run-workflow.use-case.js';
 import type { IInteractiveSessionRepository } from '../../ports/output/repositories/interactive-session-repository.interface.js';
+import { featureIdForApplication } from '../../../domain/shared/feature-id.js';
 import { APPLICATION_CREATION_WORKFLOW } from './application-creation.workflow.js';
 
 /**
@@ -160,7 +162,9 @@ export class CreateApplicationUseCase {
     @inject('IApplicationScaffolder')
     private readonly scaffolder: IApplicationScaffolder,
     @inject('IInteractiveMessageRepository')
-    private readonly messageRepo: IInteractiveMessageRepository
+    private readonly messageRepo: IInteractiveMessageRepository,
+    @inject('ILogger')
+    private readonly logger: ILogger
   ) {}
 
   async execute(input: CreateApplicationInput): Promise<CreateApplicationResult> {
@@ -228,7 +232,7 @@ export class CreateApplicationUseCase {
       const now2 = new Date();
       const firstUserMessage: InteractiveMessage = {
         id: randomUUID(),
-        featureId: `app-${application.id}`,
+        featureId: featureIdForApplication(application.id),
         role: InteractiveMessageRole.user,
         content: input.initialPrompt.trim(),
         createdAt: now2,
@@ -242,8 +246,9 @@ export class CreateApplicationUseCase {
         // still see their bubble a few seconds later instead of
         // instantly. We log and continue so the application row
         // and project path are still returned to the caller.
-        // eslint-disable-next-line no-console
-        console.error('[create-application] failed to pre-persist first user message:', err);
+        this.logger.error('[create-application] failed to pre-persist first user message', {
+          err: err instanceof Error ? err.message : String(err),
+        });
       }
     }
 
@@ -300,8 +305,9 @@ export class CreateApplicationUseCase {
         projectName: args.application.name,
       });
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('[create-application] scaffold failed:', err);
+      this.logger.error('[create-application] scaffold failed', {
+        err: err instanceof Error ? err.message : String(err),
+      });
       try {
         await this.appRepo.update(args.application.id, {
           status: ApplicationStatus.Error,
@@ -333,7 +339,7 @@ export class CreateApplicationUseCase {
       // them step by step.
       const briefPath = await this.briefStore.write(args.application.id, systemPrompt);
 
-      const featureId = `app-${args.application.id}`;
+      const featureId = featureIdForApplication(args.application.id);
       await this.runWorkflow.execute({
         featureId,
         worktreePath: args.projectPath,
@@ -360,8 +366,9 @@ export class CreateApplicationUseCase {
         ...(agentSessionId ? { agentSessionId } : {}),
       });
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('[create-application] workflow dispatch failed:', err);
+      this.logger.error('[create-application] workflow dispatch failed', {
+        err: err instanceof Error ? err.message : String(err),
+      });
       try {
         await this.appRepo.update(args.application.id, {
           status: ApplicationStatus.Error,

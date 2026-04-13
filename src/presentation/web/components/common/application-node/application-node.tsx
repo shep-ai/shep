@@ -27,6 +27,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useTurnStatus } from '@/hooks/turn-statuses-provider';
 import { useDeployAction } from '@/hooks/use-deploy-action';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
+import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 import { deriveAppLiveStatus } from '@/lib/derive-app-status';
 import type { ApplicationNodeData } from './application-node-config';
 
@@ -54,7 +55,7 @@ export function ApplicationNode({
   // Live session turn status from the global SSE subscription. The
   // scope key is `app-<id>` — same key used everywhere else the
   // application's chat is referenced.
-  const turnStatus = useTurnStatus(`app-${data.id}`);
+  const turnStatus = useTurnStatus(featureIdForApplication(data.id));
 
   // Shared dev-server deploy state — one per card. Subscribes to the
   // `DeploymentStatusProvider` which is SSR-seeded in the dashboard

@@ -10,6 +10,7 @@ import type { Application } from '../../../domain/generated/output.js';
 import { WorkflowStepStatus } from '../../../domain/generated/output.js';
 import type { IApplicationRepository } from '../../ports/output/repositories/application-repository.interface.js';
 import type { IWorkflowStepRepository } from '../../ports/output/repositories/workflow-step-repository.interface.js';
+import { featureIdForApplication } from '../../../domain/shared/feature-id.js';
 
 /**
  * Effective status for an application, derived from persisted app
@@ -49,7 +50,7 @@ export class ListApplicationsUseCase {
         continue;
       }
 
-      const steps = await this.stepRepo.listByFeature(`app-${app.id}`);
+      const steps = await this.stepRepo.listByFeature(featureIdForApplication(app.id));
       results.push({ ...app, effectiveStatus: deriveEffectiveStatus(app, steps) });
     }
 

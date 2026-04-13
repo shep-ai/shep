@@ -7,6 +7,7 @@ import {
 } from '@/components/common/feature-node/derive-feature-state';
 import { isProcessAlive } from '@shepai/core/infrastructure/services/process/is-process-alive';
 import { computeWorktreePath } from '@shepai/core/infrastructure/services/ide-launchers/compute-worktree-path';
+import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 import type { CanvasNodeType } from '@/components/features/features-canvas';
 import type { Edge } from '@xyflow/react';
 import type { FeatureNodeData } from '@/components/common/feature-node';

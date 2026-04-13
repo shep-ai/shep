@@ -33,6 +33,7 @@ import { useTurnStatus } from '@/hooks/turn-statuses-provider';
 import { useDeployAction } from '@/hooks/use-deploy-action';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
 import type { ApplicationWithStatus } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
+import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 
 export interface ApplicationCardProps {
   application: ApplicationWithStatus;
@@ -45,7 +46,7 @@ export function ApplicationCard({ application, className }: ApplicationCardProps
   const router = useRouter();
   const queryClient = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const turnStatus = useTurnStatus(`app-${application.id}`);
+  const turnStatus = useTurnStatus(featureIdForApplication(application.id));
 
   const deploy = useDeployAction({
     targetId: application.id,

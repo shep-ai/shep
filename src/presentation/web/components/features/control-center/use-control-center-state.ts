@@ -27,6 +27,7 @@ import { useAgentEventsContext } from '@/hooks/agent-events-provider';
 import { useDeploymentStatusContext } from '@/hooks/deployment-status-provider';
 import { useSoundAction } from '@/hooks/use-sound-action';
 import { createLogger } from '@/lib/logger';
+import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 
 import {
   mapEventTypeToState,
@@ -610,7 +611,7 @@ export function useControlCenterState(
 
   const handleDeleteApplication = useCallback(
     async (applicationId: string) => {
-      const appNodeId = `app-${applicationId}`;
+      const appNodeId = featureIdForApplication(applicationId);
 
       // Optimistic: remove application node
       beginMutation();

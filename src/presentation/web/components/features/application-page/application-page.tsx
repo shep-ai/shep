@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import type { Application, ApplicationStatus } from '@shepai/core/domain/generated/output';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
 import type { ChatState } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
+import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -143,7 +144,7 @@ function AppTopBar({
 
       {/* ── Live session chip (model + short session id) ─────── */}
       <SessionChip
-        featureId={`app-${application.id}`}
+        featureId={featureIdForApplication(application.id)}
         initialChatState={initialChatState}
         persistedSessionId={application.agentSessionId}
       />
@@ -502,7 +503,7 @@ function StatusPill({
   // the pill reflects real-time reality ("Working" / "Waiting" /
   // "Unread" / "Live") instead of being stuck at the coarse DB
   // snapshot which almost always reads "Idle".
-  const turnStatus = useTurnStatus(`app-${applicationId}`);
+  const turnStatus = useTurnStatus(featureIdForApplication(applicationId));
   const live = deriveAppLiveStatus(persistedStatus, turnStatus, deployReady);
 
   return (
@@ -764,7 +765,7 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
   // ── Agent-running detection ────────────────────────────────
   // While the agent is processing, the dev server is likely being
   // modified — disable preview and auto-restart when done.
-  const turnStatus = useTurnStatus(`app-${application.id}`);
+  const turnStatus = useTurnStatus(featureIdForApplication(application.id));
   const agentRunning = turnStatus === 'processing';
   const prevAgentRunningRef = useRef(false);
 
@@ -837,7 +838,7 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
       <ResizableSplit
         left={
           <ChatTab
-            featureId={`app-${application.id}`}
+            featureId={featureIdForApplication(application.id)}
             worktreePath={application.repositoryPath}
             initialAgent={application.agentType}
             initialModel={application.modelOverride}

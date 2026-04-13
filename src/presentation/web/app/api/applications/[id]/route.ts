@@ -14,6 +14,7 @@ import type { GetApplicationUseCase } from '@shepai/core/application/use-cases/a
 import type { GetInteractiveChatStateUseCase } from '@shepai/core/application/use-cases/interactive/get-interactive-chat-state.use-case';
 import type { ChatState } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
 import type { IDeploymentService } from '@shepai/core/application/ports/output/services/deployment-service.interface';
+import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +37,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams): Promi
       const getChatState = resolve<GetInteractiveChatStateUseCase>(
         'GetInteractiveChatStateUseCase'
       );
-      initialChatState = await getChatState.execute({ featureId: `app-${application.id}` });
+      initialChatState = await getChatState.execute({
+        featureId: featureIdForApplication(application.id),
+      });
     } catch {
       initialChatState = undefined;
     }
