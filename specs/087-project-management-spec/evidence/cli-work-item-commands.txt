@@ -1,0 +1,140 @@
+=== shep item --help ===
+Usage: shep item [options] [command]
+
+Manage work items
+
+Options:
+  -h, --help                          display help for command
+
+Commands:
+  ls <project>                        List work items in a project
+  new [options] <project>             Create a new work item
+  relate [options] <source> <target>  Create a relation between two work items
+  export [options] <project>          Export work items as CSV
+  help [command]                      display help for command
+
+=== shep item new --help ===
+Usage: shep item new [options] <project>
+
+Create a new work item
+
+Arguments:
+  project                          Project slug or identifier prefix
+
+Options:
+  -t, --title <title>              Work item title
+  -p, --priority <priority>        Priority (none, low, medium, high, urgent)
+  -d, --description <description>  Work item description
+  --parent <identifier>            Parent work item identifier (e.g. PROJ-42)
+  -h, --help                       display help for command
+
+=== shep item ls --help ===
+Usage: shep item ls [options] <project>
+
+List work items in a project
+
+Arguments:
+  project     Project slug or identifier prefix
+
+Options:
+  -h, --help  display help for command
+
+=== shep item export --help ===
+Usage: shep item export [options] <project>
+
+Export work items as CSV
+
+Arguments:
+  project               Project slug or identifier prefix
+
+Options:
+  -c, --columns <cols>  Comma-separated columns
+                        (identifier,title,state,priority,labels,estimate,dueDate,startDate,description)
+                        (default:
+                        "identifier,title,state,priority,estimate,dueDate")
+  -o, --output <file>   Write to file instead of stdout
+  -h, --help            display help for command
+
+=== shep item relate --help ===
+Usage: shep item relate [options] <source> <target>
+
+Create a relation between two work items
+
+Arguments:
+  source             Source work item identifier (e.g. PROJ-1)
+  target             Target work item identifier (e.g. PROJ-2)
+
+Options:
+  -t, --type <type>  Relation type (blocking, relates-to, duplicate,
+                     starts-before, finishes-before)
+  -h, --help         display help for command
+
+=== shep item new evidence-test --title 'Setup CI pipeline' --priority high ===
+
+✓ Work item created
+  ID:       EVID-1
+  Title:    Setup CI pipeline
+  Priority: High
+
+
+=== shep item new evidence-test --title 'Write unit tests' --priority medium ===
+
+✓ Work item created
+  ID:       EVID-2
+  Title:    Write unit tests
+  Priority: Medium
+
+
+=== shep item new evidence-test --title 'Fix login bug' --priority urgent ===
+
+✓ Work item created
+  ID:       EVID-3
+  Title:    Fix login bug
+  Priority: Urgent
+
+
+=== shep item ls evidence-test (list items after creation) ===
+
+  Evidence Test — Work Items (3)
+
+  ID          Title                                 State           Priority  
+  EVID-1      Setup CI pipeline                     Backlog         High
+  EVID-2      Write unit tests                      Backlog         Medium
+  EVID-3      Fix login bug                         Backlog         Urgent
+
+
+=== shep item ls demo-project (list items in existing project) ===
+
+  Demo Project — Work Items (5)
+
+  ID          Title                                 State           Priority  
+  DEMO-1      Design database schema                Backlog         None
+  DEMO-2      Build REST API endpoints              Backlog         None
+  DEMO-3      Create frontend dashboard             Backlog         None
+  DEMO-4      Write unit tests                      Backlog         None
+  DEMO-5      Fix critical login bug                Backlog         None
+
+
+=== shep item relate EVID-1 EVID-2 --type blocking ===
+
+✓ Relation created
+  Source: EVID-1
+  Target: EVID-2
+  Type:   Blocking
+
+
+=== shep item export evidence-test ===
+Identifier,Title,State,Priority,Estimate,Due Date
+EVID-1,Setup CI pipeline,Backlog,High,,
+EVID-2,Write unit tests,Backlog,Medium,,
+EVID-3,Fix login bug,Backlog,Urgent,,
+ℹ 3 items exported.
+
+=== shep item export demo-project -c 'identifier,title,state,priority' ===
+Identifier,Title,State,Priority
+DEMO-1,Design database schema,Backlog,None
+DEMO-2,Build REST API endpoints,Backlog,None
+DEMO-3,Create frontend dashboard,Backlog,None
+DEMO-4,Write unit tests,Backlog,None
+DEMO-5,Fix critical login bug,Backlog,None
+ℹ 5 items exported.

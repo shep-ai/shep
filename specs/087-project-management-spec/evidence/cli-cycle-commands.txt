@@ -1,0 +1,99 @@
+=== shep cycle --help ===
+Usage: shep cycle [options] [command]
+
+Manage sprint cycles
+
+Options:
+  -h, --help                            display help for command
+
+Commands:
+  ls <project>                          List cycles in a project
+  new [options] <project>               Create a new cycle
+  show <cycle-id>                       Show cycle details
+  add-items <cycle-id> <item-ids...>    Add work items to a cycle
+  transfer [options] <source> [target]  Transfer incomplete items from one cycle
+                                        to another
+  help [command]                        display help for command
+
+=== shep cycle new --help ===
+Usage: shep cycle new [options] <project>
+
+Create a new cycle
+
+Arguments:
+  project                          Project slug or ID
+
+Options:
+  -n, --name <name>                Cycle name
+  -d, --description <description>  Cycle description
+  -s, --start <date>               Start date (YYYY-MM-DD)
+  -e, --end <date>                 End date (YYYY-MM-DD)
+  -h, --help                       display help for command
+
+=== shep cycle ls --help ===
+Usage: shep cycle ls [options] <project>
+
+List cycles in a project
+
+Arguments:
+  project     Project slug or ID
+
+Options:
+  -h, --help  display help for command
+
+=== shep cycle show --help ===
+Usage: shep cycle show [options] <cycle-id>
+
+Show cycle details
+
+Arguments:
+  cycle-id    Cycle ID
+
+Options:
+  -h, --help  display help for command
+
+=== shep cycle add-items --help ===
+Usage: shep cycle add-items [options] <cycle-id> <item-ids...>
+
+Add work items to a cycle
+
+Arguments:
+  cycle-id    Cycle ID
+  item-ids    Work item IDs to add
+
+Options:
+  -h, --help  display help for command
+
+=== shep cycle transfer --help ===
+Usage: shep cycle transfer [options] <source> [target]
+
+Transfer incomplete items from one cycle to another
+
+Arguments:
+  source       Source cycle ID
+  target       Target cycle ID (omit to remove items from cycle)
+
+Options:
+  -f, --force  Skip confirmation prompt
+  -h, --help   display help for command
+
+=== shep cycle new evidence-test --name 'Sprint 1' --start 2026-04-14 --end 2026-04-28 ===
+
+✓ Cycle created
+  Name:   Sprint 1
+  Status: Upcoming
+  ID:     f6cd3263-8cab-4520-aa4c-dcda944c2d95
+
+
+=== shep cycle ls evidence-test (after creation) ===
+
+  Cycles — Evidence Test (1)
+
+  ID          Name                      Status        Start         End         
+  f6cd3263    Sprint 1                  Upcoming      4/14/2026     4/28/2026
+
+
+=== shep cycle ls demo-project ===
+
+ℹ No cycles found. Create one with: shep cycle new <project>
+

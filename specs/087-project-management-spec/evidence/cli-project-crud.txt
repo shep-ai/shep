@@ -1,0 +1,73 @@
+=== shep project --help ===
+Usage: shep project [options] [command]
+
+Manage projects
+
+Options:
+  -h, --help            display help for command
+
+Commands:
+  ls                    List all projects
+  new [options]         Create a new project
+  show <slug>           Show project details
+  del [options] <slug>  Delete a project
+  help [command]        display help for command
+
+=== shep project new --help ===
+Usage: shep project new [options]
+
+Create a new project
+
+Options:
+  -n, --name <name>                Project name
+  -p, --prefix <prefix>            Identifier prefix (1-5 uppercase letters)
+  -d, --description <description>  Project description
+  -h, --help                       display help for command
+
+=== shep project ls ===
+
+  Projects (1)
+
+  Prefix    Name                          Items     Description                             
+  DEMO      Demo Project                  5         —
+
+
+=== shep project new --name 'Evidence Test' --prefix 'EVID' --description 'CLI evidence capture test project' ===
+
+✓ Project created
+  Name:   Evidence Test
+  Prefix: EVID
+  Slug:   evidence-test
+
+
+=== shep project ls (after creation) ===
+
+  Projects (2)
+
+  Prefix    Name                          Items     Description                             
+  DEMO      Demo Project                  5         —
+  EVID      Evidence Test                 0         CLI evidence capture test project
+
+
+=== shep project show --help ===
+Usage: shep project show [options] <slug>
+
+Show project details
+
+Arguments:
+  slug        Project slug or ID
+
+Options:
+  -h, --help  display help for command
+
+=== shep project del --help ===
+Usage: shep project del [options] <slug>
+
+Delete a project
+
+Arguments:
+  slug         Project slug or ID
+
+Options:
+  -f, --force  Skip confirmation prompt
+  -h, --help   display help for command

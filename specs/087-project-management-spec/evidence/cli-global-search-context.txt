@@ -1,0 +1,85 @@
+=== Global Search: Full-text search use case context ===
+(Global search is a web UI feature accessible via Cmd+K shortcut.
+ It uses the SearchWorkItems FTS5 use case. The CLI demonstrates
+ the underlying ListWorkItems and search-related infrastructure.)
+
+=== All PM commands registered in CLI ===
+Usage: shep [options] [command]
+
+Autonomous AI Native SDLC Platform - Automate the development cycle from idea to
+deploy
+
+Options:
+  -v, --version               Display version number
+  -h, --help                  display help for command
+
+Commands:
+  version                     Display version information
+  settings                    Manage Shep global settings
+  ui [options]                Start the Shep web UI
+  run [options] <agent-name>  Run an AI agent workflow
+  agent                       Manage and view agent runs
+  feat                        Manage features through the SDLC lifecycle
+  repo                        Manage tracked repositories
+  session                     Manage and view agent provider CLI sessions
+  ide [options] <feat-id>     Open a feature worktree in your IDE
+  install [options] [tool]    Install a development tool
+  tools                       Manage development tools
+  project                     Manage projects
+  item                        Manage work items
+  cycle                       Manage sprint cycles
+  intake                      Manage intake triage items
+  notifications|notif         Manage notifications
+  upgrade                     Upgrade Shep CLI to the latest version
+  start [options]             Start the Shep web UI as a background daemon
+  stop                        Stop the running Shep web UI daemon
+  restart [options]           Gracefully restart the Shep web UI daemon (starts
+                              it if not running)
+  status [options]            Show the status of the Shep web UI daemon
+
+=== Demonstrating search-related item listing (same use case as search) ===
+
+  Demo Project — Work Items (5)
+
+  ID          Title                                 State           Priority  
+  DEMO-1      Design database schema                Backlog         None
+  DEMO-2      Build REST API endpoints              Backlog         None
+  DEMO-3      Create frontend dashboard             Backlog         None
+  DEMO-4      Write unit tests                      Backlog         None
+  DEMO-5      Fix critical login bug                Backlog         None
+
+
+=== Demonstrating CSV export (uses same query infrastructure) ===
+Identifier,Title,State,Priority,Estimate,Due Date
+DEMO-1,Design database schema,Backlog,None,,
+DEMO-2,Build REST API endpoints,Backlog,None,,
+DEMO-3,Create frontend dashboard,Backlog,None,,
+DEMO-4,Write unit tests,Backlog,None,,
+DEMO-5,Fix critical login bug,Backlog,None,,
+ℹ 5 items exported.
+
+=== Project show (search result display equivalent) ===
+
+  Project: Demo Project
+
+  Name         Demo Project
+  Prefix       DEMO
+  Slug         demo-project
+  Description  —
+  Items        5
+
+  Timestamps
+  Created  4/13/2026, 2:24:21 PM
+  Updated  4/13/2026, 2:27:52 PM
+
+
+
+  Work Items (5) (5)
+
+  ID          Title                                 State           Priority  
+  DEMO-1      Design database schema                Backlog         None
+  DEMO-2      Build REST API endpoints              Backlog         None
+  DEMO-3      Create frontend dashboard             Backlog         None
+  DEMO-4      Write unit tests                      Backlog         None
+  DEMO-5      Fix critical login bug                Backlog         None
+

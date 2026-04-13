@@ -5,64 +5,280 @@
 
 [1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-project-management-spec[39m
 
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/skip-merge.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 3216[2mms[22m[39m
-     [33m[2m✓[22m[39m undefined-gates-silent-skip: should skip merge silently when approvalGates is undefined [33m 3214[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migrations.test.ts [2m([22m[2m66 tests[22m[2m)[22m[33m 3599[2mms[22m[39m
-       [33m[2m✓[22m[39m should create settings table [33m 363[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/agent-run.repository.test.ts [2m([22m[2m31 tests[22m[2m)[22m[33m 1375[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/pr-merge.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 5091[2mms[22m[39m
-     [33m[2m✓[22m[39m push=true, openPr=true, allowMerge=true → BUG: verifyMerge skipped after gh pr merge [33m 5086[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/smoke.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 6074[2mms[22m[39m
-       [33m[2m✓[22m[39m should create a bare repo and clone with main + feature branch [33m 3307[2mms[22m[39m
-       [33m[2m✓[22m[39m createLocalOnlyHarness: should create a local repo with no remote [33m 2713[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/worktree-git-init.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 2652[2mms[22m[39m
-     [33m[2m✓[22m[39m should not re-initialize an existing git repository [33m 1317[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/push-merge.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 6948[2mms[22m[39m
-     [33m[2m✓[22m[39m push-no-pr-merge: feature branch should be merged into main after push+merge [33m 6946[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/gate-tests.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 7258[2mms[22m[39m
-     [33m[2m✓[22m[39m commit-only-with-gate: should interrupt at merge gate when allowMerge=false [33m 3668[2mms[22m[39m
-     [33m[2m✓[22m[39m push-pr-with-gate: should interrupt at merge gate when allowMerge=false (PR path) [33m 3587[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-repository.repository.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 1280[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-cycle.repository.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 1023[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-feature.repository.test.ts [2m([22m[2m39 tests[22m[2m)[22m[33m 2470[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-settings.repository.test.ts [2m([22m[2m47 tests[22m[2m)[22m[33m 3002[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-pm-module.repository.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 883[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/feature-parent.repository.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 1038[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-notification.repository.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 1126[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-application.repository.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 1536[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/settings/onboarding-to-feature-flow.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 1126[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-intake-item.repository.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 930[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/features/start-feature.use-case.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 709[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-interactive-message.repository.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 849[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/settings/workflow-command-flow.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 846[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-phase-timing.repository.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 1089[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-015.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 280[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-feature-repository.find-by-branch.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 472[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/agents/configure-agent-dev.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 378[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-interactive-session.repository.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 997[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-049.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 507[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/local-merge.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 10800[2mms[22m[39m
-     [33m[2m✓[22m[39m local-merge-no-push: feature branch should be merged into main after node completes [33m 5125[2mms[22m[39m
-     [33m[2m✓[22m[39m no-remote-override-merge: should merge locally when remote unavailable (push+openPr overridden) [33m 3017[2mms[22m[39m
-     [33m[2m✓[22m[39m no-remote-local-merge: should merge locally without any remote [33m 2655[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/settings/onboarding-flow.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 480[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/services/tool-installer.service.test.ts [2m([22m[2m32 tests[22m[2m)[22m[32m 279[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/agent-infrastructure.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 579[2mms[22m[39m
-       [33m[2m✓[22m[39m should have analyze-repository agent with graph factory [33m 433[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/merge-flow.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 476[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/reject-feedback-propagation.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 496[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/merge-flow.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 438[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/evidence-flow.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 484[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/reject-flow.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 341[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/resume-feedback-propagation.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 419[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/legacy-migrations.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 263[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/hitl-approval-flow.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 304[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/resume-after-error-merge.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 413[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/approve-after-failed-rejection.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 268[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/resume-after-error.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 445[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/features/list-features.use-case.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 80[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/approve-flow.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 148[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/gate-configuration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 157[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/skip-merge.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 4264[2mms[22m[39m
+     [33m[2m✓[22m[39m undefined-gates-silent-skip: should skip merge silently when approvalGates is undefined [33m 4259[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/pr-merge.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 4674[2mms[22m[39m
+     [33m[2m✓[22m[39m push=true, openPr=true, allowMerge=true → BUG: verifyMerge skipped after gh pr merge [33m 4668[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/smoke.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 9372[2mms[22m[39m
+       [33m[2m✓[22m[39m should create a bare repo and clone with main + feature branch [33m 5561[2mms[22m[39m
+       [33m[2m✓[22m[39m createLocalOnlyHarness: should create a local repo with no remote [33m 3585[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/push-merge.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 7932[2mms[22m[39m
+     [33m[2m✓[22m[39m push-no-pr-merge: feature branch should be merged into main after push+merge [33m 7927[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/gate-tests.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 21807[2mms[22m[39m
+     [33m[2m✓[22m[39m commit-only-with-gate: should interrupt at merge gate when allowMerge=false [33m 5360[2mms[22m[39m
+     [33m[2m✓[22m[39m push-pr-with-gate: should interrupt at merge gate when allowMerge=false (PR path) [33m 16441[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/worktree-git-init.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 19626[2mms[22m[39m
+     [33m[2m✓[22m[39m should create a non-existent directory recursively and initialize git [33m 646[2mms[22m[39m
+     [33m[2m✓[22m[39m should initialize a non-git directory with git init and initial commit [33m 317[2mms[22m[39m
+     [33m[2m✓[22m[39m should create initial commit for existing git repo with unborn branch (no commits) [33m 340[2mms[22m[39m
+     [33m[2m✓[22m[39m should allow worktree creation after fixing unborn branch repo [33m 844[2mms[22m[39m
+     [33m[2m✓[22m[39m should not re-initialize an existing git repository [33m 12355[2mms[22m[39m
+     [33m[2m✓[22m[39m should create an initial commit with the correct message [33m 1937[2mms[22m[39m
+     [33m[2m✓[22m[39m should allow worktree creation after auto-initialization [33m 1239[2mms[22m[39m
+     [33m[2m✓[22m[39m should include existing files in worktree when initializing a non-git directory (#353) [33m 1946[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/local-merge.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 29512[2mms[22m[39m
+     [33m[2m✓[22m[39m local-merge-no-push: feature branch should be merged into main after node completes [33m 8244[2mms[22m[39m
+     [33m[2m✓[22m[39m no-remote-override-merge: should merge locally when remote unavailable (push+openPr overridden) [33m 16338[2mms[22m[39m
+     [33m[2m✓[22m[39m no-remote-local-merge: should merge locally without any remote [33m 4891[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-application.repository.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 16600[2mms[22m[39m
+       [33m[2m✓[22m[39m creates and retrieves an application by id [33m 637[2mms[22m[39m
+       [33m[2m✓[22m[39m persists optional fields correctly [33m 973[2mms[22m[39m
+       [33m[2m✓[22m[39m finds an application by slug [33m 1180[2mms[22m[39m
+       [33m[2m✓[22m[39m returns null for nonexistent slug [33m 709[2mms[22m[39m
+       [33m[2m✓[22m[39m finds an application by repository path [33m 311[2mms[22m[39m
+       [33m[2m✓[22m[39m returns null for nonexistent path [33m 849[2mms[22m[39m
+       [33m[2m✓[22m[39m matches path with cross-platform normalization (backslashes) [33m 929[2mms[22m[39m
+       [33m[2m✓[22m[39m returns empty array when no applications exist [33m 647[2mms[22m[39m
+       [33m[2m✓[22m[39m returns only non-deleted applications [33m 1228[2mms[22m[39m
+       [33m[2m✓[22m[39m returns applications ordered by created_at ascending [33m 816[2mms[22m[39m
+       [33m[2m✓[22m[39m updates the name field [33m 585[2mms[22m[39m
+       [33m[2m✓[22m[39m updates the status field [33m 968[2mms[22m[39m
+       [33m[2m✓[22m[39m updates additionalPaths as JSON [33m 4940[2mms[22m[39m
+       [33m[2m✓[22m[39m updates updated_at timestamp [33m 358[2mms[22m[39m
+       [33m[2m✓[22m[39m restored application appears in list() [33m 361[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-repository.repository.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 11511[2mms[22m[39m
+       [33m[2m✓[22m[39m should create a repository record [33m 1674[2mms[22m[39m
+       [33m[2m✓[22m[39m should be idempotent for duplicate path (INSERT OR IGNORE) [33m 516[2mms[22m[39m
+       [33m[2m✓[22m[39m should return the existing entity on UNIQUE path conflict [33m 545[2mms[22m[39m
+       [33m[2m✓[22m[39m should return the newly created entity when path is new [33m 5771[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-feature.repository.test.ts [2m([22m[2m39 tests[22m[2m)[22m[33m 19771[2mms[22m[39m
+       [33m[2m✓[22m[39m should create a feature record [33m 602[2mms[22m[39m
+       [33m[2m✓[22m[39m should find feature by ID [33m 881[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly map timestamps back to Date objects [33m 1122[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly parse JSON arrays back [33m 1455[2mms[22m[39m
+       [33m[2m✓[22m[39m should return feature with all fields including optional ones [33m 552[2mms[22m[39m
+       [33m[2m✓[22m[39m should not include optional fields when they are NULL [33m 504[2mms[22m[39m
+       [33m[2m✓[22m[39m should find feature by slug and repository path [33m 915[2mms[22m[39m
+       [33m[2m✓[22m[39m should return null for wrong repository path [33m 533[2mms[22m[39m
+       [33m[2m✓[22m[39m should return null for non-existent slug [33m 582[2mms[22m[39m
+       [33m[2m✓[22m[39m should list all features [33m 1053[2mms[22m[39m
+       [33m[2m✓[22m[39m should return empty array when no features exist [33m 484[2mms[22m[39m
+       [33m[2m✓[22m[39m should filter by repositoryPath [33m 449[2mms[22m[39m
+       [33m[2m✓[22m[39m should filter by lifecycle [33m 574[2mms[22m[39m
+       [33m[2m✓[22m[39m should filter by both repositoryPath and lifecycle [33m 571[2mms[22m[39m
+       [33m[2m✓[22m[39m should update feature fields [33m 5304[2mms[22m[39m
+       [33m[2m✓[22m[39m should update name and description [33m 351[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-settings.repository.test.ts [2m([22m[2m47 tests[22m[2m)[22m[33m 33492[2mms[22m[39m
+       [33m[2m✓[22m[39m should create new settings in database [33m 572[2mms[22m[39m
+       [33m[2m✓[22m[39m should store optional user profile fields [33m 669[2mms[22m[39m
+       [33m[2m✓[22m[39m should handle missing optional user fields [33m 375[2mms[22m[39m
+       [33m[2m✓[22m[39m should store environment configuration [33m 348[2mms[22m[39m
+       [33m[2m✓[22m[39m should store system configuration with boolean as integer [33m 670[2mms[22m[39m
+       [33m[2m✓[22m[39m should enforce singleton constraint (only one settings record) [33m 4029[2mms[22m[39m
+       [33m[2m✓[22m[39m should store timestamps as ISO 8601 strings [33m 6444[2mms[22m[39m
+       [33m[2m✓[22m[39m should return null when settings do not exist [33m 823[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly map system configuration from database [33m 904[2mms[22m[39m
+       [33m[2m✓[22m[39m should parse ISO 8601 timestamps back to Date objects [33m 1065[2mms[22m[39m
+       [33m[2m✓[22m[39m should update existing settings in database [33m 1146[2mms[22m[39m
+       [33m[2m✓[22m[39m should throw error when updating non-existent settings [33m 612[2mms[22m[39m
+       [33m[2m✓[22m[39m should update model configuration [33m 525[2mms[22m[39m
+       [33m[2m✓[22m[39m should update user profile including optional fields [33m 874[2mms[22m[39m
+       [33m[2m✓[22m[39m should allow clearing optional user fields [33m 735[2mms[22m[39m
+       [33m[2m✓[22m[39m should update environment configuration [33m 706[2mms[22m[39m
+       [33m[2m✓[22m[39m should update system configuration [33m 1086[2mms[22m[39m
+       [33m[2m✓[22m[39m should preserve createdAt and update updatedAt [33m 653[2mms[22m[39m
+       [33m[2m✓[22m[39m should initialize settings with featureFlags and load them back [33m 570[2mms[22m[39m
+       [33m[2m✓[22m[39m should initialize settings without featureFlags and load defaults [33m 3434[2mms[22m[39m
+       [33m[2m✓[22m[39m should update featureFlags and persist changes [33m 2898[2mms[22m[39m
+       [33m[2m✓[22m[39m should initialize settings with preferredLanguage "fr" and load it back [33m 310[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/settings/onboarding-to-feature-flow.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 2119[2mms[22m[39m
+       [33m[2m✓[22m[39m should use all-false defaults when wizard selects nothing [33m 347[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migrations.test.ts [2m([22m[2m66 tests[22m[2m)[22m[33m 40414[2mms[22m[39m
+       [33m[2m✓[22m[39m should create settings table [33m 1844[2mms[22m[39m
+       [33m[2m✓[22m[39m should handle multiple migration runs gracefully [33m 1398[2mms[22m[39m
+       [33m[2m✓[22m[39m should add approval_mode column to agent_runs table [33m 564[2mms[22m[39m
+       [33m[2m✓[22m[39m should default approval columns to NULL for existing rows [33m 486[2mms[22m[39m
+       [33m[2m✓[22m[39m should add spec_path column to features table [33m 327[2mms[22m[39m
+       [33m[2m✓[22m[39m should set schema version to at least 7 [33m 683[2mms[22m[39m
+       [33m[2m✓[22m[39m should add notification channel columns to settings table [33m 606[2mms[22m[39m
+       [33m[2m✓[22m[39m should add notification event type columns to settings table [33m 335[2mms[22m[39m
+       [33m[2m✓[22m[39m should have all notification columns as INTEGER NOT NULL [33m 440[2mms[22m[39m
+       [33m[2m✓[22m[39m should default channel columns to 1 (enabled/opt-out) [33m 467[2mms[22m[39m
+       [33m[2m✓[22m[39m should default event type columns to 1 (enabled) [33m 371[2mms[22m[39m
+       [33m[2m✓[22m[39m should run successfully on a v8 database with existing settings row [33m 708[2mms[22m[39m
+       [33m[2m✓[22m[39m should add worktree_path column to features table [33m 3541[2mms[22m[39m
+       [33m[2m✓[22m[39m should add push column to features table [33m 7192[2mms[22m[39m
+       [33m[2m✓[22m[39m should add user_query column to features table [33m 699[2mms[22m[39m
+       [33m[2m✓[22m[39m should backfill repository_id on features from matching repositories [33m 386[2mms[22m[39m
+       [33m[2m✓[22m[39m should create unique repositories from duplicate feature paths [33m 530[2mms[22m[39m
+       [33m[2m✓[22m[39m should set schema version to at least 15 [33m 419[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly extract last path segment as repository name [33m 598[2mms[22m[39m
+       [33m[2m✓[22m[39m should handle paths without slashes [33m 864[2mms[22m[39m
+       [33m[2m✓[22m[39m creates a repositories row for a feature whose repository_path has no matching row [33m 1039[2mms[22m[39m
+       [33m[2m✓[22m[39m does not duplicate an already-existing repositories row (idempotent) [33m 525[2mms[22m[39m
+       [33m[2m✓[22m[39m sets schema version to latest after migration [33m 430[2mms[22m[39m
+       [33m[2m✓[22m[39m should add feature_flag_skills column as INTEGER NOT NULL DEFAULT 0 [33m 864[2mms[22m[39m
+       [33m[2m✓[22m[39m should add feature_flag_env_deploy column as INTEGER NOT NULL DEFAULT 1 [33m 710[2mms[22m[39m
+       [33m[2m✓[22m[39m should add feature_flag_debug column as INTEGER NOT NULL DEFAULT 0 [33m 524[2mms[22m[39m
+       [33m[2m✓[22m[39m should add ci_max_fix_attempts column as nullable INTEGER [33m 853[2mms[22m[39m
+       [33m[2m✓[22m[39m should add ci_watch_timeout_ms column as nullable INTEGER [33m 628[2mms[22m[39m
+       [33m[2m✓[22m[39m should add ci_log_max_chars column as nullable INTEGER [33m 500[2mms[22m[39m
+       [33m[2m✓[22m[39m should default feature flag columns for existing rows (envDeploy=1, others=0) [33m 682[2mms[22m[39m
+       [33m[2m✓[22m[39m should default CI columns to NULL for existing rows [33m 5523[2mms[22m[39m
+       [33m[2m✓[22m[39m should be idempotent (running twice does not error) [33m 452[2mms[22m[39m
+       [33m[2m✓[22m[39m should bootstrap seeder for database at user_version 20 [33m 427[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/agent-run.repository.test.ts [2m([22m[2m31 tests[22m[2m)[22m[33m 14495[2mms[22m[39m
+       [33m[2m✓[22m[39m should create agent run record [33m 1283[2mms[22m[39m
+       [33m[2m✓[22m[39m should store optional fields as NULL when not provided [33m 490[2mms[22m[39m
+       [33m[2m✓[22m[39m should store all optional fields when provided [33m 1175[2mms[22m[39m
+       [33m[2m✓[22m[39m should store timestamps as unix milliseconds [33m 776[2mms[22m[39m
+       [33m[2m✓[22m[39m should find agent run by ID [33m 967[2mms[22m[39m
+       [33m[2m✓[22m[39m should return null for non-existent ID [33m 5370[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly map timestamps back to Date objects [33m 552[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/verify-merge.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 48012[2mms[22m[39m
+     [33m[2m✓[22m[39m should return true after a true merge (git merge) [33m 5157[2mms[22m[39m
+     [33m[2m✓[22m[39m should return true after a squash merge (git merge --squash) [33m 4943[2mms[22m[39m
+     [33m[2m✓[22m[39m should return false when branch has not been merged [33m 13366[2mms[22m[39m
+     [33m[2m✓[22m[39m should return false when main has extra commits after squash but feature has diverged [33m 4338[2mms[22m[39m
+     [33m[2m✓[22m[39m should return true after squash merge with modified tree when premergeBaseSha provided [33m 4161[2mms[22m[39m
+     [33m[2m✓[22m[39m should return true after squash merge even when local branch is deleted (remote fallback) [33m 16039[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-intake-item.repository.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 7133[2mms[22m[39m
+       [33m[2m✓[22m[39m creates and retrieves an intake item by id [33m 666[2mms[22m[39m
+       [33m[2m✓[22m[39m returns null for nonexistent id [33m 554[2mms[22m[39m
+       [33m[2m✓[22m[39m persists optional fields correctly [33m 385[2mms[22m[39m
+       [33m[2m✓[22m[39m returns empty array when no intake items exist [33m 399[2mms[22m[39m
+       [33m[2m✓[22m[39m returns only non-deleted items for the project [33m 498[2mms[22m[39m
+       [33m[2m✓[22m[39m filters by status when provided [33m 740[2mms[22m[39m
+       [33m[2m✓[22m[39m updates status to Accepted with resulting work item id [33m 1010[2mms[22m[39m
+       [33m[2m✓[22m[39m updates status to Declined with reason [33m 753[2mms[22m[39m
+       [33m[2m✓[22m[39m updates triage suggestions from AI [33m 1775[2mms[22m[39m
+       [33m[2m✓[22m[39m soft-deletes an intake item so it is no longer returned [33m 348[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-interactive-session.repository.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 8154[2mms[22m[39m
+       [33m[2m✓[22m[39m persists a session record [33m 846[2mms[22m[39m
+       [33m[2m✓[22m[39m returns null for nonexistent ID [33m 404[2mms[22m[39m
+       [33m[2m✓[22m[39m returns the session when found [33m 449[2mms[22m[39m
+       [33m[2m✓[22m[39m returns the most recent session for a feature [33m 588[2mms[22m[39m
+       [33m[2m✓[22m[39m returns empty array when no active sessions [33m 516[2mms[22m[39m
+       [33m[2m✓[22m[39m returns only booting and ready sessions [33m 780[2mms[22m[39m
+       [33m[2m✓[22m[39m updates status without stoppedAt [33m 574[2mms[22m[39m
+       [33m[2m✓[22m[39m sets stoppedAt when provided [33m 2318[2mms[22m[39m
+       [33m[2m✓[22m[39m updates lastActivityAt timestamp [33m 458[2mms[22m[39m
+       [33m[2m✓[22m[39m marks all booting and ready sessions as stopped [33m 422[2mms[22m[39m
+       [33m[2m✓[22m[39m returns 0 when no active sessions [33m 371[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-pm-module.repository.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 7814[2mms[22m[39m
+       [33m[2m✓[22m[39m creates and retrieves a module by id [33m 612[2mms[22m[39m
+       [33m[2m✓[22m[39m returns null for nonexistent id [33m 721[2mms[22m[39m
+       [33m[2m✓[22m[39m persists optional fields correctly [33m 407[2mms[22m[39m
+       [33m[2m✓[22m[39m returns only non-deleted modules for the project [33m 1143[2mms[22m[39m
+       [33m[2m✓[22m[39m updates name and status [33m 746[2mms[22m[39m
+       [33m[2m✓[22m[39m updates lead and dates [33m 723[2mms[22m[39m
+       [33m[2m✓[22m[39m soft-deletes a module so it is no longer returned [33m 1742[2mms[22m[39m
+       [33m[2m✓[22m[39m adds work items to a module and retrieves them [33m 547[2mms[22m[39m
+       [33m[2m✓[22m[39m removes a work item from a module [33m 591[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-notification.repository.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 8117[2mms[22m[39m
+       [33m[2m✓[22m[39m creates and retrieves a notification by id [33m 761[2mms[22m[39m
+       [33m[2m✓[22m[39m returns null for nonexistent id [33m 568[2mms[22m[39m
+       [33m[2m✓[22m[39m persists optional fields correctly [33m 464[2mms[22m[39m
+       [33m[2m✓[22m[39m returns empty array when no notifications exist [33m 388[2mms[22m[39m
+       [33m[2m✓[22m[39m returns non-archived notifications for recipient [33m 391[2mms[22m[39m
+       [33m[2m✓[22m[39m filters by unread only [33m 498[2mms[22m[39m
+       [33m[2m✓[22m[39m filters by project id [33m 668[2mms[22m[39m
+       [33m[2m✓[22m[39m respects limit parameter [33m 378[2mms[22m[39m
+       [33m[2m✓[22m[39m marks a notification as read [33m 1684[2mms[22m[39m
+       [33m[2m✓[22m[39m marks all unread notifications as read for recipient [33m 616[2mms[22m[39m
+       [33m[2m✓[22m[39m archives a notification so it no longer appears in list [33m 515[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/feature-parent.repository.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 8765[2mms[22m[39m
+       [33m[2m✓[22m[39m should apply migration v19 and reach the latest schema version [33m 930[2mms[22m[39m
+       [33m[2m✓[22m[39m should add parent_id column to features table [33m 628[2mms[22m[39m
+       [33m[2m✓[22m[39m should create idx_features_parent_id index on features table [33m 547[2mms[22m[39m
+       [33m[2m✓[22m[39m should persist parentId when set on a feature [33m 530[2mms[22m[39m
+       [33m[2m✓[22m[39m should persist NULL when updating a feature to remove parentId [33m 1123[2mms[22m[39m
+       [33m[2m✓[22m[39m should return all direct children of a parent feature [33m 548[2mms[22m[39m
+       [33m[2m✓[22m[39m should return empty array when feature has no children [33m 872[2mms[22m[39m
+       [33m[2m✓[22m[39m should return empty array for a non-existent parent ID [33m 1862[2mms[22m[39m
+       [33m[2m✓[22m[39m should return fully-hydrated Feature objects (not partial) [33m 580[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-phase-timing.repository.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 8636[2mms[22m[39m
+       [33m[2m✓[22m[39m should save a phase timing record [33m 891[2mms[22m[39m
+       [33m[2m✓[22m[39m should save timing with completedAt and durationMs [33m 608[2mms[22m[39m
+       [33m[2m✓[22m[39m should store timestamps as unix milliseconds [33m 401[2mms[22m[39m
+       [33m[2m✓[22m[39m should update completedAt and durationMs [33m 497[2mms[22m[39m
+       [33m[2m✓[22m[39m should update only completedAt when durationMs is not provided [33m 526[2mms[22m[39m
+       [33m[2m✓[22m[39m should find all timings for an agent run [33m 716[2mms[22m[39m
+       [33m[2m✓[22m[39m should return empty array when no timings exist for run [33m 853[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly map timestamps back to Date objects [33m 659[2mms[22m[39m
+       [33m[2m✓[22m[39m should not include optional fields when they are NULL [33m 1730[2mms[22m[39m
+       [33m[2m✓[22m[39m should update waitingApprovalAt [33m 496[2mms[22m[39m
+       [33m[2m✓[22m[39m should update both waitingApprovalAt and approvalWaitMs [33m 656[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-cycle.repository.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 8179[2mms[22m[39m
+       [33m[2m✓[22m[39m creates and retrieves a cycle by id [33m 775[2mms[22m[39m
+       [33m[2m✓[22m[39m returns null for nonexistent id [33m 604[2mms[22m[39m
+       [33m[2m✓[22m[39m persists optional fields correctly [33m 413[2mms[22m[39m
+       [33m[2m✓[22m[39m returns empty array when no cycles exist [33m 575[2mms[22m[39m
+       [33m[2m✓[22m[39m returns the active cycle for a project [33m 938[2mms[22m[39m
+       [33m[2m✓[22m[39m returns null when no active cycle exists [33m 742[2mms[22m[39m
+       [33m[2m✓[22m[39m updates name and status [33m 861[2mms[22m[39m
+       [33m[2m✓[22m[39m updates dates [33m 1763[2mms[22m[39m
+       [33m[2m✓[22m[39m soft-deletes a cycle so it is no longer returned [33m 613[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-interactive-message.repository.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 1010[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/settings/onboarding-flow.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 7583[2mms[22m[39m
+     [33m[2m✓[22m[39m should report onboarding incomplete on a fresh database [33m 1388[2mms[22m[39m
+     [33m[2m✓[22m[39m should report onboarding complete after wizard finishes [33m 3532[2mms[22m[39m
+     [33m[2m✓[22m[39m should persist onboarding_complete=true so subsequent runs skip the wizard [33m 1452[2mms[22m[39m
+     [33m[2m✓[22m[39m should persist all wizard choices to the database [33m 1203[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-049.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 8384[2mms[22m[39m
+     [33m[2m✓[22m[39m should add user_preferred_language column to settings table [33m 1144[2mms[22m[39m
+     [33m[2m✓[22m[39m should have TEXT type with NOT NULL constraint [33m 3914[2mms[22m[39m
+     [33m[2m✓[22m[39m should default to "en" for new rows [33m 1468[2mms[22m[39m
+     [33m[2m✓[22m[39m should be idempotent (running migration twice does not throw) [33m 1770[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/features/start-feature.use-case.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 8464[2mms[22m[39m
+     [33m[2m✓[22m[39m should persist a Pending feature with no agent spawn [33m 1535[2mms[22m[39m
+     [33m[2m✓[22m[39m should transition Pending feature to Requirements and spawn agent [33m 3233[2mms[22m[39m
+     [33m[2m✓[22m[39m should transition fast Pending feature to Implementation [33m 1507[2mms[22m[39m
+     [33m[2m✓[22m[39m should transition to Blocked when parent is not in POST_IMPLEMENTATION [33m 1165[2mms[22m[39m
+     [33m[2m✓[22m[39m should transition to Requirements when parent IS in POST_IMPLEMENTATION [33m 480[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/settings/workflow-command-flow.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 8818[2mms[22m[39m
+       [33m[2m✓[22m[39m should enable individual approval gates with flags [33m 1281[2mms[22m[39m
+       [33m[2m✓[22m[39m should enable all gates with --allow-all [33m 3625[2mms[22m[39m
+       [33m[2m✓[22m[39m should enable push with --push flag [33m 1457[2mms[22m[39m
+       [33m[2m✓[22m[39m should enable PR with --pr flag [33m 1210[2mms[22m[39m
+       [33m[2m✓[22m[39m should compose multiple flags together [33m 485[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/merge-flow.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 895[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/evidence-flow.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 990[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/reject-feedback-propagation.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1111[2mms[22m[39m
+       [33m[2m✓[22m[39m should store phase="requirements" and propagate feedback through 10 PRD iterations [33m 443[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/agent-infrastructure.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 4879[2mms[22m[39m
+       [33m[2m✓[22m[39m should have analyze-repository agent with graph factory [33m 1462[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/hitl-approval-flow.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1002[2mms[22m[39m
+     [33m[2m✓[22m[39m should pause at requirements, plan, and implement gates then complete on final resume [33m 660[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/resume-after-error.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1368[2mms[22m[39m
+     [33m[2m✓[22m[39m should resume from failed implement — not restart from analyze [33m 600[2mms[22m[39m
+     [33m[2m✓[22m[39m should handle multiple resume attempts — fail, resume-fail-again, resume-succeed [33m 430[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/resume-after-error-merge.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1764[2mms[22m[39m
+     [33m[2m✓[22m[39m should resume from failed merge — not restart from analyze [33m 672[2mms[22m[39m
+     [33m[2m✓[22m[39m should resume from failed merge with gated merge (allowMerge=false) — should interrupt after recovery [33m 315[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/reject-flow.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1666[2mms[22m[39m
+     [33m[2m✓[22m[39m should reject requirements, re-execute, and interrupt again (Test 2) [33m 323[2mms[22m[39m
+     [33m[2m✓[22m[39m should handle 7+ consecutive plan rejections then approve [33m 364[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/merge-flow.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 2139[2mms[22m[39m
+       [33m[2m✓[22m[39m should commit, push, create PR via agent, and set lifecycle to Review [33m 478[2mms[22m[39m
+       [33m[2m✓[22m[39m should fail when localMergeSquash throws an error [33m 445[2mms[22m[39m
+       [33m[2m✓[22m[39m should preserve prUrl when already set (idempotent resume) [33m 325[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/resume-feedback-propagation.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2245[2mms[22m[39m
+       [33m[2m✓[22m[39m should include user rejection feedback in requirements prompt after error reject [33m 629[2mms[22m[39m
+       [33m[2m✓[22m[39m should include user rejection feedback in merge prompt after error reject [33m 759[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/agents/configure-agent-dev.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 3666[2mms[22m[39m
+     [33m[2m✓[22m[39m should persist agent.type = "dev" without binary validation errors [33m 332[2mms[22m[39m
+     [33m[2m✓[22m[39m should read back agent.type = "dev" from the database after configure [33m 340[2mms[22m[39m
+     [33m[2m✓[22m[39m should read back authMethod after configure with dev type [33m 393[2mms[22m[39m
+     [33m[2m✓[22m[39m should not call the binary validator when configuring dev type [33m 943[2mms[22m[39m
+     [33m[2m✓[22m[39m should overwrite a previously configured agent type with "dev" [33m 1658[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-feature-repository.find-by-branch.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 10554[2mms[22m[39m
+     [33m[2m✓[22m[39m should return feature when branch matches [33m 5921[2mms[22m[39m
+     [33m[2m✓[22m[39m should return null when branch does not match [33m 377[2mms[22m[39m
+     [33m[2m✓[22m[39m should scope results to repositoryPath (different repos, same branch name) [33m 362[2mms[22m[39m
+     [33m[2m✓[22m[39m should exclude soft-deleted features (deleted_at IS NOT NULL) [33m 1053[2mms[22m[39m
+     [33m[2m✓[22m[39m should normalize repository path with forward slashes [33m 1154[2mms[22m[39m
+     [33m[2m✓[22m[39m should return correct Feature entity with all mapped fields [33m 1479[2mms[22m[39m
 [90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould emit status change events after cache is seeded
 [22m[39m[SSE] emit: agent_completed for "Test Feature"
 
@@ -72,10 +288,10 @@
 [90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould emit phase completion events for new completed phases
 [22m[39m[SSE] emit: phase_completed for "Test Feature" (analyze)
 
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/services/tool-installer.service.test.ts [2m([22m[2m32 tests[22m[2m)[22m[33m 422[2mms[22m[39m
 [90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould support multiple concurrent SSE clients independently
 [22m[39m[SSE] emit: agent_completed for "Test Feature"
 
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/sqlite-migration-storage.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 30[2mms[22m[39m
 [90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould support multiple concurrent SSE clients independently
 [22m[39m[SSE] emit: agent_completed for "Test Feature"
 
@@ -97,62 +313,163 @@
 [90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould gracefully handle DI container errors during poll
 [22m[39m[SSE] emit: agent_completed for "Test Feature"
 
- [32m✓[39m [30m[43m node [49m[39m tests/integration/api/agent-events-sse.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 180[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/sessions/claude-code-session.repository.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 89[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.getFailureLogs.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 10[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/git-pr-ci-watch.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/feedback-and-timing.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 94[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/prd-approval-iterations.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 39[2mms[22m[39m
-[2026-04-13T16:22:49.826Z] [repair:spec.yaml] Repairing spec.yaml (attempt 1)
-[2026-04-13T16:22:49.828Z] [repair:spec.yaml] Repair complete (5 chars)
-[2026-04-13T16:22:49.829Z] [validate:spec.yaml] Validating spec.yaml
-[2026-04-13T16:22:49.832Z] [validate:spec.yaml] ERROR: YAML parse error in spec.yaml: unexpected end of the stream within a flow collection (15:1)
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/api/agent-events-sse.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 762[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/sessions/claude-code-session.repository.test.ts [2m([22m[2m23 tests[22m[2m)[22m[33m 343[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/legacy-migrations.test.ts [2m([22m[2m18 tests[22m[2m)[22m[33m 1915[2mms[22m[39m
+       [33m[2m✓[22m[39m should produce a schema that is a subset of the full migration system [33m 1091[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/features/list-features.use-case.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 532[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/approve-after-failed-rejection.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1028[2mms[22m[39m
+     [33m[2m✓[22m[39m requirements: reject → fail during re-exec → approve → should continue to plan without re-interrupting [33m 571[2mms[22m[39m
+     [33m[2m✓[22m[39m merge: reject → fail during re-exec → approve → should complete without re-interrupting [33m 331[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/gate-configuration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1104[2mms[22m[39m
+     [33m[2m✓[22m[39m should run fully without interrupts when approvalGates is undefined (Test 7) [33m 462[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-015.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 2998[2mms[22m[39m
+     [33m[2m✓[22m[39m should set LATEST_SCHEMA_VERSION to 36 [33m 1193[2mms[22m[39m
+     [33m[2m✓[22m[39m should add all 5 new columns to settings table [33m 600[2mms[22m[39m
+     [33m[2m✓[22m[39m should set onboarding_complete=1 on existing settings rows [33m 525[2mms[22m[39m
+     [33m[2m✓[22m[39m should have DEFAULT 0 for all new columns [33m 679[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/sqlite-migration-storage.test.ts [2m([22m[2m22 tests[22m[2m)[22m[33m 355[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/approve-flow.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1124[2mms[22m[39m
+     [33m[2m✓[22m[39m should approve requirements and continue to research (Test 1) [33m 392[2mms[22m[39m
+     [33m[2m✓[22m[39m should approve plan and continue to implement → end (Test 5) [33m 460[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.getFailureLogs.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/feedback-and-timing.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 468[2mms[22m[39m
+     [33m[2m✓[22m[39m should pass rejection feedback to re-execution prompt (Test 9) [33m 315[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/git-pr-ci-watch.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/prd-approval-iterations.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 134[2mms[22m[39m
+[2026-04-13T16:55:42.683Z] [repair:spec.yaml] Repairing spec.yaml (attempt 1)
+[2026-04-13T16:55:42.684Z] [repair:spec.yaml] Repair complete (5 chars)
+[2026-04-13T16:55:42.686Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-13T16:55:42.690Z] [validate:spec.yaml] ERROR: YAML parse error in spec.yaml: unexpected end of the stream within a flow collection (15:1)
 
  12 |   - React
  13 |   - broken item with : colon ca ...
  14 | openQuestions: [
  15 | 
 ------^
-[2026-04-13T16:22:49.832Z] [validate:spec.yaml] Validating spec.yaml
-[2026-04-13T16:22:49.833Z] [validate:spec.yaml] Validation passed
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/yaml-repair-cycle.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 12[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/verify-merge.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 15028[2mms[22m[39m
-     [33m[2m✓[22m[39m should return true after a true merge (git merge) [33m 3001[2mms[22m[39m
-     [33m[2m✓[22m[39m should return true after a squash merge (git merge --squash) [33m 4308[2mms[22m[39m
-     [33m[2m✓[22m[39m should return false when branch has not been merged [33m 1543[2mms[22m[39m
-     [33m[2m✓[22m[39m should return false when main has extra commits after squash but feature has diverged [33m 2686[2mms[22m[39m
-     [33m[2m✓[22m[39m should return true after squash merge with modified tree when premergeBaseSha provided [33m 2285[2mms[22m[39m
-     [33m[2m✓[22m[39m should return true after squash merge even when local branch is deleted (remote fallback) [33m 1204[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 37829[2mms[22m[39m
-     [33m[2m✓[22m[39m should fetch latest main when upstream has new commits (from feature branch) [33m 5533[2mms[22m[39m
-     [33m[2m✓[22m[39m should fast-forward main when on the main branch (uses pull) [33m 3925[2mms[22m[39m
-     [33m[2m✓[22m[39m should succeed silently when main is already up-to-date [33m 2034[2mms[22m[39m
-     [33m[2m✓[22m[39m should throw SYNC_FAILED when on main and local main has diverged from remote [33m 2584[2mms[22m[39m
-     [33m[2m✓[22m[39m should succeed from feature branch even when local main has diverged (fetches origin/main only) [33m 1482[2mms[22m[39m
-     [33m[2m✓[22m[39m should be idempotent — calling sync twice succeeds [33m 1031[2mms[22m[39m
-     [33m[2m✓[22m[39m should successfully rebase feature branch onto main with no conflicts [33m 1240[2mms[22m[39m
-     [33m[2m✓[22m[39m should throw REBASE_CONFLICT when rebase encounters conflicting changes [33m 1045[2mms[22m[39m
-     [33m[2m✓[22m[39m should throw GIT_ERROR when worktree has uncommitted changes [33m 642[2mms[22m[39m
-     [33m[2m✓[22m[39m should throw BRANCH_NOT_FOUND when feature branch does not exist [33m 640[2mms[22m[39m
-     [33m[2m✓[22m[39m should leave worktree clean after aborting a conflicted rebase [33m 1132[2mms[22m[39m
-     [33m[2m✓[22m[39m should produce linear history after successful rebase [33m 1277[2mms[22m[39m
-     [33m[2m✓[22m[39m should succeed when feature branch is already up-to-date with main (no-op rebase) [33m 989[2mms[22m[39m
-     [33m[2m✓[22m[39m getConflictedFiles should return conflicted file paths during a rebase conflict [33m 1180[2mms[22m[39m
-     [33m[2m✓[22m[39m stageFiles + rebaseContinue should complete rebase after manual conflict resolution [33m 1327[2mms[22m[39m
-     [33m[2m✓[22m[39m rebaseAbort should restore branch to pre-rebase state [33m 1155[2mms[22m[39m
-     [33m[2m✓[22m[39m should stash uncommitted changes and return true [33m 698[2mms[22m[39m
-     [33m[2m✓[22m[39m should return false when working directory is clean [33m 660[2mms[22m[39m
-     [33m[2m✓[22m[39m should include the stash message in git stash list output [33m 735[2mms[22m[39m
-     [33m[2m✓[22m[39m should stash pop and restore uncommitted changes [33m 732[2mms[22m[39m
-     [33m[2m✓[22m[39m should stash drop and discard the stash entry [33m 736[2mms[22m[39m
-     [33m[2m✓[22m[39m should preserve uncommitted changes across a clean rebase (stash → sync → rebase → pop) [33m 1327[2mms[22m[39m
-     [33m[2m✓[22m[39m should skip stash when working directory is clean and rebase normally [33m 1259[2mms[22m[39m
-     [33m[2m✓[22m[39m should preserve uncommitted changes even when rebase has conflicts that are manually resolved [33m 1381[2mms[22m[39m
-     [33m[2m✓[22m[39m should restore uncommitted changes even after a failed rebase that is aborted [33m 1538[2mms[22m[39m
-     [33m[2m✓[22m[39m should handle unstaged modifications in stash-rebase-pop flow [33m 1550[2mms[22m[39m
+[2026-04-13T16:55:42.690Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-13T16:55:42.691Z] [validate:spec.yaml] Validation passed
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/yaml-repair-cycle.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [31m❯[39m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts [2m([22m[2m26 tests[22m[2m | [22m[31m11 failed[39m[2m)[22m[33m 300904[2mms[22m[39m
+     [33m[2m✓[22m[39m should fetch latest main when upstream has new commits (from feature branch) [33m 8258[2mms[22m[39m
+[31m     [31m×[31m should fast-forward main when on the main branch (uses pull)[39m[33m 11249[2mms[22m[39m
+     [33m[2m✓[22m[39m should succeed silently when main is already up-to-date [33m 7116[2mms[22m[39m
+     [33m[2m✓[22m[39m should throw SYNC_FAILED when on main and local main has diverged from remote [33m 15491[2mms[22m[39m
+     [33m[2m✓[22m[39m should succeed from feature branch even when local main has diverged (fetches origin/main only) [33m 10281[2mms[22m[39m
+[31m     [31m×[31m should be idempotent — calling sync twice succeeds[39m[33m 10115[2mms[22m[39m
+[31m     [31m×[31m should successfully rebase feature branch onto main with no conflicts[39m[33m 10107[2mms[22m[39m
+[31m     [31m×[31m should throw REBASE_CONFLICT when rebase encounters conflicting changes[39m[33m 11858[2mms[22m[39m
+     [33m[2m✓[22m[39m should throw GIT_ERROR when worktree has uncommitted changes [33m 8668[2mms[22m[39m
+     [33m[2m✓[22m[39m should throw BRANCH_NOT_FOUND when feature branch does not exist [33m 2536[2mms[22m[39m
+     [33m[2m✓[22m[39m should leave worktree clean after aborting a conflicted rebase [33m 3502[2mms[22m[39m
+     [33m[2m✓[22m[39m should produce linear history after successful rebase [33m 4158[2mms[22m[39m
+     [33m[2m✓[22m[39m should succeed when feature branch is already up-to-date with main (no-op rebase) [33m 2310[2mms[22m[39m
+     [33m[2m✓[22m[39m getConflictedFiles should return conflicted file paths during a rebase conflict [33m 9350[2mms[22m[39m
+     [33m[2m✓[22m[39m stageFiles + rebaseContinue should complete rebase after manual conflict resolution [33m 32405[2mms[22m[39m
+[31m     [31m×[31m rebaseAbort should restore branch to pre-rebase state[39m[33m 14347[2mms[22m[39m
+[31m     [31m×[31m should stash uncommitted changes and return true[39m[33m 11648[2mms[22m[39m
+[31m     [31m×[31m should return false when working directory is clean[39m[33m 10337[2mms[22m[39m
+[31m     [31m×[31m should include the stash message in git stash list output[39m[33m 37281[2mms[22m[39m
+[31m     [31m×[31m should stash pop and restore uncommitted changes[39m[33m 23266[2mms[22m[39m
+[31m     [31m×[31m should stash drop and discard the stash entry[39m[33m 20546[2mms[22m[39m
+[31m     [31m×[31m should preserve uncommitted changes across a clean rebase (stash → sync → rebase → pop)[39m[33m 10027[2mms[22m[39m
+     [33m[2m✓[22m[39m should skip stash when working directory is clean and rebase normally [33m 12072[2mms[22m[39m
+     [33m[2m✓[22m[39m should preserve uncommitted changes even when rebase has conflicts that are manually resolved [33m 6485[2mms[22m[39m
+     [33m[2m✓[22m[39m should restore uncommitted changes even after a failed rebase that is aborted [33m 3134[2mms[22m[39m
+     [33m[2m✓[22m[39m should handle unstaged modifications in stash-rebase-pop flow [33m 3858[2mms[22m[39m
 
-[2m Test Files [22m [1m[32m55 passed[39m[22m[90m (55)[39m
-[2m      Tests [22m [1m[32m667 passed[39m[22m[90m (667)[39m
-[2m   Start at [22m 19:22:35
-[2m   Duration [22m 38.18s[2m (transform 5.50s, setup 1.02s, import 17.37s, tests 126.94s, environment 6ms)[22m
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 11 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
 
+[41m[1m FAIL [22m[49m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts[2m > [22mGitPrService — syncMain (integration)[2m > [22mshould fast-forward main when on the main branch (uses pull)
+[41m[1m FAIL [22m[49m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts[2m > [22mGitPrService — syncMain (integration)[2m > [22mshould be idempotent — calling sync twice succeeds
+[31m[1mError[22m: Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with "hookTimeout".[39m
+[36m [2m❯[22m tests/integration/services/git/git-pr.service.rebase-sync.test.ts:[2m128:3[22m[39m
+    [90m126| [39m  [35mconst[39m dirs[33m:[39m string[] [33m=[39m [][33m;[39m
+    [90m127| [39m
+    [90m128| [39m  [34mbeforeEach[39m([35masync[39m () [33m=>[39m {
+    [90m   | [39m  [31m^[39m
+    [90m129| [39m    [35mconst[39m harness [33m=[39m [35mawait[39m [34mcreateHarness[39m()[33m;[39m
+    [90m130| [39m    bareDir [33m=[39m harness[33m.[39mbareDir[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts[2m > [22mGitPrService — rebaseOnMain (integration)[2m > [22mshould successfully rebase feature branch onto main with no conflicts
+[41m[1m FAIL [22m[49m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts[2m > [22mGitPrService — rebaseOnMain (integration)[2m > [22mshould throw REBASE_CONFLICT when rebase encounters conflicting changes
+[31m[1mError[22m: Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with "hookTimeout".[39m
+[36m [2m❯[22m tests/integration/services/git/git-pr.service.rebase-sync.test.ts:[2m243:3[22m[39m
+    [90m241| [39m  [35mconst[39m dirs[33m:[39m string[] [33m=[39m [][33m;[39m
+    [90m242| [39m
+    [90m243| [39m  [34mbeforeEach[39m([35masync[39m () [33m=>[39m {
+    [90m   | [39m  [31m^[39m
+    [90m244| [39m    [35mconst[39m harness [33m=[39m [35mawait[39m [34mcreateHarness[39m()[33m;[39m
+    [90m245| [39m    bareDir [33m=[39m harness[33m.[39mbareDir[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/14]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts[2m > [22mGitPrService — helper methods (integration)[2m > [22mrebaseAbort should restore branch to pre-rebase state
+[31m[1mError[22m: Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with "hookTimeout".[39m
+[36m [2m❯[22m tests/integration/services/git/git-pr.service.rebase-sync.test.ts:[2m392:3[22m[39m
+    [90m390| [39m  [35mconst[39m dirs[33m:[39m string[] [33m=[39m [][33m;[39m
+    [90m391| [39m
+    [90m392| [39m  [34mbeforeEach[39m([35masync[39m () [33m=>[39m {
+    [90m   | [39m  [31m^[39m
+    [90m393| [39m    [35mconst[39m harness [33m=[39m [35mawait[39m [34mcreateHarness[39m()[33m;[39m
+    [90m394| [39m    bareDir [33m=[39m harness[33m.[39mbareDir[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/14]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts[2m > [22mGitPrService — stash (integration)[2m > [22mshould stash uncommitted changes and return true
+[41m[1m FAIL [22m[49m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts[2m > [22mGitPrService — stash (integration)[2m > [22mshould return false when working directory is clean
+[41m[1m FAIL [22m[49m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts[2m > [22mGitPrService — stash (integration)[2m > [22mshould include the stash message in git stash list output
+[41m[1m FAIL [22m[49m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts[2m > [22mGitPrService — stash (integration)[2m > [22mshould stash pop and restore uncommitted changes
+[41m[1m FAIL [22m[49m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts[2m > [22mGitPrService — stash (integration)[2m > [22mshould stash drop and discard the stash entry
+[31m[1mError[22m: Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with "hookTimeout".[39m
+[36m [2m❯[22m tests/integration/services/git/git-pr.service.rebase-sync.test.ts:[2m507:3[22m[39m
+    [90m505| [39m  [35mconst[39m dirs[33m:[39m string[] [33m=[39m [][33m;[39m
+    [90m506| [39m
+    [90m507| [39m  [34mbeforeEach[39m([35masync[39m () [33m=>[39m {
+    [90m   | [39m  [31m^[39m
+    [90m508| [39m    [35mconst[39m harness [33m=[39m [35mawait[39m [34mcreateHarness[39m()[33m;[39m
+    [90m509| [39m    bareDir [33m=[39m harness[33m.[39mbareDir[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/14]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts[2m > [22mGitPrService — stash (integration)[2m > [22mshould include the stash message in git stash list output
+[41m[1m FAIL [22m[49m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts[2m > [22mGitPrService — stash (integration)[2m > [22mshould stash pop and restore uncommitted changes
+[41m[1m FAIL [22m[49m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts[2m > [22mGitPrService — stash (integration)[2m > [22mshould stash drop and discard the stash entry
+[31m[1mError[22m: Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with "hookTimeout".[39m
+[36m [2m❯[22m tests/integration/services/git/git-pr.service.rebase-sync.test.ts:[2m516:3[22m[39m
+    [90m514| [39m  })[33m;[39m
+    [90m515| [39m
+    [90m516| [39m  [34mafterEach[39m([35masync[39m () [33m=>[39m {
+    [90m   | [39m  [31m^[39m
+    [90m517| [39m    [35mfor[39m ([35mconst[39m dir [35mof[39m dirs) {
+    [90m518| [39m      [35mif[39m ([34mexistsSync[39m(dir)) {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/14]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts[2m > [22mGitPrService — stash + rebase + pop flow (integration)[2m > [22mshould preserve uncommitted changes across a clean rebase (stash → sync → rebase → pop)
+[31m[1mError[22m: Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with "hookTimeout".[39m
+[36m [2m❯[22m tests/integration/services/git/git-pr.service.rebase-sync.test.ts:[2m618:3[22m[39m
+    [90m616| [39m  [35mconst[39m dirs[33m:[39m string[] [33m=[39m [][33m;[39m
+    [90m617| [39m
+    [90m618| [39m  [34mbeforeEach[39m([35masync[39m () [33m=>[39m {
+    [90m   | [39m  [31m^[39m
+    [90m619| [39m    [35mconst[39m harness [33m=[39m [35mawait[39m [34mcreateHarness[39m()[33m;[39m
+    [90m620| [39m    bareDir [33m=[39m harness[33m.[39mbareDir[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/14]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m54 passed[39m[22m[90m (55)[39m
+[2m      Tests [22m [1m[31m11 failed[39m[22m[2m | [22m[1m[32m656 passed[39m[22m[90m (667)[39m
+[2m   Start at [22m 19:54:03
+[2m   Duration [22m 302.70s[2m (transform 64.12s, setup 6.25s, import 268.35s, tests 719.07s, environment 21ms)[22m
+
+ ELIFECYCLE  Command failed with exit code 1.

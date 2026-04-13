@@ -1,0 +1,96 @@
+=== shep intake --help ===
+Usage: shep intake [options] [command]
+
+Manage intake triage items
+
+Options:
+  -h, --help              display help for command
+
+Commands:
+  ls [options] <project>  List intake items for a project
+  accept <id>             Accept an intake item and convert it to a work item
+  decline [options] <id>  Decline an intake item with a reason
+  help [command]          display help for command
+
+=== shep intake ls --help ===
+Usage: shep intake ls [options] <project>
+
+List intake items for a project
+
+Arguments:
+  project                Project slug or identifier prefix
+
+Options:
+  -s, --status <status>  Filter by status (Pending, Accepted, Declined,
+                         Duplicate)
+  -h, --help             display help for command
+
+=== shep intake accept --help ===
+Usage: shep intake accept [options] <id>
+
+Accept an intake item and convert it to a work item
+
+Arguments:
+  id          Intake item ID
+
+Options:
+  -h, --help  display help for command
+
+=== shep intake decline --help ===
+Usage: shep intake decline [options] <id>
+
+Decline an intake item with a reason
+
+Arguments:
+  id                     Intake item ID
+
+Options:
+  -r, --reason <reason>  Reason for declining
+  -h, --help             display help for command
+
+=== shep notifications --help ===
+Usage: shep notifications|notif [options] [command]
+
+Manage notifications
+
+Options:
+  -h, --help                display help for command
+
+Commands:
+  ls [options] <recipient>  List notifications
+  help [command]            display help for command
+
+=== shep notifications ls --help ===
+Usage: shep notifications ls [options] <recipient>
+
+List notifications
+
+Arguments:
+  recipient                  Recipient user ID
+
+Options:
+  -p, --project <projectId>  Filter by project ID
+  --unread                   Show only unread notifications
+  -h, --help                 display help for command
+
+=== shep intake ls evidence-test ===
+
+ℹ No intake items found.
+
+
+=== shep intake ls demo-project ===
+
+ℹ No intake items found.
+
+
+=== shep notifications ls default-user ===
+
+ℹ No notifications found.
+
+
+=== shep item export evidence-test ===
+Identifier,Title,State,Priority,Estimate,Due Date
+EVID-1,Setup CI pipeline,Backlog,High,,
+EVID-2,Write unit tests,Backlog,Medium,,
+EVID-3,Fix login bug,Backlog,Urgent,,
+ℹ 3 items exported.
