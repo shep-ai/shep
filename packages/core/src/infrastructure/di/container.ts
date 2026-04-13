@@ -253,6 +253,12 @@ import { UploadAttachmentUseCase } from '../../application/use-cases/pm-attachme
 import { ListAttachmentsUseCase } from '../../application/use-cases/pm-attachments/list-attachments.use-case.js';
 import { DeleteAttachmentUseCase } from '../../application/use-cases/pm-attachments/delete-attachment.use-case.js';
 
+// Epic use cases
+import { CreateEpicUseCase } from '../../application/use-cases/epics/create-epic.use-case.js';
+import { ListEpicsUseCase } from '../../application/use-cases/epics/list-epics.use-case.js';
+import { UpdateEpicUseCase } from '../../application/use-cases/epics/update-epic.use-case.js';
+import { DeleteEpicUseCase } from '../../application/use-cases/epics/delete-epic.use-case.js';
+
 // Analytics use cases
 import { GetCycleBurndownUseCase } from '../../application/use-cases/analytics/get-cycle-burndown.use-case.js';
 import { GetProjectBreakdownUseCase } from '../../application/use-cases/analytics/get-project-breakdown.use-case.js';
@@ -784,6 +790,16 @@ export async function initializeContainer(): Promise<typeof container> {
   container.register('ListAttachmentsUseCase', { useToken: ListAttachmentsUseCase });
   container.registerSingleton(DeleteAttachmentUseCase);
   container.register('DeleteAttachmentUseCase', { useToken: DeleteAttachmentUseCase });
+
+  // Epic use cases
+  container.registerSingleton(CreateEpicUseCase);
+  container.register('CreateEpicUseCase', { useToken: CreateEpicUseCase });
+  container.registerSingleton(ListEpicsUseCase);
+  container.register('ListEpicsUseCase', { useToken: ListEpicsUseCase });
+  container.registerSingleton(UpdateEpicUseCase);
+  container.register('UpdateEpicUseCase', { useToken: UpdateEpicUseCase });
+  container.registerSingleton(DeleteEpicUseCase);
+  container.register('DeleteEpicUseCase', { useToken: DeleteEpicUseCase });
 
   // Analytics use cases
   container.registerSingleton(GetCycleBurndownUseCase);

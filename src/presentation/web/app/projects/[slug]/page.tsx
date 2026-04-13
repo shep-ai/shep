@@ -5,6 +5,7 @@ import type { ManageWorkItemStatesUseCase } from '@shepai/core/application/use-c
 import type { ManageLabelsUseCase } from '@shepai/core/application/use-cases/labels/manage-labels.use-case';
 import type { ListCyclesUseCase } from '@shepai/core/application/use-cases/cycles/list-cycles.use-case';
 import type { ListModulesUseCase } from '@shepai/core/application/use-cases/modules/list-modules.use-case';
+import type { ListEpicsUseCase } from '@shepai/core/application/use-cases/epics/list-epics.use-case';
 import { ProjectDetailClient } from '@/components/features/projects/project-detail-client';
 
 /** Skip static pre-rendering since we need runtime DI container and server context. */
@@ -28,12 +29,13 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   }
 
   const project = result.project;
-  const [workItems, states, labels, cycles, modules] = await Promise.all([
+  const [workItems, states, labels, cycles, modules, epicsResult] = await Promise.all([
     resolve<ListWorkItemsUseCase>('ListWorkItemsUseCase').execute(project.id),
     resolve<ManageWorkItemStatesUseCase>('ManageWorkItemStatesUseCase').list(project.id),
     resolve<ManageLabelsUseCase>('ManageLabelsUseCase').list(project.id),
     resolve<ListCyclesUseCase>('ListCyclesUseCase').execute(project.id),
     resolve<ListModulesUseCase>('ListModulesUseCase').execute(project.id),
+    resolve<ListEpicsUseCase>('ListEpicsUseCase').execute(project.id),
   ]);
 
   return (
@@ -45,6 +47,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         labels={labels}
         cycles={cycles}
         modules={modules}
+        epics={epicsResult.epics}
       />
     </div>
   );

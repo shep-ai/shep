@@ -14,6 +14,7 @@ import type {
   Label,
   Cycle,
   PmModule,
+  Epic,
 } from '@shepai/core/domain/generated/output';
 import { WorkItemRow } from './work-item-row';
 import { CreateWorkItemDialog } from './create-work-item-dialog';
@@ -25,6 +26,7 @@ import { AnalyticsDashboard } from '@/components/pm/analytics/analytics-dashboar
 import { TimelineViewWrapper } from '@/components/pm/timeline-view/timeline-view-wrapper';
 import { CyclePanel } from '@/components/pm/cycle-panel/cycle-panel';
 import { ModulePanel } from '@/components/pm/module-panel/module-panel';
+import { EpicPanel } from '@/components/pm/epic-panel/epic-panel';
 import { EstimateSettings } from '@/components/pm/estimate-settings/estimate-settings';
 import { updateWorkItem } from '@/app/actions/update-work-item';
 import { listWorkItems } from '@/app/actions/list-work-items';
@@ -40,6 +42,7 @@ export interface ProjectDetailClientProps {
   labels: Label[];
   cycles?: Cycle[];
   modules?: PmModule[];
+  epics?: Epic[];
   className?: string;
 }
 
@@ -52,11 +55,13 @@ export function ProjectDetailClient({
   labels,
   cycles: initialCycles = [],
   modules: initialModules = [],
+  epics: initialEpics = [],
   className,
 }: ProjectDetailClientProps) {
   const [workItems, setWorkItems] = useState<WorkItem[]>(initialWorkItems);
   const [cycles, setCycles] = useState<Cycle[]>(initialCycles);
   const [modules, setModules] = useState<PmModule[]>(initialModules);
+  const [epics, setEpics] = useState<Epic[]>(initialEpics);
   const [groupBy, setGroupBy] = useState<GroupBy>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -276,6 +281,7 @@ export function ProjectDetailClient({
             <CyclePanel projectId={project.id} cycles={cycles} onCyclesChange={setCycles} />
             <ModulePanel projectId={project.id} modules={modules} onModulesChange={setModules} />
           </div>
+          <EpicPanel projectId={project.id} epics={epics} onEpicsChange={setEpics} />
           <AnalyticsDashboard projectId={project.id} cycles={cycles} />
           <EstimateSettings projectId={project.id} currentEstimateType={project.estimateType} />
         </div>
