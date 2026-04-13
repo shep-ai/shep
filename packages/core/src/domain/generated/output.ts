@@ -2057,6 +2057,83 @@ export type SavedView = SoftDeletableEntity & {
    */
   createdBy?: string;
 };
+export enum CycleStatus {
+  Upcoming = 'Upcoming',
+  Active = 'Active',
+  Completed = 'Completed',
+}
+
+/**
+ * A time-boxed iteration (sprint) within a project
+ */
+export type Cycle = SoftDeletableEntity & {
+  /**
+   * Parent project this cycle belongs to
+   */
+  projectId: UUID;
+  /**
+   * Human-readable cycle name (e.g., Sprint 1)
+   */
+  name: string;
+  /**
+   * Optional description of sprint goals
+   */
+  description?: string;
+  /**
+   * Current lifecycle status
+   */
+  status: CycleStatus;
+  /**
+   * Sprint start date
+   */
+  startDate?: any;
+  /**
+   * Sprint end date
+   */
+  endDate?: any;
+};
+export enum ModuleStatus {
+  Backlog = 'Backlog',
+  Planned = 'Planned',
+  InProgress = 'InProgress',
+  Paused = 'Paused',
+  Completed = 'Completed',
+  Cancelled = 'Cancelled',
+}
+
+/**
+ * An epic-like grouping of related work items within a project
+ */
+export type PmModule = SoftDeletableEntity & {
+  /**
+   * Parent project this module belongs to
+   */
+  projectId: UUID;
+  /**
+   * Human-readable module name
+   */
+  name: string;
+  /**
+   * Optional description of module scope and goals
+   */
+  description?: string;
+  /**
+   * Current lifecycle status
+   */
+  status: ModuleStatus;
+  /**
+   * Optional lead/owner for this module
+   */
+  leadId?: string;
+  /**
+   * Module start date
+   */
+  startDate?: any;
+  /**
+   * Module end date
+   */
+  endDate?: any;
+};
 
 /**
  * Single installation suggestion for a tool
@@ -3006,19 +3083,6 @@ export type PrdQuestionnaireData = {
    */
   finalAction: PrdFinalAction;
 };
-export enum CycleStatus {
-  Upcoming = 'Upcoming',
-  Active = 'Active',
-  Completed = 'Completed',
-}
-export enum ModuleStatus {
-  Backlog = 'Backlog',
-  Planned = 'Planned',
-  InProgress = 'InProgress',
-  Paused = 'Paused',
-  Completed = 'Completed',
-  Cancelled = 'Cancelled',
-}
 export enum IntakeStatus {
   Pending = 'Pending',
   Accepted = 'Accepted',

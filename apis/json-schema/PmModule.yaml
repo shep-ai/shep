@@ -1,0 +1,35 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PmModule.yaml
+type: object
+properties:
+  projectId:
+    $ref: UUID.yaml
+    description: Parent project this module belongs to
+  name:
+    type: string
+    description: Human-readable module name
+  description:
+    type: string
+    description: Optional description of module scope and goals
+  status:
+    $ref: ModuleStatus.yaml
+    default: Backlog
+    description: Current lifecycle status
+  leadId:
+    type: string
+    description: Optional lead/owner for this module
+  startDate:
+    type: string
+    format: date-time
+    description: Module start date
+  endDate:
+    type: string
+    format: date-time
+    description: Module end date
+required:
+  - projectId
+  - name
+  - status
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: An epic-like grouping of related work items within a project

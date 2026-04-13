@@ -34,3 +34,5 @@ import "./work-item-type.tsp";
 import "./label.tsp";
 import "./comment.tsp";
 import "./saved-view.tsp";
+import "./cycle.tsp";
+import "./pm-module.tsp";

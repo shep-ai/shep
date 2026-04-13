@@ -1,0 +1,32 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Cycle.yaml
+type: object
+properties:
+  projectId:
+    $ref: UUID.yaml
+    description: Parent project this cycle belongs to
+  name:
+    type: string
+    description: Human-readable cycle name (e.g., Sprint 1)
+  description:
+    type: string
+    description: Optional description of sprint goals
+  status:
+    $ref: CycleStatus.yaml
+    default: Upcoming
+    description: Current lifecycle status
+  startDate:
+    type: string
+    format: date-time
+    description: Sprint start date
+  endDate:
+    type: string
+    format: date-time
+    description: Sprint end date
+required:
+  - projectId
+  - name
+  - status
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: A time-boxed iteration (sprint) within a project

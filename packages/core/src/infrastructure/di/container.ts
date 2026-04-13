@@ -42,6 +42,10 @@ import type { IActivityLogRepository } from '../../application/ports/output/repo
 import { SQLiteActivityLogRepository } from '../repositories/sqlite-activity-log.repository.js';
 import type { IWorkItemRelationRepository } from '../../application/ports/output/repositories/work-item-relation-repository.interface.js';
 import { SQLiteWorkItemRelationRepository } from '../repositories/sqlite-work-item-relation.repository.js';
+import type { ICycleRepository } from '../../application/ports/output/repositories/cycle-repository.interface.js';
+import { SQLiteCycleRepository } from '../repositories/sqlite-cycle.repository.js';
+import type { IPmModuleRepository } from '../../application/ports/output/repositories/pm-module-repository.interface.js';
+import { SQLitePmModuleRepository } from '../repositories/sqlite-pm-module.repository.js';
 
 // Validator interfaces and implementations
 import type { IAgentValidator } from '../../application/ports/output/agents/agent-validator.interface.js';
@@ -360,6 +364,20 @@ export async function initializeContainer(): Promise<typeof container> {
     useFactory: (c) => {
       const database = c.resolve<Database.Database>('Database');
       return new SQLiteWorkItemRelationRepository(database);
+    },
+  });
+
+  container.register<ICycleRepository>('ICycleRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteCycleRepository(database);
+    },
+  });
+
+  container.register<IPmModuleRepository>('IPmModuleRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLitePmModuleRepository(database);
     },
   });
 
