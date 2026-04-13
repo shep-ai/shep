@@ -8,6 +8,7 @@ export type AgentTypeValue =
   | 'codex-cli'
   | 'copilot-cli'
   | 'cursor'
+  | 'cline'
   | 'gemini-cli'
   | 'aider'
   | 'continue'
@@ -98,6 +99,7 @@ const agentTypeIconMap: Record<AgentTypeValue, ComponentType<IconProps>> = {
   'codex-cli': createBrandIcon('/icons/agents/openai.svg', 'Codex CLI'),
   'copilot-cli': createBrandIcon('/icons/agents/copilot.svg', 'Copilot CLI'),
   cursor: createBrandIcon('/icons/agents/cursor.jpeg', 'Cursor'),
+  cline: createBrandIcon('/icons/agents/cline.svg', 'Cline'),
   'gemini-cli': createBrandIcon('/icons/agents/gemini.svg', 'Gemini CLI'),
   aider: createBrandIcon('/icons/agents/aider.png', 'Aider'),
   continue: createBrandIcon('/icons/agents/continue.jpeg', 'Continue'),
@@ -113,6 +115,7 @@ export const agentTypeLabels: Record<AgentTypeValue, string> = {
   'codex-cli': 'Codex CLI',
   'copilot-cli': 'Copilot CLI',
   cursor: 'Cursor',
+  cline: 'Cline',
   'gemini-cli': 'Gemini CLI',
   aider: 'Aider',
   continue: 'Continue',

@@ -516,6 +516,7 @@ export enum AgentType {
   Aider = 'aider',
   Continue = 'continue',
   Cursor = 'cursor',
+  Cline = 'cline',
   OpenRouter = 'openrouter',
   TogetherAi = 'together-ai',
   Ollama = 'ollama',

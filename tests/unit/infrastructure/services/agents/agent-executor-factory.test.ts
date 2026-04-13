@@ -292,7 +292,8 @@ describe('AgentExecutorFactory', () => {
       expect(supported).toContain('openrouter');
       expect(supported).toContain('together-ai');
       expect(supported).toContain('ollama');
-      expect(supported).toHaveLength(9);
+      expect(supported).toContain('cline');
+      expect(supported).toHaveLength(10);
     });
 
     it('should not include unsupported agents', () => {
@@ -320,6 +321,15 @@ describe('AgentExecutorFactory', () => {
       expect(copilotInfo).toBeDefined();
       expect(copilotInfo!.cmd).toBe('copilot');
       expect(copilotInfo!.versionArgs).toEqual(['--version']);
+    });
+
+    it('should include cline entry with cmd cline', () => {
+      const cliInfos = factory.getCliInfo();
+      const clineInfo = cliInfos.find((info) => info.agentType === AgentType.Cline);
+
+      expect(clineInfo).toBeDefined();
+      expect(clineInfo!.cmd).toBe('cline');
+      expect(clineInfo!.versionArgs).toEqual(['version']);
     });
 
     it('should not include SDK agents (openrouter, together-ai, ollama) since they have no CLI binary', () => {
@@ -439,6 +449,20 @@ describe('AgentExecutorFactory', () => {
         'mistralai/Mistral-Small-24B-Instruct-2501',
         'google/gemma-2-27b-it',
         'codellama/CodeLlama-70b-Instruct-hf',
+      ]);
+    });
+
+    it('should return cline model list with 6 models', () => {
+      const models = factory.getSupportedModels(AgentType.Cline);
+
+      expect(models).toHaveLength(6);
+      expect(models).toEqual([
+        'claude-sonnet-4-20250514',
+        'claude-haiku-4-5-20251001',
+        'gpt-4.1',
+        'gpt-4.1-mini',
+        'deepseek-chat',
+        'llama3.2',
       ]);
     });
 

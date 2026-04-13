@@ -23,6 +23,10 @@
           "name": "Cursor",
           "description": "وكيل البرمجة بالذكاء الاصطناعي Cursor"
         },
+        "cline": {
+          "name": "Cline",
+          "description": "Multi-provider agentic coding assistant with full tool use (requires cline CLI)"
+        },
         "devMock": {
           "name": "Dev (Mock)",
           "description": "محاكاة تطوير محلية — لا يتطلب ملف وكيل ثنائي"

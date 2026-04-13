@@ -28,6 +28,7 @@ const AGENT_BINARY_MAP: Partial<Record<AgentType, string>> = {
   'copilot-cli': 'copilot',
   cursor: 'cursor-agent',
   'gemini-cli': 'gemini',
+  cline: 'cline',
 };
 
 /**

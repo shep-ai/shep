@@ -46,6 +46,11 @@ export function createAgentSelectConfig() {
         description: t('tui:prompts.selectAgent.choices.cursor.description'),
       },
       {
+        name: t('tui:prompts.selectAgent.choices.cline.name'),
+        value: AgentType.Cline,
+        description: t('tui:prompts.selectAgent.choices.cline.description'),
+      },
+      {
         name: t('tui:prompts.selectAgent.choices.devMock.name'),
         value: AgentType.Dev,
         description: t('tui:prompts.selectAgent.choices.devMock.description'),

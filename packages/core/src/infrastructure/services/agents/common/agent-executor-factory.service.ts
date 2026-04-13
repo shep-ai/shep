@@ -28,6 +28,7 @@ import { CopilotCliExecutorService } from './executors/copilot-cli-executor.serv
 import { OpenRouterExecutorService } from './executors/openrouter-executor.service.js';
 import { TogetherAiExecutorService } from './executors/together-ai-executor.service.js';
 import { OllamaExecutorService } from './executors/ollama-executor.service.js';
+import { ClineExecutorService } from './executors/cline-executor.service.js';
 import type { SpawnFunction } from './types.js';
 
 /**
@@ -88,6 +89,9 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
       case 'copilot-cli':
         executor = new CopilotCliExecutorService(this.spawn, _authConfig);
         break;
+      case 'cline':
+        executor = new ClineExecutorService(this.spawn);
+        break;
       case 'openrouter':
         executor = new OpenRouterExecutorService(_authConfig.token ?? '');
         break;
@@ -120,6 +124,7 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
       'gemini-cli' as AgentType,
       'codex-cli' as AgentType,
       'copilot-cli' as AgentType,
+      'cline' as AgentType,
       'openrouter' as AgentType,
       'together-ai' as AgentType,
       'ollama' as AgentType,
@@ -133,6 +138,7 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
       { agentType: 'cursor' as AgentType, cmd: 'cursor', versionArgs: ['--version'] },
       { agentType: 'codex-cli' as AgentType, cmd: 'codex', versionArgs: ['--version'] },
       { agentType: 'copilot-cli' as AgentType, cmd: 'copilot', versionArgs: ['--version'] },
+      { agentType: 'cline' as AgentType, cmd: 'cline', versionArgs: ['version'] },
     ];
   }
 
@@ -155,6 +161,8 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
         return CODEX_CLI_MODELS;
       case 'copilot-cli':
         return COPILOT_CLI_MODELS;
+      case 'cline':
+        return CLINE_MODELS;
       case 'openrouter':
         return OPENROUTER_MODELS;
       case 'together-ai':
@@ -274,6 +282,16 @@ const COPILOT_CLI_MODELS = [
   'gpt-5.3-codex',
   'gpt-5.4',
   'gpt-5.4-mini',
+];
+
+// Cline — multi-provider agentic assistant (models depend on configured provider)
+const CLINE_MODELS: string[] = [
+  'claude-sonnet-4-20250514',
+  'claude-haiku-4-5-20251001',
+  'gpt-4.1',
+  'gpt-4.1-mini',
+  'deepseek-chat',
+  'llama3.2',
 ];
 
 // OpenRouter — popular coding-capable models from multiple vendors

@@ -25,6 +25,7 @@ const AGENT_TYPE_OPTIONS = [
   { value: AgentType.CopilotCli, label: 'Copilot CLI' },
   { value: AgentType.Cursor, label: 'Cursor' },
   { value: AgentType.GeminiCli, label: 'Gemini CLI' },
+  { value: AgentType.Cline, label: 'Cline' },
   { value: AgentType.OpenRouter, label: 'OpenRouter' },
   { value: AgentType.TogetherAi, label: 'Together AI' },
   { value: AgentType.Ollama, label: 'Ollama' },

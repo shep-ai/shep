@@ -23,6 +23,10 @@
           "name": "Cursor",
           "description": "AI-агент для кодування Cursor"
         },
+        "cline": {
+          "name": "Cline",
+          "description": "Multi-provider agentic coding assistant with full tool use (requires cline CLI)"
+        },
         "devMock": {
           "name": "Dev (Mock)",
           "description": "Локальна заглушка для розробки — бінарний файл агента не потрібен"

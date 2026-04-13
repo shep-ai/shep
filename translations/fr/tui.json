@@ -23,6 +23,10 @@
           "name": "Cursor",
           "description": "Agent de codage IA Cursor"
         },
+        "cline": {
+          "name": "Cline",
+          "description": "Multi-provider agentic coding assistant with full tool use (requires cline CLI)"
+        },
         "devMock": {
           "name": "Dev (Mock)",
           "description": "Mock de développement local — aucun binaire d'agent requis"

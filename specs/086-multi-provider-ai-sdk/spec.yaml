@@ -134,3 +134,7 @@ rejectionFeedback:
     message: "Add support to local ollama as well"
     phase: "merge"
     timestamp: "2026-04-12T16:17:30.697Z"
+  - iteration: 5
+    message: "The current implementation uses the Vercel AI SDK to call OpenRouter and Together AI as single-shot HTTP endpoints. This means there is no agentic loop — Shep passes a prompt and gets text back, but the model cannot read files, run commands, iterate on code, or take tool actions autonomously.\n\nThis approach is not equivalent to existing CLI agents (Claude Code, Cursor, etc.) where the agent drives the full development loop.\n\nRecommended direction: Integrate Cline as a provider instead. Cline is an agentic coding assistant that supports multiple LLM backends (OpenRouter, Together AI, Anthropic, etc.) and runs a full agentic loop with file system access, terminal execution, and tool use — making it a proper equivalent to Claude Code as an agent within Shep's executor model.\n\nPlease rework the feature to support Cline as an agent type, using its CLI/SDK interface so users can configure any Cline-supported model while retaining full agentic capabilities.\n\n!!! Importnat !!! update merge review evidence !!!"
+    phase: "merge"
+    timestamp: "2026-04-13T07:56:05.466Z"
