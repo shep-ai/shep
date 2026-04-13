@@ -1,0 +1,33 @@
+feature:
+  id: "089-discord-readme-badge"
+  name: "discord-readme-badge"
+  number: 89
+  branch: "feat/089-discord-readme-badge"
+  lifecycle: "research"
+  createdAt: "2026-04-13T20:54:46Z"
+status:
+  phase: "research"
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: "2026-04-13T20:54:46Z"
+  lastUpdatedBy: "feature-agent"
+  completedPhases:
+    - "fast-implement"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-04-13T20:54:46Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []
