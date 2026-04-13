@@ -1,0 +1,184 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: ai-tool-plugin-system
+number: 89
+branch: "feat/089-ai-tool-plugin-system"
+oneLiner: "Pluggable AI-native tool system for integrating external tools (MCP servers, CLIs, libraries) into agentic SDLC workflows"
+userQuery: >
+  I want to be have a feature in shep to plugin ai native tools into the agentic workflows and SDLC and automation,
+  for example if I want to plug in
+  https://github.com/MemPalace/mempalace
+  or
+  https://github.com/alexgreensh/token-optimizer
+  or
+  https://github.com/ruvnet/ruflo
+  or other it would be easy and possible
+summary: >
+  A plugin system that lets users register, configure, and activate external AI-native tools
+  (such as MemPalace, Token Optimizer, Ruflo, or any MCP-compatible tool) into Shep's agentic
+  workflows. Builds on the existing IAgentExecutorProvider, IToolInstallerService, and
+  ISkillInjectorService patterns to provide a unified plugin registry with lifecycle hooks,
+  per-feature activation, and automatic injection into agent execution contexts.
+phase: "Analysis"
+sizeEstimate: "L"
+
+# Relationships
+relatedFeatures: []
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "tsyringe (DI)"
+  - "LangGraph (workflow orchestration)"
+  - "SQLite (persistence)"
+  - "Model Context Protocol (MCP)"
+  - "Next.js (web UI)"
+  - "Commander.js (CLI)"
+  - "shadcn/ui (component library)"
+
+relatedLinks:
+  - title: "MemPalace - Local AI memory system with MCP server"
+    url: "https://github.com/MemPalace/mempalace"
+  - title: "Token Optimizer - Token waste reduction and context management"
+    url: "https://github.com/alexgreensh/token-optimizer"
+  - title: "Ruflo - Multi-agent AI orchestration framework with MCP"
+    url: "https://github.com/ruvnet/ruflo"
+  - title: "Model Context Protocol specification"
+    url: "https://modelcontextprotocol.io"
+
+# Open questions (must be resolved before implementation)
+openQuestions:
+  - "Should plugins be scoped globally or per-repository? The existing skill injection is global, but tools like MemPalace benefit from per-project initialization."
+  - "How should plugins that require external runtimes (e.g., Python for MemPalace) handle runtime detection and installation?"
+  - "Should the plugin system support lifecycle hooks into the LangGraph workflow (pre-node, post-node) or only inject tools into agent execution contexts?"
+  - "What is the security model for third-party plugins? Should there be a trust/sandboxing mechanism?"
+
+# Markdown content (the actual spec)
+content: |
+  ## Problem Statement
+
+  Shep's agentic SDLC workflows currently have limited extensibility for external AI-native tools. While the
+  platform has a tool installer service (for CLI tools like git, gh, Claude Code) and a skill injector service
+  (for agent prompt extensions), there is no unified mechanism to:
+
+  1. **Discover and register** third-party AI tools (memory systems, token optimizers, specialized agents, etc.)
+  2. **Configure tool-specific settings** (API keys, initialization parameters, activation per-feature)
+  3. **Inject tools into agent execution contexts** so LangGraph workflow nodes can use them during autonomous execution
+  4. **Manage tool lifecycle** (install, initialize per-project, health-check, update, remove)
+
+  Users who want to enhance their workflows with tools like MemPalace (persistent AI memory), Token Optimizer
+  (context window management), or Ruflo (specialized agent orchestration) currently have no straightforward
+  path to plug these into Shep's autonomous execution pipeline.
+
+  The common integration surface for these tools is the **Model Context Protocol (MCP)** -- all three
+  referenced tools expose MCP server interfaces. This provides a natural standardization point for the
+  plugin system.
+
+  ## Codebase Analysis
+
+  ### Project Structure
+
+  The repository follows Clean Architecture with four layers in `packages/core/src/`:
+
+  | Layer | Path | Purpose |
+  | ----- | ---- | ------- |
+  | Domain | `packages/core/src/domain/` | Core entities, enums, value objects (TypeSpec-generated) |
+  | Application | `packages/core/src/application/` | Use cases, port interfaces (output ports in `ports/output/`) |
+  | Infrastructure | `packages/core/src/infrastructure/` | Implementations: SQLite repos, agent executors, services, DI container |
+  | Presentation | `src/presentation/` | CLI (Commander.js), TUI (Inquirer), Web (Next.js + shadcn/ui) |
+
+  Key directories for this feature:
+
+  - `packages/core/src/application/ports/output/` -- Port interfaces (IToolInstallerService, ISkillInjectorService, IAgentExecutorProvider)
+  - `packages/core/src/infrastructure/services/tool-installer/` -- Tool metadata JSON files and installation logic
+  - `packages/core/src/infrastructure/services/skill-injector/` -- Skill injection into worktrees
+  - `packages/core/src/infrastructure/services/agents/` -- Agent executors and LangGraph workflow
+  - `packages/core/src/infrastructure/di/container.ts` -- DI container wiring (tsyringe)
+  - `tsp/` -- TypeSpec domain model definitions (source of truth for entities/enums)
+  - `src/presentation/cli/commands/` -- CLI command definitions
+  - `src/presentation/web/` -- Next.js web interface with server actions
+
+  ### Architecture Patterns
+
+  **Dependency Injection**: All services resolved via tsyringe IoC container. Port interfaces defined in application layer,
+  implementations registered in infrastructure. Web actions use string token aliases.
+
+  **Agent Executor Abstraction**: `IAgentExecutorFactory` creates executors for different agent types (claude-code, cursor,
+  gemini-cli, copilot-cli, codex-cli, dev). The `IAgentExecutorProvider` resolves the active executor from settings.
+  Each executor accepts `AgentExecutionOptions` which includes `tools`, `disableMcp`, model selection, and timeout.
+
+  **LangGraph Workflow**: The feature agent is a StateGraph with nodes (analyze, requirements, research, plan, implement,
+  evidence, merge) connected by conditional edges. State flows through channels with per-feature flags. Background workers
+  manage process lifecycle with heartbeats and checkpointing.
+
+  **Existing Tool Patterns**:
+  - `IToolInstallerService` -- JSON-based tool metadata, platform-specific install commands, binary verification
+  - `ISkillInjectorService` -- Copy/install skills into worktree `.claude/skills/`, managed via `SkillInjectionConfig` in Settings
+  - `IAgentRegistry` -- Register and discover agent workflow definitions (name, description, factory function)
+
+  **Per-Feature Settings Flow**: Settings propagate through 12 layers from UI to agent state. The plugin system must follow
+  this same pattern for per-feature tool activation.
+
+  ### Relevant Technologies
+
+  - **Model Context Protocol (MCP)**: All three referenced tools (MemPalace, Token Optimizer, Ruflo) expose MCP server
+    interfaces. MCP provides a standardized way for AI tools to expose capabilities as discoverable tools. This is the
+    natural integration protocol for the plugin system.
+  - **TypeSpec**: Domain models must be defined here first, then compiled to TypeScript. Any new entities (Plugin,
+    PluginConfig, PluginStatus) start in `tsp/`.
+  - **tsyringe**: DI container for service registration. New services need both class token and string alias registration.
+  - **LangGraph**: Workflow orchestration. Plugin tools need to be available within node execution contexts.
+  - **SQLite**: Persistence for plugin registry, configuration, and status tracking.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `tsp/` (TypeSpec models) | High | New domain entities: Plugin, PluginConfig, PluginStatus, PluginType enum |
+  | `packages/core/src/domain/` | High | Generated types from TypeSpec compilation |
+  | `packages/core/src/application/ports/output/` | High | New port interfaces: IPluginRegistry, IPluginManager, IPluginExecutionContext |
+  | `packages/core/src/application/use-cases/` | High | New use cases: register-plugin, configure-plugin, activate-plugin, list-plugins, remove-plugin |
+  | `packages/core/src/infrastructure/services/` | High | New plugin service implementations: registry, installer, MCP client adapter, lifecycle manager |
+  | `packages/core/src/infrastructure/di/container.ts` | Medium | Register new services, use cases, and string token aliases |
+  | `packages/core/src/infrastructure/persistence/sqlite/` | Medium | New migration for plugins table, new repository and mapper |
+  | `packages/core/src/infrastructure/services/agents/feature-agent/` | Medium | Inject active plugins into agent execution options per workflow node |
+  | `packages/core/src/infrastructure/services/agents/common/executors/` | Medium | Pass plugin-provided MCP servers/tools to agent executor CLI args |
+  | `src/presentation/cli/commands/` | Medium | New CLI commands: `shep plugin add/remove/list/configure/enable/disable` |
+  | `src/presentation/web/` | Medium | Plugin management UI: list, configure, toggle per-feature |
+  | `packages/core/src/infrastructure/services/tool-installer/` | Low | May extend or reference for plugin runtime dependency installation |
+  | `packages/core/src/infrastructure/services/skill-injector/` | Low | Pattern reference; plugins may coexist with or subsume skill injection |
+  | Settings entity and mapper | Medium | New `plugins` section in Settings for global plugin configuration |
+
+  ## Dependencies
+
+  **Internal Dependencies:**
+  - Existing `IAgentExecutorFactory` and `IAgentExecutorProvider` interfaces (plugin tools injected via execution options)
+  - Existing `IToolInstallerService` pattern (for plugin runtime dependency installation)
+  - Existing `ISkillInjectorService` pattern (for understanding worktree-level injection)
+  - Existing `IAgentRegistry` pattern (for plugin discovery/registration pattern)
+  - Settings service and per-feature settings flow (for plugin activation toggles)
+  - SQLite persistence layer (for plugin registry storage)
+  - LangGraph feature agent state channels (for per-node plugin availability)
+
+  **External Dependencies:**
+  - MCP client library (for connecting to plugin MCP servers) -- likely `@modelcontextprotocol/sdk`
+  - Runtime detection utilities (Python for MemPalace, Node.js for Ruflo, etc.)
+
+  **Referenced Tools (Example Plugins):**
+  - **MemPalace** -- Local AI memory system with 19 MCP tools. Python runtime. Stores conversation histories for cross-session recall.
+  - **Token Optimizer** -- Context window management via lifecycle hooks. Python runtime. Reduces token waste in long-running agent sessions.
+  - **Ruflo** -- Multi-agent orchestration framework with MCP server. Node.js runtime. Provides specialized agent capabilities.
+
+  ## Size Estimate
+
+  **L** (week+) — This feature introduces a new subsystem spanning all four architecture layers:
+  new TypeSpec domain models, new port interfaces, new use cases (5+), new infrastructure services
+  (plugin registry, MCP client adapter, lifecycle manager), new SQLite migration and repository,
+  new CLI commands, and new web UI components. The MCP client integration and per-feature activation
+  flow add significant complexity. The pattern is well-established in the codebase (follows
+  IToolInstallerService and ISkillInjectorService precedents), which reduces risk but not scope.
+
+  ---
+
+  _Generated by feature agent — proceed with research_
