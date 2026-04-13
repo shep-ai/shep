@@ -2,7 +2,7 @@
 # Use the default gitleaks config as the base
 useDefault = true
 
-[[allowlists]]
+[allowlist]
 description = "Allow mock/test tokens in Storybook stories and test files"
 paths = [
   '''\.stories\.tsx$''',
@@ -13,9 +13,6 @@ paths = [
   '''__mocks__''',
   '''\.spec\.ts$''',
 ]
-
-[[allowlists]]
-description = "Allow fake test/placeholder tokens that match common test patterns"
 regexes = [
   '''test-.*-\d+''',
   '''test-token''',
