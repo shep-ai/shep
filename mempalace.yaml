@@ -1,0 +1,90 @@
+wing: cli
+rooms:
+  - name: apis
+    description: Files from apis/
+    keywords:
+      - apis
+      - apis
+  - name: documentation
+    description: Files from docs/
+    keywords:
+      - documentation
+      - docs
+  - name: packages
+    description: Files from packages/
+    keywords:
+      - packages
+      - packages
+  - name: playwright_report
+    description: Files from playwright-report/
+    keywords:
+      - playwright_report
+      - playwright-report
+  - name: scripts
+    description: Files from scripts/
+    keywords:
+      - scripts
+      - scripts
+  - name: planning
+    description: Files from specs/
+    keywords:
+      - planning
+      - specs
+  - name: src
+    description: Files from src/
+    keywords:
+      - src
+      - src
+  - name: storybook_static
+    description: Files from storybook-static/
+    keywords:
+      - storybook_static
+      - storybook-static
+  - name: test_results
+    description: Files from test-results/
+    keywords:
+      - test_results
+      - test-results
+  - name: testing
+    description: Files from tests/
+    keywords:
+      - testing
+      - tests
+  - name: translations
+    description: Files from translations/
+    keywords:
+      - translations
+      - translations
+  - name: tsp
+    description: Files from tsp/
+    keywords:
+      - tsp
+      - tsp
+  - name: types
+    description: Files from types/
+    keywords:
+      - types
+      - types
+  - name: web
+    description: Files from web/
+    keywords:
+      - web
+      - web
+  - name: backend
+    description: Files from api/
+    keywords:
+      - backend
+      - api
+  - name: frontend
+    description: Files from ui/
+    keywords:
+      - frontend
+      - ui
+  - name: design
+    description: Files from assets/
+    keywords:
+      - design
+      - assets
+  - name: general
+    description: Files that don't fit other rooms
+    keywords: []

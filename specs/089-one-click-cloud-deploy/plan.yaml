@@ -347,6 +347,13 @@ content: |
 
   ## Implementation Strategy
 
+  **Clean Architecture** is enforced throughout: the outer layers (presentation, infrastructure)
+  depend only inward, and every new cross-layer call is routed through an application-layer
+  use case. The four layers — domain, application, infrastructure, presentation — correspond
+  to the directories in `packages/core/src/` and `src/presentation/`. New ports live under
+  `application/ports/`; new adapters live under `infrastructure/`. Presentation never imports
+  from `infrastructure/` directly.
+
   **MANDATORY TDD**: every phase with executable code follows RED → GREEN → REFACTOR.
   Foundation phases (TypeSpec, migrations, stubs) ship without tests because they have
   no runtime behavior to assert.

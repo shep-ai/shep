@@ -1755,6 +1755,21 @@ export enum ApplicationStatus {
   Active = 'Active',
   Error = 'Error',
 }
+export enum CloudDeploymentProvider {
+  CloudflarePages = 'CloudflarePages',
+  Vercel = 'Vercel',
+  Netlify = 'Netlify',
+  AwsAmplify = 'AwsAmplify',
+  GcpCloudRun = 'GcpCloudRun',
+}
+export enum CloudDeploymentStatus {
+  NotDeployed = 'NotDeployed',
+  Building = 'Building',
+  Uploading = 'Uploading',
+  Deploying = 'Deploying',
+  Deployed = 'Deployed',
+  Failed = 'Failed',
+}
 
 /**
  * A persistent AI-powered application workspace
@@ -1800,6 +1815,34 @@ export type Application = SoftDeletableEntity & {
    * Persistent agent SDK session ID — set once on first session boot, never changes
    */
   agentSessionId?: string;
+  /**
+   * Git remote URL (e.g. https://github.com/user/repo) once a remote is attached
+   */
+  gitRemoteUrl?: string;
+  /**
+   * Selected cloud deployment provider for this application
+   */
+  cloudDeploymentProvider?: CloudDeploymentProvider;
+  /**
+   * Current lifecycle state of the cloud deployment
+   */
+  cloudDeploymentStatus?: CloudDeploymentStatus;
+  /**
+   * Provider-specific deployment id used to poll status
+   */
+  cloudDeploymentId?: string;
+  /**
+   * Public URL of the most recent successful deployment
+   */
+  cloudDeploymentUrl?: string;
+  /**
+   * Error message from the last failed deployment attempt
+   */
+  cloudDeploymentError?: string;
+  /**
+   * Unix millisecond timestamp of the last deployment attempt (success or failure)
+   */
+  lastDeployedAt?: bigint;
 };
 export enum EstimateType {
   None = 'None',
@@ -3454,6 +3497,12 @@ export type PrdQuestionnaireData = {
    */
   finalAction: PrdFinalAction;
 };
+export enum InteractiveSessionEventType {
+  Booting = 'interactive_session_booting',
+  Ready = 'interactive_session_ready',
+  Stopped = 'interactive_session_stopped',
+  Error = 'interactive_session_error',
+}
 export enum AgentFeature {
   sessionResume = 'session-resume',
   streaming = 'streaming',
