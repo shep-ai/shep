@@ -229,7 +229,7 @@ jobs:
           sudo mv gitleaks /usr/local/bin/
 
       - name: Gitleaks secret scan
-        run: gitleaks detect --source . --verbose --redact --gitleaks-ignore-path .gitleaksignore
+        run: gitleaks detect --source . --verbose --redact --config .gitleaks.toml --gitleaks-ignore-path .gitleaksignore
 
   # ===========================================================================
   # Security: Semgrep SAST
