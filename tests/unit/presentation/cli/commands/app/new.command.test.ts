@@ -39,6 +39,7 @@ function makeApplication(overrides?: Partial<Application>): Application {
     repositoryPath: '/home/user/.shep/projects/todo-app-f3a2c1',
     additionalPaths: [],
     status: ApplicationStatus.Idle,
+    setupComplete: false,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     ...overrides,

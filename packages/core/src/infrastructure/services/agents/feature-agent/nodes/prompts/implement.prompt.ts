@@ -8,6 +8,7 @@
 
 import { readSpecFile } from '../node-helpers.js';
 import type { FeatureAgentState } from '../../state.js';
+import { COMMIT_CO_AUTHOR } from '../../../../git/pr-branding.js';
 
 export interface PhaseTask {
   id: string;
@@ -121,7 +122,9 @@ ${taskSections}
 2. For tasks with TDD guidance: write tests alongside implementation following the hints provided — use them as guidance, not rigid steps
 3. Follow existing codebase conventions for file placement, naming patterns, and architecture layers
 ${verificationBlock}
-5. Commit your work with descriptive conventional commit messages (e.g. \`feat(scope): description\`)
+5. Commit your work with descriptive conventional commit messages and include the Shep Bot co-author trailer:
+   - e.g. \`git commit -m "feat(scope): description" -m "" -m "${COMMIT_CO_AUTHOR}"\`
+   - Do NOT include any other Co-Authored-By trailer (e.g. Claude) — only the Shep Bot trailer above
    - Commit incrementally as you complete logical units of work — do NOT wait until the end
    - Each commit should be a coherent, working unit
    - It is CRITICAL that all implementation code is committed before this phase ends — evidence collection runs next and needs a clean working tree${state.push ? `\n6. Push to remote after committing: \`git push -u origin HEAD\`\n   - Do NOT wait for or watch CI — just push and finish` : ''}

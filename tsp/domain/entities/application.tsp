@@ -59,4 +59,10 @@ model Application extends SoftDeletableEntity {
 
   @doc("Current application status")
   status: ApplicationStatus;
+
+  @doc("Whether the initial setup workflow has completed successfully")
+  setupComplete: boolean;
+
+  @doc("Persistent agent SDK session ID — set once on first session boot, never changes")
+  agentSessionId?: string;
 }

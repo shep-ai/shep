@@ -1,3 +1,18 @@
+# [1.183.0](https://github.com/shep-ai/shep/compare/v1.182.1...v1.183.0) (2026-04-13)
+
+
+### Features
+
+* **web:** applications page, workflow resume, and dark mode polish ([#550](https://github.com/shep-ai/shep/issues/550)) ([f06bd34](https://github.com/shep-ai/shep/commit/f06bd343a04910cc3a5f84867c31b8e5effec068))
+* **agents:** replace claude co-author branding with shep bot ([#548](https://github.com/shep-ai/shep/issues/548)) ([ebd68d3](https://github.com/shep-ai/shep/commit/ebd68d32fcde1d9cfb91cec87adc0eadd6ebf023))
+
+## [1.182.1](https://github.com/shep-ai/shep/compare/v1.182.0...v1.182.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* **api:** handle existing clone destination and upstream remote during github repo import ([#551](https://github.com/shep-ai/shep/issues/551)) ([e6e1577](https://github.com/shep-ai/shep/commit/e6e1577bb9eecf6fcfe977908737d78e738b9b04)), closes [#545](https://github.com/shep-ai/shep/issues/545)
+
 # [1.182.0](https://github.com/shep-ai/shep/compare/v1.181.0...v1.182.0) (2026-04-12)
 
 

@@ -18,6 +18,7 @@ import { Language } from '@shepai/core/domain/generated/output';
 
 const LANGUAGE_OPTIONS = [
   { value: Language.English, label: 'English', nativeName: 'English' },
+  { value: Language.Ukrainian, label: 'Українська', nativeName: 'Українська' },
   { value: Language.Russian, label: 'Русский', nativeName: 'Русский' },
   { value: Language.Portuguese, label: 'Português', nativeName: 'Português' },
   { value: Language.Spanish, label: 'Español', nativeName: 'Español' },

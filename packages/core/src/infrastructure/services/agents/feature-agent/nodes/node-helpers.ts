@@ -26,6 +26,7 @@ import {
 } from '../phase-timing-context.js';
 import { updateNodeLifecycle } from '../lifecycle-context.js';
 import { getLogPrefix, setCurrentPhase } from '../log-context.js';
+import { COMMIT_CO_AUTHOR } from './prompts/pr-branding.js';
 
 /**
  * Create a scoped logger that prefixes messages with the node name.
@@ -407,8 +408,10 @@ export function buildCommitPushBlock(opts: {
     ``,
     `After completing all tasks above:`,
     `1. Stage the changed files: ${fileList} (use \`git add\` with the specific paths)`,
-    `2. Commit with a conventional commit message${opts.skipVerification ? ' using `--no-verify` to skip hooks' : ''} — e.g. \`git commit${opts.skipVerification ? ' --no-verify' : ''} -m "${opts.commitHint}"\``,
+    `2. Commit with a conventional commit message${opts.skipVerification ? ' using `--no-verify` to skip hooks' : ''} and include the Shep Bot co-author trailer:`,
+    `   - e.g. \`git commit${opts.skipVerification ? ' --no-verify' : ''} -m "${opts.commitHint}" -m "" -m "${COMMIT_CO_AUTHOR}"\``,
     `   - The message should accurately describe what changed`,
+    `   - Do NOT include any other Co-Authored-By trailer (e.g. Claude) — only the Shep Bot trailer`,
   ];
   if (opts.push && !opts.skipVerification) {
     lines.push(`3. Run local verification before pushing:`);

@@ -372,9 +372,13 @@ describe('buildFastImplementPrompt', () => {
 
     const prompt = buildFastImplementPrompt(state);
 
-    expect(prompt).toContain('src/');
-    expect(prompt).not.toContain('node_modules');
-    expect(prompt).not.toContain('.git');
+    // Extract the Project Structure section to verify directory filtering
+    const structureMatch = prompt.match(/## Project Structure\n\n```\n([\s\S]*?)```/);
+    expect(structureMatch).not.toBeNull();
+    const dirSection = structureMatch![1];
+    expect(dirSection).toContain('src/');
+    expect(dirSection).not.toContain('node_modules');
+    expect(dirSection).not.toContain('.git');
   });
 
   it('should forbid entering plan mode', () => {

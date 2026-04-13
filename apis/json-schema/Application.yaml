@@ -28,6 +28,12 @@ properties:
   status:
     $ref: ApplicationStatus.yaml
     description: Current application status
+  setupComplete:
+    type: boolean
+    description: Whether the initial setup workflow has completed successfully
+  agentSessionId:
+    type: string
+    description: Persistent agent SDK session ID — set once on first session boot, never changes
 required:
   - name
   - slug
@@ -35,6 +41,7 @@ required:
   - repositoryPath
   - additionalPaths
   - status
+  - setupComplete
 allOf:
   - $ref: SoftDeletableEntity.yaml
 description: A persistent AI-powered application workspace

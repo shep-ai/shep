@@ -23,10 +23,10 @@ export class SQLiteApplicationRepository implements IApplicationRepository {
     const stmt = this.db.prepare(`
       INSERT INTO applications (
         id, name, slug, description, repository_path, additional_paths,
-        agent_type, model_override, status, created_at, updated_at, deleted_at
+        agent_type, model_override, status, setup_complete, agent_session_id, created_at, updated_at, deleted_at
       ) VALUES (
         @id, @name, @slug, @description, @repository_path, @additional_paths,
-        @agent_type, @model_override, @status, @created_at, @updated_at, @deleted_at
+        @agent_type, @model_override, @status, @setup_complete, @agent_session_id, @created_at, @updated_at, @deleted_at
       )
     `);
     stmt.run(row);
@@ -65,7 +65,16 @@ export class SQLiteApplicationRepository implements IApplicationRepository {
   async update(
     id: string,
     fields: Partial<
-      Pick<Application, 'name' | 'status' | 'additionalPaths' | 'agentType' | 'modelOverride'>
+      Pick<
+        Application,
+        | 'name'
+        | 'status'
+        | 'additionalPaths'
+        | 'agentType'
+        | 'modelOverride'
+        | 'setupComplete'
+        | 'agentSessionId'
+      >
     >
   ): Promise<void> {
     const now = Date.now();
@@ -91,6 +100,14 @@ export class SQLiteApplicationRepository implements IApplicationRepository {
     if (fields.modelOverride !== undefined) {
       setClauses.push('model_override = ?');
       values.push(fields.modelOverride);
+    }
+    if (fields.setupComplete !== undefined) {
+      setClauses.push('setup_complete = ?');
+      values.push(fields.setupComplete ? 1 : 0);
+    }
+    if (fields.agentSessionId !== undefined) {
+      setClauses.push('agent_session_id = ?');
+      values.push(fields.agentSessionId);
     }
 
     values.push(id);

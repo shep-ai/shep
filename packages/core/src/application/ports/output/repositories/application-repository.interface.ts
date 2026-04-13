@@ -15,7 +15,16 @@ export interface IApplicationRepository {
   update(
     id: string,
     fields: Partial<
-      Pick<Application, 'name' | 'status' | 'additionalPaths' | 'agentType' | 'modelOverride'>
+      Pick<
+        Application,
+        | 'name'
+        | 'status'
+        | 'additionalPaths'
+        | 'agentType'
+        | 'modelOverride'
+        | 'setupComplete'
+        | 'agentSessionId'
+      >
     >
   ): Promise<void>;
   softDelete(id: string): Promise<void>;

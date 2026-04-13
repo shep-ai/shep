@@ -27,51 +27,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useTurnStatus } from '@/hooks/turn-statuses-provider';
 import { useDeployAction } from '@/hooks/use-deploy-action';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
+import { deriveAppLiveStatus } from '@/lib/derive-app-status';
 import type { ApplicationNodeData } from './application-node-config';
 
 /** Preview slot height. Roomier than the old 120px to give the live
  *  iframe / start-preview CTA more presence on the canvas. */
 const PREVIEW_HEIGHT_PX = 180;
-
-/**
- * Pick the effective status for the card's status pill. "Idle" is
- * never shown. The fallback when nothing is actively happening is
- * "Ready" (standby) — unless the dev server is running, in which
- * case "Live" takes over as the persistent resting state.
- *
- * Priority (highest wins):
- *
- *   - `processing`      → "In Progress"  (agent actively running a turn)
- *   - `awaiting_input`  → "Warning"      (agent blocked on user question)
- *   - deploymentUrl set → "Live"         (dev server running at a real URL)
- *   - persisted Error   → "Error"
- *   - otherwise         → "Ready"        (agent finished, preview not running)
- *
- * Note the `unread` turn status intentionally collapses into the
- * default branch — when the agent just finished a turn but the user
- * hasn't scrolled back to read it, we still show Ready (or Live if
- * the dev server is up). The user is already looking at the card,
- * a "you have unread output" nag adds no information.
- */
-function deriveLiveStatus(
-  persistedStatus: string,
-  turnStatus: string,
-  deploymentUrl: string | undefined
-): { label: string; dotClass: string; pulse: boolean } {
-  if (turnStatus === 'processing') {
-    return { label: 'In Progress', dotClass: 'bg-violet-500', pulse: true };
-  }
-  if (turnStatus === 'awaiting_input') {
-    return { label: 'Warning', dotClass: 'bg-amber-500', pulse: true };
-  }
-  if (deploymentUrl) {
-    return { label: 'Live', dotClass: 'bg-emerald-500', pulse: true };
-  }
-  if (persistedStatus === 'Error') {
-    return { label: 'Error', dotClass: 'bg-red-500', pulse: false };
-  }
-  return { label: 'Ready', dotClass: 'bg-sky-500', pulse: false };
-}
 
 export function ApplicationNode({
   data,
@@ -122,7 +83,7 @@ export function ApplicationNode({
   // intentionally no secondary snapshot URL that could stay stale.
   const effectiveDeploymentUrl = deploy.url;
 
-  const live = deriveLiveStatus(data.status, turnStatus, effectiveDeploymentUrl ?? undefined);
+  const live = deriveAppLiveStatus(data.status, turnStatus, !!effectiveDeploymentUrl);
 
   // Clicking anything in the "card controls" zone (Preview button,
   // open-in-new-tab) must not trigger the card's navigation-to-app
@@ -226,7 +187,8 @@ export function ApplicationNode({
         }}
         className={cn(
           'nodrag bg-card flex w-[26rem] cursor-pointer flex-col overflow-hidden rounded-xl border shadow-sm transition-[border-color,box-shadow] duration-200 dark:bg-neutral-800/80',
-          selected && 'border-blue-400 dark:border-amber-500/60'
+          selected && 'border-blue-400 dark:border-amber-500/60',
+          !selected && live.borderClass
         )}
       >
         {/* Row 1: Header — icon, name, status.

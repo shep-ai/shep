@@ -10,7 +10,7 @@ import type { IApplicationBriefStore } from '@/application/ports/output/services
 import type { CreateProjectUseCase } from '@/application/use-cases/projects/create-project.use-case.js';
 import type { SendInteractiveMessageUseCase } from '@/application/use-cases/interactive/send-interactive-message.use-case.js';
 import type { RunWorkflowUseCase } from '@/application/use-cases/workflows/run-workflow.use-case.js';
-import type { IInteractiveSessionService } from '@/application/ports/output/services/interactive-session-service.interface.js';
+import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
 import { ApplicationStatus } from '@/domain/generated/output.js';
 
 function createMockAppRepo(): IApplicationRepository {
@@ -76,7 +76,7 @@ describe('CreateApplicationUseCase', () => {
   let mockSendMessage: SendInteractiveMessageUseCase;
   let mockBriefStore: IApplicationBriefStore;
   let mockRunWorkflow: RunWorkflowUseCase;
-  let mockSessionService: IInteractiveSessionService;
+  let mockSessionRepo: IInteractiveSessionRepository;
 
   beforeEach(() => {
     mockAppRepo = createMockAppRepo();
@@ -87,7 +87,9 @@ describe('CreateApplicationUseCase', () => {
     mockRunWorkflow = {
       execute: vi.fn().mockResolvedValue(undefined),
     } as unknown as RunWorkflowUseCase;
-    mockSessionService = {} as IInteractiveSessionService;
+    mockSessionRepo = {
+      findLatestAgentSessionIdForFeature: vi.fn().mockResolvedValue(null),
+    } as unknown as IInteractiveSessionRepository;
     useCase = new CreateApplicationUseCase(
       mockAppRepo,
       mockCreateProject,
@@ -95,7 +97,7 @@ describe('CreateApplicationUseCase', () => {
       mockSendMessage,
       mockBriefStore,
       mockRunWorkflow,
-      mockSessionService
+      mockSessionRepo
     );
   });
 
@@ -156,6 +158,7 @@ describe('CreateApplicationUseCase', () => {
         repositoryPath: '/shep/projects/chat-assistant-aaa111',
         additionalPaths: [],
         status: ApplicationStatus.Idle,
+        setupComplete: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       })

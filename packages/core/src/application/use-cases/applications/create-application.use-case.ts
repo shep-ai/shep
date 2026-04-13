@@ -21,7 +21,7 @@ import type { IApplicationBriefStore } from '../../ports/output/services/applica
 import type { CreateProjectUseCase } from '../projects/create-project.use-case.js';
 import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
 import type { RunWorkflowUseCase } from '../workflows/run-workflow.use-case.js';
-import type { IInteractiveSessionService } from '../../ports/output/services/interactive-session-service.interface.js';
+import type { IInteractiveSessionRepository } from '../../ports/output/repositories/interactive-session-repository.interface.js';
 import { APPLICATION_CREATION_WORKFLOW } from '../../workflows/application-creation.workflow.js';
 
 /**
@@ -153,8 +153,8 @@ export class CreateApplicationUseCase {
     private readonly briefStore: IApplicationBriefStore,
     @inject('RunWorkflowUseCase')
     private readonly runWorkflow: RunWorkflowUseCase,
-    @inject('IInteractiveSessionService')
-    private readonly sessionService: IInteractiveSessionService
+    @inject('IInteractiveSessionRepository')
+    private readonly sessionRepo: IInteractiveSessionRepository
   ) {}
 
   async execute(input: CreateApplicationInput): Promise<CreateApplicationResult> {
@@ -162,17 +162,9 @@ export class CreateApplicationUseCase {
     const baseSlug = slugify(input.description);
 
     // 2. Allocate a unique <stem>-<6hex> slug + scaffold the project folder.
-    //    Random tag means siblings created from the same description never
-    //    collide on disk or in the DB; the retry loop below covers the
-    //    astronomically rare case where two random tags do clash.
     const { slug, projectPath } = await this.allocateUniqueSlugAndScaffold(baseSlug);
 
     // 3. Generate the human-readable display name from the BASE slug
-    //    only — the random hex tag is an internal disambiguator that
-    //    lives on the `slug` field (and the worktree path), and must
-    //    NEVER bleed into the user-visible title. Names are allowed to
-    //    duplicate; uniqueness is enforced on `slug`. Users can rename
-    //    afterwards via the application page.
     const name = toTitleCase(baseSlug);
 
     // 4. Create Application record
@@ -185,6 +177,7 @@ export class CreateApplicationUseCase {
       repositoryPath: projectPath,
       additionalPaths: [],
       status: ApplicationStatus.Idle,
+      setupComplete: false,
       agentType: input.agentType,
       modelOverride: input.modelOverride,
       createdAt: now,
@@ -286,21 +279,23 @@ export class CreateApplicationUseCase {
         workflow: APPLICATION_CREATION_WORKFLOW,
         model: args.model,
         agentType: args.agentType,
-        // First-step wrapper: the agent's very first turn sees the
-        // "read the brief first" directive stapled onto step 1's
-        // prompt. The chat UI still shows the user's verbatim
-        // description as the first bubble — the orchestrator
-        // persists `userMessage` as the first message row before
-        // dispatching the turn.
         firstStepPromptWrapper: (stepPrompt) =>
           buildKickoffDirective({
             briefPath: args.briefPath,
             userMessage: `${args.userMessage}\n\n---\n\n${stepPrompt}`,
           }),
-        // Persisted first bubble — the orchestrator writes this as
-        // the user message before sending the first agent turn so
-        // the chat has an immediate visual anchor.
         visibleFirstMessage: args.userMessage,
+      });
+
+      // All steps completed — mark the application as setup complete
+      // and persist the agent session ID for future resumption.
+      const appId = args.featureId.replace(/^app-/, '');
+      const agentSessionId = await this.sessionRepo.findLatestAgentSessionIdForFeature(
+        args.featureId
+      );
+      await this.appRepo.update(appId, {
+        setupComplete: true,
+        ...(agentSessionId ? { agentSessionId } : {}),
       });
     } catch (err) {
       // eslint-disable-next-line no-console
