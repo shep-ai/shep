@@ -5,6 +5,7 @@ import type { ListWorkItemsUseCase } from '@shepai/core/application/use-cases/wo
 import type { ManageWorkItemStatesUseCase } from '@shepai/core/application/use-cases/work-item-states/manage-work-item-states.use-case';
 import type { ListWorkItemRelationsUseCase } from '@shepai/core/application/use-cases/work-item-relations/list-work-item-relations.use-case';
 import type { ListAttachmentsUseCase } from '@shepai/core/application/use-cases/pm-attachments/list-attachments.use-case';
+import type { ListTimeEntriesUseCase } from '@shepai/core/application/use-cases/time-entries/list-time-entries.use-case';
 import { WorkItemDetailClient } from './work-item-detail-client';
 
 export const dynamic = 'force-dynamic';
@@ -42,12 +43,14 @@ export default async function WorkItemDetailPage({ params }: WorkItemDetailPageP
 
   const workItem = workItemResult.workItem;
 
-  const [allWorkItems, states, relationsResult, attachmentsResult] = await Promise.all([
-    resolve<ListWorkItemsUseCase>('ListWorkItemsUseCase').execute(project.id),
-    resolve<ManageWorkItemStatesUseCase>('ManageWorkItemStatesUseCase').list(project.id),
-    resolve<ListWorkItemRelationsUseCase>('ListWorkItemRelationsUseCase').execute(workItem.id),
-    resolve<ListAttachmentsUseCase>('ListAttachmentsUseCase').execute(workItem.id),
-  ]);
+  const [allWorkItems, states, relationsResult, attachmentsResult, timeEntriesResult] =
+    await Promise.all([
+      resolve<ListWorkItemsUseCase>('ListWorkItemsUseCase').execute(project.id),
+      resolve<ManageWorkItemStatesUseCase>('ManageWorkItemStatesUseCase').list(project.id),
+      resolve<ListWorkItemRelationsUseCase>('ListWorkItemRelationsUseCase').execute(workItem.id),
+      resolve<ListAttachmentsUseCase>('ListAttachmentsUseCase').execute(workItem.id),
+      resolve<ListTimeEntriesUseCase>('ListTimeEntriesUseCase').execute(workItem.id),
+    ]);
 
   return (
     <div className="flex h-full flex-col p-6">
@@ -58,6 +61,8 @@ export default async function WorkItemDetailPage({ params }: WorkItemDetailPageP
         states={states}
         relations={relationsResult}
         attachments={attachmentsResult.attachments}
+        timeEntries={timeEntriesResult.timeEntries}
+        totalMinutes={timeEntriesResult.totalMinutes}
       />
     </div>
   );

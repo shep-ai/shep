@@ -259,6 +259,11 @@ import { ListEpicsUseCase } from '../../application/use-cases/epics/list-epics.u
 import { UpdateEpicUseCase } from '../../application/use-cases/epics/update-epic.use-case.js';
 import { DeleteEpicUseCase } from '../../application/use-cases/epics/delete-epic.use-case.js';
 
+// Time entry use cases
+import { LogTimeEntryUseCase } from '../../application/use-cases/time-entries/log-time-entry.use-case.js';
+import { ListTimeEntriesUseCase } from '../../application/use-cases/time-entries/list-time-entries.use-case.js';
+import { DeleteTimeEntryUseCase } from '../../application/use-cases/time-entries/delete-time-entry.use-case.js';
+
 // Analytics use cases
 import { GetCycleBurndownUseCase } from '../../application/use-cases/analytics/get-cycle-burndown.use-case.js';
 import { GetProjectBreakdownUseCase } from '../../application/use-cases/analytics/get-project-breakdown.use-case.js';
@@ -800,6 +805,14 @@ export async function initializeContainer(): Promise<typeof container> {
   container.register('UpdateEpicUseCase', { useToken: UpdateEpicUseCase });
   container.registerSingleton(DeleteEpicUseCase);
   container.register('DeleteEpicUseCase', { useToken: DeleteEpicUseCase });
+
+  // Time entry use cases
+  container.registerSingleton(LogTimeEntryUseCase);
+  container.register('LogTimeEntryUseCase', { useToken: LogTimeEntryUseCase });
+  container.registerSingleton(ListTimeEntriesUseCase);
+  container.register('ListTimeEntriesUseCase', { useToken: ListTimeEntriesUseCase });
+  container.registerSingleton(DeleteTimeEntryUseCase);
+  container.register('DeleteTimeEntryUseCase', { useToken: DeleteTimeEntryUseCase });
 
   // Analytics use cases
   container.registerSingleton(GetCycleBurndownUseCase);

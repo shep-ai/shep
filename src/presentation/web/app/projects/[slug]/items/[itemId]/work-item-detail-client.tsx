@@ -11,11 +11,13 @@ import type {
   WorkItem,
   WorkItemState,
   PmAttachment,
+  TimeEntry,
 } from '@shepai/core/domain/generated/output';
 import type { WorkItemRelation } from '@shepai/core/application/ports/output/repositories/work-item-relation-repository.interface';
 import { WorkItemRelationsPanel } from '@/components/pm/relations/work-item-relations-panel';
 import { SubItemsSection } from '@/components/pm/sub-items/sub-items-section';
 import { AttachmentList } from '@/components/pm/attachments/attachment-list';
+import { TimeEntryList } from '@/components/pm/time-entries/time-entry-list';
 
 const PRIORITY_COLORS: Record<string, string> = {
   Urgent: 'bg-red-500/10 text-red-500',
@@ -32,6 +34,8 @@ export interface WorkItemDetailClientProps {
   states: WorkItemState[];
   relations: WorkItemRelation[];
   attachments: PmAttachment[];
+  timeEntries: TimeEntry[];
+  totalMinutes: number;
   className?: string;
 }
 
@@ -42,6 +46,8 @@ export function WorkItemDetailClient({
   states,
   relations,
   attachments,
+  timeEntries,
+  totalMinutes,
   className,
 }: WorkItemDetailClientProps) {
   const router = useRouter();
@@ -144,6 +150,15 @@ export function WorkItemDetailClient({
 
       {/* Attachments */}
       <AttachmentList workItemId={workItem.id} attachments={attachments} />
+
+      <hr className="border-border" />
+
+      {/* Time Tracking */}
+      <TimeEntryList
+        workItemId={workItem.id}
+        timeEntries={timeEntries}
+        totalMinutes={totalMinutes}
+      />
     </div>
   );
 }
