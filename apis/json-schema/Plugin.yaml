@@ -1,0 +1,86 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Plugin.yaml
+type: object
+properties:
+  name:
+    type: string
+    description: Unique plugin name used as identifier (e.g., 'mempalace', 'ruflo')
+  displayName:
+    type: string
+    description: Human-readable display name for UI presentation
+  type:
+    $ref: PluginType.yaml
+    description: Integration type determining how the plugin connects to Shep workflows
+  version:
+    type: string
+    description: Installed version of the plugin package
+  installSource:
+    type: string
+    description: "Installation source: 'catalog' for curated plugins, 'custom' for user-added"
+  transport:
+    $ref: PluginTransport.yaml
+    description: MCP transport protocol (only for Mcp type plugins)
+  serverCommand:
+    type: string
+    description: Command to start the MCP server process (only for Mcp type plugins)
+  serverArgs:
+    type: array
+    items:
+      type: string
+    description: Arguments passed to the MCP server command (only for Mcp type plugins)
+  requiredEnvVars:
+    type: array
+    items:
+      type: string
+    description: Environment variable names required by this plugin (names only, never values)
+  toolGroups:
+    type: array
+    items:
+      $ref: ToolGroup.yaml
+    description: Available tool groups defined by this plugin for selective activation
+  activeToolGroups:
+    type: array
+    items:
+      type: string
+    description: Names of currently enabled tool groups from the available set
+  enabled:
+    type: boolean
+    default: true
+    description: Whether this plugin is globally enabled for use in features
+  healthStatus:
+    $ref: PluginHealthStatus.yaml
+    default: Unknown
+    description: Current operational health status based on multi-tier health checks
+  healthMessage:
+    type: string
+    description: Human-readable details from the most recent health check
+  hookType:
+    type: string
+    description: Hook event type for lifecycle integration (only for Hook type plugins)
+  scriptPath:
+    type: string
+    description: Path to the hook script file (only for Hook type plugins)
+  binaryCommand:
+    type: string
+    description: Executable command for CLI tool invocation (only for Cli type plugins)
+  runtimeType:
+    type: string
+    description: "Required runtime environment: 'python' or 'node'"
+  runtimeMinVersion:
+    type: string
+    description: Minimum required version of the runtime (e.g., '3.9' for Python, '20' for Node.js)
+  homepageUrl:
+    type: string
+    description: Plugin homepage or repository URL for reference
+  description:
+    type: string
+    description: Brief description of what this plugin provides
+required:
+  - name
+  - displayName
+  - type
+  - enabled
+  - healthStatus
+allOf:
+  - $ref: BaseEntity.yaml
+description: External AI-native tool registered in Shep's plugin system

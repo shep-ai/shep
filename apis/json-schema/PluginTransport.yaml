@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PluginTransport.yaml
+type: string
+enum:
+  - Stdio
+  - Http
+description: Transport protocol for MCP server communication

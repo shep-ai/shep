@@ -1,0 +1,18 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ToolGroup.yaml
+type: object
+properties:
+  name:
+    type: string
+    description: Group identifier used for activation and filtering
+  description:
+    type: string
+    description: Human-readable description of what this tool group provides
+  tools:
+    type: array
+    items:
+      type: string
+    description: List of individual tool names belonging to this group
+required:
+  - name
+description: Logical grouping of MCP tools within a plugin for selective activation

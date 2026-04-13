@@ -438,6 +438,11 @@ model Feature extends SoftDeletableEntity {
   @doc("Absolute path to the git worktree for this feature")
   worktreePath?: string;
 
+  // ── Plugin Activation ──────────────────────────────────────
+
+  @doc("Per-feature plugin activation overrides mapping plugin names to enabled state (JSON-serialized in DB)")
+  activePlugins?: Record<boolean>;
+
   // ── Pull Request Tracking ──────────────────────────────────
 
   @doc("Pull request data (null until PR created)")
