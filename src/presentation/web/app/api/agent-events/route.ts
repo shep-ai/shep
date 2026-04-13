@@ -29,6 +29,7 @@ import {
 import { isProcessAlive } from '@shepai/core/infrastructure/services/process/is-process-alive';
 import type { NotificationEvent } from '@shepai/core/domain/generated/output';
 import type { ListFeaturesUseCase } from '@shepai/core/application/use-cases/features/list-features.use-case';
+import type { ICloudDeploymentEventBus } from '@shepai/core/application/ports/output/services/cloud-deployment-event-bus.interface';
 
 // Force dynamic — SSE streams must never be statically optimized or cached
 export const dynamic = 'force-dynamic';
@@ -427,6 +428,52 @@ export function GET(request: Request): Response {
         void poll();
         const pollInterval = setInterval(() => void poll(), POLL_INTERVAL_MS);
 
+        // Cloud deployment events (spec 089) — forwarded directly from the
+        // in-process event bus so the UI sees Uploading/Deploying/Deployed/
+        // Failed transitions in real time without DB polling.
+        let unsubscribeCloudDeploy: (() => void) | null = null;
+        try {
+          const cloudEventBus = resolve<ICloudDeploymentEventBus>('ICloudDeploymentEventBus');
+          unsubscribeCloudDeploy = cloudEventBus.subscribe((cloudEvent) => {
+            const payload: NotificationEvent & {
+              cloudDeployment?: {
+                applicationId: string;
+                provider: string;
+                status: string;
+                url?: string;
+                error?: string;
+              };
+            } = {
+              eventType: NotificationEventType.CloudDeploymentUpdated,
+              agentRunId: cloudEvent.applicationId,
+              featureId: cloudEvent.applicationId,
+              featureName: cloudEvent.applicationId,
+              message:
+                cloudEvent.message ??
+                (cloudEvent.error
+                  ? `Deploy failed: ${cloudEvent.error}`
+                  : `Deploy ${cloudEvent.status}`),
+              severity:
+                cloudEvent.status === 'Deployed'
+                  ? NotificationSeverity.Success
+                  : cloudEvent.status === 'Failed'
+                    ? NotificationSeverity.Error
+                    : NotificationSeverity.Info,
+              timestamp: new Date(cloudEvent.timestamp).toISOString(),
+              cloudDeployment: {
+                applicationId: cloudEvent.applicationId,
+                provider: cloudEvent.provider,
+                status: cloudEvent.status,
+                url: cloudEvent.url,
+                error: cloudEvent.error,
+              },
+            };
+            emitEvent(payload);
+          });
+        } catch {
+          // Event bus not registered yet — older DI containers will still work.
+        }
+
         // Heartbeat to keep connection alive
         const heartbeatInterval = setInterval(() => {
           enqueue(': heartbeat\n\n');
@@ -437,6 +484,13 @@ export function GET(request: Request): Response {
           stopped = true;
           clearInterval(pollInterval);
           clearInterval(heartbeatInterval);
+          if (unsubscribeCloudDeploy) {
+            try {
+              unsubscribeCloudDeploy();
+            } catch {
+              // Listener may have already been detached
+            }
+          }
           try {
             controller.close();
           } catch {

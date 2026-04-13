@@ -138,6 +138,10 @@ export function mapEventTypeToState(eventType: NotificationEventType): FeatureNo
       return 'blocked';
     case NotificationEventType.MergeReviewReady:
       return 'action-required';
+    case NotificationEventType.CloudDeploymentUpdated:
+      // Cloud deploy updates do not affect the feature node lifecycle state —
+      // they are consumed by the application-page cloud deploy hook instead.
+      return 'running';
   }
 }
 

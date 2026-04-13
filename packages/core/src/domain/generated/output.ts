@@ -603,6 +603,10 @@ export type NotificationEventConfig = {
    * Notify when feature is ready for merge review
    */
   mergeReviewReady: boolean;
+  /**
+   * Notify when cloud deployment status changes (spec 089)
+   */
+  cloudDeploymentUpdated?: boolean;
 };
 
 /**
@@ -1679,6 +1683,7 @@ export enum NotificationEventType {
   PrChecksFailed = 'pr_checks_failed',
   PrBlocked = 'pr_blocked',
   MergeReviewReady = 'merge_review_ready',
+  CloudDeploymentUpdated = 'cloud_deployment_updated',
 }
 export enum NotificationSeverity {
   Info = 'info',

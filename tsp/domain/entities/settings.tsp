@@ -522,6 +522,9 @@ model NotificationEventConfig {
 
   @doc("Notify when feature is ready for merge review")
   mergeReviewReady: boolean = true;
+
+  @doc("Notify when cloud deployment status changes (spec 089)")
+  cloudDeploymentUpdated?: boolean = true;
 }
 
 /**
