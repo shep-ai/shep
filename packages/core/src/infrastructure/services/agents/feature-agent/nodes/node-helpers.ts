@@ -114,6 +114,7 @@ export function buildExecutorOptions(
     maxTurns: 5000,
     timeout: stageTimeout,
     ...(state.model ? { model: state.model } : {}),
+    ...(state.mcpConfigPath ? { mcpConfigPath: state.mcpConfigPath } : {}),
     ...overrides,
   };
 }

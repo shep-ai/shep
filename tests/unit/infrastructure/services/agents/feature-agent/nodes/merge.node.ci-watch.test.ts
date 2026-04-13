@@ -230,6 +230,7 @@ function baseState(overrides: Partial<FeatureAgentState> = {}): FeatureAgentStat
     ciFixStatus: 'idle',
     evidence: [],
     evidenceRetries: 0,
+    mcpConfigPath: undefined,
     ...overrides,
   } as FeatureAgentState;
 }

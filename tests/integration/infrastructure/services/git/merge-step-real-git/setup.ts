@@ -305,6 +305,7 @@ export function makeState(overrides: Partial<FeatureAgentState>): FeatureAgentSt
     ciWatchEnabled: true,
     enableEvidence: false,
     commitEvidence: false,
+    mcpConfigPath: undefined,
     ...overrides,
   };
 }
