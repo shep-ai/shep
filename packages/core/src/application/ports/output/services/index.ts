@@ -15,6 +15,7 @@ export type {
   ISpecInitializerService,
   SpecInitializerResult,
 } from './spec-initializer.interface.js';
+export type { ISpecArtifactParser } from './spec-artifact-parser.interface.js';
 export type { IVersionService } from './version-service.interface.js';
 export type { IWebServerService } from './web-server-service.interface.js';
 export type { IWorktreeService, WorktreeInfo } from './worktree-service.interface.js';

@@ -8,11 +8,12 @@
  * YAML without errors.
  */
 
+import 'reflect-metadata';
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { safeYamlLoad } from '@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js';
-import { parseSpecYaml } from '@/domain/factories/spec-yaml-parser.js';
+import { SpecYamlParserService } from '@/infrastructure/services/spec/spec-yaml-parser.service.js';
 
 describe('Spec YAML Backward Compatibility', () => {
   const projectRoot = join(__dirname, '../../..');
@@ -97,7 +98,7 @@ describe('Spec YAML Backward Compatibility', () => {
     // parseSpecYaml throws on validation failure
     let parsed: unknown;
     try {
-      parsed = parseSpecYaml(content);
+      parsed = new SpecYamlParserService().parseSpecYaml(content);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Current spec.yaml failed validation: ${errorMessage}`);

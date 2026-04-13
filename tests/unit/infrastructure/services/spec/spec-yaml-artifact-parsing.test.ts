@@ -8,15 +8,11 @@
  * the result satisfies the generated TypeScript type with all fields present.
  */
 
+import 'reflect-metadata';
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  parseSpecYaml,
-  parseResearchYaml,
-  parsePlanYaml,
-  parseTasksYaml,
-} from '@/domain/factories/spec-yaml-parser.js';
+import { SpecYamlParserService } from '@/infrastructure/services/spec/spec-yaml-parser.service.js';
 import type {
   FeatureArtifact,
   ResearchArtifact,
@@ -31,8 +27,10 @@ function readYaml(filename: string): string {
 }
 
 describe('Spec YAML 1:1 artifact schema parsing', () => {
+  const parser = new SpecYamlParserService();
+
   it('spec.yaml parses into FeatureArtifact with all required fields', () => {
-    const result: FeatureArtifact = parseSpecYaml(readYaml('spec.yaml'));
+    const result: FeatureArtifact = parser.parseSpecYaml(readYaml('spec.yaml'));
 
     // SpecArtifactBase fields
     expect(typeof result.name).toBe('string');
@@ -57,7 +55,7 @@ describe('Spec YAML 1:1 artifact schema parsing', () => {
   });
 
   it('research.yaml parses into ResearchArtifact with all required fields', () => {
-    const result: ResearchArtifact = parseResearchYaml(readYaml('research.yaml'));
+    const result: ResearchArtifact = parser.parseResearchYaml(readYaml('research.yaml'));
 
     // SpecArtifactBase fields
     expect(typeof result.name).toBe('string');
@@ -79,7 +77,7 @@ describe('Spec YAML 1:1 artifact schema parsing', () => {
   });
 
   it('plan.yaml parses into TechnicalPlanArtifact with all required fields', () => {
-    const result: TechnicalPlanArtifact = parsePlanYaml(readYaml('plan.yaml'));
+    const result: TechnicalPlanArtifact = parser.parsePlanYaml(readYaml('plan.yaml'));
 
     // SpecArtifactBase fields
     expect(typeof result.name).toBe('string');
@@ -102,7 +100,7 @@ describe('Spec YAML 1:1 artifact schema parsing', () => {
   });
 
   it('tasks.yaml parses into TasksArtifact with all required fields', () => {
-    const result: TasksArtifact = parseTasksYaml(readYaml('tasks.yaml'));
+    const result: TasksArtifact = parser.parseTasksYaml(readYaml('tasks.yaml'));
 
     // SpecArtifactBase fields
     expect(typeof result.name).toBe('string');

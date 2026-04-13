@@ -143,6 +143,7 @@ import type { IAgentRunRepository } from '../../application/ports/output/agents/
 import type { IPhaseTimingRepository } from '../../application/ports/output/agents/phase-timing-repository.interface.js';
 import type { IFeatureAgentProcessService } from '../../application/ports/output/agents/feature-agent-process.interface.js';
 import type { ISpecInitializerService } from '../../application/ports/output/services/spec-initializer.interface.js';
+import type { ISpecArtifactParser } from '../../application/ports/output/services/spec-artifact-parser.interface.js';
 import type { INotificationService } from '../../application/ports/output/services/notification-service.interface.js';
 import { AgentExecutorFactory } from '../services/agents/common/agent-executor-factory.service.js';
 import { AgentExecutorProvider } from '../services/agents/common/agent-executor-provider.service.js';
@@ -154,6 +155,7 @@ import { SQLiteAgentRunRepository } from '../repositories/agent-run.repository.j
 import { SQLitePhaseTimingRepository } from '../repositories/sqlite-phase-timing.repository.js';
 import { FeatureAgentProcessService } from '../services/agents/feature-agent/feature-agent-process.service.js';
 import { SpecInitializerService } from '../services/spec/spec-initializer.service.js';
+import { SpecYamlParserService } from '../services/spec/spec-yaml-parser.service.js';
 import { DesktopNotifier } from '../services/notifications/desktop-notifier.js';
 import { NotificationService } from '../services/notifications/notification.service.js';
 import { getNotificationBus } from '../services/notifications/notification-bus.js';
@@ -841,6 +843,8 @@ export async function initializeContainer(): Promise<typeof container> {
   container.register<ISpecInitializerService>('ISpecInitializerService', {
     useFactory: () => new SpecInitializerService(),
   });
+
+  container.registerSingleton<ISpecArtifactParser>('ISpecArtifactParser', SpecYamlParserService);
 
   // Register notification services
   const notificationBus = getNotificationBus();

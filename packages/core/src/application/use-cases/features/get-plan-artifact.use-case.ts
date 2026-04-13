@@ -14,14 +14,16 @@ import { injectable, inject } from 'tsyringe';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { TechnicalPlanArtifact } from '../../../domain/generated/output.js';
-import { parsePlanYaml } from '../../../domain/factories/spec-yaml-parser.js';
+import type { ISpecArtifactParser } from '../../ports/output/services/spec-artifact-parser.interface.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 
 @injectable()
 export class GetPlanArtifactUseCase {
   constructor(
     @inject('IFeatureRepository')
-    private readonly featureRepo: IFeatureRepository
+    private readonly featureRepo: IFeatureRepository,
+    @inject('ISpecArtifactParser')
+    private readonly specParser: ISpecArtifactParser
   ) {}
 
   async execute(featureId: string): Promise<TechnicalPlanArtifact> {
@@ -38,6 +40,6 @@ export class GetPlanArtifactUseCase {
 
     const planYamlPath = join(feature.specPath, 'plan.yaml');
     const content = await readFile(planYamlPath, 'utf-8');
-    return parsePlanYaml(content);
+    return this.specParser.parsePlanYaml(content);
   }
 }
