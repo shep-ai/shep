@@ -7,17 +7,27 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import type { PmProject, WorkItemState, Label } from '@shepai/core/domain/generated/output';
+import type {
+  PmProject,
+  WorkItemState,
+  Label,
+  PmProjectMember,
+} from '@shepai/core/domain/generated/output';
 import { EstimateSettings } from '@/components/pm/estimate-settings/estimate-settings';
+import { ProjectMembersPanel } from '@/components/features/projects/project-members-panel';
 import { updatePmProject } from '@/app/actions/update-pm-project';
 import { deletePmProject } from '@/app/actions/delete-pm-project';
 import { createWorkItemState, deleteWorkItemState } from '@/app/actions/manage-work-item-states';
 import { createLabel, deleteLabel } from '@/app/actions/manage-labels';
+import { addProjectMember } from '@/app/actions/add-project-member';
+import { removeProjectMember } from '@/app/actions/remove-project-member';
+import { updateProjectMemberRole } from '@/app/actions/update-project-member-role';
 
 export interface ProjectSettingsClientProps {
   project: PmProject;
   states: WorkItemState[];
   labels: Label[];
+  members?: PmProjectMember[];
   className?: string;
 }
 
@@ -33,6 +43,7 @@ export function ProjectSettingsClient({
   project,
   states: initialStates,
   labels: initialLabels,
+  members: initialMembers = [],
   className,
 }: ProjectSettingsClientProps) {
   const router = useRouter();
@@ -295,6 +306,20 @@ export function ProjectSettingsClient({
             Add
           </Button>
         </div>
+      </section>
+
+      <hr className="border-border" />
+
+      {/* Members */}
+      <section data-testid="members-settings">
+        <ProjectMembersPanel
+          projectId={project.id}
+          members={initialMembers}
+          currentUserId=""
+          onAddMember={addProjectMember}
+          onRemoveMember={removeProjectMember}
+          onUpdateRole={updateProjectMemberRole}
+        />
       </section>
 
       <hr className="border-border" />

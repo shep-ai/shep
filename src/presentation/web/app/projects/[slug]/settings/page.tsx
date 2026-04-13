@@ -2,6 +2,7 @@ import { resolve } from '@/lib/server-container';
 import type { GetPmProjectUseCase } from '@shepai/core/application/use-cases/pm-projects/get-pm-project.use-case';
 import type { ManageWorkItemStatesUseCase } from '@shepai/core/application/use-cases/work-item-states/manage-work-item-states.use-case';
 import type { ManageLabelsUseCase } from '@shepai/core/application/use-cases/labels/manage-labels.use-case';
+import type { ListProjectMembersUseCase } from '@shepai/core/application/use-cases/project-members/list-project-members.use-case';
 import { ProjectSettingsClient } from './project-settings-client';
 
 export const dynamic = 'force-dynamic';
@@ -24,14 +25,17 @@ export default async function ProjectSettingsPage({ params }: ProjectSettingsPag
   }
 
   const project = result.project;
-  const [states, labels] = await Promise.all([
+  const [states, labels, membersResult] = await Promise.all([
     resolve<ManageWorkItemStatesUseCase>('ManageWorkItemStatesUseCase').list(project.id),
     resolve<ManageLabelsUseCase>('ManageLabelsUseCase').list(project.id),
+    resolve<ListProjectMembersUseCase>('ListProjectMembersUseCase').execute(project.id),
   ]);
+
+  const members = membersResult.ok ? membersResult.members : [];
 
   return (
     <div className="flex h-full flex-col p-6">
-      <ProjectSettingsClient project={project} states={states} labels={labels} />
+      <ProjectSettingsClient project={project} states={states} labels={labels} members={members} />
     </div>
   );
 }
