@@ -1367,4 +1367,20 @@ describe('GitPrService', () => {
       ).rejects.toThrow(GitPrError);
     });
   });
+
+  describe('pull', () => {
+    it('should run git pull in the given directory', async () => {
+      vi.mocked(mockExec).mockResolvedValueOnce({ stdout: '', stderr: '' });
+
+      await service.pull('/repo');
+
+      expect(mockExec).toHaveBeenCalledWith('git', ['pull'], { cwd: '/repo' });
+    });
+
+    it('should throw GitPrError when git pull fails', async () => {
+      vi.mocked(mockExec).mockRejectedValueOnce(new Error('Could not resolve host'));
+
+      await expect(service.pull('/repo')).rejects.toThrow(GitPrError);
+    });
+  });
 });

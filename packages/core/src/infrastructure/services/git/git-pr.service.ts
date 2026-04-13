@@ -896,6 +896,14 @@ export class GitPrService implements IGitPrService {
     }
   }
 
+  async pull(cwd: string): Promise<void> {
+    try {
+      await this.execFile('git', ['pull'], { cwd });
+    } catch (error) {
+      throw this.parseGitError(error);
+    }
+  }
+
   private parseDiffStat(diffStat: string, logOutput: string): DiffSummary {
     const summaryLine = diffStat.trim().split('\n').pop() ?? '';
     const filesMatch = summaryLine.match(/(\d+)\s+files?\s+changed/);

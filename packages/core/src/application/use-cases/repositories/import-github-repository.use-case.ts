@@ -7,6 +7,8 @@
  */
 
 import { injectable, inject } from 'tsyringe';
+import { randomBytes } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Repository } from '../../../domain/generated/output.js';
@@ -97,9 +99,15 @@ export class ImportGitHubRepositoryUseCase {
     repoName: string,
     normalizedUrl: string
   ): Promise<Repository> {
-    const destination = this.resolveDestination(input, repoName);
+    const { destination, alreadyUpToDate } = await this.resolveCloneDestination(
+      input,
+      repoName,
+      normalizedUrl
+    );
 
-    await this.gitHubService.cloneRepository(nameWithOwner, destination, input.cloneOptions);
+    if (!alreadyUpToDate) {
+      await this.gitHubService.cloneRepository(nameWithOwner, destination, input.cloneOptions);
+    }
 
     const repository = await this.addRepositoryUseCase.execute({
       path: destination,
@@ -136,12 +144,18 @@ export class ImportGitHubRepositoryUseCase {
     }
 
     // Clone the fork
-    const destination = this.resolveDestination(input, repoName);
-    await this.gitHubService.cloneRepository(
-      forkResult.nameWithOwner,
-      destination,
-      input.cloneOptions
+    const { destination, alreadyUpToDate } = await this.resolveCloneDestination(
+      input,
+      repoName,
+      normalizedForkUrl
     );
+    if (!alreadyUpToDate) {
+      await this.gitHubService.cloneRepository(
+        forkResult.nameWithOwner,
+        destination,
+        input.cloneOptions
+      );
+    }
 
     // Configure the upstream remote so users can `git fetch upstream` / sync
     // with the original repo. Without this, the fork has no knowledge of its
@@ -169,7 +183,38 @@ export class ImportGitHubRepositoryUseCase {
     };
   }
 
-  private resolveDestination(input: ImportGitHubRepositoryInput, repoName: string): string {
+  /**
+   * Resolve the clone destination, handling the case where the directory already exists.
+   *
+   * If the destination exists and is a git repo with the same remote origin → git pull and
+   * signal that clone can be skipped. If it's a different remote or not a git repo → suffix
+   * with a random short hash so the clone proceeds to a new directory.
+   */
+  private async resolveCloneDestination(
+    input: ImportGitHubRepositoryInput,
+    repoName: string,
+    expectedRemoteUrl: string
+  ): Promise<{ destination: string; alreadyUpToDate: boolean }> {
+    const destination = this.resolveBasePath(input, repoName);
+
+    if (!existsSync(destination)) {
+      return { destination, alreadyUpToDate: false };
+    }
+
+    // Directory exists — check its remote origin
+    const existingRemote = await this.gitPrService.getRemoteUrl(destination);
+    if (existingRemote && this.isSameRemote(existingRemote, expectedRemoteUrl)) {
+      // Same remote — pull to update, skip clone
+      await this.gitPrService.pull(destination);
+      return { destination, alreadyUpToDate: true };
+    }
+
+    // Different remote or not a git repo — use a suffixed directory name
+    const hash = randomBytes(3).toString('hex');
+    return { destination: normalizePath(`${destination}-${hash}`), alreadyUpToDate: false };
+  }
+
+  private resolveBasePath(input: ImportGitHubRepositoryInput, repoName: string): string {
     if (input.dest) {
       return normalizePath(input.dest);
     }
@@ -179,6 +224,18 @@ export class ImportGitHubRepositoryUseCase {
       baseDir = join(homedir(), baseDir.slice(2));
     }
     return normalizePath(join(baseDir, repoName));
+  }
+
+  /**
+   * Compare two remote URLs for equivalence, normalizing case, .git suffix, and protocol.
+   */
+  private isSameRemote(a: string, b: string): boolean {
+    const normalize = (url: string): string =>
+      url
+        .toLowerCase()
+        .replace(/\.git$/, '')
+        .replace(/\/$/, '');
+    return normalize(a) === normalize(b);
   }
 }
 

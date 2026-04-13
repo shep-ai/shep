@@ -196,6 +196,14 @@ export interface IGitPrService {
   addRemote(cwd: string, remoteName: string, remoteUrl: string): Promise<void>;
 
   /**
+   * Pull latest changes from the remote for the current branch.
+   *
+   * @param cwd - Working directory path
+   * @throws GitPrError with GIT_ERROR code on failure
+   */
+  pull(cwd: string): Promise<void>;
+
+  /**
    * Detect the repository's default branch with robust fallback chain:
    * 1. Remote HEAD (git symbolic-ref refs/remotes/origin/HEAD)
    * 2. Local branches named main or master (in that order)

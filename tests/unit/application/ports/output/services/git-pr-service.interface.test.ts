@@ -141,6 +141,9 @@ describe('IGitPrService', () => {
       addRemote: async () => {
         /* noop */
       },
+      pull: async () => {
+        /* noop */
+      },
       getDefaultBranch: async () => 'main',
       hasUncommittedChanges: async () => false,
       commitAll: async () => 'abc123',
