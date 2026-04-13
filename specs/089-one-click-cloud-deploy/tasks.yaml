@@ -1,13 +1,14 @@
 name: "one-click-cloud-deploy"
 summary: >
-  Task breakdown for 089-one-click-cloud-deploy. 58 tasks across 13 phases. Combines
-  the new cloud-deploy + git-remote feature with the 13 clean-arch violations from
-  research, plus a final CLI parity phase that ships thin Commander adapters for every
-  Application + cloud-deploy + git-remote use case. The CLI phase reuses existing use
-  cases verbatim — zero logic duplication.
+  Task breakdown for 089-one-click-cloud-deploy. **72 tasks across 14 phases.**
+  Original 58 (phases 1-13) shipped in PR #554 covering cloud deploy + git-remote
+  + CLI parity. Phase 14 (t-59..t-72) was added after the PR opened: 2 blockers
+  for CI failures, 1 task to finish the user-requested subagent framework, and
+  8 follow-up clean-arch cleanup tasks to be executed via those subagents.
+  Current state: 45 of 72 complete, PR #554 open with CI red (blocked on t-59).
 
-phase: "implementation"
-updatedAt: "2026-04-14"
+phase: "in-review"
+updatedAt: "2026-04-14T02:00:00Z"
 
 tasks:
   # ─────────────────────────── Phase 1: Domain foundation ───────────────────────────
@@ -1110,48 +1111,360 @@ tasks:
       - "Every new command has a localized description"
     estimatedEffort: "S"
 
-totalEstimate: "XL (58 tasks, ~2.5-3.5 weeks of focused work)"
+  # ─────────────────────── Phase 14: PR review response + follow-up cleanup ───────────────────────
+  #
+  # All tasks below were added AFTER the initial PR #554 was opened.
+  # They were not in the original plan. They divide into three groups:
+  #
+  #   (a) t-59, t-60  — BLOCKERS that make PR #554's CI red. Must ship first.
+  #   (b) t-61 .. t-64 — subagent framework the user asked for (so the cleanup
+  #                      work runs in parallel across Agent tool invocations).
+  #   (c) t-65 .. t-72 — the actual clean-arch cleanup, executed via the agents.
+  #
+  # Phase 14 has its own phase entry in plan.yaml. Do not mix these tasks into
+  # phases 1-13 — those represent the original 089 scope and are frozen.
+
+  - id: t-59
+    title: "Relocate ApplicationNotFoundError to domain/errors/ (unblocks PR #554 CI)"
+    description: >
+      The Next.js web build fails because
+      packages/core/src/application/use-cases/cloud-deploy/
+      initiate-cloud-deployment.use-case.ts:18 imports ApplicationNotFoundError
+      from a sibling use-case file via './select-cloud-provider.use-case.js'.
+      Next.js's bundler cannot resolve cross-use-case '.js' suffix imports
+      inside the core package. Fix: create
+      packages/core/src/domain/errors/application-not-found.error.ts,
+      move the class there, update all three importers
+      (initiate-cloud-deployment, get-cloud-deployment-status, create-git-remote),
+      delete the export from select-cloud-provider.use-case.ts. Re-run pnpm
+      build:release locally before pushing to verify the web bundle builds.
+      This is ALSO violation #19 from clean-arch-violations.md, so fixing it
+      closes two items at once.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "domain/errors/application-not-found.error.ts exists with the class"
+      - "All three importers updated"
+      - "Old export removed from select-cloud-provider.use-case.ts"
+      - "pnpm build:release runs clean locally"
+      - "Pushed and E2E Web + E2E CLI + Electron CI jobs turn green"
+    estimatedEffort: "XS"
+
+  - id: t-60
+    title: "Investigate Gitleaks failure in agent-settings-section.stories.tsx"
+    description: >
+      Gitleaks CI job flags src/presentation/web/components/features/settings/
+      agent-settings-section.stories.tsx on PR #554. The file was NOT edited by
+      this PR. Investigate: (a) was the file recently added to main with
+      mock tokens that match the gitleaks pattern; (b) does .gitleaks.toml
+      have an allowlist entry that should cover the mock; (c) is the file
+      using a literal that trips one of the built-in Gitleaks rules. Per
+      integrity rules, this failure is OUR responsibility even if the file
+      is pre-existing. Options: add the literal to .gitleaks.toml allowlist
+      with a comment explaining why it's a fixture, OR rewrite the story to
+      use a truncated placeholder.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "Gitleaks CI job turns green on PR #554"
+      - "Root cause documented in the PR comment or a follow-up issue"
+    estimatedEffort: "S"
+
+  - id: t-61
+    title: "Finish .claude/agents/ subagent framework (6 remaining agents)"
+    description: >
+      The user asked for shep-tailored subagents to drive the follow-up cleanup
+      efficiently. 4 of 10 planned agents exist:
+      shep-clean-arch-auditor, shep-port-extractor, shep-file-relocator,
+      shep-use-case-creator. shep-singleton-killer was rejected as too specific.
+      Still to create: shep-port-creator, shep-tsp-field-adder,
+      shep-migration-creator, shep-web-route-creator,
+      shep-storybook-story-creator, shep-cli-command-creator. Each has its own
+      strict-scope system prompt, tool allowlist, and report format. All are
+      reusable shep primitives — not one-off violation fixers.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "6 new .md files under .claude/agents/, each with YAML frontmatter + strict system prompt"
+      - "Each agent has explicit inputs, step-by-step process, verification commands, and report format"
+      - "Agents committed on the same branch as the follow-up cleanup work"
+    estimatedEffort: "M"
+
+  - id: t-62
+    title: "Dispatch shep-clean-arch-auditor across application/, domain/, presentation/"
+    description: >
+      Fan out three parallel Agent tool calls of shep-clean-arch-auditor, one
+      per top-level directory. Each appends findings to
+      clean-arch-violations.md starting at index 21. Collate results into a
+      single updated "What's left" section in the log.
+    state: "Todo"
+    dependencies: ["t-61"]
+    tdd: null
+    acceptanceCriteria:
+      - "Three parallel audit runs completed"
+      - "clean-arch-violations.md appended with any new findings"
+    estimatedEffort: "S"
+
+  - id: t-63
+    title: "Kill getSettings() singleton via shep-port-extractor"
+    description: >
+      Dispatch shep-port-extractor with concrete_path=infrastructure/services/
+      settings.service.ts, symbol_name=getSettings, symbol_kind=function,
+      callers=[5 application use-case files from violation #17],
+      port_name=ISettingsProvider (or extend ISettingsRepository if a
+      compatible method exists), di_token='ISettingsRepository',
+      port_location=repositories. Agent rewires all 5 use cases and deletes
+      the module-level singleton. Closes violation #17a.
+    state: "Todo"
+    dependencies: ["t-61"]
+    tdd: null
+    acceptanceCriteria:
+      - "getSettings() no longer exported from infrastructure/services/settings.service.ts"
+      - "5 application use cases inject ISettingsRepository"
+      - "Typecheck + lint + affected tests green"
+    estimatedEffort: "M"
+
+  - id: t-64
+    title: "Move computeWorktreePath + TOOL_METADATA to domain/shared/ via shep-file-relocator"
+    description: >
+      Two parallel shep-file-relocator calls. Both targets are pure helpers
+      imported from application use cases today (violation #17b). Each
+      relocator call: (a) validates the source has no outward dependencies,
+      (b) moves the file to domain/shared/, (c) rewrites imports in every
+      caller across the repo. Closes violations #17b (two of three sub-items).
+    state: "Todo"
+    dependencies: ["t-61"]
+    tdd: null
+    acceptanceCriteria:
+      - "packages/core/src/domain/shared/worktree-path.ts exists"
+      - "packages/core/src/domain/shared/tool-metadata.ts exists"
+      - "All 3+2=5 callers updated"
+      - "Typecheck + lint green"
+    estimatedEffort: "S"
+
+  - id: t-65
+    title: "Extract ports for phase-timing-context, node-helpers, conflict-resolution, attachment-storage"
+    description: >
+      Four parallel shep-port-extractor calls, one per remaining infrastructure
+      import in application/use-cases (violation #17c). Each creates the port
+      interface, wraps or adapts the concrete, rewires DI, migrates callers.
+    state: "Todo"
+    dependencies: ["t-61"]
+    tdd: null
+    acceptanceCriteria:
+      - "Four new ports under application/ports/output/"
+      - "Concretes implement the ports"
+      - "Application use cases inject ports, not concretes"
+      - "Typecheck + lint + affected tests green"
+    estimatedEffort: "L"
+
+  - id: t-66
+    title: "Relocate AgentSessionRepositoryRegistry to infrastructure/ + add port"
+    description: >
+      Violation #16: the registry lives in application/services/ and imports
+      tsyringe directly. Create IAgentSessionRepositoryRegistry port in
+      application/ports/output/agents/, move the concrete to
+      infrastructure/services/agents/, register via string token, migrate
+      all callers (use cases) to inject the port. This plus t-67 deletes the
+      application/services/ tree entirely.
+    state: "Todo"
+    dependencies: ["t-61"]
+    tdd: null
+    acceptanceCriteria:
+      - "IAgentSessionRepositoryRegistry port exists"
+      - "Concrete moved to infrastructure/services/agents/"
+      - "application/services/ tree deleted"
+      - "All callers updated, tests green"
+    estimatedEffort: "M"
+
+  - id: t-67
+    title: "Relocate application-creation.workflow.ts OR wrap in a use case"
+    description: >
+      Violation #15: application/workflows/ tree should not exist at the
+      application layer. Decide per inspection: (a) the workflow definition
+      is actually domain data (an ordered array of step names/prompts) →
+      move to domain/shared/workflows/ OR (b) it's an orchestration step
+      executor → wrap in a RunApplicationCreationWorkflowUseCase and put the
+      step runner in infrastructure/. Delete the application/workflows/ tree.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "application/workflows/ tree deleted"
+      - "All callers updated"
+      - "Tests green"
+    estimatedEffort: "S"
+
+  - id: t-68
+    title: "Add no-restricted-imports ESLint rule for application → infrastructure"
+    description: >
+      Violation #18: preventive rule. Add a scoped ESLint override to
+      eslint.config.mjs (or .eslintrc) that forbids any import matching
+      '**/infrastructure/**' inside packages/core/src/application/**. Use
+      no-restricted-imports with a clear error message pointing to the
+      dependency rule in .claude/rules/code-quality.md. Verify the rule
+      triggers on a deliberate violation then passes after we revert.
+    state: "Todo"
+    dependencies: ["t-63", "t-64", "t-65"]
+    tdd: null
+    acceptanceCriteria:
+      - "Rule present in ESLint config scoped to application/"
+      - "pnpm lint stays clean (proves we cleaned everything before enabling the rule)"
+      - "Deliberate test violation triggers the rule"
+    estimatedEffort: "XS"
+
+  - id: t-69
+    title: "Split container.ts into topic modules via shep-file-relocator fan-out"
+    description: >
+      Violation #12 (minor). container.ts is 800+ lines. Split into:
+      infrastructure/di/modules/register-repositories.ts,
+      register-services.ts, register-use-cases.ts, register-cloud-deploy.ts.
+      container.ts becomes a thin bootstrap that calls each module in order.
+      The modular split is low risk but invasive; use a single session to
+      avoid merge noise.
+    state: "Todo"
+    dependencies: ["t-63", "t-65"]
+    tdd: null
+    acceptanceCriteria:
+      - "container.ts under 200 lines"
+      - "Every previously-registered token still resolves"
+      - "Integration test added: resolve every declared token in one pass"
+    estimatedEffort: "M"
+
+  - id: t-70
+    title: "Adopt domain/shared/feature-id helpers across legacy callers"
+    description: >
+      Violation #11 (partial fix done — helpers exist but not adopted).
+      Migrate the 7 existing callers from raw `app-${id}` / /^app-/ patterns
+      to featureIdForApplication() / applicationIdFromFeatureId(). Callers:
+      create-application, delete-application, list-applications,
+      resume-application-workflow use cases + application-page.tsx and
+      related web files.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "Zero raw 'app-${' literals in the 7 files"
+      - "Zero /^app-/ regexes for this namespace in the 7 files"
+      - "Typecheck + lint + affected tests green"
+    estimatedEffort: "S"
+
+  - id: t-71
+    title: "Migrate remaining console.* call sites to ILogger"
+    description: >
+      Violation #13 (partial — ILogger port + ConsoleLogger adapter exist).
+      Migrate: run-workflow.use-case.ts, create-application.use-case.ts,
+      and the two remaining console.* sites in agent-events/route.ts (the
+      latter gets ILogger via the web server container resolver). Remove
+      the eslint-disable comments.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "No console.* in packages/core/src/application/"
+      - "No console.* in agent-events/route.ts"
+      - "Typecheck + lint green (no eslint-disable needed)"
+    estimatedEffort: "XS"
+
+  - id: t-72
+    title: "Final CI sweep after cleanup batch"
+    description: >
+      After t-59 through t-71 land, push and wait for ALL CI checks on the
+      PR (or a new cleanup PR) to turn green. Per .claude/rules/cicd.md,
+      NEVER trust `gh run watch` alone — verify with `gh run list --branch
+      <branch> --json status,conclusion` after watch completes. Also run
+      the full local gate first: lint, format, typecheck, test:unit,
+      test:int, tsp:compile, build:release (NOT just build:cli),
+      build:storybook. The build:release gap is what caused t-59 to exist.
+    state: "Todo"
+    dependencies:
+      ["t-59", "t-60", "t-63", "t-64", "t-65", "t-66", "t-67", "t-68", "t-69", "t-70", "t-71"]
+    tdd: null
+    acceptanceCriteria:
+      - "pnpm lint + format:check + typecheck + tsp:compile + test:unit + test:int + build:release + build:storybook all green locally"
+      - "All CI checks on the PR branch green (verified via gh run list, not just gh run watch)"
+    estimatedEffort: "M"
+
+totalEstimate: "XXL (72 tasks — 58 original + 14 follow-up including 6 subagents + 8 cleanup)"
 
 openQuestions: []
 
 content: |
   ## Summary
 
-  58 tasks across 13 phases. Combines the full v1 cloud-deploy + git-remote feature
-  with integrated fixes for all 13 clean-arch violations found during research (each
-  mapped to the phase that naturally touches the file), plus a final phase that ships
-  CLI parity for every Application + cloud-deploy + git-remote use case via thin
-  Commander adapters. The CLI phase reuses every existing use case verbatim — zero new
-  business logic, zero new use cases, zero database polling (deploy progress streams
-  via the same in-process ICloudDeploymentEventBus the SSE route uses).
-  Phases 4, 6, 7, 9, 10 run parallel-where-possible with explicit inter-task
-  dependencies. Every phase with executable code follows mandatory RED → GREEN → REFACTOR
-  TDD cycles.
+  **72 tasks across 14 phases.** Original 58 (phases 1-13) shipped in PR #554
+  covering the full cloud-deploy + git-remote feature and CLI parity with zero
+  logic duplication. **Phase 14 (14 new tasks, t-59..t-72)** was added after the
+  PR opened — two blockers (CI fixes), 4 subagent framework tasks, and 8 follow-up
+  clean-arch cleanup tasks executed via those subagents.
 
-  ## Acceptance Checklist
+  **Current state as of 2026-04-14:**
+  - **45 / 72 tasks complete** (all of phases 1-11 + 13)
+  - **PR #554 open with 8 CI failures** — see `errors.current.ci-red-pr-554` in
+    feature.yaml. Root cause of the 7 build-path failures is violation #19
+    (ApplicationNotFoundError needs to move to domain/errors/). Gitleaks failure
+    is pre-existing and needs separate investigation.
+  - **Subagent framework 40% done** — 4 of 10 agents created in .claude/agents/.
 
-  Before marking feature complete:
+  ## What's Left (priority order)
 
-  - [ ] All 58 tasks completed
+  ### Blockers
+  - [ ] **t-59** — Relocate `ApplicationNotFoundError` to `domain/errors/` (unblocks 7 CI jobs)
+  - [ ] **t-60** — Fix Gitleaks on `agent-settings-section.stories.tsx`
+  - [ ] **t-72** — Full local build:release + CI sweep after blockers land
+
+  ### Subagent framework
+  - [ ] **t-61** — Create 6 remaining agents: shep-port-creator, shep-tsp-field-adder,
+        shep-migration-creator, shep-web-route-creator, shep-storybook-story-creator,
+        shep-cli-command-creator
+
+  ### Clean-arch cleanup (via agents, parallelizable)
+  - [ ] **t-62** — Fresh audit sweep via shep-clean-arch-auditor × 3
+  - [ ] **t-63** — Kill `getSettings()` singleton (violation #17a, 5 callers)
+  - [ ] **t-64** — Move `computeWorktreePath` + `TOOL_METADATA` to `domain/shared/` (#17b)
+  - [ ] **t-65** — Extract 4 ports for node-helpers, phase-timing, conflict-resolution, attachment-storage (#17c)
+  - [ ] **t-66** — Move `AgentSessionRepositoryRegistry` to infrastructure + add port (#16)
+  - [ ] **t-67** — Eliminate `application/workflows/` directory (#15)
+  - [ ] **t-68** — Add `no-restricted-imports` ESLint rule for application → infrastructure (#18)
+  - [ ] **t-69** — Split `container.ts` into topic modules (#12)
+  - [ ] **t-70** — Adopt `feature-id` helpers across 7 legacy callers (#11 finish)
+  - [ ] **t-71** — Migrate remaining `console.*` to `ILogger` (#13 finish)
+
+  ### Deferred from original plan (still in backlog, not in phase 14)
+  - [ ] **t-28** (violations #1-3) — Refactor `deploy-application.ts` server action into `StartApplicationDeploymentUseCase`
+  - [ ] **t-48, t-49** (violations #4-7) — Extract `StreamAgentEventsUseCase` + hide `isProcessAlive` behind a port + share `SdlcLifecycle→node` mapping
+  - [ ] **t-46, t-47** (violations #8-10) — Split `application-page.tsx` (867 lines → N files), extract `useDevServerCoordinator` hook, wire commit buttons to real use cases
+  - [ ] **t-29** — `CommitApplicationChangesUseCase` + `CommitAndPushApplicationChangesUseCase`
+  - [ ] **t-51** — Playwright smoke test for cloud deploy
+
+  ## Acceptance Checklist (final)
+
+  - [ ] All 72 tasks completed
   - [ ] `pnpm lint` clean
   - [ ] `pnpm format:check` clean
   - [ ] `pnpm typecheck` clean
   - [ ] `pnpm tsp:compile` clean
   - [ ] `pnpm test:unit` green
   - [ ] `pnpm test:int` green
-  - [ ] `pnpm build` successful
+  - [ ] **`pnpm build:release` clean** (CLI + web — NOT just `pnpm build`)
   - [ ] `pnpm build:storybook` successful
-  - [ ] `pnpm test:e2e` passes the new cloud-deploy smoke test
-  - [ ] `pnpm test:e2e:cli` passes the new app-cloud-deploy CLI flow
+  - [ ] `pnpm test:e2e` passes the cloud-deploy smoke test
+  - [ ] `pnpm test:e2e:cli` passes the app-cloud-deploy CLI flow
   - [ ] `shep app --help` lists cloud-providers, deploy, and git subcommands
-  - [ ] CLI commands import only application use cases + domain types (no infrastructure)
-  - [ ] Manual smoke: connect Cloudflare token → deploy → see live URL chip → refresh → state rehydrates
+  - [ ] CLI + application use cases import only domain + application/ports (no infrastructure)
+  - [ ] `packages/core/src/application/` contains only `ports/` and `use-cases/` (no services/, no workflows/)
+  - [ ] Zero `console.*` in `packages/core/src/application/` and `packages/core/src/domain/`
+  - [ ] Manual smoke: connect Cloudflare token → deploy → URL chip → refresh → state rehydrates
   - [ ] Manual smoke: create GitHub repo button → gh auth flow → remote chip appears
   - [ ] Every new component has a colocated .stories.tsx
-  - [ ] clean-arch-violations.md: all 13 entries marked resolved OR have a task reference
-  - [ ] CI all-green on the feature branch
-  - [ ] PR created
+  - [ ] clean-arch-violations.md: all 20 entries marked resolved OR referenced by a merged task
+  - [ ] **PR #554 CI all-green (verified via `gh run list --branch feat/089-one-click-cloud-deploy`, not just `gh run watch`)**
+  - [ ] Merged
 
   ---
 
-  _Task details are in the tasks[] array above._
+  _Task details are in the tasks[] array above. Phase-14 tasks (t-59..t-72) are the
+  current focus — everything before that is either shipped or deferred to its own PR._

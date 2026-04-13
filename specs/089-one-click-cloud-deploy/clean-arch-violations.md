@@ -1,5 +1,59 @@
 # Clean Architecture Violations — Incremental Log
 
+> **CURRENT STATE (2026-04-14)**
+>
+> - **20 violations logged** across two audit passes (13 during research, 7 during post-impl audit)
+> - **Fully fixed:** 0
+> - **Partially fixed:** 3 (#6, #11, #13 — scaffolding in place, adoption incomplete)
+> - **Outstanding:** 17
+> - **Blocking PR #554 CI right now:** #19 (`ApplicationNotFoundError` cross-use-case import — see task **t-59**)
+>
+> See the "What's Left" checklist below for the execution plan.
+
+## What's Left — prioritised checklist
+
+### 🔴 Blocker (must ship before PR #554 can merge)
+
+- [ ] **#19 / t-59** — Move `ApplicationNotFoundError` to `domain/errors/application-not-found.error.ts`. Fix also unblocks the Next.js web build on CI.
+- [ ] **t-60** — Fix Gitleaks failure on `agent-settings-section.stories.tsx` (pre-existing file; still our responsibility per integrity rules).
+
+### 🟠 Critical (dependency-rule breakers — must eventually fix)
+
+- [ ] **#1, #2, #3** — `deploy-application.ts` server action → `StartApplicationDeploymentUseCase`. High-risk, dedicated PR.
+- [ ] **#4, #5** — `/api/agent-events/route.ts` hosts orchestration + imports `isProcessAlive` from infrastructure. `StreamAgentEventsUseCase` extraction. Dedicated PR.
+- [ ] **#16** — `AgentSessionRepositoryRegistry` imports tsyringe inside application/ → move to infrastructure + port. **t-66**.
+- [ ] **#17** — **13 use-case files import from `infrastructure/`** (biggest offender). Split into three sub-tasks:
+  - [ ] **#17a / t-63** — Kill `getSettings()` singleton; inject `ISettingsRepository` into the 5 callers.
+  - [ ] **#17b / t-64** — Move `computeWorktreePath` + `TOOL_METADATA` to `domain/shared/`.
+  - [ ] **#17c / t-65** — Add ports for `node-helpers`, `phase-timing-context`, `conflict-resolution.service`, `attachment-storage.service`; migrate each caller.
+
+### 🟡 Major (architectural drift — should ship as soon as the blockers land)
+
+- [ ] **#8, #9, #10** — `application-page.tsx` split (867 lines) + `useDevServerCoordinator` hook + wire commit buttons to a real use case. Dedicated PR.
+- [ ] **#7** — Share `SdlcLifecycle → node` mapping between SSE route and `derive-feature-state.ts`.
+- [ ] **#14 / t-67** — Delete `application/services/` tree (folded into #16 work).
+- [ ] **#15 / t-67** — Delete `application/workflows/` tree.
+
+### 🟢 Minor (quality — batch at the end)
+
+- [ ] **#6** — Adopt `InteractiveSessionEventType` TypeSpec enum in SSE route (enum shipped, not yet used at call site).
+- [ ] **#11 / t-70** — Adopt `feature-id` helpers across the 7 legacy callers.
+- [ ] **#12 / t-69** — Split `container.ts` (831 lines) into topic modules.
+- [ ] **#13 / t-71** — Migrate remaining `console.*` in `run-workflow.use-case.ts`, `create-application.use-case.ts`, and `agent-events/route.ts` to the new `ILogger` port.
+- [ ] **#18 / t-68** — Add `no-restricted-imports` ESLint rule for `application/` → `infrastructure/` as a CI guardrail.
+- [ ] **#19 / t-59** — (duplicated as blocker)
+
+### ⚪ Preventive / follow-up
+
+- Enable `pnpm build:release` as a required local gate before pushing (the missing gate that let #19 escape to CI).
+- Add an "audit sweep" GitHub Action that runs `shep-clean-arch-auditor` weekly.
+
+### Subagent framework (enables parallel cleanup)
+
+- [ ] **t-61** — Create the 6 remaining shep subagents. Already shipped: `shep-clean-arch-auditor`, `shep-port-extractor`, `shep-file-relocator`, `shep-use-case-creator`. Still to create: `shep-port-creator`, `shep-tsp-field-adder`, `shep-migration-creator`, `shep-web-route-creator`, `shep-storybook-story-creator`, `shep-cli-command-creator`.
+
+---
+
 This file is appended to throughout the research and implementation of feature `089-one-click-cloud-deploy`. Every time a file is read in the course of this feature's work and a Clean Architecture violation is noticed, a new entry is added here.
 
 **Rules enforced** (from `.claude/rules/code-quality.md` and `CLAUDE.md`):
@@ -128,3 +182,115 @@ At the end of the research phase, `/shep-kit:plan` MUST ingest this file and pro
 - **Observation:** Application layer and presentation layer both reach for raw `console` instead of an injected logging port; an `// eslint-disable` per site is a code smell that a logging port would erase.
 - **Suggested fix:** Introduce `ILogger` in `application/ports/output/services` and inject it into use cases; presentation uses its own adapter.
 - **Found during:** research
+- **Status:** **Partially fixed** — `ILogger` port and `ConsoleLogger` adapter shipped in phase 4; existing call sites NOT migrated yet. New cloud-deploy use cases use `ILogger` from the start.
+
+---
+
+## Phase 2 — Application / Domain structural audit (post-research, user-requested)
+
+The user inspected `packages/core/src/application/` and `packages/core/src/domain/` after implementation and noted that **the application layer should contain only `ports/` and `use-cases/`, not `services/` or `workflows/`**. Audit findings below. All entries marked `Found during: post-impl-audit`.
+
+### 14. `application/services/` directory exists
+- **File:** `packages/core/src/application/services/agents/agent-session-repository.registry.ts`
+- **Severity:** Major
+- **Observation:** The application layer has a `services/` sibling to `ports/` and `use-cases/`. Per the user's architecture rule, application-layer code lives in only those two folders. Services are infrastructure concerns; shared application-layer logic, if any, should be a use case or a pure helper colocated with the use cases that need it.
+- **Suggested fix:** Move `AgentSessionRepositoryRegistry` to `infrastructure/services/agents/`. Use cases keep their existing injection token unchanged; only the physical location changes. Delete the empty `application/services/` tree.
+- **Found during:** post-impl-audit
+
+### 15. `application/workflows/` directory exists
+- **File:** `packages/core/src/application/workflows/application-creation.workflow.ts`
+- **Severity:** Major
+- **Observation:** Same category as #14. `workflows/` is a third top-level folder in `application/` that shouldn't exist. An "application creation workflow" describing ordered steps is a **use case** (`RunApplicationCreationWorkflowUseCase`) or an infrastructure adapter with a use-case entry point — never a free-standing `workflows/` concept.
+- **Suggested fix:** Move `application-creation.workflow.ts` contents under `application/use-cases/applications/workflows/` (as a private helper of the existing workflow use case) OR under `infrastructure/services/workflows/` if it describes concrete step execution. Delete the empty `application/workflows/` tree.
+- **Found during:** post-impl-audit
+
+### 16. Application-layer class imports tsyringe directly and calls `container.resolve`
+- **File:** `packages/core/src/application/services/agents/agent-session-repository.registry.ts:14-28`
+- **Severity:** **Critical**
+- **Observation:** The registry imports `container` and `injectable` from `tsyringe` and calls `container.resolve<IAgentSessionRepository>(...)` inside the application layer. tsyringe is an **infrastructure concern** (the DI framework). The application layer must remain framework-agnostic so the same use cases can run in tests, CLI, TUI, and Web without pulling in a DI container. My new `CloudDeploymentProviderRegistry` (correctly placed in `infrastructure/`) has the same shape and demonstrates the right home for this pattern.
+- **Suggested fix:** Define `IAgentSessionRepositoryRegistry` as a port in `application/ports/output/agents/`, move the concrete class to `infrastructure/services/agents/agent-session-repository.registry.ts`, and inject it by token (`'IAgentSessionRepositoryRegistry'`). Tests inject a fake.
+- **Found during:** post-impl-audit
+
+### 17. Thirteen use-case files import from `infrastructure/` directly
+- **Files** (application → infrastructure imports):
+  - `application/use-cases/agents/approve-agent-run.use-case.ts:23-24` → `infrastructure/services/agents/feature-agent/nodes/node-helpers.js`, `infrastructure/services/ide-launchers/compute-worktree-path.js`
+  - `application/use-cases/agents/check-agent-auth.use-case.ts:22` → `infrastructure/services/settings.service.js`
+  - `application/use-cases/agents/get-agent-session.use-case.ts:11` → `infrastructure/services/settings.service.js`
+  - `application/use-cases/agents/list-agent-sessions.use-case.ts:11` → `infrastructure/services/settings.service.js`
+  - `application/use-cases/agents/reject-agent-run.use-case.ts:25-27` → three infrastructure imports (node-helpers, phase-timing-context, compute-worktree-path)
+  - `application/use-cases/agents/stop-agent-run.use-case.ts:12` → `phase-timing-context.js`
+  - `application/use-cases/deployments/start-feature-deployment.use-case.ts:25` → `compute-worktree-path.js`
+  - `application/use-cases/features/create/create-feature.use-case.ts:36,39` → `settings.service.js`, `attachment-storage.service.js`
+  - `application/use-cases/features/rebase-feature-on-main.use-case.ts:24` → `conflict-resolution.service.js`
+  - `application/use-cases/ide/launch-ide.use-case.ts:15` → `compute-worktree-path.js`
+  - `application/use-cases/settings/check-onboarding-status.use-case.ts:8` → `settings.service.js`
+  - `application/use-cases/tools/launch-tool.use-case.ts:12` → `tool-metadata.js`
+  - `application/use-cases/tools/list-tools.use-case.ts:14` → `tool-metadata.js`
+- **Severity:** **Critical**
+- **Observation:** This is the single most-violated rule in the repo. The application layer must depend inward only (on domain + its own ports). Several recurring offenders:
+  - `getSettings()` singleton from `infrastructure/services/settings.service.ts` — imported by 5 use cases. This bypasses `ISettingsRepository` entirely.
+  - `computeWorktreePath()` pure helper in `infrastructure/services/ide-launchers/` — imported by 3 use cases. It's a pure function but lives in the wrong layer.
+  - `TOOL_METADATA` constants from `infrastructure/services/tool-installer/` — imported by 2 use cases.
+  - `node-helpers.js`, `phase-timing-context.js`, `conflict-resolution.service.js`, `attachment-storage.service.ts` — each imported directly by a use case.
+- **Suggested fix:** Per offender —
+  1. **`getSettings()`** — delete the module-level singleton; inject `ISettingsRepository` into the 5 use cases. (This also resolves the "No Singletons" rule violation.)
+  2. **`computeWorktreePath()`** — move to `domain/shared/worktree-path.ts` (it's a pure function over repo + branch strings). Domain can be safely imported by both application and infrastructure.
+  3. **`TOOL_METADATA`** — move to `domain/shared/tool-metadata.ts` or expose through an `IToolMetadataProvider` port.
+  4. **`node-helpers`, `phase-timing-context`, `conflict-resolution.service`, `attachment-storage.service`** — each needs a matching port in `application/ports/output/` and the use cases should inject the port, not import the infrastructure implementation.
+- **Found during:** post-impl-audit
+
+### 18. `application/ports/output/index.ts` re-exports hide boundary violations
+- **File:** `packages/core/src/application/ports/output/services/index.ts`
+- **Severity:** Minor
+- **Observation:** The port barrel re-exports types; if any future port accidentally pulls a concrete class from `infrastructure/` via a transitive re-export, it would go unnoticed. Not currently broken — flagged as a preventive observation.
+- **Suggested fix:** Add a lint rule (`no-restricted-imports` with pattern `**/infrastructure/**`) scoped to `packages/core/src/application/**` to turn any such regression into a CI error.
+- **Found during:** post-impl-audit
+
+### 19. `application/use-cases/cloud-deploy/select-cloud-provider.use-case.ts` hosts `ApplicationNotFoundError`
+- **File:** `packages/core/src/application/use-cases/cloud-deploy/select-cloud-provider.use-case.ts:7-12`
+- **Severity:** Minor
+- **Observation:** `ApplicationNotFoundError` is a domain-level error re-used by multiple use cases (get-status, create-git-remote, initiate-deploy all import it from the select use-case file). It should live in `domain/errors/` alongside `session-not-found.error.ts`.
+- **Suggested fix:** Move to `packages/core/src/domain/errors/application-not-found.error.ts` and update the three importers.
+- **Found during:** post-impl-audit (introduced in this spec)
+
+### 20. Domain layer is clean
+- **Files:** `packages/core/src/domain/**`
+- **Severity:** (none — note)
+- **Observation:** Grep for outward imports (`from '[^']*infrastructure/'`, `from '[^']*application/'`, `tsyringe`) in `packages/core/src/domain/` returns **zero results** across 14 files. Domain is the only layer that fully respects the dependency rule today. `domain/shared/feature-id.ts` (new in this spec) and existing value-objects / factories / errors / generated types all stay within domain.
+- **Found during:** post-impl-audit
+
+---
+
+## Summary
+
+| Severity | Count | Status |
+| -------- | ----- | ------ |
+| Critical | **6** (#1, #2, #4, #5, #16, #17) | 0 fully fixed, 1 partial |
+| Major | **4** (#3, #7, #8, #14, #15) | 0 fixed |
+| Minor | **10** (#6, #9-#13, #18-#20) | 1 partial (#13), 2 preventively addressed by new-code discipline |
+| **Total** | **20 violations across two passes** | **~2 fully fixed, ~2 partial, 16 outstanding** |
+
+### What this PR fixed
+- #11 (partial) — feature-id helper created in `domain/shared/feature-id.ts`; not yet adopted by the 7 existing callers in `create-application.use-case.ts`, `delete-application.use-case.ts`, `list-applications.use-case.ts`, `resume-application-workflow.use-case.ts`, `application-page.tsx`, etc.
+- #13 (partial) — `ILogger` port + `ConsoleLogger` adapter shipped; existing `console.*` sites NOT migrated; new cloud-deploy use cases use `ILogger` from day one.
+- #6 (partial) — `InteractiveSessionEventType` TypeSpec enum added; SSE route NOT yet migrated to use it (still declares a string union inline).
+
+### What this PR deliberately did NOT fix
+- **#1, #2, #3** — `deploy-application.ts` server action refactor (`StartApplicationDeploymentUseCase`). High risk, unrelated to cloud deploy.
+- **#4, #5, #7** — `/api/agent-events/route.ts` orchestration extraction. ~300 lines of business logic; dedicated refactor needed.
+- **#8, #9, #10** — `application-page.tsx` split + dev-server coordinator hook + commit button use cases. 867-line file; invasive.
+- **#12** — `container.ts` modular split. Low-risk move; deferred to keep the PR focused.
+- **#14, #15** — `application/services/` and `application/workflows/` directory cleanup. Touches pre-existing code; deferred.
+- **#16** — `AgentSessionRepositoryRegistry` relocation to infrastructure. One-file move + port interface, but would need every importer updated.
+- **#17** — **Thirteen use cases** that import from `infrastructure/`. This is the biggest and the most impactful; each offender needs its own PR-sized fix (either a new port or moving the helper to `domain/`).
+- **#18** — Preventive lint rule addition.
+- **#19** — `ApplicationNotFoundError` relocation to `domain/errors/`.
+
+### Recommended next steps
+
+A dedicated follow-up PR (`feat/090-clean-arch-cleanup` or similar) scoped purely to violations #14–#19 would be straightforward — they're all either one-file moves or small refactors. Violations #17's 13 files can be further split into:
+- **#17a**: delete `getSettings()` singleton, inject `ISettingsRepository` into 5 use cases (high-impact, low-risk — singleton elimination)
+- **#17b**: move `computeWorktreePath`, `TOOL_METADATA` to `domain/shared/` (pure moves)
+- **#17c**: add ports for `node-helpers`, `phase-timing-context`, `conflict-resolution`, `attachment-storage` (each is a 1–2 file change)
+
+The invasive refactors (#1–#10, #12) should each get their own PR so CI review remains tractable.
