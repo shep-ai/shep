@@ -280,10 +280,16 @@ import { DetectDuplicatesUseCase } from '../../application/use-cases/intake/dete
 import { ListNotificationsUseCase } from '../../application/use-cases/notifications/list-notifications.use-case.js';
 import { MarkNotificationReadUseCase } from '../../application/use-cases/notifications/mark-notification-read.use-case.js';
 
+// Import/Export use cases
+import { ExportWorkItemsCsvUseCase } from '../../application/use-cases/import-export/export-work-items-csv.use-case.js';
+import { ImportWorkItemsCsvUseCase } from '../../application/use-cases/import-export/import-work-items-csv.use-case.js';
+
 // Analytics use cases
 import { GetCycleBurndownUseCase } from '../../application/use-cases/analytics/get-cycle-burndown.use-case.js';
 import { GetProjectBreakdownUseCase } from '../../application/use-cases/analytics/get-project-breakdown.use-case.js';
 import { GetModuleProgressUseCase } from '../../application/use-cases/analytics/get-module-progress.use-case.js';
+import { GetAiCycleSummaryUseCase } from '../../application/use-cases/analytics/get-ai-cycle-summary.use-case.js';
+import { GetAiProjectHealthUseCase } from '../../application/use-cases/analytics/get-ai-project-health.use-case.js';
 
 // Deployment use cases
 import { StartFeatureDeploymentUseCase } from '../../application/use-cases/deployments/start-feature-deployment.use-case.js';
@@ -864,10 +870,20 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(MarkNotificationReadUseCase);
   container.register('MarkNotificationReadUseCase', { useToken: MarkNotificationReadUseCase });
 
+  // Import/Export use cases
+  container.registerSingleton(ExportWorkItemsCsvUseCase);
+  container.register('ExportWorkItemsCsvUseCase', { useToken: ExportWorkItemsCsvUseCase });
+  container.registerSingleton(ImportWorkItemsCsvUseCase);
+  container.register('ImportWorkItemsCsvUseCase', { useToken: ImportWorkItemsCsvUseCase });
+
   // Analytics use cases
   container.registerSingleton(GetCycleBurndownUseCase);
   container.registerSingleton(GetProjectBreakdownUseCase);
   container.registerSingleton(GetModuleProgressUseCase);
+  container.registerSingleton(GetAiCycleSummaryUseCase);
+  container.register('GetAiCycleSummaryUseCase', { useToken: GetAiCycleSummaryUseCase });
+  container.registerSingleton(GetAiProjectHealthUseCase);
+  container.register('GetAiProjectHealthUseCase', { useToken: GetAiProjectHealthUseCase });
 
   // Session repositories (per-AgentType string tokens)
   container.register(`IAgentSessionRepository:${AgentType.ClaudeCode}`, {
