@@ -58,7 +58,8 @@ describe('FeatureAgentAnnotation', () => {
       expect(channelNames).toContain('ciWatchEnabled');
       expect(channelNames).toContain('enableEvidence');
       expect(channelNames).toContain('commitEvidence');
-      expect(channelNames.length).toBe(32);
+      expect(channelNames).toContain('mcpConfigPath');
+      expect(channelNames.length).toBe(33);
     });
   });
 

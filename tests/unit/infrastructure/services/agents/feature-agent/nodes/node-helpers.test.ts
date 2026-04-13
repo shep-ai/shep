@@ -435,6 +435,17 @@ describe('buildExecutorOptions', () => {
     const options = buildExecutorOptions(baseState as any);
     expect(options.cwd).toBe('/tmp/repo');
   });
+
+  it('includes mcpConfigPath when set in state', () => {
+    const state = { ...baseState, mcpConfigPath: '/tmp/mcp-config.json' };
+    const options = buildExecutorOptions(state as any);
+    expect(options.mcpConfigPath).toBe('/tmp/mcp-config.json');
+  });
+
+  it('omits mcpConfigPath when undefined in state', () => {
+    const options = buildExecutorOptions(baseState as any);
+    expect(options).not.toHaveProperty('mcpConfigPath');
+  });
 });
 
 describe('removeSpecCommitsIfNeeded', () => {

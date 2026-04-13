@@ -159,6 +159,7 @@ function createMockState(overrides?: Partial<FeatureAgentState>): FeatureAgentSt
     ciWatchEnabled: true,
     enableEvidence: true,
     commitEvidence: false,
+    mcpConfigPath: undefined,
     ...overrides,
   };
 }

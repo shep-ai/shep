@@ -115,6 +115,11 @@ export const FeatureAgentAnnotation = Annotation.Root({
     reducer: (_prev, next) => next ?? _prev,
     default: () => undefined,
   }),
+  // --- Plugin MCP config (set by worker when plugins are active) ---
+  mcpConfigPath: Annotation<string | undefined>({
+    reducer: (_prev, next) => next ?? _prev,
+    default: () => undefined,
+  }),
   // --- CI watch/fix loop state ---
   ciFixAttempts: Annotation<number>({
     reducer: (_prev, next) => next,

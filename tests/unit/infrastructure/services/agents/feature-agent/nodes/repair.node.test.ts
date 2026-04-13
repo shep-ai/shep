@@ -67,6 +67,7 @@ function baseState(_overrides: Partial<FeatureAgentState> = {}): FeatureAgentSta
     enableEvidence: false,
     injectSkills: false,
     commitEvidence: false,
+    mcpConfigPath: undefined,
   } as FeatureAgentState;
 }
 
