@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, FolderKanban } from 'lucide-react';
+import { ArrowLeft, Plus, FolderKanban, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -172,6 +172,16 @@ export function ProjectDetailClient({
           >
             <Plus className="mr-1 h-3 w-3" />
             New Item
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0"
+            onClick={() => router.push(`/projects/${project.slug}/settings`)}
+            data-testid="project-settings-btn"
+            title="Project Settings"
+          >
+            <Settings className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
