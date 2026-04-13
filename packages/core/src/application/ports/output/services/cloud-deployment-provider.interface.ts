@@ -28,29 +28,6 @@ export interface CloudDeployResult {
 
 export type CloudDeployProgressHandler = (status: CloudDeploymentStatus, message?: string) => void;
 
-export class ProviderNotImplementedError extends Error {
-  readonly code = 'PROVIDER_NOT_IMPLEMENTED';
-  constructor(public readonly provider: CloudDeploymentProvider) {
-    super(`Cloud deployment provider ${provider} is not yet implemented`);
-  }
-}
-
-export class CloudProviderNotConnectedError extends Error {
-  readonly code = 'CLOUD_PROVIDER_NOT_CONNECTED';
-  constructor(public readonly provider: CloudDeploymentProvider) {
-    super(`Cloud deployment provider ${provider} is not connected — no token stored`);
-  }
-}
-
-export class BuildOutputNotFoundError extends Error {
-  readonly code = 'BUILD_OUTPUT_NOT_FOUND';
-  constructor(public readonly searchedPaths: string[]) {
-    super(
-      `No built output directory found. Looked for: ${searchedPaths.join(', ')}. Run the build before deploying.`
-    );
-  }
-}
-
 export interface ICloudDeploymentProvider {
   readonly providerId: CloudDeploymentProvider;
   /** Human-friendly label shown in the UI dropdown. */

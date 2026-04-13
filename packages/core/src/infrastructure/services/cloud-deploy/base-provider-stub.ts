@@ -10,7 +10,7 @@ import type {
   CloudDeployResult,
   ICloudDeploymentProvider,
 } from '../../../application/ports/output/services/cloud-deployment-provider.interface.js';
-import { ProviderNotImplementedError } from '../../../application/ports/output/services/cloud-deployment-provider.interface.js';
+import { ProviderNotImplementedError } from '../../../domain/errors/provider-not-implemented.error.js';
 import {
   CloudDeploymentStatus,
   type CloudDeploymentProvider,

@@ -2,13 +2,7 @@ import { inject, injectable } from 'tsyringe';
 
 import type { IApplicationRepository } from '../../ports/output/repositories/application-repository.interface.js';
 import type { CloudDeploymentProvider } from '../../../domain/generated/output.js';
-
-export class ApplicationNotFoundError extends Error {
-  readonly code = 'APPLICATION_NOT_FOUND';
-  constructor(public readonly applicationId: string) {
-    super(`Application ${applicationId} not found`);
-  }
-}
+import { ApplicationNotFoundError } from '../../../domain/errors/application-not-found.error.js';
 
 export interface SelectCloudProviderInput {
   applicationId: string;

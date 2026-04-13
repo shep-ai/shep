@@ -5,7 +5,7 @@ import type {
   CloudDeploymentProvider,
   CloudDeploymentStatus,
 } from '../../../domain/generated/output.js';
-import { ApplicationNotFoundError } from './select-cloud-provider.use-case.js';
+import { ApplicationNotFoundError } from '../../../domain/errors/application-not-found.error.js';
 
 export interface CloudDeploymentStatusDto {
   provider?: CloudDeploymentProvider;

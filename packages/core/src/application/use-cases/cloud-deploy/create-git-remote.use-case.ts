@@ -2,7 +2,7 @@ import { inject, injectable } from 'tsyringe';
 
 import type { IApplicationRepository } from '../../ports/output/repositories/application-repository.interface.js';
 import type { IGitRemoteService } from '../../ports/output/services/git-remote.service.interface.js';
-import { ApplicationNotFoundError } from './select-cloud-provider.use-case.js';
+import { ApplicationNotFoundError } from '../../../domain/errors/application-not-found.error.js';
 
 export interface CreateGitRemoteResult {
   remoteUrl: string;

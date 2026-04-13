@@ -12,7 +12,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { resolve } from '@/lib/server-container';
 import type { CreateGitRemoteUseCase } from '@shepai/core/application/use-cases/cloud-deploy/create-git-remote.use-case';
-import { ApplicationNotFoundError } from '@shepai/core/application/use-cases/cloud-deploy/select-cloud-provider.use-case';
+import { ApplicationNotFoundError } from '@shepai/core/domain/errors/application-not-found.error';
 import { GhNotAuthenticatedError } from '@shepai/core/application/ports/output/services/git-remote.service.interface';
 
 export const dynamic = 'force-dynamic';

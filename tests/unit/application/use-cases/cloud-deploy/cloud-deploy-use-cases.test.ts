@@ -14,17 +14,13 @@ import { SelectCloudProviderUseCase } from '@/application/use-cases/cloud-deploy
 import { GetCloudDeploymentStatusUseCase } from '@/application/use-cases/cloud-deploy/get-cloud-deployment-status.use-case.js';
 import { CreateGitRemoteUseCase } from '@/application/use-cases/cloud-deploy/create-git-remote.use-case.js';
 import { EnsureGhAuthenticatedUseCase } from '@/application/use-cases/cloud-deploy/ensure-gh-authenticated.use-case.js';
-import {
-  ApplicationNotReadyError,
-  InitiateCloudDeploymentUseCase,
-  NoProviderSelectedError,
-} from '@/application/use-cases/cloud-deploy/initiate-cloud-deployment.use-case.js';
-import {
-  BuildOutputNotFoundError,
-  CloudProviderNotConnectedError,
-  ProviderNotImplementedError,
-  type ICloudDeploymentProvider,
-} from '@/application/ports/output/services/cloud-deployment-provider.interface.js';
+import { InitiateCloudDeploymentUseCase } from '@/application/use-cases/cloud-deploy/initiate-cloud-deployment.use-case.js';
+import { ApplicationNotReadyError } from '@/domain/errors/application-not-ready.error.js';
+import { NoProviderSelectedError } from '@/domain/errors/no-provider-selected.error.js';
+import { BuildOutputNotFoundError } from '@/domain/errors/build-output-not-found.error.js';
+import { CloudProviderNotConnectedError } from '@/domain/errors/cloud-provider-not-connected.error.js';
+import { ProviderNotImplementedError } from '@/domain/errors/provider-not-implemented.error.js';
+import type { ICloudDeploymentProvider } from '@/application/ports/output/services/cloud-deployment-provider.interface.js';
 import type { ICloudDeploymentProviderRegistry } from '@/application/ports/output/services/cloud-deployment-provider-registry.interface.js';
 import type { ICloudProviderTokensRepository } from '@/application/ports/output/repositories/cloud-provider-tokens.repository.interface.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
@@ -36,7 +32,7 @@ import type {
   ICloudDeploymentEventBus,
 } from '@/application/ports/output/services/cloud-deployment-event-bus.interface.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
-import { ApplicationNotFoundError } from '@/application/use-cases/cloud-deploy/select-cloud-provider.use-case.js';
+import { ApplicationNotFoundError } from '@/domain/errors/application-not-found.error.js';
 
 // ─────────────────────────────── Fakes ───────────────────────────────
 

@@ -14,7 +14,7 @@ import {
   CloudDeploymentProvider,
   type CloudDeploymentProvider as CloudDeploymentProviderType,
 } from '@shepai/core/domain/generated/output';
-import { ProviderNotImplementedError } from '@shepai/core/application/ports/output/services/cloud-deployment-provider.interface';
+import { ProviderNotImplementedError } from '@shepai/core/domain/errors/provider-not-implemented.error';
 
 export const dynamic = 'force-dynamic';
 

@@ -20,13 +20,13 @@ import { inject, injectable } from 'tsyringe';
 
 import type { ExecFunction } from '../git/worktree.service.js';
 import type { ICloudProviderTokensRepository } from '../../../application/ports/output/repositories/cloud-provider-tokens.repository.interface.js';
-import {
-  CloudProviderNotConnectedError,
-  type CloudDeployInput,
-  type CloudDeployProgressHandler,
-  type CloudDeployResult,
-  type ICloudDeploymentProvider,
+import type {
+  CloudDeployInput,
+  CloudDeployProgressHandler,
+  CloudDeployResult,
+  ICloudDeploymentProvider,
 } from '../../../application/ports/output/services/cloud-deployment-provider.interface.js';
+import { CloudProviderNotConnectedError } from '../../../domain/errors/cloud-provider-not-connected.error.js';
 import {
   CloudDeploymentProvider,
   CloudDeploymentStatus,

@@ -14,7 +14,7 @@ import {
   CloudDeploymentProvider,
   type CloudDeploymentProvider as CloudDeploymentProviderType,
 } from '@/domain/generated/output.js';
-import { ProviderNotImplementedError } from '@/application/ports/output/services/cloud-deployment-provider.interface.js';
+import { ProviderNotImplementedError } from '@/domain/errors/provider-not-implemented.error.js';
 import { messages, colors } from '../../../ui/index.js';
 
 function parseProvider(raw: string): CloudDeploymentProviderType | null {

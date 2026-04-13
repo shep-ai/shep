@@ -2,7 +2,7 @@ import { inject, injectable } from 'tsyringe';
 
 import type { ICloudProviderTokensRepository } from '../../ports/output/repositories/cloud-provider-tokens.repository.interface.js';
 import type { ICloudDeploymentProviderRegistry } from '../../ports/output/services/cloud-deployment-provider-registry.interface.js';
-import { ProviderNotImplementedError } from '../../ports/output/services/cloud-deployment-provider.interface.js';
+import { ProviderNotImplementedError } from '../../../domain/errors/provider-not-implemented.error.js';
 import type { CloudDeploymentProvider } from '../../../domain/generated/output.js';
 
 export interface ConnectCloudProviderInput {

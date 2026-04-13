@@ -11,16 +11,12 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { resolve } from '@/lib/server-container';
 import type { InitiateCloudDeploymentUseCase } from '@shepai/core/application/use-cases/cloud-deploy/initiate-cloud-deployment.use-case';
-import {
-  ApplicationNotReadyError,
-  NoProviderSelectedError,
-} from '@shepai/core/application/use-cases/cloud-deploy/initiate-cloud-deployment.use-case';
-import { ApplicationNotFoundError } from '@shepai/core/application/use-cases/cloud-deploy/select-cloud-provider.use-case';
-import {
-  BuildOutputNotFoundError,
-  CloudProviderNotConnectedError,
-  ProviderNotImplementedError,
-} from '@shepai/core/application/ports/output/services/cloud-deployment-provider.interface';
+import { ApplicationNotFoundError } from '@shepai/core/domain/errors/application-not-found.error';
+import { ApplicationNotReadyError } from '@shepai/core/domain/errors/application-not-ready.error';
+import { NoProviderSelectedError } from '@shepai/core/domain/errors/no-provider-selected.error';
+import { BuildOutputNotFoundError } from '@shepai/core/domain/errors/build-output-not-found.error';
+import { CloudProviderNotConnectedError } from '@shepai/core/domain/errors/cloud-provider-not-connected.error';
+import { ProviderNotImplementedError } from '@shepai/core/domain/errors/provider-not-implemented.error';
 
 export const dynamic = 'force-dynamic';
 

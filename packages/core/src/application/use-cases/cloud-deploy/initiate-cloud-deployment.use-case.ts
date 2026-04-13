@@ -5,31 +5,17 @@ import type { IApplicationRepository } from '../../ports/output/repositories/app
 import type { IFileSystemService } from '../../ports/output/services/file-system-service.interface.js';
 import type { ICloudDeploymentEventBus } from '../../ports/output/services/cloud-deployment-event-bus.interface.js';
 import type { ICloudDeploymentProviderRegistry } from '../../ports/output/services/cloud-deployment-provider-registry.interface.js';
-import {
-  BuildOutputNotFoundError,
-  CloudProviderNotConnectedError,
-  ProviderNotImplementedError,
-} from '../../ports/output/services/cloud-deployment-provider.interface.js';
 import type { ILogger } from '../../ports/output/services/logger.interface.js';
 import {
   CloudDeploymentProvider,
   CloudDeploymentStatus,
 } from '../../../domain/generated/output.js';
-import { ApplicationNotFoundError } from './select-cloud-provider.use-case.js';
-
-export class ApplicationNotReadyError extends Error {
-  readonly code = 'APPLICATION_NOT_READY';
-  constructor(applicationId: string) {
-    super(`Application ${applicationId} has not completed setup yet — cannot deploy`);
-  }
-}
-
-export class NoProviderSelectedError extends Error {
-  readonly code = 'NO_PROVIDER_SELECTED';
-  constructor(applicationId: string) {
-    super(`Application ${applicationId} has no cloud deployment provider selected`);
-  }
-}
+import { ApplicationNotFoundError } from '../../../domain/errors/application-not-found.error.js';
+import { ApplicationNotReadyError } from '../../../domain/errors/application-not-ready.error.js';
+import { NoProviderSelectedError } from '../../../domain/errors/no-provider-selected.error.js';
+import { BuildOutputNotFoundError } from '../../../domain/errors/build-output-not-found.error.js';
+import { CloudProviderNotConnectedError } from '../../../domain/errors/cloud-provider-not-connected.error.js';
+import { ProviderNotImplementedError } from '../../../domain/errors/provider-not-implemented.error.js';
 
 export interface InitiateCloudDeploymentInput {
   applicationId: string;

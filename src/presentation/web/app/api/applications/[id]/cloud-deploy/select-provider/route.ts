@@ -8,7 +8,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { resolve } from '@/lib/server-container';
 import type { SelectCloudProviderUseCase } from '@shepai/core/application/use-cases/cloud-deploy/select-cloud-provider.use-case';
-import { ApplicationNotFoundError } from '@shepai/core/application/use-cases/cloud-deploy/select-cloud-provider.use-case';
+import { ApplicationNotFoundError } from '@shepai/core/domain/errors/application-not-found.error';
 import {
   CloudDeploymentProvider,
   type CloudDeploymentProvider as CloudDeploymentProviderType,

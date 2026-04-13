@@ -6,10 +6,8 @@ import {
   CloudflareApiError,
   CloudflareTokenInvalidError,
 } from '@/infrastructure/services/cloud-deploy/cloud-deployment-errors.js';
-import {
-  CloudProviderNotConnectedError,
-  type CloudDeployInput,
-} from '@/application/ports/output/services/cloud-deployment-provider.interface.js';
+import type { CloudDeployInput } from '@/application/ports/output/services/cloud-deployment-provider.interface.js';
+import { CloudProviderNotConnectedError } from '@/domain/errors/cloud-provider-not-connected.error.js';
 import { CloudDeploymentProvider, CloudDeploymentStatus } from '@/domain/generated/output.js';
 import type { ICloudProviderTokensRepository } from '@/application/ports/output/repositories/cloud-provider-tokens.repository.interface.js';
 
