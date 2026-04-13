@@ -715,4 +715,58 @@ describe('SQLiteFeatureRepository', () => {
       expect(found?.buildMode).toBe(BuildMode.Spec);
     });
   });
+
+  describe('activePlugins persistence', () => {
+    it('should persist activePlugins via create/findById', async () => {
+      const feature = createTestFeature({
+        activePlugins: { mempalace: true, ruflo: false },
+      });
+
+      await repository.create(feature);
+      const found = await repository.findById('feat-1');
+
+      expect(found?.activePlugins).toEqual({ mempalace: true, ruflo: false });
+    });
+
+    it('should persist undefined activePlugins as null (no field on domain object)', async () => {
+      const feature = createTestFeature();
+
+      await repository.create(feature);
+      const found = await repository.findById('feat-1');
+
+      expect(found?.activePlugins).toBeUndefined();
+    });
+
+    it('should persist activePlugins via update/findById', async () => {
+      await repository.create(createTestFeature());
+
+      await repository.update(
+        createTestFeature({
+          activePlugins: { 'token-optimizer': true },
+          updatedAt: new Date(),
+        })
+      );
+      const found = await repository.findById('feat-1');
+
+      expect(found?.activePlugins).toEqual({ 'token-optimizer': true });
+    });
+
+    it('should clear activePlugins via update when set to empty object', async () => {
+      await repository.create(
+        createTestFeature({
+          activePlugins: { mempalace: true },
+        })
+      );
+
+      await repository.update(
+        createTestFeature({
+          activePlugins: {},
+          updatedAt: new Date(),
+        })
+      );
+      const found = await repository.findById('feat-1');
+
+      expect(found?.activePlugins).toBeUndefined();
+    });
+  });
 });
