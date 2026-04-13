@@ -241,6 +241,13 @@ import { DeleteModuleUseCase } from '../../application/use-cases/modules/delete-
 import { AddItemsToModuleUseCase } from '../../application/use-cases/modules/add-items-to-module.use-case.js';
 import { RemoveItemsFromModuleUseCase } from '../../application/use-cases/modules/remove-items-from-module.use-case.js';
 
+// Page use cases
+import { CreatePageUseCase } from '../../application/use-cases/pages/create-page.use-case.js';
+import { ListPagesUseCase } from '../../application/use-cases/pages/list-pages.use-case.js';
+import { GetPageUseCase } from '../../application/use-cases/pages/get-page.use-case.js';
+import { UpdatePageUseCase } from '../../application/use-cases/pages/update-page.use-case.js';
+import { DeletePageUseCase } from '../../application/use-cases/pages/delete-page.use-case.js';
+
 // Analytics use cases
 import { GetCycleBurndownUseCase } from '../../application/use-cases/analytics/get-cycle-burndown.use-case.js';
 import { GetProjectBreakdownUseCase } from '../../application/use-cases/analytics/get-project-breakdown.use-case.js';
@@ -758,6 +765,13 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(AddItemsToModuleUseCase);
   container.registerSingleton(RemoveItemsFromModuleUseCase);
 
+  // Page use cases
+  container.registerSingleton(CreatePageUseCase);
+  container.registerSingleton(ListPagesUseCase);
+  container.registerSingleton(GetPageUseCase);
+  container.registerSingleton(UpdatePageUseCase);
+  container.registerSingleton(DeletePageUseCase);
+
   // Analytics use cases
   container.registerSingleton(GetCycleBurndownUseCase);
   container.registerSingleton(GetProjectBreakdownUseCase);
@@ -1070,6 +1084,23 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('RemoveItemsFromModuleUseCase', {
     useFactory: (c) => c.resolve(RemoveItemsFromModuleUseCase),
+  });
+
+  // Page use case string-token aliases
+  container.register('CreatePageUseCase', {
+    useFactory: (c) => c.resolve(CreatePageUseCase),
+  });
+  container.register('ListPagesUseCase', {
+    useFactory: (c) => c.resolve(ListPagesUseCase),
+  });
+  container.register('GetPageUseCase', {
+    useFactory: (c) => c.resolve(GetPageUseCase),
+  });
+  container.register('UpdatePageUseCase', {
+    useFactory: (c) => c.resolve(UpdatePageUseCase),
+  });
+  container.register('DeletePageUseCase', {
+    useFactory: (c) => c.resolve(DeletePageUseCase),
   });
 
   // Analytics use case string-token aliases
