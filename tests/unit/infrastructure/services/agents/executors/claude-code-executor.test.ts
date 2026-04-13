@@ -612,6 +612,51 @@ describe('ClaudeCodeExecutorService', () => {
       });
     });
 
+    describe('mcpConfigPath option', () => {
+      it('should add --mcp-config with path when mcpConfigPath is set', async () => {
+        const mockProc = createMockChildProcess();
+        vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+        const resultLine = buildStreamResult({ result: 'Done' });
+        const executePromise = executor.execute('Test', {
+          mcpConfigPath: '/tmp/shep-mcp-feat-1.json',
+        });
+        emitStreamData(mockProc, [resultLine], null, 0);
+        await executePromise;
+        expect(mockSpawn).toHaveBeenCalledWith(
+          'claude',
+          expect.arrayContaining(['--mcp-config', '/tmp/shep-mcp-feat-1.json']),
+          expect.any(Object)
+        );
+      });
+
+      it('should NOT add --mcp-config when mcpConfigPath is undefined', async () => {
+        const mockProc = createMockChildProcess();
+        vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+        const resultLine = buildStreamResult({ result: 'Done' });
+        const executePromise = executor.execute('Test', {});
+        emitStreamData(mockProc, [resultLine], null, 0);
+        await executePromise;
+        const args = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
+        expect(args).not.toContain('--mcp-config');
+      });
+
+      it('should include both --strict-mcp-config and --mcp-config when both set', async () => {
+        const mockProc = createMockChildProcess();
+        vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+        const resultLine = buildStreamResult({ result: 'Done' });
+        const executePromise = executor.execute('Test', {
+          disableMcp: true,
+          mcpConfigPath: '/tmp/shep-mcp-feat-1.json',
+        });
+        emitStreamData(mockProc, [resultLine], null, 0);
+        await executePromise;
+        const args = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
+        expect(args).toContain('--strict-mcp-config');
+        expect(args).toContain('--mcp-config');
+        expect(args).toContain('/tmp/shep-mcp-feat-1.json');
+      });
+    });
+
     describe('tools option', () => {
       it('should add --tools with comma-separated values when tools provided', async () => {
         const mockProc = createMockChildProcess();
