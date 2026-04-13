@@ -3,18 +3,18 @@ feature:
   name: 'one-click-cloud-deploy'
   number: 89
   branch: 'feat/089-one-click-cloud-deploy'
-  lifecycle: 'research'
+  lifecycle: 'planning'
   createdAt: '2026-04-13T20:49:18Z'
 
 status:
-  phase: 'research'
+  phase: 'planning'
   progress:
     completed: 0
     total: 0
     percentage: 0
   currentTask: null
-  lastUpdated: '2026-04-13T20:49:18Z'
-  lastUpdatedBy: 'shep-kit:new-feature'
+  lastUpdated: '2026-04-13T21:10:00Z'
+  lastUpdatedBy: 'shep-kit:research'
 
 validation:
   lastRun: null
@@ -30,6 +30,9 @@ checkpoints:
   - phase: 'feature-created'
     completedAt: '2026-04-13T20:49:18Z'
     completedBy: 'shep-kit:new-feature'
+  - phase: 'research-complete'
+    completedAt: '2026-04-13T21:10:00Z'
+    completedBy: 'shep-kit:research'
 
 errors:
   current: null
