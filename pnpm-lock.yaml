@@ -11,6 +11,12 @@ importers:
 
   .:
     dependencies:
+      '@ai-sdk/openai-compatible':
+        specifier: ^2.0.0
+        version: 2.0.41(zod@4.3.6)
+      '@ai-sdk/provider':
+        specifier: ^3.0.8
+        version: 3.0.8
       '@anthropic-ai/claude-agent-sdk':
         specifier: 0.2.81
         version: 0.2.81(zod@4.3.6)
@@ -32,6 +38,12 @@ importers:
       '@langchain/langgraph-checkpoint-sqlite':
         specifier: ^1.0.1
         version: 1.0.1(@langchain/core@1.1.22(@opentelemetry/api@1.9.0))(@langchain/langgraph-checkpoint@1.0.0(@langchain/core@1.1.22(@opentelemetry/api@1.9.0)))
+      '@openrouter/ai-sdk-provider':
+        specifier: ^2.5.1
+        version: 2.5.1(ai@6.0.154(zod@4.3.6))(zod@4.3.6)
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.154(zod@4.3.6)
       ajv:
         specifier: ^8.18.0
         version: 8.18.0
@@ -96,9 +108,6 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@ai-sdk/provider':
-        specifier: ^3.0.8
-        version: 3.0.8
       '@commitlint/cli':
         specifier: ^19.0.0
         version: 19.8.1(@types/node@25.2.0)(typescript@5.9.3)
@@ -219,9 +228,6 @@ importers:
       '@xyflow/react':
         specifier: ^12.10.0
         version: 12.10.0(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      ai:
-        specifier: ^6.0.154
-        version: 6.0.154(zod@4.3.6)
       autoprefixer:
         specifier: ^10.4.24
         version: 10.4.24(postcss@8.5.6)
