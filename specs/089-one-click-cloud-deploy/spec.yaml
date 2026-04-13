@@ -1,0 +1,107 @@
+name: "one-click-cloud-deploy"
+number: 89
+branch: "feat/089-one-click-cloud-deploy"
+oneLiner: "One-click cloud deploy and GitHub repo creation for generated applications, persisted on the Application entity with a provider-agnostic architecture"
+userQuery: |
+  On our application page I want to support easy one-click deploy guided by agent or/and using CLI tools like google/aws/cloudflare/vercel. I want us to handle deploy of our React app to cloud with one click, persisting the cloud-deploy status fully in db on applications records, using clean arch use-cases and UI as thin layer. We have temp local dir with repo, so we will also need to handle git repo creation so for example for cloudflare we can just configure new github worker app using few curl commands, we need to guide user how to get token, not by telling him, trying best effort to do it with cli and only giving user Login button on ui or something. Git remote status also must be persisted on application records in db. Make all seamless, for people who even doesn't know what REPO and GITHUB and CLOUDFLARE IS. Also make Deploy generic with option, currently only cloudflare supported, add gcp/aws/vercel and more popular as in dev or future release, use button with drop down to change the deploy provider, the button itself shows the icon of selected platform, dropdown should have icons of each platform too.
+summary: |
+  Add a provider-agnostic one-click cloud deploy system to the application page. The user sees two new top-bar buttons next to the existing "Preview" (run-dev) button: a split "Deploy" button (icon of the selected provider + dropdown listing all providers with icons, disabled ones tagged "Coming soon") and a separate "Create GitHub repo" button that uses the locally-installed `gh` CLI (no tokens, no OAuth). v1 wires Cloudflare Pages as the only active ICloudDeploymentProvider adapter; Vercel, Netlify, AWS Amplify and GCP Cloud Run ship as disabled stubs so the architecture, UI and domain are provider-agnostic from day one. Deploy state (provider, status, deploymentId, public URL, error, lastDeployedAt) and git remote URL are persisted on the Application row in SQLite and stream to the UI via the existing /api/agent-events SSE loop. The deploy flow is deterministic (use case + provider adapter) — no agent in the loop. Users connect a provider via a "Connect" modal that opens the provider's token page and accepts a pasted API token, stored encrypted in a new cloud_provider_tokens table using AES-GCM with a machine-derived key.
+phase: "Requirements"
+sizeEstimate: "XL"
+relatedFeatures:
+  - "088-cli-application-management"
+technologies:
+  - TypeScript
+  - TypeSpec
+  - React
+  - Next.js
+  - SQLite
+  - Cloudflare Pages API
+  - gh CLI
+relatedLinks:
+  - title: "Cloudflare Pages Direct Upload API"
+    url: "https://developers.cloudflare.com/pages/get-started/direct-upload/"
+  - title: "GitHub CLI docs"
+    url: "https://cli.github.com/manual/"
+  - title: "Approved design plan (local)"
+    url: "C:/Users/mk/.claude/plans/wiggly-purring-lark.md"
+openQuestions: []
+content: |
+  ## Problem Statement
+
+  After running the Shep workflow, a user has a locally-scaffolded, built and committed React app in a temp directory — but no path from "my app builds" to "my app is on the internet." The target user may not know what git, GitHub, or Cloudflare are. Today:
+
+  - The `Application` entity has no concept of a git remote or a cloud deployment.
+  - No cloud provider integration exists (no OAuth, no Vercel/Cloudflare SDKs, no secret storage).
+  - The existing `IDeploymentService` handles only local dev servers.
+  - Git operations exist via `gh` CLI subprocess (`git-fork.service.ts`) but are scoped to forking upstream repos, not creating new GitHub repos from the local scaffold.
+
+  ## Success Criteria
+
+  - [ ] User clicks **Deploy** on the application page → sees a dropdown with Cloudflare Pages enabled and Vercel/Netlify/AWS Amplify/GCP Cloud Run shown with "Coming soon" tags, each with its provider icon.
+  - [ ] First Cloudflare deploy opens a "Connect" modal with a "Get a token" link and a paste field; token validates live and persists encrypted in SQLite.
+  - [ ] After connect, clicking Deploy runs the happy path with no further prompts; button transitions `NotDeployed → Uploading → Deploying → Deployed` and shows a URL chip linking to the live site.
+  - [ ] Deploy failure surfaces the error inline on the button and persists it on the Application row so it re-hydrates on page refresh.
+  - [ ] User clicks **Create GitHub repo** → if `gh` is authenticated, a repo is created and `gitRemoteUrl` persists; if not, the button transitions to "Sign in with GitHub", which spawns `gh auth login --web`, polls status, and then retries automatically.
+  - [ ] All deploy/git state survives a page reload and a CLI restart (sourced from SQLite, not memory).
+  - [ ] Deploy status updates stream to the UI via the existing `/api/agent-events` SSE loop — no new polling system.
+  - [ ] Presentation layer imports no infrastructure adapters: every action flows through a use case resolved from the DI container.
+  - [ ] Adding a new provider in phase 2 requires only (a) an adapter class implementing `ICloudDeploymentProvider` and (b) flipping its `enabled` flag to true — no domain, UI or use-case changes.
+  - [ ] All new components ship with colocated Storybook stories per project rules.
+  - [ ] Full TDD: failing tests written first for every repository, use case, and provider adapter.
+
+  ## Affected Areas
+
+  | Area                      | Impact | Reasoning                                                                                           |
+  | ------------------------- | ------ | --------------------------------------------------------------------------------------------------- |
+  | tsp/ (TypeSpec)           | M      | New `CloudDeploymentProvider` + `CloudDeploymentStatus` enums; 7 new fields on `Application`        |
+  | packages/core domain      | M      | Regenerated from TypeSpec; new `ProviderNotImplementedError`, `BuildOutputNotFoundError`            |
+  | packages/core application | L      | Seven new use cases under `use-cases/cloud-deploy/`; four new output ports                          |
+  | packages/core infra       | L      | Cloudflare Pages provider (live), 4 stub providers, registry, token repo, git remote service       |
+  | SQLite migrations         | M      | Two new migrations: extend `applications` table, new `cloud_provider_tokens` table                  |
+  | DI container              | S      | Register new ports and use cases                                                                    |
+  | Web API routes            | M      | Eight new routes under `/api/cloud-providers/*` and `/api/applications/[id]/cloud-deploy/*`         |
+  | Web UI components         | L      | Deploy split button, provider dropdown, Connect modal, GitHub repo button, shared cloud icons      |
+  | SSE events                | S      | Extend `/api/agent-events` polling loop to emit `cloud_deployment.updated`                          |
+  | Storybook                 | M      | Mandatory stories for every new component                                                           |
+
+  ## Dependencies
+
+  - Builds on `feat/application-entity` work already in-flight on branch `feat/application-entity` / PR #550 (Application entity, workflow orchestrator, step tracker).
+  - Relies on `APPLICATION_CREATION_WORKFLOW` step 6 (`npm run build`) and step 7 (`git init` + initial commit) having already run — deploy is gated on `setupComplete === true`.
+  - Reuses injected `ExecFunction` pattern from `git-fork.service.ts` for `gh`/`git` shell-outs.
+  - No upstream blockers.
+
+  ## Non-Goals (v1)
+
+  - Vercel/Netlify/AWS/GCP deploys wired to real APIs (UI-visible, adapter-disabled).
+  - OAuth device flows (token paste is enough for v1).
+  - Rebuilds triggered from the Deploy button (user re-runs workflow).
+  - Custom domains, env vars, deploy previews, rollbacks, deploy history.
+  - Agent-driven deploy recovery.
+
+  ## Approved Design
+
+  Detailed architecture, ports, use cases, files touched, and TDD ordering live in the approved design plan:
+  `C:/Users/mk/.claude/plans/wiggly-purring-lark.md`
+
+  The research and plan phases for this spec should treat that document as the authoritative source and expand it into the YAML `research.yaml` / `plan.yaml` / `tasks.yaml` artifacts.
+
+  ## Additional Instruction — Clean-Arch Violation Log
+
+  Per user request, while reading files during research and implementation, any Clean Architecture violations observed in the *existing* codebase should be appended to a separate file `specs/089-one-click-cloud-deploy/clean-arch-violations.md` with:
+
+  - File path + line range
+  - Severity: Minor / Major / Critical
+  - Short description of the violation
+  - Suggested fix
+
+  The file is built incrementally (NOT in one pass). At implementation time, the `/shep-kit:plan` phase MUST ingest this file and create explicit cleanup tasks for every entry — "we will need to consider fixing EVERYTHING" per user instruction.
+
+  ## Size Estimate
+
+  **XL** — ~30 new files across 5 layers (TSP, domain, application, infrastructure, presentation), 2 SQL migrations, new DI wiring, SSE event extension, and a full TDD suite. Conservatively 2–3 weeks of focused work. Could be split into phases (v1 = Cloudflare only; v2 = Vercel) if needed at planning time.
+
+  ---
+
+  _Generated by `/shep-kit:new-feature` — proceed with `/shep-kit:research`_

@@ -1,0 +1,36 @@
+feature:
+  id: '089-one-click-cloud-deploy'
+  name: 'one-click-cloud-deploy'
+  number: 89
+  branch: 'feat/089-one-click-cloud-deploy'
+  lifecycle: 'research'
+  createdAt: '2026-04-13T20:49:18Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-04-13T20:49:18Z'
+  lastUpdatedBy: 'shep-kit:new-feature'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-04-13T20:49:18Z'
+    completedBy: 'shep-kit:new-feature'
+
+errors:
+  current: null
+  history: []
