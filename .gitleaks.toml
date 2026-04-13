@@ -13,3 +13,17 @@ paths = [
   '''__mocks__''',
   '''\.spec\.ts$''',
 ]
+
+[[allowlists]]
+description = "Allow fake test/placeholder tokens that match common test patterns"
+regexes = [
+  '''test-.*-\d+''',
+  '''test-token''',
+  '''test-api-key''',
+  '''sk-test-token''',
+  '''placeholder''',
+  '''dummy''',
+  '''fake''',
+  '''mock''',
+  '''example''',
+]
