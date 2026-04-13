@@ -1,6 +1,4 @@
-export async function bulkUpdateWorkItems(
-  _input: unknown
-): Promise<{
+export async function bulkUpdateWorkItems(_input: unknown): Promise<{
   ok: boolean;
   succeeded: string[];
   failed: { id: string; error: string }[];
