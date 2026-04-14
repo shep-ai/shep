@@ -239,41 +239,12 @@ export function deriveGraph(
     }
   }
 
-  // Add application nodes and derive repo→app edges (matched by repositoryPath).
-  if (applicationMap) {
-    for (const [nodeId, entry] of applicationMap) {
-      const appNodeId = nodeId;
-      const data: ApplicationNodeData = {
-        ...entry.data,
-        ...(callbacks?.onApplicationClick && {
-          onClick: () => callbacks.onApplicationClick!(entry.data.id),
-        }),
-        ...(callbacks?.onApplicationDelete && {
-          onDelete: callbacks.onApplicationDelete,
-        }),
-      };
-      nodes.push({
-        id: appNodeId,
-        type: 'applicationNode',
-        position: { x: 0, y: 0 },
-        data,
-      } as CanvasNodeType);
-
-      // Derive app→repo edge (application on LEFT, repo on RIGHT)
-      if (entry.data.repositoryPath) {
-        const repoPath = entry.data.repositoryPath.replace(/\\/g, '/');
-        const repoNodeId = repoByPath.get(repoPath);
-        if (repoNodeId) {
-          edges.push({
-            id: `edge-${appNodeId}-${repoNodeId}`,
-            source: appNodeId,
-            target: repoNodeId,
-            style: { strokeDasharray: '5 5' },
-          });
-        }
-      }
-    }
-  }
+  // Applications are NOT derived onto the canvas anymore — they live
+  // exclusively on the `/applications` page. The `applicationMap`
+  // parameter is kept (and intentionally ignored) so existing callers
+  // compile; a follow-up cleanup can drop it once all graph-state
+  // plumbing is rewritten to not build an application map at all.
+  void applicationMap;
 
   // Build set of feature node IDs that have children (are dependency edge sources)
   const parentNodeIds = new Set<string>();
