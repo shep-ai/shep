@@ -6,8 +6,9 @@ summary: >
   The inventory page (/features) currently shows features in a read-only table with filtering, grouping,
   and sorting — but all management actions (archive, delete, start, retry, etc.) require navigating to
   the control center canvas or opening the feature drawer. This feature adds inline row actions to the
-  inventory table so users with many repositories can manage features directly from the table view.
-phase: Analysis
+  inventory table so users with many repositories can manage features directly from the table view,
+  reusing the same server actions and confirmation dialogs used by the control center canvas.
+phase: Requirements
 sizeEstimate: M
 
 relatedFeatures: []
@@ -23,132 +24,183 @@ technologies:
 relatedLinks: []
 
 openQuestions:
-  - "Should bulk actions (select multiple features, archive all) be included in scope or deferred?"
-  - "Should the create-feature action be accessible from the inventory page toolbar (similar to the FAB on the canvas)?"
+  - question: "How should actions be rendered in the Tabulator table — via a Tabulator custom formatter with React portals, or by overlaying React components outside Tabulator?"
+    resolved: true
+    options:
+      - option: "Tabulator formatter with React portals"
+        description: "Add an actions column using a Tabulator custom formatter that creates a DOM container, then render a React DropdownMenu into it via createPortal. Keeps action triggers inside the table cell, aligning with Tabulator's column model. The portal approach is already proven in other React+Tabulator integrations in this codebase."
+        selected: true
+      - option: "Overlay React component outside Tabulator"
+        description: "Track which row is active and render a floating React component positioned absolutely over the table. Avoids Tabulator formatter complexity but introduces positioning/scroll sync challenges and breaks the natural table column layout."
+        selected: false
+    selectionRationale: "The portal-in-formatter approach keeps the action trigger (three-dot button) as a native Tabulator column cell, which means it participates in column sizing, scrolling, and row lifecycle automatically. The overlay approach would require manual position tracking and scroll synchronization, adding unnecessary complexity."
+    answer: "Tabulator formatter with React portals"
+
+  - question: "Should the actions column be pinnable/frozen to the right edge of the table, or should it scroll with the other columns?"
+    resolved: true
+    options:
+      - option: "Frozen to right edge"
+        description: "Pin the actions column to the right side so it is always visible regardless of horizontal scroll position. Ensures actions are always accessible but adds visual complexity with a frozen column separator."
+        selected: true
+      - option: "Scrollable with other columns"
+        description: "Let the actions column scroll naturally with the rest of the table. Simpler implementation but actions may be off-screen on narrow viewports."
+        selected: false
+    selectionRationale: "The actions column is the primary interaction surface added by this feature. If it scrolls off-screen, the entire feature becomes inaccessible. Freezing it to the right edge guarantees users can always reach actions regardless of table width or horizontal scroll position. Tabulator supports frozen columns natively via the `frozen: true` column definition."
+    answer: "Frozen to right edge"
+
+  - question: "Should the Stop action be included in the context menu for running features?"
+    resolved: true
+    options:
+      - option: "Include Stop action"
+        description: "Add Stop to the context menu for features in the 'running' state, matching the full set of actions available on the control center canvas feature node. Provides complete parity."
+        selected: true
+      - option: "Exclude Stop action"
+        description: "Omit Stop from the inventory context menu since stopping a running feature is a high-consequence action that benefits from the canvas's more contextual view. Users would need to go to the canvas or drawer to stop."
+        selected: false
+    selectionRationale: "Full action parity between the inventory table and the control center canvas is a core goal of this feature. Excluding Stop would create an inconsistency where users must still context-switch to the canvas for one specific action. The Stop action should be included with the same behavior as the canvas — no confirmation dialog, direct server action call."
+    answer: "Include Stop action"
+
+  - question: "Should the Review action (for action-required features) navigate to the feature drawer, or should it be excluded from the context menu?"
+    resolved: true
+    options:
+      - option: "Include Review as navigation action"
+        description: "Add Review to the context menu for features in the 'action-required' state. Clicking it navigates to the feature detail page (same as clicking the row name), providing a discoverable entry point for the review workflow."
+        selected: true
+      - option: "Exclude Review from context menu"
+        description: "Omit Review since clicking the feature name already navigates to the detail page. Including it in the context menu would be redundant with the existing click behavior."
+        selected: false
+    selectionRationale: "While clicking the feature name already navigates to the detail page, including Review in the context menu makes the available action for action-required features discoverable and consistent. Users scanning the context menu should see the appropriate action for each state without needing to know about the name-click shortcut."
+    answer: "Include Review as navigation action"
+
+  - question: "Should bulk/multi-select actions be included in this feature, or deferred to a future iteration?"
+    resolved: true
+    options:
+      - option: "Defer bulk actions to future iteration"
+        description: "Keep scope to single-row context menu actions only. Bulk selection and batch operations (e.g., archive 10 features at once) would add significant complexity including selection state management, batch confirmation dialogs, and batch server action orchestration."
+        selected: true
+      - option: "Include basic bulk actions"
+        description: "Add checkbox column for multi-select with a toolbar for batch actions (archive selected, delete selected). Provides power-user efficiency but significantly increases scope and complexity."
+        selected: false
+    selectionRationale: "Bulk actions are a natural follow-up but would roughly double the scope of this feature. Single-row context menus deliver the core value (managing features without leaving the inventory) and establish the action infrastructure that bulk operations can build on later. Ship the simpler version first."
+    answer: "Defer bulk actions to future iteration"
+
+  - question: "How should the table refresh after a mutation — full page revalidation via router.refresh(), or optimistic local state update?"
+    resolved: true
+    options:
+      - option: "router.refresh() for server revalidation"
+        description: "Call Next.js router.refresh() after each mutation to trigger server-side re-fetch of the feature tree data. Simple, correct, and consistent with SSR data flow. Adds a brief loading delay (typically <500ms) while the server re-fetches."
+        selected: true
+      - option: "Optimistic local state update"
+        description: "Update the local features array immediately (e.g., change status, remove row) and then reconcile with server data in the background. Feels instant but requires maintaining a parallel local state model, handling rollbacks on error, and keeping the optimistic state in sync with filter/group/sort logic."
+        selected: false
+      - option: "Hybrid — optimistic + revalidation"
+        description: "Apply optimistic update for immediate feedback, then call router.refresh() to reconcile. Best UX but most complex — requires both optimistic state management and reconciliation logic."
+        selected: false
+    selectionRationale: "router.refresh() is the simplest correct approach. The control center canvas uses SSE-driven state updates because it maintains a complex React Flow graph, but the inventory table is a server-rendered data display. A full refresh is idiomatic for Next.js server components and avoids the complexity of managing parallel local state alongside Tabulator's internal data model. The sub-500ms delay is acceptable for management actions that are not high-frequency."
+    answer: "router.refresh() for server revalidation"
+
+  - question: "Should action state (loading/pending) be shown per-row while an action is in progress?"
+    resolved: true
+    options:
+      - option: "Show per-row loading state"
+        description: "Track which feature IDs have in-flight actions and show a spinner or disabled state on the action button for those rows. Prevents double-submission and provides clear feedback that the action is processing."
+        selected: true
+      - option: "No per-row loading state"
+        description: "Disable the entire actions column or show a global loading indicator during mutations. Simpler but provides poor feedback when multiple features are visible."
+        selected: false
+    selectionRationale: "Per-row loading state is essential for usability. Without it, users may click the same action twice or not know which feature is being processed. The implementation requires a simple Set<string> of in-flight feature IDs managed via useState, which is minimal overhead."
+    answer: "Show per-row loading state"
 
 content: |
   ## Problem Statement
 
   The inventory page (`/features`) is currently a read-only table view. Users can filter, group, and
-  sort features — but to perform any management action (archive, delete, start, retry, unarchive),
+  sort features — but to perform any management action (archive, delete, start, retry, unarchive, stop),
   they must either switch to the control center canvas (which becomes unwieldy with many repos) or
   click into the feature drawer. For users managing many repositories, this context-switching overhead
   makes the inventory impractical as a primary workspace.
 
   The control center canvas provides hover-action buttons on feature nodes (archive, delete, unarchive,
-  start, retry, review), but these only work when the canvas is visible and features are within the
+  start, retry, stop, review), but these only work when the canvas is visible and features are within the
   viewport. The inventory table, designed for managing large numbers of features, has no equivalent
   action surface.
 
   ## Success Criteria
 
-  - [ ] Each feature row in the inventory table has an actions column with a context menu (three-dot dropdown)
-  - [ ] Context menu offers: Start (when pending), Retry (when error), Archive (when active), Unarchive (when archived), Delete (with cleanup/cascade dialog)
-  - [ ] Actions trigger the same server actions used by the control center canvas (no new backend work)
-  - [ ] Delete shows the same `DeleteFeatureDialog` with cleanup, cascade, and close-PR options
-  - [ ] Archive shows the same confirmation dialog as the canvas
-  - [ ] After an action completes, the table data refreshes to reflect the new state
-  - [ ] Actions are disabled/hidden based on feature state (same rules as the canvas feature node)
-  - [ ] Storybook stories exist for the row actions component
+  - [ ] Each feature row in the inventory table has a frozen actions column on the right with a three-dot dropdown trigger
+  - [ ] Context menu offers state-appropriate actions: Start (pending), Stop (running), Retry (error), Review (action-required), Archive (non-archived, non-deleting), Unarchive (archived), Delete (non-deleting)
+  - [ ] Actions trigger the same server actions used by the control center canvas — no new backend work
+  - [ ] Delete opens the existing `DeleteFeatureDialog` with correct hasChildren and hasOpenPr flags
+  - [ ] Archive opens a confirmation dialog before executing
+  - [ ] After any action completes, the table data refreshes via router.refresh() to reflect the new state
+  - [ ] Per-row loading state prevents double-submission and shows which feature has an in-flight action
+  - [ ] Actions are hidden for group header rows and rows in transient states (creating, deleting)
+  - [ ] The FeatureTreeRow type is extended with hasChildren and hasOpenPr fields for the delete dialog
+  - [ ] A new FeatureRowActions component is created with colocated Storybook stories
   - [ ] All existing inventory tests continue to pass
+  - [ ] The actions column does not break existing table features (grouping, sorting, filtering, tree expansion, name click navigation)
 
-  ## Codebase Analysis
+  ## Functional Requirements
 
-  ### Project Structure
+  - **FR-1**: Add an "Actions" column as the last column in the FeatureTreeTable, frozen to the right edge, containing a three-dot icon button that opens a shadcn/ui DropdownMenu
+  - **FR-2**: The DropdownMenu must show only actions valid for the feature's current state, following the same state-to-action mapping used by the control center feature node:
+    - `pending` → Start, Archive, Delete
+    - `running` → Stop, Archive, Delete
+    - `error` → Retry, Archive, Delete
+    - `action-required` → Review, Archive, Delete
+    - `done` → Archive, Delete
+    - `blocked` → Archive, Delete
+    - `archived` → Unarchive, Delete
+    - `creating` → No actions (hide the three-dot button)
+    - `deleting` → No actions (hide the three-dot button)
+  - **FR-3**: The Delete action must open the existing DeleteFeatureDialog component, passing the feature's hasChildren and hasOpenPr data so cleanup, cascade, and close-PR options are correctly shown
+  - **FR-4**: The Archive action must open a confirmation AlertDialog before executing, consistent with the canvas behavior
+  - **FR-5**: Start, Stop, Retry, and Unarchive actions must execute immediately without a confirmation dialog, consistent with canvas behavior
+  - **FR-6**: The Review action must navigate to `/feature/{featureId}/overview`, the same destination as clicking the feature name
+  - **FR-7**: After any mutation action completes successfully, the page must refresh via `router.refresh()` to re-fetch server data and update the table
+  - **FR-8**: After a mutation action fails, an error toast or inline error message must be shown to the user with the error details from the server action response
+  - **FR-9**: While an action is in-flight for a feature, that row's action button must show a loading indicator and further actions on that row must be disabled
+  - **FR-10**: The actions column must not render action buttons on group header rows (`_isGroupHeader === true` or `_isRepoGroup === true`)
+  - **FR-11**: The FeatureTreeRow interface must be extended with `hasChildren: boolean` and `hasOpenPr: boolean` fields, populated by the server data-fetching function
+  - **FR-12**: The actions column must use a Tabulator custom formatter that creates a DOM container, with the React DropdownMenu rendered into it via createPortal
+  - **FR-13**: A new `FeatureRowActions` React component must encapsulate the dropdown menu, state-to-action logic, and dialog triggers — this component is rendered via portal into each table row's actions cell
 
-  The project follows Clean Architecture with four layers:
+  ## Non-Functional Requirements
 
-  - **domain/** — Core business entities (Feature, Repository), TypeSpec-generated models
-  - **application/** — Use cases (`ListFeaturesUseCase`, `ArchiveFeatureUseCase`, etc.) with port interfaces
-  - **infrastructure/** — SQLite persistence, DI container, agent executors
-  - **presentation/** — CLI (`src/presentation/cli/`), Web UI (`src/presentation/web/`)
+  - **NFR-1**: The actions column must not degrade table scroll performance — the dropdown menu must only mount when the three-dot button is clicked, not pre-rendered for every row
+  - **NFR-2**: The FeatureRowActions component must have colocated Storybook stories covering all feature states (pending, running, error, action-required, done, blocked, archived) and loading state
+  - **NFR-3**: The actions column width must be fixed (not growable) and narrow enough to not take significant space from data columns — approximately 48-56px
+  - **NFR-4**: All action labels must use existing localization keys from the feature node or define new keys following the same i18n pattern
+  - **NFR-5**: The implementation must not introduce new dependencies — only existing packages (shadcn/ui, Tabulator, React) are used
+  - **NFR-6**: The three-dot trigger and dropdown must be keyboard-accessible (Tab to focus, Enter/Space to open, arrow keys to navigate, Escape to close) — this is provided by shadcn/ui DropdownMenu by default
+  - **NFR-7**: The actions column must work correctly with all existing table features: grouping by repository/status/lifecycle, sorting, filtering by search/status/archive/repo, and tree expansion
+  - **NFR-8**: Error states from server actions must be handled gracefully — the UI must never show an unhandled promise rejection or leave the table in an inconsistent state
+  - **NFR-9**: Portal cleanup must be handled properly — when Tabulator destroys/recycles row DOM elements (e.g., during re-render after grouping change), the React portals must be unmounted to prevent memory leaks
 
-  The web UI uses Next.js 14 app router with:
-  - Server components for data fetching (`app/features/page.tsx`)
-  - Client components for interactivity (`app/features/feature-tree-page-client.tsx`)
-  - Server actions for mutations (`app/actions/*.ts`)
-  - Shared components in `components/common/` and `components/features/`
+  ## Product Questions & AI Recommendations
 
-  ### Architecture Patterns
-
-  **Action flow:** User clicks button → client component calls server action → server action resolves
-  use case from DI container via string token → use case executes → client receives result → UI updates.
-
-  **Existing server actions already cover all needed mutations:**
-  - `app/actions/archive-feature.ts` — archive a feature
-  - `app/actions/unarchive-feature.ts` — unarchive a feature
-  - `app/actions/delete-feature.ts` — delete with cleanup/cascade/closePr options
-  - `app/actions/start-feature.ts` — start a pending feature
-  - `app/actions/retry-feature.ts` — retry a failed feature
-  - `app/actions/stop-feature.ts` — stop a running feature
-
-  **Existing reusable components:**
-  - `DeleteFeatureDialog` — full delete confirmation dialog with cleanup, cascade, and close-PR options
-  - `AlertDialog` from shadcn/ui — used for archive confirmation in the canvas
-
-  **Feature state → available actions mapping** (from `feature-node.tsx`):
-  - `pending` → Start
-  - `running` → Stop
-  - `error` → Retry
-  - `action-required` → Review (navigate to drawer)
-  - `archived` → Unarchive
-  - `creating` / `deleting` → No actions
-  - All non-archived, non-deleting states → Archive, Delete
-
-  ### Relevant Technologies
-
-  - **Tabulator.js** — Currently renders the inventory table. Adding an actions column requires either
-    a custom Tabulator column formatter or a React portal approach for rendering React components in cells.
-  - **shadcn/ui** — Provides `DropdownMenu`, `AlertDialog`, `Button` used throughout the app.
-  - **Server actions** — All feature management mutations are already implemented.
-  - **React Flow** — Only used on the canvas, not relevant for inventory changes.
-
-  ### Current Inventory Implementation
-
-  **Server component** (`app/features/page.tsx`):
-  - Calls `getFeatureTreeData()` to fetch features and repos
-  - Passes data to `FeatureTreePageClient`
-
-  **Client component** (`app/features/feature-tree-page-client.tsx`):
-  - Manages filter state (search, status, archive, repo)
-  - Manages grouping and sorting state
-  - Filters data via `useMemo` and passes to `FeatureTreeTable`
-  - Only interaction: `handleFeatureClick(id)` → navigates to `/feature/{id}/overview`
-
-  **Table component** (`components/features/feature-tree-table/feature-tree-table.tsx`):
-  - Uses Tabulator.js with `dataTree` for hierarchical display
-  - Columns: Name, Repository, Status, Lifecycle, Branch
-  - Click handler on Name column cells triggers `onFeatureClick` callback
-  - No action column, no context menus, no inline buttons
-
-  **Data types** (`FeatureTreeRow`):
-  - Contains: id, name, status, lifecycle, branch, repositoryName, remoteUrl, parentId
-  - Missing for actions: hasChildren, hasOpenPr (needed for delete dialog options)
-
-  ### Control Center Feature Node (reference implementation)
-
-  The canvas `FeatureNode` component (`components/common/feature-node/feature-node.tsx`) provides
-  the reference implementation for feature actions:
-
-  - Hover-revealed left-side buttons: Archive (with AlertDialog confirm), Delete (with DeleteFeatureDialog), Unarchive
-  - Bottom-right state-dependent buttons: Start, Retry, Review (navigate)
-  - Callbacks passed via `FeatureNodeData`: onArchive, onDelete, onStart, onRetry, onStop, onUnarchive
-
-  The `ControlCenterInner` component wires these callbacks to server actions and handles optimistic
-  updates + SSE-driven state refresh.
+  | # | Question | AI Recommendation | Rationale |
+  | - | -------- | ----------------- | --------- |
+  | 1 | How should actions be rendered in Tabulator cells? | Tabulator formatter with React portals | Keeps action triggers inside the table cell, participates in column sizing/scrolling naturally, avoids overlay positioning complexity |
+  | 2 | Should the actions column be frozen to the right? | Yes, frozen to right edge | Actions are the primary interaction surface — they must always be visible regardless of horizontal scroll |
+  | 3 | Should Stop be included for running features? | Yes, include Stop | Full action parity with the canvas is a core goal; excluding it creates inconsistency |
+  | 4 | Should Review be in the context menu? | Yes, as navigation action | Makes the available action for action-required features discoverable and consistent |
+  | 5 | Should bulk/multi-select actions be included? | Defer to future iteration | Would roughly double scope; single-row context menus deliver core value and establish action infrastructure for later |
+  | 6 | How should the table refresh after mutations? | router.refresh() server revalidation | Simplest correct approach for server-rendered data; avoids complex optimistic state management alongside Tabulator |
+  | 7 | Should per-row loading state be shown? | Yes, show per-row loading | Essential for usability — prevents double-submission and provides clear feedback; minimal implementation overhead |
 
   ## Affected Areas
 
   | Area | Impact | Reasoning |
   | ---- | ------ | --------- |
-  | `src/presentation/web/components/features/feature-tree-table/` | High | Adding actions column, context menu, and action handlers to the table |
-  | `src/presentation/web/app/features/feature-tree-page-client.tsx` | High | Wiring server actions as callbacks, handling action state, data refresh |
+  | `src/presentation/web/components/features/feature-tree-table/` | High | Adding actions column, custom formatter, portal management, and new FeatureRowActions component |
+  | `src/presentation/web/app/features/feature-tree-page-client.tsx` | High | Wiring server actions as callbacks, managing in-flight action state, handling router.refresh() after mutations |
   | `src/presentation/web/app/features/page.tsx` | Low | May need to pass additional data (hasChildren, hasOpenPr) for delete dialog |
+  | `src/presentation/web/lib/server-container.ts` | Low | Data fetching function needs to compute hasChildren and hasOpenPr for each feature |
   | `src/presentation/web/app/actions/` | None | All server actions already exist — no changes needed |
   | `src/presentation/web/components/common/delete-feature-dialog/` | None | Reuse as-is |
-  | `src/presentation/web/lib/server-container.ts` | None | Data fetching function may need minor enrichment |
-  | `tests/` | Medium | New tests for row actions component, update existing inventory tests |
-  | `stories/` | Medium | New Storybook stories for row actions component |
+  | `tests/` | Medium | New tests for FeatureRowActions component, update existing inventory tests |
+  | `stories/` | Medium | New Storybook stories for FeatureRowActions component covering all states |
 
   ## Dependencies
 
@@ -156,16 +208,22 @@ content: |
   - Server actions: `archive-feature.ts`, `unarchive-feature.ts`, `delete-feature.ts`, `start-feature.ts`, `retry-feature.ts`, `stop-feature.ts`
   - `DeleteFeatureDialog` component — reusable as-is
   - shadcn/ui components: `DropdownMenu`, `AlertDialog`, `Button`
-  - Domain types: `FeatureTreeRow` type (may need extension for `hasChildren`, `hasOpenPr`)
+
+  **Existing code (minor extension needed):**
+  - `FeatureTreeRow` type — add `hasChildren: boolean` and `hasOpenPr: boolean` fields
+  - `getFeatureTreeData()` — compute hasChildren (from _children presence) and hasOpenPr (from feature PR data) during data assembly
 
   **Pattern reference:**
-  - `feature-node.tsx` — state-to-actions mapping logic
-  - `control-center-inner` — server action wiring pattern
+  - `feature-node.tsx` — state-to-actions mapping logic to replicate
+  - `feature-node-state-config.ts` — state configuration and action availability rules
+  - `control-center-inner.tsx` — server action wiring and callback patterns
 
   ## Size Estimate
 
   **M** — The scope is a presentation-layer change only. All backend use cases and server actions
-  already exist. The main work is: (1) adding an actions column to the Tabulator table with a
-  React-rendered context menu, (2) wiring the actions to existing server actions, (3) handling
-  state refresh after mutations, (4) reusing the existing delete/archive dialogs, and (5) writing
-  tests and stories. No domain, application, or infrastructure changes are needed.
+  already exist. The main work is: (1) adding a frozen actions column to the Tabulator table with a
+  React portal-based custom formatter, (2) creating a FeatureRowActions component with state-dependent
+  dropdown menu, (3) wiring actions to existing server actions with per-row loading state, (4) extending
+  FeatureTreeRow with hasChildren/hasOpenPr, (5) handling table refresh via router.refresh(), (6) reusing
+  existing delete/archive confirmation dialogs, and (7) writing tests and Storybook stories. No domain,
+  application, or infrastructure changes are needed.
