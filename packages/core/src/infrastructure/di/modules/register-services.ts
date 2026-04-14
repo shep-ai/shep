@@ -11,6 +11,8 @@ import { VersionService } from '../../services/version.service.js';
 import type { IWebServerService } from '../../../application/ports/output/services/web-server-service.interface.js';
 import type { IWorktreeService } from '../../../application/ports/output/services/worktree-service.interface.js';
 import { WorktreeService } from '../../services/git/worktree.service.js';
+import type { IGitCommitService } from '../../../application/ports/output/services/git-commit.service.interface.js';
+import { GitCommitService } from '../../services/git/git-commit.service.js';
 import type { IFileSystemService } from '../../../application/ports/output/services/file-system-service.interface.js';
 import { FileSystemService } from '../../services/file-system.service.js';
 import type { IApplicationBriefStore } from '../../../application/ports/output/services/application-brief-store.interface.js';
@@ -56,6 +58,8 @@ import type { IConflictResolutionService } from '../../../application/ports/outp
 import { ConflictResolutionService } from '../../services/agents/conflict-resolution/conflict-resolution.service.js';
 import type { ILogger } from '../../../application/ports/output/services/logger.interface.js';
 import { ConsoleLogger } from '../../services/logging/console-logger.js';
+import type { IProcessLivenessProbe } from '../../../application/ports/output/services/process-liveness.interface.js';
+import { ProcessLivenessAdapter } from '../../services/process/process-liveness.adapter.js';
 
 /**
  * Register core infrastructure services: validators, filesystem, git, notifications,
@@ -103,6 +107,7 @@ export function registerServices(container: DependencyContainer): void {
   });
 
   container.registerSingleton<IWorktreeService>('IWorktreeService', WorktreeService);
+  container.registerSingleton<IGitCommitService>('IGitCommitService', GitCommitService);
   container.registerSingleton<IFileSystemService>('IFileSystemService', FileSystemService);
   container.registerSingleton<IApplicationBriefStore>(
     'IApplicationBriefStore',
@@ -187,4 +192,12 @@ export function registerServices(container: DependencyContainer): void {
 
   // Generic logger used by cloud deploy + other infrastructure consumers.
   container.registerSingleton<ILogger>('ILogger', ConsoleLogger);
+
+  // Process liveness probe — hides `process.kill(pid, 0)` behind a port so
+  // application + presentation layers never import `infrastructure/services/
+  // process/is-process-alive` directly.
+  container.registerSingleton<IProcessLivenessProbe>(
+    'IProcessLivenessProbe',
+    ProcessLivenessAdapter
+  );
 }

@@ -61,6 +61,8 @@ import { GetApplicationUseCase } from '../../../application/use-cases/applicatio
 import { DeleteApplicationUseCase } from '../../../application/use-cases/applications/delete-application.use-case.js';
 import { ResumeApplicationWorkflowUseCase } from '../../../application/use-cases/applications/resume-application-workflow.use-case.js';
 import { UpdateApplicationUseCase } from '../../../application/use-cases/applications/update-application.use-case.js';
+import { CommitApplicationChangesUseCase } from '../../../application/use-cases/applications/commit-application-changes.use-case.js';
+import { CommitAndPushApplicationChangesUseCase } from '../../../application/use-cases/applications/commit-and-push-application-changes.use-case.js';
 import { CreateTerminalSessionUseCase } from '../../../application/use-cases/terminal/create-terminal-session.use-case.js';
 import { ListApplicationFilesUseCase } from '../../../application/use-cases/applications/list-application-files.use-case.js';
 import { ReadApplicationFileUseCase } from '../../../application/use-cases/applications/read-application-file.use-case.js';
@@ -69,6 +71,7 @@ import { WriteApplicationFileUseCase } from '../../../application/use-cases/appl
 import { WatchApplicationFilesUseCase } from '../../../application/use-cases/applications/watch-application-files.use-case.js';
 import { ListAgentSessionsUseCase } from '../../../application/use-cases/agents/list-agent-sessions.use-case.js';
 import { GetAgentSessionUseCase } from '../../../application/use-cases/agents/get-agent-session.use-case.js';
+import { StreamAgentEventsUseCase } from '../../../application/use-cases/agents/stream-agent-events.use-case.js';
 
 /**
  * Register the main body of application use cases (settings, agents, features,
@@ -149,8 +152,11 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(DeleteApplicationUseCase);
   container.registerSingleton(ResumeApplicationWorkflowUseCase);
   container.registerSingleton(UpdateApplicationUseCase);
+  container.registerSingleton(CommitApplicationChangesUseCase);
+  container.registerSingleton(CommitAndPushApplicationChangesUseCase);
   container.registerSingleton(ListAgentSessionsUseCase);
   container.registerSingleton(GetAgentSessionUseCase);
+  container.registerSingleton(StreamAgentEventsUseCase);
 
   // ─── String-token aliases for web routes ─────────────────────────────────
   // Turbopack can't resolve .js→.ts imports inside @shepai/core, so routes use
@@ -296,6 +302,12 @@ export function registerUseCases(container: DependencyContainer): void {
   container.register('UpdateApplicationUseCase', {
     useFactory: (c) => c.resolve(UpdateApplicationUseCase),
   });
+  container.register('CommitApplicationChangesUseCase', {
+    useFactory: (c) => c.resolve(CommitApplicationChangesUseCase),
+  });
+  container.register('CommitAndPushApplicationChangesUseCase', {
+    useFactory: (c) => c.resolve(CommitAndPushApplicationChangesUseCase),
+  });
   container.register('ListApplicationFilesUseCase', {
     useFactory: (c) => c.resolve(ListApplicationFilesUseCase),
   });
@@ -313,6 +325,9 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('CreateTerminalSessionUseCase', {
     useFactory: (c) => c.resolve(CreateTerminalSessionUseCase),
+  });
+  container.register('StreamAgentEventsUseCase', {
+    useFactory: (c) => c.resolve(StreamAgentEventsUseCase),
   });
 
   container.registerSingleton(ImportWorkItemsCsvUseCase);

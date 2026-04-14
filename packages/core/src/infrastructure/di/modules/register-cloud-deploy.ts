@@ -87,12 +87,35 @@ export function registerCloudDeploy(container: DependencyContainer): void {
   );
   container.registerSingleton<IGitRemoteService>('IGitRemoteService', GitRemoteService);
 
-  // Cloud deployment use cases (spec 089)
+  // Cloud deployment use cases (spec 089). String-token aliases added so
+  // web routes can do `resolve<T>('UseCaseName')` — needed because next.js
+  // server-side resolve lives outside the core di bootstrap.
   container.registerSingleton(ListCloudProvidersUseCase);
+  container.register('ListCloudProvidersUseCase', {
+    useFactory: (c) => c.resolve(ListCloudProvidersUseCase),
+  });
   container.registerSingleton(ConnectCloudProviderUseCase);
+  container.register('ConnectCloudProviderUseCase', {
+    useFactory: (c) => c.resolve(ConnectCloudProviderUseCase),
+  });
   container.registerSingleton(SelectCloudProviderUseCase);
+  container.register('SelectCloudProviderUseCase', {
+    useFactory: (c) => c.resolve(SelectCloudProviderUseCase),
+  });
   container.registerSingleton(InitiateCloudDeploymentUseCase);
+  container.register('InitiateCloudDeploymentUseCase', {
+    useFactory: (c) => c.resolve(InitiateCloudDeploymentUseCase),
+  });
   container.registerSingleton(GetCloudDeploymentStatusUseCase);
+  container.register('GetCloudDeploymentStatusUseCase', {
+    useFactory: (c) => c.resolve(GetCloudDeploymentStatusUseCase),
+  });
   container.registerSingleton(CreateGitRemoteUseCase);
+  container.register('CreateGitRemoteUseCase', {
+    useFactory: (c) => c.resolve(CreateGitRemoteUseCase),
+  });
   container.registerSingleton(EnsureGhAuthenticatedUseCase);
+  container.register('EnsureGhAuthenticatedUseCase', {
+    useFactory: (c) => c.resolve(EnsureGhAuthenticatedUseCase),
+  });
 }
