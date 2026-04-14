@@ -21,6 +21,7 @@ import {
   PluginHealthStatus,
 } from '../../../domain/generated/output.js';
 import type { IPluginRepository } from '../../ports/output/repositories/plugin-repository.interface.js';
+import type { IPluginHealthChecker } from '../../ports/output/services/plugin-health-checker.interface.js';
 import { getCatalogEntry } from '../../../infrastructure/services/plugin/plugin-catalog.js';
 
 export interface AddCustomPluginInput {
@@ -41,7 +42,9 @@ export interface AddCustomPluginInput {
 export class AddPluginUseCase {
   constructor(
     @inject('IPluginRepository')
-    private readonly pluginRepo: IPluginRepository
+    private readonly pluginRepo: IPluginRepository,
+    @inject('IPluginHealthChecker')
+    private readonly healthChecker: IPluginHealthChecker
   ) {}
 
   async execute(input: string | AddCustomPluginInput): Promise<Plugin> {
@@ -111,6 +114,10 @@ export class AddPluginUseCase {
         ...(input.description && { description: input.description }),
       };
     }
+
+    const health = await this.healthChecker.checkHealth(plugin);
+    plugin.healthStatus = health.status;
+    plugin.healthMessage = health.message;
 
     await this.pluginRepo.create(plugin);
     return plugin;

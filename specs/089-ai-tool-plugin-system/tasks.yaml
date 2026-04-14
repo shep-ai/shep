@@ -36,7 +36,7 @@ tasks:
       Create tsp/common/enums/plugin.tsp with PluginType (Mcp, Hook, Cli),
       PluginTransport (Stdio, Http), and PluginHealthStatus (Healthy, Degraded,
       Unavailable, Unknown) enums. Add import to tsp/common/enums/index.tsp.
-    state: "Todo"
+    state: "Done"
     dependencies: []
     acceptanceCriteria:
       - "PluginType enum has exactly three members: Mcp, Hook, Cli"
@@ -64,7 +64,7 @@ tasks:
       enabled (default true), healthStatus (default Unknown), healthMessage?, hookType?,
       scriptPath?, binaryCommand?, runtimeType?, runtimeMinVersion?, homepageUrl?, description?.
       Also define ToolGroup model with name, description?, tools? fields.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-1"
     acceptanceCriteria:
@@ -93,7 +93,7 @@ tasks:
       tsp/domain/entities/feature.tsp. Type is Record<string, boolean>
       (or a simple key-value model) for per-feature plugin activation overrides.
       Compile and verify the generated type includes the new field.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-2"
     acceptanceCriteria:
@@ -122,7 +122,7 @@ tasks:
       The plugins table stores all plugin registry data with columns matching the Plugin
       entity. JSON columns for arrays (server_args, required_env_vars, tool_groups,
       active_tool_groups). Additive-only migration per LESSONS.md.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-2"
     acceptanceCriteria:
@@ -149,7 +149,7 @@ tasks:
       Create migration 061-add-active-plugins-to-features.ts that adds an active_plugins
       TEXT column to the features table. Additive-only. The column stores a JSON object
       mapping plugin names to boolean activation state.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-4"
     acceptanceCriteria:
@@ -173,7 +173,7 @@ tasks:
       functions. Handles camelCase/snake_case conversion, JSON serialization for array
       fields (serverArgs, requiredEnvVars, toolGroups, activeToolGroups), and date
       conversion (unix milliseconds). Follow feature.mapper.ts pattern exactly.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-4"
     acceptanceCriteria:
@@ -201,7 +201,7 @@ tasks:
       Define IPluginRepository port interface with CRUD methods: create, findById,
       findByName, list, update, delete. Implement SQLitePluginRepository following
       the SQLiteFeatureRepository pattern with hardcoded INSERT/UPDATE SQL.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-6"
     acceptanceCriteria:
@@ -235,7 +235,7 @@ tasks:
       Add active_plugins to FeatureRow interface in feature.mapper.ts. Update toDatabase()
       to JSON.stringify activePlugins. Update fromDatabase() to JSON.parse active_plugins.
       Add active_plugins to INSERT and UPDATE SQL in sqlite-feature.repository.ts.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-5"
     acceptanceCriteria:
@@ -266,7 +266,7 @@ tasks:
       Define IMcpServerManager with methods: startServersForFeature, stopServersForFeature,
       getActiveServers, generateMcpConfigPath. Define IPluginHealthChecker with methods:
       checkHealth, checkAllHealth. Both in application/ports/output/services/. Export from index.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-7"
     acceptanceCriteria:
@@ -284,7 +284,7 @@ tasks:
       objects. V1 entries: MemPalace (MCP stdio, Python 3.9+), Token Optimizer (Hook,
       Python 3.8+), Ruflo (MCP stdio, Node 20+, requires ANTHROPIC_API_KEY).
       Export getCatalogEntries() function.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-2"
     acceptanceCriteria:
@@ -312,7 +312,7 @@ tasks:
     description: >
       Create GetPluginCatalogUseCase that returns the curated catalog entries.
       Optionally cross-references with installed plugins to show install status.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-10"
       - "task-7"
@@ -336,26 +336,32 @@ tasks:
     description: >
       Create AddPluginUseCase that handles both catalog-based and custom plugin
       installation. For catalog plugins, looks up metadata from catalog. For custom,
-      accepts type, command, args, transport. Creates a Plugin entity and persists
-      via IPluginRepository. Runs health check after creation.
-    state: "Todo"
+      accepts type, command, args, transport. Creates a Plugin entity, runs the
+      injected IPluginHealthChecker against it, persists the result (status +
+      message) via IPluginRepository, and returns the populated Plugin.
+    state: "Done"
     dependencies:
       - "task-10"
       - "task-7"
+      - "task-18"
     acceptanceCriteria:
       - "execute(name) installs from catalog if name matches a catalog entry"
       - "execute({name, type, command, ...}) installs a custom plugin"
       - "Throws if plugin name already exists in registry"
       - "Creates Plugin entity with all fields populated from catalog or input"
-      - "Persists via IPluginRepository.create()"
-      - "Returns the created Plugin"
+      - "Calls IPluginHealthChecker.checkHealth on the new plugin before persistence"
+      - "Persists healthStatus and healthMessage from the checker result via IPluginRepository.create()"
+      - "Returns the created Plugin with health fields populated (never Unknown when checker returned)"
     tdd:
       red:
         - "Write unit test: execute('mempalace') creates plugin with catalog metadata"
         - "Write unit test: execute({name:'custom', type:'Mcp', ...}) creates custom plugin"
         - "Write unit test: execute('mempalace') throws when already installed"
+        - "Write unit test: health checker is invoked once and Healthy result is persisted"
+        - "Write unit test: Degraded result (missing env vars) is persisted, no throw"
+        - "Write unit test: Unavailable result (missing runtime) is persisted, no throw"
       green:
-        - "Implement AddPluginUseCase with IPluginRepository and catalog dependencies"
+        - "Implement AddPluginUseCase with IPluginRepository and IPluginHealthChecker"
       refactor:
         - "Extract input validation to a helper if complex"
 
@@ -365,7 +371,7 @@ tasks:
     description: >
       Create RemovePluginUseCase that stops any running MCP servers for the plugin,
       removes the plugin record from the registry, and returns success/failure.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-7"
       - "task-9"
@@ -390,7 +396,7 @@ tasks:
     description: >
       Create ListPluginsUseCase that returns all registered plugins from the repository
       with their current health status.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-7"
     acceptanceCriteria:
@@ -413,7 +419,7 @@ tasks:
     description: >
       Create EnablePluginUseCase and DisablePluginUseCase that toggle the enabled
       field on a plugin. Both update the plugin record in the repository.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-7"
     acceptanceCriteria:
@@ -438,7 +444,7 @@ tasks:
       Create ConfigurePluginUseCase that updates plugin configuration: active tool groups,
       custom server args, or other mutable fields. Validates that tool groups are valid
       for the plugin (exist in toolGroups array).
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-7"
     acceptanceCriteria:
@@ -462,19 +468,19 @@ tasks:
     title: "Implement PluginHealthCheckerService"
     description: >
       Implement IPluginHealthChecker with tiered health checks: (1) runtime on PATH
-      via which/where, (2) package installed check, (3) required env vars present in
-      process.env, (4) optional server probe. Follow ToolInstallerService pattern for
-      runtime detection.
-    state: "Todo"
+      via which/where, (3) required env vars present in process.env. Follow
+      ToolInstallerService pattern for runtime detection. Tier 2 (package
+      verification via `pip show` / `npm ls`) and Tier 4 (MCP server probe) are
+      explicitly deferred for V1 -- see follow-ups task-31 and task-32.
+    state: "Done"
     dependencies:
       - "task-9"
     acceptanceCriteria:
       - "checkHealth(plugin) returns PluginHealthStatus and message"
       - "Tier 1: detects python3/node on PATH (reuse ToolInstallerService patterns)"
-      - "Tier 2: verifies package installed (pip show / npx check)"
       - "Tier 3: validates required env vars are set in process.env"
-      - "Returns Healthy when all tiers pass"
-      - "Returns Degraded when runtime present but package/env issues"
+      - "Returns Healthy when all enabled tiers pass"
+      - "Returns Degraded when runtime present but env vars missing"
       - "Returns Unavailable when runtime missing"
       - "checkAllHealth() checks all registered plugins"
     tdd:
@@ -484,7 +490,7 @@ tasks:
         - "Write unit test: checkHealth with missing env var returns Degraded"
         - "Write unit test: checkAllHealth checks each plugin"
       green:
-        - "Implement PluginHealthCheckerService with tiered checks"
+        - "Implement PluginHealthCheckerService with Tier 1 + Tier 3 checks"
         - "Use child_process.execFile for runtime detection (short timeout)"
       refactor:
         - "Extract runtime detection utilities if reusable beyond plugins"
@@ -495,7 +501,7 @@ tasks:
     description: >
       Create CheckPluginHealthUseCase that runs health checks on a specific plugin
       or all plugins. Updates health status in the repository after check.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-17"
       - "task-7"
@@ -519,7 +525,7 @@ tasks:
       Register IPluginRepository, IMcpServerManager, IPluginHealthChecker, and all
       eight plugin use cases in the DI container. Add string token aliases for web
       access per LESSONS.md.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-12"
       - "task-13"
@@ -555,7 +561,7 @@ tasks:
       Implement IMcpServerManager using child_process.spawn() for MCP server processes.
       Features: start/stop servers per-feature, reference counting for shared servers,
       per-feature temp .mcp.json file generation, process signal cleanup handlers.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-9"
       - "task-7"
@@ -588,7 +594,7 @@ tasks:
       Add optional mcpConfigPath field to AgentExecutionOptions interface.
       This carries the path to the per-feature .mcp.json temp file through the
       agent-agnostic interface.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-20"
     acceptanceCriteria:
@@ -610,7 +616,7 @@ tasks:
       Modify buildArgs() in ClaudeCodeExecutorService to add --mcp-config <path>
       when options.mcpConfigPath is set. This tells Claude Code to load plugin
       MCP servers from the generated temp file.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-21"
     acceptanceCriteria:
@@ -635,7 +641,7 @@ tasks:
       Add mcpConfigPath channel to FeatureAgentState annotations. Modify
       buildExecutorOptions() in node-helpers.ts to include mcpConfigPath from state
       in the returned AgentExecutionOptions.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-21"
     acceptanceCriteria:
@@ -660,7 +666,7 @@ tasks:
       and stop them in the finally block. Read feature activePlugins from the
       repository, resolve enabled plugins, call McpServerManager.startServersForFeature(),
       and pass mcpConfigPath through to graph input state.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-20"
       - "task-23"
@@ -698,7 +704,7 @@ tasks:
       Implement add, remove, and list subcommands. add supports both catalog name
       and custom plugin options. list displays plugins in a table with status.
       Register plugin command in the main CLI entry point.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-19"
     acceptanceCriteria:
@@ -728,7 +734,7 @@ tasks:
       Implement the remaining five CLI subcommands. enable/disable toggle activation.
       configure sets tool groups. status shows detailed health check results.
       catalog lists available plugins from the curated catalog.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-25"
     acceptanceCriteria:
@@ -759,7 +765,7 @@ tasks:
       Create server actions for plugin management: list-plugins, add-plugin,
       remove-plugin, toggle-plugin, get-plugin-catalog, check-plugin-health,
       configure-plugin. Each resolves use case by string token from DI container.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-19"
     acceptanceCriteria:
@@ -784,7 +790,7 @@ tasks:
       Create PluginList component showing installed plugins in a Card layout with
       status badge (Healthy/Degraded/Unavailable), enabled/disabled Switch toggle,
       and action buttons (configure, remove). Include Storybook stories file.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-27"
     acceptanceCriteria:
@@ -812,13 +818,14 @@ tasks:
       buttons. Shows name, description, type, runtime requirements. Install button
       calls add-plugin server action. Already-installed plugins show Installed badge
       instead of Install button. Include Storybook stories file.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-27"
     acceptanceCriteria:
       - "PluginCatalog displays catalog entries with name, description, type badge, runtime info"
       - "Install button calls add-plugin server action"
       - "Already-installed plugins show Installed badge instead of button"
+      - "Each not-yet-installed entry surfaces the catalog installCommand so the user knows the underlying package install they must run themselves (FR-4 install guidance)"
       - "Loading state while installing"
       - "Colocated .stories.tsx file"
     tdd:
@@ -839,7 +846,7 @@ tasks:
       Add navigation link to the dashboard layout sidebar. Add per-feature plugin
       activation toggles to the create-feature drawer, following existing per-feature
       settings patterns.
-    state: "Todo"
+    state: "Done"
     dependencies:
       - "task-28"
       - "task-29"
@@ -859,6 +866,64 @@ tasks:
       refactor:
         - "Ensure responsive layout on mobile"
         - "Verify accessibility (keyboard navigation, screen reader labels)"
+
+  - id: "task-31"
+    phaseId: "phase-3"
+    title: "Implement Tier 2 health check (package installed)"
+    description: >
+      Extend PluginHealthCheckerService with Tier 2: verify the underlying
+      package is installed (e.g., `pip show <pkg>` for python plugins,
+      `npm ls -g <pkg>` or equivalent for node plugins). Must be cross-platform
+      (see packages/CLAUDE.md spawn rules) and time-bounded. Surface result in
+      the same Healthy/Degraded/Unavailable taxonomy. Update the file header
+      comment in plugin-health-checker.service.ts to remove the deferral note.
+    state: "Todo"
+    dependencies:
+      - "task-17"
+    acceptanceCriteria:
+      - "checkHealth detects missing python package via `pip show` (or python -m pip show) and reports Degraded with install hint"
+      - "checkHealth detects missing global node package via `npm ls -g --depth=0` and reports Degraded"
+      - "Cross-platform: works on win32/darwin/linux without shell:true"
+      - "Timeout-bounded (<= EXEC_TIMEOUT_MS) so a hung package manager doesn't block install"
+      - "Existing Tier 1 + Tier 3 tests still pass; new unit tests cover both python + node Tier 2 paths"
+    tdd:
+      red:
+        - "Write unit test: missing pip package returns Degraded with install hint"
+        - "Write unit test: missing npm global package returns Degraded with install hint"
+        - "Write unit test: package present + runtime present + env vars set returns Healthy"
+      green:
+        - "Add per-runtime Tier 2 probe in PluginHealthCheckerService"
+        - "Mock execFile in tests; do not hit real registries"
+      refactor:
+        - "Extract per-runtime probe map (mirroring RUNTIME_BINARIES) to keep checkHealth flat"
+
+  - id: "task-32"
+    phaseId: "phase-4"
+    title: "Implement Tier 4 health check (MCP server probe)"
+    description: >
+      Extend PluginHealthCheckerService (or wrap it) with an optional Tier 4
+      that spawns the MCP server and verifies a successful initialize handshake
+      within the spec NFR-2 10s budget. Required by spec FR-6(d). Should reuse
+      McpServerManagerService primitives where possible to avoid duplicating
+      spawn/teardown logic.
+    state: "Todo"
+    dependencies:
+      - "task-17"
+      - "task-19"
+    acceptanceCriteria:
+      - "Probe spawns MCP server, awaits initialize response, then terminates the process"
+      - "Returns Healthy on successful handshake"
+      - "Returns Unavailable on spawn failure or timeout (>10s per NFR-2)"
+      - "Does not leave orphaned child processes on any exit path (covered by integration test)"
+    tdd:
+      red:
+        - "Write integration test: real lightweight stdio MCP server returns Healthy"
+        - "Write integration test: command that exits non-zero returns Unavailable"
+        - "Write integration test: command that hangs is killed and returns Unavailable within ~11s"
+      green:
+        - "Implement probe using existing spawn helpers"
+      refactor:
+        - "Share teardown helper with McpServerManagerService"
 
 totalEstimate: "40-50h"
 

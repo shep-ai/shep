@@ -10,11 +10,16 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AddPluginUseCase } from '@/application/use-cases/plugins/add-plugin.use-case.js';
 import type { IPluginRepository } from '@/application/ports/output/repositories/plugin-repository.interface.js';
+import type {
+  IPluginHealthChecker,
+  PluginHealthResult,
+} from '@/application/ports/output/services/plugin-health-checker.interface.js';
 import { PluginType, PluginTransport, PluginHealthStatus } from '@/domain/generated/output.js';
 
 describe('AddPluginUseCase', () => {
   let useCase: AddPluginUseCase;
   let mockPluginRepo: IPluginRepository;
+  let mockHealthChecker: IPluginHealthChecker;
 
   beforeEach(() => {
     mockPluginRepo = {
@@ -26,7 +31,18 @@ describe('AddPluginUseCase', () => {
       delete: vi.fn(),
     };
 
-    useCase = new AddPluginUseCase(mockPluginRepo);
+    mockHealthChecker = {
+      checkHealth: vi.fn(
+        async (plugin): Promise<PluginHealthResult> => ({
+          pluginName: plugin.name,
+          status: PluginHealthStatus.Healthy,
+          message: 'All checks passed',
+        })
+      ),
+      checkAllHealth: vi.fn().mockResolvedValue([]),
+    };
+
+    useCase = new AddPluginUseCase(mockPluginRepo, mockHealthChecker);
   });
 
   describe('catalog-based install', () => {
@@ -38,7 +54,8 @@ describe('AddPluginUseCase', () => {
       expect(result.type).toBe(PluginType.Mcp);
       expect(result.installSource).toBe('catalog');
       expect(result.enabled).toBe(true);
-      expect(result.healthStatus).toBe(PluginHealthStatus.Unknown);
+      expect(result.healthStatus).toBe(PluginHealthStatus.Healthy);
+      expect(result.healthMessage).toBe('All checks passed');
       expect(result.serverCommand).toBe('python');
       expect(result.serverArgs).toEqual(['-m', 'mempalace.mcp_server']);
       expect(result.transport).toBe(PluginTransport.Stdio);
@@ -63,6 +80,49 @@ describe('AddPluginUseCase', () => {
     it('should generate a UUID for the plugin id', async () => {
       const result = await useCase.execute('mempalace');
       expect(result.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    });
+
+    it('should run health check after creation and persist the result', async () => {
+      const result = await useCase.execute('mempalace');
+
+      expect(mockHealthChecker.checkHealth).toHaveBeenCalledTimes(1);
+      expect(mockHealthChecker.checkHealth).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'mempalace' })
+      );
+      expect(result.healthStatus).toBe(PluginHealthStatus.Healthy);
+      expect(mockPluginRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          healthStatus: PluginHealthStatus.Healthy,
+          healthMessage: 'All checks passed',
+        })
+      );
+    });
+
+    it('should persist Degraded status when health check reports missing env vars', async () => {
+      mockHealthChecker.checkHealth = vi.fn().mockResolvedValue({
+        pluginName: 'mempalace',
+        status: PluginHealthStatus.Degraded,
+        message: 'Missing required environment variables: FOO',
+      });
+
+      const result = await useCase.execute('mempalace');
+
+      expect(result.healthStatus).toBe(PluginHealthStatus.Degraded);
+      expect(result.healthMessage).toContain('Missing required environment variables');
+    });
+
+    it('should persist Unavailable status when runtime is missing and not throw', async () => {
+      mockHealthChecker.checkHealth = vi.fn().mockResolvedValue({
+        pluginName: 'mempalace',
+        status: PluginHealthStatus.Unavailable,
+        message: 'Required runtime "python" not found on PATH. Install python 3.9+ and try again.',
+      });
+
+      const result = await useCase.execute('mempalace');
+
+      expect(result.healthStatus).toBe(PluginHealthStatus.Unavailable);
+      expect(result.healthMessage).toMatch(/not found on PATH/);
+      expect(mockPluginRepo.create).toHaveBeenCalled();
     });
   });
 

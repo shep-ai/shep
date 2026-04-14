@@ -3,8 +3,10 @@
  *
  * Implements multi-tier health checks for plugins:
  * Tier 1: Runtime on PATH (python3/node via which)
- * Tier 2: Package installed (future - pip show/npx check)
  * Tier 3: Required env vars present in process.env
+ *
+ * Tier 2 (package installation via `pip show` / `npm ls`) is deferred for V1.
+ * See specs/089-ai-tool-plugin-system/tasks.yaml task-18 for the follow-up.
  *
  * Follows ToolInstallerService pattern for runtime detection.
  */

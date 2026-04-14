@@ -311,3 +311,17 @@ import 'reflect-metadata';
 before any other import. This does NOT apply to routes that only `resolve<T>('StringToken')` without importing the class itself — those don't evaluate tsyringe's decorators in the route's module graph.
 
 **Prevention:** When creating a new API route under `src/presentation/web/app/api/` that imports a use case class from `@shepai/core`, the very first line must be `import 'reflect-metadata';`.
+
+## "Install" Use Cases Must Run a Health Check Before Returning
+
+If an install/registration use case persists an entity but never verifies the result, the UI shows the entity in a permanent `Unknown` state and the user has no way to tell whether the install actually accomplished anything. Symptom: install feels suspiciously fast — because nothing was actually verified.
+
+**Rule:** Any use case named `Add*`, `Install*`, or `Register*` for an external integration MUST:
+1. Build the entity
+2. Run an availability/health check before persistence
+3. Persist the resulting status + message
+4. Return the populated entity so the presentation layer can surface real status immediately
+
+**Pattern:** `AddPluginUseCase` injects `IPluginHealthChecker`, calls `checkHealth(plugin)` after building the entity, sets `healthStatus` + `healthMessage` from the result, then `repo.create(plugin)`. See [add-plugin.use-case.ts](packages/core/src/application/use-cases/plugins/add-plugin.use-case.ts).
+
+**Prevention:** When writing a task spec for an Install/Add use case, the acceptance criteria must include "Runs health check after creation and persists the result" — not just in the description prose, where it's easy to skip in implementation.

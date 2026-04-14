@@ -72,6 +72,17 @@ export function PluginCatalog({ catalog, onInstall }: PluginCatalogProps) {
                     </a>
                   ) : null}
                 </div>
+                {!entry.isInstalled ? (
+                  <div
+                    className="text-muted-foreground mt-1.5 flex items-center gap-1 text-[10px]"
+                    data-testid={`install-command-${entry.name}`}
+                  >
+                    <span className="shrink-0">Run yourself:</span>
+                    <code className="bg-muted truncate rounded px-1 py-0.5 font-mono text-[10px]">
+                      {entry.installCommand}
+                    </code>
+                  </div>
+                ) : null}
               </div>
 
               {/* Install button or installed badge */}
