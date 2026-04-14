@@ -10,6 +10,8 @@ Single source of truth for Shep's value proposition, messaging, and tone. All pu
 
 Use this as the lead on landing pages, social cards, and launch posts. The number anchors the claim; "parallel AI agents" signals the mechanism.
 
+**Evidence backing**: Benchmark shows **3-5x speedup** from parallelism alone (5 features, measured wall-clock time). Including automation savings (branch management, CI monitoring, context switching), effective speedup approaches 5-8x. "10x" is the aspirational upper bound at high parallelism. Full methodology and results: [speed-benchmark.md](./speed-benchmark.md).
+
 ## Pain Statement
 
 > Managing AI agents across features is slow, error-prone, and manual. One agent session is fine. Five is chaos — context switching, branch conflicts, stale worktrees, forgotten CI runs.
