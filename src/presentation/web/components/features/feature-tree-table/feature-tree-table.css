@@ -29,7 +29,6 @@
   color: var(--color-foreground, #0a0a0a);
   font-family: var(--font-sans);
   font-size: 14px;
-  overflow: hidden;
 }
 
 /* ── Header — light fill with bottom border ────────────────── */
