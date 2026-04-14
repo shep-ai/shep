@@ -25,7 +25,7 @@ export interface FeatureRowActionsProps {
   onReview: (featureId: string) => void;
   onArchive: (featureId: string) => void;
   onUnarchive: (featureId: string) => void;
-  onDelete: (featureId: string, cleanup: boolean, cascadeDelete: boolean, closePr: boolean) => void;
+  onDelete: (featureId: string) => void;
 }
 
 const ACTION_HANDLERS: Record<
@@ -54,17 +54,6 @@ export function FeatureRowActions(props: FeatureRowActionsProps) {
 
   function handleActionClick(key: FeatureRowActionKey) {
     setOpen(false);
-
-    // Actions requiring confirmation are handled by the parent (Phase 4 wiring).
-    // For now, the archive confirmation opens a dialog externally.
-    // Delete requires the DeleteFeatureDialog — handled via the onDelete callback
-    // which will be wired through the portal manager in Phase 4.
-    if (key === 'delete' || key === 'archive') {
-      // These will trigger confirmation dialogs in Phase 4.
-      // For delete, we don't call onDelete directly here — the dialog handles it.
-      // For archive, we don't call onArchive directly here — the dialog handles it.
-      return;
-    }
 
     const handlerName = ACTION_HANDLERS[key];
     const handler = props[handlerName];

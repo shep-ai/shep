@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useState, useMemo } from 'react';
 import { Search, SlidersHorizontal, Archive, Inbox, X, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
+import { toast } from 'sonner';
+import { Trans, useTranslation } from 'react-i18next';
 import { FeatureTreeTable } from '@/components/features/feature-tree-table';
 import type {
   FeatureTreeRow,
@@ -10,11 +12,23 @@ import type {
   GroupByField,
   SortDir,
 } from '@/components/features/feature-tree-table';
+import { FeatureRowActionsManager } from '@/components/features/feature-tree-table/feature-row-actions-manager';
+import { DeleteFeatureDialog } from '@/components/common/delete-feature-dialog/delete-feature-dialog';
 import { PageHeader } from '@/components/common/page-header';
 import { EmptyState } from '@/components/common/empty-state';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Select,
   SelectContent,
@@ -22,6 +36,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { archiveFeature } from '@/app/actions/archive-feature';
+import { unarchiveFeature } from '@/app/actions/unarchive-feature';
+import { deleteFeature } from '@/app/actions/delete-feature';
+import { startFeature } from '@/app/actions/start-feature';
+import { stopFeature } from '@/app/actions/stop-feature';
+import { resumeFeature } from '@/app/actions/resume-feature';
 import type { FeatureStatus } from '@/components/common/feature-status-config';
 
 export interface FeatureTreePageClientProps {
@@ -79,8 +99,21 @@ export function isArchived(feature: FeatureTreeRow): boolean {
   return feature.lifecycle === 'Archived';
 }
 
+interface DeleteTarget {
+  featureId: string;
+  featureName: string;
+  hasChildren: boolean;
+  hasOpenPr: boolean;
+}
+
+interface ArchiveTarget {
+  featureId: string;
+  featureName: string;
+}
+
 export function FeatureTreePageClient({ features, repos }: FeatureTreePageClientProps) {
   const router = useRouter();
+  const { t } = useTranslation('web');
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,11 +128,190 @@ export function FeatureTreePageClient({ features, repos }: FeatureTreePageClient
   const [itemSortField, setItemSortField] = useState('name');
   const [itemSortDir, setItemSortDir] = useState<SortDir>('asc');
 
+  // Action wiring state
+  const [tableContainer, setTableContainer] = useState<HTMLDivElement | null>(null);
+  const [inFlightIds, setInFlightIds] = useState<Set<string>>(new Set());
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<ArchiveTarget | null>(null);
+
+  const addInFlight = useCallback((id: string) => {
+    setInFlightIds((prev) => new Set(prev).add(id));
+  }, []);
+
+  const removeInFlight = useCallback((id: string) => {
+    setInFlightIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
   const handleFeatureClick = useCallback(
     (featureId: string) => {
       router.push(`/feature/${featureId}/overview`);
     },
     [router]
+  );
+
+  const handleTableRender = useCallback((container: HTMLDivElement) => {
+    setTableContainer(container);
+  }, []);
+
+  // ── Action handlers ──────────────────────────────────────────
+
+  const handleStart = useCallback(
+    async (featureId: string) => {
+      addInFlight(featureId);
+      try {
+        const result = await startFeature(featureId);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success('Feature started');
+        }
+      } catch {
+        toast.error('Failed to start feature');
+      } finally {
+        removeInFlight(featureId);
+        router.refresh();
+      }
+    },
+    [addInFlight, removeInFlight, router]
+  );
+
+  const handleStop = useCallback(
+    async (featureId: string) => {
+      addInFlight(featureId);
+      try {
+        const result = await stopFeature(featureId);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success('Feature stopped');
+        }
+      } catch {
+        toast.error('Failed to stop feature');
+      } finally {
+        removeInFlight(featureId);
+        router.refresh();
+      }
+    },
+    [addInFlight, removeInFlight, router]
+  );
+
+  const handleRetry = useCallback(
+    async (featureId: string) => {
+      addInFlight(featureId);
+      try {
+        const result = await resumeFeature(featureId);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success('Feature resumed');
+        }
+      } catch {
+        toast.error('Failed to resume feature');
+      } finally {
+        removeInFlight(featureId);
+        router.refresh();
+      }
+    },
+    [addInFlight, removeInFlight, router]
+  );
+
+  const handleReview = useCallback(
+    (featureId: string) => {
+      router.push(`/feature/${featureId}/overview`);
+    },
+    [router]
+  );
+
+  const handleUnarchive = useCallback(
+    async (featureId: string) => {
+      addInFlight(featureId);
+      try {
+        const result = await unarchiveFeature(featureId);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success('Feature unarchived');
+        }
+      } catch {
+        toast.error('Failed to unarchive feature');
+      } finally {
+        removeInFlight(featureId);
+        router.refresh();
+      }
+    },
+    [addInFlight, removeInFlight, router]
+  );
+
+  // Archive opens confirmation dialog
+  const handleArchiveRequest = useCallback(
+    (featureId: string) => {
+      const feature = features.find((f) => f.id === featureId);
+      if (!feature) return;
+      setArchiveTarget({ featureId, featureName: feature.name });
+    },
+    [features]
+  );
+
+  const handleArchiveConfirm = useCallback(async () => {
+    if (!archiveTarget) return;
+    const { featureId } = archiveTarget;
+    setArchiveTarget(null);
+    addInFlight(featureId);
+    try {
+      const result = await archiveFeature(featureId);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success('Feature archived');
+      }
+    } catch {
+      toast.error('Failed to archive feature');
+    } finally {
+      removeInFlight(featureId);
+      router.refresh();
+    }
+  }, [archiveTarget, addInFlight, removeInFlight, router]);
+
+  // Delete opens DeleteFeatureDialog
+  const handleDeleteRequest = useCallback(
+    (featureId: string) => {
+      const feature = features.find((f) => f.id === featureId);
+      if (!feature) return;
+      setDeleteTarget({
+        featureId,
+        featureName: feature.name,
+        hasChildren: feature.hasChildren ?? false,
+        hasOpenPr: feature.hasOpenPr ?? false,
+      });
+    },
+    [features]
+  );
+
+  const handleDeleteConfirm = useCallback(
+    async (cleanup: boolean, cascadeDelete: boolean, closePr: boolean) => {
+      if (!deleteTarget) return;
+      const { featureId } = deleteTarget;
+      setDeleteTarget(null);
+      addInFlight(featureId);
+      try {
+        const result = await deleteFeature(featureId, cleanup, cascadeDelete, closePr);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success('Feature deleted');
+        }
+      } catch {
+        toast.error('Failed to delete feature');
+      } finally {
+        removeInFlight(featureId);
+        router.refresh();
+      }
+    },
+    [deleteTarget, addInFlight, removeInFlight, router]
   );
 
   const handleGroupByChange = (value: string) => {
@@ -416,6 +628,7 @@ export function FeatureTreePageClient({ features, repos }: FeatureTreePageClient
             groupSortDir={groupSortDir}
             itemSortField={itemSortField}
             itemSortDir={itemSortDir}
+            onTableRender={handleTableRender}
           />
         ) : (
           <EmptyState
@@ -436,6 +649,64 @@ export function FeatureTreePageClient({ features, repos }: FeatureTreePageClient
           />
         )}
       </div>
+
+      {/* Portal manager for row action dropdowns */}
+      <FeatureRowActionsManager
+        tableContainer={tableContainer}
+        features={filteredFeatures}
+        inFlightIds={inFlightIds}
+        onStart={handleStart}
+        onStop={handleStop}
+        onRetry={handleRetry}
+        onReview={handleReview}
+        onArchive={handleArchiveRequest}
+        onUnarchive={handleUnarchive}
+        onDelete={handleDeleteRequest}
+      />
+
+      {/* Archive confirmation dialog */}
+      <AlertDialog
+        open={archiveTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setArchiveTarget(null);
+        }}
+      >
+        <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('featureNode.archiveConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              <Trans
+                t={t}
+                i18nKey="featureNode.archiveConfirmDescription"
+                values={{ name: archiveTarget?.featureName }}
+                components={{ strong: <strong /> }}
+              />
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setArchiveTarget(null)}>
+              {t('featureNode.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleArchiveConfirm}>
+              {t('featureNode.archive')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete confirmation dialog */}
+      <DeleteFeatureDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        isDeleting={deleteTarget !== null && inFlightIds.has(deleteTarget.featureId)}
+        featureName={deleteTarget?.featureName ?? ''}
+        featureId={deleteTarget?.featureId ?? ''}
+        hasChildren={deleteTarget?.hasChildren}
+        hasOpenPr={deleteTarget?.hasOpenPr}
+      />
     </div>
   );
 }

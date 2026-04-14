@@ -102,10 +102,18 @@ describe('FeatureRowActions', () => {
     await user.click(screen.getByRole('button', { name: /actions/i }));
     await user.click(screen.getByRole('menuitem', { name: /delete/i }));
 
-    // Delete requires confirmation, so onDelete is not called immediately.
-    // Instead, the delete confirmation dialog should open.
-    // We verify the dialog opens rather than the callback being called.
-    expect(onDelete).not.toHaveBeenCalled();
+    expect(onDelete).toHaveBeenCalledWith('feat-123');
+  });
+
+  it('calls onArchive with featureId when Archive menu item is clicked', async () => {
+    const user = userEvent.setup();
+    const onArchive = vi.fn();
+    render(<FeatureRowActions {...makeProps({ nodeState: 'pending', onArchive })} />);
+
+    await user.click(screen.getByRole('button', { name: /actions/i }));
+    await user.click(screen.getByRole('menuitem', { name: /archive/i }));
+
+    expect(onArchive).toHaveBeenCalledWith('feat-123');
   });
 
   it('shows a spinner when isLoading is true', () => {

@@ -20,7 +20,7 @@ export interface FeatureRowActionsManagerProps {
   onReview: (featureId: string) => void;
   onArchive: (featureId: string) => void;
   onUnarchive: (featureId: string) => void;
-  onDelete: (featureId: string, cleanup: boolean, cascadeDelete: boolean, closePr: boolean) => void;
+  onDelete: (featureId: string) => void;
 }
 
 /**
