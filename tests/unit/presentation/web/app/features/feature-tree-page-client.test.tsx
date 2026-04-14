@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { FeatureTreePageClient } from '@/app/features/feature-tree-page-client';
 import type { FeatureTreeRow } from '@/components/features/feature-tree-table/feature-tree-table';
+import type { InventoryCreateData } from '@/app/features/get-feature-tree-data';
 
 // ── Mocks ────────────────────────────────────────────────────
 
@@ -50,6 +51,42 @@ vi.mock('@/app/actions/stop-feature', () => ({
 
 vi.mock('@/app/actions/resume-feature', () => ({
   resumeFeature: (...args: unknown[]) => mockResumeFeature(...args),
+}));
+
+vi.mock('@/app/actions/create-feature', () => ({
+  createFeature: vi.fn().mockResolvedValue({ feature: { id: 'new-feat' } }),
+}));
+
+vi.mock('@/app/actions/add-repository', () => ({
+  addRepository: vi.fn().mockResolvedValue({ repository: { id: 'repo-1' } }),
+}));
+
+vi.mock('@/hooks/feature-flags-context', () => ({
+  useFeatureFlags: () => ({ adoptBranch: false, githubImport: false }),
+}));
+
+vi.mock('@/hooks/fab-layout-context', () => ({
+  useFabLayout: () => ({ swapPosition: false }),
+}));
+
+vi.mock('@/components/ui/sidebar', () => ({
+  useSidebar: () => ({ state: 'expanded' }),
+}));
+
+vi.mock('@/components/common/floating-action-button', () => ({
+  FloatingActionButton: () => <div data-testid="floating-action-button" />,
+}));
+
+vi.mock('@/components/common/feature-create-drawer', () => ({
+  FeatureCreateDrawer: () => null,
+}));
+
+vi.mock('@/components/features/control-center/new-project-dialog', () => ({
+  NewProjectDialog: () => null,
+}));
+
+vi.mock('@/components/features/control-center/control-center-empty-state', () => ({
+  ControlCenterEmptyState: () => null,
 }));
 
 // Mock sonner toast
@@ -122,6 +159,14 @@ const defaultFeatures: FeatureTreeRow[] = [
   }),
 ];
 
+const defaultCreateData: InventoryCreateData = {
+  featureOptions: [],
+  repositoryOptions: [],
+  workflowDefaults: undefined,
+  currentAgentType: undefined,
+  currentModel: undefined,
+};
+
 // ── Tests ─────────────────────────────────────────────────────
 
 describe('FeatureTreePageClient — Action Wiring', () => {
@@ -136,7 +181,9 @@ describe('FeatureTreePageClient — Action Wiring', () => {
   });
 
   it('renders the page with feature data', () => {
-    render(<FeatureTreePageClient features={defaultFeatures} repos={[]} />);
+    render(
+      <FeatureTreePageClient features={defaultFeatures} repos={[]} createData={defaultCreateData} />
+    );
     expect(screen.getByTestId('feature-tree-page')).toBeInTheDocument();
   });
 
@@ -145,12 +192,16 @@ describe('FeatureTreePageClient — Action Wiring', () => {
     // Instead, we test by importing the component and verifying its callbacks are correctly defined.
     // The real integration test would require a DOM with portal targets.
     // Here we verify that the component renders without error with all action wiring in place.
-    render(<FeatureTreePageClient features={defaultFeatures} repos={[]} />);
+    render(
+      <FeatureTreePageClient features={defaultFeatures} repos={[]} createData={defaultCreateData} />
+    );
     expect(screen.getByTestId('feature-tree-page')).toBeInTheDocument();
   });
 
   it('handleReview navigates to feature overview page', () => {
-    render(<FeatureTreePageClient features={defaultFeatures} repos={[]} />);
+    render(
+      <FeatureTreePageClient features={defaultFeatures} repos={[]} createData={defaultCreateData} />
+    );
     // The review handler calls router.push — verified through the handleFeatureClick pattern
     // which is the same navigation target
     expect(screen.getByTestId('feature-tree-page')).toBeInTheDocument();
@@ -164,7 +215,9 @@ describe('FeatureTreePageClient — Delete Dialog Integration', () => {
   });
 
   it('renders DeleteFeatureDialog in closed state initially', () => {
-    render(<FeatureTreePageClient features={defaultFeatures} repos={[]} />);
+    render(
+      <FeatureTreePageClient features={defaultFeatures} repos={[]} createData={defaultCreateData} />
+    );
     // The dialog should not be visible initially
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
@@ -177,7 +230,9 @@ describe('FeatureTreePageClient — Archive Dialog Integration', () => {
   });
 
   it('renders archive AlertDialog in closed state initially', () => {
-    render(<FeatureTreePageClient features={defaultFeatures} repos={[]} />);
+    render(
+      <FeatureTreePageClient features={defaultFeatures} repos={[]} createData={defaultCreateData} />
+    );
     // The archive dialog should not be visible initially
     expect(screen.queryByText('Archive feature?')).not.toBeInTheDocument();
   });

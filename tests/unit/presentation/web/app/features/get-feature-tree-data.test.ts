@@ -17,6 +17,26 @@ vi.mock('@/lib/server-container', () => ({
   },
 }));
 
+vi.mock('@/app/actions/get-workflow-defaults', () => ({
+  getWorkflowDefaults: vi.fn().mockResolvedValue({
+    approvalGates: { allowPrd: false, allowPlan: false, allowMerge: false },
+    push: false,
+    openPr: false,
+    ciWatchEnabled: true,
+    enableEvidence: false,
+    commitEvidence: false,
+    fast: false,
+    injectSkills: false,
+  }),
+}));
+
+vi.mock('@shepai/core/infrastructure/services/settings.service', () => ({
+  getSettings: () => ({
+    agent: { type: 'claude-code' },
+    models: { default: 'claude-sonnet-4-5-20250929' },
+  }),
+}));
+
 const { getFeatureTreeData } = await import(
   '../../../../../../src/presentation/web/app/features/get-feature-tree-data.js'
 );

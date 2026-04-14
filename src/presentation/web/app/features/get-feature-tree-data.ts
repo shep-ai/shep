@@ -5,12 +5,28 @@ import type { ListAgentRunsUseCase } from '@shepai/core/application/use-cases/ag
 import type { AgentRun } from '@shepai/core/domain/generated/output';
 import type { FeatureTreeRow } from '@/components/features/feature-tree-table';
 import type { FeatureStatus } from '@/components/common/feature-status-config';
+import type {
+  ParentFeatureOption,
+  RepositoryOption,
+} from '@/components/common/feature-create-drawer';
+import type { WorkflowDefaults } from '@/app/actions/get-workflow-defaults';
 import { SdlcLifecycle, PrStatus } from '@shepai/core/domain/generated/output';
 import { deriveNodeState } from '@/components/common/feature-node/derive-feature-state';
+import { getWorkflowDefaults } from '@/app/actions/get-workflow-defaults';
+import { getSettings } from '@shepai/core/infrastructure/services/settings.service';
 
 export interface InventoryRepo {
   name: string;
   remoteUrl?: string;
+}
+
+/** Data needed by the create-feature drawer embedded in the inventory page. */
+export interface InventoryCreateData {
+  featureOptions: ParentFeatureOption[];
+  repositoryOptions: RepositoryOption[];
+  workflowDefaults?: WorkflowDefaults;
+  currentAgentType?: string;
+  currentModel?: string;
 }
 
 const LIFECYCLE_TO_STATUS: Record<string, FeatureStatus> = {
@@ -51,15 +67,17 @@ function buildLatestAgentRunMap(agentRuns: AgentRun[]): Map<string, AgentRun> {
 export async function getFeatureTreeData(): Promise<{
   features: FeatureTreeRow[];
   repos: InventoryRepo[];
+  createData: InventoryCreateData;
 }> {
   const listFeatures = resolve<ListFeaturesUseCase>('ListFeaturesUseCase');
   const listRepos = resolve<ListRepositoriesUseCase>('ListRepositoriesUseCase');
   const listAgentRuns = resolve<ListAgentRunsUseCase>('ListAgentRunsUseCase');
 
-  const [features, repositories, agentRuns] = await Promise.all([
+  const [features, repositories, agentRuns, workflowDefaults] = await Promise.all([
     listFeatures.execute({ includeArchived: true }),
     listRepos.execute(),
     listAgentRuns.execute(),
+    getWorkflowDefaults().catch(() => undefined),
   ]);
 
   const repoByPath = new Map<string, { name: string; remoteUrl?: string }>();
@@ -101,5 +119,25 @@ export async function getFeatureTreeData(): Promise<{
     remoteUrl: repo.remoteUrl,
   }));
 
-  return { features: featureRows, repos };
+  const settings = getSettings();
+
+  const featureOptions: ParentFeatureOption[] = features
+    .map((f) => ({ id: f.id, name: f.name }))
+    .filter((f) => f.id && !f.id.startsWith('#'));
+
+  const repositoryOptions: RepositoryOption[] = repositories.map((r) => ({
+    id: r.id,
+    name: r.name,
+    path: r.path,
+  }));
+
+  const createData: InventoryCreateData = {
+    featureOptions,
+    repositoryOptions,
+    workflowDefaults,
+    currentAgentType: settings.agent.type,
+    currentModel: settings.models.default,
+  };
+
+  return { features: featureRows, repos, createData };
 }
