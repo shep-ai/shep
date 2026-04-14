@@ -34,6 +34,7 @@ Feature flags are persisted in the Settings singleton and toggled via the Settin
     - `tests/unit/infrastructure/services/settings-service-update.test.ts`
     - `tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts` (snake_case `feature_flag_<name>` field)
     - `tests/integration/infrastructure/repositories/sqlite-settings.repository.test.ts`
+    - `tests/unit/domain/factories/settings-defaults.factory.test.ts` (uses `toEqual` for exact-shape assertion — only fires at runtime, NOT in typecheck)
 
 **Verify before claiming done:** run `pnpm typecheck`, then open the Settings page in the browser and confirm the new toggle actually renders. If it doesn't, you forgot translation keys (see step 9) or the DB row still has the default value.
 
