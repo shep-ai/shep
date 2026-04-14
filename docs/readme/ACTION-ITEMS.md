@@ -19,7 +19,7 @@ Consolidated from all feedback sources. Updated per README iteration.
 
 | # | Action | Type | Source | Status |
 |---|--------|------|--------|--------|
-| 5 | **Record a 2-min demo GIF/video** — Show full flow: `shep feat new` → plan review → implementation → PR. Single highest-impact trust-builder. No copy change can substitute for proof. | CONTENT | Reviewer A (sim) | Open |
+| 5 | **Record a 2-min demo GIF/video** — Show full flow: `shep feat new` → plan review → implementation → PR. Single highest-impact trust-builder. No copy change can substitute for proof. | CONTENT | Reviewer A (sim) | In Progress (VHS tape created, GIF placeholder in README) |
 | 6 | **Add real-world case study** — "Here's what Shep produced on a real repo" section. Show an actual plan, actual PR, actual result. Even one example changes the credibility equation. | CONTENT | Reviewer A (orig + sim) | Open |
 | 7 | **Document adversarial security scenarios** — Separate doc or expanded FAQ: what if the agent introduces a vulnerable dependency? SQL injection? Auth bypass? Answer: CI + linters + review gates. Make it explicit. | README | Reviewer A (orig + sim) | Open |
 | 8 | **Add troubleshooting / edge-cases doc** — Monorepos, massive PRs, merge conflicts mid-feature, flaky CI, sandbox restrictions. Real problems real users hit. | README | Reviewer A (orig), Reviewer B | Open |
@@ -30,7 +30,7 @@ Consolidated from all feedback sources. Updated per README iteration.
 |---|--------|------|--------|--------|
 | 9 | **Add JetBrains IDE support** — IntelliJ, WebStorm, GoLand all use `idea` CLI launcher. Significant market share especially in enterprise. | PRODUCT | Reviewer B | Open |
 | 10 | **Add concrete numbers to large codebase FAQ** — Test and document: largest repo tested, file count where research degrades, recommended max. Even approximate numbers beat "depends on your agent." | README | Reviewer A (sim) | Open |
-| 11 | **Add "what Shep is NOT" boundary statement** — Explicitly say: not a security scanner, not a CI replacement, not a code editor, not a replacement for your agent. Set boundaries to build trust. | README | Reviewer A (orig) | Open |
+| 11 | **Add "what Shep is NOT" boundary statement** — Explicitly say: not a security scanner, not a CI replacement, not a code editor, not a replacement for your agent. Set boundaries to build trust. | README | Reviewer A (orig) | Done (pain-first README rewrite, spec 090) |
 | 12 | **Collect and display user testimonials** — As users adopt Shep, collect quotes. Structure README to accommodate them (Superset has a "wall of love"). | CONTENT | Superset analysis | Open |
 | 13 | **Add failure metrics / success rates** — Track and publish: what % of features complete without intervention? Average CI fix retries? This is the ultimate proof point. | PRODUCT + README | Reviewer A (orig + sim) | Open |
 
@@ -38,9 +38,9 @@ Consolidated from all feedback sources. Updated per README iteration.
 
 | # | Action | Type | Source | Status |
 |---|--------|------|--------|--------|
-| 14 | **Add community links** — Discord, Twitter/X, GitHub Discussions. Shows life beyond the repo. | README | Superset analysis | Open |
-| 15 | **Changelog link in README header** — Shows active development. Superset does this well. | README | Superset analysis | Open |
-| 16 | **npm package description update** — Current: "Autonomous AI Native SDLC Platform". Proposed: "Ship features, not prompts — structured AI development with requirements, plans, and approval gates" | PRODUCT | Rationale doc | Open |
+| 14 | **Add community links** — Discord, Twitter/X, GitHub Discussions. Shows life beyond the repo. | README | Superset analysis | Partial (Discord badge in header, spec 090) |
+| 15 | **Changelog link in README header** — Shows active development. Superset does this well. | README | Superset analysis | Done (added to nav bar, spec 090) |
+| 16 | **npm package description update** — Current: "Autonomous AI Native SDLC Platform". Proposed: "Ship features, not prompts — structured AI development with requirements, plans, and approval gates" | PRODUCT | Rationale doc | Done (updated to value-focused description, spec 090 phase 1) |
 
 ---
 

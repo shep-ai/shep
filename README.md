@@ -11,32 +11,26 @@
   Shep
 </h1>
 
-### Run multiple AI agents in parallel. Each in its own worktree.
+### You're already using AI coding agents. The problem isn't the coding — it's everything around it.
 
-_Manage 10 features at once — isolated branches, automatic commits, CI watching, and PRs — from a dashboard or the terminal._
+_Switching branches. Stashing changes. Watching CI. Assembling PRs. One agent session is fine. Five is chaos._
+
+**Shep runs each feature in its own worktree with its own agent — and handles the rest.**
 
 [![CI](https://github.com/shep-ai/shep/actions/workflows/ci.yml/badge.svg)](https://github.com/shep-ai/shep/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/@shepai/cli.svg?color=cb3837&logo=npm)](https://www.npmjs.com/package/@shepai/cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Discord](https://img.shields.io/discord/1473730318576914617?color=5865F2&logo=discord&logoColor=white)](https://discord.gg/ES6tdVFfur)
 
-[Quick Start](#quick-start) · [How It Works](#how-it-works) · [Features](#features) · [Trust & Safety](#trust--safety) · [FAQ](#faq)
-
-<br />
-
-<img src="docs/screenshots/cover.png" alt="Shep — Parallel AI Agent Sessions" width="900" />
+[Quick Start](#quick-start) · [Features](#features) · [Trust & Safety](#trust--safety) · [FAQ](#faq) · [Changelog](https://github.com/shep-ai/shep/releases)
 
 </div>
 
 ---
 
-## Why Shep?
+## Ship features 10x faster with parallel AI agents
 
-You're already using AI coding agents. The problem isn't the coding — it's everything around it.
-
-Switching branches. Stashing changes. Watching CI. Assembling PRs. Losing context when you juggle three things at once. One agent session is fine. Five is chaos.
-
-**Shep gives each feature its own isolated world** — a git worktree, a branch, an agent session — and handles the boring parts: committing, pushing, opening PRs, watching CI, and fixing failures. You manage it all from one dashboard or the CLI.
+Five features. One command each. All running at the same time — isolated branches, automatic commits, CI watching, and PRs — while you focus on what matters.
 
 ```bash
 shep feat new "add stripe payments" --push --pr
@@ -44,6 +38,43 @@ shep feat new "add dark mode toggle" --push --pr
 shep feat new "fix login redirect bug" --push --pr
 # Three agents running in parallel. Zero branch conflicts. You monitor from one place.
 ```
+
+Benchmarked: [3-5x wall-clock speedup](docs/content/speed-benchmark.md) from parallelism alone, with additional gains from automated git operations, CI monitoring, and eliminated context switching.
+
+<!-- TODO: Replace with actual GIF once recorded with VHS -->
+<!-- ![Shep parallel demo](demo/shep-parallel.gif) -->
+
+<div align="center">
+<img src="docs/screenshots/parallel-features.png" alt="Shep — Three features running in parallel" width="900" />
+</div>
+
+---
+
+## Install in 10 seconds
+
+```bash
+# Try it instantly — no install needed
+npx @shepai/cli
+
+# Or install globally
+npm i -g @shepai/cli
+
+# Start Shep — opens the web dashboard at localhost:4050
+shep
+```
+
+---
+
+## Why developers trust Shep
+
+<table>
+<tr>
+<td width="25%" align="center"><strong>MIT Licensed</strong><br/>Fork it, sell it, do what you want</td>
+<td width="25%" align="center"><strong>100% Local</strong><br/>All data in <code>~/.shep/</code> as SQLite. No cloud, no account, no tracking</td>
+<td width="25%" align="center"><strong>Agent-Agnostic</strong><br/>Claude Code, Cursor CLI, Gemini CLI. Swap anytime</td>
+<td width="25%" align="center"><strong>185+ Releases</strong><br/>Actively maintained and shipped weekly</td>
+</tr>
+</table>
 
 ---
 
@@ -58,19 +89,6 @@ shep feat new "fix login redirect bug" --push --pr
   - If prompted to log in, complete auth first — Shep can't authenticate on your behalf.
 
 > **Sandbox mode note:** Some agents restrict network access by default. If operations like `npm install` fail, configure allowed hosts in your agent's settings or disable sandbox for Shep features. See [Agent Permissions](#agent-permissions).
-
-### Install and run
-
-```bash
-# Try it instantly — no install needed
-npx @shepai/cli
-
-# Or install globally
-npm i -g @shepai/cli
-
-# Start Shep — opens the web dashboard at localhost:4050
-shep
-```
 
 ### Your first feature
 
@@ -101,7 +119,7 @@ shep feat new "refactor auth middleware" --push --pr
 Launch from CLI or dashboard — monitor everything in one place. Open any feature in your IDE, terminal, or file manager with one click:
 
 <div align="center">
-<img src="docs/screenshots/parallel-features.png" alt="Shep — Three features running in parallel" width="900" />
+<img src="docs/screenshots/cover.png" alt="Shep — Parallel AI Agent Sessions" width="900" />
 </div>
 
 Or work across multiple repos:
@@ -116,6 +134,42 @@ Manage multiple repos from one dashboard. Start a local dev server per feature, 
 <div align="center">
 <img src="docs/screenshots/multi-repo.png" alt="Shep — Multiple repos with global chat and HTML preview" width="900" />
 </div>
+
+---
+
+## Features
+
+### Prompt to PR
+
+One command: `shep feat new "do X" --push --pr`. Agent implements, Shep commits, pushes, opens a PR. Done.
+
+### Parallel sessions
+
+Run multiple features at once. Each gets its own git worktree — isolated branch, isolated files, zero conflicts. Monitor all of them from one dashboard.
+
+### CI watch and auto-fix
+
+Shep watches your CI pipeline after push. If it fails, the agent reads the logs, diagnoses the problem, and pushes a fix. Retries are configurable (default: 3). Works best when CI produces clear error messages.
+
+### Agent-agnostic
+
+Use Claude Code, Cursor CLI, or Gemini CLI. Swap per feature, per repo, anytime. If it runs in a terminal, Shep can orchestrate it.
+
+### Web dashboard + CLI
+
+Two ways to manage everything. The dashboard at `localhost:4050` shows a visual graph of all repos and features with real-time status, diff review, and interactive chat. The CLI gives you the same control from the terminal.
+
+### Everything configurable
+
+Push, PR, merge, CI watch, CI fix retries, timeouts, model selection, agent type — configure per feature with flags or set global defaults with `shep settings`. Nothing is hardcoded.
+
+### 100% local
+
+All data lives in `~/.shep/` as SQLite. No cloud, no account, no tracking. Your code is only sent to whichever AI agent you configure, under that agent's own terms.
+
+### Optional: Spec-driven development
+
+When you need more structure — requirements, technical research, implementation plans with approval gates. Produces versioned YAML artifacts you review before any code is written. Enable per feature with `--no-fast`.
 
 ---
 
@@ -169,42 +223,6 @@ Each gate produces a YAML artifact you can read, edit, and approve before the ag
 
 ---
 
-## Features
-
-### Parallel Sessions
-
-Run multiple features at once. Each gets its own git worktree — isolated branch, isolated files, zero conflicts. Monitor all of them from one dashboard.
-
-### Prompt to PR
-
-One command: `shep feat new "do X" --push --pr`. Agent implements, Shep commits, pushes, opens a PR. Done.
-
-### Agent-Agnostic
-
-Use Claude Code, Cursor CLI, or Gemini CLI. Swap per feature, per repo, anytime. If it runs in a terminal, Shep can orchestrate it.
-
-### Web Dashboard + CLI
-
-Two ways to manage everything. The dashboard at `localhost:4050` shows a visual graph of all repos and features with real-time status, diff review, and interactive chat. The CLI gives you the same control from the terminal.
-
-### CI Watch & Auto-Fix
-
-Shep watches your CI pipeline after push. If it fails, the agent reads the logs, diagnoses the problem, and pushes a fix. Retries are configurable (default: 3). Works best when CI produces clear error messages.
-
-### Everything Configurable
-
-Push, PR, merge, CI watch, CI fix retries, timeouts, model selection, agent type — configure per feature with flags or set global defaults with `shep settings`. Nothing is hardcoded.
-
-### 100% Local
-
-All data lives in `~/.shep/` as SQLite. No cloud, no account, no tracking. Your code is only sent to whichever AI agent you configure, under that agent's own terms.
-
-### Optional: Spec-Driven Development
-
-When you need more structure — requirements, technical research, implementation plans with approval gates. Produces versioned YAML artifacts you review before any code is written. Enable per feature with `--no-fast`.
-
----
-
 ## What Happens When Things Go Wrong
 
 - **CI fails.** Shep reads the logs, diagnoses the problem, and pushes a fix. Retries up to 3 times (configurable), then pauses and asks you.
@@ -228,6 +246,10 @@ Shep runs entirely on your machine.
 | **Agent mistakes** | Shep creates a draft PR. Your CI, linters, and security scanners run before any merge. Shep does not merge code that fails CI. |
 | **Review before merge** | Unless you pass `--allow-merge`, no code is merged without your approval. |
 | **Full audit trail** | Every action and state transition is logged. View with `shep feat logs <id>`. |
+
+### What Shep is NOT
+
+Shep is an orchestration layer. It is not a security scanner, not a CI replacement, not a code editor, and not a replacement for your AI agent. It manages the workflow around your agent — branches, commits, PRs, CI monitoring. Your agent does the coding. Your CI does the testing. Your review process does the gatekeeping.
 
 ### Agent Permissions
 
