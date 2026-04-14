@@ -52,7 +52,16 @@
  */
 
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, rmSync } from 'node:fs';
+import {
+  cpSync,
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  statSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { injectable } from 'tsyringe';
 import type {
@@ -92,78 +101,90 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
   async scaffold(options: ScaffoldOptions): Promise<ScaffoldResult> {
     const { repositoryPath } = options;
 
-    // Phase 1 — bootstrap bun on first-ever run
+    // Phase 1 — bootstrap bun on first-ever run.
     this.ensureBunOnPath();
 
-    // Phase 2a — empty the target directory before running shadcn init.
+    // Phase 2 — run shadcn init inside an OS-level scratch directory
+    // instead of directly inside `repositoryPath`.
     //
-    // `CreateProjectUseCase` -> `FsProjectScaffoldService.scaffoldProject`
-    // runs `git init` + an empty commit on the folder BEFORE we get
-    // here, which leaves a `.git/` directory in place. That alone is
-    // enough to make `create-vite` decide the target "is not empty"
-    // and either prompt with "remove existing files and continue?" or
-    // silently fall back to creating a child folder. Wiping everything
-    // under `repositoryPath` gives shadcn a pristine cwd. The workflow
-    // `commit` step runs a fresh `git init` later, so nothing
-    // downstream depends on the pre-existing repo.
-    this.emptyDirectory(repositoryPath);
+    // BACKGROUND: earlier attempts to scaffold directly into
+    // `repositoryPath` kept producing a `vite-app/` subdirectory
+    // despite `--name`, `--cwd`, and even emptying the target first.
+    // The exact reason is opaque — `shadcn init --template vite` may
+    // write shadcn-specific files (`components.json`, etc.) at the
+    // given cwd AND run `create-vite` in a child folder named after
+    // `--name`, mixing the two layouts. Our flatten helper then
+    // early-returned because there was already a `package.json` at
+    // the root, leaving `vite-app/` in place.
+    //
+    // NEW STRATEGY — zero trust in shadcn's cwd behavior:
+    //   1. Create a fresh temp directory (`os.tmpdir()/shep-scaffold-*`).
+    //   2. Run shadcn init inside it.
+    //   3. Find the single scaffolded project root — either the temp
+    //      dir itself (if shadcn scaffolded flat) or a unique child
+    //      with a `package.json` (if shadcn insisted on a subdir).
+    //   4. Empty `repositoryPath` and `fs.renameSync` every file from
+    //      the scaffold root into `repositoryPath`.
+    //   5. Remove the temp directory.
+    //
+    // This eliminates the subdir class of bug forever: whatever
+    // shadcn produces, we only copy the useful subtree into the real
+    // project path. The final `repositoryPath` layout is 100% under
+    // our control.
+    const scratchDir = mkdtempSync(join(tmpdir(), 'shep-scaffold-'));
+    try {
+      // CRITICAL: `--template vite` drives `create-vite`, and `--yes`
+      // does NOT cover the "What is your project named?" prompt. We
+      // answer it via `--name` instead of piping stdin — stdin piping
+      // is unreliable because many prompt libraries detect non-TTY
+      // input and ignore it, leading to indefinite hangs. The chosen
+      // name is irrelevant: the move step below ignores it.
+      //
+      // `stdinInput` newlines remain as a defensive safety net in
+      // case a future shadcn version adds a new prompt we didn't
+      // anticipate — combined with the 3-minute phase timeout
+      // (runSpawn), the child can never hang longer than that.
+      await this.runSpawn({
+        command: 'bunx',
+        args: [
+          '--bun',
+          'shadcn@latest',
+          'init',
+          '--preset',
+          'b0',
+          '--base',
+          'base',
+          '--template',
+          'vite',
+          '--name',
+          SHADCN_PROJECT_NAME,
+          '--yes',
+        ],
+        cwd: scratchDir,
+        phase: 'shadcn init',
+        stdinInput: '\n'.repeat(20),
+        timeoutMs: PHASE_TIMEOUT_MS,
+      });
 
-    // Phase 2b — scaffold the base project via shadcn b0 preset.
-    //
-    // `shadcn init --preset b0 --base base --template vite` installs
-    // Vite + React + TypeScript + Tailwind + the shadcn base
-    // components in a single command.
-    //
-    // CRITICAL: `--template vite` drives `create-vite`, and `--yes`
-    // does NOT cover the "What is your project named?" prompt. We
-    // answer it via `--name` instead of piping stdin — stdin piping
-    // is unreliable because many prompt libraries detect non-TTY
-    // input and ignore it, leading to indefinite hangs. The chosen
-    // name is irrelevant: Phase 3 (`flattenSingleChildProject`)
-    // flattens the scaffolded subdirectory into `repositoryPath`
-    // regardless of what shadcn picks.
-    //
-    // `--cwd` is passed explicitly so shadcn resolves paths relative
-    // to our target, independent of whatever cwd the Shep process is
-    // running with.
-    //
-    // `stdinInput` newlines remain as a defensive safety net in case
-    // a future shadcn version adds a new prompt we didn't anticipate —
-    // combined with the 3-minute phase timeout (runSpawn), the child
-    // can never hang longer than that.
-    await this.runSpawn({
-      command: 'bunx',
-      args: [
-        '--bun',
-        'shadcn@latest',
-        'init',
-        '--preset',
-        'b0',
-        '--base',
-        'base',
-        '--template',
-        'vite',
-        '--name',
-        SHADCN_PROJECT_NAME,
-        '--cwd',
-        repositoryPath,
-        '--yes',
-      ],
-      cwd: repositoryPath,
-      phase: 'shadcn init',
-      stdinInput: '\n'.repeat(20),
-      timeoutMs: PHASE_TIMEOUT_MS,
-    });
+      // Phase 3 — locate the scaffolded project root inside the
+      // scratch directory, then move every file into repositoryPath.
+      const scaffoldRoot = this.findScaffoldRoot(scratchDir);
+      this.emptyDirectory(repositoryPath);
+      this.moveDirectoryContents(scaffoldRoot, repositoryPath);
+    } finally {
+      // Always clean up the scratch dir, even if the move failed —
+      // otherwise /tmp fills up with half-scaffolded projects.
+      try {
+        rmSync(scratchDir, { recursive: true, force: true });
+      } catch {
+        // Best-effort — the OS will eventually reap os.tmpdir().
+      }
+    }
 
-    // Phase 3 — flatten the child directory shadcn created.
-    //
-    // In practice shadcn creates `repositoryPath/vite-app/` because of
-    // `--name`. `flattenSingleChildProject` is a synchronous
-    // `fs.renameSync` walk that moves every file (including dotfiles)
-    // from the single child directory up into `repositoryPath` and
-    // removes the empty shell. It no-ops when there is already a
-    // `package.json` at `repositoryPath` (meaning shadcn or a future
-    // version scaffolded straight into cwd without a subdir).
+    // Phase 3b — defensive flatten. If `moveDirectoryContents` ever
+    // leaves a stray `vite-app/` child (e.g. due to a future shadcn
+    // quirk we haven't accounted for), the flatten helper catches it
+    // as a safety net.
     flattenSingleChildProject(repositoryPath);
 
     // Phase 4 — install the app-specific extras the "components"
@@ -225,16 +246,103 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
    * Remove every entry inside `dirPath` without removing the directory
    * itself. Idempotent and cross-platform — uses `fs.rmSync(..., {
    * recursive, force })` per entry instead of `fs.rm` on the parent so
-   * we don't delete the directory `bunx` is about to chdir into.
+   * we don't delete the directory the caller is about to write into.
    *
-   * Called before `shadcn init` so the scaffold sees a truly empty
-   * cwd regardless of what the upstream `FsProjectScaffoldService`
-   * left behind (currently `.git/` + a first commit).
+   * Called before moving the scaffolded output from the temp scratch
+   * directory so the target path starts clean. Anything
+   * `FsProjectScaffoldService` pre-created (currently a `.git/`
+   * directory + first commit) is wiped — the workflow `commit` step
+   * re-initializes git itself, so nothing downstream depends on the
+   * pre-existing repo.
    */
   private emptyDirectory(dirPath: string): void {
     if (!existsSync(dirPath)) return;
     for (const entry of readdirSync(dirPath)) {
       rmSync(join(dirPath, entry), { recursive: true, force: true });
+    }
+  }
+
+  /**
+   * Resolve the directory inside `scratchDir` that actually contains
+   * the scaffolded project. Handles both layouts shadcn might produce:
+   *
+   *   1. FLAT — `scratchDir/package.json` exists. Return `scratchDir`.
+   *   2. SUBDIR — exactly one child directory under `scratchDir`
+   *      contains `package.json`. Return that child.
+   *
+   * Throws with a clear message when the layout is ambiguous (no
+   * `package.json` anywhere, or multiple candidate children) so we
+   * don't silently ship a broken scaffold into the user's project.
+   */
+  private findScaffoldRoot(scratchDir: string): string {
+    if (existsSync(join(scratchDir, 'package.json'))) {
+      return scratchDir;
+    }
+
+    const entries = readdirSync(scratchDir);
+    const candidates: string[] = [];
+    for (const entry of entries) {
+      const entryPath = join(scratchDir, entry);
+      let isDir: boolean;
+      try {
+        isDir = statSync(entryPath).isDirectory();
+      } catch {
+        continue;
+      }
+      if (!isDir) continue;
+      if (existsSync(join(entryPath, 'package.json'))) {
+        candidates.push(entryPath);
+      }
+    }
+
+    if (candidates.length === 0) {
+      throw new Error(
+        `findScaffoldRoot: no package.json found in scratch directory "${scratchDir}" ` +
+          `or any immediate child — shadcn init did not produce a recognizable project.`
+      );
+    }
+    if (candidates.length > 1) {
+      throw new Error(
+        `findScaffoldRoot: multiple candidate scaffold roots in "${scratchDir}" ` +
+          `(${candidates.map((p) => p.slice(scratchDir.length + 1)).join(', ')}) — ` +
+          `shadcn init layout is ambiguous.`
+      );
+    }
+
+    return candidates[0]!;
+  }
+
+  /**
+   * Move every entry from `srcDir` into `destDir`, preserving dotfiles.
+   * `destDir` must be empty (call `emptyDirectory` first). Uses
+   * `fs.renameSync` so the move is atomic on POSIX and cheap on
+   * Windows — source and destination live on the same filesystem
+   * (both under `/tmp` and the Shep home dir, which are usually the
+   * same mount point).
+   *
+   * If rename fails with EXDEV (cross-device), falls back to a
+   * recursive copy + delete so the adapter still works when `/tmp`
+   * is on a different filesystem than the Shep home directory
+   * (common on Linux where `/tmp` is often `tmpfs`).
+   */
+  private moveDirectoryContents(srcDir: string, destDir: string): void {
+    for (const entry of readdirSync(srcDir)) {
+      const from = join(srcDir, entry);
+      const to = join(destDir, entry);
+      try {
+        renameSync(from, to);
+      } catch (err) {
+        const code = (err as NodeJS.ErrnoException).code;
+        if (code === 'EXDEV') {
+          // Cross-device rename — fall back to recursive copy + delete.
+          // Happens when /tmp is on a different filesystem than the
+          // Shep home dir (common on Linux where /tmp is often tmpfs).
+          cpSync(from, to, { recursive: true, errorOnExist: true });
+          rmSync(from, { recursive: true, force: true });
+        } else {
+          throw err;
+        }
+      }
     }
   }
 
