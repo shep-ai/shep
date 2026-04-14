@@ -173,4 +173,196 @@ describe('FeatureRowActionsManager', () => {
 
     document.body.removeChild(container);
   });
+
+  it('renders action buttons for mixed-state features (all actionable states)', () => {
+    const mixedFeatures: FeatureTreeRow[] = [
+      {
+        id: 'feat-pending',
+        name: 'Pending Feature',
+        status: 'pending',
+        lifecycle: 'Pending',
+        branch: 'feat/pending',
+        repositoryName: 'repo',
+        nodeState: 'pending',
+      },
+      {
+        id: 'feat-running',
+        name: 'Running Feature',
+        status: 'in-progress',
+        lifecycle: 'Implementation',
+        branch: 'feat/running',
+        repositoryName: 'repo',
+        nodeState: 'running',
+      },
+      {
+        id: 'feat-error',
+        name: 'Error Feature',
+        status: 'error',
+        lifecycle: 'Implementation',
+        branch: 'feat/error',
+        repositoryName: 'repo',
+        nodeState: 'error',
+      },
+      {
+        id: 'feat-done',
+        name: 'Done Feature',
+        status: 'done',
+        lifecycle: 'Maintain',
+        branch: 'feat/done',
+        repositoryName: 'repo',
+        nodeState: 'done',
+      },
+      {
+        id: 'feat-archived',
+        name: 'Archived Feature',
+        status: 'done',
+        lifecycle: 'Archived',
+        branch: 'feat/archived',
+        repositoryName: 'repo',
+        nodeState: 'archived',
+      },
+    ];
+
+    const container = createContainerWithPortalTargets([
+      'feat-pending',
+      'feat-running',
+      'feat-error',
+      'feat-done',
+      'feat-archived',
+    ]);
+
+    render(
+      <FeatureRowActionsManager
+        tableContainer={container}
+        features={mixedFeatures}
+        inFlightIds={new Set()}
+        {...defaultCallbacks}
+      />
+    );
+
+    // All 5 features have actionable states, so 5 action buttons
+    const actionButtons = screen.getAllByRole('button', { name: 'Actions' });
+    expect(actionButtons.length).toBe(5);
+
+    document.body.removeChild(container);
+  });
+
+  it('does not render actions for creating/deleting features even with portal targets', () => {
+    const transientFeatures: FeatureTreeRow[] = [
+      {
+        id: 'feat-creating',
+        name: 'Creating Feature',
+        status: 'pending',
+        lifecycle: 'Started',
+        branch: 'feat/creating',
+        repositoryName: 'repo',
+        nodeState: 'creating',
+      },
+      {
+        id: 'feat-deleting',
+        name: 'Deleting Feature',
+        status: 'blocked',
+        lifecycle: 'Deleting',
+        branch: 'feat/deleting',
+        repositoryName: 'repo',
+        nodeState: 'deleting',
+      },
+    ];
+
+    const container = createContainerWithPortalTargets(['feat-creating', 'feat-deleting']);
+
+    render(
+      <FeatureRowActionsManager
+        tableContainer={container}
+        features={transientFeatures}
+        inFlightIds={new Set()}
+        {...defaultCallbacks}
+      />
+    );
+
+    // FeatureRowActions returns null for creating/deleting — no buttons should render
+    const actionButtons = screen.queryAllByRole('button', { name: 'Actions' });
+    expect(actionButtons.length).toBe(0);
+
+    document.body.removeChild(container);
+  });
+
+  it('only disables the in-flight row, not other rows', () => {
+    const container = createContainerWithPortalTargets(['feat-1', 'feat-2']);
+
+    render(
+      <FeatureRowActionsManager
+        tableContainer={container}
+        features={sampleFeatures}
+        inFlightIds={new Set(['feat-1'])}
+        {...defaultCallbacks}
+      />
+    );
+
+    const actionButtons = screen.getAllByRole('button', { name: 'Actions' });
+    expect(actionButtons.length).toBe(2);
+
+    // Find the disabled (in-flight) button and enabled button
+    const disabledButtons = actionButtons.filter((btn) => btn.hasAttribute('disabled'));
+    const enabledButtons = actionButtons.filter((btn) => !btn.hasAttribute('disabled'));
+
+    expect(disabledButtons.length).toBe(1);
+    expect(enabledButtons.length).toBe(1);
+
+    // The disabled button should have a spinner
+    expect(disabledButtons[0].querySelector('.animate-spin')).toBeTruthy();
+
+    document.body.removeChild(container);
+  });
+
+  it('handles features in both flat and nested _children', () => {
+    const nestedFeatures: FeatureTreeRow[] = [
+      {
+        id: 'group-repo',
+        name: 'my-app',
+        status: 'pending',
+        lifecycle: '',
+        branch: '',
+        repositoryName: 'my-app',
+        _isRepoGroup: true,
+        _featureCount: 2,
+        _children: [
+          {
+            id: 'feat-nested-1',
+            name: 'Nested Feature 1',
+            status: 'done',
+            lifecycle: 'Maintain',
+            branch: 'feat/nested-1',
+            repositoryName: 'my-app',
+            nodeState: 'done',
+          },
+          {
+            id: 'feat-nested-2',
+            name: 'Nested Feature 2',
+            status: 'error',
+            lifecycle: 'Implementation',
+            branch: 'feat/nested-2',
+            repositoryName: 'my-app',
+            nodeState: 'error',
+          },
+        ],
+      },
+    ];
+
+    const container = createContainerWithPortalTargets(['feat-nested-1', 'feat-nested-2']);
+
+    render(
+      <FeatureRowActionsManager
+        tableContainer={container}
+        features={nestedFeatures}
+        inFlightIds={new Set()}
+        {...defaultCallbacks}
+      />
+    );
+
+    const actionButtons = screen.getAllByRole('button', { name: 'Actions' });
+    expect(actionButtons.length).toBe(2);
+
+    document.body.removeChild(container);
+  });
 });
