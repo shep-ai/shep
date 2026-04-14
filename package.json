@@ -1,7 +1,7 @@
 {
   "name": "@shepai/cli",
   "version": "1.185.0",
-  "description": "Autonomous AI Native SDLC Platform - Automate the development cycle from idea to deploy",
+  "description": "Ship features 10x faster — orchestrate parallel AI agents across git worktrees",
   "type": "module",
   "license": "MIT",
   "author": "Shep AI",
@@ -11,12 +11,18 @@
   },
   "keywords": [
     "ai",
-    "sdlc",
+    "ai-agents",
+    "ai-coding",
+    "agent-orchestration",
     "automation",
+    "claude",
+    "claude-code",
     "cli",
     "developer-tools",
-    "code-generation",
-    "langgraph"
+    "git-worktrees",
+    "parallel-development",
+    "sdlc",
+    "typescript"
   ],
   "bin": {
     "shep": "./dist/src/presentation/cli/index.js"
