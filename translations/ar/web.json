@@ -204,7 +204,17 @@
       "collaborationDescription": "Enable agent-to-agent messaging, supervisor delegation, and the unified agent questions inbox",
       "bedrockIntegration": "Project Bedrock Memory",
       "bedrockIntegrationDescription": "Enable project-bedrock memory integration (markdown project memory for AI coding agents) — surfaces toggles, drawers, and tabs across applications, repositories, and features. Requires Python 3.9+ and pipx.",
-      "hint": "ميزات تجريبية لا تزال قيد التطوير. قم بتمكينها على مسؤوليتك — قد تتغير أو تُزال في الإصدارات المستقبلية. وضع التصحيح يضيف تسجيلًا مفصلاً مفيدًا لاستكشاف الأخطاء."
+      "hint": "ميزات تجريبية لا تزال قيد التطوير. قم بتمكينها على مسؤوليتك — قد تتغير أو تُزال في الإصدارات المستقبلية. وضع التصحيح يضيف تسجيلًا مفصلاً مفيدًا لاستكشاف الأخطاء.",
+      "skills": "المهارات",
+      "skillsDescription": "تمكين نظام المهارات لإمكانيات الوكيل",
+      "githubImport": "استيراد GitHub",
+      "githubImportDescription": "تمكين استيراد مستودعات GitHub في واجهة الويب",
+      "adoptBranch": "تبني فرع",
+      "adoptBranchDescription": "استيراد الفروع الموجودة كميزات متتبعة",
+      "gitRebaseSync": "إعادة تأسيس ومزامنة Git",
+      "gitRebaseSyncDescription": "تمكين عمليات إعادة التأسيس على main ومزامنة main",
+      "inventory": "المخزون",
+      "inventoryDescription": "تمكين صفحة المخزون التي تعرض جميع المستودعات والميزات في عرض شجري"
     },
     "interactiveAgent": {
       "title": "الوكيل التفاعلي",
@@ -261,7 +271,8 @@
     "tools": "الأدوات",
     "skills": "المهارات",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "plugins": "الإضافات"
   },
   "sidebar": {
     "features": "الميزات",

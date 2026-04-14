@@ -13,6 +13,7 @@ import {
   ZapOff,
   Wrench,
   Puzzle,
+  Plug,
   Settings,
   TableProperties,
   FolderKanban,
@@ -249,6 +250,12 @@ export function AppSidebar({
               />
             </>
           ) : null}
+          <SidebarNavItem
+            icon={Plug}
+            label={t('navigation.plugins')}
+            href="/plugins"
+            active={pathname === '/plugins'}
+          />
           <SidebarNavItem
             icon={Settings}
             label={t('navigation.settings')}

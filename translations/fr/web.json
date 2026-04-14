@@ -204,7 +204,17 @@
       "collaborationDescription": "Enable agent-to-agent messaging, supervisor delegation, and the unified agent questions inbox",
       "bedrockIntegration": "Project Bedrock Memory",
       "bedrockIntegrationDescription": "Enable project-bedrock memory integration (markdown project memory for AI coding agents) — surfaces toggles, drawers, and tabs across applications, repositories, and features. Requires Python 3.9+ and pipx.",
-      "hint": "Fonctionnalités expérimentales encore en cours de développement. Activez à vos risques et périls — elles peuvent changer ou être supprimées dans les versions futures. Le mode débogage ajoute une journalisation détaillée utile pour le dépannage."
+      "hint": "Fonctionnalités expérimentales encore en cours de développement. Activez à vos risques et périls — elles peuvent changer ou être supprimées dans les versions futures. Le mode débogage ajoute une journalisation détaillée utile pour le dépannage.",
+      "skills": "Compétences",
+      "skillsDescription": "Activer le système de compétences pour les capacités de l'agent",
+      "githubImport": "Import GitHub",
+      "githubImportDescription": "Activer l'import de dépôts GitHub dans l'interface web",
+      "adoptBranch": "Adopter une branche",
+      "adoptBranchDescription": "Importer des branches existantes comme fonctionnalités suivies",
+      "gitRebaseSync": "Git Rebase et synchronisation",
+      "gitRebaseSyncDescription": "Activer les opérations de rebase-on-main et sync-main de git",
+      "inventory": "Inventaire",
+      "inventoryDescription": "Activer la page Inventaire affichant tous les dépôts et fonctionnalités en vue arborescente"
     },
     "interactiveAgent": {
       "title": "Agent interactif",
@@ -261,7 +271,8 @@
     "tools": "Outils",
     "skills": "Compétences",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "plugins": "Extensions"
   },
   "sidebar": {
     "features": "Fonctionnalités",

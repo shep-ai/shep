@@ -204,7 +204,17 @@
       "collaborationDescription": "Enable agent-to-agent messaging, supervisor delegation, and the unified agent questions inbox",
       "bedrockIntegration": "Project Bedrock Memory",
       "bedrockIntegrationDescription": "Enable project-bedrock memory integration (markdown project memory for AI coding agents) — surfaces toggles, drawers, and tabs across applications, repositories, and features. Requires Python 3.9+ and pipx.",
-      "hint": "Experimental features that are still under development. Enable at your own risk — they may change or be removed in future versions. Debug mode adds verbose logging useful for troubleshooting."
+      "hint": "Experimental features that are still under development. Enable at your own risk — they may change or be removed in future versions. Debug mode adds verbose logging useful for troubleshooting.",
+      "skills": "Skills",
+      "skillsDescription": "Enable the skills system for agent capabilities",
+      "githubImport": "GitHub Import",
+      "githubImportDescription": "Enable GitHub repository import in the web UI",
+      "adoptBranch": "Adopt Branch",
+      "adoptBranchDescription": "Import existing branches as tracked features",
+      "gitRebaseSync": "Git Rebase & Sync",
+      "gitRebaseSyncDescription": "Enable git rebase-on-main and sync-main operations",
+      "inventory": "Inventory",
+      "inventoryDescription": "Enable the Inventory page showing all repositories and features in a tree view"
     },
     "interactiveAgent": {
       "title": "Interactive Agent",
@@ -261,7 +271,8 @@
     "tools": "Tools",
     "skills": "Skills",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "plugins": "Plugins"
   },
   "sidebar": {
     "features": "Features",

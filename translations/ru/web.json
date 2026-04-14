@@ -204,7 +204,17 @@
       "collaborationDescription": "Enable agent-to-agent messaging, supervisor delegation, and the unified agent questions inbox",
       "bedrockIntegration": "Project Bedrock Memory",
       "bedrockIntegrationDescription": "Enable project-bedrock memory integration (markdown project memory for AI coding agents) — surfaces toggles, drawers, and tabs across applications, repositories, and features. Requires Python 3.9+ and pipx.",
-      "hint": "Экспериментальные функции, которые ещё находятся в разработке. Включайте на свой страх и риск — они могут измениться или быть удалены в будущих версиях. Режим отладки добавляет подробное логирование, полезное для устранения неполадок."
+      "hint": "Экспериментальные функции, которые ещё находятся в разработке. Включайте на свой страх и риск — они могут измениться или быть удалены в будущих версиях. Режим отладки добавляет подробное логирование, полезное для устранения неполадок.",
+      "skills": "Навыки",
+      "skillsDescription": "Включить систему навыков для возможностей агента",
+      "githubImport": "Импорт из GitHub",
+      "githubImportDescription": "Включить импорт репозиториев GitHub в веб-интерфейсе",
+      "adoptBranch": "Принять ветку",
+      "adoptBranchDescription": "Импортировать существующие ветки как отслеживаемые функции",
+      "gitRebaseSync": "Git Rebase и синхронизация",
+      "gitRebaseSyncDescription": "Включить операции git rebase-on-main и sync-main",
+      "inventory": "Инвентарь",
+      "inventoryDescription": "Включить страницу Инвентаря, отображающую все репозитории и функции в виде дерева"
     },
     "interactiveAgent": {
       "title": "Интерактивный агент",
@@ -261,7 +271,8 @@
     "tools": "Инструменты",
     "skills": "Навыки",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "plugins": "Плагины"
   },
   "sidebar": {
     "features": "Функции",

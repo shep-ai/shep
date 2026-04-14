@@ -221,6 +221,9 @@ export class CreateFeatureUseCase {
       enableEvidence: input.enableEvidence ?? false,
       injectSkills: input.injectSkills ?? false,
       commitEvidence: input.commitEvidence ?? false,
+      ...(input.activePlugins && Object.keys(input.activePlugins).length > 0
+        ? { activePlugins: input.activePlugins }
+        : {}),
       approvalGates: input.approvalGates ?? {
         allowPrd: false,
         allowPlan: false,

@@ -12,6 +12,7 @@ import {
   Loader2,
   GitFork,
   FileText,
+  Plug,
   Puzzle,
   RefreshCw,
   LayoutGrid,
@@ -122,6 +123,8 @@ export interface FeatureCreatePayload {
   rebaseBeforeBranch: boolean;
   /** Inject curated skills into the feature worktree. */
   injectSkills: boolean;
+  /** Per-feature plugin activation overrides (plugin name -> enabled/disabled). */
+  activePlugins?: Record<string, boolean>;
   /** Optional agent type override for this feature run */
   agentType?: string;
   /** Optional model override for this feature run */
@@ -253,6 +256,8 @@ export interface FeatureCreateDrawerProps {
    * the user into a single mode.
    */
   initialApplicationId?: string;
+  /** Installed plugins available for per-feature activation toggles. */
+  installedPlugins?: { name: string; displayName: string; enabled: boolean }[];
 }
 
 function resolveInitialMode(
@@ -280,6 +285,7 @@ export function FeatureCreateDrawer({
   canPushDirectly,
   initialMode,
   initialApplicationId,
+  installedPlugins,
 }: FeatureCreateDrawerProps) {
   const isAppScoped = initialApplicationId !== undefined;
   // App-scoped invocations seed the picker with `Spec` (the SDD intent) so
@@ -336,6 +342,13 @@ export function FeatureCreateDrawer({
   const [commitSpecs, setCommitSpecs] = useState(true);
   const [rebaseBeforeBranch, setRebaseBeforeBranch] = useState(true);
   const [injectSkills, setInjectSkills] = useState(workflowDefaults?.injectSkills ?? false);
+  const [pluginOverrides, setPluginOverrides] = useState<Record<string, boolean>>(() => {
+    const defaults: Record<string, boolean> = {};
+    for (const p of installedPlugins ?? []) {
+      defaults[p.name] = p.enabled;
+    }
+    return defaults;
+  });
   const [overrideAgent, setOverrideAgent] = useState<string | undefined>(undefined);
   const [overrideModel, setOverrideModel] = useState<string | undefined>(undefined);
   const [selectedRepoPath, setSelectedRepoPath] = useState<string | undefined>(
@@ -604,6 +617,7 @@ export function FeatureCreateDrawer({
         commitSpecs,
         rebaseBeforeBranch,
         injectSkills,
+        ...(Object.keys(pluginOverrides).length > 0 ? { activePlugins: pluginOverrides } : {}),
         ...(pending ? { pending } : {}),
         ...(overrideAgent ? { agentType: overrideAgent } : {}),
         ...(overrideModel ? { model: overrideModel } : {}),
@@ -630,6 +644,7 @@ export function FeatureCreateDrawer({
       commitSpecs,
       rebaseBeforeBranch,
       injectSkills,
+      pluginOverrides,
       pending,
       overrideAgent,
       overrideModel,
@@ -1206,6 +1221,47 @@ export function FeatureCreateDrawer({
                   </Tooltip>
                 </div>
               </div>
+
+              {/* Plugins row */}
+              {installedPlugins && installedPlugins.length > 0 ? (
+                <div className="border-input flex items-start gap-4 rounded-md border px-3 py-2.5">
+                  <span className="text-muted-foreground w-16 shrink-0 pt-0.5 text-xs font-semibold tracking-wider">
+                    PLUGINS
+                  </span>
+                  <div className="flex flex-1 flex-wrap items-center gap-4">
+                    {installedPlugins.map((plugin) => (
+                      <Tooltip key={plugin.name}>
+                        <TooltipTrigger asChild>
+                          <div className="flex cursor-pointer items-center gap-1.5">
+                            <Switch
+                              id={`plugin-${plugin.name}`}
+                              size="sm"
+                              checked={pluginOverrides[plugin.name] ?? plugin.enabled}
+                              onCheckedChange={(checked) =>
+                                setPluginOverrides((prev) => ({
+                                  ...prev,
+                                  [plugin.name]: checked,
+                                }))
+                              }
+                              disabled={isSubmitting}
+                            />
+                            <Label
+                              htmlFor={`plugin-${plugin.name}`}
+                              className="flex cursor-pointer items-center gap-1 text-xs font-medium"
+                            >
+                              <Plug className="h-3 w-3" />
+                              {plugin.displayName}
+                            </Label>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          {`${(pluginOverrides[plugin.name] ?? plugin.enabled) ? 'Disable' : 'Enable'} ${plugin.displayName} for this feature`}
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               {/* Git row */}
               <div className="border-input flex items-start gap-4 rounded-md border px-3 py-2.5">
