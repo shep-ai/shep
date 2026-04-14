@@ -170,28 +170,25 @@ export class CreateApplicationUseCase {
     // 3. Generate the human-readable display name from the BASE slug
     const name = toTitleCase(baseSlug);
 
-    // 4. Scaffold the project tree (vite + shadcn + deps + fat template).
-    //    This runs BEFORE the DB row is inserted so a scaffold failure
-    //    doesn't leave orphan Application rows pointing at broken
-    //    folders. The use-case depends only on the port — the adapter
-    //    owns bun, shadcn, fs layout, and template files.
+    // 4. Persist the Application row IMMEDIATELY and return to the caller.
     //
-    //    On success, `package.json` is guaranteed to live at
-    //    `projectPath` (no intermediate subdirectory), node_modules
-    //    are installed, and the fat template overlay has been applied.
-    //    The first agent turn therefore lands on a project that is
-    //    ready to code against — it does not scaffold anything itself.
-    // Result fields (templateFiles, templateVersion) are unused today —
-    // Patch 3 will persist the manifest version on the Application row
-    // once the fat-template domain field exists. For now we just need
-    // the contract-enforced side effect: a flat, ready-to-code project
-    // at `projectPath`.
-    await this.scaffolder.scaffold({
-      repositoryPath: projectPath,
-      projectName: name,
-    });
-
-    // 5. Create Application record
+    //    CRITICAL — DO NOT MOVE THE SCAFFOLD ABOVE THIS LINE.
+    //    The scaffold pipeline (`bun --version` → `npm install -g bun`
+    //    → `bunx shadcn init` → flatten → `bun add` → template overlay)
+    //    takes 30+ seconds on the first run and blocks whichever
+    //    runtime is calling us (Next.js server action, CLI, future
+    //    TUI). A previous regression awaited it inline and every
+    //    presentation layer froze for the duration. Every caller
+    //    MUST see a fast return here and navigate the user to the
+    //    application page while scaffolding runs in the background.
+    //
+    //    Row goes in with status = Idle / setupComplete = false. The
+    //    background dispatch below will:
+    //      1. Run the scaffold (deterministic, no agent).
+    //      2. On success, dispatch the orchestrator workflow if
+    //         there is an initialPrompt.
+    //      3. On any failure, flip status to Error so the
+    //         application card surfaces the problem on the page.
     const now = new Date();
     const application: Application = {
       id: randomUUID(),
@@ -207,123 +204,126 @@ export class CreateApplicationUseCase {
       createdAt: now,
       updatedAt: now,
     };
-
     await this.appRepo.create(application);
 
-    // 6. Optionally kick off the interactive chat session.
+    // 5. Kick off scaffold + (optional) workflow in the background.
+    //    The use case returns IMMEDIATELY after this fire-and-forget;
+    //    the HTTP / CLI caller is unblocked in milliseconds and the
+    //    user lands on the application page right away.
     //
-    //    Prompt delivery strategy — CRITICAL:
-    //    The Claude Agent SDK V2 session API (`unstable_v2_createSession`)
-    //    uses `SDKSessionOptions`, which does NOT include a `systemPrompt`
-    //    field — anything we pass there is silently dropped. V1 `query()`
-    //    supports `systemPrompt` but sacrifices the persistent-process
-    //    performance V2 gives us, so we stay on V2.
+    //    If initialPrompt is set, the workflow orchestrator runs
+    //    after the scaffold finishes. If initialPrompt is absent
+    //    (e.g. `shep app new` without a kickoff), only the scaffold
+    //    runs — the user still gets a ready-to-code project.
     //
-    //    To actually deliver the Shep brief (persona, workflow, quality
-    //    bar, definition of done) we:
-    //      1. Build the full brief via the prompt builder.
-    //      2. Write it to `<SHEP_HOME>/application-briefs/<id>.md`
-    //         via IApplicationBriefStore. The brief lives OUTSIDE the
-    //         user's project on purpose: keeps the scaffolded repo
-    //         clean, survives project-folder recreation, is auditable
-    //         per application, and test-isolates via `SHEP_HOME`.
-    //      3. Persist the user's verbatim description as the first chat
-    //         message (clean UI — no prompt clutter).
-    //      4. Kick off the interactive session with a short directive
-    //         that (a) carries the user's request and (b) tells the
-    //         agent its very first action must be to `Read` the brief
-    //         at its absolute path. That read becomes turn 1 of the
-    //         conversation history, so every subsequent turn is
-    //         conditioned on the full brief.
-    if (input.initialPrompt?.trim()) {
-      const { systemPrompt, userMessage } = this.promptBuilder.build({
-        description: input.initialPrompt.trim(),
-        workspace: {
-          workingDirectory: projectPath,
-          platform: process.platform === 'win32' ? 'windows' : 'posix',
-        },
-      });
-
-      // 5a. Materialise the brief on disk. The brief holds the
-      //     persona/environment/quality bar only — the workflow
-      //     steps live in core code, not the brief, because the
-      //     orchestrator drives them step by step.
-      const briefPath = await this.briefStore.write(application.id, systemPrompt);
-
-      // 5b. Start the orchestrator in the background. The use case
-      //     returns immediately — the HTTP/CLI caller isn't blocked
-      //     for the 10+ minutes a full build takes. The orchestrator
-      //     will:
-      //
-      //       1. Boot the interactive session via `sendMessage`,
-      //          using step 1's prompt wrapped with the "read the
-      //          brief first" directive so the agent's turn 1
-      //          loads the brief.
-      //       2. Walk every step in order, persisting status
-      //          transitions BEFORE and AFTER each agent turn so
-      //          a refresh or crash always sees a consistent view.
-      //
-      //     We also persist the user's verbatim description as the
-      //     first chat bubble by letting `sendMessage` write it —
-      //     that happens inside the orchestrator via
-      //     `content: userMessage` on the first step.
-      const featureId = `app-${application.id}`;
-      void this.dispatchWorkflow({
-        featureId,
-        worktreePath: projectPath,
-        userMessage,
-        briefPath,
-        model: input.modelOverride,
-        agentType: input.agentType,
-      });
-    }
+    //    Prompt delivery strategy — CRITICAL (unchanged from before):
+    //    The Claude Agent SDK V2 session API does not accept a
+    //    systemPrompt, so we write the full brief to
+    //    `<SHEP_HOME>/application-briefs/<id>.md` via
+    //    IApplicationBriefStore and have the agent Read it on turn 1
+    //    via a kickoff directive. Building the brief and writing it
+    //    also runs in the background so the request handler stays
+    //    fast.
+    void this.dispatchScaffoldAndWorkflow({
+      application,
+      projectPath,
+      initialPrompt: input.initialPrompt?.trim() ? input.initialPrompt.trim() : undefined,
+      agentType: input.agentType,
+      modelOverride: input.modelOverride,
+    });
 
     return { application, repositoryPath: projectPath };
   }
 
   /**
-   * Kick off the orchestrator asynchronously. Resolves the session
-   * id by booting it via the first step's send, then runs the rest
-   * of the workflow. Errors are logged — the application is
-   * already persisted, so the chat can recover even if the
-   * workflow dies.
+   * Background pipeline that runs AFTER the Application row is
+   * already persisted and the caller has returned. Owns the long-
+   * running side effects (scaffold, optional workflow) so no
+   * presentation layer has to block on them.
+   *
+   * Errors at any stage are caught and flip the Application row to
+   * Error + setupComplete=false — never re-thrown, because there is
+   * no caller left to receive them.
    */
-  private async dispatchWorkflow(args: {
-    featureId: string;
-    worktreePath: string;
-    userMessage: string;
-    briefPath: string;
-    model?: string;
-    agentType?: string;
+  private async dispatchScaffoldAndWorkflow(args: {
+    application: Application;
+    projectPath: string;
+    initialPrompt: string | undefined;
+    agentType: string | undefined;
+    modelOverride: string | undefined;
   }): Promise<void> {
+    // Phase A — scaffold the project tree.
     try {
+      await this.scaffolder.scaffold({
+        repositoryPath: args.projectPath,
+        projectName: args.application.name,
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[create-application] scaffold failed:', err);
+      try {
+        await this.appRepo.update(args.application.id, {
+          status: ApplicationStatus.Error,
+        });
+      } catch {
+        // Best-effort — surface the original error first.
+      }
+      return;
+    }
+
+    // Phase B — optional workflow orchestration. Skipped when no
+    // initialPrompt is provided (e.g. `shep app new` without a
+    // kickoff). The scaffold alone is enough to hand the user a
+    // ready-to-code project.
+    if (!args.initialPrompt) return;
+
+    try {
+      const { systemPrompt, userMessage } = this.promptBuilder.build({
+        description: args.initialPrompt,
+        workspace: {
+          workingDirectory: args.projectPath,
+          platform: process.platform === 'win32' ? 'windows' : 'posix',
+        },
+      });
+
+      // Materialize the brief on disk. The brief holds persona /
+      // environment / quality bar only — the workflow steps live in
+      // core code, not the brief, because the orchestrator drives
+      // them step by step.
+      const briefPath = await this.briefStore.write(args.application.id, systemPrompt);
+
+      const featureId = `app-${args.application.id}`;
       await this.runWorkflow.execute({
-        featureId: args.featureId,
-        worktreePath: args.worktreePath,
+        featureId,
+        worktreePath: args.projectPath,
         workflow: APPLICATION_CREATION_WORKFLOW,
-        model: args.model,
+        model: args.modelOverride,
         agentType: args.agentType,
         firstStepPromptWrapper: (stepPrompt) =>
           buildKickoffDirective({
-            briefPath: args.briefPath,
-            userMessage: `${args.userMessage}\n\n---\n\n${stepPrompt}`,
+            briefPath,
+            userMessage: `${userMessage}\n\n---\n\n${stepPrompt}`,
           }),
-        visibleFirstMessage: args.userMessage,
+        visibleFirstMessage: userMessage,
       });
 
       // All steps completed — mark the application as setup complete
       // and persist the agent session ID for future resumption.
-      const appId = args.featureId.replace(/^app-/, '');
-      const agentSessionId = await this.sessionRepo.findLatestAgentSessionIdForFeature(
-        args.featureId
-      );
-      await this.appRepo.update(appId, {
+      const agentSessionId = await this.sessionRepo.findLatestAgentSessionIdForFeature(featureId);
+      await this.appRepo.update(args.application.id, {
         setupComplete: true,
         ...(agentSessionId ? { agentSessionId } : {}),
       });
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('[create-application] workflow dispatch failed:', err);
+      try {
+        await this.appRepo.update(args.application.id, {
+          status: ApplicationStatus.Error,
+        });
+      } catch {
+        // Best-effort status update — original error already logged.
+      }
     }
   }
 

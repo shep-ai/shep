@@ -125,17 +125,29 @@ describe('CreateApplicationUseCase', () => {
     const arg = vi.mocked(mockCreateProject.execute).mock.calls[0][0];
     expect(arg.name).toMatch(/^rest-api-users-[0-9a-f]{6}$/);
 
-    // Scaffolder ran with the resolved project path + human name, BEFORE
-    // the DB row was inserted. A scaffold failure should not leave
-    // orphan rows behind.
+    // The Application row must be persisted BEFORE the scaffold runs
+    // so the caller (HTTP server action, CLI, TUI) returns in
+    // milliseconds and the user can navigate to the application page
+    // with a spinner while the 30s+ scaffold runs in the background.
+    // This is a HARD regression guard — an earlier patch awaited the
+    // scaffold inline and froze every presentation layer for the full
+    // bun+shadcn+install pipeline duration.
+    expect(mockAppRepo.create).toHaveBeenCalledTimes(1);
+    const createCallOrder = vi.mocked(mockAppRepo.create).mock.invocationCallOrder[0];
+    if (vi.mocked(mockScaffolder.scaffold).mock.invocationCallOrder[0] !== undefined) {
+      const scaffoldCallOrder = vi.mocked(mockScaffolder.scaffold).mock.invocationCallOrder[0];
+      expect(createCallOrder).toBeLessThan(scaffoldCallOrder);
+    }
+
+    // Scaffolder is still invoked with the resolved project path + name
+    // (but fire-and-forget — we wait a microtask tick for the
+    // background dispatch to reach it).
+    await new Promise((resolve) => setImmediate(resolve));
     expect(mockScaffolder.scaffold).toHaveBeenCalledTimes(1);
     expect(mockScaffolder.scaffold).toHaveBeenCalledWith({
       repositoryPath: `/shep/projects/${arg.name}`,
       projectName: 'Rest Api Users',
     });
-    const scaffoldCallOrder = vi.mocked(mockScaffolder.scaffold).mock.invocationCallOrder[0];
-    const createCallOrder = vi.mocked(mockAppRepo.create).mock.invocationCallOrder[0];
-    expect(scaffoldCallOrder).toBeLessThan(createCallOrder);
 
     // Application was persisted with the same slug
     expect(mockAppRepo.create).toHaveBeenCalledWith(
@@ -157,15 +169,45 @@ describe('CreateApplicationUseCase', () => {
     expect(result.repositoryPath).toBe(`/shep/projects/${arg.name}`);
   });
 
-  it('does not persist the application row when the scaffolder throws', async () => {
+  it('returns immediately and flips status to Error when the background scaffold throws', async () => {
+    // The use case logs `[create-application] scaffold failed: …`
+    // before flipping status — suppress it so the test output stays
+    // clean while still asserting the observable side effects below.
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
     vi.mocked(mockScaffolder.scaffold).mockRejectedValueOnce(new Error('bun bootstrap failed'));
 
-    await expect(useCase.execute({ description: 'A broken app' })).rejects.toThrow(
-      'bun bootstrap failed'
+    // The use case must resolve successfully — the scaffold runs in
+    // the background and any failure there is surfaced via a status
+    // update on the already-persisted Application row, NOT via a
+    // rejected promise. Re-throwing would freeze every presentation
+    // layer on the create flow.
+    const result = await useCase.execute({ description: 'A broken app' });
+    expect(result.application).toBeDefined();
+    expect(mockAppRepo.create).toHaveBeenCalledTimes(1);
+    expect(mockAppRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ status: ApplicationStatus.Idle })
     );
 
-    expect(mockAppRepo.create).not.toHaveBeenCalled();
+    // Wait for the background dispatch to run through the rejected
+    // scaffold and the subsequent status flip.
+    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    // Scaffold was attempted, workflow was NOT dispatched, and the
+    // row was updated to Error so the Applications page can surface
+    // the failure.
+    expect(mockScaffolder.scaffold).toHaveBeenCalledTimes(1);
     expect(mockRunWorkflow.execute).not.toHaveBeenCalled();
+    expect(mockAppRepo.update).toHaveBeenCalledWith(
+      result.application.id,
+      expect.objectContaining({ status: ApplicationStatus.Error })
+    );
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      '[create-application] scaffold failed:',
+      expect.any(Error)
+    );
+    consoleErrorSpy.mockRestore();
   });
 
   it('passes agent and model overrides through to the application record', async () => {
@@ -247,6 +289,10 @@ describe('CreateApplicationUseCase', () => {
 
   it('does NOT send a chat message when initialPrompt is omitted', async () => {
     await useCase.execute({ description: 'a quiet app' });
+    // Background scaffold still runs, but without initialPrompt the
+    // workflow + prompt builder must be skipped. Wait for the
+    // background dispatch to reach the skip branch first.
+    await new Promise((resolve) => setImmediate(resolve));
     expect(mockPromptBuilder.build).not.toHaveBeenCalled();
     expect(mockRunWorkflow.execute).not.toHaveBeenCalled();
   });
@@ -258,6 +304,12 @@ describe('CreateApplicationUseCase', () => {
       agentType: 'claude-code',
       modelOverride: 'claude-sonnet-4-6',
     });
+
+    // Prompt builder + brief write + workflow dispatch all live in the
+    // background pipeline now, so wait for the dispatch to reach them
+    // before asserting.
+    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
 
     // Prompt builder receives the trimmed user description AND the
     // workspace facts (cwd + platform) so the agent knows where it is
@@ -315,6 +367,9 @@ describe('CreateApplicationUseCase', () => {
       description: 'X',
       initialPrompt: '   build me a portfolio   ',
     });
+    // Background dispatch runs scaffold → then prompt build.
+    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
     expect(mockPromptBuilder.build).toHaveBeenCalledWith(
       expect.objectContaining({ description: 'build me a portfolio' })
     );
@@ -322,6 +377,7 @@ describe('CreateApplicationUseCase', () => {
 
   it('skips the chat message when initialPrompt is only whitespace', async () => {
     await useCase.execute({ description: 'X', initialPrompt: '   ' });
+    await new Promise((resolve) => setImmediate(resolve));
     expect(mockPromptBuilder.build).not.toHaveBeenCalled();
     expect(mockRunWorkflow.execute).not.toHaveBeenCalled();
   });
