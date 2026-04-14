@@ -1,144 +1,144 @@
 
-[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-ai-tool-plugin-system[39m
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-ai-tool-plugin-system
 
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mtoDatabase[2m > [22mshould map required fields to snake_case columns[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mtoDatabase[2m > [22mshould convert Date objects to unix milliseconds[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mtoDatabase[2m > [22mshould map enabled=false to 0[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mtoDatabase[2m > [22mshould serialize serverArgs as JSON string[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mtoDatabase[2m > [22mshould serialize requiredEnvVars as JSON string[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mtoDatabase[2m > [22mshould serialize toolGroups as JSON string[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mtoDatabase[2m > [22mshould serialize activeToolGroups as JSON string[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mtoDatabase[2m > [22mshould map empty arrays to null[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mtoDatabase[2m > [22mshould map undefined optional fields to null[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mtoDatabase[2m > [22mshould map MCP-specific fields when present[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mtoDatabase[2m > [22mshould map Hook-specific fields when present[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mtoDatabase[2m > [22mshould map CLI-specific fields when present[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mfromDatabase[2m > [22mshould map required columns to camelCase fields[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mfromDatabase[2m > [22mshould convert unix milliseconds back to Date objects[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mfromDatabase[2m > [22mshould map enabled=0 to false[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mfromDatabase[2m > [22mshould deserialize serverArgs from JSON[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mfromDatabase[2m > [22mshould deserialize requiredEnvVars from JSON[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mfromDatabase[2m > [22mshould deserialize toolGroups from JSON[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mfromDatabase[2m > [22mshould deserialize activeToolGroups from JSON[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mfromDatabase[2m > [22mshould map null optional fields to undefined[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mfromDatabase[2m > [22mshould map MCP-specific fields when present[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mfromDatabase[2m > [22mshould map health status enum values correctly[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mround-trip[2m > [22mshould preserve all fields through toDatabase -> fromDatabase[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mround-trip[2m > [22mshould preserve minimal plugin through round-trip[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mround-trip[2m > [22mshould preserve Hook plugin fields through round-trip[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts[2m > [22mPlugin Mapper[2m > [22mround-trip[2m > [22mshould preserve CLI plugin fields through round-trip[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/check-plugin-health.use-case.test.ts[2m > [22mCheckPluginHealthUseCase[2m > [22msingle plugin check[2m > [22mshould check health of named plugin and update repo[32m 7[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/check-plugin-health.use-case.test.ts[2m > [22mCheckPluginHealthUseCase[2m > [22msingle plugin check[2m > [22mshould throw when plugin not found[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/check-plugin-health.use-case.test.ts[2m > [22mCheckPluginHealthUseCase[2m > [22msingle plugin check[2m > [22mshould update repo with degraded status[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/check-plugin-health.use-case.test.ts[2m > [22mCheckPluginHealthUseCase[2m > [22mall plugins check[2m > [22mshould check all plugins when no name provided[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/check-plugin-health.use-case.test.ts[2m > [22mCheckPluginHealthUseCase[2m > [22mall plugins check[2m > [22mshould return empty array when no plugins installed[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/configure-plugin.use-case.test.ts[2m > [22mConfigurePluginUseCase[2m > [22mshould update activeToolGroups with valid group names[32m 4[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/configure-plugin.use-case.test.ts[2m > [22mConfigurePluginUseCase[2m > [22mshould throw on invalid tool group name[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/configure-plugin.use-case.test.ts[2m > [22mConfigurePluginUseCase[2m > [22mshould include available groups in error message[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/configure-plugin.use-case.test.ts[2m > [22mConfigurePluginUseCase[2m > [22mshould throw when plugin not found[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/configure-plugin.use-case.test.ts[2m > [22mConfigurePluginUseCase[2m > [22mshould allow empty activeToolGroups array[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/configure-plugin.use-case.test.ts[2m > [22mConfigurePluginUseCase[2m > [22mshould handle plugin with no tool groups defined[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/configure-plugin.use-case.test.ts[2m > [22mConfigurePluginUseCase[2m > [22mshould update the updatedAt timestamp[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts[2m > [22mstartPluginServers[2m > [22mstarts MCP servers and returns config path when enabled MCP plugins exist[32m 5[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts[2m > [22mstartPluginServers[2m > [22mfilters out non-MCP plugins[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts[2m > [22mstartPluginServers[2m > [22mfilters out disabled plugins[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts[2m > [22mstartPluginServers[2m > [22mreturns undefined when no MCP plugins exist[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts[2m > [22mstartPluginServers[2m > [22mreturns undefined and does not throw when startServersForFeature fails[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts[2m > [22mstartPluginServers[2m > [22mreturns undefined when generateMcpConfigPath returns null[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts[2m > [22mstopPluginServers[2m > [22mcalls stopServersForFeature with the feature ID[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts[2m > [22mstopPluginServers[2m > [22mdoes not throw when stopServersForFeature fails[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-health-checker.service.test.ts[2m > [22mPluginHealthCheckerService[2m > [22mcheckHealth[2m > [22mshould return Healthy when runtime and env vars are present[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-health-checker.service.test.ts[2m > [22mPluginHealthCheckerService[2m > [22mcheckHealth[2m > [22mshould return Unavailable when runtime is missing[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-health-checker.service.test.ts[2m > [22mPluginHealthCheckerService[2m > [22mcheckHealth[2m > [22mshould return Degraded when required env var is missing[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-health-checker.service.test.ts[2m > [22mPluginHealthCheckerService[2m > [22mcheckHealth[2m > [22mshould return Healthy when no runtime type is specified[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-health-checker.service.test.ts[2m > [22mPluginHealthCheckerService[2m > [22mcheckHealth[2m > [22mshould return Healthy when env vars are all present[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-health-checker.service.test.ts[2m > [22mPluginHealthCheckerService[2m > [22mcheckAllHealth[2m > [22mshould check health of each plugin and return results[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-health-checker.service.test.ts[2m > [22mPluginHealthCheckerService[2m > [22mcheckAllHealth[2m > [22mshould return empty array for empty input[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/add-plugin.use-case.test.ts[2m > [22mAddPluginUseCase[2m > [22mcatalog-based install[2m > [22mshould create plugin with catalog metadata for mempalace[32m 4[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/add-plugin.use-case.test.ts[2m > [22mAddPluginUseCase[2m > [22mcatalog-based install[2m > [22mshould throw when catalog plugin not found[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/add-plugin.use-case.test.ts[2m > [22mAddPluginUseCase[2m > [22mcatalog-based install[2m > [22mshould throw when plugin already installed[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/add-plugin.use-case.test.ts[2m > [22mAddPluginUseCase[2m > [22mcatalog-based install[2m > [22mshould generate a UUID for the plugin id[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/add-plugin.use-case.test.ts[2m > [22mAddPluginUseCase[2m > [22mcustom plugin install[2m > [22mshould create custom MCP plugin with provided fields[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/add-plugin.use-case.test.ts[2m > [22mAddPluginUseCase[2m > [22mcustom plugin install[2m > [22mshould default displayName to name when not provided[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/add-plugin.use-case.test.ts[2m > [22mAddPluginUseCase[2m > [22mcustom plugin install[2m > [22mshould throw when custom plugin name already exists[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/enable-disable-plugin.use-case.test.ts[2m > [22mEnablePluginUseCase[2m > [22mshould enable a disabled plugin and return enabled=true[32m 4[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/enable-disable-plugin.use-case.test.ts[2m > [22mEnablePluginUseCase[2m > [22mshould update the updatedAt timestamp[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/enable-disable-plugin.use-case.test.ts[2m > [22mEnablePluginUseCase[2m > [22mshould throw when plugin not found[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/enable-disable-plugin.use-case.test.ts[2m > [22mDisablePluginUseCase[2m > [22mshould disable an enabled plugin and return enabled=false[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/enable-disable-plugin.use-case.test.ts[2m > [22mDisablePluginUseCase[2m > [22mshould update the updatedAt timestamp[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/enable-disable-plugin.use-case.test.ts[2m > [22mDisablePluginUseCase[2m > [22mshould throw when plugin not found[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mstartServersForFeature[2m > [22mshould spawn a child process for each MCP plugin[32m 5[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mstartServersForFeature[2m > [22mshould pass required env vars from process.env to child process[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mstartServersForFeature[2m > [22mshould skip non-MCP plugins[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mstartServersForFeature[2m > [22mshould skip plugins without serverCommand[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mstartServersForFeature[2m > [22mshould spawn multiple plugins for a feature[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mstartServersForFeature[2m > [22mshould increment reference count for shared servers across features[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mstartServersForFeature[2m > [22mshould pass activeToolGroups via env var for plugins that support them[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mstopServersForFeature[2m > [22mshould kill process when refcount reaches zero[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mstopServersForFeature[2m > [22mshould not kill process when other features still using it[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mstopServersForFeature[2m > [22mshould be a no-op for unknown feature IDs[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mgetActiveServers[2m > [22mshould return empty array when no servers for feature[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mgetActiveServers[2m > [22mshould return active servers for a feature[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mgenerateMcpConfigPath[2m > [22mshould return null when no active servers for feature[32m 3[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mgenerateMcpConfigPath[2m > [22mshould create a valid JSON file in os.tmpdir()[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mgenerateMcpConfigPath[2m > [22mshould return same path on repeated calls for same feature[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mstopServersForFeature cleanup[2m > [22mshould delete the temp config file on stop[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts[2m > [22mMcpServerManagerService[2m > [22mshutdown[2m > [22mshould kill all managed servers[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mcreatePluginCommand()[2m > [22mreturns a Commander Command instance[32m 7[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mcreatePluginCommand()[2m > [22mhas name "plugin"[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mcreatePluginCommand()[2m > [22mregisters all 8 subcommands[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22madd subcommand[2m > [22mreturns a Command with name "add"[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22madd subcommand[2m > [22mcalls AddPluginUseCase with catalog name[32m 3[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22madd subcommand[2m > [22mcalls AddPluginUseCase with custom input[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22madd subcommand[2m > [22mshows error for custom install without --name[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22madd subcommand[2m > [22mshows error for custom install without --type[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22madd subcommand[2m > [22mshows error for invalid --type value[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22madd subcommand[2m > [22mhandles use case errors gracefully[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mremove subcommand[2m > [22mreturns a Command with name "remove"[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mremove subcommand[2m > [22mcalls RemovePluginUseCase with plugin name[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mremove subcommand[2m > [22mhandles errors gracefully[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mlist subcommand[2m > [22mreturns a Command with name "list"[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mlist subcommand[2m > [22mcalls ListPluginsUseCase and renders a list view[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mlist subcommand[2m > [22mshows empty message when no plugins installed[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22menable subcommand[2m > [22mreturns a Command with name "enable"[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22menable subcommand[2m > [22mcalls EnablePluginUseCase with plugin name[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mdisable subcommand[2m > [22mreturns a Command with name "disable"[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mdisable subcommand[2m > [22mcalls DisablePluginUseCase with plugin name[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mconfigure subcommand[2m > [22mreturns a Command with name "configure"[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mconfigure subcommand[2m > [22mcalls ConfigurePluginUseCase with tool groups[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mconfigure subcommand[2m > [22mshows info message when no options provided[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mstatus subcommand[2m > [22mreturns a Command with name "status"[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mstatus subcommand[2m > [22mcalls CheckPluginHealthUseCase for specific plugin and renders detail view[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mstatus subcommand[2m > [22mcalls CheckPluginHealthUseCase for all plugins and renders list view[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mstatus subcommand[2m > [22mshows info message when no plugins exist and status checked for all[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mcatalog subcommand[2m > [22mreturns a Command with name "catalog"[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/plugin/plugin-commands.test.ts[2m > [22mplugin command group[2m > [22mcatalog subcommand[2m > [22mcalls GetPluginCatalogUseCase and renders list view[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts[2m > [22mPlugin Catalog[2m > [22mgetCatalogEntries[2m > [22mshould return an array with at least 3 entries[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts[2m > [22mPlugin Catalog[2m > [22mgetCatalogEntries[2m > [22mshould contain mempalace, token-optimizer, and ruflo[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts[2m > [22mPlugin Catalog[2m > [22mgetCatalogEntries[2m > [22mshould return a new array on each call (not mutable reference)[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts[2m > [22mPlugin Catalog[2m > [22mgetCatalogEntry[2m > [22mshould return MemPalace entry with correct fields[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts[2m > [22mPlugin Catalog[2m > [22mgetCatalogEntry[2m > [22mshould return Token Optimizer entry with Hook type[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts[2m > [22mPlugin Catalog[2m > [22mgetCatalogEntry[2m > [22mshould return Ruflo entry with MCP type and env vars[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts[2m > [22mPlugin Catalog[2m > [22mgetCatalogEntry[2m > [22mshould return Ruflo with tool groups defined[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts[2m > [22mPlugin Catalog[2m > [22mgetCatalogEntry[2m > [22mshould return undefined for nonexistent entry[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts[2m > [22mPlugin Catalog[2m > [22mgetCatalogEntry[2m > [22mshould have homepageUrl for all entries[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts[2m > [22mPlugin Catalog[2m > [22mgetCatalogEntry[2m > [22mshould have description for all entries[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/remove-plugin.use-case.test.ts[2m > [22mRemovePluginUseCase[2m > [22mshould remove an existing plugin and return it[32m 4[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/remove-plugin.use-case.test.ts[2m > [22mRemovePluginUseCase[2m > [22mshould throw when plugin not found[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/remove-plugin.use-case.test.ts[2m > [22mRemovePluginUseCase[2m > [22mshould include plugin name in not found error[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/list-plugins.use-case.test.ts[2m > [22mListPluginsUseCase[2m > [22mshould return empty array when no plugins[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/list-plugins.use-case.test.ts[2m > [22mListPluginsUseCase[2m > [22mshould return all plugins when no filters[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/list-plugins.use-case.test.ts[2m > [22mListPluginsUseCase[2m > [22mshould filter by enabled=true[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/list-plugins.use-case.test.ts[2m > [22mListPluginsUseCase[2m > [22mshould filter by enabled=false[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/list-plugins.use-case.test.ts[2m > [22mListPluginsUseCase[2m > [22mshould filter by plugin type[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/list-plugins.use-case.test.ts[2m > [22mListPluginsUseCase[2m > [22mshould combine enabled and type filters[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/get-plugin-catalog.use-case.test.ts[2m > [22mGetPluginCatalogUseCase[2m > [22mshould return all catalog entries[32m 2[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/get-plugin-catalog.use-case.test.ts[2m > [22mGetPluginCatalogUseCase[2m > [22mshould mark installed plugin as isInstalled=true[32m 1[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/get-plugin-catalog.use-case.test.ts[2m > [22mGetPluginCatalogUseCase[2m > [22mshould mark uninstalled plugin as isInstalled=false[32m 0[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/plugins/get-plugin-catalog.use-case.test.ts[2m > [22mGetPluginCatalogUseCase[2m > [22mshould show mixed install status across catalog[32m 1[2mms[22m[39m
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > toDatabase > should map required fields to snake_case columns 1ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > toDatabase > should convert Date objects to unix milliseconds 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > toDatabase > should map enabled=false to 0 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > toDatabase > should serialize serverArgs as JSON string 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > toDatabase > should serialize requiredEnvVars as JSON string 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > toDatabase > should serialize toolGroups as JSON string 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > toDatabase > should serialize activeToolGroups as JSON string 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > toDatabase > should map empty arrays to null 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > toDatabase > should map undefined optional fields to null 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > toDatabase > should map MCP-specific fields when present 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > toDatabase > should map Hook-specific fields when present 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > toDatabase > should map CLI-specific fields when present 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > fromDatabase > should map required columns to camelCase fields 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > fromDatabase > should convert unix milliseconds back to Date objects 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > fromDatabase > should map enabled=0 to false 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > fromDatabase > should deserialize serverArgs from JSON 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > fromDatabase > should deserialize requiredEnvVars from JSON 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > fromDatabase > should deserialize toolGroups from JSON 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > fromDatabase > should deserialize activeToolGroups from JSON 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > fromDatabase > should map null optional fields to undefined 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > fromDatabase > should map MCP-specific fields when present 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > fromDatabase > should map health status enum values correctly 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > round-trip > should preserve all fields through toDatabase -> fromDatabase 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > round-trip > should preserve minimal plugin through round-trip 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > round-trip > should preserve Hook plugin fields through round-trip 0ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/plugin.mapper.test.ts > Plugin Mapper > round-trip > should preserve CLI plugin fields through round-trip 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/check-plugin-health.use-case.test.ts > CheckPluginHealthUseCase > single plugin check > should check health of named plugin and update repo 2ms
+ ✓  node  tests/unit/application/use-cases/plugins/check-plugin-health.use-case.test.ts > CheckPluginHealthUseCase > single plugin check > should throw when plugin not found 1ms
+ ✓  node  tests/unit/application/use-cases/plugins/check-plugin-health.use-case.test.ts > CheckPluginHealthUseCase > single plugin check > should update repo with degraded status 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/check-plugin-health.use-case.test.ts > CheckPluginHealthUseCase > all plugins check > should check all plugins when no name provided 1ms
+ ✓  node  tests/unit/application/use-cases/plugins/check-plugin-health.use-case.test.ts > CheckPluginHealthUseCase > all plugins check > should return empty array when no plugins installed 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts > startPluginServers > starts MCP servers and returns config path when enabled MCP plugins exist 2ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts > startPluginServers > filters out non-MCP plugins 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts > startPluginServers > filters out disabled plugins 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts > startPluginServers > returns undefined when no MCP plugins exist 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts > startPluginServers > returns undefined and does not throw when startServersForFeature fails 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts > startPluginServers > returns undefined when generateMcpConfigPath returns null 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts > stopPluginServers > calls stopServersForFeature with the feature ID 0ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/plugin-startup.test.ts > stopPluginServers > does not throw when stopServersForFeature fails 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/configure-plugin.use-case.test.ts > ConfigurePluginUseCase > should update activeToolGroups with valid group names 4ms
+ ✓  node  tests/unit/application/use-cases/plugins/configure-plugin.use-case.test.ts > ConfigurePluginUseCase > should throw on invalid tool group name 1ms
+ ✓  node  tests/unit/application/use-cases/plugins/configure-plugin.use-case.test.ts > ConfigurePluginUseCase > should include available groups in error message 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/configure-plugin.use-case.test.ts > ConfigurePluginUseCase > should throw when plugin not found 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/configure-plugin.use-case.test.ts > ConfigurePluginUseCase > should allow empty activeToolGroups array 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/configure-plugin.use-case.test.ts > ConfigurePluginUseCase > should handle plugin with no tool groups defined 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/configure-plugin.use-case.test.ts > ConfigurePluginUseCase > should update the updatedAt timestamp 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-health-checker.service.test.ts > PluginHealthCheckerService > checkHealth > should return Healthy when runtime and env vars are present 1ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-health-checker.service.test.ts > PluginHealthCheckerService > checkHealth > should return Unavailable when runtime is missing 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-health-checker.service.test.ts > PluginHealthCheckerService > checkHealth > should return Degraded when required env var is missing 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-health-checker.service.test.ts > PluginHealthCheckerService > checkHealth > should return Healthy when no runtime type is specified 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-health-checker.service.test.ts > PluginHealthCheckerService > checkHealth > should return Healthy when env vars are all present 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-health-checker.service.test.ts > PluginHealthCheckerService > checkAllHealth > should check health of each plugin and return results 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-health-checker.service.test.ts > PluginHealthCheckerService > checkAllHealth > should return empty array for empty input 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/add-plugin.use-case.test.ts > AddPluginUseCase > catalog-based install > should create plugin with catalog metadata for mempalace 2ms
+ ✓  node  tests/unit/application/use-cases/plugins/add-plugin.use-case.test.ts > AddPluginUseCase > catalog-based install > should throw when catalog plugin not found 1ms
+ ✓  node  tests/unit/application/use-cases/plugins/add-plugin.use-case.test.ts > AddPluginUseCase > catalog-based install > should throw when plugin already installed 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/add-plugin.use-case.test.ts > AddPluginUseCase > catalog-based install > should generate a UUID for the plugin id 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/add-plugin.use-case.test.ts > AddPluginUseCase > custom plugin install > should create custom MCP plugin with provided fields 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/add-plugin.use-case.test.ts > AddPluginUseCase > custom plugin install > should default displayName to name when not provided 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/add-plugin.use-case.test.ts > AddPluginUseCase > custom plugin install > should throw when custom plugin name already exists 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/enable-disable-plugin.use-case.test.ts > EnablePluginUseCase > should enable a disabled plugin and return enabled=true 3ms
+ ✓  node  tests/unit/application/use-cases/plugins/enable-disable-plugin.use-case.test.ts > EnablePluginUseCase > should update the updatedAt timestamp 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/enable-disable-plugin.use-case.test.ts > EnablePluginUseCase > should throw when plugin not found 1ms
+ ✓  node  tests/unit/application/use-cases/plugins/enable-disable-plugin.use-case.test.ts > DisablePluginUseCase > should disable an enabled plugin and return enabled=false 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/enable-disable-plugin.use-case.test.ts > DisablePluginUseCase > should update the updatedAt timestamp 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/enable-disable-plugin.use-case.test.ts > DisablePluginUseCase > should throw when plugin not found 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > startServersForFeature > should spawn a child process for each MCP plugin 4ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > startServersForFeature > should pass required env vars from process.env to child process 1ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > startServersForFeature > should skip non-MCP plugins 1ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > startServersForFeature > should skip plugins without serverCommand 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > startServersForFeature > should spawn multiple plugins for a feature 1ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > startServersForFeature > should increment reference count for shared servers across features 1ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > startServersForFeature > should pass activeToolGroups via env var for plugins that support them 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > stopServersForFeature > should kill process when refcount reaches zero 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > stopServersForFeature > should not kill process when other features still using it 1ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > stopServersForFeature > should be a no-op for unknown feature IDs 1ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > getActiveServers > should return empty array when no servers for feature 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > getActiveServers > should return active servers for a feature 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > generateMcpConfigPath > should return null when no active servers for feature 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > generateMcpConfigPath > should create a valid JSON file in os.tmpdir() 1ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > generateMcpConfigPath > should return same path on repeated calls for same feature 1ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > stopServersForFeature cleanup > should delete the temp config file on stop 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/mcp-server-manager.service.test.ts > McpServerManagerService > shutdown > should kill all managed servers 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts > Plugin Catalog > getCatalogEntries > should return an array with at least 3 entries 1ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts > Plugin Catalog > getCatalogEntries > should contain mempalace, token-optimizer, and ruflo 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts > Plugin Catalog > getCatalogEntries > should return a new array on each call (not mutable reference) 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts > Plugin Catalog > getCatalogEntry > should return MemPalace entry with correct fields 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts > Plugin Catalog > getCatalogEntry > should return Token Optimizer entry with Hook type 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts > Plugin Catalog > getCatalogEntry > should return Ruflo entry with MCP type and env vars 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts > Plugin Catalog > getCatalogEntry > should return Ruflo with tool groups defined 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts > Plugin Catalog > getCatalogEntry > should return undefined for nonexistent entry 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts > Plugin Catalog > getCatalogEntry > should have homepageUrl for all entries 0ms
+ ✓  node  tests/unit/infrastructure/services/plugin/plugin-catalog.test.ts > Plugin Catalog > getCatalogEntry > should have description for all entries 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > createPluginCommand() > returns a Commander Command instance 4ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > createPluginCommand() > has name "plugin" 1ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > createPluginCommand() > registers all 8 subcommands 1ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > add subcommand > returns a Command with name "add" 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > add subcommand > calls AddPluginUseCase with catalog name 1ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > add subcommand > calls AddPluginUseCase with custom input 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > add subcommand > shows error for custom install without --name 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > add subcommand > shows error for custom install without --type 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > add subcommand > shows error for invalid --type value 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > add subcommand > handles use case errors gracefully 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > remove subcommand > returns a Command with name "remove" 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > remove subcommand > calls RemovePluginUseCase with plugin name 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > remove subcommand > handles errors gracefully 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > list subcommand > returns a Command with name "list" 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > list subcommand > calls ListPluginsUseCase and renders a list view 1ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > list subcommand > shows empty message when no plugins installed 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > enable subcommand > returns a Command with name "enable" 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > enable subcommand > calls EnablePluginUseCase with plugin name 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > disable subcommand > returns a Command with name "disable" 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > disable subcommand > calls DisablePluginUseCase with plugin name 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > configure subcommand > returns a Command with name "configure" 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > configure subcommand > calls ConfigurePluginUseCase with tool groups 1ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > configure subcommand > shows info message when no options provided 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > status subcommand > returns a Command with name "status" 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > status subcommand > calls CheckPluginHealthUseCase for specific plugin and renders detail view 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > status subcommand > calls CheckPluginHealthUseCase for all plugins and renders list view 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > status subcommand > shows info message when no plugins exist and status checked for all 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > catalog subcommand > returns a Command with name "catalog" 0ms
+ ✓  node  tests/unit/commands/plugin/plugin-commands.test.ts > plugin command group > catalog subcommand > calls GetPluginCatalogUseCase and renders list view 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/remove-plugin.use-case.test.ts > RemovePluginUseCase > should remove an existing plugin and return it 3ms
+ ✓  node  tests/unit/application/use-cases/plugins/remove-plugin.use-case.test.ts > RemovePluginUseCase > should throw when plugin not found 1ms
+ ✓  node  tests/unit/application/use-cases/plugins/remove-plugin.use-case.test.ts > RemovePluginUseCase > should include plugin name in not found error 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/list-plugins.use-case.test.ts > ListPluginsUseCase > should return empty array when no plugins 1ms
+ ✓  node  tests/unit/application/use-cases/plugins/list-plugins.use-case.test.ts > ListPluginsUseCase > should return all plugins when no filters 1ms
+ ✓  node  tests/unit/application/use-cases/plugins/list-plugins.use-case.test.ts > ListPluginsUseCase > should filter by enabled=true 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/list-plugins.use-case.test.ts > ListPluginsUseCase > should filter by enabled=false 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/list-plugins.use-case.test.ts > ListPluginsUseCase > should filter by plugin type 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/list-plugins.use-case.test.ts > ListPluginsUseCase > should combine enabled and type filters 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/get-plugin-catalog.use-case.test.ts > GetPluginCatalogUseCase > should return all catalog entries 1ms
+ ✓  node  tests/unit/application/use-cases/plugins/get-plugin-catalog.use-case.test.ts > GetPluginCatalogUseCase > should mark installed plugin as isInstalled=true 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/get-plugin-catalog.use-case.test.ts > GetPluginCatalogUseCase > should mark uninstalled plugin as isInstalled=false 0ms
+ ✓  node  tests/unit/application/use-cases/plugins/get-plugin-catalog.use-case.test.ts > GetPluginCatalogUseCase > should show mixed install status across catalog 0ms
 
-[2m Test Files [22m [1m[32m13 passed[39m[22m[90m (13)[39m
-[2m      Tests [22m [1m[32m135 passed[39m[22m[90m (135)[39m
-[2m   Start at [22m 08:13:29
-[2m   Duration [22m 643ms[2m (transform 1.79s, setup 580ms, import 2.02s, tests 154ms, environment 2ms)[22m
+ Test Files  13 passed (13)
+      Tests  135 passed (135)
+   Start at  09:23:12
+   Duration  360ms (transform 888ms, setup 307ms, import 1.09s, tests 73ms, environment 1ms)
 
