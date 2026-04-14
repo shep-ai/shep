@@ -1,51 +1,62 @@
 === Feature-Specific Test Results ===
-Run: pnpm test:unit tests/unit/plugin/plugin-json.test.ts tests/unit/presentation/web/components/landing/
+Run: pnpm test:unit -- tests/unit/plugin/plugin-json.test.ts tests/unit/presentation/web/components/landing/
+Date: 2026-04-14T15:48:52Z
 
 --- Plugin Validation Tests (tests/unit/plugin/plugin-json.test.ts) ---
-✓ plugin-json.test.ts (13 tests) PASSED
-
-  ✓ .claude-plugin/plugin.json exists
-  ✓ has valid JSON
-  ✓ has required "name" field
-  ✓ has required "version" field
-  ✓ has required "owner" field
-  ✓ has required "metadata" field
-  ✓ has "plugins" array
-  ✓ plugins array is not empty
-  ✓ first plugin has "skills" array
-  ✓ all skill directories exist and have SKILL.md
-  ✓ metadata has "description"
-  ✓ metadata has "repository"
-  ✓ metadata has "license"
+  plugin.json manifest
+    PASS  should exist at .claude-plugin/plugin.json
+    required fields
+      PASS  should be valid JSON
+      PASS  should have a name field
+      PASS  should have version set to 0.1.0
+      PASS  should have a description in metadata
+      PASS  should have description matching value-focused positioning
+      PASS  should have an owner field with name and email
+    plugins array
+      PASS  should have a plugins array with at least one entry
+      PASS  should have each plugin entry with name, description, and skills
+      PASS  should not declare any MCP servers or hooks
+    skill file references
+      PASS  should have a SKILL.md file for every skill referenced in plugins
+      PASS  should reference at least 5 skills (curated subset)
+      PASS  should include the shep-intro skill
+  Result: 13 tests PASSED (5ms)
 
 --- Landing Page Component Tests ---
-✓ hero-section.test.tsx (5 tests) PASSED
-  ✓ renders the pain statement
-  ✓ renders the headline
-  ✓ renders the value proposition
-  ✓ renders the CTA button
-  ✓ renders the install command
 
-✓ trust-signals.test.tsx (2 tests) PASSED
-  ✓ renders all four trust signal badges
-  ✓ renders correct trust signal text
+  HeroSection (tests/unit/presentation/web/components/landing/hero-section.test.tsx)
+    PASS  renders the pain-first headline from positioning guide
+    PASS  renders the pain statement
+    PASS  renders the value proposition
+    PASS  renders get started and why shep CTA buttons
+    PASS  renders the install command
+  Result: 5 tests PASSED (46ms)
 
-✓ feature-cards.test.tsx (2 tests) PASSED
-  ✓ renders all four feature cards
-  ✓ renders feature card titles and descriptions
+  TrustSignals (tests/unit/presentation/web/components/landing/trust-signals.test.tsx)
+    PASS  renders all four trust signal badges
+    PASS  renders descriptions for each trust signal
+  Result: 2 tests PASSED (86ms)
 
-✓ public-layout.test.tsx (3 tests) PASSED
-  ✓ renders without auth context
-  ✓ does not include dashboard navigation
-  ✓ renders minimal public navigation
+  FeatureCards (tests/unit/presentation/web/components/landing/feature-cards.test.tsx)
+    PASS  renders all four feature benefit cards
+    PASS  renders descriptions for each feature card
+  Result: 2 tests PASSED (102ms)
 
-✓ why-shep-page.test.tsx (4 tests) PASSED
-  ✓ renders the Why Shep heading
-  ✓ renders feature cards section
-  ✓ renders comparison section
-  ✓ page renders without errors
+  PublicLayout (tests/unit/presentation/web/components/landing/public-layout.test.tsx)
+    PASS  renders children without authentication context
+    PASS  does not include dashboard navigation components
+    PASS  renders footer with MIT license notice
+  Result: 3 tests PASSED (55ms)
+
+  WhyShepPage (tests/unit/presentation/web/components/landing/why-shep-page.test.tsx)
+    PASS  renders the page title
+    PASS  renders feature cards
+    PASS  renders comparison section
+    PASS  renders the get started CTA
+  Result: 4 tests PASSED (205ms)
 
 --- Summary ---
 Feature test files: 6 files, 29 tests — ALL PASSING
 Full test suite: 467 test files, 6317 tests — ALL PASSING
-Build: SUCCESS (tsc + tsc-alias compiled without errors)
+Duration: 32.33s
+Build: SUCCESS
