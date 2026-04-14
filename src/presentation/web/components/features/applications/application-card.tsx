@@ -234,9 +234,16 @@ export function ApplicationCard({ application, className }: ApplicationCardProps
         data-testid="application-card"
         onClick={navigate}
         className={cn(
-          'bg-card group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl',
-          'border-border/60 border shadow-sm',
-          'hover:border-border transition-all duration-200 hover:shadow-lg',
+          // In dark mode `--color-card` resolves to `#0a0a0a`, which is the
+          // same value as `--color-background` — so a plain `bg-card` card
+          // has no contrast against the page. Lift the dark-mode surface
+          // one step (`neutral-900` = `#171717`) and soften the border so
+          // the card reads as an elevated tile instead of a hole in the
+          // page. Light mode is unchanged.
+          'group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl',
+          'bg-card dark:bg-neutral-900',
+          'border-border/60 border shadow-sm dark:border-white/10',
+          'hover:border-border transition-all duration-200 hover:shadow-lg dark:hover:border-white/20 dark:hover:shadow-black/40',
           // min-h keeps all cards in a row visually aligned; flex-1 on
           // the context zone pushes the footer to the bottom.
           'min-h-[280px]',
@@ -301,8 +308,12 @@ export function ApplicationCard({ application, className }: ApplicationCardProps
           ) : (
             // Ambient placeholder — no title overlay; name/description
             // always render in the body below so they stay consistent
-            // across every card state.
-            <div className="absolute inset-0 overflow-hidden bg-[#111827]">
+            // across every card state. Stays dark in BOTH modes because
+            // the MockPreview SVG strokes are white-at-low-opacity and
+            // would be invisible on a light background. In dark mode we
+            // lift it to `neutral-800` (one notch above the card body's
+            // `neutral-900`), giving the header a distinct elevation tier.
+            <div className="absolute inset-0 overflow-hidden bg-[#111827] dark:bg-neutral-800">
               <MockPreview name={application.name} />
             </div>
           )}
