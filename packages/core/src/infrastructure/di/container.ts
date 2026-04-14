@@ -36,6 +36,11 @@ import { SessionPersistence } from '../services/interactive/core/session-persist
 import { SettingsProviderAdapter } from '../services/interactive/lifecycle/settings-provider.adapter.js';
 import { AgentConfigResolver } from '../services/interactive/lifecycle/agent-config.resolver.js';
 import { AgentStreamConsumer } from '../services/interactive/runtime/agent-stream.consumer.js';
+import { BootPromptResolver } from '../services/interactive/lifecycle/boot-prompt.resolver.js';
+import { SessionBootstrapper } from '../services/interactive/lifecycle/session-bootstrapper.js';
+import { SessionTerminator } from '../services/interactive/lifecycle/session-terminator.js';
+import { TurnExecutor } from '../services/interactive/runtime/turn.executor.js';
+import { UserInteractionCoordinator } from '../services/interactive/runtime/user-interaction.coordinator.js';
 import type { ILogger } from '../../application/ports/output/services/logger.interface.js';
 
 // Topic-grouped registration modules
@@ -142,19 +147,55 @@ export async function initializeContainer(): Promise<typeof container> {
     error: (msg, meta) => console.error(`[shep] ${msg}`, meta ?? ''),
   };
   const streamConsumer = new AgentStreamConsumer(sessionPersistence, streamEventDispatcher, logger);
+  const featureRepository = container.resolve<IFeatureRepository>('IFeatureRepository');
+  const agentExecutorFactory = container.resolve<IAgentExecutorFactory>('IAgentExecutorFactory');
+  const featureContextBuilder = new FeatureContextBuilder();
+  const bootPromptResolver = new BootPromptResolver(featureRepository, featureContextBuilder);
+  const interactionCoordinator = new UserInteractionCoordinator(
+    sessionPersistence,
+    streamEventDispatcher,
+    logger
+  );
+  const bootstrapper = new SessionBootstrapper(
+    interactiveSessionRepo,
+    sessionRegistry,
+    sessionPersistence,
+    streamEventDispatcher,
+    bootPromptResolver,
+    streamConsumer,
+    agentExecutorFactory,
+    agentConfigResolver,
+    interactionCoordinator,
+    logger
+  );
+  const terminator = new SessionTerminator(
+    sessionRegistry,
+    sessionPersistence,
+    streamEventDispatcher,
+    logger
+  );
+  const turnExecutor = new TurnExecutor(
+    interactiveSessionRepo,
+    sessionRegistry,
+    sessionPersistence,
+    streamConsumer,
+    logger,
+    streamEventDispatcher
+  );
   const interactiveSessionService = new InteractiveSessionService(
     interactiveSessionRepo,
     interactiveMessageRepo,
-    container.resolve<IAgentExecutorFactory>('IAgentExecutorFactory'),
-    container.resolve<IFeatureRepository>('IFeatureRepository'),
-    new FeatureContextBuilder(),
+    featureRepository,
+    featureContextBuilder,
     workflowStepRepoBoot,
     sessionRegistry,
     streamEventDispatcher,
     sessionPersistence,
-    agentConfigResolver,
-    streamConsumer,
-    logger
+    logger,
+    bootstrapper,
+    terminator,
+    turnExecutor,
+    interactionCoordinator
   );
   container.registerInstance<IInteractiveSessionService>(
     'IInteractiveSessionService',

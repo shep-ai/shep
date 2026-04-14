@@ -31,6 +31,11 @@ import { StreamEventDispatcher } from '@/infrastructure/services/interactive/cor
 import { SessionPersistence } from '@/infrastructure/services/interactive/core/session-persistence.js';
 import { AgentConfigResolver } from '@/infrastructure/services/interactive/lifecycle/agent-config.resolver.js';
 import { AgentStreamConsumer } from '@/infrastructure/services/interactive/runtime/agent-stream.consumer.js';
+import { SessionBootstrapper } from '@/infrastructure/services/interactive/lifecycle/session-bootstrapper.js';
+import { SessionTerminator } from '@/infrastructure/services/interactive/lifecycle/session-terminator.js';
+import { TurnExecutor } from '@/infrastructure/services/interactive/runtime/turn.executor.js';
+import { UserInteractionCoordinator } from '@/infrastructure/services/interactive/runtime/user-interaction.coordinator.js';
+import { BootPromptResolver } from '@/infrastructure/services/interactive/lifecycle/boot-prompt.resolver.js';
 import type { ISettingsProvider } from '@/application/ports/output/services/settings-provider.interface.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 import { ConcurrentSessionLimitError } from '@/domain/errors/concurrent-session-limit.error.js';
@@ -321,19 +326,47 @@ describe('InteractiveSessionService', () => {
       error: vi.fn(),
     };
     const streamConsumer = new AgentStreamConsumer(persistence, dispatcher, fakeLogger);
+    const bootPromptResolver = new BootPromptResolver(featureRepo, contextBuilder);
+    const interactionCoordinator = new UserInteractionCoordinator(
+      persistence,
+      dispatcher,
+      fakeLogger
+    );
+    const bootstrapper = new SessionBootstrapper(
+      sessionRepo,
+      registry,
+      persistence,
+      dispatcher,
+      bootPromptResolver,
+      streamConsumer,
+      executorFactory,
+      agentConfigResolver,
+      interactionCoordinator,
+      fakeLogger
+    );
+    const terminator = new SessionTerminator(registry, persistence, dispatcher, fakeLogger);
+    const turnExecutor = new TurnExecutor(
+      sessionRepo,
+      registry,
+      persistence,
+      streamConsumer,
+      fakeLogger,
+      dispatcher
+    );
     service = new InteractiveSessionService(
       sessionRepo,
       messageRepo,
-      executorFactory,
       featureRepo,
       contextBuilder,
       workflowStepRepo,
       registry,
       dispatcher,
       persistence,
-      agentConfigResolver,
-      streamConsumer,
-      fakeLogger
+      fakeLogger,
+      bootstrapper,
+      terminator,
+      turnExecutor,
+      interactionCoordinator
     );
   });
 

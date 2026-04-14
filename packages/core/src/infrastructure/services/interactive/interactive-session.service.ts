@@ -1,13 +1,31 @@
 /**
  * Interactive Session Service
  *
- * Singleton service that owns the lifecycle of all interactive agent sessions.
- * Uses the IAgentExecutorFactory to create interactive executors that manage
- * persistent sessions via the agent SDK. Multi-turn context is maintained
- * by the SDK session handle internally.
+ * Thin facade that implements `IInteractiveSessionService` by delegating
+ * to extracted collaborators. Phase 5 of the strangler refactor — see
+ * `docs/plans/2026-04-14-interactive-session-service-refactor.md`.
  *
- * Dependencies are injected via constructor for testability (no real processes
- * are spawned in unit tests — the factory is replaced with a test double).
+ * The following collaborators handle the heavy lifting:
+ * - `SessionBootstrapper`        — startSession + completeBootAsync
+ * - `SessionTerminator`          — stopSession + stopByFeature
+ * - `TurnExecutor`               — executeAndPersistTurn + queue drain
+ * - `UserInteractionCoordinator` — buildOnUserQuestionCallback + respondToInteraction
+ * - `BootPromptResolver`         — three-case boot-prompt logic
+ * - `AgentStreamConsumer`        — SDK stream event loop (phase 4)
+ * - `AgentConfigResolver`        — agent type/auth/cap resolution (phase 3)
+ * - `SessionPersistence`         — monotonic-clock DB writes (phase 2)
+ * - `SessionRegistry`            — in-memory state (phase 1)
+ * - `StreamEventDispatcher`      — SSE fan-out (phase 1)
+ *
+ * Remaining direct logic: sendMessage, sendUserMessage, getChatState,
+ * getSession, getMessages, clearMessages, markRead, getTurnStatuses,
+ * getAllActiveTurnStatuses, setActiveStep, clearActiveStep,
+ * notifyWorkflowStep, waitForTurnDone, subscribe, subscribeByFeature,
+ * subscribeAll — these are slated for phases 6+7.
+ *
+ * Dependencies are injected via constructor for testability (no real
+ * processes are spawned in unit tests — the factory is replaced with a
+ * test double).
  */
 
 import * as crypto from 'node:crypto';
@@ -20,12 +38,6 @@ import type {
 import type { IInteractiveSessionRepository } from '../../../application/ports/output/repositories/interactive-session-repository.interface.js';
 import type { IInteractiveMessageRepository } from '../../../application/ports/output/repositories/interactive-message-repository.interface.js';
 import type { IWorkflowStepRepository } from '../../../application/ports/output/repositories/workflow-step-repository.interface.js';
-import type { IAgentExecutorFactory } from '../../../application/ports/output/agents/agent-executor-factory.interface.js';
-import type {
-  InteractiveAgentSessionHandle,
-  UserInteractionData,
-} from '../../../application/ports/output/agents/interactive-agent-executor.interface.js';
-import type { IFeatureRepository } from '../../../application/ports/output/repositories/feature-repository.interface.js';
 import type {
   InteractiveSession,
   InteractiveMessage,
@@ -36,15 +48,14 @@ import {
   InteractiveMessageRole,
   WorkflowStepStatus,
 } from '../../../domain/generated/output.js';
-import { ConcurrentSessionLimitError } from '../../../domain/errors/concurrent-session-limit.error.js';
-import { type FeatureContextBuilder } from './feature-context.builder.js';
-import type { SessionRegistry, SessionState } from './core/session-registry.js';
+import type { SessionRegistry } from './core/session-registry.js';
 import type { StreamEventDispatcher } from './core/stream-event-dispatcher.js';
 import type { SessionPersistence } from './core/session-persistence.js';
-import type { AgentConfigResolver } from './lifecycle/agent-config.resolver.js';
 import type { ILogger } from '../../../application/ports/output/services/logger.interface.js';
-import { BootWatchdog } from './lifecycle/boot-watchdog.js';
-import { type AgentStreamConsumer } from './runtime/agent-stream.consumer.js';
+import type { SessionBootstrapper } from './lifecycle/session-bootstrapper.js';
+import type { SessionTerminator } from './lifecycle/session-terminator.js';
+import type { TurnExecutor } from './runtime/turn.executor.js';
+import type { UserInteractionCoordinator } from './runtime/user-interaction.coordinator.js';
 
 /**
  * Core service managing interactive agent session lifecycles.
@@ -65,20 +76,21 @@ export class InteractiveSessionService implements IInteractiveSessionService {
   constructor(
     private readonly sessionRepo: IInteractiveSessionRepository,
     private readonly messageRepo: IInteractiveMessageRepository,
-    private readonly executorFactory: IAgentExecutorFactory,
-    private readonly featureRepo: IFeatureRepository,
-    private readonly contextBuilder: FeatureContextBuilder,
+    _featureRepo: unknown, // owned by SessionBootstrapper — kept for signature arity
+    _contextBuilder: unknown, // owned by BootPromptResolver — kept for signature arity
     private readonly workflowStepRepo: IWorkflowStepRepository,
     private readonly registry: SessionRegistry,
     private readonly dispatcher: StreamEventDispatcher,
     private readonly persistence: SessionPersistence,
-    private readonly agentConfigResolver: AgentConfigResolver,
-    private readonly streamConsumer: AgentStreamConsumer,
-    private readonly logger: ILogger
+    _logger: ILogger, // owned by collaborators — kept for signature arity
+    private readonly bootstrapper: SessionBootstrapper,
+    private readonly terminator: SessionTerminator,
+    private readonly turnExecutor: TurnExecutor,
+    private readonly interactionCoordinator: UserInteractionCoordinator
   ) {}
 
   // ---------------------------------------------------------------------------
-  // Public API
+  // Public API — delegated to collaborators
   // ---------------------------------------------------------------------------
 
   async startSession(
@@ -89,350 +101,18 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     systemPrompt?: string,
     initialUserMessage?: string
   ): Promise<InteractiveSession> {
-    const cap = this.agentConfigResolver.getCap();
-    const activeCount = await this.sessionRepo.countActiveSessions();
-    if (activeCount >= cap) {
-      throw new ConcurrentSessionLimitError(activeCount, cap);
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // Resume-aware boot: look up the previous session's agent
-    // sessionId BEFORE inserting the new row.
-    //
-    // Ordering matters CRITICALLY here. If we created the new DB
-    // session row first and then called `findByFeatureId`, the repo
-    // would return the row we just inserted (most recent by
-    // createdAt) — which has no agentSessionId yet — and the old,
-    // semantically-still-meaningful row would be invisible. That
-    // silently downgrades every reboot to a `createSession` call,
-    // stranding the agent with zero conversation history and making
-    // it answer "this appears to be the start of our conversation"
-    // to the user's second message. Look it up first.
-    // ─────────────────────────────────────────────────────────────
-    let previousAgentSessionId: string | undefined;
-    for (const s of this.registry.values()) {
-      if (s.featureId === featureId && s.agentSessionId) {
-        previousAgentSessionId = s.agentSessionId;
-        break;
-      }
-    }
-    // Also check stoppedSessions cache (populated on stop)
-    previousAgentSessionId ??= this.registry.takeStoppedAgentSessionId(featureId);
-    // Fall back to DB — the in-memory cache may be empty after
-    // service restart, hot reload, or Turbopack module re-init.
-    //
-    // Use `findLatestAgentSessionIdForFeature` (not `findByFeatureId`
-    // → `getAgentSessionId`) so we walk BACK through history to find
-    // the most recent session that actually captured an
-    // agentSessionId. This covers the case where the latest row is a
-    // failed-boot session with a NULL agentSessionId — without this,
-    // one bad boot would permanently orphan the agent conversation.
-    previousAgentSessionId ??=
-      (await this.sessionRepo.findLatestAgentSessionIdForFeature(featureId)) ?? undefined;
-
-    // Create DB record with booting status (AFTER the lookup above).
-    const now = new Date();
-    const session: InteractiveSession = {
-      id: crypto.randomUUID(),
-      featureId,
-      status: InteractiveSessionStatus.booting,
-      startedAt: now,
-      lastActivityAt: now,
-      createdAt: now,
-      updatedAt: now,
-    };
-    await this.sessionRepo.create(session);
-    this.dispatcher.notifyByFeatureId(featureId, {
-      delta: '',
-      done: false,
-      sessionStatus: InteractiveSessionStatus.booting,
-    });
-
-    // Mark as processing immediately so the FAB shows the spinner during boot
-    void this.persistence.updateTurnStatusAndNotify(session.id, featureId, 'processing');
-
-    // Set up in-memory state. CRITICAL: pendingUserContent must be set
-    // BEFORE completeBootAsync is dispatched below. Setting it from the
-    // caller after startSession returns is a race — the async boot may
-    // already be reading state.pendingUserContent === undefined on the
-    // same microtask, fall into the "no-first-turn" branch, and silently
-    // skip the kickoff send.
-    const state: SessionState = {
-      sessionId: session.id,
+    return this.bootstrapper.startSession(
       featureId,
       worktreePath,
       model,
       agentType,
       systemPrompt,
-      handle: null,
-      agentSessionId: previousAgentSessionId,
-      currentAssistantBuffer: '',
-      toolEventsLog: [],
-      subscribers: new Set(),
-      turnInProgress: false,
-      turnQueue: [],
-      pendingInteraction: null,
-      pendingInteractionResolver: null,
-      pendingUserContent: initialUserMessage,
-    };
-    this.registry.set(session.id, state);
-
-    // Fire-and-forget the async boot sequence. The API returns the session
-    // immediately in "booting" status; the frontend polls until "ready".
-    void this.completeBootAsync(state, featureId, worktreePath);
-
-    return session;
-  }
-
-  /**
-   * Asynchronously complete the boot sequence: build feature context,
-   * create an SDK session via the interactive executor, send the boot
-   * prompt, iterate the stream for the greeting, persist the greeting,
-   * and transition the session to "ready".
-   */
-  private async completeBootAsync(
-    state: SessionState,
-    featureId: string,
-    worktreePath: string
-  ): Promise<void> {
-    try {
-      // Resolve the system prompt for the agent SDK. If the caller
-      // supplied one (e.g. Application chat uses the Shep brief,
-      // Repository/Global chats their own), use it verbatim. Otherwise
-      // fall back to the default feature-context prompt — that's still
-      // the right thing for classic `feat-*` scopes where the session
-      // service owns context-building.
-      let context: string;
-      if (state.systemPrompt !== undefined) {
-        context = state.systemPrompt;
-      } else {
-        const feature = await this.featureRepo.findById(featureId);
-        const openPRs: string[] = feature?.pr?.url ? [feature.pr.url] : [];
-        context = this.contextBuilder.buildContext(
-          feature ??
-            ({ id: featureId, name: featureId } as Parameters<
-              FeatureContextBuilder['buildContext']
-            >[0]),
-          worktreePath,
-          openPRs
-        );
-      }
-
-      // Decide what to send as the first turn (`handle.send(bootPrompt)`
-      // below). The chat is stateless from the agent's point of view —
-      // no prior history is injected, no session-restart rules, no
-      // "conversation log read-only" wrapper. Three cases:
-      //
-      // 1. User already sent a message that booted this session
-      //    (Application chat, or any scope that calls sendUserMessage
-      //    cold) → that pending content IS the first turn.
-      //
-      // 2. No pending message AND no caller-supplied systemPrompt →
-      //    legacy Feature-chat path: send the feature context as the
-      //    boot prompt so the agent greets the user based on it.
-      //
-      // 3. No pending message BUT caller supplied systemPrompt →
-      //    scope is self-describing; stay silent and wait for the user
-      //    to speak. Applicable to any generic scope (Application,
-      //    Repository, Global) where a chatty greeting isn't wanted.
-      let bootPrompt: string;
-      if (state.pendingUserContent !== undefined) {
-        bootPrompt = state.pendingUserContent;
-        state.pendingUserContent = undefined;
-      } else if (state.systemPrompt === undefined) {
-        bootPrompt = context;
-      } else {
-        bootPrompt = '';
-      }
-
-      // Resolve agent type and auth config from settings
-      const resolvedAgentType = this.agentConfigResolver.resolveAgentType(state.agentType);
-      const authConfig = this.agentConfigResolver.resolveAuthConfig();
-
-      // Create the interactive executor and session
-      const executor = this.executorFactory.createInteractiveExecutor(
-        resolvedAgentType,
-        authConfig
-      );
-      let handle: InteractiveAgentSessionHandle;
-
-      // Build the onUserQuestion callback that pauses the SDK stream
-      // and waits for user input via the UI.
-      const onUserQuestion = this.buildOnUserQuestionCallback(state);
-
-      const previousAgentSessionId = state.agentSessionId;
-      if (previousAgentSessionId) {
-        // Resume existing SDK session
-        handle = await executor.resumeSession(previousAgentSessionId, {
-          cwd: worktreePath,
-          model: state.model,
-          systemPrompt: context,
-          onUserQuestion,
-        });
-      } else {
-        // Create new SDK session
-        handle = await executor.createSession({
-          cwd: worktreePath,
-          model: state.model,
-          systemPrompt: context,
-          onUserQuestion,
-        });
-      }
-
-      state.handle = handle;
-
-      // If there's no first user turn to act on, don't push anything —
-      // the session is ready the moment the SDK handle exists. The user
-      // will send their first message through the normal turn path.
-      if (!bootPrompt) {
-        await this.persistence.updateSessionStatusAndNotify(
-          state.sessionId,
-          state.featureId,
-          InteractiveSessionStatus.ready
-        );
-        void this.persistence.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
-        return;
-      }
-
-      // Send the boot prompt and iterate stream for the greeting
-      await handle.send(bootPrompt);
-
-      const bootAbort = new AbortController();
-      state.streamAbort = bootAbort;
-
-      // Idle watchdog: reset on every event. If the agent goes silent
-      // for longer than BootWatchdog.IDLE_TIMEOUT_MS, abort the boot.
-      // This is NOT a wall-clock budget — long first turns (full project
-      // scaffold + install + build) are fine as long as the stream
-      // keeps producing events.
-      const watchdog = new BootWatchdog();
-      watchdog.start(() => bootAbort.abort());
-
-      let result;
-      try {
-        result = await this.streamConsumer.consume(handle, state, 'boot', bootAbort, watchdog);
-      } finally {
-        watchdog.stop();
-        state.streamAbort = undefined;
-      }
-
-      if (result.completed === 'done') {
-        // Capture the SDK session ID (available after first message exchange)
-        const sdkSessionId = result.agentSessionIdFromHandle;
-        if (sdkSessionId) {
-          // Detect CWD mismatch: if we tried to resume but got a different
-          // session ID, the SDK silently created a fresh session (typically
-          // because the cwd changed or session JSONL was lost).
-          if (previousAgentSessionId && sdkSessionId !== previousAgentSessionId) {
-            this.logger.warn(
-              `[InteractiveSession] Session resume mismatch for feature ${featureId}: ` +
-                `expected ${previousAgentSessionId}, got ${sdkSessionId}. ` +
-                `SDK created a fresh session (likely cwd changed or session expired).`
-            );
-          }
-          state.agentSessionId = sdkSessionId;
-          // Persist to DB so it survives service restarts
-          void this.sessionRepo.updateAgentSessionId(state.sessionId, sdkSessionId);
-        }
-
-        await this.persistence.updateSessionStatusAndNotify(
-          state.sessionId,
-          state.featureId,
-          InteractiveSessionStatus.ready
-        );
-
-        // If there's a pending user message, the next turn will set 'processing'.
-        // Otherwise boot greeting is expected — mark idle.
-        if (!state.pendingUserContent) {
-          void this.persistence.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
-        }
-
-        state.currentAssistantBuffer = '';
-        state.toolEventsLog = [];
-
-        // Notify subscribers of end-of-turn
-        this.dispatcher.notify(state, { delta: '', done: true });
-        return; // Boot complete
-      }
-
-      // ended-without-done: persist trailing text and transition to ready.
-      await this.persistence.updateSessionStatusAndNotify(
-        state.sessionId,
-        state.featureId,
-        InteractiveSessionStatus.ready
-      );
-      if (!state.pendingUserContent) {
-        void this.persistence.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
-      }
-      state.currentAssistantBuffer = '';
-      state.toolEventsLog = [];
-    } catch (err) {
-      // If session was already cleaned up by stopSession, nothing more to do
-      if (!this.registry.has(state.sessionId)) return;
-
-      // Boot failed — mark session as error so the frontend can show the failure
-      // eslint-disable-next-line no-console
-      console.error(`[InteractiveSession] boot failed for session ${state.sessionId}:`, err);
-      try {
-        await this.persistence.updateSessionStatusAndNotify(
-          state.sessionId,
-          state.featureId,
-          InteractiveSessionStatus.error
-        );
-      } catch {
-        // Best-effort DB update
-      }
-      if (state.agentSessionId) {
-        this.registry.cacheStoppedAgentSessionId(state.featureId, state.agentSessionId);
-      }
-      this.registry.delete(state.sessionId);
-    }
+      initialUserMessage
+    );
   }
 
   async stopSession(sessionId: string): Promise<void> {
-    const state = this.registry.get(sessionId);
-    if (!state) {
-      // Already stopped — idempotent
-      return;
-    }
-
-    // eslint-disable-next-line no-console
-    console.log(
-      `[InteractiveSession] stopSession called for ${sessionId} (feature: ${state.featureId})`,
-      new Error().stack?.split('\n').slice(1, 4).join(' <- ')
-    );
-
-    // Abort any active stream iteration and clear pending turns
-    if (state.streamAbort) {
-      state.streamAbort.abort();
-      state.streamAbort = undefined;
-    }
-    state.turnQueue.length = 0;
-    state.turnInProgress = false;
-
-    // Cache agentSessionId so resumption works when session restarts
-    if (state.agentSessionId) {
-      this.registry.cacheStoppedAgentSessionId(state.featureId, state.agentSessionId);
-    }
-    this.registry.delete(sessionId);
-
-    // Close the SDK session handle
-    if (state.handle) {
-      try {
-        await state.handle.close();
-      } catch {
-        // Session may already be closed
-      }
-      state.handle = null;
-    }
-
-    await this.persistence.updateSessionStatusAndNotify(
-      sessionId,
-      state.featureId,
-      InteractiveSessionStatus.stopped,
-      new Date()
-    );
-    void this.persistence.updateTurnStatusAndNotify(sessionId, state.featureId, 'idle');
+    return this.terminator.stop(sessionId);
   }
 
   async sendMessage(sessionId: string, content: string): Promise<InteractiveMessage> {
@@ -461,286 +141,10 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
     await this.sessionRepo.updateLastActivity(sessionId, now);
 
-    // Guard: only one turn at a time per session (SDK stream is not concurrent-safe)
-    if (state.turnInProgress) {
-      state.turnQueue.push(content);
-    } else {
-      state.turnInProgress = true;
-      void this.executeAndPersistTurn(state, content);
-    }
+    // Delegate turn execution to TurnExecutor (guarded: one turn at a time)
+    void this.turnExecutor.enqueueTurn(state, content);
 
     return message;
-  }
-
-  /**
-   * Execute a turn via the SDK session handle and persist the assistant response.
-   */
-  private async executeAndPersistTurn(state: SessionState, prompt: string): Promise<void> {
-    try {
-      if (!state.handle) {
-        throw new Error('No active session handle — cannot execute turn');
-      }
-
-      state.currentAssistantBuffer = '';
-      state.toolEventsLog = [];
-
-      // Mark turn as processing for dot indicator
-      void this.persistence.updateTurnStatusAndNotify(
-        state.sessionId,
-        state.featureId,
-        'processing'
-      );
-
-      // Send the message to the SDK session
-      await state.handle.send(prompt);
-
-      // Set up abort controller for this stream
-      const abort = new AbortController();
-      state.streamAbort = abort;
-
-      let responseText = '';
-
-      try {
-        for await (const event of state.handle.stream()) {
-          if (abort.signal.aborted) break;
-
-          switch (event.type) {
-            case 'delta':
-              if (event.content) {
-                responseText += event.content;
-                state.currentAssistantBuffer += event.content;
-                this.dispatcher.notify(state, { delta: event.content!, done: false });
-              }
-              break;
-
-            case 'thinking':
-              if (event.content) {
-                await this.persistence.persistToolEvent(state, 'Thinking', event.content);
-                this.dispatcher.notify(state, {
-                  delta: '',
-                  done: false,
-                  log: 'Thinking…',
-                  activity: { kind: 'thinking', label: 'Thinking', detail: event.content },
-                });
-              }
-              break;
-
-            case 'tool_use':
-              if (event.label) {
-                const toolLabel = event.label;
-                const toolDetail = event.detail;
-                await this.persistence.persistToolEvent(state, toolLabel, toolDetail);
-                this.dispatcher.notify(state, {
-                  delta: '',
-                  done: false,
-                  log: `Using tool: ${toolLabel}`,
-                  activity: { kind: 'tool_use', label: toolLabel, detail: toolDetail },
-                });
-              }
-              break;
-
-            case 'tool_result':
-              if (event.label) {
-                const resultLabel = event.label;
-                const resultDetail = event.detail;
-                await this.persistence.persistToolEvent(state, resultLabel, resultDetail);
-                this.dispatcher.notify(state, {
-                  delta: '',
-                  done: false,
-                  log: `Completed: ${resultLabel}`,
-                  activity: { kind: 'tool_result', label: resultLabel, detail: resultDetail },
-                });
-              }
-              break;
-
-            case 'status':
-              if (event.content) {
-                const statusContent = event.content;
-                this.dispatcher.notify(state, { delta: '', done: false, log: statusContent });
-              }
-              break;
-
-            case 'done': {
-              // All delta text has been persisted incrementally via
-              // `flushAssistantBuffer` as each tool call was recorded,
-              // so the remaining buffer holds only the trailing prose
-              // after the final tool call. Flush it as its own message.
-              // We intentionally do NOT persist `event.content` /
-              // `responseText` here — that would duplicate everything
-              // we already flushed between tools.
-              await this.persistence.flushAssistantBuffer(state);
-              state.toolEventsLog = [];
-
-              // Accumulate usage from this turn
-              if (event.usage) {
-                void this.sessionRepo.accumulateUsage(state.sessionId, {
-                  costUsd: event.usage.costUsd ?? 0,
-                  inputTokens: event.usage.inputTokens ?? 0,
-                  outputTokens: event.usage.outputTokens ?? 0,
-                  turns: event.usage.numTurns ?? 1,
-                });
-              }
-
-              // Mark as unread — if user has the chat open, the frontend
-              // will immediately call markRead to clear it
-              void this.persistence.updateTurnStatusAndNotify(
-                state.sessionId,
-                state.featureId,
-                'unread'
-              );
-
-              // Notify subscribers of end-of-turn
-              this.dispatcher.notify(state, { delta: '', done: true });
-              return; // Turn complete
-            }
-
-            case 'error':
-              // eslint-disable-next-line no-console
-              console.error(
-                `[InteractiveSession] agent error during turn for session ${state.sessionId}:`,
-                event.content
-              );
-              // Accumulate usage even on errors — cost was still incurred
-              if (event.usage) {
-                void this.sessionRepo.accumulateUsage(state.sessionId, {
-                  costUsd: event.usage.costUsd ?? 0,
-                  inputTokens: event.usage.inputTokens ?? 0,
-                  outputTokens: event.usage.outputTokens ?? 0,
-                  turns: event.usage.numTurns ?? 1,
-                });
-              }
-              this.dispatcher.notify(state, {
-                delta: '',
-                done: true,
-                log: `Error: ${event.content ?? 'unknown'}`,
-              });
-              break;
-
-            case 'init':
-              // The SDK emits init on every turn, but we only show "Session started"
-              // during boot (handled in completeBootAsync). Ignore it here to avoid
-              // spamming the chat with repeated session-started messages.
-              break;
-
-            case 'api_retry':
-              this.dispatcher.notify(state, {
-                delta: '',
-                done: false,
-                log: event.content ?? 'Retrying API call...',
-              });
-              break;
-
-            case 'rate_limit':
-              this.dispatcher.notify(state, {
-                delta: '',
-                done: false,
-                log: event.content ?? 'Rate limited',
-              });
-              break;
-
-            case 'task_started':
-              if (event.content) {
-                await this.persistence.persistToolEvent(state, 'Subtask started', event.content);
-                this.dispatcher.notify(state, {
-                  delta: '',
-                  done: false,
-                  log: `Subtask: ${event.content}`,
-                  activity: { kind: 'system', label: 'Subtask started', detail: event.content },
-                });
-              }
-              break;
-
-            case 'task_progress':
-              if (event.content) {
-                this.dispatcher.notify(state, {
-                  delta: '',
-                  done: false,
-                  log: `Subtask: ${event.content}`,
-                });
-              }
-              break;
-
-            case 'task_done':
-              if (event.content) {
-                const taskStatus = event.detail ?? 'completed';
-                await this.persistence.persistToolEvent(
-                  state,
-                  `Subtask ${taskStatus}`,
-                  event.content
-                );
-                this.dispatcher.notify(state, {
-                  delta: '',
-                  done: false,
-                  log: `Subtask ${taskStatus}: ${event.content}`,
-                  activity: {
-                    kind: 'system',
-                    label: `Subtask ${taskStatus}`,
-                    detail: event.content,
-                  },
-                });
-              }
-              break;
-
-            case 'user_question':
-              // AskUserQuestion is now handled by the canUseTool callback
-              // (buildOnUserQuestionCallback) which pauses the SDK stream.
-              // This event should not appear in the stream anymore, but if it
-              // does (e.g. from a different code path), ignore it here.
-              break;
-          }
-        }
-      } finally {
-        state.streamAbort = undefined;
-      }
-
-      // If we exit the stream loop without a 'done' event (stream ended),
-      // persist whatever trailing text remains in the buffer (earlier
-      // text was flushed incrementally alongside tool events).
-      if (responseText && state.currentAssistantBuffer) {
-        await this.persistence.flushAssistantBuffer(state);
-        state.toolEventsLog = [];
-        this.dispatcher.notify(state, { delta: '', done: true });
-      } else if (!responseText) {
-        // Stream ended without any response — SDK session likely died.
-        // Mark as error so the next message triggers a fresh session.
-        // eslint-disable-next-line no-console
-        console.error(
-          `[InteractiveSession] stream ended without response for session ${state.sessionId} — session may have died`
-        );
-        this.dispatcher.notify(state, {
-          delta: '',
-          done: true,
-          log: 'Session disconnected — will restart on next message',
-        });
-        if (state.agentSessionId) {
-          this.registry.cacheStoppedAgentSessionId(state.featureId, state.agentSessionId);
-        }
-        this.registry.delete(state.sessionId);
-        try {
-          await this.persistence.updateSessionStatusAndNotify(
-            state.sessionId,
-            state.featureId,
-            InteractiveSessionStatus.error
-          );
-        } catch {
-          // Best-effort DB update
-        }
-        return; // Skip queue drain — session is dead
-      }
-    } catch (err) {
-      // If session was already stopped, ignore
-      if (!this.registry.has(state.sessionId)) return;
-      // eslint-disable-next-line no-console
-      console.error(`[InteractiveSession] turn failed for session ${state.sessionId}:`, err);
-    } finally {
-      // Release the turn lock and drain the queue
-      state.turnInProgress = false;
-      if (this.registry.has(state.sessionId) && state.turnQueue.length > 0) {
-        const nextContent = state.turnQueue.shift()!;
-        state.turnInProgress = true;
-        void this.executeAndPersistTurn(state, nextContent);
-      }
-    }
   }
 
   async getMessages(featureId: string, limit?: number): Promise<InteractiveMessage[]> {
@@ -751,7 +155,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     // Stop any active session so the agent doesn't retain old context
     const state = this.registry.findActiveStateForFeature(featureId);
     if (state) {
-      await this.stopSession(state.sessionId);
+      await this.terminator.stop(state.sessionId);
     }
     // Also clear the cached agentSessionId so next session starts fresh
     this.registry.deleteStoppedAgentSessionId(featureId);
@@ -785,9 +189,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     // 1. Persist user message to DB immediately — this is the source
     //    of truth. SKIPPED when `persistUserMessage === false`, which
     //    the application-creation flow uses to boot the session on top
-    //    of a user message it already wrote in the foreground (so the
-    //    chat renders the bubble instantly, long before the slow
-    //    scaffold and session-boot work completes).
+    //    of a user message it already wrote in the foreground.
     const now = new Date();
     const userMsg: InteractiveMessage = {
       id: crypto.randomUUID(),
@@ -806,14 +208,12 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
     // If the caller requested a different model/agent than the running session,
     // silently stop the current session so a new one boots with the new config.
-    // Also clear the cached agentSessionId so we create a fresh SDK session
-    // instead of resuming the old one (which would keep the old model).
     if (state && model && state.model !== model) {
-      await this.stopSession(state.sessionId);
+      await this.terminator.stop(state.sessionId);
       this.registry.deleteStoppedAgentSessionId(featureId);
       state = undefined;
     } else if (state && agentType && state.agentType !== agentType) {
-      await this.stopSession(state.sessionId);
+      await this.terminator.stop(state.sessionId);
       this.registry.deleteStoppedAgentSessionId(featureId);
       state = undefined;
     }
@@ -823,12 +223,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       if (dbSession?.status === InteractiveSessionStatus.ready) {
         // Session ready — send to agent (guarded: one turn at a time)
         await this.sessionRepo.updateLastActivity(state.sessionId, now);
-        if (state.turnInProgress) {
-          state.turnQueue.push(content);
-        } else {
-          state.turnInProgress = true;
-          void this.executeAndPersistTurn(state, content);
-        }
+        void this.turnExecutor.enqueueTurn(state, content);
       } else if (dbSession?.status === InteractiveSessionStatus.booting) {
         // Session booting — queue the message
         state.pendingUserContent = content;
@@ -836,8 +231,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     } else {
       // No in-memory session — check DB for an orphaned active session (e.g. after
       // service restart / hot-reload) and mark it stopped before booting a new one.
-      // The agentSessionId is persisted in DB so startSession will pick it up for
-      // SDK session resumption.
       const dbSession = await this.sessionRepo.findByFeatureId(featureId);
       if (
         dbSession &&
@@ -852,18 +245,9 @@ export class InteractiveSessionService implements IInteractiveSessionService {
         );
       }
 
-      // Boot a new session — startSession will find the agentSessionId from DB.
-      // Pass the first-turn content as `initialUserMessage` so it's
-      // written to the session state atomically BEFORE completeBootAsync
-      // is dispatched. Do NOT set pendingUserContent after startSession
-      // returns — that races with the async boot and results in the
-      // first turn being silently dropped.
-      //
-      // When the caller supplies `agentKickoffOverride` (e.g. the
-      // application-creation flow's "read SHEP_BRIEF.md first"
-      // directive), the agent's first turn uses the override while the
-      // DB-persisted user message keeps the raw `content` untouched —
-      // so the chat UI still shows just the user's verbatim request.
+      // Boot a new session. Pass the first-turn content as `initialUserMessage`
+      // so it's written to the session state atomically BEFORE completeBootAsync
+      // is dispatched.
       const firstTurnContent = agentKickoffOverride ?? content;
       await this.startSession(
         featureId,
@@ -913,11 +297,10 @@ export class InteractiveSessionService implements IInteractiveSessionService {
         totalOutputTokens: usage?.totalOutputTokens ?? null,
       };
     } else {
-      // No in-memory state — check DB for last session (e.g. after server restart / hot-reload)
+      // No in-memory state — check DB for last session (e.g. after server restart)
       const latest = await this.sessionRepo.findByFeatureId(featureId);
       if (latest) {
         sessionStatus = latest.status as string;
-        // Show DB info even without live process (process was lost on restart)
         if (
           latest.status !== InteractiveSessionStatus.stopped &&
           latest.status !== InteractiveSessionStatus.error
@@ -948,7 +331,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       const statuses = await this.sessionRepo.getTurnStatuses([featureId]);
       turnStatus = statuses.get(featureId) ?? 'idle';
     } else {
-      // Check DB for the latest session's turn status
       const latest = await this.sessionRepo.findByFeatureId(featureId);
       if (latest) {
         const statuses = await this.sessionRepo.getTurnStatuses([featureId]);
@@ -959,12 +341,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     // Include pending interaction if one exists
     const pendingInteraction = state?.pendingInteraction ?? null;
 
-    // ── Workflow view — derived entirely from the DB so a browser
-    // refresh or daemon restart sees the exact same progress state.
-    // A step row in `running` status means the orchestrator had
-    // started that step before the crash; recovery flips it to
-    // `interrupted` at boot so we never show stale "running" after
-    // the daemon dies.
+    // Workflow view — derived entirely from the DB
     const workflowSteps = await this.workflowStepRepo.listByFeature(featureId);
     let workflow: ChatState['workflow'] = null;
     if (workflowSteps.length > 0) {
@@ -974,10 +351,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
         steps: workflowSteps,
         currentStepId: running?.id ?? null,
       };
-      // Derive turnStatus from the workflow: if any step is running,
-      // the agent is working — regardless of whether the in-memory
-      // session has been reloaded yet. This is the fix for "lose
-      // in-progress after refresh": the answer is always a SELECT.
       if (running) turnStatus = 'processing';
     }
 
@@ -1001,19 +374,15 @@ export class InteractiveSessionService implements IInteractiveSessionService {
   }
 
   async stopByFeature(featureId: string): Promise<void> {
-    const state = this.registry.findActiveStateForFeature(featureId);
-    if (!state) return;
-    await this.stopSession(state.sessionId);
+    return this.terminator.stopByFeature(featureId);
   }
 
   async markRead(featureId: string): Promise<void> {
-    // Find the active session for this feature and clear unread status
     const state = this.registry.findActiveStateForFeature(featureId);
     if (state) {
       void this.persistence.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
       return;
     }
-    // Fallback: check DB for the latest active session
     const latest = await this.sessionRepo.findByFeatureId(featureId);
     if (latest) {
       void this.persistence.updateTurnStatusAndNotify(latest.id, featureId, 'idle');
@@ -1033,42 +402,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     if (!state?.pendingInteraction || !state.pendingInteractionResolver) {
       throw new Error(`No pending interaction for feature ${featureId}`);
     }
-
-    // Persist the user's answers as a structured user message.
-    // The {{interaction}} prefix lets the frontend detect and render it
-    // as a compact green bubble instead of a regular text message.
-    const interactionPayload = {
-      questions: state.pendingInteraction.questions.map((q) => ({
-        header: q.header,
-        question: q.question,
-      })),
-      answers,
-    };
-    const now = new Date();
-    const userMsg: InteractiveMessage = {
-      id: crypto.randomUUID(),
-      featureId: state.featureId,
-      sessionId: state.sessionId,
-      role: InteractiveMessageRole.user,
-      content: `{{interaction}}${JSON.stringify(interactionPayload)}`,
-      createdAt: now,
-      updatedAt: now,
-    };
-    await this.persistence.persistMessage(userMsg);
-
-    // Resolve the Promise that the canUseTool callback is awaiting.
-    // This unblocks the SDK stream — the agent resumes with the user's answers.
-    state.pendingInteractionResolver(answers);
-
-    // Clear pending interaction state
-    state.pendingInteraction = null;
-    state.pendingInteractionResolver = null;
-
-    // Update turn status back to processing
-    void this.persistence.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'processing');
-
-    // Clear the "Waiting for your response..." log
-    state.subscribers.forEach((sub) => sub({ delta: '', done: false }));
+    return this.interactionCoordinator.respondToInteraction(state, answers);
   }
 
   // ---------------------------------------------------------------------------
@@ -1093,9 +427,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
   /**
    * Resolves the next time any subscriber receives a `done: true`
-   * chunk for the given feature. The orchestrator subscribes BEFORE
-   * sending the step prompt so the resolution can't race with the
-   * agent finishing before the promise is set up.
+   * chunk for the given feature.
    */
   async waitForTurnDone(featureId: string, signal?: AbortSignal): Promise<void> {
     return new Promise<void>((resolve, reject) => {
@@ -1118,78 +450,4 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       signal?.addEventListener('abort', onAbort);
     });
   }
-
-  /**
-   * Build the onUserQuestion callback for a session.
-   * Called by the SDK's canUseTool when the agent invokes AskUserQuestion.
-   * Returns a Promise that doesn't resolve until the user submits their answers.
-   */
-  private buildOnUserQuestionCallback(state: SessionState) {
-    return async (interaction: UserInteractionData): Promise<Record<string, string>> => {
-      // Flush any accumulated assistant text as a separate message BEFORE
-      // the interaction. This ensures the agent's question text appears
-      // above the green answer bubble in the conversation history.
-      if (state.currentAssistantBuffer.trim()) {
-        const now = new Date();
-        const msg: InteractiveMessage = {
-          id: crypto.randomUUID(),
-          featureId: state.featureId,
-          sessionId: state.sessionId,
-          role: InteractiveMessageRole.assistant,
-          content: state.currentAssistantBuffer,
-          createdAt: now,
-          updatedAt: now,
-        };
-        await this.persistence.persistMessage(msg);
-        state.currentAssistantBuffer = '';
-        state.toolEventsLog = [];
-
-        // Notify subscribers so the frontend picks up the new message
-        state.subscribers.forEach((sub) => sub({ delta: '', done: true }));
-        // Small delay so the refetch completes before the interaction appears
-        await new Promise<void>((r) => setTimeout(r, 100));
-      }
-
-      // Store the interaction data for the frontend
-      state.pendingInteraction = interaction;
-
-      // Update turn status so the dot indicator shows amber
-      void this.persistence.updateTurnStatusAndNotify(
-        state.sessionId,
-        state.featureId,
-        'awaiting_input'
-      );
-
-      // Notify subscribers so SSE pushes the interaction to the frontend
-      state.subscribers.forEach((sub) =>
-        sub({
-          delta: '',
-          done: false,
-          log: 'Waiting for your response...',
-          interaction,
-        })
-      );
-
-      // Create a Promise that will be resolved when the user calls respondToInteraction
-      return new Promise<Record<string, string>>((resolve) => {
-        state.pendingInteractionResolver = resolve;
-      });
-    };
-  }
-
-  // Agent type / auth / concurrent-session cap resolution lives on
-  // `AgentConfigResolver` (`lifecycle/agent-config.resolver.ts`) — this
-  // facade delegates via `this.agentConfigResolver.*`. The resolver
-  // reads settings through an injected `ISettingsProvider` port so no
-  // component in this file calls the `settings.service` singleton.
-
-  // Persistence + monotonic-clock helpers live on SessionPersistence
-  // (`core/session-persistence.ts`) — this facade delegates via
-  // `this.persistence.*`. The collaborator is a DI singleton so the
-  // monotonic counter is shared process-wide.
-
-  // Idle-eviction timer removed. Live agent sessions are preserved
-  // indefinitely and only stop on an explicit user action (Stop
-  // button, new session reset, server shutdown). See `stopSession`
-  // for the only teardown path.
 }
