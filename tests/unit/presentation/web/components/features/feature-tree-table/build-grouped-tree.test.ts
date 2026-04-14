@@ -193,6 +193,23 @@ describe('buildGroupedTree', () => {
 
       expect(tree[0].id).toBe('group-repositoryName-my-repo');
     });
+
+    it('carries _repositoryPath from children when grouping by repositoryName', () => {
+      const data = [
+        makeRow({ id: '1', repositoryName: 'my-repo', _repositoryPath: '/home/user/my-repo' }),
+        makeRow({ id: '2', repositoryName: 'my-repo', _repositoryPath: '/home/user/my-repo' }),
+      ];
+      const tree = buildGroupedTree(data, 'repositoryName', 'asc', 'name', 'asc');
+
+      expect(tree[0]._repositoryPath).toBe('/home/user/my-repo');
+    });
+
+    it('does not set _repositoryPath when grouping by non-repository fields', () => {
+      const data = [makeRow({ id: '1', status: 'pending', _repositoryPath: '/home/user/my-repo' })];
+      const tree = buildGroupedTree(data, 'status', 'asc', 'name', 'asc');
+
+      expect(tree[0]._repositoryPath).toBeUndefined();
+    });
   });
 });
 

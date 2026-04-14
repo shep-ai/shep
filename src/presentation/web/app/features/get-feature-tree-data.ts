@@ -107,6 +107,7 @@ export async function getFeatureTreeData(): Promise<{
       repositoryName:
         repo?.name ?? feature.repositoryPath.split('/').pop() ?? feature.repositoryPath,
       remoteUrl: repo?.remoteUrl,
+      _repositoryPath: feature.repositoryPath,
       parentId: feature.parentId ?? undefined,
       nodeState: deriveNodeState(feature, latestRun),
       hasChildren: parentIds.has(feature.id),

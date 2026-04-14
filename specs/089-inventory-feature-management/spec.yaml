@@ -101,3 +101,7 @@ rejectionFeedback:
     message: "I need to be able to create new features/project and anything the \"+\" fab is doing from this page and sii it in the table view\nwhen managing feature I shouldn't jump to the control center.\nI need to be able to manage fully the project/feature/and anything the control center allows but in the table tree view in the inventory (with modals/drawers etc)\nwe can reuse the same componenet we have in the control center"
     phase: "merge"
     timestamp: "2026-04-14T10:30:17.641Z"
+  - iteration: 2
+    message: "The inventory should be by default collapsed and all showen, we should also be able to click on a plus sign near each repository and create feature and have action buttons above the table for quick actions like new project import etc (things we have in the fab)"
+    phase: "merge"
+    timestamp: "2026-04-14T11:46:59.209Z"

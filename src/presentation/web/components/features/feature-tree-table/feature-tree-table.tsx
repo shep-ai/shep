@@ -27,6 +27,8 @@ export interface FeatureTreeRow {
   _isRepoGroup?: boolean;
   /** Internal: number of features in this repo group (legacy tree) */
   _featureCount?: number;
+  /** Repository path for the repo this row belongs to (used to create features from repo groups) */
+  _repositoryPath?: string;
   /** Derived UI node state for action mapping (9-state model from derive-feature-state) */
   nodeState?: FeatureNodeState;
   /** Whether this feature has child features (for delete dialog cascade option) */
@@ -58,6 +60,8 @@ export interface FeatureTreeTableProps {
   itemSortDir?: SortDir;
   /** Called when the table renders/re-renders with a ref to the container, for portal management. */
   onTableRender?: (container: HTMLDivElement) => void;
+  /** Called when the (+) button on a repo group header is clicked, with the repository path. */
+  onCreateFeatureForRepo?: (repositoryPath: string) => void;
 }
 
 // ── Constants ────────────────────────────────────────────────
@@ -117,7 +121,12 @@ function repoFormatter(cell: CellComponent): string {
   return `<span style="display:inline-flex;align-items:center;gap:6px">${REPO_ICON_SVG}<span>${escapeHtml(val)}</span></span>`;
 }
 
-function groupHeaderNameFormatter(groupBy: GroupByField): (cell: CellComponent) => string {
+/** SVG plus icon — lucide Plus (14px) */
+const PLUS_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
+
+function groupHeaderNameFormatter(
+  groupBy: GroupByField
+): (cell: CellComponent) => string | HTMLElement {
   return (cell: CellComponent) => {
     const row = cell.getRow().getData() as FeatureTreeRow;
     if (!row._isGroupHeader) return escapeHtml(cell.getValue() as string);
@@ -125,7 +134,47 @@ function groupHeaderNameFormatter(groupBy: GroupByField): (cell: CellComponent) 
     const icon = groupBy === 'repositoryName' ? REPO_ICON_SVG : GROUP_ICON_SVG;
     const count = row._groupCount ?? 0;
     const countLabel = count === 1 ? '1 feature' : `${count} features`;
-    return `<span style="display:inline-flex;align-items:center;gap:8px;font-weight:600">${icon}<span>${escapeHtml(row.name)}</span><span style="font-weight:400;color:var(--color-muted-foreground,#64748b);font-size:12px">${countLabel}</span></span>`;
+
+    const container = document.createElement('span');
+    container.style.display = 'inline-flex';
+    container.style.alignItems = 'center';
+    container.style.gap = '8px';
+    container.style.fontWeight = '600';
+    container.style.width = '100%';
+
+    container.innerHTML = `${icon}<span>${escapeHtml(row.name)}</span><span style="font-weight:400;color:var(--color-muted-foreground,#64748b);font-size:12px">${countLabel}</span>`;
+
+    // Add (+) button for repository group headers to create features
+    if (groupBy === 'repositoryName' && row._repositoryPath) {
+      const btn = document.createElement('button');
+      btn.className = 'inventory-create-for-repo-btn';
+      btn.setAttribute('data-create-for-repo', row._repositoryPath);
+      btn.setAttribute('title', 'New feature');
+      btn.innerHTML = PLUS_ICON_SVG;
+      btn.style.marginLeft = 'auto';
+      btn.style.display = 'inline-flex';
+      btn.style.alignItems = 'center';
+      btn.style.justifyContent = 'center';
+      btn.style.width = '24px';
+      btn.style.height = '24px';
+      btn.style.borderRadius = '4px';
+      btn.style.border = 'none';
+      btn.style.background = 'transparent';
+      btn.style.cursor = 'pointer';
+      btn.style.color = 'var(--color-muted-foreground, #64748b)';
+      btn.style.flexShrink = '0';
+      btn.addEventListener('mouseenter', () => {
+        btn.style.background = 'var(--color-accent, #f1f5f9)';
+        btn.style.color = 'var(--color-foreground, #0f172a)';
+      });
+      btn.addEventListener('mouseleave', () => {
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--color-muted-foreground, #64748b)';
+      });
+      container.appendChild(btn);
+    }
+
+    return container;
   };
 }
 
@@ -343,6 +392,10 @@ export function buildGroupedTree(
       _isGroupHeader: true,
       _groupCount: features.length,
       _children: sortedChildren,
+      // Carry the repo path from the first child for create-from-repo
+      ...(groupBy === 'repositoryName' && features[0]?._repositoryPath
+        ? { _repositoryPath: features[0]._repositoryPath }
+        : {}),
     });
   }
 
@@ -366,6 +419,7 @@ export function FeatureTreeTable({
   itemSortField = 'name',
   itemSortDir = 'asc',
   onTableRender,
+  onCreateFeatureForRepo,
 }: FeatureTreeTableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const tabulatorRef = useRef<Tabulator | null>(null);
@@ -373,6 +427,8 @@ export function FeatureTreeTable({
   onFeatureClickRef.current = onFeatureClick;
   const onTableRenderRef = useRef(onTableRender);
   onTableRenderRef.current = onTableRender;
+  const onCreateFeatureForRepoRef = useRef(onCreateFeatureForRepo);
+  onCreateFeatureForRepoRef.current = onCreateFeatureForRepo;
 
   const stableOnFeatureClick = useCallback((featureId: string) => {
     onFeatureClickRef.current?.(featureId);
@@ -399,7 +455,7 @@ export function FeatureTreeTable({
       ...(isGrouped
         ? {
             dataTree: true,
-            dataTreeStartExpanded: true,
+            dataTreeStartExpanded: false,
             rowFormatter: (row: RowComponent) => {
               const rowData = row.getData() as FeatureTreeRow;
               if (rowData._isGroupHeader) {
@@ -420,9 +476,22 @@ export function FeatureTreeTable({
       onTableRenderRef.current?.(container);
     });
 
+    // Event delegation for (+) create-for-repo buttons in group headers
+    const handleCreateClick = (e: MouseEvent) => {
+      const btn = (e.target as HTMLElement).closest('[data-create-for-repo]') as HTMLElement | null;
+      if (!btn) return;
+      e.stopPropagation();
+      const repoPath = btn.getAttribute('data-create-for-repo');
+      if (repoPath) {
+        onCreateFeatureForRepoRef.current?.(repoPath);
+      }
+    };
+    container.addEventListener('click', handleCreateClick);
+
     tabulatorRef.current = table;
 
     return () => {
+      container.removeEventListener('click', handleCreateClick);
       table.destroy();
       tabulatorRef.current = null;
     };

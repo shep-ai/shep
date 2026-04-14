@@ -195,6 +195,14 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
 
   // ── Create actions ────────────────────────────────────────────
 
+  // Repo path to pre-fill when creating a feature from a repo group header
+  const [createForRepoPath, setCreateForRepoPath] = useState('');
+
+  const handleCreateFeatureForRepo = useCallback((repositoryPath: string) => {
+    setCreateForRepoPath(repositoryPath);
+    setCreateDrawerOpen(true);
+  }, []);
+
   const handleCreateFeatureSubmit = useCallback(
     (data: FeatureCreatePayload) => {
       setIsCreatingFeature(true);
@@ -253,7 +261,10 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
         id: 'new-feature',
         label: t('fab.newFeature'),
         icon: <Sparkles className="h-4 w-4" />,
-        onClick: () => setCreateDrawerOpen(true),
+        onClick: () => {
+          setCreateForRepoPath('');
+          setCreateDrawerOpen(true);
+        },
       },
       {
         id: 'add-local-repo',
@@ -737,16 +748,72 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
         ) : null}
       </div>
 
-      {/* Results count */}
-      <div className="text-muted-foreground flex items-center gap-2 text-xs">
-        <span>
-          {filteredFeatures.length} feature{filteredFeatures.length !== 1 ? 's' : ''}
-        </span>
-        {hasActiveFilters ? (
-          <Badge variant="secondary" className="text-xs">
-            filtered
-          </Badge>
-        ) : null}
+      {/* Quick actions toolbar + results count */}
+      <div className="flex items-center justify-between">
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <span>
+            {filteredFeatures.length} feature{filteredFeatures.length !== 1 ? 's' : ''}
+          </span>
+          {hasActiveFilters ? (
+            <Badge variant="secondary" className="text-xs">
+              filtered
+            </Badge>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1.5 text-xs"
+            onClick={() => setNewProjectOpen(true)}
+          >
+            <FolderPlus className="size-3.5" />
+            New project
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1.5 text-xs"
+            onClick={() => {
+              setCreateForRepoPath('');
+              setCreateDrawerOpen(true);
+            }}
+          >
+            <Sparkles className="size-3.5" />
+            New feature
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1.5 text-xs"
+            onClick={handlePickFolder}
+          >
+            <FolderOpen className="size-3.5" />
+            Add local repo
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1.5 text-xs"
+            onClick={() => setShowCreatePrompt(true)}
+          >
+            <LayoutGrid className="size-3.5" />
+            New application
+          </Button>
+          {featureFlags.githubImport ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 text-xs"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('shep:open-github-import'));
+              }}
+            >
+              <Github className="size-3.5" />
+              {t('fab.fromGithub')}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {/* Table or Empty State */}
@@ -761,6 +828,7 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
             itemSortField={itemSortField}
             itemSortDir={itemSortDir}
             onTableRender={handleTableRender}
+            onCreateFeatureForRepo={handleCreateFeatureForRepo}
           />
         ) : (
           <EmptyState
@@ -846,9 +914,12 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
       {/* Create feature drawer */}
       <FeatureCreateDrawer
         open={createDrawerOpen}
-        onClose={() => setCreateDrawerOpen(false)}
+        onClose={() => {
+          setCreateDrawerOpen(false);
+          setCreateForRepoPath('');
+        }}
         onSubmit={handleCreateFeatureSubmit}
-        repositoryPath=""
+        repositoryPath={createForRepoPath}
         features={createData.featureOptions}
         repositories={createData.repositoryOptions}
         workflowDefaults={createData.workflowDefaults}
