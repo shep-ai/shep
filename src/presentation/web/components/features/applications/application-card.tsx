@@ -216,6 +216,13 @@ export function ApplicationCard({ application, className }: ApplicationCardProps
   const isBooting = deploy.status === DeploymentState.Booting || deploy.deployLoading;
   const isLocalRunning = deploy.status === DeploymentState.Ready && Boolean(effectiveDeploymentUrl);
 
+  // Resolve the URL to show in the header iframe. Prefer the local
+  // dev server when it's running (it reflects uncommitted in-progress
+  // changes), else fall back to the cloud deploy URL so a deployed
+  // app shows its actual live site instead of an abstract placeholder.
+  const previewUrl = isLocalRunning ? effectiveDeploymentUrl : isCloudLive ? cloudUrl : null;
+  const hasLivePreview = Boolean(previewUrl);
+
   const navigate = () => router.push(`/application/${application.id}`);
 
   // Repository display name from path
@@ -237,34 +244,27 @@ export function ApplicationCard({ application, className }: ApplicationCardProps
         )}
       >
         {/* ── Header visual ──────────────────────────────────── */}
-        {/* When local server is running: real iframe. Otherwise: gradient + text overlay. */}
+        {/* Preference order:
+             1. Live iframe preview (local dev server OR cloud deploy URL)
+             2. Booting spinner while a local deploy is coming up
+             3. Abstract dark SVG wireframe (ambient placeholder) */}
         <div className="relative overflow-hidden" style={{ height: 160 }}>
-          {isLocalRunning || isBooting ? (
-            // ── Live preview ──────────────────────────────────
+          {hasLivePreview ? (
             <div className="absolute inset-0 bg-white dark:bg-neutral-900">
-              {isLocalRunning ? (
-                <iframe
-                  src={effectiveDeploymentUrl!}
-                  title={`${application.name} preview`}
-                  className="pointer-events-none absolute top-0 left-0 origin-top-left border-0"
-                  style={{ width: '250%', height: '250%', transform: 'scale(0.4)' }}
-                  sandbox="allow-same-origin allow-scripts"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-2">
-                  <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
-                  <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
-                    Starting…
-                  </span>
-                </div>
-              )}
-              {/* hover overlay */}
-              {isLocalRunning ? (
-                <div
-                  className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
-                  onClick={(e) => e.stopPropagation()}
-                >
+              <iframe
+                src={previewUrl!}
+                title={`${application.name} preview`}
+                className="pointer-events-none absolute top-0 left-0 origin-top-left border-0"
+                style={{ width: '250%', height: '250%', transform: 'scale(0.4)' }}
+                sandbox="allow-same-origin allow-scripts"
+                loading="lazy"
+              />
+              {/* hover overlay — stop/open for LOCAL running; open-only for cloud */}
+              <div
+                className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {isLocalRunning ? (
                   <button
                     type="button"
                     onClick={() => void deploy.stop()}
@@ -278,32 +278,32 @@ export function ApplicationCard({ application, className }: ApplicationCardProps
                     )}
                     Stop
                   </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      window.open(effectiveDeploymentUrl!, '_blank', 'noopener,noreferrer')
-                    }
-                    className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-full bg-white/90 px-3 text-[11px] font-semibold text-neutral-900 hover:bg-white"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    Open
-                  </button>
-                </div>
-              ) : null}
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => window.open(previewUrl!, '_blank', 'noopener,noreferrer')}
+                  className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-full bg-white/90 px-3 text-[11px] font-semibold text-neutral-900 hover:bg-white"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Open
+                </button>
+              </div>
+            </div>
+          ) : isBooting ? (
+            <div className="absolute inset-0 bg-white dark:bg-neutral-900">
+              <div className="flex h-full flex-col items-center justify-center gap-2">
+                <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
+                <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                  Starting…
+                </span>
+              </div>
             </div>
           ) : (
-            // ── Abstract dark preview header ──────────────────
+            // Ambient placeholder — no title overlay; name/description
+            // always render in the body below so they stay consistent
+            // across every card state.
             <div className="absolute inset-0 overflow-hidden bg-[#111827]">
               <MockPreview name={application.name} />
-              {/* bottom scrim blends into card body + holds name/desc */}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#111827] via-[#111827]/70 to-transparent px-3.5 pt-12 pb-3">
-                <h3 className="line-clamp-1 text-[14px] leading-tight font-semibold text-white">
-                  {application.name}
-                </h3>
-                <p className="mt-0.5 line-clamp-1 text-[11px] leading-relaxed text-white/55">
-                  {application.description}
-                </p>
-              </div>
             </div>
           )}
 
@@ -366,27 +366,20 @@ export function ApplicationCard({ application, className }: ApplicationCardProps
         </div>
 
         {/* ── Context zone ───────────────────────────────────── */}
-        {/* State-specific informational content so every card feels
-            relevant rather than generic. */}
-        <div className="flex flex-1 flex-col gap-1.5 px-3 pt-2.5 pb-0">
-          {/* Name + description always visible below the header.
-              When the gradient header is showing, the name/desc are
-              rendered in white on the gradient — we still show a
-              shorter subtitle here so the info section has content.
-              When the iframe is showing, we show the full name + desc. */}
-          {/* Name + description only when the header can't show them
-              (iframe live/booting mode). The dark SVG header overlay
-              already renders name + desc for all other states. */}
-          {isLocalRunning || isBooting ? (
-            <div>
-              <h3 className="text-foreground line-clamp-1 text-[14px] leading-tight font-bold">
-                {application.name}
-              </h3>
-              <p className="text-muted-foreground line-clamp-2 text-[11px] leading-relaxed">
+        {/* Name + description always rendered in the body so they stay
+            consistent regardless of what the header is showing (live
+            iframe, booting spinner, or ambient SVG placeholder). */}
+        <div className="flex flex-1 flex-col gap-1.5 px-3.5 pt-3 pb-0">
+          <div>
+            <h3 className="text-foreground line-clamp-1 text-[14px] leading-tight font-semibold">
+              {application.name}
+            </h3>
+            {application.description ? (
+              <p className="text-muted-foreground mt-0.5 line-clamp-1 text-[11px] leading-relaxed">
                 {application.description}
               </p>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
 
           {/* State-specific context — the live URL now lives in the
               footer so we skip rendering it here to avoid duplication. */}
@@ -436,7 +429,7 @@ export function ApplicationCard({ application, className }: ApplicationCardProps
 
         {/* ── Footer ─────────────────────────────────────────── */}
         <div
-          className="flex items-center gap-2 px-3 pt-1.5 pb-2.5"
+          className="flex items-center gap-2 px-3.5 pt-2 pb-3"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Left cluster: repo dir + cloud URL — both compact, inline */}
