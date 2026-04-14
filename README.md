@@ -389,6 +389,16 @@ Shep follows Clean Architecture with four layers. For contributors and the curio
 
 ---
 
+## Share Your Experience
+
+Using Shep? We would love to hear about it.
+
+- [Start a discussion](https://github.com/shep-ai/shep/discussions) to share feedback, ask questions, or tell us how you use Shep
+- [Open an issue](https://github.com/shep-ai/shep/issues) if you hit a bug or have a feature request
+- Star the repo if Shep saves you time
+
+---
+
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for humans and [CONTRIBUTING-AGENTS.md](./CONTRIBUTING-AGENTS.md) for AI agents.
