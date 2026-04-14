@@ -14,8 +14,9 @@ import { SelectCloudProviderUseCase } from '@/application/use-cases/cloud-deploy
 import { GetCloudDeploymentStatusUseCase } from '@/application/use-cases/cloud-deploy/get-cloud-deployment-status.use-case.js';
 import { CreateGitRemoteUseCase } from '@/application/use-cases/cloud-deploy/create-git-remote.use-case.js';
 import { EnsureGhAuthenticatedUseCase } from '@/application/use-cases/cloud-deploy/ensure-gh-authenticated.use-case.js';
+import { GetGitStatusUseCase } from '@/application/use-cases/cloud-deploy/get-git-status.use-case.js';
+import { SyncRepoUseCase } from '@/application/use-cases/cloud-deploy/sync-repo.use-case.js';
 import { InitiateCloudDeploymentUseCase } from '@/application/use-cases/cloud-deploy/initiate-cloud-deployment.use-case.js';
-import { ApplicationNotReadyError } from '@/domain/errors/application-not-ready.error.js';
 import { NoProviderSelectedError } from '@/domain/errors/no-provider-selected.error.js';
 import { BuildOutputNotFoundError } from '@/domain/errors/build-output-not-found.error.js';
 import { CloudProviderNotConnectedError } from '@/domain/errors/cloud-provider-not-connected.error.js';
@@ -33,6 +34,7 @@ import type {
 } from '@/application/ports/output/services/cloud-deployment-event-bus.interface.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 import { ApplicationNotFoundError } from '@/domain/errors/application-not-found.error.js';
+import { GitRemoteCreationError } from '@/domain/errors/git-remote-creation.error.js';
 
 // ─────────────────────────────── Fakes ───────────────────────────────
 
@@ -365,6 +367,14 @@ describe('CreateGitRemoteUseCase', () => {
   const gitRemote: IGitRemoteService = {
     isGhAuthenticated: async () => true,
     createGitHubRepoAndPush: async () => ({ remoteUrl: 'https://github.com/u/app-slug' }),
+    getStatus: async () => ({
+      branch: 'main',
+      uncommittedCount: 0,
+      unpushedCount: 0,
+      hasRemote: true,
+      remoteUrl: 'https://github.com/u/app-slug',
+    }),
+    commitAndPush: async () => ({ headSha: 'sha', committed: false, pushed: false }),
   };
 
   it('persists the remote URL on success', async () => {
@@ -387,6 +397,16 @@ describe('CreateGitRemoteUseCase', () => {
       createGitHubRepoAndPush: async () => {
         throw new GhNotAuthenticatedError();
       },
+      getStatus: async () => ({
+        branch: null,
+        uncommittedCount: 0,
+        unpushedCount: 0,
+        hasRemote: false,
+        remoteUrl: null,
+      }),
+      commitAndPush: async () => {
+        throw new GhNotAuthenticatedError();
+      },
     };
     const repo = new FakeApplicationRepo();
     await repo.create(makeApp());
@@ -401,11 +421,186 @@ describe('CreateGitRemoteUseCase', () => {
   });
 });
 
+describe('GetGitStatusUseCase', () => {
+  it('returns the working tree status from the git remote service', async () => {
+    const repo = new FakeApplicationRepo();
+    await repo.create(makeApp());
+    const svc: IGitRemoteService = {
+      isGhAuthenticated: async () => true,
+      createGitHubRepoAndPush: async () => ({ remoteUrl: '' }),
+      getStatus: async () => ({
+        branch: 'main',
+        uncommittedCount: 3,
+        unpushedCount: 1,
+        hasRemote: true,
+        remoteUrl: 'https://github.com/u/r',
+      }),
+      commitAndPush: async () => ({ headSha: 'sha', committed: false, pushed: false }),
+    };
+    const useCase = new GetGitStatusUseCase(repo, svc);
+    const result = await useCase.execute({ applicationId: 'app-1' });
+    expect(result.uncommittedCount).toBe(3);
+    expect(result.unpushedCount).toBe(1);
+    expect(result.hasRemote).toBe(true);
+  });
+
+  it('throws ApplicationNotFoundError when the app id is unknown', async () => {
+    const repo = new FakeApplicationRepo();
+    const svc: IGitRemoteService = {
+      isGhAuthenticated: async () => true,
+      createGitHubRepoAndPush: async () => ({ remoteUrl: '' }),
+      getStatus: async () => ({
+        branch: null,
+        uncommittedCount: 0,
+        unpushedCount: 0,
+        hasRemote: false,
+        remoteUrl: null,
+      }),
+      commitAndPush: async () => ({ headSha: '', committed: false, pushed: false }),
+    };
+    const useCase = new GetGitStatusUseCase(repo, svc);
+    await expect(useCase.execute({ applicationId: 'missing' })).rejects.toBeInstanceOf(
+      ApplicationNotFoundError
+    );
+  });
+
+  it('uses the persisted Application.gitRemoteUrl when the live git status reports no remote (regression)', async () => {
+    // Repro: an app has been published (so gitRemoteUrl is in the DB),
+    // but a transient `git remote get-url origin` failure makes the live
+    // status return hasRemote=false. The use case must still report the
+    // remote so the UI doesn't render "No backup yet" for a published
+    // app — the persisted URL is the authoritative source of truth.
+    const repo = new FakeApplicationRepo();
+    await repo.create(makeApp({ gitRemoteUrl: 'https://github.com/blackpc/landing-page-hero' }));
+    const svc: IGitRemoteService = {
+      isGhAuthenticated: async () => true,
+      createGitHubRepoAndPush: async () => ({ remoteUrl: '' }),
+      // Live git status pretends the remote is missing.
+      getStatus: async () => ({
+        branch: 'main',
+        uncommittedCount: 2,
+        unpushedCount: 0,
+        hasRemote: false,
+        remoteUrl: null,
+      }),
+      commitAndPush: async () => ({ headSha: '', committed: false, pushed: false }),
+    };
+    const useCase = new GetGitStatusUseCase(repo, svc);
+    const result = await useCase.execute({ applicationId: 'app-1' });
+    // hasRemote MUST be true because the Application row has a stored URL,
+    // even though the live subprocess returned false.
+    expect(result.hasRemote).toBe(true);
+    expect(result.remoteUrl).toBe('https://github.com/blackpc/landing-page-hero');
+    // Drift counts from the live read are still preserved.
+    expect(result.uncommittedCount).toBe(2);
+    expect(result.branch).toBe('main');
+  });
+
+  it('prefers the live remote URL when both sources are populated', async () => {
+    // If the live status DID find a remote, keep its URL — it's the
+    // freshest source. The persisted URL is only the fallback for the
+    // hasRemote decision.
+    const repo = new FakeApplicationRepo();
+    await repo.create(makeApp({ gitRemoteUrl: 'https://github.com/old/old' }));
+    const svc: IGitRemoteService = {
+      isGhAuthenticated: async () => true,
+      createGitHubRepoAndPush: async () => ({ remoteUrl: '' }),
+      getStatus: async () => ({
+        branch: 'main',
+        uncommittedCount: 0,
+        unpushedCount: 0,
+        hasRemote: true,
+        remoteUrl: 'https://github.com/new/new',
+      }),
+      commitAndPush: async () => ({ headSha: '', committed: false, pushed: false }),
+    };
+    const useCase = new GetGitStatusUseCase(repo, svc);
+    const result = await useCase.execute({ applicationId: 'app-1' });
+    expect(result.hasRemote).toBe(true);
+    expect(result.remoteUrl).toBe('https://github.com/new/new');
+  });
+});
+
+describe('SyncRepoUseCase', () => {
+  function buildSvc(overrides: Partial<IGitRemoteService> = {}): IGitRemoteService {
+    return {
+      isGhAuthenticated: async () => true,
+      createGitHubRepoAndPush: async () => ({ remoteUrl: '' }),
+      getStatus: async () => ({
+        branch: 'main',
+        uncommittedCount: 0,
+        unpushedCount: 0,
+        hasRemote: true,
+        remoteUrl: 'https://github.com/u/r',
+      }),
+      commitAndPush: async () => ({ headSha: 'newhead', committed: true, pushed: true }),
+      ...overrides,
+    };
+  }
+
+  it('throws when the app has no git remote attached yet', async () => {
+    const repo = new FakeApplicationRepo();
+    await repo.create(makeApp({ gitRemoteUrl: undefined }));
+    const opLog = new FakeOperationLogService();
+    const useCase = new SyncRepoUseCase(
+      repo,
+      buildSvc(),
+      opLog as unknown as ConstructorParameters<typeof SyncRepoUseCase>[2]
+    );
+    await expect(useCase.execute({ applicationId: 'app-1' })).rejects.toBeInstanceOf(
+      GitRemoteCreationError
+    );
+  });
+
+  it('delegates to gitRemoteService.commitAndPush and returns its result', async () => {
+    const repo = new FakeApplicationRepo();
+    await repo.create(makeApp({ gitRemoteUrl: 'https://github.com/u/r' }));
+    const opLog = new FakeOperationLogService();
+    const svc = buildSvc();
+    const useCase = new SyncRepoUseCase(
+      repo,
+      svc,
+      opLog as unknown as ConstructorParameters<typeof SyncRepoUseCase>[2]
+    );
+    const result = await useCase.execute({ applicationId: 'app-1' });
+    expect(result).toEqual({ headSha: 'newhead', committed: true, pushed: true });
+  });
+
+  it('appends Info entries on success and Error entries on failure', async () => {
+    const repo = new FakeApplicationRepo();
+    await repo.create(makeApp({ gitRemoteUrl: 'https://github.com/u/r' }));
+    const opLog = new FakeOperationLogService();
+    const svc = buildSvc({
+      commitAndPush: async () => {
+        throw new GitRemoteCreationError('git push failed: remote rejected');
+      },
+    });
+    const useCase = new SyncRepoUseCase(
+      repo,
+      svc,
+      opLog as unknown as ConstructorParameters<typeof SyncRepoUseCase>[2]
+    );
+    await expect(useCase.execute({ applicationId: 'app-1' })).rejects.toBeInstanceOf(
+      GitRemoteCreationError
+    );
+    expect(opLog.entries.some((e) => e.level === 'error')).toBe(true);
+    expect(opLog.entries.some((e) => e.message.includes('Save & backup failed'))).toBe(true);
+  });
+});
+
 describe('EnsureGhAuthenticatedUseCase', () => {
   it('returns the service result', async () => {
     const svc: IGitRemoteService = {
       isGhAuthenticated: async () => true,
       createGitHubRepoAndPush: async () => ({ remoteUrl: '' }),
+      getStatus: async () => ({
+        branch: 'main',
+        uncommittedCount: 0,
+        unpushedCount: 0,
+        hasRemote: true,
+        remoteUrl: '',
+      }),
+      commitAndPush: async () => ({ headSha: 'sha', committed: false, pushed: false }),
     };
     expect(await new EnsureGhAuthenticatedUseCase(svc).execute()).toEqual({
       authenticated: true,
@@ -495,7 +690,15 @@ describe('InitiateCloudDeploymentUseCase', () => {
     );
   });
 
-  it('throws ApplicationNotReadyError when setupComplete=false', async () => {
+  it('proceeds past the setupComplete flag when it is false (regression — apps with stale setup_complete should still deploy)', async () => {
+    // Repro: legacy apps + apps where the orchestrator was killed
+    // mid-scaffold end up with `setup_complete: false` forever, but the
+    // user has finished the app and wants to deploy. Earlier code
+    // gated on this flag and threw ApplicationNotReadyError, blocking
+    // an otherwise-valid deploy. The real precondition is "does a
+    // build output dir exist", which BuildOutputNotFoundError catches
+    // downstream — so the use case must NOT throw ApplicationNotReady
+    // for setupComplete=false.
     repo = new FakeApplicationRepo();
     await repo.create(
       makeApp({
@@ -504,9 +707,10 @@ describe('InitiateCloudDeploymentUseCase', () => {
       })
     );
     const useCase = buildUseCase();
-    await expect(useCase.execute({ applicationId: 'app-1' })).rejects.toBeInstanceOf(
-      ApplicationNotReadyError
-    );
+    // Deploy should proceed all the way to completion since the registry
+    // still has the live provider stub set up by beforeEach.
+    const result = await useCase.execute({ applicationId: 'app-1' });
+    expect(result.url).toBe('https://example.pages.dev');
   });
 
   it('throws CloudProviderNotConnectedError when provider.isConnected is false', async () => {

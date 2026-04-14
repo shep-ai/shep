@@ -83,7 +83,11 @@ export function PublishToGitHubModal({
 
   const [ownerLogin, setOwnerLogin] = useState<string>(initialOwner);
   const [repoName, setRepoName] = useState<string>(defaultRepoName);
-  const [isPublic, setIsPublic] = useState<boolean>(true);
+  // Private by default — protect the user's code unless they
+  // explicitly choose to make it public. Earlier versions defaulted
+  // to public which leaked an unknown amount of user code to the
+  // open internet on the very first publish click.
+  const [isPublic, setIsPublic] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,7 +96,7 @@ export function PublishToGitHubModal({
     if (open) {
       setOwnerLogin(initialOwner);
       setRepoName(defaultRepoName);
-      setIsPublic(true);
+      setIsPublic(false);
       setError(null);
       setSubmitting(false);
     }

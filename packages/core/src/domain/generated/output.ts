@@ -2534,6 +2534,7 @@ export type PmAuditLog = BaseEntity & {
 export enum OperationLogKind {
   CloudDeploy = "CloudDeploy",
   GitRemoteCreate = "GitRemoteCreate",
+  RepoSync = "RepoSync",
 }
 export enum OperationLogLevel {
   Debug = "Debug",

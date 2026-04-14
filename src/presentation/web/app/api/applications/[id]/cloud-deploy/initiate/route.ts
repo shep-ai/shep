@@ -35,7 +35,6 @@ export async function POST(_request: NextRequest, { params }: RouteParams): Prom
       return NextResponse.json({ error: message, code }, { status: 404 });
     }
     if (
-      code === 'APPLICATION_NOT_READY' ||
       code === 'NO_PROVIDER_SELECTED' ||
       code === 'CLOUD_PROVIDER_NOT_CONNECTED' ||
       code === 'BUILD_OUTPUT_NOT_FOUND'

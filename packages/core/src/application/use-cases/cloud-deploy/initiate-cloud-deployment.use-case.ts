@@ -14,7 +14,6 @@ import {
   OperationLogLevel,
 } from '../../../domain/generated/output.js';
 import { ApplicationNotFoundError } from '../../../domain/errors/application-not-found.error.js';
-import { ApplicationNotReadyError } from '../../../domain/errors/application-not-ready.error.js';
 import { NoProviderSelectedError } from '../../../domain/errors/no-provider-selected.error.js';
 import { BuildOutputNotFoundError } from '../../../domain/errors/build-output-not-found.error.js';
 import { CloudProviderNotConnectedError } from '../../../domain/errors/cloud-provider-not-connected.error.js';
@@ -59,15 +58,59 @@ export class InitiateCloudDeploymentUseCase {
       await this.opLog.error(opKind, opId, `Application not found: ${input.applicationId}`);
       throw new ApplicationNotFoundError(input.applicationId);
     }
-    if (!app.setupComplete) {
-      await this.opLog.error(opKind, opId, 'Application setup is not complete — cannot deploy');
-      throw new ApplicationNotReadyError(input.applicationId);
-    }
+    // Note: we deliberately do NOT gate on `app.setupComplete` here.
+    // That flag was originally a guard against deploying a half-
+    // scaffolded brand-new app whose initial AI-generated build hadn't
+    // finished yet, but it has two failure modes that hurt real users:
+    //   1. Legacy apps created before setup_complete was a column
+    //      have it stuck on `false` forever.
+    //   2. Apps where the orchestrator was killed mid-scaffold (a dev
+    //      restart, a crash, a manual stop) end up with the flag stuck
+    //      on `false` even though every meaningful artifact is in place
+    //      — the user has been editing, the repo has commits, etc.
+    // The real precondition for a deploy is "does a build output dir
+    // exist?", which `resolveBuildOutputDir()` checks below and throws
+    // `BuildOutputNotFoundError` for. That's a more accurate, more
+    // actionable error than this paternalistic flag check, so we let
+    // it be the gatekeeper instead.
 
-    const providerId =
+    // Provider resolution order:
+    //   1. Explicit input.provider from the caller — wins unconditionally
+    //   2. The per-application `app.cloudDeploymentProvider` — set by the
+    //      SelectCloudProvider use case when the user picks one from the UI
+    //   3. Fallback: pick the first enabled + connected provider from the
+    //      registry. This makes the happy path "click Deploy without first
+    //      fiddling with a provider picker" work — if the user has exactly
+    //      one connected provider there's no ambiguity, and if they have
+    //      multiple the first-wins tiebreak is predictable.
+    //
+    // Earlier code threw NoProviderSelectedError on step 2 missing, which
+    // left users staring at an error for an action that should just work.
+    let providerId: CloudDeploymentProvider | undefined =
       input.provider ?? (app.cloudDeploymentProvider as CloudDeploymentProvider | undefined);
     if (!providerId) {
-      await this.opLog.error(opKind, opId, 'No cloud provider selected for this application');
+      const firstConnected = await this.findFirstConnectedProvider();
+      if (firstConnected) {
+        providerId = firstConnected;
+        // Persist the auto-pick onto the Application row so subsequent
+        // deploys from any entry point (CLI, web, script) see the same
+        // selection the user implicitly agreed to on this click.
+        await this.applicationRepo.update(input.applicationId, {
+          cloudDeploymentProvider: providerId,
+        });
+        await this.opLog.info(
+          opKind,
+          opId,
+          `Auto-selected provider ${providerId} (first connected)`
+        );
+      }
+    }
+    if (!providerId) {
+      await this.opLog.error(
+        opKind,
+        opId,
+        'No cloud provider connected — connect one from the Deploy panel first'
+      );
       throw new NoProviderSelectedError(input.applicationId);
     }
 
@@ -183,6 +226,31 @@ export class InitiateCloudDeploymentUseCase {
       default:
         return this.opLog.info(kind, id, message, detail);
     }
+  }
+
+  /**
+   * Walk the provider registry in declared order and return the first
+   * provider that is both `enabled` AND `isConnected()`. Used to pick
+   * a sensible default when a deploy is initiated on an application
+   * that has no explicit `cloudDeploymentProvider` yet.
+   *
+   * Returns `null` if nothing is connected — the caller then throws
+   * NoProviderSelectedError with a friendlier "connect something first"
+   * message.
+   */
+  private async findFirstConnectedProvider(): Promise<CloudDeploymentProvider | null> {
+    const descriptors = this.registry.listAll();
+    for (const descriptor of descriptors) {
+      if (!descriptor.enabled) continue;
+      const provider = this.registry.get(descriptor.id);
+      try {
+        if (await provider.isConnected()) return descriptor.id;
+      } catch {
+        // isConnected() can throw on transient token-verify failures.
+        // Treat as "not connected" and keep searching.
+      }
+    }
+    return null;
   }
 
   private resolveBuildOutputDir(repositoryPath: string): string {

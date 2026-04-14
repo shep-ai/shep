@@ -29,7 +29,7 @@ import { DeploymentState } from '@shepai/core/domain/generated/output';
 
 import type { DeployActionState } from '@/hooks/use-deploy-action';
 
-import type { AppView } from './view-switcher';
+import type { AppView } from './app-view-tabs';
 
 export interface UseDevServerCoordinatorInput {
   deploy: DeployActionState;

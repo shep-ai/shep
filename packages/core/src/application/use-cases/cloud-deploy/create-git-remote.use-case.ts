@@ -15,7 +15,8 @@ export interface CreateGitRemoteInput {
   ownerLogin?: string;
   /** Optional override of the slug. Falls back to Application.slug. */
   repoName?: string;
-  /** Optional visibility. Defaults to 'public'. */
+  /** Optional visibility. Defaults to 'private' so user code is never
+   *  exposed to the open internet without an explicit opt-in. */
   visibility?: 'public' | 'private';
 }
 
@@ -56,7 +57,7 @@ export class CreateGitRemoteUseCase {
         cwd: app.repositoryPath,
         slug: trimmedRepoName && trimmedRepoName.length > 0 ? trimmedRepoName : app.slug,
         description: app.description,
-        visibility: normalized.visibility ?? 'public',
+        visibility: normalized.visibility ?? 'private',
         ownerLogin:
           trimmedOwnerLogin && trimmedOwnerLogin.length > 0 ? trimmedOwnerLogin : undefined,
         onLog: (level, message, detail) => {

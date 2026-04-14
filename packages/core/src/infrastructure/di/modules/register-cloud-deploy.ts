@@ -30,6 +30,8 @@ import { InitiateCloudDeploymentUseCase } from '../../../application/use-cases/c
 import { GetCloudDeploymentStatusUseCase } from '../../../application/use-cases/cloud-deploy/get-cloud-deployment-status.use-case.js';
 import { CreateGitRemoteUseCase } from '../../../application/use-cases/cloud-deploy/create-git-remote.use-case.js';
 import { EnsureGhAuthenticatedUseCase } from '../../../application/use-cases/cloud-deploy/ensure-gh-authenticated.use-case.js';
+import { GetGitStatusUseCase } from '../../../application/use-cases/cloud-deploy/get-git-status.use-case.js';
+import { SyncRepoUseCase } from '../../../application/use-cases/cloud-deploy/sync-repo.use-case.js';
 
 /**
  * Cloud deployment registrations (spec 089).
@@ -125,5 +127,13 @@ export function registerCloudDeploy(container: DependencyContainer): void {
   container.registerSingleton(EnsureGhAuthenticatedUseCase);
   container.register('EnsureGhAuthenticatedUseCase', {
     useFactory: (c) => c.resolve(EnsureGhAuthenticatedUseCase),
+  });
+  container.registerSingleton(GetGitStatusUseCase);
+  container.register('GetGitStatusUseCase', {
+    useFactory: (c) => c.resolve(GetGitStatusUseCase),
+  });
+  container.registerSingleton(SyncRepoUseCase);
+  container.register('SyncRepoUseCase', {
+    useFactory: (c) => c.resolve(SyncRepoUseCase),
   });
 }

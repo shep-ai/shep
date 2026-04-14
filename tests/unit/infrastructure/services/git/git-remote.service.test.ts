@@ -121,7 +121,11 @@ describe('GitRemoteService.createGitHubRepoAndPush', () => {
     expect(ghCall![1]).toContain('my-app');
     expect(ghCall![1]).toContain('--description');
     expect(ghCall![1]).toContain('Example app');
-    expect(ghCall![1]).toContain('--public');
+    // Default visibility is `--private` so user code is never leaked to
+    // the open internet without an explicit opt-in. Earlier versions
+    // defaulted to --public and this test pinned that wrong default.
+    expect(ghCall![1]).toContain('--private');
+    expect(ghCall![1]).not.toContain('--public');
   });
 
   it('throws GhNotAuthenticatedError when gh auth token fails', async () => {

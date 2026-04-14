@@ -19,7 +19,7 @@
  */
 
 import { useCallback } from 'react';
-import { ExternalLink, Loader2, Play, TriangleAlert, Globe } from 'lucide-react';
+import { ExternalLink, Globe, Loader2, Play, Square, TriangleAlert } from 'lucide-react';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
 import type { DeployActionState } from '@/hooks/use-deploy-action';
 
@@ -52,11 +52,30 @@ export function WebPreviewTab({ deploy }: WebPreviewTabProps) {
           <button
             type="button"
             onClick={openInNewTab}
-            className="text-muted-foreground hover:text-foreground hover:bg-background/60 inline-flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors dark:hover:bg-neutral-800"
+            className="text-muted-foreground hover:text-foreground hover:bg-background/60 inline-flex cursor-pointer items-center gap-1 rounded px-1.5 py-0.5 transition-colors dark:hover:bg-neutral-800"
             title="Open in a new browser tab"
           >
             <ExternalLink className="h-3 w-3" />
             <span>Open</span>
+          </button>
+          {/* Stop control — lives here (inside the Web pane) instead of
+              on the tab itself so it never interferes with click-to-switch.
+              The user only needs Stop while looking at the live preview,
+              which is exactly when they're on this tab. */}
+          <button
+            type="button"
+            onClick={deploy.stop}
+            disabled={deploy.stopLoading}
+            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive inline-flex cursor-pointer items-center gap-1 rounded px-1.5 py-0.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            title="Stop the dev server"
+            aria-label="Stop the dev server"
+          >
+            {deploy.stopLoading ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Square className="h-3 w-3 fill-current" />
+            )}
+            <span>Stop</span>
           </button>
         </div>
         <iframe
@@ -95,15 +114,17 @@ export function WebPreviewTab({ deploy }: WebPreviewTabProps) {
     );
   }
 
-  // Idle — CTA directly kicks off the dev server. Previously this
-  // fell through to `onRunClicked` (which only switched the view to
-  // Web) so clicking it while already on the Web tab did nothing.
+  // Idle — CTA kicks off the dev server. Doubles as the redundant
+  // entry point for users who land here from the IDE/Terminal tabs and
+  // want to see the preview — clicking the Web tab itself ALSO starts
+  // the dev server (see app-view-tabs.tsx), so this is the "I'm
+  // already here, just start it" affordance.
   return (
     <EmptyState
       icon={<Globe className="text-muted-foreground h-8 w-8" />}
-      title="No dev server running"
-      description="Click Preview to install dependencies and start the app. The preview will appear here."
-      actionLabel="Preview"
+      title="No live preview yet"
+      description="Click Start preview to install dependencies and run the app locally. Your live preview will appear here."
+      actionLabel="Start preview"
       actionIcon={<Play className="h-3.5 w-3.5 fill-current" />}
       onAction={deploy.deploy}
     />
@@ -141,11 +162,7 @@ function EmptyState({
           <button
             type="button"
             onClick={onAction}
-            // AI-purple palette — identical to the top-bar Preview
-            // button (run-dev-button.tsx idle state) so both entry
-            // points feel like the same action, not two competing
-            // affordances.
-            className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-md border border-violet-500/50 bg-gradient-to-br from-indigo-500/15 to-violet-500/20 px-3 text-xs font-medium text-violet-700 transition-colors hover:from-indigo-500/25 hover:to-violet-500/30 dark:text-violet-300"
+            className="border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 mt-2 inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border px-3 text-xs font-medium transition-colors"
           >
             {actionIcon}
             <span>{actionLabel}</span>

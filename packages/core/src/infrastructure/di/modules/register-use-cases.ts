@@ -62,8 +62,6 @@ import { GetApplicationUseCase } from '../../../application/use-cases/applicatio
 import { DeleteApplicationUseCase } from '../../../application/use-cases/applications/delete-application.use-case.js';
 import { ResumeApplicationWorkflowUseCase } from '../../../application/use-cases/applications/resume-application-workflow.use-case.js';
 import { UpdateApplicationUseCase } from '../../../application/use-cases/applications/update-application.use-case.js';
-import { CommitApplicationChangesUseCase } from '../../../application/use-cases/applications/commit-application-changes.use-case.js';
-import { CommitAndPushApplicationChangesUseCase } from '../../../application/use-cases/applications/commit-and-push-application-changes.use-case.js';
 import { CreateTerminalSessionUseCase } from '../../../application/use-cases/terminal/create-terminal-session.use-case.js';
 import { ListApplicationFilesUseCase } from '../../../application/use-cases/applications/list-application-files.use-case.js';
 import { ReadApplicationFileUseCase } from '../../../application/use-cases/applications/read-application-file.use-case.js';
@@ -154,8 +152,6 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(DeleteApplicationUseCase);
   container.registerSingleton(ResumeApplicationWorkflowUseCase);
   container.registerSingleton(UpdateApplicationUseCase);
-  container.registerSingleton(CommitApplicationChangesUseCase);
-  container.registerSingleton(CommitAndPushApplicationChangesUseCase);
   container.registerSingleton(ListAgentSessionsUseCase);
   container.registerSingleton(GetAgentSessionUseCase);
   container.registerSingleton(StreamAgentEventsUseCase);
@@ -306,12 +302,6 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('UpdateApplicationUseCase', {
     useFactory: (c) => c.resolve(UpdateApplicationUseCase),
-  });
-  container.register('CommitApplicationChangesUseCase', {
-    useFactory: (c) => c.resolve(CommitApplicationChangesUseCase),
-  });
-  container.register('CommitAndPushApplicationChangesUseCase', {
-    useFactory: (c) => c.resolve(CommitAndPushApplicationChangesUseCase),
   });
   container.register('ListApplicationFilesUseCase', {
     useFactory: (c) => c.resolve(ListApplicationFilesUseCase),

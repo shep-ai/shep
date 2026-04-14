@@ -8,7 +8,7 @@ import { IdeTab } from '@/components/features/application-page/ide-tab';
 import { WebPreviewTab } from '@/components/features/application-page/web-preview-tab';
 import type { DeployActionState } from '@/hooks/use-deploy-action';
 
-import type { AppView } from './view-switcher';
+import type { AppView } from './app-view-tabs';
 
 export interface ViewBodyProps {
   activeView: AppView;

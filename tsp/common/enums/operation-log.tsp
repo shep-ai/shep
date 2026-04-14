@@ -19,6 +19,9 @@ enum OperationLogKind {
 
   @doc("GitHub repository creation + initial push for an Application")
   GitRemoteCreate: "GitRemoteCreate",
+
+  @doc("Sync local changes to an existing GitHub remote (commit + push)")
+  RepoSync: "RepoSync",
 }
 
 /**

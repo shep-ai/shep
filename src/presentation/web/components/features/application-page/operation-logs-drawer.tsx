@@ -157,13 +157,7 @@ export function OperationLogsDrawer({
       >
         <SheetHeader className="border-b">
           <SheetTitle className="flex items-center gap-2">
-            {isRunning ? (
-              <Loader2 className="text-primary size-4 animate-spin" />
-            ) : entries.some((e) => e.level === 'Error') ? (
-              <AlertTriangle className="text-destructive size-4" />
-            ) : (
-              <CircleCheck className="size-4 text-emerald-500" />
-            )}
+            <DrawerHeaderIcon isRunning={isRunning} entries={entries} />
             {title}
           </SheetTitle>
           {subtitle ? <SheetDescription>{subtitle}</SheetDescription> : null}
@@ -250,4 +244,41 @@ export function OperationLogsDrawer({
       </SheetContent>
     </Sheet>
   );
+}
+
+/**
+ * Header icon for the OperationLogsDrawer. The current outcome is what
+ * the user cares about — NOT whether any old entry from a stale prior
+ * run was an Error. Earlier code did `entries.some(e => e.level ===
+ * 'Error')` which permanently poisoned the icon to a destructive
+ * triangle the moment a single failure was logged, even if the next
+ * deploy succeeded cleanly. Look at the LATEST entry instead and let
+ * its level drive the icon. Running state still wins over everything.
+ */
+function DrawerHeaderIcon({
+  isRunning,
+  entries,
+}: {
+  isRunning: boolean;
+  entries: readonly OperationLogEntryDto[];
+}) {
+  if (isRunning) {
+    return <Loader2 className="text-primary size-4 animate-spin" />;
+  }
+  // Walk backwards to find the latest meaningful entry. Debug entries
+  // don't change the headline status — they're noise.
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const level = entries[i].level;
+    if (level === 'Debug') continue;
+    if (level === 'Error') {
+      return <AlertTriangle className="text-destructive size-4" />;
+    }
+    if (level === 'Warn') {
+      return <AlertTriangle className="size-4 text-amber-500" />;
+    }
+    // Info — operation finished cleanly
+    return <CircleCheck className="size-4 text-emerald-500" />;
+  }
+  // No entries at all — neutral idle icon
+  return <CircleCheck className="text-muted-foreground size-4" />;
 }
