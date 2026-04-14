@@ -1,0 +1,31 @@
+{
+  "name": "shep",
+  "version": "0.1.0",
+  "owner": {
+    "name": "Shep AI",
+    "email": "hello@shep.bot"
+  },
+  "metadata": {
+    "description": "Ship features 10x faster with parallel AI agents — architecture review, diagramming, React best practices, TypeSpec modeling, and more",
+    "homepage": "https://shep.bot",
+    "repository": "https://github.com/shep-ai/shep",
+    "license": "MIT"
+  },
+  "plugins": [
+    {
+      "name": "shep-skills",
+      "description": "Curated development skills for architecture review, diagramming, React/Next.js optimization, TypeSpec modeling, and parallel AI development. Each skill works standalone in any Claude Code project.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/shep-intro",
+        "./skills/architecture-reviewer",
+        "./skills/mermaid-diagrams",
+        "./skills/react-flow",
+        "./skills/shadcn-ui",
+        "./skills/vercel-react-best-practices",
+        "./skills/tsp-model"
+      ]
+    }
+  ]
+}
