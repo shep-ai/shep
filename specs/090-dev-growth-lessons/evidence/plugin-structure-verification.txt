@@ -1,0 +1,72 @@
+=== Plugin Manifest Validation ===
+
+--- plugin.json content ---
+{
+  "name": "shep",
+  "version": "0.1.0",
+  "owner": {
+    "name": "Shep AI",
+    "email": "hello@shep.bot"
+  },
+  "metadata": {
+    "description": "Ship features 10x faster with parallel AI agents — architecture review, diagramming, React best practices, TypeSpec modeling, and more",
+    "homepage": "https://shep.bot",
+    "repository": "https://github.com/shep-ai/shep",
+    "license": "MIT"
+  },
+  "plugins": [
+    {
+      "name": "shep-skills",
+      "description": "Curated development skills for architecture review, diagramming, React/Next.js optimization, TypeSpec modeling, and parallel AI development. Each skill works standalone in any Claude Code project.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/shep-intro",
+        "./skills/architecture-reviewer",
+        "./skills/mermaid-diagrams",
+        "./skills/react-flow",
+        "./skills/shadcn-ui",
+        "./skills/vercel-react-best-practices",
+        "./skills/tsp-model"
+      ]
+    }
+  ]
+}
+
+
+--- Plugin skill directories ---
+total 0
+drwxr-xr-x@ 9 arielshadkhan  staff  288 Apr 14 15:12 .
+drwxr-xr-x@ 4 arielshadkhan  staff  128 Apr 14 15:17 ..
+drwxr-xr-x@ 3 arielshadkhan  staff   96 Apr 14 15:12 architecture-reviewer
+drwxr-xr-x@ 3 arielshadkhan  staff   96 Apr 14 15:12 mermaid-diagrams
+drwxr-xr-x@ 3 arielshadkhan  staff   96 Apr 14 15:12 react-flow
+drwxr-xr-x@ 4 arielshadkhan  staff  128 Apr 14 15:12 shadcn-ui
+drwxr-xr-x@ 3 arielshadkhan  staff   96 Apr 14 15:12 shep-intro
+drwxr-xr-x@ 3 arielshadkhan  staff   96 Apr 14 15:12 tsp-model
+drwxr-xr-x@ 5 arielshadkhan  staff  160 Apr 14 15:12 vercel-react-best-practices
+
+--- Skill SKILL.md files ---
+  ✓ architecture-reviewer/SKILL.md exists (      96 lines)
+  ✓ mermaid-diagrams/SKILL.md exists (     217 lines)
+  ✓ react-flow/SKILL.md exists (     451 lines)
+  ✓ shadcn-ui/SKILL.md exists (    1663 lines)
+  ✓ shep-intro/SKILL.md exists (     110 lines)
+  ✓ tsp-model/SKILL.md exists (     142 lines)
+  ✓ vercel-react-best-practices/SKILL.md exists (     138 lines)
+
+--- Content docs ---
+total 144
+drwxr-xr-x@ 11 arielshadkhan  staff    352 Apr 14 15:35 .
+drwxr-xr-x@ 21 arielshadkhan  staff    672 Apr 14 14:57 ..
+-rw-r--r--@  1 arielshadkhan  staff  10610 Apr 14 15:25 blog-why-we-built-shep.md
+-rw-r--r--@  1 arielshadkhan  staff   9047 Apr 14 15:23 curated-list-submissions.md
+-rw-r--r--@  1 arielshadkhan  staff   5776 Apr 14 15:19 hn-show-post.md
+-rw-r--r--@  1 arielshadkhan  staff   6873 Apr 14 15:27 launch-execution-playbook.md
+-rw-r--r--@  1 arielshadkhan  staff   4355 Apr 14 15:12 marketplace-submission-guide.md
+-rw-r--r--@  1 arielshadkhan  staff   5307 Apr 14 15:00 positioning-guide.md
+-rw-r--r--@  1 arielshadkhan  staff   2325 Apr 14 15:35 release-notes-template.md
+-rw-r--r--@  1 arielshadkhan  staff   7354 Apr 14 15:00 speed-benchmark.md
+-rw-r--r--@  1 arielshadkhan  staff   3993 Apr 14 15:26 twitter-launch-thread.md
+
+All verification passed.

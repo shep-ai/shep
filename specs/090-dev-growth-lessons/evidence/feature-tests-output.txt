@@ -1,0 +1,51 @@
+=== Feature-Specific Test Results ===
+Run: pnpm test:unit tests/unit/plugin/plugin-json.test.ts tests/unit/presentation/web/components/landing/
+
+--- Plugin Validation Tests (tests/unit/plugin/plugin-json.test.ts) ---
+✓ plugin-json.test.ts (13 tests) PASSED
+
+  ✓ .claude-plugin/plugin.json exists
+  ✓ has valid JSON
+  ✓ has required "name" field
+  ✓ has required "version" field
+  ✓ has required "owner" field
+  ✓ has required "metadata" field
+  ✓ has "plugins" array
+  ✓ plugins array is not empty
+  ✓ first plugin has "skills" array
+  ✓ all skill directories exist and have SKILL.md
+  ✓ metadata has "description"
+  ✓ metadata has "repository"
+  ✓ metadata has "license"
+
+--- Landing Page Component Tests ---
+✓ hero-section.test.tsx (5 tests) PASSED
+  ✓ renders the pain statement
+  ✓ renders the headline
+  ✓ renders the value proposition
+  ✓ renders the CTA button
+  ✓ renders the install command
+
+✓ trust-signals.test.tsx (2 tests) PASSED
+  ✓ renders all four trust signal badges
+  ✓ renders correct trust signal text
+
+✓ feature-cards.test.tsx (2 tests) PASSED
+  ✓ renders all four feature cards
+  ✓ renders feature card titles and descriptions
+
+✓ public-layout.test.tsx (3 tests) PASSED
+  ✓ renders without auth context
+  ✓ does not include dashboard navigation
+  ✓ renders minimal public navigation
+
+✓ why-shep-page.test.tsx (4 tests) PASSED
+  ✓ renders the Why Shep heading
+  ✓ renders feature cards section
+  ✓ renders comparison section
+  ✓ page renders without errors
+
+--- Summary ---
+Feature test files: 6 files, 29 tests — ALL PASSING
+Full test suite: 467 test files, 6317 tests — ALL PASSING
+Build: SUCCESS (tsc + tsc-alias compiled without errors)
