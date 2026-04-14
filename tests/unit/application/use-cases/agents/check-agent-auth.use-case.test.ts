@@ -169,7 +169,8 @@ describe('CheckAgentAuthUseCase', () => {
   });
 
   it('marks OpenRouter as ready without calling list-tools (null toolId)', async () => {
-    mockGetSettings.mockReturnValue(makeSettings(AgentType.OpenRouter));
+    settingsRepo = makeSettingsRepo(vi.fn().mockResolvedValue(makeSettings(AgentType.OpenRouter)));
+    useCase = new CheckAgentAuthUseCase(listTools, detector, settingsRepo);
 
     const result = await useCase.execute();
 
@@ -187,7 +188,8 @@ describe('CheckAgentAuthUseCase', () => {
   });
 
   it('marks Together AI as ready without calling list-tools (null toolId)', async () => {
-    mockGetSettings.mockReturnValue(makeSettings(AgentType.TogetherAi));
+    settingsRepo = makeSettingsRepo(vi.fn().mockResolvedValue(makeSettings(AgentType.TogetherAi)));
+    useCase = new CheckAgentAuthUseCase(listTools, detector, settingsRepo);
 
     const result = await useCase.execute();
 
@@ -205,7 +207,8 @@ describe('CheckAgentAuthUseCase', () => {
   });
 
   it('marks Ollama as ready without calling list-tools (null toolId)', async () => {
-    mockGetSettings.mockReturnValue(makeSettings(AgentType.Ollama));
+    settingsRepo = makeSettingsRepo(vi.fn().mockResolvedValue(makeSettings(AgentType.Ollama)));
+    useCase = new CheckAgentAuthUseCase(listTools, detector, settingsRepo);
 
     const result = await useCase.execute();
 
