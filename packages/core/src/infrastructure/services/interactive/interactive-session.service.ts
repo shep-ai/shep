@@ -34,20 +34,14 @@ import type {
 import {
   InteractiveSessionStatus,
   InteractiveMessageRole,
-  AgentType,
-  AgentAuthMethod,
   WorkflowStepStatus,
 } from '../../../domain/generated/output.js';
-import type { AgentConfig } from '../../../domain/generated/output.js';
 import { ConcurrentSessionLimitError } from '../../../domain/errors/concurrent-session-limit.error.js';
 import { type FeatureContextBuilder } from './feature-context.builder.js';
-import { getSettings, hasSettings } from '../settings.service.js';
 import type { SessionRegistry, SessionState } from './core/session-registry.js';
 import type { StreamEventDispatcher } from './core/stream-event-dispatcher.js';
 import type { SessionPersistence } from './core/session-persistence.js';
-
-/** Default concurrent session cap. */
-const DEFAULT_CAP = 3;
+import type { AgentConfigResolver } from './lifecycle/agent-config.resolver.js';
 
 /**
  * Boot-phase watchdog: how long the agent is allowed to go WITHOUT
@@ -86,7 +80,8 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     private readonly workflowStepRepo: IWorkflowStepRepository,
     private readonly registry: SessionRegistry,
     private readonly dispatcher: StreamEventDispatcher,
-    private readonly persistence: SessionPersistence
+    private readonly persistence: SessionPersistence,
+    private readonly agentConfigResolver: AgentConfigResolver
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -101,7 +96,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     systemPrompt?: string,
     initialUserMessage?: string
   ): Promise<InteractiveSession> {
-    const cap = this.getCap();
+    const cap = this.agentConfigResolver.getCap();
     const activeCount = await this.sessionRepo.countActiveSessions();
     if (activeCount >= cap) {
       throw new ConcurrentSessionLimitError(activeCount, cap);
@@ -258,8 +253,8 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       }
 
       // Resolve agent type and auth config from settings
-      const resolvedAgentType = this.resolveAgentType(state.agentType);
-      const authConfig = this.resolveAuthConfig();
+      const resolvedAgentType = this.agentConfigResolver.resolveAgentType(state.agentType);
+      const authConfig = this.agentConfigResolver.resolveAuthConfig();
 
       // Create the interactive executor and session
       const executor = this.executorFactory.createInteractiveExecutor(
@@ -1286,32 +1281,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     };
   }
 
-  // ---------------------------------------------------------------------------
-  // Agent resolution helpers
-  // ---------------------------------------------------------------------------
-
-  /** Resolve the agent type from an explicit override or settings. */
-  private resolveAgentType(agentTypeOverride?: string): AgentType {
-    if (agentTypeOverride) {
-      return agentTypeOverride as AgentType;
-    }
-    if (hasSettings()) {
-      return getSettings().agent.type;
-    }
-    return AgentType.ClaudeCode;
-  }
-
-  /** Resolve the auth config from settings, with a safe fallback. */
-  private resolveAuthConfig(): AgentConfig {
-    if (hasSettings()) {
-      return getSettings().agent;
-    }
-    // Fallback for when settings haven't been initialized yet
-    return {
-      type: AgentType.ClaudeCode,
-      authMethod: AgentAuthMethod.Session,
-    };
-  }
+  // Agent type / auth / concurrent-session cap resolution lives on
+  // `AgentConfigResolver` (`lifecycle/agent-config.resolver.ts`) — this
+  // facade delegates via `this.agentConfigResolver.*`. The resolver
+  // reads settings through an injected `ISettingsProvider` port so no
+  // component in this file calls the `settings.service` singleton.
 
   // Persistence + monotonic-clock helpers live on SessionPersistence
   // (`core/session-persistence.ts`) — this facade delegates via
@@ -1322,11 +1296,4 @@ export class InteractiveSessionService implements IInteractiveSessionService {
   // indefinitely and only stop on an explicit user action (Stop
   // button, new session reset, server shutdown). See `stopSession`
   // for the only teardown path.
-
-  /** Read the concurrent session cap from settings or fall back to default. */
-  private getCap(): number {
-    if (!hasSettings()) return DEFAULT_CAP;
-    const settings = getSettings();
-    return settings.interactiveAgent?.maxConcurrentSessions ?? DEFAULT_CAP;
-  }
 }

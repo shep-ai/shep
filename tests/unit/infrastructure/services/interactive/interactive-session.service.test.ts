@@ -29,6 +29,8 @@ import { InteractiveSessionService } from '@/infrastructure/services/interactive
 import { SessionRegistry } from '@/infrastructure/services/interactive/core/session-registry.js';
 import { StreamEventDispatcher } from '@/infrastructure/services/interactive/core/stream-event-dispatcher.js';
 import { SessionPersistence } from '@/infrastructure/services/interactive/core/session-persistence.js';
+import { AgentConfigResolver } from '@/infrastructure/services/interactive/lifecycle/agent-config.resolver.js';
+import type { ISettingsProvider } from '@/application/ports/output/services/settings-provider.interface.js';
 import { ConcurrentSessionLimitError } from '@/domain/errors/concurrent-session-limit.error.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
 import type { IInteractiveMessageRepository } from '@/application/ports/output/repositories/interactive-message-repository.interface.js';
@@ -303,6 +305,13 @@ describe('InteractiveSessionService', () => {
     const registry = new SessionRegistry();
     const dispatcher = new StreamEventDispatcher(registry);
     const persistence = new SessionPersistence(messageRepo, sessionRepo, registry, dispatcher);
+    const fakeSettingsProvider: ISettingsProvider = {
+      has: () => false,
+      get: () => {
+        throw new Error('not initialized');
+      },
+    };
+    const agentConfigResolver = new AgentConfigResolver(fakeSettingsProvider);
     service = new InteractiveSessionService(
       sessionRepo,
       messageRepo,
@@ -312,7 +321,8 @@ describe('InteractiveSessionService', () => {
       workflowStepRepo,
       registry,
       dispatcher,
-      persistence
+      persistence,
+      agentConfigResolver
     );
   });
 

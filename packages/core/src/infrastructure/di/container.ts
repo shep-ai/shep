@@ -33,6 +33,8 @@ import { FeatureContextBuilder } from '../services/interactive/feature-context.b
 import { SessionRegistry } from '../services/interactive/core/session-registry.js';
 import { StreamEventDispatcher } from '../services/interactive/core/stream-event-dispatcher.js';
 import { SessionPersistence } from '../services/interactive/core/session-persistence.js';
+import { SettingsProviderAdapter } from '../services/interactive/lifecycle/settings-provider.adapter.js';
+import { AgentConfigResolver } from '../services/interactive/lifecycle/agent-config.resolver.js';
 
 // Topic-grouped registration modules
 import { registerRepositories } from './modules/register-repositories.js';
@@ -121,6 +123,11 @@ export async function initializeContainer(): Promise<typeof container> {
     sessionRegistry,
     streamEventDispatcher
   );
+  // Settings-provider port + agent-config resolver. The adapter is the
+  // one legitimate place the `settings.service` singleton is called —
+  // everywhere else consults it through the injected port.
+  const settingsProvider = new SettingsProviderAdapter();
+  const agentConfigResolver = new AgentConfigResolver(settingsProvider);
   const interactiveSessionService = new InteractiveSessionService(
     interactiveSessionRepo,
     interactiveMessageRepo,
@@ -130,7 +137,8 @@ export async function initializeContainer(): Promise<typeof container> {
     workflowStepRepoBoot,
     sessionRegistry,
     streamEventDispatcher,
-    sessionPersistence
+    sessionPersistence,
+    agentConfigResolver
   );
   container.registerInstance<IInteractiveSessionService>(
     'IInteractiveSessionService',
