@@ -147,6 +147,24 @@ export function ChatTab({
     }
   }, [stepProgress.allDone]);
 
+  const handleForceStopStep = useCallback(async (stepId: string) => {
+    // Skip placeholder rows — they have no persisted step in the DB,
+    // so there's nothing to force-stop until the real row arrives.
+    if (stepId.startsWith('placeholder-')) return;
+    try {
+      const res = await fetch(`/api/workflow-steps/${encodeURIComponent(stepId)}/force-stop`, {
+        method: 'POST',
+      });
+      if (!res.ok && res.status !== 409) {
+        // eslint-disable-next-line no-console
+        console.warn('[force-stop-step] request failed', res.status);
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[force-stop-step] request error', err);
+    }
+  }, []);
+
   const handlePickFiles = useCallback(async () => {
     try {
       const res = await fetch('/api/dialog/pick-files');
@@ -264,6 +282,7 @@ export function ChatTab({
                       activeStepId={stepProgress.activeStepId}
                       liveStatus={stepProgress.liveStatus}
                       onRetry={onResumeWorkflow}
+                      onForceStop={handleForceStopStep}
                     />
                   </>
                 ) : undefined

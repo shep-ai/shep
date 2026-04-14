@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Collapsible } from 'radix-ui';
-import { Check, ChevronDown, ChevronRight, Circle, AlertTriangle } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, Circle, AlertTriangle, X } from 'lucide-react';
 import type { Components } from 'react-markdown';
 import Markdown from 'react-markdown';
 import { cn } from '@/lib/utils';
@@ -70,6 +70,14 @@ export interface StepTrackerProps {
    * Sends a message to the agent to resume from where it left off.
    */
   onRetry?: () => void;
+  /**
+   * Called when the user clicks the inline "force stop" control on a
+   * step that appears to be stuck in `running` (or `pending`) status
+   * after a daemon restart or a missed SSE update. Flips the step to
+   * `interrupted` server-side so the standard Continue retry flow
+   * becomes available.
+   */
+  onForceStop?: (stepId: string) => void;
 }
 
 /**
@@ -87,6 +95,7 @@ export function StepTracker({
   activeStepId,
   liveStatus,
   onRetry,
+  onForceStop,
 }: StepTrackerProps) {
   const [expandedOverride, setExpandedOverride] = useState(false);
   if (steps.length === 0) return null;
@@ -148,6 +157,7 @@ export function StepTracker({
           liveStatus={step.definition.id === activeStepId ? (liveStatus ?? null) : null}
           mountIndex={idx}
           onRetry={step.status === 'interrupted' ? onRetry : undefined}
+          onForceStop={onForceStop}
         />
       ))}
       {totals ? (
@@ -195,6 +205,8 @@ interface StepCardProps {
   mountIndex: number;
   /** Called when the user clicks "Continue" on an interrupted step. */
   onRetry?: () => void;
+  /** Called when the user clicks the inline force-stop control on a running/pending step. */
+  onForceStop?: (stepId: string) => void;
 }
 
 /**
@@ -289,13 +301,25 @@ function classifyMessages(messages: InteractiveMessage[]): StepItem[] {
   return items;
 }
 
-function StepCard({ step, liveStatus, mountIndex, onRetry }: StepCardProps) {
+function StepCard({ step, liveStatus, mountIndex, onRetry, onForceStop }: StepCardProps) {
   const [optimisticRunning, setOptimisticRunning] = useState(false);
+  const [optimisticInterrupted, setOptimisticInterrupted] = useState(false);
   // Clear optimistic override once the real status catches up
   useEffect(() => {
     if (step.status !== 'interrupted') setOptimisticRunning(false);
   }, [step.status]);
-  const status = optimisticRunning ? 'running' : step.status;
+  useEffect(() => {
+    // Clear the force-stop optimistic override as soon as the real
+    // status catches up to a terminal state.
+    if (step.status !== 'running' && step.status !== 'pending') {
+      setOptimisticInterrupted(false);
+    }
+  }, [step.status]);
+  const status = optimisticInterrupted
+    ? 'interrupted'
+    : optimisticRunning
+      ? 'running'
+      : step.status;
   const [expanded, setExpanded] = useState(
     step.status === 'interrupted' || step.status === 'failed'
   );
@@ -400,6 +424,31 @@ function StepCard({ step, liveStatus, mountIndex, onRetry }: StepCardProps) {
                 title={`Step duration — ${formatDuration(durationMs)}`}
               >
                 {formatDuration(durationMs)}
+              </span>
+            ) : null}
+            {onForceStop && (status === 'running' || status === 'pending') ? (
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label="Force stop this step"
+                title="Force stop this step (mark as interrupted)"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setOptimisticInterrupted(true);
+                  onForceStop(step.definition.id);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setOptimisticInterrupted(true);
+                    onForceStop(step.definition.id);
+                  }
+                }}
+                className="text-muted-foreground/50 hover:bg-muted/60 hover:text-foreground focus-visible:ring-ring/50 inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              >
+                <X className="h-3 w-3" strokeWidth={2.5} />
               </span>
             ) : null}
             {items.length > 0 ? (

@@ -6,6 +6,7 @@ import { StopInteractiveSessionUseCase } from '../../../application/use-cases/in
 import { GetInteractiveChatStateUseCase } from '../../../application/use-cases/interactive/get-interactive-chat-state.use-case.js';
 import { RespondToInteractionUseCase } from '../../../application/use-cases/interactive/respond-to-interaction.use-case.js';
 import { RunWorkflowUseCase } from '../../../application/use-cases/workflows/run-workflow.use-case.js';
+import { ForceStopWorkflowStepUseCase } from '../../../application/use-cases/workflows/force-stop-workflow-step.use-case.js';
 
 /**
  * Register interactive-session use cases, workflow runner, and their
@@ -42,5 +43,10 @@ export function registerInteractive(container: DependencyContainer): void {
   container.registerSingleton(RunWorkflowUseCase);
   container.register('RunWorkflowUseCase', {
     useFactory: (c) => c.resolve(RunWorkflowUseCase),
+  });
+
+  container.registerSingleton(ForceStopWorkflowStepUseCase);
+  container.register('ForceStopWorkflowStepUseCase', {
+    useFactory: (c) => c.resolve(ForceStopWorkflowStepUseCase),
   });
 }

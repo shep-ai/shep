@@ -107,3 +107,23 @@ export const InterruptedAfterCrash: Story = {
     }),
   },
 };
+
+/**
+ * A step stuck in `running` after a daemon restart. The tracker shows
+ * an inline force-stop control on the running card so the user can
+ * manually flip the stuck step to `interrupted` and resume via the
+ * standard Continue retry flow.
+ */
+export const StuckRunningWithForceStop: Story = {
+  args: {
+    steps: build({
+      components: { status: 'done', metadata: { summary: 'Components ready' } },
+      wire: {
+        status: 'running',
+        startedAt: Date.now() - 2 * 60 * 1000,
+      },
+    }),
+    // eslint-disable-next-line no-console
+    onForceStop: (stepId: string) => console.log('force-stop', stepId),
+  },
+};
