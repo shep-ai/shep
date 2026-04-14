@@ -26,6 +26,10 @@ Post-implementation action items from a read-only review of the one-click cloud 
 - [ ] **Provider adapters duplicate error-mapping boilerplate** — each catches raw HTTP errors and rethrows as domain errors. Extract a shared `mapProviderHttpError(err, provider)` helper in `infrastructure/services/cloud-deploy/shared/` so new providers don't reinvent the mapping.
 - [ ] **Fire-and-forget route pattern is repeated** — `initiate/route.ts` and `create-remote/route.ts` both kick off a use case and return 202. Extract a small `fireAndForget(useCase, input)` wrapper that standardizes the error-to-operation-log path, so future async endpoints don't each implement it from scratch.
 
+## Enhancements
+
+- [ ] **Live deployment status on the `/applications` grid** — the per-app top bar already streams state via SSE, but the Apps list page is static. Surface `Application.cloudDeploymentStatus` + `cloudDeploymentUrl` on each card with a live indicator: pulsing dot for `Uploading`, green "Live" pill with clickable URL for `Deployed`, red retry chip for `Failed`. Feed off the same `ICloudDeploymentEventBus` SSE stream — no new polling. Turns the grid into a cross-app mini dashboard and makes "what's live right now?" answerable at a glance.
+
 ## Test gaps to fill alongside the above
 
 - [ ] Integration test: server restart mid-deploy leaves no stuck `Uploading` row.
