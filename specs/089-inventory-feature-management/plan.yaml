@@ -1,0 +1,217 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "inventory-feature-management"
+summary: >
+  Presentation-layer-only feature that adds inline row actions (archive, delete, start, stop, retry,
+  unarchive, review) to the inventory table. The implementation bridges Tabulator's imperative DOM
+  rendering with React's declarative model via createPortal, extends FeatureTreeRow with richer state
+  data (nodeState, hasChildren, hasOpenPr) computed server-side, and reuses all existing server actions
+  and confirmation dialogs. No domain, application, or infrastructure changes required.
+
+relatedFeatures: []
+technologies:
+  - "Next.js 14 (app router, server actions, router.refresh())"
+  - "React 18 (createPortal, useState, useCallback)"
+  - "Tabulator.js 6.4 (custom formatters, frozen columns, dataTree)"
+  - "shadcn/ui DropdownMenu (Radix-based, keyboard-accessible)"
+  - "shadcn/ui AlertDialog (archive confirmation)"
+  - "sonner (toast notifications)"
+  - "lucide-react (action icons)"
+  - "TailwindCSS"
+  - "TypeScript"
+relatedLinks:
+  - title: "Tabulator Frozen Columns Documentation"
+    url: "https://tabulator.info/docs/6.3/frozen"
+  - title: "React createPortal API"
+    url: "https://react.dev/reference/react-dom/createPortal"
+  - title: "shadcn/ui DropdownMenu"
+    url: "https://ui.shadcn.com/docs/components/dropdown-menu"
+
+phases:
+  - id: "phase-1"
+    name: "Data Layer Extension"
+    description: |
+      Extend the server-side data pipeline to provide the richer state information needed for
+      action mapping. This means extending FeatureTreeRow with nodeState, hasChildren, and
+      hasOpenPr fields, and updating getFeatureTreeData() to fetch agent runs and compute
+      these values. This phase comes first because all subsequent UI work depends on having
+      correct per-row state data.
+    parallel: false
+  - id: "phase-2"
+    name: "Action Configuration & Core Component"
+    description: |
+      Create the static action configuration (state-to-actions mapping) and the FeatureRowActions
+      React component that renders the dropdown menu with state-appropriate actions. This is the
+      core UI building block — a self-contained component with its own Storybook stories that can
+      be developed and tested independently before integration with Tabulator.
+    parallel: false
+  - id: "phase-3"
+    name: "Tabulator Integration & Portal Management"
+    description: |
+      Add the frozen actions column to the Tabulator table, implement the custom formatter that
+      creates portal target containers, and build the FeatureRowActionsManager that manages React
+      portal lifecycle (mounting, reconciliation, cleanup). This phase bridges the React component
+      from Phase 2 with Tabulator's imperative DOM model.
+    parallel: false
+  - id: "phase-4"
+    name: "Action Wiring & State Management"
+    description: |
+      Wire server action callbacks from the page client through the portal manager to each
+      FeatureRowActions instance. Implement per-row loading state (Set of in-flight feature IDs),
+      router.refresh() after mutations, toast notifications for success/error, and the
+      confirmation dialogs (DeleteFeatureDialog, archive AlertDialog).
+    parallel: false
+  - id: "phase-5"
+    name: "Integration Testing & Polish"
+    description: |
+      Verify end-to-end integration: existing table tests still pass, new action flows work
+      correctly, portal cleanup handles Tabulator re-renders, and edge cases (group headers,
+      transient states, empty data) are covered. Update any affected existing tests.
+    parallel: false
+
+filesToCreate:
+  - "src/presentation/web/components/features/feature-tree-table/feature-row-actions-config.ts"
+  - "src/presentation/web/components/features/feature-tree-table/feature-row-actions.tsx"
+  - "src/presentation/web/components/features/feature-tree-table/feature-row-actions.stories.tsx"
+  - "src/presentation/web/components/features/feature-tree-table/feature-row-actions-manager.tsx"
+  - "tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts"
+  - "tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx"
+
+filesToModify:
+  - "src/presentation/web/components/features/feature-tree-table/feature-tree-table.tsx"
+  - "src/presentation/web/app/features/get-feature-tree-data.ts"
+  - "src/presentation/web/app/features/feature-tree-page-client.tsx"
+  - "tests/unit/presentation/web/components/features/feature-tree-table/feature-tree-table.test.tsx"
+  - "tests/unit/presentation/web/app/features/inventory-filters.test.ts"
+
+openQuestions: []
+
+content: |
+  ## Architecture Overview
+
+  The inventory feature management feature is a pure presentation-layer change that adds inline
+  row actions to the existing FeatureTreeTable component. It follows the codebase's Clean
+  Architecture pattern by reusing existing use cases and server actions — no domain, application,
+  or infrastructure changes are needed.
+
+  ### Component Hierarchy (After Implementation)
+
+  ```
+  FeaturesPage (server component — unchanged)
+    └── FeatureTreePageClient (client component — extended with action state + callbacks)
+          ├── FeatureTreeTable (Tabulator wrapper — new frozen actions column)
+          │     └── Actions column formatter (creates portal target div per row)
+          ├── FeatureRowActionsManager (new — manages portals into formatter divs)
+          │     └── FeatureRowActions × N (one per visible row, via createPortal)
+          │           ├── DropdownMenu (three-dot trigger + state-appropriate menu items)
+          │           ├── DeleteFeatureDialog (reused from common/)
+          │           └── AlertDialog (archive confirmation)
+          └── [existing toolbar, filters, sort controls — unchanged]
+  ```
+
+  ### Data Flow
+
+  1. `getFeatureTreeData()` fetches features + repos + agent runs, computes `nodeState`,
+     `hasChildren`, `hasOpenPr` per row (extended in Phase 1)
+  2. `FeatureTreePageClient` filters features, passes to table + action manager, manages
+     in-flight action state via `Set<string>`
+  3. `FeatureTreeTable` renders data with frozen actions column; formatter creates container
+     divs with `data-feature-id` attributes
+  4. `FeatureRowActionsManager` detects containers via Tabulator events, renders portals
+  5. User clicks three-dot button → DropdownMenu opens with state-appropriate actions
+  6. User selects action → callback fires → server action called → toast shown → `router.refresh()`
+  7. Server re-fetches → new data flows through → Tabulator re-renders → portals reconcile
+
+  ## Key Design Decisions
+
+  ### 1. React-in-Tabulator via createPortal (Not Overlay or createRoot)
+
+  The Tabulator custom formatter creates a DOM container in each row's actions cell. A
+  FeatureRowActionsManager component at the table level uses `createPortal` to render
+  FeatureRowActions into each container. This preserves the parent React context tree (router,
+  i18n, state) — unlike `createRoot` which would create isolated React trees without shared
+  context. The overlay approach was rejected because it would require manual position tracking
+  and scroll synchronization.
+
+  The codebase already uses Radix UI portals extensively (AlertDialog, Tooltip, Sheet, Popover),
+  and the shadcn/ui DropdownMenu handles its own portal for menu content (Radix DropdownMenu.Portal
+  renders to document.body). This means the dropdown floats above the table naturally.
+
+  ### 2. FeatureNodeState for Action Mapping (Not FeatureStatus)
+
+  The spec requires 9 distinct state-to-action mappings (creating, pending, running, error,
+  action-required, done, blocked, archived, deleting). The current FeatureStatus type has only
+  6 values and conflates states that need different actions (e.g., `done` includes both Maintain
+  and Archived lifecycles; `blocked` includes Deleting). The solution reuses `deriveNodeState()`
+  from `derive-feature-state.ts` in the server-side `getFeatureTreeData()` function, adding a
+  `nodeState` field of type `FeatureNodeState` to `FeatureTreeRow`.
+
+  **Critical data requirement:** `getFeatureTreeData()` currently only calls `ListFeaturesUseCase`.
+  To derive the full 9-state FeatureNodeState, it must also fetch the latest agent run per feature.
+  The `deriveNodeState()` function requires both Feature and optional AgentRun.
+
+  ### 3. Centralized Portal Manager (Not Per-Cell Cleanup)
+
+  Tabulator destroys and recreates row DOM elements during re-render (grouping change, data update,
+  sort). A FeatureRowActionsManager maintains a `Map<string, HTMLElement>` of active portal
+  containers. On each Tabulator re-render (detected via Tabulator's `renderComplete` event), the
+  manager reconciles its portal map against the current DOM containers — unmounting stale portals
+  and creating new ones. This prevents memory leaks from orphaned React portals.
+
+  ### 4. router.refresh() for Post-Mutation Refresh (Not Optimistic State)
+
+  The inventory table is server-rendered via `getFeatureTreeData()`. After mutations,
+  `router.refresh()` triggers Next.js to re-fetch the server component tree and stream updated
+  data without losing client-side state (filters, search, grouping). The control center canvas
+  uses SSE-driven optimistic updates because it maintains a complex React Flow graph — the
+  inventory table has no such state and re-renders fully from server data on each prop change.
+
+  Per-row loading state (`Set<string>` of in-flight feature IDs) prevents double-submission and
+  provides feedback during the sub-500ms refresh window.
+
+  ### 5. Static Config Object for Action Mapping (Not Inline Conditionals)
+
+  A clean `FEATURE_ROW_ACTIONS_CONFIG` maps each `FeatureNodeState` to an array of action
+  definitions (label, icon, handler key, requiresConfirmation). This is easy to test, easy to
+  extend, and provides a single source of truth for which actions appear in which state —
+  decoupled from the rendering component.
+
+  ### 6. resumeFeature for Retry (Not a Separate Action)
+
+  The control center canvas uses `resumeFeature()` server action for its retry button. The
+  inventory table uses the same action for consistency — there is no separate retry server action.
+
+  ## Implementation Strategy
+
+  The phases are ordered by dependency:
+
+  1. **Data Layer Extension** comes first because every UI component depends on having correct
+     per-row state data (nodeState, hasChildren, hasOpenPr). Without this, the action config
+     cannot determine which actions to show.
+
+  2. **Action Configuration & Core Component** comes second because the FeatureRowActions
+     component and its config can be developed and tested in isolation (via Storybook) before
+     being integrated into the table. This de-risks the most complex UI piece.
+
+  3. **Tabulator Integration** comes third to bridge the React component with Tabulator's DOM.
+     The portal management pattern is the most technically novel piece and benefits from having
+     a working FeatureRowActions component to render.
+
+  4. **Action Wiring** comes fourth to connect everything: server actions, loading state,
+     router.refresh(), toast notifications, and confirmation dialogs.
+
+  5. **Integration Testing** comes last to verify the complete flow end-to-end and catch any
+     edge cases in the interaction between Tabulator, React portals, and Next.js data flow.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Tabulator row DOM recycling orphans React portals | FeatureRowActionsManager reconciles on renderComplete event; stale portals unmounted via Map comparison |
+  | Frozen column breaks existing table features (grouping, sorting, tree expansion) | Test frozen column with every groupBy mode + flat mode; frozen columns are a native Tabulator feature with well-defined behavior |
+  | getFeatureTreeData() agent run fetch adds latency | Agent runs are fetched in parallel with features via Promise.all(); SQLite queries are local and fast |
+  | DropdownMenu z-index conflicts with Tabulator header/frozen columns | Radix DropdownMenu.Portal renders to document.body, escaping Tabulator's stacking context entirely |
+  | Existing tests break due to FeatureTreeRow type extension | New fields (nodeState, hasChildren, hasOpenPr) are optional; existing test fixtures remain valid without changes |
+  | Double-submission during loading state | Per-row Set tracks in-flight feature IDs; action button shows spinner and is disabled while in-flight |
+  | Portal containers not found after Tabulator DOM mutations | Manager uses data-feature-id attribute queries scoped to the table container; reconciles on every renderComplete |

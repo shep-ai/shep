@@ -1,0 +1,458 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "inventory-feature-management"
+summary: >
+  11 tasks across 5 phases. Extends the inventory table with inline row actions by: (1) enriching
+  server-side data with nodeState/hasChildren/hasOpenPr, (2) creating a testable action config and
+  FeatureRowActions component, (3) bridging React into Tabulator via portal management, (4) wiring
+  server actions with loading state and refresh, and (5) verifying end-to-end integration.
+
+relatedFeatures: []
+technologies:
+  - "Next.js 14 (app router, server actions, router.refresh())"
+  - "React 18 (createPortal, useState, useCallback)"
+  - "Tabulator.js 6.4 (custom formatters, frozen columns)"
+  - "shadcn/ui DropdownMenu, AlertDialog"
+  - "sonner (toast)"
+  - "lucide-react"
+  - "TypeScript"
+  - "Vitest + React Testing Library"
+  - "Storybook"
+relatedLinks:
+  - title: "Tabulator Frozen Columns Docs"
+    url: "https://tabulator.info/docs/6.3/frozen"
+  - title: "React createPortal API"
+    url: "https://react.dev/reference/react-dom/createPortal"
+
+tasks:
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Extend FeatureTreeRow type with nodeState, hasChildren, and hasOpenPr"
+    description: |
+      Add three new optional fields to the FeatureTreeRow interface in feature-tree-table.tsx:
+      nodeState (FeatureNodeState), hasChildren (boolean), and hasOpenPr (boolean). These fields
+      are needed by the action config to determine which actions to show per row. Making them
+      optional ensures existing test fixtures and data flows remain compatible.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "FeatureTreeRow interface includes optional nodeState of type FeatureNodeState"
+      - "FeatureTreeRow interface includes optional hasChildren of type boolean"
+      - "FeatureTreeRow interface includes optional hasOpenPr of type boolean"
+      - "All existing tests pass without modification (fields are optional)"
+      - "TypeScript compilation succeeds"
+    tdd:
+      red:
+        - "Write test asserting FeatureTreeRow objects with nodeState, hasChildren, and hasOpenPr fields are valid (type-level check via satisfies operator)"
+        - "Write test asserting existing FeatureTreeRow objects without new fields are still valid"
+      green:
+        - "Add nodeState?: FeatureNodeState, hasChildren?: boolean, hasOpenPr?: boolean to FeatureTreeRow interface"
+        - "Import FeatureNodeState type from feature-node-state-config.ts"
+      refactor:
+        - "Verify no existing test needs updating since fields are optional"
+    estimatedEffort: "20min"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Update getFeatureTreeData() to compute nodeState, hasChildren, and hasOpenPr"
+    description: |
+      Modify the server-side getFeatureTreeData() function to: (1) fetch the latest agent run per
+      feature in parallel with the existing ListFeatures and ListRepositories calls, (2) call
+      deriveNodeState(feature, agentRun) to compute nodeState for each row, (3) compute hasChildren
+      from parentId relationships, and (4) compute hasOpenPr from feature PR data. This provides
+      the richer state information the action system needs.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "getFeatureTreeData() resolves agent runs alongside features and repos via Promise.all()"
+      - "Each FeatureTreeRow has a nodeState value derived via deriveNodeState()"
+      - "hasChildren is true when other features have this feature as their parentId"
+      - "hasOpenPr is true when the feature has a PR with Open status"
+      - "Existing data shape remains backward-compatible (nodeState, hasChildren, hasOpenPr are populated but existing consumers ignore them)"
+    tdd:
+      red:
+        - "Write test for getFeatureTreeData() asserting returned rows include nodeState field"
+        - "Write test asserting hasChildren is true for a feature that has child features"
+        - "Write test asserting hasOpenPr is true for a feature with an open PR"
+        - "Write test asserting nodeState is 'archived' for a feature with Archived lifecycle"
+        - "Write test asserting nodeState is 'deleting' for a feature with Deleting lifecycle"
+      green:
+        - "Add agent run fetching via resolve<ListAgentRunsUseCase> in Promise.all()"
+        - "Build a Map<featureId, AgentRun> of latest agent runs"
+        - "Import and call deriveNodeState(feature, latestAgentRun) for each feature"
+        - "Compute hasChildren by checking if any other feature has parentId === feature.id"
+        - "Compute hasOpenPr from feature.pr?.status === 'Open' (or similar field on Feature entity)"
+        - "Add nodeState, hasChildren, hasOpenPr to the returned FeatureTreeRow objects"
+      refactor:
+        - "Extract agent run lookup into a helper function if the data assembly logic grows too long"
+        - "Verify the Promise.all() pattern doesn't slow down the page load"
+    estimatedEffort: "1h"
+
+  - id: "task-3"
+    phaseId: "phase-2"
+    title: "Create feature-row-actions-config with state-to-actions mapping"
+    description: |
+      Create a static configuration object mapping each FeatureNodeState to its available actions.
+      Each action has a key (matching the server action callback), label, icon, and a flag for
+      whether it requires confirmation. This config is the single source of truth for FR-2 and
+      is easily testable without any React rendering.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "FEATURE_ROW_ACTIONS_CONFIG maps all 9 FeatureNodeState values to action arrays"
+      - "pending maps to [Start, Archive, Delete]"
+      - "running maps to [Stop, Archive, Delete]"
+      - "error maps to [Retry, Archive, Delete]"
+      - "action-required maps to [Review, Archive, Delete]"
+      - "done maps to [Archive, Delete]"
+      - "blocked maps to [Archive, Delete]"
+      - "archived maps to [Unarchive, Delete]"
+      - "creating maps to [] (empty)"
+      - "deleting maps to [] (empty)"
+      - "Each action has: key, label, icon, requiresConfirmation flag"
+      - "Delete has requiresConfirmation: true"
+      - "Archive has requiresConfirmation: true"
+      - "Start, Stop, Retry, Unarchive, Review have requiresConfirmation: false"
+    tdd:
+      red:
+        - "Write test asserting FEATURE_ROW_ACTIONS_CONFIG has entries for all 9 FeatureNodeState values"
+        - "Write test asserting pending state has exactly [Start, Archive, Delete] actions by key"
+        - "Write test asserting running state has exactly [Stop, Archive, Delete] actions by key"
+        - "Write test asserting error state has exactly [Retry, Archive, Delete] actions by key"
+        - "Write test asserting action-required state has exactly [Review, Archive, Delete] actions by key"
+        - "Write test asserting done state has exactly [Archive, Delete] actions by key"
+        - "Write test asserting blocked state has exactly [Archive, Delete] actions by key"
+        - "Write test asserting archived state has exactly [Unarchive, Delete] actions by key"
+        - "Write test asserting creating and deleting states map to empty arrays"
+        - "Write test asserting Delete and Archive actions have requiresConfirmation: true"
+        - "Write test asserting Start, Stop, Retry, Unarchive, Review have requiresConfirmation: false"
+      green:
+        - "Create feature-row-actions-config.ts with FeatureRowAction interface (key, label, icon, requiresConfirmation)"
+        - "Define action keys as a union type: 'start' | 'stop' | 'retry' | 'review' | 'archive' | 'unarchive' | 'delete'"
+        - "Create FEATURE_ROW_ACTIONS_CONFIG as Record<FeatureNodeState, FeatureRowAction[]>"
+        - "Populate all 9 state entries matching FR-2 requirements"
+      refactor:
+        - "Extract action key type and ensure it matches the callback prop names used in Phase 4"
+        - "Add JSDoc to the config explaining the mapping rationale"
+    estimatedEffort: "30min"
+
+  - id: "task-4"
+    phaseId: "phase-2"
+    title: "Create FeatureRowActions component with dropdown menu"
+    description: |
+      Build the FeatureRowActions React component that renders a three-dot button and a shadcn/ui
+      DropdownMenu. The menu items are driven by the action config based on the row's nodeState.
+      The component accepts callback props for each action type and a loading flag. This component
+      is rendered via portal into Tabulator cells in Phase 3.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "Component renders a MoreHorizontal (three-dot) icon button"
+      - "Clicking the button opens a shadcn/ui DropdownMenu"
+      - "Menu items match the actions from FEATURE_ROW_ACTIONS_CONFIG for the given nodeState"
+      - "Each menu item shows the correct icon and label"
+      - "Clicking a menu item calls the corresponding callback prop with the featureId"
+      - "When isLoading is true, the button shows a Loader2 spinner and is disabled"
+      - "Component renders nothing when nodeState is creating or deleting (empty actions array)"
+      - "Keyboard navigation works (Tab, Enter, arrows, Escape) via shadcn/ui DropdownMenu"
+    tdd:
+      red:
+        - "Write test: renders three-dot button for pending state"
+        - "Write test: does not render anything for creating state"
+        - "Write test: does not render anything for deleting state"
+        - "Write test: clicking Start menu item calls onStart with featureId"
+        - "Write test: clicking Delete menu item calls onDelete with featureId"
+        - "Write test: shows spinner when isLoading is true"
+        - "Write test: button is disabled when isLoading is true"
+      green:
+        - "Create feature-row-actions.tsx with FeatureRowActions component"
+        - "Define FeatureRowActionsProps interface with featureId, featureName, nodeState, hasChildren, hasOpenPr, isLoading, and callback props for each action key"
+        - "Read FEATURE_ROW_ACTIONS_CONFIG[nodeState] to get available actions"
+        - "Return null if actions array is empty"
+        - "Render Button with MoreHorizontal icon (or Loader2 when loading)"
+        - "Render DropdownMenu with DropdownMenuContent containing DropdownMenuItem per action"
+        - "Wire each menu item's onClick to the corresponding callback prop"
+      refactor:
+        - "Extract menu item rendering into a small helper if the JSX becomes verbose"
+        - "Ensure icons are consistent size (h-4 w-4) across all action items"
+    estimatedEffort: "1h"
+
+  - id: "task-5"
+    phaseId: "phase-2"
+    title: "Create Storybook stories for FeatureRowActions"
+    description: |
+      Write colocated Storybook stories covering all feature states and the loading state.
+      This satisfies NFR-2 and enables visual QA of the dropdown menu before integration
+      with Tabulator.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+    acceptanceCriteria:
+      - "Stories file is colocated at feature-row-actions.stories.tsx"
+      - "Stories for all 9 FeatureNodeState values: pending, running, error, action-required, done, blocked, archived, creating, deleting"
+      - "Story for loading state (isLoading: true)"
+      - "Story for feature with hasChildren: true (affects delete dialog)"
+      - "Story for feature with hasOpenPr: true (affects delete dialog)"
+      - "Stories render correctly in Storybook without errors"
+    tdd: null
+    estimatedEffort: "30min"
+
+  - id: "task-6"
+    phaseId: "phase-3"
+    title: "Add frozen actions column to FeatureTreeTable"
+    description: |
+      Add an actions column as the last column in the Tabulator table, frozen to the right edge.
+      The column uses a custom formatter that creates a container div with a data-feature-id
+      attribute for each non-group-header row. The container div is the portal target that
+      FeatureRowActionsManager will render into. The column is fixed-width (48px), non-sortable,
+      and hidden for group header rows.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Actions column appears as the last column in the table"
+      - "Column is frozen to the right edge (frozen: 'right')"
+      - "Column has fixed width of 48px, not growable"
+      - "Column is not sortable (headerSort: false)"
+      - "Custom formatter creates a div with data-feature-id attribute for regular rows"
+      - "Custom formatter returns empty string for group header rows (_isGroupHeader or _isRepoGroup)"
+      - "Column works with all groupBy modes (repositoryName, status, lifecycle) and flat mode"
+      - "Column does not break existing table features (sorting, filtering, tree expansion)"
+      - "FeatureTreeTable exposes a ref to its container div (or the Tabulator instance) for portal manager"
+    tdd:
+      red:
+        - "Write test: table renders with an actions column"
+        - "Write test: actions column creates container divs with data-feature-id for data rows"
+        - "Write test: actions column does not create container divs for group header rows"
+        - "Write test: table still renders correctly with groupBy modes when actions column is present"
+      green:
+        - "Add actions column definition to buildColumns() with frozen: 'right', width: 48, headerSort: false"
+        - "Implement custom formatter that returns a div with data-feature-id={row.id} for non-group rows"
+        - "Return empty string from formatter for rows where _isGroupHeader or _isRepoGroup is true"
+        - "Expose the table container ref or Tabulator instance via a new prop/callback for portal manager"
+      refactor:
+        - "Extract formatter function with a descriptive name (actionsColumnFormatter)"
+        - "Ensure the frozen column CSS integrates cleanly with existing feature-tree-table.css"
+    estimatedEffort: "45min"
+
+  - id: "task-7"
+    phaseId: "phase-3"
+    title: "Create FeatureRowActionsManager for portal lifecycle"
+    description: |
+      Build the FeatureRowActionsManager component that manages React portals into Tabulator's
+      actions column cells. It maintains a Map of active portal containers, reconciles on
+      Tabulator re-renders (via renderComplete event or DOM observation), and renders
+      FeatureRowActions via createPortal into each container. It receives the full set of
+      action callbacks and per-row data from the parent.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+      - "task-6"
+    acceptanceCriteria:
+      - "Component discovers portal containers by querying [data-feature-id] elements within the table container"
+      - "Component renders a FeatureRowActions via createPortal for each discovered container"
+      - "Component reconciles portals when containers change (Tabulator re-render)"
+      - "Component cleans up all portals on unmount"
+      - "Component passes correct row data (nodeState, hasChildren, hasOpenPr, featureId, featureName) to each FeatureRowActions"
+      - "Component passes action callbacks and loading state to each FeatureRowActions"
+    tdd:
+      red:
+        - "Write test: renders FeatureRowActions portals for discovered containers"
+        - "Write test: passes correct feature data to each portal instance"
+        - "Write test: cleans up portals when component unmounts"
+      green:
+        - "Create feature-row-actions-manager.tsx with FeatureRowActionsManager component"
+        - "Accept props: tableContainerRef, features (array of FeatureTreeRow), action callbacks, inFlightIds"
+        - "Use useState to maintain portal container map"
+        - "Use useEffect to observe/reconcile containers via MutationObserver or periodic scan tied to data changes"
+        - "Render createPortal(FeatureRowActions, container) for each active container"
+        - "Look up row data from features array by matching data-feature-id to feature.id"
+      refactor:
+        - "Optimize container discovery — only re-scan when data/groupBy changes, not on every render"
+        - "Ensure cleanup handles edge case where container is removed mid-render"
+    estimatedEffort: "1h30min"
+
+  - id: "task-8"
+    phaseId: "phase-4"
+    title: "Wire server actions and in-flight state in FeatureTreePageClient"
+    description: |
+      Extend FeatureTreePageClient to: (1) import all server actions (archiveFeature, deleteFeature,
+      startFeature, stopFeature, resumeFeature, unarchiveFeature), (2) manage in-flight feature IDs
+      via useState<Set<string>>, (3) create callback handlers that call server actions, manage
+      loading state, show toast notifications, and trigger router.refresh() on completion,
+      (4) render FeatureRowActionsManager alongside FeatureTreeTable.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "All 6 server actions are imported and wired as callbacks"
+      - "In-flight state tracks which feature IDs have pending actions"
+      - "Each callback: adds featureId to in-flight set, calls server action, shows toast on success/error, removes featureId from in-flight set, calls router.refresh()"
+      - "Delete callback opens DeleteFeatureDialog before executing"
+      - "Archive callback opens AlertDialog confirmation before executing"
+      - "Start, Stop, Retry (resume), Unarchive execute immediately without confirmation"
+      - "Review callback navigates to /feature/{featureId}/overview"
+      - "FeatureRowActionsManager is rendered with all callbacks and in-flight state"
+      - "Toast shows success message on successful action"
+      - "Toast shows error message from server action response on failure"
+    tdd:
+      red:
+        - "Write test: handleArchiveFeature calls archiveFeature server action and shows success toast"
+        - "Write test: handleDeleteFeature opens DeleteFeatureDialog"
+        - "Write test: handleStartFeature calls startFeature and triggers router.refresh()"
+        - "Write test: in-flight set prevents double-submission for the same feature"
+        - "Write test: error from server action shows error toast"
+        - "Write test: handleReview navigates to feature overview page"
+      green:
+        - "Import server actions from @/app/actions/"
+        - "Add useState<Set<string>> for inFlightIds"
+        - "Create handler functions for each action type following the pattern from use-control-center-state.ts"
+        - "Create handler wrappers that manage in-flight state and call router.refresh()"
+        - "Add state for delete dialog (open flag, target feature data)"
+        - "Add state for archive confirmation dialog (open flag, target feature id)"
+        - "Render FeatureRowActionsManager after FeatureTreeTable with all props"
+        - "Render DeleteFeatureDialog and archive AlertDialog controlled by state"
+      refactor:
+        - "Extract common action handler pattern (add to in-flight, call action, toast, refresh, remove from in-flight) into a helper"
+        - "Ensure handler callbacks are memoized with useCallback to prevent unnecessary re-renders"
+    estimatedEffort: "1h30min"
+
+  - id: "task-9"
+    phaseId: "phase-4"
+    title: "Integrate confirmation dialogs for delete and archive actions"
+    description: |
+      Wire the existing DeleteFeatureDialog and a new archive AlertDialog into the action flow.
+      Delete action opens DeleteFeatureDialog with hasChildren and hasOpenPr from the row data.
+      Archive action opens an AlertDialog confirmation matching the pattern from feature-node.tsx.
+      Both dialogs call the actual server action only on confirmation.
+    state: "Todo"
+    dependencies:
+      - "task-8"
+    acceptanceCriteria:
+      - "Delete action opens DeleteFeatureDialog with correct featureName, featureId, hasChildren, hasOpenPr"
+      - "DeleteFeatureDialog onConfirm calls deleteFeature server action with cleanup, cascadeDelete, closePr options"
+      - "Archive action opens AlertDialog with feature name in description"
+      - "Archive AlertDialog confirm calls archiveFeature server action"
+      - "Both dialogs close after action completes"
+      - "Both dialogs show loading state while action is in-flight"
+      - "Canceling either dialog does not trigger any server action"
+    tdd:
+      red:
+        - "Write test: delete action opens dialog with correct hasChildren and hasOpenPr"
+        - "Write test: confirming delete calls deleteFeature with checkbox options"
+        - "Write test: archive action opens confirmation dialog"
+        - "Write test: confirming archive calls archiveFeature"
+        - "Write test: canceling delete dialog does not call server action"
+        - "Write test: canceling archive dialog does not call server action"
+      green:
+        - "Add deleteTarget state (featureId, featureName, hasChildren, hasOpenPr) to FeatureTreePageClient"
+        - "Add archiveTarget state (featureId, featureName) to FeatureTreePageClient"
+        - "Wire onDelete callback to set deleteTarget state (opening the dialog)"
+        - "Wire onArchive callback to set archiveTarget state (opening the dialog)"
+        - "Render DeleteFeatureDialog with deleteTarget data and onConfirm handler"
+        - "Render archive AlertDialog with archiveTarget data and onConfirm handler"
+        - "Pass isDeleting prop to DeleteFeatureDialog based on inFlightIds"
+      refactor:
+        - "Ensure dialog state cleanup on close (reset target to null)"
+        - "Verify dialog pattern matches feature-node.tsx for visual consistency"
+    estimatedEffort: "45min"
+
+  - id: "task-10"
+    phaseId: "phase-5"
+    title: "Update existing tests for FeatureTreeRow type compatibility"
+    description: |
+      Verify and update existing tests to work with the extended FeatureTreeRow type. Since the
+      new fields are optional, most tests should pass without changes. Update test fixtures that
+      need to exercise action-related behavior and ensure makeRow() helpers produce valid data.
+    state: "Todo"
+    dependencies:
+      - "task-8"
+    acceptanceCriteria:
+      - "All existing tests in feature-tree-table.test.tsx pass"
+      - "All existing tests in inventory-filters.test.ts pass"
+      - "Test fixtures are updated if any type errors occur (unlikely since fields are optional)"
+      - "New tests cover action column presence in the table"
+    tdd:
+      red:
+        - "Run existing test suites and verify they pass — if any fail, write a fix test first"
+      green:
+        - "Fix any type errors in existing fixtures by adding optional new fields where needed"
+        - "Add test for table rendering with actions column present"
+      refactor:
+        - "Update makeRow() helper in inventory-filters.test.ts if needed for new test scenarios"
+    estimatedEffort: "30min"
+
+  - id: "task-11"
+    phaseId: "phase-5"
+    title: "End-to-end integration verification and edge case testing"
+    description: |
+      Verify the complete feature works end-to-end: table renders with actions column, dropdown
+      shows correct actions per state, actions trigger server calls, dialogs work, loading state
+      shows, table refreshes after mutation. Test edge cases: group headers have no actions,
+      transient states (creating/deleting) have no actions, empty table works, portal cleanup
+      on unmount works.
+    state: "Todo"
+    dependencies:
+      - "task-9"
+      - "task-10"
+    acceptanceCriteria:
+      - "Actions column renders for all feature rows in the table"
+      - "Group header rows do not have action buttons"
+      - "Creating and deleting rows do not have action buttons"
+      - "Dropdown shows correct actions for each state per FR-2"
+      - "Portal cleanup works when Tabulator re-renders (e.g., after groupBy change)"
+      - "All test suites pass: pnpm test:unit"
+      - "TypeScript compilation passes: pnpm typecheck"
+      - "Storybook builds without errors: pnpm build:storybook"
+      - "Lint passes: pnpm lint"
+    tdd:
+      red:
+        - "Write integration test: table with mixed-state features shows correct action menus"
+        - "Write test: changing groupBy re-renders table and portals reconcile correctly"
+        - "Write test: action on one row does not affect other rows"
+      green:
+        - "Fix any issues discovered during integration testing"
+        - "Verify portal cleanup by testing groupBy changes"
+        - "Run full validation suite: pnpm validate"
+      refactor:
+        - "Clean up any debug code or console.log statements"
+        - "Review all new files for code quality compliance (file length, naming, no magic values)"
+        - "Verify no regressions in existing functionality"
+    estimatedEffort: "1h"
+
+totalEstimate: "9h"
+openQuestions: []
+
+content: |
+  ## Summary
+
+  The implementation is organized into 11 tasks across 5 phases, totaling approximately 9 hours
+  of estimated effort.
+
+  The work begins with **data layer extension** (Phase 1) — enriching FeatureTreeRow with the
+  nodeState, hasChildren, and hasOpenPr fields needed by the action system. This requires
+  updating getFeatureTreeData() to fetch agent runs alongside features and compute the derived
+  state server-side using the existing deriveNodeState() function.
+
+  Next, **action configuration and the core component** (Phase 2) are built independently of
+  Tabulator — a static config object maps each of the 9 FeatureNodeState values to their available
+  actions, and the FeatureRowActions component renders a shadcn/ui DropdownMenu driven by that
+  config. Storybook stories enable visual QA before integration.
+
+  **Tabulator integration** (Phase 3) bridges the React component into Tabulator's DOM via a
+  frozen actions column with a custom formatter that creates portal target divs, and a
+  FeatureRowActionsManager that manages createPortal lifecycle — mounting, reconciliation on
+  Tabulator re-renders, and cleanup.
+
+  **Action wiring** (Phase 4) connects everything: server actions imported into the page client,
+  per-row loading state via a Set of in-flight IDs, toast notifications via sonner, router.refresh()
+  for data re-fetch, and the existing DeleteFeatureDialog and archive AlertDialog for confirmation
+  flows.
+
+  Finally, **integration testing** (Phase 5) verifies the complete flow end-to-end, ensures
+  existing tests pass, and covers edge cases like group headers, transient states, and portal
+  cleanup during table re-renders.
