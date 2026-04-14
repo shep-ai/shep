@@ -1,16 +1,22 @@
 /**
  * Application-creation workflow definition.
  *
- * The eight steps Shep walks every new application through, with the
+ * The five steps Shep walks every new application through, with the
  * friendly non-technical title/description the user sees in the
  * tracker card AND the focused agent-facing prompt the orchestrator
  * sends for that step.
  *
- * History note: an earlier version had separate `plan` and `content`
- * steps. They produced agent text confirmations with no actual tool
- * work, leaving lonely "title-only" cards in the tracker. Both have
- * been folded into the `components` step which now plans, builds,
- * and writes real content in a single agent turn.
+ * History note: earlier versions had `plan`/`content`/`deps`/`style`
+ * steps that were folded away, and a `scaffold` step that ran bun
+ * bootstrap + `bunx shadcn init` + a bash flatten one-liner inside an
+ * agent turn. `scaffold` was deleted in v4 because doing it inside
+ * the agent turn repeatedly failed in three ways: (1) bun might not
+ * be on PATH, (2) `shadcn init --template vite` creates a child
+ * directory that needed a fragile flatten, (3) the final `bun add`
+ * was sometimes skipped. All four phases now run deterministically
+ * in `BunShadcnScaffolder` at application-creation time, BEFORE the
+ * first agent turn ever starts. The agent lands on a flat, ready-to-
+ * code project and its very first step is `components`.
  *
  * Key design notes:
  *   - The orchestrator (`RunWorkflowUseCase`) sends each step's
@@ -42,7 +48,7 @@ export interface WorkflowDefinition {
   steps: WorkflowStepDefinition[];
 }
 
-export const APPLICATION_CREATION_WORKFLOW_ID = 'application-creation-v2';
+export const APPLICATION_CREATION_WORKFLOW_ID = 'application-creation-v4';
 
 /**
  * The canonical application-creation workflow. Bumping the `id`
@@ -54,47 +60,38 @@ export const APPLICATION_CREATION_WORKFLOW: WorkflowDefinition = {
   id: APPLICATION_CREATION_WORKFLOW_ID,
   steps: [
     {
-      stepKey: 'scaffold',
-      title: 'Setting up your project',
-      description: 'Creating the foundation files',
-      prompt: [
-        'Your task for this step is ONLY to scaffold the Vite + React + TypeScript project.',
-        '',
-        'Run this exact command as your first tool call, no discovery commands before it:',
-        '',
-        '```',
-        'npm create vite@latest . -- --template react-ts',
-        '```',
-        '',
-        '(note the dot — scaffold INTO the current directory).',
-        '',
-        'Then run `npm install`. Do not write any source files in this step. Do not touch Tailwind or any other dependency — that is the next step. When `npm install` finishes cleanly, reply with a short plain-English confirmation (one sentence).',
-      ].join('\n'),
-    },
-    {
-      stepKey: 'deps',
-      title: 'Installing design tools',
-      description: 'Adding Tailwind and essentials',
-      prompt: [
-        'Install Tailwind CSS via the official Vite guide and wire it into `src/index.css` / `tailwind.config.js` so it actually compiles.',
-        '',
-        'Then add the minimum extras the app will need (from this list, only what the app will actually use): `react-router-dom`, `react-hook-form`, `zod`, `lucide-react`, `clsx`, `tailwind-merge`. Keep `package.json` lean — no speculative libraries.',
-        '',
-        'When done, reply with a short plain-English confirmation (one sentence).',
-      ].join('\n'),
-    },
-    {
       stepKey: 'components',
       title: 'Building the pieces',
-      description: 'Designing and creating reusable parts',
+      description: 'Designing and creating polished reusable parts',
       prompt: [
-        "Plan the app first — what screens it has, what reusable components those screens need, what data shapes flow between them. Keep the plan in your head; do NOT share it with the user, the next step's output is what they will see.",
+        '**Your VERY FIRST tool call MUST be `Read TEMPLATE.md`** at the project root. That file is the Shep cheat sheet — it lists every pre-built component you already have, the palette that is already configured, the helpers you MUST use instead of reinventing, and the hard rules. Read it BEFORE you plan anything.',
         '',
-        'Then build the leaf components bottom-up. Every component is a real `.tsx` file under `src/`. Small reusable pieces first, then larger compositions. Do NOT wire routing or full-page composition here — that is the next step.',
+        'The project you are working in was already scaffolded and dependency-installed by Shep BEFORE your first turn — you do NOT need to run `bunx shadcn init`, `bun install`, or any bootstrap. `package.json`, `src/main.tsx`, the shadcn primitives under `src/components/ui/`, the Shep pre-built `src/components/common/*`, the helpers under `src/lib/*`, and the types under `src/types/common.ts` are ALREADY there.',
         '',
-        'Populate every component with realistic, hand-crafted content the moment you create it: real-sounding names, dates, prices, copy. Lorem ipsum is FORBIDDEN.',
+        '**Hard rules — rewriting any of the pre-built pieces below is FORBIDDEN:**',
+        '  • Avatar, StatusDot, Badge, EmptyState, LoadingSpinner, ErrorBoundary, BottomNav, TopBar, IconButton, SectionHeader — already exist under `src/components/common/`. Import them from `@/components/common`. NEVER reimplement them.',
+        '  • The palette is already configured in `src/index.css`. Use Tailwind semantic classes (`bg-background`, `bg-card`, `text-foreground`, `bg-primary`, `border-border`). Do NOT pick a new palette, do NOT hardcode `slate-*` / `violet-*` when a semantic class will do.',
+        '  • `formatRelativeTime`, `formatCurrency`, `formatCompactNumber` live in `@/lib/format`. Use them — do NOT hand-roll date/number formatting.',
+        '  • `pickName`, `pickParagraph`, `pickPrice`, `pickTimestamp`, `pickAvatar`, `pickInitials` live in `@/lib/mock`. Use them for ALL sample data. Lorem ipsum is FORBIDDEN.',
+        '  • `User`, `Id`, `Url`, `Timestamp`, `OnlineStatus`, `Timestamped` types live in `@/types/common`. Import from there instead of redefining.',
         '',
-        'When the components are drafted with their real content, reply with a one-sentence confirmation.',
+        'AFTER reading TEMPLATE.md, plan the app (silently — do NOT share the plan with the user): what screens it has, what app-specific feature components it needs ON TOP of the pre-built common ones, what data shapes flow between them.',
+        '',
+        'Then build ONLY the app-specific feature components under `src/components/features/`. Every component is a real `.tsx` file. Small reusable pieces first, then larger compositions. Do NOT wire routing or full-page composition here — that is the next step.',
+        '',
+        '**Build every feature component fully polished on the first pass — there is no separate polish step later.** Each component must ship with:',
+        '  • Tailwind semantic classes from the Shep palette (never re-pick colors).',
+        '  • A consistent spacing and typography scale.',
+        '  • Hover states and transitions where they make sense.',
+        '  • Mobile-first responsive classes.',
+        '  • No inline `<style>` blocks.',
+        '',
+        'Populate every component with realistic content the moment you create it, generated from `@/lib/mock` helpers. Lorem ipsum is FORBIDDEN.',
+        '',
+        'Every screen with a list/feed/grid MUST handle the empty case with `<EmptyState />`.',
+        'Every tappable icon MUST use `<IconButton />`, not a raw `<button>`.',
+        '',
+        'When the feature components are drafted with real content AND final visuals, reply with a one-sentence confirmation.',
       ].join('\n'),
     },
     {
@@ -108,21 +105,13 @@ export const APPLICATION_CREATION_WORKFLOW: WorkflowDefinition = {
       ].join('\n'),
     },
     {
-      stepKey: 'style',
-      title: 'Polishing the look',
-      description: 'Applying colors, spacing, and motion',
-      prompt: [
-        'Polish the visuals: cohesive Tailwind palette, consistent spacing scale, typography, hover states, transitions. Mobile-first responsive. No inline `<style>` blocks.',
-        '',
-        'Reply with a one-sentence confirmation when the polish pass is finished.',
-      ].join('\n'),
-    },
-    {
       stepKey: 'verify',
       title: 'Double-checking',
       description: 'Making sure it runs cleanly',
       prompt: [
-        "Run `npm run build` (or the project's typecheck) and fix EVERY error and warning. The app MUST start cleanly with `npm run dev` on the very first try — no errors in the browser console, no unresolved imports.",
+        "Run `bun run build` (or the project's typecheck via `bun run tsc --noEmit` if no build script exists) and fix EVERY error and warning. The app MUST start cleanly with `bun run dev` on the very first try — no errors in the browser console, no unresolved imports.",
+        '',
+        'Use `bun` for every command in this step — never fall back to `npm`, `npx`, or `yarn`.',
         '',
         'When the build is clean, reply with a one-sentence confirmation.',
       ].join('\n'),

@@ -7,6 +7,7 @@ import {
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
 import type { IApplicationCreationPromptBuilder } from '@/application/ports/output/services/application-creation-prompt-builder.interface.js';
 import type { IApplicationBriefStore } from '@/application/ports/output/services/application-brief-store.interface.js';
+import type { IApplicationScaffolder } from '@/application/ports/output/services/application-scaffolder.interface.js';
 import type { CreateProjectUseCase } from '@/application/use-cases/projects/create-project.use-case.js';
 import type { SendInteractiveMessageUseCase } from '@/application/use-cases/interactive/send-interactive-message.use-case.js';
 import type { RunWorkflowUseCase } from '@/application/use-cases/workflows/run-workflow.use-case.js';
@@ -68,6 +69,18 @@ function createMockBriefStore(): IApplicationBriefStore {
   };
 }
 
+function createMockScaffolder(): IApplicationScaffolder {
+  return {
+    scaffold: vi.fn().mockImplementation(({ repositoryPath }: { repositoryPath: string }) =>
+      Promise.resolve({
+        repositoryPath,
+        templateFiles: [],
+        templateVersion: 'test-0',
+      })
+    ),
+  };
+}
+
 describe('CreateApplicationUseCase', () => {
   let useCase: CreateApplicationUseCase;
   let mockAppRepo: IApplicationRepository;
@@ -77,6 +90,7 @@ describe('CreateApplicationUseCase', () => {
   let mockBriefStore: IApplicationBriefStore;
   let mockRunWorkflow: RunWorkflowUseCase;
   let mockSessionRepo: IInteractiveSessionRepository;
+  let mockScaffolder: IApplicationScaffolder;
 
   beforeEach(() => {
     mockAppRepo = createMockAppRepo();
@@ -90,6 +104,7 @@ describe('CreateApplicationUseCase', () => {
     mockSessionRepo = {
       findLatestAgentSessionIdForFeature: vi.fn().mockResolvedValue(null),
     } as unknown as IInteractiveSessionRepository;
+    mockScaffolder = createMockScaffolder();
     useCase = new CreateApplicationUseCase(
       mockAppRepo,
       mockCreateProject,
@@ -97,7 +112,8 @@ describe('CreateApplicationUseCase', () => {
       mockSendMessage,
       mockBriefStore,
       mockRunWorkflow,
-      mockSessionRepo
+      mockSessionRepo,
+      mockScaffolder
     );
   });
 
@@ -108,6 +124,18 @@ describe('CreateApplicationUseCase', () => {
     expect(mockCreateProject.execute).toHaveBeenCalledTimes(1);
     const arg = vi.mocked(mockCreateProject.execute).mock.calls[0][0];
     expect(arg.name).toMatch(/^rest-api-users-[0-9a-f]{6}$/);
+
+    // Scaffolder ran with the resolved project path + human name, BEFORE
+    // the DB row was inserted. A scaffold failure should not leave
+    // orphan rows behind.
+    expect(mockScaffolder.scaffold).toHaveBeenCalledTimes(1);
+    expect(mockScaffolder.scaffold).toHaveBeenCalledWith({
+      repositoryPath: `/shep/projects/${arg.name}`,
+      projectName: 'Rest Api Users',
+    });
+    const scaffoldCallOrder = vi.mocked(mockScaffolder.scaffold).mock.invocationCallOrder[0];
+    const createCallOrder = vi.mocked(mockAppRepo.create).mock.invocationCallOrder[0];
+    expect(scaffoldCallOrder).toBeLessThan(createCallOrder);
 
     // Application was persisted with the same slug
     expect(mockAppRepo.create).toHaveBeenCalledWith(
@@ -127,6 +155,17 @@ describe('CreateApplicationUseCase', () => {
     // are allowed to duplicate; uniqueness is enforced on `slug`.
     expect(result.application.name).toBe('Rest Api Users');
     expect(result.repositoryPath).toBe(`/shep/projects/${arg.name}`);
+  });
+
+  it('does not persist the application row when the scaffolder throws', async () => {
+    vi.mocked(mockScaffolder.scaffold).mockRejectedValueOnce(new Error('bun bootstrap failed'));
+
+    await expect(useCase.execute({ description: 'A broken app' })).rejects.toThrow(
+      'bun bootstrap failed'
+    );
+
+    expect(mockAppRepo.create).not.toHaveBeenCalled();
+    expect(mockRunWorkflow.execute).not.toHaveBeenCalled();
   });
 
   it('passes agent and model overrides through to the application record', async () => {

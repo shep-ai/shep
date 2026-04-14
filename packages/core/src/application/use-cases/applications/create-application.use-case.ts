@@ -18,6 +18,7 @@ import { ApplicationStatus } from '../../../domain/generated/output.js';
 import type { IApplicationRepository } from '../../ports/output/repositories/application-repository.interface.js';
 import type { IApplicationCreationPromptBuilder } from '../../ports/output/services/application-creation-prompt-builder.interface.js';
 import type { IApplicationBriefStore } from '../../ports/output/services/application-brief-store.interface.js';
+import type { IApplicationScaffolder } from '../../ports/output/services/application-scaffolder.interface.js';
 import type { CreateProjectUseCase } from '../projects/create-project.use-case.js';
 import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
 import type { RunWorkflowUseCase } from '../workflows/run-workflow.use-case.js';
@@ -154,20 +155,43 @@ export class CreateApplicationUseCase {
     @inject('RunWorkflowUseCase')
     private readonly runWorkflow: RunWorkflowUseCase,
     @inject('IInteractiveSessionRepository')
-    private readonly sessionRepo: IInteractiveSessionRepository
+    private readonly sessionRepo: IInteractiveSessionRepository,
+    @inject('IApplicationScaffolder')
+    private readonly scaffolder: IApplicationScaffolder
   ) {}
 
   async execute(input: CreateApplicationInput): Promise<CreateApplicationResult> {
     // 1. Derive a stable slug stem from the description.
     const baseSlug = slugify(input.description);
 
-    // 2. Allocate a unique <stem>-<6hex> slug + scaffold the project folder.
+    // 2. Allocate a unique <stem>-<6hex> slug + create the empty project folder.
     const { slug, projectPath } = await this.allocateUniqueSlugAndScaffold(baseSlug);
 
     // 3. Generate the human-readable display name from the BASE slug
     const name = toTitleCase(baseSlug);
 
-    // 4. Create Application record
+    // 4. Scaffold the project tree (vite + shadcn + deps + fat template).
+    //    This runs BEFORE the DB row is inserted so a scaffold failure
+    //    doesn't leave orphan Application rows pointing at broken
+    //    folders. The use-case depends only on the port — the adapter
+    //    owns bun, shadcn, fs layout, and template files.
+    //
+    //    On success, `package.json` is guaranteed to live at
+    //    `projectPath` (no intermediate subdirectory), node_modules
+    //    are installed, and the fat template overlay has been applied.
+    //    The first agent turn therefore lands on a project that is
+    //    ready to code against — it does not scaffold anything itself.
+    // Result fields (templateFiles, templateVersion) are unused today —
+    // Patch 3 will persist the manifest version on the Application row
+    // once the fat-template domain field exists. For now we just need
+    // the contract-enforced side effect: a flat, ready-to-code project
+    // at `projectPath`.
+    await this.scaffolder.scaffold({
+      repositoryPath: projectPath,
+      projectName: name,
+    });
+
+    // 5. Create Application record
     const now = new Date();
     const application: Application = {
       id: randomUUID(),
@@ -186,7 +210,7 @@ export class CreateApplicationUseCase {
 
     await this.appRepo.create(application);
 
-    // 5. Optionally kick off the interactive chat session.
+    // 6. Optionally kick off the interactive chat session.
     //
     //    Prompt delivery strategy — CRITICAL:
     //    The Claude Agent SDK V2 session API (`unstable_v2_createSession`)

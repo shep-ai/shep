@@ -95,6 +95,8 @@ import type { IApplicationBriefStore } from '../../application/ports/output/serv
 import { ApplicationBriefStore } from '../services/filesystem/application-brief.store.js';
 import type { IProjectScaffoldService } from '../../application/ports/output/services/project-scaffold-service.interface.js';
 import { FsProjectScaffoldService } from '../services/project-scaffold/fs-project-scaffold.service.js';
+import type { IApplicationScaffolder } from '../../application/ports/output/services/application-scaffolder.interface.js';
+import { BunShadcnScaffolder } from '../services/scaffolding/bun-shadcn-scaffolder.service.js';
 import type { IApplicationCreationPromptBuilder } from '../../application/ports/output/services/application-creation-prompt-builder.interface.js';
 import { ApplicationCreationPromptBuilder } from '../services/agents/application-creation/application-creation-prompt.builder.js';
 import type { IAgentAuthDetectorService } from '../../application/ports/output/services/agent-auth-detector.interface.js';
@@ -626,6 +628,14 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton<IProjectScaffoldService>(
     'IProjectScaffoldService',
     FsProjectScaffoldService
+  );
+  // Runs bun + shadcn init + fs flatten + bun add deterministically
+  // at application-creation time (NOT inside an agent turn), so the
+  // agent's very first turn lands on a flat, dependency-installed
+  // project with `package.json` at the repository root.
+  container.registerSingleton<IApplicationScaffolder>(
+    'IApplicationScaffolder',
+    BunShadcnScaffolder
   );
   container.registerSingleton<IApplicationCreationPromptBuilder>(
     'IApplicationCreationPromptBuilder',

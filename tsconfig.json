@@ -52,5 +52,11 @@
     "playwright.config.ts",
     ".storybook/**/*"
   ],
-  "exclude": ["node_modules", "dist", "tsp", "apis"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tsp",
+    "apis",
+    "packages/core/src/infrastructure/templates/**"
+  ]
 }
