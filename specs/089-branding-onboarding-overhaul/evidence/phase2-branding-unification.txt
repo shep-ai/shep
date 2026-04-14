@@ -1,0 +1,141 @@
+================================================================================
+PHASE 2 VERIFICATION: Branding Surface Unification
+================================================================================
+Date: 2026-04-14T09:23:00Z
+Branch: feat/branding-onboarding-overhaul
+================================================================================
+
+Canonical long descriptor:
+  "Autonomous AI-native SDLC platform — run parallel AI agents in isolated
+   worktrees to automate the development cycle from idea to deploy."
+
+Canonical short tagline:
+  "Run multiple AI agents in parallel. Each in its own worktree."
+
+
+================================================================================
+TASK 4: TypeScript branding strings
+================================================================================
+
+--- version-info.ts (line 21-22) ---
+PASS  Contains canonical long descriptor
+
+Evidence:
+  description:
+    'Autonomous AI-native SDLC platform — run parallel AI agents in isolated
+     worktrees to automate the development cycle from idea to deploy.',
+
+--- layout.tsx (lines 20-21) ---
+PASS  Contains canonical long descriptor
+
+Evidence:
+  description:
+    'Autonomous AI-native SDLC platform — run parallel AI agents in isolated
+     worktrees to automate the development cycle from idea to deploy.',
+
+--- cli/index.ts (line 6) ---
+PASS  Contains canonical long descriptor in JSDoc comment
+
+Evidence:
+  * Autonomous AI-native SDLC platform — run parallel AI agents in isolated
+  * worktrees to automate the development cycle from idea to deploy.
+
+--- Build verification ---
+PASS  pnpm build completes with zero errors (see build-verification.txt)
+
+--- Task 4 Summary ---
+  PASS  version-info.ts description matches canonical long descriptor
+  PASS  layout.tsx metadata description matches canonical long descriptor
+  PASS  cli/index.ts comment uses canonical long descriptor
+  PASS  No type signature, export, or import changes
+  PASS  pnpm build succeeds after changes
+
+
+================================================================================
+TASK 5: package.json and CLAUDE.md branding
+================================================================================
+
+--- package.json (line 4) ---
+PASS  Contains canonical long descriptor
+
+Evidence:
+  "description": "Autonomous AI-native SDLC platform — run parallel AI agents
+   in isolated worktrees to automate the development cycle from idea to deploy.",
+
+--- CLAUDE.md (line 5) ---
+PASS  Contains canonical long descriptor
+
+Evidence:
+  `@shepai/cli` — Autonomous AI-native SDLC platform — run parallel AI agents
+  in isolated worktrees to automate the development cycle from idea to deploy.
+
+--- Task 5 Summary ---
+  PASS  package.json description matches canonical long descriptor
+  PASS  CLAUDE.md project description uses canonical long descriptor
+  PASS  No other package.json fields modified
+
+
+================================================================================
+TASK 6: Issue template branding
+================================================================================
+
+--- bug-report.yml (line 2) ---
+PASS  Uses 'Shep' not 'Shep AI CLI'
+
+Evidence:
+  description: Report a bug or unexpected behavior in Shep
+
+--- feature-request.yml (line 2) ---
+PASS  Uses 'Shep' not 'Shep AI CLI'
+
+Evidence:
+  description: Suggest a new feature or enhancement for Shep
+
+--- docs-improvement.yml ---
+PASS  Does NOT contain 'Shep AI CLI' (verified, no edit needed)
+
+Evidence:
+  description: Suggest improvements to documentation, guides, or examples
+
+--- Task 6 Summary ---
+  PASS  bug-report.yml uses 'Shep' not 'Shep AI CLI'
+  PASS  feature-request.yml uses 'Shep' not 'Shep AI CLI'
+  PASS  docs-improvement.yml verified to not contain 'Shep AI CLI'
+  PASS  No changes to template field structure, labels, or body
+
+
+================================================================================
+TASK 7: README.md tagline alignment
+================================================================================
+
+--- README.md (line 14) ---
+PASS  Matches canonical short tagline exactly
+
+Evidence:
+  ### Run multiple AI agents in parallel. Each in its own worktree.
+
+No changes needed -- README.md already used the canonical short tagline.
+
+--- Task 7 Summary ---
+  PASS  README.md tagline matches canonical short tagline exactly
+  PASS  No unnecessary changes to README.md structure or content
+
+
+================================================================================
+SUMMARY: All 9 branding surfaces aligned
+================================================================================
+
+  Surface                        | Tier   | Status
+  -------------------------------|--------|--------
+  README.md                      | Short  | PASS
+  package.json                   | Long   | PASS
+  layout.tsx                     | Long   | PASS
+  version-info.ts                | Long   | PASS
+  cli/index.ts                   | Long   | PASS
+  CLAUDE.md                      | Long   | PASS
+  bug-report.yml                 | Name   | PASS
+  feature-request.yml            | Name   | PASS
+  docs-improvement.yml           | Name   | PASS (no edit needed)
+
+OVERALL PHASE 2 STATUS: PASS
+================================================================================

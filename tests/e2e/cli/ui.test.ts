@@ -110,7 +110,7 @@ describe('CLI: ui', { timeout: 300_000 }, () => {
 
       const html = await response.text();
       expect(html).toContain('@shepai/cli');
-      expect(html).toContain('Autonomous AI Native SDLC Platform');
+      expect(html).toContain('Autonomous AI-native SDLC platform');
     }, 150_000);
   });
 

@@ -1,0 +1,74 @@
+name: 🌱 Good First Issue
+description: Create a beginner-friendly issue for new contributors to Shep
+title: '[Good First Issue]: '
+labels: ['good first issue']
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem or Improvement
+      description: Describe what needs to be fixed or improved. Write this for someone unfamiliar with the codebase.
+      placeholder: |
+        The error message when running `shep` without a git repo says "fatal error" but should
+        say something friendlier like "Please run shep inside a git repository."
+    validations:
+      required: true
+
+  - type: textarea
+    id: approach
+    attributes:
+      label: Suggested Approach
+      description: Give hints on how to solve this. Include relevant concepts, patterns, or steps.
+      placeholder: |
+        1. Look at the error handling in `src/presentation/cli/commands/...`
+        2. Find where the git check happens
+        3. Update the error message string
+        4. Run `pnpm test:unit` to make sure nothing breaks
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: Files Likely Involved
+      description: List the files or directories a contributor should look at.
+      placeholder: |
+        - src/presentation/cli/commands/init.ts
+        - packages/core/src/infrastructure/git/git.service.ts
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Expected Outcome
+      description: Describe what the finished change should look like or how to verify it works.
+      placeholder: |
+        Running `shep` outside a git repo should display:
+        "Please run shep inside a git repository."
+        instead of "fatal error".
+    validations:
+      required: true
+
+  - type: textarea
+    id: docs
+    attributes:
+      label: Relevant Documentation
+      description: Links to docs, guides, or code references that will help.
+      placeholder: |
+        - [Contributing guide](CONTRIBUTING.md)
+        - [CLI architecture](docs/cli/architecture.md)
+    validations:
+      required: false
+
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Difficulty
+      description: How hard is this for someone new to the project?
+      options:
+        - Trivial (typo, string change, config tweak)
+        - Easy (small logic change, one or two files)
+        - Moderate (multiple files, some domain knowledge needed)
+    validations:
+      required: true

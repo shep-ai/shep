@@ -22,7 +22,7 @@ describe('CLI: version', () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('@shepai/cli');
     expect(result.stdout).toMatch(/v\d+\.\d+\.\d+/);
-    expect(result.stdout).toContain('Autonomous AI Native SDLC Platform');
+    expect(result.stdout).toContain('Autonomous AI-native SDLC platform');
     expect(result.stdout).toContain('Node:');
     expect(result.stdout).toMatch(/Node:.*v\d+\.\d+\.\d+/);
     expect(result.stdout).toContain('Platform:');

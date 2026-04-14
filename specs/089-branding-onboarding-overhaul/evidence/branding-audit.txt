@@ -1,0 +1,48 @@
+================================================================================
+BRANDING AUDIT: Shep AI CLI zero-match verification
+================================================================================
+Date: 2026-04-14T09:22:51Z
+Branch: feat/branding-onboarding-overhaul
+
+--- FR-2 Inventoried Surfaces ---
+
+  PASS  README.md -- zero matches for Shep AI CLI
+  PASS  package.json -- zero matches for Shep AI CLI
+  PASS  src/presentation/web/app/layout.tsx -- zero matches for Shep AI CLI
+  PASS  packages/core/src/domain/value-objects/version-info.ts -- zero matches for Shep AI CLI
+  PASS  CONTRIBUTING.md -- zero matches for Shep AI CLI
+  PASS  CLAUDE.md -- zero matches for Shep AI CLI
+  PASS  .github/ISSUE_TEMPLATE/bug-report.yml -- zero matches for Shep AI CLI
+  PASS  .github/ISSUE_TEMPLATE/feature-request.yml -- zero matches for Shep AI CLI
+  PASS  src/presentation/cli/index.ts -- zero matches for Shep AI CLI
+
+--- Canonical long descriptor verification ---
+
+  PASS  package.json
+  PASS  src/presentation/web/app/layout.tsx
+  PASS  packages/core/src/domain/value-objects/version-info.ts
+  PASS  CLAUDE.md
+  PASS  src/presentation/cli/index.ts
+
+--- Canonical short tagline verification ---
+
+  PASS  README.md
+
+--- Issue template branding ---
+
+description: Report a bug or unexpected behavior in Shep
+description: Suggest a new feature or enhancement for Shep
+(Both use Shep, not Shep AI CLI)
+
+--- docs-improvement.yml ---
+
+  PASS  does NOT contain Shep AI CLI
+
+--- Broader search (out-of-scope per spec) ---
+
+Remaining Shep AI CLI matches in docs/tests/translations: 35
+(These are out-of-scope per the spec FR-2 inventory.)
+
+================================================================================
+OVERALL: PASS -- all 9 FR-2 inventoried surfaces aligned
+================================================================================

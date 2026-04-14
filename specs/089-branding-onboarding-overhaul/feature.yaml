@@ -1,0 +1,40 @@
+feature:
+  id: "089-branding-onboarding-overhaul"
+  name: "branding-onboarding-overhaul"
+  number: 89
+  branch: "feat/089-branding-onboarding-overhaul"
+  lifecycle: "research"
+  createdAt: "2026-04-13T21:02:21Z"
+status:
+  phase: "implementation-complete"
+  progress:
+    completed: 9
+    total: 9
+    percentage: 100
+  currentTask: null
+  lastUpdated: "2026-04-14T09:05:46.197Z"
+  lastUpdatedBy: "feature-agent:implement"
+  completedPhases:
+    - "analyze"
+    - "requirements"
+    - "research"
+    - "plan"
+    - "phase-1"
+    - "phase-2"
+    - "phase-3"
+    - "evidence"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-04-13T21:02:21Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []

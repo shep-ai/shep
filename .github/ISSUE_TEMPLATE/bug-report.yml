@@ -1,5 +1,5 @@
 name: 🐛 Bug Report
-description: Report a bug or unexpected behavior in Shep AI CLI
+description: Report a bug or unexpected behavior in Shep
 title: '[Bug]: '
 labels: ['bug']
 body:

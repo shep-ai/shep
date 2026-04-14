@@ -18,5 +18,6 @@ export interface VersionInfo {
 export const DEFAULT_VERSION_INFO: VersionInfo = {
   version: 'unknown',
   name: '@shepai/cli',
-  description: 'Autonomous AI Native SDLC Platform',
+  description:
+    'Autonomous AI-native SDLC platform — run parallel AI agents in isolated worktrees to automate the development cycle from idea to deploy.',
 };

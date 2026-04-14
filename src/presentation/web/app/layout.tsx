@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Shep AI',
   description:
-    'Autonomous AI Native SDLC Platform - Automate the development cycle from idea to deploy',
+    'Autonomous AI-native SDLC platform — run parallel AI agents in isolated worktrees to automate the development cycle from idea to deploy.',
   icons: [
     {
       rel: 'icon',

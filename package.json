@@ -1,7 +1,7 @@
 {
   "name": "@shepai/cli",
   "version": "1.185.0",
-  "description": "Autonomous AI Native SDLC Platform - Automate the development cycle from idea to deploy",
+  "description": "Autonomous AI-native SDLC platform — run parallel AI agents in isolated worktrees to automate the development cycle from idea to deploy.",
   "type": "module",
   "license": "MIT",
   "author": "Shep AI",

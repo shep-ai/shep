@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Shep AI CLI Entry Point
+ * Shep CLI Entry Point
  *
- * Autonomous AI Native SDLC Platform - CLI Interface
+ * Autonomous AI-native SDLC platform — run parallel AI agents in isolated worktrees
+ * to automate the development cycle from idea to deploy.
  *
  * Usage:
  *   shep [command] [options]

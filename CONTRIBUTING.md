@@ -1,10 +1,10 @@
-# Contributing to Shep AI CLI
+# Contributing to Shep
 
-Thank you for your interest in contributing to Shep AI CLI! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to Shep! This document provides guidelines and instructions for contributing.
 
 ## Code of Conduct
 
-This project adheres to a Code of Conduct. By participating, you are expected to uphold respectful and inclusive behavior.
+This project follows the [Contributor Covenant Code of Conduct](./CODE_OF_CONDUCT.md). By participating, you are expected to uphold respectful and inclusive behavior. Please report unacceptable behavior to **conduct@shep.bot**.
 
 ## Getting Started
 
@@ -45,7 +45,37 @@ pnpm link --global
 shep --help
 ```
 
-## How to Contribute
+## Quick Contributions
+
+Not every contribution needs the full feature workflow. If your change is small and focused, use this streamlined path.
+
+### What qualifies as a quick contribution?
+
+- Fixing typos or grammar in documentation
+- Improving or clarifying existing docs
+- Small bug fixes (1-3 files)
+- Dependency version bumps
+- Configuration tweaks
+- Adding or improving code comments
+
+### Steps
+
+1. **Fork** the repository and clone your fork
+2. **Create a branch** from `main`: `git checkout -b fix/your-fix-name`
+3. **Make your change**
+4. **Run tests** to verify nothing is broken: `pnpm test`
+5. **Commit** using conventional commit format: `type(scope): description` (e.g., `fix(docs): correct typo in readme`)
+6. **Push** to your fork and **open a Pull Request** against `main`
+
+> **Note:** The spec-driven workflow (`/shep-kit:new-feature`) and TDD (test-driven development) are **not required** for quick contributions. Just make your fix, verify tests pass, and submit your PR.
+
+See the [Conventional Commits](https://www.conventionalcommits.org/) spec for the full format, but for quick fixes the one-liner above is all you need.
+
+---
+
+## Full Feature Development
+
+For new features, architectural changes, and significant enhancements, we use a structured workflow to ensure quality and consistency.
 
 ### Starting a Feature (MANDATORY)
 
@@ -262,8 +292,8 @@ Commits with types `docs`, `style`, `refactor`, `test`, `build`, `ci`, `chore` d
 
 ## Questions?
 
-- Open a [Discussion](https://github.com/shep-ai/shep/discussions) for questions
-- Join our community channels (links TBD)
+- Open a [Discussion](https://github.com/shep-ai/shep/discussions) for questions — this is our primary community channel
+- Additional community channels (Discord, Slack, etc.) may be added as the project grows — watch the README for updates
 
 ---
 
