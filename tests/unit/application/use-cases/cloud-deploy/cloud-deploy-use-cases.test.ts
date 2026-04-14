@@ -681,9 +681,12 @@ describe('InitiateCloudDeploymentUseCase', () => {
     );
   });
 
-  it('throws NoProviderSelectedError when no provider is set', async () => {
+  it('throws NoProviderSelectedError when no provider is set and none is connected', async () => {
     repo = new FakeApplicationRepo();
     await repo.create(makeApp()); // no cloudDeploymentProvider
+    // Empty registry — the first-connected fallback finds nothing and the
+    // use case surfaces NoProviderSelectedError for the UI to handle.
+    registry = new FakeRegistry(new Map());
     const useCase = buildUseCase();
     await expect(useCase.execute({ applicationId: 'app-1' })).rejects.toBeInstanceOf(
       NoProviderSelectedError

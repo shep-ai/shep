@@ -192,10 +192,6 @@ describe('CreateApplicationUseCase', () => {
   });
 
   it('returns immediately and flips status to Error when the background scaffold throws', async () => {
-    // The use case logs `[create-application] scaffold failed: …`
-    // before flipping status — suppress it so the test output stays
-    // clean while still asserting the observable side effects below.
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
     vi.mocked(mockScaffolder.scaffold).mockRejectedValueOnce(new Error('bun bootstrap failed'));
 
     // The use case must resolve successfully — the scaffold runs in
@@ -225,11 +221,10 @@ describe('CreateApplicationUseCase', () => {
       expect.objectContaining({ status: ApplicationStatus.Error })
     );
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      '[create-application] scaffold failed:',
-      expect.any(Error)
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      '[create-application] scaffold failed',
+      expect.objectContaining({ err: 'bun bootstrap failed' })
     );
-    consoleErrorSpy.mockRestore();
   });
 
   it('passes agent and model overrides through to the application record', async () => {
