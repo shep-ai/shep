@@ -54,6 +54,12 @@ const nextConfig: NextConfig = {
     root: resolve(import.meta.dirname, '../../..'),
   },
 
+  // Hide the dev-mode "compiling / N issues" badge in the bottom-right
+  // corner. Shep's own UI uses that corner for the application FAB and
+  // workflow tracker, so the Next.js indicator just gets in the way.
+  // No effect in production builds.
+  devIndicators: false,
+
   // Exclude native/DI packages and Node.js builtins from Next.js bundling.
   // Without this, Turbopack statically evaluates os.platform() at build time
   // and tree-shakes platform-conditional branches (e.g., open-shell.ts).
