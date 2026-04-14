@@ -1,5 +1,5 @@
 === Plugin Structure Verification ===
-Date: 2026-04-14T15:49:00Z
+Date: 2026-04-14T13:02:40Z
 
 --- plugin.json content ---
 {
@@ -34,24 +34,28 @@ Date: 2026-04-14T15:49:00Z
   ]
 }
 
---- Plugin Skills (7 total) ---
-  ✓ shep-intro/SKILL.md (110 lines) — Introduction to Shep and parallel AI development
-  ✓ architecture-reviewer/SKILL.md (96 lines) — Architecture review guidance
-  ✓ mermaid-diagrams/SKILL.md (217 lines) — Diagram creation with Mermaid syntax
-  ✓ react-flow/SKILL.md (451 lines) — React Flow visualization patterns
-  ✓ shadcn-ui/SKILL.md (1663 lines) — shadcn/ui component library patterns
-  ✓ tsp-model/SKILL.md (142 lines) — TypeSpec domain modeling
-  ✓ vercel-react-best-practices/SKILL.md (138 lines) — React/Next.js optimization
 
---- Content Documentation (9 files in docs/content/) ---
-  ✓ positioning-guide.md (5307 bytes) — Core value proposition and messaging guide
-  ✓ hn-show-post.md (5776 bytes) — Hacker News Show HN post draft
-  ✓ blog-why-we-built-shep.md (10610 bytes) — Launch blog post
-  ✓ twitter-launch-thread.md (3993 bytes) — Twitter/X launch thread
-  ✓ curated-list-submissions.md (9047 bytes) — Curated list submission targets
-  ✓ launch-execution-playbook.md (6873 bytes) — Launch execution guide
-  ✓ speed-benchmark.md (7354 bytes) — Speed benchmark methodology and results
-  ✓ marketplace-submission-guide.md (4355 bytes) — Plugin marketplace submission guide
-  ✓ release-notes-template.md (2325 bytes) — Narrative release notes template
+--- Plugin Skills ---
+  OK architecture-reviewer/SKILL.md (      96 lines)
+  OK mermaid-diagrams/SKILL.md (     217 lines)
+  OK react-flow/SKILL.md (     451 lines)
+  OK shadcn-ui/SKILL.md (    1663 lines)
+  OK shep-intro/SKILL.md (     110 lines)
+  OK tsp-model/SKILL.md (     142 lines)
+  OK vercel-react-best-practices/SKILL.md (     138 lines)
 
-All verification passed.
+--- Content Documentation (docs/content/) ---
+  OK blog-why-we-built-shep.md (10610 bytes)
+  OK curated-list-submissions.md (9047 bytes)
+  OK hn-show-post.md (5776 bytes)
+  OK launch-execution-playbook.md (6873 bytes)
+  OK marketplace-submission-guide.md (4355 bytes)
+  OK positioning-guide.md (5307 bytes)
+  OK release-notes-template.md (2325 bytes)
+  OK speed-benchmark.md (7354 bytes)
+  OK twitter-launch-thread.md (3993 bytes)
+
+--- Summary ---
+Plugin skills: 7
+Content docs: 9
+All files verified.
