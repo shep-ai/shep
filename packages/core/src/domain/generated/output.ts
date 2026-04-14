@@ -516,6 +516,10 @@ export enum AgentType {
   Aider = 'aider',
   Continue = 'continue',
   Cursor = 'cursor',
+  Cline = 'cline',
+  OpenRouter = 'openrouter',
+  TogetherAi = 'together-ai',
+  Ollama = 'ollama',
   Dev = 'dev',
 }
 export enum AgentAuthMethod {
@@ -1784,6 +1788,14 @@ export type Application = SoftDeletableEntity & {
    * Current application status
    */
   status: ApplicationStatus;
+  /**
+   * Whether the initial setup workflow has completed successfully
+   */
+  setupComplete: boolean;
+  /**
+   * Persistent agent SDK session ID — set once on first session boot, never changes
+   */
+  agentSessionId?: string;
 };
 export enum EstimateType {
   None = 'None',

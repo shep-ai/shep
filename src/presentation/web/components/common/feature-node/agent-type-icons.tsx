@@ -8,9 +8,13 @@ export type AgentTypeValue =
   | 'codex-cli'
   | 'copilot-cli'
   | 'cursor'
+  | 'cline'
   | 'gemini-cli'
   | 'aider'
   | 'continue'
+  | 'openrouter'
+  | 'together-ai'
+  | 'ollama'
   | 'dev';
 
 type IconProps = SVGProps<SVGSVGElement> & { className?: string };
@@ -95,9 +99,13 @@ const agentTypeIconMap: Record<AgentTypeValue, ComponentType<IconProps>> = {
   'codex-cli': createBrandIcon('/icons/agents/openai.svg', 'Codex CLI'),
   'copilot-cli': createBrandIcon('/icons/agents/copilot.svg', 'Copilot CLI'),
   cursor: createBrandIcon('/icons/agents/cursor.jpeg', 'Cursor'),
-  'gemini-cli': createBrandIcon('/icons/agents/gemini-cli.jpeg', 'Gemini CLI'),
+  cline: createBrandIcon('/icons/agents/cline.svg', 'Cline'),
+  'gemini-cli': createBrandIcon('/icons/agents/gemini.svg', 'Gemini CLI'),
   aider: createBrandIcon('/icons/agents/aider.png', 'Aider'),
   continue: createBrandIcon('/icons/agents/continue.jpeg', 'Continue'),
+  openrouter: createBrandIcon('/icons/agents/openrouter.svg', 'OpenRouter'),
+  'together-ai': createBrandIcon('/icons/agents/together-ai.svg', 'Together AI'),
+  ollama: createBrandIcon('/icons/agents/ollama.svg', 'Ollama'),
   dev: DevAgentIcon,
 };
 
@@ -107,9 +115,13 @@ export const agentTypeLabels: Record<AgentTypeValue, string> = {
   'codex-cli': 'Codex CLI',
   'copilot-cli': 'Copilot CLI',
   cursor: 'Cursor',
+  cline: 'Cline',
   'gemini-cli': 'Gemini CLI',
   aider: 'Aider',
   continue: 'Continue',
+  openrouter: 'OpenRouter',
+  'together-ai': 'Together AI',
+  ollama: 'Ollama',
   dev: 'Demo',
 };
 

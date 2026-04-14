@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Collapsible } from 'radix-ui';
 import { Check, ChevronDown, ChevronRight, Circle, AlertTriangle } from 'lucide-react';
 import type { Components } from 'react-markdown';
@@ -65,6 +65,11 @@ export interface StepTrackerProps {
    * the running step card.
    */
   liveStatus?: string | null;
+  /**
+   * Called when the user clicks "Continue" on an interrupted step.
+   * Sends a message to the agent to resume from where it left off.
+   */
+  onRetry?: () => void;
 }
 
 /**
@@ -81,6 +86,7 @@ export function StepTracker({
   collapsedSummary,
   activeStepId,
   liveStatus,
+  onRetry,
 }: StepTrackerProps) {
   const [expandedOverride, setExpandedOverride] = useState(false);
   if (steps.length === 0) return null;
@@ -92,7 +98,7 @@ export function StepTracker({
         <button
           type="button"
           onClick={() => setExpandedOverride(true)}
-          className="hover:bg-muted/40 border-border bg-background flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors"
+          className="hover:bg-muted/40 border-border bg-background flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors dark:bg-neutral-800/50"
         >
           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
             <Check className="h-4 w-4" strokeWidth={3} />
@@ -133,6 +139,7 @@ export function StepTracker({
           step={step}
           liveStatus={step.definition.id === activeStepId ? (liveStatus ?? null) : null}
           mountIndex={idx}
+          onRetry={step.status === 'interrupted' ? onRetry : undefined}
         />
       ))}
     </ol>
@@ -152,6 +159,8 @@ interface StepCardProps {
    * animation so the cards cascade in instead of popping all at once.
    */
   mountIndex: number;
+  /** Called when the user clicks "Continue" on an interrupted step. */
+  onRetry?: () => void;
 }
 
 /**
@@ -183,9 +192,17 @@ function classifyMessages(messages: InteractiveMessage[]): StepItem[] {
   return items;
 }
 
-function StepCard({ step, liveStatus, mountIndex }: StepCardProps) {
-  const [expanded, setExpanded] = useState(false);
-  const { status, definition, metadata, toolMessages } = step;
+function StepCard({ step, liveStatus, mountIndex, onRetry }: StepCardProps) {
+  const [optimisticRunning, setOptimisticRunning] = useState(false);
+  // Clear optimistic override once the real status catches up
+  useEffect(() => {
+    if (step.status !== 'interrupted') setOptimisticRunning(false);
+  }, [step.status]);
+  const status = optimisticRunning ? 'running' : step.status;
+  const [expanded, setExpanded] = useState(
+    step.status === 'interrupted' || step.status === 'failed'
+  );
+  const { definition, metadata, toolMessages } = step;
 
   const details = readStringArray(metadata, 'details');
   const error = readString(metadata, 'error');
@@ -195,7 +212,7 @@ function StepCard({ step, liveStatus, mountIndex }: StepCardProps) {
   // it is always a duplicate of the card header and is intentionally
   // NOT rendered — otherwise the expanded body would open with a copy
   // of the title right above the real content.
-  const hasBody = items.length > 0 || details.length > 0 || !!error;
+  const hasBody = items.length > 0 || details.length > 0 || !!error || status === 'interrupted';
 
   return (
     <Collapsible.Root asChild open={expanded} onOpenChange={setExpanded}>
@@ -213,11 +230,11 @@ function StepCard({ step, liveStatus, mountIndex }: StepCardProps) {
           // finished cleanly" signal). The running card uses Shep's
           // indigo/violet brand accent so the in-progress step is
           // visually distinct from anything that has already completed.
-          status === 'running' && 'border-violet-500/40 bg-violet-500/5',
-          status === 'done' && 'border-border bg-background',
-          status === 'pending' && 'border-border/40 bg-muted/20',
-          status === 'failed' && 'border-red-500/40 bg-red-500/5',
-          status === 'interrupted' && 'border-amber-500/40 bg-amber-500/5'
+          status === 'running' && 'border-violet-500/40 bg-violet-500/5 dark:bg-violet-500/10',
+          status === 'done' && 'border-border bg-background dark:bg-neutral-800/50',
+          status === 'pending' && 'border-border/40 bg-muted/20 dark:bg-neutral-800/30',
+          status === 'failed' && 'border-red-500/40 bg-red-500/5 dark:bg-red-500/10',
+          status === 'interrupted' && 'border-amber-500/40 bg-amber-500/5 dark:bg-amber-500/10'
         )}
         style={{ animationDelay: `${Math.min(mountIndex, 6) * 40}ms`, animationDuration: '300ms' }}
       >
@@ -242,15 +259,11 @@ function StepCard({ step, liveStatus, mountIndex }: StepCardProps) {
               >
                 {definition.title}
               </span>
-              {liveStatus && status === 'running' ? (
-                // While the step is running, the live status preempts
-                // the static description — same slot, more useful
-                // information. The only place agent in-flight activity
-                // surfaces while the workflow is active. Color matches
-                // the card accent (violet) so green stays exclusive to
-                // "done". `key={liveStatus}` retriggers the fade-in
-                // every time the status text rotates, so consecutive
-                // tool calls feel like they tick instead of swap.
+              {status === 'interrupted' ? (
+                <span className="min-w-0 truncate text-xs font-medium text-amber-600 dark:text-amber-400">
+                  Interrupted
+                </span>
+              ) : liveStatus && status === 'running' ? (
                 <span className="flex min-w-0 items-baseline gap-1.5 text-xs text-violet-700 dark:text-violet-300">
                   <span className="inline-flex h-1 w-1 shrink-0 translate-y-[-1px] animate-pulse rounded-full bg-violet-500" />
                   <span
@@ -302,6 +315,27 @@ function StepCard({ step, liveStatus, mountIndex }: StepCardProps) {
           )}
         >
           <div className="border-border/40 space-y-2 border-t px-3 py-2.5 text-xs">
+            {status === 'interrupted' && !error ? (
+              <div className="flex items-center justify-between rounded bg-amber-500/10 p-2">
+                <span className="text-amber-700 dark:text-amber-400">
+                  This step was interrupted before it could finish.
+                </span>
+                {onRetry ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOptimisticRunning(true);
+                      setExpanded(false);
+                      onRetry();
+                    }}
+                    className="ms-3 shrink-0 cursor-pointer rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-[11px] font-medium text-amber-700 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
+                  >
+                    Continue
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
             {error ? (
               <p className="rounded bg-red-500/10 p-2 text-red-600 dark:text-red-400">{error}</p>
             ) : null}
@@ -361,7 +395,11 @@ function StatusIcon({ status }: { status: EnhancedStepState['status'] }) {
     );
   }
   if (status === 'interrupted') {
-    return <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />;
+    return (
+      <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
+        <AlertTriangle className="h-2.5 w-2.5" strokeWidth={3} />
+      </div>
+    );
   }
   return <Circle className="text-muted-foreground/30 h-4 w-4 shrink-0" />;
 }

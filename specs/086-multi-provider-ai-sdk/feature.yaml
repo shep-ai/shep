@@ -1,0 +1,42 @@
+feature:
+  id: "086-multi-provider-ai-sdk"
+  name: "multi-provider-ai-sdk"
+  number: 86
+  branch: "feat/086-multi-provider-ai-sdk"
+  lifecycle: "research"
+  createdAt: "2026-04-09T15:41:43Z"
+status:
+  phase: "implementation-complete"
+  progress:
+    completed: 18
+    total: 18
+    percentage: 100
+  currentTask: null
+  lastUpdated: "2026-04-09T17:53:38.143Z"
+  lastUpdatedBy: "feature-agent:implement"
+  completedPhases:
+    - "analyze"
+    - "requirements"
+    - "research"
+    - "plan"
+    - "phase-1"
+    - "phase-2"
+    - "phase-3"
+    - "phase-4"
+    - "phase-5"
+    - "evidence"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-04-09T15:41:43Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []

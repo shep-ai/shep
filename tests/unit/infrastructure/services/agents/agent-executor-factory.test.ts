@@ -13,6 +13,9 @@ import { AgentExecutorFactory } from '@/infrastructure/services/agents/common/ag
 import { DevAgentExecutorService } from '@/infrastructure/services/agents/common/executors/dev-executor.service.js';
 import { CodexCliExecutorService } from '@/infrastructure/services/agents/common/executors/codex-cli-executor.service.js';
 import { CopilotCliExecutorService } from '@/infrastructure/services/agents/common/executors/copilot-cli-executor.service.js';
+import { OpenRouterExecutorService } from '@/infrastructure/services/agents/common/executors/openrouter-executor.service.js';
+import { TogetherAiExecutorService } from '@/infrastructure/services/agents/common/executors/together-ai-executor.service.js';
+import { OllamaExecutorService } from '@/infrastructure/services/agents/common/executors/ollama-executor.service.js';
 import type { SpawnFunction } from '@/infrastructure/services/agents/common/types.js';
 import { AgentType, AgentAuthMethod } from '@/domain/generated/output.js';
 import type { AgentConfig } from '@/domain/generated/output.js';
@@ -172,6 +175,96 @@ describe('AgentExecutorFactory', () => {
       expect(executor1).toBe(executor2);
     });
 
+    it('should create OpenRouterExecutorService for openrouter type', () => {
+      const config: AgentConfig = {
+        type: AgentType.OpenRouter,
+        authMethod: AgentAuthMethod.Token,
+        token: 'test-openrouter-key',
+      };
+
+      const executor = factory.createExecutor(AgentType.OpenRouter, config);
+
+      expect(executor).toBeDefined();
+      expect(executor).toBeInstanceOf(OpenRouterExecutorService);
+      expect(executor.agentType).toBe(AgentType.OpenRouter);
+    });
+
+    it('should create TogetherAiExecutorService for together-ai type', () => {
+      const config: AgentConfig = {
+        type: AgentType.TogetherAi,
+        authMethod: AgentAuthMethod.Token,
+        token: 'test-together-key',
+      };
+
+      const executor = factory.createExecutor(AgentType.TogetherAi, config);
+
+      expect(executor).toBeDefined();
+      expect(executor).toBeInstanceOf(TogetherAiExecutorService);
+      expect(executor.agentType).toBe(AgentType.TogetherAi);
+    });
+
+    it('should cache openrouter executor instances', () => {
+      const config: AgentConfig = {
+        type: AgentType.OpenRouter,
+        authMethod: AgentAuthMethod.Token,
+        token: 'test-key',
+      };
+
+      const executor1 = factory.createExecutor(AgentType.OpenRouter, config);
+      const executor2 = factory.createExecutor(AgentType.OpenRouter, config);
+
+      expect(executor1).toBe(executor2);
+    });
+
+    it('should cache together-ai executor instances', () => {
+      const config: AgentConfig = {
+        type: AgentType.TogetherAi,
+        authMethod: AgentAuthMethod.Token,
+        token: 'test-key',
+      };
+
+      const executor1 = factory.createExecutor(AgentType.TogetherAi, config);
+      const executor2 = factory.createExecutor(AgentType.TogetherAi, config);
+
+      expect(executor1).toBe(executor2);
+    });
+
+    it('should create OllamaExecutorService for ollama type', () => {
+      const config: AgentConfig = {
+        type: AgentType.Ollama,
+        authMethod: AgentAuthMethod.Session,
+      };
+
+      const executor = factory.createExecutor(AgentType.Ollama, config);
+
+      expect(executor).toBeDefined();
+      expect(executor).toBeInstanceOf(OllamaExecutorService);
+      expect(executor.agentType).toBe(AgentType.Ollama);
+    });
+
+    it('should cache ollama executor instances', () => {
+      const config: AgentConfig = {
+        type: AgentType.Ollama,
+        authMethod: AgentAuthMethod.Session,
+      };
+
+      const executor1 = factory.createExecutor(AgentType.Ollama, config);
+      const executor2 = factory.createExecutor(AgentType.Ollama, config);
+
+      expect(executor1).toBe(executor2);
+    });
+
+    it('should pass empty string when token is undefined for SDK executors', () => {
+      const config: AgentConfig = {
+        type: AgentType.OpenRouter,
+        authMethod: AgentAuthMethod.Token,
+      };
+
+      const executor = factory.createExecutor(AgentType.OpenRouter, config);
+
+      expect(executor).toBeInstanceOf(OpenRouterExecutorService);
+    });
+
     it('should return executor with correct agentType', () => {
       const executor = factory.createExecutor(AgentType.ClaudeCode, defaultAuthConfig);
 
@@ -196,7 +289,11 @@ describe('AgentExecutorFactory', () => {
       expect(supported).toContain('codex-cli');
       expect(supported).toContain('copilot-cli');
       expect(supported).toContain('dev');
-      expect(supported).toHaveLength(6);
+      expect(supported).toContain('openrouter');
+      expect(supported).toContain('together-ai');
+      expect(supported).toContain('ollama');
+      expect(supported).toContain('cline');
+      expect(supported).toHaveLength(10);
     });
 
     it('should not include unsupported agents', () => {
@@ -224,6 +321,26 @@ describe('AgentExecutorFactory', () => {
       expect(copilotInfo).toBeDefined();
       expect(copilotInfo!.cmd).toBe('copilot');
       expect(copilotInfo!.versionArgs).toEqual(['--version']);
+    });
+
+    it('should include cline entry with cmd cline', () => {
+      const cliInfos = factory.getCliInfo();
+      const clineInfo = cliInfos.find((info) => info.agentType === AgentType.Cline);
+
+      expect(clineInfo).toBeDefined();
+      expect(clineInfo!.cmd).toBe('cline');
+      expect(clineInfo!.versionArgs).toEqual(['version']);
+    });
+
+    it('should not include SDK agents (openrouter, together-ai, ollama) since they have no CLI binary', () => {
+      const cliInfos = factory.getCliInfo();
+      const openrouterInfo = cliInfos.find((info) => info.agentType === AgentType.OpenRouter);
+      const togetherInfo = cliInfos.find((info) => info.agentType === AgentType.TogetherAi);
+      const ollamaInfo = cliInfos.find((info) => info.agentType === AgentType.Ollama);
+
+      expect(openrouterInfo).toBeUndefined();
+      expect(togetherInfo).toBeUndefined();
+      expect(ollamaInfo).toBeUndefined();
     });
   });
 
@@ -301,6 +418,71 @@ describe('AgentExecutorFactory', () => {
       ]);
     });
 
+    it('should return openrouter model list with 10 models', () => {
+      const models = factory.getSupportedModels(AgentType.OpenRouter);
+
+      expect(models).toHaveLength(10);
+      expect(models).toEqual([
+        'anthropic/claude-sonnet-4.5',
+        'anthropic/claude-haiku-4.5',
+        'openai/gpt-5.4',
+        'openai/gpt-5.2',
+        'meta-llama/llama-4-maverick',
+        'meta-llama/llama-4-scout',
+        'google/gemini-3-flash',
+        'google/gemini-3-pro',
+        'deepseek/deepseek-chat-v3-0324',
+        'mistralai/mistral-large-latest',
+      ]);
+    });
+
+    it('should return together-ai model list with 8 models', () => {
+      const models = factory.getSupportedModels(AgentType.TogetherAi);
+
+      expect(models).toHaveLength(8);
+      expect(models).toEqual([
+        'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8',
+        'meta-llama/Meta-Llama-3.3-70B-Instruct-Turbo',
+        'Qwen/Qwen2.5-Coder-32B-Instruct',
+        'deepseek-ai/DeepSeek-V3',
+        'deepseek-ai/DeepSeek-R1',
+        'mistralai/Mistral-Small-24B-Instruct-2501',
+        'google/gemma-2-27b-it',
+        'codellama/CodeLlama-70b-Instruct-hf',
+      ]);
+    });
+
+    it('should return cline model list with 6 models', () => {
+      const models = factory.getSupportedModels(AgentType.Cline);
+
+      expect(models).toHaveLength(6);
+      expect(models).toEqual([
+        'claude-sonnet-4-20250514',
+        'claude-haiku-4-5-20251001',
+        'gpt-4.1',
+        'gpt-4.1-mini',
+        'deepseek-chat',
+        'llama3.2',
+      ]);
+    });
+
+    it('should return ollama model list with 9 models', () => {
+      const models = factory.getSupportedModels(AgentType.Ollama);
+
+      expect(models).toHaveLength(9);
+      expect(models).toEqual([
+        'llama3.2',
+        'llama3.1',
+        'codellama',
+        'deepseek-coder-v2',
+        'qwen2.5-coder',
+        'mistral',
+        'gemma2',
+        'phi3',
+        'starcoder2',
+      ]);
+    });
+
     it('should return empty array for dev agent', () => {
       const models = factory.getSupportedModels(AgentType.Dev);
 
@@ -318,6 +500,20 @@ describe('AgentExecutorFactory', () => {
 
       expect(result).not.toBeInstanceOf(Promise);
       expect(Array.isArray(result)).toBe(true);
+    });
+  });
+
+  describe('supportsInteractive', () => {
+    it('should return false for openrouter', () => {
+      expect(factory.supportsInteractive(AgentType.OpenRouter)).toBe(false);
+    });
+
+    it('should return false for together-ai', () => {
+      expect(factory.supportsInteractive(AgentType.TogetherAi)).toBe(false);
+    });
+
+    it('should return false for ollama', () => {
+      expect(factory.supportsInteractive(AgentType.Ollama)).toBe(false);
     });
   });
 });

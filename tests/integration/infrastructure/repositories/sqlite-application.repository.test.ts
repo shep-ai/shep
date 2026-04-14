@@ -28,6 +28,7 @@ describe('SQLiteApplicationRepository', () => {
       repositoryPath: '/home/user/projects/test-app',
       additionalPaths: [],
       status: ApplicationStatus.Idle,
+      setupComplete: false,
       createdAt: NOW,
       updatedAt: NOW,
       ...overrides,

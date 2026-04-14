@@ -39,6 +39,8 @@ import type { DeployActionState } from '@/hooks/use-deploy-action';
 export interface RunDevButtonProps {
   deploy: DeployActionState;
   className?: string;
+  /** When true the button is grayed out and non-interactive (e.g. agent is running). */
+  disabled?: boolean;
   /**
    * Visual density of the Ready state.
    *
@@ -53,7 +55,7 @@ export interface RunDevButtonProps {
   variant?: 'full' | 'compact';
 }
 
-export function RunDevButton({ deploy, className, variant = 'full' }: RunDevButtonProps) {
+export function RunDevButton({ deploy, className, disabled, variant = 'full' }: RunDevButtonProps) {
   const openUrl = useCallback(() => {
     if (deploy.url) window.open(deploy.url, '_blank', 'noopener,noreferrer');
   }, [deploy.url]);
@@ -193,11 +195,19 @@ export function RunDevButton({ deploy, className, variant = 'full' }: RunDevButt
     <button
       type="button"
       onClick={deploy.deploy}
+      disabled={disabled}
       className={cn(
-        'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-violet-500/50 bg-gradient-to-br from-indigo-500/15 to-violet-500/20 px-2.5 text-[11px] font-medium text-violet-700 transition-colors hover:from-indigo-500/25 hover:to-violet-500/30 dark:text-violet-300',
+        'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-[11px] font-medium transition-colors',
+        disabled
+          ? 'border-border bg-muted text-muted-foreground/40 cursor-not-allowed'
+          : 'border-violet-500/50 bg-gradient-to-br from-indigo-500/15 to-violet-500/20 text-violet-700 hover:from-indigo-500/25 hover:to-violet-500/30 dark:text-violet-300',
         className
       )}
-      title="Install dependencies and preview the app"
+      title={
+        disabled
+          ? 'Preview disabled while agent is running'
+          : 'Install dependencies and preview the app'
+      }
       aria-label="Preview app"
     >
       <Play className="h-3 w-3 fill-current" />

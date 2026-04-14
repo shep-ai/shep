@@ -1,0 +1,42 @@
+feature:
+  id: '087-dynamic-model-catalog'
+  name: 'dynamic-model-catalog'
+  number: 87
+  branch: 'feat/087-dynamic-model-catalog'
+  lifecycle: 'implementation'
+  createdAt: '2026-04-10T07:42:26Z'
+
+status:
+  phase: 'ready-to-implement'
+  progress:
+    completed: 0
+    total: 9
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-04-11T00:00:00Z'
+  lastUpdatedBy: 'shep-kit:plan'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-04-10T07:42:26Z'
+    completedBy: 'shep-kit:new-feature'
+  - phase: 'research-complete'
+    completedAt: '2026-04-11T00:00:00Z'
+    completedBy: 'shep-kit:research'
+  - phase: 'plan-complete'
+    completedAt: '2026-04-11T00:00:00Z'
+    completedBy: 'shep-kit:plan'
+
+errors:
+  current: null
+  history: []

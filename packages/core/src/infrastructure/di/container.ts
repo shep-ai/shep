@@ -216,6 +216,7 @@ import { CreateApplicationUseCase } from '../../application/use-cases/applicatio
 import { ListApplicationsUseCase } from '../../application/use-cases/applications/list-applications.use-case.js';
 import { GetApplicationUseCase } from '../../application/use-cases/applications/get-application.use-case.js';
 import { DeleteApplicationUseCase } from '../../application/use-cases/applications/delete-application.use-case.js';
+import { ResumeApplicationWorkflowUseCase } from '../../application/use-cases/applications/resume-application-workflow.use-case.js';
 import { UpdateApplicationUseCase } from '../../application/use-cases/applications/update-application.use-case.js';
 
 // PM use cases
@@ -837,6 +838,7 @@ export async function initializeContainer(): Promise<typeof container> {
   container.registerSingleton(ListApplicationsUseCase);
   container.registerSingleton(GetApplicationUseCase);
   container.registerSingleton(DeleteApplicationUseCase);
+  container.registerSingleton(ResumeApplicationWorkflowUseCase);
   container.registerSingleton(UpdateApplicationUseCase);
 
   // Deployment use cases
@@ -1160,6 +1162,9 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('DeleteApplicationUseCase', {
     useFactory: (c) => c.resolve(DeleteApplicationUseCase),
+  });
+  container.register('ResumeApplicationWorkflowUseCase', {
+    useFactory: (c) => c.resolve(ResumeApplicationWorkflowUseCase),
   });
   container.register('UpdateApplicationUseCase', {
     useFactory: (c) => c.resolve(UpdateApplicationUseCase),

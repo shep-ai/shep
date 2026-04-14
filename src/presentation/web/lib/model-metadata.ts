@@ -38,14 +38,18 @@ const FALLBACK: ModelMeta = { displayName: '', description: '' };
 export function getModelMeta(modelId: string): ModelMeta {
   const meta = MODEL_METADATA[modelId];
   if (meta) return meta;
-  // Fallback: prettify the raw ID
+
+  // Fallback: prettify the raw ID. Provider/model IDs like
+  // 'anthropic/claude-sonnet-4.5' are split and we keep only the model portion,
+  // then apply the same prefix-stripping used for bare claude/gemini/gpt IDs.
+  const bare = modelId.includes('/') ? (modelId.split('/').pop() ?? modelId) : modelId;
   return {
     ...FALLBACK,
-    displayName: modelId
-      .replace(/^claude-/, '')
-      .replace(/^gemini-/, 'Gemini ')
-      .replace(/^gpt-/, 'GPT-')
-      .replace(/-/g, ' ')
+    displayName: bare
+      .replace(/^claude-/i, '')
+      .replace(/^gemini-/i, 'Gemini ')
+      .replace(/^gpt-/i, 'GPT-')
+      .replace(/[-_]/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase()),
   };
 }

@@ -25,6 +25,10 @@ const AGENT_TYPE_OPTIONS = [
   { value: AgentType.CopilotCli, label: 'Copilot CLI' },
   { value: AgentType.Cursor, label: 'Cursor' },
   { value: AgentType.GeminiCli, label: 'Gemini CLI' },
+  { value: AgentType.Cline, label: 'Cline' },
+  { value: AgentType.OpenRouter, label: 'OpenRouter' },
+  { value: AgentType.TogetherAi, label: 'Together AI' },
+  { value: AgentType.Ollama, label: 'Ollama' },
   { value: AgentType.Aider, label: 'Aider' },
   { value: AgentType.Continue, label: 'Continue' },
   { value: AgentType.Dev, label: 'Dev' },
@@ -32,6 +36,9 @@ const AGENT_TYPE_OPTIONS = [
 
 /** Agent types that only support session-based auth (no API token). */
 const SESSION_ONLY_AGENTS = new Set<AgentType>([AgentType.CopilotCli]);
+
+/** Agent types that require token-based auth (API key only, no CLI binary). */
+const TOKEN_REQUIRED_AGENTS = new Set<AgentType>([AgentType.OpenRouter, AgentType.TogetherAi]);
 
 const AUTH_METHOD_OPTIONS = [
   { value: AgentAuthMethod.Session, label: 'Session' },
@@ -80,7 +87,12 @@ export function AgentSettingsSection({ agent }: AgentSettingsSectionProps) {
 
   function handleAgentTypeChange(value: string) {
     const newType = value as AgentType;
-    const newAuthMethod = SESSION_ONLY_AGENTS.has(newType) ? AgentAuthMethod.Session : authMethod;
+    let newAuthMethod = authMethod;
+    if (SESSION_ONLY_AGENTS.has(newType)) {
+      newAuthMethod = AgentAuthMethod.Session;
+    } else if (TOKEN_REQUIRED_AGENTS.has(newType)) {
+      newAuthMethod = AgentAuthMethod.Token;
+    }
     setAgentType(newType);
     if (newAuthMethod !== authMethod) {
       setAuthMethod(newAuthMethod);
@@ -145,16 +157,19 @@ export function AgentSettingsSection({ agent }: AgentSettingsSectionProps) {
           <Select
             value={authMethod}
             onValueChange={handleAuthMethodChange}
-            disabled={SESSION_ONLY_AGENTS.has(agentType)}
+            disabled={SESSION_ONLY_AGENTS.has(agentType) || TOKEN_REQUIRED_AGENTS.has(agentType)}
           >
             <SelectTrigger id="auth-method" data-testid="auth-method-select">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {AUTH_METHOD_OPTIONS.filter(
-                (opt) =>
-                  !SESSION_ONLY_AGENTS.has(agentType) || opt.value === AgentAuthMethod.Session
-              ).map((opt) => (
+              {AUTH_METHOD_OPTIONS.filter((opt) => {
+                if (SESSION_ONLY_AGENTS.has(agentType))
+                  return opt.value === AgentAuthMethod.Session;
+                if (TOKEN_REQUIRED_AGENTS.has(agentType))
+                  return opt.value === AgentAuthMethod.Token;
+                return true;
+              }).map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </SelectItem>
@@ -165,6 +180,11 @@ export function AgentSettingsSection({ agent }: AgentSettingsSectionProps) {
             <p className="text-muted-foreground text-xs">
               Copilot CLI uses GitHub OAuth — authenticate with{' '}
               <code className="font-mono">copilot auth login</code>. No API token needed.
+            </p>
+          )}
+          {TOKEN_REQUIRED_AGENTS.has(agentType) && (
+            <p className="text-muted-foreground text-xs">
+              This provider requires an API key for authentication. No CLI binary needed.
             </p>
           )}
         </div>

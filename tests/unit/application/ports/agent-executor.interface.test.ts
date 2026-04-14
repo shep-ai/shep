@@ -133,6 +133,7 @@ describe('IAgentExecutorFactory type contracts', () => {
       getSupportedAgents: () => [AgentType.ClaudeCode],
       getCliInfo: () => [],
       getSupportedModels: () => [],
+      listAvailableModels: async () => [],
       createInteractiveExecutor: () => {
         throw new Error('not implemented');
       },
@@ -153,6 +154,7 @@ describe('IAgentExecutorFactory type contracts', () => {
       getSupportedAgents: () => [AgentType.ClaudeCode, AgentType.GeminiCli],
       getCliInfo: () => [],
       getSupportedModels: () => [],
+      listAvailableModels: async () => [],
       createInteractiveExecutor: () => {
         throw new Error('not implemented');
       },
@@ -177,6 +179,7 @@ describe('IAgentExecutorFactory type contracts', () => {
       getSupportedAgents: () => [AgentType.ClaudeCode, AgentType.GeminiCli],
       getCliInfo: () => [],
       getSupportedModels: () => [],
+      listAvailableModels: async () => [],
       createInteractiveExecutor: () => {
         throw new Error('not implemented');
       },

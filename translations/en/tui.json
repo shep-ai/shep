@@ -23,9 +23,25 @@
           "name": "Cursor",
           "description": "Cursor AI coding agent"
         },
+        "cline": {
+          "name": "Cline",
+          "description": "Multi-provider agentic coding assistant with full tool use (requires cline CLI)"
+        },
         "devMock": {
           "name": "Dev (Mock)",
           "description": "Local development mock — no agent binary required"
+        },
+        "openRouter": {
+          "name": "OpenRouter",
+          "description": "Access hundreds of AI models via OpenRouter API (requires API key)"
+        },
+        "togetherAi": {
+          "name": "Together AI",
+          "description": "Fast open-source model inference via Together AI API (requires API key)"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "description": "Run local LLMs via Ollama (no API key required, runs on localhost)"
         },
         "aider": {
           "name": "Aider",

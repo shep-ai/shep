@@ -156,19 +156,15 @@ instead of flat structure. Update clients accordingly.
 
 ## Co-Author Attribution
 
-Always include the co-author footer when committing:
+Always include the Shep Bot co-author footer when committing:
 
 ```
 feat(cli): add status command
 
-Co-Authored-By: Claude <noreply@anthropic.com>
+Co-Authored-By: Shep Bot <shep-agent@users.noreply.github.com>
 ```
 
-For Claude Opus 4.5 specifically:
-
-```
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
-```
+Do NOT use any other Co-Authored-By trailer (e.g. Claude, Anthropic). All commits must be attributed to Shep Bot.
 
 ## Code Guidelines
 

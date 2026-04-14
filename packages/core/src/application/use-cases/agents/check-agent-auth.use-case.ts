@@ -65,6 +65,10 @@ const AGENT_METADATA: Record<string, AgentMetadata> = {
   [AgentType.Aider]: { label: 'Aider', toolId: null, binaryName: null },
   [AgentType.Continue]: { label: 'Continue', toolId: null, binaryName: null },
   [AgentType.Dev]: { label: 'Demo', toolId: null, binaryName: null },
+  [AgentType.Cline]: { label: 'Cline', toolId: null, binaryName: 'cline' },
+  [AgentType.OpenRouter]: { label: 'OpenRouter', toolId: null, binaryName: null },
+  [AgentType.TogetherAi]: { label: 'Together AI', toolId: null, binaryName: null },
+  [AgentType.Ollama]: { label: 'Ollama', toolId: null, binaryName: null },
 };
 
 const UNKNOWN_RESULT: CheckAgentAuthResult = {

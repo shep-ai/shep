@@ -1,0 +1,238 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: dynamic-model-catalog
+summary: Technical analysis for 087-dynamic-model-catalog — dynamic model catalog fetching for OpenRouter and Together AI
+
+# Relationships
+relatedFeatures:
+  - "086-multi-provider-ai-sdk"
+technologies:
+  - TypeScript
+  - Vercel AI SDK
+  - React
+  - Next.js Server Actions
+relatedLinks:
+  - title: OpenRouter /api/v1/models (live endpoint)
+    url: https://openrouter.ai/api/v1/models
+  - title: Together AI models endpoint (docs)
+    url: https://docs.together.ai/reference/models-1
+
+# Structured technology decisions
+decisions:
+  - title: Model catalog fetch strategy
+    chosen: Native fetch via a per-executor listModels() method, called from the factory on demand
+    rejected:
+      - Call the AI SDK provider packages (openrouter-ai-sdk-provider, ai-sdk/togetherai) — they do not expose a listModels() API
+      - Fetch at process boot and block startup — slow and fails if user has no token yet
+    rationale: >
+      The AI SDK provider packages focus on inference, not discovery. The REST
+      endpoints are trivially callable with native fetch. A per-executor method
+      keeps provider-specific response parsing encapsulated inside the
+      infrastructure layer (rule: provider SDKs only in infrastructure).
+
+  - title: Cache implementation
+    chosen: In-memory Map on the factory, keyed by "{agentType}::{tokenHash}" with TTL (default 1 hour)
+    rejected:
+      - SQLite-backed persistent cache — overkill, model lists change infrequently and cost nothing to refetch
+      - Module-level singleton cache — violates the "no singletons outside bootstrapping" rule
+      - No cache — would hit provider API on every picker open
+    rationale: >
+      The factory is already a DI-injected singleton that caches executor
+      instances; extending it with a model-list cache keeps the surface small
+      and honors DI rules. Hashing the token into the key ensures we invalidate
+      when a user rotates their API key. In-memory is sufficient because the
+      cache naturally resets when the process restarts, which matches how
+      stale-on-startup is acceptable for a discovery feature.
+
+  - title: Async interface migration
+    chosen: Change IAgentExecutorFactory.getSupportedModels to return Promise<string[]>
+    rejected:
+      - Add a parallel async method (getSupportedModelsAsync) and keep the sync one — leaves dead code and two sources of truth
+      - Return sync fallback immediately and refresh in background — async in UI is already well-handled via server actions, complexity not justified
+    rationale: >
+      All current callers (web server action, CLI command) already operate in
+      async contexts. Making the interface fully async is a clean cut and
+      eliminates the dual-API smell. CLI agents with static lists return a
+      resolved Promise trivially.
+
+  - title: Fallback when API call fails
+    chosen: Return the existing static curated list on error, log a warning, do not throw
+    rejected:
+      - Throw and surface the error to the UI — blocks the picker and looks broken when users have no token
+      - Return an empty list — looks like the agent has no models
+    rationale: >
+      Three failure modes must gracefully degrade — no token configured yet,
+      network offline, provider 5xx or rate-limit. In all three, showing a
+      sensible default set is better than breaking the UI. The existing
+      hardcoded OR/Together lists become the fallback payload rather than
+      dead code.
+
+  - title: Catalog shape — keep string[] or return richer DTO
+    chosen: Return a CatalogEntry[] DTO with id, displayName, description, isFree, contextLength, pricing — bridged to string[] at the factory boundary for existing callers
+    rejected:
+      - Keep string[] only, look up metadata client-side — loses free-model detection (free variants are only discoverable from the API response)
+      - Return provider-specific raw responses — couples the domain to vendor schemas
+    rationale: >
+      The UI needs more than an id list to show "Free" badges and
+      pricing/context hints. A normalized CatalogEntry type lives in the
+      application port layer so both the factory and server actions can
+      consume it. getSupportedModels keeps its string[] contract (backed by
+      getModelCatalog) so CLI agents and older callers continue to work.
+
+  - title: UI search affordance threshold
+    chosen: Show a search input inside the model list panel whenever the catalog exceeds 20 entries
+    rejected:
+      - Always show search — adds friction for providers with <10 models (claude-code, gemini-cli)
+      - Never show search — 300 OpenRouter models are unnavigable
+    rationale: >
+      20 is below the point where scrolling becomes painful and above the size
+      of every CLI-agent catalog in the repo today. Implemented as a simple
+      client-side filter over displayName + id in the existing Popover.
+
+# Open questions (should be resolved by end of research)
+openQuestions: []
+
+# Markdown content (the full research document)
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-04-11
+
+  ## Technology Decisions
+
+  ### 1. Model catalog fetch strategy
+
+  **Options considered:**
+  1. Native `fetch()` against each provider's REST endpoint from a new `listModels()` method on the executor service
+  2. Use the Vercel AI SDK provider packages (they do NOT expose a model-listing API — verified on `@openrouter/ai-sdk-provider` and `@ai-sdk/openai-compatible`)
+  3. Fetch at bootstrap and cache forever
+
+  **Decision:** Option 1 — per-executor `listModels()` method.
+
+  **Rationale:** Provider SDKs focus on inference. The REST endpoints are stable and easy. Keeping parsing in the infrastructure layer respects the dependency rule (no provider-specific code leaks into application).
+
+  ### 2. Cache implementation
+
+  **Options considered:**
+  1. Extend the existing `AgentExecutorFactory` cache Map with a second Map for model lists, TTL-based
+  2. Add a persistent SQLite cache
+  3. Skip caching; hit the API every picker open
+
+  **Decision:** Option 1 — in-memory TTL cache on the factory.
+
+  **Rationale:** The factory is the natural owner: it's DI-injected, singleton-scoped by the container, and already caches executor instances. Cache key: `"{agentType}::{sha256(token).slice(0, 16)}"` so rotating the API key invalidates. TTL default 1 hour (configurable via constructor).
+
+  ### 3. Async interface migration
+
+  **Options considered:**
+  1. Change `getSupportedModels()` signature to `Promise<string[]>`
+  2. Add `getSupportedModelsAsync()` alongside the sync one
+
+  **Decision:** Option 1 — full async cut.
+
+  **Rationale:** Every caller is already async (server action, CLI command). Two sources of truth is worse than one migration.
+
+  **Migration surface (3 production callers):**
+  - `src/presentation/web/app/actions/get-supported-models.ts` — already async
+  - `src/presentation/web/app/actions/get-all-agent-models.ts` — already async
+  - `src/presentation/cli/commands/settings/model.command.ts` — already async
+
+  Plus tests: `tests/unit/infrastructure/services/agents/agent-executor-factory.test.ts`, `tests/unit/presentation/web/actions/get-supported-models.test.ts`, CLI command tests.
+
+  ### 4. Fallback strategy
+
+  **Options considered:**
+  1. Return the existing curated lists on any fetch failure, log warning
+  2. Throw — let UI surface error
+  3. Return empty list
+
+  **Decision:** Option 1 — degrade gracefully to static lists.
+
+  **Rationale:** Three common failure modes (no token, offline, provider error) must not break the picker. The old hardcoded lists become the offline fallback, reused rather than deleted.
+
+  ### 5. Catalog shape
+
+  **Options considered:**
+  1. Rich `CatalogEntry[]` DTO with pricing/free/context
+  2. Keep `string[]`, infer free from `:free` suffix client-side
+  3. Expose provider-specific raw responses
+
+  **Decision:** Option 1 — new `getModelCatalog()` returning `CatalogEntry[]`, keep `getSupportedModels()` as `Promise<string[]>` derived from it.
+
+  **Rationale:** The UI needs free-model flagging and pricing hints for informed selection. A normalized DTO in `application/ports/output/agents/` isolates the domain from vendor schemas.
+
+  **Normalized type sketch:**
+  ```ts
+  interface CatalogEntry {
+    id: string;
+    displayName: string;
+    description?: string;
+    isFree: boolean;
+    contextLength?: number;
+    pricing?: { input: number; output: number }; // per 1M tokens
+  }
+  ```
+
+  ### 6. UI search threshold
+
+  **Decision:** Show a client-side text filter when `models.length > 20`. Simple case-insensitive match against `id + displayName`.
+
+  ## API Contracts
+
+  ### OpenRouter — `GET https://openrouter.ai/api/v1/models`
+
+  - **Auth:** Optional (endpoint is public; pass bearer token only to filter to user-enabled models)
+  - **Response fields used:** `id`, `name`, `description`, `context_length`, `pricing.prompt`, `pricing.completion`
+  - **Free detection:** Either `id` ends in `:free` OR `pricing.prompt === "0" && pricing.completion === "0"`
+  - **Rate limit:** Not documented; low-risk with 1-hour cache
+
+  ### Together AI — `GET https://api.together.xyz/v1/models`
+
+  - **Auth:** Required — `Authorization: Bearer <TOGETHER_API_KEY>`
+  - **Response fields used:** `id`, `display_name`, `context_length`, `pricing.input`, `pricing.output`, `type`
+  - **Filter:** Only include `type === "chat"` or `type === "language"` entries (skip embedding/image/moderation)
+  - **Free detection:** `pricing.input === 0 && pricing.output === 0` (Together does not use a `:free` suffix)
+  - **Rate limit:** 429 when exceeded; cache strongly mitigates
+
+  ## Library Analysis
+
+  | Library                       | Version  | Purpose                           | Pros                          | Cons                          |
+  | ----------------------------- | -------- | --------------------------------- | ----------------------------- | ----------------------------- |
+  | node `fetch` (built-in)       | Node 22+ | HTTP calls to provider /models    | No new dep; already available | Manual retry/timeout handling |
+  | `@openrouter/ai-sdk-provider` | existing | Inference (NOT used for listing)  | Already installed for 086     | No model-listing API          |
+  | `@ai-sdk/openai-compatible`   | existing | Inference (NOT used for listing)  | Already installed for 086     | No model-listing API          |
+
+  No new runtime dependencies required. Test deps unchanged (vitest `vi.spyOn(globalThis, 'fetch')` patterns already used in the repo).
+
+  ## Security Considerations
+
+  - **API token never logged:** Fallback warning must redact token; use `[token:***]` in log lines
+  - **Cache key hashing:** Use `crypto.createHash('sha256').update(token).digest('hex').slice(0, 16)` — never store the raw token in the Map key, reduces risk of key material leaking via heap dumps
+  - **Request timeouts:** Set `AbortController` with 10-second timeout on all fetches; a hung provider must not hang the picker
+  - **No token → no request:** Together AI requires a token; if none is configured, skip the fetch entirely and return the static fallback without hitting the network
+  - **No CORS concern:** All calls happen server-side (factory runs in core, invoked by server action or CLI)
+
+  ## Performance Implications
+
+  - **First-load latency:** One HTTP round trip per provider on first picker open (~300–800 ms typical). Acceptable; picker has a `Loading…` state already
+  - **Cache hit path:** O(1) Map lookup, zero I/O, sub-ms
+  - **TTL refresh:** Lazy refresh on first call after expiry — no background timers, no memory leaks
+  - **Payload size:** OpenRouter response ~400 KB JSON (~300 models). Parsed once per TTL cycle, stored as ~50 KB normalized `CatalogEntry[]`. Fine.
+  - **UI rendering:** 300+ items in a scroll container without virtualization — fine for current Popover (CSS overflow scroll), but the search filter becomes the primary navigation tool above the 20-item threshold
+
+  ## Test Strategy
+
+  - **Unit (factory):** Mock `fetch` via `vi.spyOn(globalThis, 'fetch')` — cover cache hit, cache miss, TTL expiry, token rotation, fetch error fallback, non-2xx fallback, timeout abort
+  - **Unit (server action):** Mock factory's `getModelCatalog` — verify shape passthrough and error propagation
+  - **Unit (AgentModelPicker):** Existing tests extend with "free badge renders" and "search filters list" cases
+  - **Integration:** Skip live API calls in CI (flaky, rate-limited). The `tests/integration/infrastructure/services/agents/factory-sdk-executors.test.ts` stays focused on inference
+
+  ## Open Questions
+
+  All questions resolved.
+
+  ---
+
+  _Updated by `/shep-kit:research` — proceed with `/shep-kit:plan`_

@@ -17,10 +17,10 @@ import type { ExecFunction } from '@/infrastructure/services/git/worktree.servic
 
 vi.mock('node:fs', async () => {
   const actual = await vi.importActual<object>('node:fs');
-  return { ...actual, readFileSync: vi.fn() };
+  return { ...actual, readFileSync: vi.fn(), writeFileSync: vi.fn(), unlinkSync: vi.fn() };
 });
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 describe('GitPrService', () => {
   let mockExec: ExecFunction;
@@ -1226,6 +1226,48 @@ describe('GitPrService', () => {
       expect(mockExec).toHaveBeenCalledWith('git', ['fetch', 'origin'], { cwd: '/repo' });
       expect(mockExec).toHaveBeenCalledWith('git', ['pull', 'origin', 'main'], { cwd: '/repo' });
     });
+
+    it('should apply Shep Bot co-author branding to squash merge commit message', async () => {
+      vi.mocked(mockExec)
+        .mockRejectedValueOnce(new Error('no merge')) // merge --abort (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // checkout baseBranch
+        .mockResolvedValueOnce({ stdout: 'Squash commit\n', stderr: '' }) // merge --squash
+        .mockResolvedValueOnce({ stdout: 'M file.txt\n', stderr: '' }) // status --porcelain
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // commit --file
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // branch -d
+
+      await service.localMergeSquash('/repo', 'feat/test', 'main', 'feat: my feature');
+
+      // The commit message written to the temp file should include Shep Bot co-author
+      expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
+        expect.stringContaining('shep-merge-msg'),
+        expect.stringContaining('Co-Authored-By: Shep Bot'),
+        'utf8'
+      );
+    });
+
+    it('should strip Claude co-author trailer from squash merge commit message', async () => {
+      vi.mocked(mockExec)
+        .mockRejectedValueOnce(new Error('no merge')) // merge --abort (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // reset --hard HEAD (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // clean -fd (pre-cleanup)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // checkout baseBranch
+        .mockResolvedValueOnce({ stdout: 'Squash commit\n', stderr: '' }) // merge --squash
+        .mockResolvedValueOnce({ stdout: 'M file.txt\n', stderr: '' }) // status --porcelain
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // commit --file
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }); // branch -d
+
+      const msgWithClaude =
+        'feat: my feature\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>';
+      await service.localMergeSquash('/repo', 'feat/test', 'main', msgWithClaude);
+
+      const writtenContent = vi.mocked(writeFileSync).mock.calls[0][1] as string;
+      expect(writtenContent).not.toContain('Claude');
+      expect(writtenContent).not.toContain('anthropic.com');
+      expect(writtenContent).toContain('Co-Authored-By: Shep Bot');
+    });
   });
 
   describe('createGitHubRepo', () => {
@@ -1343,12 +1385,44 @@ describe('GitPrService', () => {
       );
     });
 
-    it('should wrap underlying git errors in GitPrError', async () => {
-      vi.mocked(mockExec).mockRejectedValueOnce(new Error('remote upstream already exists'));
+    it('should fall back to set-url when remote already exists', async () => {
+      vi.mocked(mockExec)
+        .mockRejectedValueOnce(new Error('remote upstream already exists'))
+        .mockResolvedValueOnce({ stdout: '', stderr: '' });
+
+      await service.addRemote('/repo', 'upstream', 'https://github.com/x/y');
+
+      expect(mockExec).toHaveBeenCalledWith(
+        'git',
+        ['remote', 'set-url', 'upstream', 'https://github.com/x/y'],
+        { cwd: '/repo' }
+      );
+    });
+
+    it('should throw GitPrError when both add and set-url fail', async () => {
+      vi.mocked(mockExec)
+        .mockRejectedValueOnce(new Error('remote upstream already exists'))
+        .mockRejectedValueOnce(new Error('no such remote'));
 
       await expect(
         service.addRemote('/repo', 'upstream', 'https://github.com/x/y')
       ).rejects.toThrow(GitPrError);
+    });
+  });
+
+  describe('pull', () => {
+    it('should run git pull in the given directory', async () => {
+      vi.mocked(mockExec).mockResolvedValueOnce({ stdout: '', stderr: '' });
+
+      await service.pull('/repo');
+
+      expect(mockExec).toHaveBeenCalledWith('git', ['pull'], { cwd: '/repo' });
+    });
+
+    it('should throw GitPrError when git pull fails', async () => {
+      vi.mocked(mockExec).mockRejectedValueOnce(new Error('Could not resolve host'));
+
+      await expect(service.pull('/repo')).rejects.toThrow(GitPrError);
     });
   });
 });

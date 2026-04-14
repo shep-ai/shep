@@ -23,9 +23,25 @@
           "name": "Cursor",
           "description": "סוכן קידוד Cursor AI"
         },
+        "cline": {
+          "name": "Cline",
+          "description": "Multi-provider agentic coding assistant with full tool use (requires cline CLI)"
+        },
         "devMock": {
           "name": "Dev (Mock)",
           "description": "מוק פיתוח מקומי — לא נדרש קובץ סוכן"
+        },
+        "openRouter": {
+          "name": "OpenRouter",
+          "description": "גישה למאות מודלי AI דרך ממשק OpenRouter API (נדרש מפתח API)"
+        },
+        "togetherAi": {
+          "name": "Together AI",
+          "description": "הסקה מהירה של מודלים בקוד פתוח דרך ממשק Together AI API (נדרש מפתח API)"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "description": "הרצת מודלי LLM מקומיים דרך Ollama (לא נדרש מפתח API, רץ על localhost)"
         },
         "aider": {
           "name": "Aider",

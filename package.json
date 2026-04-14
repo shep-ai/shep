@@ -1,6 +1,6 @@
 {
   "name": "@shepai/cli",
-  "version": "1.180.0",
+  "version": "1.183.0",
   "description": "Autonomous AI Native SDLC Platform - Automate the development cycle from idea to deploy",
   "type": "module",
   "license": "MIT",
@@ -184,6 +184,8 @@
   },
   "packageManager": "pnpm@10.30.0",
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^2.0.0",
+    "@ai-sdk/provider": "^3.0.8",
     "@anthropic-ai/claude-agent-sdk": "0.2.81",
     "@assistant-ui/react": "^0.12.19",
     "@cubone/react-file-manager": "^1.35.0",
@@ -194,6 +196,8 @@
     "@langchain/core": "^1.1.22",
     "@langchain/langgraph": "^1.1.4",
     "@langchain/langgraph-checkpoint-sqlite": "^1.0.1",
+    "@openrouter/ai-sdk-provider": "^2.5.1",
+    "ai": "^6.0.0",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "better-sqlite3": "^12.6.2",

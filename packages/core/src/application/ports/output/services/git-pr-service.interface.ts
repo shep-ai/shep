@@ -186,7 +186,7 @@ export interface IGitPrService {
   ): Promise<string>;
 
   /**
-   * Add a git remote to the local repository.
+   * Add a git remote to the local repository, or update its URL if it already exists.
    *
    * @param cwd - Working directory path
    * @param remoteName - Name for the remote (e.g. "origin")
@@ -194,6 +194,14 @@ export interface IGitPrService {
    * @throws GitPrError with GIT_ERROR code on failure
    */
   addRemote(cwd: string, remoteName: string, remoteUrl: string): Promise<void>;
+
+  /**
+   * Pull latest changes from the remote for the current branch.
+   *
+   * @param cwd - Working directory path
+   * @throws GitPrError with GIT_ERROR code on failure
+   */
+  pull(cwd: string): Promise<void>;
 
   /**
    * Detect the repository's default branch with robust fallback chain:

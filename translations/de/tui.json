@@ -14,9 +14,25 @@
           "description": "GitHub Copilot CLI (Standard: Claude Sonnet 4.5, erfordert Copilot-Abonnement)"
         },
         "cursor": { "name": "Cursor", "description": "Cursor KI-Coding-Agent" },
+        "cline": {
+          "name": "Cline",
+          "description": "Multi-provider agentic coding assistant with full tool use (requires cline CLI)"
+        },
         "devMock": {
           "name": "Dev (Mock)",
           "description": "Lokaler Entwicklungs-Mock — kein Agent-Binary erforderlich"
+        },
+        "openRouter": {
+          "name": "OpenRouter",
+          "description": "Zugriff auf hunderte KI-Modelle über OpenRouter API (API-Schlüssel erforderlich)"
+        },
+        "togetherAi": {
+          "name": "Together AI",
+          "description": "Schnelle Open-Source-Modellinferenz über Together AI API (API-Schlüssel erforderlich)"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "description": "Lokale LLMs über Ollama ausführen (kein API-Schlüssel erforderlich, läuft auf localhost)"
         },
         "aider": { "name": "Aider", "disabled": "(Demnächst verfügbar)" },
         "continue": { "name": "Continue", "disabled": "(Demnächst verfügbar)" }

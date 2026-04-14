@@ -26,6 +26,7 @@ describe('InitRemoteRepositoryUseCase', () => {
         .fn<() => Promise<string>>()
         .mockResolvedValue('https://github.com/octocat/my-project'),
       addRemote: vi.fn().mockResolvedValue(undefined),
+      pull: vi.fn().mockResolvedValue(undefined),
       getDefaultBranch: vi.fn().mockResolvedValue('main'),
       revParse: vi.fn().mockResolvedValue('abc123'),
       hasUncommittedChanges: vi.fn().mockResolvedValue(false),

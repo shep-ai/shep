@@ -46,9 +46,29 @@ export function createAgentSelectConfig() {
         description: t('tui:prompts.selectAgent.choices.cursor.description'),
       },
       {
+        name: t('tui:prompts.selectAgent.choices.cline.name'),
+        value: AgentType.Cline,
+        description: t('tui:prompts.selectAgent.choices.cline.description'),
+      },
+      {
         name: t('tui:prompts.selectAgent.choices.devMock.name'),
         value: AgentType.Dev,
         description: t('tui:prompts.selectAgent.choices.devMock.description'),
+      },
+      {
+        name: t('tui:prompts.selectAgent.choices.openRouter.name'),
+        value: AgentType.OpenRouter,
+        description: t('tui:prompts.selectAgent.choices.openRouter.description'),
+      },
+      {
+        name: t('tui:prompts.selectAgent.choices.togetherAi.name'),
+        value: AgentType.TogetherAi,
+        description: t('tui:prompts.selectAgent.choices.togetherAi.description'),
+      },
+      {
+        name: t('tui:prompts.selectAgent.choices.ollama.name'),
+        value: AgentType.Ollama,
+        description: t('tui:prompts.selectAgent.choices.ollama.description'),
       },
       {
         name: t('tui:prompts.selectAgent.choices.aider.name'),

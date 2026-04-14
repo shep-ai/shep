@@ -82,4 +82,41 @@ describe('AgentSettingsSection', () => {
     );
     expect(screen.getByText('Choose your AI coding agent and authentication method')).toBeDefined();
   });
+
+  it('renders token input when OpenRouter is selected with token auth', () => {
+    render(
+      <AgentSettingsSection
+        agent={{ type: AgentType.OpenRouter, authMethod: AgentAuthMethod.Token, token: 'or-key' }}
+      />
+    );
+    expect(screen.getByTestId('agent-token-input')).toBeDefined();
+  });
+
+  it('renders token input when Together AI is selected with token auth', () => {
+    render(
+      <AgentSettingsSection
+        agent={{ type: AgentType.TogetherAi, authMethod: AgentAuthMethod.Token, token: 'tai-key' }}
+      />
+    );
+    expect(screen.getByTestId('agent-token-input')).toBeDefined();
+  });
+
+  it('renders helper text for SDK agents requiring API key', () => {
+    render(
+      <AgentSettingsSection
+        agent={{ type: AgentType.OpenRouter, authMethod: AgentAuthMethod.Token }}
+      />
+    );
+    expect(screen.getByText(/requires an API key/i)).toBeDefined();
+  });
+
+  it('renders Ollama with session auth (no token required)', () => {
+    render(
+      <AgentSettingsSection
+        agent={{ type: AgentType.Ollama, authMethod: AgentAuthMethod.Session }}
+      />
+    );
+    expect(screen.getByTestId('agent-type-select')).toBeDefined();
+    expect(screen.queryByTestId('agent-token-input')).toBeNull();
+  });
 });

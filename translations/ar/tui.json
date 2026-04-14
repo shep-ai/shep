@@ -23,9 +23,25 @@
           "name": "Cursor",
           "description": "وكيل البرمجة بالذكاء الاصطناعي Cursor"
         },
+        "cline": {
+          "name": "Cline",
+          "description": "Multi-provider agentic coding assistant with full tool use (requires cline CLI)"
+        },
         "devMock": {
           "name": "Dev (Mock)",
           "description": "محاكاة تطوير محلية — لا يتطلب ملف وكيل ثنائي"
+        },
+        "openRouter": {
+          "name": "OpenRouter",
+          "description": "الوصول إلى مئات نماذج الذكاء الاصطناعي عبر واجهة برمجة تطبيقات OpenRouter (يتطلب مفتاح API)"
+        },
+        "togetherAi": {
+          "name": "Together AI",
+          "description": "استدلال سريع لنماذج مفتوحة المصدر عبر واجهة برمجة تطبيقات Together AI (يتطلب مفتاح API)"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "description": "تشغيل نماذج LLM محلية عبر Ollama (لا يتطلب مفتاح API، يعمل على localhost)"
         },
         "aider": {
           "name": "Aider",

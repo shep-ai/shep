@@ -1,0 +1,510 @@
+=== Unit Test Results ===
+Run: 2026-04-12
+Command: pnpm test:unit
+
+ ✓  node  tests/unit/infrastructure/services/agents/executors/codex-cli-executor.test.ts (49 tests) 389ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/gemini-cli-executor.test.ts (43 tests) 404ms
+ ✓  node  tests/unit/application/use-cases/upgrade/upgrade-cli.use-case.test.ts (16 tests) 852ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/cursor-executor.test.ts (39 tests) 278ms
+✓ Daemon spawned at http://localhost:4050
+ ✓  node  tests/unit/presentation/cli/commands/upgrade.command.test.ts (26 tests) 2333ms
+✓ Daemon spawned at http://localhost:8080
+ ✓  node  tests/unit/infrastructure/services/agents/executors/copilot-cli-executor.test.ts (51 tests) 498ms
+ ✓  node  tests/unit/infrastructure/services/agents/agent-registry.service.test.ts (8 tests) 1572ms
+       ✓ should pre-register the analyze-repository agent  1560ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts (47 tests) 1859ms
+     ✓ should soft-reset spec commits when commitSpecs=false  467ms
+     ✓ should not modify commits when commitSpecs=true  425ms
+     ✓ should not modify commits for non-spec phases  428ms
+     ✓ should be a no-op when agent did not commit spec files  517ms
+✓ Daemon spawned at http://localhost:4050
+ ✓  node  tests/unit/infrastructure/spec-yaml-backward-compatibility.test.ts (4 tests) 545ms
+     ✓ should validate current feature spec.yaml against schema  419ms
+✓ Daemon spawned at http://localhost:4050
+ ✓  node  tests/unit/infrastructure/services/tool-installer/tool-installer.service.test.ts (19 tests) 198ms
+ ✓  node  tests/unit/infrastructure/services/filesystem/node-application-file-system.service.test.ts (21 tests) 498ms
+✓ Daemon spawned at http://localhost:4050
+ ✓  node  tests/unit/domain/factories/spec-yaml-artifact-parsing.test.ts (4 tests) 587ms
+     ✓ spec.yaml parses into FeatureArtifact with all required fields  573ms
+✓ Daemon spawned at http://localhost:4050
+✓ Daemon spawned at http://localhost:4050
+ ✓  node  tests/unit/translations/language-switching.test.ts (43 tests) 303ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/claude-code-executor.test.ts (38 tests) 568ms
+✓ Daemon spawned at http://localhost:4050
+ ✓  node  tests/unit/infrastructure/di/container-reject-token.test.ts (1 test) 6584ms
+     ✓ resolves RejectAgentRunUseCase via string token after initialization  6583ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/node-helpers.test.ts (59 tests) 146ms
+✓ Daemon spawned at http://localhost:4050
+ ✓  node  tests/unit/infrastructure/di/container-idempotency.test.ts (3 tests) 6792ms
+     ✓ isContainerInitialized() returns false before init  6439ms
+✓ Daemon spawned at http://localhost:4050
+ ✓  node  tests/unit/infrastructure/di/container-session-registrations.test.ts (6 tests) 7232ms
+     ✓ resolves ListAgentSessionsUseCase after initialization  6300ms
+     ✓ resolves IAgentSessionRepository:codex-cli as CodexCliSessionRepository  309ms
+ ✓  node  tests/unit/use-cases/features/adopt-branch.use-case.test.ts (21 tests) 202ms
+✓ Daemon spawned at http://localhost:4050
+ ✓  node  tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts (31 tests) 506ms
+ ✓  node  tests/unit/application/use-cases/agents/get-agent-session.use-case.test.ts (8 tests) 35ms
+ ✓  node  tests/unit/presentation/cli/commands/session/show.command.test.ts (16 tests) 367ms
+ ✓  node  tests/unit/translations/translation-completeness.test.ts (139 tests) 473ms
+✓ Daemon spawned at http://localhost:4050
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge.node.test.ts (38 tests) 299ms
+✓ Daemon spawned at http://localhost:7070
+✗ Daemon failed to start (exit code 1).
+✗ Daemon failed to start (exit code 1).
+✗ Daemon failed to start (exit code 1).
+ ✓  node  tests/unit/commands/daemon/start-daemon.test.ts (18 tests) 6610ms
+       ✓ calls findAvailablePort with DEFAULT_PORT when no port option given  541ms
+       ✓ calls findAvailablePort with the provided port override  504ms
+       ✓ spawns the daemon process using process.execPath and _serve args  502ms
+       ✓ propagates process.execArgv to the child  504ms
+       ✓ spawns with detached: true  508ms
+       ✓ spawns with windowsHide: true to suppress console window on Windows  503ms
+       ✓ spawns with stdout and stderr redirected to log file fd  513ms
+       ✓ opens the log file for appending  502ms
+       ✓ calls child.unref() after the settle check  510ms
+       ✓ writes daemon.json with pid, port, and startedAt  510ms
+       ✓ writes a valid ISO 8601 timestamp to startedAt  506ms
+       ✓ opens the browser with the correct URL  501ms
+       ✓ opens the browser with the custom port URL when --port is given  501ms
+ ✓  node  tests/unit/domain/factories/spec-yaml-parser.test.ts (80 tests) 847ms
+     ✓ should parse without throwing  649ms
+ ✓  node  tests/unit/application/use-cases/features/create-feature.use-case.test.ts (57 tests) 306ms
+ ✓  node  tests/unit/application/use-cases/features/auto-resolve-merged-branches.use-case.test.ts (15 tests) 412ms
+ ✓  node  tests/unit/infrastructure/services/interactive/interactive-session.service.test.ts (42 tests) 855ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/feature-agent-graph.test.ts (17 tests) 2023ms
+       ✓ should interrupt at plan in allow-prd gates  319ms
+ ✓  node  tests/unit/commands/status.command.test.ts (12 tests) 360ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/evidence.node.test.ts (38 tests) 239ms
+ ✓  node  tests/unit/commands/_serve.command.test.ts (12 tests) 66ms
+ ✓  node  tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts (55 tests) 524ms
+ ✓  node  tests/unit/infrastructure/services/notifications/notification-watcher.service.test.ts (25 tests) 158ms
+ ✓  node  tests/unit/presentation/cli/commands/restart.command.test.ts (14 tests) 23ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent-worker.test.ts (34 tests) 265ms
+ ✓  node  tests/unit/application/use-cases/features/resume-feature.use-case.test.ts (19 tests) 162ms
+ ✓  node  tests/unit/commands/start.command.test.ts (9 tests) 85ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts (20 tests) 115ms
+ ✓  node  tests/unit/infrastructure/services/agents/conflict-resolution/conflict-resolution.service.test.ts (12 tests) 26ms
+ ✓  node  tests/unit/presentation/cli/commands/session/ls.command.test.ts (14 tests) 83ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/fast-feature-agent-graph.test.ts (13 tests) 711ms
+       ✓ should call executor for fast-implement and evidence sub-agent  313ms
+ ✓  node  tests/unit/infrastructure/services/port.service.test.ts (9 tests) 68ms
+ ✓  node  tests/unit/electron/ipc/channels.test.ts (9 tests) 17ms
+ ✓  node  tests/unit/electron/main.test.ts (33 tests) 252ms
+ ✓  node  tests/unit/scripts/spec-validate.test.ts (16 tests) 216ms
+ ✓  node  tests/unit/infrastructure/services/agents/sessions/codex-cli-session.repository.test.ts (22 tests) 153ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts (18 tests) 172ms
+ ✓  node  tests/unit/infrastructure/services/git/git-fork.service.test.ts (17 tests) 265ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/analyze-repository-graph.test.ts (12 tests) 328ms
+ ✓  node  tests/unit/application/use-cases/features/update-feature-pinned-config.use-case.test.ts (11 tests) 18ms
+ ✓  node  tests/unit/presentation/cli/commands/install.command.test.ts (27 tests) 301ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge.node.ci-watch.test.ts (33 tests) 371ms
+ ✓  node  tests/unit/presentation/cli/commands/settings/ide.command.test.ts (10 tests) 20ms
+ ✓  node  tests/unit/infrastructure/services/agents/structured-agent-caller.service.test.ts (15 tests) 227ms
+ ✓  node  tests/unit/infrastructure/services/shep-instance.service.test.ts (7 tests) 62ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/del.command.test.ts (19 tests) 348ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/new.command.test.ts (46 tests) 246ms
+ ✓  node  tests/unit/commands/stop.command.test.ts (11 tests) 199ms
+ ✓  node  tests/unit/application/use-cases/features/auto-archive-completed.use-case.test.ts (9 tests) 116ms
+ ✓  node  tests/unit/application/use-cases/repositories/init-remote-repository.use-case.test.ts (14 tests) 347ms
+ ✓  node  tests/unit/electron/adapters/electron-desktop-notifier.test.ts (8 tests) 28ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/ls.command.test.ts (25 tests) 153ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts (20 tests) 277ms
+ ✓  node  tests/unit/presentation/tui/i18n.test.ts (6 tests) 14ms
+ ✓  node  tests/unit/infrastructure/services/ide-launchers/json-driven-ide-launcher.service.test.ts (22 tests) 23ms
+ ✓  node  tests/unit/presentation/cli/commands/repo/ls.command.test.ts (8 tests) 54ms
+ ✓  node  tests/unit/presentation/cli/commands/repo/show.command.test.ts (9 tests) 97ms
+ ✓  node  tests/unit/application/use-cases/applications/application-files.use-cases.test.ts (11 tests) 162ms
+ ✓  node  tests/unit/infrastructure/services/agents/streaming/event-channel.test.ts (8 tests) 40ms
+ ✓  node  tests/unit/infrastructure/services/agents/agent-runner.service.test.ts (23 tests) 38ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent-process.service.test.ts (18 tests) 62ms
+ ✓  node  tests/unit/use-cases/features/create/metadata-generator.test.ts (24 tests) 173ms
+ ✓  node  tests/unit/infrastructure/services/deployment/deployment.service.test.ts (33 tests) 326ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/show.command.test.ts (11 tests) 407ms
+ ✓  node  tests/unit/infrastructure/services/attachment-storage.service.test.ts (11 tests) 280ms
+ ✓  node  tests/unit/infrastructure/services/notifications/desktop-notifier.test.ts (9 tests) 9ms
+ ✓  node  tests/unit/application/use-cases/agents/run-agent.use-case.test.ts (9 tests) 11ms
+ ✓  node  tests/unit/infrastructure/services/web-server.service.test.ts (12 tests) 151ms
+ ✓  node  tests/unit/presentation/cli/commands/run.command.test.ts (10 tests) 10ms
+ ✓  node  tests/unit/presentation/cli/commands/log-viewer.test.ts (5 tests) 44ms
+ ✓  node  tests/unit/commands/feat/adopt.command.test.ts (12 tests) 185ms
+ ✓  node  tests/unit/application/use-cases/features/delete-feature.use-case.test.ts (36 tests) 411ms
+ ✓  node  tests/unit/infrastructure/services/git/get-branch-sync-status.test.ts (4 tests) 9ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/dev-executor.service.test.ts (21 tests) 176ms
+ ✓  node  tests/unit/infrastructure/services/agents/langgraph/nodes/fast-implement.node.test.ts (29 tests) 95ms
+ ✓  node  tests/unit/presentation/cli/commands/repo/add.command.test.ts (17 tests) 102ms
+✗ Failed to unarchive feature
+ ✓  node  tests/unit/infrastructure/services/deployment/deployment.service.logs.test.ts (18 tests) 202ms
+✗ Failed to unarchive feature
+ ✓  node  tests/unit/presentation/cli/commands/feat/unarchive.command.test.ts (5 tests) 92ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/evidence-output-parser.test.ts (65 tests) 140ms
+ ✓  node  tests/unit/infrastructure/services/agents/heartbeat.test.ts (3 tests) 31ms
+ ✓  node  tests/unit/presentation/tui/wizards/onboarding/onboarding.wizard.test.ts (7 tests) 101ms
+ ✓  node  tests/unit/presentation/tui/wizards/github-import.wizard.test.ts (19 tests) 113ms
+ ✓  node  tests/unit/commands/index.integration.test.ts (12 tests) 126ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts (79 tests) 160ms
+ ✓  node  tests/unit/application/use-cases/agents/reject-agent-run-iteration.test.ts (11 tests) 75ms
+ ✓  node  tests/unit/presentation/cli/commands/ide-open.command.test.ts (14 tests) 115ms
+ ✓  node  tests/unit/application/use-cases/agents/approve-agent-run.use-case.test.ts (10 tests) 14ms
+ ✓  node  tests/unit/infrastructure/services/daemon/daemon-pid.service.test.ts (11 tests) 213ms
+✗ Failed to review feature
+✗ Failed to review feature
+✗ Failed to review feature
+ ✓  node  tests/unit/infrastructure/services/skill-injector.service.test.ts (21 tests) 59ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/review.command.test.ts (7 tests) 94ms
+ ✓  node  tests/unit/scripts/spec-generate-md.test.ts (12 tests) 159ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/start.command.test.ts (6 tests) 276ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/validate.node.test.ts (8 tests) 89ms
+ ✓  node  tests/unit/presentation/tui/wizards/prd-review.wizard.test.ts (5 tests) 12ms
+ ✓  node  tests/unit/commands/daemon/stop-daemon.test.ts (16 tests) 251ms
+ ✓  node  tests/unit/presentation/cli/commands/ui.command.test.ts (14 tests) 44ms
+ ✓  node  tests/unit/infrastructure/services/external/github-repository.service.test.ts (32 tests) 73ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts (81 tests) 144ms
+ ✓  node  tests/unit/infrastructure/services/agents/agent-validator.service.test.ts (14 tests) 13ms
+ ✓  node  tests/unit/application/use-cases/agents/show-agent-run.use-case.test.ts (8 tests) 9ms
+ ✓  node  tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts (12 tests) 122ms
+✗ Failed to reject feature
+ ✓  node  tests/unit/presentation/cli/commands/feat/reject.command.test.ts (6 tests) 25ms
+ ✓  node  tests/unit/presentation/cli/commands/settings/agent.command.test.ts (11 tests) 106ms
+ ✓  node  tests/unit/application/use-cases/repositories/import-github-repository.use-case.test.ts (27 tests) 31ms
+ ✓  node  tests/unit/application/use-cases/agents/stop-agent-run.use-case.test.ts (5 tests) 37ms
+ ✓  node  tests/unit/presentation/cli/ui/output.test.ts (11 tests) 12ms
+ ✓  node  tests/unit/infrastructure/agents/feature-agent/node-helpers-yaml.test.ts (24 tests) 171ms
+ ✓  node  tests/unit/application/use-cases/features/unarchive-feature.use-case.test.ts (11 tests) 92ms
+ ✓  node  tests/unit/domain/factories/settings-defaults.factory.test.ts (36 tests) 87ms
+ ✓  node  tests/unit/presentation/cli/commands/settings/init.command.test.ts (4 tests) 109ms
+ ✓  node  tests/unit/presentation/cli/commands/settings/model.command.test.ts (10 tests) 156ms
+ ✓  node  tests/unit/application/use-cases/features/create/create-feature-from-remote.use-case.test.ts (20 tests) 26ms
+ ✓  node  tests/unit/infrastructure/services/external/github-repository.service.getViewerPermission.test.ts (9 tests) 52ms
+✗ Failed to approve feature
+ ✓  node  tests/unit/electron/bootstrap.test.ts (13 tests) 224ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/approve.command.test.ts (4 tests) 218ms
+✗ Failed to archive feature
+✗ Failed to archive feature
+ ✓  node  tests/unit/presentation/cli/commands/feat/archive.command.test.ts (8 tests) 282ms
+ ✓  node  tests/unit/infrastructure/services/git/worktree.service.test.ts (30 tests) 313ms
+ ✓  node  tests/unit/infrastructure/services/agents/agent-executor-factory.test.ts (26 tests) 274ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/evidence-prompts.test.ts (36 tests) 16ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.test.ts (25 tests) 61ms
+ ✓  node  tests/unit/electron/update-checker.test.ts (8 tests) 15ms
+ ✓  node  tests/unit/infrastructure/services/file-dialog.service.test.ts (21 tests) 34ms
+ ✓  node  tests/unit/domain/generated/spec-artifact-schema-mapping.test.ts (133 tests) 102ms
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features.use-case.test.ts (13 tests) 175ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/resolve-waiting-feature.test.ts (9 tests) 38ms
+ ✓  node  tests/unit/application/use-cases/features/show-feature.use-case.test.ts (6 tests) 7ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-sync.test.ts (41 tests) 335ms
+ ✓  node  tests/unit/application/use-cases/applications/create-application.use-case.test.ts (13 tests) 231ms
+ ✓  node  tests/unit/infrastructure/services/folder-dialog.service.test.ts (20 tests) 62ms
+ ✓  node  tests/unit/application/use-cases/agents/review-feature.use-case.test.ts (8 tests) 27ms
+ ✓  node  tests/unit/infrastructure/services/agents/streaming/streaming-executor-proxy.test.ts (8 tests) 16ms
+ ✓  node  tests/unit/application/use-cases/repositories/add-repository.use-case.test.ts (8 tests) 50ms
+ ✓  node  tests/unit/infrastructure/services/external/jira-ticket.service.test.ts (7 tests) 7ms
+ ✓  node  tests/unit/infrastructure/services/agents/agent-executor-provider.test.ts (5 tests) 7ms
+ ✓  node  tests/unit/application/use-cases/features/archive-feature.use-case.test.ts (17 tests) 49ms
+ ✓  node  tests/unit/translations/translation-files.test.ts (16 tests) 15ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/logs.command.test.ts (6 tests) 21ms
+ ✓  node  tests/unit/application/use-cases/agents/configure-agent.use-case.test.ts (11 tests) 79ms
+ ✓  node  tests/unit/presentation/cli/i18n.test.ts (8 tests) 17ms
+ ✓  node  tests/unit/application/use-cases/repositories/list-github-repositories.use-case.test.ts (6 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/repositories/delete-repository.use-case.test.ts (10 tests) 78ms
+ ✓  node  tests/unit/application/use-cases/agents/check-agent-auth.use-case.test.ts (7 tests) 5ms
+ ✓  node  tests/unit/infrastructure/services/agents/executors/claude-code-interactive-executor.test.ts (11 tests) 19ms
+ ✓  node  tests/unit/domain/value-objects/tool-installation-status.test.ts (20 tests) 106ms
+ ✓  node  tests/unit/application/use-cases/update-settings.use-case.test.ts (12 tests) 24ms
+ ✓  node  tests/unit/infrastructure/services/agents/phase-timing-context.test.ts (20 tests) 81ms
+ ✓  node  tests/unit/presentation/tui/wizards/agent-config.wizard.test.ts (4 tests) 97ms
+ ✓  node  tests/unit/application/use-cases/agents/list-agent-runs.use-case.test.ts (4 tests) 8ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.evidence.test.ts (20 tests) 130ms
+ ✓  node  tests/unit/application/use-cases/features/update/update-feature-lifecycle.use-case.test.ts (4 tests) 17ms
+ ✓  node  tests/unit/infrastructure/services/auto-archive/auto-archive-watcher.service.test.ts (12 tests) 18ms
+ ✓  node  tests/unit/presentation/cli/commands/settings/show.command.test.ts (6 tests) 18ms
+ ✓  node  tests/unit/infrastructure/services/notifications/notification-bus.test.ts (6 tests) 156ms
+ ✓  node  tests/unit/application/use-cases/repositories/sync-repository-main.use-case.test.ts (4 tests) 11ms
+ ✓  node  tests/unit/electron/tray.test.ts (17 tests) 137ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/feature.mapper.test.ts (26 tests) 13ms
+ ✓  node  tests/unit/application/use-cases/tools/validate-tool-availability.use-case.test.ts (5 tests) 10ms
+ ✓  node  tests/unit/application/use-cases/load-settings.use-case.test.ts (6 tests) 13ms
+ ✓  node  tests/unit/application/use-cases/agents/approve-agent-run-payload.test.ts (5 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/agents/reject-agent-run.use-case.test.ts (10 tests) 59ms
+ ✓  node  tests/unit/application/use-cases/agents/delete-agent-run.use-case.test.ts (5 tests) 8ms
+ ✓  node  tests/unit/use-cases/features/create/slug-resolver.test.ts (8 tests) 24ms
+ ✓  node  tests/unit/presentation/tui/wizards/onboarding/steps/workflow-defaults.step.test.ts (5 tests) 16ms
+ ✓  node  tests/unit/electron/resolve-web-dir.test.ts (8 tests) 7ms
+ ✓  node  tests/unit/application/use-cases/tools/list-tools.use-case.test.ts (4 tests) 13ms
+ ✓  node  tests/unit/infrastructure/services/notifications/notification.service.test.ts (7 tests) 12ms
+ ✓  node  tests/unit/application/ports/agent-runtime.interface.test.ts (11 tests) 8ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/state.test.ts (18 tests) 10ms
+ ✓  node  tests/unit/application/use-cases/deployments/start-feature-deployment.use-case.test.ts (6 tests) 11ms
+ ✓  node  tests/unit/infrastructure/services/git/worktree.service.add-existing.test.ts (8 tests) 10ms
+ ✓  node  tests/unit/infrastructure/services/browser-opener.service.test.ts (13 tests) 26ms
+ ✓  node  tests/unit/domain/generated/language-enum.test.ts (11 tests) 6ms
+ ✓  node  tests/unit/presentation/cli/commands/repo/resolve-repository.test.ts (6 tests) 9ms
+ ✓  node  tests/unit/application/use-cases/features/poll-upstream-pr.use-case.test.ts (8 tests) 26ms
+ ✓  node  tests/unit/infrastructure/services/external/github-issue.service.test.ts (6 tests) 8ms
+ ✓  node  tests/unit/application/ports/output/services/git-pr-service.interface.test.ts (26 tests) 10ms
+ ✓  node  tests/unit/application/use-cases/tools/install-tool.use-case.test.ts (6 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/agents/list-agent-sessions.use-case.test.ts (9 tests) 73ms
+ ✓  node  tests/unit/electron/preload.test.ts (8 tests) 92ms
+ ✓  node  tests/unit/infrastructure/services/ide-launchers/compute-worktree-path.test.ts (6 tests) 20ms
+ ✓  node  tests/unit/infrastructure/services/deployment/log-ring-buffer.test.ts (15 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/agents/validate-agent-auth.use-case.test.ts (5 tests) 6ms
+ ✓  node  tests/unit/application/use-cases/features/get-branch-sync-status.use-case.test.ts (6 tests) 10ms
+ ✓  node  tests/unit/application/ports/agent-executor.interface.test.ts (11 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/deployments/start-repository-deployment.use-case.test.ts (4 tests) 58ms
+ ✓  node  tests/unit/electron/port-conflict.test.ts (5 tests) 9ms
+ ✓  node  tests/unit/infrastructure/services/agents/lifecycle-context.test.ts (10 tests) 7ms
+ ✓  node  tests/unit/application/use-cases/repositories/list-github-organizations.use-case.test.ts (4 tests) 8ms
+ ✓  node  tests/unit/infrastructure/services/tool-installer/tool-metadata.test.ts (9 tests) 6ms
+ ✓  node  tests/unit/application/ports/output/services/github-repository-service.interface.test.ts (26 tests) 8ms
+ ✓  node  tests/unit/presentation/tui/prompts/prd-review-summary.prompt.test.ts (5 tests) 36ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/plan.schema.test.ts (9 tests) 6ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/requirements-prompt.test.ts (8 tests) 7ms
+ ✓  node  tests/unit/application/use-cases/features/list-features.use-case.test.ts (5 tests) 7ms
+ ✓  node  tests/unit/application/use-cases/tools/launch-tool.use-case.test.ts (4 tests) 6ms
+ ✓  node  tests/unit/application/use-cases/settings/complete-onboarding.use-case.test.ts (6 tests) 8ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/application.mapper.test.ts (24 tests) 28ms
+ ✓  node  tests/unit/application/use-cases/projects/create-project.use-case.test.ts (13 tests) 10ms
+ ✓  node  tests/unit/presentation/tui/prompts/prd-review-question.prompt.test.ts (7 tests) 4ms
+ ✓  node  tests/unit/electron/adapters/electron-browser-opener.test.ts (9 tests) 9ms
+ ✓  node  tests/unit/infrastructure/services/agents/application-creation/application-creation-prompt.builder.test.ts (15 tests) 13ms
+ ✓  node  tests/unit/presentation/tui/prompts/agent-select.prompt.test.ts (4 tests) 9ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.getFailureLogs.test.ts (5 tests) 8ms
+ ✓  node  tests/unit/electron/app-wiring.test.ts (5 tests) 9ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/repair.node.test.ts (7 tests) 43ms
+ ✓  node  tests/unit/presentation/cli/commands/session/index.command.test.ts (5 tests) 9ms
+ ✓  node  tests/unit/infrastructure/services/interactive/feature-context.builder.test.ts (10 tests) 80ms
+ ✓  node  tests/unit/application/use-cases/terminal/create-terminal-session.use-case.test.ts (3 tests) 10ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/merge-output-parser.test.ts (19 tests) 17ms
+ ✓  node  tests/unit/application/use-cases/deployments/list-deployments.use-case.test.ts (2 tests) 5ms
+ ✓  node  tests/unit/infrastructure/services/settings-service-update.test.ts (4 tests) 6ms
+ ✓  node  tests/unit/application/use-cases/initialize-settings.use-case.test.ts (8 tests) 7ms
+ ✓  node  tests/unit/application/services/agents/agent-session-repository.registry.test.ts (4 tests) 14ms
+ ✓  node  tests/unit/domain/generated/skill-injection-types.test.ts (8 tests) 4ms
+ ✓  node  tests/unit/application/use-cases/deployments/get-deployment-status.use-case.test.ts (3 tests) 6ms
+ ✓  node  tests/unit/application/use-cases/deployments/stop-deployment.use-case.test.ts (3 tests) 6ms
+ ✓  node  tests/unit/domain/factories/settings-defaults-onboarding.test.ts (3 tests) 5ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/commit-specs-flag.test.ts (8 tests) 9ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/research.schema.test.ts (5 tests) 5ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/spec.schema.test.ts (17 tests) 9ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/schemas/validation.test.ts (10 tests) 44ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-message.mapper.test.ts (7 tests) 5ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/repository.mapper.test.ts (24 tests) 8ms
+ ✓  node  tests/unit/application/use-cases/ide/launch-ide.use-case.test.ts (8 tests) 7ms
+ ✓  node  tests/unit/infrastructure/services/cross-platform-deps.test.ts (3 tests) 6ms
+ ✓  node  tests/unit/presentation/cli/commands/feat/show-phase-timing-rejections.test.ts (6 tests) 41ms
+ ✓  node  tests/unit/use-cases/features/branch-name-utils.test.ts (33 tests) 15ms
+ ✓  node  tests/unit/domain/prd-approval-types.test.ts (8 tests) 5ms
+ ✓  node  tests/unit/infrastructure/services/deployment/parse-port.test.ts (13 tests) 6ms
+ ✓  node  tests/unit/application/ports/external-issue-fetcher.interface.test.ts (4 tests) 4ms
+ ✓  node  tests/unit/infrastructure/services/git/pr-branding.test.ts (8 tests) 5ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge.prompt.test.ts (6 tests) 42ms
+ ✓  node  tests/unit/infrastructure/services/agents/sessions/stub-session.repository.test.ts (6 tests) 4ms
+ ✓  node  tests/unit/application/ports/output/services/ide-launcher-service.interface.test.ts (7 tests) 4ms
+ ✓  node  tests/unit/domain/errors/session-not-found.error.test.ts (4 tests) 5ms
+ ✓  node  tests/unit/presentation/cli/ui/tables.test.ts (8 tests) 5ms
+ ✓  node  tests/unit/infrastructure/services/agents/conflict-resolution/conflict-resolution.prompt.test.ts (10 tests) 5ms
+ ✓  node  tests/unit/application/use-cases/repositories/list-repositories.use-case.test.ts (2 tests) 5ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch.test.ts (10 tests) 7ms
+ ✓  node  tests/unit/application/use-cases/settings/check-onboarding-status.use-case.test.ts (2 tests) 5ms
+ ✓  node  tests/unit/domain/generated/agent-type-codex-cli.test.ts (2 tests) 3ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/interactive-session.mapper.test.ts (8 tests) 5ms
+ ✓  node  tests/unit/domain/generated/agent-type-copilot-cli.test.ts (2 tests) 3ms
+ ✓  node  tests/unit/infrastructure/services/shep-directory.service.test.ts (2 tests) 23ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/write-spec-file-atomic.test.ts (4 tests) 97ms
+ ✓  node  tests/unit/domain/lifecycle-gates.test.ts (3 tests) 3ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.ci-watch-fix.test.ts (8 tests) 4ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/parse-worker-args.test.ts (17 tests) 54ms
+ ✓  web  tests/unit/presentation/web/components/common/prd-questionnaire/prd-questionnaire.test.tsx (25 tests) 5020ms
+       ✓ hides header by default (showHeader=false)  586ms
+       ✓ renders the current question with number prefix and step dots  1093ms
+       ✓ renders options as button elements with letter prefixes  300ms
+       ✓ chat input submit calls onReject with input text  391ms
+       ✓ isProcessing=true disables option buttons, nav buttons, and chat input  341ms
+       ✓ submitting revision input calls onReject with feedback  390ms
+       ✓ approve button is disabled when isRejecting is true  358ms
+ ✓  web  tests/unit/presentation/web/components/common/reject-feedback-dialog/reject-feedback-dialog.test.tsx (17 tests) 4000ms
+       ✓ renders dialog content when open is true  723ms
+       ✓ is disabled when feedback is whitespace only  380ms
+       ✓ is enabled when feedback has content  690ms
+       ✓ calls onConfirm with trimmed feedback on confirm click  653ms
+       ✓ resets feedback when dialog reopens  332ms
+ ✓  web  tests/unit/presentation/web/components/common/repository-node/repository-node.test.tsx (44 tests) 6926ms
+       ✓ renders IDE and Shell buttons when repositoryPath is provided  1094ms
+       ✓ IDE button click calls openInIde  598ms
+       ✓ Shell button click calls openInShell  340ms
+       ✓ action button click does not trigger parent onClick  488ms
+       ✓ shows error icon on IDE button when ideError is set  335ms
+       ✓ resets the deleteFromDisk toggle when the dialog is reopened  523ms
+ ✓  web  tests/unit/presentation/web/components/common/delete-feature-dialog/delete-feature-dialog.test.tsx (31 tests) 7137ms
+       ✓ renders dialog content when open is true  779ms
+       ✓ renders feature name in description  353ms
+       ✓ renders cleanup checkbox checked by default  480ms
+       ✓ calls onConfirm with cleanup=false when cleanup checkbox is unchecked  724ms
+       ✓ disables delete button when isDeleting is true  351ms
+       ✓ resets cascade checkbox to unchecked when dialog reopens  346ms
+       ✓ close-PR checkbox should re-enable and re-check when cleanup is re-checked  337ms
+       ✓ resets close-PR checkbox to checked when dialog reopens  539ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/settings-page-client.test.tsx (8 tests) 6131ms
+     ✓ renders heading text "Settings"  2228ms
+     ✓ renders all six section components  709ms
+     ✓ passes shepHome and dbFileSize to database section  670ms
+     ✓ handles missing featureFlags gracefully  463ms
+     ✓ renders terminal select in environment section  456ms
+     ✓ renders shell select in environment section  572ms
+     ✓ renders PR blocked notification toggle  560ms
+     ✓ renders Merge review ready notification toggle  471ms
+ ✓  web  tests/unit/presentation/web/components/common/add-repository-button/add-repository-button.test.tsx (15 tests) 6572ms
+     ✓ renders button that opens popover on click  1479ms
+     ✓ popover shows "Local folder" and "From GitHub" options  717ms
+     ✓ "Local folder" calls pickFolder and onSelect  412ms
+     ✓ "From GitHub" opens GitHubImportDialog  430ms
+     ✓ popover closes after selecting local folder  402ms
+       ✓ calls onSelect with path when native picker succeeds  320ms
+       ✓ does not trigger fallback when native picker is cancelled (null)  314ms
+       ✓ calls onSelect when folder is selected in fallback dialog  369ms
+       ✓ closes dialog without calling onSelect when fallback dialog is cancelled  473ms
+       ✓ does not call onSelect when dialog is cancelled  309ms
+       ✓ resets showReactPicker when dialog closes  311ms
+ ✓  web  tests/unit/presentation/web/features/skills/skills-page-client.test.tsx (15 tests) 5806ms
+     ✓ renders page header with "Skills" title  994ms
+     ✓ search input filters skills by name  300ms
+     ✓ search input filters skills by description  421ms
+     ✓ category filter shows only skills in selected category  427ms
+     ✓ search and category filter combine  628ms
+     ✓ clicking "All" category button shows all categories  699ms
+     ✓ shows "No matching skills" when filters yield no results  402ms
+     ✓ clears filters when "Clear filters" action is clicked  458ms
+     ✓ opens drawer when a skill card is clicked  351ms
+     ✓ closes drawer when dismissed  706ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx (33 tests) 6076ms
+       ✓ renders four tab triggers when hasPlan is true  838ms
+       ✓ clicking Activity tab triggers phase timings fetch  383ms
+       ✓ clicking Activity tab again does not trigger another fetch (cache hit)  326ms
+       ✓ resets to Overview tab when featureId changes  369ms
+       ✓ does not pass readOnly when lifecycle=review (action bar present)  315ms
+ ✓  web  tests/unit/presentation/web/components/common/server-log-viewer/server-log-viewer.test.tsx (12 tests) 1766ms
+       ✓ renders dialog content when open is true  764ms
+ ✓  web  tests/unit/presentation/web/components/common/github-import-dialog/github-repo-browser.test.tsx (12 tests) 1877ms
+     ✓ calls onSelect when repo clicked  641ms
+     ✓ filters repos via search input  515ms
+ ✓  web  tests/unit/presentation/web/features/skills/skill-detail-drawer.test.tsx (16 tests) 2640ms
+     ✓ renders skill display name as sheet title when open  660ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/workflow-settings-section.test.tsx (15 tests) 4087ms
+     ✓ renders all 5 Switch toggles  647ms
+     ✓ toggling hide ci status switch calls updateSettingsAction with hideCiStatus: true  648ms
+     ✓ toggling hide ci status switch off calls updateSettingsAction with hideCiStatus: false  563ms
+ ✓  web  tests/unit/presentation/web/common/feature-node/feature-node.test.tsx (51 tests) 4209ms
+     ✓ renders phase badge for all lifecycle phases  327ms
+ ✓  web  tests/unit/presentation/web/features/features-canvas/features-canvas.test.tsx (20 tests) 4438ms
+     ✓ empty state button fires onAddFeature  545ms
+       ✓ renders feature node with lifecycle=implementation and state=running  508ms
+       ✓ renders graph with mix of fast-mode and full-pipeline features  714ms
+ ✓  web  tests/unit/presentation/web/layouts/app-sidebar.test.tsx (10 tests) 4646ms
+     ✓ renders Control Center nav item in header  610ms
+     ✓ groups features by status into Action Needed, In Progress, and Done sections  321ms
+     ✓ fires onFeatureClick with featureId when a feature is clicked  1626ms
+     ✓ renders Settings nav item in header linking to /settings  584ms
+     ✓ shows repo group even when there is only one repository  421ms
+     ✓ calls onAddFeature with repository path when add-feature button is clicked  344ms
+ ✓  web  tests/unit/presentation/web/common/floating-action-button.test.tsx (10 tests) 1334ms
+     ✓ shows action items when clicked  548ms
+ ✓  web  tests/unit/presentation/web/features/control-center/welcome-agent-setup.test.tsx (6 tests) 1634ms
+     ✓ shows model list after selecting an agent with models  769ms
+     ✓ completes after selecting agent and model  414ms
+ ✓  web  tests/unit/presentation/web/components/common/github-import-dialog/github-url-input.test.tsx (10 tests) 2074ms
+     ✓ calls onSubmit with valid GitHub URL (HTTPS)  866ms
+ ✓  web  tests/unit/presentation/web/components/features/tools/tool-detail-drawer.test.tsx (11 tests) 2218ms
+     ✓ renders tool name and description when open  728ms
+ ✓  web  tests/unit/presentation/web/features/application-page/use-ide-state.test.ts (11 tests) 996ms
+     ✓ refreshes the tree (debounced) when any change event fires  357ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/agent-settings-section.test.tsx (7 tests) 1300ms
+     ✓ renders agent type select with current value  441ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review.test.tsx (38 tests) 3065ms
+       ✓ renders PR number as clickable external link with correct href and target  734ms
+ ✓  web  tests/unit/presentation/web/components/common/tech-decisions-review/tech-decisions-review.test.tsx (13 tests) 2345ms
+       ✓ renders approve button  645ms
+ ✓  web  tests/unit/presentation/web/components/common/github-import-dialog/github-import-dialog.test.tsx (6 tests) 2510ms
+     ✓ renders dialog with two tabs when open  1207ms
+     ✓ URL tab submission triggers import action  423ms
+     ✓ shows error on import failure  363ms
+ ✓  web  tests/unit/presentation/web/common/repo-group.test.tsx (11 tests) 1053ms
+     ✓ hides children when collapsed  429ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/environment-settings-section.test.tsx (7 tests) 1480ms
+     ✓ renders editor select  458ms
+ ✓  web  tests/unit/presentation/web/components/features/control-center/control-center-integration.test.tsx (15 tests) 1668ms
+ ✓  web  tests/unit/presentation/web/components/common/base-drawer/base-drawer.test.tsx (21 tests) 2377ms
+       ✓ renders children content when open=true  605ms
+ ✓  web  tests/unit/presentation/web/layouts/app-shell.test.tsx (9 tests) 1695ms
+     ✓ renders children within the dashboard layout  395ms
+     ✓ marks Control Center as active for / pathname  583ms
+ ✓  web  tests/unit/presentation/web/components/common/drawer-action-bar/drawer-action-bar.test.tsx (6 tests) 1717ms
+     ✓ plays approve sound when approve button is clicked (no onReject)  646ms
+     ✓ calls onReject when revision is submitted via submit button  554ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/overview-tab.test.tsx (45 tests) 1759ms
+       ✓ displays PR number as link  465ms
+ ✓  web  tests/unit/presentation/web/features/control-center/control-center.test.tsx (3 tests) 1131ms
+     ✓ renders the control-center container  467ms
+     ✓ renders feature nodes when initialNodes has feature nodes  467ms
+ ✓  web  tests/unit/presentation/web/components/common/prd-questionnaire/prd-questionnaire-sound.test.tsx (4 tests) 1326ms
+     ✓ plays select sound when option is clicked  718ms
+     ✓ plays navigate sound when Previous button is clicked  351ms
+ ✓  web  tests/unit/presentation/web/features/control-center/use-control-center-state.test.tsx (36 tests) 707ms
+ ✓  web  tests/unit/presentation/web/hooks/use-deployment-logs.test.ts (15 tests) 288ms
+ ✓  web  tests/unit/presentation/web/components/common/sidebar-collapse-toggle/sidebar-collapse-toggle.test.tsx (2 tests) 625ms
+     ✓ plays collapse sound when sidebar is open and being collapsed  534ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/plan-tab.test.tsx (13 tests) 598ms
+ ✓  web  tests/unit/presentation/web/layouts/sidebar.test.tsx (5 tests) 623ms
+     ✓ highlights active nav item based on pathname prop  454ms
+ ✓  web  tests/unit/presentation/web/card.test.tsx (7 tests) 587ms
+     ✓ renders with CardFooter  398ms
+ ✓  web  tests/unit/presentation/web/components/common/action-button/action-button-sound.test.tsx (2 tests) 433ms
+     ✓ plays click sound when button is clicked  392ms
+ ✓  web  tests/unit/presentation/web/common/repository-node/repository-node.test.tsx (7 tests) 652ms
+ ✓  web  tests/unit/presentation/web/lib/skills.test.ts (48 tests) 246ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/feature-flags-settings-section.test.tsx (4 tests) 754ms
+     ✓ renders 6 feature flag toggles with descriptions  516ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/diff-view.test.tsx (13 tests) 671ms
+ ✓  web  tests/unit/presentation/web/alert.test.tsx (4 tests) 781ms
+     ✓ renders with default variant  659ms
+ ✓  web  tests/unit/presentation/web/components/common/product-decisions-summary/product-decisions-summary.test.tsx (9 tests) 348ms
+ ✓  web  tests/unit/presentation/web/features/control-center/control-center-empty-state.test.tsx (3 tests) 546ms
+     ✓ renders agent setup first, not repo section  326ms
+ ✓  web  tests/unit/presentation/web/common/feature-status-group.test.tsx (3 tests) 332ms
+     ✓ renders status label text  309ms
+ ✓  web  tests/unit/presentation/web/hooks/use-graph-state.test.tsx (24 tests) 399ms
+ ✓  web  tests/unit/presentation/web/common/feature-status-badges.test.tsx (5 tests) 366ms
+ ✓  web  tests/unit/presentation/web/components/common/inline-attachments/inline-attachments.test.tsx (13 tests) 315ms
+ ✓  web  tests/unit/presentation/web/hooks/use-deploy-action.test.ts (19 tests) 192ms
+ ✓  web  tests/unit/presentation/web/app-layout-integration.test.tsx (4 tests) 279ms
+ ✓  web  tests/unit/presentation/web/components/common/tech-decisions-review/tech-decisions-review-sound.test.tsx (2 tests) 253ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/database-settings-section.test.tsx (4 tests) 230ms
+ ✓  web  tests/unit/presentation/web/api/tools-install-stream.test.ts (4 tests) 58ms
+ ✓  web  tests/unit/presentation/web/components/common/repository-node/use-repository-actions.test.ts (15 tests) 57ms
+ ✓  web  tests/unit/presentation/web/common/sidebar-section-header.test.tsx (3 tests) 236ms
+ ✓  web  tests/unit/presentation/web/api/deployment-logs-sse.test.ts (10 tests) 121ms
+ ✓  web  tests/unit/presentation/web/api/directory-list.test.ts (16 tests) 216ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer/use-feature-actions.test.ts (24 tests) 255ms
+ ✓  web  tests/unit/presentation/web/hooks/use-agent-events.test.ts (13 tests) 176ms
+ ✓  web  tests/unit/presentation/web/badge.test.tsx (3 tests) 224ms
+ ✓  web  tests/unit/presentation/web/components/common/ci-status-badge/ci-status-badge.test.tsx (3 tests) 233ms
+ ✓  web  tests/unit/presentation/web/common/loading-skeleton.test.tsx (9 tests) 124ms
+ ✓  web  tests/unit/presentation/web/hooks/use-viewport-persistence.test.ts (21 tests) 145ms
+ ✓  web  tests/unit/presentation/web/hooks/use-version.test.ts (4 tests) 156ms
+ ✓  web  tests/unit/presentation/web/hooks/use-sound-action.test.ts (28 tests) 212ms
+ ✓  web  tests/unit/presentation/web/api/tools-install.test.ts (4 tests) 277ms
+ ✓  web  tests/unit/presentation/web/common/elapsed-time.test.tsx (5 tests) 291ms
+ ✓  web  tests/unit/presentation/web/use-theme.test.tsx (6 tests) 123ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-tree-table.test.tsx (3 tests) 125ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/use-tab-data-fetch.test.ts (16 tests) 209ms
+ ✓  web  tests/unit/presentation/web/hooks/use-drawer-sync.test.ts (11 tests) 136ms
+ ✓  web  tests/unit/presentation/web/actions/open-shell.test.ts (17 tests) 11ms
+ ✓  web  tests/unit/presentation/web/hooks/use-notifications.test.ts (9 tests) 137ms
+ ✓  web  tests/unit/presentation/web/i18n.test.tsx (7 tests) 109ms
+ ✓  web  tests/unit/presentation/web/hooks/sidebar-features-context.test.tsx (11 tests) 115ms
+ ✓  web  tests/unit/presentation/web/lib/rtl-fonts.test.ts (7 tests) 100ms
+
+=== Summary ===
+ Test Files  418 passed (418)
+      Tests  5963 passed (5963)
+   Start at  19:31:26
+   Duration  120.22s (transform 40.14s, setup 116.08s, import 214.27s, tests 283.79s, environment 239.33s)

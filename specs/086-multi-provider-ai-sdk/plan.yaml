@@ -1,0 +1,277 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "multi-provider-ai-sdk"
+summary: >
+  Integrate Vercel AI SDK v6 as a unified HTTP-based execution path alongside existing CLI
+  executors. Uses an abstract AiSdkBaseExecutorService with provider-injected LanguageModel
+  instances. OpenRouter uses @openrouter/ai-sdk-provider; Together AI uses @ai-sdk/openai-compatible
+  (workaround for @ai-sdk/togetherai v6 incompatibility). All changes are purely additive — zero
+  modifications to IAgentExecutor, IAgentExecutorFactory, or any existing executor. Implementation
+  follows bottom-up layering: TypeSpec enums first, then infrastructure executors, then factory
+  wiring, then auth detection, then presentation layer updates. 18 tasks across 5 phases.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - "Vercel AI SDK (ai@^6.0.0) - generateText, streamText, generateObject core APIs"
+  - "@openrouter/ai-sdk-provider@^2.5.1 - OpenRouter community provider for AI SDK v6"
+  - "@ai-sdk/openai-compatible@^3.x - OpenAI-compatible provider for Together AI workaround"
+  - "zod@^4.3.6 - already present, peer dependency of ai package for generateObject schemas"
+  - "TypeSpec - AgentType enum extensions (openrouter, together-ai)"
+  - "tsyringe - DI container (no factory constructor changes needed)"
+
+relatedLinks:
+  - title: "Vercel AI SDK v6 Documentation"
+    url: "https://ai-sdk.dev/docs/introduction"
+  - title: "AI SDK generateText Reference"
+    url: "https://ai-sdk.dev/docs/reference/ai-sdk-core/generate-text"
+  - title: "AI SDK streamText Reference"
+    url: "https://ai-sdk.dev/docs/reference/ai-sdk-core/stream-text"
+  - title: "AI SDK generateObject Reference"
+    url: "https://ai-sdk.dev/docs/reference/ai-sdk-core/generate-object"
+  - title: "OpenRouter AI SDK Provider"
+    url: "https://ai-sdk.dev/providers/community-providers/openrouter"
+  - title: "AI SDK OpenAI Compatible Providers"
+    url: "https://ai-sdk.dev/providers/openai-compatible-providers"
+  - title: "@ai-sdk/togetherai v6 Compatibility Issue (#11780)"
+    url: "https://github.com/vercel/ai/issues/11780"
+
+# Structured implementation phases
+phases:
+  - id: "phase-1"
+    name: "Foundation - Dependencies and Domain Model"
+    description: >
+      Install npm packages (ai, @openrouter/ai-sdk-provider, @ai-sdk/openai-compatible), extend
+      the TypeSpec AgentType enum with OpenRouter and TogetherAi values, regenerate output.ts, and
+      fix any type errors in existing code caused by the new enum values (exhaustive switches, test
+      fixtures). This phase must come first because every subsequent phase depends on the new
+      AgentType values existing in the generated domain types.
+    parallel: false
+
+  - id: "phase-2"
+    name: "Infrastructure - SDK Executor Implementation"
+    description: >
+      Build the core executor layer: abstract AiSdkBaseExecutorService base class implementing
+      IAgentExecutor via AI SDK generateText/streamText/generateObject, then concrete
+      OpenRouterExecutorService and TogetherAiExecutorService subclasses. This is the heart of the
+      feature — the base class handles all AI SDK response mapping, streaming conversion, error
+      handling, timeout management, and token usage extraction. Subclasses only construct the
+      provider-specific LanguageModel and set feature flags. Fully testable in isolation with
+      mocked AI SDK functions.
+    parallel: false
+
+  - id: "phase-3"
+    name: "Integration - Factory, Auth, and Validator Wiring"
+    description: >
+      Wire the new executors into existing infrastructure: add factory switch cases and curated
+      model list constants, update auth detection for SDK agent token-presence checks, add
+      AGENT_METADATA entries in CheckAgentAuthUseCase, and handle SDK agents in the validator
+      service. This phase bridges the new executors to the application layer without touching
+      any interfaces.
+    parallel: false
+
+  - id: "phase-4"
+    name: "Presentation - TUI and Web UI Updates"
+    description: >
+      Add OpenRouter and Together AI to all presentation layers: TUI agent selection prompt with
+      i18n strings across all languages, TUI wizard token auth auto-forcing, Web UI
+      AGENT_TYPE_OPTIONS and TOKEN_REQUIRED_AGENTS set, agent-type-icons registry with brand
+      icons, and Storybook stories for the updated agent settings component.
+    parallel: false
+
+  - id: "phase-5"
+    name: "Validation - Integration Tests and Full Suite Verification"
+    description: >
+      Integration tests verifying factory creates and caches SDK executors correctly, structured
+      agent caller routes to generateObject for SDK executors, and auth check flow returns correct
+      results for SDK agents. Run the complete test suite (unit + integration), build, lint, and
+      typecheck to confirm zero regressions across the entire codebase.
+    parallel: false
+
+# File change tracking
+filesToCreate:
+  - "packages/core/src/infrastructure/services/agents/common/executors/ai-sdk-base-executor.service.ts"
+  - "packages/core/src/infrastructure/services/agents/common/executors/openrouter-executor.service.ts"
+  - "packages/core/src/infrastructure/services/agents/common/executors/together-ai-executor.service.ts"
+  - "tests/unit/infrastructure/services/agents/executors/ai-sdk-base-executor.service.test.ts"
+  - "tests/unit/infrastructure/services/agents/executors/openrouter-executor.service.test.ts"
+  - "tests/unit/infrastructure/services/agents/executors/together-ai-executor.service.test.ts"
+  - "tests/unit/infrastructure/services/agents/factory-sdk-executors.test.ts"
+
+filesToModify:
+  - "tsp/common/enums/agent-config.tsp"
+  - "packages/core/src/domain/generated/output.ts"
+  - "packages/core/package.json"
+  - "pnpm-lock.yaml"
+  - "packages/core/src/infrastructure/services/agents/common/agent-executor-factory.service.ts"
+  - "packages/core/src/infrastructure/services/agent-auth-detector/platform-agent-auth-detector.service.ts"
+  - "packages/core/src/infrastructure/services/agents/common/agent-validator.service.ts"
+  - "packages/core/src/application/use-cases/agents/check-agent-auth.use-case.ts"
+  - "src/presentation/tui/prompts/agent-select.prompt.ts"
+  - "src/presentation/tui/wizards/agent-config.wizard.ts"
+  - "src/presentation/web/components/features/settings/agent-settings-section.tsx"
+  - "src/presentation/web/components/common/feature-node/agent-type-icons.tsx"
+  - "translations/en/tui.json"
+  - "tests/unit/infrastructure/services/agents/agent-executor-factory.service.test.ts"
+  - "tests/unit/application/use-cases/agents/check-agent-auth.use-case.test.ts"
+  - "tests/unit/infrastructure/services/agents/agent-auth-detector.service.test.ts"
+  - "tests/unit/presentation/tui/prompts/agent-select.prompt.test.ts"
+  - "tests/unit/presentation/web/components/features/settings/agent-settings-section.test.tsx"
+  - "src/presentation/web/components/features/settings/agent-settings-section.stories.tsx"
+
+# Open questions (all resolved during research)
+openQuestions: []
+
+# Markdown content (the full plan document)
+content: |
+  ## Status
+
+  - **Phase:** Planning (Complete)
+  - **Updated:** 2026-04-09
+
+  ## Architecture Overview
+
+  The existing agent execution architecture follows a clean factory pattern where each agent type
+  has a concrete IAgentExecutor implementation. The factory creates, caches, and returns executors
+  based on AgentType. All existing executors are CLI-based — they spawn subprocesses and parse
+  stdout/stderr.
+
+  The new SDK executors introduce a parallel HTTP-based execution path:
+
+  ```
+  IAgentExecutor (port interface — UNCHANGED)
+    ├── ClaudeCodeExecutorService     (CLI subprocess — UNCHANGED)
+    ├── CursorExecutorService         (CLI subprocess — UNCHANGED)
+    ├── GeminiCliExecutorService      (CLI subprocess — UNCHANGED)
+    ├── CodexCliExecutorService       (CLI subprocess — UNCHANGED)
+    ├── CopilotCliExecutorService     (CLI subprocess — UNCHANGED)
+    ├── DevAgentExecutorService       (mock — UNCHANGED)
+    └── AiSdkBaseExecutorService      (NEW — abstract, AI SDK HTTP)
+        ├── OpenRouterExecutorService (NEW — @openrouter/ai-sdk-provider)
+        └── TogetherAiExecutorService (NEW — @ai-sdk/openai-compatible)
+  ```
+
+  SDK executors implement the same IAgentExecutor interface with zero modifications. The factory
+  gains two switch cases. The cache, model lists, CLI info, and supported agents arrays are extended.
+  No interfaces change. No existing executor code changes.
+
+  ### Layer Placement (Clean Architecture)
+
+  - **Domain**: AgentType enum gains two values (TypeSpec → generated output.ts). No other domain changes.
+  - **Application**: Zero changes to port interfaces. CheckAgentAuthUseCase gains two AGENT_METADATA entries with null toolId (same pattern as dev/aider/continue).
+  - **Infrastructure**: Three new executor files in `executors/`. Factory switch cases + static model list constants. Auth detector gains SDK agent type handling. Validator gains SDK agent early return.
+  - **Presentation**: TUI prompt choices + i18n strings. Web UI dropdown entries + TOKEN_REQUIRED_AGENTS set. Agent icon registry gains two entries with brand icons.
+
+  ## Key Design Decisions
+
+  ### 1. Together AI via @ai-sdk/openai-compatible (not @ai-sdk/togetherai)
+
+  The official @ai-sdk/togetherai v2.0.41 is incompatible with AI SDK v6 — it uses the v2 model
+  specification while v6 requires v3 (GitHub issue #11780, open since Jan 2026, no release).
+  Together AI's API is OpenAI-compatible at https://api.together.xyz/v1, so we use
+  @ai-sdk/openai-compatible's createOpenAICompatible() with that baseURL. When @ai-sdk/togetherai
+  v3 ships, swapping the provider constructor is a one-line change in TogetherAiExecutorService
+  with zero base class changes.
+
+  ### 2. Abstract Base Class for SDK Executors
+
+  All AI SDK response mapping logic lives in a single abstract AiSdkBaseExecutorService:
+  - generateText() → AgentExecutionResult (text + usage + metadata)
+  - streamText().textStream → AsyncIterable<AgentExecutionStreamEvent> (progress events + result)
+  - generateObject() with jsonSchema() → structured_output in metadata
+  - Error catching with APICallError type guard → enhanced rethrow with provider context
+  - Timeout via native AI SDK timeout parameter
+  - Token usage mapping (inputTokens, outputTokens, cache tokens)
+
+  Concrete subclasses only construct the provider LanguageModel and set agentType + feature flags.
+  This avoids ~200 lines of duplicated adapter code per provider and makes future SDK providers
+  trivial to add.
+
+  ### 3. Streaming via textStream AsyncIterable
+
+  streamText().textStream is already AsyncIterable<string>. Each chunk maps directly to a progress
+  AgentExecutionStreamEvent with zero buffering. After iteration completes, result.usage and
+  result.text provide the final result event. The adapter is a simple async generator with
+  for-await-of — no custom ReadableStream or TransformStream.
+
+  ### 4. Structured Output via jsonSchema() Wrapper
+
+  The ai package exports jsonSchema() which wraps raw JSON Schema objects for generateObject().
+  This keeps IAgentExecutor.execute()'s outputSchema parameter as a plain object (no Zod dependency
+  in the interface) while gaining provider-native structured output enforcement. The base executor
+  detects outputSchema in options and routes to generateObject() instead of generateText().
+
+  ### 5. Error Handling — Catch, Enhance, Rethrow
+
+  CLI executors throw on subprocess failures. Caller code (use cases, StructuredAgentCallerService)
+  uses try/catch. SDK executors follow the same throw-on-failure contract. AI SDK's APICallError
+  is caught via APICallError.isInstance() type guard, enhanced with provider name and specific
+  guidance for 401/403 (check API key) and 429 (rate limit info), then rethrown. Network and
+  timeout errors are similarly enhanced. API keys are NEVER included in error messages.
+
+  ### 6. Timeout — Native AI SDK Parameter
+
+  AI SDK v6 accepts a timeout parameter (milliseconds) that handles AbortController creation and
+  cleanup internally. No manual setTimeout + abort needed. Default: 300000ms (5 min) when
+  options.timeout is not specified.
+
+  ### 7. Auth Detection — Token Presence Only
+
+  SDK agents have no CLI binary. Auth detection returns authenticated=true when AgentConfig.token
+  is a non-empty string. No API validation calls. Consistent with CLI agents checking binary
+  presence rather than credential validity. Invalid keys fail clearly at execute() time.
+
+  ### 8. Static Model Lists in Factory Constants
+
+  Follows the established pattern (CLAUDE_CODE_MODELS, GEMINI_CLI_MODELS, etc.). New constants
+  OPENROUTER_MODELS and TOGETHER_AI_MODELS are curated lists of popular coding-capable models.
+  getSupportedModels() stays synchronous with zero network calls.
+
+  ### 9. CheckAgentAuthUseCase — null toolId Pattern
+
+  SDK agents are added to AGENT_METADATA with toolId=null and binaryName=null. When toolId is null,
+  the use case returns installed=true and authenticated=true immediately — the same path used by
+  dev, Aider, and Continue. Token validity is checked at execution time, not during auth status.
+
+  ### 10. Web UI TOKEN_REQUIRED_AGENTS Pattern
+
+  Mirrors SESSION_ONLY_AGENTS = new Set([CopilotCli]). A new TOKEN_REQUIRED_AGENTS = new Set
+  ([OpenRouter, TogetherAi]) forces authMethod to Token and always shows the API key input when
+  an SDK agent is selected. Symmetric pattern, minimal code change.
+
+  ## Implementation Strategy
+
+  Bottom-up dependency ordering ensures each phase builds on a stable foundation:
+
+  **Phase 1** installs packages and extends AgentType. Must come first because every file
+  importing AgentType sees the new values. Test fixtures with exhaustive enum matching need
+  updates.
+
+  **Phase 2** builds executors in isolation. Fully testable with mocked AI SDK functions — no
+  factory, no DI, no UI needed. TDD with vi.mock('ai') on generateText/streamText/generateObject.
+
+  **Phase 3** wires executors into existing infrastructure. Small, focused changes to factory,
+  auth detector, validator, and use case. Each independently testable.
+
+  **Phase 4** updates UI touchpoints. TUI and Web UI changes reference AgentType enum values
+  that now exist. i18n strings added to English (other languages use English fallback).
+
+  **Phase 5** runs integration tests and full validation suite to catch any regressions.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | @ai-sdk/togetherai releases v3 during implementation | No impact — @ai-sdk/openai-compatible is the chosen path. Migration to native provider is a one-line swap documented in the executor class. |
+  | New AgentType enum values break exhaustive switches or test fixtures | Phase 1 includes a dedicated task to grep and fix all exhaustive AgentType references across the codebase. |
+  | AI SDK v6 API surface differs from documentation | All executor logic in base class with comprehensive mocked unit tests. API surface verified against installed package types at compile time. |
+  | Model IDs change or become unavailable | Static named constants — easy to update. Model selection at execution time with sensible defaults. Invalid IDs produce clear provider errors. |
+  | API key accidentally logged or serialized | Keys flow through existing AgentConfig.token (encrypted SQLite). Error messages say "API key is missing or invalid" without echoing the key. Covered by error handling tests. |
+  | Streaming latency exceeds NFR-8 (100ms to first event) | textStream yields directly from AI SDK SSE parser with zero intermediate buffering. Simple for-await-of adapter. |
+  | Test isolation — real HTTP calls in unit tests | All AI SDK functions mocked at module level via vi.mock('ai'). Tests verify mock interactions, never network. |
+  | Web UI stories missing for new agent options | Phase 4 includes dedicated Storybook story task for agent-settings-section with SDK agent scenarios. |
+
+  ---
+
+  _Planning complete. Ready for implementation._

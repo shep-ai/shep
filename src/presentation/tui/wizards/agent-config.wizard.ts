@@ -7,11 +7,14 @@
 
 import { select, password } from '@inquirer/prompts';
 
-import { AgentAuthMethod, type AgentType } from '@/domain/generated/output.js';
+import { AgentAuthMethod, AgentType } from '@/domain/generated/output.js';
 import { createAgentSelectConfig } from '../prompts/agent-select.prompt.js';
 import { createAuthMethodConfig } from '../prompts/auth-method.prompt.js';
 import { getTuiI18n } from '../i18n.js';
 import { shepTheme } from '../themes/shep.theme.js';
+
+/** Agent types that require token-based auth (API key only, no CLI binary). */
+const TOKEN_REQUIRED_AGENTS = new Set<AgentType>([AgentType.OpenRouter, AgentType.TogetherAi]);
 
 /**
  * Result returned by the agent configuration wizard.
@@ -35,7 +38,10 @@ export interface AgentConfigResult {
 export async function agentConfigWizard(): Promise<AgentConfigResult> {
   const agentType = await select<AgentType>(createAgentSelectConfig());
 
-  const authMethod = await select<AgentAuthMethod>(createAuthMethodConfig());
+  const isTokenRequired = TOKEN_REQUIRED_AGENTS.has(agentType);
+  const authMethod = isTokenRequired
+    ? AgentAuthMethod.Token
+    : await select<AgentAuthMethod>(createAuthMethodConfig());
 
   const result: AgentConfigResult = {
     type: agentType,

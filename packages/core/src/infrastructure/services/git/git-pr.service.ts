@@ -27,7 +27,7 @@ import { join } from 'node:path';
 import yaml from 'js-yaml';
 import { PrStatus } from '../../../domain/generated/output.js';
 import type { ExecFunction } from './worktree.service.js';
-import { applyPrBranding } from './pr-branding.js';
+import { applyPrBranding, applyCommitBranding } from './pr-branding.js';
 
 @injectable()
 export class GitPrService implements IGitPrService {
@@ -344,9 +344,10 @@ export class GitPrService implements IGitPrService {
       if (status.trim().length > 0) {
         // Write commit message to a temp file to avoid shell splitting on Windows
         // (DI-injected execFile uses shell: true on Windows, which splits on spaces)
+        const brandedMessage = applyCommitBranding(commitMessage);
         const msgFile = join(tmpdir(), `shep-merge-msg-${Date.now()}.txt`);
         try {
-          writeFileSync(msgFile, commitMessage, 'utf8');
+          writeFileSync(msgFile, brandedMessage, 'utf8');
           await this.execFile('git', ['commit', '--file', msgFile], { cwd });
         } finally {
           try {
@@ -885,6 +886,20 @@ export class GitPrService implements IGitPrService {
   async addRemote(cwd: string, remoteName: string, remoteUrl: string): Promise<void> {
     try {
       await this.execFile('git', ['remote', 'add', remoteName, remoteUrl], { cwd });
+    } catch {
+      // Remote may already exist (e.g. gh repo clone auto-adds upstream for forks)
+      // — update its URL instead of failing.
+      try {
+        await this.execFile('git', ['remote', 'set-url', remoteName, remoteUrl], { cwd });
+      } catch (setUrlError) {
+        throw this.parseGitError(setUrlError);
+      }
+    }
+  }
+
+  async pull(cwd: string): Promise<void> {
+    try {
+      await this.execFile('git', ['pull'], { cwd });
     } catch (error) {
       throw this.parseGitError(error);
     }

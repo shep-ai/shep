@@ -23,9 +23,25 @@
           "name": "Cursor",
           "description": "Agent de codage IA Cursor"
         },
+        "cline": {
+          "name": "Cline",
+          "description": "Multi-provider agentic coding assistant with full tool use (requires cline CLI)"
+        },
         "devMock": {
           "name": "Dev (Mock)",
           "description": "Mock de développement local — aucun binaire d'agent requis"
+        },
+        "openRouter": {
+          "name": "OpenRouter",
+          "description": "Accédez à des centaines de modèles IA via l'API OpenRouter (clé API requise)"
+        },
+        "togetherAi": {
+          "name": "Together AI",
+          "description": "Inférence rapide de modèles open-source via l'API Together AI (clé API requise)"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "description": "Exécuter des LLMs locaux via Ollama (pas de clé API requise, fonctionne sur localhost)"
         },
         "aider": {
           "name": "Aider",

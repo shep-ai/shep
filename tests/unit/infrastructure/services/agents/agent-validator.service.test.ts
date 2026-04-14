@@ -205,4 +205,33 @@ describe('AgentValidatorService', () => {
       expect(mockExec).toHaveBeenCalledWith('cursor-agent', ['--version']);
     });
   });
+
+  describe('isAvailable - SDK agents (no binary required)', () => {
+    it('should return available with version "sdk" for openrouter without calling execFn', async () => {
+      const result = await service.isAvailable(AgentType.OpenRouter);
+
+      expect(result.available).toBe(true);
+      expect(result.version).toBe('sdk');
+      expect(result.error).toBeUndefined();
+      expect(mockExec).not.toHaveBeenCalled();
+    });
+
+    it('should return available with version "sdk" for together-ai without calling execFn', async () => {
+      const result = await service.isAvailable(AgentType.TogetherAi);
+
+      expect(result.available).toBe(true);
+      expect(result.version).toBe('sdk');
+      expect(result.error).toBeUndefined();
+      expect(mockExec).not.toHaveBeenCalled();
+    });
+
+    it('should return available with version "sdk" for ollama without calling execFn', async () => {
+      const result = await service.isAvailable(AgentType.Ollama);
+
+      expect(result.available).toBe(true);
+      expect(result.version).toBe('sdk');
+      expect(result.error).toBeUndefined();
+      expect(mockExec).not.toHaveBeenCalled();
+    });
+  });
 });

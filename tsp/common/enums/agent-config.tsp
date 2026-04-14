@@ -7,8 +7,8 @@
  *
  * ## Supported Agents
  *
- * Claude Code, Codex CLI, Copilot CLI, and Cursor are fully supported. Other agents
- * (Gemini CLI, Aider, Continue) are listed for future
+ * Claude Code, Codex CLI, Copilot CLI, Cursor, Cline, OpenRouter, Together AI, and Ollama
+ * are fully supported. Other agents (Gemini CLI, Aider, Continue) are listed for future
  * extensibility and appear as "Coming Soon" in the TUI wizard.
  */
 /**
@@ -19,6 +19,10 @@
  * codex-cli    ← Currently supported
  * copilot-cli  ← Currently supported
  * cursor       ← Currently supported
+ * cline        ← Currently supported (CLI-based, multi-provider agentic)
+ * openrouter   ← Currently supported (SDK-based, HTTP API)
+ * together-ai  ← Currently supported (SDK-based, HTTP API)
+ * ollama       ← Currently supported (SDK-based, local inference)
  * gemini-cli   ← Coming Soon
  * aider        ← Coming Soon
  * continue     ← Coming Soon
@@ -74,6 +78,40 @@ enum AgentType {
    */
   @doc("Cursor AI coding agent")
   Cursor: "cursor",
+
+  /**
+   * Cline CLI agentic coding assistant.
+   * Supported — uses the `cline` CLI binary with headless mode for autonomous execution.
+   * Supports multiple LLM backends (Anthropic, OpenRouter, Together AI, Ollama, etc.)
+   * with full agentic capabilities (file system access, terminal execution, tool use).
+   */
+  @doc("Cline multi-provider agentic coding assistant")
+  Cline: "cline",
+
+  /**
+   * OpenRouter API provider.
+   * Supported — SDK-based executor using the Vercel AI SDK over HTTP.
+   * Provides access to multiple model vendors (Anthropic, OpenAI, Meta, Google, etc.)
+   * through a single API key.
+   */
+  @doc("OpenRouter multi-provider API")
+  OpenRouter: "openrouter",
+
+  /**
+   * Together AI API provider.
+   * Supported — SDK-based executor using the Vercel AI SDK over HTTP.
+   * Fast inference for open-source models (Llama, Qwen, DeepSeek, Mistral, etc.).
+   */
+  @doc("Together AI open-source model inference")
+  TogetherAi: "together-ai",
+
+  /**
+   * Ollama local LLM runtime.
+   * Supported — SDK-based executor using OpenAI-compatible API.
+   * Runs locally with no external API key required.
+   */
+  @doc("Ollama local LLM runtime")
+  Ollama: "ollama",
 
   /**
    * Local development mock executor.

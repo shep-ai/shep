@@ -23,9 +23,25 @@
           "name": "Cursor",
           "description": "AI-агент для кодування Cursor"
         },
+        "cline": {
+          "name": "Cline",
+          "description": "Multi-provider agentic coding assistant with full tool use (requires cline CLI)"
+        },
         "devMock": {
           "name": "Dev (Mock)",
           "description": "Локальна заглушка для розробки — бінарний файл агента не потрібен"
+        },
+        "openRouter": {
+          "name": "OpenRouter",
+          "description": "Доступ до сотень моделей ШІ через API OpenRouter (потрібен API-ключ)"
+        },
+        "togetherAi": {
+          "name": "Together AI",
+          "description": "Швидкий інференс моделей з відкритим кодом через API Together AI (потрібен API-ключ)"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "description": "Запуск локальних LLM через Ollama (API-ключ не потрібен, працює на localhost)"
         },
         "aider": {
           "name": "Aider",

@@ -14,7 +14,10 @@ import type { IInteractiveAgentExecutor } from '../../../../application/ports/ou
 import type {
   IAgentExecutorFactory,
   AgentCliInfo,
+  AgentModelListing,
 } from '../../../../application/ports/output/agents/agent-executor-factory.interface.js';
+import { OpenRouterModelCatalogService } from './model-catalogs/openrouter-model-catalog.service.js';
+import { TogetherAiModelCatalogService } from './model-catalogs/together-ai-model-catalog.service.js';
 import { ClaudeCodeExecutorService } from './executors/claude-code-executor.service.js';
 import { ClaudeCodeInteractiveExecutor } from './executors/claude-code-interactive-executor.service.js';
 import { CursorExecutorService } from './executors/cursor-executor.service.js';
@@ -22,6 +25,10 @@ import { DevAgentExecutorService } from './executors/dev-executor.service.js';
 import { GeminiCliExecutorService } from './executors/gemini-cli-executor.service.js';
 import { CodexCliExecutorService } from './executors/codex-cli-executor.service.js';
 import { CopilotCliExecutorService } from './executors/copilot-cli-executor.service.js';
+import { OpenRouterExecutorService } from './executors/openrouter-executor.service.js';
+import { TogetherAiExecutorService } from './executors/together-ai-executor.service.js';
+import { OllamaExecutorService } from './executors/ollama-executor.service.js';
+import { ClineExecutorService } from './executors/cline-executor.service.js';
 import type { SpawnFunction } from './types.js';
 
 /**
@@ -32,11 +39,22 @@ import type { SpawnFunction } from './types.js';
  */
 export class AgentExecutorFactory implements IAgentExecutorFactory {
   private readonly cache = new Map<string, IAgentExecutor>();
+  private readonly openRouterCatalog: OpenRouterModelCatalogService;
+  private readonly togetherAiCatalog: TogetherAiModelCatalogService;
 
   /**
    * @param spawn - Spawn function for creating subprocesses (injectable for testing).
+   * @param openRouterCatalog - Optional OpenRouter catalog (defaults to new instance).
+   * @param togetherAiCatalog - Optional Together AI catalog (defaults to new instance).
    */
-  constructor(private readonly spawn: SpawnFunction) {}
+  constructor(
+    private readonly spawn: SpawnFunction,
+    openRouterCatalog?: OpenRouterModelCatalogService,
+    togetherAiCatalog?: TogetherAiModelCatalogService
+  ) {
+    this.openRouterCatalog = openRouterCatalog ?? new OpenRouterModelCatalogService();
+    this.togetherAiCatalog = togetherAiCatalog ?? new TogetherAiModelCatalogService();
+  }
 
   /**
    * Create (or return cached) executor for the specified agent type.
@@ -71,6 +89,18 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
       case 'copilot-cli':
         executor = new CopilotCliExecutorService(this.spawn, _authConfig);
         break;
+      case 'cline':
+        executor = new ClineExecutorService(this.spawn);
+        break;
+      case 'openrouter':
+        executor = new OpenRouterExecutorService(_authConfig.token ?? '');
+        break;
+      case 'together-ai':
+        executor = new TogetherAiExecutorService(_authConfig.token ?? '');
+        break;
+      case 'ollama':
+        executor = new OllamaExecutorService(_authConfig.token ?? undefined);
+        break;
       default:
         throw new Error(
           `Unsupported agent type: ${agentType}. Supported: ${this.getSupportedAgents().join(', ')}`
@@ -94,6 +124,10 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
       'gemini-cli' as AgentType,
       'codex-cli' as AgentType,
       'copilot-cli' as AgentType,
+      'cline' as AgentType,
+      'openrouter' as AgentType,
+      'together-ai' as AgentType,
+      'ollama' as AgentType,
     ];
   }
 
@@ -104,6 +138,7 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
       { agentType: 'cursor' as AgentType, cmd: 'cursor', versionArgs: ['--version'] },
       { agentType: 'codex-cli' as AgentType, cmd: 'codex', versionArgs: ['--version'] },
       { agentType: 'copilot-cli' as AgentType, cmd: 'copilot', versionArgs: ['--version'] },
+      { agentType: 'cline' as AgentType, cmd: 'cline', versionArgs: ['version'] },
     ];
   }
 
@@ -126,9 +161,45 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
         return CODEX_CLI_MODELS;
       case 'copilot-cli':
         return COPILOT_CLI_MODELS;
+      case 'cline':
+        return CLINE_MODELS;
+      case 'openrouter':
+        return OPENROUTER_MODELS;
+      case 'together-ai':
+        return TOGETHER_AI_MODELS;
+      case 'ollama':
+        return OLLAMA_MODELS;
       default:
         return [];
     }
+  }
+
+  /**
+   * List models available for the given agent type. For OpenRouter and
+   * Together AI this hits the provider's catalog API (cached). For all other
+   * agents it wraps the static list returned by {@link getSupportedModels}.
+   */
+  async listAvailableModels(
+    agentType: AgentType,
+    authConfig?: AgentConfig
+  ): Promise<AgentModelListing[]> {
+    const key = agentType as string;
+    const trimmed = authConfig?.token?.trim();
+    const token = trimmed && trimmed.length > 0 ? trimmed : undefined;
+
+    if (key === 'openrouter') {
+      const dynamic = await this.openRouterCatalog.listModels(token);
+      if (dynamic.length > 0) return dynamic;
+      return OPENROUTER_MODELS.map((id) => ({ id }));
+    }
+
+    if (key === 'together-ai') {
+      const dynamic = await this.togetherAiCatalog.listModels(token);
+      if (dynamic.length > 0) return dynamic;
+      return TOGETHER_AI_MODELS.map((id) => ({ id }));
+    }
+
+    return this.getSupportedModels(agentType).map((id) => ({ id }));
   }
 
   /**
@@ -211,4 +282,53 @@ const COPILOT_CLI_MODELS = [
   'gpt-5.3-codex',
   'gpt-5.4',
   'gpt-5.4-mini',
+];
+
+// Cline — multi-provider agentic assistant (models depend on configured provider)
+const CLINE_MODELS: string[] = [
+  'claude-sonnet-4-20250514',
+  'claude-haiku-4-5-20251001',
+  'gpt-4.1',
+  'gpt-4.1-mini',
+  'deepseek-chat',
+  'llama3.2',
+];
+
+// OpenRouter — popular coding-capable models from multiple vendors
+const OPENROUTER_MODELS: string[] = [
+  'anthropic/claude-sonnet-4.5',
+  'anthropic/claude-haiku-4.5',
+  'openai/gpt-5.4',
+  'openai/gpt-5.2',
+  'meta-llama/llama-4-maverick',
+  'meta-llama/llama-4-scout',
+  'google/gemini-3-flash',
+  'google/gemini-3-pro',
+  'deepseek/deepseek-chat-v3-0324',
+  'mistralai/mistral-large-latest',
+];
+
+// Together AI — fast open-source model inference, coding-focused
+const TOGETHER_AI_MODELS: string[] = [
+  'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8',
+  'meta-llama/Meta-Llama-3.3-70B-Instruct-Turbo',
+  'Qwen/Qwen2.5-Coder-32B-Instruct',
+  'deepseek-ai/DeepSeek-V3',
+  'deepseek-ai/DeepSeek-R1',
+  'mistralai/Mistral-Small-24B-Instruct-2501',
+  'google/gemma-2-27b-it',
+  'codellama/CodeLlama-70b-Instruct-hf',
+];
+
+// Ollama — popular local models for coding and general use
+const OLLAMA_MODELS: string[] = [
+  'llama3.2',
+  'llama3.1',
+  'codellama',
+  'deepseek-coder-v2',
+  'qwen2.5-coder',
+  'mistral',
+  'gemma2',
+  'phi3',
+  'starcoder2',
 ];

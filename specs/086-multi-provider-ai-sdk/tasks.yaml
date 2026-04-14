@@ -1,0 +1,634 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "multi-provider-ai-sdk"
+summary: >
+  18 tasks across 5 phases. Phase 1 (Foundation) installs packages and extends the domain model.
+  Phase 2 (Executors) builds the abstract base class and two concrete SDK executors with TDD.
+  Phase 3 (Wiring) integrates executors into factory, auth detection, validator, and use case.
+  Phase 4 (Presentation) updates TUI and Web UI with agent selection, token auth, icons, and stories.
+  Phase 5 (Validation) runs integration tests and full suite verification.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - "ai@^6.0.0"
+  - "@openrouter/ai-sdk-provider@^2.5.1"
+  - "@ai-sdk/openai-compatible@^3.x"
+relatedLinks:
+  - title: "AI SDK v6 Documentation"
+    url: "https://ai-sdk.dev/docs/introduction"
+  - title: "@ai-sdk/togetherai v6 Incompatibility Issue"
+    url: "https://github.com/vercel/ai/issues/11780"
+
+# Structured task list
+tasks:
+  # ──────────────────────────────────────────────
+  # Phase 1: Foundation - Dependencies and Domain
+  # ──────────────────────────────────────────────
+
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Install AI SDK npm dependencies"
+    description: >
+      Add ai@^6.0.0, @openrouter/ai-sdk-provider@^2.5.1, and @ai-sdk/openai-compatible@^3.x to
+      packages/core/package.json. Run pnpm install to update the lock file. Verify no peer
+      dependency conflicts with existing packages (especially zod@^4.3.6 which is already present).
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "packages/core/package.json lists ai, @openrouter/ai-sdk-provider, and @ai-sdk/openai-compatible as dependencies"
+      - "pnpm install completes without peer dependency warnings for these packages"
+      - "import { generateText, streamText, generateObject } from 'ai' resolves without errors"
+      - "pnpm build succeeds with the new dependencies installed"
+    tdd: null
+    estimatedEffort: "15min"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Extend AgentType enum in TypeSpec and regenerate"
+    description: >
+      Add OpenRouter: \"openrouter\" and TogetherAi: \"together-ai\" to the AgentType enum in
+      tsp/common/enums/agent-config.tsp. Run pnpm tsp:compile to regenerate
+      packages/core/src/domain/generated/output.ts. Verify the new enum values appear in the
+      generated file and that pnpm typecheck passes.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "AgentType enum in agent-config.tsp includes OpenRouter: \"openrouter\" and TogetherAi: \"together-ai\""
+      - "pnpm tsp:compile succeeds without errors"
+      - "Generated output.ts exports AgentType.OpenRouter and AgentType.TogetherAi"
+      - "pnpm typecheck passes (no type errors from new enum values)"
+    tdd: null
+    estimatedEffort: "15min"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Fix exhaustive AgentType references across codebase"
+    description: >
+      Grep for all switch/case statements, Record<AgentType,...>, and test fixtures that
+      exhaustively list AgentType values. Update them to include the new openrouter and together-ai
+      values. Key locations: agent-type-icons.tsx AgentTypeValue union, any test that constructs
+      arrays of all agent types, and agent-select prompt test expectations.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "AgentTypeValue union in agent-type-icons.tsx includes openrouter and together-ai"
+      - "agentTypeIconMap and agentTypeLabels include entries for both new types"
+      - "All existing tests pass with the new enum values (pnpm test:unit completes green)"
+      - "pnpm typecheck passes with zero errors"
+    tdd:
+      red:
+        - "Run pnpm typecheck — expect type errors in files with exhaustive AgentType matches"
+      green:
+        - "Add openrouter and together-ai to all exhaustive type references and icon/label maps"
+      refactor:
+        - "Verify no duplicate entries, consistent naming (OpenRouter, Together AI for labels)"
+    estimatedEffort: "30min"
+
+  # ──────────────────────────────────────────────
+  # Phase 2: Infrastructure - SDK Executors
+  # ──────────────────────────────────────────────
+
+  - id: "task-4"
+    phaseId: "phase-2"
+    title: "Implement AiSdkBaseExecutorService - execute() with generateText"
+    description: >
+      Create the abstract AiSdkBaseExecutorService class implementing IAgentExecutor. The
+      constructor accepts a LanguageModel instance and a provider display name (for error messages).
+      Implement execute() which delegates to generateText() with model, prompt, system, and timeout
+      parameters. Map the AI SDK response to AgentExecutionResult (result.text, usage mapping,
+      sessionId=undefined). Abstract methods: createModel(modelId) and get providerName.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "AiSdkBaseExecutorService is abstract and implements IAgentExecutor"
+      - "execute() calls generateText() with correct parameters (model, prompt, system, timeout)"
+      - "AgentExecutionResult.result contains the response text"
+      - "Usage maps: inputTokens, outputTokens, cacheCreationInputTokens, cacheReadInputTokens"
+      - "Default timeout of 300000ms when options.timeout is not provided"
+      - "sessionId is always undefined (no persistent sessions)"
+    tdd:
+      red:
+        - "Write test: execute() calls generateText with prompt and returns result text"
+        - "Write test: execute() maps AI SDK usage to AgentExecutionUsage"
+        - "Write test: execute() passes system prompt from options.systemPrompt"
+        - "Write test: execute() uses default timeout when none specified"
+        - "Write test: execute() passes options.timeout to AI SDK timeout parameter"
+      green:
+        - "Create ai-sdk-base-executor.service.ts with abstract class"
+        - "Implement execute() with generateText() delegation and response mapping"
+        - "Create concrete test subclass that extends AiSdkBaseExecutorService for testing"
+      refactor:
+        - "Extract usage mapping to a private mapUsage() helper method"
+        - "Extract common AI SDK call options to a private buildCallOptions() helper"
+    estimatedEffort: "1h"
+
+  - id: "task-5"
+    phaseId: "phase-2"
+    title: "Implement AiSdkBaseExecutorService - executeStream() with streamText"
+    description: >
+      Add executeStream() to the base class. Delegates to streamText() and adapts
+      textStream (AsyncIterable<string>) to AsyncIterable<AgentExecutionStreamEvent>.
+      Each text chunk becomes a progress event with timestamp. After iteration, emit a
+      result event with the full text and usage from the stream result promise.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+    acceptanceCriteria:
+      - "executeStream() returns AsyncIterable<AgentExecutionStreamEvent>"
+      - "Each text chunk from textStream yields a progress event with content and timestamp"
+      - "Final result event contains full accumulated text"
+      - "Usage is extracted from the stream result after iteration completes"
+      - "System prompt and timeout are passed through to streamText()"
+    tdd:
+      red:
+        - "Write test: executeStream() yields progress events for each text chunk"
+        - "Write test: executeStream() yields a final result event with full text"
+        - "Write test: executeStream() passes system prompt and timeout to streamText"
+      green:
+        - "Implement executeStream() as async generator using for-await-of on textStream"
+        - "Yield progress events for each chunk, then result event after iteration"
+      refactor:
+        - "Ensure zero buffering — each chunk yields immediately"
+    estimatedEffort: "45min"
+
+  - id: "task-6"
+    phaseId: "phase-2"
+    title: "Implement AiSdkBaseExecutorService - structured output with generateObject"
+    description: >
+      When options.outputSchema is provided in execute(), route to generateObject() instead of
+      generateText(). Use the ai package's jsonSchema() wrapper to convert the raw JSON Schema
+      object. Return the structured object in result.metadata.structured_output, matching the
+      convention used by StructuredAgentCallerService.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+    acceptanceCriteria:
+      - "execute() with outputSchema calls generateObject() instead of generateText()"
+      - "jsonSchema() wrapper is used to convert the raw JSON Schema for generateObject()"
+      - "result.metadata.structured_output contains the parsed object"
+      - "result.result contains JSON.stringify of the object (for text fallback)"
+      - "Usage is mapped from generateObject response"
+    tdd:
+      red:
+        - "Write test: execute() with outputSchema calls generateObject with jsonSchema wrapper"
+        - "Write test: result.metadata.structured_output contains the structured object"
+        - "Write test: result.result contains stringified JSON of the object"
+      green:
+        - "Add outputSchema detection in execute() to branch between generateText and generateObject"
+        - "Import jsonSchema from ai package and wrap the schema"
+      refactor:
+        - "Extract structured output path to a private executeStructured() method"
+    estimatedEffort: "30min"
+
+  - id: "task-7"
+    phaseId: "phase-2"
+    title: "Implement AiSdkBaseExecutorService - error handling"
+    description: >
+      Add try/catch around all AI SDK calls. Use APICallError.isInstance() to detect API errors
+      and extract statusCode, isRetryable, responseBody. Enhance error messages with provider
+      name. Add specific guidance for 401/403 (check API key), 429 (rate limit), 5xx (server
+      error). Wrap network and timeout errors with provider context. Never include API keys
+      in error messages.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+      - "task-5"
+    acceptanceCriteria:
+      - "401/403 errors throw with message containing provider name and API key guidance"
+      - "429 errors throw with rate limit information"
+      - "5xx errors throw with server error context"
+      - "Timeout errors throw with timeout duration in message"
+      - "Network errors throw with connection failure guidance"
+      - "No error message contains the actual API key value"
+      - "APICallError.isInstance() type guard is used (not instanceof)"
+    tdd:
+      red:
+        - "Write test: 401 error includes provider name and API key check guidance"
+        - "Write test: 429 error includes rate limit info"
+        - "Write test: 5xx error includes server error message"
+        - "Write test: timeout error includes timeout duration"
+        - "Write test: network error includes connection failure message"
+        - "Write test: error messages never contain the string used as API key"
+      green:
+        - "Wrap execute() and executeStream() in try/catch"
+        - "Import APICallError from ai package and use isInstance() type guard"
+        - "Build enhanced error messages with switch on statusCode"
+      refactor:
+        - "Extract error enhancement to a private enhanceError() method"
+    estimatedEffort: "45min"
+
+  - id: "task-8"
+    phaseId: "phase-2"
+    title: "Implement OpenRouterExecutorService"
+    description: >
+      Create concrete OpenRouterExecutorService extending AiSdkBaseExecutorService. Constructor
+      accepts apiKey string. Constructs the OpenRouter provider via createOpenRouter({ apiKey })
+      from @openrouter/ai-sdk-provider. Model is selected at execution time via
+      provider.chatModel(modelId). Default model: anthropic/claude-sonnet-4.5. Feature flags:
+      streaming=true, structuredOutput=true, systemPrompt=true, sessionResume=false,
+      toolScoping=false, sessionListing=false.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+      - "task-5"
+      - "task-6"
+      - "task-7"
+    acceptanceCriteria:
+      - "OpenRouterExecutorService extends AiSdkBaseExecutorService"
+      - "agentType is 'openrouter' (AgentType.OpenRouter)"
+      - "Constructor accepts apiKey and creates OpenRouter provider"
+      - "createModel() returns provider.chatModel(modelId) with sensible default"
+      - "supportsFeature returns true for streaming, structured-output, system-prompt"
+      - "supportsFeature returns false for session-resume, tool-scoping, session-listing"
+    tdd:
+      red:
+        - "Write test: constructor creates OpenRouter provider with apiKey"
+        - "Write test: agentType is 'openrouter'"
+        - "Write test: supportsFeature returns correct values for all features"
+        - "Write test: createModel returns chatModel with specified model id"
+        - "Write test: createModel uses default model when none specified"
+      green:
+        - "Create openrouter-executor.service.ts extending AiSdkBaseExecutorService"
+        - "Import createOpenRouter from @openrouter/ai-sdk-provider"
+        - "Implement constructor, createModel, providerName, and feature flags"
+      refactor:
+        - "Ensure provider instance is created once in constructor (not per-call)"
+    estimatedEffort: "30min"
+
+  - id: "task-9"
+    phaseId: "phase-2"
+    title: "Implement TogetherAiExecutorService"
+    description: >
+      Create concrete TogetherAiExecutorService extending AiSdkBaseExecutorService. Constructor
+      accepts apiKey string. Constructs the provider via createOpenAICompatible({ name:
+      'together-ai', baseURL: 'https://api.together.xyz/v1', apiKey }) from
+      @ai-sdk/openai-compatible. Model default: meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8.
+      Same feature flags as OpenRouter.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+      - "task-5"
+      - "task-6"
+      - "task-7"
+    acceptanceCriteria:
+      - "TogetherAiExecutorService extends AiSdkBaseExecutorService"
+      - "agentType is 'together-ai' (AgentType.TogetherAi)"
+      - "Constructor creates OpenAI-compatible provider with Together AI baseURL"
+      - "createModel() returns provider.chatModel(modelId) with sensible default"
+      - "supportsFeature returns same values as OpenRouter"
+      - "Comment documents that migration to @ai-sdk/togetherai v3 is a one-line swap"
+    tdd:
+      red:
+        - "Write test: constructor creates openai-compatible provider with Together AI baseURL"
+        - "Write test: agentType is 'together-ai'"
+        - "Write test: supportsFeature returns correct values for all features"
+        - "Write test: createModel returns chatModel with specified model id"
+        - "Write test: createModel uses default model when none specified"
+      green:
+        - "Create together-ai-executor.service.ts extending AiSdkBaseExecutorService"
+        - "Import createOpenAICompatible from @ai-sdk/openai-compatible"
+        - "Implement constructor, createModel, providerName, and feature flags"
+      refactor:
+        - "Add JSDoc noting the @ai-sdk/togetherai v3 migration path"
+    estimatedEffort: "30min"
+
+  # ──────────────────────────────────────────────
+  # Phase 3: Integration - Factory, Auth, Validator
+  # ──────────────────────────────────────────────
+
+  - id: "task-10"
+    phaseId: "phase-3"
+    title: "Add factory switch cases and curated model lists"
+    description: >
+      Update AgentExecutorFactory to handle openrouter and together-ai agent types. Add switch
+      cases in createExecutor() that construct OpenRouterExecutorService and
+      TogetherAiExecutorService with the API key from authConfig.token. Add static model list
+      constants (OPENROUTER_MODELS, TOGETHER_AI_MODELS) and wire into getSupportedModels().
+      Update getSupportedAgents() to include both new types. Update getCliInfo() to include
+      entries with null cmd. supportsInteractive() returns false for both.
+    state: "Todo"
+    dependencies:
+      - "task-8"
+      - "task-9"
+    acceptanceCriteria:
+      - "createExecutor('openrouter', config) returns OpenRouterExecutorService"
+      - "createExecutor('together-ai', config) returns TogetherAiExecutorService"
+      - "API key is read from authConfig.token and passed to executor constructor"
+      - "getSupportedAgents() includes 'openrouter' and 'together-ai'"
+      - "getSupportedModels('openrouter') returns OPENROUTER_MODELS constant"
+      - "getSupportedModels('together-ai') returns TOGETHER_AI_MODELS constant"
+      - "getCliInfo() includes entries with null cmd for both SDK agents"
+      - "Executor caching works (second call returns same instance)"
+      - "supportsInteractive returns false for both new types"
+    tdd:
+      red:
+        - "Write test: createExecutor returns OpenRouterExecutorService for 'openrouter'"
+        - "Write test: createExecutor returns TogetherAiExecutorService for 'together-ai'"
+        - "Write test: createExecutor caches SDK executor instances"
+        - "Write test: getSupportedAgents includes both new types"
+        - "Write test: getSupportedModels returns curated lists for both types"
+        - "Write test: getCliInfo returns null cmd entries for both SDK agents"
+      green:
+        - "Add switch cases in createExecutor for openrouter and together-ai"
+        - "Define OPENROUTER_MODELS and TOGETHER_AI_MODELS as named constants"
+        - "Update getSupportedAgents, getSupportedModels, and getCliInfo"
+      refactor:
+        - "Ensure model lists are sorted consistently (by vendor, then by model)"
+    estimatedEffort: "45min"
+
+  - id: "task-11"
+    phaseId: "phase-3"
+    title: "Update auth detection for SDK agent types"
+    description: >
+      Update PlatformAgentAuthDetectorService to handle OpenRouter and TogetherAi agent types.
+      For SDK agents, the isAuthenticated() method should check if a non-empty token is available.
+      Since the current interface receives (agentType, binaryName) and SDK agents have binaryName
+      null, add cases in tier1AuthCheck that return true (SDK agents have no env-var or file
+      heuristics — auth is enforced at the settings layer via token requirement).
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "isAuthenticated('openrouter', null) returns true (no binary check, trust settings layer)"
+      - "isAuthenticated('together-ai', null) returns true"
+      - "Existing agent auth detection is unchanged"
+      - "No network calls for SDK agent auth detection"
+    tdd:
+      red:
+        - "Write test: isAuthenticated returns true for openrouter with null binaryName"
+        - "Write test: isAuthenticated returns true for together-ai with null binaryName"
+        - "Write test: existing agent types still work correctly"
+      green:
+        - "Add OpenRouter and TogetherAi cases to tier1AuthCheck returning true"
+      refactor:
+        - "Group SDK agent cases together with a comment explaining the pattern"
+    estimatedEffort: "20min"
+
+  - id: "task-12"
+    phaseId: "phase-3"
+    title: "Add AGENT_METADATA entries in CheckAgentAuthUseCase"
+    description: >
+      Add entries for OpenRouter and TogetherAi to the AGENT_METADATA record in
+      check-agent-auth.use-case.ts. Both entries have label (display name), toolId=null,
+      binaryName=null. When toolId is null, the use case already returns installed=true and
+      authenticated=true via the existing early-return path (same as dev/aider/continue).
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "AGENT_METADATA includes entry for AgentType.OpenRouter with label 'OpenRouter', toolId null, binaryName null"
+      - "AGENT_METADATA includes entry for AgentType.TogetherAi with label 'Together AI', toolId null, binaryName null"
+      - "CheckAgentAuthUseCase.execute() returns installed=true, authenticated=true for both SDK agents"
+      - "Existing agent metadata entries are unchanged"
+    tdd:
+      red:
+        - "Write test: execute() returns installed=true, authenticated=true, label='OpenRouter' when agent type is openrouter"
+        - "Write test: execute() returns installed=true, authenticated=true, label='Together AI' when agent type is together-ai"
+      green:
+        - "Add two entries to AGENT_METADATA record with null toolId and binaryName"
+      refactor:
+        - "Verify alphabetical ordering of AGENT_METADATA entries is maintained"
+    estimatedEffort: "15min"
+
+  - id: "task-13"
+    phaseId: "phase-3"
+    title: "Update agent validator for SDK agent types"
+    description: >
+      Update AgentValidatorService to handle SDK agent types gracefully. The current implementation
+      returns available=false with an unsupported message for unknown types. Add early returns for
+      openrouter and together-ai that return available=true with version 'sdk' (similar to how dev
+      returns available=true with version 'dev'). No binary check needed.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "isAvailable('openrouter') returns { available: true, version: 'sdk' }"
+      - "isAvailable('together-ai') returns { available: true, version: 'sdk' }"
+      - "No subprocess spawned for SDK agent types"
+      - "Existing agent validation unchanged"
+    tdd:
+      red:
+        - "Write test: isAvailable returns available=true for openrouter"
+        - "Write test: isAvailable returns available=true for together-ai"
+        - "Write test: no execFn call for SDK agents"
+      green:
+        - "Add early return cases for openrouter and together-ai in isAvailable()"
+      refactor:
+        - "Group SDK agents with dev in a comment explaining no-binary-required pattern"
+    estimatedEffort: "15min"
+
+  # ──────────────────────────────────────────────
+  # Phase 4: Presentation - TUI and Web UI
+  # ──────────────────────────────────────────────
+
+  - id: "task-14"
+    phaseId: "phase-4"
+    title: "Add TUI agent selection entries and i18n strings"
+    description: >
+      Add OpenRouter and Together AI as selectable choices in createAgentSelectConfig() in
+      agent-select.prompt.ts. Add i18n translation strings for both agents in translations/en/tui.json
+      (name and description). Place them above the Coming Soon agents (Aider, Continue) but after
+      the existing active agents.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "createAgentSelectConfig() includes OpenRouter and Together AI as enabled choices"
+      - "translations/en/tui.json has selectAgent.choices.openRouter.name and .description"
+      - "translations/en/tui.json has selectAgent.choices.togetherAi.name and .description"
+      - "Choices appear between Dev and Aider in the selection list"
+      - "Agent select prompt test expectations updated for new choices"
+    tdd:
+      red:
+        - "Write test: agent select config includes OpenRouter choice with correct value"
+        - "Write test: agent select config includes Together AI choice with correct value"
+        - "Write test: both choices are enabled (not disabled)"
+      green:
+        - "Add i18n strings to translations/en/tui.json"
+        - "Add choice entries in createAgentSelectConfig using AgentType.OpenRouter and AgentType.TogetherAi"
+      refactor:
+        - "Verify choice ordering is logical (CLI agents first, SDK agents next, Coming Soon last)"
+    estimatedEffort: "20min"
+
+  - id: "task-15"
+    phaseId: "phase-4"
+    title: "Update TUI wizard to auto-force token auth for SDK agents"
+    description: >
+      Modify agentConfigWizard() in agent-config.wizard.ts to detect SDK agent types and
+      automatically set authMethod to Token without prompting. When OpenRouter or Together AI is
+      selected, skip the auth method selection prompt and go directly to the API key password
+      prompt. Use a TOKEN_REQUIRED_AGENTS set for clean detection.
+    state: "Todo"
+    dependencies:
+      - "task-14"
+    acceptanceCriteria:
+      - "Selecting OpenRouter skips auth method prompt and goes directly to API key input"
+      - "Selecting Together AI skips auth method prompt and goes directly to API key input"
+      - "Returned AgentConfigResult has authMethod=Token for SDK agents"
+      - "Existing agent flow (auth method selection) unchanged for CLI agents"
+    tdd:
+      red:
+        - "Write test: wizard skips auth method prompt for OpenRouter and prompts for token"
+        - "Write test: wizard skips auth method prompt for Together AI and prompts for token"
+        - "Write test: wizard shows auth method prompt for claude-code (unchanged)"
+      green:
+        - "Add TOKEN_REQUIRED_AGENTS set containing OpenRouter and TogetherAi"
+        - "Add conditional in wizard: if token-required, skip auth prompt and force Token method"
+      refactor:
+        - "Ensure the set is a module-level constant, not inline"
+    estimatedEffort: "20min"
+
+  - id: "task-16"
+    phaseId: "phase-4"
+    title: "Update Web UI agent settings with TOKEN_REQUIRED_AGENTS"
+    description: >
+      Add OpenRouter and Together AI to AGENT_TYPE_OPTIONS array in agent-settings-section.tsx.
+      Create TOKEN_REQUIRED_AGENTS = new Set([AgentType.OpenRouter, AgentType.TogetherAi]).
+      When selected type is in TOKEN_REQUIRED_AGENTS, auto-switch authMethod to Token, disable
+      the auth method dropdown, and show the API key input with helper text explaining the
+      requirement. Update handleAgentTypeChange to handle token-required agents.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "AGENT_TYPE_OPTIONS includes { value: AgentType.OpenRouter, label: 'OpenRouter' }"
+      - "AGENT_TYPE_OPTIONS includes { value: AgentType.TogetherAi, label: 'Together AI' }"
+      - "TOKEN_REQUIRED_AGENTS contains OpenRouter and TogetherAi"
+      - "Selecting OpenRouter forces authMethod to Token and disables auth dropdown"
+      - "Selecting Together AI forces authMethod to Token and disables auth dropdown"
+      - "Helper text explains API key requirement for SDK agents"
+      - "Existing SESSION_ONLY_AGENTS behavior unchanged for CopilotCli"
+    tdd:
+      red:
+        - "Write test: OpenRouter option appears in agent type dropdown"
+        - "Write test: Together AI option appears in agent type dropdown"
+        - "Write test: selecting OpenRouter forces auth method to Token"
+        - "Write test: auth method dropdown is disabled for TOKEN_REQUIRED_AGENTS"
+        - "Write test: API key input shown when SDK agent selected"
+      green:
+        - "Add entries to AGENT_TYPE_OPTIONS"
+        - "Create TOKEN_REQUIRED_AGENTS set"
+        - "Update handleAgentTypeChange to check TOKEN_REQUIRED_AGENTS"
+        - "Add helper text for token-required agents"
+      refactor:
+        - "Ensure TOKEN_REQUIRED_AGENTS and SESSION_ONLY_AGENTS patterns are symmetric"
+    estimatedEffort: "30min"
+
+  - id: "task-17"
+    phaseId: "phase-4"
+    title: "Add agent icons and Storybook stories for SDK agents"
+    description: >
+      Add OpenRouter and Together AI entries to agent-type-icons.tsx: extend AgentTypeValue union,
+      add entries to agentTypeIconMap (using DefaultAgentIcon or brand icons if available), and add
+      entries to agentTypeLabels. Create or update Storybook stories for agent-settings-section
+      showing SDK agent selection scenarios. Ensure existing stories still render correctly.
+    state: "Todo"
+    dependencies:
+      - "task-16"
+    acceptanceCriteria:
+      - "AgentTypeValue includes 'openrouter' and 'together-ai'"
+      - "agentTypeIconMap has entries for both new types"
+      - "agentTypeLabels has 'OpenRouter' and 'Together AI' labels"
+      - "getAgentTypeIcon('openrouter') returns an icon component (not DefaultAgentIcon if brand icon available)"
+      - "Storybook stories render agent settings with OpenRouter and Together AI selected"
+      - "pnpm build:storybook succeeds"
+    tdd:
+      red:
+        - "Write test: getAgentTypeIcon('openrouter') returns a valid component"
+        - "Write test: getAgentTypeIcon('together-ai') returns a valid component"
+        - "Write test: agentTypeLabels['openrouter'] is 'OpenRouter'"
+        - "Write test: agentTypeLabels['together-ai'] is 'Together AI'"
+      green:
+        - "Add union members and map entries in agent-type-icons.tsx"
+        - "Add Storybook stories for agent settings with SDK agents"
+      refactor:
+        - "If brand SVG icons are available, replace DefaultAgentIcon with brand icons"
+    estimatedEffort: "30min"
+
+  # ──────────────────────────────────────────────
+  # Phase 5: Validation - Integration and Full Suite
+  # ──────────────────────────────────────────────
+
+  - id: "task-18"
+    phaseId: "phase-5"
+    title: "Integration tests and full suite verification"
+    description: >
+      Write integration tests verifying the factory creates and caches SDK executors correctly
+      end-to-end (factory + real executor classes, mocked AI SDK). Verify structured agent caller
+      routes to generateObject for SDK executors when supportsFeature(structuredOutput) is true.
+      Run the full validation suite: pnpm lint, pnpm format:check, pnpm typecheck, pnpm test:unit,
+      pnpm test:int, pnpm build. Fix any failures.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+      - "task-11"
+      - "task-12"
+      - "task-13"
+      - "task-14"
+      - "task-15"
+      - "task-16"
+      - "task-17"
+    acceptanceCriteria:
+      - "Integration test: factory.createExecutor('openrouter', config) returns OpenRouterExecutorService instance"
+      - "Integration test: factory.createExecutor('together-ai', config) returns TogetherAiExecutorService instance"
+      - "Integration test: factory caches SDK executors (second call returns same reference)"
+      - "pnpm lint passes"
+      - "pnpm format:check passes"
+      - "pnpm typecheck passes"
+      - "pnpm test:unit passes with all tests green"
+      - "pnpm test:int passes"
+      - "pnpm build succeeds"
+    tdd:
+      red:
+        - "Write integration test: factory creates real OpenRouterExecutorService"
+        - "Write integration test: factory creates real TogetherAiExecutorService"
+        - "Write integration test: factory caches both SDK executor types"
+      green:
+        - "Tests should pass given all previous tasks are complete"
+        - "Fix any failures discovered during full suite run"
+      refactor:
+        - "Clean up any test duplication or inconsistencies found during integration testing"
+    estimatedEffort: "1h"
+
+# Total effort estimate
+totalEstimate: "8h"
+
+# Open questions
+openQuestions: []
+
+# Markdown content (the full tasks document)
+content: |
+  ## Summary
+
+  18 tasks organized across 5 phases implement the multi-provider AI SDK feature bottom-up.
+
+  **Phase 1 (Foundation, 3 tasks, ~1h)** installs the AI SDK packages, extends the AgentType
+  enum in TypeSpec, regenerates domain types, and fixes all exhaustive type references across
+  the codebase so that subsequent phases have a stable type foundation.
+
+  **Phase 2 (Executors, 6 tasks, ~3.5h)** builds the core execution layer: the abstract
+  AiSdkBaseExecutorService handles all AI SDK integration (generateText, streamText,
+  generateObject, error handling, usage mapping, timeouts), then OpenRouterExecutorService and
+  TogetherAiExecutorService provide the thin provider-specific construction layer. Each piece
+  is built test-first with mocked AI SDK functions.
+
+  **Phase 3 (Wiring, 4 tasks, ~1.5h)** connects executors to existing infrastructure: factory
+  switch cases with curated model lists, auth detection for token presence, AGENT_METADATA
+  entries in the auth check use case, and validator early returns for SDK agents. Small, focused
+  changes to well-understood files.
+
+  **Phase 4 (Presentation, 4 tasks, ~1.5h)** adds UI touchpoints across TUI and Web: agent
+  selection prompts with i18n, wizard token auth auto-forcing, Web UI dropdown entries with
+  TOKEN_REQUIRED_AGENTS pattern, icon registry entries, and Storybook stories.
+
+  **Phase 5 (Validation, 1 task, ~1h)** runs integration tests verifying end-to-end factory
+  wiring plus the full lint/typecheck/test/build validation suite to confirm zero regressions.
+
+  The task ordering respects strict dependency chains — no task depends on a later task. Within
+  each phase, tasks can be partially parallelized (e.g., tasks 8 and 9 only depend on tasks
+  4-7, not on each other).

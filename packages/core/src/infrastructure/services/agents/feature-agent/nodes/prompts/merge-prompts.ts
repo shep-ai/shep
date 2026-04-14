@@ -13,7 +13,7 @@ import yaml from 'js-yaml';
 import { EvidenceType, type Evidence } from '@/domain/generated/output.js';
 import { readSpecFile, buildResumeContext } from '../node-helpers.js';
 import type { FeatureAgentState } from '../../state.js';
-import { PR_BRANDING } from './pr-branding.js';
+import { PR_BRANDING, COMMIT_CO_AUTHOR } from './pr-branding.js';
 
 /**
  * Extract merge-phase rejection feedback from spec.yaml.
@@ -160,7 +160,9 @@ export function buildCommitPushPrPrompt(
 3. Write a conventional commit message based on the actual diff content
    - Use the format: \`feat(<scope>): <description>\` or \`fix(<scope>): <description>\`
    - The commit message should summarize what actually changed, not be generic
-   - Run \`git commit -m "<your message>"\``);
+   - MUST include the co-author trailer: \`${COMMIT_CO_AUTHOR}\`
+   - Run: \`git commit -m "<your message>" -m "" -m "${COMMIT_CO_AUTHOR}"\`
+   - Do NOT include any other Co-Authored-By trailer (e.g. Claude) — only the Shep Bot trailer above`);
 
   // Step 2: Local verification before push (conditional)
   if (shouldPush) {
@@ -209,6 +211,7 @@ ${evidenceSection}
 ## Constraints
 
 - Write a meaningful conventional commit message derived from the actual diff — do NOT use generic messages
+- Every commit MUST include the co-author trailer: \`${COMMIT_CO_AUTHOR}\` — do NOT include any other Co-Authored-By trailer
 ${rejectionSection ? '- You MUST modify source code files to address the rejection feedback above BEFORE committing' : '- Do NOT modify any source code files — only perform git operations'}
 ${!state.commitSpecs ? '- Do NOT commit the `specs/` directory — it must stay untracked. If you accidentally staged it, run `git reset -- specs/` before committing' : ''}
 - Do NOT amend existing commits
@@ -270,8 +273,8 @@ Follow these steps EXACTLY:
    - For config files (.gitignore, tsconfig.json, etc.), merge both sides' additions
    - Stage each resolved file: \`git add <file>\`
 
-4. After ALL conflicts are resolved, commit:
-   \`git commit -m "${commitMessage.replace(/"/g, '\\"')}"\`
+4. After ALL conflicts are resolved, commit with the Shep Bot co-author trailer:
+   \`git commit -m "${commitMessage.replace(/"/g, '\\"')}" -m "" -m "${COMMIT_CO_AUTHOR}"\`
 
 5. Delete the feature branch:
    \`git branch -d ${featureBranch}\` (non-fatal if it fails)
@@ -318,14 +321,16 @@ ${failureLogs}
 1. Analyze the CI failure logs above to diagnose the root cause
 2. Apply a targeted fix to resolve the failure — change only what is necessary
 3. Stage all changes: \`git add -A\`
-4. Commit with this exact conventional commit message format:
-   \`fix(ci): attempt ${attemptNumber}/${maxAttempts} — <short description of what you fixed>\`
+4. Commit with this exact conventional commit message format and the Shep Bot co-author trailer:
+   \`git commit -m "fix(ci): attempt ${attemptNumber}/${maxAttempts} — <short description of what you fixed>" -m "" -m "${COMMIT_CO_AUTHOR}"\`
 5. Push the fix to the branch: \`git push origin ${branch}\`
 
 ## Constraints
 
 - Fix ONLY the issue(s) causing the CI failure — do not refactor unrelated code
 - The commit message MUST start with \`fix(ci): attempt ${attemptNumber}/${maxAttempts} — \`
+- The commit MUST include the co-author trailer: \`${COMMIT_CO_AUTHOR}\`
+- Do NOT include any other Co-Authored-By trailer (e.g. Claude) — only the Shep Bot trailer
 - Do NOT create a new branch — push directly to \`${branch}\`
 - If the failure is unclear, make your best diagnosis and explain your reasoning in the commit message`;
 }

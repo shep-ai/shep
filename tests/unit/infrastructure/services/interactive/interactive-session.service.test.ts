@@ -266,6 +266,7 @@ describe('InteractiveSessionService', () => {
       getSupportedAgents: vi.fn().mockReturnValue([AgentType.ClaudeCode]),
       getCliInfo: vi.fn().mockReturnValue([]),
       getSupportedModels: vi.fn().mockReturnValue([]),
+      listAvailableModels: vi.fn().mockResolvedValue([]),
       createInteractiveExecutor: vi.fn().mockReturnValue(mockInteractiveExecutor),
       supportsInteractive: vi.fn().mockReturnValue(true),
     };

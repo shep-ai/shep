@@ -9,6 +9,8 @@ const allAgentTypes: { type: AgentTypeValue; label: string }[] = [
   { type: 'gemini-cli', label: 'Gemini CLI' },
   { type: 'aider', label: 'Aider' },
   { type: 'continue', label: 'Continue' },
+  { type: 'openrouter', label: 'OpenRouter' },
+  { type: 'together-ai', label: 'Together AI' },
   { type: 'dev', label: 'Dev (Mock)' },
 ];
 

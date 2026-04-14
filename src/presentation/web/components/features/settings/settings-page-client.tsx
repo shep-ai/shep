@@ -18,11 +18,15 @@ import {
   Timer,
   MessageSquare,
   LayoutGrid,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import {
   Select,
@@ -33,14 +37,25 @@ import {
 } from '@/components/ui/select';
 import { updateSettingsAction } from '@/app/actions/update-settings';
 import {
-  type AgentType,
+  AgentType,
+  AgentAuthMethod,
   EditorType,
   Language,
   TerminalType,
 } from '@shepai/core/domain/generated/output';
 import { getEditorTypeIcon } from '@/components/common/editor-type-icons';
 import { AgentModelPicker } from '@/components/features/settings/AgentModelPicker';
-import { LanguageSettingsSection } from '@/components/features/settings/language-settings-section';
+const LANGUAGE_OPTIONS = [
+  { value: Language.English, nativeName: 'English' },
+  { value: Language.Ukrainian, nativeName: 'Українська' },
+  { value: Language.Russian, nativeName: 'Русский' },
+  { value: Language.Portuguese, nativeName: 'Português' },
+  { value: Language.Spanish, nativeName: 'Español' },
+  { value: Language.Arabic, nativeName: 'العربية' },
+  { value: Language.Hebrew, nativeName: 'עברית' },
+  { value: Language.French, nativeName: 'Français' },
+  { value: Language.German, nativeName: 'Deutsch' },
+];
 import { TimeoutSlider } from '@/components/features/settings/timeout-slider';
 import type {
   Settings,
@@ -63,6 +78,17 @@ const SHELL_OPTIONS = [
   { value: 'bash', label: 'Bash' },
   { value: 'zsh', label: 'Zsh' },
   { value: 'fish', label: 'Fish' },
+];
+
+/** Agent types that only support session-based auth (no API token). */
+const SESSION_ONLY_AGENTS = new Set<AgentType>([AgentType.CopilotCli]);
+
+/** Agent types that require token-based auth (API key only, no CLI binary). */
+const TOKEN_REQUIRED_AGENTS = new Set<AgentType>([AgentType.OpenRouter, AgentType.TogetherAi]);
+
+const AUTH_METHOD_OPTIONS = [
+  { value: AgentAuthMethod.Session, label: 'Session' },
+  { value: AgentAuthMethod.Token, label: 'Token' },
 ];
 
 const SECTIONS = [
@@ -361,7 +387,7 @@ export function SettingsPageClient({
   dbFileSize,
   availableTerminals,
 }: SettingsPageClientProps) {
-  const { t } = useTranslation('web');
+  const { t, i18n: i18nInstance } = useTranslation('web');
   const { showSaving, showSaved, save } = useSaveIndicator();
   const featureFlags = settings.featureFlags ?? {
     skills: false,
@@ -374,8 +400,23 @@ export function SettingsPageClient({
     inventory: false,
   };
 
+  // Language state
+  const [language, setLanguage] = useState(settings.user?.preferredLanguage ?? Language.English);
+
+  function handleLanguageChange(value: string) {
+    setLanguage(value as Language);
+    i18nInstance.changeLanguage(value);
+    const dir = value === 'ar' || value === 'he' ? 'rtl' : 'ltr';
+    document.documentElement.lang = value;
+    document.documentElement.dir = dir;
+    save({ user: { preferredLanguage: value } });
+  }
+
   // Agent state
   const [agentType, setAgentType] = useState(settings.agent.type);
+  const [authMethod, setAuthMethod] = useState(settings.agent.authMethod);
+  const [token, setToken] = useState(settings.agent.token ?? '');
+  const [showToken, setShowToken] = useState(false);
 
   // Environment state
   const [editor, setEditor] = useState(settings.environment.defaultEditor);
@@ -724,9 +765,27 @@ export function SettingsPageClient({
           id="section-language"
           className="grid scroll-mt-18 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[1fr_280px]"
         >
-          <LanguageSettingsSection
-            language={settings.user?.preferredLanguage ?? Language.English}
-          />
+          <SettingsSection
+            icon={Globe}
+            title={t('settings.language.title')}
+            description={t('settings.language.description')}
+            testId="language-settings-section"
+          >
+            <SettingsRow label={t('settings.language.label')} htmlFor="display-language">
+              <Select value={language} onValueChange={handleLanguageChange}>
+                <SelectTrigger id="display-language" data-testid="language-select" className="w-44">
+                  <SelectValue placeholder={t('settings.language.placeholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.nativeName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SettingsRow>
+          </SettingsSection>
         </div>
 
         {/* ── Agent ── */}
@@ -749,10 +808,113 @@ export function SettingsPageClient({
                 initialAgentType={agentType}
                 initialModel={settings.models.default}
                 mode="settings"
-                onAgentModelChange={(newAgent) => setAgentType(newAgent as AgentType)}
+                onAgentModelChange={(newAgent) => {
+                  const newType = newAgent as AgentType;
+                  setAgentType(newType);
+                  // Auto-switch auth method for token-required / session-only agents
+                  if (TOKEN_REQUIRED_AGENTS.has(newType) && authMethod !== AgentAuthMethod.Token) {
+                    setAuthMethod(AgentAuthMethod.Token);
+                    save({ agent: { type: newType, authMethod: AgentAuthMethod.Token } });
+                  } else if (
+                    SESSION_ONLY_AGENTS.has(newType) &&
+                    authMethod !== AgentAuthMethod.Session
+                  ) {
+                    setAuthMethod(AgentAuthMethod.Session);
+                    save({ agent: { type: newType, authMethod: AgentAuthMethod.Session } });
+                  }
+                }}
                 className="w-55"
               />
             </SettingsRow>
+            <SettingsRow
+              label="Auth Method"
+              description="How this agent authenticates"
+              htmlFor="agent-auth-method"
+            >
+              <Select
+                value={authMethod}
+                onValueChange={(v) => {
+                  const newAuth = v as AgentAuthMethod;
+                  setAuthMethod(newAuth);
+                  const payload: Record<string, unknown> = {
+                    type: agentType,
+                    authMethod: newAuth,
+                  };
+                  if (newAuth === AgentAuthMethod.Token) {
+                    payload.token = token;
+                  }
+                  save({ agent: payload });
+                }}
+                disabled={
+                  SESSION_ONLY_AGENTS.has(agentType) || TOKEN_REQUIRED_AGENTS.has(agentType)
+                }
+              >
+                <SelectTrigger
+                  id="agent-auth-method"
+                  data-testid="agent-auth-method-select"
+                  className="w-55 cursor-pointer text-xs"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {AUTH_METHOD_OPTIONS.filter((opt) => {
+                    if (SESSION_ONLY_AGENTS.has(agentType))
+                      return opt.value === AgentAuthMethod.Session;
+                    if (TOKEN_REQUIRED_AGENTS.has(agentType))
+                      return opt.value === AgentAuthMethod.Token;
+                    return true;
+                  }).map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SettingsRow>
+            {TOKEN_REQUIRED_AGENTS.has(agentType) && (
+              <div className="border-b py-2.5 last:border-b-0">
+                <p className="text-muted-foreground text-[11px] leading-tight">
+                  This provider requires an API key for authentication. No CLI binary needed.
+                </p>
+              </div>
+            )}
+            {authMethod === AgentAuthMethod.Token && (
+              <SettingsRow label="API Token" description="Saves on blur" htmlFor="agent-token">
+                <div className="relative w-55">
+                  <Input
+                    id="agent-token"
+                    data-testid="agent-token-input"
+                    type={showToken ? 'text' : 'password'}
+                    value={token}
+                    onChange={(e) => setToken(e.target.value)}
+                    onBlur={() => {
+                      if (token !== (settings.agent.token ?? '')) {
+                        save({
+                          agent: { type: agentType, authMethod, token },
+                        });
+                      }
+                    }}
+                    placeholder="Enter your API token"
+                    className="pe-10 text-xs"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-0 right-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowToken(!showToken)}
+                    data-testid="toggle-token-visibility"
+                    aria-label={showToken ? 'Hide token' : 'Show token'}
+                  >
+                    {showToken ? (
+                      <EyeOff className="h-3.5 w-3.5" />
+                    ) : (
+                      <Eye className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </div>
+              </SettingsRow>
+            )}
           </SettingsSection>
           <SectionHint
             links={[

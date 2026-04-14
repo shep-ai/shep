@@ -1,0 +1,4 @@
+
+> @shepai/cli@1.178.1 lint /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-multi-provider-ai-sdk
+> eslint . --max-warnings 0 --cache
+

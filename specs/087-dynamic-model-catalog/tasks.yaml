@@ -1,0 +1,272 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: dynamic-model-catalog
+summary: Task breakdown for 087-dynamic-model-catalog — 9 tasks across 7 phases
+
+relatedFeatures:
+  - "086-multi-provider-ai-sdk"
+technologies: []
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: "Define CatalogEntry DTO and update IAgentExecutorFactory interface"
+    description: >
+      Create packages/core/src/application/ports/output/agents/model-catalog.types.ts
+      exporting CatalogEntry (id, displayName, description?, isFree, contextLength?,
+      pricing?). Update IAgentExecutorFactory: change getSupportedModels to return
+      Promise<string[]>, add getModelCatalog(agentType, token?) -> Promise<CatalogEntry[]>.
+      No runtime behavior yet — this phase only introduces the type surface so
+      downstream phases can compile.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - "CatalogEntry type exported from application/ports/output/agents"
+      - "IAgentExecutorFactory.getSupportedModels returns Promise<string[]>"
+      - "IAgentExecutorFactory.getModelCatalog(agentType, token?) returns Promise<CatalogEntry[]>"
+      - "pnpm typecheck reports only expected call-site breakages (to be fixed in later phases)"
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-2
+    title: "TDD: factory catalog cache with TTL and token-rotation invalidation"
+    description: >
+      RED: add agent-executor-factory-catalog.test.ts covering cache miss -> fetch,
+      cache hit -> no fetch, TTL expiry -> refetch, token rotation -> new cache entry,
+      fetch rejection -> fallback list. Mock executor.listModels via vi.spyOn.
+      GREEN: in agent-executor-factory.service.ts add catalogCache Map keyed by
+      `${type}::${sha256(token).slice(0,16)}`, TTL default 3_600_000 ms (injectable
+      via constructor for test control), lazy refresh, sha256 helper using node:crypto.
+      REFACTOR: extract cache logic into private methods getCachedCatalog / setCached
+      / hashToken, named constants for TTL and hash length.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "New test file passes with RED first commit, then GREEN"
+      - "Cache keyed per (agentType, tokenHash)"
+      - "TTL override accepted via constructor param"
+      - "Fetch rejection returns fallback without throwing"
+      - "No raw token stored in cache keys"
+    tdd:
+      red:
+        - "Write agent-executor-factory-catalog.test.ts with 6 failing cases"
+      green:
+        - "Implement catalogCache, hashToken, TTL check, fallback dispatch"
+      refactor:
+        - "Extract cache accessors; replace magic numbers with named constants"
+    estimatedEffort: M
+
+  - id: task-3
+    title: "Migrate getSupportedModels to async; update all existing unit tests"
+    description: >
+      RED: update tests/unit/infrastructure/services/agents/agent-executor-factory.test.ts
+      so assertions use await. These fail until GREEN.
+      GREEN: change getSupportedModels signature to Promise<string[]>; implementation
+      delegates to getModelCatalog for OR/Together and to the static arrays (now
+      renamed *_FALLBACK_MODELS) for CLI agents via Promise.resolve.
+      REFACTOR: co-locate fallback arrays at file bottom with explanatory comment
+      linking to spec 087.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - "getSupportedModels returns Promise<string[]> for all agent types"
+      - "All existing factory unit tests updated to await"
+      - "Static fallback arrays renamed with _FALLBACK_MODELS suffix and documented"
+      - "pnpm test:unit passes for factory tests"
+    tdd:
+      red:
+        - "Update existing factory tests to await — they fail"
+      green:
+        - "Return Promise from getSupportedModels; delegate to catalog or static fallback"
+      refactor:
+        - "Rename arrays, add spec reference comment"
+    estimatedEffort: S
+
+  - id: task-4
+    title: "[P] TDD: OpenRouterExecutorService.listModels()"
+    description: >
+      RED: openrouter-list-models.test.ts covers successful normalization from a
+      fixture, :free suffix detection, zero-pricing detection, 404/5xx -> throws
+      (factory handles fallback), AbortController timeout rejection.
+      GREEN: add listModels() to OpenRouterExecutorService: GET
+      https://openrouter.ai/api/v1/models with optional Bearer token, 10s
+      AbortController timeout, parse data[].{ id, name, description, context_length,
+      pricing } into CatalogEntry[]. Skip entries missing id.
+      REFACTOR: extract a buildCatalogEntry pure helper for unit-level reuse.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "listModels fetches /api/v1/models and returns normalized CatalogEntry[]"
+      - "Free detection covers both :free suffix and pricing.prompt === '0'"
+      - "10-second timeout enforced via AbortController"
+      - "Non-2xx response rejects; factory fallback path exercised in task-2 tests"
+      - "Fixture JSON used in test to avoid network"
+    tdd:
+      red:
+        - "Write failing listModels tests with fixture"
+      green:
+        - "Implement listModels with fetch + normalization"
+      refactor:
+        - "Extract buildCatalogEntry helper"
+    estimatedEffort: M
+
+  - id: task-5
+    title: "[P] TDD: TogetherAiExecutorService.listModels()"
+    description: >
+      RED: together-ai-list-models.test.ts covers successful normalization with
+      type filter (chat, language only), no-token short-circuit (resolves empty,
+      no fetch call), zero-pricing free detection, 401/429/5xx rejection, timeout.
+      GREEN: add listModels() that requires Bearer token; if missing, return
+      Promise.resolve([]) without calling fetch; otherwise GET
+      https://api.together.xyz/v1/models with Authorization header, 10s
+      AbortController timeout, filter type in {chat, language}, normalize to
+      CatalogEntry[].
+      REFACTOR: share buildCatalogEntry helper via a small module-level util in
+      the same file (no separate util file — too small).
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "No network call when token is missing/empty"
+      - "Only type in {chat, language} entries are returned"
+      - "Free detection via zero pricing"
+      - "10-second timeout enforced"
+      - "Fixture-driven tests, no live calls"
+    tdd:
+      red:
+        - "Write failing listModels tests with fixture"
+      green:
+        - "Implement listModels with token guard + fetch + filter + normalize"
+      refactor:
+        - "Extract buildCatalogEntry helper within file"
+    estimatedEffort: M
+
+  - id: task-6
+    title: "Migrate callers: web server actions, CLI model command, storybook mocks"
+    description: >
+      Update get-supported-models.ts and get-all-agent-models.ts to await the new
+      async interface and to consume getModelCatalog where richer metadata is needed
+      (UI action only; CLI still just needs string[]). Update the CLI model.command
+      to await. Update .storybook/mocks/app/actions/get-all-agent-models.ts to return
+      the richer catalog shape so Storybook builds don't regress. Update the mock
+      executor factory (mock-executor-factory.service.ts) to return Promise<string[]>
+      and stub getModelCatalog.
+    state: Todo
+    dependencies:
+      - task-3
+      - task-4
+      - task-5
+    acceptanceCriteria:
+      - "All three production callers await factory methods"
+      - "get-all-agent-models returns CatalogEntry[]-aware shape (with isFree, pricing)"
+      - "Storybook mock matches the new return shape"
+      - "mock-executor-factory updated with async stubs"
+      - "pnpm typecheck passes repo-wide"
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-7
+    title: "TDD: AgentModelPicker renders free-model badge"
+    description: >
+      RED: extend AgentModelPicker.test.tsx — "renders Free badge for isFree
+      entries". Assertion fails until the badge is wired.
+      GREEN: update the picker to accept the richer ModelInfo (add isFree, pricing
+      optional) and render a small "Free" pill next to displayName when
+      `m.isFree === true`. Style via existing Tailwind tokens (emerald-500 bg).
+      REFACTOR: extract ModelRow subcomponent within the same file if the JSX grows
+      beyond ~25 lines.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - "Free badge visible when isFree is true"
+      - "No badge when isFree is false"
+      - "Storybook 'With free models' story renders"
+      - "Existing picker tests still pass"
+    tdd:
+      red:
+        - "Write failing 'renders Free badge' test"
+      green:
+        - "Render badge in model row"
+      refactor:
+        - "Extract ModelRow if needed"
+    estimatedEffort: S
+
+  - id: task-8
+    title: "TDD: AgentModelPicker client-side search filter for large catalogs"
+    description: >
+      RED: extend AgentModelPicker.test.tsx — "shows search input when >20 models"
+      and "filters list by query case-insensitively".
+      GREEN: add a useState<string>('') filter inside the level-2 panel. Show
+      <input type="search"> above the model list only when
+      `activeGroup.models.length > 20`. Filter case-insensitively on
+      `displayName + id`. Auto-focus the input on drill-down to mimic command-palette
+      ergonomics. Clear filter on drillBack / popover close.
+      REFACTOR: extract a memoized `filteredModels` via useMemo; keep the filter
+      state local (no lift).
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - "Search input hidden at ≤20 entries"
+      - "Search input visible at >20 entries and auto-focuses"
+      - "Filter matches displayName or id, case-insensitive"
+      - "Filter resets on drill-back / popover close"
+      - "New 'Large catalog with search' Storybook story"
+    tdd:
+      red:
+        - "Write failing threshold + filter tests"
+      green:
+        - "Implement search state, conditional input, useMemo filter"
+      refactor:
+        - "Tighten state reset effects"
+    estimatedEffort: M
+
+  - id: task-9
+    title: "Verification: pnpm validate + full test suite + Storybook build"
+    description: >
+      Run the full local verification sequence before commit-pr: pnpm lint,
+      pnpm format:check, pnpm typecheck, pnpm test:unit, pnpm test:int, pnpm build,
+      pnpm build:storybook. Capture results to specs/087-dynamic-model-catalog/evidence/.
+      Fix any regressions surfaced. Zero tolerance for skipped failures.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - "All lint/format/typecheck checks pass"
+      - "pnpm test:unit and pnpm test:int green"
+      - "pnpm build succeeds"
+      - "pnpm build:storybook succeeds"
+      - "Evidence files captured under specs/087-dynamic-model-catalog/evidence/"
+    tdd: null
+    estimatedEffort: S
+
+totalEstimate: M (9 tasks, ~1 focused session)
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  Replace hardcoded OpenRouter / Together AI model lists with live, cached fetches
+  and surface free models in the picker — 9 tasks across 7 phases.
+
+  ## Acceptance Checklist
+
+  Before marking feature complete:
+
+  - [ ] All 9 tasks completed
+  - [ ] Tests passing (`pnpm test`)
+  - [ ] Linting clean (`pnpm lint`)
+  - [ ] Types valid (`pnpm typecheck`)
+  - [ ] TypeSpec compiles (`pnpm tsp:compile`)
+  - [ ] Storybook builds (`pnpm build:storybook`)
+  - [ ] PR created and reviewed
+
+  ---
+
+  _Task details are in the tasks[] array above_

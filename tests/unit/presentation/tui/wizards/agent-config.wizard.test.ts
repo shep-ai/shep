@@ -108,4 +108,59 @@ describe('agentConfigWizard', () => {
       'select:Select authentication method',
     ]);
   });
+
+  it('should skip auth method prompt for OpenRouter and prompt for token', async () => {
+    mockSelect.mockResolvedValueOnce('openrouter'); // agent type
+    mockPassword.mockResolvedValueOnce('or-test-key-123');
+
+    const result = await agentConfigWizard();
+
+    expect(result).toEqual({
+      type: 'openrouter',
+      authMethod: 'token',
+      token: 'or-test-key-123',
+    });
+    // select called only once (agent type, no auth method prompt)
+    expect(mockSelect).toHaveBeenCalledTimes(1);
+    expect(mockPassword).toHaveBeenCalledTimes(1);
+  });
+
+  it('should skip auth method prompt for Together AI and prompt for token', async () => {
+    mockSelect.mockResolvedValueOnce('together-ai'); // agent type
+    mockPassword.mockResolvedValueOnce('tai-test-key-456');
+
+    const result = await agentConfigWizard();
+
+    expect(result).toEqual({
+      type: 'together-ai',
+      authMethod: 'token',
+      token: 'tai-test-key-456',
+    });
+    expect(mockSelect).toHaveBeenCalledTimes(1);
+    expect(mockPassword).toHaveBeenCalledTimes(1);
+  });
+
+  it('should show auth method prompt for claude-code (unchanged)', async () => {
+    mockSelect.mockResolvedValueOnce('claude-code'); // agent type
+    mockSelect.mockResolvedValueOnce('session'); // auth method
+
+    await agentConfigWizard();
+
+    expect(mockSelect).toHaveBeenCalledTimes(2);
+    expect(mockPassword).not.toHaveBeenCalled();
+  });
+
+  it('should show auth method prompt for Ollama (no token required)', async () => {
+    mockSelect.mockResolvedValueOnce('ollama'); // agent type
+    mockSelect.mockResolvedValueOnce('session'); // auth method
+
+    const result = await agentConfigWizard();
+
+    expect(result).toEqual({
+      type: 'ollama',
+      authMethod: 'session',
+    });
+    expect(mockSelect).toHaveBeenCalledTimes(2);
+    expect(mockPassword).not.toHaveBeenCalled();
+  });
 });

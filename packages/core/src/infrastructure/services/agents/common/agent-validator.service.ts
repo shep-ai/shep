@@ -28,6 +28,7 @@ const AGENT_BINARY_MAP: Partial<Record<AgentType, string>> = {
   'copilot-cli': 'copilot',
   cursor: 'cursor-agent',
   'gemini-cli': 'gemini',
+  cline: 'cline',
 };
 
 /**
@@ -57,6 +58,11 @@ export class AgentValidatorService implements IAgentValidator {
   async isAvailable(agentType: AgentType): Promise<AgentValidationResult> {
     // Dev type requires no binary — always available for local development
     if (agentType === 'dev') return { available: true, version: 'dev' };
+
+    // SDK-based agents require no binary — always available (auth checked at execution time)
+    if (agentType === 'openrouter' || agentType === 'together-ai' || agentType === 'ollama') {
+      return { available: true, version: 'sdk' };
+    }
 
     const binary = AGENT_BINARY_MAP[agentType];
 

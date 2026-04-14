@@ -9,5 +9,9 @@ enum:
   - aider
   - continue
   - cursor
+  - cline
+  - openrouter
+  - together-ai
+  - ollama
   - dev
 description: AI coding agent tool selection

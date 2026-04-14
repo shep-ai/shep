@@ -59,3 +59,32 @@ export const CopilotCli: Story = {
     },
   },
 };
+
+export const OpenRouter: Story = {
+  args: {
+    agent: {
+      type: AgentType.OpenRouter,
+      authMethod: AgentAuthMethod.Token,
+      token: 'or-test-api-key-12345',
+    },
+  },
+};
+
+export const TogetherAi: Story = {
+  args: {
+    agent: {
+      type: AgentType.TogetherAi,
+      authMethod: AgentAuthMethod.Token,
+      token: 'tai-test-api-key-67890',
+    },
+  },
+};
+
+export const Ollama: Story = {
+  args: {
+    agent: {
+      type: AgentType.Ollama,
+      authMethod: AgentAuthMethod.Session,
+    },
+  },
+};

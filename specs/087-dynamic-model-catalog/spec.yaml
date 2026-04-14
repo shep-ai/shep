@@ -1,0 +1,95 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: dynamic-model-catalog
+number: 087
+branch: feat/087-dynamic-model-catalog
+oneLiner: Fetch available models dynamically from OpenRouter and Together AI APIs with caching and search
+summary: >
+  OpenRouter exposes 300+ models (many free) and Together AI exposes 100+,
+  but the AgentModelPicker only shows ~10 hardcoded models per provider.
+  Replace the static arrays with an async, cached fetch from each provider's
+  /v1/models endpoint, surface free-model badges, and add search to the picker
+  when the catalog grows beyond a threshold. Fallback to a curated default list
+  when the API is unreachable or unauthenticated.
+phase: Research
+sizeEstimate: M
+
+# Relationships
+relatedFeatures:
+  - "086-multi-provider-ai-sdk"
+
+technologies:
+  - TypeScript
+  - Vercel AI SDK
+  - React
+  - Next.js Server Actions
+
+relatedLinks:
+  - title: OpenRouter Models API
+    url: https://openrouter.ai/docs/api-reference/list-available-models
+  - title: Together AI Models API
+    url: https://docs.together.ai/reference/models-1
+
+# Open questions (must be resolved before implementation)
+openQuestions: []
+
+# Markdown content (the actual spec)
+content: |
+  ## Problem Statement
+
+  OpenRouter offers 300+ models across many providers (Anthropic, OpenAI, Meta,
+  Google, DeepSeek, Mistral, etc.) and Together AI offers 100+ open-source models.
+  Many of these are free or have generous free tiers. Today, the AgentModelPicker
+  shows a hardcoded list of ~10 OpenRouter models and ~8 Together AI models,
+  defined as static string arrays in `agent-executor-factory.service.ts`.
+
+  This means:
+  - Users cannot discover free models (e.g. `:free` variants on OpenRouter)
+  - Newly released models require a code change and a release
+  - The hardcoded lists drift from reality as providers add/remove models
+  - Users with valid API tokens cannot access models the maintainers haven't curated
+
+  ## Success Criteria
+
+  - [ ] OpenRouter model catalog is fetched live from `https://openrouter.ai/api/v1/models`
+  - [ ] Together AI model catalog is fetched live from `https://api.together.xyz/v1/models`
+  - [ ] Results are cached in-memory with a configurable TTL (default 1 hour)
+  - [ ] Cache is keyed per provider, invalidated on API token change
+  - [ ] `IAgentExecutorFactory.getSupportedModels` returns `Promise<string[]>` (becomes async)
+  - [ ] All synchronous callers are migrated to await the result
+  - [ ] AgentModelPicker shows a search/filter input when the model list exceeds 20 items
+  - [ ] Free models are visually tagged with a "Free" badge
+  - [ ] If the live fetch fails (no token, network error, non-2xx), the picker falls back to the existing curated lists with a non-blocking warning logged
+  - [ ] CLI agents (claude-code, cursor, codex-cli, copilot-cli, gemini-cli) keep their static lists — no behavior change
+  - [ ] Existing tests still pass; new tests cover live fetch, cache hit/miss, and fallback
+
+  ## Affected Areas
+
+  | Area                                                              | Impact | Reasoning                                                                       |
+  | ----------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------- |
+  | `IAgentExecutorFactory` interface                                 | High   | `getSupportedModels` signature changes from sync to async                       |
+  | `agent-executor-factory.service.ts`                               | High   | Replace static OR/Together arrays with cached API fetch                         |
+  | `openrouter-executor.service.ts` / `together-ai-executor.service.ts` | Medium | Add a `listModels()` method that hits the provider's /models endpoint           |
+  | `get-all-agent-models.ts` server action                           | Medium | Already async — must await the new factory method                               |
+  | `AgentModelPicker/index.tsx`                                      | Medium | Add search input + free-model badge rendering                                   |
+  | `model-metadata.ts`                                               | Low    | Extend `getModelMeta` to consume catalog metadata (pricing, context length)     |
+  | CLI `settings/model.command.ts`                                   | Low    | Await the now-async factory call                                                |
+  | Tests (factory, model-picker, server actions)                     | Medium | Mock fetch, cover cache + fallback paths                                        |
+  | Storybook mocks                                                   | Low    | Update `get-all-agent-models` mock to match richer return shape                 |
+
+  ## Dependencies
+
+  - **086-multi-provider-ai-sdk** — defines the OpenRouter and Together AI executor
+    services this feature extends. Catalog fetching builds on the same auth/token
+    plumbing.
+
+  ## Size Estimate
+
+  **M** — One interface change with a known migration surface, two new HTTP
+  integrations with shared caching, one UI enhancement (search + badge), and
+  test updates. No domain model changes; no DB migration.
+
+  ---
+
+  _Generated by `/shep-kit:new-feature` — proceed with `/shep-kit:research`_

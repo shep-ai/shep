@@ -1,9 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { Check, ChevronLeft, ChevronRight, CircleCheck, CircleMinus } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, CircleCheck, CircleMinus, Search } from 'lucide-react';
 import { getAllAgentModels } from '@/app/actions/get-all-agent-models';
-import type { AgentModelGroup } from '@/app/actions/get-all-agent-models';
+import type { AgentModelGroup, ModelInfo } from '@/app/actions/get-all-agent-models';
 import { checkAllAgentsStatus } from '@/app/actions/check-all-agents-status';
 import type { AgentInstallMap } from '@/app/actions/check-all-agents-status';
 import { updateAgentAndModel } from '@/app/actions/update-agent-and-model';
@@ -62,6 +62,8 @@ export function AgentModelPicker({
   const [level, setLevel] = React.useState(0);
   // Which agent's models to show (kept separate from level for animation)
   const [drillAgent, setDrillAgent] = React.useState<string | null>(null);
+  // Search query for filtering models (level 1 only)
+  const [modelQuery, setModelQuery] = React.useState('');
 
   React.useEffect(() => {
     getAllAgentModels()
@@ -89,6 +91,7 @@ export function AgentModelPicker({
       const t = setTimeout(() => {
         setLevel(0);
         setDrillAgent(null);
+        setModelQuery('');
       }, 150);
       return () => clearTimeout(t);
     }
@@ -96,6 +99,7 @@ export function AgentModelPicker({
 
   const drillInto = (agent: string) => {
     setDrillAgent(agent);
+    setModelQuery('');
     requestAnimationFrame(() => {
       requestAnimationFrame(() => setLevel(1));
     });
@@ -103,7 +107,20 @@ export function AgentModelPicker({
 
   const drillBack = () => {
     setLevel(0);
+    setModelQuery('');
     setTimeout(() => setDrillAgent(null), 220);
+  };
+
+  const filterModels = (models: ModelInfo[]): ModelInfo[] => {
+    const q = modelQuery.trim().toLowerCase();
+    if (!q) return models;
+    return models.filter(
+      (m) =>
+        m.id.toLowerCase().includes(q) ||
+        (m.displayName ?? '').toLowerCase().includes(q) ||
+        (m.vendor ?? '').toLowerCase().includes(q) ||
+        (m.description ?? '').toLowerCase().includes(q)
+    );
   };
 
   const handleSelect = async (newAgentType: string, newModel: string) => {
@@ -184,6 +201,8 @@ export function AgentModelPicker({
         <PopoverContent
           className="z-[70] w-(--radix-popover-trigger-width) overflow-hidden p-0"
           align="start"
+          side="bottom"
+          avoidCollisions={false}
         >
           {/* Sliding container — both panels side by side, translateX controlled by level */}
           <div
@@ -191,7 +210,12 @@ export function AgentModelPicker({
             style={{ transform: `translateX(${level === 1 ? '-50%' : '0%'})`, width: '200%' }}
           >
             {/* ── Level 1: Agent list ── */}
-            <div className="w-1/2 shrink-0">
+            <div
+              className={cn(
+                'max-h-53.75 w-1/2 shrink-0 overflow-y-auto',
+                level === 1 && 'h-0 overflow-hidden'
+              )}
+            >
               <div className="text-muted-foreground border-b px-3 py-2 text-xs font-medium">
                 Select agent
               </div>
@@ -238,7 +262,12 @@ export function AgentModelPicker({
             </div>
 
             {/* ── Level 2: Model list for selected agent ── */}
-            <div className="w-1/2 shrink-0">
+            <div
+              className={cn(
+                'max-h-53.75 w-1/2 shrink-0 overflow-y-auto',
+                level === 0 && 'h-0 overflow-hidden'
+              )}
+            >
               {activeGroup ? (
                 <>
                   {/* Back header */}
@@ -249,32 +278,79 @@ export function AgentModelPicker({
                   >
                     <ChevronLeft className="h-3.5 w-3.5" />
                     {activeGroup.label}
+                    <span className="text-muted-foreground/60 ml-auto">
+                      {activeGroup.models.length}
+                    </span>
                   </button>
 
+                  {/* Search box — shown only when catalog is large enough to warrant it */}
+                  {activeGroup.models.length > 8 ? (
+                    <div className="bg-background sticky top-0 z-10 border-b px-2 py-1.5">
+                      <div className="relative">
+                        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={modelQuery}
+                          onChange={(e) => setModelQuery(e.target.value)}
+                          placeholder="Search models…"
+                          className="bg-muted/50 placeholder:text-muted-foreground focus:ring-ring w-full rounded-md py-1 pr-2 pl-6 text-xs outline-none focus:ring-1"
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+
                   {/* Model items */}
-                  {activeGroup.models.map((m) => {
-                    const isSelected = agentType === activeGroup.agentType && model === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        type="button"
-                        className={cn(
-                          'flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-start transition-colors',
-                          'hover:bg-accent hover:text-accent-foreground',
-                          isSelected && 'bg-accent/50'
-                        )}
-                        onClick={() => handleSelect(activeGroup.agentType, m.id)}
-                      >
-                        <div className="flex min-w-0 flex-1 flex-col">
-                          <span className="text-xs font-medium">{m.displayName}</span>
-                          <span className="text-muted-foreground text-xs">{m.description}</span>
+                  {(() => {
+                    const visible = filterModels(activeGroup.models);
+                    if (visible.length === 0) {
+                      return (
+                        <div className="text-muted-foreground px-3 py-4 text-center text-xs">
+                          No models match &ldquo;{modelQuery}&rdquo;
                         </div>
-                        {isSelected ? (
-                          <Check className="text-primary h-3.5 w-3.5 shrink-0" />
-                        ) : null}
-                      </button>
-                    );
-                  })}
+                      );
+                    }
+                    return visible.map((m) => {
+                      const isSelected = agentType === activeGroup.agentType && model === m.id;
+                      const secondary =
+                        m.description ||
+                        [
+                          m.vendor,
+                          m.contextLength ? `${Math.round(m.contextLength / 1000)}k ctx` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ') ||
+                        m.id;
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          className={cn(
+                            'flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-start transition-colors',
+                            'hover:bg-accent hover:text-accent-foreground',
+                            isSelected && 'bg-accent/50'
+                          )}
+                          onClick={() => handleSelect(activeGroup.agentType, m.id)}
+                        >
+                          <div className="flex min-w-0 flex-1 flex-col">
+                            <span className="flex items-center gap-1.5 text-xs font-medium">
+                              <span className="truncate">{m.displayName}</span>
+                              {m.isFree ? (
+                                <span className="rounded bg-emerald-100 px-1 py-0 text-[9px] font-semibold tracking-wide text-emerald-700 uppercase dark:bg-emerald-900/40 dark:text-emerald-300">
+                                  Free
+                                </span>
+                              ) : null}
+                            </span>
+                            <span className="text-muted-foreground truncate text-xs">
+                              {secondary}
+                            </span>
+                          </div>
+                          {isSelected ? (
+                            <Check className="text-primary h-3.5 w-3.5 shrink-0" />
+                          ) : null}
+                        </button>
+                      );
+                    });
+                  })()}
                 </>
               ) : null}
             </div>

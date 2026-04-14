@@ -1,0 +1,59 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: simplify-bug-reporting
+number: 087
+branch: feat/087-simplify-bug-reporting
+oneLiner: simplify github issue templates for easier bug reporting
+userQuery: >
+  Simplify GitHub issue templates to reduce friction when reporting bugs,
+  requesting features, or suggesting doc improvements.
+summary: >
+  Simplify GitHub issue templates by consolidating multiple fields into
+  single textareas, removing required checklists, and enabling blank issues.
+phase: Analysis
+sizeEstimate: M
+
+# Relationships
+relatedFeatures:
+  []
+
+technologies:
+  []
+
+relatedLinks:
+  []
+
+# Open questions (must be resolved before implementation)
+openQuestions:
+  []
+
+# Markdown content (the actual spec)
+content: |
+  ## Problem Statement
+
+  GitHub issue templates are overly complex with too many required fields,
+  discouraging users from reporting bugs or requesting features. Simplify
+  the templates to reduce friction and increase community engagement.
+
+  ## Success Criteria
+
+  - [x] Bug report template consolidated to fewer, simpler fields
+  - [x] Feature request template simplified
+  - [x] Docs improvement template simplified
+  - [x] Blank issues enabled for quick reports
+  - [x] All templates are valid YAML
+
+  ## Affected Areas
+
+  | Area           | Impact | Reasoning                                |
+  | -------------- | ------ | ---------------------------------------- |
+  | GitHub config  | High   | Issue templates directly affect UX       |
+
+  ## Dependencies
+
+  None identified.
+
+  ## Size Estimate
+
+  **S** - Configuration-only change

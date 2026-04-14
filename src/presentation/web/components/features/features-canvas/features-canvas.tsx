@@ -32,6 +32,8 @@ export interface FeaturesCanvasProps {
   onCanvasDrag?: () => void;
   onMoveEnd?: OnMoveEnd;
   toolbar?: React.ReactNode;
+  /** Show the toolbar even when the canvas is empty (e.g. empty workspace). Defaults to true. */
+  showToolbarOnEmpty?: boolean;
   emptyState?: React.ReactNode;
 }
 
@@ -51,6 +53,7 @@ export function FeaturesCanvas({
   onCanvasDrag,
   onMoveEnd,
   toolbar,
+  showToolbarOnEmpty = true,
   emptyState,
 }: FeaturesCanvasProps) {
   const { t } = useTranslation('web');
@@ -190,8 +193,9 @@ export function FeaturesCanvas({
         </div>
       ) : null}
       {/* Toolbar rendered above the empty-state overlay so the workspace
-          selector remains usable while an empty workspace is shown. */}
-      {toolbar && isEmpty ? (
+          selector remains usable while an empty workspace is shown.
+          Hidden when showToolbarOnEmpty is false (welcome prompt screen). */}
+      {toolbar && isEmpty && showToolbarOnEmpty ? (
         <div className="pointer-events-auto absolute end-3 top-3 z-20">{toolbar}</div>
       ) : null}
     </div>
