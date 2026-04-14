@@ -22,8 +22,20 @@ Feature flags are persisted in the Settings singleton and toggled via the Settin
 8. `src/presentation/web/components/features/settings/settings-page-client.tsx` — add `<SwitchRow>` inside the Feature Flags `SettingsSection` and add the key to the fallback object at the top (`const featureFlags = settings.featureFlags ?? { ... }`).
 9. Translation strings in EVERY locale — `translations/<lang>/web.json` → `settings.featureFlags.<name>` and `settings.featureFlags.<name>Description`. Missing keys render as the raw key path on-screen. Locales: `en, ar, es, de, fr, he, pt, uk, ru`.
 10. Gate the UI on `featureFlags.<name>` wherever the feature is exposed (sidebar, routes, search, FAB actions)
+11. Update hardcoded `FeatureFlags` / `FeatureFlagsState` fixtures across stories, tests, and hooks. `tsc --noEmit` will surface every one — run `pnpm typecheck` BEFORE committing so the pre-commit hook doesn't bounce. Known fixture locations (grow this list when a new one shows up):
+    - `src/presentation/web/hooks/feature-flags-context.tsx`
+    - `src/presentation/web/components/features/settings/settings-page-client.tsx` (fallback object)
+    - `src/presentation/web/components/features/settings/settings-page-client.stories.tsx`
+    - `src/presentation/web/components/layouts/app-sidebar/app-sidebar.stories.tsx`
+    - `src/presentation/web/components/common/repository-node/repository-drawer.stories.tsx`
+    - `tests/unit/presentation/web/layouts/app-sidebar.test.tsx`
+    - `tests/unit/presentation/web/layouts/app-shell.test.tsx`
+    - `tests/unit/presentation/web/components/common/add-repository-button/add-repository-button.test.tsx`
+    - `tests/unit/infrastructure/services/settings-service-update.test.ts`
+    - `tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts` (snake_case `feature_flag_<name>` field)
+    - `tests/integration/infrastructure/repositories/sqlite-settings.repository.test.ts`
 
-**Verify before claiming done:** open the Settings page in the browser and confirm the new toggle actually renders. If it doesn't, you edited the wrong component (see step 8) or forgot translation keys (see step 9).
+**Verify before claiming done:** run `pnpm typecheck`, then open the Settings page in the browser and confirm the new toggle actually renders. If it doesn't, you forgot translation keys (see step 9) or the DB row still has the default value.
 
 **Failure mode if you skip a step:** the UI toggle saves, the mapper writes the column, but the repo SQL omits it → the value is silently dropped on INSERT/UPDATE. Same pattern as the per-feature flag bug below — mapper and repo SQL are separate sources of truth and must stay in sync.
 
