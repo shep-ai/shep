@@ -42,18 +42,9 @@ import type { SessionRegistry, SessionState } from './core/session-registry.js';
 import type { StreamEventDispatcher } from './core/stream-event-dispatcher.js';
 import type { SessionPersistence } from './core/session-persistence.js';
 import type { AgentConfigResolver } from './lifecycle/agent-config.resolver.js';
-
-/**
- * Boot-phase watchdog: how long the agent is allowed to go WITHOUT
- * emitting any stream event (delta / tool_use / tool_result / status)
- * before we consider the boot stuck and abort it.
- *
- * This is an IDLE timer, not a wall-clock budget: each event received
- * resets it. That's essential for application-creation flows where the
- * first turn legitimately takes many minutes (scaffold + install + build
- * a whole project). A fixed wall-clock budget would kill those mid-way.
- */
-const BOOT_IDLE_TIMEOUT_MS = 120_000;
+import type { ILogger } from '../../../application/ports/output/services/logger.interface.js';
+import { BootWatchdog } from './lifecycle/boot-watchdog.js';
+import { type AgentStreamConsumer } from './runtime/agent-stream.consumer.js';
 
 /**
  * Core service managing interactive agent session lifecycles.
@@ -81,7 +72,9 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     private readonly registry: SessionRegistry,
     private readonly dispatcher: StreamEventDispatcher,
     private readonly persistence: SessionPersistence,
-    private readonly agentConfigResolver: AgentConfigResolver
+    private readonly agentConfigResolver: AgentConfigResolver,
+    private readonly streamConsumer: AgentStreamConsumer,
+    private readonly logger: ILogger
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -304,162 +297,65 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       // Send the boot prompt and iterate stream for the greeting
       await handle.send(bootPrompt);
 
-      // No longer needed as a local — delta text is accumulated into
-      // `state.currentAssistantBuffer` and flushed inline alongside
-      // tool events via `flushAssistantBuffer`.
       const bootAbort = new AbortController();
       state.streamAbort = bootAbort;
 
       // Idle watchdog: reset on every event. If the agent goes silent
-      // for longer than BOOT_IDLE_TIMEOUT_MS, abort the boot. This is
-      // NOT a wall-clock budget — long first turns (full project
+      // for longer than BootWatchdog.IDLE_TIMEOUT_MS, abort the boot.
+      // This is NOT a wall-clock budget — long first turns (full project
       // scaffold + install + build) are fine as long as the stream
       // keeps producing events.
-      let bootTimeout: NodeJS.Timeout = setTimeout(() => {
-        bootAbort.abort();
-      }, BOOT_IDLE_TIMEOUT_MS);
-      const bumpBootWatchdog = () => {
-        clearTimeout(bootTimeout);
-        bootTimeout = setTimeout(() => {
-          bootAbort.abort();
-        }, BOOT_IDLE_TIMEOUT_MS);
-      };
+      const watchdog = new BootWatchdog();
+      watchdog.start(() => bootAbort.abort());
 
+      let result;
       try {
-        for await (const event of handle.stream()) {
-          if (bootAbort.signal.aborted) {
-            throw new Error(
-              `Agent boot stalled for ${BOOT_IDLE_TIMEOUT_MS / 1000}s with no stream activity`
-            );
-          }
-
-          // Any event = proof of life. Reset the boot watchdog so a
-          // long-running first turn (full project scaffold) isn't
-          // killed as long as the stream keeps producing events.
-          bumpBootWatchdog();
-
-          switch (event.type) {
-            case 'delta':
-              if (event.content) {
-                state.currentAssistantBuffer += event.content;
-                this.dispatcher.notify(state, { delta: event.content, done: false });
-              }
-              break;
-
-            case 'thinking':
-              if (event.content) {
-                await this.persistence.persistToolEvent(state, 'Thinking', event.content);
-                this.dispatcher.notify(state, {
-                  delta: '',
-                  done: false,
-                  log: 'Thinking…',
-                  activity: { kind: 'thinking', label: 'Thinking', detail: event.content },
-                });
-              }
-              break;
-
-            case 'tool_use':
-              if (event.label) {
-                const toolLabel = event.label;
-                const toolDetail = event.detail;
-                await this.persistence.persistToolEvent(state, toolLabel, toolDetail);
-                this.dispatcher.notify(state, {
-                  delta: '',
-                  done: false,
-                  log: `Using tool: ${toolLabel}`,
-                  activity: { kind: 'tool_use', label: toolLabel, detail: toolDetail },
-                });
-              }
-              break;
-
-            case 'tool_result':
-              if (event.label) {
-                const resultLabel = event.label;
-                const resultDetail = event.detail;
-                await this.persistence.persistToolEvent(state, resultLabel, resultDetail);
-                this.dispatcher.notify(state, {
-                  delta: '',
-                  done: false,
-                  log: `Completed: ${resultLabel}`,
-                  activity: { kind: 'tool_result', label: resultLabel, detail: resultDetail },
-                });
-              }
-              break;
-
-            case 'status':
-              if (event.content) {
-                const statusContent = event.content;
-                this.dispatcher.notify(state, { delta: '', done: false, log: statusContent });
-              }
-              break;
-
-            case 'done': {
-              // All delta text is persisted incrementally via
-              // `flushAssistantBuffer` inside `persistToolEvent`, so by
-              // the time `done` fires the buffer only holds the trailing
-              // prose that came after the last tool call (often the
-              // final step confirmation). Flush it here as its own
-              // message — persisting `event.content`/`greetingText`
-              // would duplicate everything we already flushed between
-              // tools.
-              await this.persistence.flushAssistantBuffer(state);
-
-              // Capture the SDK session ID (available after first message exchange)
-              const sdkSessionId = handle.sessionId;
-              if (sdkSessionId) {
-                // Detect CWD mismatch: if we tried to resume but got a different
-                // session ID, the SDK silently created a fresh session (typically
-                // because the cwd changed or session JSONL was lost).
-                if (previousAgentSessionId && sdkSessionId !== previousAgentSessionId) {
-                  // eslint-disable-next-line no-console
-                  console.warn(
-                    `[InteractiveSession] Session resume mismatch for feature ${featureId}: ` +
-                      `expected ${previousAgentSessionId}, got ${sdkSessionId}. ` +
-                      `SDK created a fresh session (likely cwd changed or session expired).`
-                  );
-                }
-                state.agentSessionId = sdkSessionId;
-                // Persist to DB so it survives service restarts
-                void this.sessionRepo.updateAgentSessionId(state.sessionId, sdkSessionId);
-              }
-
-              await this.persistence.updateSessionStatusAndNotify(
-                state.sessionId,
-                state.featureId,
-                InteractiveSessionStatus.ready
-              );
-
-              // If there's a pending user message, the next turn will set 'processing'.
-              // Otherwise boot greeting is expected — mark idle.
-              if (!state.pendingUserContent) {
-                void this.persistence.updateTurnStatusAndNotify(
-                  state.sessionId,
-                  state.featureId,
-                  'idle'
-                );
-              }
-
-              state.currentAssistantBuffer = '';
-              state.toolEventsLog = [];
-
-              // Notify subscribers of end-of-turn
-              this.dispatcher.notify(state, { delta: '', done: true });
-              return; // Boot complete
-            }
-
-            case 'error':
-              throw new Error(`Agent error during boot: ${event.content ?? 'unknown'}`);
-          }
-        }
+        result = await this.streamConsumer.consume(handle, state, 'boot', bootAbort, watchdog);
       } finally {
-        clearTimeout(bootTimeout);
+        watchdog.stop();
         state.streamAbort = undefined;
       }
 
-      // If we get here without a 'done' event, persist whatever
-      // trailing text remains in the buffer (earlier text was already
-      // flushed incrementally alongside tool events).
-      await this.persistence.flushAssistantBuffer(state);
+      if (result.completed === 'done') {
+        // Capture the SDK session ID (available after first message exchange)
+        const sdkSessionId = result.agentSessionIdFromHandle;
+        if (sdkSessionId) {
+          // Detect CWD mismatch: if we tried to resume but got a different
+          // session ID, the SDK silently created a fresh session (typically
+          // because the cwd changed or session JSONL was lost).
+          if (previousAgentSessionId && sdkSessionId !== previousAgentSessionId) {
+            this.logger.warn(
+              `[InteractiveSession] Session resume mismatch for feature ${featureId}: ` +
+                `expected ${previousAgentSessionId}, got ${sdkSessionId}. ` +
+                `SDK created a fresh session (likely cwd changed or session expired).`
+            );
+          }
+          state.agentSessionId = sdkSessionId;
+          // Persist to DB so it survives service restarts
+          void this.sessionRepo.updateAgentSessionId(state.sessionId, sdkSessionId);
+        }
+
+        await this.persistence.updateSessionStatusAndNotify(
+          state.sessionId,
+          state.featureId,
+          InteractiveSessionStatus.ready
+        );
+
+        // If there's a pending user message, the next turn will set 'processing'.
+        // Otherwise boot greeting is expected — mark idle.
+        if (!state.pendingUserContent) {
+          void this.persistence.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
+        }
+
+        state.currentAssistantBuffer = '';
+        state.toolEventsLog = [];
+
+        // Notify subscribers of end-of-turn
+        this.dispatcher.notify(state, { delta: '', done: true });
+        return; // Boot complete
+      }
+
+      // ended-without-done: persist trailing text and transition to ready.
       await this.persistence.updateSessionStatusAndNotify(
         state.sessionId,
         state.featureId,

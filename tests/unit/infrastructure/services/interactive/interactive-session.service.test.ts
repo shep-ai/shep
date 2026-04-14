@@ -30,7 +30,9 @@ import { SessionRegistry } from '@/infrastructure/services/interactive/core/sess
 import { StreamEventDispatcher } from '@/infrastructure/services/interactive/core/stream-event-dispatcher.js';
 import { SessionPersistence } from '@/infrastructure/services/interactive/core/session-persistence.js';
 import { AgentConfigResolver } from '@/infrastructure/services/interactive/lifecycle/agent-config.resolver.js';
+import { AgentStreamConsumer } from '@/infrastructure/services/interactive/runtime/agent-stream.consumer.js';
 import type { ISettingsProvider } from '@/application/ports/output/services/settings-provider.interface.js';
+import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 import { ConcurrentSessionLimitError } from '@/domain/errors/concurrent-session-limit.error.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
 import type { IInteractiveMessageRepository } from '@/application/ports/output/repositories/interactive-message-repository.interface.js';
@@ -312,6 +314,13 @@ describe('InteractiveSessionService', () => {
       },
     };
     const agentConfigResolver = new AgentConfigResolver(fakeSettingsProvider);
+    const fakeLogger: ILogger = {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
+    const streamConsumer = new AgentStreamConsumer(persistence, dispatcher, fakeLogger);
     service = new InteractiveSessionService(
       sessionRepo,
       messageRepo,
@@ -322,7 +331,9 @@ describe('InteractiveSessionService', () => {
       registry,
       dispatcher,
       persistence,
-      agentConfigResolver
+      agentConfigResolver,
+      streamConsumer,
+      fakeLogger
     );
   });
 

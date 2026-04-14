@@ -53,6 +53,8 @@ import { StreamEventDispatcher } from '@/infrastructure/services/interactive/cor
 import { SessionPersistence } from '@/infrastructure/services/interactive/core/session-persistence.js';
 import { SettingsProviderAdapter } from '@/infrastructure/services/interactive/lifecycle/settings-provider.adapter.js';
 import { AgentConfigResolver } from '@/infrastructure/services/interactive/lifecycle/agent-config.resolver.js';
+import { AgentStreamConsumer } from '@/infrastructure/services/interactive/runtime/agent-stream.consumer.js';
+import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 
 /**
  * String tokens resolved by web API routes. To regenerate, grep
@@ -208,6 +210,13 @@ describe('DI container bootstrap (integration)', () => {
     );
     const settingsProvider = new SettingsProviderAdapter();
     const agentConfigResolver = new AgentConfigResolver(settingsProvider);
+    const noop = (_msg: string, _meta?: Record<string, unknown>) => undefined;
+    const logger: ILogger = { debug: noop, info: noop, warn: noop, error: noop };
+    const streamConsumer = new AgentStreamConsumer(
+      sessionPersistence,
+      streamEventDispatcher,
+      logger
+    );
     const interactiveSessionService = new InteractiveSessionService(
       interactiveSessionRepo,
       interactiveMessageRepo,
@@ -218,7 +227,9 @@ describe('DI container bootstrap (integration)', () => {
       sessionRegistry,
       streamEventDispatcher,
       sessionPersistence,
-      agentConfigResolver
+      agentConfigResolver,
+      streamConsumer,
+      logger
     );
     scopedContainer.registerInstance<IInteractiveSessionService>(
       'IInteractiveSessionService',

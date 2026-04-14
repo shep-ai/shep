@@ -35,6 +35,8 @@ import { StreamEventDispatcher } from '../services/interactive/core/stream-event
 import { SessionPersistence } from '../services/interactive/core/session-persistence.js';
 import { SettingsProviderAdapter } from '../services/interactive/lifecycle/settings-provider.adapter.js';
 import { AgentConfigResolver } from '../services/interactive/lifecycle/agent-config.resolver.js';
+import { AgentStreamConsumer } from '../services/interactive/runtime/agent-stream.consumer.js';
+import type { ILogger } from '../../application/ports/output/services/logger.interface.js';
 
 // Topic-grouped registration modules
 import { registerRepositories } from './modules/register-repositories.js';
@@ -128,6 +130,18 @@ export async function initializeContainer(): Promise<typeof container> {
   // everywhere else consults it through the injected port.
   const settingsProvider = new SettingsProviderAdapter();
   const agentConfigResolver = new AgentConfigResolver(settingsProvider);
+
+  const logger: ILogger = {
+    // eslint-disable-next-line no-console
+    debug: (msg, meta) => console.debug(`[shep] ${msg}`, meta ?? ''),
+    // eslint-disable-next-line no-console
+    info: (msg, meta) => console.info(`[shep] ${msg}`, meta ?? ''),
+    // eslint-disable-next-line no-console
+    warn: (msg, meta) => console.warn(`[shep] ${msg}`, meta ?? ''),
+    // eslint-disable-next-line no-console
+    error: (msg, meta) => console.error(`[shep] ${msg}`, meta ?? ''),
+  };
+  const streamConsumer = new AgentStreamConsumer(sessionPersistence, streamEventDispatcher, logger);
   const interactiveSessionService = new InteractiveSessionService(
     interactiveSessionRepo,
     interactiveMessageRepo,
@@ -138,7 +152,9 @@ export async function initializeContainer(): Promise<typeof container> {
     sessionRegistry,
     streamEventDispatcher,
     sessionPersistence,
-    agentConfigResolver
+    agentConfigResolver,
+    streamConsumer,
+    logger
   );
   container.registerInstance<IInteractiveSessionService>(
     'IInteractiveSessionService',
