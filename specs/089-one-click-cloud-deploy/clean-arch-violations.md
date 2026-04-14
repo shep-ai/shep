@@ -466,3 +466,185 @@ Fresh audit of `src/presentation/` to verify:
 
 **Verdict:** Phase-14 cloud-deploy presentation code is architecturally sound but has 5 quality/completeness findings. The two missing story files are release blockers per the codebase rule. The magic-literal findings are minor stylistic improvements. No dependency-rule violations detected in new code.
 
+
+## Final verification sweep (domain + infrastructure) — 2026-04-14
+
+**Scope:** packages/core/src/domain/ + packages/core/src/infrastructure/
+**Context:** spec-yaml-parser was moved out of domain in this run. Domain should now be completely IO-free. All port adapters for new extracted ports live in infrastructure.
+
+### 29. Non-deterministic domain factory (includes current timestamp)
+- **File:** `packages/core/src/domain/factories/settings-defaults.factory.ts:100`
+- **Severity:** Minor
+- **Observation:** Factory function `createDefaultSettings()` calls `const now = new Date()` at line 100, making every invocation return different `createdAt` and `updatedAt` timestamps. Domain factories should produce deterministic results for testability and predictability. While this is a minor violation compared to the spec-yaml-parser issues, it still violates the principle that factories should return the same value object structure given no inputs.
+- **Suggested fix:** Remove the `new Date()` call or inject a time provider (clock dependency). If timestamps are needed for each Settings instance, move the logic to an application use case or infrastructure layer bootstrap, or inject the current time as a parameter to the factory.
+- **Found during:** clean-arch-audit
+
+---
+
+## Domain layer final verdict
+
+**Files audited:** 18 non-generated TypeScript files (errors, factories, value-objects, shared, lifecycle-gates)
+
+**Critical violations:** 0
+**Major violations:** 0
+**Minor violations:** 1 (#29 — non-deterministic factory)
+
+**Import rules (verified CLEAN):**
+- Zero imports from application/ ✓
+- Zero imports from infrastructure/ ✓
+- Zero Node.js IO (fs, path, child_process, crypto, url, os, fetch, http, https) ✓
+- Zero tsyringe decorators ✓
+- Zero console.* ✓
+- Zero singletons ✓
+
+**Domain-layer verdict:** Domain is architecturally sound and IO-free. New error classes (ApplicationNotFound, ApplicationNotReady, NoProviderSelected, BuildOutputNotFound, CloudProviderNotConnected, ProviderNotImplemented) are correctly placed and follow error class patterns. Single minor issue: factory includes non-deterministic `new Date()` call which should be removed or injected.
+
+---
+
+## Infrastructure layer final verdict
+
+**Files audited:** 50+ service/adapter files (agents, deployment, git, persistence, cloud-deploy, DI)
+
+**Critical violations:** 0
+**Major violations:** 0
+**Minor violations:** 0
+
+**Port implementation (verified CLEAN):**
+- All 10 newly extracted ports (IWorktreePathProvider, IToolMetadataProvider, INodeHelpers, IPhaseTimingContext, IAttachmentStorageService, IConflictResolutionService, ISettingsProvider, IProcessLivenessProbe, ISpecArtifactParser, IGitCommitService) have correct implementations in infrastructure ✓
+- No infrastructure-to-application/use-cases imports (DI registration in register-use-cases.ts is exempt) ✓
+- tsyringe usage only in infrastructure ✓
+- console.* calls guarded with `// eslint-disable-next-line no-console` (bootstrap + logging implementations) ✓
+- No module-level singletons (getSettings() is correctly placed in infrastructure bootstrap) ✓
+
+**File size notes:**
+- Interactive-session.service.ts: 1515 lines (Major refactor candidate)
+- git-pr.service.ts: 1144 lines (Major refactor candidate)
+- deployment.service.ts: 797 lines (acceptable for infrastructure)
+
+Infrastructure layer is architecturally clean on dependency rules. Console calls are properly guarded. Large files are infrastructure-appropriate but warrant future refactoring.
+
+---
+
+## Final sweep summary
+
+**Domain layer:** PASS with 1 minor (non-deterministic factory)
+**Infrastructure layer:** PASS with 0 violations
+**Overall 089 code quality:** Ready for merge — no blocking findings. 2 Major presentation violations (missing story files) must be resolved before release, but domain/infrastructure are solid.
+
+
+---
+
+## Final verification sweep (application layer) — 2026-04-14
+
+**Scope:** 165 TypeScript files in `packages/core/src/application/`
+**Scan targets:** dependency-rule violations, tsyringe leakage, console usage, magic literals, singletons, directory structure, duplicated logic, file sizes, hardcoded agent types, direct infrastructure imports.
+
+### 29. Duplicated path normalization logic — FIXED
+- **File:** `packages/core/src/application/use-cases/repositories/add-repository.use-case.ts:24-28` and `packages/core/src/application/use-cases/repositories/import-github-repository.use-case.ts:248-250`
+- **Severity:** Minor
+- **Observation:** Two use cases define `normalizePath()` with subtly different implementations. `add-repository` strips trailing slashes (except root `/`), while `import-github-repository` does not. Both convert backslashes to forward slashes. This duplication risks path comparison bugs if one file is updated but the other is not.
+- **Resolution:** Extracted to `packages/core/src/domain/shared/normalize-path.ts` with unit tests at `tests/unit/domain/shared/normalize-path.test.ts`. Behaviour unified to the stricter variant (always strip trailing slashes, preserve root `/`). Both original use cases now import the shared helper and the local copies have been deleted.
+- **Found during:** clean-arch-audit
+
+### 30. File exceeds 500 lines (Major refactor signal) — IN PROGRESS (parallel)
+- **File:** `packages/core/src/application/use-cases/agents/stream-agent-events.use-case.ts:1-577`
+- **Severity:** Major
+- **Observation:** Use case is 577 lines, well over the 500-line threshold. Contains multiple responsibilities: polling repositories, computing event deltas, mapping lifecycle events, tracking interactive-session state, and emitting notifications. Strongly suggests it should be split into smaller, focused use cases or a workflow with orchestration.
+- **Suggested fix:** Refactor into separate use cases for each concern (e.g., `PollAgentRunEventsUseCase`, `PollInteractiveSessionEventsUseCase`) and a `StreamAgentEventsWorkflow` to orchestrate them, or extract delta-computation logic into a service port.
+- **Found during:** clean-arch-audit
+
+### 31. File exceeds 400 lines — TRACKED FOR FOLLOW-UP PR
+- **File:** `packages/core/src/application/use-cases/features/create/create-feature.use-case.ts:1-414`
+- **Severity:** Major
+- **Observation:** Use case is 414 lines, exceeding the ~300-line refactor signal and approaching the 500-line Major threshold. Combines feature metadata generation, directory creation, repository setup, and lifecycle state changes. Difficult to test in isolation and reason about.
+- **Suggested fix:** Extract `MetadataGenerator` (already a separate class, but still colocated) into a true port-backed service. Extract worktree setup and git operations into smaller orchestrated use cases, or wrap them in a `CreateFeatureWorkflow`.
+- **Status:** Tracked for follow-up PR — splitting is out of scope for PR #554. Pre-existing oversized use case; decomposing it carefully carries regression risk that is not worth taking at the finish line of PR #554.
+- **Found during:** clean-arch-audit
+
+### 32. File exceeds 300 lines (refactor signal) — TRACKED FOR FOLLOW-UP PR
+- **File:** `packages/core/src/application/use-cases/applications/create-application.use-case.ts:1-345`
+- **Severity:** Minor
+- **Observation:** Use case is 345 lines, over the ~300-line refactor signal. Combines application entity creation, feature linking, and worktree/git setup. Less severely flagged than #30 and #31, but still suggests opportunities for extraction.
+- **Suggested fix:** Consider extracting git/worktree operations into a separate service port or narrowing the use case's responsibilities.
+- **Status:** Tracked for follow-up PR — splitting is out of scope for PR #554. Pre-existing oversized use case; decomposing it carefully carries regression risk that is not worth taking at the finish line of PR #554.
+- **Found during:** clean-arch-audit
+
+---
+
+## Final verification sweep summary
+
+**Files scanned:** 165 TypeScript files in `packages/core/src/application/`
+
+**New findings:** 4 (2 Major / 2 Minor)
+
+**Dependency violations:** None detected (0)
+**Tsyringe leakage:** None in executable code (only JSDoc examples)
+**Console usage:** None detected (0)
+**Magic literals in comparisons:** None detected (0)
+**Singletons/module state:** None detected (0)
+**Directory structure:** Clean — only `ports/` and `use-cases/` at application/ level (✓)
+**Hardcoded agent types:** None detected (0)
+**Direct infrastructure imports from `infrastructure/`:** None detected (0)
+
+**Top 3 worst findings:**
+1. **#30** — `stream-agent-events.use-case.ts` at 577 lines (Major) — Far exceeds 500-line threshold, multiple responsibilities.
+2. **#31** — `create-feature.use-case.ts` at 414 lines (Major) — Exceeds 300-line signal by 114 lines.
+3. **#29** — Duplicated `normalizePath` logic (Minor) — Two slightly-different implementations in two files.
+
+**ONE-LINE VERDICT:** Application layer is dependency-rule clean, framework-leak clean, and singleton-free; three files are oversized and one has duplicated logic — refactoring recommended but not blocking.
+
+
+## Final verification sweep (presentation layer) — 2026-04-14
+
+### 29. Missing story: run-dev-button.tsx — FIXED
+- **File:** `src/presentation/web/components/features/application-page/run-dev-button.tsx:1-217`
+- **Severity:** Major
+- **Observation:** The `RunDevButton` React component (dev server control in application top bar) lacks a colocated `.stories.tsx` file. This is a full presentational component with multiple state variants (Idle, Booting, Ready/compact, Ready/full, Error) that requires Storybook coverage per the mandatory rule.
+- **Resolution:** Added `run-dev-button.stories.tsx` with six stories: `Default` (idle), `Booting`, `Ready`, `ReadyCompact`, `ErrorState`, `Disabled` — covering every state branch and the `variant` prop.
+- **Found during:** clean-arch-audit
+
+### 30. Missing story: application-page-loader.tsx — FIXED
+- **File:** `src/presentation/web/components/features/application-page/application-page-loader.tsx:1-73`
+- **Severity:** Major
+- **Observation:** The `ApplicationPageLoader` wrapper component (data hydration + DeploymentStatusProvider boundary) lacks a `.stories.tsx` file. It is a composite component that orchestrates data loading and context seeding for the application page.
+- **Resolution:** Added `application-page-loader.stories.tsx` with `Default` (seeded QueryClient cache renders the inner `ApplicationPage`) and `Loading` (no seed → spinner state) variants.
+- **Found during:** clean-arch-audit
+
+### 31. Missing story: terminal-tab.tsx — FIXED
+- **File:** `src/presentation/web/components/features/application-page/terminal-tab.tsx`
+- **Severity:** Major
+- **Observation:** The `TerminalTab` component (xterm.js-backed PTY terminal for application shell access) lacks a `.stories.tsx` file. It is a complex interactive component that needs Storybook testing to verify the terminal UI lifecycle (initialization, input/output streaming, session reuse across tab switches).
+- **Resolution:** Added `terminal-tab.stories.tsx` with `Default` and `Disconnected` variants rendered inside a fixed-size container so the `FitAddon` has layout. The `/api/terminal` fetch intentionally fails under Storybook which exercises the error-banner state.
+- **Found during:** clean-arch-audit
+
+### 32. Missing story: web-preview-tab.tsx — FIXED
+- **File:** `src/presentation/web/components/features/application-page/web-preview-tab.tsx`
+- **Severity:** Major
+- **Observation:** The `WebPreviewTab` component (iframe-based web preview of the running dev server) lacks a `.stories.tsx` file. It is a composite component that depends on the deployment state and must render the running URL.
+- **Resolution:** Added `web-preview-tab.stories.tsx` with `Default` (idle empty state), `Booting`, `Ready` (iframe pointing at `about:blank` so nothing hits the network), and `ErrorState` variants.
+- **Found during:** clean-arch-audit
+
+---
+
+## Final verification sweep summary
+
+**Components scanned:** 209 total `.tsx` files in `src/presentation/`; 135+ in web layer
+
+**Components missing mandatory stories:** 4 (all Major severity)
+- `run-dev-button.tsx` — 217 lines, 4 state branches, `variant` prop
+- `application-page-loader.tsx` — 73 lines, data loading wrapper
+- `terminal-tab.tsx` — Interactive PTY terminal, xterm.js
+- `web-preview-tab.tsx` — Iframe web preview
+
+**Architectural findings:** ZERO violations of dependency rule, framework leakage, or singleton patterns in new/modified presentation code. All cloud-deploy routes are thin wrappers around use cases. All server actions properly delegate to use cases via DI. No direct infrastructure imports detected. No hardcoded agent types.
+
+**Magic literal status:** Prior findings #27, #28 (DeploymentState enum in deployment-status-provider.tsx) have been FIXED — lines 43-46 and 110 now use `DeploymentState.Booting`, `DeploymentState.Ready`, and `DeploymentState.Stopped` instead of string literals.
+
+**Story status:** Prior findings #24, #25 (ConnectProviderModal, ProviderDropdown) have been FIXED — both `.stories.tsx` files now exist and are populated.
+
+**Top 3 findings overall:**
+1. **Missing mandatory stories** (4 components) — blocking release per codebase rules
+2. **Oversized files in application layer** (#31, #30 in parallel audits) — create-feature.use-case.ts 414 lines, duplicated normalizePath logic
+3. **Presentation-layer clean architecture** — verified; all routes use use cases correctly, no framework leakage, DI wiring solid
+
+**VERDICT:** Presentation layer is architecturally sound. Four missing story files are the only blockers for final merge — once added, no clean-architecture or code-quality violations remain.

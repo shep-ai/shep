@@ -7,5 +7,12 @@ d05e96264388c5293b05819845dd77053b97e477:src/presentation/web/components/feature
 d05e96264388c5293b05819845dd77053b97e477:src/presentation/web/components/features/settings/agent-settings-section.stories.tsx:generic-api-key:78
 f2099f97e4e447aac7f141b14a2eb38a39df56f7:src/presentation/web/components/features/settings/agent-settings-section.stories.tsx:generic-api-key:68
 f2099f97e4e447aac7f141b14a2eb38a39df56f7:src/presentation/web/components/features/settings/agent-settings-section.stories.tsx:generic-api-key:78
+# Storybook fixture tokens for AgentSettingsSection (OpenRouter/TogetherAI stories).
+# Values are obvious placeholders: 'or-test-api-key-12345' and 'tai-test-api-key-67890'.
+# Introduced in commit d05e9626 (feat(agents): add multi-provider support with cline
+# agentic executor #544) which added OpenRouter and TogetherAI example Story entries.
+# These are UI fixtures rendered in Storybook to preview the token-auth form — no real
+# credentials are involved. PR #554 (one-click cloud deploy) does not touch this file;
+# the allowlist is added here only because gitleaks scans full git history.
 d05e96264388c5293b05819845dd77053b97e477:src/presentation/web/components/features/settings/agent-settings-section.stories.tsx:generic-api-key:68
 d05e96264388c5293b05819845dd77053b97e477:src/presentation/web/components/features/settings/agent-settings-section.stories.tsx:generic-api-key:78
