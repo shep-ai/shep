@@ -18,7 +18,6 @@ import {
   CheckCircle2,
   Cloud,
   ExternalLink,
-  GitBranch,
   Loader2,
   RefreshCw,
   Rocket,
@@ -33,6 +32,7 @@ import type { GitStatusDto } from '@/hooks/use-git-status';
 import type { SmartDeployState } from '@/hooks/use-smart-deploy-state';
 import type { CloudDeployActionApi } from '@/hooks/use-cloud-deploy-action';
 import { ProviderList, type ProviderListEntry } from './provider-list';
+import { GitHubIcon } from './cloud-provider-icons';
 
 export interface DeployPanelProps {
   state: SmartDeployState;
@@ -238,7 +238,7 @@ export function DeployPanel({
         <div className="mt-2.5 space-y-2.5">
           {hasRemote && remoteDisplay ? (
             <StatusChip
-              icon={GitBranch}
+              icon={GitHubIcon}
               primary={remoteDisplay}
               secondary={
                 gitStatus
@@ -258,7 +258,7 @@ export function DeployPanel({
             />
           ) : (
             <StatusChip
-              icon={GitBranch}
+              icon={GitHubIcon}
               primary="No backup yet"
               secondary="Save your code online so you never lose it"
               tone="muted"
@@ -283,7 +283,7 @@ export function DeployPanel({
               </>
             ) : (
               <PanelAction
-                icon={GitBranch}
+                icon={GitHubIcon}
                 label="Set up code backup"
                 onClick={onSetUpCodeStorage}
                 variant="primary"

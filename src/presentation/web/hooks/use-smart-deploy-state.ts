@@ -26,11 +26,13 @@
  *   1. Loading — first fetch hasn't completed AND no persisted URL
  *   2. Working — sync OR deploy in flight
  *   3. Failed — sync OR deploy failed
- *   4. PushAndDeploy — has dirty changes AND has a connected cloud
- *   5. Save — has dirty changes, no cloud connected
- *   6. Deploy — clean tree, no deployment yet, has remote
- *   7. Live — clean tree, deployed, no drift
- *   8. GetOnline — first-time setup (no remote at all)
+ *   4. Live — the site is already deployed (wins over everything below; a
+ *      missing git backup is a soft warning shown inside the panel, not a
+ *      blocker that should override the live indicator in the top bar)
+ *   5. PushAndDeploy — has dirty changes AND has a connected cloud
+ *   6. Save — has dirty changes, no cloud connected
+ *   7. Deploy — clean tree, has remote, not deployed yet
+ *   8. GetOnline — first-time setup (no remote AND not deployed)
  */
 
 import { useMemo } from 'react';
@@ -165,7 +167,23 @@ export function useSmartDeployState({
       });
     }
 
-    // 3. No remote at all — first-time setup
+    // 3. Already deployed → Live. Wins over everything below (including
+    //    `!hasRemote → getOnline`) so users who published to Cloudflare
+    //    without setting up a git backup still see the live indicator in
+    //    the top bar. The missing backup is surfaced inside the panel as
+    //    a soft "no backup yet" chip, not as a label that pretends the
+    //    site isn't online.
+    if (cloudDeployed) {
+      return baseState({
+        kind: 'live',
+        changeCount,
+        hasRemote,
+        hasCloud: hasConnectedCloudProvider,
+        liveUrl: cloudUrl ?? null,
+      });
+    }
+
+    // 4. No remote at all — first-time setup
     if (!hasRemote) {
       return baseState({
         kind: 'getOnline',
@@ -175,7 +193,7 @@ export function useSmartDeployState({
       });
     }
 
-    // 4. Dirty + cloud connected → Push & Deploy combined action
+    // 5. Dirty + cloud connected → Push & Deploy combined action
     if (changeCount > 0 && hasConnectedCloudProvider) {
       return baseState({
         kind: 'pushAndDeploy',
@@ -185,24 +203,13 @@ export function useSmartDeployState({
       });
     }
 
-    // 5. Dirty, no cloud → Save changes only
+    // 6. Dirty, no cloud → Save changes only
     if (changeCount > 0) {
       return baseState({
         kind: 'save',
         changeCount,
         hasRemote: true,
         hasCloud: false,
-      });
-    }
-
-    // 6. Clean + already deployed → Live
-    if (cloudDeployed) {
-      return baseState({
-        kind: 'live',
-        changeCount: 0,
-        hasRemote: true,
-        hasCloud: hasConnectedCloudProvider,
-        liveUrl: cloudUrl ?? null,
       });
     }
 
