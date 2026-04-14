@@ -5,6 +5,7 @@ import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import type { ColumnDefinition, CellComponent, RowComponent } from 'tabulator-tables';
 import { cn } from '@/lib/utils';
 import type { FeatureStatus } from '@/components/common/feature-status-config';
+import type { FeatureNodeState } from '@/components/common/feature-node/feature-node-state-config';
 import './feature-tree-table.css';
 
 export interface FeatureTreeRow {
@@ -26,6 +27,12 @@ export interface FeatureTreeRow {
   _isRepoGroup?: boolean;
   /** Internal: number of features in this repo group (legacy tree) */
   _featureCount?: number;
+  /** Derived UI node state for action mapping (9-state model from derive-feature-state) */
+  nodeState?: FeatureNodeState;
+  /** Whether this feature has child features (for delete dialog cascade option) */
+  hasChildren?: boolean;
+  /** Whether this feature has an open pull request (for delete dialog close-PR option) */
+  hasOpenPr?: boolean;
 }
 
 export interface InventoryRepo {
