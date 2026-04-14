@@ -121,7 +121,7 @@ export function FileTreePanel({
 }: FileTreePanelProps) {
   const data = useMemo(() => toArboristNodes(tree?.children), [tree]);
   const treeRef = useRef<TreeApi<ArboristNode> | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 280, h: 400 });
 
   // Keep the module-scoped ref pointed at the latest callback.
@@ -133,48 +133,65 @@ export function FileTreePanel({
   }, [onOpenFile]);
 
   // Measure the container so react-arborist can virtualize correctly.
+  //
+  // We use a callback ref (setContainer) rather than useRef + a single
+  // useEffect([], …) because the component early-returns a loading /
+  // error placeholder BEFORE the container div gets a chance to mount.
+  // With the old pattern the effect ran once on first render with
+  // containerRef.current === null, the ResizeObserver never attached,
+  // and size.h stayed stuck at the 400 placeholder forever — which
+  // produced the "my file list is clipped until I collapse+reopen the
+  // explorer" bug, because collapse/reopen remounted the component and
+  // this time tree was already loaded so the container div was rendered
+  // on the first render pass.
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
+    if (!container) return;
+    // Seed size synchronously from the live element — ResizeObserver
+    // only fires after a layout tick, and we'd rather not show a flash
+    // of the 400px placeholder in the meantime.
+    const rect = container.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      setSize({ w: Math.floor(rect.width), h: Math.floor(rect.height) });
+    }
     const ro = new ResizeObserver((entries) => {
-      const rect = entries[0]?.contentRect;
-      if (rect) setSize({ w: Math.floor(rect.width), h: Math.floor(rect.height) });
+      const entry = entries[0]?.contentRect;
+      if (entry) setSize({ w: Math.floor(entry.width), h: Math.floor(entry.height) });
     });
-    ro.observe(el);
+    ro.observe(container);
     return () => ro.disconnect();
-  }, []);
+  }, [container]);
 
-  if (loading && !tree) {
-    return (
-      <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
-        Loading files…
-      </div>
-    );
-  }
-  if (error) {
-    return (
-      <div className="text-destructive flex h-full items-center justify-center p-2 text-center text-xs">
-        {error}
-      </div>
-    );
-  }
-  if (!tree) return null;
-
+  // IMPORTANT: always render the containerRef div as the outer wrapper,
+  // even during loading / error / empty states. Loading and error content
+  // render INSIDE it so the ResizeObserver effect above stays attached to
+  // a single stable DOM node across the loading→loaded transition — no
+  // re-attach flicker, no stale measurement on the first frame after the
+  // file tree arrives.
   return (
-    <div ref={containerRef} className="h-full w-full overflow-hidden">
-      <Tree<ArboristNode>
-        ref={treeRef}
-        data={data}
-        openByDefault={false}
-        width={size.w}
-        height={size.h}
-        rowHeight={24}
-        indent={12}
-        padding={4}
-        selection={activePath ?? undefined}
-      >
-        {NodeRenderer}
-      </Tree>
+    <div ref={setContainer} className="h-full w-full overflow-hidden">
+      {loading && !tree ? (
+        <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
+          Loading files…
+        </div>
+      ) : error ? (
+        <div className="text-destructive flex h-full items-center justify-center p-2 text-center text-xs">
+          {error}
+        </div>
+      ) : !tree ? null : (
+        <Tree<ArboristNode>
+          ref={treeRef}
+          data={data}
+          openByDefault={false}
+          width={size.w}
+          height={size.h}
+          rowHeight={24}
+          indent={12}
+          padding={4}
+          selection={activePath ?? undefined}
+        >
+          {NodeRenderer}
+        </Tree>
+      )}
     </div>
   );
 }
