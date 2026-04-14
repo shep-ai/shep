@@ -63,6 +63,19 @@ export interface RunWorkflowInput {
    */
   model?: string;
   agentType?: string;
+  /**
+   * When true, the orchestrator SKIPS the step that would persist
+   * `visibleFirstMessage` as the user's first chat bubble — the
+   * caller has already written it to the DB in the foreground so
+   * the UI can render it instantly. The session still boots and
+   * the agent still receives the wrapped first-step prompt, but no
+   * second user message row is created.
+   *
+   * Used by `CreateApplicationUseCase.dispatchScaffoldAndWorkflow`
+   * so the user's bubble is visible from page load even though the
+   * scaffold + session boot run in the background.
+   */
+  firstUserMessageAlreadyPersisted?: boolean;
 }
 
 @injectable()
@@ -107,6 +120,11 @@ export class RunWorkflowUseCase {
       model: input.model,
       agentType: input.agentType,
       agentKickoffOverride: firstAgentPrompt,
+      // Skip the DB-persist step when the caller already wrote the
+      // user's first bubble in the foreground. The session still
+      // boots and sees `firstAgentPrompt`; we just don't create a
+      // duplicate row for `visibleFirstMessage`.
+      persistUserMessage: !input.firstUserMessageAlreadyPersisted,
     });
 
     // Resolve the session id — newly booted, so poll briefly.

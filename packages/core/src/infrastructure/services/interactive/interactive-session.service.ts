@@ -933,9 +933,15 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     model?: string,
     agentType?: string,
     systemPrompt?: string,
-    agentKickoffOverride?: string
+    agentKickoffOverride?: string,
+    persistUserMessage = true
   ): Promise<InteractiveMessage> {
-    // 1. Persist user message to DB immediately — this is the source of truth
+    // 1. Persist user message to DB immediately — this is the source
+    //    of truth. SKIPPED when `persistUserMessage === false`, which
+    //    the application-creation flow uses to boot the session on top
+    //    of a user message it already wrote in the foreground (so the
+    //    chat renders the bubble instantly, long before the slow
+    //    scaffold and session-boot work completes).
     const now = new Date();
     const userMsg: InteractiveMessage = {
       id: crypto.randomUUID(),
@@ -945,7 +951,9 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       createdAt: now,
       updatedAt: now,
     };
-    await this.persistMessage(userMsg);
+    if (persistUserMessage) {
+      await this.persistMessage(userMsg);
+    }
 
     // 2. Find active session for this feature
     let state = this.findActiveStateForFeature(featureId);

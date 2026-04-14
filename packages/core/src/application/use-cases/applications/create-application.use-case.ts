@@ -13,12 +13,13 @@
 
 import { injectable, inject } from 'tsyringe';
 import { randomUUID, randomBytes } from 'node:crypto';
-import type { Application } from '../../../domain/generated/output.js';
-import { ApplicationStatus } from '../../../domain/generated/output.js';
+import type { Application, InteractiveMessage } from '../../../domain/generated/output.js';
+import { ApplicationStatus, InteractiveMessageRole } from '../../../domain/generated/output.js';
 import type { IApplicationRepository } from '../../ports/output/repositories/application-repository.interface.js';
 import type { IApplicationCreationPromptBuilder } from '../../ports/output/services/application-creation-prompt-builder.interface.js';
 import type { IApplicationBriefStore } from '../../ports/output/services/application-brief-store.interface.js';
 import type { IApplicationScaffolder } from '../../ports/output/services/application-scaffolder.interface.js';
+import type { IInteractiveMessageRepository } from '../../ports/output/repositories/interactive-message-repository.interface.js';
 import type { CreateProjectUseCase } from '../projects/create-project.use-case.js';
 import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
 import type { RunWorkflowUseCase } from '../workflows/run-workflow.use-case.js';
@@ -157,7 +158,9 @@ export class CreateApplicationUseCase {
     @inject('IInteractiveSessionRepository')
     private readonly sessionRepo: IInteractiveSessionRepository,
     @inject('IApplicationScaffolder')
-    private readonly scaffolder: IApplicationScaffolder
+    private readonly scaffolder: IApplicationScaffolder,
+    @inject('IInteractiveMessageRepository')
+    private readonly messageRepo: IInteractiveMessageRepository
   ) {}
 
   async execute(input: CreateApplicationInput): Promise<CreateApplicationResult> {
@@ -205,6 +208,44 @@ export class CreateApplicationUseCase {
       updatedAt: now,
     };
     await this.appRepo.create(application);
+
+    // 4b. Persist the user's verbatim description as the first chat
+    //     message IMMEDIATELY, while we're still in the foreground.
+    //     The chat page SSR reads messages via
+    //     `InteractiveMessageRepository.findByFeatureId` on first
+    //     paint, so writing the row here means the user sees their
+    //     own bubble the instant they land on `/application/<id>` —
+    //     no waiting for the 30-second scaffold + session boot to
+    //     finish before the background workflow dispatch gets around
+    //     to calling `sendMessage.execute`.
+    //
+    //     The background workflow dispatch below passes
+    //     `firstUserMessageAlreadyPersisted: true` so `RunWorkflowUseCase`
+    //     skips the DB-persist side of its first `sendMessage.execute`
+    //     call — only the session boot + agent kickoff run, no
+    //     duplicate row.
+    if (input.initialPrompt?.trim()) {
+      const now2 = new Date();
+      const firstUserMessage: InteractiveMessage = {
+        id: randomUUID(),
+        featureId: `app-${application.id}`,
+        role: InteractiveMessageRole.user,
+        content: input.initialPrompt.trim(),
+        createdAt: now2,
+        updatedAt: now2,
+      };
+      try {
+        await this.messageRepo.create(firstUserMessage);
+      } catch (err) {
+        // Non-fatal — the background dispatch will retry via
+        // sendMessage.execute if the row is missing. The user will
+        // still see their bubble a few seconds later instead of
+        // instantly. We log and continue so the application row
+        // and project path are still returned to the caller.
+        // eslint-disable-next-line no-console
+        console.error('[create-application] failed to pre-persist first user message:', err);
+      }
+    }
 
     // 5. Kick off scaffold + (optional) workflow in the background.
     //    The use case returns IMMEDIATELY after this fire-and-forget;
@@ -305,6 +346,10 @@ export class CreateApplicationUseCase {
             userMessage: `${userMessage}\n\n---\n\n${stepPrompt}`,
           }),
         visibleFirstMessage: userMessage,
+        // The user's first bubble was pre-persisted in execute()
+        // before this background dispatch ran — don't let run-workflow
+        // write a duplicate row.
+        firstUserMessageAlreadyPersisted: true,
       });
 
       // All steps completed — mark the application as setup complete
