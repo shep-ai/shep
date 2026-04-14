@@ -1,0 +1,20 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-inventory-feature-management
+
+ ✓  web  tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts > getFeatureTreeData > returns nodeState derived from lifecycle and agent run 1ms
+ ✓  web  tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts > getFeatureTreeData > returns nodeState "archived" for a feature with Archived lifecycle 0ms
+ ✓  web  tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts > getFeatureTreeData > returns nodeState "deleting" for a feature with Deleting lifecycle 0ms
+ ✓  web  tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts > getFeatureTreeData > returns nodeState "error" when latest agent run has failed status 0ms
+ ✓  web  tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts > getFeatureTreeData > returns nodeState "pending" for a feature with Pending lifecycle 0ms
+ ✓  web  tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts > getFeatureTreeData > returns hasChildren true when a feature has child features 0ms
+ ✓  web  tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts > getFeatureTreeData > returns hasOpenPr true for a feature with an open PR 0ms
+ ✓  web  tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts > getFeatureTreeData > returns hasOpenPr false for a feature with a merged PR 0ms
+ ✓  web  tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts > getFeatureTreeData > returns hasOpenPr false for a feature without a PR 0ms
+ ✓  web  tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts > getFeatureTreeData > uses the latest agent run when multiple runs exist for a feature 0ms
+ ✓  web  tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts > getFeatureTreeData > preserves existing fields (id, name, status, lifecycle, branch, repositoryName) 0ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  12:30:33
+   Duration  232ms (transform 75ms, setup 133ms, import 39ms, tests 3ms, environment 0ms)
+

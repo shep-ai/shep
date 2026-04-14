@@ -1,0 +1,13 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-inventory-feature-management
+
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-tree-table.test.tsx > FeatureTreeTable > renders the container element with data-testid 17ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-tree-table.test.tsx > FeatureTreeTable > applies custom className 3ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-tree-table.test.tsx > FeatureTreeTable > renders without errors when data is empty 3ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-tree-table.test.tsx > FeatureTreeTable > renders with extended FeatureTreeRow fields (nodeState, hasChildren, hasOpenPr) 1ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  12:30:26
+   Duration  984ms (transform 111ms, setup 222ms, import 208ms, tests 25ms, environment 381ms)
+

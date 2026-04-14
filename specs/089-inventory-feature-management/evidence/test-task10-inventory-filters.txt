@@ -1,0 +1,33 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-inventory-feature-management
+
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > isArchived > returns true for Archived lifecycle 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > isArchived > returns false for Maintain lifecycle 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > isArchived > returns false for active lifecycles 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > getItemSortOptions > returns all options when no groupBy 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > getItemSortOptions > excludes repositoryName when grouped by repositoryName 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > getItemSortOptions > excludes status when grouped by status 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > getItemSortOptions > excludes lifecycle when grouped by lifecycle 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > archive filter > filters out archived features in active mode 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > archive filter > shows only archived features in archived mode 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > archive filter > shows all features in all mode 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > status filter > filters by specific status 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > status filter > shows all when status filter is null 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > status filter > returns empty when no features match status 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > repository filter > filters by specific repository 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > repository filter > shows all when repo filter is null 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > search > matches by feature name 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > search > matches by branch name 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > search > matches by repository name 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > search > is case insensitive 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > search > returns empty when nothing matches 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > combined filters > applies archive + status filters together 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > combined filters > applies archive + repo + search together 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > combined filters > applies all filters together 0ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts > filtering logic > combined filters > returns empty when combined filters exclude everything 0ms
+
+ Test Files  1 passed (1)
+      Tests  24 passed (24)
+   Start at  12:31:13
+   Duration  586ms (transform 113ms, setup 116ms, import 211ms, tests 4ms, environment 201ms)
+

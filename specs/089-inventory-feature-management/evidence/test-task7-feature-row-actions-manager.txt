@@ -1,0 +1,18 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-inventory-feature-management
+
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-manager.test.tsx > FeatureRowActionsManager > renders FeatureRowActions portals for discovered containers 67ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-manager.test.tsx > FeatureRowActionsManager > does not render portals when tableContainer is null 1ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-manager.test.tsx > FeatureRowActionsManager > does not render portals for features without nodeState 1ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-manager.test.tsx > FeatureRowActionsManager > finds features nested in _children for grouped data 7ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-manager.test.tsx > FeatureRowActionsManager > cleans up portals when component unmounts 6ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-manager.test.tsx > FeatureRowActionsManager > renders action buttons for mixed-state features (all actionable states) 13ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-manager.test.tsx > FeatureRowActionsManager > does not render actions for creating/deleting features even with portal targets 1ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-manager.test.tsx > FeatureRowActionsManager > only disables the in-flight row, not other rows 6ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-manager.test.tsx > FeatureRowActionsManager > handles features in both flat and nested _children 5ms
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Start at  12:30:59
+   Duration  605ms (transform 70ms, setup 117ms, import 122ms, tests 108ms, environment 203ms)
+

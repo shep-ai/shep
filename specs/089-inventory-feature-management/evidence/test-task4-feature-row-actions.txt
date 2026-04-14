@@ -1,0 +1,23 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-inventory-feature-management
+
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx > FeatureRowActions > renders a three-dot button for pending state 60ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx > FeatureRowActions > does not render anything for creating state 1ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx > FeatureRowActions > does not render anything for deleting state 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx > FeatureRowActions > calls onStart with featureId when Start menu item is clicked 67ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx > FeatureRowActions > calls onStop with featureId when Stop menu item is clicked 41ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx > FeatureRowActions > calls onRetry with featureId when Retry menu item is clicked 38ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx > FeatureRowActions > calls onReview with featureId when Review menu item is clicked 34ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx > FeatureRowActions > calls onUnarchive with featureId when Unarchive menu item is clicked 33ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx > FeatureRowActions > calls onDelete with featureId when Delete menu item is clicked 34ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx > FeatureRowActions > calls onArchive with featureId when Archive menu item is clicked 33ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx > FeatureRowActions > shows a spinner when isLoading is true 3ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx > FeatureRowActions > disables the button when isLoading is true 2ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx > FeatureRowActions > shows correct menu items for each state 22ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions.test.tsx > FeatureRowActions > shows correct menu items for archived state 21ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  12:30:45
+   Duration  916ms (transform 71ms, setup 118ms, import 148ms, tests 390ms, environment 203ms)
+

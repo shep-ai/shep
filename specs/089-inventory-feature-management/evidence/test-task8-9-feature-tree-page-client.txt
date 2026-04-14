@@ -1,0 +1,14 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-inventory-feature-management
+
+ ✓  web  tests/unit/presentation/web/app/features/feature-tree-page-client.test.tsx > FeatureTreePageClient — Action Wiring > renders the page with feature data 54ms
+ ✓  web  tests/unit/presentation/web/app/features/feature-tree-page-client.test.tsx > FeatureTreePageClient — Action Wiring > handleStartFeature calls startFeature server action and shows success toast 16ms
+ ✓  web  tests/unit/presentation/web/app/features/feature-tree-page-client.test.tsx > FeatureTreePageClient — Action Wiring > handleReview navigates to feature overview page 13ms
+ ✓  web  tests/unit/presentation/web/app/features/feature-tree-page-client.test.tsx > FeatureTreePageClient — Delete Dialog Integration > renders DeleteFeatureDialog in closed state initially 14ms
+ ✓  web  tests/unit/presentation/web/app/features/feature-tree-page-client.test.tsx > FeatureTreePageClient — Archive Dialog Integration > renders archive AlertDialog in closed state initially 16ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  12:31:05
+   Duration  745ms (transform 131ms, setup 117ms, import 206ms, tests 114ms, environment 248ms)
+

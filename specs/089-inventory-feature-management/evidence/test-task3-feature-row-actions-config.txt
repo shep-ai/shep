@@ -1,0 +1,23 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-inventory-feature-management
+
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts > FEATURE_ROW_ACTIONS_CONFIG > has entries for all 9 FeatureNodeState values 1ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts > FEATURE_ROW_ACTIONS_CONFIG > maps pending to [start, archive, delete] 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts > FEATURE_ROW_ACTIONS_CONFIG > maps running to [stop, archive, delete] 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts > FEATURE_ROW_ACTIONS_CONFIG > maps error to [retry, archive, delete] 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts > FEATURE_ROW_ACTIONS_CONFIG > maps action-required to [review, archive, delete] 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts > FEATURE_ROW_ACTIONS_CONFIG > maps done to [archive, delete] 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts > FEATURE_ROW_ACTIONS_CONFIG > maps blocked to [archive, delete] 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts > FEATURE_ROW_ACTIONS_CONFIG > maps archived to [unarchive, delete] 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts > FEATURE_ROW_ACTIONS_CONFIG > maps creating to empty array 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts > FEATURE_ROW_ACTIONS_CONFIG > maps deleting to empty array 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts > FEATURE_ROW_ACTIONS_CONFIG > marks delete and archive as requiresConfirmation: true 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts > FEATURE_ROW_ACTIONS_CONFIG > marks start, stop, retry, unarchive, review as requiresConfirmation: false 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts > FEATURE_ROW_ACTIONS_CONFIG > every action has a non-empty label 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts > FEATURE_ROW_ACTIONS_CONFIG > every action has an icon component 0ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  12:30:39
+   Duration  451ms (transform 56ms, setup 130ms, import 46ms, tests 3ms, environment 213ms)
+

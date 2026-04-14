@@ -1,0 +1,17 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-inventory-feature-management
+
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/actions-column.test.ts > buildColumns > includes an actions column as the last column 1ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/actions-column.test.ts > buildColumns > actions column is frozen with fixed width and no header sort 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/actions-column.test.ts > buildColumns > actions column is present regardless of groupBy mode 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/actions-column.test.ts > buildColumns > actions column is always the last column 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/actions-column.test.ts > actionsColumnFormatter > creates a div with data-feature-id for regular data rows 4ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/actions-column.test.ts > actionsColumnFormatter > returns empty string for group header rows 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/actions-column.test.ts > actionsColumnFormatter > returns empty string for repo group rows 0ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/actions-column.test.ts > actionsColumnFormatter > container div has flex centering styles 0ms
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  12:30:52
+   Duration  406ms (transform 55ms, setup 114ms, import 25ms, tests 6ms, environment 205ms)
+
