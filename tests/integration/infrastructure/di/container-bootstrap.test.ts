@@ -59,6 +59,9 @@ import { SessionBootstrapper } from '@/infrastructure/services/interactive/lifec
 import { SessionTerminator } from '@/infrastructure/services/interactive/lifecycle/session-terminator.js';
 import { TurnExecutor } from '@/infrastructure/services/interactive/runtime/turn.executor.js';
 import { UserInteractionCoordinator } from '@/infrastructure/services/interactive/runtime/user-interaction.coordinator.js';
+import { MessageDispatcher } from '@/infrastructure/services/interactive/api/message-dispatcher.js';
+import { ChatStateAssembler } from '@/infrastructure/services/interactive/api/chat-state.assembler.js';
+import { WorkflowHooks } from '@/infrastructure/services/interactive/api/workflow-hooks.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 
 /**
@@ -258,6 +261,22 @@ describe('DI container bootstrap (integration)', () => {
       logger,
       streamEventDispatcher
     );
+    const messageDispatcher = new MessageDispatcher(
+      interactiveSessionRepo,
+      interactiveMessageRepo,
+      sessionRegistry,
+      sessionPersistence,
+      bootstrapper,
+      terminator,
+      turnExecutor
+    );
+    const chatStateAssembler = new ChatStateAssembler(
+      interactiveMessageRepo,
+      interactiveSessionRepo,
+      workflowStepRepoBoot,
+      sessionRegistry
+    );
+    const workflowHooks = new WorkflowHooks(sessionRegistry, streamEventDispatcher);
     const interactiveSessionService = new InteractiveSessionService(
       interactiveSessionRepo,
       interactiveMessageRepo,
@@ -271,7 +290,10 @@ describe('DI container bootstrap (integration)', () => {
       bootstrapper,
       terminator,
       turnExecutor,
-      interactionCoordinator
+      interactionCoordinator,
+      messageDispatcher,
+      chatStateAssembler,
+      workflowHooks
     );
     scopedContainer.registerInstance<IInteractiveSessionService>(
       'IInteractiveSessionService',

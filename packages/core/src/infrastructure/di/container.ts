@@ -41,6 +41,9 @@ import { SessionBootstrapper } from '../services/interactive/lifecycle/session-b
 import { SessionTerminator } from '../services/interactive/lifecycle/session-terminator.js';
 import { TurnExecutor } from '../services/interactive/runtime/turn.executor.js';
 import { UserInteractionCoordinator } from '../services/interactive/runtime/user-interaction.coordinator.js';
+import { MessageDispatcher } from '../services/interactive/api/message-dispatcher.js';
+import { ChatStateAssembler } from '../services/interactive/api/chat-state.assembler.js';
+import { WorkflowHooks } from '../services/interactive/api/workflow-hooks.js';
 import type { ILogger } from '../../application/ports/output/services/logger.interface.js';
 
 // Topic-grouped registration modules
@@ -182,6 +185,22 @@ export async function initializeContainer(): Promise<typeof container> {
     logger,
     streamEventDispatcher
   );
+  const messageDispatcher = new MessageDispatcher(
+    interactiveSessionRepo,
+    interactiveMessageRepo,
+    sessionRegistry,
+    sessionPersistence,
+    bootstrapper,
+    terminator,
+    turnExecutor
+  );
+  const chatStateAssembler = new ChatStateAssembler(
+    interactiveMessageRepo,
+    interactiveSessionRepo,
+    workflowStepRepoBoot,
+    sessionRegistry
+  );
+  const workflowHooks = new WorkflowHooks(sessionRegistry, streamEventDispatcher);
   const interactiveSessionService = new InteractiveSessionService(
     interactiveSessionRepo,
     interactiveMessageRepo,
@@ -195,7 +214,10 @@ export async function initializeContainer(): Promise<typeof container> {
     bootstrapper,
     terminator,
     turnExecutor,
-    interactionCoordinator
+    interactionCoordinator,
+    messageDispatcher,
+    chatStateAssembler,
+    workflowHooks
   );
   container.registerInstance<IInteractiveSessionService>(
     'IInteractiveSessionService',

@@ -36,6 +36,9 @@ import { SessionTerminator } from '@/infrastructure/services/interactive/lifecyc
 import { TurnExecutor } from '@/infrastructure/services/interactive/runtime/turn.executor.js';
 import { UserInteractionCoordinator } from '@/infrastructure/services/interactive/runtime/user-interaction.coordinator.js';
 import { BootPromptResolver } from '@/infrastructure/services/interactive/lifecycle/boot-prompt.resolver.js';
+import { MessageDispatcher } from '@/infrastructure/services/interactive/api/message-dispatcher.js';
+import { ChatStateAssembler } from '@/infrastructure/services/interactive/api/chat-state.assembler.js';
+import { WorkflowHooks } from '@/infrastructure/services/interactive/api/workflow-hooks.js';
 import type { ISettingsProvider } from '@/application/ports/output/services/settings-provider.interface.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 import { ConcurrentSessionLimitError } from '@/domain/errors/concurrent-session-limit.error.js';
@@ -353,6 +356,22 @@ describe('InteractiveSessionService', () => {
       fakeLogger,
       dispatcher
     );
+    const messageDispatcher = new MessageDispatcher(
+      sessionRepo,
+      messageRepo,
+      registry,
+      persistence,
+      bootstrapper,
+      terminator,
+      turnExecutor
+    );
+    const chatStateAssembler = new ChatStateAssembler(
+      messageRepo,
+      sessionRepo,
+      workflowStepRepo,
+      registry
+    );
+    const workflowHooks = new WorkflowHooks(registry, dispatcher);
     service = new InteractiveSessionService(
       sessionRepo,
       messageRepo,
@@ -366,7 +385,10 @@ describe('InteractiveSessionService', () => {
       bootstrapper,
       terminator,
       turnExecutor,
-      interactionCoordinator
+      interactionCoordinator,
+      messageDispatcher,
+      chatStateAssembler,
+      workflowHooks
     );
   });
 
