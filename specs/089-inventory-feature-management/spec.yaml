@@ -1,0 +1,171 @@
+name: inventory-feature-management
+number: 89
+branch: feat/089-inventory-feature-management
+oneLiner: "Add feature management actions (archive, delete, start, retry) directly to the inventory table"
+summary: >
+  The inventory page (/features) currently shows features in a read-only table with filtering, grouping,
+  and sorting — but all management actions (archive, delete, start, retry, etc.) require navigating to
+  the control center canvas or opening the feature drawer. This feature adds inline row actions to the
+  inventory table so users with many repositories can manage features directly from the table view.
+phase: Analysis
+sizeEstimate: M
+
+relatedFeatures: []
+
+technologies:
+  - "Next.js 14 (app router, server actions)"
+  - "React 18 (client components, hooks)"
+  - "Tabulator.js (data table rendering)"
+  - "shadcn/ui (dialogs, dropdowns, buttons)"
+  - "TailwindCSS (styling)"
+  - "TypeScript"
+
+relatedLinks: []
+
+openQuestions:
+  - "Should bulk actions (select multiple features, archive all) be included in scope or deferred?"
+  - "Should the create-feature action be accessible from the inventory page toolbar (similar to the FAB on the canvas)?"
+
+content: |
+  ## Problem Statement
+
+  The inventory page (`/features`) is currently a read-only table view. Users can filter, group, and
+  sort features — but to perform any management action (archive, delete, start, retry, unarchive),
+  they must either switch to the control center canvas (which becomes unwieldy with many repos) or
+  click into the feature drawer. For users managing many repositories, this context-switching overhead
+  makes the inventory impractical as a primary workspace.
+
+  The control center canvas provides hover-action buttons on feature nodes (archive, delete, unarchive,
+  start, retry, review), but these only work when the canvas is visible and features are within the
+  viewport. The inventory table, designed for managing large numbers of features, has no equivalent
+  action surface.
+
+  ## Success Criteria
+
+  - [ ] Each feature row in the inventory table has an actions column with a context menu (three-dot dropdown)
+  - [ ] Context menu offers: Start (when pending), Retry (when error), Archive (when active), Unarchive (when archived), Delete (with cleanup/cascade dialog)
+  - [ ] Actions trigger the same server actions used by the control center canvas (no new backend work)
+  - [ ] Delete shows the same `DeleteFeatureDialog` with cleanup, cascade, and close-PR options
+  - [ ] Archive shows the same confirmation dialog as the canvas
+  - [ ] After an action completes, the table data refreshes to reflect the new state
+  - [ ] Actions are disabled/hidden based on feature state (same rules as the canvas feature node)
+  - [ ] Storybook stories exist for the row actions component
+  - [ ] All existing inventory tests continue to pass
+
+  ## Codebase Analysis
+
+  ### Project Structure
+
+  The project follows Clean Architecture with four layers:
+
+  - **domain/** — Core business entities (Feature, Repository), TypeSpec-generated models
+  - **application/** — Use cases (`ListFeaturesUseCase`, `ArchiveFeatureUseCase`, etc.) with port interfaces
+  - **infrastructure/** — SQLite persistence, DI container, agent executors
+  - **presentation/** — CLI (`src/presentation/cli/`), Web UI (`src/presentation/web/`)
+
+  The web UI uses Next.js 14 app router with:
+  - Server components for data fetching (`app/features/page.tsx`)
+  - Client components for interactivity (`app/features/feature-tree-page-client.tsx`)
+  - Server actions for mutations (`app/actions/*.ts`)
+  - Shared components in `components/common/` and `components/features/`
+
+  ### Architecture Patterns
+
+  **Action flow:** User clicks button → client component calls server action → server action resolves
+  use case from DI container via string token → use case executes → client receives result → UI updates.
+
+  **Existing server actions already cover all needed mutations:**
+  - `app/actions/archive-feature.ts` — archive a feature
+  - `app/actions/unarchive-feature.ts` — unarchive a feature
+  - `app/actions/delete-feature.ts` — delete with cleanup/cascade/closePr options
+  - `app/actions/start-feature.ts` — start a pending feature
+  - `app/actions/retry-feature.ts` — retry a failed feature
+  - `app/actions/stop-feature.ts` — stop a running feature
+
+  **Existing reusable components:**
+  - `DeleteFeatureDialog` — full delete confirmation dialog with cleanup, cascade, and close-PR options
+  - `AlertDialog` from shadcn/ui — used for archive confirmation in the canvas
+
+  **Feature state → available actions mapping** (from `feature-node.tsx`):
+  - `pending` → Start
+  - `running` → Stop
+  - `error` → Retry
+  - `action-required` → Review (navigate to drawer)
+  - `archived` → Unarchive
+  - `creating` / `deleting` → No actions
+  - All non-archived, non-deleting states → Archive, Delete
+
+  ### Relevant Technologies
+
+  - **Tabulator.js** — Currently renders the inventory table. Adding an actions column requires either
+    a custom Tabulator column formatter or a React portal approach for rendering React components in cells.
+  - **shadcn/ui** — Provides `DropdownMenu`, `AlertDialog`, `Button` used throughout the app.
+  - **Server actions** — All feature management mutations are already implemented.
+  - **React Flow** — Only used on the canvas, not relevant for inventory changes.
+
+  ### Current Inventory Implementation
+
+  **Server component** (`app/features/page.tsx`):
+  - Calls `getFeatureTreeData()` to fetch features and repos
+  - Passes data to `FeatureTreePageClient`
+
+  **Client component** (`app/features/feature-tree-page-client.tsx`):
+  - Manages filter state (search, status, archive, repo)
+  - Manages grouping and sorting state
+  - Filters data via `useMemo` and passes to `FeatureTreeTable`
+  - Only interaction: `handleFeatureClick(id)` → navigates to `/feature/{id}/overview`
+
+  **Table component** (`components/features/feature-tree-table/feature-tree-table.tsx`):
+  - Uses Tabulator.js with `dataTree` for hierarchical display
+  - Columns: Name, Repository, Status, Lifecycle, Branch
+  - Click handler on Name column cells triggers `onFeatureClick` callback
+  - No action column, no context menus, no inline buttons
+
+  **Data types** (`FeatureTreeRow`):
+  - Contains: id, name, status, lifecycle, branch, repositoryName, remoteUrl, parentId
+  - Missing for actions: hasChildren, hasOpenPr (needed for delete dialog options)
+
+  ### Control Center Feature Node (reference implementation)
+
+  The canvas `FeatureNode` component (`components/common/feature-node/feature-node.tsx`) provides
+  the reference implementation for feature actions:
+
+  - Hover-revealed left-side buttons: Archive (with AlertDialog confirm), Delete (with DeleteFeatureDialog), Unarchive
+  - Bottom-right state-dependent buttons: Start, Retry, Review (navigate)
+  - Callbacks passed via `FeatureNodeData`: onArchive, onDelete, onStart, onRetry, onStop, onUnarchive
+
+  The `ControlCenterInner` component wires these callbacks to server actions and handles optimistic
+  updates + SSE-driven state refresh.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `src/presentation/web/components/features/feature-tree-table/` | High | Adding actions column, context menu, and action handlers to the table |
+  | `src/presentation/web/app/features/feature-tree-page-client.tsx` | High | Wiring server actions as callbacks, handling action state, data refresh |
+  | `src/presentation/web/app/features/page.tsx` | Low | May need to pass additional data (hasChildren, hasOpenPr) for delete dialog |
+  | `src/presentation/web/app/actions/` | None | All server actions already exist — no changes needed |
+  | `src/presentation/web/components/common/delete-feature-dialog/` | None | Reuse as-is |
+  | `src/presentation/web/lib/server-container.ts` | None | Data fetching function may need minor enrichment |
+  | `tests/` | Medium | New tests for row actions component, update existing inventory tests |
+  | `stories/` | Medium | New Storybook stories for row actions component |
+
+  ## Dependencies
+
+  **Existing code (no changes needed):**
+  - Server actions: `archive-feature.ts`, `unarchive-feature.ts`, `delete-feature.ts`, `start-feature.ts`, `retry-feature.ts`, `stop-feature.ts`
+  - `DeleteFeatureDialog` component — reusable as-is
+  - shadcn/ui components: `DropdownMenu`, `AlertDialog`, `Button`
+  - Domain types: `FeatureTreeRow` type (may need extension for `hasChildren`, `hasOpenPr`)
+
+  **Pattern reference:**
+  - `feature-node.tsx` — state-to-actions mapping logic
+  - `control-center-inner` — server action wiring pattern
+
+  ## Size Estimate
+
+  **M** — The scope is a presentation-layer change only. All backend use cases and server actions
+  already exist. The main work is: (1) adding an actions column to the Tabulator table with a
+  React-rendered context menu, (2) wiring the actions to existing server actions, (3) handling
+  state refresh after mutations, (4) reusing the existing delete/archive dialogs, and (5) writing
+  tests and stories. No domain, application, or infrastructure changes are needed.
