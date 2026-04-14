@@ -269,8 +269,16 @@ export class SessionBootstrapper {
             );
           }
           state.agentSessionId = sdkSessionId;
-          // Persist to DB so it survives service restarts
-          void this.sessionRepo.updateAgentSessionId(state.sessionId, sdkSessionId);
+          // Persist to DB so it survives service restarts. This used to be
+          // fire-and-forget (`void …`), but that opened a race with the
+          // next workflow step: `RunWorkflowUseCase` moves on the moment
+          // `waitForTurnDone` resolves, and if the next step's
+          // `sendUserMessage` fell back to the DB path (in-memory state
+          // miss) before this write landed, `findLatestAgentSessionIdForFeature`
+          // returned null, and the SDK got `createSession` (fresh session)
+          // instead of `resumeSession` — wiping conversation context
+          // between steps. Awaiting here closes the race.
+          await this.sessionRepo.updateAgentSessionId(state.sessionId, sdkSessionId);
         }
 
         await this.persistence.updateSessionStatusAndNotify(

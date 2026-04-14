@@ -125,8 +125,23 @@ export class MessageDispatcher {
       } else if (dbSession?.status === InteractiveSessionStatus.booting) {
         // Session booting — queue the message
         state.pendingUserContent = content;
+      } else {
+        // Edge case: in-memory state exists but the DB row is gone or
+        // in a terminal state (error/stopped, or row missing entirely).
+        // Previously this branch silently dropped the message — the
+        // orchestrator would then hang forever waiting on
+        // `waitForTurnDone`. Drop the stale in-memory state and fall
+        // through to the cold-boot path below so the workflow can
+        // recover.
+        this.registry.delete(state.sessionId);
+        if (state.agentSessionId) {
+          this.registry.cacheStoppedAgentSessionId(featureId, state.agentSessionId);
+        }
+        state = undefined;
       }
-    } else {
+    }
+
+    if (!state) {
       // No in-memory session — check DB for an orphaned active session (e.g. after
       // service restart / hot-reload) and mark it stopped before booting a new one.
       const dbSession = await this.sessionRepo.findByFeatureId(featureId);

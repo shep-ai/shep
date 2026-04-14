@@ -97,6 +97,24 @@ export class TurnExecutor {
         });
       }
 
+      // Re-capture the SDK session id after every turn. The V2 Agent
+      // SDK can rotate `session_id` in the message stream (the executor's
+      // `mapStream` updates `handle.sessionId` whenever a message carries
+      // a new one), so the id that identifies the conversation for future
+      // `resumeSession` calls may differ from the one captured at boot.
+      // Keeping `state.agentSessionId` fresh — and writing it through to
+      // the DB — ensures that if the in-memory session is ever lost
+      // between workflow steps, the next `startSession` call picks the
+      // correct id via `findLatestAgentSessionIdForFeature` and resumes
+      // the same conversation instead of creating a fresh one.
+      if (state.handle) {
+        const latestSdkId = state.handle.sessionId;
+        if (latestSdkId && latestSdkId !== state.agentSessionId) {
+          state.agentSessionId = latestSdkId;
+          await this.sessionRepo.updateAgentSessionId(state.sessionId, latestSdkId);
+        }
+      }
+
       // Mark as unread — if user has the chat open, the frontend
       // will immediately call markRead to clear it
       void this.persistence.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'unread');
