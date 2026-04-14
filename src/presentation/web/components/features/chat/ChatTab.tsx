@@ -164,6 +164,8 @@ export function ChatTab({
         status: 'pending' as const,
         metadata: null,
         toolMessages: [],
+        startedAt: null,
+        finishedAt: null,
       }));
   const showTracker = trackerSteps.length > 0;
   const workflowInFlight = stepProgress.hasPlan === true && stepProgress.allDone !== true;

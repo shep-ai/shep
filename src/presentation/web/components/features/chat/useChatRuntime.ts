@@ -47,6 +47,10 @@ export interface EnhancedStepState {
   status: 'pending' | 'running' | 'done' | 'failed' | 'interrupted';
   metadata: Record<string, unknown> | null;
   toolMessages: InteractiveMessage[];
+  /** Milliseconds since epoch when the step flipped to `running`. */
+  startedAt: number | null;
+  /** Milliseconds since epoch when the step reached a terminal state. */
+  finishedAt: number | null;
 }
 
 /** Enhanced progress consumed by `StepTracker` + `ChatTab`. */
@@ -88,6 +92,31 @@ function parseMetadata(raw: string | null | undefined): Record<string, unknown> 
   } catch {
     return null;
   }
+}
+
+/**
+ * Coerce a timestamp field from a WorkflowStep row into a millisecond
+ * epoch. The backend stores timestamps as integer ms since 1970 but
+ * the generated domain type widens them to `any`; they arrive here
+ * as numbers, ISO strings, or Date instances depending on the code
+ * path (SSE chunks vs. SSR serialization). Returns null for any
+ * falsy or unparseable input so the UI can distinguish "not yet set"
+ * from "set to zero".
+ */
+function toEpochMillis(raw: unknown): number | null {
+  if (raw === null || raw === undefined || raw === '') return null;
+  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
+  if (raw instanceof Date) {
+    const ms = raw.getTime();
+    return Number.isFinite(ms) ? ms : null;
+  }
+  if (typeof raw === 'string') {
+    const asNumber = Number(raw);
+    if (Number.isFinite(asNumber)) return asNumber;
+    const asDate = new Date(raw).getTime();
+    return Number.isFinite(asDate) ? asDate : null;
+  }
+  return null;
 }
 
 interface SessionInfo {
@@ -619,6 +648,8 @@ export function useChatRuntime(
       status: mapStatus(s.status),
       metadata: parseMetadata(s.metadata),
       toolMessages: byStep.get(s.id) ?? [],
+      startedAt: toEpochMillis(s.startedAt),
+      finishedAt: toEpochMillis(s.finishedAt),
     }));
     const allDone = steps.length > 0 && steps.every((s) => s.status === 'done');
     // Live status string for the running step card. Order of fallback

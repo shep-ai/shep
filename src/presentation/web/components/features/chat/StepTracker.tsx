@@ -115,6 +115,14 @@ export function StepTracker({
     );
   }
 
+  // Aggregate totals: total duration + total cost + total tokens
+  // across every step. Rendered once every real step has timing
+  // data so the user gets a single bottom-of-tracker summary. The
+  // cost/tokens columns are omitted when none of the steps carry
+  // usage metadata (e.g. a resumed workflow that finished before
+  // usage snapshots were wired in).
+  const totals = computeTotals(steps);
+
   return (
     <ol className={cn('flex flex-col gap-2 p-4', className)}>
       {collapsedSummary ? (
@@ -142,6 +150,32 @@ export function StepTracker({
           onRetry={step.status === 'interrupted' ? onRetry : undefined}
         />
       ))}
+      {totals ? (
+        <li className="border-border/40 text-muted-foreground mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-3 text-[10px] tracking-wide uppercase">
+          <span className="flex items-center gap-1">
+            <span className="text-muted-foreground/70">Total</span>
+            <span className="text-foreground font-semibold tracking-normal normal-case">
+              {formatDuration(totals.durationMs)}
+            </span>
+          </span>
+          {totals.costUsd > 0 ? (
+            <span className="flex items-center gap-1">
+              <span className="text-muted-foreground/70">Cost</span>
+              <span className="text-foreground font-semibold tracking-normal normal-case">
+                {formatCost(totals.costUsd)}
+              </span>
+            </span>
+          ) : null}
+          {totals.inputTokens > 0 || totals.outputTokens > 0 ? (
+            <span className="flex items-center gap-1">
+              <span className="text-muted-foreground/70">Tokens</span>
+              <span className="text-foreground font-semibold tracking-normal normal-case">
+                {formatTokens(totals.inputTokens)} in · {formatTokens(totals.outputTokens)} out
+              </span>
+            </span>
+          ) : null}
+        </li>
+      ) : null}
     </ol>
   );
 }
@@ -207,6 +241,14 @@ function StepCard({ step, liveStatus, mountIndex, onRetry }: StepCardProps) {
   const details = readStringArray(metadata, 'details');
   const error = readString(metadata, 'error');
   const items = classifyMessages(toolMessages);
+  // Live-ticking duration: for the currently running step we want the
+  // pill to count up every second so the user sees elapsed time. For
+  // finished steps we just render the static diff between startedAt
+  // and finishedAt. Pending steps have no duration at all.
+  const durationMs = useStepDurationMs(step, status);
+  const costUsd = readNumber(metadata, 'costUsd');
+  const inputTokens = readNumber(metadata, 'inputTokens');
+  const outputTokens = readNumber(metadata, 'outputTokens');
   // Note: the `summary` metadata field is populated by the orchestrator
   // with `definition.title` on every step (see RunWorkflowUseCase), so
   // it is always a duplicate of the card header and is intentionally
@@ -284,6 +326,19 @@ function StepCard({ step, liveStatus, mountIndex, onRetry }: StepCardProps) {
                 </span>
               ) : null}
             </div>
+            {durationMs !== null ? (
+              <span
+                className={cn(
+                  'shrink-0 text-[10px] font-medium tabular-nums transition-colors duration-300',
+                  status === 'running'
+                    ? 'text-violet-600 dark:text-violet-300'
+                    : 'text-muted-foreground/70'
+                )}
+                title={`Step duration — ${formatDuration(durationMs)}`}
+              >
+                {formatDuration(durationMs)}
+              </span>
+            ) : null}
             {items.length > 0 ? (
               <span
                 key={items.length}
@@ -345,6 +400,16 @@ function StepCard({ step, liveStatus, mountIndex, onRetry }: StepCardProps) {
                   <li key={d}>{d}</li>
                 ))}
               </ul>
+            ) : null}
+            {costUsd > 0 || inputTokens > 0 || outputTokens > 0 ? (
+              <div className="text-muted-foreground/70 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] tabular-nums">
+                {costUsd > 0 ? <span>{formatCost(costUsd)}</span> : null}
+                {inputTokens > 0 || outputTokens > 0 ? (
+                  <span>
+                    {formatTokens(inputTokens)} in · {formatTokens(outputTokens)} out
+                  </span>
+                ) : null}
+              </div>
             ) : null}
             {items.length > 0 ? (
               <div className="-mx-1 flex flex-col gap-1">
@@ -417,4 +482,112 @@ function readStringArray(metadata: Record<string, unknown> | null, key: string):
   const v = metadata[key];
   if (!Array.isArray(v)) return [];
   return v.filter((x): x is string => typeof x === 'string');
+}
+
+function readNumber(metadata: Record<string, unknown> | null, key: string): number {
+  if (!metadata) return 0;
+  const v = metadata[key];
+  return typeof v === 'number' && Number.isFinite(v) ? v : 0;
+}
+
+/**
+ * Millisecond-precision duration for a step. Returns:
+ *  - null when pending (no startedAt yet)
+ *  - a live-ticking value when running (updates every second so the
+ *    user sees elapsed time count up inside the pill)
+ *  - a static finishedAt - startedAt value when terminal
+ */
+function useStepDurationMs(
+  step: EnhancedStepState,
+  status: EnhancedStepState['status']
+): number | null {
+  // Tick state for running steps — forces a re-render every second so
+  // `Date.now() - startedAt` advances in the rendered pill.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (status !== 'running' || step.startedAt === null) return undefined;
+    const handle = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(handle);
+  }, [status, step.startedAt]);
+  // Silence unused-var warning without disabling the effect's contribution.
+  void tick;
+
+  if (step.startedAt === null) return null;
+  if (status === 'running') return Math.max(0, Date.now() - step.startedAt);
+  if (step.finishedAt === null) return null;
+  return Math.max(0, step.finishedAt - step.startedAt);
+}
+
+/**
+ * Human-friendly duration. Uses a compact form so the inline pill
+ * stays narrow: `850ms`, `12s`, `3m 5s`, `1h 12m`.
+ */
+function formatDuration(ms: number): string {
+  if (!Number.isFinite(ms) || ms < 0) return '';
+  if (ms < 1_000) return `${Math.round(ms)}ms`;
+  const totalSeconds = Math.round(ms / 1_000);
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes < 60) return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
+  const hours = Math.floor(minutes / 60);
+  const remMinutes = minutes % 60;
+  return remMinutes === 0 ? `${hours}h` : `${hours}h ${remMinutes}m`;
+}
+
+/** USD cost formatted with enough precision to show sub-cent values. */
+function formatCost(cost: number): string {
+  if (!Number.isFinite(cost) || cost <= 0) return '$0';
+  if (cost < 0.01) return `$${cost.toFixed(4)}`;
+  if (cost < 1) return `$${cost.toFixed(3)}`;
+  return `$${cost.toFixed(2)}`;
+}
+
+/** Compact token count: 1.2k, 3.4M. */
+function formatTokens(count: number): string {
+  if (!Number.isFinite(count) || count <= 0) return '0';
+  if (count < 1_000) return String(Math.round(count));
+  if (count < 1_000_000) return `${(count / 1_000).toFixed(count < 10_000 ? 1 : 0)}k`;
+  return `${(count / 1_000_000).toFixed(1)}M`;
+}
+
+/**
+ * Sum per-step timing + usage metadata into tracker-level totals.
+ * Returns null when no real step has completed yet (no startedAt on
+ * any card) so the bottom-of-tracker footer stays hidden for the
+ * placeholder tracker and for freshly-booted workflows.
+ */
+function computeTotals(steps: EnhancedStepState[]): {
+  durationMs: number;
+  costUsd: number;
+  inputTokens: number;
+  outputTokens: number;
+} | null {
+  let earliestStart: number | null = null;
+  let latestFinish: number | null = null;
+  let costUsd = 0;
+  let inputTokens = 0;
+  let outputTokens = 0;
+  for (const step of steps) {
+    if (step.startedAt !== null) {
+      earliestStart =
+        earliestStart === null ? step.startedAt : Math.min(earliestStart, step.startedAt);
+    }
+    // Use `now` for a still-running step so the footer ticks forward
+    // with the step card. Terminal steps use their own finishedAt.
+    const stepEnd = step.status === 'running' ? Date.now() : (step.finishedAt ?? null);
+    if (stepEnd !== null) {
+      latestFinish = latestFinish === null ? stepEnd : Math.max(latestFinish, stepEnd);
+    }
+    costUsd += readNumber(step.metadata, 'costUsd');
+    inputTokens += readNumber(step.metadata, 'inputTokens');
+    outputTokens += readNumber(step.metadata, 'outputTokens');
+  }
+  if (earliestStart === null || latestFinish === null) return null;
+  return {
+    durationMs: Math.max(0, latestFinish - earliestStart),
+    costUsd,
+    inputTokens,
+    outputTokens,
+  };
 }

@@ -61,6 +61,8 @@ function build(
       status: o.status ?? 'pending',
       metadata: o.metadata ?? null,
       toolMessages: o.toolMessages ?? [],
+      startedAt: o.startedAt ?? null,
+      finishedAt: o.finishedAt ?? null,
     };
   });
 }
