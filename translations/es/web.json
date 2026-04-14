@@ -204,6 +204,8 @@
       "reactFileManagerDescription": "Usar el administrador de archivos React integrado en lugar del selector de carpetas nativo del SO",
       "inventory": "Inventario",
       "inventoryDescription": "Habilitar la página de Inventario que muestra todos los repositorios y funciones en vista de árbol",
+      "projects": "Proyectos",
+      "projectsDescription": "Habilitar la navegación de Proyectos y las páginas de gestión de proyectos en la interfaz web",
       "hint": "Funcionalidades experimentales que aún están en desarrollo. Habilítalas bajo tu propio riesgo — pueden cambiar o ser eliminadas en versiones futuras. El modo de depuración agrega registro detallado útil para la resolución de problemas."
     },
     "interactiveAgent": {

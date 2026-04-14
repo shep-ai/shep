@@ -99,6 +99,7 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
     gitRebaseSync: true,
     reactFileManager: true,
     inventory: false,
+    projects: false,
   };
 
   return (

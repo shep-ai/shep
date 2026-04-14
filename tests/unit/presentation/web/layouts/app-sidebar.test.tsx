@@ -47,6 +47,7 @@ const defaultFlags = {
   gitRebaseSync: false,
   reactFileManager: false,
   inventory: true,
+  projects: false,
 };
 
 function renderWithSidebar(ui: React.ReactElement) {

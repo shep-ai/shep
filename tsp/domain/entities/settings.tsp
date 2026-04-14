@@ -591,6 +591,9 @@ model FeatureFlags {
 
   @doc("Enable the Inventory page showing all repositories and features")
   inventory: boolean = false;
+
+  @doc("Enable Projects pages and navigation (project management)")
+  projects: boolean = false;
 }
 
 /**

@@ -397,6 +397,7 @@ export function SettingsPageClient({
     adoptBranch: false,
     gitRebaseSync: false,
     reactFileManager: false,
+    projects: false,
     inventory: false,
   };
 
@@ -1785,6 +1786,18 @@ export function SettingsPageClient({
               checked={flags.inventory}
               onChange={(v) => {
                 const newFlags = { ...flags, inventory: v };
+                setFlags(newFlags);
+                save({ featureFlags: newFlags });
+              }}
+            />
+            <SwitchRow
+              label={t('settings.featureFlags.projects')}
+              description={t('settings.featureFlags.projectsDescription')}
+              id="flag-projects"
+              testId="switch-flag-projects"
+              checked={flags.projects}
+              onChange={(v) => {
+                const newFlags = { ...flags, projects: v };
                 setFlags(newFlags);
                 save({ featureFlags: newFlags });
               }}

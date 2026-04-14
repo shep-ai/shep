@@ -663,6 +663,10 @@ export type FeatureFlags = {
    * Enable the Inventory page showing all repositories and features
    */
   inventory: boolean;
+  /**
+   * Enable Projects pages and navigation (project management)
+   */
+  projects: boolean;
 };
 
 /**

@@ -16,6 +16,7 @@ const defaultFeatureFlags = {
   gitRebaseSync: false,
   reactFileManager: false,
   inventory: false,
+  projects: false,
 };
 
 const meta: Meta<typeof AppSidebar> = {

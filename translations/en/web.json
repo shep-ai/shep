@@ -204,6 +204,8 @@
       "reactFileManagerDescription": "Use the built-in React file manager instead of the native OS folder picker",
       "inventory": "Inventory",
       "inventoryDescription": "Enable the Inventory page showing all repositories and features in a tree view",
+      "projects": "Projects",
+      "projectsDescription": "Enable Projects navigation and project management pages in the web UI",
       "hint": "Experimental features that are still under development. Enable at your own risk — they may change or be removed in future versions. Debug mode adds verbose logging useful for troubleshooting."
     },
     "interactiveAgent": {

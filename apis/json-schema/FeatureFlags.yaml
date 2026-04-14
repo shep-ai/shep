@@ -34,6 +34,10 @@ properties:
     type: boolean
     default: false
     description: Enable the Inventory page showing all repositories and features
+  projects:
+    type: boolean
+    default: false
+    description: Enable Projects pages and navigation (project management)
 required:
   - skills
   - envDeploy
@@ -43,4 +47,5 @@ required:
   - gitRebaseSync
   - reactFileManager
   - inventory
+  - projects
 description: Feature flag toggles for runtime feature control

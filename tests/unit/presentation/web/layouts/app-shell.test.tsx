@@ -27,6 +27,7 @@ const defaultFlags = {
   gitRebaseSync: false,
   reactFileManager: false,
   inventory: false,
+  projects: false,
 };
 
 function renderShell(children: React.ReactNode) {

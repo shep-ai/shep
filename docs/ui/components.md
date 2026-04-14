@@ -371,7 +371,6 @@ Settings page sections.
 - **AgentSettingsSection** (`agent-settings-section.tsx`) -- Agent configuration section
 - **DatabaseSettingsSection** (`database-settings-section.tsx`) -- Database info section
 - **EnvironmentSettingsSection** (`environment-settings-section.tsx`) -- Environment settings
-- **FeatureFlagsSettingsSection** (`feature-flags-settings-section.tsx`) -- Feature flags
 - **NotificationSettingsSection** (`notification-settings-section.tsx`) -- Notification preferences
 - **WorkflowSettingsSection** (`workflow-settings-section.tsx`) -- Workflow defaults
 - **AgentModelPicker** (`AgentModelPicker/`) -- Agent and model picker component

@@ -42,6 +42,7 @@ export const AllSections: Story = {
         gitRebaseSync: false,
         reactFileManager: false,
         inventory: false,
+        projects: false,
       },
     },
     shepHome: '/opt/shep',

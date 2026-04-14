@@ -1,5 +1,34 @@
 # Lessons Learned
 
+## Adding a Web Feature Flag — Full Wiring Checklist
+
+Feature flags are persisted in the Settings singleton and toggled via the Settings page. A new flag is NOT just an env var or a hardcoded boolean — it must be wired end-to-end or the Settings toggle will silently fail to persist.
+
+**When adding a new flag, touch ALL of the following:**
+
+1. `tsp/domain/entities/settings.tsp` — add field to `model FeatureFlags` with `= false` default
+2. Run `pnpm tsp:compile` to regenerate `packages/core/src/domain/generated/output.ts` (never edit this file by hand)
+3. New migration `packages/core/src/infrastructure/persistence/sqlite/migrations/NNN-add-feature-flag-<name>.ts` — `ALTER TABLE settings ADD COLUMN feature_flag_<name> INTEGER NOT NULL DEFAULT 0` (guarded by `pragma table_info` check)
+4. `packages/core/src/infrastructure/persistence/sqlite/mappers/settings.mapper.ts` — 3 edits:
+   - `SettingsRow` interface: add `feature_flag_<name>: number`
+   - `toDatabase()`: add `feature_flag_<name>: settings.featureFlags?.<name> ? 1 : 0`
+   - `fromDatabase()`: add `<name>: row.feature_flag_<name> === 1` inside `featureFlags`
+5. `packages/core/src/infrastructure/repositories/sqlite-settings.repository.ts` — 3 edits:
+   - INSERT column list
+   - INSERT `VALUES (..., @feature_flag_<name>, ...)`
+   - UPDATE SET clause
+6. `packages/core/src/domain/factories/settings-defaults.factory.ts` — add `<name>: false` to the `FeatureFlags` defaults object
+7. `src/presentation/web/lib/feature-flags.ts` — add field to `FeatureFlagsState` interface, to the DB-primary branch, and to the env-var fallback branch (+ optional deprecated accessor)
+8. `src/presentation/web/components/features/settings/settings-page-client.tsx` — add `<SwitchRow>` inside the Feature Flags `SettingsSection` and add the key to the fallback object at the top (`const featureFlags = settings.featureFlags ?? { ... }`).
+9. Translation strings in EVERY locale — `translations/<lang>/web.json` → `settings.featureFlags.<name>` and `settings.featureFlags.<name>Description`. Missing keys render as the raw key path on-screen. Locales: `en, ar, es, de, fr, he, pt, uk, ru`.
+10. Gate the UI on `featureFlags.<name>` wherever the feature is exposed (sidebar, routes, search, FAB actions)
+
+**Verify before claiming done:** open the Settings page in the browser and confirm the new toggle actually renders. If it doesn't, you edited the wrong component (see step 8) or forgot translation keys (see step 9).
+
+**Failure mode if you skip a step:** the UI toggle saves, the mapper writes the column, but the repo SQL omits it → the value is silently dropped on INSERT/UPDATE. Same pattern as the per-feature flag bug below — mapper and repo SQL are separate sources of truth and must stay in sync.
+
+**Do NOT** hide a flag only via `NEXT_PUBLIC_FLAG_*` env vars when the rest of the flag system is DB-backed. Users expect to toggle flags from the Settings page, not by editing `.env`.
+
 ## Auth-Detection Checks Must Match the Tool's Real Storage + Real CLI
 
 `check-agent-auth.ts` was reporting **Claude Code needs authentication** even though the user was logged in. Two stacked bugs:

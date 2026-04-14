@@ -222,6 +222,7 @@ export function createDefaultSettings(): Settings {
     gitRebaseSync: false,
     reactFileManager: false,
     inventory: false,
+    projects: false,
   };
 
   return {

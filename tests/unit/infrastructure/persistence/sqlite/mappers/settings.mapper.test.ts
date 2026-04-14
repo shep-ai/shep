@@ -161,6 +161,7 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     feature_flag_git_rebase_sync: 0,
     feature_flag_react_file_manager: 0,
     feature_flag_inventory: 0,
+    feature_flag_projects: 0,
     interactive_agent_enabled: 1,
     interactive_agent_auto_timeout_minutes: 15,
     interactive_agent_max_concurrent_sessions: 3,

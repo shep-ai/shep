@@ -184,12 +184,14 @@ export function AppSidebar({
             href="/tools"
             active={pathname === '/tools'}
           />
-          <SidebarNavItem
-            icon={FolderKanban}
-            label="Projects"
-            href="/projects"
-            active={pathname?.startsWith('/projects') ?? false}
-          />
+          {featureFlags.projects ? (
+            <SidebarNavItem
+              icon={FolderKanban}
+              label="Projects"
+              href="/projects"
+              active={pathname?.startsWith('/projects') ?? false}
+            />
+          ) : null}
           {featureFlags.skills ? (
             <SidebarNavItem
               icon={Puzzle}
