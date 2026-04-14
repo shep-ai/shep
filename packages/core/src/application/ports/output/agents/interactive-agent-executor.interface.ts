@@ -58,6 +58,7 @@ export interface UserInteractionData {
 export interface InteractiveAgentEvent {
   type:
     | 'delta' // Streaming text token
+    | 'thinking' // Extended-thinking reasoning block (content-only, no tool)
     | 'tool_use' // Agent is calling a tool
     | 'tool_result' // Tool execution summary
     | 'status' // Status update (tool progress, compacting, etc.)
