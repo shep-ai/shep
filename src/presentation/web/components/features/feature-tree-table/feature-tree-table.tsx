@@ -56,6 +56,8 @@ export interface FeatureTreeTableProps {
   itemSortField?: string;
   /** Sort direction for items. */
   itemSortDir?: SortDir;
+  /** Called when the table renders/re-renders with a ref to the container, for portal management. */
+  onTableRender?: (container: HTMLDivElement) => void;
 }
 
 // ── Constants ────────────────────────────────────────────────
@@ -127,6 +129,30 @@ function groupHeaderNameFormatter(groupBy: GroupByField): (cell: CellComponent) 
   };
 }
 
+// ── Actions column ────────────────────────────────────────────
+
+export const ACTIONS_COLUMN_FIELD = '_actions';
+const ACTIONS_COLUMN_WIDTH = 48;
+
+/**
+ * Tabulator custom formatter for the actions column.
+ * Creates a portal target div with data-feature-id for regular rows.
+ * Returns empty string for group header rows (no actions on headers).
+ */
+export function actionsColumnFormatter(cell: CellComponent): string | HTMLElement {
+  const row = cell.getRow().getData() as FeatureTreeRow;
+  if (row._isGroupHeader || row._isRepoGroup) return '';
+
+  const container = document.createElement('div');
+  container.setAttribute('data-feature-id', row.id);
+  container.style.display = 'flex';
+  container.style.alignItems = 'center';
+  container.style.justifyContent = 'center';
+  container.style.width = '100%';
+  container.style.height = '100%';
+  return container;
+}
+
 // ── Column builders ──────────────────────────────────────────
 
 interface ColumnConfig {
@@ -135,7 +161,7 @@ interface ColumnConfig {
 }
 
 /** All possible columns. We'll filter out the grouped-by column in tree mode. */
-function buildColumns({ onFeatureClick, groupBy }: ColumnConfig): ColumnDefinition[] {
+export function buildColumns({ onFeatureClick, groupBy }: ColumnConfig): ColumnDefinition[] {
   const clickProps = onFeatureClick
     ? {
         cellClick: (_e: UIEvent, cell: CellComponent) => {
@@ -193,6 +219,15 @@ function buildColumns({ onFeatureClick, groupBy }: ColumnConfig): ColumnDefiniti
       widthGrow: 2,
       headerSort: !isGrouped,
       formatter: branchFormatter,
+    },
+    {
+      title: '',
+      field: ACTIONS_COLUMN_FIELD,
+      width: ACTIONS_COLUMN_WIDTH,
+      headerSort: false,
+      resizable: false,
+      frozen: true,
+      formatter: actionsColumnFormatter,
     },
   ];
 
@@ -330,11 +365,14 @@ export function FeatureTreeTable({
   groupSortDir = 'asc',
   itemSortField = 'name',
   itemSortDir = 'asc',
+  onTableRender,
 }: FeatureTreeTableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const tabulatorRef = useRef<Tabulator | null>(null);
   const onFeatureClickRef = useRef(onFeatureClick);
   onFeatureClickRef.current = onFeatureClick;
+  const onTableRenderRef = useRef(onTableRender);
+  onTableRenderRef.current = onTableRender;
 
   const stableOnFeatureClick = useCallback((featureId: string) => {
     onFeatureClickRef.current?.(featureId);
@@ -350,7 +388,9 @@ export function FeatureTreeTable({
       ? buildGroupedTree(data, groupBy!, groupSortDir, itemSortField, itemSortDir)
       : data;
 
-    const table = new Tabulator(containerRef.current, {
+    const container = containerRef.current;
+
+    const table = new Tabulator(container, {
       data: tableData,
       columns,
       layout: 'fitColumns',
@@ -370,6 +410,14 @@ export function FeatureTreeTable({
         : {
             initialSort: [{ column: 'repositoryName', dir: 'asc' as const }],
           }),
+    });
+
+    table.on('renderComplete', () => {
+      onTableRenderRef.current?.(container);
+    });
+
+    table.on('tableBuilt', () => {
+      onTableRenderRef.current?.(container);
     });
 
     tabulatorRef.current = table;

@@ -87,6 +87,11 @@
   padding: 12px 16px;
 }
 
+/* ── Frozen actions column — tight padding, no border ──────── */
+.tabulator .tabulator-row .tabulator-cell.tabulator-frozen {
+  padding: 4px 0;
+}
+
 /* ── Tree indent — keep spacing, hide the └ connector lines ── */
 .tabulator .tabulator-row .tabulator-data-tree-branch {
   border-left: none;
