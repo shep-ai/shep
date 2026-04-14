@@ -41,7 +41,7 @@ export class SQLiteInteractiveMessageRepository implements IInteractiveMessageRe
       .prepare(
         `SELECT * FROM interactive_messages
          WHERE feature_id = ?
-         ORDER BY created_at ASC
+         ORDER BY created_at ASC, rowid ASC
          LIMIT ?`
       )
       .all(featureId, limit) as InteractiveMessageRow[];
@@ -53,7 +53,7 @@ export class SQLiteInteractiveMessageRepository implements IInteractiveMessageRe
       .prepare(
         `SELECT * FROM interactive_messages
          WHERE session_id = ?
-         ORDER BY created_at ASC`
+         ORDER BY created_at ASC, rowid ASC`
       )
       .all(sessionId) as InteractiveMessageRow[];
     return rows.map(fromDatabase);

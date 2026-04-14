@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Cloud,
   Loader2,
+  RefreshCw,
   Rocket,
   Save,
   Sparkles,
@@ -52,7 +53,7 @@ interface LabelSpec {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   sub?: string;
-  tone: 'primary' | 'emerald' | 'destructive' | 'muted';
+  tone: 'primary' | 'emerald' | 'amber' | 'destructive' | 'muted';
   spinning?: boolean;
 }
 
@@ -73,6 +74,18 @@ function labelFor(state: SmartDeployState): LabelSpec {
             ? `${state.changeCount} change${state.changeCount === 1 ? '' : 's'}`
             : undefined,
         tone: 'primary',
+      };
+    case 'saveAndRepublish':
+      return {
+        icon: RefreshCw,
+        label: 'Save & republish',
+        sub:
+          state.changeCount > 0
+            ? `${state.changeCount} change${state.changeCount === 1 ? '' : 's'} not live`
+            : 'Not in sync',
+        // Amber instead of emerald so the "your live site is behind"
+        // state looks visibly different from the calm "Live" chip.
+        tone: 'amber',
       };
     case 'save':
       return {
@@ -110,6 +123,8 @@ const TONE_CLASSES: Record<LabelSpec['tone'], string> = {
     'border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/15',
   emerald:
     'border-emerald-500/40 bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/15',
+  amber:
+    'border-amber-500/40 bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 dark:text-amber-400 dark:bg-amber-500/10 dark:hover:bg-amber-500/15',
   destructive:
     'border-destructive/40 bg-destructive/5 text-destructive hover:bg-destructive/10 dark:bg-destructive/10 dark:hover:bg-destructive/15',
   muted: 'border-border bg-background text-muted-foreground hover:bg-accent',
@@ -161,9 +176,17 @@ export function SmartDeployButton({
         <span className="relative inline-flex">
           <Icon className={cn('size-3.5 shrink-0', spec.spinning && 'animate-spin')} />
           {/* Tiny dirty-dot overlay on the icon when there are pending changes
-              and we're NOT already showing them in the label (i.e. live or
-              loading state). Visible without opening the panel. */}
-          {isDirty && state.kind !== 'save' && state.kind !== 'pushAndDeploy' ? (
+              and we're NOT already showing them in the label. Hidden for
+              states whose label already communicates the state so we don't
+              double-indicate: save, pushAndDeploy, saveAndRepublish,
+              working, loading, failed. */}
+          {isDirty &&
+          state.kind !== 'save' &&
+          state.kind !== 'pushAndDeploy' &&
+          state.kind !== 'saveAndRepublish' &&
+          state.kind !== 'working' &&
+          state.kind !== 'loading' &&
+          state.kind !== 'failed' ? (
             <span className="bg-primary absolute -end-0.5 -top-0.5 size-1.5 rounded-full" />
           ) : null}
         </span>

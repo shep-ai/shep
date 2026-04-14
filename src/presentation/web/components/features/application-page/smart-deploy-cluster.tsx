@@ -229,6 +229,12 @@ export function SmartDeployCluster({
       case 'pushAndDeploy':
         void handleSaveAndPublish();
         return;
+      case 'saveAndRepublish':
+        // Site is already live but user has local drift. The one-click
+        // action is: commit & push the changes, then redeploy to the
+        // connected cloud provider — same pipeline as pushAndDeploy.
+        void handleSaveAndPublish();
+        return;
       case 'save':
         void handleSaveChanges();
         return;
@@ -327,7 +333,6 @@ export function SmartDeployCluster({
             onSaveChanges={handleSaveChanges}
             onPublishToWeb={handlePublishToWeb}
             onRedeploy={handleRedeploy}
-            onSaveAndPublish={handleSaveAndPublish}
             onSetUpCodeStorage={handleSetUpCodeStorage}
             onSelectProvider={(p) => void handleSelectProvider(p)}
             onConnectProvider={handleConnectProvider}

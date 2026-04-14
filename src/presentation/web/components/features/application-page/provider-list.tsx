@@ -40,6 +40,16 @@ export interface ProviderListProps {
   selectedProvider: CloudDeploymentProvider | null;
   loading?: boolean;
   loadError?: string | null;
+  /**
+   * When true, the currently-selected provider is NEVER rendered as a
+   * row — not in the collapsed primary view, not in the expanded list.
+   * Used when the parent already renders the selected provider as its
+   * own main row (e.g. DeployPanel's cloud host ServiceRow) and we only
+   * want the provider list to surface *alternatives*. In that mode the
+   * collapsed view is empty and only the "Change provider" chevron
+   * shows — clicking it expands the list of other providers.
+   */
+  hideSelected?: boolean;
   onSelectConnected(provider: CloudDeploymentProvider): void;
   onSelectDisconnected(provider: CloudDeploymentProvider): void;
   onEditConnection?(provider: CloudDeploymentProvider): void;
@@ -50,17 +60,30 @@ export function ProviderList({
   selectedProvider,
   loading = false,
   loadError = null,
+  hideSelected = false,
   onSelectConnected,
   onSelectDisconnected,
   onEditConnection,
 }: ProviderListProps) {
-  // The collapsed view shows the one provider the user cares about. Pick
-  // in priority order: (1) explicit selection, (2) first connected, (3)
-  // first enabled, (4) first entry. Memoized so the expand/collapse toggle
-  // doesn't re-derive this on every render.
+  // When hideSelected is set we're acting as an inline switcher under
+  // a parent row that already shows the current provider. Filter the
+  // currently-selected entry out before any of the collapsed / expanded
+  // logic runs so we never double-render it.
+  const effectiveProviders = useMemo(
+    () =>
+      hideSelected && selectedProvider
+        ? providers.filter((p) => p.id !== selectedProvider)
+        : providers,
+    [providers, selectedProvider, hideSelected]
+  );
+
+  // The collapsed view shows the one provider the user cares about
+  // (the "primary"). In hideSelected mode the collapsed view is empty
+  // on purpose — the parent owns the main row and this list only
+  // surfaces alternatives when the user expands it.
   const primary = useMemo(
-    () => pickPrimary(providers, selectedProvider),
-    [providers, selectedProvider]
+    () => (hideSelected ? null : pickPrimary(effectiveProviders, selectedProvider)),
+    [effectiveProviders, selectedProvider, hideSelected]
   );
 
   // Collapsed by default — user can expand to see the "Coming soon" lineup
@@ -74,34 +97,54 @@ export function ProviderList({
   if (loadError) {
     return <div className="text-destructive px-2 py-1.5 text-[11px]">{loadError}</div>;
   }
-  if (providers.length === 0) {
-    return (
-      <div className="text-muted-foreground px-2 py-1.5 text-[11px]">No providers available</div>
-    );
+  if (effectiveProviders.length === 0) {
+    // No alternatives to switch to — don't render anything so the
+    // DeployPanel doesn't show an empty "Change provider" toggle that
+    // leads nowhere.
+    return null;
   }
 
-  const hasAlternatives = providers.length > 1;
-  const visible = expanded ? providers : primary ? [primary] : [];
+  // In hideSelected mode the chevron is the only thing visible in the
+  // collapsed state — there are always alternatives to reveal because
+  // we filtered out the selected one above.
+  const hasAlternatives = hideSelected || effectiveProviders.length > 1;
+  const visible = expanded ? effectiveProviders : primary ? [primary] : [];
 
   return (
-    <div className="border-border/50 overflow-hidden rounded-md border">
-      <ul className="divide-border/50 flex flex-col divide-y">
-        {visible.map((provider) => (
-          <ProviderRow
-            key={provider.id}
-            provider={provider}
-            isSelected={provider.id === selectedProvider}
-            onSelectConnected={onSelectConnected}
-            onSelectDisconnected={onSelectDisconnected}
-            onEditConnection={onEditConnection}
-          />
-        ))}
-      </ul>
+    <div
+      className={cn(
+        'overflow-hidden',
+        // When we DO render rows (collapsed primary or expanded list)
+        // wrap them in a bordered container. In hideSelected mode the
+        // collapsed state renders nothing, so skip the border to avoid
+        // an empty framed box.
+        (visible.length > 0 || expanded) && 'border-border/50 rounded-md border'
+      )}
+    >
+      {visible.length > 0 ? (
+        <ul className="divide-border/50 flex flex-col divide-y">
+          {visible.map((provider) => (
+            <ProviderRow
+              key={provider.id}
+              provider={provider}
+              isSelected={provider.id === selectedProvider}
+              onSelectConnected={onSelectConnected}
+              onSelectDisconnected={onSelectDisconnected}
+              onEditConnection={onEditConnection}
+            />
+          ))}
+        </ul>
+      ) : null}
       {hasAlternatives ? (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="border-border/50 text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center justify-center gap-1 border-t px-2 py-1.5 text-[10px] font-medium tracking-wide uppercase transition-colors"
+          className={cn(
+            'text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium tracking-wide uppercase transition-colors',
+            // Only draw the top border when there's a row above it;
+            // in hideSelected collapsed state the button stands alone.
+            visible.length > 0 && 'border-border/50 border-t'
+          )}
           aria-expanded={expanded}
         >
           {expanded ? (

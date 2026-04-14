@@ -2,24 +2,23 @@ import { test, expect } from '@playwright/test';
 import type { Page, Route } from '@playwright/test';
 
 /**
- * Smoke test for the spec-089 cloud-deploy UI (task t-51).
+ * Smoke test for the spec-089 cloud-deploy UI.
  *
- * Scope: exercises the DeployButton + ProviderDropdown happy path on
- * the application page. Stubs the HTTP routes the page hits so the
+ * Covers the SmartDeployButton + DeployPanel happy-path flow on the
+ * application top bar. Stubs every HTTP route the page hits so the
  * test is deterministic and runs fully offline — no real cloud API
  * calls, no dependency on a fully-registered DI container, no SQLite
- * seeding. Network interception is the same pattern used by
- * `feature-create-drawer.spec.ts`.
+ * seeding.
  *
  * What this covers:
- *   1. Deploy button renders in the application top bar.
- *   2. Clicking the provider switcher opens a Radix dropdown listing
- *      every known provider (Cloudflare Pages, Vercel, Netlify, AWS
- *      Amplify, Google Cloud Run).
- *   3. Disabled stubs show "Coming soon" with aria-disabled=true.
- *   4. Enabled-but-disconnected providers show "Not connected".
- *   5. Selecting an enabled-but-disconnected provider opens the
- *      ConnectProviderModal dialog.
+ *   1. The smart deploy split-button renders in the application top bar.
+ *   2. Clicking the chevron opens the DeployPanel popover.
+ *   3. The panel shows two rows (GitHub backup + cloud host).
+ *   4. The cloud row's "Change provider" button expands the full
+ *      provider list including enabled + disabled providers.
+ *   5. Disabled stubs show "Coming soon" and enabled-but-disconnected
+ *      Cloudflare Pages shows "Not connected".
+ *   6. Clicking Cloudflare Pages opens the ConnectProviderModal dialog.
  */
 
 const APP_ID = 'e2e-app-cloud-deploy';
@@ -55,76 +54,122 @@ function fulfillJson(route: Route, body: unknown, status = 200): Promise<void> {
 
 test.describe('Cloud Deploy — application page smoke (spec 089)', () => {
   test.beforeEach(async ({ page }) => {
-    // /api/applications/:id — drives the ApplicationPageLoader useQuery.
+    // Primary application fetch. The application page expects the
+    // enriched shape { application, initialChatState, deployment }
+    // from GET /api/applications/:id, so stub all three branches.
     await page.route(`**/api/applications/${APP_ID}`, (route) =>
-      fulfillJson(route, { application: STUB_APPLICATION })
+      fulfillJson(route, {
+        application: STUB_APPLICATION,
+        initialChatState: null,
+        deployment: null,
+      })
     );
 
-    // /api/cloud-providers — drives the DeployButton provider list.
+    // Provider list for the DeployPanel.
     await page.route('**/api/cloud-providers', (route) =>
       fulfillJson(route, { providers: STUB_PROVIDERS })
     );
 
-    // Side-routes the application page polls. Stub them so server-side
-    // DI gaps in dev-web can't poison the test (e.g., unregistered
-    // StreamAgentEventsUseCase causes /api/agent-events to 500).
+    // Side-routes the smart-deploy cluster + application page poll.
     await page.route('**/api/applications/*/files*', (route) => fulfillJson(route, { files: [] }));
     await page.route('**/api/applications/*/cloud-deploy/status', (route) =>
       fulfillJson(route, { status: null })
     );
+    await page.route('**/api/applications/*/git/status', (route) =>
+      fulfillJson(route, {
+        branch: null,
+        uncommittedCount: 0,
+        unpushedCount: 0,
+        hasRemote: false,
+        remoteUrl: null,
+      })
+    );
+    await page.route('**/api/operations/**', (route) => fulfillJson(route, { entries: [] }));
+    await page.route('**/api/agent-events*', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'text/event-stream',
+        body: '',
+      })
+    );
   });
 
-  async function openProviderDropdown(page: Page): Promise<void> {
-    const switcher = page.getByRole('button', { name: 'Switch cloud deployment provider' });
-    await expect(switcher).toBeVisible({ timeout: 20000 });
-    await switcher.click();
-    await expect(page.getByText('Deploy to')).toBeVisible();
+  async function openDeployPanel(page: Page): Promise<void> {
+    // The smart deploy button is a split button — the chevron on the
+    // right opens the panel. Use its aria-label (stable) rather than
+    // the dynamic primary-click label which depends on smart state.
+    const chevron = page.getByRole('button', { name: 'Open deploy panel' });
+    await expect(chevron).toBeVisible({ timeout: 20000 });
+    await chevron.click();
+    // The panel renders two ServiceRow titles — waiting on the
+    // "No backup yet" row is the most stable signal that the popover
+    // has mounted.
+    await expect(page.getByText(/No backup yet/i)).toBeVisible();
   }
 
-  test('deploy button renders and provider dropdown lists all providers', async ({ page }) => {
+  async function expandProviderList(page: Page): Promise<void> {
+    // "Change provider" chevron inside the cloud host ServiceRow.
+    // It's rendered as the collapsed-state toggle of the ProviderList.
+    const changeProviderButton = page.getByRole('button', { name: /Change provider/i });
+    await expect(changeProviderButton).toBeVisible();
+    await changeProviderButton.click();
+  }
+
+  test('deploy button renders and provider list shows every provider', async ({ page }) => {
     await page.goto(`/application/${APP_ID}`);
 
-    // Default label is "Deploy" — no provider selected yet, status
-    // NotDeployed, statusLabel() returns "Deploy".
-    const deployButton = page.getByRole('button', { name: /^Deploy$/ });
-    await expect(deployButton).toBeVisible({ timeout: 20000 });
+    // Smart deploy split-button is mounted.
+    await expect(page.getByRole('button', { name: 'Open deploy panel' })).toBeVisible({
+      timeout: 20000,
+    });
 
-    await openProviderDropdown(page);
+    await openDeployPanel(page);
+    await expandProviderList(page);
 
-    // Every known provider surfaces as a menu item.
-    await expect(page.getByRole('menuitem', { name: /Cloudflare Pages/i })).toBeVisible();
-    await expect(page.getByRole('menuitem', { name: /Vercel/i })).toBeVisible();
-    await expect(page.getByRole('menuitem', { name: /Netlify/i })).toBeVisible();
-    await expect(page.getByRole('menuitem', { name: /AWS Amplify/i })).toBeVisible();
-    await expect(page.getByRole('menuitem', { name: /Google Cloud Run/i })).toBeVisible();
+    // Every known provider surfaces as a row in the expanded list.
+    // Rows are plain <button> elements so we match by accessible name
+    // instead of the old Radix menuitem role.
+    await expect(
+      page.getByRole('button', { name: /Cloudflare Pages.*Not connected/i })
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /Vercel.*Coming soon/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Netlify.*Coming soon/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /AWS Amplify.*Coming soon/i })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /Google Cloud Run.*Coming soon/i })
+    ).toBeVisible();
   });
 
   test('stub providers show "Coming soon" and Cloudflare shows "Not connected"', async ({
     page,
   }) => {
     await page.goto(`/application/${APP_ID}`);
-    await openProviderDropdown(page);
+    await openDeployPanel(page);
+    await expandProviderList(page);
 
-    // Cloudflare Pages is enabled but has no stored token.
-    const cloudflareItem = page.getByRole('menuitem', { name: /Cloudflare Pages/i });
-    await expect(cloudflareItem).toContainText(/Not connected/i);
+    // Cloudflare is enabled but has no stored token.
+    const cloudflareRow = page.getByRole('button', { name: /Cloudflare Pages/i });
+    await expect(cloudflareRow).toContainText(/Not connected/i);
+    await expect(cloudflareRow).toBeEnabled();
 
-    // Every disabled stub renders as "Coming soon" with aria-disabled=true.
+    // Every disabled stub row renders as "Coming soon" and is
+    // not clickable.
     const comingSoonProviders = [/Vercel/i, /Netlify/i, /AWS Amplify/i, /Google Cloud Run/i];
     for (const label of comingSoonProviders) {
-      const item = page.getByRole('menuitem', { name: label });
-      await expect(item).toContainText(/Coming soon/i);
-      await expect(item).toHaveAttribute('aria-disabled', 'true');
+      const row = page.getByRole('button', { name: label });
+      await expect(row).toContainText(/Coming soon/i);
+      await expect(row).toBeDisabled();
     }
   });
 
   test('selecting Cloudflare Pages opens the connect-provider modal', async ({ page }) => {
     await page.goto(`/application/${APP_ID}`);
-    await openProviderDropdown(page);
+    await openDeployPanel(page);
+    await expandProviderList(page);
 
     // Cloudflare is enabled-but-not-connected => clicking should open
     // the ConnectProviderModal (Radix Dialog).
-    await page.getByRole('menuitem', { name: /Cloudflare Pages/i }).click();
+    await page.getByRole('button', { name: /Cloudflare Pages.*Not connected/i }).click();
 
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();

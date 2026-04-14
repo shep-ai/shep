@@ -58,7 +58,6 @@ const sharedHandlers = {
   onSaveChanges: noop,
   onPublishToWeb: noop,
   onRedeploy: noop,
-  onSaveAndPublish: noop,
   onSetUpCodeStorage: noop,
   onConnectCloud: noop,
   onSwitchProvider: noop,

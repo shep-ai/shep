@@ -26,13 +26,20 @@
  *   1. Loading — first fetch hasn't completed AND no persisted URL
  *   2. Working — sync OR deploy in flight
  *   3. Failed — sync OR deploy failed
- *   4. Live — the site is already deployed (wins over everything below; a
- *      missing git backup is a soft warning shown inside the panel, not a
- *      blocker that should override the live indicator in the top bar)
- *   5. PushAndDeploy — has dirty changes AND has a connected cloud
- *   6. Save — has dirty changes, no cloud connected
- *   7. Deploy — clean tree, has remote, not deployed yet
- *   8. GetOnline — first-time setup (no remote AND not deployed)
+ *   4. SaveAndRepublish — ALREADY deployed AND the user has new local
+ *      changes. The site is live but out-of-date — we swap the calm
+ *      green "Live" chip for a primary-toned "Save & republish" CTA so
+ *      the drift is obvious at a glance and the user knows the one
+ *      click they need to make the site match their work again.
+ *   5. Live — clean tree, already deployed, no local drift. Wins over
+ *      the `!hasRemote → getOnline` guard below so users who publish
+ *      to Cloudflare without setting up a git backup still see the
+ *      live indicator in the top bar.
+ *   6. PushAndDeploy — has dirty changes AND has a connected cloud
+ *      (but NOT deployed yet — priority 4 handles the already-live case)
+ *   7. Save — has dirty changes, no cloud connected
+ *   8. Deploy — clean tree, has remote, not deployed yet
+ *   9. GetOnline — first-time setup (no remote AND not deployed)
  */
 
 import { useMemo } from 'react';
@@ -46,7 +53,8 @@ export type SmartDeployStateKind =
   | 'getOnline' // no remote yet
   | 'deploy' // clean + has remote, no deployment yet
   | 'save' // dirty + has remote, no cloud connected
-  | 'pushAndDeploy' // dirty + has remote + cloud connected
+  | 'pushAndDeploy' // dirty + has remote + cloud connected (not yet live)
+  | 'saveAndRepublish' // dirty + already live — republish needed to catch up
   | 'live' // clean + deployed, no drift
   | 'working' // running (sync or deploy)
   | 'failed'; // last operation failed
@@ -167,12 +175,29 @@ export function useSmartDeployState({
       });
     }
 
-    // 3. Already deployed → Live. Wins over everything below (including
-    //    `!hasRemote → getOnline`) so users who published to Cloudflare
-    //    without setting up a git backup still see the live indicator in
-    //    the top bar. The missing backup is surfaced inside the panel as
-    //    a soft "no backup yet" chip, not as a label that pretends the
-    //    site isn't online.
+    // 3. Already deployed + local drift → SaveAndRepublish. The site is
+    //    live but the user has edits that aren't up there yet. Promote
+    //    the republish CTA over the calm "Live" chip so the drift is
+    //    obvious from the top bar without opening the panel. Requires
+    //    a remote because the handler does a save-then-publish pipeline;
+    //    the remote-less "dirty but live" corner falls through to the
+    //    plain Live state and the user can republish via the panel.
+    if (cloudDeployed && changeCount > 0 && hasRemote) {
+      return baseState({
+        kind: 'saveAndRepublish',
+        changeCount,
+        hasRemote: true,
+        hasCloud: hasConnectedCloudProvider,
+        liveUrl: cloudUrl ?? null,
+      });
+    }
+
+    // 4. Already deployed, no drift → Live. Wins over everything below
+    //    (including `!hasRemote → getOnline`) so users who published to
+    //    Cloudflare without setting up a git backup still see the live
+    //    indicator in the top bar. The missing backup is surfaced inside
+    //    the panel as a soft "no backup yet" chip, not as a label that
+    //    pretends the site isn't online.
     if (cloudDeployed) {
       return baseState({
         kind: 'live',

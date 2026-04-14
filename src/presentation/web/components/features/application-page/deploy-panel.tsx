@@ -2,10 +2,15 @@
 
 /**
  * DeployPanel — rich content rendered inside the SmartDeployButton's
- * popover. Two visually distinct sections that map to the user's mental
- * model: "where my code is saved" + "where my site is live". Brand names
- * (GitHub, Cloudflare) appear only as small "powered by" subtitles, so a
- * non-technical user can skim the panel without ever seeing jargon.
+ * popover. Two unified rows (GitHub backup, cloud host) that map to the
+ * user's mental model of "where my code is saved" + "where my site is
+ * live". Every row is the same shape: brand icon on the left, title +
+ * status subtitle in the middle, compact icon-only actions on the right.
+ *
+ * Visual language borrowed from the Codex/OpenAI app: neutral chrome,
+ * brand colors carried ONLY by the leading icons, one accent pill per
+ * row for active status, and icon-only action buttons instead of wide
+ * colored CTAs. No nested amber-on-emerald-on-primary chip pileup.
  *
  * The panel is purely presentational — it composes hooks owned by the
  * SmartDeployButton's parent. All click handlers are passed in as props
@@ -15,7 +20,6 @@
 import {
   AlertTriangle,
   ArrowUpRight,
-  CheckCircle2,
   Cloud,
   ExternalLink,
   Loader2,
@@ -23,7 +27,6 @@ import {
   Rocket,
   Save,
   ScrollText,
-  Sparkles,
   XCircle,
 } from 'lucide-react';
 import type { CloudDeploymentProvider } from '@shepai/core/domain/generated/output';
@@ -32,7 +35,7 @@ import type { GitStatusDto } from '@/hooks/use-git-status';
 import type { SmartDeployState } from '@/hooks/use-smart-deploy-state';
 import type { CloudDeployActionApi } from '@/hooks/use-cloud-deploy-action';
 import { ProviderList, type ProviderListEntry } from './provider-list';
-import { GitHubIcon } from './cloud-provider-icons';
+import { CLOUD_PROVIDER_BRAND_HEX, CLOUD_PROVIDER_ICONS, GitHubIcon } from './cloud-provider-icons';
 
 export interface DeployPanelProps {
   state: SmartDeployState;
@@ -53,7 +56,6 @@ export interface DeployPanelProps {
   onSaveChanges(): void;
   onPublishToWeb(): void;
   onRedeploy(): void;
-  onSaveAndPublish(): void;
   onSetUpCodeStorage(): void;
   /** Called when the user clicks a connected provider row to switch to it.
    *  Should persist the selection and immediately run a deploy. */
@@ -67,82 +69,98 @@ export interface DeployPanelProps {
   onOpenInGitHub(): void;
 }
 
-const SECTION_PADDING = 'px-4 py-3';
+/**
+ * A single service row — the atom of the panel. Brand icon on the left
+ * (carries the only non-neutral color), title + subtitle in the middle,
+ * an optional small status pill (live / syncing / out-of-date / off),
+ * and compact icon-only action buttons on the right. All rows share
+ * the exact same height and padding so the panel reads as a clean
+ * stack instead of a collage of cards.
+ */
+type ServiceRowStatus = 'live' | 'dirty' | 'off' | 'working' | 'failed';
 
-/** Section header — uppercase muted title + small "powered by" line. */
-function SectionHeader({ title, poweredBy }: { title: string; poweredBy: string }) {
-  return (
-    <div className="flex items-baseline justify-between">
-      <h3 className="text-foreground text-[11px] font-semibold tracking-wide uppercase">{title}</h3>
-      <span className="text-muted-foreground text-[10px]">powered by {poweredBy}</span>
-    </div>
-  );
-}
-
-/** Compact row that shows a chip + state line. */
-function StatusChip({
-  icon: Icon,
-  primary,
-  secondary,
-  tone = 'muted',
+function ServiceRow({
+  Icon,
+  brandHex,
+  title,
+  subtitle,
   href,
-  onClick,
+  status,
+  statusLabel,
+  actions,
+  expansion,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
-  primary: string;
-  secondary?: string;
-  tone?: 'muted' | 'emerald' | 'destructive' | 'amber';
+  Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  brandHex?: string;
+  title: string;
+  subtitle?: React.ReactNode;
   href?: string;
-  onClick?: () => void;
+  status?: ServiceRowStatus;
+  statusLabel?: string;
+  actions: React.ReactNode;
+  /** Optional collapsible area rendered directly under the row (used
+   *  for the cloud provider switcher). Kept inside the same row so the
+   *  visual hierarchy stays flat. */
+  expansion?: React.ReactNode;
 }) {
-  const toneClass = {
-    muted: 'border-border/60 bg-muted/30',
-    emerald: 'border-emerald-500/40 bg-emerald-500/5',
-    destructive: 'border-destructive/40 bg-destructive/5',
-    amber: 'border-amber-500/40 bg-amber-500/5',
-  }[tone];
+  const statusClass = status ? STATUS_PILL_CLASSES[status] : undefined;
 
-  const inner = (
-    <div className={cn('flex items-center gap-2.5 rounded-md border p-2.5', toneClass)}>
-      <Icon className="text-foreground/80 size-4 shrink-0" />
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-xs font-medium">{primary}</div>
-        {secondary ? (
-          <div className="text-muted-foreground truncate text-[10px]">{secondary}</div>
-        ) : null}
-      </div>
-      {href ? <ExternalLink className="text-muted-foreground size-3" /> : null}
-    </div>
+  const titleNode = href ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="hover:text-primary inline-flex items-center gap-1 truncate transition-colors"
+      title={href}
+    >
+      <span className="truncate">{title}</span>
+      <ExternalLink className="size-3 shrink-0 opacity-60" />
+    </a>
+  ) : (
+    <span className="truncate">{title}</span>
   );
 
-  if (href) {
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block cursor-pointer hover:brightness-110"
-      >
-        {inner}
-      </a>
-    );
-  }
-  if (onClick) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className="block w-full cursor-pointer text-left hover:brightness-110"
-      >
-        {inner}
-      </button>
-    );
-  }
-  return inner;
+  return (
+    <div>
+      <div className="flex items-center gap-3 px-4 py-3">
+        <Icon className="size-5 shrink-0" style={brandHex ? { color: brandHex } : undefined} />
+        <div className="min-w-0 flex-1">
+          <div className="text-foreground truncate text-[12px] font-medium">{titleNode}</div>
+          {subtitle ? (
+            <div className="text-muted-foreground truncate text-[10px]">{subtitle}</div>
+          ) : null}
+        </div>
+        {status && statusLabel ? (
+          <span
+            className={cn(
+              'hidden shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold tracking-wide whitespace-nowrap uppercase sm:inline-block',
+              statusClass
+            )}
+          >
+            {statusLabel}
+          </span>
+        ) : null}
+        <div className="flex shrink-0 items-center gap-0.5">{actions}</div>
+      </div>
+      {expansion}
+    </div>
+  );
 }
 
-/** Inline action button used inside each section. */
-function PanelAction({
+const STATUS_PILL_CLASSES: Record<ServiceRowStatus, string> = {
+  live: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+  dirty: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+  off: 'bg-muted text-muted-foreground',
+  working: 'bg-primary/10 text-primary',
+  failed: 'bg-destructive/10 text-destructive',
+};
+
+/**
+ * Compact icon-only action button. Codex style — square, neutral by
+ * default, primary tinted only when `variant="primary"`. Always carries
+ * a `title` attribute so it doubles as a tooltip.
+ */
+function IconAction({
   icon: Icon,
   label,
   onClick,
@@ -152,28 +170,27 @@ function PanelAction({
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   onClick(): void;
-  variant?: 'default' | 'primary' | 'destructive';
+  variant?: 'default' | 'primary';
   disabled?: boolean;
 }) {
   const variantClass = {
-    default: 'border-border/70 bg-background hover:bg-accent text-foreground',
-    primary: 'border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary',
-    destructive: 'border-destructive/40 bg-destructive/5 hover:bg-destructive/10 text-destructive',
+    default: 'text-muted-foreground hover:text-foreground hover:bg-accent',
+    primary: 'text-primary hover:bg-primary/10',
   }[variant];
-
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
+      aria-label={label}
+      title={label}
       className={cn(
-        'inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border px-2.5 text-[11px] font-medium transition-colors',
+        'inline-flex size-7 cursor-pointer items-center justify-center rounded-md transition-colors',
         variantClass,
         disabled && 'cursor-not-allowed opacity-50'
       )}
     >
       <Icon className="size-3.5" />
-      <span>{label}</span>
     </button>
   );
 }
@@ -190,7 +207,6 @@ export function DeployPanel({
   onSaveChanges,
   onPublishToWeb,
   onRedeploy,
-  onSaveAndPublish,
   onSetUpCodeStorage,
   onSelectProvider,
   onConnectProvider,
@@ -208,187 +224,192 @@ export function DeployPanel({
   // "https://github.com/owner/repo.git" → "owner/repo".
   const remoteDisplay = gitStatus?.remoteUrl ? prettyRepoName(gitStatus.remoteUrl) : null;
 
+  // ── Derive the GitHub row state ────────────────────────────
+  const gitDirtyCount = gitStatus
+    ? gitStatus.uncommittedCount + gitStatus.unpushedCount
+    : state.changeCount;
+  const gitSubtitle = hasRemote
+    ? gitStatus
+      ? gitStatus.uncommittedCount > 0
+        ? `${gitStatus.uncommittedCount} unsaved change${gitStatus.uncommittedCount === 1 ? '' : 's'}`
+        : gitStatus.unpushedCount > 0
+          ? `${gitStatus.unpushedCount} change${gitStatus.unpushedCount === 1 ? '' : 's'} ready to push`
+          : 'Up to date'
+      : 'Loading…'
+    : 'Save your code online so you never lose it';
+  const gitTitle = hasRemote && remoteDisplay ? remoteDisplay : 'No backup yet';
+  const gitHref = hasRemote ? normalizeRemoteHref(gitStatus?.remoteUrl ?? null) : undefined;
+  const gitStatus_: ServiceRowStatus | undefined = !hasRemote
+    ? 'off'
+    : gitDirtyCount > 0
+      ? 'dirty'
+      : 'live';
+  const gitStatusLabel = !hasRemote
+    ? 'Off'
+    : gitDirtyCount > 0
+      ? `${gitDirtyCount} pending`
+      : 'In sync';
+
+  // ── Derive the cloud host row state ────────────────────────
+  const hostTitle = cloudProviderName ?? 'Cloudflare Pages';
+  const hostSubtitle = hasCloud
+    ? liveUrl
+      ? `Last published ${lastDeployedAgo ?? 'just now'}`
+      : 'Connected — not yet published'
+    : 'Click to connect a hosting provider';
+  const hostStatus: ServiceRowStatus | undefined = isWorking
+    ? 'working'
+    : state.kind === 'failed' && state.failedSource === 'deploy'
+      ? 'failed'
+      : !hasCloud
+        ? 'off'
+        : liveUrl
+          ? state.changeCount > 0 && hasRemote
+            ? 'dirty'
+            : 'live'
+          : 'off';
+  const hostStatusLabel: string | undefined = isWorking
+    ? 'Working'
+    : state.kind === 'failed' && state.failedSource === 'deploy'
+      ? 'Failed'
+      : !hasCloud
+        ? 'Off'
+        : liveUrl
+          ? state.changeCount > 0 && hasRemote
+            ? 'Out of sync'
+            : 'Live'
+          : 'Ready';
+
+  // Prefer the real connected provider's brand icon over the
+  // generic Cloud lucide when available.
+  const selectedProviderId = cloudDeploy.state.provider ?? null;
+  const HostIcon =
+    selectedProviderId && CLOUD_PROVIDER_ICONS[selectedProviderId]
+      ? CLOUD_PROVIDER_ICONS[selectedProviderId]
+      : (Cloud as React.ComponentType<{ className?: string; style?: React.CSSProperties }>);
+  const hostBrandHex = selectedProviderId
+    ? CLOUD_PROVIDER_BRAND_HEX[selectedProviderId]
+    : undefined;
+
   return (
-    <div className="flex flex-col">
-      {/* ── Top status strip — only when deployed ──────────────── */}
-      {liveUrl ? (
-        <a
-          href={liveUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex cursor-pointer items-center gap-2 border-b border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 transition-colors hover:bg-emerald-500/15"
-          title="Open the live site"
-        >
-          <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-          <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-              Your site is live
-            </div>
-            <div className="truncate font-mono text-[10px] text-emerald-700/70 dark:text-emerald-400/70">
-              {liveUrl.replace(/^https?:\/\//, '')}
-            </div>
-          </div>
-          <ArrowUpRight className="size-3.5 text-emerald-700 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 dark:text-emerald-400" />
-        </a>
-      ) : null}
-
-      {/* ── Section 1: Save & backup ─────────────────────────── */}
-      <section className={cn(SECTION_PADDING, 'border-b')}>
-        <SectionHeader title="Save & backup" poweredBy="GitHub" />
-        <div className="mt-2.5 space-y-2.5">
-          {hasRemote && remoteDisplay ? (
-            <StatusChip
-              icon={GitHubIcon}
-              primary={remoteDisplay}
-              secondary={
-                gitStatus
-                  ? gitStatus.uncommittedCount > 0
-                    ? `${gitStatus.uncommittedCount} unsaved change${gitStatus.uncommittedCount === 1 ? '' : 's'}`
-                    : gitStatus.unpushedCount > 0
-                      ? `${gitStatus.unpushedCount} change${gitStatus.unpushedCount === 1 ? '' : 's'} ready to push`
-                      : 'Up to date'
-                  : 'Loading…'
-              }
-              tone={
-                gitStatus && (gitStatus.uncommittedCount > 0 || gitStatus.unpushedCount > 0)
-                  ? 'amber'
-                  : 'emerald'
-              }
-              href={normalizeRemoteHref(gitStatus?.remoteUrl ?? null)}
-            />
-          ) : (
-            <StatusChip
-              icon={GitHubIcon}
-              primary="No backup yet"
-              secondary="Save your code online so you never lose it"
-              tone="muted"
-            />
-          )}
-
-          <div className="flex flex-wrap gap-1.5">
-            {hasRemote ? (
-              <>
-                <PanelAction
-                  icon={Save}
-                  label={
-                    state.changeCount > 0
-                      ? `Save ${state.changeCount} change${state.changeCount === 1 ? '' : 's'}`
-                      : 'Save changes'
-                  }
-                  onClick={onSaveChanges}
-                  variant={state.changeCount > 0 ? 'primary' : 'default'}
-                  disabled={isWorking || state.changeCount === 0}
-                />
-                <PanelAction icon={ArrowUpRight} label="Open in GitHub" onClick={onOpenInGitHub} />
-              </>
-            ) : (
-              <PanelAction
-                icon={GitHubIcon}
-                label="Set up code backup"
-                onClick={onSetUpCodeStorage}
-                variant="primary"
+    <div className="flex flex-col divide-y">
+      {/* ── GitHub / backup row ─────────────────────────────── */}
+      <ServiceRow
+        Icon={GitHubIcon}
+        title={gitTitle}
+        subtitle={gitSubtitle}
+        href={gitHref}
+        status={gitStatus_}
+        statusLabel={gitStatusLabel}
+        actions={
+          hasRemote ? (
+            <>
+              <IconAction
+                icon={Save}
+                label={
+                  gitDirtyCount > 0
+                    ? `Save ${gitDirtyCount} change${gitDirtyCount === 1 ? '' : 's'}`
+                    : 'Nothing to save'
+                }
+                onClick={onSaveChanges}
+                variant={gitDirtyCount > 0 ? 'primary' : 'default'}
+                disabled={isWorking || gitDirtyCount === 0}
               />
-            )}
-          </div>
-        </div>
-      </section>
+              <IconAction icon={ArrowUpRight} label="Open in GitHub" onClick={onOpenInGitHub} />
+            </>
+          ) : (
+            <IconAction
+              icon={GitHubIcon}
+              label="Set up code backup"
+              onClick={onSetUpCodeStorage}
+              variant="primary"
+            />
+          )
+        }
+      />
 
-      {/* ── Section 2: Live website ──────────────────────────── */}
-      <section className={SECTION_PADDING}>
-        <SectionHeader title="Live website" poweredBy={cloudProviderName ?? 'Cloudflare Pages'} />
-        <div className="mt-2.5 space-y-2.5">
-          {/* Last-published status strip — only when we have a live URL. */}
-          {liveUrl ? (
-            <div className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
-              <CheckCircle2 className="size-3 text-emerald-500" />
-              <span>Last published {lastDeployedAgo ?? 'just now'}</span>
-            </div>
-          ) : null}
-
-          {/* Provider list — ALL providers including "Coming soon" stubs
-              so the user can see what's available and what's on the
-              roadmap. This was the main thing the old DeployButton's
-              nested dropdown gave you, flattened into the panel. */}
-          <ProviderList
-            providers={providers}
-            selectedProvider={cloudDeploy.state.provider ?? null}
-            loading={providersLoading}
-            loadError={providersError}
-            onSelectConnected={onSelectProvider}
-            onSelectDisconnected={onConnectProvider}
-            onEditConnection={onEditConnection}
-          />
-
-          <div className="flex flex-wrap gap-1.5">
-            {hasCloud ? (
-              <PanelAction
+      {/* ── Cloud host row ──────────────────────────────────── */}
+      <ServiceRow
+        Icon={HostIcon}
+        brandHex={hostBrandHex}
+        title={hostTitle}
+        subtitle={hostSubtitle}
+        href={liveUrl ?? undefined}
+        status={hostStatus}
+        statusLabel={hostStatusLabel}
+        actions={
+          hasCloud ? (
+            <>
+              <IconAction
                 icon={liveUrl ? RefreshCw : Rocket}
                 label={liveUrl ? 'Republish' : 'Publish to web'}
                 onClick={liveUrl ? onRedeploy : onPublishToWeb}
                 variant="primary"
                 disabled={isWorking}
               />
-            ) : (
-              <PanelAction
-                icon={Cloud}
-                label="Connect hosting"
-                onClick={() => {
-                  // Default the connect action to Cloudflare Pages (the
-                  // only live provider in v1). Users who want a different
-                  // one can click the row in the provider list above.
-                  const firstEnabled = providers.find((p) => p.enabled);
-                  if (firstEnabled) onConnectProvider(firstEnabled.id);
-                }}
-                variant="primary"
-                disabled={isWorking}
-              />
-            )}
-            <PanelAction icon={ScrollText} label="Activity log" onClick={onOpenLogs} />
-          </div>
-
-          {/* Inline error pill when deploy failed — pulls user attention
-              without forcing them into the logs drawer for a one-line gist. */}
-          {state.kind === 'failed' && state.failedSource === 'deploy' ? (
-            <div className="border-destructive/30 bg-destructive/5 text-destructive flex items-start gap-1.5 rounded-md border p-2 text-[10px]">
-              <XCircle className="mt-0.5 size-3 shrink-0" />
-              <span className="break-words">{state.errorMessage}</span>
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      {/* ── Combined action — only visible when meaningful ───── */}
-      {hasRemote && hasCloud && state.changeCount > 0 ? (
-        <button
-          type="button"
-          onClick={onSaveAndPublish}
-          disabled={isWorking}
-          className={cn(
-            'border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary group flex cursor-pointer items-center justify-center gap-2 border-t px-4 py-3 text-xs font-semibold transition-colors',
-            isWorking && 'cursor-not-allowed opacity-60'
-          )}
-        >
-          {isWorking ? (
-            <Loader2 className="size-4 animate-spin" />
+              <IconAction icon={ScrollText} label="Activity log" onClick={onOpenLogs} />
+            </>
           ) : (
-            <Sparkles className="size-4 transition-transform group-hover:scale-110" />
-          )}
-          <span>
-            Save &amp; publish everything
-            {state.changeCount > 0
-              ? ` (${state.changeCount} change${state.changeCount === 1 ? '' : 's'})`
-              : ''}
-          </span>
-        </button>
-      ) : null}
+            <IconAction
+              icon={Cloud}
+              label="Connect hosting"
+              onClick={() => {
+                const firstEnabled = providers.find((p) => p.enabled);
+                if (firstEnabled) onConnectProvider(firstEnabled.id);
+              }}
+              variant="primary"
+              disabled={isWorking}
+            />
+          )
+        }
+        expansion={
+          <div className="px-4 pb-3">
+            <ProviderList
+              providers={providers}
+              selectedProvider={selectedProviderId}
+              loading={providersLoading}
+              loadError={providersError}
+              // The cloud host ServiceRow above already renders the
+              // currently-selected provider as its own main row. Tell
+              // the provider list to hide it so we don't render two
+              // "Cloudflare Pages" rows stacked on top of each other —
+              // the user just sees a "Change provider" chevron that
+              // reveals the alternatives (and "Coming soon" stubs)
+              // when clicked.
+              hideSelected
+              onSelectConnected={onSelectProvider}
+              onSelectDisconnected={onConnectProvider}
+              onEditConnection={onEditConnection}
+            />
+          </div>
+        }
+      />
 
-      {/* Sync error inline — same pattern as deploy error above. */}
-      {state.kind === 'failed' && state.failedSource === 'sync' ? (
-        <div className="border-destructive/30 bg-destructive/5 text-destructive flex items-start gap-1.5 border-t px-4 py-2.5 text-[10px]">
+      {/* Inline error surface — tucked under the relevant row so the
+          user never needs to open the logs drawer for a one-line gist.
+          Working-state spinner lives here too so there's a single place
+          for transient feedback instead of two competing indicators. */}
+      {isWorking ? (
+        <div className="text-muted-foreground flex items-center gap-2 px-4 py-2 text-[11px]">
+          <Loader2 className="size-3 animate-spin" />
+          <span>Working…</span>
+        </div>
+      ) : state.kind === 'failed' && state.failedSource === 'deploy' ? (
+        <div className="text-destructive flex items-start gap-1.5 px-4 py-2 text-[10px]">
+          <XCircle className="mt-0.5 size-3 shrink-0" />
+          <span className="break-words">{state.errorMessage}</span>
+        </div>
+      ) : state.kind === 'failed' && state.failedSource === 'sync' ? (
+        <div className="text-destructive flex items-start gap-1.5 px-4 py-2 text-[10px]">
           <AlertTriangle className="mt-0.5 size-3 shrink-0" />
           <span className="break-words">{state.errorMessage}</span>
         </div>
       ) : null}
+
+      {/* Note: onSaveAndPublish is no longer surfaced inside the panel.
+          The top-bar button already promotes it via the saveAndRepublish
+          state (amber "Save & republish" CTA), so a duplicate button
+          inside the popover would be pure chrome noise. */}
     </div>
   );
 }

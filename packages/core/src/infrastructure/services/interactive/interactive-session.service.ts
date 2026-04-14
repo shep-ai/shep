@@ -143,6 +143,18 @@ export class InteractiveSessionService implements IInteractiveSessionService {
    */
   private activeStepByFeature = new Map<string, string>();
 
+  /**
+   * Monotonic clock for message `createdAt` values. `Date.now()` has
+   * millisecond precision, and the SDK can fire `tool_use` + `tool_result`
+   * (and their paired persistToolEvent calls) within the same millisecond
+   * — which leaves the DB with two rows whose `created_at` are identical,
+   * causing `ORDER BY created_at ASC` to return them in insert-race order
+   * and breaking the tool→Output pairing in StepTracker.classifyMessages.
+   * By pinning each subsequent timestamp to `max(Date.now(), lastTs + 1)`
+   * we guarantee monotonically increasing millis even under burst writes.
+   */
+  private lastMessageTs = 0;
+
   constructor(
     private readonly sessionRepo: IInteractiveSessionRepository,
     private readonly messageRepo: IInteractiveMessageRepository,
@@ -416,7 +428,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
             case 'thinking':
               if (event.content) {
-                void this.persistToolEvent(state, 'Thinking', event.content);
+                await this.persistToolEvent(state, 'Thinking', event.content);
                 this.notify(state, {
                   delta: '',
                   done: false,
@@ -430,7 +442,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               if (event.label) {
                 const toolLabel = event.label;
                 const toolDetail = event.detail;
-                void this.persistToolEvent(state, toolLabel, toolDetail);
+                await this.persistToolEvent(state, toolLabel, toolDetail);
                 this.notify(state, {
                   delta: '',
                   done: false,
@@ -444,7 +456,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               if (event.label) {
                 const resultLabel = event.label;
                 const resultDetail = event.detail;
-                void this.persistToolEvent(state, resultLabel, resultDetail);
+                await this.persistToolEvent(state, resultLabel, resultDetail);
                 this.notify(state, {
                   delta: '',
                   done: false,
@@ -679,7 +691,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
             case 'thinking':
               if (event.content) {
-                void this.persistToolEvent(state, 'Thinking', event.content);
+                await this.persistToolEvent(state, 'Thinking', event.content);
                 this.notify(state, {
                   delta: '',
                   done: false,
@@ -693,7 +705,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               if (event.label) {
                 const toolLabel = event.label;
                 const toolDetail = event.detail;
-                void this.persistToolEvent(state, toolLabel, toolDetail);
+                await this.persistToolEvent(state, toolLabel, toolDetail);
                 this.notify(state, {
                   delta: '',
                   done: false,
@@ -707,7 +719,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               if (event.label) {
                 const resultLabel = event.label;
                 const resultDetail = event.detail;
-                void this.persistToolEvent(state, resultLabel, resultDetail);
+                await this.persistToolEvent(state, resultLabel, resultDetail);
                 this.notify(state, {
                   delta: '',
                   done: false,
@@ -796,7 +808,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
             case 'task_started':
               if (event.content) {
-                void this.persistToolEvent(state, 'Subtask started', event.content);
+                await this.persistToolEvent(state, 'Subtask started', event.content);
                 this.notify(state, {
                   delta: '',
                   done: false,
@@ -815,7 +827,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
             case 'task_done':
               if (event.content) {
                 const taskStatus = event.detail ?? 'completed';
-                void this.persistToolEvent(state, `Subtask ${taskStatus}`, event.content);
+                await this.persistToolEvent(state, `Subtask ${taskStatus}`, event.content);
                 this.notify(state, {
                   delta: '',
                   done: false,
@@ -1400,14 +1412,15 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     try {
       await this.flushAssistantBuffer(state);
       const content = detail ? `**${label}** \`${detail}\`` : `**${label}**`;
+      const now = this.nextMessageDate();
       const msg: InteractiveMessage = {
         id: crypto.randomUUID(),
         featureId: state.featureId,
         sessionId: state.sessionId,
         role: InteractiveMessageRole.assistant,
         content,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: now,
+        updatedAt: now,
       };
       await this.persistMessage(msg);
     } catch {
@@ -1429,16 +1442,34 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     const buffered = state.currentAssistantBuffer.trim();
     if (!buffered) return;
     state.currentAssistantBuffer = '';
+    const now = this.nextMessageDate();
     const msg: InteractiveMessage = {
       id: crypto.randomUUID(),
       featureId: state.featureId,
       sessionId: state.sessionId,
       role: InteractiveMessageRole.assistant,
       content: buffered,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     };
     await this.persistMessage(msg);
+  }
+
+  /**
+   * Produce the next monotonic timestamp for a persisted interactive
+   * message. Guarantees a strictly-increasing sequence even when two
+   * calls happen in the same millisecond (which is the norm for rapid
+   * `tool_use` + `tool_result` bursts emitted by the Claude SDK) so
+   * the repository's `ORDER BY created_at ASC` query returns rows in
+   * the exact order they were persisted. Frontend classifyMessages()
+   * depends on that order to pair Write/Edit/Read tool calls with
+   * their adjacent Output bubble.
+   */
+  private nextMessageDate(): Date {
+    const wallclock = Date.now();
+    const next = wallclock > this.lastMessageTs ? wallclock : this.lastMessageTs + 1;
+    this.lastMessageTs = next;
+    return new Date(next);
   }
 
   // ---------------------------------------------------------------------------
