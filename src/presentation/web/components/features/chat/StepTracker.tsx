@@ -198,30 +198,93 @@ interface StepCardProps {
 }
 
 /**
- * Classify a persisted assistant message into exactly one visible item:
- *   - a tool bubble (Bash / Read / Write / Edit / …)
- *   - a plain markdown prose block (the agent's final-word text for a
- *     step, e.g. the "report" step's summary)
+ * Classify a persisted assistant message into one visible item:
  *
- * Messages that parse as tool events render via `ToolBubble`, everything
- * else renders via `react-markdown`. Both flavours count toward the
- * step's badge — so "title-only" steps that previously looked empty now
- * show their text content inline.
+ *   - `thinking` — the agent's extended-thinking block, rendered as
+ *     a chrome-less inline row (label + chevron) so it visually
+ *     recedes from the actual tool/output chain.
+ *   - `tool` — a tool call (Bash / Read / Write / Edit / Grep / …),
+ *     optionally paired with the adjacent `Output` result so one
+ *     bubble carries BOTH the invocation input AND its stdout/
+ *     contents response. Every tool render this way — no more two
+ *     separate bubbles per call.
+ *   - `text` — plain markdown prose block (the agent's final-word
+ *     text for a step, e.g. the `report` step's summary).
+ *
+ * Pairing rule: when we see a tool message immediately followed by a
+ * message whose label is `Output`, we consume both and emit ONE
+ * paired item. Lone `Output` messages (no preceding tool call in this
+ * step's buffer, which shouldn't happen but has shown up in practice
+ * when SSE ordering jitters) fall back to rendering as an unpaired
+ * tool item so nothing is silently lost.
  */
 type StepItem =
-  | { kind: 'tool'; message: InteractiveMessage }
+  | { kind: 'thinking'; message: InteractiveMessage }
+  | {
+      kind: 'tool';
+      message: InteractiveMessage;
+      /** Paired `Output` message when the agent emitted one right after. */
+      output: InteractiveMessage | null;
+    }
   | { kind: 'text'; message: InteractiveMessage };
 
+const OUTPUT_LABEL = 'Output';
+const THINKING_LABEL = 'Thinking';
+
 function classifyMessages(messages: InteractiveMessage[]): StepItem[] {
+  // Pre-parse every message once so we can look ahead without
+  // re-parsing inside the loop.
+  const parsed = messages
+    .map((m) => {
+      const content = m.content?.trim() ?? '';
+      return { message: m, content, event: content ? parseToolEvent(content) : null };
+    })
+    .filter((row) => row.content.length > 0);
+
   const items: StepItem[] = [];
-  for (const m of messages) {
-    const content = m.content?.trim() ?? '';
-    if (!content) continue;
-    if (parseToolEvent(content)) {
-      items.push({ kind: 'tool', message: m });
-    } else {
-      items.push({ kind: 'text', message: m });
+  for (let i = 0; i < parsed.length; i++) {
+    const row = parsed[i]!;
+
+    // Thinking gets its own bubble-less rendering path.
+    if (row.event?.kind === 'tool' && row.event.name === THINKING_LABEL) {
+      items.push({ kind: 'thinking', message: row.message });
+      continue;
     }
+
+    // A lone Output row (no preceding tool call we could pair it
+    // with — already consumed below) renders as an unpaired tool
+    // item. This is a fallback path that should rarely fire in
+    // practice but keeps the data visible if SSE ordering ever
+    // delivers Output before its parent tool.
+    if (row.event?.kind === 'tool' && row.event.name === OUTPUT_LABEL) {
+      items.push({ kind: 'tool', message: row.message, output: null });
+      continue;
+    }
+
+    // Tool call — look ahead exactly one message and consume it if
+    // it's an Output. This collapses the `Bash` + `Output` pair
+    // that used to render as two stacked bubbles into one.
+    if (row.event?.kind === 'tool') {
+      const next = parsed[i + 1];
+      const isOutputNext = next?.event?.kind === 'tool' && next.event.name === OUTPUT_LABEL;
+      items.push({
+        kind: 'tool',
+        message: row.message,
+        output: isOutputNext ? next.message : null,
+      });
+      if (isOutputNext) i++; // skip the paired Output on the next iteration
+      continue;
+    }
+
+    // Label-only events (e.g. "Session started") still render as
+    // unpaired tool items.
+    if (row.event?.kind === 'label-only') {
+      items.push({ kind: 'tool', message: row.message, output: null });
+      continue;
+    }
+
+    // Plain prose — markdown renderer.
+    items.push({ kind: 'text', message: row.message });
   }
   return items;
 }
@@ -413,33 +476,93 @@ function StepCard({ step, liveStatus, mountIndex, onRetry }: StepCardProps) {
             ) : null}
             {items.length > 0 ? (
               <div className="-mx-1 flex flex-col gap-1">
-                {items.map((item, idx) =>
-                  item.kind === 'tool' ? (
+                {items.map((item, idx) => {
+                  const animStyle = {
+                    animationDelay: `${Math.min(idx, 6) * 30}ms`,
+                  } as const;
+                  if (item.kind === 'thinking') {
+                    return (
+                      <div
+                        key={item.message.id}
+                        className="animate-in fade-in-0 slide-in-from-top-1 duration-200"
+                        style={animStyle}
+                      >
+                        <ThinkingRow text={item.message.content} />
+                      </div>
+                    );
+                  }
+                  if (item.kind === 'tool') {
+                    return (
+                      <div
+                        key={item.message.id}
+                        className="animate-in fade-in-0 slide-in-from-top-1 duration-200"
+                        style={animStyle}
+                      >
+                        <ToolBubble text={item.message.content} outputText={item.output?.content} />
+                      </div>
+                    );
+                  }
+                  return (
                     <div
                       key={item.message.id}
                       className="animate-in fade-in-0 slide-in-from-top-1 duration-200"
-                      style={{ animationDelay: `${Math.min(idx, 6) * 30}ms` }}
-                    >
-                      <ToolBubble text={item.message.content} />
-                    </div>
-                  ) : (
-                    <div
-                      key={item.message.id}
-                      className="animate-in fade-in-0 slide-in-from-top-1 duration-200"
-                      style={{ animationDelay: `${Math.min(idx, 6) * 30}ms` }}
+                      style={animStyle}
                     >
                       <div className="border-border/60 bg-background text-foreground rounded-md border px-2.5 py-1.5 text-xs leading-relaxed dark:bg-neutral-800/70">
                         <Markdown components={markdownComponents}>{item.message.content}</Markdown>
                       </div>
                     </div>
-                  )
-                )}
+                  );
+                })}
               </div>
             ) : null}
           </div>
         </Collapsible.Content>
       </li>
     </Collapsible.Root>
+  );
+}
+
+/**
+ * Chrome-less "Thinking" row used for extended-thinking blocks
+ * inside a step card. Intentionally NOT wrapped in the same
+ * bordered chip as regular tool bubbles — thinking is meta-commentary
+ * about the agent's reasoning, not a tool call, and should visually
+ * recede into the background so the real tool/output chain stands
+ * out. Collapsed by default; click the label + chevron to expand
+ * and read the full reasoning block inline without a bordered box.
+ */
+function ThinkingRow({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  // Strip the `**Thinking** \`...\`` persistence wrapper so the
+  // expanded body shows the raw reasoning text.
+  const body = (() => {
+    const event = parseToolEvent(text);
+    if (event?.kind === 'tool' && event.name === 'Thinking') {
+      return event.detail;
+    }
+    return text;
+  })();
+  return (
+    <div className="flex max-w-full flex-col">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="text-muted-foreground/80 hover:text-foreground inline-flex items-center gap-1 self-start rounded px-1 py-0.5 text-[11px] italic transition-colors"
+      >
+        {expanded ? (
+          <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
+        ) : (
+          <ChevronRight className="h-3 w-3 shrink-0 opacity-60" />
+        )}
+        <span>Thinking</span>
+      </button>
+      {expanded ? (
+        <p className="text-muted-foreground/80 mt-0.5 ml-5 max-w-full text-[11px] leading-relaxed break-words whitespace-pre-wrap italic">
+          {body}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
