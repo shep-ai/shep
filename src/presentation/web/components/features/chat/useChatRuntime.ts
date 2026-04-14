@@ -752,11 +752,17 @@ export function useChatRuntime(
       result = chatMessages;
     }
 
-    // When the step-tracker is active we hide ALL assistant
-    // placeholders (streaming text, status log, thinking). The
-    // tracker itself conveys progress; stacking bubbles on top of it
-    // is noise.
-    if (hasPlan) {
+    // While the workflow is STILL RUNNING, hide the assistant
+    // placeholder (streaming text, status log, thinking). The
+    // running step card already conveys in-flight progress via its
+    // spinner + live-status line; stacking a bubble on top of the
+    // tracker is noise.
+    //
+    // Once the workflow is DONE, follow-up chat turns must show the
+    // usual thinking/streaming indicator — the tracker is collapsed
+    // into its summary by then and nothing else in the UI signals
+    // that the agent is working on the user's new message.
+    if (hasPlan && !stepProgress.allDone) {
       return result;
     }
 

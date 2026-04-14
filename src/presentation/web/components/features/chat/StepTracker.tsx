@@ -360,10 +360,12 @@ function StepCard({ step, liveStatus, mountIndex, onRetry }: StepCardProps) {
                   ) : (
                     <div
                       key={item.message.id}
-                      className="text-foreground animate-in fade-in-0 slide-in-from-top-1 px-1 text-xs leading-relaxed duration-200"
+                      className="animate-in fade-in-0 slide-in-from-top-1 duration-200"
                       style={{ animationDelay: `${Math.min(idx, 6) * 30}ms` }}
                     >
-                      <Markdown components={markdownComponents}>{item.message.content}</Markdown>
+                      <div className="border-border/60 bg-background text-foreground rounded-md border px-2.5 py-1.5 text-xs leading-relaxed dark:bg-neutral-800/70">
+                        <Markdown components={markdownComponents}>{item.message.content}</Markdown>
+                      </div>
                     </div>
                   )
                 )}

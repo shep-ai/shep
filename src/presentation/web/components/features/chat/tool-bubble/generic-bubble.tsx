@@ -29,7 +29,12 @@ export function GenericToolBubble({ name, detail, parsed }: GenericToolBubblePro
         onToggle={() => setExpanded((v) => !v)}
       />
       {expanded ? (
-        <pre className="border-border/60 bg-background/40 text-foreground/70 max-h-[300px] max-w-full overflow-auto rounded-md rounded-tl-none border px-3 py-2 font-mono text-[10px] leading-relaxed">
+        // No `max-h` / no inner scroll — large outputs flow into the
+        // page's natural scroll so the user can see the full payload
+        // by scrolling the thread instead of fighting a nested
+        // scrollbar. Long lines wrap via `whitespace-pre-wrap` +
+        // `break-words` so there's no horizontal scroll either.
+        <pre className="border-border/60 bg-background/40 text-foreground/70 max-w-full overflow-hidden rounded-md rounded-tl-none border px-3 py-2 font-mono text-[10px] leading-relaxed break-words whitespace-pre-wrap">
           {body}
         </pre>
       ) : null}
