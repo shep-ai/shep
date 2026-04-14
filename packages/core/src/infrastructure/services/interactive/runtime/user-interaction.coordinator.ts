@@ -23,7 +23,7 @@ import * as crypto from 'node:crypto';
 
 import type { SessionPersistence } from '../core/session-persistence.js';
 import type { StreamEventDispatcher } from '../core/stream-event-dispatcher.js';
-import type { SessionState } from '../core/session-registry.js';
+import type { SessionRegistry, SessionState } from '../core/session-registry.js';
 import type { ILogger } from '../../../../application/ports/output/services/logger.interface.js';
 import type { UserInteractionData } from '../../../../application/ports/output/agents/interactive-agent-executor.interface.js';
 import {
@@ -35,7 +35,8 @@ export class UserInteractionCoordinator {
   constructor(
     private readonly persistence: SessionPersistence,
     private readonly dispatcher: StreamEventDispatcher,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
+    private readonly registry: SessionRegistry
   ) {}
 
   /**
@@ -85,6 +86,22 @@ export class UserInteractionCoordinator {
         state.pendingInteractionResolver = resolve;
       });
     };
+  }
+
+  /**
+   * Feature-scoped entry point: looks up the active session state for
+   * `featureId` and delegates to `respondToInteraction`. Throws when there
+   * is no pending interaction for that feature scope.
+   */
+  async respondToInteractionByFeature(
+    featureId: string,
+    answers: Record<string, string>
+  ): Promise<void> {
+    const state = this.registry.findActiveStateForFeature(featureId);
+    if (!state?.pendingInteraction || !state.pendingInteractionResolver) {
+      throw new Error(`No pending interaction for feature ${featureId}`);
+    }
+    return this.respondToInteraction(state, answers);
   }
 
   /**

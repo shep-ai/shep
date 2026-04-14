@@ -333,7 +333,8 @@ describe('InteractiveSessionService', () => {
     const interactionCoordinator = new UserInteractionCoordinator(
       persistence,
       dispatcher,
-      fakeLogger
+      fakeLogger,
+      registry
     );
     const bootstrapper = new SessionBootstrapper(
       sessionRepo,
@@ -347,7 +348,14 @@ describe('InteractiveSessionService', () => {
       interactionCoordinator,
       fakeLogger
     );
-    const terminator = new SessionTerminator(registry, persistence, dispatcher, fakeLogger);
+    const terminator = new SessionTerminator(
+      registry,
+      persistence,
+      dispatcher,
+      fakeLogger,
+      messageRepo,
+      workflowStepRepo
+    );
     const turnExecutor = new TurnExecutor(
       sessionRepo,
       registry,

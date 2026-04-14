@@ -167,4 +167,21 @@ export class SessionPersistence {
       turnStatus,
     });
   }
+
+  /**
+   * Mark a feature scope as read (turn status → idle).
+   * Uses the active in-memory session when available; falls back to the
+   * most recent DB session for already-stopped scopes.
+   */
+  async markRead(featureId: string): Promise<void> {
+    const state = this.registry.findActiveStateForFeature(featureId);
+    if (state) {
+      void this.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
+      return;
+    }
+    const latest = await this.sessionRepo.findByFeatureId(featureId);
+    if (latest) {
+      void this.updateTurnStatusAndNotify(latest.id, featureId, 'idle');
+    }
+  }
 }

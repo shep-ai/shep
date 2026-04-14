@@ -1,33 +1,23 @@
 /**
- * Interactive Session Service
+ * Interactive Session Service — THIN FACADE (Phase 7 of 7)
  *
- * Thin facade that implements `IInteractiveSessionService` by delegating
- * to extracted collaborators. Phase 6 of the strangler refactor — see
- * `docs/plans/2026-04-14-interactive-session-service-refactor.md`.
+ * Implements `IInteractiveSessionService` by delegating every public method
+ * to the appropriate collaborator. Contains NO business logic of its own.
  *
- * The following collaborators handle the heavy lifting:
- * - `MessageDispatcher`           — sendMessage + sendUserMessage (phase 6)
- * - `ChatStateAssembler`          — getChatState read-side DTO (phase 6)
- * - `WorkflowHooks`               — setActiveStep + clearActiveStep +
- *                                   notifyWorkflowStep + waitForTurnDone (phase 6)
- * - `SessionBootstrapper`         — startSession + completeBootAsync (phase 5)
- * - `SessionTerminator`           — stopSession + stopByFeature (phase 5)
- * - `TurnExecutor`                — executeAndPersistTurn + queue drain (phase 5)
- * - `UserInteractionCoordinator`  — buildOnUserQuestionCallback + respondToInteraction (phase 5)
- * - `BootPromptResolver`          — three-case boot-prompt logic (phase 5)
- * - `AgentStreamConsumer`         — SDK stream event loop (phase 4)
- * - `AgentConfigResolver`         — agent type/auth/cap resolution (phase 3)
- * - `SessionPersistence`          — monotonic-clock DB writes (phase 2)
- * - `SessionRegistry`             — in-memory state (phase 1)
- * - `StreamEventDispatcher`       — SSE fan-out (phase 1)
+ * Collaborator map:
+ * - `SessionBootstrapper`        — startSession
+ * - `SessionTerminator`          — stopSession, stopByFeature, clearMessages
+ * - `MessageDispatcher`          — sendMessage, sendUserMessage
+ * - `IInteractiveMessageRepository` — getMessages
+ * - `IInteractiveSessionRepository` — getSession, getTurnStatuses, getAllActiveTurnStatuses
+ * - `StreamEventDispatcher`      — subscribe, subscribeByFeature, subscribeAll
+ * - `ChatStateAssembler`         — getChatState
+ * - `SessionPersistence`         — markRead
+ * - `UserInteractionCoordinator` — respondToInteraction
+ * - `WorkflowHooks`              — setActiveStep, clearActiveStep, notifyWorkflowStep, waitForTurnDone
  *
- * Remaining direct logic: getSession, getMessages, clearMessages, markRead,
- * getTurnStatuses, getAllActiveTurnStatuses, respondToInteraction,
- * subscribe, subscribeByFeature, subscribeAll — slated for phase 7.
- *
- * Dependencies are injected via constructor for testability (no real
- * processes are spawned in unit tests — the factory is replaced with a
- * test double).
+ * See `docs/plans/2026-04-14-interactive-session-service-refactor.md` for
+ * the full strangler-refactor history (phases 1–7).
  */
 
 import type {
@@ -38,19 +28,15 @@ import type {
 } from '../../../application/ports/output/services/interactive-session-service.interface.js';
 import type { IInteractiveSessionRepository } from '../../../application/ports/output/repositories/interactive-session-repository.interface.js';
 import type { IInteractiveMessageRepository } from '../../../application/ports/output/repositories/interactive-message-repository.interface.js';
-import type { IWorkflowStepRepository } from '../../../application/ports/output/repositories/workflow-step-repository.interface.js';
 import type {
   InteractiveSession,
   InteractiveMessage,
   WorkflowStep,
 } from '../../../domain/generated/output.js';
-import type { SessionRegistry } from './core/session-registry.js';
 import type { StreamEventDispatcher } from './core/stream-event-dispatcher.js';
 import type { SessionPersistence } from './core/session-persistence.js';
-import type { ILogger } from '../../../application/ports/output/services/logger.interface.js';
 import type { SessionBootstrapper } from './lifecycle/session-bootstrapper.js';
 import type { SessionTerminator } from './lifecycle/session-terminator.js';
-import type { TurnExecutor } from './runtime/turn.executor.js';
 import type { UserInteractionCoordinator } from './runtime/user-interaction.coordinator.js';
 import type { MessageDispatcher } from './api/message-dispatcher.js';
 import type { ChatStateAssembler } from './api/chat-state.assembler.js';
@@ -77,14 +63,14 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     private readonly messageRepo: IInteractiveMessageRepository,
     _featureRepo: unknown, // owned by SessionBootstrapper — kept for signature arity
     _contextBuilder: unknown, // owned by BootPromptResolver — kept for signature arity
-    private readonly workflowStepRepo: IWorkflowStepRepository,
-    private readonly registry: SessionRegistry,
+    _workflowStepRepo: unknown, // owned by SessionTerminator — kept for signature arity
+    _registry: unknown, // owned by collaborators — kept for signature arity
     private readonly dispatcher: StreamEventDispatcher,
     private readonly persistence: SessionPersistence,
-    _logger: ILogger, // owned by collaborators — kept for signature arity
+    _logger: unknown, // owned by collaborators — kept for signature arity
     private readonly bootstrapper: SessionBootstrapper,
     private readonly terminator: SessionTerminator,
-    _turnExecutor: TurnExecutor, // owned by MessageDispatcher — kept for signature arity
+    _turnExecutor: unknown, // owned by MessageDispatcher — kept for signature arity
     private readonly interactionCoordinator: UserInteractionCoordinator,
     private readonly messageDispatcher: MessageDispatcher,
     private readonly chatStateAssembler: ChatStateAssembler,
@@ -92,7 +78,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
   ) {}
 
   // ---------------------------------------------------------------------------
-  // Public API — delegated to collaborators
+  // Session lifecycle
   // ---------------------------------------------------------------------------
 
   async startSession(
@@ -117,38 +103,17 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     return this.terminator.stop(sessionId);
   }
 
+  async stopByFeature(featureId: string): Promise<void> {
+    return this.terminator.stopByFeature(featureId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Messaging
+  // ---------------------------------------------------------------------------
+
   async sendMessage(sessionId: string, content: string): Promise<InteractiveMessage> {
     return this.messageDispatcher.sendMessage(sessionId, content);
   }
-
-  async getMessages(featureId: string, limit?: number): Promise<InteractiveMessage[]> {
-    return this.messageRepo.findByFeatureId(featureId, limit);
-  }
-
-  async clearMessages(featureId: string): Promise<void> {
-    // Stop any active session so the agent doesn't retain old context
-    const state = this.registry.findActiveStateForFeature(featureId);
-    if (state) {
-      await this.terminator.stop(state.sessionId);
-    }
-    // Also clear the cached agentSessionId so next session starts fresh
-    this.registry.deleteStoppedAgentSessionId(featureId);
-    await this.workflowStepRepo.deleteByFeatureId(featureId);
-    this.registry.clearActiveStep(featureId);
-    return this.messageRepo.deleteByFeatureId(featureId);
-  }
-
-  async getSession(sessionId: string): Promise<InteractiveSession | null> {
-    return this.sessionRepo.findById(sessionId);
-  }
-
-  subscribe(sessionId: string, onChunk: (chunk: StreamChunk) => void): UnsubscribeFn {
-    return this.dispatcher.subscribeSession(sessionId, onChunk);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Feature-scoped API (frontend doesn't manage sessions)
-  // ---------------------------------------------------------------------------
 
   async sendUserMessage(
     featureId: string,
@@ -172,32 +137,20 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     );
   }
 
-  async getChatState(featureId: string): Promise<ChatState> {
-    return this.chatStateAssembler.assemble(featureId);
+  async getMessages(featureId: string, limit?: number): Promise<InteractiveMessage[]> {
+    return this.messageRepo.findByFeatureId(featureId, limit);
   }
 
-  subscribeByFeature(featureId: string, onChunk: (chunk: StreamChunk) => void): UnsubscribeFn {
-    return this.dispatcher.subscribeByFeature(featureId, onChunk);
+  async clearMessages(featureId: string): Promise<void> {
+    return this.terminator.clearFeatureMessages(featureId);
   }
 
-  subscribeAll(onChunk: (featureId: string, chunk: StreamChunk) => void): UnsubscribeFn {
-    return this.dispatcher.subscribeAll(onChunk);
-  }
+  // ---------------------------------------------------------------------------
+  // Session reads
+  // ---------------------------------------------------------------------------
 
-  async stopByFeature(featureId: string): Promise<void> {
-    return this.terminator.stopByFeature(featureId);
-  }
-
-  async markRead(featureId: string): Promise<void> {
-    const state = this.registry.findActiveStateForFeature(featureId);
-    if (state) {
-      void this.persistence.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
-      return;
-    }
-    const latest = await this.sessionRepo.findByFeatureId(featureId);
-    if (latest) {
-      void this.persistence.updateTurnStatusAndNotify(latest.id, featureId, 'idle');
-    }
+  async getSession(sessionId: string): Promise<InteractiveSession | null> {
+    return this.sessionRepo.findById(sessionId);
   }
 
   async getTurnStatuses(featureIds: string[]): Promise<Map<string, string>> {
@@ -208,12 +161,40 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     return this.sessionRepo.getAllActiveTurnStatuses();
   }
 
+  // ---------------------------------------------------------------------------
+  // Subscriptions
+  // ---------------------------------------------------------------------------
+
+  subscribe(sessionId: string, onChunk: (chunk: StreamChunk) => void): UnsubscribeFn {
+    return this.dispatcher.subscribeSession(sessionId, onChunk);
+  }
+
+  subscribeByFeature(featureId: string, onChunk: (chunk: StreamChunk) => void): UnsubscribeFn {
+    return this.dispatcher.subscribeByFeature(featureId, onChunk);
+  }
+
+  subscribeAll(onChunk: (featureId: string, chunk: StreamChunk) => void): UnsubscribeFn {
+    return this.dispatcher.subscribeAll(onChunk);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Chat state & read tracking
+  // ---------------------------------------------------------------------------
+
+  async getChatState(featureId: string): Promise<ChatState> {
+    return this.chatStateAssembler.assemble(featureId);
+  }
+
+  async markRead(featureId: string): Promise<void> {
+    return this.persistence.markRead(featureId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Interaction handling
+  // ---------------------------------------------------------------------------
+
   async respondToInteraction(featureId: string, answers: Record<string, string>): Promise<void> {
-    const state = this.registry.findActiveStateForFeature(featureId);
-    if (!state?.pendingInteraction || !state.pendingInteractionResolver) {
-      throw new Error(`No pending interaction for feature ${featureId}`);
-    }
-    return this.interactionCoordinator.respondToInteraction(state, answers);
+    return this.interactionCoordinator.respondToInteractionByFeature(featureId, answers);
   }
 
   // ---------------------------------------------------------------------------

@@ -325,6 +325,82 @@ export default tseslint.config(
   },
 
   // =============================================================================
+  // Interactive service subfolder layering
+  //
+  // Dependency direction: core/ ← lifecycle/ ← runtime/ ← api/ ← facade
+  // Inner layers must NOT import from outer layers.
+  // =============================================================================
+  {
+    files: ['packages/core/src/infrastructure/services/interactive/core/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '**/services/interactive/lifecycle/**',
+                '**/services/interactive/lifecycle/*',
+              ],
+              message:
+                'core/ must not import from lifecycle/. Dependency direction: core ← lifecycle ← runtime ← api.',
+            },
+            {
+              group: ['**/services/interactive/runtime/**', '**/services/interactive/runtime/*'],
+              message:
+                'core/ must not import from runtime/. Dependency direction: core ← lifecycle ← runtime ← api.',
+            },
+            {
+              group: ['**/services/interactive/api/**', '**/services/interactive/api/*'],
+              message:
+                'core/ must not import from api/. Dependency direction: core ← lifecycle ← runtime ← api.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/core/src/infrastructure/services/interactive/lifecycle/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/services/interactive/runtime/**', '**/services/interactive/runtime/*'],
+              message:
+                'lifecycle/ must not import from runtime/. Dependency direction: core ← lifecycle ← runtime ← api.',
+            },
+            {
+              group: ['**/services/interactive/api/**', '**/services/interactive/api/*'],
+              message:
+                'lifecycle/ must not import from api/. Dependency direction: core ← lifecycle ← runtime ← api.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/core/src/infrastructure/services/interactive/runtime/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/services/interactive/api/**', '**/services/interactive/api/*'],
+              message:
+                'runtime/ must not import from api/. Dependency direction: core ← lifecycle ← runtime ← api.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // =============================================================================
   // Prettier compatibility (must be last)
   // =============================================================================
   prettierConfig

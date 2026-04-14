@@ -157,7 +157,8 @@ export async function initializeContainer(): Promise<typeof container> {
   const interactionCoordinator = new UserInteractionCoordinator(
     sessionPersistence,
     streamEventDispatcher,
-    logger
+    logger,
+    sessionRegistry
   );
   const bootstrapper = new SessionBootstrapper(
     interactiveSessionRepo,
@@ -175,7 +176,9 @@ export async function initializeContainer(): Promise<typeof container> {
     sessionRegistry,
     sessionPersistence,
     streamEventDispatcher,
-    logger
+    logger,
+    interactiveMessageRepo,
+    workflowStepRepoBoot
   );
   const turnExecutor = new TurnExecutor(
     interactiveSessionRepo,

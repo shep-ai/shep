@@ -16,6 +16,8 @@ import {
 import type { SessionPersistence } from '@/infrastructure/services/interactive/core/session-persistence.js';
 import type { StreamEventDispatcher } from '@/infrastructure/services/interactive/core/stream-event-dispatcher.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
+import type { IInteractiveMessageRepository } from '@/application/ports/output/repositories/interactive-message-repository.interface.js';
+import type { IWorkflowStepRepository } from '@/application/ports/output/repositories/workflow-step-repository.interface.js';
 import { InteractiveSessionStatus } from '@/domain/generated/output.js';
 
 function makeState(overrides: Partial<SessionState> = {}): SessionState {
@@ -55,11 +57,25 @@ function makeLogger(): ILogger {
   return { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 }
 
+function makeMessageRepo(): IInteractiveMessageRepository {
+  return {
+    deleteByFeatureId: vi.fn().mockResolvedValue(undefined),
+  } as unknown as IInteractiveMessageRepository;
+}
+
+function makeWorkflowStepRepo(): IWorkflowStepRepository {
+  return {
+    deleteByFeatureId: vi.fn().mockResolvedValue(undefined),
+  } as unknown as IWorkflowStepRepository;
+}
+
 describe('SessionTerminator', () => {
   let registry: SessionRegistry;
   let persistence: SessionPersistence;
   let dispatcher: StreamEventDispatcher;
   let logger: ILogger;
+  let messageRepo: IInteractiveMessageRepository;
+  let workflowStepRepo: IWorkflowStepRepository;
   let terminator: SessionTerminator;
 
   beforeEach(() => {
@@ -67,7 +83,16 @@ describe('SessionTerminator', () => {
     persistence = makePersistence();
     dispatcher = makeDispatcher();
     logger = makeLogger();
-    terminator = new SessionTerminator(registry, persistence, dispatcher, logger);
+    messageRepo = makeMessageRepo();
+    workflowStepRepo = makeWorkflowStepRepo();
+    terminator = new SessionTerminator(
+      registry,
+      persistence,
+      dispatcher,
+      logger,
+      messageRepo,
+      workflowStepRepo
+    );
   });
 
   // ---------------------------------------------------------------------------

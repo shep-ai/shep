@@ -233,7 +233,8 @@ describe('DI container bootstrap (integration)', () => {
     const interactionCoordinator = new UserInteractionCoordinator(
       sessionPersistence,
       streamEventDispatcher,
-      logger
+      logger,
+      sessionRegistry
     );
     const bootstrapper = new SessionBootstrapper(
       interactiveSessionRepo,
@@ -251,7 +252,9 @@ describe('DI container bootstrap (integration)', () => {
       sessionRegistry,
       sessionPersistence,
       streamEventDispatcher,
-      logger
+      logger,
+      interactiveMessageRepo,
+      workflowStepRepoBoot
     );
     const turnExecutor = new TurnExecutor(
       interactiveSessionRepo,

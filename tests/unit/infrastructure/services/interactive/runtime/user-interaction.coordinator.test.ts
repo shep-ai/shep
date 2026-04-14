@@ -12,7 +12,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { UserInteractionCoordinator } from '@/infrastructure/services/interactive/runtime/user-interaction.coordinator.js';
 import type { SessionPersistence } from '@/infrastructure/services/interactive/core/session-persistence.js';
 import type { StreamEventDispatcher } from '@/infrastructure/services/interactive/core/stream-event-dispatcher.js';
-import type { SessionState } from '@/infrastructure/services/interactive/core/session-registry.js';
+import {
+  SessionRegistry,
+  type SessionState,
+} from '@/infrastructure/services/interactive/core/session-registry.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 import type { UserInteractionData } from '@/application/ports/output/agents/interactive-agent-executor.interface.js';
 
@@ -73,6 +76,7 @@ describe('UserInteractionCoordinator', () => {
   let persistence: SessionPersistence;
   let dispatcher: StreamEventDispatcher;
   let logger: ILogger;
+  let registry: SessionRegistry;
   let coordinator: UserInteractionCoordinator;
 
   beforeEach(() => {
@@ -80,7 +84,8 @@ describe('UserInteractionCoordinator', () => {
     ({ persistence } = makePersistence());
     dispatcher = makeDispatcher();
     logger = makeLogger();
-    coordinator = new UserInteractionCoordinator(persistence, dispatcher, logger);
+    registry = new SessionRegistry();
+    coordinator = new UserInteractionCoordinator(persistence, dispatcher, logger, registry);
   });
 
   afterEach(() => {

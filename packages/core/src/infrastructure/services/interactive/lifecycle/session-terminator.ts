@@ -29,6 +29,8 @@ import type { SessionRegistry } from '../core/session-registry.js';
 import type { SessionPersistence } from '../core/session-persistence.js';
 import type { StreamEventDispatcher } from '../core/stream-event-dispatcher.js';
 import type { ILogger } from '../../../../application/ports/output/services/logger.interface.js';
+import type { IInteractiveMessageRepository } from '../../../../application/ports/output/repositories/interactive-message-repository.interface.js';
+import type { IWorkflowStepRepository } from '../../../../application/ports/output/repositories/workflow-step-repository.interface.js';
 import { InteractiveSessionStatus } from '../../../../domain/generated/output.js';
 
 export class SessionTerminator {
@@ -36,7 +38,9 @@ export class SessionTerminator {
     private readonly registry: SessionRegistry,
     private readonly persistence: SessionPersistence,
     private readonly dispatcher: StreamEventDispatcher,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
+    private readonly messageRepo: IInteractiveMessageRepository,
+    private readonly workflowStepRepo: IWorkflowStepRepository
   ) {}
 
   /**
@@ -96,5 +100,18 @@ export class SessionTerminator {
     const state = this.registry.findActiveStateForFeature(featureId);
     if (!state) return;
     await this.stop(state.sessionId);
+  }
+
+  /**
+   * Clear all messages and workflow steps for a feature scope.
+   * Stops any active session first so the agent doesn't retain old context.
+   * Also clears the cached agent session id so the next boot starts fresh.
+   */
+  async clearFeatureMessages(featureId: string): Promise<void> {
+    await this.stopByFeature(featureId);
+    this.registry.deleteStoppedAgentSessionId(featureId);
+    await this.workflowStepRepo.deleteByFeatureId(featureId);
+    this.registry.clearActiveStep(featureId);
+    await this.messageRepo.deleteByFeatureId(featureId);
   }
 }
