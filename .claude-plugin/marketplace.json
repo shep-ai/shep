@@ -1,0 +1,42 @@
+{
+  "name": "shep-marketplace",
+  "owner": {
+    "name": "Shep AI",
+    "email": "hello@shep.bot"
+  },
+  "metadata": {
+    "description": "Developer productivity skills from the Shep SDLC platform",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "shep",
+      "description": "Developer productivity skills from the Shep SDLC platform — architecture review, diagramming, React best practices, and more",
+      "version": "1.0.0",
+      "source": "./.claude-plugin",
+      "author": {
+        "name": "Shep AI"
+      },
+      "homepage": "https://shep.bot",
+      "repository": "https://github.com/shep-ai/shep",
+      "license": "MIT",
+      "keywords": [
+        "developer-tools",
+        "architecture",
+        "react",
+        "nextjs",
+        "diagrams",
+        "mermaid",
+        "shadcn-ui",
+        "typespec",
+        "react-flow",
+        "clean-architecture",
+        "sdlc",
+        "ai-agents",
+        "parallel-development"
+      ],
+      "category": "Developer Tools",
+      "tags": ["architecture", "react", "diagrams", "developer-productivity"]
+    }
+  ]
+}

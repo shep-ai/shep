@@ -46,7 +46,7 @@ describe('plugin manifest (.claude-plugin/.claude-plugin/plugin.json)', () => {
       const manifest = JSON.parse(content);
       const description = manifest.description as string;
       expect(description.toLowerCase()).not.toContain(
-        'agentic parallel development control center',
+        'agentic parallel development control center'
       );
       expect(description.toLowerCase()).not.toContain('ai native sdlc platform');
     });
@@ -101,10 +101,7 @@ describe('plugin manifest (.claude-plugin/.claude-plugin/plugin.json)', () => {
 
       for (const skill of expectedSkills) {
         const skillMdPath = join(skillsDir, skill, 'SKILL.md');
-        expect(
-          existsSync(skillMdPath),
-          `Expected SKILL.md to exist at ${skillMdPath}`,
-        ).toBe(true);
+        expect(existsSync(skillMdPath), `Expected SKILL.md to exist at ${skillMdPath}`).toBe(true);
       }
     });
 
