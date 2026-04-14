@@ -56,6 +56,8 @@ interface CreateFeatureInput {
    *  application's domain UUID. Persisted on the Feature so the canvas can
    *  render an app→feature parent edge. */
   applicationId?: string;
+  /** Per-feature plugin activation overrides (plugin name -> enabled/disabled). */
+  activePlugins?: Record<string, boolean>;
 }
 
 export async function createFeature(
@@ -82,6 +84,7 @@ export async function createFeature(
     rebaseBeforeBranch,
     injectSkills,
     applicationId,
+    activePlugins,
   } = input;
 
   if (!description?.trim()) {
@@ -123,6 +126,7 @@ export async function createFeature(
       ...(rebaseBeforeBranch != null ? { rebaseBeforeBranch } : {}),
       ...(injectSkills != null ? { injectSkills } : {}),
       ...(applicationId ? { applicationId } : {}),
+      ...(activePlugins && Object.keys(activePlugins).length > 0 ? { activePlugins } : {}),
     });
 
     // Phase 2 (background): metadata generation, worktree, spec, agent spawn
@@ -150,6 +154,7 @@ export async function createFeature(
           ...(rebaseBeforeBranch != null ? { rebaseBeforeBranch } : {}),
           ...(injectSkills != null ? { injectSkills } : {}),
           ...(applicationId ? { applicationId } : {}),
+          ...(activePlugins && Object.keys(activePlugins).length > 0 ? { activePlugins } : {}),
         },
         shouldSpawn
       )

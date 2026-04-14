@@ -261,7 +261,8 @@
     "tools": "Outils",
     "skills": "Compétences",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "plugins": "Extensions"
   },
   "sidebar": {
     "features": "Fonctionnalités",

@@ -261,7 +261,8 @@
     "tools": "Инструменты",
     "skills": "Навыки",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "plugins": "Плагины"
   },
   "sidebar": {
     "features": "Функции",

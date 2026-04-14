@@ -56,6 +56,8 @@ export interface CreateFeatureInput {
   rebaseBeforeBranch?: boolean;
   /** Inject curated skills into the worktree (overrides settings.workflow.skillInjection.enabled). */
   injectSkills?: boolean;
+  /** Per-feature plugin activation overrides (plugin name -> enabled/disabled). */
+  activePlugins?: Record<string, boolean>;
 }
 
 export interface CreateFeatureResult {
