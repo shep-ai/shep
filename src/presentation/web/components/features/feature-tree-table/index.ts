@@ -2,7 +2,10 @@ export {
   FeatureTreeTable,
   buildTreeData,
   buildGroupedTree,
+  buildColumns,
   displayLabel,
+  actionsColumnFormatter,
+  ACTIONS_COLUMN_FIELD,
 } from './feature-tree-table';
 export type {
   FeatureTreeTableProps,
@@ -15,3 +18,5 @@ export { FEATURE_ROW_ACTIONS_CONFIG } from './feature-row-actions-config';
 export type { FeatureRowAction, FeatureRowActionKey } from './feature-row-actions-config';
 export { FeatureRowActions } from './feature-row-actions';
 export type { FeatureRowActionsProps } from './feature-row-actions';
+export { FeatureRowActionsManager } from './feature-row-actions-manager';
+export type { FeatureRowActionsManagerProps } from './feature-row-actions-manager';
