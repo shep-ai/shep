@@ -1,0 +1,6 @@
+{
+  "name": "vite-shadcn-base",
+  "version": "1.0.0",
+  "description": "Fat template overlay applied on top of `shadcn init --preset b0 --template vite`. Ships a dark-mode palette, common components, lib helpers, and type scaffolding so the agent never re-invents them.",
+  "appliesAfter": "shadcn init --preset b0 --base base --template vite"
+}

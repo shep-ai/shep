@@ -33,6 +33,14 @@ own user turn with a single, clear task.
    conversation history; trust it.
 5. Never \`ls\`, \`pwd\`, or run discovery commands — the brief's
    Environment section already told you everything.
+6. **Bun is the ONLY package manager and runtime for this project.**
+   Every command that installs, runs, builds, tests, or executes a
+   script MUST use \`bun\` / \`bunx\` — never \`npm\`, \`npx\`,
+   \`yarn\`, \`pnpm\`, or \`pnpx\`. Examples: \`bun add <pkg>\`,
+   \`bun remove <pkg>\`, \`bun run dev\`, \`bun run build\`,
+   \`bunx <cli>\`. The project was already scaffolded and installed
+   via bun before your first turn — you never need to run shadcn
+   init, bun install, or any bootstrap yourself.
 
 **No markers, no protocol strings.** Do not emit anything like
 \`SHEP__*\`, \`STEP_*\`, or any marker-style lines. The orchestrator

@@ -1,0 +1,172 @@
+================================================================================
+PHASE 3 VERIFICATION: Contributor Onboarding Overhaul
+================================================================================
+Date: 2026-04-14T09:23:00Z
+Branch: feat/branding-onboarding-overhaul
+================================================================================
+
+
+================================================================================
+TASK 8: Restructure CONTRIBUTING.md with tiered contribution paths
+================================================================================
+
+--- Criterion: Title is 'Contributing to Shep' (not 'Shep AI CLI') ---
+PASS
+
+Evidence (line 1):
+  # Contributing to Shep
+
+--- Criterion: Line 3 intro references 'Shep' not 'Shep AI CLI' ---
+PASS
+
+Evidence (line 3):
+  Thank you for your interest in contributing to Shep! This document provides
+  guidelines and instructions for contributing.
+
+--- Criterion: Quick Contributions section appears after Getting Started ---
+PASS
+
+Evidence (line 48):
+  ## Quick Contributions
+
+The section appears after the Getting Started section (lines 9-46) and before
+the Full Feature Development section (line 76).
+
+--- Criterion: Quick Contributions lists qualifying changes ---
+PASS
+
+Evidence (lines 52-59):
+  ### What qualifies as a quick contribution?
+
+  - Fixing typos or grammar in documentation
+  - Improving or clarifying existing docs
+  - Small bug fixes (1-3 files)
+  - Dependency version bumps
+  - Configuration tweaks
+  - Adding or improving code comments
+
+All 6 qualifying types are listed: typos, doc fixes, small bugs, dependency
+bumps, config tweaks, and code comments.
+
+--- Criterion: Minimal steps: fork, branch, fix, conventional commit, PR ---
+PASS
+
+Evidence (lines 61-68):
+  ### Steps
+
+  1. **Fork** the repository and clone your fork
+  2. **Create a branch** from `main`: `git checkout -b fix/your-fix-name`
+  3. **Make your change**
+  4. **Run tests** to verify nothing is broken: `pnpm test`
+  5. **Commit** using conventional commit format: `type(scope): description`
+     (e.g., `fix(docs): correct typo in readme`)
+  6. **Push** to your fork and **open a Pull Request** against `main`
+
+--- Criterion: One-line conventional commit format explanation ---
+PASS
+
+Evidence (lines 67 and 72):
+  5. **Commit** using conventional commit format: `type(scope): description`
+
+  See the [Conventional Commits](https://www.conventionalcommits.org/) spec
+  for the full format, but for quick fixes the one-liner above is all you need.
+
+--- Criterion: TDD and spec workflow NOT required statement ---
+PASS
+
+Evidence (line 70):
+  > **Note:** The spec-driven workflow (`/shep-kit:new-feature`) and TDD
+  > (test-driven development) are **not required** for quick contributions.
+  > Just make your fix, verify tests pass, and submit your PR.
+
+--- Criterion: Mentions running pnpm test ---
+PASS
+
+Evidence (line 66):
+  4. **Run tests** to verify nothing is broken: `pnpm test`
+
+--- Criterion: Full Feature section retains spec-driven workflow ---
+PASS
+
+Evidence (lines 76-88):
+  ## Full Feature Development
+
+  For new features, architectural changes, and significant enhancements, we use
+  a structured workflow to ensure quality and consistency.
+
+  ### Starting a Feature (MANDATORY)
+
+  **All feature work MUST begin with `/shep-kit:new-feature`.**
+
+  /shep-kit:new-feature -> /shep-kit:research -> /shep-kit:plan -> implement
+
+--- Criterion: Code of Conduct section links to CODE_OF_CONDUCT.md ---
+PASS
+
+Evidence (line 7):
+  This project follows the [Contributor Covenant Code of Conduct](./CODE_OF_CONDUCT.md).
+  By participating, you are expected to uphold respectful and inclusive behavior.
+  Please report unacceptable behavior to **conduct@shep.bot**.
+
+--- Criterion: All existing content preserved ---
+PASS
+
+The restructured CONTRIBUTING.md retains all original sections: Code of Conduct,
+Getting Started, Prerequisites, Setup, Reporting Issues, TDD, Architecture,
+Conventional Commits, Code Quality, PR Guidelines, and Community & Getting Help.
+Only additions: Quick Contributions section (new), Full Feature Development
+relabeling, and updated Code of Conduct link.
+
+--- Task 8 Summary ---
+  PASS  Title is 'Contributing to Shep'
+  PASS  Line 3 references 'Shep' not 'Shep AI CLI'
+  PASS  Quick Contributions section after Getting Started
+  PASS  Lists 6 qualifying change types
+  PASS  Minimal fork-branch-fix-commit-PR steps
+  PASS  One-line conventional commit explanation
+  PASS  TDD/spec workflow NOT required statement
+  PASS  Mentions pnpm test
+  PASS  Full Feature section retains spec workflow
+  PASS  Code of Conduct links to CODE_OF_CONDUCT.md
+  PASS  All existing content preserved
+
+
+================================================================================
+TASK 9: Update community channels placeholder
+================================================================================
+
+--- Criterion: No 'links TBD' or 'TBD' placeholder remains ---
+PASS
+
+grep -c "TBD" CONTRIBUTING.md returns 0 matches (verified).
+
+--- Criterion: GitHub Discussions as primary community channel ---
+PASS
+
+Evidence (line 295):
+  - Open a [Discussion](https://github.com/shep-ai/shep/discussions) for
+    questions -- this is our primary community channel
+
+--- Criterion: Forward-looking message about additional channels ---
+PASS
+
+Evidence (line 296):
+  - Additional community channels (Discord, Slack, etc.) may be added as the
+    project grows -- watch the README for updates
+
+--- Criterion: Section reads naturally and is welcoming ---
+PASS
+
+The Community & Getting Help section (lines 287-296) provides clear guidance
+for newcomers with welcoming language and actionable next steps.
+
+--- Task 9 Summary ---
+  PASS  No TBD placeholders remain
+  PASS  GitHub Discussions presented as primary community channel
+  PASS  Forward-looking message about additional channels
+  PASS  Section reads naturally and is welcoming
+
+
+================================================================================
+OVERALL PHASE 3 STATUS: PASS
+================================================================================

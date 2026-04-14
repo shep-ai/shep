@@ -5,6 +5,7 @@ import type { IFeatureRepository } from '@/application/ports/output/repositories
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
 import type { IFileSystemService } from '@/application/ports/output/services/file-system-service.interface.js';
 import type { IShepInstanceService } from '@/application/ports/output/services/shep-instance-service.interface.js';
+import type { IWorktreePathProvider } from '@/application/ports/output/services/worktree-path-provider.interface.js';
 import { DeploymentState, SdlcLifecycle, type Feature } from '@/domain/generated/output.js';
 
 function makeFeature(overrides?: Partial<Feature>): Feature {
@@ -72,7 +73,13 @@ function createDeps() {
     isSameInstance: vi.fn().mockReturnValue(false),
   };
 
-  return { featureRepo, deploymentService, fileSystem, shepInstance };
+  const worktreePaths: IWorktreePathProvider = {
+    getWorktreePath: vi.fn(
+      (repo: string, branch: string) => `/tmp/fake-worktree/${repo}/${branch}`
+    ),
+  };
+
+  return { featureRepo, deploymentService, fileSystem, shepInstance, worktreePaths };
 }
 
 describe('StartFeatureDeploymentUseCase', () => {
@@ -85,7 +92,8 @@ describe('StartFeatureDeploymentUseCase', () => {
       deps.featureRepo,
       deps.deploymentService,
       deps.fileSystem,
-      deps.shepInstance
+      deps.shepInstance,
+      deps.worktreePaths
     );
   });
 

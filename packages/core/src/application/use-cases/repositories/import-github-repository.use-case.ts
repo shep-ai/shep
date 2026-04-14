@@ -12,6 +12,7 @@ import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Repository } from '../../../domain/generated/output.js';
+import { normalizePath } from '../../../domain/shared/normalize-path.js';
 import type {
   IGitHubRepositoryService,
   CloneOptions,
@@ -237,14 +238,4 @@ export class ImportGitHubRepositoryUseCase {
         .replace(/\/$/, '');
     return normalize(a) === normalize(b);
   }
-}
-
-/**
- * Normalizes a filesystem path to use forward slashes.
- *
- * Per packages/CLAUDE.md, all paths stored in the database MUST use forward
- * slashes so that Windows and POSIX callers resolve/compare identically.
- */
-function normalizePath(p: string): string {
-  return p.replace(/\\/g, '/');
 }

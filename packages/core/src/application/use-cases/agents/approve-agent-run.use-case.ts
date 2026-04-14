@@ -15,13 +15,10 @@ import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-re
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
 import type { IPhaseTimingRepository } from '../../ports/output/agents/phase-timing-repository.interface.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
+import type { IWorktreePathProvider } from '../../ports/output/services/worktree-path-provider.interface.js';
+import type { INodeHelpers } from '../../ports/output/services/node-helpers.interface.js';
 import { AgentRunStatus } from '../../../domain/generated/output.js';
 import type { PrdApprovalPayload } from '../../../domain/generated/output.js';
-import {
-  writeSpecFileAtomic,
-  safeYamlDump,
-} from '../../../infrastructure/services/agents/feature-agent/nodes/node-helpers.js';
-import { computeWorktreePath } from '../../../infrastructure/services/ide-launchers/compute-worktree-path.js';
 
 @injectable()
 export class ApproveAgentRunUseCase {
@@ -33,7 +30,11 @@ export class ApproveAgentRunUseCase {
     @inject('IFeatureRepository')
     private readonly featureRepository: IFeatureRepository,
     @inject('IPhaseTimingRepository')
-    private readonly phaseTimingRepository: IPhaseTimingRepository
+    private readonly phaseTimingRepository: IPhaseTimingRepository,
+    @inject('IWorktreePathProvider')
+    private readonly worktreePaths: IWorktreePathProvider,
+    @inject('INodeHelpers')
+    private readonly nodeHelpers: INodeHelpers
   ) {}
 
   async execute(
@@ -81,7 +82,11 @@ export class ApproveAgentRunUseCase {
           }
         }
 
-        writeSpecFileAtomic(specDir, 'spec.yaml', safeYamlDump(spec));
+        this.nodeHelpers.writeSpecFileAtomic(
+          specDir,
+          'spec.yaml',
+          this.nodeHelpers.safeYamlDump(spec)
+        );
       } catch {
         // Non-fatal: selection update failure should not block approval
       }
@@ -115,7 +120,7 @@ export class ApproveAgentRunUseCase {
     const worktreePath =
       feature?.worktreePath ??
       (feature?.repositoryPath && feature?.branch
-        ? computeWorktreePath(feature.repositoryPath, feature.branch)
+        ? this.worktreePaths.getWorktreePath(feature.repositoryPath, feature.branch)
         : undefined);
 
     this.processService.spawn(

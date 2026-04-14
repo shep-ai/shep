@@ -17,6 +17,7 @@ import http from 'node:http';
 import net from 'node:net';
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
 import { initializeContainer, container } from '@/infrastructure/di/container.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
 import { InitializeSettingsUseCase } from '@/application/use-cases/settings/initialize-settings.use-case.js';
@@ -42,6 +43,45 @@ import {
 } from '@/infrastructure/services/auto-archive/auto-archive-watcher.service.js';
 
 const DEFAULT_PORT = 3000;
+
+/**
+ * Open the given URL in the user's default browser. Cross-platform:
+ * uses `start` on Windows, `open` on macOS, and `xdg-open` on Linux.
+ * Best-effort — if the command is missing or fails we just log and
+ * carry on so the dev server itself is unaffected.
+ */
+function openBrowser(url: string): void {
+  const platform = process.platform;
+  let command: string;
+  let args: string[];
+  if (platform === 'win32') {
+    // `start` is a cmd builtin, not a standalone executable — shell out
+    // through cmd. The empty "" is the window title that `start` needs
+    // when the first argument is quoted.
+    command = 'cmd';
+    args = ['/c', 'start', '""', url];
+  } else if (platform === 'darwin') {
+    command = 'open';
+    args = [url];
+  } else {
+    command = 'xdg-open';
+    args = [url];
+  }
+
+  try {
+    const child = spawn(command, args, {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    child.on('error', (err) => {
+      console.warn(`[dev-server] could not open browser (${command}): ${err.message}`);
+    });
+    child.unref();
+  } catch (err) {
+    console.warn(`[dev-server] could not open browser: ${String(err)}`);
+  }
+}
 
 async function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -142,6 +182,13 @@ async function main() {
       resolve();
     });
   });
+
+  // Auto-open the dev URL in the default browser. Opt out with
+  // BROWSER=none (matches the Create React App / Vite convention) so
+  // CI, tmux panes, and headless SSH sessions don't spawn a browser.
+  if (process.env.BROWSER !== 'none') {
+    openBrowser(`http://localhost:${port}`);
+  }
 
   // Graceful shutdown with timeout to avoid hanging on open connections
   let isShuttingDown = false;

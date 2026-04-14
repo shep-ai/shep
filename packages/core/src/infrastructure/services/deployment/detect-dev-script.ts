@@ -13,8 +13,14 @@ import { createDeploymentLogger } from './deployment-logger.js';
 /** Script names to search for, in priority order */
 const SCRIPT_PRIORITY = ['dev', 'start', 'serve'] as const;
 
-/** Lockfile-to-package-manager mapping, checked in order */
+/** Lockfile-to-package-manager mapping, checked in order.
+ *  Bun is listed first — the application-creation workflow scaffolds
+ *  every new project via `bunx shadcn@latest init` which writes a
+ *  `bun.lock[b]` file, and those projects MUST keep using bun for
+ *  dev/build so the preview pane matches what the agent built with. */
 const LOCKFILE_MANAGERS = [
+  { lockfile: 'bun.lock', manager: 'bun' },
+  { lockfile: 'bun.lockb', manager: 'bun' },
   { lockfile: 'pnpm-lock.yaml', manager: 'pnpm' },
   { lockfile: 'yarn.lock', manager: 'yarn' },
   { lockfile: 'package-lock.json', manager: 'npm' },
@@ -94,9 +100,14 @@ function detectDevScriptInDir(dirPath: string): DetectDevScriptResult {
   // Detect package manager from lockfile
   const packageManager = detectPackageManager(dirPath);
 
-  // Build the command — pnpm/yarn use `<pm> <script>`, npm uses `npm run <script>`
+  // Build the command — pnpm/yarn use `<pm> <script>`; npm and bun both
+  // need the explicit `run` prefix (`bun <script>` without `run` would
+  // try to execute a binary named `<script>` instead of the package.json
+  // script).
   const command =
-    packageManager === 'npm' ? `npm run ${scriptName}` : `${packageManager} ${scriptName}`;
+    packageManager === 'npm' || packageManager === 'bun'
+      ? `${packageManager} run ${scriptName}`
+      : `${packageManager} ${scriptName}`;
 
   const needsInstall = !existsSync(join(dirPath, 'node_modules'));
   log.info(

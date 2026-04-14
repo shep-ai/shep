@@ -33,10 +33,10 @@ import type { IRepositoryRepository } from '../../../ports/output/repositories/r
 import type { IGitPrService } from '../../../ports/output/services/git-pr-service.interface.js';
 import type { IAgentValidator } from '../../../ports/output/agents/agent-validator.interface.js';
 import type { ISkillInjectorService } from '../../../ports/output/services/skill-injector.interface.js';
-import { getSettings } from '../../../../infrastructure/services/settings.service.js';
+import type { ISettingsRepository } from '../../../ports/output/repositories/settings.repository.interface.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import { POST_IMPLEMENTATION } from '../../../../domain/lifecycle-gates.js';
-import { AttachmentStorageService } from '../../../../infrastructure/services/attachment-storage.service.js';
+import type { IAttachmentStorageService } from '../../../ports/output/services/feature-attachment-storage.interface.js';
 import { MetadataGenerator } from './metadata-generator.js';
 import { SlugResolver } from './slug-resolver.js';
 import type { CreateFeatureInput, CreateFeatureResult, CreateRecordResult } from './types.js';
@@ -62,13 +62,28 @@ export class CreateFeatureUseCase {
     private readonly repositoryRepo: IRepositoryRepository,
     @inject('IGitPrService')
     private readonly gitPrService: IGitPrService,
-    @inject(AttachmentStorageService)
-    private readonly attachmentStorage: AttachmentStorageService,
+    @inject('IAttachmentStorageService')
+    private readonly attachmentStorage: IAttachmentStorageService,
     @inject('IAgentValidator')
     private readonly agentValidator: IAgentValidator,
     @inject('ISkillInjectorService')
-    private readonly skillInjector: ISkillInjectorService
+    private readonly skillInjector: ISkillInjectorService,
+    @inject('ISettingsRepository')
+    private readonly settingsRepository: ISettingsRepository
   ) {}
+
+  /**
+   * Load settings from the repository, throwing if unavailable. Replaces the
+   * former getSettings() module-level singleton import — application layer
+   * must not reach into infrastructure directly.
+   */
+  private async loadSettingsOrThrow() {
+    const settings = await this.settingsRepository.load();
+    if (settings === null) {
+      throw new Error('Settings not initialized. Cannot create feature.');
+    }
+    return settings;
+  }
 
   /**
    * Full synchronous execution: creates record, initializes worktree/spec, spawns agent.
@@ -198,7 +213,7 @@ export class CreateFeatureUseCase {
     await this.featureRepo.create(feature);
 
     // Create agent run record (pending state — agent not spawned yet)
-    const settings = getSettings();
+    const settings = await this.loadSettingsOrThrow();
     const agentRun = {
       id: runId,
       agentType: (input.agentType as typeof settings.agent.type) ?? settings.agent.type,
@@ -309,7 +324,7 @@ export class CreateFeatureUseCase {
     }
 
     // Inject curated skills into the worktree (opt-in, guarded by settings or CLI flag)
-    const settings = getSettings();
+    const settings = await this.loadSettingsOrThrow();
     const shouldInject = input.injectSkills ?? settings.workflow.skillInjection?.enabled ?? false;
     let injectedSkillNames: string[] | undefined;
     const skillConfig =

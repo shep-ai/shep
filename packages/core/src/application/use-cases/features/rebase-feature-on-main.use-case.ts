@@ -21,7 +21,7 @@ import type { IWorktreeService } from '../../ports/output/services/worktree-serv
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '../../ports/output/agents/phase-timing-repository.interface.js';
 import { AgentRunStatus, AgentType } from '../../../domain/generated/output.js';
-import type { ConflictResolutionService } from '../../../infrastructure/services/agents/conflict-resolution/conflict-resolution.service.js';
+import type { IConflictResolutionService } from '../../ports/output/services/conflict-resolution.interface.js';
 
 @injectable()
 export class RebaseFeatureOnMainUseCase {
@@ -32,8 +32,8 @@ export class RebaseFeatureOnMainUseCase {
     private readonly gitPrService: IGitPrService,
     @inject('IWorktreeService')
     private readonly worktreeService: IWorktreeService,
-    @inject('ConflictResolutionService')
-    private readonly conflictResolutionService: ConflictResolutionService,
+    @inject('IConflictResolutionService')
+    private readonly conflictResolutionService: IConflictResolutionService,
     @inject('IAgentRunRepository')
     private readonly agentRunRepo: IAgentRunRepository,
     @inject('IPhaseTimingRepository')

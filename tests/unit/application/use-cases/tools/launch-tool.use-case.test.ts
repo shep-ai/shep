@@ -13,44 +13,49 @@ import type {
   IIdeLauncherService,
   LaunchIdeResult,
 } from '@/application/ports/output/services/ide-launcher-service.interface.js';
+import type {
+  IToolMetadataProvider,
+  ToolMetadata,
+} from '@/application/ports/output/services/tool-metadata-provider.interface.js';
 
 // Controlled TOOL_METADATA fixture with two tools:
 //   - vscode: has openDirectory (launchable)
 //   - no-launch-tool: no openDirectory (not launchable)
-const mockLaunchMetadata = vi.hoisted(() => ({
-  TOOL_METADATA: {
-    vscode: {
-      name: 'Visual Studio Code',
-      summary: 'Lightweight source code editor',
-      description: 'VS Code detailed description',
-      tags: ['ide'],
-      binary: 'code',
-      packageManager: 'apt',
-      commands: { linux: 'apt install code', darwin: 'brew install code' },
-      timeout: 300000,
-      documentationUrl: 'https://code.visualstudio.com',
-      verifyCommand: 'code --version',
-      autoInstall: true,
-      openDirectory: 'code {dir}',
-    },
-    'no-launch-tool': {
-      name: 'No Launch Tool',
-      summary: 'A tool without openDirectory',
-      description: 'This tool has no openDirectory defined',
-      tags: ['cli-agent'],
-      binary: 'notool',
-      packageManager: 'manual',
-      commands: { linux: 'install manually' },
-      timeout: 60000,
-      documentationUrl: 'https://example.com',
-      verifyCommand: 'notool --version',
-      autoInstall: false,
-      // no openDirectory field
-    },
-  } as Record<string, unknown>,
-}));
+const fixtureMetadata: Record<string, ToolMetadata> = {
+  vscode: {
+    name: 'Visual Studio Code',
+    summary: 'Lightweight source code editor',
+    description: 'VS Code detailed description',
+    tags: ['ide'],
+    binary: 'code',
+    packageManager: 'apt',
+    commands: { linux: 'apt install code', darwin: 'brew install code' },
+    timeout: 300000,
+    documentationUrl: 'https://code.visualstudio.com',
+    verifyCommand: 'code --version',
+    autoInstall: true,
+    openDirectory: 'code {dir}',
+  },
+  'no-launch-tool': {
+    name: 'No Launch Tool',
+    summary: 'A tool without openDirectory',
+    description: 'This tool has no openDirectory defined',
+    tags: ['cli-agent'],
+    binary: 'notool',
+    packageManager: 'manual',
+    commands: { linux: 'install manually' },
+    timeout: 60000,
+    documentationUrl: 'https://example.com',
+    verifyCommand: 'notool --version',
+    autoInstall: false,
+    // no openDirectory field
+  },
+};
 
-vi.mock('@/infrastructure/services/tool-installer/tool-metadata.js', () => mockLaunchMetadata);
+const fakeToolMetadataProvider: IToolMetadataProvider = {
+  getToolById: (toolId: string) => fixtureMetadata[toolId],
+  getAllEntries: () => Object.entries(fixtureMetadata),
+};
 
 import { LaunchToolUseCase } from '@/application/use-cases/tools/launch-tool.use-case.js';
 
@@ -72,7 +77,7 @@ describe('LaunchToolUseCase', () => {
       checkAvailability: vi.fn<(editorId: string) => Promise<boolean>>().mockResolvedValue(true),
     };
 
-    useCase = new LaunchToolUseCase(mockService);
+    useCase = new LaunchToolUseCase(mockService, fakeToolMetadataProvider);
   });
 
   describe('success', () => {

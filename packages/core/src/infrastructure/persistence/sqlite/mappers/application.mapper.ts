@@ -9,7 +9,11 @@
  * - JSON arrays stored as TEXT
  */
 
-import type { Application } from '../../../../domain/generated/output.js';
+import type {
+  Application,
+  CloudDeploymentProvider,
+  CloudDeploymentStatus,
+} from '../../../../domain/generated/output.js';
 
 /**
  * Database row type matching the applications table schema.
@@ -26,9 +30,20 @@ export interface ApplicationRow {
   status: string;
   setup_complete: number;
   agent_session_id: string | null;
+  git_remote_url: string | null;
+  cloud_deployment_provider: string | null;
+  cloud_deployment_status: string | null;
+  cloud_deployment_id: string | null;
+  cloud_deployment_url: string | null;
+  cloud_deployment_error: string | null;
+  last_deployed_at: number | null;
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
+}
+
+function dateOrNumberToMs(value: Date | number): number {
+  return value instanceof Date ? value.getTime() : value;
 }
 
 /**
@@ -47,13 +62,19 @@ export function toDatabase(app: Application): ApplicationRow {
     status: app.status,
     setup_complete: app.setupComplete ? 1 : 0,
     agent_session_id: app.agentSessionId ?? null,
-    created_at: app.createdAt instanceof Date ? app.createdAt.getTime() : app.createdAt,
-    updated_at: app.updatedAt instanceof Date ? app.updatedAt.getTime() : app.updatedAt,
-    deleted_at: app.deletedAt
-      ? app.deletedAt instanceof Date
-        ? app.deletedAt.getTime()
-        : app.deletedAt
-      : null,
+    git_remote_url: app.gitRemoteUrl ?? null,
+    cloud_deployment_provider: app.cloudDeploymentProvider ?? null,
+    cloud_deployment_status: app.cloudDeploymentStatus ?? null,
+    cloud_deployment_id: app.cloudDeploymentId ?? null,
+    cloud_deployment_url: app.cloudDeploymentUrl ?? null,
+    cloud_deployment_error: app.cloudDeploymentError ?? null,
+    last_deployed_at:
+      app.lastDeployedAt !== undefined && app.lastDeployedAt !== null
+        ? dateOrNumberToMs(app.lastDeployedAt)
+        : null,
+    created_at: dateOrNumberToMs(app.createdAt),
+    updated_at: dateOrNumberToMs(app.updatedAt),
+    deleted_at: app.deletedAt ? dateOrNumberToMs(app.deletedAt) : null,
   };
 }
 
@@ -73,6 +94,18 @@ export function fromDatabase(row: ApplicationRow): Application {
     status: row.status as Application['status'],
     setupComplete: row.setup_complete === 1,
     agentSessionId: row.agent_session_id ?? undefined,
+    gitRemoteUrl: row.git_remote_url ?? undefined,
+    cloudDeploymentProvider:
+      (row.cloud_deployment_provider as CloudDeploymentProvider | null) ?? undefined,
+    cloudDeploymentStatus:
+      (row.cloud_deployment_status as CloudDeploymentStatus | null) ?? undefined,
+    cloudDeploymentId: row.cloud_deployment_id ?? undefined,
+    cloudDeploymentUrl: row.cloud_deployment_url ?? undefined,
+    cloudDeploymentError: row.cloud_deployment_error ?? undefined,
+    lastDeployedAt:
+      row.last_deployed_at !== null && row.last_deployed_at !== undefined
+        ? new Date(row.last_deployed_at)
+        : undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     deletedAt: row.deleted_at ? new Date(row.deleted_at) : undefined,

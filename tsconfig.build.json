@@ -8,5 +8,13 @@
     "rootDir": "."
   },
   "include": ["src/**/*", "packages/core/src/**/*", "types/**/*"],
-  "exclude": ["node_modules", "dist", "tsp", "apis", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tsp",
+    "apis",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "packages/core/src/infrastructure/templates/**"
+  ]
 }

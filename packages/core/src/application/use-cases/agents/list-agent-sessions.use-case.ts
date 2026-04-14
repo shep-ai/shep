@@ -8,8 +8,8 @@
 
 import { injectable, inject } from 'tsyringe';
 import type { AgentSession, AgentType } from '../../../domain/generated/output.js';
-import { getSettings } from '../../../infrastructure/services/settings.service.js';
-import { AgentSessionRepositoryRegistry } from '../../services/agents/agent-session-repository.registry.js';
+import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
+import type { IAgentSessionRepositoryRegistry } from '../../ports/output/agents/agent-session-repository-registry.interface.js';
 
 export interface ListAgentSessionsInput {
   /** Agent type to query; falls back to configured default when omitted */
@@ -21,12 +21,14 @@ export interface ListAgentSessionsInput {
 @injectable()
 export class ListAgentSessionsUseCase {
   constructor(
-    @inject(AgentSessionRepositoryRegistry)
-    private readonly registry: AgentSessionRepositoryRegistry
+    @inject('IAgentSessionRepositoryRegistry')
+    private readonly registry: IAgentSessionRepositoryRegistry,
+    @inject('ISettingsRepository')
+    private readonly settingsRepository: ISettingsRepository
   ) {}
 
   async execute(input?: ListAgentSessionsInput): Promise<AgentSession[]> {
-    const agentType = this.resolveAgentType(input?.agentType);
+    const agentType = await this.resolveAgentType(input?.agentType);
     const repository = this.registry.getRepository(agentType);
 
     if (!repository.isSupported()) {
@@ -38,7 +40,12 @@ export class ListAgentSessionsUseCase {
     return repository.list({ limit });
   }
 
-  private resolveAgentType(agentType?: AgentType): AgentType {
-    return agentType ?? getSettings().agent.type;
+  private async resolveAgentType(agentType?: AgentType): Promise<AgentType> {
+    if (agentType) return agentType;
+    const settings = await this.settingsRepository.load();
+    if (settings === null) {
+      throw new Error('Settings not initialized. Cannot resolve default agent type.');
+    }
+    return settings.agent.type;
   }
 }

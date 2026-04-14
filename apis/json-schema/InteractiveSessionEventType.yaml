@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: InteractiveSessionEventType.yaml
+type: string
+enum:
+  - interactive_session_booting
+  - interactive_session_ready
+  - interactive_session_stopped
+  - interactive_session_error
+description: Types of interactive-session lifecycle events

@@ -8,11 +8,8 @@ import { StopAgentRunUseCase } from '@/application/use-cases/agents/stop-agent-r
 import { AgentRunStatus, AgentType } from '@/domain/generated/output.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
+import type { IPhaseTimingContext } from '@/application/ports/output/services/phase-timing-context.interface.js';
 import type { AgentRun } from '@/domain/generated/output.js';
-
-vi.mock('@/infrastructure/services/agents/feature-agent/phase-timing-context.js', () => ({
-  recordLifecycleEvent: vi.fn().mockResolvedValue(undefined),
-}));
 
 function makeAgentRun(overrides: Partial<AgentRun> = {}): AgentRun {
   const now = new Date().toISOString();
@@ -40,10 +37,17 @@ function createMockTimingRepo(): IPhaseTimingRepository {
   };
 }
 
+function createMockPhaseTimingContext(): IPhaseTimingContext {
+  return {
+    recordLifecycleEvent: vi.fn().mockResolvedValue(undefined),
+  };
+}
+
 describe('StopAgentRunUseCase', () => {
   let useCase: StopAgentRunUseCase;
   let mockRepo: IAgentRunRepository;
   let mockTimingRepo: IPhaseTimingRepository;
+  let mockPhaseTimingContext: IPhaseTimingContext;
 
   beforeEach(() => {
     mockRepo = {
@@ -57,8 +61,9 @@ describe('StopAgentRunUseCase', () => {
       delete: vi.fn().mockResolvedValue(undefined),
     };
     mockTimingRepo = createMockTimingRepo();
+    mockPhaseTimingContext = createMockPhaseTimingContext();
 
-    useCase = new StopAgentRunUseCase(mockRepo, mockTimingRepo);
+    useCase = new StopAgentRunUseCase(mockRepo, mockTimingRepo, mockPhaseTimingContext);
   });
 
   it('should return error if run not found', async () => {

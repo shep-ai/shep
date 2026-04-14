@@ -10,7 +10,7 @@ import { AgentRunStatus } from '@/domain/generated/output.js';
 import type { AgentRun, PrdApprovalPayload } from '@/domain/generated/output.js';
 import { ApproveAgentRunUseCase } from '@/application/use-cases/agents/approve-agent-run.use-case.js';
 
-// Mock fs, js-yaml, and writeSpecFileAtomic
+// Mock fs and js-yaml so the use case can read a fake spec file
 vi.mock('node:fs', () => ({
   readFileSync: vi.fn(),
 }));
@@ -19,26 +19,27 @@ vi.mock('js-yaml', () => ({
   default: { load: vi.fn(), dump: vi.fn() },
 }));
 
-vi.mock('@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js', () => ({
-  writeSpecFileAtomic: vi.fn(),
-  safeYamlDump: vi.fn(),
-}));
+import type { IWorktreePathProvider } from '@/application/ports/output/services/worktree-path-provider.interface.js';
+import type { INodeHelpers } from '@/application/ports/output/services/node-helpers.interface.js';
 
-vi.mock('@/infrastructure/services/ide-launchers/compute-worktree-path.js', () => ({
-  computeWorktreePath: vi.fn().mockReturnValue('/computed/worktree/path'),
-}));
+function createFakeWorktreePaths(): IWorktreePathProvider {
+  return {
+    getWorktreePath: vi.fn().mockReturnValue('/computed/worktree/path'),
+  };
+}
+
+function createFakeNodeHelpers(): INodeHelpers {
+  return {
+    writeSpecFileAtomic: vi.fn(),
+    safeYamlDump: vi.fn().mockReturnValue('updated-yaml'),
+  };
+}
 
 import { readFileSync } from 'node:fs';
 import yaml from 'js-yaml';
-import {
-  writeSpecFileAtomic,
-  safeYamlDump,
-} from '@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js';
 
 const mockReadFileSync = vi.mocked(readFileSync);
 const mockYamlLoad = vi.mocked(yaml.load);
-const mockSafeYamlDump = vi.mocked(safeYamlDump);
-const mockWriteSpecFileAtomic = vi.mocked(writeSpecFileAtomic);
 
 function createMockRunRepository() {
   return {
@@ -105,6 +106,7 @@ describe('ApproveAgentRunUseCase with PrdApprovalPayload', () => {
   let mockProcessService: ReturnType<typeof createMockProcessService>;
   let mockFeatureRepo: ReturnType<typeof createMockFeatureRepository>;
   let mockTimingRepo: ReturnType<typeof createMockTimingRepository>;
+  let fakeNodeHelpers: INodeHelpers;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -112,6 +114,7 @@ describe('ApproveAgentRunUseCase with PrdApprovalPayload', () => {
     mockProcessService = createMockProcessService();
     mockFeatureRepo = createMockFeatureRepository();
     mockTimingRepo = createMockTimingRepository();
+    fakeNodeHelpers = createFakeNodeHelpers();
     mockFeatureRepo.findById.mockResolvedValue({
       id: 'feat-001',
       name: 'test-feature',
@@ -124,7 +127,9 @@ describe('ApproveAgentRunUseCase with PrdApprovalPayload', () => {
       mockRunRepo as any,
       mockProcessService as any,
       mockFeatureRepo as any,
-      mockTimingRepo as any
+      mockTimingRepo as any,
+      createFakeWorktreePaths(),
+      fakeNodeHelpers
     );
   });
 
@@ -179,7 +184,6 @@ describe('ApproveAgentRunUseCase with PrdApprovalPayload', () => {
     };
     mockReadFileSync.mockReturnValue('yaml-content');
     mockYamlLoad.mockReturnValue(specData);
-    mockSafeYamlDump.mockReturnValue('updated-yaml');
 
     const payload: PrdApprovalPayload = {
       approved: true,
@@ -189,9 +193,10 @@ describe('ApproveAgentRunUseCase with PrdApprovalPayload', () => {
     const result = await useCase.execute('run-001', payload);
 
     expect(result.approved).toBe(true);
-    expect(mockWriteSpecFileAtomic).toHaveBeenCalled();
+    expect(fakeNodeHelpers.writeSpecFileAtomic).toHaveBeenCalled();
     // Verify the spec was updated with new selection
-    const dumpCall = mockSafeYamlDump.mock.calls[0][0] as any;
+    const dumpCall = (fakeNodeHelpers.safeYamlDump as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as any;
     const updatedQuestion = dumpCall.openQuestions[0];
     expect(updatedQuestion.answer).toBe('MongoDB');
     expect(updatedQuestion.options[0].selected).toBe(false);
@@ -204,7 +209,7 @@ describe('ApproveAgentRunUseCase with PrdApprovalPayload', () => {
 
     await useCase.execute('run-001', payload);
 
-    expect(mockWriteSpecFileAtomic).not.toHaveBeenCalled();
+    expect(fakeNodeHelpers.writeSpecFileAtomic).not.toHaveBeenCalled();
   });
 
   it('should not write spec.yaml when changedSelections is empty', async () => {
@@ -213,6 +218,6 @@ describe('ApproveAgentRunUseCase with PrdApprovalPayload', () => {
 
     await useCase.execute('run-001', payload);
 
-    expect(mockWriteSpecFileAtomic).not.toHaveBeenCalled();
+    expect(fakeNodeHelpers.writeSpecFileAtomic).not.toHaveBeenCalled();
   });
 });

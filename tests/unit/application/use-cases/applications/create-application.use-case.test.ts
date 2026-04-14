@@ -7,10 +7,13 @@ import {
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
 import type { IApplicationCreationPromptBuilder } from '@/application/ports/output/services/application-creation-prompt-builder.interface.js';
 import type { IApplicationBriefStore } from '@/application/ports/output/services/application-brief-store.interface.js';
+import type { IApplicationScaffolder } from '@/application/ports/output/services/application-scaffolder.interface.js';
+import type { IInteractiveMessageRepository } from '@/application/ports/output/repositories/interactive-message-repository.interface.js';
 import type { CreateProjectUseCase } from '@/application/use-cases/projects/create-project.use-case.js';
 import type { SendInteractiveMessageUseCase } from '@/application/use-cases/interactive/send-interactive-message.use-case.js';
 import type { RunWorkflowUseCase } from '@/application/use-cases/workflows/run-workflow.use-case.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
+import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 import { ApplicationStatus } from '@/domain/generated/output.js';
 
 function createMockAppRepo(): IApplicationRepository {
@@ -68,6 +71,27 @@ function createMockBriefStore(): IApplicationBriefStore {
   };
 }
 
+function createMockScaffolder(): IApplicationScaffolder {
+  return {
+    scaffold: vi.fn().mockImplementation(({ repositoryPath }: { repositoryPath: string }) =>
+      Promise.resolve({
+        repositoryPath,
+        templateFiles: [],
+        templateVersion: 'test-0',
+      })
+    ),
+  };
+}
+
+function createMockMessageRepo(): IInteractiveMessageRepository {
+  return {
+    create: vi.fn().mockResolvedValue(undefined),
+    findByFeatureId: vi.fn().mockResolvedValue([]),
+    findBySessionId: vi.fn().mockResolvedValue([]),
+    deleteByFeatureId: vi.fn().mockResolvedValue(undefined),
+  };
+}
+
 describe('CreateApplicationUseCase', () => {
   let useCase: CreateApplicationUseCase;
   let mockAppRepo: IApplicationRepository;
@@ -77,6 +101,9 @@ describe('CreateApplicationUseCase', () => {
   let mockBriefStore: IApplicationBriefStore;
   let mockRunWorkflow: RunWorkflowUseCase;
   let mockSessionRepo: IInteractiveSessionRepository;
+  let mockScaffolder: IApplicationScaffolder;
+  let mockMessageRepo: IInteractiveMessageRepository;
+  let mockLogger: ILogger;
 
   beforeEach(() => {
     mockAppRepo = createMockAppRepo();
@@ -90,6 +117,14 @@ describe('CreateApplicationUseCase', () => {
     mockSessionRepo = {
       findLatestAgentSessionIdForFeature: vi.fn().mockResolvedValue(null),
     } as unknown as IInteractiveSessionRepository;
+    mockScaffolder = createMockScaffolder();
+    mockMessageRepo = createMockMessageRepo();
+    mockLogger = {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
     useCase = new CreateApplicationUseCase(
       mockAppRepo,
       mockCreateProject,
@@ -97,7 +132,10 @@ describe('CreateApplicationUseCase', () => {
       mockSendMessage,
       mockBriefStore,
       mockRunWorkflow,
-      mockSessionRepo
+      mockSessionRepo,
+      mockScaffolder,
+      mockMessageRepo,
+      mockLogger
     );
   });
 
@@ -108,6 +146,30 @@ describe('CreateApplicationUseCase', () => {
     expect(mockCreateProject.execute).toHaveBeenCalledTimes(1);
     const arg = vi.mocked(mockCreateProject.execute).mock.calls[0][0];
     expect(arg.name).toMatch(/^rest-api-users-[0-9a-f]{6}$/);
+
+    // The Application row must be persisted BEFORE the scaffold runs
+    // so the caller (HTTP server action, CLI, TUI) returns in
+    // milliseconds and the user can navigate to the application page
+    // with a spinner while the 30s+ scaffold runs in the background.
+    // This is a HARD regression guard — an earlier patch awaited the
+    // scaffold inline and froze every presentation layer for the full
+    // bun+shadcn+install pipeline duration.
+    expect(mockAppRepo.create).toHaveBeenCalledTimes(1);
+    const createCallOrder = vi.mocked(mockAppRepo.create).mock.invocationCallOrder[0];
+    if (vi.mocked(mockScaffolder.scaffold).mock.invocationCallOrder[0] !== undefined) {
+      const scaffoldCallOrder = vi.mocked(mockScaffolder.scaffold).mock.invocationCallOrder[0];
+      expect(createCallOrder).toBeLessThan(scaffoldCallOrder);
+    }
+
+    // Scaffolder is still invoked with the resolved project path + name
+    // (but fire-and-forget — we wait a microtask tick for the
+    // background dispatch to reach it).
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(mockScaffolder.scaffold).toHaveBeenCalledTimes(1);
+    expect(mockScaffolder.scaffold).toHaveBeenCalledWith({
+      repositoryPath: `/shep/projects/${arg.name}`,
+      projectName: 'Rest Api Users',
+    });
 
     // Application was persisted with the same slug
     expect(mockAppRepo.create).toHaveBeenCalledWith(
@@ -127,6 +189,42 @@ describe('CreateApplicationUseCase', () => {
     // are allowed to duplicate; uniqueness is enforced on `slug`.
     expect(result.application.name).toBe('Rest Api Users');
     expect(result.repositoryPath).toBe(`/shep/projects/${arg.name}`);
+  });
+
+  it('returns immediately and flips status to Error when the background scaffold throws', async () => {
+    vi.mocked(mockScaffolder.scaffold).mockRejectedValueOnce(new Error('bun bootstrap failed'));
+
+    // The use case must resolve successfully — the scaffold runs in
+    // the background and any failure there is surfaced via a status
+    // update on the already-persisted Application row, NOT via a
+    // rejected promise. Re-throwing would freeze every presentation
+    // layer on the create flow.
+    const result = await useCase.execute({ description: 'A broken app' });
+    expect(result.application).toBeDefined();
+    expect(mockAppRepo.create).toHaveBeenCalledTimes(1);
+    expect(mockAppRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ status: ApplicationStatus.Idle })
+    );
+
+    // Wait for the background dispatch to run through the rejected
+    // scaffold and the subsequent status flip.
+    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    // Scaffold was attempted, workflow was NOT dispatched, and the
+    // row was updated to Error so the Applications page can surface
+    // the failure.
+    expect(mockScaffolder.scaffold).toHaveBeenCalledTimes(1);
+    expect(mockRunWorkflow.execute).not.toHaveBeenCalled();
+    expect(mockAppRepo.update).toHaveBeenCalledWith(
+      result.application.id,
+      expect.objectContaining({ status: ApplicationStatus.Error })
+    );
+
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      '[create-application] scaffold failed',
+      expect.objectContaining({ err: 'bun bootstrap failed' })
+    );
   });
 
   it('passes agent and model overrides through to the application record', async () => {
@@ -208,8 +306,62 @@ describe('CreateApplicationUseCase', () => {
 
   it('does NOT send a chat message when initialPrompt is omitted', async () => {
     await useCase.execute({ description: 'a quiet app' });
+    // Background scaffold still runs, but without initialPrompt the
+    // workflow + prompt builder must be skipped. Wait for the
+    // background dispatch to reach the skip branch first.
+    await new Promise((resolve) => setImmediate(resolve));
     expect(mockPromptBuilder.build).not.toHaveBeenCalled();
     expect(mockRunWorkflow.execute).not.toHaveBeenCalled();
+    // No message row either — nothing to pre-persist when there is
+    // no user-authored prompt.
+    expect(mockMessageRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('pre-persists the user first-message IMMEDIATELY, before any background work', async () => {
+    const result = await useCase.execute({
+      description: 'Build a todo list app',
+      initialPrompt: 'Build a todo list app',
+    });
+
+    // The message row must land BEFORE the scaffold runs — otherwise
+    // the chat page SSR would see no messages on first paint and the
+    // user's bubble would only appear after the 30-second scaffold +
+    // session boot completed. HARD regression guard.
+    expect(mockMessageRepo.create).toHaveBeenCalledTimes(1);
+    const createMessageOrder = vi.mocked(mockMessageRepo.create).mock.invocationCallOrder[0];
+
+    // Scaffold may or may not have started yet at this point — the
+    // background dispatch is fire-and-forget. Give it a tick and then
+    // assert the ordering.
+    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
+    const scaffoldOrder = vi.mocked(mockScaffolder.scaffold).mock.invocationCallOrder[0];
+    expect(createMessageOrder).toBeLessThan(scaffoldOrder);
+
+    // The persisted row carries the user's verbatim description, the
+    // correct featureId shape (`app-<uuid>`), and a fresh UUID.
+    const persisted = vi.mocked(mockMessageRepo.create).mock.calls[0]![0];
+    expect(persisted.featureId).toBe(`app-${result.application.id}`);
+    expect(persisted.role).toBe('user');
+    expect(persisted.content).toBe('Build a todo list app');
+    expect(persisted.id).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it('tells run-workflow that the first user message is already persisted', async () => {
+    await useCase.execute({
+      description: 'Build a portfolio site',
+      initialPrompt: 'Build a portfolio site',
+    });
+
+    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    // run-workflow must NOT create a duplicate bubble for the user's
+    // first turn — the flag below routes its first sendMessage.execute
+    // through the `persistUserMessage: false` path in the session.
+    expect(mockRunWorkflow.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ firstUserMessageAlreadyPersisted: true })
+    );
   });
 
   it('builds the split prompt and dispatches the workflow orchestrator with a brief-read kickoff wrapper', async () => {
@@ -219,6 +371,12 @@ describe('CreateApplicationUseCase', () => {
       agentType: 'claude-code',
       modelOverride: 'claude-sonnet-4-6',
     });
+
+    // Prompt builder + brief write + workflow dispatch all live in the
+    // background pipeline now, so wait for the dispatch to reach them
+    // before asserting.
+    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
 
     // Prompt builder receives the trimmed user description AND the
     // workspace facts (cwd + platform) so the agent knows where it is
@@ -276,6 +434,9 @@ describe('CreateApplicationUseCase', () => {
       description: 'X',
       initialPrompt: '   build me a portfolio   ',
     });
+    // Background dispatch runs scaffold → then prompt build.
+    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
     expect(mockPromptBuilder.build).toHaveBeenCalledWith(
       expect.objectContaining({ description: 'build me a portfolio' })
     );
@@ -283,6 +444,7 @@ describe('CreateApplicationUseCase', () => {
 
   it('skips the chat message when initialPrompt is only whitespace', async () => {
     await useCase.execute({ description: 'X', initialPrompt: '   ' });
+    await new Promise((resolve) => setImmediate(resolve));
     expect(mockPromptBuilder.build).not.toHaveBeenCalled();
     expect(mockRunWorkflow.execute).not.toHaveBeenCalled();
   });

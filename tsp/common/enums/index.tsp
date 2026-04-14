@@ -18,3 +18,6 @@ import "./tool.tsp";
 import "./notification.tsp";
 import "./evidence-type.tsp";
 import "./work-item-enums.tsp";
+import "./cloud-deployment.tsp";
+import "./interactive-session-event.tsp";
+import "./operation-log.tsp";

@@ -52,6 +52,13 @@ export default tseslint.config(
       'src/domain/generated/**', // TypeSpec-generated domain models
       'packages/core/src/domain/generated/**', // TypeSpec-generated domain models (core)
 
+      // Fat-template payload — raw assets shipped into user projects at
+      // scaffold time. These files import from the user's own
+      // `react` / `lucide-react` / `@/lib/utils` scope (not core's),
+      // so they're intentionally excluded from the core tsconfig and
+      // must also be skipped by eslint's project service.
+      'packages/core/src/infrastructure/templates/**',
+
       // Spec artifacts (auto-generated YAML/MD, evidence PNGs)
       'specs/**',
 
@@ -293,6 +300,27 @@ export default tseslint.config(
       'storybook/hierarchy-separator': 'error',
       'storybook/no-uninstalled-addons': 'error',
       'storybook/prefer-pascal-case': 'warn',
+    },
+  },
+
+  // =============================================================================
+  // Clean Architecture — application layer must not import infrastructure
+  // =============================================================================
+  {
+    files: ['packages/core/src/application/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/infrastructure/**', '**/infrastructure/*'],
+              message:
+                'Application layer must not import from infrastructure. Use a port interface in application/ports/ and inject via DI.',
+            },
+          ],
+        },
+      ],
     },
   },
 

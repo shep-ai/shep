@@ -8,7 +8,7 @@ import {
   GitPrErrorCode,
 } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { IWorktreeService } from '@/application/ports/output/services/worktree-service.interface.js';
-import type { ConflictResolutionService } from '@/infrastructure/services/agents/conflict-resolution/conflict-resolution.service.js';
+import type { IConflictResolutionService } from '@/application/ports/output/services/conflict-resolution.interface.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
 import type { Feature } from '@/domain/generated/output.js';
@@ -75,11 +75,11 @@ function createMockWorktreeService(): IWorktreeService {
   } as unknown as IWorktreeService;
 }
 
-function createMockConflictResolution(): ConflictResolutionService {
+function createMockConflictResolution(): IConflictResolutionService {
   return {
     resolve: vi.fn().mockResolvedValue(undefined),
     resolveStashPop: vi.fn().mockResolvedValue(undefined),
-  } as unknown as ConflictResolutionService;
+  } as unknown as IConflictResolutionService;
 }
 
 function createMockAgentRunRepo(): IAgentRunRepository {
@@ -134,7 +134,7 @@ describe('RebaseFeatureOnMainUseCase', () => {
   let mockFeatureRepo: IFeatureRepository;
   let mockGitPrService: IGitPrService;
   let mockWorktreeService: IWorktreeService;
-  let mockConflictResolution: ConflictResolutionService;
+  let mockConflictResolution: IConflictResolutionService;
   let mockAgentRunRepo: IAgentRunRepository;
   let mockPhaseTimingRepo: IPhaseTimingRepository;
 

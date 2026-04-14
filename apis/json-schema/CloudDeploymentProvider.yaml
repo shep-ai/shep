@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CloudDeploymentProvider.yaml
+type: string
+enum:
+  - CloudflarePages
+  - Vercel
+  - Netlify
+  - AwsAmplify
+  - GcpCloudRun
+description: Supported cloud deployment providers for generated applications

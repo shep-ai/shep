@@ -61,14 +61,9 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
           >
             <LayoutGrid className="mb-2 h-6 w-6 opacity-20" />
             <p className="text-xs">No applications yet.</p>
-            <button
-              type="button"
-              onClick={() => setShowCreatePrompt(true)}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-indigo-500 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm transition-colors hover:bg-indigo-400"
-            >
-              <Plus className="h-3 w-3" />
-              New application
-            </button>
+            <p className="mt-1 text-[11px] opacity-70">
+              Tap the <Plus className="inline h-3 w-3 align-text-bottom" /> button to create one.
+            </p>
           </div>
         ) : (
           <div

@@ -603,6 +603,10 @@ export type NotificationEventConfig = {
    * Notify when feature is ready for merge review
    */
   mergeReviewReady: boolean;
+  /**
+   * Notify when cloud deployment status changes (spec 089)
+   */
+  cloudDeploymentUpdated?: boolean;
 };
 
 /**
@@ -1679,6 +1683,7 @@ export enum NotificationEventType {
   PrChecksFailed = 'pr_checks_failed',
   PrBlocked = 'pr_blocked',
   MergeReviewReady = 'merge_review_ready',
+  CloudDeploymentUpdated = 'cloud_deployment_updated',
 }
 export enum NotificationSeverity {
   Info = 'info',
@@ -1755,6 +1760,21 @@ export enum ApplicationStatus {
   Active = 'Active',
   Error = 'Error',
 }
+export enum CloudDeploymentProvider {
+  CloudflarePages = 'CloudflarePages',
+  Vercel = 'Vercel',
+  Netlify = 'Netlify',
+  AwsAmplify = 'AwsAmplify',
+  GcpCloudRun = 'GcpCloudRun',
+}
+export enum CloudDeploymentStatus {
+  NotDeployed = 'NotDeployed',
+  Building = 'Building',
+  Uploading = 'Uploading',
+  Deploying = 'Deploying',
+  Deployed = 'Deployed',
+  Failed = 'Failed',
+}
 
 /**
  * A persistent AI-powered application workspace
@@ -1800,6 +1820,34 @@ export type Application = SoftDeletableEntity & {
    * Persistent agent SDK session ID — set once on first session boot, never changes
    */
   agentSessionId?: string;
+  /**
+   * Git remote URL (e.g. https://github.com/user/repo) once a remote is attached
+   */
+  gitRemoteUrl?: string;
+  /**
+   * Selected cloud deployment provider for this application
+   */
+  cloudDeploymentProvider?: CloudDeploymentProvider;
+  /**
+   * Current lifecycle state of the cloud deployment
+   */
+  cloudDeploymentStatus?: CloudDeploymentStatus;
+  /**
+   * Provider-specific deployment id used to poll status
+   */
+  cloudDeploymentId?: string;
+  /**
+   * Public URL of the most recent successful deployment
+   */
+  cloudDeploymentUrl?: string;
+  /**
+   * Error message from the last failed deployment attempt
+   */
+  cloudDeploymentError?: string;
+  /**
+   * Timestamp of the last deployment attempt (success or failure)
+   */
+  lastDeployedAt?: any;
 };
 export enum EstimateType {
   None = 'None',
@@ -2482,6 +2530,43 @@ export type PmAuditLog = BaseEntity & {
    * IP address or client identifier of the actor — optional
    */
   ipAddress?: string;
+};
+export enum OperationLogKind {
+  CloudDeploy = 'CloudDeploy',
+  GitRemoteCreate = 'GitRemoteCreate',
+  RepoSync = 'RepoSync',
+}
+export enum OperationLogLevel {
+  Debug = 'Debug',
+  Info = 'Info',
+  Warn = 'Warn',
+  Error = 'Error',
+}
+
+/**
+ * A single timestamped line of progress for a long-running operation
+ */
+export type OperationLogEntry = BaseEntity & {
+  /**
+   * Kind of operation this entry belongs to
+   */
+  operationKind: OperationLogKind;
+  /**
+   * Stable id that scopes the operation — typically the application id
+   */
+  operationId: string;
+  /**
+   * Severity / level of this entry
+   */
+  level: OperationLogLevel;
+  /**
+   * Human-readable single-line message
+   */
+  message: string;
+  /**
+   * Optional structured detail (JSON-serialised) — multi-line stderr, error codes, etc.
+   */
+  detail?: string;
 };
 
 /**
@@ -3454,6 +3539,12 @@ export type PrdQuestionnaireData = {
    */
   finalAction: PrdFinalAction;
 };
+export enum InteractiveSessionEventType {
+  Booting = 'interactive_session_booting',
+  Ready = 'interactive_session_ready',
+  Stopped = 'interactive_session_stopped',
+  Error = 'interactive_session_error',
+}
 export enum AgentFeature {
   sessionResume = 'session-resume',
   streaming = 'streaming',

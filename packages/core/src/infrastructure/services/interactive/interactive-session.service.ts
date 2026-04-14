@@ -143,6 +143,18 @@ export class InteractiveSessionService implements IInteractiveSessionService {
    */
   private activeStepByFeature = new Map<string, string>();
 
+  /**
+   * Monotonic clock for message `createdAt` values. `Date.now()` has
+   * millisecond precision, and the SDK can fire `tool_use` + `tool_result`
+   * (and their paired persistToolEvent calls) within the same millisecond
+   * — which leaves the DB with two rows whose `created_at` are identical,
+   * causing `ORDER BY created_at ASC` to return them in insert-race order
+   * and breaking the tool→Output pairing in StepTracker.classifyMessages.
+   * By pinning each subsequent timestamp to `max(Date.now(), lastTs + 1)`
+   * we guarantee monotonically increasing millis even under burst writes.
+   */
+  private lastMessageTs = 0;
+
   constructor(
     private readonly sessionRepo: IInteractiveSessionRepository,
     private readonly messageRepo: IInteractiveMessageRepository,
@@ -372,7 +384,9 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       // Send the boot prompt and iterate stream for the greeting
       await handle.send(bootPrompt);
 
-      let greetingText = '';
+      // No longer needed as a local — delta text is accumulated into
+      // `state.currentAssistantBuffer` and flushed inline alongside
+      // tool events via `flushAssistantBuffer`.
       const bootAbort = new AbortController();
       state.streamAbort = bootAbort;
 
@@ -407,9 +421,20 @@ export class InteractiveSessionService implements IInteractiveSessionService {
           switch (event.type) {
             case 'delta':
               if (event.content) {
-                greetingText += event.content;
                 state.currentAssistantBuffer += event.content;
-                this.notify(state, { delta: event.content!, done: false });
+                this.notify(state, { delta: event.content, done: false });
+              }
+              break;
+
+            case 'thinking':
+              if (event.content) {
+                await this.persistToolEvent(state, 'Thinking', event.content);
+                this.notify(state, {
+                  delta: '',
+                  done: false,
+                  log: 'Thinking…',
+                  activity: { kind: 'thinking', label: 'Thinking', detail: event.content },
+                });
               }
               break;
 
@@ -417,7 +442,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               if (event.label) {
                 const toolLabel = event.label;
                 const toolDetail = event.detail;
-                void this.persistToolEvent(state, toolLabel, toolDetail);
+                await this.persistToolEvent(state, toolLabel, toolDetail);
                 this.notify(state, {
                   delta: '',
                   done: false,
@@ -431,7 +456,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               if (event.label) {
                 const resultLabel = event.label;
                 const resultDetail = event.detail;
-                void this.persistToolEvent(state, resultLabel, resultDetail);
+                await this.persistToolEvent(state, resultLabel, resultDetail);
                 this.notify(state, {
                   delta: '',
                   done: false,
@@ -449,9 +474,15 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               break;
 
             case 'done': {
-              // Use result text if provided and non-empty, otherwise use accumulated buffer
-              const resultText =
-                event.content && event.content.length > 0 ? event.content : greetingText;
+              // All delta text is persisted incrementally via
+              // `flushAssistantBuffer` inside `persistToolEvent`, so by
+              // the time `done` fires the buffer only holds the trailing
+              // prose that came after the last tool call (often the
+              // final step confirmation). Flush it here as its own
+              // message — persisting `event.content`/`greetingText`
+              // would duplicate everything we already flushed between
+              // tools.
+              await this.flushAssistantBuffer(state);
 
               // Capture the SDK session ID (available after first message exchange)
               const sdkSessionId = handle.sessionId;
@@ -472,17 +503,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
                 void this.sessionRepo.updateAgentSessionId(state.sessionId, sdkSessionId);
               }
 
-              // Persist greeting and mark session ready
-              const greetingMsg: InteractiveMessage = {
-                id: crypto.randomUUID(),
-                featureId,
-                sessionId: state.sessionId,
-                role: InteractiveMessageRole.assistant,
-                content: resultText,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              };
-              await this.persistMessage(greetingMsg);
               await this.updateSessionStatusAndNotify(
                 state.sessionId,
                 state.featureId,
@@ -512,19 +532,10 @@ export class InteractiveSessionService implements IInteractiveSessionService {
         state.streamAbort = undefined;
       }
 
-      // If we get here without a 'done' event, use whatever text we accumulated
-      if (greetingText) {
-        const greetingMsg: InteractiveMessage = {
-          id: crypto.randomUUID(),
-          featureId,
-          sessionId: state.sessionId,
-          role: InteractiveMessageRole.assistant,
-          content: greetingText,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        await this.persistMessage(greetingMsg);
-      }
+      // If we get here without a 'done' event, persist whatever
+      // trailing text remains in the buffer (earlier text was already
+      // flushed incrementally alongside tool events).
+      await this.flushAssistantBuffer(state);
       await this.updateSessionStatusAndNotify(
         state.sessionId,
         state.featureId,
@@ -678,11 +689,23 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               }
               break;
 
+            case 'thinking':
+              if (event.content) {
+                await this.persistToolEvent(state, 'Thinking', event.content);
+                this.notify(state, {
+                  delta: '',
+                  done: false,
+                  log: 'Thinking…',
+                  activity: { kind: 'thinking', label: 'Thinking', detail: event.content },
+                });
+              }
+              break;
+
             case 'tool_use':
               if (event.label) {
                 const toolLabel = event.label;
                 const toolDetail = event.detail;
-                void this.persistToolEvent(state, toolLabel, toolDetail);
+                await this.persistToolEvent(state, toolLabel, toolDetail);
                 this.notify(state, {
                   delta: '',
                   done: false,
@@ -696,7 +719,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               if (event.label) {
                 const resultLabel = event.label;
                 const resultDetail = event.detail;
-                void this.persistToolEvent(state, resultLabel, resultDetail);
+                await this.persistToolEvent(state, resultLabel, resultDetail);
                 this.notify(state, {
                   delta: '',
                   done: false,
@@ -714,24 +737,14 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               break;
 
             case 'done': {
-              // Use result text if provided and non-empty, otherwise use accumulated buffer
-              const resultText =
-                event.content && event.content.length > 0 ? event.content : responseText;
-
-              // Persist assistant message
-              const now = new Date();
-              const msg: InteractiveMessage = {
-                id: crypto.randomUUID(),
-                featureId: state.featureId,
-                sessionId: state.sessionId,
-                role: InteractiveMessageRole.assistant,
-                content: resultText,
-                createdAt: now,
-                updatedAt: now,
-              };
-              await this.persistMessage(msg);
-
-              state.currentAssistantBuffer = '';
+              // All delta text has been persisted incrementally via
+              // `flushAssistantBuffer` as each tool call was recorded,
+              // so the remaining buffer holds only the trailing prose
+              // after the final tool call. Flush it as its own message.
+              // We intentionally do NOT persist `event.content` /
+              // `responseText` here — that would duplicate everything
+              // we already flushed between tools.
+              await this.flushAssistantBuffer(state);
               state.toolEventsLog = [];
 
               // Accumulate usage from this turn
@@ -795,7 +808,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
             case 'task_started':
               if (event.content) {
-                void this.persistToolEvent(state, 'Subtask started', event.content);
+                await this.persistToolEvent(state, 'Subtask started', event.content);
                 this.notify(state, {
                   delta: '',
                   done: false,
@@ -814,7 +827,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
             case 'task_done':
               if (event.content) {
                 const taskStatus = event.detail ?? 'completed';
-                void this.persistToolEvent(state, `Subtask ${taskStatus}`, event.content);
+                await this.persistToolEvent(state, `Subtask ${taskStatus}`, event.content);
                 this.notify(state, {
                   delta: '',
                   done: false,
@@ -841,21 +854,10 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       }
 
       // If we exit the stream loop without a 'done' event (stream ended),
-      // persist whatever text we accumulated
+      // persist whatever trailing text remains in the buffer (earlier
+      // text was flushed incrementally alongside tool events).
       if (responseText && state.currentAssistantBuffer) {
-        const now = new Date();
-        const msg: InteractiveMessage = {
-          id: crypto.randomUUID(),
-          featureId: state.featureId,
-          sessionId: state.sessionId,
-          role: InteractiveMessageRole.assistant,
-          content: responseText,
-          createdAt: now,
-          updatedAt: now,
-        };
-        await this.persistMessage(msg);
-
-        state.currentAssistantBuffer = '';
+        await this.flushAssistantBuffer(state);
         state.toolEventsLog = [];
         this.notify(state, { delta: '', done: true });
       } else if (!responseText) {
@@ -943,9 +945,15 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     model?: string,
     agentType?: string,
     systemPrompt?: string,
-    agentKickoffOverride?: string
+    agentKickoffOverride?: string,
+    persistUserMessage = true
   ): Promise<InteractiveMessage> {
-    // 1. Persist user message to DB immediately — this is the source of truth
+    // 1. Persist user message to DB immediately — this is the source
+    //    of truth. SKIPPED when `persistUserMessage === false`, which
+    //    the application-creation flow uses to boot the session on top
+    //    of a user message it already wrote in the foreground (so the
+    //    chat renders the bubble instantly, long before the slow
+    //    scaffold and session-boot work completes).
     const now = new Date();
     const userMsg: InteractiveMessage = {
       id: crypto.randomUUID(),
@@ -955,7 +963,9 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       createdAt: now,
       updatedAt: now,
     };
-    await this.persistMessage(userMsg);
+    if (persistUserMessage) {
+      await this.persistMessage(userMsg);
+    }
 
     // 2. Find active session for this feature
     let state = this.findActiveStateForFeature(featureId);
@@ -1388,6 +1398,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
   /**
    * Persist a tool/system event as its own assistant message in the DB.
    * Each event gets its own bubble in the chat thread.
+   *
+   * Before writing the tool row, any prose the agent produced since the
+   * last flush is persisted as its own text message so that step cards
+   * interleave agent text with tool calls instead of collapsing every
+   * step's narration into one blob at `done`.
    */
   private async persistToolEvent(
     state: SessionState,
@@ -1395,20 +1410,66 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     detail?: string
   ): Promise<void> {
     try {
+      await this.flushAssistantBuffer(state);
       const content = detail ? `**${label}** \`${detail}\`` : `**${label}**`;
+      const now = this.nextMessageDate();
       const msg: InteractiveMessage = {
         id: crypto.randomUUID(),
         featureId: state.featureId,
         sessionId: state.sessionId,
         role: InteractiveMessageRole.assistant,
         content,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: now,
+        updatedAt: now,
       };
       await this.persistMessage(msg);
     } catch {
       // Non-critical — don't fail the turn for a tool event
     }
+  }
+
+  /**
+   * Persist whatever text has accumulated in `currentAssistantBuffer`
+   * as its own assistant message, then clear the buffer. Called right
+   * before each tool event so the DB history interleaves agent prose
+   * with tool calls — the step tracker groups messages by their
+   * persisted `stepId`, so without the flush everything the agent said
+   * mid-step ends up in one trailing blob (or tagged to no step at all
+   * if the orchestrator has already cleared activeStep by the time
+   * `done` fires).
+   */
+  private async flushAssistantBuffer(state: SessionState): Promise<void> {
+    const buffered = state.currentAssistantBuffer.trim();
+    if (!buffered) return;
+    state.currentAssistantBuffer = '';
+    const now = this.nextMessageDate();
+    const msg: InteractiveMessage = {
+      id: crypto.randomUUID(),
+      featureId: state.featureId,
+      sessionId: state.sessionId,
+      role: InteractiveMessageRole.assistant,
+      content: buffered,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await this.persistMessage(msg);
+  }
+
+  /**
+   * Produce the next monotonic timestamp for a persisted interactive
+   * message. Guarantees a strictly-increasing sequence even when two
+   * calls happen in the same millisecond (which is the norm for rapid
+   * `tool_use` + `tool_result` bursts emitted by the Claude SDK) so
+   * the repository's `ORDER BY created_at ASC` query returns rows in
+   * the exact order they were persisted. Frontend classifyMessages()
+   * depends on that order to pair Write/Edit/Read tool calls with
+   * their adjacent Output bubble.
+   */
+  private nextMessageDate(): Date {
+    const wallclock = Date.now();
+    const next = wallclock > this.lastMessageTs ? wallclock : this.lastMessageTs + 1;
+    this.lastMessageTs = next;
+    return new Date(next);
   }
 
   // ---------------------------------------------------------------------------

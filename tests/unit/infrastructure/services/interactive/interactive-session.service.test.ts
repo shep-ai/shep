@@ -1015,7 +1015,13 @@ describe('InteractiveSessionService', () => {
       await flushPromises();
 
       const fh = latestHandle();
-      fh.pushEvent({ type: 'done', content: 'Hi there!' });
+      // The service persists assistant prose by appending `delta`
+      // chunks to an internal buffer and flushing on the terminal event.
+      // `done.content` is intentionally NOT re-persisted to avoid
+      // duplicating text that was already streamed — so the test must
+      // stream the reply the same way the real executor does.
+      fh.pushEvent({ type: 'delta', content: 'Hi there!' });
+      fh.pushEvent({ type: 'done' });
       await flushPromises();
 
       const assistantCreate = (messageRepo.create as ReturnType<typeof vi.fn>).mock.calls.find(

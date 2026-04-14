@@ -105,3 +105,7 @@ rejectionFeedback:
     message: "The inventory should be by default collapsed and all showen, we should also be able to click on a plus sign near each repository and create feature and have action buttons above the table for quick actions like new project import etc (things we have in the fab)"
     phase: "merge"
     timestamp: "2026-04-14T11:46:59.209Z"
+  - iteration: 3
+    message: "Resolve merge conflicts"
+    phase: "merge"
+    timestamp: "2026-04-14T21:16:25.303Z"

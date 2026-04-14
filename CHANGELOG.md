@@ -1,3 +1,39 @@
+# [1.187.0](https://github.com/shep-ai/shep/compare/v1.186.1...v1.187.0) (2026-04-14)
+
+
+### Features
+
+* one-click cloud deploy for applications (spec 089) ([#554](https://github.com/shep-ai/shep/issues/554)) ([29342f8](https://github.com/shep-ai/shep/commit/29342f80df4a4776b7142246cabb4552da9502e3))
+
+## [1.186.1](https://github.com/shep-ai/shep/compare/v1.186.0...v1.186.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* application creation flow, tracker UX, and scaffolding reliability ([#559](https://github.com/shep-ai/shep/issues/559)) ([e3034c1](https://github.com/shep-ai/shep/commit/e3034c1dd1bcc274f5e0af14f172940abc42abd9))
+
+# [1.186.0](https://github.com/shep-ai/shep/compare/v1.185.0...v1.186.0) (2026-04-14)
+
+
+### Features
+
+* **config:** unify branding and reduce contributor onboarding friction ([#556](https://github.com/shep-ai/shep/issues/556)) ([0327d23](https://github.com/shep-ai/shep/commit/0327d23c965282036c9f5fa343e1118b335d2e25))
+
+# [1.185.0](https://github.com/shep-ai/shep/compare/v1.184.0...v1.185.0) (2026-04-14)
+
+
+### Features
+
+* **dx:** add discord badge to readme ([#553](https://github.com/shep-ai/shep/issues/553)) ([13cd39d](https://github.com/shep-ai/shep/commit/13cd39d3e119a37aa1a2ad96c6adc7fa048688e3))
+
+# [1.184.0](https://github.com/shep-ai/shep/compare/v1.183.0...v1.184.0) (2026-04-14)
+
+
+### Features
+
+* **agents:** add multi-provider support with cline agentic executor ([#544](https://github.com/shep-ai/shep/issues/544)) ([d05e962](https://github.com/shep-ai/shep/commit/d05e96264388c5293b05819845dd77053b97e477))
+* **specs:** add plane-like project management capabilities to shep ([#552](https://github.com/shep-ai/shep/issues/552)) ([a54d250](https://github.com/shep-ai/shep/commit/a54d250e32f96c763d0d7adde767afc17115e970))
+
 # [1.183.0](https://github.com/shep-ai/shep/compare/v1.182.1...v1.183.0) (2026-04-13)
 
 

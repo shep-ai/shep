@@ -1,0 +1,110 @@
+feature:
+  id: '089-one-click-cloud-deploy'
+  name: 'one-click-cloud-deploy'
+  number: 89
+  branch: 'feat/089-one-click-cloud-deploy'
+  lifecycle: 'implementation-complete-local'
+  createdAt: '2026-04-13T20:49:18Z'
+  pr: 554
+  prUrl: 'https://github.com/shep-ai/shep/pull/554'
+
+status:
+  phase: 'implementation-complete-local'
+  progress:
+    completed: 72
+    total: 72
+    percentage: 100
+  currentTask: 'done — all 72 tasks + 20 clean-arch violations + phase-14 re-audit findings fixed locally'
+  lastUpdated: '2026-04-14T03:15:00Z'
+  lastUpdatedBy: 'shep-kit:implement'
+  ciState: 'not-pushed' # local-only run per user instruction; ci not consulted
+  ciNote: >
+    All work on branch feat/089-one-click-cloud-deploy is local. No ci
+    was watched, no push was done, no pr update was made. User gate
+    required was the full local gate below.
+
+validation:
+  lastRun: '2026-04-14T03:15:00Z'
+  localGatesPassed:
+    - tsp-compile
+    - typecheck
+    - lint # no-restricted-imports rule for application→infrastructure now enforced
+    - test-unit # 6096 tests green
+    - test-int # 616 tests green
+    - build-release # the missing gate from the prior run — now green
+    - build-storybook # stories for every new component
+  localGatesMissed: []
+  autoFixesApplied:
+    - 'domain/errors moves to unblock turbopack 16'
+    - 'port extraction for 8 infrastructure imports in application layer'
+    - 'container split 954 → 142 lines + 8 topic modules'
+    - 'feature-id helpers adopted across 10 callers'
+    - 'console.* → ILogger migration in 3 use cases'
+    - 'spec-yaml-parser relocated domain → infrastructure behind ISpecArtifactParser'
+    - 'AgentSessionRepositoryRegistry moved application/services/ → infrastructure/'
+    - 'application/services/ and application/workflows/ subtrees deleted'
+    - 'deploy-application.ts server action → StartApplicationDeploymentUseCase'
+    - '/api/agent-events route 521 → 141 lines via StreamAgentEventsUseCase + IProcessLivenessProbe + shared sdlc-lifecycle-mapping'
+    - 'application-page.tsx 867 → 135 lines split into 10 subcomponents with colocated stories'
+    - 'useDevServerCoordinator hook extracted'
+    - 'CommitApplicationChangesUseCase + CommitAndPushApplicationChangesUseCase wired to real git port'
+    - 'cloud-deploy use cases string-token aliases added so web routes can resolve them'
+    - 'playwright smoke test for cloud deploy ui added'
+
+tasks:
+  current: 'done'
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-04-13T20:49:18Z'
+    completedBy: 'shep-kit:new-feature'
+  - phase: 'research-complete'
+    completedAt: '2026-04-13T21:10:00Z'
+    completedBy: 'shep-kit:research'
+  - phase: 'plan-complete'
+    completedAt: '2026-04-14T00:00:00Z'
+    completedBy: 'shep-kit:plan'
+  - phase: 'implementation-core-complete'
+    completedAt: '2026-04-14T01:00:00Z'
+    completedBy: 'shep-kit:implement'
+    notes: >
+      Phases 1-11 + 13 shipped (45 of 58 planned tasks). PR #554 opened.
+      All local gates GREEN: typecheck, lint, unit (6079), int (628),
+      tsp, build-cli. Build-release + e2e were NOT run locally which
+      missed the Next.js cross-import failure.
+  - phase: 'subagent-framework-started'
+    completedAt: '2026-04-14T02:00:00Z'
+    completedBy: 'shep-kit:implement'
+    notes: >
+      User-requested addition (out of original 089 scope): .claude/agents/
+      scaffolded with 4 of 10 planned shep-tailored subagent definitions —
+      shep-clean-arch-auditor, shep-port-extractor, shep-file-relocator,
+      shep-use-case-creator. Six remaining pending. shep-singleton-killer
+      was drafted then deleted — user rejected it as too specific to one
+      violation class (it collapses into shep-port-extractor's scope).
+
+errors:
+  current:
+    - id: ci-red-pr-554
+      severity: critical
+      blocking: true
+      discoveredAt: '2026-04-14T02:00:00Z'
+      summary: >
+        PR #554 has 8 failing CI checks. Root cause of the seven build-path
+        failures is a Next.js module-not-found error on
+        packages/core/src/application/use-cases/cloud-deploy/
+        initiate-cloud-deployment.use-case.ts:18 which imports
+        ApplicationNotFoundError from a sibling use-case file via
+        './select-cloud-provider.use-case.js'. Next.js cannot resolve
+        cross-use-case '.js' suffix imports inside the core package at
+        bundle time. This is exactly clean-arch violation #19 in
+        clean-arch-violations.md — the error class should live in
+        domain/errors/application-not-found.error.ts. Fixing #19 also
+        fixes the web build. Gitleaks also flags
+        src/presentation/web/components/features/settings/
+        agent-settings-section.stories.tsx (a file NOT touched by this
+        PR) — needs baseline investigation.
+      resolution: Task t-59 — relocate ApplicationNotFoundError to domain/errors/
+  history: []

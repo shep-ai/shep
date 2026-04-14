@@ -8,6 +8,7 @@
 import { injectable, inject } from 'tsyringe';
 import type { IApplicationRepository } from '../../ports/output/repositories/application-repository.interface.js';
 import type { IInteractiveSessionService } from '../../ports/output/services/interactive-session-service.interface.js';
+import { featureIdForApplication } from '../../../domain/shared/feature-id.js';
 
 @injectable()
 export class DeleteApplicationUseCase {
@@ -21,7 +22,7 @@ export class DeleteApplicationUseCase {
   async execute(id: string): Promise<void> {
     // 1. Try to stop interactive session — catch errors (session may not exist)
     try {
-      await this.sessionService.stopByFeature(`app-${id}`);
+      await this.sessionService.stopByFeature(featureIdForApplication(id));
     } catch {
       // No active session or stop failed — continue with deletion
     }

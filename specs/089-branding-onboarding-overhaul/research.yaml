@@ -1,0 +1,286 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: branding-onboarding-overhaul
+summary: >
+  Research confirms this is a documentation-and-metadata-only change touching 14+ files with zero
+  runtime code changes. Key decisions: use direct string edits (no branding constant abstraction),
+  adopt Contributor Covenant v2.1 verbatim, structure good-first-issue template to match existing
+  GitHub issue form YAML patterns, and restructure CONTRIBUTING.md with a quick-fix section above
+  the full-feature workflow. No new libraries or dependencies required.
+
+# Relationships
+relatedFeatures:
+  - "080-skill-branding-injection"
+  - "079-pr-branding"
+  - "087-co-author-branding"
+
+technologies:
+  - "Markdown"
+  - "YAML (GitHub issue forms)"
+  - "Next.js metadata (layout.tsx)"
+  - "Commander.js CLI descriptions"
+  - "TypeScript value objects (version-info.ts)"
+  - "GitHub community health files"
+  - "Contributor Covenant v2.1 (CC BY 4.0)"
+
+relatedLinks:
+  - title: "GitHub community health files documentation"
+    url: "https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions"
+  - title: "Contributor Covenant v2.1"
+    url: "https://www.contributor-covenant.org/version/2/1/code_of_conduct/"
+  - title: "GitHub issue forms syntax"
+    url: "https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-githubs-form-schema"
+  - title: "Conventional Commits specification"
+    url: "https://www.conventionalcommits.org/"
+
+# Structured technology decisions
+decisions:
+  - title: "Branding storage approach"
+    chosen: "Direct string edits in each file (no shared constant)"
+    rejected:
+      - "Create a shared branding constants module (e.g., src/domain/constants/branding.ts) imported by all surfaces — Rejected because the surfaces span Markdown, YAML, JSON, and TypeScript. Only 2-3 TypeScript files reference the descriptor, while the majority are non-code files (README, CONTRIBUTING, issue templates, CLAUDE.md). A shared module would only serve the TypeScript files, while Markdown/YAML/JSON files would still need manual string edits. The complexity of importing and maintaining a shared module is not justified for 2-3 call sites."
+      - "Use a build-time template system to inject branding from a single source — Rejected because it adds build tooling complexity for a problem that occurs infrequently (branding changes are rare). The spec already documents both canonical descriptors as the single source of truth. A template system would require custom tooling for Markdown substitution, GitHub YAML processing, and package.json patching — massive over-engineering for a cosmetic change."
+    rationale: >
+      The branding surfaces are heterogeneous: Markdown files, YAML templates, JSON (package.json),
+      and TypeScript source. No single mechanism can serve all of them. Direct edits are the simplest
+      approach and match how the codebase currently handles these strings. The spec itself serves as
+      the single source of truth for the canonical text, which is sufficient for the rare event of
+      future branding updates. This aligns with the codebase principle of avoiding over-engineering.
+
+  - title: "CONTRIBUTING.md restructuring approach"
+    chosen: "Add Quick Contributions section above existing full-feature workflow, preserve existing content"
+    rejected:
+      - "Rewrite CONTRIBUTING.md from scratch with new structure — Rejected because the existing document is comprehensive and well-structured (283 lines, 12+ sections). A rewrite risks losing nuanced details about the development workflow, release process, and coding standards that were carefully crafted. The restructuring only needs to ADD a quick-fix path and REORGANIZE the top-level flow, not replace existing content."
+      - "Split into multiple files (CONTRIBUTING-quick.md, CONTRIBUTING-full.md) — Rejected because GitHub only recognizes a single CONTRIBUTING.md for the community profile integration. Multiple files would also force contributors to choose which file to read before knowing which path applies to them, increasing friction rather than reducing it."
+    rationale: >
+      The existing CONTRIBUTING.md is well-written with good coverage of development standards.
+      The issue is not content quality but content ordering — the mandatory spec-driven workflow
+      appears first and deters casual contributors. The fix is additive: insert a Quick Contributions
+      section near the top (after Getting Started) that provides the streamlined path, then clearly
+      label the existing workflow section as the Full Feature path. This preserves all existing
+      content while creating a clear fork in the reader's journey.
+
+  - title: "CODE_OF_CONDUCT.md content approach"
+    chosen: "Contributor Covenant v2.1 verbatim with project-specific contact email"
+    rejected:
+      - "Custom-written code of conduct tailored to the project — Rejected because it requires legal review, ongoing maintenance, and is less recognizable to open-source contributors. The Contributor Covenant is used by 100k+ projects and is immediately trusted by contributors."
+      - "Abbreviated code of conduct with link to full Contributor Covenant — Rejected because GitHub's community profile checker expects the full text in the file, and an abbreviated version may miss enforcement guidelines that give the document teeth."
+    rationale: >
+      Contributor Covenant v2.1 is the de facto standard. It requires exactly one customization:
+      replacing the [INSERT CONTACT METHOD] placeholder with the project's enforcement email.
+      The text is available under CC BY 4.0, allowing free use with attribution. Using it verbatim
+      ensures the document is complete, legally sound, and immediately recognizable.
+
+  - title: "SECURITY.md disclosure approach"
+    chosen: "Email-based private disclosure with structured response timeline"
+    rejected:
+      - "GitHub Security Advisories as primary channel — Rejected because it requires reporters to have GitHub accounts and understand the advisory workflow. Email is universally accessible and has zero learning curve for reporters of any experience level."
+      - "Public issue with 'security' label — Rejected because it publicly exposes vulnerability details before a fix is available, creating a window for exploitation. Private disclosure is the industry standard for responsible reporting."
+    rationale: >
+      Email-based disclosure is the most accessible option and the standard for open-source projects
+      of this size. The SECURITY.md will include: supported versions table, email address for reports,
+      expected response timeline (acknowledge within 48h, triage within 7 days), and a clear statement
+      not to open public issues for security vulnerabilities. GitHub Security Advisories can be
+      mentioned as a secondary channel but email remains primary.
+
+  - title: "Good-first-issue template format"
+    chosen: "GitHub issue forms YAML (.yml) matching existing template patterns"
+    rejected:
+      - "Markdown-based issue template (.md) — Rejected because the existing templates (bug-report.yml, feature-request.yml, docs-improvement.yml) all use the YAML issue forms format. A Markdown template would be inconsistent and lacks structured form fields (dropdowns, required validation). The YAML format provides a better experience for maintainers creating beginner issues."
+      - "No template, label-only approach — Rejected because without a template, good-first-issues lack consistent structure. Newcomers need clear problem statements, hints, expected outcomes, and links to docs. A template ensures every good-first-issue is well-structured, which the spec explicitly requires."
+    rationale: >
+      The codebase already uses GitHub issue forms YAML for all three existing templates. Following
+      the same pattern (emoji prefix in name, description field, title prefix, labels array, body
+      with typed fields) ensures visual and structural consistency. The template will include fields
+      for: problem description, suggested approach/hints, files likely involved, expected outcome,
+      relevant docs links, and a difficulty dropdown (trivial/easy/moderate). This template is
+      maintainer-facing — used when creating issues for newcomers, not by newcomers themselves.
+
+  - title: "Scope of 'Shep AI CLI' replacement"
+    chosen: "Replace in spec-identified surfaces only (issue templates, CONTRIBUTING.md title, CLI entry comment)"
+    rejected:
+      - "Global find-and-replace of all 47+ 'Shep AI CLI' occurrences — Rejected because many occurrences are in documentation files (docs/), translation files (translations/), test fixtures, and internal comments that are not public-facing branding surfaces. A global replacement would create a massive diff touching files outside the spec scope, risk breaking translation keys, and conflate branding cleanup with a broader rename effort."
+      - "Replace only in GitHub issue templates — Rejected because the spec explicitly identifies CONTRIBUTING.md title, CLI entry comment, and version command comment as surfaces needing alignment. Limiting to just issue templates would leave inconsistencies in other spec-identified files."
+    rationale: >
+      The spec defines a clear branding surface inventory. Replacing 'Shep AI CLI' in those specific
+      surfaces achieves the goal of consistent public-facing branding. The 40+ other occurrences in
+      docs/, translations/, and internal files are a separate cleanup effort that should not be
+      conflated with this feature. The spec explicitly scopes the work to the listed surfaces.
+
+# Open questions (resolved during research)
+openQuestions:
+  - question: "Should translation files (translations/en/tui.json etc.) be updated to remove 'Shep AI CLI' references?"
+    resolved: true
+    options:
+      - option: "Update translation files in this feature"
+        description: "Replace 'Welcome to Shep AI CLI' with 'Welcome to Shep' across all 6+ language files. Ensures complete branding consistency but expands scope beyond spec-defined surfaces and risks breaking i18n keys if the translation key structure is coupled to the text."
+        selected: false
+      - option: "Defer translation updates to a separate task"
+        description: "Keep this feature focused on the spec-defined branding surfaces. Create a follow-up task for translation file branding alignment. Prevents scope creep and isolates the translation change for proper i18n review."
+        selected: true
+      - option: "Update only the English translation file"
+        description: "Update translations/en/tui.json as the primary language, defer other languages. Creates a temporary inconsistency between English and other languages, which is worse than either updating all or none."
+        selected: false
+    selectionRationale: >
+      The spec explicitly lists the branding surfaces to update and translation files are not among
+      them. Updating translations touches 6+ language files, requires verifying that the welcome
+      message key structure is not affected, and may need review from translators for non-English
+      languages. Deferring keeps this feature focused and within its M size estimate.
+
+  - question: "Should the docs-improvement.yml template also be updated for branding alignment?"
+    resolved: true
+    options:
+      - option: "Update docs-improvement.yml branding"
+        description: "Check and update the docs-improvement template for 'Shep AI CLI' references. The current description ('Suggest improvements to documentation, guides, or examples') does not contain 'Shep AI CLI', so no change is needed, but the spec mentions verifying it."
+        selected: true
+      - option: "Skip docs-improvement.yml entirely"
+        description: "Assume the template is fine and skip verification. Risks missing a branding inconsistency if the template was updated after the spec was written."
+        selected: false
+      - option: "Rewrite all templates from scratch"
+        description: "Rewrite all four templates to use consistent branding patterns. Over-scoped for a verification task."
+        selected: false
+    selectionRationale: >
+      Research confirms that docs-improvement.yml description is 'Suggest improvements to
+      documentation, guides, or examples' — it does NOT contain 'Shep AI CLI'. No change is
+      needed for this template, but verifying it was the right call per the spec's instruction
+      to check it. The other two templates (bug-report.yml, feature-request.yml) DO need updates.
+
+  - question: "What enforcement contact email should be used in CODE_OF_CONDUCT.md?"
+    resolved: true
+    options:
+      - option: "Use a dedicated conduct@shep.bot email"
+        description: "Professional, purpose-specific email address. Signals that the project takes conduct seriously. Requires setting up the email alias."
+        selected: true
+      - option: "Use a generic security@shep.bot email"
+        description: "Reuse the same email for both security and conduct reports. Simpler but conflates two different types of reports with different response processes."
+        selected: false
+      - option: "Use a GitHub Discussions link instead of email"
+        description: "Direct reports to a public discussion channel. Inappropriate for conduct violations which should be reported privately."
+        selected: false
+    selectionRationale: >
+      Conduct reports require a private channel separate from security reports. Using conduct@shep.bot
+      (or similar project-specific email) ensures reports are routed correctly and signals that the
+      project has a dedicated process for community issues. The exact email can be finalized by the
+      maintainer during implementation — the template will use a placeholder pattern.
+
+content: |
+  ## Technology Decisions
+
+  ### 1. Branding Storage Approach
+
+  **Chosen:** Direct string edits in each file (no shared constant)
+
+  **Rejected:**
+  - Shared branding constants module — Only 2-3 TypeScript files need the descriptor; the majority of surfaces are Markdown, YAML, and JSON files that cannot import TypeScript modules. The complexity is not justified.
+  - Build-time template system — Massive over-engineering for a cosmetic change that occurs infrequently. The spec itself serves as the single source of truth.
+
+  **Rationale:** The branding surfaces are heterogeneous (Markdown, YAML, JSON, TypeScript). No single mechanism serves all of them. Direct edits are simplest and match the codebase's current approach. The spec documents both canonical descriptors as the reference point for future changes.
+
+  ### 2. CONTRIBUTING.md Restructuring
+
+  **Chosen:** Add Quick Contributions section above existing full-feature workflow, preserve existing content
+
+  **Rejected:**
+  - Full rewrite — The existing 283-line document is comprehensive and well-crafted. A rewrite risks losing nuanced details.
+  - Split into multiple files — GitHub only recognizes a single CONTRIBUTING.md for community profile integration.
+
+  **Rationale:** The issue is content ordering, not content quality. Insert a Quick Contributions section near the top (after Getting Started) with the streamlined path, then relabel the existing workflow as the Full Feature path. All existing content is preserved.
+
+  ### 3. CODE_OF_CONDUCT.md Content
+
+  **Chosen:** Contributor Covenant v2.1 verbatim with project-specific contact email
+
+  **Rejected:**
+  - Custom code of conduct — Requires legal review, ongoing maintenance, less recognizable.
+  - Abbreviated version with link — GitHub community profile expects full text; abbreviated version lacks enforcement teeth.
+
+  **Rationale:** Industry standard (100k+ projects), CC BY 4.0 licensed, requires only one customization (contact email placeholder).
+
+  ### 4. SECURITY.md Disclosure Approach
+
+  **Chosen:** Email-based private disclosure with structured response timeline
+
+  **Rejected:**
+  - GitHub Security Advisories as primary — Requires GitHub account and advisory workflow knowledge.
+  - Public issue with security label — Exposes vulnerabilities before fix is available.
+
+  **Rationale:** Email is universally accessible. File will include: supported versions, email address, response timeline (48h acknowledge, 7-day triage), and clear instruction not to open public issues.
+
+  ### 5. Good-First-Issue Template Format
+
+  **Chosen:** GitHub issue forms YAML (.yml) matching existing template patterns
+
+  **Rejected:**
+  - Markdown-based template (.md) — Inconsistent with existing YAML templates, lacks structured form fields.
+  - Label-only approach — No template means inconsistent issue structure for newcomers.
+
+  **Rationale:** All three existing templates use YAML issue forms. Following the same pattern (emoji prefix, description, title prefix, labels, typed body fields) ensures consistency. The template is maintainer-facing.
+
+  ### 6. Scope of 'Shep AI CLI' Replacement
+
+  **Chosen:** Replace in spec-identified surfaces only (issue templates, CONTRIBUTING.md, CLI comments)
+
+  **Rejected:**
+  - Global find-and-replace of all 47+ occurrences — Massive diff, risks breaking translation keys, conflates branding with rename effort.
+  - Issue templates only — Misses other spec-identified surfaces.
+
+  **Rationale:** The spec defines a clear surface inventory. Other occurrences (docs/, translations/, tests) are a separate cleanup effort.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | Contributor Covenant v2.1 | Code of Conduct text | Use (CC BY 4.0) | Industry standard, zero drafting, one placeholder to customize |
+  | No new npm packages | N/A | N/A | This feature is entirely documentation and metadata — no runtime dependencies |
+  | No new build tools | N/A | N/A | Direct file edits require no templating or build pipeline changes |
+
+  ## Security Considerations
+
+  - **SECURITY.md creation:** Establishes a formal vulnerability disclosure process where none exists today. Email-based private disclosure ensures vulnerabilities are not publicly exposed before a fix is available.
+  - **No code changes:** All TypeScript modifications are string constant changes only (version-info.ts description, layout.tsx metadata, cli/index.ts comment). No new attack surfaces are introduced.
+  - **package.json description:** Changing the npm description field does not affect any runtime behavior, authentication, or package integrity. It only changes what users see on npmjs.com.
+  - **No secrets or credentials:** No files in this feature contain or reference secrets, API keys, or credentials.
+
+  ## Performance Implications
+
+  - **Zero runtime impact:** All changes are to string constants, metadata, and documentation files. No new code paths, no additional imports, no bundle size changes.
+  - **Build verification:** The only performance-adjacent concern is ensuring `pnpm build` still passes after changing strings in version-info.ts and layout.tsx. These are compile-time checks, not runtime.
+  - **No additional network calls:** The branding changes do not introduce any new API calls, fetch requests, or external service dependencies.
+
+  ## Architecture Notes
+
+  ### How This Fits the Existing Codebase
+
+  - **version-info.ts** (`packages/core/src/domain/value-objects/version-info.ts`): Contains `DEFAULT_VERSION_INFO` with a `description` field set to "Autonomous AI Native SDLC Platform". This is a domain value object — the change is a string constant update with no API or type signature changes. The `VersionInfo` interface remains unchanged.
+
+  - **layout.tsx** (`src/presentation/web/app/layout.tsx`): Contains Next.js metadata export with `description` field. The change is a metadata string update — no component, prop, or rendering changes.
+
+  - **cli/index.ts** (`src/presentation/cli/index.ts`): Contains a JSDoc comment with "Autonomous AI Native SDLC Platform - CLI Interface". This is a comment-only change with zero runtime impact.
+
+  - **CONTRIBUTING.md restructuring**: The existing document follows a linear flow (setup → contribute → standards → PR → release). The restructuring adds a fork after "Getting Started" where contributors choose between quick-fix and full-feature paths. This is a documentation architecture change, not a code architecture change.
+
+  - **New files** (CODE_OF_CONDUCT.md, SECURITY.md, good-first-issue.yml): These are standard GitHub community health files placed at conventional locations. GitHub automatically detects root-level CODE_OF_CONDUCT.md and SECURITY.md for the community profile. The issue template goes in `.github/ISSUE_TEMPLATE/` alongside existing templates.
+
+  ### File Change Inventory
+
+  | File | Change Type | Risk |
+  | ---- | ----------- | ---- |
+  | README.md | Verify tagline alignment | None — already uses correct tagline |
+  | package.json | Update description string | Low — npm metadata only |
+  | layout.tsx | Update metadata description | Low — string constant only |
+  | version-info.ts | Update DEFAULT_VERSION_INFO.description | Low — string constant only |
+  | cli/index.ts | Update JSDoc comment | None — comment only |
+  | CLAUDE.md | Update project description | None — AI context only |
+  | CONTRIBUTING.md | Add quick-fix section, relabel full-feature, update CoC link, update community channels | Medium — largest structural change |
+  | bug-report.yml | Replace "Shep AI CLI" with "Shep" | None — template text only |
+  | feature-request.yml | Replace "Shep AI CLI" with "Shep" | None — template text only |
+  | docs-improvement.yml | Verify (no change needed) | None |
+  | config.yml | Verify contact links | None |
+  | CODE_OF_CONDUCT.md (new) | Contributor Covenant v2.1 | None — standard template |
+  | SECURITY.md (new) | Email-based disclosure policy | None — new file |
+  | good-first-issue.yml (new) | Structured issue form | None — new template |
+
+  ---
+
+  _Research completed 2026-04-14_

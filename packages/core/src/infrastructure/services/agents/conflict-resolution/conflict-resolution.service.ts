@@ -10,6 +10,7 @@ import { injectable, inject } from 'tsyringe';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { IAgentExecutorProvider } from '@/application/ports/output/agents/agent-executor-provider.interface.js';
+import type { IConflictResolutionService } from '@/application/ports/output/services/conflict-resolution.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import {
   GitPrError,
@@ -27,7 +28,7 @@ const MAX_RETRIES_PER_COMMIT = 3;
 const CONFLICT_MARKERS = ['<<<<<<<', '=======', '>>>>>>>'];
 
 @injectable()
-export class ConflictResolutionService {
+export class ConflictResolutionService implements IConflictResolutionService {
   constructor(
     @inject('IAgentExecutorProvider')
     private readonly agentProvider: IAgentExecutorProvider,

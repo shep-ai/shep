@@ -24,6 +24,13 @@ export interface IApplicationRepository {
         | 'modelOverride'
         | 'setupComplete'
         | 'agentSessionId'
+        | 'gitRemoteUrl'
+        | 'cloudDeploymentProvider'
+        | 'cloudDeploymentStatus'
+        | 'cloudDeploymentId'
+        | 'cloudDeploymentUrl'
+        | 'cloudDeploymentError'
+        | 'lastDeployedAt'
       >
     >
   ): Promise<void>;

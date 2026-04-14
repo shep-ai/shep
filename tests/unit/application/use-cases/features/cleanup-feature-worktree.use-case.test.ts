@@ -13,6 +13,7 @@ import { CleanupFeatureWorktreeUseCase } from '@/application/use-cases/features/
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IWorktreeService } from '@/application/ports/output/services/worktree-service.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
+import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 import { SdlcLifecycle } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
 
@@ -50,6 +51,7 @@ describe('CleanupFeatureWorktreeUseCase', () => {
   let mockFeatureRepo: IFeatureRepository;
   let mockWorktreeService: IWorktreeService;
   let mockGitPrService: IGitPrService;
+  let mockLogger: ILogger;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -117,10 +119,18 @@ describe('CleanupFeatureWorktreeUseCase', () => {
       stashDrop: vi.fn().mockResolvedValue(undefined),
     };
 
+    mockLogger = {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
+
     useCase = new CleanupFeatureWorktreeUseCase(
       mockFeatureRepo,
       mockWorktreeService,
-      mockGitPrService
+      mockGitPrService,
+      mockLogger
     );
   });
 
@@ -170,24 +180,21 @@ describe('CleanupFeatureWorktreeUseCase', () => {
     const feature = createMockFeature();
     mockFeatureRepo.findById = vi.fn().mockResolvedValue(feature);
     mockWorktreeService.remove = vi.fn().mockRejectedValue(new Error('worktree not found'));
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     await useCase.execute('feat-123-full-uuid');
 
-    expect(warnSpy).toHaveBeenCalledWith(
+    expect(mockLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('CleanupFeatureWorktreeUseCase'),
       expect.anything()
     );
     // Local branch deletion should still be called
     expect(mockGitPrService.deleteBranch).toHaveBeenCalledWith('/repo', 'feat/test-feature');
-    warnSpy.mockRestore();
   });
 
   it('should call prune after worktree remove fails to clean stale entries', async () => {
     const feature = createMockFeature();
     mockFeatureRepo.findById = vi.fn().mockResolvedValue(feature);
     mockWorktreeService.remove = vi.fn().mockRejectedValue(new Error('is not a working tree'));
-    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     await useCase.execute('feat-123-full-uuid');
 
@@ -210,16 +217,14 @@ describe('CleanupFeatureWorktreeUseCase', () => {
     mockFeatureRepo.findById = vi.fn().mockResolvedValue(feature);
     mockWorktreeService.remove = vi.fn().mockRejectedValue(new Error('is not a working tree'));
     mockWorktreeService.prune = vi.fn().mockRejectedValue(new Error('prune failed'));
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     await useCase.execute('feat-123-full-uuid');
 
-    expect(warnSpy).toHaveBeenCalledWith(
+    expect(mockLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('worktree prune failed'),
       expect.anything()
     );
     expect(mockGitPrService.deleteBranch).toHaveBeenCalledWith('/repo', 'feat/test-feature');
-    warnSpy.mockRestore();
   });
 
   it('should compute worktree path via getWorktreePath when feature has no worktreePath', async () => {
@@ -248,11 +253,10 @@ describe('CleanupFeatureWorktreeUseCase', () => {
       .fn()
       .mockRejectedValueOnce(new Error('branch not found'))
       .mockResolvedValueOnce(undefined);
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     await useCase.execute('feat-123-full-uuid');
 
-    expect(warnSpy).toHaveBeenCalledWith(
+    expect(mockLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('CleanupFeatureWorktreeUseCase'),
       expect.anything()
     );
@@ -261,7 +265,6 @@ describe('CleanupFeatureWorktreeUseCase', () => {
       '/repo',
       'feat/test-feature'
     );
-    warnSpy.mockRestore();
   });
 
   it('should skip remote deleteBranch when remoteBranchExists returns false', async () => {
@@ -284,15 +287,13 @@ describe('CleanupFeatureWorktreeUseCase', () => {
     const feature = createMockFeature();
     mockFeatureRepo.findById = vi.fn().mockResolvedValue(feature);
     mockWorktreeService.remoteBranchExists = vi.fn().mockRejectedValue(new Error('network error'));
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     await expect(useCase.execute('feat-123-full-uuid')).resolves.toBeUndefined();
 
-    expect(warnSpy).toHaveBeenCalledWith(
+    expect(mockLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('CleanupFeatureWorktreeUseCase'),
       expect.anything()
     );
-    warnSpy.mockRestore();
   });
 
   // ---------------------------------------------------------------------------
@@ -316,7 +317,6 @@ describe('CleanupFeatureWorktreeUseCase', () => {
     mockWorktreeService.remove = vi.fn().mockRejectedValue(new Error('remove failed'));
     mockGitPrService.deleteBranch = vi.fn().mockRejectedValue(new Error('delete failed'));
     mockWorktreeService.remoteBranchExists = vi.fn().mockRejectedValue(new Error('network error'));
-    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     await expect(useCase.execute('feat-123-full-uuid')).resolves.toBeUndefined();
   });

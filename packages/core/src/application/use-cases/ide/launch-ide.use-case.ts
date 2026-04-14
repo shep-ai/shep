@@ -12,13 +12,15 @@ import type {
   LaunchIdeInput,
   LaunchIdeResult,
 } from '../../ports/output/services/ide-launcher-service.interface.js';
-import { computeWorktreePath } from '../../../infrastructure/services/ide-launchers/compute-worktree-path.js';
+import type { IWorktreePathProvider } from '../../ports/output/services/worktree-path-provider.interface.js';
 
 @injectable()
 export class LaunchIdeUseCase {
   constructor(
     @inject('IIdeLauncherService')
-    private readonly ideLauncherService: IIdeLauncherService
+    private readonly ideLauncherService: IIdeLauncherService,
+    @inject('IWorktreePathProvider')
+    private readonly worktreePaths: IWorktreePathProvider
   ) {}
 
   /**
@@ -30,7 +32,9 @@ export class LaunchIdeUseCase {
   async execute(input: LaunchIdeInput): Promise<LaunchIdeResult> {
     const { editorId, repositoryPath, branch, checkAvailability } = input;
 
-    const directoryPath = branch ? computeWorktreePath(repositoryPath, branch) : repositoryPath;
+    const directoryPath = branch
+      ? this.worktreePaths.getWorktreePath(repositoryPath, branch)
+      : repositoryPath;
 
     if (checkAvailability) {
       const available = await this.ideLauncherService.checkAvailability(editorId);

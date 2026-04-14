@@ -1,0 +1,1470 @@
+name: "one-click-cloud-deploy"
+summary: >
+  Task breakdown for 089-one-click-cloud-deploy. **72 tasks across 14 phases.**
+  Original 58 (phases 1-13) shipped in PR #554 covering cloud deploy + git-remote
+  + CLI parity. Phase 14 (t-59..t-72) was added after the PR opened: 2 blockers
+  for CI failures, 1 task to finish the user-requested subagent framework, and
+  8 follow-up clean-arch cleanup tasks to be executed via those subagents.
+  Current state: 45 of 72 complete, PR #554 open with CI red (blocked on t-59).
+
+phase: "in-review"
+updatedAt: "2026-04-14T02:00:00Z"
+
+tasks:
+  # ─────────────────────────── Phase 1: Domain foundation ───────────────────────────
+  - id: t-01
+    title: "TypeSpec: cloud-deploy + interactive-session enums"
+    description: >
+      Create tsp/common/enums/cloud-deployment.tsp with CloudDeploymentProvider
+      (CloudflarePages, Vercel, Netlify, AwsAmplify, GcpCloudRun) and
+      CloudDeploymentStatus (NotDeployed, Building, Uploading, Deploying, Deployed,
+      Failed). Create tsp/common/enums/interactive-session-event.tsp with
+      InteractiveSessionEventType (Booting, Ready, Stopped, Error) to fix violation #6.
+      Import both in tsp/main.tsp if needed.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "pnpm tsp:compile succeeds"
+      - "packages/core/src/domain/generated/output.ts contains both enums"
+    estimatedEffort: "S"
+
+  - id: t-02
+    title: "TypeSpec: extend Application entity with cloud-deploy fields"
+    description: >
+      Add seven optional fields to tsp/domain/entities/application.tsp:
+      gitRemoteUrl, cloudDeploymentProvider, cloudDeploymentStatus, cloudDeploymentId,
+      cloudDeploymentUrl, cloudDeploymentError, lastDeployedAt. Use the enums from t-01.
+      Regenerate and commit.
+    state: "Todo"
+    dependencies: ["t-01"]
+    tdd: null
+    acceptanceCriteria:
+      - "pnpm tsp:compile produces new fields in generated Application type"
+      - "pnpm typecheck still succeeds (downstream files may surface errors — fix in their respective phases)"
+    estimatedEffort: "S"
+
+  - id: t-03
+    title: "Domain helper: feature-id namespace"
+    description: >
+      Create packages/core/src/domain/shared/feature-id.ts exposing
+      `featureIdForApplication(id): string`, `applicationIdFromFeatureId(fid): string | null`,
+      and `isApplicationFeatureId(fid): boolean`. Replaces the raw `app-${id}` / `feat-${id}`
+      string concat + regex (violation #11). Unit-test it. Callers in create-application
+      use case + application-page.tsx will switch in phases 7 and 10.
+    state: "Todo"
+    dependencies: []
+    tdd:
+      red:
+        - "Write tests covering round-trip, null for non-application prefix, and idempotency"
+      green:
+        - "Implement tiny pure functions"
+      refactor:
+        - "Export named constants if the prefix literals repeat"
+    acceptanceCriteria:
+      - "All unit tests green"
+      - "Helper has zero external deps"
+    estimatedEffort: "S"
+
+  # ─────────────────────── Phase 2: Secret storage + token repo ───────────────────────
+  - id: t-04
+    title: "LocalSecretBox helper (AES-256-GCM, zero deps)"
+    description: >
+      Create packages/core/src/infrastructure/services/crypto/local-secret-box.ts
+      exposing `encrypt(plaintext: string): EncryptedBlob` and `decrypt(blob)` where
+      EncryptedBlob = { ciphertext: Buffer; iv: Buffer; tag: Buffer }. Uses node:crypto
+      with aes-256-gcm, 12-byte IV, 16-byte auth tag. Constructor takes a 32-byte key
+      and throws if length mismatches.
+    state: "Todo"
+    dependencies: []
+    tdd:
+      red:
+        - "Tests: round-trip ok, wrong-key throws, mutated ciphertext throws auth-tag mismatch, mutated IV throws"
+      green:
+        - "Implement the class using exact code from research §2.3"
+      refactor:
+        - "Extract Buffer.length constants"
+    acceptanceCriteria:
+      - "Tests pass"
+      - "No external dependencies"
+    estimatedEffort: "S"
+
+  - id: t-05
+    title: "SecretKeyFile resolver (~/.shep/secret.key, mode 0600, atomic wx)"
+    description: >
+      Create packages/core/src/infrastructure/services/crypto/secret-key-file.ts with
+      `loadOrCreateSecretKey(shepHomeDir: string): Buffer`. Uses fs.writeFileSync(...,
+      { mode: 0o600, flag: 'wx' }) atomically on first use; falls back to reading on
+      EEXIST. Reuses getShepHomeDir for the directory.
+    state: "Todo"
+    dependencies: ["t-04"]
+    tdd:
+      red:
+        - "Tests: first call generates a new 32-byte key; second call reads the same bytes; invalid file length throws"
+      green:
+        - "Implement using fs + randomBytes"
+      refactor:
+        - "Extract KEY_BYTES constant"
+    acceptanceCriteria:
+      - "Tests pass across multiple runs in a temp dir"
+      - "File mode asserted on POSIX; skipped assertion on Windows with comment"
+    estimatedEffort: "S"
+
+  - id: t-06
+    title: "Migration 061: cloud_provider_tokens table"
+    description: >
+      Create packages/core/src/infrastructure/persistence/sqlite/migrations/061-cloud-provider-tokens.ts
+      with up() creating cloud_provider_tokens (provider TEXT PRIMARY KEY, token_ciphertext
+      BLOB NOT NULL, token_iv BLOB NOT NULL, token_tag BLOB NOT NULL, created_at INTEGER
+      NOT NULL, updated_at INTEGER NOT NULL). Idempotent via sqlite_master check.
+      Stub down().
+    state: "Todo"
+    dependencies: []
+    tdd:
+      red:
+        - "Integration test: run migration on in-memory DB, assert pragma('table_info') lists all six columns"
+        - "Test idempotency — calling up() twice does not fail"
+      green:
+        - "Implement migration"
+      refactor: []
+    acceptanceCriteria:
+      - "Migration integration tests green"
+    estimatedEffort: "S"
+
+  - id: t-07
+    title: "SqliteCloudProviderTokensRepository (port + adapter, TDD)"
+    description: >
+      Create the port
+      packages/core/src/application/ports/output/repositories/cloud-provider-tokens.repository.interface.ts
+      with get/set/remove/listConnected methods keyed by CloudDeploymentProvider.
+      Implement
+      packages/core/src/infrastructure/repositories/sqlite-cloud-provider-tokens.repository.ts
+      backed by LocalSecretBox. Constructor takes better-sqlite3 Database + LocalSecretBox.
+    state: "Todo"
+    dependencies: ["t-04", "t-05", "t-06", "t-01"]
+    tdd:
+      red:
+        - "Tests: set+get round-trips the token plaintext"
+        - "set twice for same provider replaces (assert count=1)"
+        - "Tests: ciphertext column content differs from plaintext (encryption-at-rest verification)"
+        - "remove() deletes the row"
+        - "listConnected() returns only providers present in the table"
+      green:
+        - "Implement with prepared statements + LocalSecretBox.encrypt/decrypt"
+      refactor:
+        - "Extract column mapping helper"
+    acceptanceCriteria:
+      - "All tests green"
+      - "ciphertext is not equal to plaintext in the DB"
+    estimatedEffort: "M"
+
+  # ─────────────────────── Phase 3: Application persistence extension ───────────────────────
+  - id: t-08
+    title: "Migration 060: applications cloud-deploy columns"
+    description: >
+      Create migration 060-applications-cloud-deploy.ts. Adds seven columns via ALTER
+      TABLE: git_remote_url, cloud_deployment_provider, cloud_deployment_status,
+      cloud_deployment_id, cloud_deployment_url, cloud_deployment_error, last_deployed_at.
+      All guarded by pragma('table_info(applications)') existence checks for idempotency.
+      Down() stub.
+    state: "Todo"
+    dependencies: []
+    tdd:
+      red:
+        - "Integration test: after migration, pragma('table_info(applications)') lists all seven new columns"
+        - "Idempotency test"
+      green:
+        - "Implement migration"
+      refactor: []
+    acceptanceCriteria:
+      - "Tests green"
+    estimatedEffort: "S"
+
+  - id: t-09
+    title: "Extend application mapper + repository update whitelist"
+    description: >
+      Update packages/core/src/infrastructure/persistence/sqlite/mappers/application.mapper.ts
+      to (de)serialize all seven new columns. Extend
+      packages/core/src/application/ports/output/repositories/application-repository.interface.ts
+      to add the new fields to the `update()` Pick type. Extend
+      packages/core/src/infrastructure/repositories/sqlite-application.repository.ts
+      with corresponding if-branches and column selection.
+    state: "Todo"
+    dependencies: ["t-02", "t-08"]
+    tdd:
+      red:
+        - "Extend sqlite-application.repository.test.ts: round-trip every new field (create → update → fetch)"
+        - "Test: updating one field does not zero the others"
+      green:
+        - "Edit mapper + repository to handle new columns"
+      refactor:
+        - "Extract TO_DB / FROM_DB helpers if branches get repetitive"
+    acceptanceCriteria:
+      - "All repository tests green"
+      - "Update of one field does not touch unrelated fields"
+    estimatedEffort: "M"
+
+  - id: t-10
+    title: "Type-check the update Pick extension across callers"
+    description: >
+      Run `pnpm typecheck`. If any caller of IApplicationRepository.update breaks
+      because of the newly widened Pick, fix it. This task exists to catch any drift
+      upfront before the use-case phase adds more callers.
+    state: "Todo"
+    dependencies: ["t-09"]
+    tdd: null
+    acceptanceCriteria:
+      - "pnpm typecheck clean"
+    estimatedEffort: "XS"
+
+  # ─────────────────────── Phase 4: Ports + registry + git remote service ───────────────────────
+  - id: t-11
+    title: "Port: ICloudDeploymentProvider + ICloudDeploymentProviderRegistry"
+    description: >
+      Create the two port files under
+      packages/core/src/application/ports/output/services/. Define CloudDeployInput,
+      CloudDeployResult, and the progress-callback signature. Registry exposes listAll()
+      and get(id). Type-only.
+    state: "Todo"
+    dependencies: ["t-01"]
+    tdd: null
+    acceptanceCriteria:
+      - "Ports compile and typecheck succeeds"
+    estimatedEffort: "S"
+
+  - id: t-12
+    title: "Port: IGitRemoteService + ILogger + ICloudDeploymentEventBus"
+    description: >
+      Three new port interfaces. IGitRemoteService has isGhAuthenticated and
+      createGitHubRepoAndPush. ILogger has info/warn/error/debug (minimal). Event bus
+      has publish(event) and subscribe(listener). All type-only.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "Interfaces compile"
+    estimatedEffort: "S"
+
+  - id: t-13
+    title: "CloudDeploymentProviderRegistry adapter"
+    description: >
+      Create packages/core/src/infrastructure/services/cloud-deploy/cloud-deployment-provider.registry.ts
+      mirroring AgentSessionRepositoryRegistry. listAll() iterates CloudDeploymentProvider
+      enum values and resolves each from the tsyringe container by string token. get(id)
+      asserts `enabled === true` and throws ProviderNotImplementedError otherwise.
+    state: "Todo"
+    dependencies: ["t-11"]
+    tdd:
+      red:
+        - "Test listAll returns five entries with correct enabled flags"
+        - "Test get() throws ProviderNotImplementedError for disabled providers"
+        - "Test get() returns the injected instance for enabled providers"
+      green:
+        - "Implement using container.resolve with string tokens"
+      refactor:
+        - "Extract the token-formatter function"
+    acceptanceCriteria:
+      - "Tests green with fakes for each provider"
+    estimatedEffort: "S"
+
+  - id: t-14
+    title: "GitRemoteService adapter"
+    description: >
+      Create packages/core/src/infrastructure/services/git/git-remote.service.ts.
+      Injects ExecFunction. isGhAuthenticated runs `gh auth token`, returns boolean.
+      createGitHubRepoAndPush runs git init (idempotent), git add + commit (idempotent),
+      gh repo create --source=. --push --description=..., then parses `git remote
+      get-url origin`. Throws typed GhNotAuthenticatedError on auth failure.
+    state: "Todo"
+    dependencies: ["t-12"]
+    tdd:
+      red:
+        - "Tests with a fake ExecFunction: happy path returns the URL; gh auth token non-zero throws typed error; git init is idempotent"
+        - "Test that description is quoted correctly (no shell injection)"
+      green:
+        - "Implement"
+      refactor:
+        - "Extract subprocess helpers"
+    acceptanceCriteria:
+      - "Tests green"
+    estimatedEffort: "M"
+
+  - id: t-15
+    title: "InMemoryCloudDeploymentEventBus adapter"
+    description: >
+      Create packages/core/src/infrastructure/services/events/in-memory-cloud-deployment-event-bus.ts
+      backed by node:events EventEmitter. publish(event) emits; subscribe returns an
+      unsubscribe function. Used by the use case to report progress without coupling
+      directly to SSE.
+    state: "Todo"
+    dependencies: ["t-12"]
+    tdd:
+      red:
+        - "Tests: publish → all subscribers receive the event; unsubscribe stops delivery"
+      green:
+        - "Implement"
+      refactor: []
+    acceptanceCriteria:
+      - "Tests green"
+    estimatedEffort: "XS"
+
+  - id: t-16
+    title: "ConsoleLogger adapter + migrate existing use case console.warn/error"
+    description: >
+      Create packages/core/src/infrastructure/services/logging/console-logger.ts
+      implementing ILogger via console.*. Migrate:
+      - run-workflow.use-case.ts `console.warn` → ILogger.warn
+      - create-application.use-case.ts `console.log`/`console.error` → ILogger
+      Violation #13 partial fix; SSE route cleanup happens in phase 11.
+    state: "Todo"
+    dependencies: ["t-12"]
+    tdd:
+      red:
+        - "Tests for ConsoleLogger via a Console spy"
+      green:
+        - "Implement + edit callers to inject ILogger"
+      refactor:
+        - "Update existing use-case tests to inject a fake ILogger"
+    acceptanceCriteria:
+      - "Tests green for ConsoleLogger + touched use cases"
+      - "No `console.*` remains in the two use-case files"
+    estimatedEffort: "S"
+
+  # ─────────────────────── Phase 5: Cloudflare Pages provider ───────────────────────
+  - id: t-17
+    title: "CloudflarePagesProvider: account + project endpoints (TDD)"
+    description: >
+      First half of the provider. Create
+      packages/core/src/infrastructure/services/cloud-deploy/cloudflare-pages.provider.ts
+      with isConnected() (GET /user/tokens/verify), private getAccountId() (GET /accounts),
+      private ensureProject(name) (GET /pages/projects then POST if missing). Uses
+      injected fetch function + ICloudProviderTokensRepository. Does NOT yet implement
+      deploy().
+    state: "Todo"
+    dependencies: ["t-07", "t-11"]
+    tdd:
+      red:
+        - "Tests mock fetch and assert correct headers/body for each endpoint"
+        - "Test isConnected returns false when token missing; false when token invalid; true on valid"
+        - "Test ensureProject is idempotent (existing project returns same result)"
+        - "Test network error wraps as CloudflareProviderError"
+      green:
+        - "Implement API-call layer"
+      refactor:
+        - "Extract request helper that injects Authorization header and parses errors"
+    acceptanceCriteria:
+      - "Tests green with fetch-fake"
+    estimatedEffort: "L"
+
+  - id: t-18
+    title: "CloudflarePagesProvider: deploy + poll + wrangler fallback (TDD)"
+    description: >
+      Second half. Implement deploy(input, onProgress): computes build output manifest,
+      POSTs the deployment, then polls GET /deployments/{id} until latest_stage.status
+      becomes success or failure. Emits onProgress callbacks: Uploading → Deploying →
+      Deployed (or Failed). Wrangler fallback kicks in when the direct HTTP POST
+      returns a non-2xx that maps to wrangler's supported path — spawns
+      `npx wrangler pages deploy <dir> --project-name=<name> --branch=main` via
+      injected ExecFunction with env { CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID }.
+    state: "Todo"
+    dependencies: ["t-17"]
+    tdd:
+      red:
+        - "Test happy HTTP path emits the three progress states in order"
+        - "Test failure path emits Failed and throws"
+        - "Test wrangler fallback invoked when HTTP returns 5xx"
+        - "Test poll transitions: queued → initialize → build → deploy → success"
+      green:
+        - "Implement"
+      refactor:
+        - "Extract state mapping table"
+    acceptanceCriteria:
+      - "All tests green"
+      - "Token never appears in any log line or error message (assert via log spy)"
+    estimatedEffort: "L"
+
+  # ─────────────────────── Phase 6: Stub providers (parallel) ───────────────────────
+  - id: t-19
+    title: "VercelProviderStub"
+    description: >
+      Create packages/core/src/infrastructure/services/cloud-deploy/vercel.provider.stub.ts
+      exporting a class with providerId = 'Vercel', enabled = false, isConnected() returns
+      false, deploy() throws ProviderNotImplementedError.
+    state: "Todo"
+    dependencies: ["t-11"]
+    tdd: null
+    acceptanceCriteria:
+      - "Compiles + typecheck clean"
+    estimatedEffort: "XS"
+
+  - id: t-20
+    title: "NetlifyProviderStub"
+    description: "Same as t-19 for Netlify."
+    state: "Todo"
+    dependencies: ["t-11"]
+    tdd: null
+    acceptanceCriteria: ["Compiles"]
+    estimatedEffort: "XS"
+
+  - id: t-21
+    title: "AwsAmplifyProviderStub"
+    description: "Same as t-19 for AwsAmplify."
+    state: "Todo"
+    dependencies: ["t-11"]
+    tdd: null
+    acceptanceCriteria: ["Compiles"]
+    estimatedEffort: "XS"
+
+  - id: t-22
+    title: "GcpCloudRunProviderStub"
+    description: "Same as t-19 for GcpCloudRun."
+    state: "Todo"
+    dependencies: ["t-11"]
+    tdd: null
+    acceptanceCriteria: ["Compiles"]
+    estimatedEffort: "XS"
+
+  # ─────────────────────── Phase 7: Use cases ───────────────────────
+  - id: t-23
+    title: "ListCloudProvidersUseCase (TDD)"
+    description: >
+      Read registry + token repository; return [{id, name, enabled, connected}] for
+      every provider. Used on application page load and by the provider dropdown.
+    state: "Todo"
+    dependencies: ["t-13", "t-07"]
+    tdd:
+      red:
+        - "Test returns five providers with correct enabled flags"
+        - "Test connected flag is true only for providers with a persisted token"
+      green:
+        - "Implement"
+      refactor: []
+    acceptanceCriteria:
+      - "Tests green"
+    estimatedEffort: "S"
+
+  - id: t-24
+    title: "ConnectCloudProviderUseCase (TDD)"
+    description: >
+      Input: {provider, token}. Resolve the live adapter, call a new validateToken(token)
+      method on it (add to ICloudDeploymentProvider port), persist on success, reject
+      on failure. For v1 only Cloudflare implements validateToken; stubs throw.
+    state: "Todo"
+    dependencies: ["t-11", "t-13", "t-07", "t-17"]
+    tdd:
+      red:
+        - "Test happy path validates + persists"
+        - "Test invalid token returns domain error and does NOT persist"
+        - "Test disabled provider raises ProviderNotImplementedError"
+      green:
+        - "Implement"
+      refactor: []
+    acceptanceCriteria:
+      - "Tests green"
+    estimatedEffort: "S"
+
+  - id: t-25
+    title: "SelectCloudProviderUseCase (TDD)"
+    description: >
+      Input: {applicationId, provider}. Updates Application.cloudDeploymentProvider
+      via the extended repository.
+    state: "Todo"
+    dependencies: ["t-09"]
+    tdd:
+      red:
+        - "Test persists the provider on the Application"
+        - "Test throws when application not found"
+      green:
+        - "Implement"
+      refactor: []
+    acceptanceCriteria: ["Tests green"]
+    estimatedEffort: "XS"
+
+  - id: t-26
+    title: "InitiateCloudDeploymentUseCase (TDD)"
+    description: >
+      The main orchestrator. Loads Application, asserts setupComplete=true, resolves
+      provider from registry, asserts isConnected, auto-detects build output dir
+      (dist/build/.next/out), persists Uploading, calls provider.deploy() with an
+      onProgress callback that publishes on the event bus AND updates the Application
+      row on every status change, persists Deployed or Failed at the end. Rethrows
+      any provider error after persistence.
+    state: "Todo"
+    dependencies: ["t-09", "t-13", "t-15", "t-17", "t-18", "t-25"]
+    tdd:
+      red:
+        - "Test happy path: status transitions persisted in order"
+        - "Test build output missing raises BuildOutputNotFoundError and persists Failed"
+        - "Test provider disabled raises ProviderNotImplementedError"
+        - "Test provider not connected raises ProviderNotConnectedError"
+        - "Test setupComplete=false raises ApplicationNotReadyError"
+        - "Test provider throws mid-deploy → Failed persisted with error message, event bus notified"
+      green:
+        - "Implement"
+      refactor:
+        - "Extract build-output-detector helper"
+    acceptanceCriteria:
+      - "All tests green"
+      - "Events published in the correct order"
+    estimatedEffort: "L"
+
+  - id: t-27
+    title: "GetCloudDeploymentStatusUseCase + CreateGitRemoteUseCase + EnsureGhAuthenticatedUseCase"
+    description: >
+      Three small use cases bundled since each is ~15 lines. Status use case reads
+      Application row and returns cloud fields. CreateGitRemote calls IGitRemoteService
+      and persists gitRemoteUrl. EnsureGhAuth returns {authenticated: bool}. TDD each.
+    state: "Todo"
+    dependencies: ["t-09", "t-14"]
+    tdd:
+      red:
+        - "Tests per use case"
+        - "CreateGitRemote: happy path persists URL"
+        - "CreateGitRemote: gh not authed raises typed error and does NOT persist"
+      green:
+        - "Implement all three"
+      refactor: []
+    acceptanceCriteria:
+      - "Tests green"
+    estimatedEffort: "M"
+
+  - id: t-28
+    title: "StartApplicationDeploymentUseCase (+ refactor deploy-application.ts)"
+    description: >
+      Ingests violations #1, #2, #3. Create
+      packages/core/src/application/use-cases/applications/start-application-deployment.use-case.ts
+      containing the full orchestration currently in the server action: load Application,
+      check repositoryPath exists via IFileSystemService (not node:fs), guard self-instance
+      via IShepInstanceService, call IDeploymentService.start. Then rewrite
+      src/presentation/web/app/actions/deploy-application.ts to a thin adapter: parse
+      input, resolve this use case, call execute(). Remove all infrastructure imports
+      from the action.
+    state: "Todo"
+    dependencies: ["t-12"]
+    tdd:
+      red:
+        - "Tests: happy path calls IDeploymentService.start with correct args"
+        - "Test: missing repository path raises RepositoryPathMissingError"
+        - "Test: self-instance guard raises SelfInstanceError"
+      green:
+        - "Implement use case and refactor action"
+      refactor: []
+    acceptanceCriteria:
+      - "Existing dev-server deploy still works (manual + any existing e2e)"
+      - "Server action imports only use-case + DTO types"
+    estimatedEffort: "M"
+
+  - id: t-29
+    title: "CommitApplicationChangesUseCase + CommitAndPushApplicationChangesUseCase"
+    description: >
+      Violation #10 ingest. Two use cases that run `git add -A && git commit` and
+      (second one) `git push` on the Application repositoryPath via the injected
+      ExecFunction. Reports success/failure for UI toasts. Wired into the UI in
+      phase 10.
+    state: "Todo"
+    dependencies: ["t-14"]
+    tdd:
+      red:
+        - "Tests: commit happy path"
+        - "Test: nothing-to-commit returns a non-error NoChanges result"
+        - "Test: push when no remote returns NoRemote result (doesn't throw)"
+      green:
+        - "Implement"
+      refactor: []
+    acceptanceCriteria: ["Tests green"]
+    estimatedEffort: "S"
+
+  - id: t-30
+    title: "Use-case parallel check + typecheck sweep"
+    description: >
+      After t-23..t-29 land, run pnpm typecheck + pnpm test:unit to catch any drift.
+      Fix anything that was touched by the wider Pick or new error types.
+    state: "Todo"
+    dependencies: ["t-23","t-24","t-25","t-26","t-27","t-28","t-29"]
+    tdd: null
+    acceptanceCriteria:
+      - "pnpm typecheck clean"
+      - "pnpm test:unit green"
+    estimatedEffort: "XS"
+
+  # ─────────────────────── Phase 8: DI wiring + modular split ───────────────────────
+  - id: t-31
+    title: "Register new ports, adapters, and use cases in container"
+    description: >
+      Add registrations for ICloudProviderTokensRepository, ICloudDeploymentProvider:*
+      (five string tokens), CloudDeploymentProviderRegistry, IGitRemoteService,
+      InMemoryCloudDeploymentEventBus, ConsoleLogger, and all cloud-deploy use cases
+      plus the three use cases from t-28/t-29. Mirror the exact AgentSessionRepositoryRegistry
+      multi-instance pattern.
+    state: "Todo"
+    dependencies: ["t-07","t-13","t-14","t-15","t-16","t-17","t-18","t-19","t-20","t-21","t-22","t-23","t-24","t-25","t-26","t-27","t-28","t-29"]
+    tdd:
+      red:
+        - "Integration test: after container init, resolve() returns a non-null instance for every new token"
+        - "Test: CloudDeploymentProviderRegistry.listAll() returns exactly 5 entries"
+      green:
+        - "Wire registrations"
+      refactor: []
+    acceptanceCriteria:
+      - "Container init test green"
+    estimatedEffort: "M"
+
+  - id: t-32
+    title: "Split container.ts into modules (violation #12)"
+    description: >
+      Move repository/service/use-case registrations out of the 831-line container.ts
+      into packages/core/src/infrastructure/di/modules/{register-repositories, register-services,
+      register-use-cases, register-cloud-deploy}.ts. container.ts becomes a small
+      bootstrap that calls each module in order.
+    state: "Todo"
+    dependencies: ["t-31"]
+    tdd:
+      red:
+        - "Reuse the t-31 container-resolve test to confirm nothing got lost in the split"
+      green:
+        - "Move code, keep identifiers"
+      refactor: []
+    acceptanceCriteria:
+      - "container.ts < 200 lines"
+      - "All tests still green"
+    estimatedEffort: "M"
+
+  # ─────────────────────── Phase 9: Web API routes ───────────────────────
+  - id: t-33
+    title: "GET /api/cloud-providers"
+    description: "Thin route → ListCloudProvidersUseCase. Returns JSON array."
+    state: "Todo"
+    dependencies: ["t-23","t-31"]
+    tdd: null
+    acceptanceCriteria: ["Returns 200 + array on happy path; 500 on container error"]
+    estimatedEffort: "XS"
+
+  - id: t-34
+    title: "POST /api/cloud-providers/[provider]/connect"
+    description: "Thin route → ConnectCloudProviderUseCase. Body: {token}. Validates provider name against the enum; 400 on bad name."
+    state: "Todo"
+    dependencies: ["t-24","t-31"]
+    tdd: null
+    acceptanceCriteria: ["200 on success, 400 on invalid token, 409 on disabled provider"]
+    estimatedEffort: "XS"
+
+  - id: t-35
+    title: "GET /api/cloud-providers/github/auth-status"
+    description: "Thin route → EnsureGhAuthenticatedUseCase. Returns {authenticated: bool}."
+    state: "Todo"
+    dependencies: ["t-27","t-31"]
+    tdd: null
+    acceptanceCriteria: ["200 with boolean"]
+    estimatedEffort: "XS"
+
+  - id: t-36
+    title: "POST /api/cloud-providers/github/auth-login"
+    description: >
+      Thin route that spawns `gh auth login --web` detached via an
+      IGhCliLauncher port (new tiny port) and returns immediately. UI polls auth-status.
+    state: "Todo"
+    dependencies: ["t-27","t-31"]
+    tdd: null
+    acceptanceCriteria: ["202 accepted, process spawned"]
+    estimatedEffort: "S"
+
+  - id: t-37
+    title: "POST /api/applications/[id]/cloud-deploy/select-provider"
+    description: "Thin route → SelectCloudProviderUseCase."
+    state: "Todo"
+    dependencies: ["t-25","t-31"]
+    tdd: null
+    acceptanceCriteria: ["200 on success, 404 if app not found"]
+    estimatedEffort: "XS"
+
+  - id: t-38
+    title: "POST /api/applications/[id]/cloud-deploy/initiate"
+    description: "Thin route → InitiateCloudDeploymentUseCase. Runs fire-and-forget; status surfaces via SSE."
+    state: "Todo"
+    dependencies: ["t-26","t-31"]
+    tdd: null
+    acceptanceCriteria: ["202 accepted returns immediately; background job persists status"]
+    estimatedEffort: "S"
+
+  - id: t-39
+    title: "GET /api/applications/[id]/cloud-deploy/status"
+    description: "Thin route → GetCloudDeploymentStatusUseCase."
+    state: "Todo"
+    dependencies: ["t-27","t-31"]
+    tdd: null
+    acceptanceCriteria: ["200 with status DTO"]
+    estimatedEffort: "XS"
+
+  - id: t-40
+    title: "POST /api/applications/[id]/git/create-remote"
+    description: "Thin route → CreateGitRemoteUseCase. Maps GhNotAuthenticatedError to 409 with code GH_NOT_AUTHENTICATED."
+    state: "Todo"
+    dependencies: ["t-27","t-31"]
+    tdd: null
+    acceptanceCriteria:
+      - "200 with repoUrl on happy path"
+      - "409 with code GH_NOT_AUTHENTICATED on auth failure"
+    estimatedEffort: "S"
+
+  # ─────────────────────── Phase 10: Web UI ───────────────────────
+  - id: t-41
+    title: "cloud-provider-icons.tsx + shared icon exports"
+    description: >
+      Create centralized SVG icons (Cloudflare, Vercel, Netlify, AwsAmplify, GcpCloudRun,
+      GitHub) using simple-icons paths inlined as React components. One file, one
+      export per provider.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "Each icon renders in Storybook"
+    estimatedEffort: "S"
+
+  - id: t-42
+    title: "provider-dropdown.tsx + stories"
+    description: >
+      shadcn/ui DropdownMenu. Rows per provider with icon, name, state badge
+      (Connected/Not connected/Coming soon). Emits onSelect(provider). Reads data
+      from props (no direct fetch).
+    state: "Todo"
+    dependencies: ["t-41"]
+    tdd:
+      red:
+        - "Storybook stories render all state combinations"
+      green:
+        - "Implement component"
+      refactor: []
+    acceptanceCriteria:
+      - "All required stories present"
+    estimatedEffort: "M"
+
+  - id: t-43
+    title: "connect-provider-modal.tsx + stories"
+    description: >
+      Dialog with provider icon + 'Get a token' external link + token textarea +
+      Connect button. Submits to /api/cloud-providers/[provider]/connect. Error
+      surfaced inline.
+    state: "Todo"
+    dependencies: ["t-41"]
+    tdd:
+      red:
+        - "Stories: default, submitting, error, success"
+      green:
+        - "Implement"
+      refactor: []
+    acceptanceCriteria: ["All stories render"]
+    estimatedEffort: "M"
+
+  - id: t-44
+    title: "deploy-button.tsx + stories + useCloudDeployAction hook"
+    description: >
+      Split button: left half shows selected provider icon + label reflecting status
+      (NotDeployed, Deploying…, Deployed chip with URL, Failed). Right half = chevron
+      opens provider-dropdown. Consumes use-cloud-deploy-action hook.
+      hooks/use-cloud-deploy-action.ts seeds from /api/applications/[id]/cloud-deploy/status,
+      subscribes to SSE cloud_deployment.updated events, exposes
+      {status, url, error, provider, initiate, selectProvider, connect}.
+    state: "Todo"
+    dependencies: ["t-42","t-43","t-33","t-34","t-37","t-38","t-39"]
+    tdd:
+      red:
+        - "Stories for every status"
+        - "Unit test for the hook's reducer (state transitions on SSE events)"
+      green:
+        - "Implement"
+      refactor:
+        - "Extract button label builder"
+    acceptanceCriteria:
+      - "Stories render"
+      - "Hook transitions correctly in unit tests"
+    estimatedEffort: "L"
+
+  - id: t-45
+    title: "create-github-repo-button.tsx + stories"
+    description: >
+      Button next to Deploy. States: NoRemote → calls create-remote, on 409 transitions
+      to GhSignInRequired → calls auth-login + polls auth-status every 1.5s → retries
+      create-remote. On success: shows chip with remote URL.
+    state: "Todo"
+    dependencies: ["t-40","t-35","t-36","t-41"]
+    tdd:
+      red:
+        - "Stories cover every state transition"
+      green:
+        - "Implement"
+      refactor: []
+    acceptanceCriteria: ["All stories render"]
+    estimatedEffort: "M"
+
+  - id: t-46
+    title: "use-dev-server-coordinator hook (violation #8)"
+    description: >
+      Extract the dev-server orchestration currently in application-page.tsx lines
+      747-807 into hooks/use-dev-server-coordinator.ts. Hook owns the decision logic
+      for stop/restart on agent turn state and returns a small props bundle for the
+      component to consume. Component loses all imperative orchestration.
+    state: "Todo"
+    dependencies: []
+    tdd:
+      red:
+        - "Unit test with a fake agent-turn source: running→stopped transitions produce correct start/stop events"
+      green:
+        - "Implement hook"
+      refactor: []
+    acceptanceCriteria:
+      - "Hook tests green"
+      - "application-page.tsx never calls deployment mutation functions directly"
+    estimatedEffort: "M"
+
+  - id: t-47
+    title: "Split application-page.tsx + wire new buttons + commit use cases (violations #9, #10)"
+    description: >
+      Extract subcomponents into their own files under the same folder:
+      app-top-bar.tsx, path-cluster.tsx, git-status-cluster.tsx, session-chip.tsx,
+      view-switcher.tsx, view-body.tsx, status-pill.tsx. Insert <CreateGithubRepoButton/>
+      and <DeployButton/> into the top bar between RunDevButton and the view switcher.
+      Wire the (previously placeholder) commit / commit+push handlers to
+      CommitApplicationChangesUseCase via a small client wrapper. Use
+      use-dev-server-coordinator hook from t-46. Replace every raw `app-${id}` or
+      `/^app-/` with the helper from t-03.
+    state: "Todo"
+    dependencies: ["t-03","t-44","t-45","t-46","t-29"]
+    tdd:
+      red:
+        - "Stories for the pre-existing subcomponents (AppTopBar, PathCluster, etc.) render in their new isolated files"
+      green:
+        - "Move code incrementally, keep the app-page compiling after each move"
+      refactor: []
+    acceptanceCriteria:
+      - "application-page.tsx < 250 lines"
+      - "All existing stories still render"
+      - "pnpm dev:web — manual smoke of preview, commit buttons, deploy button, create-github-repo button"
+    estimatedEffort: "XL"
+
+  # ─────────────────────── Phase 11: SSE extension + cleanup ───────────────────────
+  - id: t-48
+    title: "StreamAgentEventsUseCase (violations #4, #5)"
+    description: >
+      Extract the SSE route's in-handler orchestration into
+      packages/core/src/application/use-cases/events/stream-agent-events.use-case.ts.
+      Returns an async iterable of NotificationEvent. Hides `isProcessAlive` behind
+      a new IProcessLivenessService port + ProcessLivenessService adapter (wrapping
+      the existing `is-process-alive` helper). Route handler becomes ~40 lines of
+      SSE framing that consumes the iterable.
+    state: "Todo"
+    dependencies: ["t-12","t-15"]
+    tdd:
+      red:
+        - "Tests for the use case with fakes for every injected repo"
+        - "Test: crash detection emits the correct event"
+        - "Test: PR-change detection emits the correct event"
+      green:
+        - "Extract logic into the use case"
+      refactor:
+        - "Split the polling loop into smaller helpers"
+    acceptanceCriteria:
+      - "SSE route imports only use cases + domain types (no infrastructure)"
+      - "Existing agent-events e2e flows (if any) still pass"
+    estimatedEffort: "XL"
+
+  - id: t-49
+    title: "Shared SdlcLifecycle→node mapping (violation #7)"
+    description: >
+      Create packages/core/src/application/shared/sdlc-lifecycle-node.ts (or similar
+      core location) with the single LIFECYCLE_TO_NODE mapping. Update the SSE route
+      and client-side derive-feature-state.ts to import from that single source.
+    state: "Todo"
+    dependencies: []
+    tdd:
+      red:
+        - "Unit test: mapping matches documented values"
+      green:
+        - "Extract + rewire both callers"
+      refactor: []
+    acceptanceCriteria:
+      - "Only one copy of the mapping remains in the repo (grep check)"
+    estimatedEffort: "S"
+
+  - id: t-50
+    title: "Cloud-deployment snapshot dimension + console → ILogger migration in SSE route"
+    description: >
+      Add a third snapshot dimension to the SSE polling loop that watches
+      Application.cloudDeploymentStatus + gitRemoteUrl per application. Emit
+      cloud_deployment_updated NotificationEvent when either changes. Also replaces
+      the remaining console.log/error in agent-events/route.ts with the ILogger
+      from t-16 (violation #13 SSE portion).
+    state: "Todo"
+    dependencies: ["t-48","t-16"]
+    tdd:
+      red:
+        - "Test: when Application.cloudDeploymentStatus changes between polls, an event is emitted"
+        - "Test: no event emitted for untouched applications"
+      green:
+        - "Implement"
+      refactor: []
+    acceptanceCriteria:
+      - "Manual smoke via pnpm dev:web: deploy triggers live button updates"
+    estimatedEffort: "M"
+
+  # ─────────────────────── Phase 12: Verification + E2E ───────────────────────
+  - id: t-51
+    title: "Playwright smoke test for cloud deploy"
+    description: >
+      src/presentation/web/e2e/cloud-deploy.spec.ts: seed a test application with
+      setupComplete=true, override the ICloudDeploymentProvider:CloudflarePages binding
+      with a test fake that emits Uploading → Deploying → Deployed, click Deploy,
+      assert the button transitions and the URL chip renders.
+    state: "Todo"
+    dependencies: ["t-47","t-50"]
+    tdd: null
+    acceptanceCriteria:
+      - "Test passes locally via pnpm test:e2e"
+    estimatedEffort: "M"
+
+  - id: t-52
+    title: "Full local CI gate"
+    description: >
+      Run pnpm lint, format:check, typecheck, tsp:compile, test:unit, test:int, build,
+      build:storybook. Fix any drift. Push, watch all CI runs green per .claude/rules/cicd.md.
+    state: "Todo"
+    dependencies: ["t-51"]
+    tdd: null
+    acceptanceCriteria:
+      - "All local gates green"
+      - "All CI runs on the feature branch green"
+    estimatedEffort: "M"
+
+  # ─────────────────────── Phase 13: CLI Application commands (reuse use cases) ───────────────────────
+  # Every task in this phase is a thin Commander adapter that resolves an existing
+  # use case via container.resolve(...) and handles only input parsing + terminal
+  # output. ZERO new business logic, ZERO new use cases.
+  - id: t-53
+    title: "CLI: shep app cloud-providers ls + connect (reuse use cases)"
+    description: >
+      Add a new `cloud-providers` subcommand group under `shep app` and register it on
+      the existing app command. Two subcommands:
+      `shep app cloud-providers ls` — thin adapter that resolves
+      ListCloudProvidersUseCase (t-23) and renders a table via the existing
+      `renderListView` UI helper (icon column, name, enabled, connected). Supports
+      --json flag for machine-readable output.
+      `shep app cloud-providers connect <provider> [--token <t>]` — resolves
+      ConnectCloudProviderUseCase (t-24). When --token is omitted and stdin is a TTY,
+      prompts for the token via @inquirer/prompts password input. Maps the use case's
+      domain errors (invalid token, disabled provider) to messages.error + exit code 1.
+      Files: src/presentation/cli/commands/app/cloud-providers/{index,ls,connect}.command.ts
+      and src/presentation/cli/commands/app/shared/format-cloud-providers.ts for the
+      shared row formatter.
+      Modifies src/presentation/cli/commands/app/index.ts to register the new group.
+      MUST NOT import from infrastructure/ — only the use cases via the DI container,
+      and domain types for argument shapes.
+    state: "Todo"
+    dependencies: ["t-23", "t-24", "t-31"]
+    tdd:
+      red:
+        - "Unit test for format-cloud-providers row formatter: rendering covers connected/not-connected/disabled rows"
+        - "Unit test for the connect command: when --token is provided, the use case is invoked with the right shape and a 1 exit code is set on rejection"
+      green:
+        - "Implement the two thin command files + shared formatter"
+      refactor:
+        - "Extract any duplicated provider-name → label helper into the shared formatter"
+    acceptanceCriteria:
+      - "Tests green"
+      - "Both commands import only use cases + domain types (no infrastructure imports)"
+      - "Running `shep app cloud-providers ls` lists exactly the providers returned by the existing use case"
+    estimatedEffort: "M"
+
+  - id: t-54
+    title: "CLI: shep app cloud-providers github-login (reuse EnsureGhAuthenticatedUseCase)"
+    description: >
+      Add `shep app cloud-providers github-login` subcommand. Resolves
+      EnsureGhAuthenticatedUseCase (t-27) first — if already authenticated, prints a
+      success message and exits 0. Otherwise spawns `gh auth login --web` via the same
+      IGhCliLauncher port that the web route from t-36 uses (resolved from the DI
+      container — the port already exists from phase 9), then polls
+      EnsureGhAuthenticatedUseCase every 1.5s with a CLI spinner until authenticated
+      or a 2-minute timeout elapses. Output formatting only — the polling loop is in
+      the command file because it is presentation behavior; no use case is added.
+      Files: src/presentation/cli/commands/app/cloud-providers/github-login.command.ts
+    state: "Todo"
+    dependencies: ["t-27", "t-31", "t-36"]
+    tdd:
+      red:
+        - "Unit test: when EnsureGhAuthenticatedUseCase initially returns {authenticated: true}, the command prints success without invoking the launcher"
+        - "Unit test: timeout path exits with code 1 and an explicit timeout message"
+      green:
+        - "Implement the command using a fake clock + injected use cases for testing"
+      refactor:
+        - "Extract the polling loop into a tiny CLI-local helper if reused"
+    acceptanceCriteria:
+      - "Tests green"
+      - "Command imports only use cases and the IGhCliLauncher port from application/ports"
+    estimatedEffort: "M"
+
+  - id: t-55
+    title: "CLI: shep app deploy initiate + status (stream via ICloudDeploymentEventBus)"
+    description: >
+      Add a new `deploy` subcommand group under `shep app` with two subcommands:
+      `shep app deploy <app-id> [--provider <provider>]` — resolves an Application via
+      the existing resolveApplication helper, optionally calls SelectCloudProviderUseCase
+      (t-25) when --provider is supplied, then resolves InitiateCloudDeploymentUseCase
+      (t-26) and invokes it. Streams progress to the terminal by subscribing to the
+      ICloudDeploymentEventBus port (t-12, t-15) — the SAME in-process bus the SSE route
+      consumes. Renders an ora spinner that updates on each `cloud_deployment.updated`
+      event for the current application id; on Deployed, prints the URL chip + exits 0;
+      on Failed, prints the error + exits 1.
+      `shep app deploy status <app-id>` — thin adapter that resolves
+      GetCloudDeploymentStatusUseCase (t-27) and renders a single-section detail view.
+      Supports --json. Reuses resolveApplication.ts.
+      Files: src/presentation/cli/commands/app/deploy/{index,initiate,status}.command.ts
+      and src/presentation/cli/commands/app/shared/format-cloud-status.ts for shared
+      status-to-label/colour mapping. Streaming subscription MUST come from the
+      DI-resolved ICloudDeploymentEventBus instance — never poll the database, never
+      reach into infrastructure directly.
+    state: "Todo"
+    dependencies: ["t-25", "t-26", "t-27", "t-15", "t-31"]
+    tdd:
+      red:
+        - "Unit test: the initiate command subscribes to the event bus before invoking the use case and unsubscribes on completion"
+        - "Unit test: status transitions from Uploading → Deploying → Deployed produce the expected spinner state changes"
+        - "Unit test: a Failed event sets exit code 1 and surfaces the error message"
+        - "Unit test for format-cloud-status: every CloudDeploymentStatus enum value maps to a non-empty label"
+      green:
+        - "Implement both commands + shared formatter using fakes for the use cases and a fake event bus"
+      refactor:
+        - "Extract the subscribe-then-await helper if both initiate and a future watch command would share it"
+    acceptanceCriteria:
+      - "Tests green"
+      - "No console.log inside use cases (CLI handles all rendering)"
+      - "Command files import only application use cases + the ICloudDeploymentEventBus port"
+      - "Database is never queried directly from the command — all reads go through GetCloudDeploymentStatusUseCase"
+    estimatedEffort: "L"
+
+  - id: t-56
+    title: "CLI: shep app git create-remote (reuse CreateGitRemoteUseCase + interactive gh fallback)"
+    description: >
+      Add a new `git` subcommand group under `shep app` with one subcommand:
+      `shep app git create-remote <app-id>` — resolves the Application via
+      resolveApplication, then resolves CreateGitRemoteUseCase (t-27). On the typed
+      GhNotAuthenticatedError, prompts the user to run gh login interactively (using
+      @inquirer/prompts confirm) and on confirm delegates to the same
+      github-login.command.ts flow from t-54, then retries CreateGitRemoteUseCase once.
+      On success prints the remote URL.
+      Files: src/presentation/cli/commands/app/git/{index,create-remote}.command.ts
+      Modifies src/presentation/cli/commands/app/index.ts to register the new group.
+    state: "Todo"
+    dependencies: ["t-27", "t-31", "t-54"]
+    tdd:
+      red:
+        - "Unit test: happy path resolves the use case and prints the remote URL"
+        - "Unit test: GhNotAuthenticatedError triggers the gh-login fallback and a retry"
+        - "Unit test: a second auth failure exits 1 with the typed error message"
+      green:
+        - "Implement the command using fakes for the use case"
+      refactor:
+        - "Reuse the gh-login helper from t-54 instead of duplicating the polling loop"
+    acceptanceCriteria:
+      - "Tests green"
+      - "Command imports only use cases + domain error types"
+    estimatedEffort: "M"
+
+  - id: t-57
+    title: "CLI e2e: tests/e2e/cli/app-cloud-deploy.test.ts"
+    description: >
+      Add a single e2e test under tests/e2e/cli/ that drives the new commands via the
+      existing CLI runner harness in tests/helpers/cli (mirrors tests/e2e/cli/feat.test.ts).
+      Seeds an isolated SHEP_HOME, registers a fake CloudflarePages provider via
+      container override, then runs `shep app cloud-providers ls`, `shep app cloud-providers
+      connect cloudflare-pages --token fake`, `shep app deploy <id> --provider cloudflare-pages`,
+      and `shep app deploy status <id>`. Asserts the terminal output contains the
+      expected status transitions and final URL chip. Container override pattern matches
+      the test seam introduced in t-51 for the Playwright smoke test.
+    state: "Todo"
+    dependencies: ["t-53", "t-54", "t-55", "t-56", "t-51"]
+    tdd:
+      red:
+        - "Write the failing e2e flow first against the empty command files"
+      green:
+        - "Wire the container override + run all four CLI invocations in sequence"
+      refactor:
+        - "Extract any duplicated assertion helper into tests/helpers/cli"
+    acceptanceCriteria:
+      - "pnpm test:e2e:cli passes the new file"
+      - "Test runs in <15s on Linux + Windows runners"
+    estimatedEffort: "M"
+
+  - id: t-58
+    title: "CLI typecheck/lint/test sweep + i18n strings"
+    description: >
+      Run pnpm typecheck + pnpm lint + pnpm test:unit and fix any drift. Add CLI i18n
+      strings under src/presentation/cli/i18n for every new command/argument/help text
+      following the existing pattern (cli:commands.app.cloudProviders.*,
+      cli:commands.app.deploy.*, cli:commands.app.git.*). Verify the new commands appear
+      in `shep app --help`. Final acceptance gate before t-52's full CI gate is rerun.
+    state: "Todo"
+    dependencies: ["t-53", "t-54", "t-55", "t-56", "t-57"]
+    tdd: null
+    acceptanceCriteria:
+      - "pnpm typecheck clean"
+      - "pnpm lint clean"
+      - "pnpm test:unit green"
+      - "`shep app --help` lists cloud-providers, deploy, git subcommands"
+      - "Every new command has a localized description"
+    estimatedEffort: "S"
+
+  # ─────────────────────── Phase 14: PR review response + follow-up cleanup ───────────────────────
+  #
+  # All tasks below were added AFTER the initial PR #554 was opened.
+  # They were not in the original plan. They divide into three groups:
+  #
+  #   (a) t-59, t-60  — BLOCKERS that make PR #554's CI red. Must ship first.
+  #   (b) t-61 .. t-64 — subagent framework the user asked for (so the cleanup
+  #                      work runs in parallel across Agent tool invocations).
+  #   (c) t-65 .. t-72 — the actual clean-arch cleanup, executed via the agents.
+  #
+  # Phase 14 has its own phase entry in plan.yaml. Do not mix these tasks into
+  # phases 1-13 — those represent the original 089 scope and are frozen.
+
+  - id: t-59
+    title: "Relocate ApplicationNotFoundError to domain/errors/ (unblocks PR #554 CI)"
+    description: >
+      The Next.js web build fails because
+      packages/core/src/application/use-cases/cloud-deploy/
+      initiate-cloud-deployment.use-case.ts:18 imports ApplicationNotFoundError
+      from a sibling use-case file via './select-cloud-provider.use-case.js'.
+      Next.js's bundler cannot resolve cross-use-case '.js' suffix imports
+      inside the core package. Fix: create
+      packages/core/src/domain/errors/application-not-found.error.ts,
+      move the class there, update all three importers
+      (initiate-cloud-deployment, get-cloud-deployment-status, create-git-remote),
+      delete the export from select-cloud-provider.use-case.ts. Re-run pnpm
+      build:release locally before pushing to verify the web bundle builds.
+      This is ALSO violation #19 from clean-arch-violations.md, so fixing it
+      closes two items at once.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "domain/errors/application-not-found.error.ts exists with the class"
+      - "All three importers updated"
+      - "Old export removed from select-cloud-provider.use-case.ts"
+      - "pnpm build:release runs clean locally"
+      - "Pushed and E2E Web + E2E CLI + Electron CI jobs turn green"
+    estimatedEffort: "XS"
+
+  - id: t-60
+    title: "Investigate Gitleaks failure in agent-settings-section.stories.tsx"
+    description: >
+      Gitleaks CI job flags src/presentation/web/components/features/settings/
+      agent-settings-section.stories.tsx on PR #554. The file was NOT edited by
+      this PR. Investigate: (a) was the file recently added to main with
+      mock tokens that match the gitleaks pattern; (b) does .gitleaks.toml
+      have an allowlist entry that should cover the mock; (c) is the file
+      using a literal that trips one of the built-in Gitleaks rules. Per
+      integrity rules, this failure is OUR responsibility even if the file
+      is pre-existing. Options: add the literal to .gitleaks.toml allowlist
+      with a comment explaining why it's a fixture, OR rewrite the story to
+      use a truncated placeholder.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "Gitleaks CI job turns green on PR #554"
+      - "Root cause documented in the PR comment or a follow-up issue"
+    estimatedEffort: "S"
+
+  - id: t-61
+    title: "Finish .claude/agents/ subagent framework (6 remaining agents)"
+    description: >
+      The user asked for shep-tailored subagents to drive the follow-up cleanup
+      efficiently. 4 of 10 planned agents exist:
+      shep-clean-arch-auditor, shep-port-extractor, shep-file-relocator,
+      shep-use-case-creator. shep-singleton-killer was rejected as too specific.
+      Still to create: shep-port-creator, shep-tsp-field-adder,
+      shep-migration-creator, shep-web-route-creator,
+      shep-storybook-story-creator, shep-cli-command-creator. Each has its own
+      strict-scope system prompt, tool allowlist, and report format. All are
+      reusable shep primitives — not one-off violation fixers.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "6 new .md files under .claude/agents/, each with YAML frontmatter + strict system prompt"
+      - "Each agent has explicit inputs, step-by-step process, verification commands, and report format"
+      - "Agents committed on the same branch as the follow-up cleanup work"
+    estimatedEffort: "M"
+
+  - id: t-62
+    title: "Dispatch shep-clean-arch-auditor across application/, domain/, presentation/"
+    description: >
+      Fan out three parallel Agent tool calls of shep-clean-arch-auditor, one
+      per top-level directory. Each appends findings to
+      clean-arch-violations.md starting at index 21. Collate results into a
+      single updated "What's left" section in the log.
+    state: "Todo"
+    dependencies: ["t-61"]
+    tdd: null
+    acceptanceCriteria:
+      - "Three parallel audit runs completed"
+      - "clean-arch-violations.md appended with any new findings"
+    estimatedEffort: "S"
+
+  - id: t-63
+    title: "Kill getSettings() singleton via shep-port-extractor"
+    description: >
+      Dispatch shep-port-extractor with concrete_path=infrastructure/services/
+      settings.service.ts, symbol_name=getSettings, symbol_kind=function,
+      callers=[5 application use-case files from violation #17],
+      port_name=ISettingsProvider (or extend ISettingsRepository if a
+      compatible method exists), di_token='ISettingsRepository',
+      port_location=repositories. Agent rewires all 5 use cases and deletes
+      the module-level singleton. Closes violation #17a.
+    state: "Todo"
+    dependencies: ["t-61"]
+    tdd: null
+    acceptanceCriteria:
+      - "getSettings() no longer exported from infrastructure/services/settings.service.ts"
+      - "5 application use cases inject ISettingsRepository"
+      - "Typecheck + lint + affected tests green"
+    estimatedEffort: "M"
+
+  - id: t-64
+    title: "Move computeWorktreePath + TOOL_METADATA to domain/shared/ via shep-file-relocator"
+    description: >
+      Two parallel shep-file-relocator calls. Both targets are pure helpers
+      imported from application use cases today (violation #17b). Each
+      relocator call: (a) validates the source has no outward dependencies,
+      (b) moves the file to domain/shared/, (c) rewrites imports in every
+      caller across the repo. Closes violations #17b (two of three sub-items).
+    state: "Todo"
+    dependencies: ["t-61"]
+    tdd: null
+    acceptanceCriteria:
+      - "packages/core/src/domain/shared/worktree-path.ts exists"
+      - "packages/core/src/domain/shared/tool-metadata.ts exists"
+      - "All 3+2=5 callers updated"
+      - "Typecheck + lint green"
+    estimatedEffort: "S"
+
+  - id: t-65
+    title: "Extract ports for phase-timing-context, node-helpers, conflict-resolution, attachment-storage"
+    description: >
+      Four parallel shep-port-extractor calls, one per remaining infrastructure
+      import in application/use-cases (violation #17c). Each creates the port
+      interface, wraps or adapts the concrete, rewires DI, migrates callers.
+    state: "Todo"
+    dependencies: ["t-61"]
+    tdd: null
+    acceptanceCriteria:
+      - "Four new ports under application/ports/output/"
+      - "Concretes implement the ports"
+      - "Application use cases inject ports, not concretes"
+      - "Typecheck + lint + affected tests green"
+    estimatedEffort: "L"
+
+  - id: t-66
+    title: "Relocate AgentSessionRepositoryRegistry to infrastructure/ + add port"
+    description: >
+      Violation #16: the registry lives in application/services/ and imports
+      tsyringe directly. Create IAgentSessionRepositoryRegistry port in
+      application/ports/output/agents/, move the concrete to
+      infrastructure/services/agents/, register via string token, migrate
+      all callers (use cases) to inject the port. This plus t-67 deletes the
+      application/services/ tree entirely.
+    state: "Todo"
+    dependencies: ["t-61"]
+    tdd: null
+    acceptanceCriteria:
+      - "IAgentSessionRepositoryRegistry port exists"
+      - "Concrete moved to infrastructure/services/agents/"
+      - "application/services/ tree deleted"
+      - "All callers updated, tests green"
+    estimatedEffort: "M"
+
+  - id: t-67
+    title: "Relocate application-creation.workflow.ts OR wrap in a use case"
+    description: >
+      Violation #15: application/workflows/ tree should not exist at the
+      application layer. Decide per inspection: (a) the workflow definition
+      is actually domain data (an ordered array of step names/prompts) →
+      move to domain/shared/workflows/ OR (b) it's an orchestration step
+      executor → wrap in a RunApplicationCreationWorkflowUseCase and put the
+      step runner in infrastructure/. Delete the application/workflows/ tree.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "application/workflows/ tree deleted"
+      - "All callers updated"
+      - "Tests green"
+    estimatedEffort: "S"
+
+  - id: t-68
+    title: "Add no-restricted-imports ESLint rule for application → infrastructure"
+    description: >
+      Violation #18: preventive rule. Add a scoped ESLint override to
+      eslint.config.mjs (or .eslintrc) that forbids any import matching
+      '**/infrastructure/**' inside packages/core/src/application/**. Use
+      no-restricted-imports with a clear error message pointing to the
+      dependency rule in .claude/rules/code-quality.md. Verify the rule
+      triggers on a deliberate violation then passes after we revert.
+    state: "Todo"
+    dependencies: ["t-63", "t-64", "t-65"]
+    tdd: null
+    acceptanceCriteria:
+      - "Rule present in ESLint config scoped to application/"
+      - "pnpm lint stays clean (proves we cleaned everything before enabling the rule)"
+      - "Deliberate test violation triggers the rule"
+    estimatedEffort: "XS"
+
+  - id: t-69
+    title: "Split container.ts into topic modules via shep-file-relocator fan-out"
+    description: >
+      Violation #12 (minor). container.ts is 800+ lines. Split into:
+      infrastructure/di/modules/register-repositories.ts,
+      register-services.ts, register-use-cases.ts, register-cloud-deploy.ts.
+      container.ts becomes a thin bootstrap that calls each module in order.
+      The modular split is low risk but invasive; use a single session to
+      avoid merge noise.
+    state: "Todo"
+    dependencies: ["t-63", "t-65"]
+    tdd: null
+    acceptanceCriteria:
+      - "container.ts under 200 lines"
+      - "Every previously-registered token still resolves"
+      - "Integration test added: resolve every declared token in one pass"
+    estimatedEffort: "M"
+
+  - id: t-70
+    title: "Adopt domain/shared/feature-id helpers across legacy callers"
+    description: >
+      Violation #11 (partial fix done — helpers exist but not adopted).
+      Migrate the 7 existing callers from raw `app-${id}` / /^app-/ patterns
+      to featureIdForApplication() / applicationIdFromFeatureId(). Callers:
+      create-application, delete-application, list-applications,
+      resume-application-workflow use cases + application-page.tsx and
+      related web files.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "Zero raw 'app-${' literals in the 7 files"
+      - "Zero /^app-/ regexes for this namespace in the 7 files"
+      - "Typecheck + lint + affected tests green"
+    estimatedEffort: "S"
+
+  - id: t-71
+    title: "Migrate remaining console.* call sites to ILogger"
+    description: >
+      Violation #13 (partial — ILogger port + ConsoleLogger adapter exist).
+      Migrate: run-workflow.use-case.ts, create-application.use-case.ts,
+      and the two remaining console.* sites in agent-events/route.ts (the
+      latter gets ILogger via the web server container resolver). Remove
+      the eslint-disable comments.
+    state: "Todo"
+    dependencies: []
+    tdd: null
+    acceptanceCriteria:
+      - "No console.* in packages/core/src/application/"
+      - "No console.* in agent-events/route.ts"
+      - "Typecheck + lint green (no eslint-disable needed)"
+    estimatedEffort: "XS"
+
+  - id: t-72
+    title: "Final CI sweep after cleanup batch"
+    description: >
+      After t-59 through t-71 land, push and wait for ALL CI checks on the
+      PR (or a new cleanup PR) to turn green. Per .claude/rules/cicd.md,
+      NEVER trust `gh run watch` alone — verify with `gh run list --branch
+      <branch> --json status,conclusion` after watch completes. Also run
+      the full local gate first: lint, format, typecheck, test:unit,
+      test:int, tsp:compile, build:release (NOT just build:cli),
+      build:storybook. The build:release gap is what caused t-59 to exist.
+    state: "Todo"
+    dependencies:
+      ["t-59", "t-60", "t-63", "t-64", "t-65", "t-66", "t-67", "t-68", "t-69", "t-70", "t-71"]
+    tdd: null
+    acceptanceCriteria:
+      - "pnpm lint + format:check + typecheck + tsp:compile + test:unit + test:int + build:release + build:storybook all green locally"
+      - "All CI checks on the PR branch green (verified via gh run list, not just gh run watch)"
+    estimatedEffort: "M"
+
+totalEstimate: "XXL (72 tasks — 58 original + 14 follow-up including 6 subagents + 8 cleanup)"
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  **72 tasks across 14 phases.** Original 58 (phases 1-13) shipped in PR #554
+  covering the full cloud-deploy + git-remote feature and CLI parity with zero
+  logic duplication. **Phase 14 (14 new tasks, t-59..t-72)** was added after the
+  PR opened — two blockers (CI fixes), 4 subagent framework tasks, and 8 follow-up
+  clean-arch cleanup tasks executed via those subagents.
+
+  **Current state as of 2026-04-14:**
+  - **45 / 72 tasks complete** (all of phases 1-11 + 13)
+  - **PR #554 open with 8 CI failures** — see `errors.current.ci-red-pr-554` in
+    feature.yaml. Root cause of the 7 build-path failures is violation #19
+    (ApplicationNotFoundError needs to move to domain/errors/). Gitleaks failure
+    is pre-existing and needs separate investigation.
+  - **Subagent framework 40% done** — 4 of 10 agents created in .claude/agents/.
+
+  ## What's Left (priority order)
+
+  ### Blockers
+  - [ ] **t-59** — Relocate `ApplicationNotFoundError` to `domain/errors/` (unblocks 7 CI jobs)
+  - [ ] **t-60** — Fix Gitleaks on `agent-settings-section.stories.tsx`
+  - [ ] **t-72** — Full local build:release + CI sweep after blockers land
+
+  ### Subagent framework
+  - [ ] **t-61** — Create 6 remaining agents: shep-port-creator, shep-tsp-field-adder,
+        shep-migration-creator, shep-web-route-creator, shep-storybook-story-creator,
+        shep-cli-command-creator
+
+  ### Clean-arch cleanup (via agents, parallelizable)
+  - [ ] **t-62** — Fresh audit sweep via shep-clean-arch-auditor × 3
+  - [ ] **t-63** — Kill `getSettings()` singleton (violation #17a, 5 callers)
+  - [ ] **t-64** — Move `computeWorktreePath` + `TOOL_METADATA` to `domain/shared/` (#17b)
+  - [ ] **t-65** — Extract 4 ports for node-helpers, phase-timing, conflict-resolution, attachment-storage (#17c)
+  - [ ] **t-66** — Move `AgentSessionRepositoryRegistry` to infrastructure + add port (#16)
+  - [ ] **t-67** — Eliminate `application/workflows/` directory (#15)
+  - [ ] **t-68** — Add `no-restricted-imports` ESLint rule for application → infrastructure (#18)
+  - [ ] **t-69** — Split `container.ts` into topic modules (#12)
+  - [ ] **t-70** — Adopt `feature-id` helpers across 7 legacy callers (#11 finish)
+  - [ ] **t-71** — Migrate remaining `console.*` to `ILogger` (#13 finish)
+
+  ### Deferred from original plan (still in backlog, not in phase 14)
+  - [ ] **t-28** (violations #1-3) — Refactor `deploy-application.ts` server action into `StartApplicationDeploymentUseCase`
+  - [ ] **t-48, t-49** (violations #4-7) — Extract `StreamAgentEventsUseCase` + hide `isProcessAlive` behind a port + share `SdlcLifecycle→node` mapping
+  - [ ] **t-46, t-47** (violations #8-10) — Split `application-page.tsx` (867 lines → N files), extract `useDevServerCoordinator` hook, wire commit buttons to real use cases
+  - [ ] **t-29** — `CommitApplicationChangesUseCase` + `CommitAndPushApplicationChangesUseCase`
+  - [ ] **t-51** — Playwright smoke test for cloud deploy
+
+  ## Acceptance Checklist (final)
+
+  - [ ] All 72 tasks completed
+  - [ ] `pnpm lint` clean
+  - [ ] `pnpm format:check` clean
+  - [ ] `pnpm typecheck` clean
+  - [ ] `pnpm tsp:compile` clean
+  - [ ] `pnpm test:unit` green
+  - [ ] `pnpm test:int` green
+  - [ ] **`pnpm build:release` clean** (CLI + web — NOT just `pnpm build`)
+  - [ ] `pnpm build:storybook` successful
+  - [ ] `pnpm test:e2e` passes the cloud-deploy smoke test
+  - [ ] `pnpm test:e2e:cli` passes the app-cloud-deploy CLI flow
+  - [ ] `shep app --help` lists cloud-providers, deploy, and git subcommands
+  - [ ] CLI + application use cases import only domain + application/ports (no infrastructure)
+  - [ ] `packages/core/src/application/` contains only `ports/` and `use-cases/` (no services/, no workflows/)
+  - [ ] Zero `console.*` in `packages/core/src/application/` and `packages/core/src/domain/`
+  - [ ] Manual smoke: connect Cloudflare token → deploy → URL chip → refresh → state rehydrates
+  - [ ] Manual smoke: create GitHub repo button → gh auth flow → remote chip appears
+  - [ ] Every new component has a colocated .stories.tsx
+  - [ ] clean-arch-violations.md: all 20 entries marked resolved OR referenced by a merged task
+  - [ ] **PR #554 CI all-green (verified via `gh run list --branch feat/089-one-click-cloud-deploy`, not just `gh run watch`)**
+  - [ ] Merged
+
+  ---
+
+  _Task details are in the tasks[] array above. Phase-14 tasks (t-59..t-72) are the
+  current focus — everything before that is either shipped or deferred to its own PR._

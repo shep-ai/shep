@@ -1,0 +1,262 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "branding-onboarding-overhaul"
+summary: >
+  9 tasks across 3 phases. Phase 1 creates three new community health files (CODE_OF_CONDUCT.md,
+  SECURITY.md, good-first-issue template). Phase 2 unifies branding across 8 existing files with
+  build verification. Phase 3 restructures CONTRIBUTING.md with tiered contribution paths and
+  updated references. Estimated total effort: 3-4 hours.
+
+# Relationships
+relatedFeatures:
+  - "080-skill-branding-injection"
+  - "079-pr-branding"
+  - "087-co-author-branding"
+
+technologies:
+  - "Markdown"
+  - "YAML (GitHub issue forms)"
+  - "Next.js metadata"
+  - "TypeScript value objects"
+
+relatedLinks:
+  - title: "Contributor Covenant v2.1 text"
+    url: "https://www.contributor-covenant.org/version/2/1/code_of_conduct/"
+  - title: "GitHub issue forms syntax"
+    url: "https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-githubs-form-schema"
+
+# Structured task list
+tasks:
+  # ──────────────────────────────────────────────────────────────
+  # Phase 1: Community Health Files
+  # ──────────────────────────────────────────────────────────────
+
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Create CODE_OF_CONDUCT.md"
+    description: >
+      Create CODE_OF_CONDUCT.md at repo root using Contributor Covenant v2.1 verbatim text.
+      Replace the [INSERT CONTACT METHOD] placeholder with conduct@shep.bot (or equivalent
+      project-specific email). Include the CC BY 4.0 attribution footer. GitHub will automatically
+      detect this file for the community profile.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "CODE_OF_CONDUCT.md exists at repo root"
+      - "Content matches Contributor Covenant v2.1 verbatim (except contact email)"
+      - "Contact method is set to conduct@shep.bot"
+      - "CC BY 4.0 attribution is present at the bottom"
+      - "Language is clear and jargon-free"
+    tdd: null
+    estimatedEffort: "20min"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Create SECURITY.md"
+    description: >
+      Create SECURITY.md at repo root with: supported versions table (latest release), email-based
+      vulnerability reporting process (security@shep.bot), expected response timeline (acknowledge
+      within 48 hours, triage within 7 days), and a clear statement not to open public issues for
+      security vulnerabilities. GitHub will automatically detect this for the community profile.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "SECURITY.md exists at repo root"
+      - "Contains supported versions table"
+      - "Contains email address for private vulnerability reports"
+      - "States response timeline (48h acknowledge, 7-day triage)"
+      - "Explicitly instructs reporters NOT to open public issues"
+      - "Language is clear and accessible to non-native English speakers"
+    tdd: null
+    estimatedEffort: "15min"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Create good-first-issue GitHub issue template"
+    description: >
+      Create .github/ISSUE_TEMPLATE/good-first-issue.yml as a structured GitHub issue form
+      following the same YAML patterns as the existing bug-report.yml and feature-request.yml
+      templates. Include fields for: problem/improvement description, suggested approach/hints,
+      files likely involved, expected outcome, relevant docs links, and difficulty estimate
+      dropdown (trivial/easy/moderate). This template is maintainer-facing — used when creating
+      beginner-friendly issues. Add 'good first issue' label.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - ".github/ISSUE_TEMPLATE/good-first-issue.yml exists"
+      - "Uses GitHub issue forms YAML format matching existing templates"
+      - "Has emoji prefix in name field consistent with other templates"
+      - "Includes fields: description, suggested approach, files involved, expected outcome, docs links, difficulty"
+      - "Difficulty field is a dropdown with options: trivial, easy, moderate"
+      - "Labels array includes 'good first issue'"
+      - "Product name is 'Shep' (not 'Shep AI CLI')"
+    tdd: null
+    estimatedEffort: "20min"
+
+  # ──────────────────────────────────────────────────────────────
+  # Phase 2: Branding Surface Unification
+  # ──────────────────────────────────────────────────────────────
+
+  - id: "task-4"
+    phaseId: "phase-2"
+    title: "Update TypeScript branding strings"
+    description: >
+      Update the description string in version-info.ts DEFAULT_VERSION_INFO from
+      'Autonomous AI Native SDLC Platform' to the canonical long descriptor. Update layout.tsx
+      metadata description from 'Autonomous AI Native SDLC Platform - Automate the development
+      cycle from idea to deploy' to the canonical long descriptor. Update cli/index.ts JSDoc
+      comment from 'Autonomous AI Native SDLC Platform - CLI Interface' to use the canonical
+      long descriptor. These are string-only changes with no type or behavioral impact.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "version-info.ts description matches canonical long descriptor"
+      - "layout.tsx metadata description matches canonical long descriptor"
+      - "cli/index.ts comment uses canonical long descriptor"
+      - "No type signature, export, or import changes"
+      - "pnpm build succeeds after changes"
+    tdd:
+      red:
+        - "No automated tests needed — these are string constant and comment changes. Build verification serves as the test."
+      green:
+        - "Update the three string values to the canonical long descriptor"
+      refactor:
+        - "Verify pnpm build passes to confirm no compilation errors introduced"
+    estimatedEffort: "15min"
+
+  - id: "task-5"
+    phaseId: "phase-2"
+    title: "Update package.json and CLAUDE.md branding"
+    description: >
+      Update package.json description field from 'Autonomous AI Native SDLC Platform - Automate
+      the development cycle from idea to deploy' to the canonical long descriptor. Update CLAUDE.md
+      project description line to use the canonical long descriptor. Both are metadata-only changes.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "package.json description field matches canonical long descriptor"
+      - "CLAUDE.md project description uses canonical long descriptor"
+      - "No other package.json fields are modified"
+    tdd: null
+    estimatedEffort: "10min"
+
+  - id: "task-6"
+    phaseId: "phase-2"
+    title: "Update issue template branding"
+    description: >
+      Update bug-report.yml description from 'Report a bug or unexpected behavior in Shep AI CLI'
+      to 'Report a bug or unexpected behavior in Shep'. Update feature-request.yml description
+      from 'Suggest a new feature or enhancement for Shep AI CLI' to 'Suggest a new feature or
+      enhancement for Shep'. Verify docs-improvement.yml does NOT contain 'Shep AI CLI' (research
+      confirmed it doesn't — no edit needed).
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "bug-report.yml description uses 'Shep' not 'Shep AI CLI'"
+      - "feature-request.yml description uses 'Shep' not 'Shep AI CLI'"
+      - "docs-improvement.yml verified to not contain 'Shep AI CLI'"
+      - "No changes to template field structure, labels, or body"
+    tdd: null
+    estimatedEffort: "10min"
+
+  - id: "task-7"
+    phaseId: "phase-2"
+    title: "Verify README.md tagline alignment"
+    description: >
+      Verify that README.md uses the canonical short tagline. Current text is 'Run multiple AI
+      agents in parallel. Each in its own worktree.' which matches the canonical short tagline.
+      Confirm alignment and make no changes if already correct. If any deviation is found, align
+      to the canonical text.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "README.md tagline matches canonical short tagline exactly"
+      - "No unnecessary changes to README.md structure or content"
+    tdd: null
+    estimatedEffort: "5min"
+
+  # ──────────────────────────────────────────────────────────────
+  # Phase 3: Contributor Onboarding Overhaul
+  # ──────────────────────────────────────────────────────────────
+
+  - id: "task-8"
+    phaseId: "phase-3"
+    title: "Restructure CONTRIBUTING.md with tiered contribution paths"
+    description: >
+      The largest task in this feature. Restructure CONTRIBUTING.md to: (a) change title from
+      'Contributing to Shep AI CLI' to 'Contributing to Shep', (b) insert a 'Quick Contributions'
+      section after Getting Started with the streamlined path for typos, doc fixes, small bugs, and
+      config tweaks — including explicit list of qualifying changes, minimal fork-branch-fix-commit-PR
+      steps, one-line conventional commit explanation, and clear statement that TDD/spec workflow are
+      NOT required, (c) relabel the existing 'How to Contribute' / 'Starting a Feature' section as
+      the 'Full Feature Development' path, (d) update the Code of Conduct section to link to the new
+      CODE_OF_CONDUCT.md file, (e) update line 3 reference from 'Shep AI CLI' to 'Shep'.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+      - "task-5"
+    acceptanceCriteria:
+      - "Title is 'Contributing to Shep' (not 'Shep AI CLI')"
+      - "Line 3 intro references 'Shep' not 'Shep AI CLI'"
+      - "Quick Contributions section appears after Getting Started and before Full Feature section"
+      - "Quick Contributions lists qualifying changes: typos, doc fixes, small bugs, dependency bumps, config tweaks"
+      - "Quick Contributions has minimal steps: fork, branch, fix, conventional commit, PR"
+      - "Quick Contributions includes one-line conventional commit format explanation"
+      - "Quick Contributions explicitly states TDD and spec workflow are NOT required"
+      - "Quick Contributions mentions running pnpm test to verify nothing is broken"
+      - "Full Feature section retains spec-driven workflow, TDD, and architecture requirements"
+      - "Code of Conduct section links to CODE_OF_CONDUCT.md"
+      - "All existing content is preserved (not deleted or rewritten)"
+    tdd: null
+    estimatedEffort: "45min"
+
+  - id: "task-9"
+    phaseId: "phase-3"
+    title: "Update community channels placeholder in CONTRIBUTING.md"
+    description: >
+      Replace the 'links TBD' placeholder on line 266 of CONTRIBUTING.md with a forward-looking
+      message directing users to GitHub Discussions as the primary community channel, with a note
+      that additional channels may be added in the future. The existing Discussions link on line 265
+      is already present — enhance the section to be more welcoming rather than showing a TBD.
+    state: "Todo"
+    dependencies:
+      - "task-8"
+    acceptanceCriteria:
+      - "No 'links TBD' or 'TBD' placeholder remains in CONTRIBUTING.md"
+      - "GitHub Discussions is presented as the primary community channel"
+      - "Forward-looking message about potential additional channels"
+      - "Section reads naturally and is welcoming to newcomers"
+    tdd: null
+    estimatedEffort: "10min"
+
+# Total effort estimate
+totalEstimate: "2.5-3h"
+
+# Open questions
+openQuestions: []
+
+# Markdown content (the full tasks document)
+content: |
+  ## Summary
+
+  Nine tasks across three phases implement the branding-onboarding-overhaul feature.
+
+  Phase 1 creates three standalone community health files in parallel: CODE_OF_CONDUCT.md
+  (Contributor Covenant v2.1), SECURITY.md (email-based disclosure), and a good-first-issue
+  GitHub issue template (YAML form matching existing template patterns). These are additive
+  files with no dependencies on existing code.
+
+  Phase 2 unifies branding across all existing surfaces. TypeScript string constants in
+  version-info.ts and layout.tsx are updated to the canonical long descriptor, followed by
+  a build verification. package.json, CLAUDE.md, and issue templates get simple string
+  replacements. README.md is verified to already match the canonical short tagline.
+
+  Phase 3 tackles the largest change: restructuring CONTRIBUTING.md. A new Quick Contributions
+  section is inserted after Getting Started, providing the streamlined path for casual
+  contributors. The existing workflow is relabeled as Full Feature Development. The Code of
+  Conduct reference is updated to link to the new file, and the community channels placeholder
+  is replaced with a GitHub Discussions message.
+
+  The only task requiring build verification is task-4 (TypeScript string changes). All other
+  tasks are documentation and configuration changes with no compilation impact.

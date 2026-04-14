@@ -8,8 +8,8 @@
 import { injectable, inject } from 'tsyringe';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '../../ports/output/agents/phase-timing-repository.interface.js';
+import type { IPhaseTimingContext } from '../../ports/output/services/phase-timing-context.interface.js';
 import { AgentRunStatus } from '../../../domain/generated/output.js';
-import { recordLifecycleEvent } from '../../../infrastructure/services/agents/feature-agent/phase-timing-context.js';
 
 @injectable()
 export class StopAgentRunUseCase {
@@ -17,7 +17,9 @@ export class StopAgentRunUseCase {
     @inject('IAgentRunRepository')
     private readonly agentRunRepository: IAgentRunRepository,
     @inject('IPhaseTimingRepository')
-    private readonly phaseTimingRepository: IPhaseTimingRepository
+    private readonly phaseTimingRepository: IPhaseTimingRepository,
+    @inject('IPhaseTimingContext')
+    private readonly phaseTimingContext: IPhaseTimingContext
   ) {}
 
   async execute(id: string): Promise<{ stopped: boolean; reason: string }> {
@@ -45,7 +47,11 @@ export class StopAgentRunUseCase {
         completedAt: now,
         updatedAt: now,
       });
-      await recordLifecycleEvent('run:stopped', id, this.phaseTimingRepository);
+      await this.phaseTimingContext.recordLifecycleEvent(
+        'run:stopped',
+        id,
+        this.phaseTimingRepository
+      );
       return { stopped: true, reason: 'Marked as interrupted (no PID to signal)' };
     }
 
@@ -77,7 +83,11 @@ export class StopAgentRunUseCase {
     // For alive processes, the worker's SIGTERM handler records run:stopped.
     // For dead processes, record it here since the worker can't.
     if (!alive) {
-      await recordLifecycleEvent('run:stopped', id, this.phaseTimingRepository);
+      await this.phaseTimingContext.recordLifecycleEvent(
+        'run:stopped',
+        id,
+        this.phaseTimingRepository
+      );
     }
 
     return {

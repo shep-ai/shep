@@ -11,18 +11,9 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockGetSettings } = vi.hoisted(() => ({
-  mockGetSettings: vi.fn().mockReturnValue({
-    agent: { type: 'claude-code' },
-    workflow: {},
-  }),
-}));
-
-vi.mock('@/infrastructure/services/settings.service.js', () => ({
-  getSettings: (...args: unknown[]) => mockGetSettings(...args),
-}));
-
 import { CreateFeatureUseCase } from '@/application/use-cases/features/create/create-feature.use-case.js';
+import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
+import type { Settings } from '@/domain/generated/output.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IWorktreeService } from '@/application/ports/output/services/worktree-service.interface.js';
 import type { IFeatureAgentProcessService } from '@/application/ports/output/agents/feature-agent-process.interface.js';
@@ -96,6 +87,8 @@ describe('CreateFeatureUseCase', () => {
   let mockGitPrService: IGitPrService;
   let mockAgentValidator: IAgentValidator;
   let mockSkillInjector: ISkillInjectorService;
+  let mockSettingsRepository: ISettingsRepository;
+  let mockLoadSettings: ReturnType<typeof vi.fn>;
 
   const baseInput: CreateFeatureInput = {
     userInput: 'Add authentication',
@@ -206,10 +199,16 @@ describe('CreateFeatureUseCase', () => {
       inject: vi.fn().mockResolvedValue({ injected: [], skipped: [], failed: [] }),
     };
 
-    mockGetSettings.mockReturnValue({
+    mockLoadSettings = vi.fn().mockResolvedValue({
       agent: { type: 'claude-code' },
       workflow: {},
-    });
+    } as unknown as Settings);
+
+    mockSettingsRepository = {
+      initialize: vi.fn().mockResolvedValue(undefined),
+      load: mockLoadSettings as unknown as ISettingsRepository['load'],
+      update: vi.fn().mockResolvedValue(undefined),
+    };
 
     useCase = new CreateFeatureUseCase(
       mockFeatureRepo,
@@ -223,7 +222,8 @@ describe('CreateFeatureUseCase', () => {
       mockGitPrService,
       mockAttachmentStorage as any,
       mockAgentValidator,
-      mockSkillInjector
+      mockSkillInjector,
+      mockSettingsRepository
     );
   });
 
@@ -866,7 +866,7 @@ describe('CreateFeatureUseCase', () => {
     };
 
     it('should call skillInjector.inject() when injectSkills is true', async () => {
-      mockGetSettings.mockReturnValue({
+      mockLoadSettings.mockResolvedValue({
         agent: { type: 'claude-code' },
         workflow: { skillInjection: skillInjectionConfig },
       });
@@ -882,7 +882,7 @@ describe('CreateFeatureUseCase', () => {
     });
 
     it('should NOT call inject() when injectSkills is false', async () => {
-      mockGetSettings.mockReturnValue({
+      mockLoadSettings.mockResolvedValue({
         agent: { type: 'claude-code' },
         workflow: { skillInjection: skillInjectionConfig },
       });
@@ -893,7 +893,7 @@ describe('CreateFeatureUseCase', () => {
     });
 
     it('should NOT call inject() when skills list is empty', async () => {
-      mockGetSettings.mockReturnValue({
+      mockLoadSettings.mockResolvedValue({
         agent: { type: 'claude-code' },
         workflow: { skillInjection: { enabled: true, skills: [] } },
       });
@@ -904,7 +904,7 @@ describe('CreateFeatureUseCase', () => {
     });
 
     it('should fall back to default skills when skillInjection config is undefined', async () => {
-      mockGetSettings.mockReturnValue({
+      mockLoadSettings.mockResolvedValue({
         agent: { type: 'claude-code' },
         workflow: {},
       });
@@ -917,7 +917,7 @@ describe('CreateFeatureUseCase', () => {
     });
 
     it('should use settings.workflow.skillInjection.enabled when injectSkills is undefined', async () => {
-      mockGetSettings.mockReturnValue({
+      mockLoadSettings.mockResolvedValue({
         agent: { type: 'claude-code' },
         workflow: { skillInjection: skillInjectionConfig },
       });
@@ -928,7 +928,7 @@ describe('CreateFeatureUseCase', () => {
     });
 
     it('should NOT inject when settings.enabled is false and injectSkills is undefined', async () => {
-      mockGetSettings.mockReturnValue({
+      mockLoadSettings.mockResolvedValue({
         agent: { type: 'claude-code' },
         workflow: { skillInjection: { ...skillInjectionConfig, enabled: false } },
       });
@@ -939,7 +939,7 @@ describe('CreateFeatureUseCase', () => {
     });
 
     it('should override settings.enabled=false when injectSkills=true', async () => {
-      mockGetSettings.mockReturnValue({
+      mockLoadSettings.mockResolvedValue({
         agent: { type: 'claude-code' },
         workflow: { skillInjection: { ...skillInjectionConfig, enabled: false } },
       });
@@ -950,7 +950,7 @@ describe('CreateFeatureUseCase', () => {
     });
 
     it('should override settings.enabled=true when injectSkills=false', async () => {
-      mockGetSettings.mockReturnValue({
+      mockLoadSettings.mockResolvedValue({
         agent: { type: 'claude-code' },
         workflow: { skillInjection: skillInjectionConfig },
       });
@@ -961,7 +961,7 @@ describe('CreateFeatureUseCase', () => {
     });
 
     it('should continue with agent spawn when inject() throws', async () => {
-      mockGetSettings.mockReturnValue({
+      mockLoadSettings.mockResolvedValue({
         agent: { type: 'claude-code' },
         workflow: { skillInjection: skillInjectionConfig },
       });
@@ -976,7 +976,7 @@ describe('CreateFeatureUseCase', () => {
     });
 
     it('should still complete feature creation when inject() throws', async () => {
-      mockGetSettings.mockReturnValue({
+      mockLoadSettings.mockResolvedValue({
         agent: { type: 'claude-code' },
         workflow: { skillInjection: skillInjectionConfig },
       });
@@ -991,7 +991,7 @@ describe('CreateFeatureUseCase', () => {
     });
 
     it('should default injectSkills to false when both input and settings are undefined', async () => {
-      mockGetSettings.mockReturnValue({
+      mockLoadSettings.mockResolvedValue({
         agent: { type: 'claude-code' },
         workflow: {},
       });

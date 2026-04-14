@@ -247,7 +247,11 @@ export class DeploymentService implements IDeploymentService {
     // Build spawn args based on package manager
     const { packageManager, scriptName, command, needsInstall, resolvedDir } = detection;
     const spawnDir = resolvedDir;
-    const args = packageManager === 'npm' ? ['run', scriptName] : [scriptName];
+    // `bun <script>` resolves to the binary `<script>` on PATH; to run
+    // the package.json script we need `bun run <script>` — same shape
+    // as npm. pnpm/yarn accept the script name directly.
+    const args =
+      packageManager === 'npm' || packageManager === 'bun' ? ['run', scriptName] : [scriptName];
 
     // Install dependencies if node_modules is missing (e.g. fresh worktree)
     if (needsInstall) {

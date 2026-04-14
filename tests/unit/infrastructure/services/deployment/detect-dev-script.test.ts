@@ -76,6 +76,46 @@ describe('detectDevScript', () => {
     });
   });
 
+  it('should detect bun from bun.lock presence and use `bun run <script>`', () => {
+    mockReadFileSync.mockReturnValue(
+      JSON.stringify({
+        scripts: { dev: 'vite' },
+      })
+    );
+    mockExistsSync.mockImplementation((path) => {
+      const p = String(path);
+      return p.endsWith('bun.lock') || p.endsWith('node_modules');
+    });
+
+    const result = detectDevScript('/project');
+
+    expect(result).toEqual({
+      success: true,
+      packageManager: 'bun',
+      scriptName: 'dev',
+      command: 'bun run dev',
+      needsInstall: false,
+      resolvedDir: '/project',
+    });
+  });
+
+  it('should detect bun from legacy bun.lockb presence', () => {
+    mockReadFileSync.mockReturnValue(
+      JSON.stringify({
+        scripts: { dev: 'vite' },
+      })
+    );
+    mockExistsSync.mockImplementation((path) => {
+      const p = String(path);
+      return p.endsWith('bun.lockb') || p.endsWith('node_modules');
+    });
+
+    const result = detectDevScript('/project');
+
+    expect(result.success && result.packageManager).toBe('bun');
+    expect(result.success && result.command).toBe('bun run dev');
+  });
+
   it('should detect yarn from yarn.lock presence', () => {
     mockReadFileSync.mockReturnValue(
       JSON.stringify({
@@ -256,13 +296,34 @@ describe('detectDevScript', () => {
     expect(result.success && result.needsInstall).toBe(true);
   });
 
-  it('should prioritize pnpm-lock.yaml over yarn.lock when both exist', () => {
+  it('should prioritize bun over every other manager when lockfiles collide', () => {
     mockReadFileSync.mockReturnValue(
       JSON.stringify({
         scripts: { dev: 'vite' },
       })
     );
     mockExistsSync.mockReturnValue(true); // all lockfiles + node_modules exist
+
+    const result = detectDevScript('/project');
+
+    // Bun is first in priority so app-creation projects (which are all
+    // scaffolded with `bunx shadcn`) always resolve to bun even if a
+    // stale lockfile from another manager also happens to be present.
+    expect(result.success && result.packageManager).toBe('bun');
+  });
+
+  it('should prioritize pnpm-lock.yaml over yarn.lock when bun is not present', () => {
+    mockReadFileSync.mockReturnValue(
+      JSON.stringify({
+        scripts: { dev: 'vite' },
+      })
+    );
+    mockExistsSync.mockImplementation((path) => {
+      const p = String(path);
+      // Simulate a project without bun lockfiles but with both pnpm + yarn.
+      if (p.endsWith('bun.lock') || p.endsWith('bun.lockb')) return false;
+      return true;
+    });
 
     const result = detectDevScript('/project');
 

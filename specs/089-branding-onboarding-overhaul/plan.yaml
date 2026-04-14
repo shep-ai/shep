@@ -1,0 +1,162 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "branding-onboarding-overhaul"
+summary: >
+  Documentation-and-metadata-only implementation across 14 files in three phases: (1) create missing
+  community health files (CODE_OF_CONDUCT.md, SECURITY.md, good-first-issue template), (2) unify
+  branding strings across all public surfaces using two canonical descriptors, and (3) restructure
+  CONTRIBUTING.md with tiered contribution paths and updated references. No runtime code changes,
+  no new dependencies, no architectural modifications. Build verification after TypeScript string edits.
+
+# Relationships
+relatedFeatures:
+  - "080-skill-branding-injection"
+  - "079-pr-branding"
+  - "087-co-author-branding"
+
+technologies:
+  - "Markdown"
+  - "YAML (GitHub issue forms)"
+  - "Next.js metadata (layout.tsx)"
+  - "TypeScript value objects (version-info.ts)"
+  - "GitHub community health files"
+  - "Contributor Covenant v2.1 (CC BY 4.0)"
+
+relatedLinks:
+  - title: "Contributor Covenant v2.1"
+    url: "https://www.contributor-covenant.org/version/2/1/code_of_conduct/"
+  - title: "GitHub community health files documentation"
+    url: "https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions"
+  - title: "GitHub issue forms syntax"
+    url: "https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-githubs-form-schema"
+
+# Structured implementation phases
+phases:
+  - id: "phase-1"
+    name: "Community Health Files"
+    description: >
+      Create the three new files that don't exist yet: CODE_OF_CONDUCT.md, SECURITY.md, and the
+      good-first-issue GitHub issue template. These are standalone additions with no dependencies
+      on existing file modifications. Starting here avoids merge conflicts and provides immediate
+      value — GitHub's community profile will detect them as soon as they're merged.
+    parallel: false
+
+  - id: "phase-2"
+    name: "Branding Surface Unification"
+    description: >
+      Update all existing files to use the canonical two-tier descriptor system. This includes
+      TypeScript string constants (version-info.ts, layout.tsx), JSON metadata (package.json),
+      YAML templates (issue templates), comments (cli/index.ts), and Markdown files (README.md,
+      CLAUDE.md). The TypeScript changes require build verification afterward. Grouped together
+      because all branding edits should land atomically for consistency.
+    parallel: false
+
+  - id: "phase-3"
+    name: "Contributor Onboarding Overhaul"
+    description: >
+      Restructure CONTRIBUTING.md with tiered contribution paths, update the Code of Conduct
+      reference to link to the new file, and replace the community channels placeholder. This
+      is the largest single-file change and depends on phase-1 (CODE_OF_CONDUCT.md must exist
+      before CONTRIBUTING.md can link to it) and phase-2 (branding in CONTRIBUTING.md title
+      should already be updated).
+    parallel: false
+
+# File change tracking
+filesToCreate:
+  - "CODE_OF_CONDUCT.md"
+  - "SECURITY.md"
+  - ".github/ISSUE_TEMPLATE/good-first-issue.yml"
+
+filesToModify:
+  - "package.json"
+  - "README.md"
+  - "CLAUDE.md"
+  - "CONTRIBUTING.md"
+  - "src/presentation/web/app/layout.tsx"
+  - "packages/core/src/domain/value-objects/version-info.ts"
+  - "src/presentation/cli/index.ts"
+  - ".github/ISSUE_TEMPLATE/bug-report.yml"
+  - ".github/ISSUE_TEMPLATE/feature-request.yml"
+
+# Open questions (should all be resolved before implementation)
+openQuestions: []
+
+# Markdown content (the full plan document)
+content: |
+  ## Architecture Overview
+
+  This feature makes zero architectural changes. All modifications are to string constants,
+  metadata fields, documentation files, and GitHub configuration YAML. The changes fall into
+  three categories:
+
+  1. **New standalone files** — CODE_OF_CONDUCT.md, SECURITY.md, and good-first-issue.yml are
+     additive community health files placed at standard GitHub-recognized locations (repo root
+     and `.github/ISSUE_TEMPLATE/`). They have no imports, exports, or runtime impact.
+
+  2. **String constant edits in TypeScript** — version-info.ts contains a `DEFAULT_VERSION_INFO`
+     object with a `description` field (string literal). layout.tsx contains a Next.js metadata
+     export with a `description` field. cli/index.ts has a JSDoc comment. All changes are
+     string-only with no type signature, export, or behavioral modifications.
+
+  3. **Documentation restructuring** — CONTRIBUTING.md gets a structural overhaul to add
+     tiered contribution paths. This is a Markdown-only change with no code coupling.
+
+  ## Key Design Decisions
+
+  ### 1. Direct string edits (no shared branding constant)
+
+  The branding surfaces span Markdown, YAML, JSON, and TypeScript. Only 2-3 TypeScript files
+  reference the descriptor. A shared module would only serve those files while Markdown/YAML/JSON
+  surfaces still need manual edits. The spec documents both canonical descriptors as the single
+  source of truth, which is sufficient for future branding updates.
+
+  ### 2. Two-tier canonical descriptors
+
+  - **Short tagline** (README hero): "Run multiple AI agents in parallel. Each in its own worktree."
+  - **Long descriptor** (metadata): "Autonomous AI-native SDLC platform — run parallel AI agents
+    in isolated worktrees to automate the development cycle from idea to deploy."
+  - **Product name**: "Shep" (not "Shep AI CLI", not "Shep AI")
+
+  ### 3. Additive CONTRIBUTING.md restructuring (not rewrite)
+
+  The existing 283-line document is comprehensive. The fix is content ordering — insert a
+  Quick Contributions section after Getting Started, then relabel the existing workflow as the
+  Full Feature path. All existing content is preserved with minimal modifications.
+
+  ### 4. Contributor Covenant v2.1 verbatim
+
+  Industry standard, CC BY 4.0 licensed, requires only one customization: the enforcement
+  contact email placeholder (conduct@shep.bot).
+
+  ### 5. Scoped 'Shep AI CLI' replacement
+
+  Only replace in spec-identified surfaces (issue templates, CONTRIBUTING.md, CLI comment).
+  The 40+ other occurrences in docs/, translations/, and internal files are a separate effort.
+
+  ## Implementation Strategy
+
+  **Phase ordering rationale:**
+
+  Phase 1 (Community Health Files) comes first because these are new files with no dependencies.
+  They can be created independently and provide immediate value when GitHub detects them.
+
+  Phase 2 (Branding Unification) comes second because it touches existing files with simple
+  string replacements. The TypeScript changes need a build verification step to ensure no
+  compilation errors were introduced.
+
+  Phase 3 (Contributor Onboarding) comes last because CONTRIBUTING.md restructuring is the
+  most complex single-file change and references the CODE_OF_CONDUCT.md created in phase 1.
+  It also includes the branding fix for the CONTRIBUTING.md title, which logically groups
+  with the other CONTRIBUTING.md changes rather than splitting it into phase 2.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | TypeScript string changes break build | Run `pnpm build` after phase 2 to catch compilation errors immediately |
+  | CONTRIBUTING.md restructuring loses existing content | Additive approach — insert new sections, relabel existing ones, preserve all current text |
+  | Contributor Covenant contact email is a placeholder | Use conduct@shep.bot pattern; maintainer can finalize during review |
+  | Issue template YAML syntax errors | Follow exact patterns from existing templates (bug-report.yml, feature-request.yml) |
+  | docs-improvement.yml needs changes | Research confirmed it does NOT contain "Shep AI CLI" — verification only, no edit needed |
+  | Scope creep into translation files | Explicitly deferred per research decision; translation branding is a separate follow-up |

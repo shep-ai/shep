@@ -8,23 +8,12 @@
 import { injectable, inject } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import type { Repository } from '../../../domain/generated/output.js';
+import { normalizePath } from '../../../domain/shared/normalize-path.js';
 import type { IRepositoryRepository } from '../../ports/output/repositories/repository-repository.interface.js';
 
 export interface AddRepositoryInput {
   path: string;
   name?: string;
-}
-
-/**
- * Normalizes a path: backslashes → forward slashes, trailing slashes removed.
- * On Windows, the folder picker returns backslashes (C:\Users\...) while
- * the CLI uses forward slashes (C:/Users/...). Normalize to forward slashes
- * so the same directory is never stored under two different path strings.
- */
-function normalizePath(p: string): string {
-  const forwardSlash = p.replace(/\\/g, '/');
-  // Remove trailing slashes but keep root "/"
-  return forwardSlash.length > 1 ? forwardSlash.replace(/\/+$/, '') : forwardSlash;
 }
 
 @injectable()

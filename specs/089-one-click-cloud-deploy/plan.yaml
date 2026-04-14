@@ -1,0 +1,596 @@
+name: "one-click-cloud-deploy"
+summary: >
+  Implementation plan for 089-one-click-cloud-deploy. Adds a provider-agnostic
+  one-click cloud deploy system + separate GitHub repo creation to the application
+  page. v1 wires Cloudflare Pages as the only live ICloudDeploymentProvider adapter;
+  Vercel, Netlify, AWS Amplify and GCP Cloud Run ship as disabled stubs. All state
+  persists on the Application row; UI streams progress via the existing
+  /api/agent-events SSE loop. Phases 1-13 shipped in PR #554 (45 tasks). Phase 14
+  (14 new tasks) was added after the PR opened to address CI failures, finish the
+  user-requested subagent framework, and execute the residual clean-arch cleanup
+  via those subagents. 20 clean-arch violations tracked total (across two audit
+  passes), each mapped to the phase that touches the file.
+
+phase: "in-review-phase-14-pending"
+updatedAt: "2026-04-14T02:00:00Z"
+
+relatedFeatures:
+  - "088-cli-application-management"
+technologies:
+  - TypeScript
+  - TypeSpec
+  - React
+  - Next.js
+  - SQLite
+  - tsyringe
+  - umzug
+  - better-sqlite3
+  - Cloudflare Pages REST API
+  - gh CLI
+relatedLinks:
+  - title: "Approved design plan"
+    url: "C:/Users/mk/.claude/plans/wiggly-purring-lark.md"
+  - title: "Clean-arch violations log"
+    url: "specs/089-one-click-cloud-deploy/clean-arch-violations.md"
+
+phases:
+  - id: phase-1
+    name: "Domain foundation (TypeSpec + feature-id helpers)"
+    description: >
+      Extend TypeSpec with CloudDeploymentProvider + CloudDeploymentStatus + InteractiveSessionEventType
+      enums, add seven new fields to Application, regenerate domain types, and extract the
+      `app-` / `feat-` featureId prefix helper (violation #11) into a shared domain module.
+      Foundational phase — no tests, but pnpm tsp:compile + typecheck must pass before
+      anything else proceeds.
+    parallel: false
+    taskIds: [t-01, t-02, t-03]
+
+  - id: phase-2
+    name: "Secret storage + token repository (TDD)"
+    description: >
+      Build LocalSecretBox helper + SecretKey file resolver, then the new
+      SqliteCloudProviderTokensRepository with three-BLOB-column schema. Migration 061
+      creates the cloud_provider_tokens table. Fully TDD — failing repo + box tests
+      written first.
+    parallel: false
+    taskIds: [t-04, t-05, t-06, t-07]
+
+  - id: phase-3
+    name: "Application persistence extension (TDD)"
+    description: >
+      Migration 060 adds the seven cloud-deploy columns. Update the application mapper,
+      extend the repository update() Pick with the new fields, and add repository tests
+      covering round-trips of every new field. Fully TDD.
+    parallel: false
+    taskIds: [t-08, t-09, t-10]
+
+  - id: phase-4
+    name: "Ports + provider registry + git remote service (TDD)"
+    description: >
+      Define the four new output ports (ICloudDeploymentProvider,
+      ICloudDeploymentProviderRegistry, ICloudProviderTokensRepository,
+      IGitRemoteService) and their shared input/output DTOs. Implement the
+      CloudDeploymentProviderRegistry (using the string-token DI pattern from
+      AgentSessionRepositoryRegistry) and the GitRemoteService backed by the existing
+      ExecFunction. Port interfaces are pure types — registry + service are unit-tested
+      with fakes.
+    parallel: true
+    taskIds: [t-11, t-12, t-13, t-14, t-15, t-16]
+
+  - id: phase-5
+    name: "Cloudflare Pages provider (live adapter, TDD)"
+    description: >
+      Build the one live ICloudDeploymentProvider implementation: token verify → account
+      discover → project create-or-get → HTTP direct upload with wrangler fallback → poll
+      status. Integration-tested with fetch/exec mocks; no live API calls in CI.
+    parallel: false
+    taskIds: [t-17, t-18]
+
+  - id: phase-6
+    name: "Stub providers"
+    description: >
+      Ship four placeholder adapters (Vercel, Netlify, AWS Amplify, GCP Cloud Run) that
+      each export enabled = false and throw ProviderNotImplementedError on deploy. Zero
+      business logic. All four can be written in parallel.
+    parallel: true
+    taskIds: [t-19, t-20, t-21, t-22]
+
+  - id: phase-7
+    name: "Cloud-deploy + git use cases (TDD)"
+    description: >
+      Seven use cases under use-cases/cloud-deploy/: ListCloudProviders,
+      ConnectCloudProvider, SelectCloudProvider, InitiateCloudDeployment,
+      GetCloudDeploymentStatus, CreateGitRemote, EnsureGhAuthenticated. Also refactors
+      the existing deploy-application server action (violations #1-#3) into a new
+      StartApplicationDeploymentUseCase so the action is finally a thin adapter.
+      Fully TDD — failing tests first for every use case.
+    parallel: true
+    taskIds: [t-23, t-24, t-25, t-26, t-27, t-28, t-29, t-30]
+
+  - id: phase-8
+    name: "DI container wiring + modular split"
+    description: >
+      Register every new port, adapter, registry and use case. Wire the stub providers
+      under string tokens mirroring AgentSessionRepositoryRegistry. Split the 831-line
+      container.ts into topic-focused sub-modules (violation #12) that register into the
+      shared container from a single bootstrap function.
+    parallel: false
+    taskIds: [t-31, t-32]
+
+  - id: phase-9
+    name: "Web API routes"
+    description: >
+      Eight new thin route handlers, each calling one use case. Also introduces a
+      dedicated StreamCloudDeploymentEventsUseCase / event-bus port that will be consumed
+      by the SSE extension in phase 11.
+    parallel: true
+    taskIds: [t-33, t-34, t-35, t-36, t-37, t-38, t-39, t-40]
+
+  - id: phase-10
+    name: "Web UI components + Storybook"
+    description: >
+      Build deploy split button + dropdown + connect modal + create-github-repo button +
+      shared provider icons. Also splits application-page.tsx (867 lines → multiple files,
+      violation #9), extracts dev-server coordination into a dedicated hook that owns a
+      use case (violation #8), and wires the new commit/commit-push buttons through
+      CommitApplicationChangesUseCase (violation #10). Mandatory Storybook stories for
+      every new component.
+    parallel: true
+    taskIds: [t-41, t-42, t-43, t-44, t-45, t-46, t-47]
+
+  - id: phase-11
+    name: "SSE event extension + clean-arch cleanup of the route"
+    description: >
+      Extend /api/agent-events with a cloud_deployment.updated snapshot dimension driven
+      by Application.cloudDeploymentStatus changes. Because this phase touches
+      agent-events/route.ts it ALSO fixes violations #4, #5, #6, #7 and #13: extract the
+      in-route orchestration into a StreamAgentEventsUseCase that yields
+      NotificationEvents, remove the direct `isProcessAlive` infrastructure import, add
+      an InteractiveSessionEventType TypeSpec enum, share the SdlcLifecycle→node mapping
+      with the client-side derive-feature-state.ts, and route console logging through an
+      ILogger port.
+    parallel: false
+    taskIds: [t-48, t-49, t-50]
+
+  - id: phase-12
+    name: "Verification + E2E (web)"
+    description: >
+      Run the full local verification gate (lint, typecheck, test:unit, test:int,
+      tsp:compile, build, build:storybook). Add one Playwright smoke test that stubs the
+      Cloudflare provider and asserts Deploy transitions from NotDeployed to Deployed.
+    parallel: false
+    taskIds: [t-51, t-52]
+
+  - id: phase-13
+    name: "CLI Application commands (reuse use cases)"
+    description: >
+      Ship CLI parity for every Application + cloud-deploy + git-remote operation.
+      Reuses existing use cases; ZERO logic duplication. Every command is a thin
+      Commander.js adapter that resolves the same use case the Web API route already
+      calls and formats input/output for the terminal. Adds three CLI subcommand groups:
+      `shep app cloud-providers ...` (list/connect/github-login), `shep app deploy ...`
+      (initiate/status), and `shep app git ...` (create-remote). Also fills the Application
+      lifecycle gap by adding a `shep app show` enhancement plus the existing
+      ls/show/new/del commands. The `deploy` command streams progress to the terminal by
+      subscribing to the same in-process `ICloudDeploymentEventBus` that the SSE route
+      consumes (no DB polling, no parallel transport). Mandatory TDD: unit tests for
+      command output formatters + a CLI e2e test under `tests/e2e/cli/` that drives the
+      command surface via the existing CLI runner harness.
+    parallel: false
+    taskIds: [t-53, t-54, t-55, t-56, t-57, t-58]
+
+  - id: phase-14
+    name: "PR review response + subagent-driven clean-arch cleanup"
+    description: >
+      Added AFTER PR #554 was opened. Splits into three sub-groups:
+
+      (1) CI blockers (t-59, t-60) — must ship first. The Next.js web build on
+      PR #554 fails because initiate-cloud-deployment.use-case.ts imports
+      ApplicationNotFoundError from a sibling use-case file (cross-import Next.js
+      cannot resolve). Fix = clean-arch violation #19 (move error to
+      domain/errors/). Gitleaks also fails on a pre-existing stories file that
+      needs investigation.
+
+      (2) Subagent framework (t-61) — the user asked for reusable shep-tailored
+      subagents in .claude/agents/ so the cleanup runs as parallel Agent tool
+      calls. 4 of 10 agents exist (shep-clean-arch-auditor, shep-port-extractor,
+      shep-file-relocator, shep-use-case-creator); 6 remaining. All agents are
+      general primitives, not violation-specific fixers.
+
+      (3) Clean-arch follow-up cleanup (t-62..t-71) — executes the agents against
+      the residual violations from the log: #11 finish, #12, #13 finish, #15, #16,
+      #17a/b/c, #18, plus a fresh audit pass (#21+). t-72 is the final CI sweep
+      that reruns EVERY gate including build:release (whose absence from the
+      local gate is what let t-59 slip through to CI).
+
+      Phase 14 is deliberately separate from phases 1-13, which are frozen as the
+      original 089 scope. Phase 14 may end up splitting into its own branch
+      (feat/090-clean-arch-cleanup) if PR #554 merges before the cleanup lands.
+    parallel: true # most cleanup tasks are independent; agent fan-out is the whole point
+    taskIds: [t-59, t-60, t-61, t-62, t-63, t-64, t-65, t-66, t-67, t-68, t-69, t-70, t-71, t-72]
+
+filesToCreate:
+  # TypeSpec
+  - tsp/common/enums/cloud-deployment.tsp
+  - tsp/common/enums/interactive-session-event.tsp
+  - tsp/domain/shared/feature-id.tsp
+
+  # Migrations
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/060-applications-cloud-deploy.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/061-cloud-provider-tokens.ts
+
+  # Domain helpers
+  - packages/core/src/domain/shared/feature-id.ts
+
+  # Application layer — ports
+  - packages/core/src/application/ports/output/services/cloud-deployment-provider.interface.ts
+  - packages/core/src/application/ports/output/services/cloud-deployment-provider-registry.interface.ts
+  - packages/core/src/application/ports/output/services/git-remote.service.interface.ts
+  - packages/core/src/application/ports/output/services/logger.interface.ts
+  - packages/core/src/application/ports/output/repositories/cloud-provider-tokens.repository.interface.ts
+  - packages/core/src/application/ports/output/services/cloud-deployment-event-bus.interface.ts
+
+  # Application layer — use cases
+  - packages/core/src/application/use-cases/cloud-deploy/list-cloud-providers.use-case.ts
+  - packages/core/src/application/use-cases/cloud-deploy/connect-cloud-provider.use-case.ts
+  - packages/core/src/application/use-cases/cloud-deploy/select-cloud-provider.use-case.ts
+  - packages/core/src/application/use-cases/cloud-deploy/initiate-cloud-deployment.use-case.ts
+  - packages/core/src/application/use-cases/cloud-deploy/get-cloud-deployment-status.use-case.ts
+  - packages/core/src/application/use-cases/cloud-deploy/create-git-remote.use-case.ts
+  - packages/core/src/application/use-cases/cloud-deploy/ensure-gh-authenticated.use-case.ts
+  - packages/core/src/application/use-cases/applications/start-application-deployment.use-case.ts
+  - packages/core/src/application/use-cases/applications/commit-application-changes.use-case.ts
+  - packages/core/src/application/use-cases/events/stream-agent-events.use-case.ts
+
+  # Infrastructure
+  - packages/core/src/infrastructure/services/crypto/local-secret-box.ts
+  - packages/core/src/infrastructure/services/crypto/secret-key-file.ts
+  - packages/core/src/infrastructure/services/cloud-deploy/cloudflare-pages.provider.ts
+  - packages/core/src/infrastructure/services/cloud-deploy/vercel.provider.stub.ts
+  - packages/core/src/infrastructure/services/cloud-deploy/netlify.provider.stub.ts
+  - packages/core/src/infrastructure/services/cloud-deploy/aws-amplify.provider.stub.ts
+  - packages/core/src/infrastructure/services/cloud-deploy/gcp-cloud-run.provider.stub.ts
+  - packages/core/src/infrastructure/services/cloud-deploy/cloud-deployment-provider.registry.ts
+  - packages/core/src/infrastructure/services/cloud-deploy/cloud-deployment-errors.ts
+  - packages/core/src/infrastructure/services/git/git-remote.service.ts
+  - packages/core/src/infrastructure/services/logging/console-logger.ts
+  - packages/core/src/infrastructure/repositories/sqlite-cloud-provider-tokens.repository.ts
+  - packages/core/src/infrastructure/services/events/in-memory-cloud-deployment-event-bus.ts
+
+  # DI container modular split
+  - packages/core/src/infrastructure/di/modules/register-repositories.ts
+  - packages/core/src/infrastructure/di/modules/register-services.ts
+  - packages/core/src/infrastructure/di/modules/register-cloud-deploy.ts
+  - packages/core/src/infrastructure/di/modules/register-use-cases.ts
+
+  # Web API routes
+  - src/presentation/web/app/api/cloud-providers/route.ts
+  - src/presentation/web/app/api/cloud-providers/[provider]/connect/route.ts
+  - src/presentation/web/app/api/cloud-providers/github/auth-status/route.ts
+  - src/presentation/web/app/api/cloud-providers/github/auth-login/route.ts
+  - src/presentation/web/app/api/applications/[id]/cloud-deploy/select-provider/route.ts
+  - src/presentation/web/app/api/applications/[id]/cloud-deploy/initiate/route.ts
+  - src/presentation/web/app/api/applications/[id]/cloud-deploy/status/route.ts
+  - src/presentation/web/app/api/applications/[id]/git/create-remote/route.ts
+
+  # Web UI
+  - src/presentation/web/components/features/application-page/deploy-button.tsx
+  - src/presentation/web/components/features/application-page/deploy-button.stories.tsx
+  - src/presentation/web/components/features/application-page/provider-dropdown.tsx
+  - src/presentation/web/components/features/application-page/provider-dropdown.stories.tsx
+  - src/presentation/web/components/features/application-page/connect-provider-modal.tsx
+  - src/presentation/web/components/features/application-page/connect-provider-modal.stories.tsx
+  - src/presentation/web/components/features/application-page/create-github-repo-button.tsx
+  - src/presentation/web/components/features/application-page/create-github-repo-button.stories.tsx
+  - src/presentation/web/components/features/application-page/cloud-provider-icons.tsx
+  - src/presentation/web/components/features/application-page/app-top-bar.tsx
+  - src/presentation/web/components/features/application-page/view-switcher.tsx
+  - src/presentation/web/components/features/application-page/view-body.tsx
+  - src/presentation/web/components/features/application-page/path-cluster.tsx
+  - src/presentation/web/components/features/application-page/git-status-cluster.tsx
+  - src/presentation/web/components/features/application-page/status-pill.tsx
+  - src/presentation/web/components/features/application-page/session-chip.tsx
+  - src/presentation/web/hooks/use-cloud-deploy-action.ts
+  - src/presentation/web/hooks/use-dev-server-coordinator.ts
+  - src/presentation/web/lib/shared/sdlc-lifecycle-node.ts
+
+  # E2E (web)
+  - src/presentation/web/e2e/cloud-deploy.spec.ts
+
+  # CLI commands (phase 13 — thin Commander adapters that reuse existing use cases)
+  - src/presentation/cli/commands/app/deploy/index.ts
+  - src/presentation/cli/commands/app/deploy/initiate.command.ts
+  - src/presentation/cli/commands/app/deploy/status.command.ts
+  - src/presentation/cli/commands/app/cloud-providers/index.ts
+  - src/presentation/cli/commands/app/cloud-providers/ls.command.ts
+  - src/presentation/cli/commands/app/cloud-providers/connect.command.ts
+  - src/presentation/cli/commands/app/cloud-providers/github-login.command.ts
+  - src/presentation/cli/commands/app/git/index.ts
+  - src/presentation/cli/commands/app/git/create-remote.command.ts
+  - src/presentation/cli/commands/app/shared/format-cloud-status.ts
+  - src/presentation/cli/commands/app/shared/format-cloud-providers.ts
+
+  # CLI e2e tests
+  - tests/e2e/cli/app-cloud-deploy.test.ts
+
+filesToModify:
+  - tsp/domain/entities/application.tsp
+  - packages/core/src/domain/generated/output.ts  # regenerated, never hand-edited
+  - packages/core/src/application/ports/output/repositories/application-repository.interface.ts
+  - packages/core/src/infrastructure/persistence/sqlite/mappers/application.mapper.ts
+  - packages/core/src/infrastructure/repositories/sqlite-application.repository.ts
+  - packages/core/src/infrastructure/di/container.ts
+  - packages/core/src/application/use-cases/applications/create-application.use-case.ts  # use featureIdForApplication helper
+  - packages/core/src/application/use-cases/workflows/run-workflow.use-case.ts  # replace console.warn with ILogger
+  - src/presentation/web/app/actions/deploy-application.ts  # refactor to thin action
+  - src/presentation/web/components/features/application-page/application-page.tsx  # split + dev-server hook + commit buttons
+  - src/presentation/web/app/api/agent-events/route.ts  # extract orchestration into use case
+  - src/presentation/cli/commands/app/index.ts  # register cloud-providers + deploy + git subcommands
+
+openQuestions: []
+
+content: |
+  ## Status (live)
+
+  - **Phase:** In review — phase 14 pending
+  - **Updated:** 2026-04-14
+  - **Task count:** **72 tasks across 14 phases** (58 original + 14 phase-14 follow-up)
+  - **Completed:** 45 of 72 (all of phases 1-11 + 13)
+  - **PR:** [#554](https://github.com/shep-ai/shep/pull/554) — **CI red**, blocked on violation #19
+  - **Local gates that passed:** typecheck, lint, test-unit (6079), test-int (628), tsp:compile, build:cli
+  - **Local gates that were MISSED:** `build:release` (full web build), `test:e2e` — CI caught what local didn't
+
+  ## What's Left (priority order)
+
+  ### Blockers (must ship first — PR #554 is red)
+
+  1. **t-59** — Move `ApplicationNotFoundError` to `domain/errors/application-not-found.error.ts`.
+     Root cause of 7 of the 8 failing CI jobs: Next.js cannot resolve the cross-use-case
+     `./select-cloud-provider.use-case.js` import. Also closes clean-arch violation #19.
+  2. **t-60** — Investigate and fix Gitleaks on `agent-settings-section.stories.tsx`
+     (pre-existing file; per integrity rules, still our responsibility).
+
+  ### Subagent framework (user-requested, enables parallel cleanup)
+
+  3. **t-61** — Create 6 remaining shep-tailored subagents under `.claude/agents/`:
+     `shep-port-creator`, `shep-tsp-field-adder`, `shep-migration-creator`,
+     `shep-web-route-creator`, `shep-storybook-story-creator`, `shep-cli-command-creator`.
+     Already shipped: `shep-clean-arch-auditor`, `shep-port-extractor`,
+     `shep-file-relocator`, `shep-use-case-creator`.
+
+  ### Clean-arch cleanup (execute via the agents — parallelizable)
+
+  4. **t-62** — Fresh audit sweep via `shep-clean-arch-auditor` × 3 (application, domain, presentation)
+  5. **t-63** — Kill `getSettings()` singleton (violation #17a, 5 callers) via `shep-port-extractor`
+  6. **t-64** — Move `computeWorktreePath` + `TOOL_METADATA` to `domain/shared/` (#17b) via `shep-file-relocator` × 2
+  7. **t-65** — Extract ports for `phase-timing-context`, `node-helpers`, `conflict-resolution`, `attachment-storage` (#17c) via `shep-port-extractor` × 4 in parallel
+  8. **t-66** — Relocate `AgentSessionRepositoryRegistry` to infrastructure + add port (#16)
+  9. **t-67** — Eliminate `application/workflows/` directory (#15)
+  10. **t-68** — Add `no-restricted-imports` ESLint rule for application → infrastructure (#18)
+  11. **t-69** — Split `container.ts` into topic modules (#12)
+  12. **t-70** — Adopt `feature-id` helpers across 7 legacy callers (#11 finish)
+  13. **t-71** — Migrate remaining `console.*` to `ILogger` (#13 finish)
+  14. **t-72** — Final local + CI verification sweep (including `build:release` this time)
+
+  ### Deferred invasive refactors (not in phase 14 — each gets its own follow-up PR)
+
+  - **Violations #1-3** → `deploy-application.ts` server action refactor (`StartApplicationDeploymentUseCase`)
+  - **Violations #4-7** → `StreamAgentEventsUseCase` extraction from `/api/agent-events/route.ts`
+  - **Violations #8-10** → `application-page.tsx` split (867 lines → N files) + dev-server coordinator hook + commit use cases
+  - **t-51** → Playwright smoke test for cloud deploy
+
+  ## Status (frozen snapshot at initial plan time)
+
+  - **Phase:** Planning complete
+  - **Initial task count:** 58 tasks across 13 phases
+  - **Initial scope:** full v1 feature work + fixes for 13 clean-arch violations found during research
+    + CLI parity for Application + cloud-deploy + git-remote (phase 13, zero logic duplication)
+
+  ## Architecture Overview
+
+  ```
+  ┌─────────────────────────────── Web UI (thin) ─────────────────────────────┐
+  │                                                                           │
+  │  application-page.tsx ── app-top-bar.tsx                                  │
+  │                            ├── path-cluster.tsx                           │
+  │                            ├── git-status-cluster.tsx                     │
+  │                            ├── session-chip.tsx                           │
+  │                            ├── run-dev-button.tsx (existing)              │
+  │                            ├── create-github-repo-button.tsx  ◄── NEW    │
+  │                            ├── deploy-button.tsx              ◄── NEW    │
+  │                            │     └── provider-dropdown.tsx               │
+  │                            │           └── connect-provider-modal.tsx    │
+  │                            └── view-switcher.tsx                          │
+  │                                                                           │
+  │  hooks/use-cloud-deploy-action.ts  (consumes SSE + use cases)             │
+  │  hooks/use-dev-server-coordinator.ts  (extracted orchestration)           │
+  │                                                                           │
+  └───────────────────────────────┬───────────────────────────────────────────┘
+                                  │
+                          HTTP + Server-Sent Events
+                                  │
+  ┌───────────────────────────────▼───────────────────────────────────────────┐
+  │ Web API routes (thin — each calls exactly one use case)                   │
+  │                                                                           │
+  │  /api/cloud-providers                                                     │
+  │  /api/cloud-providers/[provider]/connect                                  │
+  │  /api/cloud-providers/github/{auth-status,auth-login}                     │
+  │  /api/applications/[id]/cloud-deploy/{select-provider,initiate,status}    │
+  │  /api/applications/[id]/git/create-remote                                 │
+  │  /api/agent-events  ◄── extended with cloud_deployment.updated            │
+  └───────────────────────────────┬───────────────────────────────────────────┘
+                                  │
+                              use cases
+                                  │
+  ┌───────────────────────────────▼───────────────────────────────────────────┐
+  │ Application layer (use cases + ports)                                     │
+  │                                                                           │
+  │  ListCloudProvidersUseCase                                                │
+  │  ConnectCloudProviderUseCase                                              │
+  │  SelectCloudProviderUseCase                                               │
+  │  InitiateCloudDeploymentUseCase ────► ICloudDeploymentProviderRegistry    │
+  │       │                                        │                         │
+  │       ├── onProgress ──► ICloudDeploymentEventBus (port)                  │
+  │       └── persist ──► IApplicationRepository.update(...cloud fields)     │
+  │  GetCloudDeploymentStatusUseCase                                          │
+  │  CreateGitRemoteUseCase ─────────────► IGitRemoteService                  │
+  │  EnsureGhAuthenticatedUseCase                                             │
+  │  StreamAgentEventsUseCase (extracted from SSE route)                     │
+  │  StartApplicationDeploymentUseCase (extracted from server action)        │
+  │  CommitApplicationChangesUseCase (replaces in-JSX placeholder)           │
+  │                                                                           │
+  │  NEW PORTS: ICloudDeploymentProvider, ICloudDeploymentProviderRegistry,   │
+  │             ICloudProviderTokensRepository, IGitRemoteService,            │
+  │             ILogger, ICloudDeploymentEventBus                             │
+  └───────────────────────────────┬───────────────────────────────────────────┘
+                                  │
+  ┌───────────────────────────────▼───────────────────────────────────────────┐
+  │ Infrastructure                                                            │
+  │                                                                           │
+  │  CloudflarePagesProvider  (implements ICloudDeploymentProvider) ◄─ LIVE   │
+  │  VercelProviderStub, NetlifyProviderStub, AwsAmplifyProviderStub,         │
+  │    GcpCloudRunProviderStub  (enabled = false, throw on deploy)            │
+  │  CloudDeploymentProviderRegistry (string-token DI, iterates enum)         │
+  │  GitRemoteService         (wraps injected ExecFunction for gh + git)      │
+  │  LocalSecretBox           (AES-256-GCM, zero deps)                        │
+  │  SecretKeyFile            (~/.shep/secret.key, mode 0600, atomic wx)      │
+  │  SqliteCloudProviderTokensRepository (3 BLOB columns)                     │
+  │  InMemoryCloudDeploymentEventBus (EventEmitter-backed)                    │
+  │  ConsoleLogger            (ILogger impl)                                  │
+  │                                                                           │
+  │  DB migrations 060 (applications cloud cols) + 061 (tokens table)         │
+  └───────────────────────────────────────────────────────────────────────────┘
+  ```
+
+  ## Implementation Strategy
+
+  **Clean Architecture** is enforced throughout: the outer layers (presentation, infrastructure)
+  depend only inward, and every new cross-layer call is routed through an application-layer
+  use case. The four layers — domain, application, infrastructure, presentation — correspond
+  to the directories in `packages/core/src/` and `src/presentation/`. New ports live under
+  `application/ports/`; new adapters live under `infrastructure/`. Presentation never imports
+  from `infrastructure/` directly.
+
+  **MANDATORY TDD**: every phase with executable code follows RED → GREEN → REFACTOR.
+  Foundation phases (TypeSpec, migrations, stubs) ship without tests because they have
+  no runtime behavior to assert.
+
+  ### Why the phase order
+
+  1. **Domain first** — TypeSpec + regeneration has to succeed before any application
+     code can reference `CloudDeploymentProvider` or `CloudDeploymentStatus`. The
+     featureId helper extraction (violation #11) also lives here so later phases import
+     the helper from the start rather than retrofitting it.
+  2. **Crypto + tokens before repositories** — InitiateCloudDeployment depends on the
+     CloudflarePagesProvider which reads tokens. Getting secret storage done early
+     unblocks every downstream phase.
+  3. **Application repository extension** — persistence of cloud deploy state is the
+     integration surface between all upstream layers and the UI. Once the mapper +
+     repository know about the new fields, use cases can update them freely.
+  4. **Ports before adapters** — pure type definitions so adapters can be written
+     against a stable interface. Registry + GitRemoteService are also unit tested here.
+  5. **Cloudflare live adapter** — the single most complex piece of code in the feature.
+     Isolated phase so it can iterate without blocking stubs, use cases, or UI.
+  6. **Stub providers** — trivially parallel and independent.
+  7. **Use cases** — thin orchestration, independently testable. This phase also ingests
+     violations #1-#3 by creating `StartApplicationDeploymentUseCase` and rewriting
+     `deploy-application.ts` to a thin adapter.
+  8. **DI wiring** — everything from phases 2-7 gets registered. Splitting container.ts
+     (violation #12) is done here because every new binding would otherwise widen the
+     existing 831-line file.
+  9. **Web API routes** — thin HTTP adapters around use cases. Parallelizable.
+  10. **Web UI** — components + stories + splitting application-page.tsx. Ingests
+      violations #8, #9, #10 by creating a dev-server coordination hook, extracting
+      subcomponents into their own files, and wiring the placeholder commit buttons to
+      a real use case.
+  11. **SSE extension** — last because it consumes every upstream concept. This phase
+      also ingests violations #4, #5, #6, #7, #13 by creating StreamAgentEventsUseCase,
+      hiding `isProcessAlive` behind a port, adding an InteractiveSessionEventType
+      TypeSpec enum, extracting the shared SdlcLifecycle→node mapping, and routing
+      console output through ILogger.
+  12. **Verify (web)** — the full CI gate must pass locally, plus one Playwright smoke test.
+  13. **CLI parity** — thin Commander adapters for every Application, cloud-deploy, and
+      git-remote use case. Comes last because it depends on the use cases (phase 7) and
+      DI wiring (phase 8) being stable, and because it should reuse the exact same
+      `ICloudDeploymentEventBus` registered in phase 8 to stream deploy progress to the
+      terminal. Zero new business logic — every command resolves an existing use case
+      via `container.resolve(...)` and only handles input parsing + terminal formatting.
+
+  ### Parallelization strategy
+
+  Phases 4, 6, 7, 9, 10 are marked `parallel: true`. Within each, tasks with no
+  shared-file conflicts are dispatched to subagents in batches of 3-5. Explicit
+  dependencies between tasks are declared in `tasks.yaml` so the executor respects
+  them even inside a "parallel" phase. Phases with shared files (2, 3, 5, 8, 11) are
+  sequential inside the phase.
+
+  ## Files to Create / Modify
+
+  See `filesToCreate` and `filesToModify` arrays at the top of this file.
+  Total: 70 new files (58 web/core + 12 CLI), 12 modified files.
+
+  ## Testing Strategy (TDD: Tests FIRST)
+
+  ### Unit tests (RED → GREEN → REFACTOR)
+
+  - `LocalSecretBox` — round-trip, wrong-key failure, tamper-detection.
+  - `SqliteCloudProviderTokensRepository` — round-trip, replace existing, remove, listConnected; assert ciphertext on disk differs from plaintext.
+  - `SqliteApplicationRepository` (extension) — persist and load all seven new fields; preserve on update.
+  - `CloudDeploymentProviderRegistry` — listAll across the five providers; get() throws for disabled.
+  - `CloudflarePagesProvider` — fetch-mocked happy path, 403 on bad token, wrangler fallback when HTTP fails, status polling transitions.
+  - `GitRemoteService` — happy path, gh not authenticated error, already-committed idempotency.
+  - Every cloud-deploy use case — happy path + one failure mode (missing token, disabled provider, build output missing, gh not authed, etc.).
+
+  ### Integration tests
+
+  - Migrations 060 + 061 against an in-memory SQLite DB; assert columns and table exist and are idempotent (re-running `up()` is a no-op).
+  - ConnectCloudProviderUseCase end-to-end with a mock fetch; verifies token persists encrypted.
+  - InitiateCloudDeploymentUseCase end-to-end with in-memory repos + mock Cloudflare provider + in-memory event bus; verifies persisted Application state transitions through Uploading → Deploying → Deployed.
+
+  ### E2E
+
+  - One Playwright smoke test (`src/presentation/web/e2e/cloud-deploy.spec.ts`): seed an application with `setupComplete=true`, override the `ICloudDeploymentProvider:CloudflarePages` binding with a test fake, click Deploy, assert the button transitions and the URL chip renders. Uses an existing test-seam pattern if one exists; otherwise documents the gap in the PR description.
+
+  ### Storybook
+
+  - Colocated `.stories.tsx` file required for every new component. Tests that Storybook builds cleanly via `pnpm build:storybook` in phase 12.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Cloudflare direct-upload HTTP contract differs from wrangler | Ship HTTP happy path + wrangler CLI fallback; integration tests mock both. |
+  | `gh` CLI not installed on user machine | Detect at connect time; show clear error with install link. Existing git-fork.service already has this gap — we surface it better. |
+  | Cloudflare token leaked in logs | Provider adapter NEVER logs the token; SSE events sanitize error messages. |
+  | Windows file mode 0600 is advisory | Document in adapter header; rely on parent ~/.shep/ being 0o700 (already the case). |
+  | Migration 060 column list drifts from mapper | Single migration test asserts pragma('table_info') includes every new column. |
+  | Application page split breaks existing behavior | Phase 10 runs after all non-UI phases; Storybook + manual dev-server smoke test before merge. |
+  | Clean-arch refactors expand scope | Violations are grouped into the phase that already touches the file; no speculative drive-bys. |
+  | SSE route orchestration extraction is invasive | Done in dedicated phase 11 with a StreamAgentEventsUseCase that yields domain events; route shrinks to SSE framing only. |
+  | DI container split may miss a registration | Composition-root bootstrap module unit-tested: resolves every declared token and asserts a non-null instance. |
+
+  ## Clean-Arch Violation Integration
+
+  All 13 entries in `specs/089-one-click-cloud-deploy/clean-arch-violations.md` are
+  mapped to existing phases rather than dumped at the end. This avoids speculative
+  refactors and ensures each fix happens in the phase that already has the file open:
+
+  | # | Violation | Phase | Task |
+  | - | --------- | ----- | ---- |
+  | 1 | deploy-application.ts imports infrastructure logger | 7 | t-28 (StartApplicationDeploymentUseCase) |
+  | 2 | deploy-application.ts bypasses use cases | 7 | t-28 |
+  | 3 | deploy-application.ts uses node:fs existsSync | 7 | t-28 |
+  | 4 | SSE route hosts business orchestration | 11 | t-48 (StreamAgentEventsUseCase) |
+  | 5 | SSE route imports `isProcessAlive` from infrastructure | 11 | t-48 |
+  | 6 | SSE route hardcodes interactive-session event types | 1 + 11 | t-01 + t-48 |
+  | 7 | SSE route duplicates SdlcLifecycle→node mapping | 11 | t-49 (shared module) |
+  | 8 | application-page.tsx orchestrates dev-server lifecycle | 10 | t-46 (use-dev-server-coordinator) |
+  | 9 | application-page.tsx is 867 lines | 10 | t-47 (split subcomponents) |
+  | 10 | Placeholder commit/commit-push in component | 10 | t-47 (CommitApplicationChangesUseCase + wiring) |
+  | 11 | `app-` / `feat-` featureId prefix magic literal | 1 | t-03 (shared domain helper) |
+  | 12 | container.ts is 831 lines | 8 | t-32 (modular split) |
+  | 13 | `console.*` inside use cases + SSE route | 1 + 11 | t-02 (ILogger port) + t-50 |
+
+  ---
+
+  _Updated by `/shep-kit:plan` — see tasks.yaml for detailed task breakdown_

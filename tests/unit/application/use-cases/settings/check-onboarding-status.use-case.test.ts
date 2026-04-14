@@ -1,28 +1,34 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
-// Mock the settings service module
-vi.mock('@/infrastructure/services/settings.service.js', () => ({
-  getSettings: vi.fn(),
-}));
+import 'reflect-metadata';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { CheckOnboardingStatusUseCase } from '@/application/use-cases/settings/check-onboarding-status.use-case.js';
-import { getSettings } from '@/infrastructure/services/settings.service.js';
+import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
+import type { Settings } from '@/domain/generated/output.js';
 
-const mockGetSettings = vi.mocked(getSettings);
+function makeSettingsRepo(
+  load: ISettingsRepository['load'] = vi.fn().mockResolvedValue(null)
+): ISettingsRepository {
+  return {
+    initialize: vi.fn().mockResolvedValue(undefined),
+    load,
+    update: vi.fn().mockResolvedValue(undefined),
+  };
+}
 
 describe('CheckOnboardingStatusUseCase', () => {
   let useCase: CheckOnboardingStatusUseCase;
+  let repo: ISettingsRepository;
 
   beforeEach(() => {
-    useCase = new CheckOnboardingStatusUseCase();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
+    repo = makeSettingsRepo();
+    useCase = new CheckOnboardingStatusUseCase(repo);
   });
 
   it('should return { isComplete: true } when onboardingComplete is true', async () => {
-    mockGetSettings.mockReturnValue({ onboardingComplete: true } as any);
+    repo = makeSettingsRepo(
+      vi.fn().mockResolvedValue({ onboardingComplete: true } as unknown as Settings)
+    );
+    useCase = new CheckOnboardingStatusUseCase(repo);
 
     const result = await useCase.execute();
 
@@ -30,7 +36,19 @@ describe('CheckOnboardingStatusUseCase', () => {
   });
 
   it('should return { isComplete: false } when onboardingComplete is false', async () => {
-    mockGetSettings.mockReturnValue({ onboardingComplete: false } as any);
+    repo = makeSettingsRepo(
+      vi.fn().mockResolvedValue({ onboardingComplete: false } as unknown as Settings)
+    );
+    useCase = new CheckOnboardingStatusUseCase(repo);
+
+    const result = await useCase.execute();
+
+    expect(result).toEqual({ isComplete: false });
+  });
+
+  it('should return { isComplete: false } when the repository returns null', async () => {
+    repo = makeSettingsRepo(vi.fn().mockResolvedValue(null));
+    useCase = new CheckOnboardingStatusUseCase(repo);
 
     const result = await useCase.execute();
 

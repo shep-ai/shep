@@ -61,6 +61,29 @@ export interface ChatTabProps {
 
 const IS_DEV = process.env.NODE_ENV === 'development';
 
+/**
+ * Pure predicate: is the workflow ACTIVELY producing output right now?
+ *
+ * The composer is locked iff this returns true. We deliberately do NOT
+ * key on "the plan is incomplete" (`hasPlan && !allDone`) — that
+ * misclassifies a workflow with stale `pending` steps from a crashed
+ * orchestrator (e.g. dev:web restarted mid-run, leaving the last few
+ * steps stuck on `pending` forever) as in-flight, which leaves the chat
+ * input permanently disabled even though no agent is doing anything.
+ *
+ * `running` is the only step status that proves work is actively
+ * happening this instant. Pending / done / interrupted / failed all
+ * mean "no agent is producing output right now → user may type."
+ *
+ * Exported for unit testing.
+ */
+export function isWorkflowInFlight(stepProgress: {
+  hasPlan: boolean;
+  steps: readonly { status: string }[];
+}): boolean {
+  return stepProgress.hasPlan && stepProgress.steps.some((s) => s.status === 'running');
+}
+
 export function ChatTab({
   featureId,
   worktreePath,
@@ -103,6 +126,12 @@ export function ChatTab({
     agentType: overrideAgent,
     debugMode,
     initialChatState,
+    // When the host provides a workflow placeholder we KNOW the tracker
+    // will be the primary surface and the first user message must be
+    // pinned ABOVE it — even during the early window before the first
+    // real workflow-step row arrives. Without this, the bubble would
+    // fall through to the flat thread and render below the tracker.
+    pinInitialRequest: (workflowPlaceholder?.length ?? 0) > 0,
   });
 
   // Fire the all-steps-complete callback exactly once per mount.
@@ -164,9 +193,11 @@ export function ChatTab({
         status: 'pending' as const,
         metadata: null,
         toolMessages: [],
+        startedAt: null,
+        finishedAt: null,
       }));
   const showTracker = trackerSteps.length > 0;
-  const workflowInFlight = stepProgress.hasPlan === true && stepProgress.allDone !== true;
+  const workflowInFlight = isWorkflowInFlight(stepProgress);
 
   const composer = (
     <ChatComposer

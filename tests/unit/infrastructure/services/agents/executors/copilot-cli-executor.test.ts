@@ -470,24 +470,39 @@ describe('CopilotCliExecutorService', () => {
     });
 
     it('should NOT inject any auth env variable for session auth', async () => {
-      const authConfig: AgentConfig = {
-        type: AgentType.CopilotCli,
-        authMethod: 'session' as any,
-      };
-      const sessionExecutor = new CopilotCliExecutorService(mockSpawn, authConfig);
-      const mockProc = createMockChildProcess();
-      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+      // Test hermeticity: the executor forwards `process.env` untouched
+      // (minus CLAUDECODE), so this assertion can be polluted by whatever
+      // the developer/CI runner has in their shell. Save and clear the
+      // env vars we care about, then restore after the test so other
+      // suites running in the same worker aren't affected.
+      const originalGithubToken = process.env.GITHUB_TOKEN;
+      const originalCopilotKey = process.env.COPILOT_API_KEY;
+      delete process.env.GITHUB_TOKEN;
+      delete process.env.COPILOT_API_KEY;
 
-      const executePromise = sessionExecutor.execute('Test', { silent: true });
-      emitJsonlLines(mockProc, [assistantMessage('OK'), resultEvent('s-1')], null, 0);
+      try {
+        const authConfig: AgentConfig = {
+          type: AgentType.CopilotCli,
+          authMethod: 'session' as any,
+        };
+        const sessionExecutor = new CopilotCliExecutorService(mockSpawn, authConfig);
+        const mockProc = createMockChildProcess();
+        vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
 
-      await executePromise;
+        const executePromise = sessionExecutor.execute('Test', { silent: true });
+        emitJsonlLines(mockProc, [assistantMessage('OK'), resultEvent('s-1')], null, 0);
 
-      const spawnOpts = vi.mocked(mockSpawn).mock.calls[0][2] as Record<string, unknown>;
-      const env = spawnOpts.env as Record<string, string>;
-      // No Copilot-specific auth env var should be injected
-      expect(env.COPILOT_API_KEY).toBeUndefined();
-      expect(env.GITHUB_TOKEN).toBeUndefined();
+        await executePromise;
+
+        const spawnOpts = vi.mocked(mockSpawn).mock.calls[0][2] as Record<string, unknown>;
+        const env = spawnOpts.env as Record<string, string>;
+        // No Copilot-specific auth env var should be injected
+        expect(env.COPILOT_API_KEY).toBeUndefined();
+        expect(env.GITHUB_TOKEN).toBeUndefined();
+      } finally {
+        if (originalGithubToken !== undefined) process.env.GITHUB_TOKEN = originalGithubToken;
+        if (originalCopilotKey !== undefined) process.env.COPILOT_API_KEY = originalCopilotKey;
+      }
     });
 
     it('should strip CLAUDECODE from spawn environment', async () => {

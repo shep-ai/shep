@@ -38,6 +38,15 @@ export interface SendInteractiveMessageInput {
    * cluttering the chat transcript.
    */
   agentKickoffOverride?: string;
+  /**
+   * When false, the session service SKIPS the step that persists a
+   * user message row for `content`. Used by long-running creation
+   * flows that have ALREADY persisted the user's first bubble in the
+   * foreground (so the UI renders it instantly) and only need this
+   * call for the session boot + agent-side kickoff. Defaults to
+   * `true` — every normal chat message persists a row.
+   */
+  persistUserMessage?: boolean;
 }
 
 /**
@@ -62,7 +71,8 @@ export class SendInteractiveMessageUseCase {
       input.model,
       input.agentType,
       input.systemPrompt,
-      input.agentKickoffOverride
+      input.agentKickoffOverride,
+      input.persistUserMessage
     );
   }
 }

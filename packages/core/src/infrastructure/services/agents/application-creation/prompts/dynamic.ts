@@ -31,16 +31,19 @@ export function renderWorkspace(
   return [
     '# Environment — Ground Truth, Do Not Verify',
     '',
-    '**These facts are guaranteed by Shep before you get control.** Do NOT run `pwd`, `ls`, `ls -la`, `git log`, `git status`, `find`, or any other discovery command to "check" them. Running any of these is a wasted turn and a Workflow violation — your very first tool call MUST be the scaffold command in Workflow step 1.',
+    '**These facts are guaranteed by Shep before you get control.** Do NOT run `pwd`, `ls`, `ls -la`, `git log`, `git status`, `find`, or any other discovery command to "check" them. Running any of these is a wasted turn and a Workflow violation — your very first tool call MUST be `Read TEMPLATE.md` at the project root.',
     '',
     `- **Working directory (cwd)**: \`${workspace.workingDirectory}\``,
-    `- **Directory state**: EMPTY. Only a freshly-initialized git repo exists (\`main\` branch, one empty initial commit by \`Shep <shep@local>\`). There are no source files, no \`package.json\`, nothing to read. You are not "examining an existing project" — you are building a new one from zero.`,
+    `- **Directory state**: ALREADY SCAFFOLDED. Shep ran \`bunx shadcn@latest init --preset b0 --base base --template vite\` + \`bun add react-router-dom react-hook-form zod lucide-react\` + a fat-template overlay BEFORE your first turn. The cwd already contains \`package.json\`, \`vite.config.ts\`, \`tsconfig.json\`, \`tailwind.config.*\`, \`components.json\`, \`src/main.tsx\`, \`src/App.tsx\`, \`src/index.css\` (dark-mode palette configured), \`src/components/ui/*\` (shadcn primitives), \`src/components/common/*\` (Shep pre-built pieces), \`src/lib/theme.ts\`, \`src/lib/format.ts\`, \`src/lib/mock.ts\`, \`src/types/common.ts\`, \`node_modules/\`, and \`TEMPLATE.md\`. You are NOT "building from zero" — you are adding app-specific feature components on top of a ready-to-code foundation.`,
     `- **Platform**: ${platform}`,
     `- **Shell**: ${shell}`,
+    `- **Package manager / runtime**: \`bun\`. Use \`bun add\`, \`bun run\`, \`bunx\` — NEVER \`npm\`, \`npx\`, \`yarn\`, or \`pnpm\`.`,
     '',
-    'All relative paths you write, read, or edit resolve against the cwd above. When you scaffold, scaffold INTO this directory (`npm create vite@latest . -- --template react-ts` — note the dot). Do not `cd` elsewhere.',
+    'All relative paths you write, read, or edit resolve against the cwd above. You do NOT scaffold anything — Shep already did it. Do NOT run `npm create vite`, `bunx create-vite`, `bun install`, `bunx shadcn init`, or any other bootstrap/scaffold command. Do not `cd` elsewhere.',
     '',
-    'Your FIRST assistant message to the user should be a short, friendly acknowledgement ("Building your landing page now — scaffolding Vite + React + Tailwind…") followed IMMEDIATELY by the scaffold tool call. No discovery, no questions, no planning turns.',
+    'Your FIRST tool call MUST be `Read TEMPLATE.md` at the project root so you know exactly which common components, helpers, and types are already available. Only after reading TEMPLATE.md should you start creating files under `src/components/features/`.',
+    '',
+    'Your FIRST assistant message to the user should be a short, friendly acknowledgement ("Building your landing page now — designing the hero, features, and pricing sections…") followed IMMEDIATELY by the `Read TEMPLATE.md` tool call. No discovery, no scaffolding, no questions, no planning turns.',
   ].join('\n');
 }
 

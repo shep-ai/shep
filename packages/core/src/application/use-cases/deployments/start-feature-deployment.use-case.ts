@@ -21,8 +21,8 @@ import type {
 } from '../../ports/output/services/deployment-service.interface.js';
 import type { IFileSystemService } from '../../ports/output/services/file-system-service.interface.js';
 import type { IShepInstanceService } from '../../ports/output/services/shep-instance-service.interface.js';
+import type { IWorktreePathProvider } from '../../ports/output/services/worktree-path-provider.interface.js';
 import { DeploymentState } from '../../../domain/generated/output.js';
-import { computeWorktreePath } from '../../../infrastructure/services/ide-launchers/compute-worktree-path.js';
 
 @injectable()
 export class StartFeatureDeploymentUseCase {
@@ -30,7 +30,8 @@ export class StartFeatureDeploymentUseCase {
     @inject('IFeatureRepository') private readonly featureRepo: IFeatureRepository,
     @inject('IDeploymentService') private readonly deploymentService: IDeploymentService,
     @inject('IFileSystemService') private readonly fileSystem: IFileSystemService,
-    @inject('IShepInstanceService') private readonly shepInstance: IShepInstanceService
+    @inject('IShepInstanceService') private readonly shepInstance: IShepInstanceService,
+    @inject('IWorktreePathProvider') private readonly worktreePaths: IWorktreePathProvider
   ) {}
 
   async execute(featureId: string): Promise<DeploymentStatus> {
@@ -50,7 +51,8 @@ export class StartFeatureDeploymentUseCase {
     }
 
     const worktreePath =
-      feature.worktreePath ?? computeWorktreePath(feature.repositoryPath, feature.branch);
+      feature.worktreePath ??
+      this.worktreePaths.getWorktreePath(feature.repositoryPath, feature.branch);
 
     if (!this.fileSystem.pathExists(worktreePath)) {
       throw new Error(`Worktree path does not exist: ${worktreePath}`);

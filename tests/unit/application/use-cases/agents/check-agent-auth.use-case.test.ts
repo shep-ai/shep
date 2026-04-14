@@ -1,18 +1,12 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock the settings service module so the use case reads our fake agent type.
-vi.mock('@/infrastructure/services/settings.service.js', () => ({
-  getSettings: vi.fn(),
-}));
-
 import { CheckAgentAuthUseCase } from '@/application/use-cases/agents/check-agent-auth.use-case.js';
 import type { ListToolsUseCase } from '@/application/use-cases/tools/list-tools.use-case.js';
-import { getSettings } from '@/infrastructure/services/settings.service.js';
 import type { IAgentAuthDetectorService } from '@/application/ports/output/services/agent-auth-detector.interface.js';
+import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
+import type { Settings } from '@/domain/generated/output.js';
 import { AgentType } from '@/domain/generated/output.js';
-
-const mockGetSettings = vi.mocked(getSettings);
 
 function makeListTools(tool: { id: string; available: boolean; installCommand?: string }) {
   return {
@@ -32,19 +26,31 @@ function makeAuthDetector(authenticated: boolean): IAgentAuthDetectorService {
   return { isAuthenticated: vi.fn().mockResolvedValue(authenticated) };
 }
 
-function makeSettings(agentType: string) {
-  return { agent: { type: agentType } } as unknown as ReturnType<typeof getSettings>;
+function makeSettings(agentType: string): Settings {
+  return { agent: { type: agentType } } as unknown as Settings;
+}
+
+function makeSettingsRepo(
+  load: ISettingsRepository['load'] = vi.fn().mockResolvedValue(null)
+): ISettingsRepository {
+  return {
+    initialize: vi.fn().mockResolvedValue(undefined),
+    load,
+    update: vi.fn().mockResolvedValue(undefined),
+  };
 }
 
 describe('CheckAgentAuthUseCase', () => {
   let useCase: CheckAgentAuthUseCase;
   let listTools: ListToolsUseCase;
   let detector: IAgentAuthDetectorService;
+  let settingsRepo: ISettingsRepository;
 
   beforeEach(() => {
     listTools = makeListTools({ id: 'claude-code', available: true });
     detector = makeAuthDetector(true);
-    useCase = new CheckAgentAuthUseCase(listTools, detector);
+    settingsRepo = makeSettingsRepo(vi.fn().mockResolvedValue(makeSettings(AgentType.ClaudeCode)));
+    useCase = new CheckAgentAuthUseCase(listTools, detector, settingsRepo);
   });
 
   afterEach(() => {
@@ -52,8 +58,6 @@ describe('CheckAgentAuthUseCase', () => {
   });
 
   it('returns ready when claude-code is installed and authenticated', async () => {
-    mockGetSettings.mockReturnValue(makeSettings(AgentType.ClaudeCode));
-
     const result = await useCase.execute();
 
     expect(result).toEqual({
@@ -69,13 +73,12 @@ describe('CheckAgentAuthUseCase', () => {
   });
 
   it('returns not-installed when the tool is missing', async () => {
-    mockGetSettings.mockReturnValue(makeSettings(AgentType.ClaudeCode));
     listTools = makeListTools({
       id: 'claude-code',
       available: false,
       installCommand: 'npm i -g claude',
     });
-    useCase = new CheckAgentAuthUseCase(listTools, detector);
+    useCase = new CheckAgentAuthUseCase(listTools, detector, settingsRepo);
 
     const result = await useCase.execute();
 
@@ -88,9 +91,8 @@ describe('CheckAgentAuthUseCase', () => {
   });
 
   it('returns needs-auth when installed but credentials are missing', async () => {
-    mockGetSettings.mockReturnValue(makeSettings(AgentType.ClaudeCode));
     detector = makeAuthDetector(false);
-    useCase = new CheckAgentAuthUseCase(listTools, detector);
+    useCase = new CheckAgentAuthUseCase(listTools, detector, settingsRepo);
 
     const result = await useCase.execute();
 
@@ -100,7 +102,8 @@ describe('CheckAgentAuthUseCase', () => {
   });
 
   it('marks no-tool agents (dev/demo) as ready without calling list-tools', async () => {
-    mockGetSettings.mockReturnValue(makeSettings(AgentType.Dev));
+    settingsRepo = makeSettingsRepo(vi.fn().mockResolvedValue(makeSettings(AgentType.Dev)));
+    useCase = new CheckAgentAuthUseCase(listTools, detector, settingsRepo);
 
     const result = await useCase.execute();
 
@@ -118,9 +121,10 @@ describe('CheckAgentAuthUseCase', () => {
   });
 
   it('returns unknown when settings cannot be read', async () => {
-    mockGetSettings.mockImplementation(() => {
-      throw new Error('settings not initialized');
-    });
+    settingsRepo = makeSettingsRepo(
+      vi.fn().mockRejectedValue(new Error('settings not initialized'))
+    );
+    useCase = new CheckAgentAuthUseCase(listTools, detector, settingsRepo);
 
     const result = await useCase.execute();
 
@@ -130,8 +134,19 @@ describe('CheckAgentAuthUseCase', () => {
     expect(result.authenticated).toBe(false);
   });
 
+  it('returns unknown when settings repository returns null', async () => {
+    settingsRepo = makeSettingsRepo(vi.fn().mockResolvedValue(null));
+    useCase = new CheckAgentAuthUseCase(listTools, detector, settingsRepo);
+
+    const result = await useCase.execute();
+
+    expect(result.agentType).toBe('unknown');
+    expect(result.label).toBe('Unknown');
+  });
+
   it('returns unknown agentType for an unrecognised agent', async () => {
-    mockGetSettings.mockReturnValue(makeSettings('made-up-agent'));
+    settingsRepo = makeSettingsRepo(vi.fn().mockResolvedValue(makeSettings('made-up-agent')));
+    useCase = new CheckAgentAuthUseCase(listTools, detector, settingsRepo);
 
     const result = await useCase.execute();
 
@@ -141,11 +156,10 @@ describe('CheckAgentAuthUseCase', () => {
   });
 
   it('treats list-tools failures as not-installed', async () => {
-    mockGetSettings.mockReturnValue(makeSettings(AgentType.ClaudeCode));
     listTools = {
       execute: vi.fn().mockRejectedValue(new Error('catalogue down')),
     } as unknown as ListToolsUseCase;
-    useCase = new CheckAgentAuthUseCase(listTools, detector);
+    useCase = new CheckAgentAuthUseCase(listTools, detector, settingsRepo);
 
     const result = await useCase.execute();
 
@@ -155,7 +169,8 @@ describe('CheckAgentAuthUseCase', () => {
   });
 
   it('marks OpenRouter as ready without calling list-tools (null toolId)', async () => {
-    mockGetSettings.mockReturnValue(makeSettings(AgentType.OpenRouter));
+    settingsRepo = makeSettingsRepo(vi.fn().mockResolvedValue(makeSettings(AgentType.OpenRouter)));
+    useCase = new CheckAgentAuthUseCase(listTools, detector, settingsRepo);
 
     const result = await useCase.execute();
 
@@ -173,7 +188,8 @@ describe('CheckAgentAuthUseCase', () => {
   });
 
   it('marks Together AI as ready without calling list-tools (null toolId)', async () => {
-    mockGetSettings.mockReturnValue(makeSettings(AgentType.TogetherAi));
+    settingsRepo = makeSettingsRepo(vi.fn().mockResolvedValue(makeSettings(AgentType.TogetherAi)));
+    useCase = new CheckAgentAuthUseCase(listTools, detector, settingsRepo);
 
     const result = await useCase.execute();
 
@@ -191,7 +207,8 @@ describe('CheckAgentAuthUseCase', () => {
   });
 
   it('marks Ollama as ready without calling list-tools (null toolId)', async () => {
-    mockGetSettings.mockReturnValue(makeSettings(AgentType.Ollama));
+    settingsRepo = makeSettingsRepo(vi.fn().mockResolvedValue(makeSettings(AgentType.Ollama)));
+    useCase = new CheckAgentAuthUseCase(listTools, detector, settingsRepo);
 
     const result = await useCase.execute();
 

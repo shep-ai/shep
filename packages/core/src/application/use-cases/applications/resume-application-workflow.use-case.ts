@@ -17,7 +17,8 @@ import type { IWorkflowStepRepository } from '../../ports/output/repositories/wo
 import type { IInteractiveSessionService } from '../../ports/output/services/interactive-session-service.interface.js';
 import type { IInteractiveSessionRepository } from '../../ports/output/repositories/interactive-session-repository.interface.js';
 import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
-import { APPLICATION_CREATION_WORKFLOW } from '../../workflows/application-creation.workflow.js';
+import { featureIdForApplication } from '../../../domain/shared/feature-id.js';
+import { APPLICATION_CREATION_WORKFLOW } from './application-creation.workflow.js';
 
 export interface ResumeApplicationWorkflowInput {
   applicationId: string;
@@ -42,7 +43,7 @@ export class ResumeApplicationWorkflowUseCase {
     const app = await this.appRepo.findById(input.applicationId);
     if (!app) throw new Error(`Application ${input.applicationId} not found`);
 
-    const featureId = `app-${app.id}`;
+    const featureId = featureIdForApplication(app.id);
     const steps = await this.stepRepo.listByFeature(featureId);
     if (steps.length === 0) return;
 

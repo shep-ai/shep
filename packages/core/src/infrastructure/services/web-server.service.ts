@@ -33,25 +33,57 @@ const defaultDeps: WebServerDeps = {
  * Resolve the web UI directory path.
  * Works in both development (src/) and production (dist/) contexts.
  *
- * Development: import.meta.dirname = <root>/packages/core/src/infrastructure/services/
- *   → 5 levels up → <root>/src/presentation/web/
+ * Priority order matters — when the same workspace has BOTH a dev
+ * source tree AND a built `web/` bundle alongside `dist/`, we must
+ * prefer the production bundle when it is reached from `dist/` so that
+ * `node dist/src/presentation/cli/index.js ui` actually runs in prod
+ * mode (no HMR, no compile badge, pre-built routes). Otherwise the
+ * workspace-dev fallback would silently downgrade prod launches to
+ * dev mode because `<root>/src/presentation/web/next.config.ts`
+ * always exists in a dev checkout.
  *
- * Workspace dist: import.meta.dirname = <root>/dist/packages/core/src/infrastructure/services/
- *   → 6 levels up → <root>/src/presentation/web/
+ * Layouts this function handles:
  *
- * Production (npm install): import.meta.dirname = <root>/dist/packages/core/src/infrastructure/services/
- *   → 6 levels up → <root>/web/
+ *   Source (`pnpm dev:cli`): import.meta.dirname =
+ *     <root>/packages/core/src/infrastructure/services/
+ *     → 5 `..` + `src/presentation/web/` = <root>/src/presentation/web/
+ *
+ *   Built CLI in workspace (`node dist/.../ui`), prod `web/` NOT built:
+ *     <root>/dist/packages/core/src/infrastructure/services/
+ *     → 6 `..` + `src/presentation/web/` = <root>/src/presentation/web/
+ *     (dev source fallback, kept for the "only built the CLI" loop)
+ *
+ *   Built CLI in workspace, prod `web/` ALREADY built (`pnpm build:release`):
+ *     <root>/dist/packages/core/src/infrastructure/services/
+ *     → 6 `..` + `web/` = <root>/web/
+ *     (picked BEFORE the workspace-dev fallback)
+ *
+ *   Published npm install: same 6-up `web/` resolution.
  */
 export function resolveWebDir(): { dir: string; dev: boolean } {
-  // Check for development source directory first
-  // From packages/core/src/infrastructure/services/ → 5 levels up to root, then src/presentation/web
+  // 1. Dev source when running via tsx from `packages/core/src/...`.
+  //    This file physically lives under `src/` so 5 `..` reach the
+  //    repository root; the workspace-dev and production branches
+  //    never fire in this mode because they need 6 `..`.
   const devDir = path.resolve(import.meta.dirname, '../../../../../src/presentation/web');
   if (fs.existsSync(path.join(devDir, 'next.config.ts'))) {
     return { dir: devDir, dev: true };
   }
 
-  // Dist CLI inside a workspace checkout: the built CLI lives under dist/,
-  // but the source web app still exists at the repository root.
+  // 2. Production `web/` bundle alongside `dist/` — take it if the
+  //    Next.js build output exists. This MUST be checked before the
+  //    workspace-dev fallback so `node dist/.../ui` runs in prod mode
+  //    inside a full dev checkout (where both `web/` and
+  //    `src/presentation/web/` exist).
+  const prodDir = path.resolve(import.meta.dirname, '../../../../../../web');
+  if (fs.existsSync(path.join(prodDir, '.next'))) {
+    return { dir: prodDir, dev: false };
+  }
+
+  // 3. Workspace-dev fallback: built CLI in `dist/`, but no prod `web/`
+  //    bundle assembled yet. This is the fast "rebuilt just the CLI"
+  //    inner loop — we reuse the dev source tree so the UI still works
+  //    without re-running `pnpm build:web:prod`.
   const workspaceDevDir = path.resolve(
     import.meta.dirname,
     '../../../../../../src/presentation/web'
@@ -60,19 +92,12 @@ export function resolveWebDir(): { dir: string; dev: boolean } {
     return { dir: workspaceDevDir, dev: true };
   }
 
-  // Production: web UI is shipped alongside dist/ in the package
-  // From dist/packages/core/src/infrastructure/services/ → 6 levels up to package root
-  const prodDir = path.resolve(import.meta.dirname, '../../../../../../web');
-  if (fs.existsSync(path.join(prodDir, '.next'))) {
-    return { dir: prodDir, dev: false };
-  }
-
   throw new Error(
     `Web UI directory not found. Ensure the web UI is built (pnpm build:web).\n` +
       `  Searched:\n` +
       `    dev:  ${devDir} (next.config.ts: ${fs.existsSync(path.join(devDir, 'next.config.ts'))})\n` +
-      `    workspace: ${workspaceDevDir} (next.config.ts: ${fs.existsSync(path.join(workspaceDevDir, 'next.config.ts'))})\n` +
       `    prod: ${prodDir} (.next: ${fs.existsSync(path.join(prodDir, '.next'))})\n` +
+      `    workspace-dev fallback: ${workspaceDevDir} (next.config.ts: ${fs.existsSync(path.join(workspaceDevDir, 'next.config.ts'))})\n` +
       `  import.meta.dirname: ${import.meta.dirname}`
   );
 }

@@ -1,0 +1,11 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CloudDeploymentStatus.yaml
+type: string
+enum:
+  - NotDeployed
+  - Building
+  - Uploading
+  - Deploying
+  - Deployed
+  - Failed
+description: Lifecycle state of a cloud deployment for an Application

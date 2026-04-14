@@ -34,6 +34,28 @@ properties:
   agentSessionId:
     type: string
     description: Persistent agent SDK session ID — set once on first session boot, never changes
+  gitRemoteUrl:
+    type: string
+    description: Git remote URL (e.g. https://github.com/user/repo) once a remote is attached
+  cloudDeploymentProvider:
+    $ref: CloudDeploymentProvider.yaml
+    description: Selected cloud deployment provider for this application
+  cloudDeploymentStatus:
+    $ref: CloudDeploymentStatus.yaml
+    description: Current lifecycle state of the cloud deployment
+  cloudDeploymentId:
+    type: string
+    description: Provider-specific deployment id used to poll status
+  cloudDeploymentUrl:
+    type: string
+    description: Public URL of the most recent successful deployment
+  cloudDeploymentError:
+    type: string
+    description: Error message from the last failed deployment attempt
+  lastDeployedAt:
+    type: string
+    format: date-time
+    description: Timestamp of the last deployment attempt (success or failure)
 required:
   - name
   - slug

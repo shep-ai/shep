@@ -15,13 +15,15 @@ import { SdlcLifecycle } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { IWorktreeService } from '../../ports/output/services/worktree-service.interface.js';
 import type { IGitPrService } from '../../ports/output/services/git-pr-service.interface.js';
+import type { ILogger } from '../../ports/output/services/logger.interface.js';
 
 @injectable()
 export class CleanupFeatureWorktreeUseCase {
   constructor(
     @inject('IFeatureRepository') private readonly featureRepo: IFeatureRepository,
     @inject('IWorktreeService') private readonly worktreeService: IWorktreeService,
-    @inject('IGitPrService') private readonly gitPrService: IGitPrService
+    @inject('IGitPrService') private readonly gitPrService: IGitPrService,
+    @inject('ILogger') private readonly logger: ILogger
   ) {}
 
   async execute(featureId: string): Promise<void> {
@@ -39,14 +41,16 @@ export class CleanupFeatureWorktreeUseCase {
     try {
       await this.worktreeService.remove(feature.repositoryPath, worktreePath, true);
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('[CleanupFeatureWorktreeUseCase] worktree remove failed:', err);
+      this.logger.warn('[CleanupFeatureWorktreeUseCase] worktree remove failed', {
+        err: err instanceof Error ? err.message : String(err),
+      });
       // Prune stale worktree entries so the branch is no longer considered "in use"
       try {
         await this.worktreeService.prune(feature.repositoryPath);
       } catch (pruneErr) {
-        // eslint-disable-next-line no-console
-        console.warn('[CleanupFeatureWorktreeUseCase] worktree prune failed:', pruneErr);
+        this.logger.warn('[CleanupFeatureWorktreeUseCase] worktree prune failed', {
+          err: pruneErr instanceof Error ? pruneErr.message : String(pruneErr),
+        });
       }
     }
 
@@ -54,8 +58,9 @@ export class CleanupFeatureWorktreeUseCase {
     try {
       await this.gitPrService.deleteBranch(feature.repositoryPath, feature.branch);
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('[CleanupFeatureWorktreeUseCase] local branch delete failed:', err);
+      this.logger.warn('[CleanupFeatureWorktreeUseCase] local branch delete failed', {
+        err: err instanceof Error ? err.message : String(err),
+      });
     }
 
     // Step 3: Delete the remote feature branch if it still exists
@@ -68,8 +73,9 @@ export class CleanupFeatureWorktreeUseCase {
         await this.gitPrService.deleteBranch(feature.repositoryPath, feature.branch, true);
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('[CleanupFeatureWorktreeUseCase] remote branch delete failed:', err);
+      this.logger.warn('[CleanupFeatureWorktreeUseCase] remote branch delete failed', {
+        err: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 }

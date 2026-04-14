@@ -28,6 +28,7 @@ export type {
   ListSessionsOptions,
   GetSessionOptions,
 } from './agent-session-repository.interface.js';
+export type { IAgentSessionRepositoryRegistry } from './agent-session-repository-registry.interface.js';
 export type {
   IInteractiveAgentExecutor,
   InteractiveAgentOptions,

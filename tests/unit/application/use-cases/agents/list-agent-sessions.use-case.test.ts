@@ -7,17 +7,19 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ListAgentSessionsUseCase } from '@/application/use-cases/agents/list-agent-sessions.use-case.js';
-import type { AgentSessionRepositoryRegistry } from '@/application/services/agents/agent-session-repository.registry.js';
+import type { IAgentSessionRepositoryRegistry } from '@/application/ports/output/agents/agent-session-repository-registry.interface.js';
 import type { IAgentSessionRepository } from '@/application/ports/output/agents/agent-session-repository.interface.js';
-import type { AgentSession } from '@/domain/generated/output.js';
+import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
+import type { AgentSession, Settings } from '@/domain/generated/output.js';
 import { AgentType } from '@/domain/generated/output.js';
 
-// Mock getSettings — use string literal (not enum ref) to avoid hoisting issues
-vi.mock('@/infrastructure/services/settings.service.js', () => ({
-  getSettings: vi.fn().mockReturnValue({
-    agent: { type: 'claude-code' },
-  }),
-}));
+function makeSettingsRepo(agentType = 'claude-code'): ISettingsRepository {
+  return {
+    initialize: vi.fn().mockResolvedValue(undefined),
+    load: vi.fn().mockResolvedValue({ agent: { type: agentType } } as unknown as Settings),
+    update: vi.fn().mockResolvedValue(undefined),
+  };
+}
 
 function createMockSession(overrides?: Partial<AgentSession>): AgentSession {
   return {
@@ -34,8 +36,9 @@ function createMockSession(overrides?: Partial<AgentSession>): AgentSession {
 
 describe('ListAgentSessionsUseCase', () => {
   let useCase: ListAgentSessionsUseCase;
-  let mockRegistry: AgentSessionRepositoryRegistry;
+  let mockRegistry: IAgentSessionRepositoryRegistry;
   let mockRepository: IAgentSessionRepository;
+  let mockSettingsRepository: ISettingsRepository;
   let stderrSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
@@ -47,9 +50,11 @@ describe('ListAgentSessionsUseCase', () => {
 
     mockRegistry = {
       getRepository: vi.fn().mockReturnValue(mockRepository),
-    } as unknown as AgentSessionRepositoryRegistry;
+    } as unknown as IAgentSessionRepositoryRegistry;
 
-    useCase = new ListAgentSessionsUseCase(mockRegistry);
+    mockSettingsRepository = makeSettingsRepo();
+
+    useCase = new ListAgentSessionsUseCase(mockRegistry, mockSettingsRepository);
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
   });
 
@@ -96,7 +101,7 @@ describe('ListAgentSessionsUseCase', () => {
   it('should write a warning to stderr when the provider is not supported', async () => {
     (mockRepository.isSupported as ReturnType<typeof vi.fn>).mockReturnValue(false);
     mockRegistry.getRepository = vi.fn().mockReturnValue(mockRepository);
-    useCase = new ListAgentSessionsUseCase(mockRegistry);
+    useCase = new ListAgentSessionsUseCase(mockRegistry, mockSettingsRepository);
 
     await useCase.execute({ agentType: AgentType.Cursor });
 

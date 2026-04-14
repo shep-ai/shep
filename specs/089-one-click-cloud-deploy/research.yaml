@@ -1,0 +1,354 @@
+name: "one-click-cloud-deploy"
+summary: "Technical research for 089-one-click-cloud-deploy — Cloudflare Pages direct upload, AES-GCM local token storage, gh CLI patterns, and SSE event extension."
+phase: "research"
+updatedAt: "2026-04-13"
+
+relatedFeatures:
+  - "088-cli-application-management"
+technologies:
+  - TypeScript
+  - TypeSpec
+  - React
+  - Next.js
+  - SQLite
+  - tsyringe
+  - umzug
+  - better-sqlite3
+  - Cloudflare Pages REST API
+  - gh CLI
+relatedLinks:
+  - title: "Cloudflare Pages Direct Upload"
+    url: "https://developers.cloudflare.com/pages/get-started/direct-upload/"
+  - title: "Cloudflare Pages REST API"
+    url: "https://developers.cloudflare.com/api/resources/pages/subresources/projects/"
+  - title: "Cloudflare user/tokens/verify"
+    url: "https://developers.cloudflare.com/api/resources/user/subresources/tokens/methods/verify/"
+  - title: "GitHub CLI manual"
+    url: "https://cli.github.com/manual/"
+  - title: "Node.js crypto — createCipheriv"
+    url: "https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options"
+
+decisions:
+  - title: "Cloud deploy pluggability"
+    chosen: "ICloudDeploymentProvider port + registry (registered via string tokens like 'ICloudDeploymentProvider:CloudflarePages'), mirroring AgentSessionRepositoryRegistry"
+    rejected:
+      - "Single concrete CloudDeployService class — fails the pluggability requirement"
+      - "Strategy pattern inside a single use case — leaks adapter concerns into application layer"
+    rationale: "The project already uses this exact pattern for per-agent-type session repositories (container.ts lines 530-548). Mirroring it keeps the DI style consistent and lets us register 5 providers (1 active + 4 stubs) with zero new infrastructure."
+
+  - title: "Cloudflare deploy happy path"
+    chosen: "HTTP direct-upload via Cloudflare REST API with wrangler CLI as graceful fallback"
+    rejected:
+      - "wrangler CLI only — adds a runtime dependency, harder error surfacing"
+      - "Git-connected deploy — defeats the 'no git knowledge required' goal and requires GitHub integration upstream"
+    rationale: "Direct HTTP is documented and scriptable; wrangler fallback gives us an out if the low-level upload protocol changes. Both paths use the same CLOUDFLARE_API_TOKEN so the auth story is unified."
+
+  - title: "Cloud auth UX"
+    chosen: "Guided token paste — 'Connect' button opens Cloudflare token page in a new tab, user pastes once, we validate via GET /user/tokens/verify, then store encrypted"
+    rejected:
+      - "OAuth device flow — Cloudflare does not expose device flow; would require hosting an OAuth app + redirect catcher"
+      - "Store token in plaintext in settings table — fails threat model"
+    rationale: "Device flow requires server-side OAuth infra we do not have. Token paste is zero-infra, validates live on connect, and fits the existing settings pattern."
+
+  - title: "Local token encryption"
+    chosen: "AES-256-GCM with a 32-byte key stored in ~/.shep/secret.key (mode 0600, atomic wx create). Three BLOB columns: token_ciphertext, token_iv, token_tag"
+    rejected:
+      - "Plaintext in SQLite — fails threat model even for local-only"
+      - "Derive key from node-machine-id — brittle (OS reinstalls, renames), extra dependency for zero gain at this threat model"
+      - "keytar / OS keychain — extra native dependency, inconsistent on Windows, more moving parts"
+    rationale: "Node built-in crypto only, zero deps. Threat model is local-machine confidentiality (not root attacker). Atomic wx file creation means exactly one key per machine; unique IV per encrypt guarantees safety of GCM. Three-column storage is explicit and debuggable."
+
+  - title: "GitHub repo creation UX"
+    chosen: "Separate 'Create GitHub repo' button using existing ExecFunction + `gh` CLI (`gh auth token` check → `gh repo create --source=. --push`). On 'GH_NOT_AUTHENTICATED', transition to 'Sign in with GitHub' button that spawns `gh auth login --web` and polls auth-status"
+    rejected:
+      - "Direct GitHub REST API + OAuth device flow — requires new OAuth app + token storage, duplicates what `gh` already does"
+      - "Ship our own git client — simple-git adds 30MB + duplicates shell-out pattern already used in git-fork.service.ts"
+    rationale: "git-fork.service.ts and github-repository.service.ts already inject an ExecFunction and call `gh` for all operations. Reusing the exact same pattern means no new auth infrastructure, no new dependencies, and a consistent error story."
+
+  - title: "Deploy status streaming to UI"
+    chosen: "Extend the existing SSE snapshot-diff loop in src/presentation/web/app/api/agent-events/route.ts to emit a new cloud_deployment.updated event when Application.cloudDeploymentStatus changes"
+    rejected:
+      - "New dedicated /api/cloud-deploy/events route — duplicates polling and connection management"
+      - "WebSockets — over-engineered; project has no WS infrastructure"
+      - "Client-side polling — violates the 'stream, don't poll' existing pattern"
+    rationale: "The route already runs a 2-second polling loop that reads feature/run state, compares to a per-connection cache, and emits NotificationEvents. Adding a third snapshot dimension (applications cloud deploy) is ~40 lines of code that reuse the entire transport layer."
+
+  - title: "Provider registry multi-instance DI"
+    chosen: "Register each provider under `ICloudDeploymentProvider:${providerId}` (string token per enum value), plus a single `CloudDeploymentProviderRegistry` that resolves by id"
+    rejected:
+      - "Array injection (container.registerInstance of an array) — tsyringe supports it but the project has no precedent"
+      - "Factory function passed the id at resolve time — harder to introspect for `listAll()`"
+    rationale: "Exact mirror of AgentSessionRepositoryRegistry (see container.ts lines 530-548). Registry exposes `listAll()` by iterating the known enum values and resolving each from the container."
+
+  - title: "Token validation on connect"
+    chosen: "Call GET /user/tokens/verify — returns token status with no side effects"
+    rejected:
+      - "GET /accounts — works but also exposes org data, slightly heavier"
+      - "Defer validation to first deploy — bad UX, user discovers bad token 5 minutes later"
+    rationale: "Cheapest, most explicit check. Response includes token `status: active` which we assert."
+
+content: |
+  ## Status
+
+  - **Phase:** Research complete
+  - **Updated:** 2026-04-13
+  - **Next:** `/shep-kit:plan`
+
+  ## 1. Cloudflare Pages Direct Upload — Concrete API Reference
+
+  ### 1.1 Authentication
+
+  Bearer token in the `Authorization` header:
+
+  ```
+  Authorization: Bearer <CLOUDFLARE_API_TOKEN>
+  ```
+
+  Required scope when creating the token: **Account → Cloudflare Pages → Edit**.
+
+  ### 1.2 Token validation (zero side effects)
+
+  ```
+  GET https://api.cloudflare.com/client/v4/user/tokens/verify
+  Authorization: Bearer <token>
+  ```
+
+  Success response:
+
+  ```json
+  { "success": true, "result": { "id": "...", "status": "active" } }
+  ```
+
+  Called by `ConnectCloudProviderUseCase` before persisting the token.
+
+  ### 1.3 Account discovery
+
+  ```
+  GET https://api.cloudflare.com/client/v4/accounts
+  Authorization: Bearer <token>
+  ```
+
+  v1 picks `result[0].id`. Multi-account selection is out of scope.
+
+  ### 1.4 Project creation (idempotent)
+
+  1. `GET /accounts/{account_id}/pages/projects` → filter by `result[*].name === slug`.
+  2. If not found: `POST /accounts/{account_id}/pages/projects` with body `{ "name": "<slug>", "production_branch": "main" }`.
+  3. On 409 Conflict, refetch by name.
+
+  ### 1.5 Direct upload deployment
+
+  Cloudflare does not publish a fully documented per-file HTTP upload for Pages (that layer is wrapped by wrangler). For v1 we ship the deployment create call with a multipart form, and fall back to wrangler if the HTTP path returns anything other than 2xx:
+
+  ```
+  POST https://api.cloudflare.com/client/v4/accounts/{account_id}/pages/projects/{project}/deployments
+  Authorization: Bearer <token>
+  Content-Type: multipart/form-data
+
+  (fields)
+  branch=main
+  manifest={"index.html": {"hash": "...", "size": ...}, ...}
+  file[filename] = <bytes>
+  ```
+
+  Wrangler fallback (always-correct path):
+
+  ```
+  CLOUDFLARE_ACCOUNT_ID=<id> CLOUDFLARE_API_TOKEN=<token> \
+    npx wrangler pages deploy <build-dir> --project-name=<slug> --branch=main
+  ```
+
+  The Cloudflare provider calls this via the injected `ExecFunction` when the HTTP path fails. Wrangler resolves from a project-level `devDependencies` entry pinned in `package.json`.
+
+  ### 1.6 Deployment status polling
+
+  ```
+  GET /accounts/{account_id}/pages/projects/{project}/deployments/{deployment_id}
+  ```
+
+  State progression: `queued → initialize → build → deploy` with each stage having status `active|success|failure|idle|canceled`. Final URL is `result.url` (e.g. `https://<slug>.pages.dev`).
+
+  ### 1.7 Error envelope
+
+  ```json
+  { "success": false, "errors": [{ "code": 10000, "message": "..." }], "messages": [], "result": null }
+  ```
+
+  Common codes: 403 (scope), 404 (project/deployment), 409 (duplicate), 422 (invalid name).
+
+  ### 1.8 Limits
+
+  - 25 MiB per file
+  - 20,000 files/deployment (free), 100,000 (paid)
+
+  Our generated React apps are far below both.
+
+  ## 2. AES-256-GCM Local Token Storage
+
+  ### 2.1 Key management
+
+  - Generate a **32-byte random key** once on first use: `randomBytes(32)`.
+  - Write to `~/.shep/secret.key` with `{ mode: 0o600, flag: 'wx' }` (atomic, owner-only on POSIX; ACLs required on Windows — `~/.shep/` is already created with 0o700 via `getShepHomeDir`).
+  - On later runs, read the file. Never re-generate.
+
+  Reason for random key (not machine-id): OS reinstalls and hostname changes break machine-id derivation, and the threat model is local-machine confidentiality, not a root-level attacker. Random + file perms is equivalent.
+
+  ### 2.2 Cipher
+
+  - Algorithm: `aes-256-gcm`
+  - IV: 12 bytes per encrypt, fresh random each call (`randomBytes(12)`)
+  - Auth tag: 16 bytes, stored alongside ciphertext
+  - Zero external deps — `node:crypto` only
+
+  ### 2.3 `LocalSecretBox` helper (exact shape to ship)
+
+  ```typescript
+  import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+
+  export interface EncryptedBlob { ciphertext: Buffer; iv: Buffer; tag: Buffer; }
+
+  export class LocalSecretBox {
+    constructor(private readonly key: Buffer) {
+      if (key.length !== 32) throw new Error('LocalSecretBox key must be 32 bytes');
+    }
+    encrypt(plaintext: string): EncryptedBlob {
+      const iv = randomBytes(12);
+      const cipher = createCipheriv('aes-256-gcm', this.key, iv, { authTagLength: 16 });
+      const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+      return { ciphertext, iv, tag: cipher.getAuthTag() };
+    }
+    decrypt(blob: EncryptedBlob): string {
+      const decipher = createDecipheriv('aes-256-gcm', this.key, blob.iv);
+      decipher.setAuthTag(blob.tag);
+      return decipher.update(blob.ciphertext, undefined, 'utf8') + decipher.final('utf8');
+    }
+  }
+  ```
+
+  ### 2.4 Storage schema — three BLOB columns
+
+  ```sql
+  CREATE TABLE cloud_provider_tokens (
+    provider TEXT PRIMARY KEY,
+    token_ciphertext BLOB NOT NULL,
+    token_iv BLOB NOT NULL,
+    token_tag BLOB NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  ```
+
+  Three columns are preferred over a concatenated blob: no magic offsets, easier debugging, simpler migration if key rotation lands.
+
+  ### 2.5 Existing state of secret storage
+
+  `SQLiteSettingsRepository` stores every setting in plaintext. No encryption helpers exist anywhere in the codebase. The violation log tracks this for phase 2 consideration, but v1 only adds the new `cloud_provider_tokens` table — we do NOT retrofit the existing settings table.
+
+  ## 3. Existing Code Patterns to Mirror
+
+  ### 3.1 Migration
+
+  - Location: `packages/core/src/infrastructure/persistence/sqlite/migrations/`
+  - File name: `NNN-description.ts` (next free numbers: 060, 061)
+  - Signature: `export async function up({ context: db }: MigrationParams<Database.Database>): Promise<void>`
+  - Always provide a `down()` stub (SQLite pre-3.35 can't DROP COLUMN).
+  - Auto-discovered by `discoverNewMigrations()` in `migrations.ts`. Run explicitly in `container.ts` line 228.
+  - For ALTER TABLE: check column existence via `db.pragma('table_info(...)')` and guard with `if (!columnNames.has('...'))` for idempotency.
+
+  ### 3.2 Mapper (`application.mapper.ts`)
+
+  - `toDatabase()`: nullable → `?? null`, booleans → `? 1 : 0`, JSON arrays → `JSON.stringify(... ?? [])`, dates → `.getTime()`.
+  - `fromDatabase()`: `?? undefined`, `=== 1` for booleans, `JSON.parse(... ) as T[]`, `new Date(ms)`.
+
+  ### 3.3 Repository update whitelist (`sqlite-application.repository.ts`)
+
+  - `update()` accepts `Partial<Pick<Application, 'name' | 'status' | ...>>`.
+  - Dynamically builds `SET` clauses with `if (fields.X !== undefined)`.
+  - Always appends `updated_at = ?` and filters `WHERE id = ? AND deleted_at IS NULL`.
+
+  ### 3.4 DI container (tsyringe)
+
+  - `container.register<IFoo>('IFoo', { useFactory: (c) => new FooImpl(c.resolve(...)) })` for factory injection
+  - `container.registerSingleton<IFoo>('IFoo', FooImpl)` for class registration
+  - **Multi-instance precedent** (mirror this exactly): `container.register(`IAgentSessionRepository:${AgentType.ClaudeCode}`, { useFactory: () => new ClaudeCodeSessionRepository() })` followed by `container.registerSingleton(AgentSessionRepositoryRegistry)` (container.ts lines 530-548).
+  - Registry resolves with `container.resolve<IFoo>(`IFoo:${id}`)` (see `agent-session-repository.registry.ts` lines 27-29).
+
+  ### 3.5 Use case pattern (`import-github-repository.use-case.ts`)
+
+  ```typescript
+  @injectable()
+  export class ImportGitHubRepositoryUseCase {
+    constructor(
+      @inject('IGitHubRepositoryService') private readonly gitHubService: IGitHubRepositoryService,
+      @inject('IRepositoryRepository') private readonly repositoryRepo: IRepositoryRepository,
+      @inject(AddRepositoryUseCase) private readonly addRepositoryUseCase: AddRepositoryUseCase,
+    ) {}
+    async execute(input: ImportGitHubRepositoryInput): Promise<Repository> { ... }
+  }
+  ```
+
+  Progress reporting = optional callback in input, not a streaming return. Mid-flow status updates persist via repository `update()` calls. Use cases return synchronously; the SSE loop picks up changes from repository snapshots.
+
+  ### 3.6 SSE emission (`src/presentation/web/app/api/agent-events/route.ts`)
+
+  Per-connection `Map<id, CachedState>` with `POLL_INTERVAL_MS = 2000`. On first encounter, seed cache without emitting. On subsequent polls, diff against cached state and `emitEvent(...)` when a field changes. Mapping table `STATUS_TO_EVENT` translates domain enum values to `NotificationEventType` enum values. Extension point for `cloud_deployment.updated` is a third snapshot dimension added after the existing feature + session loops.
+
+  ## 4. `gh` CLI Flow for Repo Creation
+
+  Exact commands (all through injected `ExecFunction`):
+
+  1. `gh auth token` — exit 0 ⇒ authed, non-zero ⇒ not authed
+  2. If not authed: `gh auth login --web` — spawned detached, returns immediately. UI polls `gh auth token` every 1.5s.
+  3. `git init` (idempotent — workflow step 7 already runs this; we re-run safely)
+  4. `git add -A && git commit -m "Initial commit"` (idempotent — fails silently if nothing to commit)
+  5. `gh repo create <slug> --public --source=. --push --description="<desc>"`
+  6. `git remote get-url origin` → parse and persist `gitRemoteUrl`
+
+  All steps share the same `ExecFunction` token in the DI container, reused from `git-fork.service.ts`.
+
+  ## 5. Security Considerations
+
+  1. **Token confidentiality at rest** — AES-256-GCM with machine-local key file (see §2). Threat model: casual filesystem read. Not: root-level attacker, cloud backup theft.
+  2. **Token validation before persist** — invalid tokens rejected at connect time. Prevents storing garbage users cannot recover.
+  3. **Secret.key file permissions** — 0o600 on POSIX. On Windows, relies on the parent `~/.shep/` directory being user-only (already created with 0o700 by `getShepHomeDir`). Document the Windows gap in the adapter header comment.
+  4. **Token never logged** — provider adapter MUST NOT include token in any log line, error message, or SSE event payload.
+  5. **gh CLI auth** — relies on the user's existing `gh auth` — we never see a GitHub token ourselves, reducing our attack surface.
+  6. **Cloudflare API error messages** — can include partial URLs. Sanitize before surfacing in SSE events (strip query strings, token fragments).
+  7. **Wrangler fallback env leak** — pass `CLOUDFLARE_API_TOKEN` via `env` option to `spawn`, not via shell concatenation.
+
+  ## 6. Performance Implications
+
+  1. **Build output scanning** — auto-detect walks `repositoryPath` checking for `dist/`, `build/`, `.next/`, `out/` in order. O(1) stat calls, negligible.
+  2. **File upload parallelism** — wrangler already uploads in parallel; the HTTP fallback should too (Promise.all with a concurrency limit of 8). Only matters on HTTP path.
+  3. **Status polling interval** — 2s matches the existing SSE loop; no new polling system.
+  4. **Token decryption cost** — AES-GCM of a ~200-byte token is microseconds; cached in memory by `CloudflarePagesProvider` for the duration of one deploy.
+  5. **SSE loop per-application snapshot cost** — one additional `SELECT id, cloud_deployment_status, cloud_deployment_url, git_remote_url FROM applications` per poll tick per connection. Application table is small (<100 rows in practice), indexed by id. Negligible.
+
+  ## 7. Library Analysis
+
+  | Library | Version | Purpose | Pros | Cons |
+  | ------- | ------- | ------- | ---- | ---- |
+  | `node:crypto` (builtin) | N/A | AES-256-GCM encryption | Zero deps, standard | None |
+  | `wrangler` | ^3.x | Cloudflare Pages deploy fallback | Official Cloudflare CLI | Node-spawn overhead on cold path |
+  | `better-sqlite3` | already installed | Token + app row persistence | Already used across project | — |
+  | `tsyringe` | already installed | DI for new ports | Project standard | — |
+  | `@octokit/rest` | **rejected** | GitHub API | — | Rejected; `gh` CLI covers the flow |
+  | `keytar` | **rejected** | OS keychain | — | Rejected; native dep, inconsistent on Windows |
+
+  ## 8. Open Questions
+
+  All questions resolved. Key clarifications captured in the approved plan:
+
+  - v1 provider: Cloudflare Pages only (others shipped as disabled stubs)
+  - Deploy driver: deterministic use case, NOT agent-driven
+  - Auth UX: guided token paste (not OAuth)
+  - Git in v1: separate button, `gh` CLI only
+  - Build step: assumed complete by workflow step 6; deploy gated on `setupComplete === true`
+
+  ## 9. Clean-Arch Violations Log
+
+  A background audit of 10 existing files is feeding findings into `specs/089-one-click-cloud-deploy/clean-arch-violations.md`. The plan phase will ingest that file and convert every entry into a cleanup task in `tasks.yaml`, per user instruction: **"we will need to consider fixing EVERYTHING."**
+
+  ---
+
+  _Updated by `/shep-kit:research` — proceed with `/shep-kit:plan`_

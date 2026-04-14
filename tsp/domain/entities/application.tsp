@@ -9,6 +9,7 @@
  */
 import "../../common/base.tsp";
 import "../../common/scalars.tsp";
+import "../../common/enums/cloud-deployment.tsp";
 
 /**
  * Application Status
@@ -65,4 +66,25 @@ model Application extends SoftDeletableEntity {
 
   @doc("Persistent agent SDK session ID — set once on first session boot, never changes")
   agentSessionId?: string;
+
+  @doc("Git remote URL (e.g. https://github.com/user/repo) once a remote is attached")
+  gitRemoteUrl?: string;
+
+  @doc("Selected cloud deployment provider for this application")
+  cloudDeploymentProvider?: CloudDeploymentProvider;
+
+  @doc("Current lifecycle state of the cloud deployment")
+  cloudDeploymentStatus?: CloudDeploymentStatus;
+
+  @doc("Provider-specific deployment id used to poll status")
+  cloudDeploymentId?: string;
+
+  @doc("Public URL of the most recent successful deployment")
+  cloudDeploymentUrl?: string;
+
+  @doc("Error message from the last failed deployment attempt")
+  cloudDeploymentError?: string;
+
+  @doc("Timestamp of the last deployment attempt (success or failure)")
+  lastDeployedAt?: utcDateTime;
 }

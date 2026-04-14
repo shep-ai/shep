@@ -46,6 +46,10 @@ properties:
     type: boolean
     default: true
     description: Notify when feature is ready for merge review
+  cloudDeploymentUpdated:
+    type: boolean
+    default: true
+    description: Notify when cloud deployment status changes (spec 089)
 required:
   - agentStarted
   - phaseCompleted

@@ -326,6 +326,20 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
                   content: block.text,
                 });
               }
+            } else if (block.type === 'thinking') {
+              // Extended-thinking reasoning — surface as its own event
+              // so the session service can persist it inline alongside
+              // tool calls for debugging visibility.
+              const thinkingText =
+                'thinking' in block && typeof block.thinking === 'string' ? block.thinking : '';
+              const textText = 'text' in block && typeof block.text === 'string' ? block.text : '';
+              const text = thinkingText !== '' ? thinkingText : textText;
+              if (text) {
+                events.push({
+                  type: 'thinking',
+                  content: text,
+                });
+              }
             } else if (block.type === 'tool_use') {
               // AskUserQuestion is handled by canUseTool callback — don't emit as tool_use
               if (block.name === 'AskUserQuestion') {
@@ -508,7 +522,8 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
         if ('summary' in msg) {
           events.push({
             type: 'tool_result',
-            content: msg.summary,
+            label: 'Summary',
+            detail: typeof msg.summary === 'string' ? msg.summary : String(msg.summary),
           });
         }
         break;
@@ -525,6 +540,48 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
         break;
       }
 
+      case 'user': {
+        // SDKUserMessage — on the agent stream these are replays of
+        // tool results (stdout, file contents, grep hits, …) that the
+        // SDK loops back into the conversation. Surface them as
+        // `tool_result` events so the step card shows the actual
+        // output of each tool call right under its bubble.
+        if ('message' in msg && msg.message && Array.isArray(msg.message.content)) {
+          for (const block of msg.message.content) {
+            if (
+              block &&
+              typeof block === 'object' &&
+              'type' in block &&
+              block.type === 'tool_result'
+            ) {
+              const raw = 'content' in block ? block.content : undefined;
+              let text = '';
+              if (typeof raw === 'string') {
+                text = raw;
+              } else if (Array.isArray(raw)) {
+                // Content blocks array — concatenate any text parts.
+                text = raw
+                  .map((p) =>
+                    p && typeof p === 'object' && 'text' in p && typeof p.text === 'string'
+                      ? p.text
+                      : ''
+                  )
+                  .filter(Boolean)
+                  .join('\n');
+              }
+              if (text) {
+                events.push({
+                  type: 'tool_result',
+                  label: 'Output',
+                  detail: text,
+                });
+              }
+            }
+          }
+        }
+        break;
+      }
+
       default: {
         // SDKCompactBoundaryMessage — context was compacted.
         // Not in the TS discriminant union, so handle via string check.
@@ -535,7 +592,7 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
             content: 'Context compacted — older conversation has been summarized',
           });
         }
-        // Otherwise ignore: user, user_replay, auth_status,
+        // Otherwise ignore: user_replay, auth_status,
         // local_command_output, hook_*, files_persisted,
         // elicitation_complete, prompt_suggestion
         break;

@@ -14,17 +14,14 @@ import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-re
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
 import type { IPhaseTimingRepository } from '../../ports/output/agents/phase-timing-repository.interface.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
+import type { IWorktreePathProvider } from '../../ports/output/services/worktree-path-provider.interface.js';
+import type { INodeHelpers } from '../../ports/output/services/node-helpers.interface.js';
+import type { IPhaseTimingContext } from '../../ports/output/services/phase-timing-context.interface.js';
 import { AgentRunStatus } from '../../../domain/generated/output.js';
 import type {
   PrdRejectionPayload,
   RejectionFeedbackEntry,
 } from '../../../domain/generated/output.js';
-import {
-  writeSpecFileAtomic,
-  safeYamlDump,
-} from '../../../infrastructure/services/agents/feature-agent/nodes/node-helpers.js';
-import { recordLifecycleEvent } from '../../../infrastructure/services/agents/feature-agent/phase-timing-context.js';
-import { computeWorktreePath } from '../../../infrastructure/services/ide-launchers/compute-worktree-path.js';
 
 @injectable()
 export class RejectAgentRunUseCase {
@@ -36,7 +33,13 @@ export class RejectAgentRunUseCase {
     @inject('IFeatureRepository')
     private readonly featureRepository: IFeatureRepository,
     @inject('IPhaseTimingRepository')
-    private readonly phaseTimingRepository: IPhaseTimingRepository
+    private readonly phaseTimingRepository: IPhaseTimingRepository,
+    @inject('IWorktreePathProvider')
+    private readonly worktreePaths: IWorktreePathProvider,
+    @inject('INodeHelpers')
+    private readonly nodeHelpers: INodeHelpers,
+    @inject('IPhaseTimingContext')
+    private readonly phaseTimingContext: IPhaseTimingContext
   ) {}
 
   async execute(
@@ -101,7 +104,11 @@ export class RejectAgentRunUseCase {
       };
 
       spec.rejectionFeedback = [...existingFeedback, newEntry];
-      writeSpecFileAtomic(specDir, 'spec.yaml', safeYamlDump(spec));
+      this.nodeHelpers.writeSpecFileAtomic(
+        specDir,
+        'spec.yaml',
+        this.nodeHelpers.safeYamlDump(spec)
+      );
     } catch {
       // If spec.yaml can't be read, still proceed with iteration 1
     }
@@ -131,7 +138,11 @@ export class RejectAgentRunUseCase {
     }
 
     // Record rejected lifecycle event
-    await recordLifecycleEvent('run:rejected', id, this.phaseTimingRepository);
+    await this.phaseTimingContext.recordLifecycleEvent(
+      'run:rejected',
+      id,
+      this.phaseTimingRepository
+    );
 
     // Spawn worker with rejection payload
     const rejectionPayload: PrdRejectionPayload = {
@@ -144,7 +155,8 @@ export class RejectAgentRunUseCase {
     // Derive worktree path with fallback — the mapper conditionally sets
     // worktreePath only when the DB column is non-null, so compute it if missing.
     const worktreePath =
-      feature.worktreePath ?? computeWorktreePath(feature.repositoryPath, feature.branch);
+      feature.worktreePath ??
+      this.worktreePaths.getWorktreePath(feature.repositoryPath, feature.branch);
 
     this.processService.spawn(
       run.featureId ?? '',

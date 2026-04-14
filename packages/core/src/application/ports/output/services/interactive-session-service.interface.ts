@@ -264,7 +264,16 @@ export interface IInteractiveSessionService {
      * application-creation flow to inject a "read SHEP_BRIEF.md
      * first" directive without polluting the chat transcript.
      */
-    agentKickoffOverride?: string
+    agentKickoffOverride?: string,
+    /**
+     * When false, SKIP the "persist a user message row for `content`"
+     * step. The caller is responsible for having already written the
+     * user message to the DB. Used by long-running creation flows
+     * that persist the user's first bubble up-front so the chat
+     * renders it instantly, and only need this call for the session
+     * boot + agent-side kickoff. Defaults to `true`.
+     */
+    persistUserMessage?: boolean
   ): Promise<InteractiveMessage>;
 
   /**
