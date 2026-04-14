@@ -103,6 +103,12 @@ export function ChatTab({
     agentType: overrideAgent,
     debugMode,
     initialChatState,
+    // When the host provides a workflow placeholder we KNOW the tracker
+    // will be the primary surface and the first user message must be
+    // pinned ABOVE it — even during the early window before the first
+    // real workflow-step row arrives. Without this, the bubble would
+    // fall through to the flat thread and render below the tracker.
+    pinInitialRequest: (workflowPlaceholder?.length ?? 0) > 0,
   });
 
   // Fire the all-steps-complete callback exactly once per mount.

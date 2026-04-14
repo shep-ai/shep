@@ -193,6 +193,17 @@ export interface ChatRuntimeOptions {
    * background refetch only confirms / updates them.
    */
   initialChatState?: ChatState;
+  /**
+   * When true, the host page intends to render the first stepless user
+   * message ABOVE the step tracker via its own pinned bubble — so the
+   * hook must (a) always surface that message as `initialRequestMessage`
+   * and (b) filter it out of the flat thread, even when no workflow plan
+   * has landed yet (placeholder-only state). Without this flag the bubble
+   * would appear BELOW the tracker during the window between app creation
+   * and the first workflow-step row, because the filter previously only
+   * kicked in once `hasPlan` became true.
+   */
+  pinInitialRequest?: boolean;
 }
 
 /** A debug event captured from SSE for display in debug mode. */
@@ -701,11 +712,12 @@ export function useChatRuntime(
   //    the layout can render it ABOVE the step tracker — matching
   //    the mental model "user asked X, Shep built it, then we
   //    kept chatting".
+  const pinInitialRequest = options?.pinInitialRequest === true;
   const initialRequestMessage = useMemo<InteractiveMessage | null>(() => {
-    if (!stepProgress.hasPlan) return null;
+    if (!stepProgress.hasPlan && !pinInitialRequest) return null;
     const first = messages.find((m) => m.role === InteractiveMessageRole.user && !m.stepId);
     return first ?? null;
-  }, [stepProgress.hasPlan, messages]);
+  }, [stepProgress.hasPlan, pinInitialRequest, messages]);
 
   const threadMessages: ThreadMessageLike[] = useMemo(() => {
     const hasPlan = stepProgress.hasPlan;
@@ -732,7 +744,14 @@ export function useChatRuntime(
     // via `<InitialRequestBubble>` so leaving it in the flat thread
     // would duplicate it.
     const workflowRunning = hasPlan && !stepProgress.allDone;
-    const sourceMessages = hasPlan
+    // Filter when a plan exists OR when the host has explicitly asked us
+    // to pin the initial request bubble above the tracker (placeholder
+    // window before the first workflow-step row lands). In the
+    // placeholder-only case we still want the first user message pulled
+    // out of the flat thread so the host's `<InitialRequestBubble>`
+    // isn't duplicated below the tracker.
+    const shouldFilter = hasPlan || pinInitialRequest;
+    const sourceMessages = shouldFilter
       ? messages.filter((m) => {
           if (m.id === initialRequestMessage?.id) return false;
           if (m.stepId) return false; // step-tagged messages live inside their card
@@ -839,6 +858,7 @@ export function useChatRuntime(
     debugEvents,
     stepProgress.hasPlan,
     stepProgress.allDone,
+    pinInitialRequest,
   ]);
 
   // ── Status info for typing indicator ──────────────────────────────────
