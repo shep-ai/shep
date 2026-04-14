@@ -132,8 +132,11 @@ describe('ApplicationCreationPromptBuilder', () => {
       expect(systemPrompt).toContain('POSIX shell');
       // Tells the agent NOT to waste a turn rediscovering the cwd
       expect(systemPrompt).toMatch(/do NOT run `pwd`/i);
-      // Mentions git init state so the agent doesn't re-initialize
-      expect(systemPrompt).toMatch(/git repo/i);
+      // Tells the agent the project was already scaffolded so it does
+      // not re-run `bunx shadcn init`, `npm create vite`, or any other
+      // bootstrap that would destroy the Shep fat-template overlay.
+      expect(systemPrompt).toMatch(/already scaffolded/i);
+      expect(systemPrompt).toContain('TEMPLATE.md');
     });
 
     it('switches shell guidance on windows platform', () => {
