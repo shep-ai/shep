@@ -162,11 +162,18 @@ export class CloudflarePagesProvider implements ICloudDeploymentProvider {
           err instanceof Error ? err.message : String(err)
         );
       }
-      onProgress(CloudDeploymentStatus.Deployed, `Live at ${wranglerResult.url}`);
-      log(OperationLogLevel.Info, `Deployment succeeded — live at ${wranglerResult.url}`);
+      // Prefer the project alias (`<project>.pages.dev`) over wrangler's
+      // per-commit preview URL (`<hash>.<project>.pages.dev`). The alias
+      // is the stable production URL users expect to see in the app card;
+      // the per-commit URL is a one-off preview that changes on every
+      // deploy. We keep the wrangler URL as a fallback in case the alias
+      // derivation somehow produces an empty string.
+      const aliasUrl = this.deriveAliasUrl(input.projectName) || wranglerResult.url;
+      onProgress(CloudDeploymentStatus.Deployed, `Live at ${aliasUrl}`);
+      log(OperationLogLevel.Info, `Deployment succeeded — live at ${aliasUrl}`);
       return {
         deploymentId: newestId ?? `wrangler-${Date.now()}`,
-        url: wranglerResult.url,
+        url: aliasUrl,
       };
     }
 
@@ -224,6 +231,26 @@ export class CloudflarePagesProvider implements ICloudDeploymentProvider {
   }
 
   // ─────────────── internals ───────────────
+
+  /**
+   * Build the stable alias URL for a Cloudflare Pages project.
+   *
+   * Cloudflare serves every successful production deploy at
+   * `<project-name>.pages.dev` in addition to the per-commit preview URL
+   * (`<hash>.<project-name>.pages.dev`). The alias is what we surface in
+   * the app card — it doesn't change between deploys, so users can
+   * bookmark it and share it without worrying about stale commit hashes.
+   *
+   * Project names are already validated by Cloudflare's own API (lowercase
+   * alphanumerics + hyphens, 1–58 chars), and our `cleanDeployName`
+   * helper produces strings that satisfy those rules, so no further
+   * sanitisation is needed here.
+   */
+  private deriveAliasUrl(projectName: string): string {
+    const trimmed = projectName.trim();
+    if (!trimmed) return '';
+    return `https://${trimmed}.pages.dev`;
+  }
 
   private async verifyToken(token: string): Promise<void> {
     const res = await this.request<{ status: string }>(

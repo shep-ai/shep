@@ -55,6 +55,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import {
   cpSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   renameSync,
@@ -63,6 +64,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { getShepHomeDir } from '../filesystem/shep-directory.service.js';
 import { injectable } from 'tsyringe';
 import type {
   IApplicationScaffolder,
@@ -96,6 +98,16 @@ const PHASE_TIMEOUT_MS = 180_000; // 3 minutes
  */
 const SHADCN_PROJECT_NAME = 'vite-app';
 
+/**
+ * Bump this whenever the shadcn preset, extra deps, or base template
+ * changes in a way that requires a fresh scaffold. Old cache dirs are
+ * left in place (not deleted) so a rollback is always possible.
+ */
+const SCAFFOLD_CACHE_VERSION = 'v1';
+
+/** Entries to exclude when saving the scaffold output to cache. */
+const CACHE_SKIP = new Set(['.git', 'node_modules']);
+
 @injectable()
 export class BunShadcnScaffolder implements IApplicationScaffolder {
   async scaffold(options: ScaffoldOptions): Promise<ScaffoldResult> {
@@ -104,88 +116,72 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
     // Phase 1 — bootstrap bun on first-ever run.
     this.ensureBunOnPath();
 
-    // Phase 2 — run shadcn init inside an OS-level scratch directory
-    // instead of directly inside `repositoryPath`.
+    // Phase 2 — base project files.
     //
-    // BACKGROUND: earlier attempts to scaffold directly into
-    // `repositoryPath` kept producing a `vite-app/` subdirectory
-    // despite `--name`, `--cwd`, and even emptying the target first.
-    // The exact reason is opaque — `shadcn init --template vite` may
-    // write shadcn-specific files (`components.json`, etc.) at the
-    // given cwd AND run `create-vite` in a child folder named after
-    // `--name`, mixing the two layouts. Our flatten helper then
-    // early-returned because there was already a `package.json` at
-    // the root, leaving `vite-app/` in place.
+    // FAST PATH (cache hit): The scaffold output from a previous run is
+    // stored at ~/.shep/cache/scaffold/<version>/ (source files + lockfile,
+    // no node_modules). We copy those files in and run
+    // `bun install --frozen-lockfile`, which is fast because bun's global
+    // package cache already has every package from the last run.
     //
-    // NEW STRATEGY — zero trust in shadcn's cwd behavior:
-    //   1. Create a fresh temp directory (`os.tmpdir()/shep-scaffold-*`).
-    //   2. Run shadcn init inside it.
-    //   3. Find the single scaffolded project root — either the temp
-    //      dir itself (if shadcn scaffolded flat) or a unique child
-    //      with a `package.json` (if shadcn insisted on a subdir).
-    //   4. Empty `repositoryPath` and `fs.renameSync` every file from
-    //      the scaffold root into `repositoryPath`.
-    //   5. Remove the temp directory.
-    //
-    // This eliminates the subdir class of bug forever: whatever
-    // shadcn produces, we only copy the useful subtree into the real
-    // project path. The final `repositoryPath` layout is 100% under
-    // our control.
-    const scratchDir = mkdtempSync(join(tmpdir(), 'shep-scaffold-'));
-    try {
-      // CRITICAL: `--template vite` drives `create-vite`, and `--yes`
-      // does NOT cover the "What is your project named?" prompt. We
-      // answer it via `--name` instead of piping stdin — stdin piping
-      // is unreliable because many prompt libraries detect non-TTY
-      // input and ignore it, leading to indefinite hangs. The chosen
-      // name is irrelevant: the move step below ignores it.
-      //
-      // `stdinInput` newlines remain as a defensive safety net in
-      // case a future shadcn version adds a new prompt we didn't
-      // anticipate — combined with the 3-minute phase timeout
-      // (runSpawn), the child can never hang longer than that.
+    // SLOW PATH (cache miss): Run `bunx shadcn@latest init` in a temp
+    // directory, move the result into repositoryPath, flatten, then save
+    // (without node_modules) to the cache for next time.
+    this.emptyDirectory(repositoryPath);
+
+    if (this.isCacheValid()) {
+      this.copyDirectory(this.getCacheDir(), repositoryPath);
       await this.runSpawn({
-        command: 'bunx',
-        args: [
-          '--bun',
-          'shadcn@latest',
-          'init',
-          '--preset',
-          'b0',
-          '--base',
-          'base',
-          '--template',
-          'vite',
-          '--name',
-          SHADCN_PROJECT_NAME,
-          '--yes',
-        ],
-        cwd: scratchDir,
-        phase: 'shadcn init',
-        stdinInput: '\n'.repeat(20),
+        command: 'bun',
+        args: ['install', '--frozen-lockfile'],
+        cwd: repositoryPath,
+        phase: 'bun install (from scaffold cache)',
         timeoutMs: PHASE_TIMEOUT_MS,
       });
-
-      // Phase 3 — locate the scaffolded project root inside the
-      // scratch directory, then move every file into repositoryPath.
-      const scaffoldRoot = this.findScaffoldRoot(scratchDir);
-      this.emptyDirectory(repositoryPath);
-      this.moveDirectoryContents(scaffoldRoot, repositoryPath);
-    } finally {
-      // Always clean up the scratch dir, even if the move failed —
-      // otherwise /tmp fills up with half-scaffolded projects.
+    } else {
+      // Run shadcn init in an OS-level scratch directory.
+      // See detailed background comment in git history / original code.
+      const scratchDir = mkdtempSync(join(tmpdir(), 'shep-scaffold-'));
       try {
-        rmSync(scratchDir, { recursive: true, force: true });
-      } catch {
-        // Best-effort — the OS will eventually reap os.tmpdir().
-      }
-    }
+        await this.runSpawn({
+          command: 'bunx',
+          args: [
+            '--bun',
+            'shadcn@latest',
+            'init',
+            '--preset',
+            'b0',
+            '--base',
+            'base',
+            '--template',
+            'vite',
+            '--name',
+            SHADCN_PROJECT_NAME,
+            '--yes',
+          ],
+          cwd: scratchDir,
+          phase: 'shadcn init',
+          stdinInput: '\n'.repeat(20),
+          timeoutMs: PHASE_TIMEOUT_MS,
+        });
 
-    // Phase 3b — defensive flatten. If `moveDirectoryContents` ever
-    // leaves a stray `vite-app/` child (e.g. due to a future shadcn
-    // quirk we haven't accounted for), the flatten helper catches it
-    // as a safety net.
-    flattenSingleChildProject(repositoryPath);
+        const scaffoldRoot = this.findScaffoldRoot(scratchDir);
+        this.moveDirectoryContents(scaffoldRoot, repositoryPath);
+      } finally {
+        try {
+          rmSync(scratchDir, { recursive: true, force: true });
+        } catch {
+          // Best-effort — the OS will eventually reap os.tmpdir().
+        }
+      }
+
+      // Defensive flatten in case shadcn produced a nested layout.
+      flattenSingleChildProject(repositoryPath);
+
+      // Persist scaffold output for future fast-path runs.
+      // Excludes node_modules and .git — only source files + lockfile.
+      this.saveToCache(repositoryPath);
+    }
 
     // Phase 4 — install the app-specific extras the "components"
     // step will import. Batched into one `bun add` call.
@@ -198,11 +194,6 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
     });
 
     // Phase 5 — overlay the fat template on top of the raw scaffold.
-    //   - Ships the dark-mode palette already configured in index.css.
-    //   - Ships pre-built common/ components the agent imports.
-    //   - Ships lib/ helpers (theme, format, mock) and types/common.ts.
-    //   - Ships TEMPLATE.md at the root so the agent's first turn reads
-    //     it and knows what's available.
     const overlay = applyTemplateOverlay(repositoryPath);
 
     return {
@@ -255,6 +246,42 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
    * re-initializes git itself, so nothing downstream depends on the
    * pre-existing repo.
    */
+  // ── Scaffold cache helpers ───────────────────────────────────────────
+
+  /** Absolute path to the versioned scaffold cache directory. */
+  private getCacheDir(): string {
+    return join(getShepHomeDir(), 'cache', 'scaffold', SCAFFOLD_CACHE_VERSION);
+  }
+
+  /** True when the cache directory contains a valid `package.json`. */
+  private isCacheValid(): boolean {
+    return existsSync(join(this.getCacheDir(), 'package.json'));
+  }
+
+  /**
+   * Persist scaffold source files to the cache, skipping `node_modules`
+   * and `.git` — only source files and the lockfile are needed.
+   */
+  private saveToCache(sourceDir: string): void {
+    const cacheDir = this.getCacheDir();
+    mkdirSync(cacheDir, { recursive: true });
+    this.copyDirectory(sourceDir, cacheDir);
+  }
+
+  /**
+   * Recursively copy every entry from `srcDir` to `destDir`,
+   * skipping entries listed in `CACHE_SKIP`.
+   */
+  private copyDirectory(srcDir: string, destDir: string): void {
+    mkdirSync(destDir, { recursive: true });
+    for (const entry of readdirSync(srcDir)) {
+      if (CACHE_SKIP.has(entry)) continue;
+      cpSync(join(srcDir, entry), join(destDir, entry), { recursive: true });
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+
   private emptyDirectory(dirPath: string): void {
     if (!existsSync(dirPath)) return;
     for (const entry of readdirSync(dirPath)) {

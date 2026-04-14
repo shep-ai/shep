@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { Direction } from 'radix-ui';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -30,8 +30,19 @@ interface AppShellProps {
 
 function AppShellInner({ children, sidebarOpen }: AppShellProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { guardedNavigate } = useDrawerCloseGuard();
   const featureFlags = useFeatureFlags();
+
+  // Application-centric routes own their own primary actions (smart
+  // deploy split-button in the top bar, create FAB on the list page)
+  // so the global chat FAB is redundant there and was colliding with
+  // the page-level FAB. Hide it entirely on /applications (list) and
+  // /application/[id] (individual app page).
+  const hideGlobalChat =
+    pathname === '/applications' ||
+    pathname?.startsWith('/applications/') ||
+    pathname?.startsWith('/application/');
 
   // Subscribe to agent lifecycle events and dispatch toast/browser notifications
   useNotifications();
@@ -120,8 +131,10 @@ function AppShellInner({ children, sidebarOpen }: AppShellProps) {
       <SidebarInset>
         <div className="relative h-full">
           <main className="h-full">{children}</main>
-          {/* Global chat popup — fixed, visible across all pages */}
-          <GlobalChatPopup />
+          {/* Global chat popup — fixed, visible across pages EXCEPT
+              on application routes where the page owns its own
+              primary actions and the chat FAB is redundant. */}
+          {hideGlobalChat ? null : <GlobalChatPopup />}
           {/* Global search dialog — Cmd+K / Ctrl+K */}
           <GlobalSearchDialog />
           {featureFlags.githubImport ? (

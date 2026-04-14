@@ -7,6 +7,7 @@ import type { ICloudDeploymentEventBus } from '../../ports/output/services/cloud
 import type { ICloudDeploymentProviderRegistry } from '../../ports/output/services/cloud-deployment-provider-registry.interface.js';
 import type { ILogger } from '../../ports/output/services/logger.interface.js';
 import type { IOperationLogService } from '../../ports/output/services/operation-log-service.interface.js';
+import type { IProjectBuildService } from '../../ports/output/services/project-build-service.interface.js';
 import {
   CloudDeploymentProvider,
   CloudDeploymentStatus,
@@ -14,6 +15,7 @@ import {
   OperationLogLevel,
 } from '../../../domain/generated/output.js';
 import { ApplicationNotFoundError } from '../../../domain/errors/application-not-found.error.js';
+import { cleanDeployName } from '../../../domain/shared/clean-name.js';
 import { NoProviderSelectedError } from '../../../domain/errors/no-provider-selected.error.js';
 import { BuildOutputNotFoundError } from '../../../domain/errors/build-output-not-found.error.js';
 import { CloudProviderNotConnectedError } from '../../../domain/errors/cloud-provider-not-connected.error.js';
@@ -46,7 +48,9 @@ export class InitiateCloudDeploymentUseCase {
     @inject('ILogger')
     private readonly logger: ILogger,
     @inject('IOperationLogService')
-    private readonly opLog: IOperationLogService
+    private readonly opLog: IOperationLogService,
+    @inject('IProjectBuildService')
+    private readonly buildService: IProjectBuildService
   ) {}
 
   async execute(input: InitiateCloudDeploymentInput): Promise<InitiateCloudDeploymentResult> {
@@ -130,6 +134,18 @@ export class InitiateCloudDeploymentUseCase {
       throw new CloudProviderNotConnectedError(providerId);
     }
 
+    // Re-run the project's build script so the deploy always ships fresh output.
+    await this.opLog.info(opKind, opId, `Building project before deploy…`);
+    try {
+      await this.buildService.buildProject(app.repositoryPath, (line) => {
+        void this.opLog.debug(opKind, opId, line);
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await this.opLog.error(opKind, opId, `Build failed: ${msg}`);
+      throw err;
+    }
+
     const buildOutputDir = this.resolveBuildOutputDir(app.repositoryPath);
     await this.opLog.info(opKind, opId, `Resolved build output directory: ${buildOutputDir}`);
 
@@ -147,7 +163,10 @@ export class InitiateCloudDeploymentUseCase {
         {
           applicationId: input.applicationId,
           buildOutputDir,
-          projectName: app.slug,
+          // Use the clean display-name-derived slug (no random suffix)
+          // so the Cloudflare Pages project has a human-readable name.
+          // The random suffix stays on app.slug for local folder uniqueness.
+          projectName: cleanDeployName(app.name),
         },
         (status, message) => {
           void this.applicationRepo

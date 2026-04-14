@@ -4,6 +4,7 @@ import type { IApplicationRepository } from '../../ports/output/repositories/app
 import type { IGitRemoteService } from '../../ports/output/services/git-remote.service.interface.js';
 import type { IOperationLogService } from '../../ports/output/services/operation-log-service.interface.js';
 import { ApplicationNotFoundError } from '../../../domain/errors/application-not-found.error.js';
+import { cleanDeployName } from '../../../domain/shared/clean-name.js';
 import { OperationLogKind } from '../../../domain/generated/output.js';
 
 export interface CreateGitRemoteInput {
@@ -55,7 +56,14 @@ export class CreateGitRemoteUseCase {
     try {
       const { remoteUrl } = await this.gitRemoteService.createGitHubRepoAndPush({
         cwd: app.repositoryPath,
-        slug: trimmedRepoName && trimmedRepoName.length > 0 ? trimmedRepoName : app.slug,
+        // Prefer the user-supplied name; fall back to the clean
+        // display-name-derived slug so CLI / API callers that omit
+        // `repoName` still get a human-readable GitHub repo name
+        // instead of the internal slug with its random hex suffix.
+        slug:
+          trimmedRepoName && trimmedRepoName.length > 0
+            ? trimmedRepoName
+            : cleanDeployName(app.name),
         description: app.description,
         visibility: normalized.visibility ?? 'private',
         ownerLogin:

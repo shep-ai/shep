@@ -73,6 +73,14 @@ export interface SmartDeployState {
   errorMessage: string | null;
   /** Source of the failure (so the panel can highlight the right section). */
   failedSource: 'sync' | 'deploy' | null;
+  /** Which side is actively running when `kind === 'working'`. Used by
+   *  the top-bar button to swap the generic "Working…" label for a
+   *  specific one: "Syncing code" or "Deploying to Cloudflare Pages". */
+  workingSource: 'sync' | 'deploy' | null;
+  /** Friendly display name of the cloud provider the deploy targets,
+   *  e.g. "Cloudflare Pages". Threaded in from the parent so the
+   *  hook doesn't have to own the enum→name mapping. */
+  cloudProviderName: string | null;
 }
 
 export interface UseSmartDeployStateInput {
@@ -90,6 +98,12 @@ export interface UseSmartDeployStateInput {
   syncAction: SyncActionState;
   /** Whether at least one cloud provider is connected. From /api/cloud-providers. */
   hasConnectedCloudProvider: boolean;
+  /** Friendly display name of the target cloud provider, e.g.
+   *  "Cloudflare Pages". Threaded through so the button label can read
+   *  "Deploying to Cloudflare Pages" without the hook owning any
+   *  enum→string mapping. Falls through to null when no provider is
+   *  picked yet (`Working…` fallback). */
+  cloudProviderName: string | null;
 }
 
 export function useSmartDeployState({
@@ -99,6 +113,7 @@ export function useSmartDeployState({
   cloudDeploy,
   syncAction,
   hasConnectedCloudProvider,
+  cloudProviderName,
 }: UseSmartDeployStateInput): SmartDeployState {
   return useMemo(() => {
     // Effective git status — merge live read with persisted remote URL.
@@ -142,7 +157,12 @@ export function useSmartDeployState({
     const cloudFailed = cloudStatus === CloudDeploymentStatus.Failed;
     const cloudDeployed = cloudStatus === CloudDeploymentStatus.Deployed && Boolean(cloudUrl);
 
-    // 1. Working — sync or deploy in flight
+    // 1. Working — sync or deploy in flight. Record which side is
+    //    actively running so the button label can say "Syncing code"
+    //    or "Deploying to Cloudflare Pages" instead of the generic
+    //    "Working…". When both are running (pushAndDeploy pipeline),
+    //    the cloud deploy takes longer and is more informative to
+    //    surface, so it wins the label.
     if (syncAction.kind === 'running' || cloudIsWorking) {
       return baseState({
         kind: 'working',
@@ -150,6 +170,8 @@ export function useSmartDeployState({
         hasRemote,
         hasCloud: hasConnectedCloudProvider,
         liveUrl: cloudDeployed ? (cloudUrl ?? null) : null,
+        workingSource: cloudIsWorking ? ('deploy' as const) : ('sync' as const),
+        cloudProviderName,
       });
     }
 
@@ -252,6 +274,7 @@ export function useSmartDeployState({
     cloudDeploy.state,
     syncAction,
     hasConnectedCloudProvider,
+    cloudProviderName,
   ]);
 }
 
@@ -266,5 +289,7 @@ function baseState(
     liveUrl: partial.liveUrl ?? null,
     errorMessage: partial.errorMessage ?? null,
     failedSource: partial.failedSource ?? null,
+    workingSource: partial.workingSource ?? null,
+    cloudProviderName: partial.cloudProviderName ?? null,
   };
 }

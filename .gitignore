@@ -9,6 +9,8 @@ node_modules/
 # =============================================================================
 dist/
 build/
+# Exception: this is a source directory (services/build/*), not a build output
+!packages/core/src/infrastructure/services/build/
 /web/
 .next/
 out/

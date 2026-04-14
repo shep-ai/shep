@@ -630,6 +630,7 @@ describe('InitiateCloudDeploymentUseCase', () => {
 
   function buildUseCase() {
     const opLog = new FakeOperationLogService();
+    const buildService = { buildProject: async () => undefined };
     return new InitiateCloudDeploymentUseCase(
       repo,
       registry,
@@ -638,7 +639,8 @@ describe('InitiateCloudDeploymentUseCase', () => {
       logger,
       // The fake matches the IOperationLogService shape — duck-typed cast
       // keeps the test free of the heavy generated type imports.
-      opLog as unknown as ConstructorParameters<typeof InitiateCloudDeploymentUseCase>[5]
+      opLog as unknown as ConstructorParameters<typeof InitiateCloudDeploymentUseCase>[5],
+      buildService as unknown as ConstructorParameters<typeof InitiateCloudDeploymentUseCase>[6]
     );
   }
 

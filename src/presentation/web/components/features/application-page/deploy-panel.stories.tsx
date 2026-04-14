@@ -73,6 +73,8 @@ const baseSmart = (overrides: Partial<SmartDeployState> = {}): SmartDeployState 
   liveUrl: null,
   errorMessage: null,
   failedSource: null,
+  workingSource: null,
+  cloudProviderName: null,
   ...overrides,
 });
 

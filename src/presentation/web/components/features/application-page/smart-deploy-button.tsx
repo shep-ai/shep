@@ -61,8 +61,24 @@ function labelFor(state: SmartDeployState): LabelSpec {
   switch (state.kind) {
     case 'loading':
       return { icon: Loader2, label: 'Loading…', tone: 'muted', spinning: true };
-    case 'working':
+    case 'working': {
+      // Specific-per-source label instead of the generic "Working…".
+      // Sync: we're doing the git commit+push pipeline. Deploy: the
+      // cloud provider is shipping the build. Fallback stays as
+      // "Working…" for any edge case where source isn't set.
+      if (state.workingSource === 'sync') {
+        return { icon: Loader2, label: 'Syncing code', tone: 'primary', spinning: true };
+      }
+      if (state.workingSource === 'deploy') {
+        return {
+          icon: Loader2,
+          label: `Deploying to ${state.cloudProviderName ?? 'cloud'}`,
+          tone: 'primary',
+          spinning: true,
+        };
+      }
       return { icon: Loader2, label: 'Working…', tone: 'primary', spinning: true };
+    }
     case 'failed':
       return { icon: AlertTriangle, label: 'Try again', tone: 'destructive' };
     case 'pushAndDeploy':
@@ -118,16 +134,30 @@ function truncateHost(url: string): string {
   }
 }
 
+/**
+ * Tone classes — square, flat, VS-Code-tab-style.
+ *
+ * Neutral `border-border` all around so the button always sits as a
+ * clean rectangle with no rounded corners, and a 2px BOTTOM accent
+ * bar (`border-b-2 border-b-<tone>`) that carries the state color on
+ * a single side only. Subtle background tint + matching text/icon
+ * color complete the tone without painting the whole frame green or
+ * amber.
+ *
+ * Sits next to `app-view-tabs` in the top bar so the whole row reads
+ * as one flat rectangular family.
+ */
 const TONE_CLASSES: Record<LabelSpec['tone'], string> = {
   primary:
-    'border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/15',
+    'border-border border-b-2 border-b-primary bg-primary/5 text-primary hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/15',
   emerald:
-    'border-emerald-500/40 bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/15',
+    'border-border border-b-2 border-b-emerald-500 bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/15',
   amber:
-    'border-amber-500/40 bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 dark:text-amber-400 dark:bg-amber-500/10 dark:hover:bg-amber-500/15',
+    'border-border border-b-2 border-b-amber-500 bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 dark:text-amber-400 dark:bg-amber-500/10 dark:hover:bg-amber-500/15',
   destructive:
-    'border-destructive/40 bg-destructive/5 text-destructive hover:bg-destructive/10 dark:bg-destructive/10 dark:hover:bg-destructive/15',
-  muted: 'border-border bg-background text-muted-foreground hover:bg-accent',
+    'border-border border-b-2 border-b-destructive bg-destructive/5 text-destructive hover:bg-destructive/10 dark:bg-destructive/10 dark:hover:bg-destructive/15',
+  muted:
+    'border-border border-b-2 border-b-transparent bg-background text-muted-foreground hover:bg-accent',
 };
 
 export function SmartDeployButton({
@@ -164,12 +194,12 @@ export function SmartDeployButton({
         onClick={onPrimaryClick}
         disabled={!isInteractive}
         className={cn(
-          'inline-flex h-8 items-center gap-2 rounded-l-md border border-r-0 px-3 text-xs font-medium transition-colors',
+          // Square, flat, VS-Code-tab language. The 2px top accent
+          // comes from the tone class; the rest of the frame stays
+          // neutral so "green everywhere" can't happen anymore.
+          'inline-flex h-9 items-center gap-2 rounded-none border border-r-0 px-3 text-xs font-medium transition-colors',
           TONE_CLASSES[spec.tone],
-          isInteractive ? 'cursor-pointer' : 'cursor-not-allowed opacity-70',
-          // Subtle glow for the high-priority "Save & publish" state so it
-          // beckons the user without screaming.
-          state.kind === 'pushAndDeploy' && 'shadow-[0_0_0_1px_var(--color-primary)]/20'
+          isInteractive ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'
         )}
         title={spec.label}
       >
@@ -206,7 +236,10 @@ export function SmartDeployButton({
             aria-label="Open deploy panel"
             title="More options"
             className={cn(
-              'inline-flex h-8 items-center justify-center rounded-r-md border px-1.5 transition-colors',
+              // Square chevron half, same top accent as the main
+              // button so the split reads as one rectangle with a
+              // single vertical divider between the two halves.
+              'inline-flex h-9 items-center justify-center rounded-none border px-1.5 transition-colors',
               TONE_CLASSES[spec.tone],
               'cursor-pointer'
             )}

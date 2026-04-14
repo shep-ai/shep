@@ -2,7 +2,7 @@ import { ApplicationsPageClient } from '@/components/features/applications/appli
 
 export default function ApplicationsPage() {
   return (
-    <div className="dark:bg-background flex h-full flex-col overflow-y-auto bg-[#f6f7f8] p-6">
+    <div className="flex h-full flex-col overflow-y-auto bg-[#eef0f3] p-6 dark:bg-[#111113]">
       <ApplicationsPageClient />
     </div>
   );

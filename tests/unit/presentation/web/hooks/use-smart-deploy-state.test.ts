@@ -40,6 +40,7 @@ describe('useSmartDeployState', () => {
         cloudDeploy: makeCloud(),
         syncAction: idleSync,
         hasConnectedCloudProvider: false,
+        cloudProviderName: null,
       })
     );
     expect(result.current.kind).toBe('loading');
@@ -62,6 +63,7 @@ describe('useSmartDeployState', () => {
         }),
         syncAction: idleSync,
         hasConnectedCloudProvider: true,
+        cloudProviderName: null,
       })
     );
     // Should resolve to "live" since the cloud is deployed and we have
@@ -80,6 +82,7 @@ describe('useSmartDeployState', () => {
         cloudDeploy: makeCloud(),
         syncAction: idleSync,
         hasConnectedCloudProvider: false,
+        cloudProviderName: null,
       })
     );
     expect(result.current.kind).toBe('getOnline');
@@ -102,6 +105,7 @@ describe('useSmartDeployState', () => {
         cloudDeploy: makeCloud(),
         syncAction: idleSync,
         hasConnectedCloudProvider: true,
+        cloudProviderName: null,
       })
     );
     expect(result.current.kind).toBe('pushAndDeploy');
@@ -123,6 +127,7 @@ describe('useSmartDeployState', () => {
         cloudDeploy: makeCloud(),
         syncAction: { kind: 'running' },
         hasConnectedCloudProvider: true,
+        cloudProviderName: null,
       })
     );
     expect(result.current.kind).toBe('working');

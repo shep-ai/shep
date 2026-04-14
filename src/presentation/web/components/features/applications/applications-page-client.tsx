@@ -3,9 +3,10 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { LayoutGrid, Loader2, Plus } from 'lucide-react';
+import { FolderOpen, Github, LayoutGrid, Loader2, Plus, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DeploymentStatusProvider } from '@/hooks/deployment-status-provider';
+import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { ControlCenterEmptyState } from '@/components/features/control-center/control-center-empty-state';
 import { ApplicationCard } from './application-card';
 import type { ApplicationWithStatus } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
@@ -14,8 +15,15 @@ export interface ApplicationsPageClientProps {
   className?: string;
 }
 
+interface NewApplicationCardProps {
+  onDescribe(): void;
+  onOpenLocalDirectory?: () => void;
+  onImportGitHub?: () => void;
+}
+
 export function ApplicationsPageClient({ className }: ApplicationsPageClientProps) {
   const router = useRouter();
+  const featureFlags = useFeatureFlags();
   const [showCreatePrompt, setShowCreatePrompt] = useState(false);
 
   const { data: applications = [], isLoading } = useQuery<ApplicationWithStatus[]>({
@@ -54,38 +62,39 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
           <div className="flex items-center justify-center py-12">
             <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
           </div>
-        ) : applications.length === 0 ? (
-          <div
-            data-testid="applications-page-empty"
-            className="text-muted-foreground flex flex-col items-center justify-center py-12 text-center"
-          >
-            <LayoutGrid className="mb-2 h-6 w-6 opacity-20" />
-            <p className="text-xs">No applications yet.</p>
-            <p className="mt-1 text-[11px] opacity-70">
-              Tap the <Plus className="inline h-3 w-3 align-text-bottom" /> button to create one.
-            </p>
-          </div>
         ) : (
           <div
             data-testid="applications-page-grid"
-            className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           >
+            {/* New application placeholder card — always FIRST so the
+                user can click immediately without scanning past their apps. */}
+            <NewApplicationCard
+              onDescribe={() => setShowCreatePrompt(true)}
+              onOpenLocalDirectory={async () => {
+                const { pickFolder } = await import(
+                  '@/components/common/add-repository-button/pick-folder'
+                );
+                const path = await pickFolder();
+                if (!path) return;
+                const { adoptLocalDirectory } = await import('@/app/actions/adopt-local-directory');
+                const result = await adoptLocalDirectory({ repositoryPath: path });
+                if (result.applicationId) {
+                  router.push(`/application/${result.applicationId}`);
+                }
+              }}
+              onImportGitHub={
+                featureFlags.githubImport
+                  ? () => window.dispatchEvent(new CustomEvent('shep:open-github-import'))
+                  : undefined
+              }
+            />
+
             {sorted.map((app) => (
               <ApplicationCard key={app.id} application={app} />
             ))}
           </div>
         )}
-
-        {/* FAB — new application */}
-        <button
-          type="button"
-          data-testid="applications-fab-new"
-          aria-label="New application"
-          onClick={() => setShowCreatePrompt(true)}
-          className="fixed right-6 bottom-6 z-40 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-indigo-500 text-white shadow-lg transition-all duration-200 hover:scale-105 hover:bg-indigo-400 hover:shadow-xl active:scale-95"
-        >
-          <Plus className="h-7 w-7 stroke-[2.5]" />
-        </button>
 
         {/* Full-screen create prompt overlay */}
         {showCreatePrompt ? (
@@ -101,5 +110,127 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
         ) : null}
       </div>
     </DeploymentStatusProvider>
+  );
+}
+
+/**
+ * NewApplicationCard — a placeholder card that lives at the end of the
+ * applications grid. At rest it shows a subtle dashed border with a
+ * centered + icon and label. On hover the + fades out and a vertical
+ * list of creation options slides in so the user can pick a path
+ * without the card feeling cluttered at a glance.
+ */
+function NewApplicationCard({
+  onDescribe,
+  onOpenLocalDirectory,
+  onImportGitHub,
+}: NewApplicationCardProps) {
+  const options: {
+    icon: React.ReactNode;
+    label: string;
+    description: string;
+    onClick(): void;
+    accent: string;
+  }[] = [
+    {
+      icon: <Sparkles className="h-4 w-4" />,
+      label: 'Describe with AI',
+      description: 'Tell Shep what to build — it scaffolds + ships',
+      onClick: onDescribe,
+      accent: 'text-indigo-500 bg-indigo-100 dark:bg-indigo-900/60',
+    },
+    ...(onOpenLocalDirectory
+      ? [
+          {
+            icon: <FolderOpen className="h-4 w-4" />,
+            label: 'Open local project',
+            description: 'Pick an existing folder and continue from there',
+            onClick: onOpenLocalDirectory,
+            accent: 'text-amber-600 bg-amber-100 dark:bg-amber-900/40',
+          },
+        ]
+      : []),
+    ...(onImportGitHub
+      ? [
+          {
+            icon: <Github className="h-4 w-4" />,
+            label: 'Import from GitHub',
+            description: 'Connect an existing repo to manage here',
+            onClick: onImportGitHub,
+            accent: 'text-foreground bg-muted',
+          },
+        ]
+      : []),
+  ];
+
+  return (
+    <div
+      className={cn(
+        'group relative flex cursor-pointer flex-col overflow-hidden rounded-xl border-2',
+        'border-dashed border-indigo-200 bg-transparent transition-all duration-200',
+        'hover:border-indigo-400 hover:bg-indigo-500/[0.03]',
+        'dark:border-indigo-900 dark:hover:border-indigo-700',
+        'min-h-[280px]'
+      )}
+      onClick={onDescribe}
+    >
+      {/* Rest state — centered + icon. Fades out on hover. */}
+      <div
+        className={cn(
+          'absolute inset-0 flex flex-col items-center justify-center gap-3',
+          'transition-opacity duration-200 group-hover:opacity-0',
+          'pointer-events-none'
+        )}
+      >
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-100 text-indigo-500 dark:bg-indigo-900/60 dark:text-indigo-400">
+          <Plus className="h-5 w-5 stroke-[2]" />
+        </div>
+        <div className="text-center">
+          <p className="text-foreground text-sm font-semibold">New application</p>
+          <p className="text-muted-foreground mt-0.5 text-[11px]">Click to get started</p>
+        </div>
+      </div>
+
+      {/* Hover state — vertical option list slides up from invisible. */}
+      <div
+        className={cn(
+          'absolute inset-0 flex flex-col justify-center gap-1.5 px-4',
+          'translate-y-3 opacity-0 transition-all duration-200',
+          'group-hover:translate-y-0 group-hover:opacity-100'
+        )}
+      >
+        <p className="text-muted-foreground mb-1 px-1 text-[10px] font-medium tracking-wide uppercase">
+          How would you like to start?
+        </p>
+        {options.map((opt) => (
+          <button
+            key={opt.label}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              opt.onClick();
+            }}
+            className={cn(
+              'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left',
+              'border-border/60 bg-background/80 border transition-all duration-150',
+              'hover:border-indigo-300 hover:bg-indigo-50 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/40'
+            )}
+          >
+            <span
+              className={cn(
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
+                opt.accent
+              )}
+            >
+              {opt.icon}
+            </span>
+            <div className="min-w-0">
+              <div className="text-foreground text-[12px] font-semibold">{opt.label}</div>
+              <div className="text-muted-foreground truncate text-[10px]">{opt.description}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

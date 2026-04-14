@@ -282,7 +282,12 @@ describe('CloudflarePagesProvider.deploy', () => {
       CloudDeploymentStatus.Deploying,
       CloudDeploymentStatus.Deployed,
     ]);
-    expect(result.url).toBe('https://56b738ae.landing-page-hero-features-pricing-85f4e3.pages.dev');
+    // We surface the stable project alias (`<project>.pages.dev`) instead
+    // of the per-commit preview URL (`<hash>.<project>.pages.dev`) wrangler
+    // prints. The alias doesn't change between deploys, so the app card
+    // shows a bookmarkable production URL rather than a one-off that
+    // rotates every push.
+    expect(result.url).toBe('https://landing-page-hero-features-pricing-85f4e3.pages.dev');
     // The real Cloudflare deployment id must be carried through — NOT the
     // wrangler stdout blob (which is what the old parser returned).
     expect(result.deploymentId).toBe('real-deployment-uuid-42');

@@ -10,6 +10,8 @@ const baseState: SmartDeployState = {
   liveUrl: null,
   errorMessage: null,
   failedSource: null,
+  workingSource: null,
+  cloudProviderName: null,
 };
 
 function PlaceholderPanel({ label }: { label: string }) {

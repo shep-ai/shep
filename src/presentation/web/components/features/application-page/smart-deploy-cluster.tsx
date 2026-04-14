@@ -119,6 +119,18 @@ export function SmartDeployCluster({
   // rather than forcing them through the GitHub modal.
   const [panelOpen, setPanelOpen] = useState<boolean>(false);
 
+  // Friendly cloud-provider display name. Computed up here (rather than
+  // near the render) so `useSmartDeployState` can use it to produce a
+  // specific "Deploying to Cloudflare Pages" label instead of a generic
+  // "Working…" while a cloud deploy is in flight.
+  const cloudProviderName: string | null = (() => {
+    const selectedId = cloudDeploy.state.provider;
+    if (selectedId) return PROVIDER_DISPLAY_NAMES[selectedId];
+    const firstConnected = providers.find((p) => p.connected && p.enabled);
+    if (firstConnected) return firstConnected.displayName;
+    return null;
+  })();
+
   // Smart state — single source of truth for the button label. Pass the
   // persisted Application.gitRemoteUrl so the state machine can render a
   // real label even when the live /git/status route is briefly unreachable
@@ -130,6 +142,7 @@ export function SmartDeployCluster({
     cloudDeploy,
     syncAction: sync.state,
     hasConnectedCloudProvider,
+    cloudProviderName,
   });
 
   // ── Action dispatch ────────────────────────────────────────────────
@@ -301,15 +314,6 @@ export function SmartDeployCluster({
     [cloudDeploy, refreshProviders]
   );
 
-  // Friendly cloud-provider display name for the panel header.
-  const cloudProviderName: string | null = (() => {
-    const selectedId = cloudDeploy.state.provider;
-    if (selectedId) return PROVIDER_DISPLAY_NAMES[selectedId];
-    const firstConnected = providers.find((p) => p.connected && p.enabled);
-    if (firstConnected) return firstConnected.displayName;
-    return null;
-  })();
-
   // Last-deployed time-ago — cheap client-side derivation.
   const lastDeployedAgo = formatTimeAgo(cloudDeploy.state.lastDeployedAt);
 
@@ -330,6 +334,12 @@ export function SmartDeployCluster({
             providers={providers}
             providersLoading={!providersLoaded}
             providersError={null}
+            publishOwners={owners}
+            publishDefaultRepoName={application.name
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '')}
+            onPublishSubmit={handlePublishSubmit}
             onSaveChanges={handleSaveChanges}
             onPublishToWeb={handlePublishToWeb}
             onRedeploy={handleRedeploy}
@@ -363,7 +373,10 @@ export function SmartDeployCluster({
           open={publishModalOpen}
           onOpenChange={setPublishModalOpen}
           owners={owners}
-          defaultRepoName={application.slug}
+          defaultRepoName={application.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')}
           onSubmit={handlePublishSubmit}
         />
       ) : null}

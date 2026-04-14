@@ -110,14 +110,11 @@ export function AppViewTabs({ active, onChange, disabledTabs = [], deploy }: App
                 value={view}
                 disabled={disabled}
                 className={cn(
-                  // Mirror feature-drawer-tabs styling exactly: top accent
-                  // border on active, right divider between tabs, no
-                  // background pill, no shadow.
                   'text-muted-foreground hover:bg-muted hover:text-foreground',
                   'data-[state=active]:bg-background data-[state=active]:text-foreground',
-                  'data-[state=active]:border-t-primary',
+                  'data-[state=active]:font-semibold',
                   '[&:not([data-state=active])]:border-r-border',
-                  'relative h-9 rounded-none border-t-2 border-r border-t-transparent border-r-transparent',
+                  'relative h-9 rounded-none border-r border-r-transparent',
                   'bg-transparent px-3 text-[12px] font-medium shadow-none transition-none',
                   'cursor-pointer data-[state=active]:shadow-none',
                   isLast && 'last:border-r-transparent',
@@ -131,6 +128,13 @@ export function AppViewTabs({ active, onChange, disabledTabs = [], deploy }: App
                   <Icon className="mr-1.5 size-3.5" />
                 )}
                 {VIEW_LABELS[view]}
+                {/* Bottom accent bar — rendered as a real div so it
+                    is 100% immune to Tailwind CSS variable cascade
+                    issues. Same 2px primary colour as the smart deploy
+                    button's bottom accent. */}
+                {active === view ? (
+                  <span className="bg-primary absolute bottom-0 left-0 h-0.5 w-full" />
+                ) : null}
               </TabsTrigger>
             );
 

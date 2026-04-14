@@ -17,12 +17,13 @@
  * so this file stays a thin renderer that's trivial to story-test.
  */
 
+import { useState } from 'react';
 import {
   AlertTriangle,
+  ArrowLeft,
   ArrowUpRight,
   Cloud,
   ExternalLink,
-  Loader2,
   RefreshCw,
   Rocket,
   Save,
@@ -36,6 +37,7 @@ import type { SmartDeployState } from '@/hooks/use-smart-deploy-state';
 import type { CloudDeployActionApi } from '@/hooks/use-cloud-deploy-action';
 import { ProviderList, type ProviderListEntry } from './provider-list';
 import { CLOUD_PROVIDER_BRAND_HEX, CLOUD_PROVIDER_ICONS, GitHubIcon } from './cloud-provider-icons';
+import { PublishToGitHubForm, type PublishOwner } from './publish-to-github-modal';
 
 export interface DeployPanelProps {
   state: SmartDeployState;
@@ -52,10 +54,29 @@ export interface DeployPanelProps {
   providers: readonly ProviderListEntry[];
   providersLoading?: boolean;
   providersError?: string | null;
+  /** GitHub owner list for the inline publish subpanel. Null when the
+   *  owners request hasn't completed yet — the Set-up-code-backup row
+   *  still clicks through to `onSetUpCodeStorage` (legacy modal) as a
+   *  graceful fallback in that window. */
+  publishOwners?: readonly PublishOwner[] | null;
+  /** Default repository name pre-filled into the inline form (slug). */
+  publishDefaultRepoName?: string;
+  /** Called when the inline form is submitted. Parent does the HTTP
+   *  call + refreshes git status + opens the logs drawer. Throws to
+   *  surface a validation error inline without closing the subpanel. */
+  onPublishSubmit?(input: {
+    ownerLogin: string;
+    repoName: string;
+    visibility: 'public' | 'private';
+  }): Promise<void>;
+
   /** Click handlers — fire the corresponding hook actions. */
   onSaveChanges(): void;
   onPublishToWeb(): void;
   onRedeploy(): void;
+  /** Legacy fallback for setting up code backup when the inline form
+   *  isn't available (publishOwners still loading). Still wired so the
+   *  user never hits a dead button during the orgs fetch. */
   onSetUpCodeStorage(): void;
   /** Called when the user clicks a connected provider row to switch to it.
    *  Should persist the selection and immediately run a deploy. */
@@ -204,6 +225,9 @@ export function DeployPanel({
   providers,
   providersLoading = false,
   providersError = null,
+  publishOwners = null,
+  publishDefaultRepoName = '',
+  onPublishSubmit,
   onSaveChanges,
   onPublishToWeb,
   onRedeploy,
@@ -219,6 +243,23 @@ export function DeployPanel({
   const liveUrl = state.liveUrl ?? cloudDeploy.state.url;
   const isWorking =
     state.kind === 'working' || cloudDeploy.state.isWorking || state.kind === 'loading';
+
+  // ── Inline subpanel state (publish-to-github) ─────────────
+  // Rendered as a slide-in view that replaces the main two-row panel
+  // body when the user clicks "Set up code backup" on the GitHub row.
+  // Kept local to the panel so the parent doesn't need to track it.
+  const [subpanel, setSubpanel] = useState<'main' | 'publish'>('main');
+  const canInlinePublish = Boolean(publishOwners && onPublishSubmit);
+  const handleOpenPublishSubpanel = () => {
+    if (canInlinePublish) {
+      setSubpanel('publish');
+    } else {
+      // Orgs fetch still in-flight — fall back to the legacy modal
+      // path so the button is never a dead click.
+      onSetUpCodeStorage();
+    }
+  };
+  const handleClosePublishSubpanel = () => setSubpanel('main');
 
   // Pull a friendly repo display name out of the remote URL —
   // "https://github.com/owner/repo.git" → "owner/repo".
@@ -291,6 +332,47 @@ export function DeployPanel({
     ? CLOUD_PROVIDER_BRAND_HEX[selectedProviderId]
     : undefined;
 
+  // ── Subpanel: publish to GitHub ──────────────────────────
+  // Slide-in view that replaces the two-row main body with the
+  // PublishToGitHubForm. Keeps the user inside the popover instead of
+  // popping a separate Radix Dialog on top of it.
+  if (subpanel === 'publish' && publishOwners && onPublishSubmit) {
+    return (
+      <div className="flex flex-col">
+        <div className="flex items-center gap-2 border-b px-3 py-2">
+          <button
+            type="button"
+            onClick={handleClosePublishSubpanel}
+            aria-label="Back"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+          >
+            <ArrowLeft className="size-3.5" />
+          </button>
+          <GitHubIcon className="size-4 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="text-foreground text-[12px] font-semibold">Set up code backup</div>
+            <div className="text-muted-foreground truncate text-[10px]">
+              Publish to GitHub so you never lose your work
+            </div>
+          </div>
+        </div>
+        <PublishToGitHubForm
+          owners={publishOwners.slice()}
+          defaultRepoName={publishDefaultRepoName}
+          variant="subpanel"
+          onSubmit={async (input) => {
+            await onPublishSubmit(input);
+            // Success → drop back to the main view. Errors are caught
+            // inside the form and surfaced as inline validation
+            // without closing the subpanel.
+            handleClosePublishSubpanel();
+          }}
+          onCancel={handleClosePublishSubpanel}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col divide-y">
       {/* ── GitHub / backup row ─────────────────────────────── */}
@@ -321,7 +403,7 @@ export function DeployPanel({
             <IconAction
               icon={GitHubIcon}
               label="Set up code backup"
-              onClick={onSetUpCodeStorage}
+              onClick={handleOpenPublishSubpanel}
               variant="primary"
             />
           )
@@ -387,14 +469,12 @@ export function DeployPanel({
 
       {/* Inline error surface — tucked under the relevant row so the
           user never needs to open the logs drawer for a one-line gist.
-          Working-state spinner lives here too so there's a single place
-          for transient feedback instead of two competing indicators. */}
-      {isWorking ? (
-        <div className="text-muted-foreground flex items-center gap-2 px-4 py-2 text-[11px]">
-          <Loader2 className="size-3 animate-spin" />
-          <span>Working…</span>
-        </div>
-      ) : state.kind === 'failed' && state.failedSource === 'deploy' ? (
+          NOTE: we deliberately do NOT render a "Working…" block here
+          even though the state machine knows about it. The top-bar
+          button already shows "Working…" as its primary label and the
+          cloud host row already shows a "Working" status pill, so a
+          third indicator in the panel footer was pure duplication. */}
+      {state.kind === 'failed' && state.failedSource === 'deploy' ? (
         <div className="text-destructive flex items-start gap-1.5 px-4 py-2 text-[10px]">
           <XCircle className="mt-0.5 size-3 shrink-0" />
           <span className="break-words">{state.errorMessage}</span>

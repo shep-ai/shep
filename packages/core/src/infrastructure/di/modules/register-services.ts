@@ -62,6 +62,8 @@ import type { IOperationLogService } from '../../../application/ports/output/ser
 import { OperationLogService } from '../../services/operation-log/operation-log.service.js';
 import type { IProcessLivenessProbe } from '../../../application/ports/output/services/process-liveness.interface.js';
 import { ProcessLivenessAdapter } from '../../services/process/process-liveness.adapter.js';
+import type { IProjectBuildService } from '../../../application/ports/output/services/project-build-service.interface.js';
+import { NodeProjectBuildService } from '../../services/build/node-project-build.service.js';
 
 /**
  * Register core infrastructure services: validators, filesystem, git, notifications,
@@ -218,5 +220,10 @@ export function registerServices(container: DependencyContainer): void {
   container.registerSingleton<IProcessLivenessProbe>(
     'IProcessLivenessProbe',
     ProcessLivenessAdapter
+  );
+
+  container.registerSingleton<IProjectBuildService>(
+    'IProjectBuildService',
+    NodeProjectBuildService
   );
 }
