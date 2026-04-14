@@ -28,6 +28,7 @@ vi.mock('node:child_process', () => ({
 import { InteractiveSessionService } from '@/infrastructure/services/interactive/interactive-session.service.js';
 import { SessionRegistry } from '@/infrastructure/services/interactive/core/session-registry.js';
 import { StreamEventDispatcher } from '@/infrastructure/services/interactive/core/stream-event-dispatcher.js';
+import { SessionPersistence } from '@/infrastructure/services/interactive/core/session-persistence.js';
 import { ConcurrentSessionLimitError } from '@/domain/errors/concurrent-session-limit.error.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
 import type { IInteractiveMessageRepository } from '@/application/ports/output/repositories/interactive-message-repository.interface.js';
@@ -301,6 +302,7 @@ describe('InteractiveSessionService', () => {
 
     const registry = new SessionRegistry();
     const dispatcher = new StreamEventDispatcher(registry);
+    const persistence = new SessionPersistence(messageRepo, sessionRepo, registry, dispatcher);
     service = new InteractiveSessionService(
       sessionRepo,
       messageRepo,
@@ -309,7 +311,8 @@ describe('InteractiveSessionService', () => {
       contextBuilder,
       workflowStepRepo,
       registry,
-      dispatcher
+      dispatcher,
+      persistence
     );
   });
 

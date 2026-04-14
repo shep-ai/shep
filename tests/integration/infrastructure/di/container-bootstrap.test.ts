@@ -50,6 +50,7 @@ import { InteractiveSessionService } from '@/infrastructure/services/interactive
 import { FeatureContextBuilder } from '@/infrastructure/services/interactive/feature-context.builder.js';
 import { SessionRegistry } from '@/infrastructure/services/interactive/core/session-registry.js';
 import { StreamEventDispatcher } from '@/infrastructure/services/interactive/core/stream-event-dispatcher.js';
+import { SessionPersistence } from '@/infrastructure/services/interactive/core/session-persistence.js';
 
 /**
  * String tokens resolved by web API routes. To regenerate, grep
@@ -197,6 +198,12 @@ describe('DI container bootstrap (integration)', () => {
     );
     const sessionRegistry = new SessionRegistry();
     const streamEventDispatcher = new StreamEventDispatcher(sessionRegistry);
+    const sessionPersistence = new SessionPersistence(
+      interactiveMessageRepo,
+      interactiveSessionRepo,
+      sessionRegistry,
+      streamEventDispatcher
+    );
     const interactiveSessionService = new InteractiveSessionService(
       interactiveSessionRepo,
       interactiveMessageRepo,
@@ -205,7 +212,8 @@ describe('DI container bootstrap (integration)', () => {
       new FeatureContextBuilder(),
       workflowStepRepoBoot,
       sessionRegistry,
-      streamEventDispatcher
+      streamEventDispatcher,
+      sessionPersistence
     );
     scopedContainer.registerInstance<IInteractiveSessionService>(
       'IInteractiveSessionService',

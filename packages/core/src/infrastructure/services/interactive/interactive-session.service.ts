@@ -44,6 +44,7 @@ import { type FeatureContextBuilder } from './feature-context.builder.js';
 import { getSettings, hasSettings } from '../settings.service.js';
 import type { SessionRegistry, SessionState } from './core/session-registry.js';
 import type { StreamEventDispatcher } from './core/stream-event-dispatcher.js';
+import type { SessionPersistence } from './core/session-persistence.js';
 
 /** Default concurrent session cap. */
 const DEFAULT_CAP = 3;
@@ -76,18 +77,6 @@ const BOOT_IDLE_TIMEOUT_MS = 120_000;
  * @todo Consider renaming to `scopeId` + adding a `scopeType` discriminator.
  */
 export class InteractiveSessionService implements IInteractiveSessionService {
-  /**
-   * Monotonic clock for message `createdAt` values. `Date.now()` has
-   * millisecond precision, and the SDK can fire `tool_use` + `tool_result`
-   * (and their paired persistToolEvent calls) within the same millisecond
-   * — which leaves the DB with two rows whose `created_at` are identical,
-   * causing `ORDER BY created_at ASC` to return them in insert-race order
-   * and breaking the tool→Output pairing in StepTracker.classifyMessages.
-   * By pinning each subsequent timestamp to `max(Date.now(), lastTs + 1)`
-   * we guarantee monotonically increasing millis even under burst writes.
-   */
-  private lastMessageTs = 0;
-
   constructor(
     private readonly sessionRepo: IInteractiveSessionRepository,
     private readonly messageRepo: IInteractiveMessageRepository,
@@ -96,7 +85,8 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     private readonly contextBuilder: FeatureContextBuilder,
     private readonly workflowStepRepo: IWorkflowStepRepository,
     private readonly registry: SessionRegistry,
-    private readonly dispatcher: StreamEventDispatcher
+    private readonly dispatcher: StreamEventDispatcher,
+    private readonly persistence: SessionPersistence
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -171,7 +161,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     });
 
     // Mark as processing immediately so the FAB shows the spinner during boot
-    void this.updateTurnStatusAndNotify(session.id, featureId, 'processing');
+    void this.persistence.updateTurnStatusAndNotify(session.id, featureId, 'processing');
 
     // Set up in-memory state. CRITICAL: pendingUserContent must be set
     // BEFORE completeBootAsync is dispatched below. Setting it from the
@@ -307,12 +297,12 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       // the session is ready the moment the SDK handle exists. The user
       // will send their first message through the normal turn path.
       if (!bootPrompt) {
-        await this.updateSessionStatusAndNotify(
+        await this.persistence.updateSessionStatusAndNotify(
           state.sessionId,
           state.featureId,
           InteractiveSessionStatus.ready
         );
-        void this.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
+        void this.persistence.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
         return;
       }
 
@@ -363,7 +353,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
             case 'thinking':
               if (event.content) {
-                await this.persistToolEvent(state, 'Thinking', event.content);
+                await this.persistence.persistToolEvent(state, 'Thinking', event.content);
                 this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
@@ -377,7 +367,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               if (event.label) {
                 const toolLabel = event.label;
                 const toolDetail = event.detail;
-                await this.persistToolEvent(state, toolLabel, toolDetail);
+                await this.persistence.persistToolEvent(state, toolLabel, toolDetail);
                 this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
@@ -391,7 +381,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               if (event.label) {
                 const resultLabel = event.label;
                 const resultDetail = event.detail;
-                await this.persistToolEvent(state, resultLabel, resultDetail);
+                await this.persistence.persistToolEvent(state, resultLabel, resultDetail);
                 this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
@@ -417,7 +407,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               // message — persisting `event.content`/`greetingText`
               // would duplicate everything we already flushed between
               // tools.
-              await this.flushAssistantBuffer(state);
+              await this.persistence.flushAssistantBuffer(state);
 
               // Capture the SDK session ID (available after first message exchange)
               const sdkSessionId = handle.sessionId;
@@ -438,7 +428,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
                 void this.sessionRepo.updateAgentSessionId(state.sessionId, sdkSessionId);
               }
 
-              await this.updateSessionStatusAndNotify(
+              await this.persistence.updateSessionStatusAndNotify(
                 state.sessionId,
                 state.featureId,
                 InteractiveSessionStatus.ready
@@ -447,7 +437,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               // If there's a pending user message, the next turn will set 'processing'.
               // Otherwise boot greeting is expected — mark idle.
               if (!state.pendingUserContent) {
-                void this.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
+                void this.persistence.updateTurnStatusAndNotify(
+                  state.sessionId,
+                  state.featureId,
+                  'idle'
+                );
               }
 
               state.currentAssistantBuffer = '';
@@ -470,14 +464,14 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       // If we get here without a 'done' event, persist whatever
       // trailing text remains in the buffer (earlier text was already
       // flushed incrementally alongside tool events).
-      await this.flushAssistantBuffer(state);
-      await this.updateSessionStatusAndNotify(
+      await this.persistence.flushAssistantBuffer(state);
+      await this.persistence.updateSessionStatusAndNotify(
         state.sessionId,
         state.featureId,
         InteractiveSessionStatus.ready
       );
       if (!state.pendingUserContent) {
-        void this.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
+        void this.persistence.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
       }
       state.currentAssistantBuffer = '';
       state.toolEventsLog = [];
@@ -489,7 +483,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       // eslint-disable-next-line no-console
       console.error(`[InteractiveSession] boot failed for session ${state.sessionId}:`, err);
       try {
-        await this.updateSessionStatusAndNotify(
+        await this.persistence.updateSessionStatusAndNotify(
           state.sessionId,
           state.featureId,
           InteractiveSessionStatus.error
@@ -541,13 +535,13 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       state.handle = null;
     }
 
-    await this.updateSessionStatusAndNotify(
+    await this.persistence.updateSessionStatusAndNotify(
       sessionId,
       state.featureId,
       InteractiveSessionStatus.stopped,
       new Date()
     );
-    void this.updateTurnStatusAndNotify(sessionId, state.featureId, 'idle');
+    void this.persistence.updateTurnStatusAndNotify(sessionId, state.featureId, 'idle');
   }
 
   async sendMessage(sessionId: string, content: string): Promise<InteractiveMessage> {
@@ -572,7 +566,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       createdAt: now,
       updatedAt: now,
     };
-    await this.persistMessage(message);
+    await this.persistence.persistMessage(message);
 
     await this.sessionRepo.updateLastActivity(sessionId, now);
 
@@ -600,7 +594,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       state.toolEventsLog = [];
 
       // Mark turn as processing for dot indicator
-      void this.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'processing');
+      void this.persistence.updateTurnStatusAndNotify(
+        state.sessionId,
+        state.featureId,
+        'processing'
+      );
 
       // Send the message to the SDK session
       await state.handle.send(prompt);
@@ -626,7 +624,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
             case 'thinking':
               if (event.content) {
-                await this.persistToolEvent(state, 'Thinking', event.content);
+                await this.persistence.persistToolEvent(state, 'Thinking', event.content);
                 this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
@@ -640,7 +638,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               if (event.label) {
                 const toolLabel = event.label;
                 const toolDetail = event.detail;
-                await this.persistToolEvent(state, toolLabel, toolDetail);
+                await this.persistence.persistToolEvent(state, toolLabel, toolDetail);
                 this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
@@ -654,7 +652,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               if (event.label) {
                 const resultLabel = event.label;
                 const resultDetail = event.detail;
-                await this.persistToolEvent(state, resultLabel, resultDetail);
+                await this.persistence.persistToolEvent(state, resultLabel, resultDetail);
                 this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
@@ -679,7 +677,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               // We intentionally do NOT persist `event.content` /
               // `responseText` here — that would duplicate everything
               // we already flushed between tools.
-              await this.flushAssistantBuffer(state);
+              await this.persistence.flushAssistantBuffer(state);
               state.toolEventsLog = [];
 
               // Accumulate usage from this turn
@@ -694,7 +692,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
               // Mark as unread — if user has the chat open, the frontend
               // will immediately call markRead to clear it
-              void this.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'unread');
+              void this.persistence.updateTurnStatusAndNotify(
+                state.sessionId,
+                state.featureId,
+                'unread'
+              );
 
               // Notify subscribers of end-of-turn
               this.dispatcher.notify(state, { delta: '', done: true });
@@ -747,7 +749,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
             case 'task_started':
               if (event.content) {
-                await this.persistToolEvent(state, 'Subtask started', event.content);
+                await this.persistence.persistToolEvent(state, 'Subtask started', event.content);
                 this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
@@ -770,7 +772,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
             case 'task_done':
               if (event.content) {
                 const taskStatus = event.detail ?? 'completed';
-                await this.persistToolEvent(state, `Subtask ${taskStatus}`, event.content);
+                await this.persistence.persistToolEvent(
+                  state,
+                  `Subtask ${taskStatus}`,
+                  event.content
+                );
                 this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
@@ -800,7 +806,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       // persist whatever trailing text remains in the buffer (earlier
       // text was flushed incrementally alongside tool events).
       if (responseText && state.currentAssistantBuffer) {
-        await this.flushAssistantBuffer(state);
+        await this.persistence.flushAssistantBuffer(state);
         state.toolEventsLog = [];
         this.dispatcher.notify(state, { delta: '', done: true });
       } else if (!responseText) {
@@ -820,7 +826,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
         }
         this.registry.delete(state.sessionId);
         try {
-          await this.updateSessionStatusAndNotify(
+          await this.persistence.updateSessionStatusAndNotify(
             state.sessionId,
             state.featureId,
             InteractiveSessionStatus.error
@@ -901,7 +907,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       updatedAt: now,
     };
     if (persistUserMessage) {
-      await this.persistMessage(userMsg);
+      await this.persistence.persistMessage(userMsg);
     }
 
     // 2. Find active session for this feature
@@ -947,7 +953,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
         (dbSession.status === InteractiveSessionStatus.ready ||
           dbSession.status === InteractiveSessionStatus.booting)
       ) {
-        await this.updateSessionStatusAndNotify(
+        await this.persistence.updateSessionStatusAndNotify(
           dbSession.id,
           featureId,
           InteractiveSessionStatus.stopped,
@@ -1113,13 +1119,13 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     // Find the active session for this feature and clear unread status
     const state = this.registry.findActiveStateForFeature(featureId);
     if (state) {
-      void this.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
+      void this.persistence.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
       return;
     }
     // Fallback: check DB for the latest active session
     const latest = await this.sessionRepo.findByFeatureId(featureId);
     if (latest) {
-      void this.updateTurnStatusAndNotify(latest.id, featureId, 'idle');
+      void this.persistence.updateTurnStatusAndNotify(latest.id, featureId, 'idle');
     }
   }
 
@@ -1157,7 +1163,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       createdAt: now,
       updatedAt: now,
     };
-    await this.persistMessage(userMsg);
+    await this.persistence.persistMessage(userMsg);
 
     // Resolve the Promise that the canUseTool callback is awaiting.
     // This unblocks the SDK stream — the agent resumes with the user's answers.
@@ -1168,7 +1174,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     state.pendingInteractionResolver = null;
 
     // Update turn status back to processing
-    void this.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'processing');
+    void this.persistence.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'processing');
 
     // Clear the "Waiting for your response..." log
     state.subscribers.forEach((sub) => sub({ delta: '', done: false }));
@@ -1243,7 +1249,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
           createdAt: now,
           updatedAt: now,
         };
-        await this.persistMessage(msg);
+        await this.persistence.persistMessage(msg);
         state.currentAssistantBuffer = '';
         state.toolEventsLog = [];
 
@@ -1257,7 +1263,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       state.pendingInteraction = interaction;
 
       // Update turn status so the dot indicator shows amber
-      void this.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'awaiting_input');
+      void this.persistence.updateTurnStatusAndNotify(
+        state.sessionId,
+        state.featureId,
+        'awaiting_input'
+      );
 
       // Notify subscribers so SSE pushes the interaction to the frontend
       state.subscribers.forEach((sub) =>
@@ -1303,143 +1313,10 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     };
   }
 
-  // ---------------------------------------------------------------------------
-  // Tool detail extraction
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Persist a tool/system event as its own assistant message in the DB.
-   * Each event gets its own bubble in the chat thread.
-   *
-   * Before writing the tool row, any prose the agent produced since the
-   * last flush is persisted as its own text message so that step cards
-   * interleave agent text with tool calls instead of collapsing every
-   * step's narration into one blob at `done`.
-   */
-  private async persistToolEvent(
-    state: SessionState,
-    label: string,
-    detail?: string
-  ): Promise<void> {
-    try {
-      await this.flushAssistantBuffer(state);
-      const content = detail ? `**${label}** \`${detail}\`` : `**${label}**`;
-      const now = this.nextMessageDate();
-      const msg: InteractiveMessage = {
-        id: crypto.randomUUID(),
-        featureId: state.featureId,
-        sessionId: state.sessionId,
-        role: InteractiveMessageRole.assistant,
-        content,
-        createdAt: now,
-        updatedAt: now,
-      };
-      await this.persistMessage(msg);
-    } catch {
-      // Non-critical — don't fail the turn for a tool event
-    }
-  }
-
-  /**
-   * Persist whatever text has accumulated in `currentAssistantBuffer`
-   * as its own assistant message, then clear the buffer. Called right
-   * before each tool event so the DB history interleaves agent prose
-   * with tool calls — the step tracker groups messages by their
-   * persisted `stepId`, so without the flush everything the agent said
-   * mid-step ends up in one trailing blob (or tagged to no step at all
-   * if the orchestrator has already cleared activeStep by the time
-   * `done` fires).
-   */
-  private async flushAssistantBuffer(state: SessionState): Promise<void> {
-    const buffered = state.currentAssistantBuffer.trim();
-    if (!buffered) return;
-    state.currentAssistantBuffer = '';
-    const now = this.nextMessageDate();
-    const msg: InteractiveMessage = {
-      id: crypto.randomUUID(),
-      featureId: state.featureId,
-      sessionId: state.sessionId,
-      role: InteractiveMessageRole.assistant,
-      content: buffered,
-      createdAt: now,
-      updatedAt: now,
-    };
-    await this.persistMessage(msg);
-  }
-
-  /**
-   * Produce the next monotonic timestamp for a persisted interactive
-   * message. Guarantees a strictly-increasing sequence even when two
-   * calls happen in the same millisecond (which is the norm for rapid
-   * `tool_use` + `tool_result` bursts emitted by the Claude SDK) so
-   * the repository's `ORDER BY created_at ASC` query returns rows in
-   * the exact order they were persisted. Frontend classifyMessages()
-   * depends on that order to pair Write/Edit/Read tool calls with
-   * their adjacent Output bubble.
-   */
-  private nextMessageDate(): Date {
-    const wallclock = Date.now();
-    const next = wallclock > this.lastMessageTs ? wallclock : this.lastMessageTs + 1;
-    this.lastMessageTs = next;
-    return new Date(next);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Mutation helpers — every DB write that changes observable state must go
-  // through one of these so SSE subscribers receive a matching notification.
-  // This is the contract that lets the client drop periodic polling.
-  // ---------------------------------------------------------------------------
-
-  /** Persist a message AND notify subscribers. Use everywhere instead of
-   *  calling `messageRepo.create` directly. The current active workflow
-   *  step for the feature (if any) is stamped onto the row so every
-   *  message is grouped under the right step card in the UI. */
-  private async persistMessage(message: InteractiveMessage): Promise<void> {
-    const activeStepId = this.registry.getActiveStep(message.featureId);
-    const tagged: InteractiveMessage =
-      message.stepId || !activeStepId ? message : { ...message, stepId: activeStepId };
-    await this.messageRepo.create(tagged);
-    this.dispatcher.notifyByFeatureId(tagged.featureId, {
-      delta: '',
-      done: false,
-      message: tagged,
-    });
-  }
-
-  /** Update session status AND notify subscribers. Passes `endedAt` to
-   *  the repo only when supplied so call-arity matches the legacy
-   *  two-argument shape (keeps existing test expectations happy). */
-  private async updateSessionStatusAndNotify(
-    sessionId: string,
-    featureId: string,
-    status: InteractiveSessionStatus,
-    endedAt?: Date
-  ): Promise<void> {
-    if (endedAt === undefined) {
-      await this.sessionRepo.updateStatus(sessionId, status);
-    } else {
-      await this.sessionRepo.updateStatus(sessionId, status, endedAt);
-    }
-    this.dispatcher.notifyByFeatureId(featureId, {
-      delta: '',
-      done: false,
-      sessionStatus: status,
-    });
-  }
-
-  /** Update turn status AND notify subscribers. */
-  private async updateTurnStatusAndNotify(
-    sessionId: string,
-    featureId: string,
-    turnStatus: string
-  ): Promise<void> {
-    await this.sessionRepo.updateTurnStatus(sessionId, turnStatus);
-    this.dispatcher.notifyByFeatureId(featureId, {
-      delta: '',
-      done: false,
-      turnStatus,
-    });
-  }
+  // Persistence + monotonic-clock helpers live on SessionPersistence
+  // (`core/session-persistence.ts`) — this facade delegates via
+  // `this.persistence.*`. The collaborator is a DI singleton so the
+  // monotonic counter is shared process-wide.
 
   // Idle-eviction timer removed. Live agent sessions are preserved
   // indefinitely and only stop on an explicit user action (Stop

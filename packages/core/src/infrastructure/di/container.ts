@@ -32,6 +32,7 @@ import { InteractiveSessionService } from '../services/interactive/interactive-s
 import { FeatureContextBuilder } from '../services/interactive/feature-context.builder.js';
 import { SessionRegistry } from '../services/interactive/core/session-registry.js';
 import { StreamEventDispatcher } from '../services/interactive/core/stream-event-dispatcher.js';
+import { SessionPersistence } from '../services/interactive/core/session-persistence.js';
 
 // Topic-grouped registration modules
 import { registerRepositories } from './modules/register-repositories.js';
@@ -110,6 +111,16 @@ export async function initializeContainer(): Promise<typeof container> {
   );
   const sessionRegistry = new SessionRegistry();
   const streamEventDispatcher = new StreamEventDispatcher(sessionRegistry);
+  // SessionPersistence is a process-wide singleton so its monotonic
+  // `createdAt` counter is shared across every write. See
+  // `core/session-persistence.ts` for why strictly-increasing timestamps
+  // matter (tool_use / tool_result collisions).
+  const sessionPersistence = new SessionPersistence(
+    interactiveMessageRepo,
+    interactiveSessionRepo,
+    sessionRegistry,
+    streamEventDispatcher
+  );
   const interactiveSessionService = new InteractiveSessionService(
     interactiveSessionRepo,
     interactiveMessageRepo,
@@ -118,7 +129,8 @@ export async function initializeContainer(): Promise<typeof container> {
     new FeatureContextBuilder(),
     workflowStepRepoBoot,
     sessionRegistry,
-    streamEventDispatcher
+    streamEventDispatcher,
+    sessionPersistence
   );
   container.registerInstance<IInteractiveSessionService>(
     'IInteractiveSessionService',
