@@ -42,6 +42,8 @@ import type { AgentConfig } from '../../../domain/generated/output.js';
 import { ConcurrentSessionLimitError } from '../../../domain/errors/concurrent-session-limit.error.js';
 import { type FeatureContextBuilder } from './feature-context.builder.js';
 import { getSettings, hasSettings } from '../settings.service.js';
+import type { SessionRegistry, SessionState } from './core/session-registry.js';
+import type { StreamEventDispatcher } from './core/stream-event-dispatcher.js';
 
 /** Default concurrent session cap. */
 const DEFAULT_CAP = 3;
@@ -57,46 +59,6 @@ const DEFAULT_CAP = 3;
  * a whole project). A fixed wall-clock budget would kill those mid-way.
  */
 const BOOT_IDLE_TIMEOUT_MS = 120_000;
-
-/** In-memory state for a single live session. */
-interface SessionState {
-  sessionId: string;
-  featureId: string;
-  worktreePath: string;
-  /** Agent SDK session handle — null until session is created. */
-  handle: InteractiveAgentSessionHandle | null;
-  /** Agent SDK session ID for resumption across service restarts. */
-  agentSessionId?: string;
-  /** Accumulates assistant text between user turns for persistence. */
-  currentAssistantBuffer: string;
-  /** Accumulates tool events during a turn for rich message persistence. */
-  toolEventsLog: string[];
-  /** Subscriber callbacks for real-time stdout chunk forwarding. */
-  subscribers: Set<(chunk: StreamChunk) => void>;
-  /** User message content queued while session boots. */
-  pendingUserContent?: string;
-  /** Model override for the agent process (e.g. 'claude-sonnet-4-6'). */
-  model?: string;
-  /** Agent type for this session. */
-  agentType?: string;
-  /**
-   * Per-scope system prompt for the agent SDK. When set, it replaces
-   * the default feature-context prompt — lets Feature / Repository /
-   * Application / Global chats each supply their own instructions.
-   * Caller-owned: the session service never infers or modifies this.
-   */
-  systemPrompt?: string;
-  /** AbortController to cancel active stream iteration on stop. */
-  streamAbort?: AbortController;
-  /** Whether a turn is currently executing (prevents concurrent turns). */
-  turnInProgress: boolean;
-  /** Queue of user messages waiting to be sent after the current turn completes. */
-  turnQueue: string[];
-  /** Pending user interaction (AskUserQuestion) — agent stream is paused, waiting for response. */
-  pendingInteraction: UserInteractionData | null;
-  /** Resolver for the pending interaction Promise — call to resume the agent. */
-  pendingInteractionResolver: ((answers: Record<string, string>) => void) | null;
-}
 
 /**
  * Core service managing interactive agent session lifecycles.
@@ -114,35 +76,6 @@ interface SessionState {
  * @todo Consider renaming to `scopeId` + adding a `scopeType` discriminator.
  */
 export class InteractiveSessionService implements IInteractiveSessionService {
-  /** Live sessions indexed by sessionId. */
-  private sessions = new Map<string, SessionState>();
-  /** Cached agentSessionIds from stopped sessions, keyed by featureId. */
-  private stoppedAgentSessionIds = new Map<string, string>();
-  /**
-   * Feature-level subscribers that survive session restarts.
-   *
-   * Unlike session-level subscribers (in SessionState.subscribers), these
-   * persist when a session dies and a new one boots. SSE connections
-   * subscribe here so they continue receiving events from new sessions.
-   */
-  private featureSubscribers = new Map<string, Set<(chunk: StreamChunk) => void>>();
-  /**
-   * Global subscribers — receive every chunk from every session tagged
-   * with its feature scope key. Used by the global turn-status SSE
-   * endpoint so the sidebar can track all active sessions without
-   * polling.
-   */
-  private globalSubscribers = new Set<(featureId: string, chunk: StreamChunk) => void>();
-
-  /**
-   * Currently-active workflow step id per feature scope. Set by the
-   * orchestrator (`RunWorkflowUseCase`) before each agent turn and
-   * cleared between steps. `persistMessage` reads this so every row
-   * it inserts is tagged with the right `step_id`. In-memory only —
-   * the DB is the source of truth for per-message `stepId`.
-   */
-  private activeStepByFeature = new Map<string, string>();
-
   /**
    * Monotonic clock for message `createdAt` values. `Date.now()` has
    * millisecond precision, and the SDK can fire `tool_use` + `tool_result`
@@ -161,7 +94,9 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     private readonly executorFactory: IAgentExecutorFactory,
     private readonly featureRepo: IFeatureRepository,
     private readonly contextBuilder: FeatureContextBuilder,
-    private readonly workflowStepRepo: IWorkflowStepRepository
+    private readonly workflowStepRepo: IWorkflowStepRepository,
+    private readonly registry: SessionRegistry,
+    private readonly dispatcher: StreamEventDispatcher
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -197,14 +132,14 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     // to the user's second message. Look it up first.
     // ─────────────────────────────────────────────────────────────
     let previousAgentSessionId: string | undefined;
-    for (const [, s] of this.sessions) {
+    for (const s of this.registry.values()) {
       if (s.featureId === featureId && s.agentSessionId) {
         previousAgentSessionId = s.agentSessionId;
         break;
       }
     }
     // Also check stoppedSessions cache (populated on stop)
-    previousAgentSessionId ??= this.stoppedAgentSessionIds.get(featureId);
+    previousAgentSessionId ??= this.registry.takeStoppedAgentSessionId(featureId);
     // Fall back to DB — the in-memory cache may be empty after
     // service restart, hot reload, or Turbopack module re-init.
     //
@@ -229,7 +164,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       updatedAt: now,
     };
     await this.sessionRepo.create(session);
-    this.notifyByFeatureId(featureId, {
+    this.dispatcher.notifyByFeatureId(featureId, {
       delta: '',
       done: false,
       sessionStatus: InteractiveSessionStatus.booting,
@@ -262,7 +197,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       pendingInteractionResolver: null,
       pendingUserContent: initialUserMessage,
     };
-    this.sessions.set(session.id, state);
+    this.registry.set(session.id, state);
 
     // Fire-and-forget the async boot sequence. The API returns the session
     // immediately in "booting" status; the frontend polls until "ready".
@@ -422,14 +357,14 @@ export class InteractiveSessionService implements IInteractiveSessionService {
             case 'delta':
               if (event.content) {
                 state.currentAssistantBuffer += event.content;
-                this.notify(state, { delta: event.content, done: false });
+                this.dispatcher.notify(state, { delta: event.content, done: false });
               }
               break;
 
             case 'thinking':
               if (event.content) {
                 await this.persistToolEvent(state, 'Thinking', event.content);
-                this.notify(state, {
+                this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
                   log: 'Thinking…',
@@ -443,7 +378,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
                 const toolLabel = event.label;
                 const toolDetail = event.detail;
                 await this.persistToolEvent(state, toolLabel, toolDetail);
-                this.notify(state, {
+                this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
                   log: `Using tool: ${toolLabel}`,
@@ -457,7 +392,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
                 const resultLabel = event.label;
                 const resultDetail = event.detail;
                 await this.persistToolEvent(state, resultLabel, resultDetail);
-                this.notify(state, {
+                this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
                   log: `Completed: ${resultLabel}`,
@@ -469,7 +404,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
             case 'status':
               if (event.content) {
                 const statusContent = event.content;
-                this.notify(state, { delta: '', done: false, log: statusContent });
+                this.dispatcher.notify(state, { delta: '', done: false, log: statusContent });
               }
               break;
 
@@ -519,7 +454,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               state.toolEventsLog = [];
 
               // Notify subscribers of end-of-turn
-              this.notify(state, { delta: '', done: true });
+              this.dispatcher.notify(state, { delta: '', done: true });
               return; // Boot complete
             }
 
@@ -548,7 +483,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       state.toolEventsLog = [];
     } catch (err) {
       // If session was already cleaned up by stopSession, nothing more to do
-      if (!this.sessions.has(state.sessionId)) return;
+      if (!this.registry.has(state.sessionId)) return;
 
       // Boot failed — mark session as error so the frontend can show the failure
       // eslint-disable-next-line no-console
@@ -563,14 +498,14 @@ export class InteractiveSessionService implements IInteractiveSessionService {
         // Best-effort DB update
       }
       if (state.agentSessionId) {
-        this.stoppedAgentSessionIds.set(state.featureId, state.agentSessionId);
+        this.registry.cacheStoppedAgentSessionId(state.featureId, state.agentSessionId);
       }
-      this.sessions.delete(state.sessionId);
+      this.registry.delete(state.sessionId);
     }
   }
 
   async stopSession(sessionId: string): Promise<void> {
-    const state = this.sessions.get(sessionId);
+    const state = this.registry.get(sessionId);
     if (!state) {
       // Already stopped — idempotent
       return;
@@ -592,9 +527,9 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
     // Cache agentSessionId so resumption works when session restarts
     if (state.agentSessionId) {
-      this.stoppedAgentSessionIds.set(state.featureId, state.agentSessionId);
+      this.registry.cacheStoppedAgentSessionId(state.featureId, state.agentSessionId);
     }
-    this.sessions.delete(sessionId);
+    this.registry.delete(sessionId);
 
     // Close the SDK session handle
     if (state.handle) {
@@ -621,7 +556,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       throw new Error(`Session ${sessionId} is not ready — cannot send message`);
     }
 
-    const state = this.sessions.get(sessionId);
+    const state = this.registry.get(sessionId);
     if (!state) {
       throw new Error(`Session ${sessionId} is not ready — cannot send message`);
     }
@@ -685,14 +620,14 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               if (event.content) {
                 responseText += event.content;
                 state.currentAssistantBuffer += event.content;
-                this.notify(state, { delta: event.content!, done: false });
+                this.dispatcher.notify(state, { delta: event.content!, done: false });
               }
               break;
 
             case 'thinking':
               if (event.content) {
                 await this.persistToolEvent(state, 'Thinking', event.content);
-                this.notify(state, {
+                this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
                   log: 'Thinking…',
@@ -706,7 +641,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
                 const toolLabel = event.label;
                 const toolDetail = event.detail;
                 await this.persistToolEvent(state, toolLabel, toolDetail);
-                this.notify(state, {
+                this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
                   log: `Using tool: ${toolLabel}`,
@@ -720,7 +655,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
                 const resultLabel = event.label;
                 const resultDetail = event.detail;
                 await this.persistToolEvent(state, resultLabel, resultDetail);
-                this.notify(state, {
+                this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
                   log: `Completed: ${resultLabel}`,
@@ -732,7 +667,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
             case 'status':
               if (event.content) {
                 const statusContent = event.content;
-                this.notify(state, { delta: '', done: false, log: statusContent });
+                this.dispatcher.notify(state, { delta: '', done: false, log: statusContent });
               }
               break;
 
@@ -762,7 +697,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               void this.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'unread');
 
               // Notify subscribers of end-of-turn
-              this.notify(state, { delta: '', done: true });
+              this.dispatcher.notify(state, { delta: '', done: true });
               return; // Turn complete
             }
 
@@ -781,7 +716,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
                   turns: event.usage.numTurns ?? 1,
                 });
               }
-              this.notify(state, {
+              this.dispatcher.notify(state, {
                 delta: '',
                 done: true,
                 log: `Error: ${event.content ?? 'unknown'}`,
@@ -795,7 +730,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               break;
 
             case 'api_retry':
-              this.notify(state, {
+              this.dispatcher.notify(state, {
                 delta: '',
                 done: false,
                 log: event.content ?? 'Retrying API call...',
@@ -803,13 +738,17 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               break;
 
             case 'rate_limit':
-              this.notify(state, { delta: '', done: false, log: event.content ?? 'Rate limited' });
+              this.dispatcher.notify(state, {
+                delta: '',
+                done: false,
+                log: event.content ?? 'Rate limited',
+              });
               break;
 
             case 'task_started':
               if (event.content) {
                 await this.persistToolEvent(state, 'Subtask started', event.content);
-                this.notify(state, {
+                this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
                   log: `Subtask: ${event.content}`,
@@ -820,7 +759,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
             case 'task_progress':
               if (event.content) {
-                this.notify(state, { delta: '', done: false, log: `Subtask: ${event.content}` });
+                this.dispatcher.notify(state, {
+                  delta: '',
+                  done: false,
+                  log: `Subtask: ${event.content}`,
+                });
               }
               break;
 
@@ -828,7 +771,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
               if (event.content) {
                 const taskStatus = event.detail ?? 'completed';
                 await this.persistToolEvent(state, `Subtask ${taskStatus}`, event.content);
-                this.notify(state, {
+                this.dispatcher.notify(state, {
                   delta: '',
                   done: false,
                   log: `Subtask ${taskStatus}: ${event.content}`,
@@ -859,7 +802,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       if (responseText && state.currentAssistantBuffer) {
         await this.flushAssistantBuffer(state);
         state.toolEventsLog = [];
-        this.notify(state, { delta: '', done: true });
+        this.dispatcher.notify(state, { delta: '', done: true });
       } else if (!responseText) {
         // Stream ended without any response — SDK session likely died.
         // Mark as error so the next message triggers a fresh session.
@@ -867,15 +810,15 @@ export class InteractiveSessionService implements IInteractiveSessionService {
         console.error(
           `[InteractiveSession] stream ended without response for session ${state.sessionId} — session may have died`
         );
-        this.notify(state, {
+        this.dispatcher.notify(state, {
           delta: '',
           done: true,
           log: 'Session disconnected — will restart on next message',
         });
         if (state.agentSessionId) {
-          this.stoppedAgentSessionIds.set(state.featureId, state.agentSessionId);
+          this.registry.cacheStoppedAgentSessionId(state.featureId, state.agentSessionId);
         }
-        this.sessions.delete(state.sessionId);
+        this.registry.delete(state.sessionId);
         try {
           await this.updateSessionStatusAndNotify(
             state.sessionId,
@@ -889,13 +832,13 @@ export class InteractiveSessionService implements IInteractiveSessionService {
       }
     } catch (err) {
       // If session was already stopped, ignore
-      if (!this.sessions.has(state.sessionId)) return;
+      if (!this.registry.has(state.sessionId)) return;
       // eslint-disable-next-line no-console
       console.error(`[InteractiveSession] turn failed for session ${state.sessionId}:`, err);
     } finally {
       // Release the turn lock and drain the queue
       state.turnInProgress = false;
-      if (this.sessions.has(state.sessionId) && state.turnQueue.length > 0) {
+      if (this.registry.has(state.sessionId) && state.turnQueue.length > 0) {
         const nextContent = state.turnQueue.shift()!;
         state.turnInProgress = true;
         void this.executeAndPersistTurn(state, nextContent);
@@ -909,14 +852,14 @@ export class InteractiveSessionService implements IInteractiveSessionService {
 
   async clearMessages(featureId: string): Promise<void> {
     // Stop any active session so the agent doesn't retain old context
-    const state = this.findActiveStateForFeature(featureId);
+    const state = this.registry.findActiveStateForFeature(featureId);
     if (state) {
       await this.stopSession(state.sessionId);
     }
     // Also clear the cached agentSessionId so next session starts fresh
-    this.stoppedAgentSessionIds.delete(featureId);
+    this.registry.deleteStoppedAgentSessionId(featureId);
     await this.workflowStepRepo.deleteByFeatureId(featureId);
-    this.activeStepByFeature.delete(featureId);
+    this.registry.clearActiveStep(featureId);
     return this.messageRepo.deleteByFeatureId(featureId);
   }
 
@@ -925,13 +868,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
   }
 
   subscribe(sessionId: string, onChunk: (chunk: StreamChunk) => void): UnsubscribeFn {
-    const state = this.sessions.get(sessionId);
-    if (!state) {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      return () => {};
-    }
-    state.subscribers.add(onChunk);
-    return () => state.subscribers.delete(onChunk);
+    return this.dispatcher.subscribeSession(sessionId, onChunk);
   }
 
   // ---------------------------------------------------------------------------
@@ -968,7 +905,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     }
 
     // 2. Find active session for this feature
-    let state = this.findActiveStateForFeature(featureId);
+    let state = this.registry.findActiveStateForFeature(featureId);
 
     // If the caller requested a different model/agent than the running session,
     // silently stop the current session so a new one boots with the new config.
@@ -976,11 +913,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     // instead of resuming the old one (which would keep the old model).
     if (state && model && state.model !== model) {
       await this.stopSession(state.sessionId);
-      this.stoppedAgentSessionIds.delete(featureId);
+      this.registry.deleteStoppedAgentSessionId(featureId);
       state = undefined;
     } else if (state && agentType && state.agentType !== agentType) {
       await this.stopSession(state.sessionId);
-      this.stoppedAgentSessionIds.delete(featureId);
+      this.registry.deleteStoppedAgentSessionId(featureId);
       state = undefined;
     }
 
@@ -1049,7 +986,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     const messages = await this.messageRepo.findByFeatureId(featureId);
 
     // Find active in-memory session
-    const state = this.findActiveStateForFeature(featureId);
+    const state = this.registry.findActiveStateForFeature(featureId);
     let sessionStatus: string | null = null;
     let streamingText: string | null = null;
     let sessionInfo: ChatState['sessionInfo'] = null;
@@ -1159,39 +1096,22 @@ export class InteractiveSessionService implements IInteractiveSessionService {
   }
 
   subscribeByFeature(featureId: string, onChunk: (chunk: StreamChunk) => void): UnsubscribeFn {
-    // Subscribe at the feature level so the callback survives session restarts.
-    // When a session dies (idle timeout, error) and a new one boots, the SSE
-    // connection keeps receiving events from the new session automatically.
-    let subs = this.featureSubscribers.get(featureId);
-    if (!subs) {
-      subs = new Set();
-      this.featureSubscribers.set(featureId, subs);
-    }
-    subs.add(onChunk);
-    return () => {
-      subs!.delete(onChunk);
-      if (subs!.size === 0) {
-        this.featureSubscribers.delete(featureId);
-      }
-    };
+    return this.dispatcher.subscribeByFeature(featureId, onChunk);
   }
 
   subscribeAll(onChunk: (featureId: string, chunk: StreamChunk) => void): UnsubscribeFn {
-    this.globalSubscribers.add(onChunk);
-    return () => {
-      this.globalSubscribers.delete(onChunk);
-    };
+    return this.dispatcher.subscribeAll(onChunk);
   }
 
   async stopByFeature(featureId: string): Promise<void> {
-    const state = this.findActiveStateForFeature(featureId);
+    const state = this.registry.findActiveStateForFeature(featureId);
     if (!state) return;
     await this.stopSession(state.sessionId);
   }
 
   async markRead(featureId: string): Promise<void> {
     // Find the active session for this feature and clear unread status
-    const state = this.findActiveStateForFeature(featureId);
+    const state = this.registry.findActiveStateForFeature(featureId);
     if (state) {
       void this.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
       return;
@@ -1212,7 +1132,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
   }
 
   async respondToInteraction(featureId: string, answers: Record<string, string>): Promise<void> {
-    const state = this.findActiveStateForFeature(featureId);
+    const state = this.registry.findActiveStateForFeature(featureId);
     if (!state?.pendingInteraction || !state.pendingInteractionResolver) {
       throw new Error(`No pending interaction for feature ${featureId}`);
     }
@@ -1259,15 +1179,15 @@ export class InteractiveSessionService implements IInteractiveSessionService {
   // ---------------------------------------------------------------------------
 
   setActiveStep(featureId: string, stepId: string): void {
-    this.activeStepByFeature.set(featureId, stepId);
+    this.registry.setActiveStep(featureId, stepId);
   }
 
   clearActiveStep(featureId: string): void {
-    this.activeStepByFeature.delete(featureId);
+    this.registry.clearActiveStep(featureId);
   }
 
   notifyWorkflowStep(featureId: string, step: WorkflowStep): void {
-    this.notifyByFeatureId(featureId, {
+    this.dispatcher.notifyByFeatureId(featureId, {
       delta: '',
       done: false,
       workflowStep: step,
@@ -1354,14 +1274,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
         state.pendingInteractionResolver = resolve;
       });
     };
-  }
-
-  /** Find the in-memory state for an active session for a feature. */
-  private findActiveStateForFeature(featureId: string): SessionState | undefined {
-    for (const state of this.sessions.values()) {
-      if (state.featureId === featureId) return state;
-    }
-    return undefined;
   }
 
   // ---------------------------------------------------------------------------
@@ -1473,39 +1385,6 @@ export class InteractiveSessionService implements IInteractiveSessionService {
   }
 
   // ---------------------------------------------------------------------------
-  // Event dispatch
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Dispatch a StreamChunk to all subscribers for a session.
-   *
-   * Sends to both session-level subscribers (legacy, for sessionId-based
-   * subscribe()) and feature-level subscribers (for SSE connections that
-   * must survive session restarts).
-   */
-  private notify(state: SessionState, chunk: StreamChunk): void {
-    state.subscribers.forEach((sub) => sub(chunk));
-    const featureSubs = this.featureSubscribers.get(state.featureId);
-    if (featureSubs) {
-      featureSubs.forEach((sub) => sub(chunk));
-    }
-    this.globalSubscribers.forEach((sub) => sub(state.featureId, chunk));
-  }
-
-  /**
-   * Notify feature-level subscribers when no in-memory session state is
-   * available (e.g. while persisting the user message before cold-boot).
-   * Session-scoped subscribers don't exist yet at that point.
-   */
-  private notifyByFeatureId(featureId: string, chunk: StreamChunk): void {
-    const featureSubs = this.featureSubscribers.get(featureId);
-    if (featureSubs) {
-      featureSubs.forEach((sub) => sub(chunk));
-    }
-    this.globalSubscribers.forEach((sub) => sub(featureId, chunk));
-  }
-
-  // ---------------------------------------------------------------------------
   // Mutation helpers — every DB write that changes observable state must go
   // through one of these so SSE subscribers receive a matching notification.
   // This is the contract that lets the client drop periodic polling.
@@ -1516,11 +1395,11 @@ export class InteractiveSessionService implements IInteractiveSessionService {
    *  step for the feature (if any) is stamped onto the row so every
    *  message is grouped under the right step card in the UI. */
   private async persistMessage(message: InteractiveMessage): Promise<void> {
-    const activeStepId = this.activeStepByFeature.get(message.featureId);
+    const activeStepId = this.registry.getActiveStep(message.featureId);
     const tagged: InteractiveMessage =
       message.stepId || !activeStepId ? message : { ...message, stepId: activeStepId };
     await this.messageRepo.create(tagged);
-    this.notifyByFeatureId(tagged.featureId, {
+    this.dispatcher.notifyByFeatureId(tagged.featureId, {
       delta: '',
       done: false,
       message: tagged,
@@ -1541,7 +1420,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     } else {
       await this.sessionRepo.updateStatus(sessionId, status, endedAt);
     }
-    this.notifyByFeatureId(featureId, {
+    this.dispatcher.notifyByFeatureId(featureId, {
       delta: '',
       done: false,
       sessionStatus: status,
@@ -1555,7 +1434,7 @@ export class InteractiveSessionService implements IInteractiveSessionService {
     turnStatus: string
   ): Promise<void> {
     await this.sessionRepo.updateTurnStatus(sessionId, turnStatus);
-    this.notifyByFeatureId(featureId, {
+    this.dispatcher.notifyByFeatureId(featureId, {
       delta: '',
       done: false,
       turnStatus,

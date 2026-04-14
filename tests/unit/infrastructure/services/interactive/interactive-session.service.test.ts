@@ -26,6 +26,8 @@ vi.mock('node:child_process', () => ({
 }));
 
 import { InteractiveSessionService } from '@/infrastructure/services/interactive/interactive-session.service.js';
+import { SessionRegistry } from '@/infrastructure/services/interactive/core/session-registry.js';
+import { StreamEventDispatcher } from '@/infrastructure/services/interactive/core/stream-event-dispatcher.js';
 import { ConcurrentSessionLimitError } from '@/domain/errors/concurrent-session-limit.error.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
 import type { IInteractiveMessageRepository } from '@/application/ports/output/repositories/interactive-message-repository.interface.js';
@@ -297,13 +299,17 @@ describe('InteractiveSessionService', () => {
       deleteByFeatureId: vi.fn(),
     };
 
+    const registry = new SessionRegistry();
+    const dispatcher = new StreamEventDispatcher(registry);
     service = new InteractiveSessionService(
       sessionRepo,
       messageRepo,
       executorFactory,
       featureRepo,
       contextBuilder,
-      workflowStepRepo
+      workflowStepRepo,
+      registry,
+      dispatcher
     );
   });
 

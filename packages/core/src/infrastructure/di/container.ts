@@ -30,6 +30,8 @@ import type { IAgentExecutorFactory } from '../../application/ports/output/agent
 import type { IFeatureRepository } from '../../application/ports/output/repositories/feature-repository.interface.js';
 import { InteractiveSessionService } from '../services/interactive/interactive-session.service.js';
 import { FeatureContextBuilder } from '../services/interactive/feature-context.builder.js';
+import { SessionRegistry } from '../services/interactive/core/session-registry.js';
+import { StreamEventDispatcher } from '../services/interactive/core/stream-event-dispatcher.js';
 
 // Topic-grouped registration modules
 import { registerRepositories } from './modules/register-repositories.js';
@@ -106,13 +108,17 @@ export async function initializeContainer(): Promise<typeof container> {
   const interactiveMessageRepo = container.resolve<IInteractiveMessageRepository>(
     'IInteractiveMessageRepository'
   );
+  const sessionRegistry = new SessionRegistry();
+  const streamEventDispatcher = new StreamEventDispatcher(sessionRegistry);
   const interactiveSessionService = new InteractiveSessionService(
     interactiveSessionRepo,
     interactiveMessageRepo,
     container.resolve<IAgentExecutorFactory>('IAgentExecutorFactory'),
     container.resolve<IFeatureRepository>('IFeatureRepository'),
     new FeatureContextBuilder(),
-    workflowStepRepoBoot
+    workflowStepRepoBoot,
+    sessionRegistry,
+    streamEventDispatcher
   );
   container.registerInstance<IInteractiveSessionService>(
     'IInteractiveSessionService',

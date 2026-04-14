@@ -48,6 +48,8 @@ import type { IAgentExecutorFactory } from '@/application/ports/output/agents/ag
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import { InteractiveSessionService } from '@/infrastructure/services/interactive/interactive-session.service.js';
 import { FeatureContextBuilder } from '@/infrastructure/services/interactive/feature-context.builder.js';
+import { SessionRegistry } from '@/infrastructure/services/interactive/core/session-registry.js';
+import { StreamEventDispatcher } from '@/infrastructure/services/interactive/core/stream-event-dispatcher.js';
 
 /**
  * String tokens resolved by web API routes. To regenerate, grep
@@ -193,13 +195,17 @@ describe('DI container bootstrap (integration)', () => {
     const interactiveMessageRepo = scopedContainer.resolve<IInteractiveMessageRepository>(
       'IInteractiveMessageRepository'
     );
+    const sessionRegistry = new SessionRegistry();
+    const streamEventDispatcher = new StreamEventDispatcher(sessionRegistry);
     const interactiveSessionService = new InteractiveSessionService(
       interactiveSessionRepo,
       interactiveMessageRepo,
       scopedContainer.resolve<IAgentExecutorFactory>('IAgentExecutorFactory'),
       scopedContainer.resolve<IFeatureRepository>('IFeatureRepository'),
       new FeatureContextBuilder(),
-      workflowStepRepoBoot
+      workflowStepRepoBoot,
+      sessionRegistry,
+      streamEventDispatcher
     );
     scopedContainer.registerInstance<IInteractiveSessionService>(
       'IInteractiveSessionService',
