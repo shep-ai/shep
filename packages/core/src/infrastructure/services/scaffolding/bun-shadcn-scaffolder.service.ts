@@ -79,6 +79,17 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
     // `bunx --bun shadcn@latest init --preset b0 --base base --template
     //  vite --yes` is the single command that installs Vite + React +
     // TypeScript + Tailwind + the shadcn base components.
+    //
+    // CRITICAL: `--template vite` shells out to `create-vite` which
+    // ALWAYS prompts "What is your project named?" on stdin even under
+    // `--yes`. There is nobody to answer it when we spawn from inside
+    // the Shep process, so the child hangs forever. We pipe a bunch
+    // of blank newlines into stdin — create-vite picks its default
+    // answer ("vite-app") for the project name and skips any other
+    // follow-up prompts it might add later. The flatten step in Phase
+    // 3 then moves the contents of the created subdirectory up into
+    // the actual `repositoryPath`, so the chosen name never leaks
+    // into the user's project.
     await this.runSpawn({
       command: 'bunx',
       args: [
@@ -95,6 +106,9 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
       ],
       cwd: repositoryPath,
       phase: 'shadcn init',
+      // Feed 20 blank newlines — cheap insurance against new prompts
+      // added by shadcn or create-vite in the future.
+      stdinInput: '\n'.repeat(20),
     });
 
     // Phase 3 — flatten the child directory shadcn created.
@@ -164,26 +178,48 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
   }
 
   /**
-   * Run a command to completion, inheriting stdio so the user sees
-   * progress in the terminal (for CLI invocations) and the Shep log
-   * (for web-app invocations). Throws on non-zero exit.
+   * Run a command to completion. Stdout and stderr inherit so the
+   * user sees progress in the terminal (for CLI invocations) and the
+   * Shep log (for web-app invocations). When `stdinInput` is set, a
+   * piped stdin is attached and the string is written to it up front,
+   * then closed — used to answer interactive prompts from tools like
+   * `create-vite` that insist on reading a project name from stdin
+   * even under `--yes`. Throws on non-zero exit.
    */
   private runSpawn(args: {
     command: string;
     args: string[];
     cwd: string;
     phase: string;
+    stdinInput?: string;
   }): Promise<void> {
     return new Promise((resolve, reject) => {
+      const pipeStdin = args.stdinInput !== undefined;
       const child = spawn(args.command, args.args, {
         cwd: args.cwd,
-        stdio: 'inherit',
+        // When we need to feed stdin, we MUST pipe it — inheriting
+        // from the parent would tie the child to whatever stdin the
+        // Shep process has (usually the dev server's TTY or /dev/null
+        // in production) and the interactive prompt would still hang.
+        stdio: pipeStdin ? ['pipe', 'inherit', 'inherit'] : 'inherit',
         // Windows needs `shell: true` to resolve `.cmd` shims for
         // `bun`, `bunx`, and `npm`. POSIX does not and benefits from
         // direct exec (no argument escaping).
         shell: IS_WINDOWS,
         windowsHide: IS_WINDOWS,
       });
+      if (pipeStdin && child.stdin) {
+        // Write the canned answer up front, then close stdin so the
+        // child receives EOF on its next `readline`. If a tool ever
+        // blocks waiting for more input, the EOF unblocks it with a
+        // default response.
+        child.stdin.on('error', () => {
+          // Ignore EPIPE — the child may have already chosen its
+          // default and closed stdin before we finish writing.
+        });
+        child.stdin.write(args.stdinInput!);
+        child.stdin.end();
+      }
       child.on('error', (err) => {
         reject(
           new Error(
