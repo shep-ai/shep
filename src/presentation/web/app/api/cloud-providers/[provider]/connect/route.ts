@@ -9,12 +9,12 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { resolve } from '@/lib/server-container';
+import { errorCode, errorMessage } from '@/lib/error-code';
 import type { ConnectCloudProviderUseCase } from '@shepai/core/application/use-cases/cloud-deploy/connect-cloud-provider.use-case';
 import {
   CloudDeploymentProvider,
   type CloudDeploymentProvider as CloudDeploymentProviderType,
 } from '@shepai/core/domain/generated/output';
-import { ProviderNotImplementedError } from '@shepai/core/domain/errors/provider-not-implemented.error';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,12 +42,11 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
     await useCase.execute({ provider, token: body.token.trim() });
     return NextResponse.json({ ok: true });
   } catch (error) {
-    if (error instanceof ProviderNotImplementedError) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: 409 });
+    const code = errorCode(error);
+    const message = errorMessage(error);
+    if (code === 'PROVIDER_NOT_IMPLEMENTED') {
+      return NextResponse.json({ error: message, code }, { status: 409 });
     }
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

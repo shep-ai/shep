@@ -43,13 +43,21 @@ const PROVIDER_DISPLAY_NAMES: Record<CloudDeploymentProvider, string> = {
   [CloudDeploymentProvider.GcpCloudRun]: 'Google Cloud Run',
 };
 
+export type ConnectProviderModalMode = 'connect' | 'update';
+
 export interface ConnectProviderModalProps {
   provider: CloudDeploymentProvider | null;
+  mode?: ConnectProviderModalMode;
   onClose(): void;
   onSubmit(provider: CloudDeploymentProvider, token: string): Promise<void>;
 }
 
-export function ConnectProviderModal({ provider, onClose, onSubmit }: ConnectProviderModalProps) {
+export function ConnectProviderModal({
+  provider,
+  mode = 'connect',
+  onClose,
+  onSubmit,
+}: ConnectProviderModalProps) {
   const [token, setToken] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,11 +92,12 @@ export function ConnectProviderModal({ provider, onClose, onSubmit }: ConnectPro
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {Icon ? <Icon className="size-5" /> : null}
-            Connect to {displayName}
+            {mode === 'update' ? `Update ${displayName} token` : `Connect to ${displayName}`}
           </DialogTitle>
           <DialogDescription>
-            Paste your {displayName} API token below. It is stored encrypted on this machine and
-            never sent anywhere else.
+            {mode === 'update'
+              ? `Paste a new ${displayName} API token to replace the one stored on this machine. The previous token will be overwritten.`
+              : `Paste your ${displayName} API token below. It is stored encrypted on this machine and never sent anywhere else.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -96,7 +105,7 @@ export function ConnectProviderModal({ provider, onClose, onSubmit }: ConnectPro
           href={tokenUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary inline-flex items-center gap-1 text-xs hover:underline"
+          className="text-primary inline-flex cursor-pointer items-center gap-1 text-xs hover:underline"
         >
           Get a token <ExternalLink className="size-3" />
         </a>
@@ -111,11 +120,26 @@ export function ConnectProviderModal({ provider, onClose, onSubmit }: ConnectPro
         {error ? <p className="text-destructive text-xs">{error}</p> : null}
 
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose} disabled={submitting}>
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            disabled={submitting}
+            className="cursor-pointer"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting || token.trim().length === 0}>
-            {submitting ? 'Connecting…' : 'Connect'}
+          <Button
+            onClick={handleSubmit}
+            disabled={submitting || token.trim().length === 0}
+            className="cursor-pointer"
+          >
+            {submitting
+              ? mode === 'update'
+                ? 'Updating…'
+                : 'Connecting…'
+              : mode === 'update'
+                ? 'Update token'
+                : 'Connect'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -19,6 +19,8 @@ import type { IWorkflowStepRepository } from '../../../application/ports/output/
 import { SQLiteInteractiveSessionRepository } from '../../repositories/sqlite-interactive-session.repository.js';
 import { SQLiteInteractiveMessageRepository } from '../../repositories/sqlite-interactive-message.repository.js';
 import { SQLiteWorkflowStepRepository } from '../../repositories/sqlite-workflow-step.repository.js';
+import type { IOperationLogRepository } from '../../../application/ports/output/repositories/operation-log.repository.interface.js';
+import { SQLiteOperationLogRepository } from '../../repositories/sqlite-operation-log.repository.js';
 
 // Project management (feature 087) repositories
 import type { IPmProjectRepository } from '../../../application/ports/output/repositories/pm-project-repository.interface.js';
@@ -132,6 +134,13 @@ export function registerRepositories(container: DependencyContainer): void {
     useFactory: (c) => {
       const database = c.resolve<Database.Database>('Database');
       return new SQLiteWorkflowStepRepository(database);
+    },
+  });
+
+  container.register<IOperationLogRepository>('IOperationLogRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteOperationLogRepository(database);
     },
   });
 

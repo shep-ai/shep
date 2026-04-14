@@ -22,6 +22,7 @@ import type { ExecFunction } from '../git/worktree.service.js';
 import type { ICloudProviderTokensRepository } from '../../../application/ports/output/repositories/cloud-provider-tokens.repository.interface.js';
 import type {
   CloudDeployInput,
+  CloudDeployLogEmitter,
   CloudDeployProgressHandler,
   CloudDeployResult,
   ICloudDeploymentProvider,
@@ -30,6 +31,7 @@ import { CloudProviderNotConnectedError } from '../../../domain/errors/cloud-pro
 import {
   CloudDeploymentProvider,
   CloudDeploymentStatus,
+  OperationLogLevel,
 } from '../../../domain/generated/output.js';
 import {
   CloudflareAccountMissingError,
@@ -105,27 +107,95 @@ export class CloudflarePagesProvider implements ICloudDeploymentProvider {
 
   async deploy(
     input: CloudDeployInput,
-    onProgress: CloudDeployProgressHandler
+    onProgress: CloudDeployProgressHandler,
+    onLog?: CloudDeployLogEmitter
   ): Promise<CloudDeployResult> {
-    const token = await this.tokens.get(CloudDeploymentProvider.CloudflarePages);
-    if (!token) throw new CloudProviderNotConnectedError(this.providerId);
+    const log: CloudDeployLogEmitter = onLog ?? (() => undefined);
+    log(OperationLogLevel.Info, `Starting Cloudflare Pages deploy for "${input.projectName}"`);
 
-    const accountId = await this.discoverAccountId(token);
-    await this.ensureProject(token, accountId, input.projectName);
+    const token = await this.tokens.get(CloudDeploymentProvider.CloudflarePages);
+    if (!token) {
+      log(OperationLogLevel.Error, 'No Cloudflare token stored for this provider');
+      throw new CloudProviderNotConnectedError(this.providerId);
+    }
+    log(OperationLogLevel.Debug, 'Decrypted Cloudflare token from local store');
+
+    const accountId = await this.discoverAccountId(token, log);
+    log(OperationLogLevel.Info, `Using Cloudflare account ${accountId}`);
+
+    await this.ensureProject(token, accountId, input.projectName, log);
 
     onProgress(CloudDeploymentStatus.Uploading, 'Uploading build output to Cloudflare Pages');
-    const deploymentId = await this.runWranglerDeploy(
+    log(OperationLogLevel.Info, `Running wrangler pages deploy from ${input.buildOutputDir}`);
+    const wranglerResult = await this.runWranglerDeploy(
       token,
       accountId,
       input.projectName,
-      input.buildOutputDir
+      input.buildOutputDir,
+      log
     );
 
-    onProgress(CloudDeploymentStatus.Deploying, 'Cloudflare is finalising the deployment');
-    const result = await this.pollUntilFinished(token, accountId, input.projectName, deploymentId);
+    // Success path A (modern wrangler 4.x+): stdout contained a live URL.
+    // Wrangler has ALREADY confirmed the deploy is live, so we skip polling
+    // entirely — the previous version of this code treated the URL banner
+    // as a deployment id, URL-encoded it into a GET, and got a 403 HTML
+    // page back, which produced a false-negative "Deploy failed" even
+    // though Cloudflare had actually succeeded.
+    if (wranglerResult.url) {
+      log(OperationLogLevel.Info, 'Wrangler reported deploy complete — skipping Cloudflare poll');
+      onProgress(CloudDeploymentStatus.Deploying, 'Cloudflare is finalising the deployment');
+      // Look up the real deployment id via a single API call so the
+      // Application row carries a re-hydratable id (not a synthetic stub).
+      // If this lookup fails for any reason we still return success — the
+      // authoritative signal is wrangler's exit code + URL banner.
+      let newestId: string | null = null;
+      try {
+        const newest = await this.fetchNewestDeployment(token, accountId, input.projectName);
+        newestId = newest?.id ?? null;
+        if (newestId) {
+          log(OperationLogLevel.Debug, `Resolved wrangler URL to deployment id ${newestId}`);
+        }
+      } catch (err) {
+        log(
+          OperationLogLevel.Warn,
+          'Failed to look up deployment id after wrangler success — using URL-derived fallback',
+          err instanceof Error ? err.message : String(err)
+        );
+      }
+      onProgress(CloudDeploymentStatus.Deployed, `Live at ${wranglerResult.url}`);
+      log(OperationLogLevel.Info, `Deployment succeeded — live at ${wranglerResult.url}`);
+      return {
+        deploymentId: newestId ?? `wrangler-${Date.now()}`,
+        url: wranglerResult.url,
+      };
+    }
 
-    onProgress(CloudDeploymentStatus.Deployed, `Live at ${result.url}`);
-    return { deploymentId: result.id, url: result.url ?? '' };
+    // Success path B (legacy wrangler): stdout contained a bare deployment
+    // id. Fall back to the old polling flow.
+    if (wranglerResult.deploymentId) {
+      log(
+        OperationLogLevel.Info,
+        `Wrangler returned legacy deployment id ${wranglerResult.deploymentId}`
+      );
+      onProgress(CloudDeploymentStatus.Deploying, 'Cloudflare is finalising the deployment');
+      const result = await this.pollUntilFinished(
+        token,
+        accountId,
+        input.projectName,
+        wranglerResult.deploymentId,
+        log
+      );
+      onProgress(CloudDeploymentStatus.Deployed, `Live at ${result.url}`);
+      log(OperationLogLevel.Info, `Deployment succeeded — live at ${result.url ?? '<unknown>'}`);
+      return { deploymentId: result.id, url: result.url ?? '' };
+    }
+
+    // Neither signal parsed — wrangler changed its output yet again.
+    log(
+      OperationLogLevel.Error,
+      'Wrangler succeeded (exit 0) but neither a URL nor a deployment id could be parsed from its output'
+    );
+    throw new CloudflareApiError('Could not parse wrangler output for deployment id or URL', 0, []);
   }
 
   async getStatus(
@@ -167,16 +237,38 @@ export class CloudflarePagesProvider implements ICloudDeploymentProvider {
     }
   }
 
-  private async discoverAccountId(token: string): Promise<string> {
+  private async discoverAccountId(token: string, log?: CloudDeployLogEmitter): Promise<string> {
     const accounts = await this.request<CloudflareAccount[]>('GET', '/accounts', token, undefined);
     const first = accounts[0];
-    if (!first) throw new CloudflareAccountMissingError();
+    if (!first) {
+      log?.(OperationLogLevel.Error, 'Cloudflare returned 0 accounts for this token');
+      throw new CloudflareAccountMissingError();
+    }
+    log?.(
+      OperationLogLevel.Debug,
+      `Cloudflare /accounts returned ${accounts.length} account(s); using "${first.name}" (${first.id})`
+    );
     return first.id;
   }
 
-  private async ensureProject(token: string, accountId: string, name: string): Promise<void> {
+  private async ensureProject(
+    token: string,
+    accountId: string,
+    name: string,
+    log?: CloudDeployLogEmitter
+  ): Promise<void> {
     const projects = await this.listProjects(token, accountId);
-    if (projects.some((p) => p.name === name)) return;
+    if (projects.some((p) => p.name === name)) {
+      log?.(
+        OperationLogLevel.Info,
+        `Reusing existing Cloudflare Pages project "${name}" (no new project created)`
+      );
+      return;
+    }
+    log?.(
+      OperationLogLevel.Info,
+      `No existing project named "${name}" — creating one on Cloudflare Pages`
+    );
     try {
       await this.request<CloudflarePagesProject>(
         'POST',
@@ -184,8 +276,15 @@ export class CloudflarePagesProvider implements ICloudDeploymentProvider {
         token,
         { name, production_branch: 'main' }
       );
+      log?.(OperationLogLevel.Info, `Created Cloudflare Pages project "${name}"`);
     } catch (err) {
-      if (err instanceof CloudflareApiError && err.status === 409) return; // already exists
+      if (err instanceof CloudflareApiError && err.status === 409) {
+        log?.(
+          OperationLogLevel.Warn,
+          `Cloudflare returned 409 (already exists) for project "${name}" — treating as success`
+        );
+        return;
+      }
       throw err;
     }
   }
@@ -217,28 +316,50 @@ export class CloudflarePagesProvider implements ICloudDeploymentProvider {
     token: string,
     accountId: string,
     projectName: string,
-    deploymentId: string
+    deploymentId: string,
+    log?: CloudDeployLogEmitter
   ): Promise<CloudflarePagesDeployment> {
     const deadline = this.clock.now() + POLL_TIMEOUT_MS;
+    let lastStatus: string | undefined;
     while (this.clock.now() < deadline) {
       const dep = await this.getDeployment(token, accountId, projectName, deploymentId);
       const status = dep.latest_stage?.status;
+      if (status !== lastStatus) {
+        log?.(
+          OperationLogLevel.Info,
+          `Cloudflare deployment stage transitioned to "${status ?? 'unknown'}"`
+        );
+        lastStatus = status;
+      }
       if (status === 'success') return dep;
       if (status === 'failure' || status === 'canceled') {
+        log?.(
+          OperationLogLevel.Error,
+          `Cloudflare deployment ${status}`,
+          JSON.stringify(dep.latest_stage)
+        );
         throw new CloudflareApiError(`Cloudflare Pages deployment ${status}`, 0, []);
       }
       await this.clock.sleep(POLL_INTERVAL_MS);
     }
+    log?.(OperationLogLevel.Error, `Polling timed out after ${POLL_TIMEOUT_MS}ms`);
     throw new CloudflareApiError('Cloudflare Pages deployment polling timed out', 0);
   }
 
+  /**
+   * Result of a wrangler subprocess invocation. Modern wrangler (4.x+)
+   * prints a URL banner on success but NO explicit "Deployment ID:" line,
+   * so we return whichever signals we could parse. The caller decides
+   * whether to skip polling based on which fields are populated.
+   */
   private async runWranglerDeploy(
     token: string,
     accountId: string,
     projectName: string,
-    buildDir: string
-  ): Promise<string> {
-    const { stdout } = await this.execFile(
+    buildDir: string,
+    log?: CloudDeployLogEmitter
+  ): Promise<{ deploymentId: string | null; url: string | null }> {
+    const { stdout, stderr } = await this.execFile(
       'npx',
       ['wrangler', 'pages', 'deploy', buildDir, `--project-name=${projectName}`, '--branch=main'],
       {
@@ -249,11 +370,55 @@ export class CloudflarePagesProvider implements ICloudDeploymentProvider {
         },
       }
     );
-    // Wrangler prints a line like "Deployment ID: <uuid>" on success.
-    const match = stdout.match(/Deployment ID:\s*([^\s]+)/i);
-    if (match?.[1]) return match[1];
-    // Fallback: return the whole trimmed stdout so callers can see something.
-    return stdout.trim() || 'unknown';
+    // Capture both streams as a multi-line detail so the UI can show a
+    // collapsible "wrangler output" entry. Tail the last 50 lines so we
+    // don't blow up the row size for huge outputs.
+    const tail = (text: string): string => text.split(/\r?\n/).slice(-50).join('\n');
+    const combined = [
+      stdout && `--- stdout (last 50) ---\n${tail(stdout)}`,
+      stderr && `--- stderr (last 50) ---\n${tail(stderr)}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+    log?.(OperationLogLevel.Debug, 'wrangler pages deploy completed', combined || undefined);
+
+    // Modern wrangler (4.x+) success banner contains the live preview URL:
+    //   "Deployment complete! Take a peek over at https://<shortid>.<proj>.pages.dev"
+    // The URL is the authoritative success signal — if wrangler printed it
+    // AND exited 0, the deploy is live. We return the URL so the caller can
+    // skip polling entirely; a subsequent API call will look up the real
+    // deployment id for status re-hydration.
+    const urlMatch = stdout.match(/https:\/\/[a-z0-9]+\.[^\s)"'<>]+\.pages\.dev/i);
+    if (urlMatch) {
+      return { deploymentId: null, url: urlMatch[0] };
+    }
+
+    // Legacy wrangler (pre-4.x) printed "Deployment ID: <uuid>" instead.
+    const idMatch = stdout.match(/Deployment ID:\s*([A-Za-z0-9-]+)/i);
+    if (idMatch?.[1]) return { deploymentId: idMatch[1], url: null };
+
+    // Neither signal parsed — wrangler changed output again, or the command
+    // failed silently. Return nulls so the caller decides how to proceed.
+    return { deploymentId: null, url: null };
+  }
+
+  /**
+   * Fetch the single newest deployment for a project. Used right after a
+   * wrangler success banner to look up the real deployment id so we can
+   * persist it on the Application row for later status re-hydration.
+   */
+  private async fetchNewestDeployment(
+    token: string,
+    accountId: string,
+    projectName: string
+  ): Promise<CloudflarePagesDeployment | null> {
+    const results = await this.request<CloudflarePagesDeployment[]>(
+      'GET',
+      `/accounts/${accountId}/pages/projects/${projectName}/deployments?per_page=1&page=1`,
+      token,
+      undefined
+    );
+    return results[0] ?? null;
   }
 
   private async request<T>(
@@ -262,7 +427,8 @@ export class CloudflarePagesProvider implements ICloudDeploymentProvider {
     token: string,
     body: unknown
   ): Promise<T> {
-    const res = await this.fetchFn(`${CLOUDFLARE_API_BASE}${path}`, {
+    const url = `${CLOUDFLARE_API_BASE}${path}`;
+    const res = await this.fetchFn(url, {
       method,
       headers: {
         Authorization: `Bearer ${token}`,
@@ -270,7 +436,37 @@ export class CloudflarePagesProvider implements ICloudDeploymentProvider {
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
-    const envelope = (await res.json()) as CloudflareEnvelope<T>;
+
+    // Read the body as text first so we can produce a useful error when
+    // Cloudflare's edge returns an HTML error page (5xx, captive portal,
+    // rate-limit page, etc.). Parsing JSON before checking the response shape
+    // would otherwise blow up with `SyntaxError: Unexpected token '<'` and
+    // hide the real status from the user.
+    const rawText = await res.text().catch(() => '');
+    const contentType = res.headers.get('content-type') ?? '';
+    const looksLikeJson = contentType.includes('application/json') || rawText.startsWith('{');
+
+    if (!looksLikeJson) {
+      throw new CloudflareApiError(
+        `Cloudflare API ${method} ${path} returned a non-JSON response (HTTP ${res.status}). ` +
+          `First 200 chars: ${snippetForError(rawText)}`,
+        res.status,
+        []
+      );
+    }
+
+    let envelope: CloudflareEnvelope<T>;
+    try {
+      envelope = JSON.parse(rawText) as CloudflareEnvelope<T>;
+    } catch {
+      throw new CloudflareApiError(
+        `Cloudflare API ${method} ${path} returned malformed JSON (HTTP ${res.status}). ` +
+          `First 200 chars: ${snippetForError(rawText)}`,
+        res.status,
+        []
+      );
+    }
+
     if (!res.ok || !envelope.success) {
       throw new CloudflareApiError(
         envelope.errors?.[0]?.message ?? `Cloudflare API ${method} ${path} failed`,
@@ -280,6 +476,13 @@ export class CloudflarePagesProvider implements ICloudDeploymentProvider {
     }
     return envelope.result;
   }
+}
+
+function snippetForError(text: string, max = 200): string {
+  const collapsed = text.replace(/\s+/g, ' ').trim();
+  if (collapsed.length === 0) return '<empty body>';
+  if (collapsed.length <= max) return collapsed;
+  return `${collapsed.slice(0, max)}…`;
 }
 
 function mapStageToStatus(

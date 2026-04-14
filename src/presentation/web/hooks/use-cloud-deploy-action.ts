@@ -65,6 +65,50 @@ interface CloudDeploymentStatusDto {
   gitRemoteUrl?: string;
 }
 
+/**
+ * Read a Response body safely. Routes are SUPPOSED to always return JSON, but
+ * in dev mode Next.js may return an HTML error page when a route module fails
+ * to compile or a request crashes the server. Naive `await res.json()` then
+ * throws "Unexpected token < in JSON" which surfaces nothing useful to the
+ * user. This helper returns the parsed JSON when possible and falls back to a
+ * truncated text snippet so the UI can show what actually came back.
+ */
+async function readResponseBody(
+  res: Response
+): Promise<{ json: unknown; text: string; isJson: boolean }> {
+  const text = await res.text().catch(() => '');
+  const ct = res.headers.get('content-type') ?? '';
+  if (ct.includes('application/json')) {
+    try {
+      return { json: JSON.parse(text), text, isJson: true };
+    } catch {
+      return { json: null, text, isJson: false };
+    }
+  }
+  // Not declared JSON — try anyway in case the server forgot the header.
+  try {
+    return { json: JSON.parse(text), text, isJson: true };
+  } catch {
+    return { json: null, text, isJson: false };
+  }
+}
+
+function snippet(text: string, max = 200): string {
+  const collapsed = text.replace(/\s+/g, ' ').trim();
+  if (collapsed.length <= max) return collapsed;
+  return `${collapsed.slice(0, max)}…`;
+}
+
+async function extractErrorMessage(res: Response, fallback: string): Promise<string> {
+  const { json, text, isJson } = await readResponseBody(res);
+  if (isJson && json && typeof json === 'object' && 'error' in json) {
+    const err = (json as { error?: unknown }).error;
+    if (typeof err === 'string' && err.length > 0) return err;
+  }
+  if (text.length > 0) return `${fallback} (HTTP ${res.status}: ${snippet(text)})`;
+  return `${fallback} (HTTP ${res.status})`;
+}
+
 function dtoToState(dto: CloudDeploymentStatusDto): CloudDeployActionState {
   const status = dto.status ?? CloudDeploymentStatus.NotDeployed;
   return {
@@ -85,8 +129,9 @@ export function useCloudDeployAction(applicationId: string): CloudDeployActionAp
     try {
       const res = await fetch(`/api/applications/${applicationId}/cloud-deploy/status`);
       if (!res.ok) return;
-      const dto = (await res.json()) as CloudDeploymentStatusDto;
-      setState(dtoToState(dto));
+      const { json, isJson } = await readResponseBody(res);
+      if (!isJson) return;
+      setState(dtoToState(json as CloudDeploymentStatusDto));
     } catch {
       // swallow — next poll will recover
     }
@@ -98,12 +143,19 @@ export function useCloudDeployAction(applicationId: string): CloudDeployActionAp
 
   const selectProvider = useCallback(
     async (provider: CloudDeploymentProvider) => {
+      // Optimistic local update so the button label reflects the choice
+      // immediately. We still throw on persistence failure so the caller can
+      // surface it (rather than silently drifting from server state).
       setState((s) => ({ ...s, provider }));
-      await fetch(`/api/applications/${applicationId}/cloud-deploy/select-provider`, {
+      const res = await fetch(`/api/applications/${applicationId}/cloud-deploy/select-provider`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider }),
       });
+      if (!res.ok) {
+        const message = await extractErrorMessage(res, 'Failed to select provider');
+        throw new Error(message);
+      }
     },
     [applicationId]
   );
@@ -115,17 +167,15 @@ export function useCloudDeployAction(applicationId: string): CloudDeployActionAp
       error: null,
       isWorking: true,
     }));
-    const res = await fetch(`/api/applications/${applicationId}/cloud-deploy/initiate`, {
-      method: 'POST',
-    });
-    if (!res.ok) {
-      let message = 'Failed to start deploy';
-      try {
-        const body = (await res.json()) as { error?: string };
-        if (body.error) message = body.error;
-      } catch {
-        // keep default
-      }
+    let res: Response;
+    try {
+      res = await fetch(`/api/applications/${applicationId}/cloud-deploy/initiate`, {
+        method: 'POST',
+      });
+    } catch (err) {
+      // Network-level failure (server down, CORS, etc.) — surface verbatim so
+      // the user knows it's not a server-side validation error.
+      const message = err instanceof Error ? err.message : 'Network error contacting server';
       setState((s) => ({
         ...s,
         status: CloudDeploymentStatus.Failed,
@@ -134,15 +184,54 @@ export function useCloudDeployAction(applicationId: string): CloudDeployActionAp
       }));
       return;
     }
-    // Subsequent progress flows in via the SSE stream (phase 11) and the
-    // refresh() polling. We keep a refresh timer for ~10s as a safety net.
+    if (!res.ok) {
+      const message = await extractErrorMessage(res, 'Failed to start deploy');
+      setState((s) => ({
+        ...s,
+        status: CloudDeploymentStatus.Failed,
+        error: message,
+        isWorking: false,
+      }));
+      return;
+    }
+    // Poll until the deployment reaches a terminal state (Deployed or
+    // Failed) or a hard safety-net timeout fires. Earlier versions capped
+    // this at 15s which was shorter than a real Cloudflare deploy — that
+    // left the UI frozen on "Deploying…" forever and required a manual
+    // reload to see the final outcome. 10 minutes is well over the P99
+    // wrangler deploy time and well under any sensible "user gave up"
+    // threshold; we still break EARLY on terminal status so the poll
+    // stops within 1.5s of completion.
+    const POLL_INTERVAL_MS = 1500;
+    const HARD_TIMEOUT_MS = 10 * 60 * 1000;
     let elapsed = 0;
-    const interval = setInterval(() => {
-      void refresh();
-      elapsed += 1500;
-      if (elapsed > 15_000) clearInterval(interval);
-    }, 1500);
-  }, [applicationId, refresh]);
+    const interval = setInterval(async () => {
+      elapsed += POLL_INTERVAL_MS;
+      try {
+        const statusRes = await fetch(`/api/applications/${applicationId}/cloud-deploy/status`);
+        if (statusRes.ok) {
+          const { json, isJson } = await readResponseBody(statusRes);
+          if (isJson) {
+            const dto = json as CloudDeploymentStatusDto;
+            const next = dtoToState(dto);
+            setState(next);
+            if (
+              next.status === CloudDeploymentStatus.Deployed ||
+              next.status === CloudDeploymentStatus.Failed
+            ) {
+              clearInterval(interval);
+              return;
+            }
+          }
+        }
+      } catch {
+        // Transient network hiccup — try again on the next tick.
+      }
+      if (elapsed >= HARD_TIMEOUT_MS) {
+        clearInterval(interval);
+      }
+    }, POLL_INTERVAL_MS);
+  }, [applicationId]);
 
   const connect = useCallback(async (provider: CloudDeploymentProvider, token: string) => {
     const res = await fetch(`/api/cloud-providers/${provider}/connect`, {
@@ -151,8 +240,8 @@ export function useCloudDeployAction(applicationId: string): CloudDeployActionAp
       body: JSON.stringify({ token }),
     });
     if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
-      throw new Error(body.error ?? 'Failed to connect cloud provider');
+      const message = await extractErrorMessage(res, 'Failed to connect cloud provider');
+      throw new Error(message);
     }
   }, []);
 

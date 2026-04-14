@@ -34,6 +34,13 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
+function htmlResponse(body: string, status: number): Response {
+  return new Response(body, {
+    status,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  });
+}
+
 function envelopeOk<T>(result: T) {
   return { success: true, result, errors: [], messages: [] };
 }
@@ -215,6 +222,104 @@ describe('CloudflarePagesProvider.deploy', () => {
 
     const noop = (): void => undefined;
     await expect(p.deploy(input, noop)).rejects.toBeInstanceOf(CloudflareApiError);
+  });
+
+  it('handles modern wrangler 4.x URL-banner output without feeding it back into a GET deployments/<id> call', async () => {
+    // Regression: wrangler 4.82 prints:
+    //   ⛅️ wrangler 4.82.2 ──…
+    //   ✨ Deployment complete! Take a peek over at https://56b738ae.landing-page-hero-features-pricing-85f4e3.pages.dev
+    // — and NO "Deployment ID: …" line. The old parser returned the whole
+    // stdout blob as the "deployment id", which got URL-encoded into a GET
+    // `/deployments/<banner-text>` call, which Cloudflare's edge answered
+    // with a 403 HTML challenge page → false-negative "Deploy failed" for a
+    // deploy that had actually succeeded. Fix: detect the URL banner, skip
+    // polling, and fetch the newest deployment id via a single extra call.
+    const wranglerStdout =
+      ' ⛅️ wrangler 4.82.2\n' +
+      '───────────────────\n' +
+      'Uploading... (5/5)\n' +
+      '✨ Success! Uploaded 0 files (5 already uploaded) (0.16 sec)\n' +
+      '\n' +
+      '🌎 Deploying...\n' +
+      '✨ Deployment complete! Take a peek over at ' +
+      'https://56b738ae.landing-page-hero-features-pricing-85f4e3.pages.dev\n';
+
+    const p = makeProvider({
+      token: 'tok',
+      fetchQueue: [
+        // discoverAccountId
+        () => jsonResponse(envelopeOk([{ id: 'acct-1', name: 'A' }])),
+        // ensureProject → already exists
+        () => jsonResponse(envelopeOk([{ name: 'landing-page-hero-features-pricing-85f4e3' }])),
+        // fetchNewestDeployment — returns the real deployment id we want
+        // persisted on the Application row.
+        () =>
+          jsonResponse(
+            envelopeOk([
+              {
+                id: 'real-deployment-uuid-42',
+                url: 'https://56b738ae.landing-page-hero-features-pricing-85f4e3.pages.dev',
+                latest_stage: { name: 'deploy', status: 'success' },
+              },
+            ])
+          ),
+      ],
+      exec: async () => ({ stdout: wranglerStdout, stderr: '' }),
+    });
+
+    const progress: CloudDeploymentStatus[] = [];
+    const result = await p.deploy(
+      {
+        applicationId: 'app-1',
+        projectName: 'landing-page-hero-features-pricing-85f4e3',
+        buildOutputDir: '/tmp/build',
+      },
+      (s) => progress.push(s)
+    );
+
+    expect(progress).toEqual([
+      CloudDeploymentStatus.Uploading,
+      CloudDeploymentStatus.Deploying,
+      CloudDeploymentStatus.Deployed,
+    ]);
+    expect(result.url).toBe('https://56b738ae.landing-page-hero-features-pricing-85f4e3.pages.dev');
+    // The real Cloudflare deployment id must be carried through — NOT the
+    // wrangler stdout blob (which is what the old parser returned).
+    expect(result.deploymentId).toBe('real-deployment-uuid-42');
+    // And crucially the deployment id must not contain any characters from
+    // the wrangler banner — those were the symptom of the old bug.
+    expect(result.deploymentId).not.toMatch(/wrangler|Deployment complete|⛅/);
+  });
+
+  it('throws CloudflareApiError with HTTP status + body snippet when the edge returns an HTML page', async () => {
+    // Regression: when Cloudflare's edge returns an HTML error page (5xx,
+    // captive portal, rate-limit splash) the provider used to call res.json()
+    // unconditionally and crash with `SyntaxError: Unexpected token '<', "<!DOCTYPE..."`.
+    // That stack trace got persisted on the Application row, leaving the user
+    // with no actionable info. The fix reads the body as text and throws a
+    // structured CloudflareApiError so the failure mode is debuggable.
+    const html =
+      '<!DOCTYPE html><html><head><title>502 Bad Gateway</title></head>' +
+      '<body><h1>Web server is down</h1><p>Error code 521</p></body></html>';
+    const p = makeProvider({
+      token: 'tok',
+      fetchQueue: [() => htmlResponse(html, 502)],
+    });
+    const noop = (): void => undefined;
+    let caught: unknown;
+    try {
+      await p.deploy(input, noop);
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(CloudflareApiError);
+    const apiErr = caught as CloudflareApiError;
+    expect(apiErr.status).toBe(502);
+    expect(apiErr.message).toContain('non-JSON');
+    expect(apiErr.message).toContain('502');
+    expect(apiErr.message).toContain('502 Bad Gateway');
+    // And it must NOT be the bare JSON parse error string.
+    expect(apiErr.message).not.toMatch(/Unexpected token/);
   });
 
   it('never leaks the token into error messages', async () => {

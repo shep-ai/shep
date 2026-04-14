@@ -45,7 +45,7 @@ export function CopyPromptButton({ applicationId }: CopyPromptButtonProps) {
       size="icon"
       onClick={handleClick}
       disabled={busy}
-      className="text-muted-foreground hover:text-foreground h-7 w-7"
+      className="text-muted-foreground hover:bg-accent hover:text-accent-foreground h-7 w-7 cursor-pointer transition-colors"
       aria-label="Copy full generated prompt (debug)"
       title="Copy full generated prompt (debug) — system + user message"
     >

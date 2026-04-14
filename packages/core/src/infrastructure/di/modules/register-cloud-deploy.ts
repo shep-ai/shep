@@ -41,6 +41,14 @@ export function registerCloudDeploy(container: DependencyContainer): void {
   // FetchFunction — injected into CloudflarePagesProvider so tests can swap it.
   container.registerInstance('FetchFunction', globalThis.fetch.bind(globalThis));
 
+  // Clock for the cloudflare provider's polling loop. Tests can override.
+  // Tsyringe does not honor TypeScript default-parameter values for @inject,
+  // so a real registration is required even though the constructor has a default.
+  container.registerInstance('CloudflareProviderClock', {
+    now: () => Date.now(),
+    sleep: (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)),
+  });
+
   // LocalSecretBox keyed by ~/.shep/secret.key (atomic wx create on first run).
   container.register<LocalSecretBox>(LocalSecretBox, {
     useFactory: () => new LocalSecretBox(loadOrCreateSecretKey(getShepHomeDir())),

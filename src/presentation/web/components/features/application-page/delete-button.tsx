@@ -33,7 +33,7 @@ export function DeleteButton({ applicationId, applicationName }: DeleteButtonPro
         variant="ghost"
         size="icon"
         onClick={() => setConfirmOpen(true)}
-        className="text-muted-foreground hover:text-destructive h-7 w-7"
+        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-7 w-7 cursor-pointer transition-colors"
         aria-label="Delete application"
         title="Delete application"
       >

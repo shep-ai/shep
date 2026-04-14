@@ -6,9 +6,12 @@ import type { IFileSystemService } from '../../ports/output/services/file-system
 import type { ICloudDeploymentEventBus } from '../../ports/output/services/cloud-deployment-event-bus.interface.js';
 import type { ICloudDeploymentProviderRegistry } from '../../ports/output/services/cloud-deployment-provider-registry.interface.js';
 import type { ILogger } from '../../ports/output/services/logger.interface.js';
+import type { IOperationLogService } from '../../ports/output/services/operation-log-service.interface.js';
 import {
   CloudDeploymentProvider,
   CloudDeploymentStatus,
+  OperationLogKind,
+  OperationLogLevel,
 } from '../../../domain/generated/output.js';
 import { ApplicationNotFoundError } from '../../../domain/errors/application-not-found.error.js';
 import { ApplicationNotReadyError } from '../../../domain/errors/application-not-ready.error.js';
@@ -42,23 +45,50 @@ export class InitiateCloudDeploymentUseCase {
     @inject('ICloudDeploymentEventBus')
     private readonly eventBus: ICloudDeploymentEventBus,
     @inject('ILogger')
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
+    @inject('IOperationLogService')
+    private readonly opLog: IOperationLogService
   ) {}
 
   async execute(input: InitiateCloudDeploymentInput): Promise<InitiateCloudDeploymentResult> {
+    const opId = input.applicationId;
+    const opKind = OperationLogKind.CloudDeploy;
+
     const app = await this.applicationRepo.findById(input.applicationId);
-    if (!app) throw new ApplicationNotFoundError(input.applicationId);
-    if (!app.setupComplete) throw new ApplicationNotReadyError(input.applicationId);
+    if (!app) {
+      await this.opLog.error(opKind, opId, `Application not found: ${input.applicationId}`);
+      throw new ApplicationNotFoundError(input.applicationId);
+    }
+    if (!app.setupComplete) {
+      await this.opLog.error(opKind, opId, 'Application setup is not complete — cannot deploy');
+      throw new ApplicationNotReadyError(input.applicationId);
+    }
 
     const providerId =
       input.provider ?? (app.cloudDeploymentProvider as CloudDeploymentProvider | undefined);
-    if (!providerId) throw new NoProviderSelectedError(input.applicationId);
+    if (!providerId) {
+      await this.opLog.error(opKind, opId, 'No cloud provider selected for this application');
+      throw new NoProviderSelectedError(input.applicationId);
+    }
+
+    await this.opLog.info(opKind, opId, `Starting deploy to ${providerId}`);
 
     const provider = this.registry.get(providerId);
-    if (!provider.enabled) throw new ProviderNotImplementedError(providerId);
-    if (!(await provider.isConnected())) throw new CloudProviderNotConnectedError(providerId);
+    if (!provider.enabled) {
+      await this.opLog.error(opKind, opId, `Provider ${providerId} is not enabled in this build`);
+      throw new ProviderNotImplementedError(providerId);
+    }
+    if (!(await provider.isConnected())) {
+      await this.opLog.error(
+        opKind,
+        opId,
+        `Provider ${providerId} reports not connected (token missing or invalid)`
+      );
+      throw new CloudProviderNotConnectedError(providerId);
+    }
 
     const buildOutputDir = this.resolveBuildOutputDir(app.repositoryPath);
+    await this.opLog.info(opKind, opId, `Resolved build output directory: ${buildOutputDir}`);
 
     // Record initial state and emit.
     await this.applicationRepo.update(input.applicationId, {
@@ -79,10 +109,19 @@ export class InitiateCloudDeploymentUseCase {
         (status, message) => {
           void this.applicationRepo
             .update(input.applicationId, { cloudDeploymentStatus: status })
-            .catch((err) =>
-              this.logger.warn('failed to persist interim deploy status', { err: String(err) })
+            .catch((errr) =>
+              this.logger.warn('failed to persist interim deploy status', { err: String(errr) })
             );
           this.publish(input.applicationId, providerId, status, undefined, undefined, message);
+          // Persist the lifecycle transition as a user-visible log entry too
+          // — `void` because we never want a logging hiccup to abort a deploy.
+          void this.opLog.info(opKind, opId, message ?? `Status transitioned to ${status}`);
+        },
+        // Provider-internal log lines flow through this callback. The provider
+        // never touches the log store directly — the use case is the only
+        // thing that calls IOperationLogService.
+        (level, message, detail) => {
+          void this.appendInternalLog(opKind, opId, level, message, detail);
         }
       );
 
@@ -94,6 +133,7 @@ export class InitiateCloudDeploymentUseCase {
         lastDeployedAt: new Date(),
       });
       this.publish(input.applicationId, providerId, CloudDeploymentStatus.Deployed, result.url);
+      await this.opLog.info(opKind, opId, `Deploy succeeded — live at ${result.url}`);
       return result;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -109,7 +149,39 @@ export class InitiateCloudDeploymentUseCase {
         undefined,
         message
       );
+      await this.opLog.error(
+        opKind,
+        opId,
+        `Deploy failed: ${message}`,
+        err instanceof Error && err.stack ? err.stack : undefined
+      );
       throw err;
+    }
+  }
+
+  /**
+   * Single funnel for provider-emitted log lines — translates the
+   * level enum into the right opLog method. Kept private so callers
+   * can't accidentally bypass the level→method mapping.
+   */
+  private appendInternalLog(
+    kind: OperationLogKind,
+    id: string,
+    level: OperationLogLevel,
+    message: string,
+    detail?: string
+  ): Promise<unknown> {
+    switch (level) {
+      case OperationLogLevel.Debug:
+        return this.opLog.debug(kind, id, message, detail);
+      case OperationLogLevel.Info:
+        return this.opLog.info(kind, id, message, detail);
+      case OperationLogLevel.Warn:
+        return this.opLog.warn(kind, id, message, detail);
+      case OperationLogLevel.Error:
+        return this.opLog.error(kind, id, message, detail);
+      default:
+        return this.opLog.info(kind, id, message, detail);
     }
   }
 

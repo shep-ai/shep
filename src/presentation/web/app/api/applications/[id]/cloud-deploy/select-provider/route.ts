@@ -7,8 +7,8 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { resolve } from '@/lib/server-container';
+import { errorCode, errorMessage } from '@/lib/error-code';
 import type { SelectCloudProviderUseCase } from '@shepai/core/application/use-cases/cloud-deploy/select-cloud-provider.use-case';
-import { ApplicationNotFoundError } from '@shepai/core/domain/errors/application-not-found.error';
 import {
   CloudDeploymentProvider,
   type CloudDeploymentProvider as CloudDeploymentProviderType,
@@ -38,12 +38,11 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
     await useCase.execute({ applicationId: id, provider });
     return NextResponse.json({ ok: true });
   } catch (error) {
-    if (error instanceof ApplicationNotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
+    const code = errorCode(error);
+    const message = errorMessage(error);
+    if (code === 'APPLICATION_NOT_FOUND') {
+      return NextResponse.json({ error: message, code }, { status: 404 });
     }
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

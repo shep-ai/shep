@@ -25,7 +25,7 @@ import type { ICloudDeploymentProviderRegistry } from '@/application/ports/outpu
 import type { ICloudProviderTokensRepository } from '@/application/ports/output/repositories/cloud-provider-tokens.repository.interface.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
 import type { IGitRemoteService } from '@/application/ports/output/services/git-remote.service.interface.js';
-import { GhNotAuthenticatedError } from '@/application/ports/output/services/git-remote.service.interface.js';
+import { GhNotAuthenticatedError } from '@/domain/errors/gh-not-authenticated.error.js';
 import type { IFileSystemService } from '@/application/ports/output/services/file-system-service.interface.js';
 import type {
   CloudDeploymentEvent,
@@ -132,6 +132,57 @@ class SilentLogger implements ILogger {
   }
   error(): void {
     /* silent */
+  }
+}
+
+/**
+ * In-memory IOperationLogService used by the deploy use-case tests. Records
+ * every appended entry so individual tests can assert specific lines were
+ * written, without needing to go through SQLite.
+ */
+class FakeOperationLogService {
+  readonly entries: { level: string; message: string; detail?: string }[] = [];
+  private record(
+    level: 'debug' | 'info' | 'warn' | 'error',
+    message: string,
+    detail?: string
+  ): Promise<{
+    id: string;
+    operationKind: string;
+    operationId: string;
+    level: string;
+    message: string;
+    detail: string | undefined;
+    createdAt: Date;
+    updatedAt: Date;
+  }> {
+    this.entries.push({ level, message, detail });
+    const now = new Date();
+    return Promise.resolve({
+      id: `${level}-${this.entries.length}`,
+      operationKind: 'CloudDeploy',
+      operationId: 'app-1',
+      level,
+      message,
+      detail,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+  debug(_k: unknown, _i: unknown, m: string, d?: string) {
+    return this.record('debug', m, d);
+  }
+  info(_k: unknown, _i: unknown, m: string, d?: string) {
+    return this.record('info', m, d);
+  }
+  warn(_k: unknown, _i: unknown, m: string, d?: string) {
+    return this.record('warn', m, d);
+  }
+  error(_k: unknown, _i: unknown, m: string, d?: string) {
+    return this.record('error', m, d);
+  }
+  list() {
+    return Promise.resolve([]);
   }
 }
 
@@ -319,7 +370,12 @@ describe('CreateGitRemoteUseCase', () => {
   it('persists the remote URL on success', async () => {
     const repo = new FakeApplicationRepo();
     await repo.create(makeApp());
-    const useCase = new CreateGitRemoteUseCase(repo, gitRemote);
+    const opLog = new FakeOperationLogService();
+    const useCase = new CreateGitRemoteUseCase(
+      repo,
+      gitRemote,
+      opLog as unknown as ConstructorParameters<typeof CreateGitRemoteUseCase>[2]
+    );
     const result = await useCase.execute('app-1');
     expect(result.remoteUrl).toBe('https://github.com/u/app-slug');
     expect((await repo.findById('app-1'))!.gitRemoteUrl).toBe('https://github.com/u/app-slug');
@@ -334,7 +390,12 @@ describe('CreateGitRemoteUseCase', () => {
     };
     const repo = new FakeApplicationRepo();
     await repo.create(makeApp());
-    const useCase = new CreateGitRemoteUseCase(repo, failingGit);
+    const opLog = new FakeOperationLogService();
+    const useCase = new CreateGitRemoteUseCase(
+      repo,
+      failingGit,
+      opLog as unknown as ConstructorParameters<typeof CreateGitRemoteUseCase>[2]
+    );
     await expect(useCase.execute('app-1')).rejects.toBeInstanceOf(GhNotAuthenticatedError);
     expect((await repo.findById('app-1'))!.gitRemoteUrl).toBeUndefined();
   });
@@ -373,7 +434,17 @@ describe('InitiateCloudDeploymentUseCase', () => {
   });
 
   function buildUseCase() {
-    return new InitiateCloudDeploymentUseCase(repo, registry, fs, bus, logger);
+    const opLog = new FakeOperationLogService();
+    return new InitiateCloudDeploymentUseCase(
+      repo,
+      registry,
+      fs,
+      bus,
+      logger,
+      // The fake matches the IOperationLogService shape — duck-typed cast
+      // keeps the test free of the heavy generated type imports.
+      opLog as unknown as ConstructorParameters<typeof InitiateCloudDeploymentUseCase>[5]
+    );
   }
 
   it('happy path persists Uploading → Deployed and emits events', async () => {

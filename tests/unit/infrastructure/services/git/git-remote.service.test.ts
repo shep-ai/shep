@@ -2,10 +2,8 @@ import 'reflect-metadata';
 import { describe, expect, it, vi } from 'vitest';
 
 import { GitRemoteService } from '@/infrastructure/services/git/git-remote.service.js';
-import {
-  GhNotAuthenticatedError,
-  GitRemoteCreationError,
-} from '@/application/ports/output/services/git-remote.service.interface.js';
+import { GhNotAuthenticatedError } from '@/domain/errors/gh-not-authenticated.error.js';
+import { GitRemoteCreationError } from '@/domain/errors/git-remote-creation.error.js';
 
 interface ExecCall {
   file: string;

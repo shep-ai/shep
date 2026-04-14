@@ -9,7 +9,7 @@ import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 import { cn } from '@/lib/utils';
 import { RunDevButton } from '@/components/features/application-page/run-dev-button';
 import { DeployButton } from '@/components/features/application-page/deploy-button';
-import { CreateGitHubRepoButton } from '@/components/features/application-page/create-github-repo-button';
+import { PublishToGitHubButton } from '@/components/features/application-page/publish-to-github-button';
 import type { CloudDeployActionApi } from '@/hooks/use-cloud-deploy-action';
 import type { DeployActionState } from '@/hooks/use-deploy-action';
 
@@ -93,15 +93,21 @@ export function AppTopBar({
       {/* ── Delete ─────────────────────────────────────────── */}
       <DeleteButton applicationId={application.id} applicationName={application.name} />
 
-      {/* ── Create GitHub repo (spec 089, violation-free; gh CLI) ─── */}
-      <CreateGitHubRepoButton
+      {/* ── Publish to GitHub (spec 089, gh CLI) ─── */}
+      <PublishToGitHubButton
         applicationId={application.id}
+        defaultRepoName={application.slug}
         initialRemoteUrl={application.gitRemoteUrl ?? null}
         disabled={agentRunning}
       />
 
       {/* ── Cloud deploy (spec 089, pluggable providers) ─── */}
-      <DeployButton deploy={cloudDeploy} disabled={agentRunning} />
+      <DeployButton
+        deploy={cloudDeploy}
+        applicationId={application.id}
+        applicationSlug={application.slug}
+        disabled={agentRunning}
+      />
 
       {/* ── Preview (install + npm run dev, persistent) ─── */}
       <RunDevButton deploy={deploy} disabled={agentRunning} />

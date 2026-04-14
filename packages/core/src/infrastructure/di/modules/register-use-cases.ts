@@ -44,6 +44,7 @@ import { ImportGitHubRepositoryUseCase } from '../../../application/use-cases/re
 import { InitRemoteRepositoryUseCase } from '../../../application/use-cases/repositories/init-remote-repository.use-case.js';
 import { ListGitHubRepositoriesUseCase } from '../../../application/use-cases/repositories/list-github-repositories.use-case.js';
 import { ListGitHubOrganizationsUseCase } from '../../../application/use-cases/repositories/list-github-organizations.use-case.js';
+import { ListOperationLogEntriesUseCase } from '../../../application/use-cases/operations/list-operation-log-entries.use-case.js';
 import { CreateFeatureFromRemoteUseCase } from '../../../application/use-cases/features/create/create-feature-from-remote.use-case.js';
 import { CheckAndUnblockFeaturesUseCase } from '../../../application/use-cases/features/check-and-unblock-features.use-case.js';
 import { UpdateFeatureLifecycleUseCase } from '../../../application/use-cases/features/update/update-feature-lifecycle.use-case.js';
@@ -134,6 +135,7 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(CreateFeatureFromRemoteUseCase);
   container.registerSingleton(ListGitHubRepositoriesUseCase);
   container.registerSingleton(ListGitHubOrganizationsUseCase);
+  container.registerSingleton(ListOperationLogEntriesUseCase);
   // CheckAndUnblockFeaturesUseCase must be registered before UpdateFeatureLifecycleUseCase
   // because the latter injects the former via class token.
   container.registerSingleton(CheckAndUnblockFeaturesUseCase);
@@ -244,6 +246,9 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('ListGitHubOrganizationsUseCase', {
     useFactory: (c) => c.resolve(ListGitHubOrganizationsUseCase),
+  });
+  container.register('ListOperationLogEntriesUseCase', {
+    useFactory: (c) => c.resolve(ListOperationLogEntriesUseCase),
   });
   container.register('CheckAndUnblockFeaturesUseCase', {
     useFactory: (c) => c.resolve(CheckAndUnblockFeaturesUseCase),

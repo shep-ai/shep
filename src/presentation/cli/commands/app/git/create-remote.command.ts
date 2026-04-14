@@ -10,7 +10,7 @@ import { Command } from 'commander';
 import { container } from '@/infrastructure/di/container.js';
 import { CreateGitRemoteUseCase } from '@/application/use-cases/cloud-deploy/create-git-remote.use-case.js';
 import { EnsureGhAuthenticatedUseCase } from '@/application/use-cases/cloud-deploy/ensure-gh-authenticated.use-case.js';
-import { GhNotAuthenticatedError } from '@/application/ports/output/services/git-remote.service.interface.js';
+import { GhNotAuthenticatedError } from '@/domain/errors/gh-not-authenticated.error.js';
 import { messages, colors } from '../../../ui/index.js';
 import { resolveApplication } from '../resolve-application.js';
 

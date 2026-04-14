@@ -1,0 +1,27 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: OperationLogEntry.yaml
+type: object
+properties:
+  operationKind:
+    $ref: OperationLogKind.yaml
+    description: Kind of operation this entry belongs to
+  operationId:
+    type: string
+    description: Stable id that scopes the operation — typically the application id
+  level:
+    $ref: OperationLogLevel.yaml
+    description: Severity / level of this entry
+  message:
+    type: string
+    description: Human-readable single-line message
+  detail:
+    type: string
+    description: Optional structured detail (JSON-serialised) — multi-line stderr, error codes, etc.
+required:
+  - operationKind
+  - operationId
+  - level
+  - message
+allOf:
+  - $ref: BaseEntity.yaml
+description: A single timestamped line of progress for a long-running operation

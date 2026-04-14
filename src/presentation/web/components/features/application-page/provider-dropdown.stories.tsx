@@ -87,3 +87,18 @@ export const NoneConnected: Story = {
     onSelectDisconnected: noopSelect,
   },
 };
+
+export const WithEditTokenAffordance: Story = {
+  args: {
+    trigger: defaultTrigger,
+    providers: ALL_PROVIDERS.map((p) =>
+      p.id === CloudDeploymentProvider.CloudflarePages || p.id === CloudDeploymentProvider.Vercel
+        ? { ...p, connected: true }
+        : p
+    ),
+    selectedProvider: CloudDeploymentProvider.CloudflarePages,
+    onSelectEnabled: noopSelect,
+    onSelectDisconnected: noopSelect,
+    onEditConnection: noopSelect,
+  },
+};

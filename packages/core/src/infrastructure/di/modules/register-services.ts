@@ -58,6 +58,8 @@ import type { IConflictResolutionService } from '../../../application/ports/outp
 import { ConflictResolutionService } from '../../services/agents/conflict-resolution/conflict-resolution.service.js';
 import type { ILogger } from '../../../application/ports/output/services/logger.interface.js';
 import { ConsoleLogger } from '../../services/logging/console-logger.js';
+import type { IOperationLogService } from '../../../application/ports/output/services/operation-log-service.interface.js';
+import { OperationLogService } from '../../services/operation-log/operation-log.service.js';
 import type { IProcessLivenessProbe } from '../../../application/ports/output/services/process-liveness.interface.js';
 import { ProcessLivenessAdapter } from '../../services/process/process-liveness.adapter.js';
 
@@ -71,11 +73,22 @@ import { ProcessLivenessAdapter } from '../../services/process/process-liveness.
 export function registerServices(container: DependencyContainer): void {
   // ExecFunction — on Windows, agent CLIs ship as .cmd/.ps1 scripts (e.g. cursor's
   // `agent.cmd`). execFile without shell: true cannot resolve .cmd extensions,
-  // causing ENOENT.
+  // causing ENOENT. With shell: true, Node concatenates `file + ' ' + args.join(' ')`
+  // and hands it to cmd.exe — which then re-tokenises on whitespace, splitting any
+  // arg containing a space (e.g. `--description "snake game"` would arrive at gh
+  // as two args). Quote args with whitespace or shell-special chars before joining.
   const execFileAsync = promisify(execFile);
+  const quoteWindowsArg = (a: string): string => {
+    if (/^[A-Za-z0-9_./:=+@,-]+$/.test(a)) return a;
+    return `"${a.replace(/(["\\])/g, '\\$1')}"`;
+  };
   const execFn = IS_WINDOWS
     ? (file: string, args: string[], options?: object) =>
-        execFileAsync(file, args, { ...options, shell: true, windowsHide: true })
+        execFileAsync(file, args.map(quoteWindowsArg), {
+          ...options,
+          shell: true,
+          windowsHide: true,
+        })
     : execFileAsync;
   container.registerInstance('ExecFunction', execFn);
 
@@ -192,6 +205,12 @@ export function registerServices(container: DependencyContainer): void {
 
   // Generic logger used by cloud deploy + other infrastructure consumers.
   container.registerSingleton<ILogger>('ILogger', ConsoleLogger);
+
+  // Operation log service — orchestrating use cases append structured progress
+  // entries here so the UI can render full operation history. Lazy-resolved so
+  // the IOperationLogRepository (registered in register-repositories) is in
+  // place by the time the first use case asks for the service.
+  container.registerSingleton<IOperationLogService>('IOperationLogService', OperationLogService);
 
   // Process liveness probe — hides `process.kill(pid, 0)` behind a port so
   // application + presentation layers never import `infrastructure/services/

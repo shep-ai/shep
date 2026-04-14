@@ -6,6 +6,7 @@
 
 import type {
   CloudDeployInput,
+  CloudDeployLogEmitter,
   CloudDeployProgressHandler,
   CloudDeployResult,
   ICloudDeploymentProvider,
@@ -31,7 +32,8 @@ export abstract class BaseProviderStub implements ICloudDeploymentProvider {
 
   async deploy(
     _input: CloudDeployInput,
-    _onProgress: CloudDeployProgressHandler
+    _onProgress: CloudDeployProgressHandler,
+    _onLog?: CloudDeployLogEmitter
   ): Promise<CloudDeployResult> {
     throw new ProviderNotImplementedError(this.providerId);
   }

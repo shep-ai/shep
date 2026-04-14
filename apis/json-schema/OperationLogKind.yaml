@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: OperationLogKind.yaml
+type: string
+enum:
+  - CloudDeploy
+  - GitRemoteCreate
+description: Kind of long-running operation an OperationLogEntry belongs to
