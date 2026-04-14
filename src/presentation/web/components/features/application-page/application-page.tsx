@@ -830,19 +830,29 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
               void fetch(`/api/applications/${application.id}/resume`, { method: 'POST' });
             }}
             onAllStepsComplete={() => {
-              // Kick off the dev server as soon as the agent has
-              // finished the scaffold workflow. The Idle→Ready
-              // transition in the deploy hook then auto-switches
-              // the right pane to the Web preview, so the user
-              // lands on their running app with zero clicks.
+              // CRITICAL: only auto-deploy on the VERY FIRST completion
+              // of the setup workflow. `application.setupComplete` is
+              // set to `true` by the use case right after the workflow
+              // finishes, and persists on the Application row forever.
               //
-              // Important: the provider's default entry is
-              // `{ status: null }` when no dev server has ever run
-              // for this application, NOT `'Stopped'`. The previous
-              // `=== 'Stopped'` check silently did nothing on the
-              // very first completion of a freshly created app,
-              // which is exactly when auto-preview matters most.
-              // Trigger as long as we're not already Booting/Ready.
+              //   - Fresh app: SSR prop is `false` (workflow hasn't
+              //     completed yet) → we auto-fire → dev server starts →
+              //     use case later sets setupComplete = true.
+              //   - Revisit: SSR prop is `true` → we skip. If the user
+              //     explicitly stopped the dev server before leaving,
+              //     they stay stopped. Respect the explicit state — do
+              //     NOT silently re-start the preview on every return
+              //     to the app page.
+              //
+              // This gate replaces an earlier "once per mount" ref
+              // guard that reset on every remount (React remounts the
+              // ChatTab when the user navigates back), which caused
+              // the auto-deploy to fire on every revisit.
+              if (application.setupComplete) return;
+
+              // First-ever completion path. Guard against double-fires
+              // mid-transition (Ready/Booting/in-flight deployLoading)
+              // just in case something else kicks the deploy before us.
               if (
                 deploy.status !== DeploymentState.Ready &&
                 deploy.status !== DeploymentState.Booting &&

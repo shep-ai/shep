@@ -55,10 +55,26 @@ export interface RunDevButtonProps {
   variant?: 'full' | 'compact';
 }
 
+/**
+ * Shared "agent is working" tooltip text used across every branch
+ * when `disabled` is true. Keeps the message consistent no matter
+ * which deployment state the button is rendering.
+ */
+const DISABLED_TITLE = 'Preview disabled while agent is running';
+
+/**
+ * Shared grayout classes applied on top of every branch's base
+ * variant classes. `pointer-events-none` wins over `hover:` rules so
+ * the button cannot be clicked OR react visually to hover.
+ */
+const DISABLED_CLASSES =
+  'cursor-not-allowed opacity-50 pointer-events-none grayscale [&_*]:pointer-events-none';
+
 export function RunDevButton({ deploy, className, disabled, variant = 'full' }: RunDevButtonProps) {
   const openUrl = useCallback(() => {
+    if (disabled) return;
     if (deploy.url) window.open(deploy.url, '_blank', 'noopener,noreferrer');
-  }, [deploy.url]);
+  }, [disabled, deploy.url]);
 
   // ────────────────────────────────────────────────────────────
   // Booting — spinner + "Starting…", click to stop
@@ -67,13 +83,15 @@ export function RunDevButton({ deploy, className, disabled, variant = 'full' }: 
     return (
       <button
         type="button"
-        onClick={deploy.stop}
-        disabled={deploy.stopLoading}
+        onClick={disabled ? undefined : deploy.stop}
+        disabled={disabled === true ? true : deploy.stopLoading}
+        aria-disabled={disabled === true ? true : undefined}
         className={cn(
           'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 text-[11px] font-medium text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400',
+          disabled && DISABLED_CLASSES,
           className
         )}
-        title="Dev server is starting — click to stop"
+        title={disabled ? DISABLED_TITLE : 'Dev server is starting — click to stop'}
         aria-label="Stop starting dev server"
       >
         <Loader2 className="h-3 w-3 animate-spin" />
@@ -93,13 +111,15 @@ export function RunDevButton({ deploy, className, disabled, variant = 'full' }: 
     return (
       <button
         type="button"
-        onClick={deploy.stop}
-        disabled={deploy.stopLoading}
+        onClick={disabled ? undefined : deploy.stop}
+        disabled={disabled === true ? true : deploy.stopLoading}
+        aria-disabled={disabled === true ? true : undefined}
         className={cn(
           'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-red-500/30 bg-red-500/5 text-red-600 transition-colors hover:border-red-500/60 hover:bg-red-500/15 dark:text-red-400',
+          disabled && DISABLED_CLASSES,
           className
         )}
-        title="Stop dev server"
+        title={disabled ? DISABLED_TITLE : 'Stop dev server'}
         aria-label="Stop dev server"
       >
         {deploy.stopLoading ? (
@@ -126,15 +146,19 @@ export function RunDevButton({ deploy, className, disabled, variant = 'full' }: 
       <div
         className={cn(
           'inline-flex h-7 shrink-0 items-stretch overflow-hidden rounded-md border border-violet-500/40 bg-violet-500/10 text-[11px] font-medium text-violet-700 dark:text-violet-300',
+          disabled && DISABLED_CLASSES,
           className
         )}
+        title={disabled ? DISABLED_TITLE : undefined}
+        aria-disabled={disabled === true ? true : undefined}
       >
         {/* URL — always the click target, opens in a new tab */}
         <button
           type="button"
           onClick={openUrl}
+          disabled={disabled}
           className="inline-flex items-center gap-1.5 px-2 font-mono transition-colors hover:bg-violet-500/20"
-          title={`Open ${deploy.url}`}
+          title={disabled ? DISABLED_TITLE : `Open ${deploy.url}`}
           aria-label={`Open dev server at ${deploy.url}`}
         >
           <span className="relative flex h-2 w-2 shrink-0">
@@ -151,10 +175,10 @@ export function RunDevButton({ deploy, className, disabled, variant = 'full' }: 
         {/* Stop — always visible, never swaps with the URL */}
         <button
           type="button"
-          onClick={deploy.stop}
-          disabled={deploy.stopLoading}
+          onClick={disabled ? undefined : deploy.stop}
+          disabled={disabled === true ? true : deploy.stopLoading}
           className="inline-flex items-center justify-center px-1.5 text-red-600 transition-colors hover:bg-red-500/20 dark:text-red-400"
-          title="Stop dev server"
+          title={disabled ? DISABLED_TITLE : 'Stop dev server'}
           aria-label="Stop dev server"
         >
           {deploy.stopLoading ? (
@@ -174,12 +198,15 @@ export function RunDevButton({ deploy, className, disabled, variant = 'full' }: 
     return (
       <button
         type="button"
-        onClick={deploy.deploy}
+        onClick={disabled ? undefined : deploy.deploy}
+        disabled={disabled}
+        aria-disabled={disabled === true ? true : undefined}
         className={cn(
           'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-red-500/40 bg-red-500/10 px-2 text-[11px] font-medium text-red-600 transition-colors hover:bg-red-500/20 dark:text-red-400',
+          disabled && DISABLED_CLASSES,
           className
         )}
-        title={deploy.deployError}
+        title={disabled ? DISABLED_TITLE : deploy.deployError}
         aria-label="Retry starting dev server"
       >
         <TriangleAlert className="h-3 w-3" />
@@ -194,20 +221,17 @@ export function RunDevButton({ deploy, className, disabled, variant = 'full' }: 
   return (
     <button
       type="button"
-      onClick={deploy.deploy}
+      onClick={disabled ? undefined : deploy.deploy}
       disabled={disabled}
+      aria-disabled={disabled === true ? true : undefined}
       className={cn(
         'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-[11px] font-medium transition-colors',
         disabled
-          ? 'border-border bg-muted text-muted-foreground/40 cursor-not-allowed'
+          ? 'border-border bg-muted text-muted-foreground/40 pointer-events-none cursor-not-allowed'
           : 'border-violet-500/50 bg-gradient-to-br from-indigo-500/15 to-violet-500/20 text-violet-700 hover:from-indigo-500/25 hover:to-violet-500/30 dark:text-violet-300',
         className
       )}
-      title={
-        disabled
-          ? 'Preview disabled while agent is running'
-          : 'Install dependencies and preview the app'
-      }
+      title={disabled ? DISABLED_TITLE : 'Install dependencies and preview the app'}
       aria-label="Preview app"
     >
       <Play className="h-3 w-3 fill-current" />
