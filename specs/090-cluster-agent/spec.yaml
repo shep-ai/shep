@@ -1,0 +1,199 @@
+name: cluster-agent
+number: 90
+branch: "feat/090-cluster-agent"
+oneLiner: "Add a Cluster domain entity and autonomous cluster agent for managing Kubernetes infrastructure via k3s, ArgoCD, Terraform, and kubectl"
+summary: >
+  Introduce a new first-class Cluster entity alongside Repository, Application, and Feature.
+  A Cluster represents a managed Kubernetes environment (k3s-in-Docker) that the Shep platform
+  provisions and operates autonomously. The cluster agent manages YAML manifests, kubectl apply,
+  ArgoCD sync, and Terraform infrastructure using templates and patterns. Clusters link to
+  Repositories, Applications, and Features to form the complete SDLC-to-deployment pipeline.
+phase: Analysis
+sizeEstimate: "XL"
+
+relatedFeatures: []
+
+technologies:
+  - "TypeSpec (domain model definition)"
+  - "TypeScript (implementation language)"
+  - "SQLite via better-sqlite3 (persistence)"
+  - "tsyringe (dependency injection)"
+  - "LangGraph (agent workflow orchestration)"
+  - "Kubernetes / k3s (container orchestration)"
+  - "kubectl (cluster CLI interaction)"
+  - "ArgoCD (GitOps continuous delivery)"
+  - "Terraform (infrastructure as code)"
+  - "Docker / k3s-in-Docker (local cluster runtime)"
+  - "Commander (CLI framework)"
+  - "Next.js + shadcn/ui (web UI)"
+  - "Vitest (testing)"
+  - "Storybook (component documentation)"
+  - "React Flow (graph visualization)"
+
+relatedLinks:
+  - title: "k3s - Lightweight Kubernetes"
+    url: "https://k3s.io/"
+  - title: "ArgoCD - GitOps Continuous Delivery"
+    url: "https://argo-cd.readthedocs.io/"
+  - title: "Terraform Documentation"
+    url: "https://developer.hashicorp.com/terraform/docs"
+  - title: "LangGraph Documentation"
+    url: "https://langchain-ai.github.io/langgraph/"
+  - title: "kubectl Reference"
+    url: "https://kubernetes.io/docs/reference/kubectl/"
+
+openQuestions:
+  - "Should clusters be scoped globally (like Settings) or per-repository (like Features)? A cluster can span multiple repos, suggesting global scope."
+  - "What is the exact k3s-in-Docker provisioning strategy? Use k3d, k3s Docker image, or a custom container setup?"
+  - "Should Terraform state be stored inside ~/.shep/ or in the cluster's own state backend?"
+  - "How should ArgoCD be bootstrapped inside the k3s cluster? Helm chart, raw manifests, or a bundled binary?"
+  - "What predefined templates and patterns should ship out of the box (e.g., basic web app, API service, full-stack)?"
+  - "Should the cluster agent reuse the existing IAgentExecutor interface or does it need a specialized executor for infrastructure commands?"
+  - "How do we handle cluster lifecycle across machine restarts (Docker auto-restart vs explicit start/stop)?"
+  - "What is the permission model for linking repositories and applications to a cluster?"
+
+content: |
+  ## Problem Statement
+
+  Shep currently manages three first-class entities: **Repository** (code source), **Application** (persistent AI workspace), and **Feature** (SDLC work unit). There is no entity representing the deployment target — the infrastructure where applications actually run. Users must manually provision Kubernetes clusters, write manifests, configure ArgoCD, and run Terraform outside of Shep.
+
+  This feature introduces a **Cluster** entity — a fully managed Kubernetes environment (k3s-in-Docker) that the Shep platform provisions, configures, and operates autonomously. The cluster agent handles:
+
+  - Provisioning a k3s cluster inside Docker
+  - Managing Kubernetes YAML manifests (deployments, services, ingresses, etc.)
+  - Running `kubectl apply` to deploy workloads
+  - Configuring ArgoCD for GitOps-driven continuous delivery
+  - Using Terraform for infrastructure-as-code provisioning
+  - Applying predefined templates and patterns for common deployment scenarios
+  - Linking clusters to Repositories, Applications, and Features for end-to-end automation
+
+  This closes the loop from "idea to deploy" — Shep's core promise.
+
+  ## Codebase Analysis
+
+  ### Project Structure
+
+  The Shep codebase follows Clean Architecture with four layers in `packages/core/src/`:
+
+  - **`domain/`** — Pure business logic, TypeSpec-generated models in `domain/generated/output.ts`. Contains errors, factories, value objects, and lifecycle gates. No external dependencies.
+  - **`application/`** — Use cases (organized by entity: `features/`, `repositories/`, `applications/`, `work-items/`, etc.) and output port interfaces in `ports/output/` (repositories, agents, services).
+  - **`infrastructure/`** — SQLite repositories, LangGraph agent graphs, DI container (`di/container.ts`), persistence mappers, migrations (84 total), and external service adapters.
+  - **`presentation/`** — CLI (Commander), TUI (@inquirer/prompts), and Web UI (Next.js + shadcn/ui + React Flow) in `src/presentation/`.
+
+  Domain models are defined in TypeSpec (`tsp/domain/entities/`) and compiled to TypeScript via `pnpm tsp:compile`. There are 42+ entity definitions, 22+ enums, and base types (`BaseEntity`, `SoftDeletableEntity`, `AuditableEntity`).
+
+  ### Architecture Patterns
+
+  1. **TypeSpec-first domain modeling** — All entities defined in `tsp/`, never edit generated `output.ts`.
+  2. **Repository pattern** — Port interfaces in `application/ports/output/repositories/`, SQLite implementations in `infrastructure/repositories/`.
+  3. **Use-case-only entry point** — Presentation layers call use cases exclusively, never repositories or services directly.
+  4. **DI via tsyringe** — Container in `infrastructure/di/container.ts` with modular registration (`register-repositories.ts`, `register-services.ts`, `register-use-cases.ts`, `register-agents.ts`).
+  5. **LangGraph agent workflows** — State-based graphs with typed annotations, pure async node functions, agent-agnostic execution via `IAgentExecutor`.
+  6. **Settings-driven agent resolution** — No hardcoded agent types; all resolution via `IAgentExecutorProvider`.
+  7. **SQLite migration system** — Numbered migrations (001-084), `user_version` pragma, additive-only (never drop columns).
+  8. **Mandatory TDD** — RED-GREEN-REFACTOR for all new code.
+  9. **Mandatory Storybook stories** — Every web component needs a colocated `.stories.tsx`.
+
+  ### Relevant Technologies
+
+  - **LangGraph** for agent workflow orchestration (existing pattern for FeatureAgent and AnalyzeRepository graphs)
+  - **better-sqlite3** for persistence (existing pattern for all entities)
+  - **tsyringe** for dependency injection (existing container with modular registration)
+  - **TypeSpec** for domain model generation (existing codegen pipeline)
+  - **Commander** for CLI commands (existing pattern: `src/presentation/cli/commands/`)
+  - **Next.js + React Flow** for web UI with real-time SSE updates (existing control center canvas)
+  - **New external tools**: kubectl, k3s/k3d, ArgoCD CLI, Terraform CLI (will need infrastructure service adapters)
+
+  ### Existing Entity Relationships
+
+  ```
+  Repository (1) ---> (many) Features    (via Feature.repositoryId FK)
+  Application (1) ---> (1) Repository    (via Application.repositoryPath)
+  Feature ---> (optional) parent Feature (via Feature.parentId FK)
+  Feature <---> WorkItem                 (via work_item_relations junction table)
+  ```
+
+  The new Cluster entity creates many-to-many relationships:
+  ```
+  Cluster <---> Repository    (a cluster can serve multiple repos; a repo can deploy to multiple clusters)
+  Cluster <---> Application   (an application can deploy to one or more clusters)
+  Cluster <---> Feature       (a feature's output can be deployed to a cluster for validation)
+  ```
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `tsp/domain/entities/` | High | New `cluster.tsp` entity model + new enums (`ClusterStatus`, `InfraProvider`, `ClusterPhase`) |
+  | `tsp/common/enums/` | High | New enum definitions for cluster lifecycle, infrastructure providers, deployment strategies |
+  | `packages/core/src/domain/generated/output.ts` | High | Regenerated after TypeSpec changes (read-only, auto-generated) |
+  | `packages/core/src/domain/factories/` | Medium | New `cluster-defaults.factory.ts` for default cluster configuration |
+  | `packages/core/src/application/ports/output/repositories/` | High | New `IClusterRepository` port interface |
+  | `packages/core/src/application/ports/output/services/` | High | New port interfaces: `IKubernetesService`, `ITerraformService`, `IArgoCDService`, `IDockerService` |
+  | `packages/core/src/application/use-cases/` | High | New `clusters/` directory with CRUD use cases + agent lifecycle use cases |
+  | `packages/core/src/infrastructure/repositories/` | High | New `sqlite-cluster.repository.ts` implementation |
+  | `packages/core/src/infrastructure/persistence/sqlite/mappers/` | High | New `cluster.mapper.ts` (domain <-> DB mapping) |
+  | `packages/core/src/infrastructure/persistence/sqlite/migrations/` | High | Migration 085+ for `clusters` table and junction tables (`cluster_repositories`, `cluster_applications`) |
+  | `packages/core/src/infrastructure/services/` | High | New service adapters: `kubernetes.service.ts`, `terraform.service.ts`, `argocd.service.ts`, `k3s-docker.service.ts` |
+  | `packages/core/src/infrastructure/services/agents/` | High | New `cluster-agent/` directory with LangGraph graph, state, nodes, worker |
+  | `packages/core/src/infrastructure/di/container.ts` | High | Register all new repositories, services, use cases, and agent components |
+  | `packages/core/src/infrastructure/di/modules/` | Medium | New or extended registration modules for cluster components |
+  | `src/presentation/cli/commands/` | High | New `cluster/` command group (create, list, show, delete, link, unlink, deploy, status) |
+  | `src/presentation/web/app/` | High | New cluster pages, server actions, API routes |
+  | `src/presentation/web/components/` | High | New cluster UI components (ClusterPage, ClusterCard, ClusterCanvas, ClusterCreateDrawer) + mandatory stories |
+  | `src/presentation/web/hooks/` | Medium | Hooks for cluster state, SSE events for cluster agent |
+  | `tests/unit/` | High | Unit tests for all new domain logic, use cases, mappers, factories |
+  | `tests/integration/` | High | Integration tests for SQLite repository, migrations, service adapters |
+  | `tests/e2e/` | Medium | E2E tests for CLI commands and web UI cluster workflows |
+  | `translations/` | Medium | i18n strings for cluster UI across all 9 locales (en, ar, es, de, fr, he, pt, uk, ru) |
+
+  ## Dependencies
+
+  ### Internal Dependencies
+  - Existing TypeSpec codegen pipeline (`pnpm tsp:compile`)
+  - Existing DI container and registration patterns
+  - Existing LangGraph agent infrastructure (IAgentExecutor, IAgentExecutorProvider, graph patterns)
+  - Existing SQLite migration system and mapper patterns
+  - Existing SSE real-time update pipeline (agent-events)
+  - Existing React Flow canvas infrastructure (for cluster visualization)
+  - Existing CLI command registration patterns (Commander)
+
+  ### External Dependencies (New)
+  - **Docker** — must be installed on host machine for k3s-in-Docker
+  - **k3s / k3d** — lightweight Kubernetes distribution for local clusters
+  - **kubectl** — Kubernetes CLI (may be bundled with k3s)
+  - **ArgoCD** — GitOps CD tool (installed inside the cluster)
+  - **Terraform** — infrastructure-as-code tool (must be installed on host or bundled)
+
+  ### npm Dependencies (Potentially New)
+  - `@kubernetes/client-node` — Kubernetes API client for Node.js (alternative to shelling out to kubectl)
+  - `dockerode` — Docker API client for Node.js (for programmatic container management)
+  - No Terraform/ArgoCD Node.js SDKs — these will use CLI wrappers via `execFile`
+
+  ## Size Estimate
+
+  **XL** — This is a multi-week effort involving:
+
+  1. **New domain entity** with TypeSpec model, enums, factory, and codegen (1-2 days)
+  2. **Database layer** with migrations, mapper, and repository (2-3 days)
+  3. **Application layer** with 8-10 use cases and port interfaces (3-4 days)
+  4. **Infrastructure services** for Docker, k3s, kubectl, ArgoCD, Terraform (4-5 days)
+  5. **Cluster agent** LangGraph graph with nodes for provisioning, deployment, monitoring (4-5 days)
+  6. **CLI commands** for the full cluster lifecycle (2-3 days)
+  7. **Web UI** components, pages, server actions, stories (4-5 days)
+  8. **Testing** across all layers (integrated throughout, adds ~40% overhead)
+  9. **Templates and patterns** for common deployment scenarios (2-3 days)
+  10. **i18n** for 9 locales (1 day)
+
+  Total estimate: **3-5 weeks** depending on scope decisions from open questions.
+
+  The complexity is driven by:
+  - Introducing entirely new external tool integrations (Docker, k3s, kubectl, ArgoCD, Terraform)
+  - Creating a new LangGraph agent graph with infrastructure-specific nodes
+  - Many-to-many relationships requiring junction tables and bidirectional linking
+  - Full-stack implementation across all 4 layers + all 3 presentation surfaces
+  - Template system for deployment patterns
+
+  ---
+
+  _Generated by feature agent — proceed with research_
