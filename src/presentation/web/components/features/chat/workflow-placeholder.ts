@@ -2,20 +2,25 @@
  * Client-side mirror of the application-creation workflow's
  * user-facing step titles + descriptions. Used to render a
  * placeholder tracker BEFORE the backend orchestrator has written
- * the real `workflow_steps` rows — the user sees all 5 pending
+ * the real `workflow_steps` rows — the user sees all the pending
  * cards the instant they land on the application page, instead
  * of a blank area that suddenly pops into existence a few
  * hundred milliseconds later.
  *
- * The old `scaffold` placeholder is gone — scaffolding now runs
- * deterministically in `BunShadcnScaffolder` BEFORE the agent turn
- * starts, so the project is already flat + dependency-installed
- * when the user lands on the application page.
+ * The first entry — `scaffold` — is a SYNTHETIC step that does not
+ * correspond to a real `workflow_steps` row. It represents the
+ * `BunShadcnScaffolder` phase (project-tree creation + `bun install`)
+ * which runs BEFORE the agent turn starts. That phase can take a
+ * long time (dependency install), and without this card the user
+ * would see an all-pending tracker and think nothing is happening.
  *
- * Keep this in sync with
+ * The rest of the list mirrors the real workflow steps. Keep them
+ * in sync with
  * `packages/core/src/application/use-cases/applications/application-creation.workflow.ts`.
- * The real steps replace the placeholder as soon as the first
- * `workflow_step` SSE chunk arrives.
+ * The real rows replace the non-scaffold placeholders as soon as the
+ * first `workflow_step` SSE chunk arrives; the scaffold card is
+ * injected on top by `ChatTab` via `scaffoldingState` so it stays
+ * visible across both phases.
  */
 
 export interface PlaceholderStep {
@@ -23,6 +28,13 @@ export interface PlaceholderStep {
   title: string;
   description: string;
 }
+
+/**
+ * Stable key for the synthetic scaffold card. Exported so `ChatTab`
+ * can prepend a matching `EnhancedStepState` and the rest of the
+ * tracker plumbing can identify it without stringly-typed comparisons.
+ */
+export const SCAFFOLD_STEP_KEY = 'scaffold';
 
 export const APPLICATION_CREATION_PLACEHOLDER_STEPS: PlaceholderStep[] = [
   {

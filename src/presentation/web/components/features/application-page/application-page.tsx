@@ -1,11 +1,12 @@
 'use client';
 
 import type { Application } from '@shepai/core/domain/generated/output';
-import { DeploymentState } from '@shepai/core/domain/generated/output';
+import { ApplicationStatus, DeploymentState } from '@shepai/core/domain/generated/output';
 import type { ChatState } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
 import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 
 import { ChatTab } from '@/components/features/chat/ChatTab';
+import type { ScaffoldingState } from '@/components/features/chat/ChatTab';
 import { APPLICATION_CREATION_PLACEHOLDER_STEPS } from '@/components/features/chat/workflow-placeholder';
 import { useCloudDeployAction } from '@/hooks/use-cloud-deploy-action';
 import { useDeployAction } from '@/hooks/use-deploy-action';
@@ -73,6 +74,35 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
     agentRunning,
   });
 
+  // Derive the synthetic scaffolding card state from the Application
+  // entity. Scaffolding (`BunShadcnScaffolder`) runs BEFORE the agent
+  // turn and has no real `workflow_steps` row, so the tracker would
+  // otherwise show all-pending cards during an expensive `bun install`.
+  // The card uses `application.createdAt` as the approximate start —
+  // the Application row is persisted moments before the scaffolder
+  // kicks off, so the duration is a couple of hundred ms high at most.
+  //   - Error state: Application.status flipped to `Error` → failed.
+  //   - Completed: `setupComplete` flipped to `true` → done.
+  //   - Otherwise: still running.
+  // `ChatTab` additionally forces `done` once real workflow rows arrive,
+  // which covers the window between `setupComplete=false` and the
+  // first workflow step SSE chunk.
+  const scaffoldingState: ScaffoldingState = application.setupComplete
+    ? {
+        status: 'done',
+        startedAt: new Date(application.createdAt).getTime(),
+      }
+    : application.status === ApplicationStatus.Error
+      ? {
+          status: 'failed',
+          startedAt: new Date(application.createdAt).getTime(),
+          error: 'Scaffolding failed — check the logs for details.',
+        }
+      : {
+          status: 'running',
+          startedAt: new Date(application.createdAt).getTime(),
+        };
+
   return (
     <div className="bg-background flex h-dvh flex-col">
       <AppTopBar
@@ -94,6 +124,7 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
             initialChatState={initialChatState}
             hideHeader
             workflowPlaceholder={APPLICATION_CREATION_PLACEHOLDER_STEPS}
+            scaffoldingState={scaffoldingState}
             onResumeWorkflow={() => {
               void fetch(`/api/applications/${application.id}/resume`, { method: 'POST' });
             }}

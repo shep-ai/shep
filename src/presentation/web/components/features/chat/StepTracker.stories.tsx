@@ -127,3 +127,62 @@ export const StuckRunningWithForceStop: Story = {
     onForceStop: (stepId: string) => console.log('force-stop', stepId),
   },
 };
+
+/**
+ * Scaffolding phase — the synthetic first-card state that ChatTab
+ * prepends via the `scaffoldingState` prop while `BunShadcnScaffolder`
+ * installs dependencies. The rest of the tracker still shows the
+ * pending placeholder cards because the agent turn has not started
+ * yet.
+ */
+export const ScaffoldingRunning: Story = {
+  args: {
+    steps: [
+      {
+        definition: {
+          id: 'placeholder-scaffold',
+          stepKey: 'scaffold',
+          title: 'Preparing your project',
+          description: 'Scaffolding the project tree and installing dependencies',
+        },
+        status: 'running' as const,
+        metadata: null,
+        toolMessages: [],
+        startedAt: Date.now() - 40 * 1000,
+        finishedAt: null,
+      },
+      ...build(),
+    ],
+  },
+};
+
+/**
+ * Scaffolding finished and the real workflow has begun — the scaffold
+ * card flips to `done` with a captured duration while the first real
+ * step (`components`) goes `running`.
+ */
+export const ScaffoldingDoneWorkflowRunning: Story = {
+  args: {
+    steps: [
+      {
+        definition: {
+          id: 'placeholder-scaffold',
+          stepKey: 'scaffold',
+          title: 'Preparing your project',
+          description: 'Scaffolding the project tree and installing dependencies',
+        },
+        status: 'done' as const,
+        metadata: null,
+        toolMessages: [],
+        startedAt: Date.now() - 90 * 1000,
+        finishedAt: Date.now() - 30 * 1000,
+      },
+      ...build({
+        components: {
+          status: 'running',
+          startedAt: Date.now() - 25 * 1000,
+        },
+      }),
+    ],
+  },
+};

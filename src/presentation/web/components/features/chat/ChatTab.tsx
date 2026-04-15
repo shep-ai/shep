@@ -15,6 +15,7 @@ import { ChatComposer } from './ChatComposer';
 import { InteractionBubble } from './InteractionBubble';
 import { StepTracker } from './StepTracker';
 import type { PlaceholderStep } from './workflow-placeholder';
+import { SCAFFOLD_STEP_KEY } from './workflow-placeholder';
 import type { EnhancedStepState } from './useChatRuntime';
 
 export interface ChatTabProps {
@@ -57,6 +58,32 @@ export interface ChatTabProps {
   workflowPlaceholder?: PlaceholderStep[];
   /** Called when the user clicks Continue on an interrupted workflow step. */
   onResumeWorkflow?: () => void;
+  /**
+   * When provided, injects a synthetic "Scaffolding" step card at the
+   * top of the tracker so the user sees in-progress feedback during
+   * the `BunShadcnScaffolder` phase (project-tree + `bun install`),
+   * which happens BEFORE the agent turn and therefore has no real
+   * `workflow_steps` row. See `workflow-placeholder.ts` for the
+   * broader context.
+   */
+  scaffoldingState?: ScaffoldingState;
+}
+
+/**
+ * Frontend-synthesised state for the "Scaffolding" card. The card is
+ * purely presentational — the scaffolder does not write a
+ * `workflow_steps` row, so the caller derives this from the
+ * Application entity and passes it in.
+ */
+export interface ScaffoldingState {
+  /** Lifecycle of the scaffold phase. */
+  status: 'running' | 'done' | 'failed';
+  /** Milliseconds since epoch when scaffolding started. */
+  startedAt: number;
+  /** Milliseconds since epoch when scaffolding reached a terminal state. */
+  finishedAt?: number;
+  /** Optional short error message to render inside the card body. */
+  error?: string;
 }
 
 const IS_DEV = process.env.NODE_ENV === 'development';
@@ -94,6 +121,7 @@ export function ChatTab({
   onAllStepsComplete,
   workflowPlaceholder,
   onResumeWorkflow,
+  scaffoldingState,
 }: ChatTabProps) {
   const [overrideAgent, setOverrideAgent] = useState<string | undefined>(initialAgent);
   const [overrideModel, setOverrideModel] = useState<string | undefined>(initialModel);
@@ -193,27 +221,70 @@ export function ChatTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- att.addAttachment is a stable callback from useAttachments
   }, [featureId, att.addAttachment]);
 
-  // Compute the tracker's step list: real workflow rows when the
-  // orchestrator has written them, otherwise synthesised pending
-  // cards from `workflowPlaceholder` so the user sees the full
-  // progress skeleton from the first paint. Real rows replace the
-  // placeholder atomically the moment the first `workflow_step`
-  // SSE chunk lands.
-  const trackerSteps: EnhancedStepState[] = stepProgress.hasPlan
+  // Compute the tracker's step list:
+  //   1. Real workflow rows when the orchestrator has written them,
+  //      otherwise synthesised pending cards from `workflowPlaceholder`
+  //      so the user sees the full progress skeleton from the first
+  //      paint. Real rows replace the placeholder atomically the
+  //      moment the first `workflow_step` SSE chunk lands.
+  //   2. If `scaffoldingState` is provided, ALWAYS prepend a synthetic
+  //      "Scaffolding" card at the top. It is the only card visible
+  //      during the `BunShadcnScaffolder` phase (project-tree +
+  //      `bun install`), which happens BEFORE the agent turn and
+  //      therefore has no real `workflow_steps` row. Once real rows
+  //      arrive, the scaffold card is flipped to `done` and kept at
+  //      index 0 so the full history stays visible.
+  const baseSteps: EnhancedStepState[] = stepProgress.hasPlan
     ? stepProgress.steps
-    : (workflowPlaceholder ?? []).map((p) => ({
+    : (workflowPlaceholder ?? [])
+        .filter((p) => p.stepKey !== SCAFFOLD_STEP_KEY)
+        .map((p) => ({
+          definition: {
+            id: `placeholder-${p.stepKey}`,
+            stepKey: p.stepKey,
+            title: p.title,
+            description: p.description,
+          },
+          status: 'pending' as const,
+          metadata: null,
+          toolMessages: [],
+          startedAt: null,
+          finishedAt: null,
+        }));
+
+  // Capture a stable `finishedAt` for the scaffold card the first
+  // time we observe real workflow rows appear (`hasPlan` flips to
+  // true). Without this, `Date.now()` would be re-sampled every
+  // render and the card's displayed duration would keep jittering.
+  const scaffoldFinishedAtRef = useRef<number | null>(null);
+  if (stepProgress.hasPlan && scaffoldFinishedAtRef.current == null) {
+    scaffoldFinishedAtRef.current = Date.now();
+  }
+
+  const scaffoldCard: EnhancedStepState | null = scaffoldingState
+    ? {
         definition: {
-          id: `placeholder-${p.stepKey}`,
-          stepKey: p.stepKey,
-          title: p.title,
-          description: p.description,
+          id: `placeholder-${SCAFFOLD_STEP_KEY}`,
+          stepKey: SCAFFOLD_STEP_KEY,
+          title: 'Preparing your project',
+          description: 'Scaffolding the project tree and installing dependencies',
         },
-        status: 'pending' as const,
-        metadata: null,
+        // Once real workflow rows exist the scaffolder is guaranteed
+        // to have finished (the orchestrator runs scaffold → workflow
+        // sequentially), so we force `done` regardless of what the
+        // caller passes — this keeps the UI consistent even if a
+        // page refresh races the Application row's setupComplete flag.
+        status: stepProgress.hasPlan ? 'done' : scaffoldingState.status,
+        metadata: scaffoldingState.error ? { error: scaffoldingState.error } : null,
         toolMessages: [],
-        startedAt: null,
-        finishedAt: null,
-      }));
+        startedAt: scaffoldingState.startedAt,
+        finishedAt:
+          scaffoldingState.finishedAt ??
+          (stepProgress.hasPlan ? scaffoldFinishedAtRef.current : null),
+      }
+    : null;
+
+  const trackerSteps: EnhancedStepState[] = scaffoldCard ? [scaffoldCard, ...baseSteps] : baseSteps;
   const showTracker = trackerSteps.length > 0;
   const workflowInFlight = isWorkflowInFlight(stepProgress);
 
