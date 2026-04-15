@@ -14,12 +14,27 @@ import { useChatRuntime } from './useChatRuntime';
 import { ChatComposer } from './ChatComposer';
 import { InteractionBubble } from './InteractionBubble';
 import { StepTracker } from './StepTracker';
+import { TurnGroupList, useTurnGroups } from './turn-group-list';
+import { OperationBubble } from './operation-bubble';
 import type { PlaceholderStep } from './workflow-placeholder';
 import { SCAFFOLD_STEP_KEY } from './workflow-placeholder';
 import type { EnhancedStepState } from './useChatRuntime';
 
 export interface ChatTabProps {
   featureId: string;
+  /**
+   * When rendered inside an application page, passing the application
+   * id lights up two application-scoped extras in the thread:
+   *   1. Server-derived "user turn groups" — completed user turns
+   *      collapse into named cards above the live messages so the
+   *      thread stays compact.
+   *   2. Publish / Deploy operation bubbles — chronological static
+   *      info cards sourced from `operation_log_entries` and
+   *      rendered after the live messages.
+   * Omitting this prop keeps the old behaviour for non-application
+   * chats (repo, global, etc.).
+   */
+  applicationId?: string;
   worktreePath?: string;
   /** Seed the agent override (e.g. from an Application's agentType) */
   initialAgent?: string;
@@ -113,6 +128,7 @@ export function isWorkflowInFlight(stepProgress: {
 
 export function ChatTab({
   featureId,
+  applicationId,
   worktreePath,
   initialAgent,
   initialModel,
@@ -127,6 +143,14 @@ export function ChatTab({
   const [overrideModel, setOverrideModel] = useState<string | undefined>(initialModel);
   const [debugMode, setDebugMode] = useState(false);
   const att = useAttachments();
+
+  // Server-derived turn grouping (Feature B). Only applicable to
+  // application-scoped chats — repo / global threads keep the flat
+  // layout. `hiddenMessageIds` is handed to useChatRuntime so the
+  // raw bubbles that now live inside a collapsed group card are
+  // removed from the thread.
+  const turnGroupsEnabled = Boolean(applicationId);
+  const { hiddenMessageIds } = useTurnGroups(turnGroupsEnabled ? featureId : '');
 
   const contentTransform = useCallback(
     (content: string) =>
@@ -147,6 +171,8 @@ export function ChatTab({
     respondToInteraction,
     stepProgress,
     initialRequestMessage,
+    rawMessages,
+    streamingState,
   } = useChatRuntime(featureId, worktreePath, {
     contentTransform,
     onMessageSent: att.clearAttachments,
@@ -160,6 +186,13 @@ export function ChatTab({
     // real workflow-step row arrives. Without this, the bubble would
     // fall through to the flat thread and render below the tracker.
     pinInitialRequest: (workflowPlaceholder?.length ?? 0) > 0,
+    // Server-derived completed turns get pulled out of the flat
+    // thread and rendered as collapsed cards above the messages.
+    hiddenMessageIds,
+    // When grouping is on, the in-progress turn card owns the
+    // streaming indicator — suppress the flat-thread version so it
+    // doesn't appear twice.
+    suppressStreamingIndicator: turnGroupsEnabled,
   });
 
   // Fire the all-steps-complete callback exactly once per mount.
@@ -340,31 +373,48 @@ export function ChatTab({
               composer={composer}
               hideEmpty={showTracker}
               beforeMessages={
-                showTracker ? (
-                  <>
-                    {initialRequestMessage ? (
-                      <InitialRequestBubble text={initialRequestMessage.content} />
-                    ) : null}
-                    <StepTracker
-                      steps={trackerSteps}
-                      collapsedSummary={
-                        stepProgress.hasPlan === true && stepProgress.allDone === true
-                      }
-                      activeStepId={stepProgress.activeStepId}
-                      liveStatus={stepProgress.liveStatus}
-                      onRetry={onResumeWorkflow}
-                      onForceStop={handleForceStopStep}
+                <>
+                  {showTracker ? (
+                    <>
+                      {initialRequestMessage ? (
+                        <InitialRequestBubble text={initialRequestMessage.content} />
+                      ) : null}
+                      <StepTracker
+                        steps={trackerSteps}
+                        collapsedSummary={
+                          stepProgress.hasPlan === true && stepProgress.allDone === true
+                        }
+                        activeStepId={stepProgress.activeStepId}
+                        liveStatus={stepProgress.liveStatus}
+                        onRetry={onResumeWorkflow}
+                        onForceStop={handleForceStopStep}
+                      />
+                    </>
+                  ) : null}
+                  {turnGroupsEnabled ? (
+                    <TurnGroupList
+                      featureId={featureId}
+                      allMessages={rawMessages}
+                      streaming={streamingState}
                     />
-                  </>
-                ) : undefined
+                  ) : null}
+                </>
               }
               afterMessages={
-                pendingInteraction ? (
-                  <InteractionBubble
-                    interaction={pendingInteraction}
-                    onSubmit={respondToInteraction}
-                  />
-                ) : undefined
+                <>
+                  {pendingInteraction ? (
+                    <InteractionBubble
+                      interaction={pendingInteraction}
+                      onSubmit={respondToInteraction}
+                    />
+                  ) : null}
+                  {applicationId ? (
+                    <>
+                      <OperationBubble applicationId={applicationId} kind="publish" />
+                      <OperationBubble applicationId={applicationId} kind="deploy" />
+                    </>
+                  ) : null}
+                </>
               }
             />
           </AssistantRuntimeProvider>

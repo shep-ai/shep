@@ -118,6 +118,7 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
         left={
           <ChatTab
             featureId={featureIdForApplication(application.id)}
+            applicationId={application.id}
             worktreePath={application.repositoryPath}
             initialAgent={application.agentType}
             initialModel={application.modelOverride}

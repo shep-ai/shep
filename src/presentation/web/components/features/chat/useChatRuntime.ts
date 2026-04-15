@@ -204,6 +204,24 @@ export interface ChatRuntimeOptions {
    * kicked in once `hasPlan` became true.
    */
   pinInitialRequest?: boolean;
+  /**
+   * Message ids to filter out of the flat thread. These belong to
+   * server-derived "turn groups" that the host page renders as
+   * collapsible cards above the thread — the raw bubbles must not
+   * also appear in the flat message list, or the user would see the
+   * same content twice (once inside the card, once flat below).
+   * See `GetChatTurnGroupsUseCase` for the server-side derivation.
+   */
+  hiddenMessageIds?: readonly string[];
+  /**
+   * When true, the hook stops injecting its synthetic `streaming`
+   * message (the one that carries the live delta + "Thinking…" /
+   * "Agent is waking up…" placeholders) into `threadMessages`. The
+   * same streaming data is exposed separately on the return value
+   * (`streamingState`) so the host can render it wherever it wants —
+   * typically inside an in-progress turn card owned by the server.
+   */
+  suppressStreamingIndicator?: boolean;
 }
 
 /** A debug event captured from SSE for display in debug mode. */
@@ -719,6 +737,16 @@ export function useChatRuntime(
     return first ?? null;
   }, [stepProgress.hasPlan, pinInitialRequest, messages]);
 
+  // Server-derived turn-group filter. The set is rebuilt whenever the
+  // host passes a new array of hidden ids (typically from
+  // `useTurnGroups()` keyed off the same featureId). Kept outside the
+  // threadMessages memo so the expensive memo only re-runs when the
+  // underlying message list actually changes.
+  const hiddenMessageIdSet = useMemo(
+    () => new Set(options?.hiddenMessageIds ?? []),
+    [options?.hiddenMessageIds]
+  );
+
   const threadMessages: ThreadMessageLike[] = useMemo(() => {
     const hasPlan = stepProgress.hasPlan;
 
@@ -750,11 +778,12 @@ export function useChatRuntime(
     // placeholder-only case we still want the first user message pulled
     // out of the flat thread so the host's `<InitialRequestBubble>`
     // isn't duplicated below the tracker.
-    const shouldFilter = hasPlan || pinInitialRequest;
+    const shouldFilter = hasPlan || pinInitialRequest || hiddenMessageIdSet.size > 0;
     const sourceMessages = shouldFilter
       ? messages.filter((m) => {
           if (m.id === initialRequestMessage?.id) return false;
           if (m.stepId) return false; // step-tagged messages live inside their card
+          if (hiddenMessageIdSet.has(m.id)) return false; // hidden inside a completed turn-group card
           if (workflowRunning && m.role === InteractiveMessageRole.assistant) {
             // Race-window leftover — see comment above.
             return false;
@@ -817,33 +846,41 @@ export function useChatRuntime(
     }
 
     // Streaming text as the last message — may include a live activity suffix.
-    if (activeStreamText.trim()) {
-      const parts: { type: 'text'; text: string }[] = [{ type: 'text', text: activeStreamText }];
-      // Append live activity indicator when agent is doing tool work
-      if (statusLog) {
-        parts.push({ type: 'text', text: `*⏳ ${statusLog}*` });
+    //
+    // Skipped entirely when the host has asked us to suppress the
+    // indicator because the server-derived in-progress turn card is
+    // rendering it inline instead (see `streamingState` below).
+    const suppressStreaming = options?.suppressStreamingIndicator === true;
+
+    if (!suppressStreaming) {
+      if (activeStreamText.trim()) {
+        const parts: { type: 'text'; text: string }[] = [{ type: 'text', text: activeStreamText }];
+        // Append live activity indicator when agent is doing tool work
+        if (statusLog) {
+          parts.push({ type: 'text', text: `*⏳ ${statusLog}*` });
+        }
+        result.push({ id: 'streaming', role: 'assistant', content: parts });
+      } else if (statusLog) {
+        // No streaming text yet but agent is actively working (tool calls, etc.)
+        result.push({
+          id: 'streaming',
+          role: 'assistant',
+          content: [{ type: 'text', text: `*⏳ ${statusLog}*` }],
+        });
+      } else if (awaitingResponse || sessionStatus === 'booting') {
+        // Note: sendMutation.isPending is NOT included here — the 600ms
+        // delay via startAwaiting() prevents flash on fast responses.
+        result.push({
+          id: 'streaming',
+          role: 'assistant',
+          content: [
+            {
+              type: 'text',
+              text: sessionStatus === 'booting' ? '*Agent is waking up...*' : '*Thinking...*',
+            },
+          ],
+        });
       }
-      result.push({ id: 'streaming', role: 'assistant', content: parts });
-    } else if (statusLog) {
-      // No streaming text yet but agent is actively working (tool calls, etc.)
-      result.push({
-        id: 'streaming',
-        role: 'assistant',
-        content: [{ type: 'text', text: `*⏳ ${statusLog}*` }],
-      });
-    } else if (awaitingResponse || sessionStatus === 'booting') {
-      // Note: sendMutation.isPending is NOT included here — the 600ms
-      // delay via startAwaiting() prevents flash on fast responses.
-      result.push({
-        id: 'streaming',
-        role: 'assistant',
-        content: [
-          {
-            type: 'text',
-            text: sessionStatus === 'booting' ? '*Agent is waking up...*' : '*Thinking...*',
-          },
-        ],
-      });
     }
 
     return result;
@@ -855,10 +892,12 @@ export function useChatRuntime(
     sessionStatus,
     statusLog,
     options?.debugMode,
+    options?.suppressStreamingIndicator,
     debugEvents,
     stepProgress.hasPlan,
     stepProgress.allDone,
     pinInitialRequest,
+    hiddenMessageIdSet,
   ]);
 
   // ── Status info for typing indicator ──────────────────────────────────
@@ -972,5 +1011,20 @@ export function useChatRuntime(
     respondToInteraction,
     stepProgress,
     initialRequestMessage,
+    /** Raw persisted messages — exposed so the host can hydrate
+     *  collapsed server-derived turn-group cards by id lookup. */
+    rawMessages: messages,
+    /**
+     * Live streaming state for external renderers (in-progress turn
+     * card). Always populated whether or not the synthetic streaming
+     * thread message is injected — `suppressStreamingIndicator`
+     * only controls the flat-thread injection, not the data exposure.
+     */
+    streamingState: {
+      text: activeStreamText,
+      statusLog,
+      awaiting: awaitingResponse,
+      sessionStatus,
+    },
   };
 }

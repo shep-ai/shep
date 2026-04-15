@@ -4,6 +4,7 @@ import { StartInteractiveSessionUseCase } from '../../../application/use-cases/i
 import { SendInteractiveMessageUseCase } from '../../../application/use-cases/interactive/send-interactive-message.use-case.js';
 import { StopInteractiveSessionUseCase } from '../../../application/use-cases/interactive/stop-interactive-session.use-case.js';
 import { GetInteractiveChatStateUseCase } from '../../../application/use-cases/interactive/get-interactive-chat-state.use-case.js';
+import { GetChatTurnGroupsUseCase } from '../../../application/use-cases/interactive/get-chat-turn-groups.use-case.js';
 import { RespondToInteractionUseCase } from '../../../application/use-cases/interactive/respond-to-interaction.use-case.js';
 import { RunWorkflowUseCase } from '../../../application/use-cases/workflows/run-workflow.use-case.js';
 import { ForceStopWorkflowStepUseCase } from '../../../application/use-cases/workflows/force-stop-workflow-step.use-case.js';
@@ -20,6 +21,7 @@ export function registerInteractive(container: DependencyContainer): void {
   container.registerSingleton(SendInteractiveMessageUseCase);
   container.registerSingleton(StopInteractiveSessionUseCase);
   container.registerSingleton(GetInteractiveChatStateUseCase);
+  container.registerSingleton(GetChatTurnGroupsUseCase);
   container.registerSingleton(RespondToInteractionUseCase);
 
   // String-token aliases for web routes (Turbopack can't resolve .js→.ts
@@ -35,6 +37,9 @@ export function registerInteractive(container: DependencyContainer): void {
   });
   container.register('GetInteractiveChatStateUseCase', {
     useFactory: (c) => c.resolve(GetInteractiveChatStateUseCase),
+  });
+  container.register('GetChatTurnGroupsUseCase', {
+    useFactory: (c) => c.resolve(GetChatTurnGroupsUseCase),
   });
   container.register('RespondToInteractionUseCase', {
     useFactory: (c) => c.resolve(RespondToInteractionUseCase),
