@@ -1,0 +1,1200 @@
+name: "cluster-agent"
+summary: >
+  37 tasks across 9 phases implementing the Cluster entity, persistence layer, 12 use cases,
+  4 infrastructure services, LangGraph agent graph with worker, feature flag wiring, 7 CLI
+  commands, web UI components with canvas integration, and i18n across 9 locales.
+
+relatedFeatures: []
+technologies: []
+relatedLinks:
+  - title: "LESSONS.md Feature Flag Checklist"
+    url: "file://LESSONS.md"
+  - title: "k3d CLI Reference"
+    url: "https://k3d.io/v5.7.5/usage/commands/"
+
+tasks:
+  # ============================================================
+  # Phase 1: Domain Model & TypeSpec
+  # ============================================================
+
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Define ClusterStatus enum in TypeSpec"
+    description: >
+      Create tsp/common/enums/cluster.tsp with the ClusterStatus enum (Provisioning, Ready,
+      Stopping, Stopped, Error, Destroying). Add @doc decorators with state transition diagram.
+      Register in tsp/common/enums/index.tsp.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "ClusterStatus enum exists in tsp/common/enums/cluster.tsp with 6 values"
+      - "Each value has @doc decorator explaining its purpose"
+      - "Enum is imported in tsp/common/enums/index.tsp"
+      - "pnpm tsp:compile succeeds"
+    tdd:
+      red:
+        - "Write test that imports ClusterStatus from generated output and asserts all 6 values exist"
+      green:
+        - "Create cluster.tsp with ClusterStatus enum, add to index.tsp, run pnpm tsp:compile"
+      refactor:
+        - "Add @doc decorator with ASCII state transition diagram in docstring"
+    estimatedEffort: "30min"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Define Cluster entity in TypeSpec"
+    description: >
+      Create tsp/domain/entities/cluster.tsp with the Cluster model extending SoftDeletableEntity.
+      Fields: name, slug, description, status (ClusterStatus, default Stopped), k3dClusterName,
+      kubeconfigPath, argoCdEnabled (default false), argoCdNamespace (default argocd), nodeCount
+      (default 1), lastProvisionedAt, lastHealthCheckAt, errorMessage. Register in entities index.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Cluster model exists in tsp/domain/entities/cluster.tsp extending SoftDeletableEntity"
+      - "All fields defined with correct types, optionality, and defaults"
+      - "Model is registered in tsp/domain/entities/index.tsp"
+      - "pnpm tsp:compile succeeds and Cluster type appears in output.ts"
+    tdd:
+      red:
+        - "Write test that imports Cluster type from generated output and asserts required fields exist with correct types"
+      green:
+        - "Create cluster.tsp model, add to index.tsp, run pnpm tsp:compile"
+      refactor:
+        - "Add @doc decorators to all fields explaining their purpose"
+    estimatedEffort: "30min"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Define ClusterRepository and ClusterApplication junction entities in TypeSpec"
+    description: >
+      Create tsp/domain/entities/cluster-repository.tsp (extends BaseEntity, fields: clusterId,
+      repositoryId) and tsp/domain/entities/cluster-application.tsp (extends BaseEntity, fields:
+      clusterId, applicationId). Register both in entities index.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "ClusterRepository model exists extending BaseEntity with clusterId and repositoryId"
+      - "ClusterApplication model exists extending BaseEntity with clusterId and applicationId"
+      - "Both models registered in entities index"
+      - "pnpm tsp:compile succeeds"
+    tdd:
+      red:
+        - "Write test importing ClusterRepository and ClusterApplication from generated output, assert fields exist"
+      green:
+        - "Create both .tsp files, add to index, run codegen"
+      refactor:
+        - "Ensure @doc decorators describe the junction relationship"
+    estimatedEffort: "20min"
+
+  - id: "task-4"
+    phaseId: "phase-1"
+    title: "Add clusters feature flag to FeatureFlags in TypeSpec"
+    description: >
+      Add clusters boolean field (default false) to the FeatureFlags model in
+      tsp/domain/entities/settings.tsp. Run codegen to regenerate output.ts.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "clusters field exists in FeatureFlags model with boolean type and false default"
+      - "pnpm tsp:compile succeeds"
+      - "Generated Settings type includes clusters in featureFlags"
+    tdd:
+      red:
+        - "Write test that imports Settings from generated output and asserts featureFlags.clusters exists as boolean"
+      green:
+        - "Add clusters field to FeatureFlags model in settings.tsp, run codegen"
+      refactor:
+        - "Add @doc decorator explaining the flag gates cluster UI visibility"
+    estimatedEffort: "15min"
+
+  - id: "task-5"
+    phaseId: "phase-1"
+    title: "Create cluster-defaults factory"
+    description: >
+      Create packages/core/src/domain/factories/cluster-defaults.factory.ts with a
+      createDefaultCluster function that returns a Cluster object with sensible defaults
+      (Stopped status, argoCdEnabled false, nodeCount 1, generated UUID, slug from name).
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "createDefaultCluster(name, options?) returns a valid Cluster object"
+      - "Default status is Stopped"
+      - "Default argoCdEnabled is false"
+      - "Default nodeCount is 1"
+      - "UUID is generated, slug is derived from name"
+      - "Unit test verifies all defaults"
+    tdd:
+      red:
+        - "Write test: createDefaultCluster('my-cluster') returns Cluster with status Stopped, argoCdEnabled false, nodeCount 1, valid UUID, slug 'my-cluster'"
+        - "Write test: createDefaultCluster('My Cluster', { argoCdEnabled: true }) returns Cluster with argoCdEnabled true and slug 'my-cluster'"
+      green:
+        - "Implement createDefaultCluster using randomUUID, slugify, and spread overrides"
+      refactor:
+        - "Extract slug generation to reusable helper if one does not already exist in the codebase"
+    estimatedEffort: "30min"
+
+  # ============================================================
+  # Phase 2: Persistence Layer
+  # ============================================================
+
+  - id: "task-6"
+    phaseId: "phase-2"
+    title: "Create clusters table migration (085)"
+    description: >
+      Create migration 085-create-clusters-table.ts with CREATE TABLE IF NOT EXISTS for the
+      clusters table. Columns match the Cluster entity: id TEXT PRIMARY KEY, name TEXT NOT NULL,
+      slug TEXT NOT NULL, description TEXT, status TEXT NOT NULL DEFAULT 'Stopped',
+      k3d_cluster_name TEXT, kubeconfig_path TEXT, argocd_enabled INTEGER NOT NULL DEFAULT 0,
+      argocd_namespace TEXT DEFAULT 'argocd', node_count INTEGER NOT NULL DEFAULT 1,
+      last_provisioned_at INTEGER, last_health_check_at INTEGER, error_message TEXT,
+      created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, deleted_at INTEGER.
+      Indexes on slug (unique where deleted_at IS NULL) and status.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "Migration creates clusters table with all columns"
+      - "Unique partial index on slug WHERE deleted_at IS NULL"
+      - "Index on status column"
+      - "All guards (sqlite_master check) prevent duplicate execution"
+      - "Integration test: migration runs idempotently"
+    tdd:
+      red:
+        - "Write integration test: open in-memory DB, run migration, assert table exists with all columns via pragma table_info"
+        - "Write integration test: run migration twice, assert no error (idempotent)"
+      green:
+        - "Create 085-create-clusters-table.ts with CREATE TABLE IF NOT EXISTS, CREATE UNIQUE INDEX IF NOT EXISTS"
+      refactor:
+        - "Verify column types and defaults match generated TypeSpec entity exactly"
+    estimatedEffort: "30min"
+
+  - id: "task-7"
+    phaseId: "phase-2"
+    title: "Create cluster_repositories junction table migration (086)"
+    description: >
+      Create migration 086-create-cluster-repositories.ts. Table: id TEXT PRIMARY KEY,
+      cluster_id TEXT NOT NULL, repository_id TEXT NOT NULL, created_at INTEGER NOT NULL.
+      Compound unique index on (cluster_id, repository_id). Individual indexes on cluster_id
+      and repository_id. FK constraints to clusters and repositories tables.
+    state: "Todo"
+    dependencies:
+      - "task-6"
+    acceptanceCriteria:
+      - "Migration creates cluster_repositories table with all columns and FK constraints"
+      - "Compound unique index on (cluster_id, repository_id)"
+      - "Individual FK indexes exist"
+      - "Integration test: migration runs idempotently"
+    tdd:
+      red:
+        - "Write integration test: run migration after 085, assert table exists with correct columns and indexes"
+      green:
+        - "Create 086-create-cluster-repositories.ts with table, compound unique index, and FK indexes"
+      refactor:
+        - "Verify index naming follows existing convention"
+    estimatedEffort: "20min"
+
+  - id: "task-8"
+    phaseId: "phase-2"
+    title: "Create cluster_applications junction table migration (087)"
+    description: >
+      Create migration 087-create-cluster-applications.ts. Same pattern as 086 but with
+      application_id instead of repository_id, FK to applications table.
+    state: "Todo"
+    dependencies:
+      - "task-6"
+    acceptanceCriteria:
+      - "Migration creates cluster_applications table with correct columns and FK constraints"
+      - "Compound unique index on (cluster_id, application_id)"
+      - "Individual FK indexes exist"
+      - "Integration test: migration runs idempotently"
+    tdd:
+      red:
+        - "Write integration test: run migration after 085, assert table exists with correct columns"
+      green:
+        - "Create 087-create-cluster-applications.ts mirroring the 086 pattern"
+      refactor:
+        - "Ensure consistent naming with the cluster_repositories migration"
+    estimatedEffort: "15min"
+
+  - id: "task-9"
+    phaseId: "phase-2"
+    title: "Create feature_flag_clusters settings migration (088)"
+    description: >
+      Create migration 088-add-feature-flag-clusters.ts. ALTER TABLE settings ADD COLUMN
+      feature_flag_clusters INTEGER NOT NULL DEFAULT 0, guarded by pragma table_info check.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+    acceptanceCriteria:
+      - "Migration adds feature_flag_clusters column to settings table"
+      - "Guards with pragma table_info to prevent duplicate column"
+      - "Default value is 0 (false)"
+      - "Integration test: migration runs idempotently"
+    tdd:
+      red:
+        - "Write integration test: run migration, assert feature_flag_clusters column exists in settings table"
+      green:
+        - "Create 088-add-feature-flag-clusters.ts following 084 pattern exactly"
+      refactor:
+        - "Verify down() function includes proper comment about SQLite DROP COLUMN limitation"
+    estimatedEffort: "15min"
+
+  - id: "task-10"
+    phaseId: "phase-2"
+    title: "Implement cluster mapper (toDatabase/fromDatabase)"
+    description: >
+      Create cluster.mapper.ts with ClusterRow interface, toDatabase, and fromDatabase functions.
+      Map all fields: camelCase to snake_case, boolean to 0/1 integer, Date to unix ms integer,
+      ClusterStatus string to enum cast.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+      - "task-6"
+    acceptanceCriteria:
+      - "ClusterRow interface defines all columns in snake_case"
+      - "toDatabase converts Cluster domain object to ClusterRow"
+      - "fromDatabase converts ClusterRow to Cluster domain object"
+      - "Boolean conversion: argoCdEnabled <-> argocd_enabled (0/1)"
+      - "Date conversion: createdAt/updatedAt <-> created_at/updated_at (unix ms)"
+      - "Nullable date conversion: lastProvisionedAt, lastHealthCheckAt, deletedAt"
+      - "Unit tests cover round-trip conversion"
+    tdd:
+      red:
+        - "Write test: toDatabase(cluster) returns ClusterRow with correct snake_case keys, integer booleans, ms timestamps"
+        - "Write test: fromDatabase(row) returns Cluster with correct camelCase keys, boolean values, Date objects"
+        - "Write test: round-trip (toDatabase then fromDatabase) preserves all field values"
+      green:
+        - "Implement ClusterRow interface, toDatabase, fromDatabase following application.mapper.ts pattern"
+      refactor:
+        - "Ensure nullable fields use consistent null/undefined mapping"
+    estimatedEffort: "45min"
+
+  - id: "task-11"
+    phaseId: "phase-2"
+    title: "Define IClusterRepository port interface"
+    description: >
+      Create the IClusterRepository interface in application/ports/output/repositories/ with
+      methods: create, findById, findBySlug, list (optional status filter), update, softDelete,
+      linkRepository, unlinkRepository, getLinkedRepositories, linkApplication,
+      unlinkApplication, getLinkedApplications.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "IClusterRepository interface defined with all 12 methods"
+      - "All method signatures use domain types (Cluster, ClusterStatus, etc.)"
+      - "update accepts Partial<Pick<Cluster, mutable fields>>"
+      - "list accepts optional status filter parameter"
+      - "All methods return Promise<T>"
+    tdd: null
+    estimatedEffort: "20min"
+
+  - id: "task-12"
+    phaseId: "phase-2"
+    title: "Implement SQLiteClusterRepository"
+    description: >
+      Implement the full SQLiteClusterRepository with CRUD operations and junction table
+      management. Uses the cluster mapper for domain-to-DB conversion. Parameterized queries
+      for SQL injection prevention. Soft-delete implementation. Junction table link/unlink
+      operations with existence checks.
+    state: "Todo"
+    dependencies:
+      - "task-6"
+      - "task-7"
+      - "task-8"
+      - "task-10"
+      - "task-11"
+    acceptanceCriteria:
+      - "All 12 IClusterRepository methods implemented"
+      - "create inserts into clusters table with all columns from mapper"
+      - "findById/findBySlug filter WHERE deleted_at IS NULL"
+      - "list supports optional status filter"
+      - "update writes only changed fields"
+      - "softDelete sets deleted_at timestamp"
+      - "linkRepository/linkApplication insert into junction tables with UUID generation"
+      - "unlinkRepository/unlinkApplication delete from junction tables"
+      - "getLinkedRepositories/getLinkedApplications join cluster with junction table"
+      - "Integration tests pass against in-memory SQLite"
+    tdd:
+      red:
+        - "Write integration test: create cluster, findById returns it with all fields"
+        - "Write integration test: create cluster, findBySlug returns it"
+        - "Write integration test: create 3 clusters, list returns all; list with status filter returns subset"
+        - "Write integration test: create then update name, verify slug regenerated"
+        - "Write integration test: softDelete sets deleted_at, findById returns null"
+        - "Write integration test: linkRepository creates junction record, getLinkedRepositories returns it"
+        - "Write integration test: unlinkRepository removes junction record"
+        - "Write integration test: duplicate linkRepository throws or is idempotent"
+      green:
+        - "Implement SQLiteClusterRepository with prepared statements for all operations"
+      refactor:
+        - "Extract common query patterns if duplication emerges between CRUD and junction methods"
+    estimatedEffort: "2h"
+
+  # ============================================================
+  # Phase 3: Application Layer - Ports & Use Cases
+  # ============================================================
+
+  - id: "task-13"
+    phaseId: "phase-3"
+    title: "Define infrastructure port interfaces"
+    description: >
+      Create 5 port interfaces: IK3dService (createCluster, deleteCluster, startCluster,
+      stopCluster, getClusterStatus, getKubeconfig), IKubectlService (apply, applyStdin,
+      getNamespaces, getPods, getServices, waitForReady), IArgoCDService (install, getStatus,
+      createApp, syncApp), IDockerHealthService (isAvailable), IClusterAgentProcessService
+      (spawn, isRunning, kill).
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "IK3dService interface with 6 methods defined"
+      - "IKubectlService interface with 6 methods defined"
+      - "IArgoCDService interface with 4 methods defined"
+      - "IDockerHealthService interface with isAvailable method defined"
+      - "IClusterAgentProcessService interface with spawn/isRunning/kill methods defined"
+      - "All methods return Promise<T> with domain-typed inputs and outputs"
+    tdd: null
+    estimatedEffort: "30min"
+
+  - id: "task-14"
+    phaseId: "phase-3"
+    title: "Define cluster use case types"
+    description: >
+      Create packages/core/src/application/use-cases/clusters/types.ts with input/output
+      types for all 12 use cases: CreateClusterInput, CreateClusterResult, UpdateClusterInput,
+      LinkEntityInput, ClusterStatusResult, etc.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "All input/output types defined for 12 use cases"
+      - "Types use domain entities (Cluster, ClusterStatus) not raw primitives"
+      - "Optional fields are properly marked"
+    tdd: null
+    estimatedEffort: "20min"
+
+  - id: "task-15"
+    phaseId: "phase-3"
+    title: "Implement CRUD use cases (Create, Get, List, Update, Delete)"
+    description: >
+      Implement the 5 core CRUD use cases for clusters. CreateClusterUseCase generates UUID
+      and slug, sets Stopped status. GetClusterUseCase retrieves by ID. ListClustersUseCase
+      supports optional status filter. UpdateClusterUseCase regenerates slug on name change.
+      DeleteClusterUseCase soft-deletes, destroying first if status is Ready or Error.
+    state: "Todo"
+    dependencies:
+      - "task-11"
+      - "task-13"
+      - "task-14"
+    acceptanceCriteria:
+      - "CreateClusterUseCase creates cluster with Stopped status and generated slug"
+      - "GetClusterUseCase returns cluster by ID or null"
+      - "ListClustersUseCase returns all clusters, optionally filtered by status"
+      - "UpdateClusterUseCase updates fields and regenerates slug on name change"
+      - "DeleteClusterUseCase soft-deletes; if status is Ready/Error, calls destroy first"
+      - "All use cases are @injectable with @inject dependencies"
+      - "Unit tests with mocked IClusterRepository pass"
+    tdd:
+      red:
+        - "Write test: CreateClusterUseCase.execute({name}) calls repo.create with Stopped status, generated UUID, slug"
+        - "Write test: GetClusterUseCase.execute(id) calls repo.findById and returns result"
+        - "Write test: ListClustersUseCase.execute() calls repo.list; with status filter calls repo.list(status)"
+        - "Write test: UpdateClusterUseCase.execute({id, name}) calls repo.update with new slug when name changes"
+        - "Write test: DeleteClusterUseCase.execute(id) on Ready cluster calls destroy then softDelete"
+        - "Write test: DeleteClusterUseCase.execute(id) on Stopped cluster calls softDelete directly"
+      green:
+        - "Implement 5 use cases with @injectable/@inject decorators following existing pattern"
+      refactor:
+        - "Extract shared cluster lookup logic to a private helper method if repeated"
+    estimatedEffort: "2h"
+
+  - id: "task-16"
+    phaseId: "phase-3"
+    title: "Implement link/unlink use cases (4 use cases)"
+    description: >
+      Implement LinkRepositoryUseCase, UnlinkRepositoryUseCase, LinkApplicationUseCase,
+      UnlinkApplicationUseCase. Each validates that both entities exist before
+      creating/removing the junction record.
+    state: "Todo"
+    dependencies:
+      - "task-11"
+      - "task-14"
+    acceptanceCriteria:
+      - "LinkRepositoryUseCase validates cluster and repository exist, then creates junction record"
+      - "UnlinkRepositoryUseCase removes junction record"
+      - "LinkApplicationUseCase validates cluster and application exist, then creates junction record"
+      - "UnlinkApplicationUseCase removes junction record"
+      - "All throw descriptive errors when entities not found"
+      - "Unit tests with mocked repos pass"
+    tdd:
+      red:
+        - "Write test: LinkRepositoryUseCase.execute({clusterId, repositoryId}) calls repo.linkRepository after verifying both exist"
+        - "Write test: LinkRepositoryUseCase.execute with non-existent cluster throws error"
+        - "Write test: UnlinkRepositoryUseCase.execute calls repo.unlinkRepository"
+        - "Write test: LinkApplicationUseCase and UnlinkApplicationUseCase mirror the repository pattern"
+      green:
+        - "Implement 4 use cases with existence validation and junction table operations"
+      refactor:
+        - "Extract entity existence validation to shared helper if pattern repeats"
+    estimatedEffort: "1h"
+
+  - id: "task-17"
+    phaseId: "phase-3"
+    title: "Implement ProvisionClusterUseCase"
+    description: >
+      Implements the provisioning workflow: validates cluster is in Stopped or Error status,
+      transitions to Provisioning, spawns the cluster agent worker process via
+      IClusterAgentProcessService. The worker handles the actual k3d provisioning.
+    state: "Todo"
+    dependencies:
+      - "task-11"
+      - "task-13"
+      - "task-14"
+    acceptanceCriteria:
+      - "Validates cluster exists and is in Stopped or Error status"
+      - "Transitions cluster status to Provisioning via repo.update"
+      - "Spawns cluster agent worker via IClusterAgentProcessService.spawn"
+      - "Returns immediately (non-blocking) - worker runs in background"
+      - "Throws error if cluster is in non-provisionable state"
+      - "Unit test with mocked dependencies passes"
+    tdd:
+      red:
+        - "Write test: execute(id) on Stopped cluster updates status to Provisioning and calls processService.spawn"
+        - "Write test: execute(id) on Ready cluster throws invalid state error"
+        - "Write test: execute(id) on Error cluster succeeds (retry allowed)"
+      green:
+        - "Implement ProvisionClusterUseCase with status validation and worker spawn"
+      refactor:
+        - "Define a set of provisionable states as a constant for reuse"
+    estimatedEffort: "45min"
+
+  - id: "task-18"
+    phaseId: "phase-3"
+    title: "Implement DestroyClusterUseCase"
+    description: >
+      Transitions cluster to Destroying status, calls IK3dService.deleteCluster to tear down
+      the k3d cluster, cleans up kubeconfig file, unlinks all repositories and applications,
+      transitions to Stopped on success or Error on failure. Must be idempotent (safe to call
+      on already-destroyed clusters).
+    state: "Todo"
+    dependencies:
+      - "task-11"
+      - "task-13"
+      - "task-14"
+    acceptanceCriteria:
+      - "Transitions cluster status to Destroying"
+      - "Calls IK3dService.deleteCluster"
+      - "Removes kubeconfig file from disk"
+      - "Unlinks all repositories and applications via junction table"
+      - "Transitions to Stopped on success, Error on failure"
+      - "Idempotent: calling on already-Stopped cluster is a no-op"
+      - "Unit test with mocked dependencies passes"
+    tdd:
+      red:
+        - "Write test: execute(id) on Ready cluster transitions to Destroying, calls k3d.deleteCluster, transitions to Stopped"
+        - "Write test: execute(id) on Stopped cluster is a no-op (returns without error)"
+        - "Write test: execute(id) when k3d.deleteCluster throws transitions to Error with error message"
+        - "Write test: execute(id) unlinks all repositories and applications"
+      green:
+        - "Implement DestroyClusterUseCase with status transitions and idempotency"
+      refactor:
+        - "Ensure cleanup runs even when k3d.deleteCluster fails (kubeconfig + junction cleanup in finally block)"
+    estimatedEffort: "1h"
+
+  - id: "task-19"
+    phaseId: "phase-3"
+    title: "Implement GetClusterStatusUseCase"
+    description: >
+      Returns enriched cluster status including current entity status, k3d health (if running),
+      pod count, service count, and ArgoCD sync state (if enabled). Delegates to infrastructure
+      service ports for live data.
+    state: "Todo"
+    dependencies:
+      - "task-11"
+      - "task-13"
+      - "task-14"
+    acceptanceCriteria:
+      - "Returns cluster entity status as baseline"
+      - "If cluster is Ready, queries IKubectlService for pod/service counts"
+      - "If argoCdEnabled and Ready, queries IArgoCDService for sync state"
+      - "If cluster is not Ready, returns entity status without live queries"
+      - "Handles infrastructure service errors gracefully (returns stale data with error message)"
+      - "Unit test with mocked dependencies passes"
+    tdd:
+      red:
+        - "Write test: execute(id) on Ready cluster returns status with pod count and service count from kubectl"
+        - "Write test: execute(id) on Ready cluster with ArgoCD enabled includes ArgoCD sync state"
+        - "Write test: execute(id) on Stopped cluster returns entity status without live queries"
+        - "Write test: execute(id) when kubectl throws returns status with error message"
+      green:
+        - "Implement GetClusterStatusUseCase with conditional live queries"
+      refactor:
+        - "Define ClusterStatusResult type with clear optional fields for live data"
+    estimatedEffort: "45min"
+
+  # ============================================================
+  # Phase 4: Infrastructure Services
+  # ============================================================
+
+  - id: "task-20"
+    phaseId: "phase-4"
+    title: "Implement error classes (K3dError, KubectlError, DockerError)"
+    description: >
+      Create custom error classes with typed error codes for each infrastructure service.
+      K3dError with K3dErrorCode (BINARY_NOT_FOUND, CLUSTER_EXISTS, CLUSTER_NOT_FOUND,
+      COMMAND_FAILED, TIMEOUT). KubectlError with KubectlErrorCode. DockerError with
+      DockerErrorCode. All extend Error with name, code, and optional cause.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "K3dError class with K3dErrorCode enum (5 codes)"
+      - "KubectlError class with KubectlErrorCode enum"
+      - "DockerError class with DockerErrorCode enum (DAEMON_NOT_RUNNING, BINARY_NOT_FOUND)"
+      - "All errors extend Error with name, code, cause properties"
+      - "Unit tests verify error construction and code assignment"
+    tdd:
+      red:
+        - "Write test: new K3dError(K3dErrorCode.BINARY_NOT_FOUND, message) has correct name, code, message"
+        - "Write test: K3dError with cause preserves original error"
+      green:
+        - "Implement 3 error classes following WorktreeError pattern"
+      refactor:
+        - "Ensure error names are descriptive for logging (K3dError, not Error)"
+    estimatedEffort: "30min"
+
+  - id: "task-21"
+    phaseId: "phase-4"
+    title: "Implement DockerHealthService"
+    description: >
+      Implement IDockerHealthService wrapping docker info via execFile. Returns boolean
+      indicating Docker daemon availability. Detects both missing binary and stopped daemon.
+    state: "Todo"
+    dependencies:
+      - "task-13"
+      - "task-20"
+    acceptanceCriteria:
+      - "isAvailable() returns true when docker info succeeds"
+      - "isAvailable() returns false when docker binary not found (ENOENT)"
+      - "isAvailable() returns false when Docker daemon not running (non-zero exit)"
+      - "@injectable() with @inject('ExecFunction')"
+      - "Unit test with mocked execFile passes"
+    tdd:
+      red:
+        - "Write test: isAvailable returns true when execFile resolves successfully"
+        - "Write test: isAvailable returns false when execFile rejects with ENOENT"
+        - "Write test: isAvailable returns false when execFile rejects with non-zero exit"
+      green:
+        - "Implement DockerHealthService with execFile('docker', ['info']) call"
+      refactor:
+        - "Add timeout parameter to prevent hanging on unresponsive Docker daemon"
+    estimatedEffort: "30min"
+
+  - id: "task-22"
+    phaseId: "phase-4"
+    title: "Implement K3dService"
+    description: >
+      Implement IK3dService wrapping k3d CLI via execFile. Methods: createCluster (with --no-lb
+      --wait flags), deleteCluster, startCluster, stopCluster, getClusterStatus, getKubeconfig.
+      Binary availability detection. Typed error handling via K3dError.
+    state: "Todo"
+    dependencies:
+      - "task-13"
+      - "task-20"
+    acceptanceCriteria:
+      - "createCluster calls k3d cluster create with --no-lb --wait flags"
+      - "deleteCluster calls k3d cluster delete with --no-wait flag"
+      - "getKubeconfig calls k3d kubeconfig get and returns kubeconfig content"
+      - "Binary not found triggers K3dError(BINARY_NOT_FOUND)"
+      - "Cluster already exists triggers K3dError(CLUSTER_EXISTS)"
+      - "@injectable() with @inject('ExecFunction')"
+      - "Unit tests with mocked execFile pass all methods"
+    tdd:
+      red:
+        - "Write test: createCluster calls execFile with ['cluster', 'create', name, '--no-lb', '--wait']"
+        - "Write test: deleteCluster calls execFile with ['cluster', 'delete', name]"
+        - "Write test: getKubeconfig returns stdout from execFile"
+        - "Write test: createCluster with ENOENT throws K3dError(BINARY_NOT_FOUND)"
+        - "Write test: createCluster with 'already exists' stderr throws K3dError(CLUSTER_EXISTS)"
+      green:
+        - "Implement K3dService with all 6 methods, error parsing from stderr patterns"
+      refactor:
+        - "Extract stderr pattern matching to a private parseError method"
+    estimatedEffort: "1.5h"
+
+  - id: "task-23"
+    phaseId: "phase-4"
+    title: "Implement KubectlService"
+    description: >
+      Implement IKubectlService wrapping kubectl CLI via execFile. All methods accept
+      kubeconfigPath as first parameter (--kubeconfig flag). Methods: apply, applyStdin,
+      getNamespaces, getPods, getServices, waitForReady. Uses -o json for machine-readable
+      output.
+    state: "Todo"
+    dependencies:
+      - "task-13"
+      - "task-20"
+    acceptanceCriteria:
+      - "All methods pass --kubeconfig flag (never modify global kubeconfig)"
+      - "apply calls kubectl apply -f <path> --kubeconfig <path>"
+      - "getPods calls kubectl get pods -n <ns> -o json and parses result"
+      - "waitForReady polls with exponential backoff up to timeout"
+      - "@injectable() with @inject('ExecFunction')"
+      - "Unit tests with mocked execFile pass"
+    tdd:
+      red:
+        - "Write test: apply calls execFile with ['apply', '-f', manifestPath, '--kubeconfig', kubeconfigPath]"
+        - "Write test: getPods parses JSON output and returns pod list"
+        - "Write test: waitForReady retries with backoff until resource is ready"
+        - "Write test: waitForReady throws KubectlError(TIMEOUT) after max wait"
+      green:
+        - "Implement KubectlService with all 6 methods"
+      refactor:
+        - "Extract JSON parsing to helper, ensure -o json flag used consistently"
+    estimatedEffort: "1.5h"
+
+  - id: "task-24"
+    phaseId: "phase-4"
+    title: "Implement ArgoCDService"
+    description: >
+      Implement IArgoCDService using kubectl (not argocd binary) to install and manage ArgoCD.
+      install() applies official ArgoCD manifests via kubectl apply. getStatus() checks ArgoCD
+      pods in specified namespace. createApp() and syncApp() use kubectl to create ArgoCD
+      Application resources.
+    state: "Todo"
+    dependencies:
+      - "task-13"
+      - "task-20"
+    acceptanceCriteria:
+      - "install() uses kubectl apply -f for official ArgoCD install manifests"
+      - "getStatus() checks pod readiness in ArgoCD namespace"
+      - "createApp() creates an ArgoCD Application custom resource via kubectl apply"
+      - "syncApp() annotates the Application resource to trigger sync"
+      - "No dependency on argocd CLI binary"
+      - "Unit tests with mocked execFile pass"
+    tdd:
+      red:
+        - "Write test: install calls execFile kubectl apply with ArgoCD manifest URL"
+        - "Write test: getStatus calls getPods for argocd namespace and returns readiness"
+        - "Write test: createApp generates Application YAML and applies via kubectl"
+      green:
+        - "Implement ArgoCDService using kubectl for all operations"
+      refactor:
+        - "Extract ArgoCD manifest URL to a constant"
+    estimatedEffort: "1h"
+
+  - id: "task-25"
+    phaseId: "phase-4"
+    title: "Implement ClusterAgentProcessService"
+    description: >
+      Implement IClusterAgentProcessService following the IFeatureAgentProcessService pattern.
+      spawn() launches cluster-agent-worker.ts as a detached Node.js process with CLI args
+      (--cluster-id, --run-id). isRunning() checks PID liveness. kill() sends SIGTERM.
+    state: "Todo"
+    dependencies:
+      - "task-13"
+    acceptanceCriteria:
+      - "spawn() launches detached child process with cluster-agent-worker.ts entry point"
+      - "spawn() passes --cluster-id and --run-id as CLI args"
+      - "isRunning() checks PID liveness via process signals"
+      - "kill() sends SIGTERM to the worker process"
+      - "@injectable() with DI dependencies"
+      - "Unit tests with mocked child_process pass"
+    tdd:
+      red:
+        - "Write test: spawn calls child_process.fork with correct script path and args"
+        - "Write test: isRunning returns true for live PID, false for dead PID"
+      green:
+        - "Implement ClusterAgentProcessService following feature-agent-process.service.ts"
+      refactor:
+        - "Ensure worker script path resolution works from both dev and packaged contexts"
+    estimatedEffort: "45min"
+
+  # ============================================================
+  # Phase 5: Cluster Agent Graph & Worker
+  # ============================================================
+
+  - id: "task-26"
+    phaseId: "phase-5"
+    title: "Define cluster agent state and annotation"
+    description: >
+      Create ClusterAgentAnnotation with typed state channels: clusterId, clusterName, status,
+      kubeconfigPath, argoCdEnabled, argoCdNamespace, currentNode, error, completedPhases
+      (with accumulator reducer). Define ClusterAgentState type.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "ClusterAgentAnnotation defines all state channels with correct types"
+      - "completedPhases uses accumulator reducer (append, not replace)"
+      - "ClusterAgentState type exported for node and graph use"
+      - "currentNode tracks the active graph node name"
+    tdd:
+      red:
+        - "Write test: state annotation initializes with correct default values"
+        - "Write test: completedPhases accumulator appends new phases"
+      green:
+        - "Create cluster-agent-state.ts with Annotation.Root and state channels"
+      refactor:
+        - "Ensure channel names follow the feature-agent-state naming convention"
+    estimatedEffort: "30min"
+
+  - id: "task-27"
+    phaseId: "phase-5"
+    title: "Implement cluster agent graph nodes"
+    description: >
+      Implement 7 node factories: createPrerequisiteCheckNode (verify Docker + k3d),
+      createProvisionNode (k3d cluster create), createConfigureKubectlNode (extract kubeconfig),
+      createInstallArgoCdNode (conditional ArgoCD install), createHealthCheckNode (exponential
+      backoff verification), createReadyNode (update DB status), createErrorNode (update status
+      to Error). Each node reads from and writes to the typed state.
+    state: "Todo"
+    dependencies:
+      - "task-13"
+      - "task-26"
+    acceptanceCriteria:
+      - "prerequisite-check verifies Docker running and k3d available via port services"
+      - "provision calls IK3dService.createCluster and waits for completion"
+      - "configure-kubectl extracts kubeconfig via IK3dService.getKubeconfig and writes to disk"
+      - "install-argocd conditionally installs ArgoCD via IArgoCDService.install"
+      - "health-check polls with exponential backoff (1s, 2s, 4s, 8s) up to 120s"
+      - "ready updates cluster status to Ready in DB"
+      - "error updates cluster status to Error with error message"
+      - "Each node marks its phase complete in completedPhases"
+      - "Unit tests with mocked dependencies pass for prerequisite-check, provision, health-check"
+    tdd:
+      red:
+        - "Write test: prerequisite-check node returns error state when Docker not available"
+        - "Write test: prerequisite-check node passes when both Docker and k3d available"
+        - "Write test: provision node calls k3d.createCluster and updates state with k3d cluster name"
+        - "Write test: health-check node retries with backoff until kubectl returns ready"
+        - "Write test: health-check node transitions to error after timeout"
+      green:
+        - "Implement 7 node factories accepting deps and returning async node functions"
+      refactor:
+        - "Extract exponential backoff utility if not already available in the codebase"
+    estimatedEffort: "3h"
+
+  - id: "task-28"
+    phaseId: "phase-5"
+    title: "Assemble cluster agent graph"
+    description: >
+      Create createClusterAgentGraph factory that wires nodes into a StateGraph with edges:
+      START -> prerequisite-check -> provision -> configure-kubectl -> conditional(install-argocd
+      or health-check) -> health-check -> ready -> END. Error edges from any node to error
+      terminal. Conditional edge based on argoCdEnabled state.
+    state: "Todo"
+    dependencies:
+      - "task-26"
+      - "task-27"
+    acceptanceCriteria:
+      - "Graph starts at prerequisite-check"
+      - "Linear flow: prerequisite-check -> provision -> configure-kubectl"
+      - "Conditional edge: if argoCdEnabled, route to install-argocd; else to health-check"
+      - "install-argocd flows to health-check"
+      - "health-check flows to ready"
+      - "ready flows to END"
+      - "Error from any node routes to error terminal"
+      - "Graph compiles successfully"
+      - "Unit test verifies graph traversal for both ArgoCD-enabled and disabled paths"
+    tdd:
+      red:
+        - "Write test: graph executes prerequisite-check -> provision -> configure-kubectl -> health-check -> ready when argoCdEnabled=false"
+        - "Write test: graph executes through install-argocd when argoCdEnabled=true"
+        - "Write test: graph routes to error node when provision throws"
+      green:
+        - "Implement createClusterAgentGraph with StateGraph, nodes, and conditional edges"
+      refactor:
+        - "Ensure graph factory accepts typed deps interface for testability"
+    estimatedEffort: "1.5h"
+
+  - id: "task-29"
+    phaseId: "phase-5"
+    title: "Implement cluster agent worker process"
+    description: >
+      Create cluster-agent-worker.ts as a detached Node.js entry point. Parses CLI args
+      (--cluster-id, --run-id, --resume), initializes DI container, resolves dependencies,
+      creates executor via IAgentExecutorProvider, creates graph, invokes with initial state.
+      Heartbeat system (30s interval), status tracking, error handlers for uncaughtException,
+      unhandledRejection, SIGTERM.
+    state: "Todo"
+    dependencies:
+      - "task-25"
+      - "task-28"
+    acceptanceCriteria:
+      - "Worker parses --cluster-id, --run-id, --resume CLI args"
+      - "Worker imports reflect-metadata first"
+      - "Worker calls initializeContainer() and resolves all dependencies"
+      - "Worker creates executor via IAgentExecutorProvider (agent-agnostic)"
+      - "Worker creates graph with createClusterAgentGraph"
+      - "Heartbeat system updates DB every 30s"
+      - "Error handlers catch uncaughtException, unhandledRejection, SIGTERM"
+      - "Resume flag deletes stale checkpoint DB and starts fresh"
+    tdd:
+      red:
+        - "Write test: worker parses CLI args correctly"
+        - "Write test: worker initializes container and resolves required dependencies"
+      green:
+        - "Implement cluster-agent-worker.ts following feature-agent-worker.ts pattern"
+      refactor:
+        - "Ensure heartbeat interval is cleared on process exit"
+    estimatedEffort: "1.5h"
+
+  # ============================================================
+  # Phase 6: Feature Flag Wiring & DI Registration
+  # ============================================================
+
+  - id: "task-30"
+    phaseId: "phase-6"
+    title: "Wire clusters feature flag through all layers"
+    description: >
+      Complete the 11-step LESSONS.md feature flag checklist. Steps 1-2 done in phase 1
+      (TypeSpec + codegen), step 3 done in phase 2 (migration). This task covers steps 4-11:
+      settings mapper (SettingsRow + toDatabase + fromDatabase), settings repository (INSERT +
+      VALUES + UPDATE), settings defaults factory, feature-flags.ts (FeatureFlagsState + DB
+      branch + env fallback), settings page toggle (SwitchRow), translations in all 9 locales,
+      UI gating (sidebar, canvas, drawers), and fixture updates across 15+ files.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+      - "task-9"
+    acceptanceCriteria:
+      - "SettingsRow has feature_flag_clusters: number"
+      - "toDatabase maps featureFlags.clusters to feature_flag_clusters (0/1)"
+      - "fromDatabase maps feature_flag_clusters to clusters boolean"
+      - "Settings repository INSERT/UPDATE SQL includes feature_flag_clusters"
+      - "Settings defaults factory includes clusters: false"
+      - "FeatureFlagsState interface includes clusters: boolean"
+      - "feature-flags.ts DB branch and env fallback include clusters"
+      - "Settings page has SwitchRow for clusters toggle"
+      - "Translation strings exist in all 9 locales for flag label and description"
+      - "All FeatureFlags fixtures updated (15+ files per LESSONS.md)"
+      - "pnpm typecheck passes with zero errors"
+    tdd:
+      red:
+        - "Write test: settings mapper round-trip preserves clusters=true flag"
+        - "Write test: settings defaults factory includes clusters: false"
+        - "Write test: settings repository integration test creates settings with clusters=true and reads back correctly"
+      green:
+        - "Update all files per the 11-step checklist"
+      refactor:
+        - "Run pnpm typecheck to verify all FeatureFlags type references are updated"
+    estimatedEffort: "2h"
+
+  - id: "task-31"
+    phaseId: "phase-6"
+    title: "Create DI registration module and wire container"
+    description: >
+      Create register-cluster.ts DI module that registers: IClusterRepository (useFactory with
+      Database injection), IK3dService, IKubectlService, IArgoCDService, IDockerHealthService
+      (all useFactory with ExecFunction), IClusterAgentProcessService, and all 12 use cases via
+      registerSingleton. Add string token aliases for web-accessible use cases in container.ts.
+      Call registerCluster() from initializeContainer().
+    state: "Todo"
+    dependencies:
+      - "task-12"
+      - "task-15"
+      - "task-16"
+      - "task-17"
+      - "task-18"
+      - "task-19"
+      - "task-21"
+      - "task-22"
+      - "task-23"
+      - "task-24"
+      - "task-25"
+    acceptanceCriteria:
+      - "register-cluster.ts registers all cluster components"
+      - "IClusterRepository registered with useFactory injecting Database"
+      - "Infrastructure services registered with useFactory injecting ExecFunction"
+      - "All 12 use cases registered via registerSingleton"
+      - "String token aliases added for web-accessible use cases in container.ts"
+      - "registerCluster() called from initializeContainer()"
+      - "Container resolves all cluster tokens without errors"
+    tdd:
+      red:
+        - "Write test: container.resolve('IClusterRepository') returns SQLiteClusterRepository instance"
+        - "Write test: container.resolve('CreateClusterUseCase') returns use case instance (string token)"
+      green:
+        - "Create register-cluster.ts, add string aliases to container.ts, call from initializeContainer"
+      refactor:
+        - "Verify registration order follows dependency graph (repos before services before use cases)"
+    estimatedEffort: "1h"
+
+  # ============================================================
+  # Phase 7: CLI Commands
+  # ============================================================
+
+  - id: "task-32"
+    phaseId: "phase-7"
+    title: "Implement cluster CLI command group (7 subcommands)"
+    description: >
+      Create the cluster Commander command group with subcommands: new (create cluster with
+      --argocd and --provision flags), ls (list clusters), show (display details), del (delete
+      with confirmation), link (link repo or app), unlink (unlink repo or app), status (live
+      status). Each resolves use cases from DI, uses i18n, formats output with shared UI module.
+    state: "Todo"
+    dependencies:
+      - "task-15"
+      - "task-16"
+      - "task-17"
+      - "task-18"
+      - "task-19"
+      - "task-31"
+    acceptanceCriteria:
+      - "createClusterCommand() returns Commander command group"
+      - "shep cluster new <name> creates cluster, --argocd enables ArgoCD, --provision starts provisioning"
+      - "shep cluster ls displays table with status, name, linked repo/app counts"
+      - "shep cluster show <id-or-slug> displays full details"
+      - "shep cluster del <id-or-slug> prompts confirmation and deletes"
+      - "shep cluster link <cluster> <entity> auto-detects entity type and links"
+      - "shep cluster unlink <cluster> <entity> unlinks"
+      - "shep cluster status <id-or-slug> shows live status"
+      - "All strings use i18n tokens"
+      - "Command group registered in program.ts"
+      - "Unit tests for new, ls, del mock use cases"
+    tdd:
+      red:
+        - "Write test: new command calls CreateClusterUseCase.execute with name and options"
+        - "Write test: ls command calls ListClustersUseCase.execute and formats output"
+        - "Write test: del command calls DeleteClusterUseCase.execute after confirmation"
+      green:
+        - "Implement all 7 command files, index.ts factory, register in program.ts"
+      refactor:
+        - "Extract shared cluster resolution logic (by ID or slug) to a helper"
+    estimatedEffort: "2h"
+
+  # ============================================================
+  # Phase 8: Web UI Components & Canvas Integration
+  # ============================================================
+
+  - id: "task-33"
+    phaseId: "phase-8"
+    title: "Implement ClusterStatusBadge component"
+    description: >
+      Create a reusable status badge component that maps ClusterStatus to color and label.
+      Colors: Provisioning (blue/pulse), Ready (green), Stopping (yellow), Stopped (gray),
+      Error (red), Destroying (orange). Uses both color and text for accessibility.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "ClusterStatusBadge renders correct color and text for each ClusterStatus value"
+      - "Uses both color and text for color-blind accessibility (NFR-11)"
+      - "Provisioning state has pulse animation"
+      - "Component is i18n-aware (translated status labels)"
+      - "Colocated .stories.tsx with all 6 status variants"
+    tdd:
+      red:
+        - "Write test: renders green badge with 'Ready' text for Ready status"
+        - "Write test: renders red badge with 'Error' text for Error status"
+        - "Write test: renders blue badge with pulse animation for Provisioning status"
+      green:
+        - "Implement ClusterStatusBadge with status-to-style mapping"
+      refactor:
+        - "Extract status color map to cluster-node-config.ts for reuse"
+    estimatedEffort: "30min"
+
+  - id: "task-34"
+    phaseId: "phase-8"
+    title: "Implement ClusterNode canvas component"
+    description: >
+      Create ClusterNode for the React Flow canvas showing cluster name, status badge, linked
+      repo count, and linked app count. Includes source and target Handles for edge connections.
+      RTL-aware positioning.
+    state: "Todo"
+    dependencies:
+      - "task-33"
+    acceptanceCriteria:
+      - "ClusterNode renders on React Flow canvas with Handle components"
+      - "Displays cluster name, ClusterStatusBadge, linked repo/app counts"
+      - "Source and target handles for edge connections"
+      - "RTL-aware handle positioning (i18n.dir())"
+      - "Colocated .stories.tsx with Default, Ready, Error, and Provisioning variants"
+      - "ClusterNodeData type defined in cluster-node-config.ts"
+    tdd:
+      red:
+        - "Write test: ClusterNode renders name and status badge"
+        - "Write test: ClusterNode renders linked repo and app counts"
+        - "Write test: ClusterNode has source and target Handle components"
+      green:
+        - "Implement ClusterNode following application-node pattern"
+      refactor:
+        - "Ensure consistent styling with other canvas node components"
+    estimatedEffort: "45min"
+
+  - id: "task-35"
+    phaseId: "phase-8"
+    title: "Implement ClusterCreateDrawer and ClusterDetailDrawer"
+    description: >
+      ClusterCreateDrawer with fields: name (required), description (optional), ArgoCD enabled
+      toggle, and Create & Provision action button. ClusterDetailDrawer with tabs: Overview
+      (status, name, description, kubeconfig path, timestamps), Repositories (linked repos
+      with link/unlink), Applications (linked apps with link/unlink), Status (live pods/services).
+    state: "Todo"
+    dependencies:
+      - "task-33"
+    acceptanceCriteria:
+      - "ClusterCreateDrawer renders name input, description textarea, ArgoCD toggle"
+      - "Create & Provision button calls server action"
+      - "ClusterDetailDrawer has 4 tabs: Overview, Repositories, Applications, Status"
+      - "Overview tab shows cluster details with ClusterStatusBadge"
+      - "Repositories tab lists linked repos with unlink action"
+      - "Status tab shows live pod list when cluster is Ready"
+      - "Both drawers have colocated .stories.tsx files"
+    tdd:
+      red:
+        - "Write test: ClusterCreateDrawer renders all form fields"
+        - "Write test: ClusterDetailDrawer renders 4 tabs"
+        - "Write test: ClusterDetailDrawer Overview tab shows cluster name and status"
+      green:
+        - "Implement both drawers following existing drawer patterns"
+      refactor:
+        - "Extract shared tab component if not already available"
+    estimatedEffort: "2h"
+
+  - id: "task-36"
+    phaseId: "phase-8"
+    title: "Implement server actions, API routes, and SSE integration"
+    description: >
+      Create server actions for cluster CRUD, link/unlink, provision, destroy. Create API routes
+      following existing pattern with string-token DI resolution and reflect-metadata imports.
+      Add cluster status change events to the SSE agent-events pipeline. Create useClusterEvents
+      hook for real-time status updates in the web UI.
+    state: "Todo"
+    dependencies:
+      - "task-31"
+    acceptanceCriteria:
+      - "Server actions call corresponding use cases via resolve<T>('StringToken')"
+      - "API routes follow existing pattern with reflect-metadata import"
+      - "SSE pipeline picks up cluster status changes"
+      - "useClusterEvents hook subscribes to cluster events"
+      - "All API routes return proper HTTP status codes and error responses"
+    tdd:
+      red:
+        - "Write test: create server action calls CreateClusterUseCase and returns cluster"
+        - "Write test: provision server action calls ProvisionClusterUseCase"
+        - "Write test: API route resolves use case by string token"
+      green:
+        - "Implement server actions, API routes, SSE event type, and hook"
+      refactor:
+        - "Ensure consistent error-to-HTTP mapping across all routes"
+    estimatedEffort: "2h"
+
+  - id: "task-37"
+    phaseId: "phase-8"
+    title: "Integrate clusters into canvas and sidebar"
+    description: >
+      Update deriveGraph to accept clusterMap parameter, create cluster nodes, and derive edges
+      from junction table data (cluster-to-repo links become canvas edges). Add Clusters
+      navigation item to sidebar gated by featureFlags.clusters. Wire canvas callbacks for
+      cluster node click (opens ClusterDetailDrawer) and cluster create (opens ClusterCreateDrawer).
+    state: "Todo"
+    dependencies:
+      - "task-30"
+      - "task-34"
+      - "task-35"
+      - "task-36"
+    acceptanceCriteria:
+      - "deriveGraph accepts optional clusterMap and produces cluster nodes"
+      - "Edges derived from cluster-repository junction data"
+      - "Cluster nodes positioned as deployment targets on canvas"
+      - "Sidebar has Clusters nav item gated by featureFlags.clusters"
+      - "Clicking cluster node opens ClusterDetailDrawer"
+      - "Canvas create action includes cluster option"
+    tdd:
+      red:
+        - "Write test: deriveGraph with clusterMap produces cluster nodes"
+        - "Write test: deriveGraph creates edges between cluster and linked repo nodes"
+        - "Write test: sidebar renders Clusters item when flag is true, hides when false"
+      green:
+        - "Update deriveGraph, sidebar, and canvas callbacks"
+      refactor:
+        - "Ensure cluster node positioning does not overlap with existing nodes"
+    estimatedEffort: "2h"
+
+  # ============================================================
+  # Phase 9: i18n & Final Verification
+  # ============================================================
+
+  - id: "task-38"
+    phaseId: "phase-9"
+    title: "Add i18n translations for all 9 locales"
+    description: >
+      Add translation strings for all cluster UI elements in both cli.json and web.json across
+      en, ar, es, de, fr, he, pt, uk, ru. Keys: sidebar nav, create drawer fields, detail
+      drawer tabs, status labels (6), action buttons, empty states, error messages, CLI command
+      descriptions.
+    state: "Todo"
+    dependencies:
+      - "task-32"
+      - "task-37"
+    acceptanceCriteria:
+      - "English translations complete and contextually accurate"
+      - "All 8 non-English locales have translations for every key"
+      - "CLI command descriptions in cli.json"
+      - "Web UI labels in web.json"
+      - "Status labels translated for all 6 ClusterStatus values"
+      - "No raw key paths visible in UI"
+    tdd: null
+    estimatedEffort: "1.5h"
+
+  - id: "task-39"
+    phaseId: "phase-9"
+    title: "Final validation pass"
+    description: >
+      Run the complete validation suite: pnpm lint:fix, pnpm format:check, pnpm typecheck,
+      pnpm tsp:compile, pnpm test:unit, pnpm test:int, pnpm build. Fix any failures. Verify
+      settings page renders clusters toggle. Verify sidebar shows/hides Clusters item based
+      on flag.
+    state: "Todo"
+    dependencies:
+      - "task-38"
+    acceptanceCriteria:
+      - "pnpm lint passes"
+      - "pnpm format:check passes"
+      - "pnpm typecheck passes with zero errors"
+      - "pnpm tsp:compile succeeds"
+      - "pnpm test:unit passes with zero failures"
+      - "pnpm test:int passes with zero failures"
+      - "pnpm build succeeds"
+    tdd: null
+    estimatedEffort: "1h"
+
+totalEstimate: "32h"
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  The implementation is organized into 39 tasks across 9 phases, totaling approximately 32 hours
+  of work. The build follows a strict bottom-up, layer-by-layer approach through the clean
+  architecture:
+
+  First, the TypeSpec domain models are defined (Cluster entity, ClusterStatus enum, junction
+  entities, feature flag), establishing the type foundation. Then the persistence layer is built
+  (4 migrations, mapper, repository) with integration tests against in-memory SQLite. Next,
+  the application layer defines port interfaces and implements 12 use cases, each unit-tested
+  with mocked dependencies.
+
+  Infrastructure services (k3d, kubectl, ArgoCD, Docker health) are implemented as execFile CLI
+  wrappers with typed error classes. The cluster agent builds on these services with a LangGraph
+  state machine (6 nodes) and a detached worker process following the feature-agent pattern.
+
+  Feature flag wiring touches all 11 layers per the LESSONS.md checklist, and the DI container
+  gets a new register-cluster.ts module. CLI commands expose the use case API through 7
+  subcommands. Web UI components (ClusterNode, drawers, status badge) integrate with the
+  React Flow canvas via deriveGraph, with server actions, API routes, and SSE events for
+  real-time updates.
+
+  Finally, i18n translations are added across all 9 locales, and a full validation pass
+  confirms zero regressions across lint, typecheck, tests, and build.
+
+  Each phase depends only on prior phases, minimizing rework. TDD cycles (RED-GREEN-REFACTOR)
+  are defined for every code task to ensure correctness from the start.
