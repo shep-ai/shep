@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import type { Monaco } from '@monaco-editor/react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Eye, FileCode, File as FileIcon, PanelRight, X } from 'lucide-react';
@@ -130,6 +131,36 @@ export function EditorPane({
     [active, onChange]
   );
 
+  // Monaco's in-browser TS language service has no project graph (no
+  // tsconfig, no node_modules), so every `import` in a .ts/.tsx file would
+  // otherwise render as a red "Cannot find module" squiggle. Disable
+  // semantic validation — we still surface real syntax errors — so the
+  // preview matches what the file actually looks like on disk.
+  const handleBeforeMount = useCallback((monaco: Monaco) => {
+    const ts = monaco.languages.typescript;
+    const compilerOptions = {
+      target: ts.ScriptTarget.Latest,
+      module: ts.ModuleKind.ESNext,
+      moduleResolution: ts.ModuleResolutionKind.NodeJs,
+      jsx: ts.JsxEmit.Preserve,
+      allowJs: true,
+      allowNonTsExtensions: true,
+      esModuleInterop: true,
+      isolatedModules: true,
+      noEmit: true,
+      skipLibCheck: true,
+    };
+    ts.typescriptDefaults.setCompilerOptions(compilerOptions);
+    ts.javascriptDefaults.setCompilerOptions(compilerOptions);
+
+    const diagnostics = {
+      noSemanticValidation: true,
+      noSyntaxValidation: false,
+    };
+    ts.typescriptDefaults.setDiagnosticsOptions(diagnostics);
+    ts.javascriptDefaults.setDiagnosticsOptions(diagnostics);
+  }, []);
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Tab strip */}
@@ -244,6 +275,7 @@ export function EditorPane({
               language={languageForPath(active.path)}
               value={active.content}
               onChange={handleChange}
+              beforeMount={handleBeforeMount}
               options={{
                 fontSize: 13,
                 minimap: { enabled: true },
