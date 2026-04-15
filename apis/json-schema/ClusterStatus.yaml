@@ -1,0 +1,11 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ClusterStatus.yaml
+type: string
+enum:
+  - Provisioning
+  - Ready
+  - Stopping
+  - Stopped
+  - Error
+  - Destroying
+description: Operational states for managed Kubernetes clusters

@@ -4432,6 +4432,14 @@ export enum DiagnosticStatus {
   Warn = 'warn',
   Fail = 'fail',
 }
+export enum ClusterStatus {
+  Provisioning = 'Provisioning',
+  Ready = 'Ready',
+  Stopping = 'Stopping',
+  Stopped = 'Stopped',
+  Error = 'Error',
+  Destroying = 'Destroying',
+}
 export enum AgentFeature {
   sessionResume = 'session-resume',
   streaming = 'streaming',
