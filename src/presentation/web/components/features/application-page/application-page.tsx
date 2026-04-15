@@ -6,7 +6,10 @@ import type { ChatState } from '@shepai/core/application/ports/output/services/i
 import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 
 import { ChatTab } from '@/components/features/chat/ChatTab';
-import type { ScaffoldingState } from '@/components/features/chat/ChatTab';
+import type {
+  ApplicationErrorState,
+  ScaffoldingState,
+} from '@/components/features/chat/ChatTab';
 import { APPLICATION_CREATION_PLACEHOLDER_STEPS } from '@/components/features/chat/workflow-placeholder';
 import { useCloudDeployAction } from '@/hooks/use-cloud-deploy-action';
 import { useDeployAction } from '@/hooks/use-deploy-action';
@@ -103,6 +106,24 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
           startedAt: new Date(application.createdAt).getTime(),
         };
 
+  // Derive a recovery-banner payload for ChatTab when the application
+  // is in a broken state. The server-side
+  // `application.status === Error` flag is the authoritative signal:
+  // the setup / build pipeline crashed, was logged, and the row was
+  // stamped. Without a visible banner the user would otherwise only
+  // see a red "ERROR" pill in the top bar with no explanation. The
+  // `/resume` endpoint re-runs the last failed step, so the banner
+  // is always retryable when we render it.
+  const applicationError: ApplicationErrorState | null =
+    application.status === ApplicationStatus.Error
+      ? {
+          kind: 'Setup failed',
+          message:
+            'The last setup run errored out before it could finish. Click Try again to re-run the failed step, or open the Smart Deploy activity log from the top bar to see what went wrong.',
+          retryable: true,
+        }
+      : null;
+
   return (
     <div className="bg-background flex h-dvh flex-col">
       <AppTopBar
@@ -129,6 +150,7 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
             onResumeWorkflow={() => {
               void fetch(`/api/applications/${application.id}/resume`, { method: 'POST' });
             }}
+            applicationError={applicationError}
             onAllStepsComplete={() => {
               // CRITICAL: only auto-deploy on the VERY FIRST completion
               // of the setup workflow. `application.setupComplete` is

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AssistantRuntimeProvider } from '@assistant-ui/react';
-import { Trash2, Cpu, User } from 'lucide-react';
+import { Trash2, Cpu, AlertTriangle, RefreshCw } from 'lucide-react';
 import type { ChatState } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
 import { cn } from '@/lib/utils';
 import { Thread } from '@/components/assistant-ui/thread';
@@ -14,7 +14,7 @@ import { useChatRuntime } from './useChatRuntime';
 import { ChatComposer } from './ChatComposer';
 import { InteractionBubble } from './InteractionBubble';
 import { StepTracker } from './StepTracker';
-import { TurnGroupList, useTurnGroups } from './turn-group-list';
+import { CurrentTurnCard, CompletedTurnGroupsList, useTurnGroupsView } from './turn-group-list';
 import { OperationBubble } from './operation-bubble';
 import type { PlaceholderStep } from './workflow-placeholder';
 import { SCAFFOLD_STEP_KEY } from './workflow-placeholder';
@@ -82,6 +82,14 @@ export interface ChatTabProps {
    * broader context.
    */
   scaffoldingState?: ScaffoldingState;
+  /**
+   * When truthy, renders a prominent error recovery banner above the
+   * turn card + step tracker. Used to surface `effectiveStatus`
+   * failures that would otherwise leave the user staring at a chat
+   * with a red status pill and no explanation. The `onRetry` prop
+   * wires a "Try again" button — typically `onResumeWorkflow`.
+   */
+  applicationError?: ApplicationErrorState | null;
 }
 
 /**
@@ -99,6 +107,15 @@ export interface ScaffoldingState {
   finishedAt?: number;
   /** Optional short error message to render inside the card body. */
   error?: string;
+}
+
+export interface ApplicationErrorState {
+  /** Short, human-readable kind: "Setup failed", "Interrupted", etc. */
+  kind: string;
+  /** Longer explanation shown below the headline. */
+  message: string;
+  /** True if the backend can re-run the failed pipeline. */
+  retryable: boolean;
 }
 
 const IS_DEV = process.env.NODE_ENV === 'development';
@@ -138,19 +155,19 @@ export function ChatTab({
   workflowPlaceholder,
   onResumeWorkflow,
   scaffoldingState,
+  applicationError,
 }: ChatTabProps) {
   const [overrideAgent, setOverrideAgent] = useState<string | undefined>(initialAgent);
   const [overrideModel, setOverrideModel] = useState<string | undefined>(initialModel);
   const [debugMode, setDebugMode] = useState(false);
   const att = useAttachments();
 
-  // Server-derived turn grouping (Feature B). Only applicable to
-  // application-scoped chats — repo / global threads keep the flat
-  // layout. `hiddenMessageIds` is handed to useChatRuntime so the
-  // raw bubbles that now live inside a collapsed group card are
-  // removed from the thread.
+  // Turn-group overlay is enabled for application-scoped chats.
+  // Groups are computed CLIENT-SIDE from `rawMessages` (see the
+  // `useTurnGroupsView` call below) so the view is always
+  // optimistic against the chat-state cache — no stale-query race
+  // window where the flat thread would briefly leak raw bubbles.
   const turnGroupsEnabled = Boolean(applicationId);
-  const { hiddenMessageIds } = useTurnGroups(turnGroupsEnabled ? featureId : '');
 
   const contentTransform = useCallback(
     (content: string) =>
@@ -170,7 +187,6 @@ export function ChatTab({
     pendingInteraction,
     respondToInteraction,
     stepProgress,
-    initialRequestMessage,
     rawMessages,
     streamingState,
   } = useChatRuntime(featureId, worktreePath, {
@@ -180,20 +196,26 @@ export function ChatTab({
     agentType: overrideAgent,
     debugMode,
     initialChatState,
-    // When the host provides a workflow placeholder we KNOW the tracker
-    // will be the primary surface and the first user message must be
-    // pinned ABOVE it — even during the early window before the first
-    // real workflow-step row arrives. Without this, the bubble would
-    // fall through to the flat thread and render below the tracker.
+    // Legacy pinInitialRequest flag is only relevant for the
+    // non-grouping path (repo/global chats with a workflow
+    // placeholder). When turn groups are on we take the full
+    // overlay path via `hideAllMessages` instead.
     pinInitialRequest: (workflowPlaceholder?.length ?? 0) > 0,
-    // Server-derived completed turns get pulled out of the flat
-    // thread and rendered as collapsed cards above the messages.
-    hiddenMessageIds,
-    // When grouping is on, the in-progress turn card owns the
-    // streaming indicator — suppress the flat-thread version so it
-    // doesn't appear twice.
+    // Full overlay path: hide ALL persisted bubbles from the flat
+    // thread and let the grouping layer own the entire visible
+    // conversation. The streaming indicator is pinned inside the
+    // in-progress turn card so we also suppress its flat version.
+    hideAllMessages: turnGroupsEnabled,
     suppressStreamingIndicator: turnGroupsEnabled,
   });
+
+  // Client-side turn grouping — re-runs synchronously on every
+  // `rawMessages` change, so a new user bubble or assistant reply
+  // is reflected in the overlay in the same render tick.
+  // Only mark the latest turn as in-progress while the agent is
+  // actually running — otherwise a finished conversation would
+  // leave a permanent "Working on your request…" fuchsia card.
+  const turnGroupsView = useTurnGroupsView(rawMessages, status.isRunning);
 
   // Fire the all-steps-complete callback exactly once per mount.
   // Using a ref (not a dependency) prevents re-firing if the parent
@@ -374,47 +396,69 @@ export function ChatTab({
               hideEmpty={showTracker}
               beforeMessages={
                 <>
+                  {/* Chronological timeline — top to bottom:
+                        1. Error recovery banner (when broken)
+                        2. Setup workflow (StepTracker)
+                        3. Completed user turns, oldest first
+                        4. In-progress turn (always chronologically last)
+                        5. Operation bubbles (publish / deploy)
+                        6. Pending interaction (awaiting user input)
+                      All rendered in `beforeMessages` because the flat
+                      thread below is dead — `hideAllMessages` zeroes
+                      the persisted bubble list when turn groups are on,
+                      so the overlay owns the entire visible surface
+                      and there's no split between before/after. */}
+                  {applicationError ? (
+                    <ErrorRecoveryBanner state={applicationError} onRetry={onResumeWorkflow} />
+                  ) : null}
                   {showTracker ? (
-                    <>
-                      {initialRequestMessage ? (
-                        <InitialRequestBubble text={initialRequestMessage.content} />
-                      ) : null}
-                      <StepTracker
-                        steps={trackerSteps}
-                        collapsedSummary={
-                          stepProgress.hasPlan === true && stepProgress.allDone === true
-                        }
-                        activeStepId={stepProgress.activeStepId}
-                        liveStatus={stepProgress.liveStatus}
-                        onRetry={onResumeWorkflow}
-                        onForceStop={handleForceStopStep}
-                      />
-                    </>
+                    <StepTracker
+                      steps={trackerSteps}
+                      collapsedSummary={
+                        stepProgress.hasPlan === true && stepProgress.allDone === true
+                      }
+                      activeStepId={stepProgress.activeStepId}
+                      liveStatus={stepProgress.liveStatus}
+                      onRetry={onResumeWorkflow}
+                      onForceStop={handleForceStopStep}
+                    />
                   ) : null}
                   {turnGroupsEnabled ? (
-                    <TurnGroupList
-                      featureId={featureId}
-                      allMessages={rawMessages}
-                      streaming={streamingState}
-                    />
+                    <>
+                      <CompletedTurnGroupsList view={turnGroupsView} allMessages={rawMessages} />
+                      <CurrentTurnCard
+                        view={turnGroupsView}
+                        allMessages={rawMessages}
+                        streaming={streamingState}
+                      />
+                      {applicationId ? (
+                        <>
+                          <OperationBubble applicationId={applicationId} kind="publish" />
+                          <OperationBubble applicationId={applicationId} kind="deploy" />
+                        </>
+                      ) : null}
+                      {pendingInteraction ? (
+                        <InteractionBubble
+                          interaction={pendingInteraction}
+                          onSubmit={respondToInteraction}
+                        />
+                      ) : null}
+                    </>
                   ) : null}
                 </>
               }
               afterMessages={
-                <>
-                  {pendingInteraction ? (
-                    <InteractionBubble
-                      interaction={pendingInteraction}
-                      onSubmit={respondToInteraction}
-                    />
-                  ) : null}
-                  {applicationId ? (
-                    <>
-                      <OperationBubble applicationId={applicationId} kind="publish" />
-                      <OperationBubble applicationId={applicationId} kind="deploy" />
-                    </>
-                  ) : null}
-                </>
+                // Non-grouping chats (repo/global) keep the legacy
+                // InteractionBubble surface in `afterMessages`.
+                // When turn groups are on, everything moved into
+                // the unified `beforeMessages` timeline above and
+                // this slot stays empty.
+                !turnGroupsEnabled && pendingInteraction ? (
+                  <InteractionBubble
+                    interaction={pendingInteraction}
+                    onSubmit={respondToInteraction}
+                  />
+                ) : null
               }
             />
           </AssistantRuntimeProvider>
@@ -424,23 +468,73 @@ export function ChatTab({
   );
 }
 
-// ── Initial request bubble ──────────────────────────────────────────────────
+// ── Error recovery banner ───────────────────────────────────────────────────
 //
-// A lightweight user-message lookalike that the host pane renders
-// above the step tracker. We don't go through the full assistant-ui
-// `UserMessage` component because this bubble lives OUTSIDE the
-// Thread's message iteration — it's a purely presentational anchor
-// for the original ask that kicked off the workflow. Visuals match
-// the real user bubble in `thread.tsx` so the swap is invisible.
-function InitialRequestBubble({ text }: { text: string }) {
+// Rendered at the very top of the chat pane when the application is
+// in a broken state (setup failed, interrupted, etc.). Replaces
+// silent failure where the only signal was a red "ERROR" pill in the
+// top bar. Gives the user a clear headline, an explanation, and — if
+// the backend says the operation is retryable — a prominent
+// "Try again" button wired to `onResumeWorkflow`.
+function ErrorRecoveryBanner({
+  state,
+  onRetry,
+}: {
+  state: ApplicationErrorState;
+  onRetry?: () => void;
+}) {
+  const [retrying, setRetrying] = useState(false);
+  const handleRetry = useCallback(() => {
+    if (!onRetry || retrying) return;
+    setRetrying(true);
+    try {
+      onRetry();
+    } finally {
+      // `onRetry` is fire-and-forget (POSTs the resume endpoint).
+      // Clear the local spinner after a short window so the button
+      // doesn't stay locked if the parent forgot to refresh state.
+      setTimeout(() => setRetrying(false), 4000);
+    }
+  }, [onRetry, retrying]);
+
   return (
-    <div className="group animate-in fade-in-0 slide-in-from-top-1 flex w-full items-start gap-2.5 px-4 py-0.5 duration-300 ease-out">
-      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-500/15">
-        <User className="h-3.5 w-3.5 text-violet-500" />
-      </div>
-      <div className="flex max-w-[85%] min-w-0 flex-col gap-0.5">
-        <div className="text-foreground mt-px overflow-hidden rounded-2xl rounded-tl-sm border border-violet-500/15 bg-violet-500/8 px-4 py-2 text-sm leading-relaxed break-words whitespace-pre-wrap shadow-sm backdrop-blur-md">
-          {text}
+    <div
+      className={cn(
+        'animate-in fade-in-0 slide-in-from-top-1 mx-3 my-3 overflow-hidden rounded-lg border shadow-sm duration-200 ease-out',
+        'border-red-500/40 bg-red-500/5 dark:bg-red-500/10'
+      )}
+      role="alert"
+    >
+      <div className="flex items-start gap-3 px-3 py-3">
+        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-500/15">
+          <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[13px] font-semibold text-red-700 dark:text-red-300">
+            {state.kind}
+          </div>
+          <div className="text-foreground/80 mt-0.5 text-[12px] leading-relaxed">
+            {state.message}
+          </div>
+          {state.retryable && onRetry ? (
+            <div className="mt-2.5 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleRetry}
+                disabled={retrying}
+                className={cn(
+                  'inline-flex h-7 items-center gap-1.5 rounded-md bg-red-500 px-3 text-[11px] font-semibold text-white transition-opacity',
+                  retrying ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:opacity-90'
+                )}
+              >
+                <RefreshCw className={cn('h-3 w-3', retrying && 'animate-spin')} />
+                {retrying ? 'Retrying…' : 'Try again'}
+              </button>
+              <span className="text-muted-foreground text-[10px]">
+                Re-runs the last failed step
+              </span>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

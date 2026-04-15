@@ -222,6 +222,16 @@ export interface ChatRuntimeOptions {
    * typically inside an in-progress turn card owned by the server.
    */
   suppressStreamingIndicator?: boolean;
+  /**
+   * When true, `threadMessages` is returned as an empty list — the
+   * flat thread renders no persisted bubbles at all. The host is
+   * expected to render the full conversation via its own grouping
+   * layer (e.g. `CurrentTurnCard` + `CompletedTurnGroupsList`) using
+   * `rawMessages`. Stable contract used by the web UI when turn-group
+   * rendering is on: the flat thread is dead, the overlay is the
+   * only visible surface.
+   */
+  hideAllMessages?: boolean;
 }
 
 /** A debug event captured from SSE for display in debug mode. */
@@ -748,6 +758,17 @@ export function useChatRuntime(
   );
 
   const threadMessages: ThreadMessageLike[] = useMemo(() => {
+    // Short-circuit: the host is rendering a full grouping overlay
+    // (turn group cards + step tracker + operation bubbles) and
+    // does NOT want any raw persisted bubbles to appear in the
+    // flat thread. Return an empty list so no message from the
+    // chat-state cache leaks into the Thread body; the composer
+    // and pending-interaction surfaces continue to work because
+    // they live OUTSIDE `threadMessages`.
+    if (options?.hideAllMessages === true) {
+      return [];
+    }
+
     const hasPlan = stepProgress.hasPlan;
 
     // When a workflow is active and STILL RUNNING: hide stepless
@@ -893,6 +914,7 @@ export function useChatRuntime(
     statusLog,
     options?.debugMode,
     options?.suppressStreamingIndicator,
+    options?.hideAllMessages,
     debugEvents,
     stepProgress.hasPlan,
     stepProgress.allDone,
