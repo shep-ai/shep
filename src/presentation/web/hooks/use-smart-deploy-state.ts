@@ -50,7 +50,7 @@ import type { SyncActionState } from './use-sync-action';
 
 export type SmartDeployStateKind =
   | 'loading'
-  | 'getOnline' // no remote yet
+  | 'getOnline' // no remote yet — one click runs the full zero-brain pipeline
   | 'deploy' // clean + has remote, no deployment yet
   | 'save' // dirty + has remote, no cloud connected
   | 'pushAndDeploy' // dirty + has remote + cloud connected (not yet live)
@@ -262,7 +262,10 @@ export function useSmartDeployState({
       });
     }
 
-    // 4. No remote at all — first-time setup
+    // 4. No remote at all — first-time setup. The button is always
+    //    "Get online" regardless of cloud provider connectivity;
+    //    the one-click handler walks the whole zero-brain pipeline
+    //    and only stops to prompt when a token is actually required.
     if (!hasRemote) {
       return baseState({
         kind: 'getOnline',

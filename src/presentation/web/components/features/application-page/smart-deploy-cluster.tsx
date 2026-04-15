@@ -10,6 +10,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { ScrollText } from 'lucide-react';
 import { toast } from 'sonner';
 import { CloudDeploymentProvider, type Application } from '@shepai/core/domain/generated/output';
 import type { useCloudDeployAction } from '@/hooks/use-cloud-deploy-action';
@@ -254,88 +255,89 @@ export function SmartDeployCluster({
   const handleGetOnline = useCallback(async () => {
     if (oneClickRunning || agentRunning) return;
     setOneClickRunning(true);
-    // Open the unified activity drawer IMMEDIATELY so the user
-    // never stares at a silently-reverting button. Every server-side
-    // log entry that the pipeline writes streams into the drawer
-    // live via its 1.5s poll.
-    setLogsOpen(true);
-    let didAnyWork = false;
+
+    // Zero-brain policy: the pipeline defaults everything and only
+    // stops if a TOKEN is genuinely required. In both "no GitHub"
+    // and "no cloud provider" cases we open the appropriate inline
+    // connect modal — NOT the panel, NOT a toast — so the user's
+    // next click is literally "paste token and hit Connect". On
+    // token submission the state recomputes and the next click runs
+    // the pipeline end-to-end.
+    //
+    // The activity drawer opens only when real work is about to
+    // run, so token-prompt paths don't flash an empty "No activity
+    // yet" drawer on the user's screen.
     try {
-      // 1. Ensure owners loaded — needed to pick a default owner
-      //    for the create-remote call below.
       await ensureOwners();
 
-      // 2. Create the GitHub remote if we don't have one yet. We
-      //    re-read `gitStatus` defensively in case it loaded between
-      //    user intent and click.
+      // 1. GitHub token gate. Empty owners ⇒ no token on file.
+      //    The publish modal owns the GitHub connect + owner-picker
+      //    flow so we defer to it here; once the user submits,
+      //    owners repopulate and the next Get Online click runs.
+      const ownersSnapshot = owners;
+      if (!ownersSnapshot || ownersSnapshot.length === 0) {
+        setPublishModalOpen(true);
+        return;
+      }
+
+      // 2. Cloud provider token gate. Pick the first enabled
+      //    provider; if none of them are connected we need a token.
+      //    Default target = first enabled provider (typically
+      //    Cloudflare Pages). The panel chevron still lets the
+      //    user pick a different one if they prefer.
+      const connectedProvider = providers.find((p) => p.enabled && p.connected);
+      if (!connectedProvider) {
+        const defaultProvider = providers.find((p) => p.enabled) ?? null;
+        if (defaultProvider) {
+          setConnectMode('connect');
+          setConnectingProvider(defaultProvider.id);
+          return;
+        }
+        // Provider catalog is empty — edge case, fall back to the
+        // panel so the user can see SOMETHING actionable.
+        setPanelOpen(true);
+        return;
+      }
+
+      // 3. Both tokens are on file → open the activity drawer and
+      //    run the full pipeline end-to-end with defaults.
+      setLogsOpen(true);
+
       const hasRemoteNow = gitStatus?.hasRemote === true || Boolean(application.gitRemoteUrl);
       if (!hasRemoteNow) {
-        const ownersSnapshot = owners;
-        const firstOwner = ownersSnapshot && ownersSnapshot.length > 0 ? ownersSnapshot[0] : null;
-        if (!firstOwner) {
-          // No GitHub connection at all — we cannot create a remote
-          // automatically. Surface the gap with a toast so the user
-          // knows WHY nothing happened, and open the panel so they
-          // can hit "Connect GitHub" in one click.
-          toast.error('Connect GitHub first', {
-            description:
-              'One-click Get online needs a GitHub connection to create the remote. Open the panel and connect GitHub.',
+        const firstOwner = ownersSnapshot[0];
+        const defaultRepoName = application.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        try {
+          const res = await fetch(`/api/applications/${application.id}/git/create-remote`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ownerLogin: firstOwner.login,
+              repoName: defaultRepoName,
+              visibility: 'private',
+            }),
           });
-          setPanelOpen(true);
-        } else {
-          const defaultRepoName = application.name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '');
-          try {
-            const res = await fetch(`/api/applications/${application.id}/git/create-remote`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                ownerLogin: firstOwner.login,
-                repoName: defaultRepoName,
-                visibility: 'private',
-              }),
-            });
-            didAnyWork = true;
-            if (!res.ok) {
-              const body = (await res.json().catch(() => ({}))) as { error?: string };
-              toast.error('GitHub publish failed', {
-                description: body.error ?? `HTTP ${res.status}`,
-              });
-            }
-          } catch (err) {
+          if (!res.ok) {
+            const body = (await res.json().catch(() => ({}))) as { error?: string };
             toast.error('GitHub publish failed', {
-              description: err instanceof Error ? err.message : 'Network error',
+              description: body.error ?? `HTTP ${res.status}`,
             });
           }
-          await refreshGitStatus();
+        } catch (err) {
+          toast.error('GitHub publish failed', {
+            description: err instanceof Error ? err.message : 'Network error',
+          });
         }
+        await refreshGitStatus();
       }
 
-      // 3. Auto-deploy to the first connected cloud provider.
-      const connected = providers.find((p) => p.enabled && p.connected);
-      if (connected) {
-        if (!cloudDeploy.state.provider || cloudDeploy.state.provider !== connected.id) {
-          await cloudDeploy.selectProvider(connected.id);
-        }
-        await cloudDeploy.initiate();
-        didAnyWork = true;
-      } else {
-        // No cloud provider connected — surface the gap with a toast
-        // and open the panel. The repo half may have already run.
-        toast.error('Connect a hosting provider', {
-          description:
-            'One-click Get online needs a connected cloud provider to deploy. Pick one from the panel.',
-        });
-        setPanelOpen(true);
+      if (!cloudDeploy.state.provider || cloudDeploy.state.provider !== connectedProvider.id) {
+        await cloudDeploy.selectProvider(connectedProvider.id);
       }
-
-      if (!didAnyWork) {
-        // Nothing actually ran — close the drawer again so the user
-        // isn't staring at an empty "No activity yet" state.
-        setLogsOpen(false);
-      }
+      await cloudDeploy.initiate();
     } finally {
       setOneClickRunning(false);
     }
@@ -439,12 +441,24 @@ export function SmartDeployCluster({
 
   return (
     <>
+      {/* Standalone icon-only activity-log button, detached from the
+          Smart Deploy split. Small, borderless, sits next to the main
+          surface so the user can always read the unified log without
+          the log affordance feeling welded to the deploy action. */}
+      <button
+        type="button"
+        aria-label="Open activity log"
+        title="Smart Deploy activity log"
+        onClick={handleOpenLogs}
+        className="text-muted-foreground hover:bg-muted hover:text-foreground mr-1 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+      >
+        <ScrollText className="size-3.5" />
+      </button>
       <SmartDeployButton
         state={smartState}
         onPrimaryClick={handlePrimaryClick}
         panelOpen={panelOpen}
         onPanelOpenChange={setPanelOpen}
-        onOpenLogs={handleOpenLogs}
         panel={
           <DeployPanel
             state={smartState}

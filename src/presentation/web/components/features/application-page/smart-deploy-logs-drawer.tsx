@@ -32,6 +32,7 @@ import {
   Github,
   Info,
   Loader2,
+  RefreshCw,
   TriangleAlert,
 } from 'lucide-react';
 import {
@@ -111,6 +112,18 @@ export interface SmartDeployLogsDrawerProps {
   subtitle?: string;
 }
 
+const FETCH_TIMEOUT_MS = 6000;
+
+async function fetchWithTimeout(url: string): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function SmartDeployLogsDrawer({
   open,
   onOpenChange,
@@ -119,33 +132,52 @@ export function SmartDeployLogsDrawer({
   subtitle,
 }: SmartDeployLogsDrawerProps) {
   const [entries, setEntries] = useState<OperationLogEntryDto[]>([]);
-  const [loading, setLoading] = useState(false);
+  // `hasLoadedOnce` splits "first load" from "background poll": the
+  // "Loading logs…" spinner only shows while we've never completed a
+  // fetch, so subsequent 1.5s polls don't flash the user back to a
+  // loading state each tick when entries legitimately stay empty.
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [backgroundFetching, setBackgroundFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDebug, setShowDebug] = useState(false);
   const bodyRef = useRef<HTMLDivElement | null>(null);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
+    setBackgroundFetching(true);
     setError(null);
     try {
-      // Fetch all three scopes in parallel, then merge. Any single
-      // request failing doesn't poison the drawer — we still show
-      // what we have and surface a soft error banner.
-      const responses = await Promise.all(
+      // Fetch all three scopes in parallel with per-request timeouts.
+      // Any single request failing (HTTP error, abort, network drop)
+      // doesn't poison the drawer — we still merge what came back and
+      // surface a soft error banner so the user knows something went
+      // wrong without staring at a blank drawer forever.
+      const results = await Promise.all(
         OP_KINDS.map(async (kind) => {
           try {
-            const res = await fetch(
+            const res = await fetchWithTimeout(
               `/api/operations/${encodeURIComponent(kind)}/${encodeURIComponent(applicationId)}/logs`
             );
-            if (!res.ok) return { kind, entries: [] as OperationLogEntryDto[] };
+            if (!res.ok) {
+              return {
+                kind,
+                entries: [] as OperationLogEntryDto[],
+                error: `${kind}: HTTP ${res.status}`,
+              };
+            }
             const body = (await res.json()) as { entries?: OperationLogEntryDto[] };
-            return { kind, entries: body.entries ?? [] };
-          } catch {
-            return { kind, entries: [] as OperationLogEntryDto[] };
+            return { kind, entries: body.entries ?? [], error: null as string | null };
+          } catch (err) {
+            const msg =
+              err instanceof Error
+                ? err.name === 'AbortError'
+                  ? `${kind}: timed out after ${FETCH_TIMEOUT_MS / 1000}s`
+                  : `${kind}: ${err.message}`
+                : `${kind}: unknown error`;
+            return { kind, entries: [] as OperationLogEntryDto[], error: msg };
           }
         })
       );
-      const merged = responses
+      const merged = results
         .flatMap((r) => r.entries)
         .sort((a, b) => {
           const ta = new Date(a.createdAt).getTime();
@@ -153,16 +185,23 @@ export function SmartDeployLogsDrawer({
           return ta - tb;
         });
       setEntries(merged);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load logs');
+      const errors = results.map((r) => r.error).filter((e): e is string => e !== null);
+      setError(errors.length > 0 ? errors.join(' · ') : null);
     } finally {
-      setLoading(false);
+      setBackgroundFetching(false);
+      setHasLoadedOnce(true);
     }
   }, [applicationId]);
 
-  // Fetch on open + poll while running.
+  // Fetch on open + poll while running. Reset the one-shot spinner
+  // flag when the drawer is closed OR the applicationId switches so
+  // the user sees "Loading logs…" on the next fresh open, not a stale
+  // "No activity yet" while the first new fetch is still in flight.
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setHasLoadedOnce(false);
+      return;
+    }
     void refresh();
     if (!isRunning) return;
     const timer = setInterval(() => {
@@ -234,11 +273,21 @@ export function SmartDeployLogsDrawer({
               <Copy className="size-3" />
               Copy all
             </button>
+            <button
+              type="button"
+              className="hover:bg-muted hover:text-foreground inline-flex cursor-pointer items-center gap-1 rounded px-1.5 py-0.5 text-[11px] disabled:opacity-50"
+              onClick={() => void refresh()}
+              disabled={backgroundFetching}
+              title="Refresh now"
+            >
+              <RefreshCw className={cn('size-3', backgroundFetching && 'animate-spin')} />
+              Refresh
+            </button>
           </div>
         </SheetHeader>
 
         <div ref={bodyRef} className="flex-1 overflow-y-auto p-4">
-          {loading && entries.length === 0 ? (
+          {!hasLoadedOnce ? (
             <div className="text-muted-foreground flex items-center gap-2 text-xs">
               <Loader2 className="size-3 animate-spin" /> Loading logs…
             </div>
@@ -248,10 +297,10 @@ export function SmartDeployLogsDrawer({
               {error}
             </div>
           ) : null}
-          {visible.length === 0 && !loading && !error ? (
+          {visible.length === 0 && hasLoadedOnce ? (
             <div className="text-muted-foreground text-xs">
-              No activity yet.
-              {isRunning ? ' The operation just started — entries will appear here.' : ''}
+              {error ? 'Could not load activity. Use Refresh to try again.' : 'No activity yet.'}
+              {isRunning && !error ? ' The operation just started — entries will appear here.' : ''}
             </div>
           ) : null}
 

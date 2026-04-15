@@ -21,7 +21,6 @@ import {
   RefreshCw,
   Rocket,
   Save,
-  ScrollText,
   Sparkles,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -40,10 +39,6 @@ export interface SmartDeployButtonProps {
    *  path instead of committing to a specific action. */
   panelOpen?: boolean;
   onPanelOpenChange?(open: boolean): void;
-  /** Opens the unified Smart Deploy activity log drawer. When omitted
-   *  the log button segment is hidden — kept optional so the
-   *  component still works in storybook without the drawer wired up. */
-  onOpenLogs?(): void;
   className?: string;
 }
 
@@ -195,7 +190,6 @@ export function SmartDeployButton({
   panel,
   panelOpen: controlledPanelOpen,
   onPanelOpenChange,
-  onOpenLogs,
   className,
 }: SmartDeployButtonProps) {
   const spec = labelFor(state);
@@ -295,27 +289,6 @@ export function SmartDeployButton({
           {panel}
         </PopoverContent>
       </Popover>
-
-      {/* ── Right-most: unified activity log trigger ──────────────
-          Persistent, always visible next to the Smart Deploy surface
-          so the user can read the full cross-operation timeline
-          (GitHub + Cloud + Sync) in one place without hunting for a
-          context-specific button inside the panel. */}
-      {onOpenLogs ? (
-        <button
-          type="button"
-          aria-label="Open activity log"
-          title="Activity log — all Smart Deploy operations"
-          onClick={onOpenLogs}
-          className={cn(
-            'inline-flex h-12 items-center justify-center rounded-none border border-l-0 px-2 transition-colors',
-            TONE_CLASSES[spec.tone],
-            'cursor-pointer'
-          )}
-        >
-          <ScrollText className="size-3.5" />
-        </button>
-      ) : null}
     </div>
   );
 }
