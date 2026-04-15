@@ -10,18 +10,15 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import {
-  CloudDeploymentProvider,
-  CloudDeploymentStatus,
-  type Application,
-} from '@shepai/core/domain/generated/output';
+import { toast } from 'sonner';
+import { CloudDeploymentProvider, type Application } from '@shepai/core/domain/generated/output';
 import type { useCloudDeployAction } from '@/hooks/use-cloud-deploy-action';
 import { useGitStatus } from '@/hooks/use-git-status';
 import { useSyncAction } from '@/hooks/use-sync-action';
 import { useSmartDeployState } from '@/hooks/use-smart-deploy-state';
 import { SmartDeployButton } from './smart-deploy-button';
 import { DeployPanel } from './deploy-panel';
-import { OperationLogsDrawer } from './operation-logs-drawer';
+import { SmartDeployLogsDrawer } from './smart-deploy-logs-drawer';
 import { ConnectProviderModal } from './connect-provider-modal';
 import { PublishToGitHubModal, type PublishOwner } from './publish-to-github-modal';
 
@@ -48,8 +45,6 @@ export interface SmartDeployClusterProps {
   /** When the agent is mid-run we disable destructive actions. */
   agentRunning: boolean;
 }
-
-type LogsTarget = { kind: 'CloudDeploy' | 'GitRemoteCreate' | 'RepoSync'; title: string } | null;
 
 export function SmartDeployCluster({
   application,
@@ -109,8 +104,13 @@ export function SmartDeployCluster({
   );
   const [connectMode, setConnectMode] = useState<'connect' | 'update'>('connect');
 
-  // Operation logs drawer — opens on the right side, scoped per op kind.
-  const [logsTarget, setLogsTarget] = useState<LogsTarget>(null);
+  // Unified Smart Deploy activity log drawer. Replaces the per-op-kind
+  // drawer — now a single timeline that merges GitRemoteCreate,
+  // CloudDeploy, and RepoSync entries sorted by createdAt so the user
+  // reads the whole story in one place. The log button on the right
+  // edge of the SmartDeployButton toggles this, and every primary
+  // action auto-opens it so the pipeline is never invisible.
+  const [logsOpen, setLogsOpen] = useState<boolean>(false);
 
   // Popover panel open state — lifted here (instead of inside
   // SmartDeployButton) so the primary-click handler for the `getOnline`
@@ -118,6 +118,13 @@ export function SmartDeployCluster({
   // "pick Save & backup OR Publish to web" choice on first click,
   // rather than forcing them through the GitHub modal.
   const [panelOpen, setPanelOpen] = useState<boolean>(false);
+
+  // One-click "Get online" pipeline guard. Set to true for the entire
+  // duration of the create-repo + auto-deploy sequence so
+  // `useSmartDeployState` can lock the label on "Getting online…" from
+  // click to success — no flickering through intermediate `deploy` /
+  // `save` states between API calls.
+  const [oneClickRunning, setOneClickRunning] = useState<boolean>(false);
 
   // Friendly cloud-provider display name. Computed up here (rather than
   // near the render) so `useSmartDeployState` can use it to produce a
@@ -143,6 +150,7 @@ export function SmartDeployCluster({
     syncAction: sync.state,
     hasConnectedCloudProvider,
     cloudProviderName,
+    oneClickRunning,
   });
 
   // ── Action dispatch ────────────────────────────────────────────────
@@ -155,35 +163,28 @@ export function SmartDeployCluster({
   // still click "Activity log" inside the panel to read the entries
   // post-hoc.
 
+  // Every primary action opens the unified activity drawer so the
+  // pipeline is never invisible — the user sees the same timeline
+  // regardless of which action kicked it off.
   const handleSaveChanges = useCallback(async () => {
+    setLogsOpen(true);
     await sync.sync();
     await refreshGitStatus();
-    if (sync.state.kind === 'failed') {
-      setLogsTarget({ kind: 'RepoSync', title: 'Save & backup' });
-    }
   }, [sync, refreshGitStatus]);
 
   const handlePublishToWeb = useCallback(async () => {
+    setLogsOpen(true);
     await cloudDeploy.initiate();
-    if (cloudDeploy.state.status === CloudDeploymentStatus.Failed) {
-      setLogsTarget({ kind: 'CloudDeploy', title: 'Publish to web' });
-    }
   }, [cloudDeploy]);
 
   const handleRedeploy = handlePublishToWeb;
 
   const handleSaveAndPublish = useCallback(async () => {
+    setLogsOpen(true);
     await sync.sync();
     await refreshGitStatus();
-    if (sync.state.kind === 'failed') {
-      // Sync side blew up — open the drawer and stop here.
-      setLogsTarget({ kind: 'RepoSync', title: 'Save & publish everything' });
-      return;
-    }
+    if (sync.state.kind === 'failed') return;
     await cloudDeploy.initiate();
-    if (cloudDeploy.state.status === CloudDeploymentStatus.Failed) {
-      setLogsTarget({ kind: 'CloudDeploy', title: 'Save & publish everything' });
-    }
   }, [sync, refreshGitStatus, cloudDeploy]);
 
   const handleSetUpCodeStorage = useCallback(async () => {
@@ -198,11 +199,9 @@ export function SmartDeployCluster({
   // user doesn't have to click Publish to web as a separate step.
   const handleSelectProvider = useCallback(
     async (provider: CloudDeploymentProvider) => {
+      setLogsOpen(true);
       await cloudDeploy.selectProvider(provider);
       await cloudDeploy.initiate();
-      if (cloudDeploy.state.status === CloudDeploymentStatus.Failed) {
-        setLogsTarget({ kind: 'CloudDeploy', title: 'Publish to web' });
-      }
     },
     [cloudDeploy]
   );
@@ -223,7 +222,7 @@ export function SmartDeployCluster({
   }, []);
 
   const handleOpenLogs = useCallback(() => {
-    setLogsTarget({ kind: 'CloudDeploy', title: 'Activity log' });
+    setLogsOpen(true);
   }, []);
 
   const handleOpenInGitHub = useCallback(() => {
@@ -234,6 +233,125 @@ export function SmartDeployCluster({
       if (href) window.open(href, '_blank', 'noopener,noreferrer');
     }
   }, [gitStatus]);
+
+  // One-click "Get online" pipeline. Best-effort end-to-end:
+  //   1. If GitHub owners haven't been loaded yet, fetch them.
+  //   2. If the repo has no git remote yet, create one against the
+  //      user's default owner using the slugified application name.
+  //      Any failure here (HTTP 409 on name collision, network blip)
+  //      is surfaced via the logs drawer but does NOT abort the
+  //      pipeline — the cloud deploy can still run off a local-only
+  //      repo in some provider configurations.
+  //   3. If at least one cloud provider is connected, pick the first
+  //      one (or the already-selected one) and fire a deploy.
+  //   4. If NO cloud provider is connected, we've done half the work
+  //      (the remote now exists) — open the panel so the user can
+  //      connect a provider in one more click.
+  //
+  // Throughout, `oneClickRunning` stays true so the button label is
+  // pinned on "Getting online…" and the transition to `live` is a
+  // single, clean flip at the end.
+  const handleGetOnline = useCallback(async () => {
+    if (oneClickRunning || agentRunning) return;
+    setOneClickRunning(true);
+    // Open the unified activity drawer IMMEDIATELY so the user
+    // never stares at a silently-reverting button. Every server-side
+    // log entry that the pipeline writes streams into the drawer
+    // live via its 1.5s poll.
+    setLogsOpen(true);
+    let didAnyWork = false;
+    try {
+      // 1. Ensure owners loaded — needed to pick a default owner
+      //    for the create-remote call below.
+      await ensureOwners();
+
+      // 2. Create the GitHub remote if we don't have one yet. We
+      //    re-read `gitStatus` defensively in case it loaded between
+      //    user intent and click.
+      const hasRemoteNow = gitStatus?.hasRemote === true || Boolean(application.gitRemoteUrl);
+      if (!hasRemoteNow) {
+        const ownersSnapshot = owners;
+        const firstOwner = ownersSnapshot && ownersSnapshot.length > 0 ? ownersSnapshot[0] : null;
+        if (!firstOwner) {
+          // No GitHub connection at all — we cannot create a remote
+          // automatically. Surface the gap with a toast so the user
+          // knows WHY nothing happened, and open the panel so they
+          // can hit "Connect GitHub" in one click.
+          toast.error('Connect GitHub first', {
+            description:
+              'One-click Get online needs a GitHub connection to create the remote. Open the panel and connect GitHub.',
+          });
+          setPanelOpen(true);
+        } else {
+          const defaultRepoName = application.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+          try {
+            const res = await fetch(`/api/applications/${application.id}/git/create-remote`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ownerLogin: firstOwner.login,
+                repoName: defaultRepoName,
+                visibility: 'private',
+              }),
+            });
+            didAnyWork = true;
+            if (!res.ok) {
+              const body = (await res.json().catch(() => ({}))) as { error?: string };
+              toast.error('GitHub publish failed', {
+                description: body.error ?? `HTTP ${res.status}`,
+              });
+            }
+          } catch (err) {
+            toast.error('GitHub publish failed', {
+              description: err instanceof Error ? err.message : 'Network error',
+            });
+          }
+          await refreshGitStatus();
+        }
+      }
+
+      // 3. Auto-deploy to the first connected cloud provider.
+      const connected = providers.find((p) => p.enabled && p.connected);
+      if (connected) {
+        if (!cloudDeploy.state.provider || cloudDeploy.state.provider !== connected.id) {
+          await cloudDeploy.selectProvider(connected.id);
+        }
+        await cloudDeploy.initiate();
+        didAnyWork = true;
+      } else {
+        // No cloud provider connected — surface the gap with a toast
+        // and open the panel. The repo half may have already run.
+        toast.error('Connect a hosting provider', {
+          description:
+            'One-click Get online needs a connected cloud provider to deploy. Pick one from the panel.',
+        });
+        setPanelOpen(true);
+      }
+
+      if (!didAnyWork) {
+        // Nothing actually ran — close the drawer again so the user
+        // isn't staring at an empty "No activity yet" state.
+        setLogsOpen(false);
+      }
+    } finally {
+      setOneClickRunning(false);
+    }
+  }, [
+    oneClickRunning,
+    agentRunning,
+    ensureOwners,
+    gitStatus,
+    owners,
+    application.id,
+    application.name,
+    application.gitRemoteUrl,
+    refreshGitStatus,
+    providers,
+    cloudDeploy,
+  ]);
 
   // Primary-click dispatch table — drives the left-half of the split button.
   const handlePrimaryClick = useCallback(() => {
@@ -260,12 +378,13 @@ export function SmartDeployCluster({
         }
         return;
       case 'getOnline':
-        // Don't force the user through the GitHub flow — opening the
-        // panel lets them pick Save & backup OR Publish to web (or
-        // Connect hosting) independently. Deploying doesn't actually
-        // require a git remote; the old "Get online → GitHub modal"
-        // shortcut was biased toward one path and blocked the other.
-        setPanelOpen(true);
+        // One-click "Get online" — create repo + auto-deploy as a
+        // single pipeline, best effort. The button label is pinned
+        // on "Getting online…" throughout via `oneClickRunning` so
+        // the user sees a single smooth transition from click to
+        // live, not a sequence of intermediate state flashes. The
+        // chevron still opens the full panel for advanced control.
+        void handleGetOnline();
         return;
       case 'failed':
         // Retry whichever side failed.
@@ -283,6 +402,7 @@ export function SmartDeployCluster({
     handleSaveAndPublish,
     handleSaveChanges,
     handlePublishToWeb,
+    handleGetOnline,
   ]);
 
   // First-time publish flow — wraps the existing PublishToGitHubModal.
@@ -299,7 +419,7 @@ export function SmartDeployCluster({
       }
       setPublishModalOpen(false);
       await refreshGitStatus();
-      setLogsTarget({ kind: 'GitRemoteCreate', title: 'Set up code backup' });
+      setLogsOpen(true);
     },
     [application.id, refreshGitStatus]
   );
@@ -324,6 +444,7 @@ export function SmartDeployCluster({
         onPrimaryClick={handlePrimaryClick}
         panelOpen={panelOpen}
         onPanelOpenChange={setPanelOpen}
+        onOpenLogs={handleOpenLogs}
         panel={
           <DeployPanel
             state={smartState}
@@ -353,18 +474,16 @@ export function SmartDeployCluster({
         }
       />
 
-      {/* Logs drawer — single instance, opened with the right scope by
-          whichever action fired last. */}
-      <OperationLogsDrawer
-        open={logsTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setLogsTarget(null);
-        }}
-        kind={(logsTarget?.kind ?? 'CloudDeploy') as 'CloudDeploy' | 'GitRemoteCreate'}
-        operationId={application.id}
-        title={logsTarget?.title ?? 'Activity log'}
+      {/* Unified Smart Deploy activity drawer — a single chronological
+          timeline merging GitRemoteCreate + CloudDeploy + RepoSync
+          logs. Replaces the old per-kind drawer so the user never
+          has to guess which scope the currently-open log belongs to. */}
+      <SmartDeployLogsDrawer
+        open={logsOpen}
+        onOpenChange={setLogsOpen}
+        applicationId={application.id}
+        isRunning={smartState.kind === 'working' || oneClickRunning}
         subtitle={cloudProviderName ?? undefined}
-        isRunning={smartState.kind === 'working'}
       />
 
       {/* First-time publish modal */}

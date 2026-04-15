@@ -17,11 +17,11 @@ import {
   AlertTriangle,
   Check,
   ChevronDown,
-  Cloud,
   Loader2,
   RefreshCw,
   Rocket,
   Save,
+  ScrollText,
   Sparkles,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -40,6 +40,10 @@ export interface SmartDeployButtonProps {
    *  path instead of committing to a specific action. */
   panelOpen?: boolean;
   onPanelOpenChange?(open: boolean): void;
+  /** Opens the unified Smart Deploy activity log drawer. When omitted
+   *  the log button segment is hidden — kept optional so the
+   *  component still works in storybook without the drawer wired up. */
+  onOpenLogs?(): void;
   className?: string;
 }
 
@@ -53,8 +57,12 @@ interface LabelSpec {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   sub?: string;
-  tone: 'primary' | 'emerald' | 'amber' | 'destructive' | 'muted';
+  tone: 'primary' | 'emerald' | 'amber' | 'destructive' | 'muted' | 'rocket';
   spinning?: boolean;
+  /** When true, the icon is rendered inside a vibrant gradient chip
+   *  instead of inheriting the tone color — reserved for the
+   *  one-click "Get online" surface that should visually pop. */
+  iconChip?: boolean;
 }
 
 function labelFor(state: SmartDeployState): LabelSpec {
@@ -64,8 +72,20 @@ function labelFor(state: SmartDeployState): LabelSpec {
     case 'working': {
       // Specific-per-source label instead of the generic "Working…".
       // Sync: we're doing the git commit+push pipeline. Deploy: the
-      // cloud provider is shipping the build. Fallback stays as
-      // "Working…" for any edge case where source isn't set.
+      // cloud provider is shipping the build. GetOnline: the
+      // one-click create-repo + auto-deploy pipeline (single label
+      // covering the whole sequence so the button can't flicker
+      // between intermediate states). Fallback stays as "Working…"
+      // for any edge case where source isn't set.
+      if (state.workingSource === 'getOnline') {
+        return {
+          icon: Loader2,
+          label: 'Getting online…',
+          tone: 'rocket',
+          spinning: true,
+          iconChip: true,
+        };
+      }
       if (state.workingSource === 'sync') {
         return { icon: Loader2, label: 'Syncing code', tone: 'primary', spinning: true };
       }
@@ -119,9 +139,9 @@ function labelFor(state: SmartDeployState): LabelSpec {
         tone: 'emerald',
       };
     case 'getOnline':
-      return { icon: Cloud, label: 'Get online', tone: 'primary' };
+      return { icon: Rocket, label: 'Get online', tone: 'rocket', iconChip: true };
     default:
-      return { icon: Cloud, label: 'Get online', tone: 'primary' };
+      return { icon: Rocket, label: 'Get online', tone: 'rocket', iconChip: true };
   }
 }
 
@@ -158,6 +178,15 @@ const TONE_CLASSES: Record<LabelSpec['tone'], string> = {
     'border-border border-b-2 border-b-destructive bg-destructive/5 text-destructive hover:bg-destructive/10 dark:bg-destructive/10 dark:hover:bg-destructive/15',
   muted:
     'border-border border-b-2 border-b-transparent bg-background text-muted-foreground hover:bg-accent',
+  // One-click "Get online" call to action. Mirrors the structure of
+  // the `primary` tone (solid subtle tint, no body gradient) so the
+  // Tailwind build can't mis-render a multi-stop gradient with
+  // opacity modifiers as a full-saturation fuchsia block. The
+  // "cool colored" accent lives entirely in the icon chip — see
+  // `iconChip` rendering below — so the button reads as a pop of
+  // colour without drowning the label in magenta.
+  rocket:
+    'border-border border-b-2 border-b-fuchsia-500 bg-fuchsia-500/5 text-fuchsia-700 hover:bg-fuchsia-500/10 dark:text-fuchsia-300 dark:bg-fuchsia-500/10 dark:hover:bg-fuchsia-500/15',
 };
 
 export function SmartDeployButton({
@@ -166,6 +195,7 @@ export function SmartDeployButton({
   panel,
   panelOpen: controlledPanelOpen,
   onPanelOpenChange,
+  onOpenLogs,
   className,
 }: SmartDeployButtonProps) {
   const spec = labelFor(state);
@@ -194,17 +224,31 @@ export function SmartDeployButton({
         onClick={onPrimaryClick}
         disabled={!isInteractive}
         className={cn(
-          // Square, flat, VS-Code-tab language. The 2px top accent
-          // comes from the tone class; the rest of the frame stays
-          // neutral so "green everywhere" can't happen anymore.
-          'inline-flex h-9 items-center gap-2 rounded-none border border-r-0 px-3 text-xs font-medium transition-colors',
+          // Square, flat, VS-Code-tab language. Fixed h-12 matches
+          // the top bar (TOP_BAR_HEIGHT_CLASS = 'h-12') so the
+          // button sits flush top-to-bottom with no outer padding
+          // band. Using h-full here is unreliable inside a flex
+          // items-center parent — the explicit height always wins.
+          'inline-flex h-12 items-center gap-2 rounded-none border border-r-0 px-3 text-xs font-medium transition-colors',
           TONE_CLASSES[spec.tone],
           isInteractive ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'
         )}
         title={spec.label}
       >
-        <span className="relative inline-flex">
-          <Icon className={cn('size-3.5 shrink-0', spec.spinning && 'animate-spin')} />
+        <span
+          className={cn(
+            'relative inline-flex',
+            spec.iconChip &&
+              'h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 via-purple-500 to-sky-500 text-white shadow-sm'
+          )}
+        >
+          <Icon
+            className={cn(
+              'shrink-0',
+              spec.iconChip ? 'size-3' : 'size-3.5',
+              spec.spinning && 'animate-spin'
+            )}
+          />
           {/* Tiny dirty-dot overlay on the icon when there are pending changes
               and we're NOT already showing them in the label. Hidden for
               states whose label already communicates the state so we don't
@@ -239,7 +283,7 @@ export function SmartDeployButton({
               // Square chevron half, same top accent as the main
               // button so the split reads as one rectangle with a
               // single vertical divider between the two halves.
-              'inline-flex h-9 items-center justify-center rounded-none border px-1.5 transition-colors',
+              'inline-flex h-12 items-center justify-center rounded-none border px-1.5 transition-colors',
               TONE_CLASSES[spec.tone],
               'cursor-pointer'
             )}
@@ -251,6 +295,27 @@ export function SmartDeployButton({
           {panel}
         </PopoverContent>
       </Popover>
+
+      {/* ── Right-most: unified activity log trigger ──────────────
+          Persistent, always visible next to the Smart Deploy surface
+          so the user can read the full cross-operation timeline
+          (GitHub + Cloud + Sync) in one place without hunting for a
+          context-specific button inside the panel. */}
+      {onOpenLogs ? (
+        <button
+          type="button"
+          aria-label="Open activity log"
+          title="Activity log — all Smart Deploy operations"
+          onClick={onOpenLogs}
+          className={cn(
+            'inline-flex h-12 items-center justify-center rounded-none border border-l-0 px-2 transition-colors',
+            TONE_CLASSES[spec.tone],
+            'cursor-pointer'
+          )}
+        >
+          <ScrollText className="size-3.5" />
+        </button>
+      ) : null}
     </div>
   );
 }

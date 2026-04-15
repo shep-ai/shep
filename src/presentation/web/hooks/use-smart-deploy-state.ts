@@ -75,8 +75,10 @@ export interface SmartDeployState {
   failedSource: 'sync' | 'deploy' | null;
   /** Which side is actively running when `kind === 'working'`. Used by
    *  the top-bar button to swap the generic "Working…" label for a
-   *  specific one: "Syncing code" or "Deploying to Cloudflare Pages". */
-  workingSource: 'sync' | 'deploy' | null;
+   *  specific one: "Syncing code", "Deploying to Cloudflare Pages", or
+   *  the one-click "Getting online…" umbrella that covers the whole
+   *  create-repo + auto-deploy pipeline. */
+  workingSource: 'sync' | 'deploy' | 'getOnline' | null;
   /** Friendly display name of the cloud provider the deploy targets,
    *  e.g. "Cloudflare Pages". Threaded in from the parent so the
    *  hook doesn't have to own the enum→name mapping. */
@@ -104,6 +106,15 @@ export interface UseSmartDeployStateInput {
    *  enum→string mapping. Falls through to null when no provider is
    *  picked yet (`Working…` fallback). */
   cloudProviderName: string | null;
+  /** True while the one-click "Get online" pipeline is running
+   *  (create GitHub remote → refresh git status → auto-deploy to the
+   *  connected cloud provider). Forces the state machine to `working`
+   *  with `workingSource: 'getOnline'` for the ENTIRE pipeline so the
+   *  button label can't flicker between intermediate truths — without
+   *  it, the brief window between create-remote completing and
+   *  cloudDeploy.initiate() being called would bounce the label
+   *  through `deploy`/`save` before landing on `working` again. */
+  oneClickRunning?: boolean;
 }
 
 export function useSmartDeployState({
@@ -114,6 +125,7 @@ export function useSmartDeployState({
   syncAction,
   hasConnectedCloudProvider,
   cloudProviderName,
+  oneClickRunning,
 }: UseSmartDeployStateInput): SmartDeployState {
   return useMemo(() => {
     // Effective git status — merge live read with persisted remote URL.
@@ -137,6 +149,26 @@ export function useSmartDeployState({
             hasRemote: false,
             remoteUrl: null,
           });
+
+    // One-click "Get online" pipeline override. The caller lifts this
+    // flag for the full duration of the create-repo → deploy pipeline
+    // so the label stays on "Getting online…" end-to-end. Without this
+    // dominance, the moment create-remote completes and git status
+    // refreshes we'd fall through to (e.g.) `deploy` until the cloud
+    // call fires a beat later, producing a visible flicker on the
+    // user's primary call-to-action.
+    if (oneClickRunning) {
+      const cloudUrl = cloudDeploy.state.url;
+      return baseState({
+        kind: 'working',
+        hasCloud: hasConnectedCloudProvider,
+        hasRemote: gitStatus?.hasRemote ?? persistedRemoteUrl !== null,
+        changeCount: (gitStatus?.uncommittedCount ?? 0) + (gitStatus?.unpushedCount ?? 0),
+        workingSource: 'getOnline',
+        cloudProviderName,
+        liveUrl: cloudUrl ?? null,
+      });
+    }
 
     // Loading is ONLY the brief window before the first /git/status fetch
     // completes, AND only when we have nothing else to show. Once the
@@ -275,6 +307,7 @@ export function useSmartDeployState({
     syncAction,
     hasConnectedCloudProvider,
     cloudProviderName,
+    oneClickRunning,
   ]);
 }
 

@@ -98,7 +98,7 @@ export function AppViewTabs({ active, onChange, disabledTabs = [], deploy }: App
   return (
     <TooltipProvider delayDuration={400}>
       <Tabs value={active} onValueChange={handleTabChange} className="contents">
-        <TabsList className="bg-muted/40 h-9 shrink-0 justify-start gap-0 rounded-none border-0 p-0">
+        <TabsList className="bg-muted/40 h-12 shrink-0 justify-start gap-0 rounded-none border-0 p-0">
           {VIEW_TABS.map((view, idx) => {
             const Icon = VIEW_ICONS[view];
             const disabled = disabledTabs.includes(view);
@@ -114,7 +114,7 @@ export function AppViewTabs({ active, onChange, disabledTabs = [], deploy }: App
                   'data-[state=active]:bg-background data-[state=active]:text-foreground',
                   'data-[state=active]:font-semibold',
                   '[&:not([data-state=active])]:border-r-border',
-                  'relative h-9 rounded-none border-r border-r-transparent',
+                  'relative h-12 rounded-none border-r border-r-transparent',
                   'bg-transparent px-3 text-[12px] font-medium shadow-none transition-none',
                   'cursor-pointer data-[state=active]:shadow-none',
                   isLast && 'last:border-r-transparent',

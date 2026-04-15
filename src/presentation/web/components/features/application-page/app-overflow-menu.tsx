@@ -43,7 +43,7 @@ export function AppOverflowMenu({ children, className }: AppOverflowMenuProps) {
             'text-muted-foreground hover:bg-muted hover:text-foreground',
             'data-[state=open]:bg-background data-[state=open]:text-foreground',
             'data-[state=open]:border-t-primary',
-            'relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-none border-t-2 border-t-transparent bg-transparent shadow-none transition-none',
+            'relative inline-flex h-12 w-9 cursor-pointer items-center justify-center rounded-none border-t-2 border-t-transparent bg-transparent shadow-none transition-none',
             className
           )}
         >
