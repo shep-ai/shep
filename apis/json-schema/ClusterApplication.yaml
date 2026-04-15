@@ -1,0 +1,16 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ClusterApplication.yaml
+type: object
+properties:
+  clusterId:
+    $ref: UUID.yaml
+    description: The cluster ID
+  applicationId:
+    $ref: UUID.yaml
+    description: The application ID
+required:
+  - clusterId
+  - applicationId
+allOf:
+  - $ref: BaseEntity.yaml
+description: Junction entity linking Clusters to Applications (many-to-many)

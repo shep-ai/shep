@@ -1,0 +1,16 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ClusterRepository.yaml
+type: object
+properties:
+  clusterId:
+    $ref: UUID.yaml
+    description: The cluster ID
+  repositoryId:
+    $ref: UUID.yaml
+    description: The repository ID
+required:
+  - clusterId
+  - repositoryId
+allOf:
+  - $ref: BaseEntity.yaml
+description: Junction entity linking Clusters to Repositories (many-to-many)

@@ -53,3 +53,5 @@ import "./recognition-event.tsp";
 import "./sdlc-task.tsp";
 import "./sdlc-subtask.tsp";
 import "./cluster.tsp";
+import "./cluster-repository.tsp";
+import "./cluster-application.tsp";
