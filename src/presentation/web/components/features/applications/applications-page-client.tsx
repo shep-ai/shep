@@ -166,7 +166,7 @@ function NewApplicationCard({
   return (
     <div
       className={cn(
-        'group relative flex cursor-pointer flex-col overflow-hidden rounded-xl border-2',
+        'group relative flex cursor-pointer flex-col overflow-hidden rounded-sm border-2',
         'border-dashed border-indigo-200 bg-transparent transition-all duration-200',
         'hover:border-indigo-400 hover:bg-indigo-500/[0.03]',
         'dark:border-indigo-900 dark:hover:border-indigo-700',

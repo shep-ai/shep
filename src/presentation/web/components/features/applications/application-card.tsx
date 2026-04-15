@@ -239,8 +239,10 @@ export function ApplicationCard({ application, className }: ApplicationCardProps
           // has no contrast against the page. Lift the dark-mode surface
           // one step (`neutral-900` = `#171717`) and soften the border so
           // the card reads as an elevated tile instead of a hole in the
-          // page. Light mode is unchanged.
-          'group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl',
+          // page. Light mode is unchanged. Corners are deliberately sharp
+          // (`rounded-sm`) per the dashboard tile family — the placeholder
+          // and new-application tiles both match.
+          'group relative flex cursor-pointer flex-col overflow-hidden rounded-sm',
           'bg-card dark:bg-neutral-900',
           'border-border/60 border shadow-sm dark:border-white/10',
           'hover:border-border transition-all duration-200 hover:shadow-lg dark:hover:border-white/20 dark:hover:shadow-black/40',
