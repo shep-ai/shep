@@ -3028,6 +3028,68 @@ export type SdlcSubTask = BaseEntity & {
    */
   sortOrder: float64;
 };
+export enum ClusterStatus {
+  Provisioning = 'Provisioning',
+  Ready = 'Ready',
+  Stopping = 'Stopping',
+  Stopped = 'Stopped',
+  Error = 'Error',
+  Destroying = 'Destroying',
+}
+
+/**
+ * A managed Kubernetes cluster provisioned via k3s-in-Docker
+ */
+export type Cluster = SoftDeletableEntity & {
+  /**
+   * Human-readable cluster name
+   */
+  name: string;
+  /**
+   * URL-friendly identifier (unique among non-deleted clusters)
+   */
+  slug: string;
+  /**
+   * Optional description of the cluster's purpose
+   */
+  description?: string;
+  /**
+   * Current operational status of the cluster
+   */
+  status: ClusterStatus;
+  /**
+   * The k3d-internal cluster name (set during provisioning)
+   */
+  k3dClusterName?: string;
+  /**
+   * Absolute path to the kubeconfig file
+   */
+  kubeconfigPath?: string;
+  /**
+   * Whether ArgoCD is enabled for this cluster
+   */
+  argoCdEnabled: boolean;
+  /**
+   * Kubernetes namespace where ArgoCD is installed
+   */
+  argoCdNamespace: string;
+  /**
+   * Number of k3s nodes (default 1, reserved for future multi-node support)
+   */
+  nodeCount: number;
+  /**
+   * Timestamp when the cluster was last successfully provisioned
+   */
+  lastProvisionedAt?: any;
+  /**
+   * Timestamp of the most recent health check
+   */
+  lastHealthCheckAt?: any;
+  /**
+   * Error message from the last failed operation (set when status = Error)
+   */
+  errorMessage?: string;
+};
 
 /**
  * Single installation suggestion for a tool
