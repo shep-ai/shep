@@ -1,75 +1,41 @@
-=== shep cluster ls (empty) ===
+=== CLI Cluster Workflow Demonstration ===
 
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster ls
-
-
-ℹ No clusters found
-
-
-=== shep cluster new test-cluster ===
-
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster new test-cluster
-
+--- Creating a basic cluster ---
 ⠋ Creating cluster...                      
 ✓ Cluster created
-  ID:       4afd6080-2e55-45dc-85c6-0504bda1bc9d
-  Name:     test-cluster
-  Slug:     test-cluster
+  ID:       bd3c4a11-8179-438d-a724-679adbe97ba9
+  Name:     test-basic
+  Slug:     test-basic
   Status:   Stopped
   ArgoCD:   disabled
 
 
-=== shep cluster ls (after create) ===
-
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster ls
-
-
-  Clusters (1)
-
-  ID          Name                      Status          ArgoCD  
-  4afd6080    test-cluster              Stopped         off
-
-
-=== shep cluster new staging --argocd ===
-
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster new staging --argocd
-
+--- Creating a cluster with ArgoCD enabled ---
 ⠋ Creating cluster...                      
 ✓ Cluster created
-  ID:       3d1484ed-156d-4eb4-95dd-8315d8921e4a
-  Name:     staging
-  Slug:     staging
+  ID:       90c60b8a-c052-4d8a-9d5e-26ee2eee18e9
+  Name:     test-argocd
+  Slug:     test-argocd
   Status:   Stopped
   ArgoCD:   enabled
 
 
-=== shep cluster ls (two clusters) ===
-
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster ls
-
+--- Listing clusters ---
 
   Clusters (2)
 
   ID          Name                      Status          ArgoCD  
-  4afd6080    test-cluster              Stopped         off
-  3d1484ed    staging                   Stopped         on
-
-=== shep cluster show test-cluster ===
-
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster show test-cluster
+  bd3c4a11    test-basic                Stopped         off
+  90c60b8a    test-argocd               Stopped         on
 
 
-  Cluster: test-cluster
+--- Showing cluster details ---
 
-  ID      4afd6080-2e55-45dc-85c6-0504bda1bc9d
-  Name    test-cluster
-  Slug    test-cluster
+  Cluster: test-basic
+
+  ID      bd3c4a11-8179-438d-a724-679adbe97ba9
+  Name    test-basic
+  Slug    test-basic
   Status  Stopped
 
   Configuration
@@ -80,21 +46,17 @@
   Node Count        1
 
   Timestamps
-  Created  4/16/2026, 11:21:06 AM
-  Updated  4/16/2026, 11:21:06 AM
+  Created  4/16/2026, 11:35:03 AM
+  Updated  4/16/2026, 11:35:03 AM
 
   Linked Entities
   Repositories  none
   Applications  none
 
 
-=== shep cluster status test-cluster ===
+--- Checking cluster status ---
 
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster status test-cluster
-
-
-  Cluster Status: test-cluster
+  Cluster Status: test-basic
 
   Status    Stopped
   Pods      n/a
@@ -102,36 +64,23 @@
   ArgoCD    disabled
 
 
-=== shep cluster del staging --force ===
-
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster del staging --force
-
+--- Deleting cluster with --force ---
 
 ✓ Cluster deleted
-  Name: staging
-  Slug: staging
+  Name: test-basic
+  Slug: test-basic
 
 
-=== shep cluster ls (after delete) ===
-
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster ls
-
-
-  Clusters (1)
-
-  ID          Name                      Status          ArgoCD  
-  4afd6080    test-cluster              Stopped         off
-
-
-=== cleanup: del test-cluster ===
-
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster del test-cluster --force
-
+--- Deleting second cluster ---
 
 ✓ Cluster deleted
-  Name: test-cluster
-  Slug: test-cluster
+  Name: test-argocd
+  Slug: test-argocd
 
+
+--- Listing clusters after deletion (should be empty) ---
+
+ℹ No clusters found
+
+
+=== Workflow Complete ===

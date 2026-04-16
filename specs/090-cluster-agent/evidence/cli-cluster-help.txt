@@ -1,6 +1,4 @@
-
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster --help
+=== CLI: shep cluster --help ===
 
 Usage: shep cluster [options] [command]
 
@@ -18,10 +16,8 @@ Commands:
   unlink <cluster> <entity>  Unlink a repository or application from a cluster
   status <id>                Show live cluster status
   help [command]             display help for command
-=== cluster new --help ===
 
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster new --help
+=== CLI: shep cluster new --help ===
 
 Usage: shep cluster new [options] <name>
 
@@ -34,10 +30,8 @@ Options:
   --argocd     Enable ArgoCD for GitOps continuous delivery
   --provision  Start provisioning immediately after creation
   -h, --help   display help for command
-=== cluster ls --help ===
 
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster ls --help
+=== CLI: shep cluster ls --help ===
 
 Usage: shep cluster ls [options]
 
@@ -45,10 +39,8 @@ List clusters
 
 Options:
   -h, --help  display help for command
-=== cluster show --help ===
 
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster show --help
+=== CLI: shep cluster show --help ===
 
 Usage: shep cluster show [options] <id>
 
@@ -59,10 +51,8 @@ Arguments:
 
 Options:
   -h, --help  display help for command
-=== cluster del --help ===
 
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster del --help
+=== CLI: shep cluster del --help ===
 
 Usage: shep cluster del [options] <id>
 
@@ -74,10 +64,8 @@ Arguments:
 Options:
   -f, --force  Skip confirmation prompt
   -h, --help   display help for command
-=== cluster link --help ===
 
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster link --help
+=== CLI: shep cluster link --help ===
 
 Usage: shep cluster link [options] <cluster> <entity>
 
@@ -89,10 +77,8 @@ Arguments:
 
 Options:
   -h, --help  display help for command
-=== cluster unlink --help ===
 
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster unlink --help
+=== CLI: shep cluster unlink --help ===
 
 Usage: shep cluster unlink [options] <cluster> <entity>
 
@@ -104,10 +90,8 @@ Arguments:
 
 Options:
   -h, --help  display help for command
-=== cluster status --help ===
 
-> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
-> tsx src/presentation/cli/index.ts cluster status --help
+=== CLI: shep cluster status --help ===
 
 Usage: shep cluster status [options] <id>
 

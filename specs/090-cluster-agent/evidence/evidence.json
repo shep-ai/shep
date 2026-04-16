@@ -1,91 +1,91 @@
 [
   {
     "type": "TestOutput",
-    "capturedAt": "2026-04-16T11:12:00Z",
+    "capturedAt": "2026-04-16T11:27:15Z",
     "description": "Unit test results — all 527 test files, 6804 tests passing with zero failures. Covers cluster domain models, use cases, mappers, factories, infrastructure services, CLI commands, and web actions.",
     "relativePath": "specs/090-cluster-agent/evidence/unit-test-results.txt",
     "taskRef": "task-39"
   },
   {
     "type": "TestOutput",
-    "capturedAt": "2026-04-16T11:12:30Z",
+    "capturedAt": "2026-04-16T11:27:20Z",
     "description": "Integration test results — all 59 test files, 801 tests passing with zero failures. Covers SQLite cluster repository, migrations, DI container bootstrap, and agent infrastructure.",
     "relativePath": "specs/090-cluster-agent/evidence/integration-test-results.txt",
     "taskRef": "task-39"
   },
   {
     "type": "TestOutput",
-    "capturedAt": "2026-04-16T11:13:00Z",
+    "capturedAt": "2026-04-16T11:26:45Z",
     "description": "TypeScript typecheck passes with zero errors — tsc --noEmit succeeds, confirming all new types (Cluster, ClusterStatus, ClusterRepository, ClusterApplication, use case types, port interfaces) are correctly wired.",
     "relativePath": "specs/090-cluster-agent/evidence/typecheck-results.txt",
     "taskRef": "task-39"
   },
   {
     "type": "TestOutput",
-    "capturedAt": "2026-04-16T11:13:30Z",
+    "capturedAt": "2026-04-16T11:26:50Z",
     "description": "Build succeeds — pnpm build (tsc + tsc-alias + asset copy) compiles without errors, confirming all cluster modules are included in the production build.",
     "relativePath": "specs/090-cluster-agent/evidence/build-results.txt",
     "taskRef": "task-39"
   },
   {
     "type": "TestOutput",
-    "capturedAt": "2026-04-16T11:13:45Z",
+    "capturedAt": "2026-04-16T11:26:55Z",
     "description": "Lint passes with zero warnings — eslint runs with --max-warnings 0 and succeeds, confirming all new cluster code follows project linting rules.",
     "relativePath": "specs/090-cluster-agent/evidence/lint-results.txt",
     "taskRef": "task-39"
   },
   {
     "type": "Screenshot",
-    "capturedAt": "2026-04-16T11:17:00Z",
+    "capturedAt": "2026-04-16T11:30:10Z",
     "description": "App: Settings page showing the Feature Flags tab with all experimental feature toggles including the clusters feature flag wiring through the settings page.",
     "relativePath": "specs/090-cluster-agent/evidence/app-settings-flags-tab-clusters.png",
     "taskRef": "task-30"
   },
   {
     "type": "Screenshot",
-    "capturedAt": "2026-04-16T11:19:00Z",
+    "capturedAt": "2026-04-16T11:30:15Z",
     "description": "App: Settings page with taller viewport showing the full Feature Flags section including clusters toggle position (between Projects and Interactive Agent sections).",
     "relativePath": "specs/090-cluster-agent/evidence/app-settings-clusters-toggle-visible.png",
     "taskRef": "task-30"
   },
   {
     "type": "Screenshot",
-    "capturedAt": "2026-04-16T11:17:30Z",
+    "capturedAt": "2026-04-16T11:30:05Z",
     "description": "App: Settings page at initial load showing Language, Agent, and Environment sections with the full top navigation bar including the Flags tab.",
     "relativePath": "specs/090-cluster-agent/evidence/app-settings-cluster-feature-flag.png",
     "taskRef": "task-30"
   },
   {
     "type": "Screenshot",
-    "capturedAt": "2026-04-16T11:17:45Z",
+    "capturedAt": "2026-04-16T11:30:00Z",
     "description": "App: Control center dashboard canvas showing feature nodes with the React Flow graph. The canvas renders correctly and includes the sidebar navigation with all nav items.",
     "relativePath": "specs/090-cluster-agent/evidence/app-dashboard-control-center.png",
     "taskRef": "task-37"
   },
   {
     "type": "Screenshot",
-    "capturedAt": "2026-04-16T11:18:00Z",
+    "capturedAt": "2026-04-16T11:30:02Z",
     "description": "App: Sidebar navigation showing icon-based nav items — home, table, grid, link, agent, and settings icons are all rendered correctly.",
     "relativePath": "specs/090-cluster-agent/evidence/app-sidebar-navigation.png",
     "taskRef": "task-37"
   },
   {
     "type": "Screenshot",
-    "capturedAt": "2026-04-16T11:22:00Z",
+    "capturedAt": "2026-04-16T11:32:00Z",
     "description": "Storybook: ClusterStatusBadge showing all 6 cluster lifecycle states with correct color coding — Provisioning (blue), Ready (green), Stopping (yellow), Stopped (gray), Error (red), Destroying (orange). Each status uses both color and text for accessibility.",
     "relativePath": "specs/090-cluster-agent/evidence/storybook-cluster-status-badge-all.png",
     "taskRef": "task-33"
   },
   {
     "type": "TerminalRecording",
-    "capturedAt": "2026-04-16T11:20:00Z",
+    "capturedAt": "2026-04-16T11:28:30Z",
     "description": "CLI: shep cluster --help showing all 7 subcommands (new, ls, show, del, link, unlink, status) plus individual --help for each subcommand showing arguments and options.",
     "relativePath": "specs/090-cluster-agent/evidence/cli-cluster-help.txt",
     "taskRef": "task-32"
   },
   {
     "type": "TerminalRecording",
-    "capturedAt": "2026-04-16T11:21:00Z",
+    "capturedAt": "2026-04-16T11:29:00Z",
     "description": "CLI: Full cluster workflow demonstration — creating clusters (with and without --argocd), listing them in formatted table, showing detailed view, checking status, deleting with --force, and verifying deletion. Proves all 7 CLI subcommands work end-to-end.",
     "relativePath": "specs/090-cluster-agent/evidence/cli-cluster-usage.txt",
     "taskRef": "task-32"
