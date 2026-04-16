@@ -263,7 +263,8 @@
     "tools": "Herramientas",
     "skills": "Habilidades",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "clusters": "Clústeres"
   },
   "sidebar": {
     "features": "Funcionalidades",
@@ -705,5 +706,15 @@
     "promptCount_many": "{{count}} prompts",
     "overrideCount_few": "{{count}} anulaciones",
     "overrideCount_many": "{{count}} anulaciones"
+  },
+  "cluster": {
+    "status": {
+      "provisioning": "Aprovisionando",
+      "ready": "Listo",
+      "stopping": "Deteniendo",
+      "stopped": "Detenido",
+      "error": "Error",
+      "destroying": "Destruyendo"
+    }
   }
 }

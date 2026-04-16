@@ -263,7 +263,8 @@
     "tools": "Outils",
     "skills": "Compétences",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "clusters": "Clusters"
   },
   "sidebar": {
     "features": "Fonctionnalités",
@@ -705,5 +706,15 @@
     "promptCount_many": "{{count}} prompts",
     "overrideCount_few": "{{count}} remplacements",
     "overrideCount_many": "{{count}} remplacements"
+  },
+  "cluster": {
+    "status": {
+      "provisioning": "Provisionnement",
+      "ready": "Prêt",
+      "stopping": "Arrêt en cours",
+      "stopped": "Arrêté",
+      "error": "Erreur",
+      "destroying": "Destruction en cours"
+    }
   }
 }

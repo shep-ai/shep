@@ -541,6 +541,107 @@
         "notFound": "Application not found: {{id}}"
       }
     },
+    "cluster": {
+      "description": "Керування кластерами",
+      "new": {
+        "description": "Створити новий кластер",
+        "nameArgument": "Назва кластера",
+        "argocdOption": "Увімкнути ArgoCD для безперервної доставки через GitOps",
+        "provisionOption": "Розпочати розгортання одразу після створення",
+        "spinnerText": "Створення кластера",
+        "clusterCreated": "Кластер створено",
+        "idLabel": "ID:",
+        "nameLabel": "Назва:",
+        "slugLabel": "Слаг:",
+        "statusLabel": "Статус:",
+        "argocdLabel": "ArgoCD:",
+        "provisioningStarted": "Розгортання розпочато",
+        "failedToCreate": "Не вдалося створити кластер"
+      },
+      "ls": {
+        "description": "Список кластерів",
+        "title": "Кластери",
+        "idColumn": "ID",
+        "nameColumn": "Назва",
+        "statusColumn": "Статус",
+        "argocdColumn": "ArgoCD",
+        "reposColumn": "Репозиторії",
+        "appsColumn": "Додатки",
+        "noClusters": "Кластерів не знайдено",
+        "failedToList": "Не вдалося отримати список кластерів"
+      },
+      "show": {
+        "description": "Показати деталі кластера",
+        "idArgument": "ID кластера, слаг або префікс",
+        "title": "Кластер: {{name}}",
+        "nameLabel": "Назва",
+        "slugLabel": "Слаг",
+        "statusLabel": "Статус",
+        "descriptionLabel": "Опис",
+        "argocdLabel": "ArgoCD",
+        "argocdNamespaceLabel": "Простір імен ArgoCD",
+        "kubeconfigLabel": "Kubeconfig",
+        "k3dNameLabel": "Назва k3d",
+        "nodeCountLabel": "Кількість вузлів",
+        "errorLabel": "Помилка",
+        "configTitle": "Конфігурація",
+        "timestampsTitle": "Часові мітки",
+        "createdLabel": "Створено",
+        "updatedLabel": "Оновлено",
+        "provisionedLabel": "Останнє розгортання",
+        "healthCheckLabel": "Остання перевірка стану",
+        "linkedTitle": "Пов'язані сутності",
+        "reposLabel": "Репозиторії",
+        "appsLabel": "Додатки",
+        "failedToShow": "Не вдалося показати кластер"
+      },
+      "del": {
+        "description": "Видалити кластер",
+        "idArgument": "ID кластера, слаг або префікс",
+        "forceOption": "Пропустити підтвердження",
+        "confirmDelete": "Видалити кластер \"{{name}}\"? Буде знищено, якщо активний.",
+        "cancelled": "Скасовано",
+        "clusterDeleted": "Кластер видалено",
+        "nameLabel": "Назва:",
+        "slugLabel": "Слаг:",
+        "failedToDelete": "Не вдалося видалити кластер"
+      },
+      "link": {
+        "description": "Прив'язати репозиторій або додаток до кластера",
+        "clusterArgument": "ID кластера, слаг або префікс",
+        "entityArgument": "ID репозиторію або додатку",
+        "linked": "Прив'язано до кластера",
+        "clusterLabel": "Кластер:",
+        "entityLabel": "Сутність:",
+        "failedToLink": "Не вдалося прив'язати сутність до кластера"
+      },
+      "unlink": {
+        "description": "Відв'язати репозиторій або додаток від кластера",
+        "clusterArgument": "ID кластера, слаг або префікс",
+        "entityArgument": "ID репозиторію або додатку",
+        "unlinked": "Відв'язано від кластера",
+        "clusterLabel": "Кластер:",
+        "entityLabel": "Сутність:",
+        "failedToUnlink": "Не вдалося відв'язати сутність від кластера"
+      },
+      "status": {
+        "description": "Показати поточний статус кластера",
+        "idArgument": "ID кластера, слаг або префікс",
+        "title": "Статус кластера: {{name}}",
+        "statusLabel": "Статус",
+        "podCountLabel": "Поди",
+        "serviceCountLabel": "Сервіси",
+        "argocdLabel": "ArgoCD",
+        "notReady": "Кластер не в стані Готовий",
+        "podsTitle": "Поди",
+        "servicesTitle": "Сервіси",
+        "failedToGetStatus": "Не вдалося отримати статус кластера"
+      },
+      "resolve": {
+        "multipleMatch": "Декілька кластерів відповідають префіксу \"{{id}}\": {{matches}}",
+        "notFound": "Кластер не знайдено: {{id}}"
+      }
+    },
     "agent": {
       "description": "Керування та перегляд запусків агентів",
       "show": {

@@ -1,0 +1,120 @@
+
+> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
+> tsx src/presentation/cli/index.ts cluster --help
+
+Usage: shep cluster [options] [command]
+
+Manage clusters
+
+Options:
+  -h, --help                 display help for command
+
+Commands:
+  new [options] <name>       Create a new cluster
+  ls                         List clusters
+  show <id>                  Display details of a cluster
+  del [options] <id>         Delete a cluster
+  link <cluster> <entity>    Link a repository or application to a cluster
+  unlink <cluster> <entity>  Unlink a repository or application from a cluster
+  status <id>                Show live cluster status
+  help [command]             display help for command
+=== cluster new --help ===
+
+> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
+> tsx src/presentation/cli/index.ts cluster new --help
+
+Usage: shep cluster new [options] <name>
+
+Create a new cluster
+
+Arguments:
+  name         Cluster name
+
+Options:
+  --argocd     Enable ArgoCD for GitOps continuous delivery
+  --provision  Start provisioning immediately after creation
+  -h, --help   display help for command
+=== cluster ls --help ===
+
+> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
+> tsx src/presentation/cli/index.ts cluster ls --help
+
+Usage: shep cluster ls [options]
+
+List clusters
+
+Options:
+  -h, --help  display help for command
+=== cluster show --help ===
+
+> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
+> tsx src/presentation/cli/index.ts cluster show --help
+
+Usage: shep cluster show [options] <id>
+
+Display details of a cluster
+
+Arguments:
+  id          Cluster ID, slug, or prefix
+
+Options:
+  -h, --help  display help for command
+=== cluster del --help ===
+
+> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
+> tsx src/presentation/cli/index.ts cluster del --help
+
+Usage: shep cluster del [options] <id>
+
+Delete a cluster
+
+Arguments:
+  id           Cluster ID, slug, or prefix
+
+Options:
+  -f, --force  Skip confirmation prompt
+  -h, --help   display help for command
+=== cluster link --help ===
+
+> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
+> tsx src/presentation/cli/index.ts cluster link --help
+
+Usage: shep cluster link [options] <cluster> <entity>
+
+Link a repository or application to a cluster
+
+Arguments:
+  cluster     Cluster ID, slug, or prefix
+  entity      Repository or application ID
+
+Options:
+  -h, --help  display help for command
+=== cluster unlink --help ===
+
+> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
+> tsx src/presentation/cli/index.ts cluster unlink --help
+
+Usage: shep cluster unlink [options] <cluster> <entity>
+
+Unlink a repository or application from a cluster
+
+Arguments:
+  cluster     Cluster ID, slug, or prefix
+  entity      Repository or application ID
+
+Options:
+  -h, --help  display help for command
+=== cluster status --help ===
+
+> @shepai/cli@1.188.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
+> tsx src/presentation/cli/index.ts cluster status --help
+
+Usage: shep cluster status [options] <id>
+
+Show live cluster status
+
+Arguments:
+  id          Cluster ID, slug, or prefix
+
+Options:
+  -h, --help  display help for command

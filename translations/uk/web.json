@@ -263,7 +263,8 @@
     "tools": "Інструменти",
     "skills": "Навички",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "clusters": "Кластери"
   },
   "sidebar": {
     "features": "Функції",
@@ -705,5 +706,15 @@
     "newAgent": "Новий агент",
     "creating": "Створення...",
     "createAgent": "Створити агента"
+  },
+  "cluster": {
+    "status": {
+      "provisioning": "Розгортання",
+      "ready": "Готовий",
+      "stopping": "Зупинка",
+      "stopped": "Зупинено",
+      "error": "Помилка",
+      "destroying": "Знищення"
+    }
   }
 }

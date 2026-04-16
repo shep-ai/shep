@@ -263,7 +263,8 @@
     "tools": "כלים",
     "skills": "כישורים",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "clusters": "אשכולות"
   },
   "sidebar": {
     "features": "פיצ'רים",
@@ -705,5 +706,15 @@
     "promptCount_many": "{{count}} פרומפטים",
     "overrideCount_few": "{{count}} דריסות",
     "overrideCount_many": "{{count}} דריסות"
+  },
+  "cluster": {
+    "status": {
+      "provisioning": "מקצה",
+      "ready": "מוכן",
+      "stopping": "נעצר",
+      "stopped": "עצור",
+      "error": "שגיאה",
+      "destroying": "משמיד"
+    }
   }
 }

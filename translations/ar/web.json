@@ -263,7 +263,8 @@
     "tools": "الأدوات",
     "skills": "المهارات",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "clusters": "المجموعات"
   },
   "sidebar": {
     "features": "الميزات",
@@ -705,5 +706,15 @@
     "promptCount_many": "{{count}} مطالبة",
     "overrideCount_few": "{{count}} تجاوزات",
     "overrideCount_many": "{{count}} تجاوزًا"
+  },
+  "cluster": {
+    "status": {
+      "provisioning": "جارٍ التوفير",
+      "ready": "جاهز",
+      "stopping": "جارٍ الإيقاف",
+      "stopped": "متوقف",
+      "error": "خطأ",
+      "destroying": "جارٍ التدمير"
+    }
   }
 }

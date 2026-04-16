@@ -541,6 +541,107 @@
         "notFound": "Application not found: {{id}}"
       }
     },
+    "cluster": {
+      "description": "Cluster verwalten",
+      "new": {
+        "description": "Neuen Cluster erstellen",
+        "nameArgument": "Clustername",
+        "argocdOption": "ArgoCD für GitOps Continuous Delivery aktivieren",
+        "provisionOption": "Bereitstellung sofort nach Erstellung starten",
+        "spinnerText": "Cluster wird erstellt",
+        "clusterCreated": "Cluster erstellt",
+        "idLabel": "ID:",
+        "nameLabel": "Name:",
+        "slugLabel": "Slug:",
+        "statusLabel": "Status:",
+        "argocdLabel": "ArgoCD:",
+        "provisioningStarted": "Bereitstellung gestartet",
+        "failedToCreate": "Cluster konnte nicht erstellt werden"
+      },
+      "ls": {
+        "description": "Cluster auflisten",
+        "title": "Cluster",
+        "idColumn": "ID",
+        "nameColumn": "Name",
+        "statusColumn": "Status",
+        "argocdColumn": "ArgoCD",
+        "reposColumn": "Repos",
+        "appsColumn": "Apps",
+        "noClusters": "Keine Cluster gefunden",
+        "failedToList": "Cluster konnten nicht aufgelistet werden"
+      },
+      "show": {
+        "description": "Clusterdetails anzeigen",
+        "idArgument": "Cluster-ID, Slug oder Präfix",
+        "title": "Cluster: {{name}}",
+        "nameLabel": "Name",
+        "slugLabel": "Slug",
+        "statusLabel": "Status",
+        "descriptionLabel": "Beschreibung",
+        "argocdLabel": "ArgoCD",
+        "argocdNamespaceLabel": "ArgoCD-Namespace",
+        "kubeconfigLabel": "Kubeconfig",
+        "k3dNameLabel": "k3d-Name",
+        "nodeCountLabel": "Knotenanzahl",
+        "errorLabel": "Fehler",
+        "configTitle": "Konfiguration",
+        "timestampsTitle": "Zeitstempel",
+        "createdLabel": "Erstellt",
+        "updatedLabel": "Aktualisiert",
+        "provisionedLabel": "Zuletzt bereitgestellt",
+        "healthCheckLabel": "Letzter Gesundheitscheck",
+        "linkedTitle": "Verknüpfte Entitäten",
+        "reposLabel": "Repositories",
+        "appsLabel": "Anwendungen",
+        "failedToShow": "Cluster konnte nicht angezeigt werden"
+      },
+      "del": {
+        "description": "Cluster löschen",
+        "idArgument": "Cluster-ID, Slug oder Präfix",
+        "forceOption": "Bestätigung überspringen",
+        "confirmDelete": "Cluster \"{{name}}\" löschen? Wird zerstört, falls aktiv.",
+        "cancelled": "Abgebrochen",
+        "clusterDeleted": "Cluster gelöscht",
+        "nameLabel": "Name:",
+        "slugLabel": "Slug:",
+        "failedToDelete": "Cluster konnte nicht gelöscht werden"
+      },
+      "link": {
+        "description": "Repository oder Anwendung mit Cluster verknüpfen",
+        "clusterArgument": "Cluster-ID, Slug oder Präfix",
+        "entityArgument": "Repository- oder Anwendungs-ID",
+        "linked": "Mit Cluster verknüpft",
+        "clusterLabel": "Cluster:",
+        "entityLabel": "Entität:",
+        "failedToLink": "Entität konnte nicht mit Cluster verknüpft werden"
+      },
+      "unlink": {
+        "description": "Repository oder Anwendung von Cluster trennen",
+        "clusterArgument": "Cluster-ID, Slug oder Präfix",
+        "entityArgument": "Repository- oder Anwendungs-ID",
+        "unlinked": "Vom Cluster getrennt",
+        "clusterLabel": "Cluster:",
+        "entityLabel": "Entität:",
+        "failedToUnlink": "Entität konnte nicht vom Cluster getrennt werden"
+      },
+      "status": {
+        "description": "Live-Status des Clusters anzeigen",
+        "idArgument": "Cluster-ID, Slug oder Präfix",
+        "title": "Clusterstatus: {{name}}",
+        "statusLabel": "Status",
+        "podCountLabel": "Pods",
+        "serviceCountLabel": "Dienste",
+        "argocdLabel": "ArgoCD",
+        "notReady": "Cluster ist nicht im Status Bereit",
+        "podsTitle": "Pods",
+        "servicesTitle": "Dienste",
+        "failedToGetStatus": "Clusterstatus konnte nicht abgerufen werden"
+      },
+      "resolve": {
+        "multipleMatch": "Mehrere Cluster stimmen mit Präfix \"{{id}}\" überein: {{matches}}",
+        "notFound": "Cluster nicht gefunden: {{id}}"
+      }
+    },
     "agent": {
       "description": "Agentläufe verwalten und anzeigen",
       "show": {

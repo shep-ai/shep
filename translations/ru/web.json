@@ -263,7 +263,8 @@
     "tools": "Инструменты",
     "skills": "Навыки",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "clusters": "Кластеры"
   },
   "sidebar": {
     "features": "Функции",
@@ -705,5 +706,15 @@
     "newAgent": "Новый агент",
     "creating": "Создание...",
     "createAgent": "Создать агента"
+  },
+  "cluster": {
+    "status": {
+      "provisioning": "Развёртывание",
+      "ready": "Готов",
+      "stopping": "Остановка",
+      "stopped": "Остановлен",
+      "error": "Ошибка",
+      "destroying": "Уничтожение"
+    }
   }
 }
