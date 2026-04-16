@@ -204,6 +204,8 @@
       "collaborationDescription": "Enable agent-to-agent messaging, supervisor delegation, and the unified agent questions inbox",
       "bedrockIntegration": "Project Bedrock Memory",
       "bedrockIntegrationDescription": "Enable project-bedrock memory integration (markdown project memory for AI coding agents) — surfaces toggles, drawers, and tabs across applications, repositories, and features. Requires Python 3.9+ and pipx.",
+      "clusters": "Clusters",
+      "clustersDescription": "Enable Clusters navigation and Kubernetes cluster management in the web UI",
       "hint": "Experimental features that are still under development. Enable at your own risk — they may change or be removed in future versions. Debug mode adds verbose logging useful for troubleshooting."
     },
     "interactiveAgent": {

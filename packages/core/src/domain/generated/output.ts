@@ -692,6 +692,7 @@ export type FeatureFlags = {
    */
   bedrockIntegration: boolean;
    * Enable Clusters pages and navigation (managed Kubernetes clusters)
+   * Enable Clusters navigation and Kubernetes cluster management in the web UI
    */
   clusters: boolean;
 };

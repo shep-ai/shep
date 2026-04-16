@@ -228,6 +228,7 @@ export function createDefaultSettings(): Settings {
     codeReview: false,
     collaboration: false,
     bedrockIntegration: true,
+    clusters: false,
   };
 
   return {

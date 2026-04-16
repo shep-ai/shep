@@ -30,6 +30,10 @@ properties:
     type: boolean
     default: true
     description: Enable project-bedrock memory integration UI and server actions (spec 098)
+  clusters:
+    type: boolean
+    default: false
+    description: Enable Clusters navigation and Kubernetes cluster management in the web UI
 required:
   - envDeploy
   - debug
@@ -38,4 +42,5 @@ required:
   - codeReview
   - collaboration
   - bedrockIntegration
+  - clusters
 description: Feature flag toggles for runtime feature control

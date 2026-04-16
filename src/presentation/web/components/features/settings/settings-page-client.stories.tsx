@@ -41,6 +41,7 @@ export const AllSections: Story = {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: false,
+        clusters: false,
       },
     },
     shepHome: '/opt/shep',

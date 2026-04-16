@@ -319,6 +319,7 @@ describe('createDefaultSettings', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: true,
+        clusters: false,
       });
     });
   });

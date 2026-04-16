@@ -46,6 +46,7 @@ const defaultFlags = {
   codeReview: false,
   collaboration: false,
   bedrockIntegration: false,
+  clusters: false,
 };
 
 function renderWithSidebar(ui: React.ReactElement) {

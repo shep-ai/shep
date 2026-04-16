@@ -403,6 +403,7 @@ export function SettingsPageClient({
     codeReview: false,
     collaboration: false,
     bedrockIntegration: true,
+    clusters: false,
   };
 
   // Language state
@@ -1783,6 +1784,18 @@ export function SettingsPageClient({
               checked={flags.bedrockIntegration}
               onChange={(v) => {
                 const newFlags = { ...flags, bedrockIntegration: v };
+                setFlags(newFlags);
+                save({ featureFlags: newFlags });
+              }}
+            />
+            <SwitchRow
+              label={t('settings.featureFlags.clusters')}
+              description={t('settings.featureFlags.clustersDescription')}
+              id="flag-clusters"
+              testId="switch-flag-clusters"
+              checked={flags.clusters}
+              onChange={(v) => {
+                const newFlags = { ...flags, clusters: v };
                 setFlags(newFlags);
                 save({ featureFlags: newFlags });
               }}

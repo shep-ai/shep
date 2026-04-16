@@ -524,6 +524,7 @@ describe('SQLiteSettingsRepository', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: false,
+        clusters: false,
       };
 
       await repository.initialize(settings);
@@ -537,6 +538,7 @@ describe('SQLiteSettingsRepository', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: false,
+        clusters: false,
       });
     });
 
@@ -554,6 +556,7 @@ describe('SQLiteSettingsRepository', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: false,
+        clusters: false,
       });
     });
 
@@ -569,6 +572,7 @@ describe('SQLiteSettingsRepository', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: false,
+        clusters: false,
       };
       settings.updatedAt = new Date('2025-01-02T00:00:00Z');
       await repository.update(settings);
@@ -582,6 +586,7 @@ describe('SQLiteSettingsRepository', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: false,
+        clusters: false,
       });
     });
 
@@ -595,6 +600,7 @@ describe('SQLiteSettingsRepository', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: false,
+        clusters: false,
       };
 
       await repository.initialize(settings);
