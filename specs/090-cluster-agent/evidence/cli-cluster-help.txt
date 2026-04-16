@@ -1,4 +1,4 @@
-=== CLI: shep cluster --help ===
+$ shep cluster
 
 Usage: shep cluster [options] [command]
 
@@ -17,7 +17,7 @@ Commands:
   status <id>                Show live cluster status
   help [command]             display help for command
 
-=== CLI: shep cluster new --help ===
+$ shep cluster help new
 
 Usage: shep cluster new [options] <name>
 
@@ -31,7 +31,7 @@ Options:
   --provision  Start provisioning immediately after creation
   -h, --help   display help for command
 
-=== CLI: shep cluster ls --help ===
+$ shep cluster help ls
 
 Usage: shep cluster ls [options]
 
@@ -40,7 +40,7 @@ List clusters
 Options:
   -h, --help  display help for command
 
-=== CLI: shep cluster show --help ===
+$ shep cluster help show
 
 Usage: shep cluster show [options] <id>
 
@@ -52,7 +52,7 @@ Arguments:
 Options:
   -h, --help  display help for command
 
-=== CLI: shep cluster del --help ===
+$ shep cluster help del
 
 Usage: shep cluster del [options] <id>
 
@@ -65,7 +65,7 @@ Options:
   -f, --force  Skip confirmation prompt
   -h, --help   display help for command
 
-=== CLI: shep cluster link --help ===
+$ shep cluster help link
 
 Usage: shep cluster link [options] <cluster> <entity>
 
@@ -78,7 +78,7 @@ Arguments:
 Options:
   -h, --help  display help for command
 
-=== CLI: shep cluster unlink --help ===
+$ shep cluster help unlink
 
 Usage: shep cluster unlink [options] <cluster> <entity>
 
@@ -91,7 +91,7 @@ Arguments:
 Options:
   -h, --help  display help for command
 
-=== CLI: shep cluster status --help ===
+$ shep cluster help status
 
 Usage: shep cluster status [options] <id>
 
@@ -102,3 +102,4 @@ Arguments:
 
 Options:
   -h, --help  display help for command
+
