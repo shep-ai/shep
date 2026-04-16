@@ -11,6 +11,7 @@ import type { CanvasNodeType } from '@/components/features/features-canvas';
 import type { FeatureNodeData } from '@/components/common/feature-node';
 import type { RepositoryNodeData } from '@/components/common/repository-node';
 import type { ApplicationNodeData } from '@/components/common/application-node/application-node-config';
+import type { ClusterNodeData } from '@/components/common/cluster-node/cluster-node-config';
 /** A feature node entry stored in the domain Map. */
 export interface FeatureEntry {
   nodeId: string;
@@ -35,6 +36,14 @@ export interface RepoEntry {
 export interface ApplicationEntry {
   nodeId: string;
   data: ApplicationNodeData;
+}
+
+/** A cluster node entry stored in the domain Map. */
+export interface ClusterEntry {
+  nodeId: string;
+  data: ClusterNodeData;
+  /** Repository IDs linked to this cluster (for deriving cluster→repo edges). */
+  linkedRepoIds?: string[];
 }
 
 /** Stable callbacks passed by the consumer, injected into derived node data. */
@@ -74,6 +83,10 @@ export interface GraphCallbacks {
    *  the consumer is expected to navigate to the create drawer pre-scoped to
    *  this application in spec mode. */
   onApplicationCreateSddFeature?: (applicationId: string) => void;
+  /** Called when the user clicks a cluster node to open its detail drawer. */
+  onClusterClick?: (clusterId: string) => void;
+  /** Called when the user deletes a cluster. */
+  onClusterDelete?: (clusterId: string) => void;
 }
 
 /**
@@ -90,7 +103,8 @@ export function deriveGraph(
   repoMap: Map<string, RepoEntry>,
   pendingMap: Map<string, FeatureEntry>,
   callbacks?: GraphCallbacks,
-  applicationMap?: Map<string, ApplicationEntry>
+  applicationMap?: Map<string, ApplicationEntry>,
+  clusterMap?: Map<string, ClusterEntry>
 ): { nodes: CanvasNodeType[]; edges: Edge[] } {
   const nodes: CanvasNodeType[] = [];
   const edges: Edge[] = [];
@@ -298,6 +312,43 @@ export function deriveGraph(
         position: { x: 0, y: 0 },
         data,
       } as CanvasNodeType);
+    }
+  }
+
+  // Add cluster nodes and cluster→repo edges
+  if (clusterMap) {
+    for (const [nodeId, entry] of clusterMap) {
+      const data: ClusterNodeData = {
+        ...entry.data,
+        ...(callbacks?.onClusterClick && {
+          onClick: () => callbacks.onClusterClick!(entry.data.id),
+        }),
+        ...(callbacks?.onClusterDelete && {
+          onDelete: callbacks.onClusterDelete,
+        }),
+      };
+      nodes.push({
+        id: nodeId,
+        type: 'clusterNode',
+        position: { x: 0, y: 0 },
+        data,
+      } as CanvasNodeType);
+
+      // Derive cluster→repo edges from linked repository IDs
+      if (entry.linkedRepoIds) {
+        for (const repoId of entry.linkedRepoIds) {
+          const repoNodeId = `repo-${repoId}`;
+          // Only create the edge if the repo node exists
+          if (repoMap.has(repoNodeId)) {
+            edges.push({
+              id: `cluster-edge-${nodeId}-${repoNodeId}`,
+              source: nodeId,
+              target: repoNodeId,
+              style: { strokeDasharray: '3 3' },
+            });
+          }
+        }
+      }
     }
   }
 

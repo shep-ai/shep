@@ -1,0 +1,43 @@
+feature:
+  id: "090-cluster-agent"
+  name: "cluster-agent"
+  number: 90
+  branch: "feat/090-cluster-agent"
+  lifecycle: "research"
+  createdAt: "2026-04-15T21:23:37Z"
+status:
+  phase: "implementing-phase-8"
+  progress:
+    completed: 32
+    total: 39
+    percentage: 82
+  currentTask: "task-33"
+  lastUpdated: "2026-04-16T06:38:07.737Z"
+  lastUpdatedBy: "feature-agent:implement"
+  completedPhases:
+    - "analyze"
+    - "requirements"
+    - "research"
+    - "plan"
+    - "phase-1"
+    - "phase-2"
+    - "phase-3"
+    - "phase-4"
+    - "phase-5"
+    - "phase-6"
+    - "phase-7"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-04-15T21:23:37Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []
