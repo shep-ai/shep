@@ -541,6 +541,107 @@
         "notFound": "Application not found: {{id}}"
       }
     },
+    "cluster": {
+      "description": "Manage clusters",
+      "new": {
+        "description": "Create a new cluster",
+        "nameArgument": "Cluster name",
+        "argocdOption": "Enable ArgoCD for GitOps continuous delivery",
+        "provisionOption": "Start provisioning immediately after creation",
+        "spinnerText": "Creating cluster",
+        "clusterCreated": "Cluster created",
+        "idLabel": "ID:",
+        "nameLabel": "Name:",
+        "slugLabel": "Slug:",
+        "statusLabel": "Status:",
+        "argocdLabel": "ArgoCD:",
+        "provisioningStarted": "Provisioning started",
+        "failedToCreate": "Failed to create cluster"
+      },
+      "ls": {
+        "description": "List clusters",
+        "title": "Clusters",
+        "idColumn": "ID",
+        "nameColumn": "Name",
+        "statusColumn": "Status",
+        "argocdColumn": "ArgoCD",
+        "reposColumn": "Repos",
+        "appsColumn": "Apps",
+        "noClusters": "No clusters found",
+        "failedToList": "Failed to list clusters"
+      },
+      "show": {
+        "description": "Display details of a cluster",
+        "idArgument": "Cluster ID, slug, or prefix",
+        "title": "Cluster: {{name}}",
+        "nameLabel": "Name",
+        "slugLabel": "Slug",
+        "statusLabel": "Status",
+        "descriptionLabel": "Description",
+        "argocdLabel": "ArgoCD",
+        "argocdNamespaceLabel": "ArgoCD Namespace",
+        "kubeconfigLabel": "Kubeconfig",
+        "k3dNameLabel": "k3d Name",
+        "nodeCountLabel": "Node Count",
+        "errorLabel": "Error",
+        "configTitle": "Configuration",
+        "timestampsTitle": "Timestamps",
+        "createdLabel": "Created",
+        "updatedLabel": "Updated",
+        "provisionedLabel": "Last Provisioned",
+        "healthCheckLabel": "Last Health Check",
+        "linkedTitle": "Linked Entities",
+        "reposLabel": "Repositories",
+        "appsLabel": "Applications",
+        "failedToShow": "Failed to show cluster"
+      },
+      "del": {
+        "description": "Delete a cluster",
+        "idArgument": "Cluster ID, slug, or prefix",
+        "forceOption": "Skip confirmation prompt",
+        "confirmDelete": "Delete cluster \"{{name}}\"? This will destroy it if running.",
+        "cancelled": "Cancelled",
+        "clusterDeleted": "Cluster deleted",
+        "nameLabel": "Name:",
+        "slugLabel": "Slug:",
+        "failedToDelete": "Failed to delete cluster"
+      },
+      "link": {
+        "description": "Link a repository or application to a cluster",
+        "clusterArgument": "Cluster ID, slug, or prefix",
+        "entityArgument": "Repository or application ID",
+        "linked": "Linked to cluster",
+        "clusterLabel": "Cluster:",
+        "entityLabel": "Entity:",
+        "failedToLink": "Failed to link entity to cluster"
+      },
+      "unlink": {
+        "description": "Unlink a repository or application from a cluster",
+        "clusterArgument": "Cluster ID, slug, or prefix",
+        "entityArgument": "Repository or application ID",
+        "unlinked": "Unlinked from cluster",
+        "clusterLabel": "Cluster:",
+        "entityLabel": "Entity:",
+        "failedToUnlink": "Failed to unlink entity from cluster"
+      },
+      "status": {
+        "description": "Show live cluster status",
+        "idArgument": "Cluster ID, slug, or prefix",
+        "title": "Cluster Status: {{name}}",
+        "statusLabel": "Status",
+        "podCountLabel": "Pods",
+        "serviceCountLabel": "Services",
+        "argocdLabel": "ArgoCD",
+        "notReady": "Cluster is not in Ready state",
+        "podsTitle": "Pods",
+        "servicesTitle": "Services",
+        "failedToGetStatus": "Failed to get cluster status"
+      },
+      "resolve": {
+        "multipleMatch": "Multiple clusters match prefix \"{{id}}\": {{matches}}",
+        "notFound": "Cluster not found: {{id}}"
+      }
+    },
     "agent": {
       "description": "Manage and view agent runs",
       "show": {

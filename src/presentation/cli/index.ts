@@ -43,6 +43,7 @@ import { createAgentCommand } from './commands/agent/index.js';
 import { createFeatCommand } from './commands/feat/index.js';
 import { createRepoCommand } from './commands/repo/index.js';
 import { createAppCommand } from './commands/app/index.js';
+import { createClusterCommand } from './commands/cluster/index.js';
 import { createSessionCommand } from './commands/session/index.js';
 import { createIdeOpenCommand } from './commands/ide-open.command.js';
 import { createInstallCommand } from './commands/install.command.js';
@@ -139,6 +140,7 @@ async function bootstrap() {
     program.addCommand(createFeatCommand());
     program.addCommand(createRepoCommand());
     program.addCommand(createAppCommand());
+    program.addCommand(createClusterCommand());
     program.addCommand(createSessionCommand());
     program.addCommand(createIdeOpenCommand());
     program.addCommand(createInstallCommand());
