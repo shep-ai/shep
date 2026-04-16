@@ -80,9 +80,9 @@ export async function getFeatureTreeData(): Promise<{
     getWorkflowDefaults().catch(() => undefined),
   ]);
 
-  const repoByPath = new Map<string, { name: string; remoteUrl?: string }>();
+  const repoByPath = new Map<string, { id: string; name: string; remoteUrl?: string }>();
   for (const repo of repositories) {
-    repoByPath.set(repo.path, { name: repo.name, remoteUrl: repo.remoteUrl });
+    repoByPath.set(repo.path, { id: repo.id, name: repo.name, remoteUrl: repo.remoteUrl });
   }
 
   const latestRunByFeature = buildLatestAgentRunMap(agentRuns);
@@ -108,6 +108,7 @@ export async function getFeatureTreeData(): Promise<{
         repo?.name ?? feature.repositoryPath.split('/').pop() ?? feature.repositoryPath,
       remoteUrl: repo?.remoteUrl,
       _repositoryPath: feature.repositoryPath,
+      _repositoryId: repo?.id,
       parentId: feature.parentId ?? undefined,
       nodeState: deriveNodeState(feature, latestRun),
       hasChildren: parentIds.has(feature.id),

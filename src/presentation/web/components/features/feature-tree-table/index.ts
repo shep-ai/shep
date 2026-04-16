@@ -20,3 +20,8 @@ export { FeatureRowActions } from './feature-row-actions';
 export type { FeatureRowActionsProps } from './feature-row-actions';
 export { FeatureRowActionsManager } from './feature-row-actions-manager';
 export type { FeatureRowActionsManagerProps } from './feature-row-actions-manager';
+export { RepositoryGroupActionsManager } from './repository-group-actions';
+export type {
+  RepositoryGroupActionsManagerProps,
+  RepoActionCallbacks,
+} from './repository-group-actions';

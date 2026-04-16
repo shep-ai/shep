@@ -324,6 +324,9 @@ export function registerUseCases(container: DependencyContainer): void {
   container.register('StreamAgentEventsUseCase', {
     useFactory: (c) => c.resolve(StreamAgentEventsUseCase),
   });
+  container.register('ListAgentRunsUseCase', {
+    useFactory: (c) => c.resolve(ListAgentRunsUseCase),
+  });
 
   container.registerSingleton(ImportWorkItemsCsvUseCase);
   container.register('ImportWorkItemsCsvUseCase', { useToken: ImportWorkItemsCsvUseCase });

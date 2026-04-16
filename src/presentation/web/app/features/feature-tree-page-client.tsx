@@ -27,6 +27,8 @@ import type {
   SortDir,
 } from '@/components/features/feature-tree-table';
 import { FeatureRowActionsManager } from '@/components/features/feature-tree-table/feature-row-actions-manager';
+import { RepositoryGroupActionsManager } from '@/components/features/feature-tree-table/repository-group-actions';
+import type { RepoActionCallbacks } from '@/components/features/feature-tree-table/repository-group-actions';
 import { DeleteFeatureDialog } from '@/components/common/delete-feature-dialog/delete-feature-dialog';
 import { PageHeader } from '@/components/common/page-header';
 import { EmptyState } from '@/components/common/empty-state';
@@ -66,6 +68,11 @@ import { stopFeature } from '@/app/actions/stop-feature';
 import { resumeFeature } from '@/app/actions/resume-feature';
 import { createFeature } from '@/app/actions/create-feature';
 import { addRepository } from '@/app/actions/add-repository';
+import { openIde } from '@/app/actions/open-ide';
+import { openShell } from '@/app/actions/open-shell';
+import { openFolder } from '@/app/actions/open-folder';
+import { deployRepository } from '@/app/actions/deploy-repository';
+import { stopDeployment } from '@/app/actions/stop-deployment';
 import type { FeatureStatus } from '@/components/common/feature-status-config';
 import type { InventoryCreateData } from './get-feature-tree-data';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
@@ -455,6 +462,65 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
       }
     },
     [deleteTarget, addInFlight, removeInFlight, router]
+  );
+
+  // ── Repository action handlers ──────────────────────────────
+
+  const handleRepoOpenIde = useCallback(async (repositoryPath: string) => {
+    const result = await openIde({ repositoryPath });
+    if (!result.success) {
+      toast.error(result.error ?? 'Failed to open IDE');
+    }
+  }, []);
+
+  const handleRepoOpenShell = useCallback(async (repositoryPath: string) => {
+    const result = await openShell({ repositoryPath });
+    if (!result.success) {
+      toast.error(result.error ?? 'Failed to open terminal');
+    }
+  }, []);
+
+  const handleRepoOpenFolder = useCallback(async (repositoryPath: string) => {
+    const result = await openFolder(repositoryPath);
+    if (!result.success) {
+      toast.error(result.error ?? 'Failed to open folder');
+    }
+  }, []);
+
+  const handleRepoStartServer = useCallback(async (repositoryPath: string) => {
+    const result = await deployRepository(repositoryPath);
+    if (!result.success) {
+      toast.error(result.error ?? 'Failed to start server');
+    } else {
+      toast.success('Server starting...');
+    }
+  }, []);
+
+  const handleRepoStopServer = useCallback(async (repositoryPath: string) => {
+    const result = await stopDeployment(repositoryPath);
+    if (!result.success) {
+      toast.error(result.error ?? 'Failed to stop server');
+    } else {
+      toast.success('Server stopped');
+    }
+  }, []);
+
+  const repoActionCallbacks = useMemo<RepoActionCallbacks>(
+    () => ({
+      onOpenIde: handleRepoOpenIde,
+      onOpenShell: handleRepoOpenShell,
+      onOpenFolder: handleRepoOpenFolder,
+      onStartServer: handleRepoStartServer,
+      onStopServer: handleRepoStopServer,
+      isServerRunning: () => false,
+    }),
+    [
+      handleRepoOpenIde,
+      handleRepoOpenShell,
+      handleRepoOpenFolder,
+      handleRepoStartServer,
+      handleRepoStopServer,
+    ]
   );
 
   const handleGroupByChange = (value: string) => {
@@ -862,6 +928,12 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
         onArchive={handleArchiveRequest}
         onUnarchive={handleUnarchive}
         onDelete={handleDeleteRequest}
+      />
+
+      {/* Portal manager for repository group action buttons */}
+      <RepositoryGroupActionsManager
+        tableContainer={tableContainer}
+        callbacks={repoActionCallbacks}
       />
 
       {/* Archive confirmation dialog */}

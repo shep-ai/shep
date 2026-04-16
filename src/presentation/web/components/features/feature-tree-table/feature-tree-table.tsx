@@ -29,6 +29,8 @@ export interface FeatureTreeRow {
   _featureCount?: number;
   /** Repository path for the repo this row belongs to (used to create features from repo groups) */
   _repositoryPath?: string;
+  /** Repository ID (used for sync and deploy actions on repo group headers) */
+  _repositoryId?: string;
   /** Derived UI node state for action mapping (9-state model from derive-feature-state) */
   nodeState?: FeatureNodeState;
   /** Whether this feature has child features (for delete dialog cascade option) */
@@ -144,14 +146,33 @@ function groupHeaderNameFormatter(
 
     container.innerHTML = `${icon}<span>${escapeHtml(row.name)}</span><span style="font-weight:400;color:var(--color-muted-foreground,#64748b);font-size:12px">${countLabel}</span>`;
 
-    // Add (+) button for repository group headers to create features
+    // Add repo action buttons and (+) button for repository group headers
     if (groupBy === 'repositoryName' && row._repositoryPath) {
+      // Spacer to push actions to the right
+      const actionArea = document.createElement('span');
+      actionArea.style.marginLeft = 'auto';
+      actionArea.style.display = 'inline-flex';
+      actionArea.style.alignItems = 'center';
+      actionArea.style.gap = '2px';
+      actionArea.style.flexShrink = '0';
+
+      // Portal target for React-rendered repo action buttons
+      const repoActionsPortal = document.createElement('span');
+      repoActionsPortal.setAttribute('data-repo-actions', row._repositoryPath);
+      if (row._repositoryId) {
+        repoActionsPortal.setAttribute('data-repo-id', row._repositoryId);
+      }
+      repoActionsPortal.style.display = 'inline-flex';
+      repoActionsPortal.style.alignItems = 'center';
+      repoActionsPortal.style.gap = '2px';
+      actionArea.appendChild(repoActionsPortal);
+
+      // (+) create feature button
       const btn = document.createElement('button');
       btn.className = 'inventory-create-for-repo-btn';
       btn.setAttribute('data-create-for-repo', row._repositoryPath);
       btn.setAttribute('title', 'New feature');
       btn.innerHTML = PLUS_ICON_SVG;
-      btn.style.marginLeft = 'auto';
       btn.style.display = 'inline-flex';
       btn.style.alignItems = 'center';
       btn.style.justifyContent = 'center';
@@ -171,7 +192,9 @@ function groupHeaderNameFormatter(
         btn.style.background = 'transparent';
         btn.style.color = 'var(--color-muted-foreground, #64748b)';
       });
-      container.appendChild(btn);
+      actionArea.appendChild(btn);
+
+      container.appendChild(actionArea);
     }
 
     return container;
@@ -392,9 +415,12 @@ export function buildGroupedTree(
       _isGroupHeader: true,
       _groupCount: features.length,
       _children: sortedChildren,
-      // Carry the repo path from the first child for create-from-repo
+      // Carry repo info from the first child for create-from-repo and repo actions
       ...(groupBy === 'repositoryName' && features[0]?._repositoryPath
-        ? { _repositoryPath: features[0]._repositoryPath }
+        ? {
+            _repositoryPath: features[0]._repositoryPath,
+            _repositoryId: features[0]._repositoryId,
+          }
         : {}),
     });
   }
