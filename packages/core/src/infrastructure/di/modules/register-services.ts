@@ -65,6 +65,13 @@ import { ProcessLivenessAdapter } from '../../services/process/process-liveness.
 import type { IProjectBuildService } from '../../../application/ports/output/services/project-build-service.interface.js';
 import { NodeProjectBuildService } from '../../services/build/node-project-build.service.js';
 
+// Code review (feature 090) services
+import type { IPlatformReviewService } from '../../../application/ports/output/services/platform-review-service.interface.js';
+import { GitHubReviewService } from '../../services/code-review/github-review.service.js';
+import { annotateFileDiffs } from '../../services/code-review/diff-annotation.service.js';
+import { buildReviewPrompt } from '../../services/code-review/review-prompt-builder.service.js';
+import { parseReviewOutput } from '../../services/code-review/review-output-parser.service.js';
+
 /**
  * Register core infrastructure services: validators, filesystem, git, notifications,
  * logger, tool installer, attachment storage, shep-instance, browser opener, etc.
@@ -226,4 +233,13 @@ export function registerServices(container: DependencyContainer): void {
     'IProjectBuildService',
     NodeProjectBuildService
   );
+
+  // ─── Code review (feature 090) services ─────────────────────────────
+  container.registerSingleton<IPlatformReviewService>(
+    'IPlatformReviewService',
+    GitHubReviewService
+  );
+  container.registerInstance('DiffAnnotator', annotateFileDiffs);
+  container.registerInstance('PromptBuilder', buildReviewPrompt);
+  container.registerInstance('OutputParser', parseReviewOutput);
 }

@@ -72,6 +72,12 @@ import { ListAgentSessionsUseCase } from '../../../application/use-cases/agents/
 import { GetAgentSessionUseCase } from '../../../application/use-cases/agents/get-agent-session.use-case.js';
 import { StreamAgentEventsUseCase } from '../../../application/use-cases/agents/stream-agent-events.use-case.js';
 
+// Code review (feature 090) use cases
+import { RunCodeReviewUseCase } from '../../../application/use-cases/code-review/run-code-review.use-case.js';
+import { GetCodeReviewUseCase } from '../../../application/use-cases/code-review/get-code-review.use-case.js';
+import { ListCodeReviewsUseCase } from '../../../application/use-cases/code-review/list-code-reviews.use-case.js';
+import { PostCodeReviewUseCase } from '../../../application/use-cases/code-review/post-code-review.use-case.js';
+
 /**
  * Register the main body of application use cases (settings, agents, features,
  * tools, repositories, applications, projects, archival, upgrade, sessions) and
@@ -155,6 +161,12 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(ListAgentSessionsUseCase);
   container.registerSingleton(GetAgentSessionUseCase);
   container.registerSingleton(StreamAgentEventsUseCase);
+
+  // ─── Code review (feature 090) use cases ────────────────────────────────
+  container.registerSingleton(RunCodeReviewUseCase);
+  container.registerSingleton(GetCodeReviewUseCase);
+  container.registerSingleton(ListCodeReviewsUseCase);
+  container.registerSingleton(PostCodeReviewUseCase);
 
   // ─── String-token aliases for web routes ─────────────────────────────────
   // Turbopack can't resolve .js→.ts imports inside @shepai/core, so routes use
@@ -327,4 +339,18 @@ export function registerUseCases(container: DependencyContainer): void {
 
   container.registerSingleton(ImportWorkItemsCsvUseCase);
   container.register('ImportWorkItemsCsvUseCase', { useToken: ImportWorkItemsCsvUseCase });
+
+  // ─── Code review (feature 090) string aliases ───────────────────────────
+  container.register('RunCodeReviewUseCase', {
+    useFactory: (c) => c.resolve(RunCodeReviewUseCase),
+  });
+  container.register('GetCodeReviewUseCase', {
+    useFactory: (c) => c.resolve(GetCodeReviewUseCase),
+  });
+  container.register('ListCodeReviewsUseCase', {
+    useFactory: (c) => c.resolve(ListCodeReviewsUseCase),
+  });
+  container.register('PostCodeReviewUseCase', {
+    useFactory: (c) => c.resolve(PostCodeReviewUseCase),
+  });
 }
