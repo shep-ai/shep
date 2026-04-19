@@ -1,15 +1,20 @@
 
 [1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-ai-code-review[39m
 
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/code-review/get-code-review.use-case.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/code-review.mapper.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/code-review/line-validation.service.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/code-review/review-prompt-builder.service.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/code-review/review-output-parser.service.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/code-review/diff-annotation.service.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/code-review/get-code-review.use-case.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 3[2mms[22m[39m
  [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/code-review/list-code-reviews.use-case.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/code-review/post-code-review.use-case.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 11[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/code-review/run-code-review.use-case.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 19[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-code-review.repository.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 442[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/code-review/post-code-review.use-case.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/code-review/run-code-review.use-case.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/code-review/github-review.service.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 4014[2mms[22m[39m
+       [33m[2m✓[22m[39m retries on 429 status code [33m 3003[2mms[22m[39m
+       [33m[2m✓[22m[39m retries on 500 server error [33m 1001[2mms[22m[39m
 
-[2m Test Files [22m [1m[32m6 passed[39m[22m[90m (6)[39m
-[2m      Tests [22m [1m[32m66 passed[39m[22m[90m (66)[39m
-[2m   Start at [22m 23:22:00
-[2m   Duration [22m 741ms[2m (transform 478ms, setup 172ms, import 544ms, tests 491ms, environment 0ms)[22m
+[2m Test Files [22m [1m[32m9 passed[39m[22m[90m (9)[39m
+[2m      Tests [22m [1m[32m108 passed[39m[22m[90m (108)[39m
+[2m   Start at [22m 23:33:13
+[2m   Duration [22m 4.24s[2m (transform 707ms, setup 276ms, import 727ms, tests 4.07s, environment 1ms)[22m
 
