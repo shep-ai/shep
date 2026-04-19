@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useTransition } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
@@ -13,8 +13,10 @@ import {
   GitCommitHorizontal,
   GitMerge,
   Info,
+  Loader2,
   Puzzle,
   RefreshCw,
+  Search,
   Settings,
   ShieldCheck,
   X,
@@ -22,11 +24,16 @@ import {
 } from 'lucide-react';
 import { InlineAttachments } from '@/components/common/inline-attachments';
 import { PrStatus } from '@shepai/core/domain/generated/output';
+import type { CodeReview } from '@shepai/core/domain/generated/output';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { CiStatusBadge } from '@/components/common/ci-status-badge';
 import { CometSpinner } from '@/components/ui/comet-spinner';
 import { ActionButton } from '@/components/common/action-button';
+import { useFeatureFlags } from '@/hooks/feature-flags-context';
+import { triggerReview } from '@/app/actions/trigger-review';
+import { CodeReviewPanel } from '@/components/features/code-review/code-review-panel';
 import { featureNodeStateConfig } from '@/components/common/feature-node';
 import type { FeatureNodeData } from '@/components/common/feature-node';
 import { AgentModelPicker } from '@/components/features/settings/AgentModelPicker';
@@ -167,12 +174,57 @@ export function OverviewTab({
   rebaseLoading,
   rebaseError,
 }: OverviewTabProps) {
+  const featureFlags = useFeatureFlags();
   const isCompleted = data.lifecycle === 'maintain';
   const isRunning = data.state === 'running' || data.state === 'action-required';
   const elapsedTime = useElapsedTime(isRunning ? data.startedAt : undefined);
   const config = featureNodeStateConfig[data.state];
   const showSummary =
     Boolean(data.summary) && !(data.userQuery && data.summary?.trim() === data.userQuery.trim());
+
+  // Code review state
+  const [reviewResult, setReviewResult] = useState<CodeReview | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [isReviewing, startReviewTransition] = useTransition();
+  const [isPosting, startPostTransition] = useTransition();
+
+  const showReviewButton = featureFlags.codeReview && data.pr;
+
+  const handleTriggerReview = () => {
+    if (!data.pr) return;
+    setReviewError(null);
+    setReviewResult(null);
+    startReviewTransition(async () => {
+      const result = await triggerReview({
+        target: data.pr!.url,
+        repositoryPath: data.repositoryPath,
+        featureId: data.featureId,
+      });
+      if (result.error) {
+        setReviewError(result.error);
+      }
+      if (result.review) {
+        setReviewResult(result.review);
+      }
+    });
+  };
+
+  const handlePostToGitHub = (reviewId: string) => {
+    startPostTransition(async () => {
+      try {
+        const res = await fetch(`/api/code-reviews/${reviewId}/post`, { method: 'POST' });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({ error: 'Failed to post review' }));
+          setReviewError(body.error ?? 'Failed to post review to GitHub');
+          return;
+        }
+        const posted = await res.json();
+        setReviewResult(posted);
+      } catch (err) {
+        setReviewError(err instanceof Error ? err.message : 'Failed to post review');
+      }
+    });
+  };
 
   return (
     <div data-testid="feature-drawer-status" className="pb-4">
@@ -232,13 +284,41 @@ export function OverviewTab({
               {data.pr.ciStatus && data.hideCiStatus !== true ? (
                 <CiStatusBadge status={data.pr.ciStatus} />
               ) : null}
-              {data.pr.commitHash ? (
+              {showReviewButton ? (
+                <Button
+                  size="xs"
+                  variant="outline"
+                  className="ml-auto"
+                  onClick={handleTriggerReview}
+                  disabled={isReviewing}
+                >
+                  {isReviewing ? (
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                  ) : (
+                    <Search className="mr-1 h-3 w-3" />
+                  )}
+                  {isReviewing ? 'Reviewing...' : 'Review PR'}
+                </Button>
+              ) : null}
+              {!showReviewButton && data.pr.commitHash ? (
                 <code className="text-foreground/40 ml-auto font-mono text-[11px]">
                   {data.pr.commitHash.slice(0, 7)}
                 </code>
               ) : null}
             </div>
           </Card>
+          {/* Code review results */}
+          {reviewResult || reviewError || isReviewing ? (
+            <div className="mt-2">
+              <CodeReviewPanel
+                review={reviewResult ?? undefined}
+                loading={isReviewing}
+                error={reviewError ?? undefined}
+                onPostToGitHub={handlePostToGitHub}
+                postingInProgress={isPosting}
+              />
+            </div>
+          ) : null}
         </Section>
       ) : null}
 
