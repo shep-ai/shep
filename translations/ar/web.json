@@ -206,6 +206,8 @@
       "inventoryDescription": "تمكين صفحة المخزون التي تعرض جميع المستودعات والميزات في عرض شجري",
       "projects": "المشاريع",
       "projectsDescription": "تمكين التنقل إلى المشاريع وصفحات إدارة المشاريع في واجهة الويب",
+      "codeReview": "AI Code Review",
+      "codeReviewDescription": "Enable AI-powered code review that analyzes PR diffs and posts inline comments to GitHub",
       "hint": "ميزات تجريبية لا تزال قيد التطوير. قم بتمكينها على مسؤوليتك — قد تتغير أو تُزال في الإصدارات المستقبلية. وضع التصحيح يضيف تسجيلًا مفصلاً مفيدًا لاستكشاف الأخطاء."
     },
     "interactiveAgent": {

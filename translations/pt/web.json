@@ -206,6 +206,8 @@
       "inventoryDescription": "Ativar a página de Inventário mostrando todos os repositórios e funcionalidades em visualização de árvore",
       "projects": "Projetos",
       "projectsDescription": "Ativar a navegação de Projetos e as páginas de gestão de projetos na interface web",
+      "codeReview": "AI Code Review",
+      "codeReviewDescription": "Enable AI-powered code review that analyzes PR diffs and posts inline comments to GitHub",
       "hint": "Recursos experimentais que ainda estão em desenvolvimento. Ative por sua conta e risco — podem mudar ou ser removidos em versões futuras. O modo debug adiciona logs detalhados úteis para solução de problemas."
     },
     "interactiveAgent": {

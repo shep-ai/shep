@@ -68,6 +68,10 @@ import { SQLitePmProjectMemberRepository } from '../../repositories/sqlite-pm-pr
 import type { IPmAuditLogRepository } from '../../../application/ports/output/repositories/pm-audit-log-repository.interface.js';
 import { SQLitePmAuditLogRepository } from '../../repositories/sqlite-pm-audit-log.repository.js';
 
+// Code review (feature 090) repository
+import type { ICodeReviewRepository } from '../../../application/ports/output/repositories/code-review-repository.interface.js';
+import { SQLiteCodeReviewRepository } from '../../repositories/sqlite-code-review.repository.js';
+
 /**
  * Register all SQLite-backed repositories.
  *
@@ -212,5 +216,10 @@ export function registerRepositories(container: DependencyContainer): void {
   });
   container.register<IPmAuditLogRepository>('IPmAuditLogRepository', {
     useFactory: (c) => new SQLitePmAuditLogRepository(c.resolve<Database.Database>('Database')),
+  });
+
+  // ─── Code review (feature 090) repository ─────────────────────────────
+  container.register<ICodeReviewRepository>('ICodeReviewRepository', {
+    useFactory: (c) => new SQLiteCodeReviewRepository(c.resolve<Database.Database>('Database')),
   });
 }

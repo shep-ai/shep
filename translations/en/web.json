@@ -206,6 +206,8 @@
       "inventoryDescription": "Enable the Inventory page showing all repositories and features in a tree view",
       "projects": "Projects",
       "projectsDescription": "Enable Projects navigation and project management pages in the web UI",
+      "codeReview": "AI Code Review",
+      "codeReviewDescription": "Enable AI-powered code review that analyzes PR diffs and posts inline comments to GitHub",
       "hint": "Experimental features that are still under development. Enable at your own risk — they may change or be removed in future versions. Debug mode adds verbose logging useful for troubleshooting."
     },
     "interactiveAgent": {

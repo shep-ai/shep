@@ -206,6 +206,8 @@
       "inventoryDescription": "Включить страницу Инвентаря, отображающую все репозитории и функции в виде дерева",
       "projects": "Проекты",
       "projectsDescription": "Включить навигацию Проектов и страницы управления проектами в веб-интерфейсе",
+      "codeReview": "AI Code Review",
+      "codeReviewDescription": "Enable AI-powered code review that analyzes PR diffs and posts inline comments to GitHub",
       "hint": "Экспериментальные функции, которые ещё находятся в разработке. Включайте на свой страх и риск — они могут измениться или быть удалены в будущих версиях. Режим отладки добавляет подробное логирование, полезное для устранения неполадок."
     },
     "interactiveAgent": {

@@ -1803,6 +1803,18 @@ export function SettingsPageClient({
                 save({ featureFlags: newFlags });
               }}
             />
+            <SwitchRow
+              label={t('settings.featureFlags.codeReview')}
+              description={t('settings.featureFlags.codeReviewDescription')}
+              id="flag-code-review"
+              testId="switch-flag-code-review"
+              checked={flags.codeReview}
+              onChange={(v) => {
+                const newFlags = { ...flags, codeReview: v };
+                setFlags(newFlags);
+                save({ featureFlags: newFlags });
+              }}
+            />
           </SettingsSection>
           <SectionHint>{t('settings.featureFlags.hint')}</SectionHint>
         </div>

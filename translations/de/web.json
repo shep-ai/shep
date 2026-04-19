@@ -206,6 +206,8 @@
       "inventoryDescription": "Inventarseite mit allen Repositories und Features in einer Baumansicht aktivieren",
       "projects": "Projekte",
       "projectsDescription": "Projekte-Navigation und Projektmanagement-Seiten in der Web-UI aktivieren",
+      "codeReview": "AI Code Review",
+      "codeReviewDescription": "Enable AI-powered code review that analyzes PR diffs and posts inline comments to GitHub",
       "hint": "Experimentelle Features, die noch in Entwicklung sind. Aktivierung auf eigene Gefahr — sie können sich in zukünftigen Versionen ändern oder entfernt werden. Der Debug-Modus fügt ausführliche Protokollierung hinzu, die bei der Fehlerbehebung nützlich ist."
     },
     "interactiveAgent": {

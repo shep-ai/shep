@@ -206,6 +206,8 @@
       "inventoryDescription": "הפעל את דף המלאי המציג את כל המאגרים והתכונות בתצוגת עץ",
       "projects": "פרויקטים",
       "projectsDescription": "הפעל ניווט פרויקטים ודפי ניהול פרויקטים בממשק הווב",
+      "codeReview": "AI Code Review",
+      "codeReviewDescription": "Enable AI-powered code review that analyzes PR diffs and posts inline comments to GitHub",
       "hint": "תכונות ניסיוניות שעדיין בפיתוח. הפעל על אחריותך — הן עשויות להשתנות או להיות מוסרות בגרסאות עתידיות. מצב ניפוי שגיאות מוסיף רישום מפורט שימושי לפתרון בעיות."
     },
     "interactiveAgent": {
