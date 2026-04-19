@@ -28,6 +28,7 @@ const defaultFlags = {
   reactFileManager: false,
   inventory: false,
   projects: false,
+  codeReview: false,
 };
 
 function renderShell(children: React.ReactNode) {

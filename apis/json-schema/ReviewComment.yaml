@@ -1,0 +1,36 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ReviewComment.yaml
+type: object
+properties:
+  path:
+    type: string
+    description: File path relative to the repository root
+  line:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Line number in the file where the comment applies
+  body:
+    type: string
+    description: Comment body describing the finding (markdown)
+  side:
+    $ref: CommentSide.yaml
+    description: Which side of the diff the comment targets (LEFT = old, RIGHT = new)
+  suggestion:
+    type: string
+    description: Suggested replacement code (rendered as GitHub suggestion block)
+  startLine:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Start line for multi-line comments (used with line as the end line)
+  inDiffRange:
+    type: boolean
+    description: Whether the comment targets a line within the actual diff range
+required:
+  - path
+  - line
+  - body
+  - side
+  - inDiffRange
+description: Inline review comment targeting a specific file and line in the diff

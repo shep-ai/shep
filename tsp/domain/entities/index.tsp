@@ -47,3 +47,4 @@ import "./pm-session.tsp";
 import "./pm-project-member.tsp";
 import "./pm-audit-log.tsp";
 import "./operation-log-entry.tsp";
+import "./code-review.tsp";

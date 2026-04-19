@@ -38,6 +38,10 @@ properties:
     type: boolean
     default: false
     description: Enable Projects pages and navigation (project management)
+  codeReview:
+    type: boolean
+    default: false
+    description: Enable AI-powered code review for pull requests
 required:
   - skills
   - envDeploy
@@ -48,4 +52,5 @@ required:
   - reactFileManager
   - inventory
   - projects
+  - codeReview
 description: Feature flag toggles for runtime feature control

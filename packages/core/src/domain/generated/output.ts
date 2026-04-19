@@ -671,6 +671,10 @@ export type FeatureFlags = {
    * Enable Projects pages and navigation (project management)
    */
   projects: boolean;
+  /**
+   * Enable AI-powered code review for pull requests
+   */
+  codeReview: boolean;
 };
 
 /**
@@ -2567,6 +2571,115 @@ export type OperationLogEntry = BaseEntity & {
    * Optional structured detail (JSON-serialised) — multi-line stderr, error codes, etc.
    */
   detail?: string;
+};
+
+/**
+ * Token usage tracking for an AI agent invocation
+ */
+export type TokenUsage = {
+  /**
+   * Number of input tokens consumed by the agent
+   */
+  inputTokens: number;
+  /**
+   * Number of output tokens produced by the agent
+   */
+  outputTokens: number;
+};
+export enum CommentSide {
+  Left = 'LEFT',
+  Right = 'RIGHT',
+}
+
+/**
+ * Inline review comment targeting a specific file and line in the diff
+ */
+export type ReviewComment = {
+  /**
+   * File path relative to the repository root
+   */
+  path: string;
+  /**
+   * Line number in the file where the comment applies
+   */
+  line: number;
+  /**
+   * Comment body describing the finding (markdown)
+   */
+  body: string;
+  /**
+   * Which side of the diff the comment targets (LEFT = old, RIGHT = new)
+   */
+  side: CommentSide;
+  /**
+   * Suggested replacement code (rendered as GitHub suggestion block)
+   */
+  suggestion?: string;
+  /**
+   * Start line for multi-line comments (used with line as the end line)
+   */
+  startLine?: number;
+  /**
+   * Whether the comment targets a line within the actual diff range
+   */
+  inDiffRange: boolean;
+};
+export enum CodeReviewStatus {
+  Pending = 'Pending',
+  InProgress = 'InProgress',
+  Completed = 'Completed',
+  Posted = 'Posted',
+  Failed = 'Failed',
+}
+
+/**
+ * AI-powered code review of a pull request
+ */
+export type CodeReview = BaseEntity & {
+  /**
+   * Optional link to the Shep Feature that owns this PR
+   */
+  featureId?: UUID;
+  /**
+   * Absolute path to the repository being reviewed
+   */
+  repositoryPath: string;
+  /**
+   * Pull request number on GitHub
+   */
+  prNumber: number;
+  /**
+   * Full GitHub pull request URL
+   */
+  prUrl?: string;
+  /**
+   * Current lifecycle status of the review
+   */
+  status: CodeReviewStatus;
+  /**
+   * Agent's overall summary assessment of the PR
+   */
+  summary?: string;
+  /**
+   * Inline review comments targeting specific diff lines
+   */
+  comments?: ReviewComment[];
+  /**
+   * GitHub review URL after findings are posted
+   */
+  reviewUrl?: string;
+  /**
+   * AI model identifier used for the review (e.g. claude-sonnet-4-6)
+   */
+  agentModel?: string;
+  /**
+   * Token usage tracking for cost monitoring
+   */
+  tokenUsage?: TokenUsage;
+  /**
+   * Error details when status is Failed
+   */
+  errorMessage?: string;
 };
 
 /**

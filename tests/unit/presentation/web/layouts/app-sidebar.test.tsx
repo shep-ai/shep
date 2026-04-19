@@ -48,6 +48,7 @@ const defaultFlags = {
   reactFileManager: false,
   inventory: true,
   projects: false,
+  codeReview: false,
 };
 
 function renderWithSidebar(ui: React.ReactElement) {

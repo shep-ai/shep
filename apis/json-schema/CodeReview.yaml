@@ -1,0 +1,48 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CodeReview.yaml
+type: object
+properties:
+  featureId:
+    $ref: UUID.yaml
+    description: Optional link to the Shep Feature that owns this PR
+  repositoryPath:
+    type: string
+    description: Absolute path to the repository being reviewed
+  prNumber:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Pull request number on GitHub
+  prUrl:
+    type: string
+    description: Full GitHub pull request URL
+  status:
+    $ref: CodeReviewStatus.yaml
+    description: Current lifecycle status of the review
+  summary:
+    type: string
+    description: Agent's overall summary assessment of the PR
+  comments:
+    type: array
+    items:
+      $ref: ReviewComment.yaml
+    description: Inline review comments targeting specific diff lines
+  reviewUrl:
+    type: string
+    description: GitHub review URL after findings are posted
+  agentModel:
+    type: string
+    description: AI model identifier used for the review (e.g. claude-sonnet-4-6)
+  tokenUsage:
+    $ref: TokenUsage.yaml
+    description: Token usage tracking for cost monitoring
+  errorMessage:
+    type: string
+    description: Error details when status is Failed
+required:
+  - repositoryPath
+  - prNumber
+  - status
+allOf:
+  - $ref: BaseEntity.yaml
+description: AI-powered code review of a pull request

@@ -13,6 +13,7 @@ const defaultFlags: FeatureFlagsState = {
   reactFileManager: false,
   inventory: false,
   projects: false,
+  codeReview: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsState>(defaultFlags);

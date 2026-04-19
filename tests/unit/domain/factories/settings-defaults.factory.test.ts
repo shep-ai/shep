@@ -321,6 +321,7 @@ describe('createDefaultSettings', () => {
         reactFileManager: false,
         inventory: false,
         projects: false,
+        codeReview: false,
       });
     });
   });

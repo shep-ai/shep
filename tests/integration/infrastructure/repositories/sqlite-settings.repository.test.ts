@@ -526,6 +526,7 @@ describe('SQLiteSettingsRepository', () => {
         reactFileManager: false,
         inventory: false,
         projects: false,
+        codeReview: false,
       };
 
       await repository.initialize(settings);
@@ -541,6 +542,7 @@ describe('SQLiteSettingsRepository', () => {
         reactFileManager: false,
         inventory: false,
         projects: false,
+        codeReview: false,
       });
     });
 
@@ -560,6 +562,7 @@ describe('SQLiteSettingsRepository', () => {
         reactFileManager: false,
         inventory: false,
         projects: false,
+        codeReview: false,
       });
     });
 
@@ -577,6 +580,7 @@ describe('SQLiteSettingsRepository', () => {
         reactFileManager: false,
         inventory: false,
         projects: false,
+        codeReview: false,
       };
       settings.updatedAt = new Date('2025-01-02T00:00:00Z');
       await repository.update(settings);
@@ -592,6 +596,7 @@ describe('SQLiteSettingsRepository', () => {
         reactFileManager: false,
         inventory: false,
         projects: false,
+        codeReview: false,
       });
     });
 
@@ -607,6 +612,7 @@ describe('SQLiteSettingsRepository', () => {
         reactFileManager: false,
         inventory: false,
         projects: false,
+        codeReview: false,
       };
 
       await repository.initialize(settings);

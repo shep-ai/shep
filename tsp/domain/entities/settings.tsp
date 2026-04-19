@@ -597,6 +597,9 @@ model FeatureFlags {
 
   @doc("Enable Projects pages and navigation (project management)")
   projects: boolean = false;
+
+  @doc("Enable AI-powered code review for pull requests")
+  codeReview: boolean = false;
 }
 
 /**

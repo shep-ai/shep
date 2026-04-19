@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CommentSide.yaml
+type: string
+enum:
+  - LEFT
+  - RIGHT
+description: Side of the diff a review comment targets

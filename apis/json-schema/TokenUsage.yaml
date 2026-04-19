@@ -1,0 +1,18 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: TokenUsage.yaml
+type: object
+properties:
+  inputTokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Number of input tokens consumed by the agent
+  outputTokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Number of output tokens produced by the agent
+required:
+  - inputTokens
+  - outputTokens
+description: Token usage tracking for an AI agent invocation

@@ -399,6 +399,7 @@ export function SettingsPageClient({
     reactFileManager: false,
     projects: false,
     inventory: false,
+    codeReview: false,
   };
 
   // Language state
