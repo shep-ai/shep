@@ -1,0 +1,5 @@
+=== GET /api/code-reviews ===
+[]
+
+=== GET /api/code-reviews/nonexistent-id ===
+{"error":"Code review not found: \"nonexistent-id\""}
