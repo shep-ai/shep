@@ -655,6 +655,55 @@
       "description": "הפעל את שרת ה-Web (שימוש פנימי בלבד)",
       "portOption": "פורט להאזנה",
       "portValidation": "הפורט חייב להיות מספר שלם בין 1024 ל-65535"
+    },
+    "codeReview": {
+      "description": "AI-powered code review for pull requests",
+      "targetArgument": "PR number or GitHub PR URL",
+      "ownerOption": "Repository owner (e.g. octocat)",
+      "repoOption": "Repository name (e.g. my-project)",
+      "postOption": "Post review to GitHub after completion",
+      "reviewingPr": "Reviewing PR {{target}}",
+      "spinnerText": "Running code review",
+      "reviewFailed": "Code review failed",
+      "reviewCompleted": "Review completed — {{comments}} finding(s)",
+      "postingReview": "Posting review to GitHub",
+      "postedSuccess": "Review posted to GitHub: {{url}}",
+      "postFailed": "Failed to post review to GitHub",
+      "postHint": "Run `shep review post {{id}}` to post to GitHub",
+      "failedToReview": "Failed to run code review",
+      "show": {
+        "description": "Display a completed code review",
+        "idArgument": "Review ID (or prefix)",
+        "title": "Code Review — PR #{{pr}}",
+        "idLabel": "ID",
+        "prLabel": "Pull Request",
+        "statusLabel": "Status",
+        "commentsLabel": "Findings",
+        "modelLabel": "Model",
+        "reviewUrlLabel": "Review URL",
+        "createdLabel": "Created",
+        "summaryTitle": "Summary",
+        "errorTitle": "Error",
+        "findingsTitle": "Findings",
+        "failedToShow": "Failed to show code review"
+      },
+      "list": {
+        "description": "List recent code reviews",
+        "limitOption": "Maximum number of reviews to show",
+        "title": "Code Reviews",
+        "idColumn": "ID",
+        "prColumn": "PR",
+        "statusColumn": "STATUS",
+        "commentsColumn": "FINDINGS",
+        "dateColumn": "DATE",
+        "noReviews": "No code reviews found",
+        "failedToList": "Failed to list code reviews"
+      },
+      "post": {
+        "description": "Post a completed review to GitHub",
+        "idArgument": "Review ID (or prefix)",
+        "failedToPost": "Failed to post review to GitHub"
+      }
     }
   },
   "ui": {
