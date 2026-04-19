@@ -1,7 +1,7 @@
 'use client';
 
 import type { JSX } from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FeatureRowActions } from './feature-row-actions';
 import type { FeatureTreeRow } from './feature-tree-table';
@@ -9,6 +9,8 @@ import type { FeatureTreeRow } from './feature-tree-table';
 export interface FeatureRowActionsManagerProps {
   /** Reference to the Tabulator table container div, provided via onTableRender callback. */
   tableContainer: HTMLDivElement | null;
+  /** Monotonic counter incremented on each Tabulator render, forces portal re-discovery. */
+  renderTick: number;
   /** Full feature data array (same as what's passed to the table). */
   features: FeatureTreeRow[];
   /** Set of feature IDs currently in-flight (loading). */
@@ -33,6 +35,7 @@ export interface FeatureRowActionsManagerProps {
  */
 export function FeatureRowActionsManager({
   tableContainer,
+  renderTick,
   features,
   inFlightIds,
   onStart,
@@ -45,7 +48,12 @@ export function FeatureRowActionsManager({
 }: FeatureRowActionsManagerProps) {
   const [portalContainers, setPortalContainers] = useState<Map<string, HTMLElement>>(new Map());
 
-  const discoverContainers = useCallback(() => {
+  // Re-discover portal targets whenever the container changes OR Tabulator re-renders (renderTick).
+  // Tabulator destroys and recreates row DOM elements on tree expand/collapse, so the old
+  // portal target divs become stale. renderTick is a monotonic counter incremented on every
+  // Tabulator renderComplete/tableBuilt event to force re-discovery even when the container
+  // element reference stays the same.
+  useEffect(() => {
     if (!tableContainer) {
       setPortalContainers(new Map());
       return;
@@ -61,19 +69,13 @@ export function FeatureRowActionsManager({
     });
 
     setPortalContainers((prev) => {
-      // Only update state if the containers actually changed
       if (prev.size !== nextMap.size) return nextMap;
       for (const [id, el] of nextMap) {
         if (prev.get(id) !== el) return nextMap;
       }
       return prev;
     });
-  }, [tableContainer]);
-
-  // Discover containers whenever the table reference changes (re-render)
-  useEffect(() => {
-    discoverContainers();
-  }, [discoverContainers]);
+  }, [tableContainer, renderTick]);
 
   // Build a lookup map for feature data by ID
   const featureById = new Map<string, FeatureTreeRow>();

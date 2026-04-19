@@ -64,6 +64,7 @@ describe('FeatureRowActionsManager', () => {
         tableContainer={container}
         features={sampleFeatures}
         inFlightIds={new Set()}
+        renderTick={0}
         {...defaultCallbacks}
       />
     );
@@ -79,6 +80,7 @@ describe('FeatureRowActionsManager', () => {
     render(
       <FeatureRowActionsManager
         tableContainer={null}
+        renderTick={0}
         features={sampleFeatures}
         inFlightIds={new Set()}
         {...defaultCallbacks}
@@ -107,6 +109,7 @@ describe('FeatureRowActionsManager', () => {
     render(
       <FeatureRowActionsManager
         tableContainer={container}
+        renderTick={0}
         features={featuresWithoutState}
         inFlightIds={new Set()}
         {...defaultCallbacks}
@@ -139,6 +142,7 @@ describe('FeatureRowActionsManager', () => {
     render(
       <FeatureRowActionsManager
         tableContainer={container}
+        renderTick={0}
         features={groupedFeatures}
         inFlightIds={new Set()}
         {...defaultCallbacks}
@@ -157,6 +161,7 @@ describe('FeatureRowActionsManager', () => {
     const { unmount } = render(
       <FeatureRowActionsManager
         tableContainer={container}
+        renderTick={0}
         features={sampleFeatures}
         inFlightIds={new Set()}
         {...defaultCallbacks}
@@ -234,6 +239,7 @@ describe('FeatureRowActionsManager', () => {
     render(
       <FeatureRowActionsManager
         tableContainer={container}
+        renderTick={0}
         features={mixedFeatures}
         inFlightIds={new Set()}
         {...defaultCallbacks}
@@ -274,6 +280,7 @@ describe('FeatureRowActionsManager', () => {
     render(
       <FeatureRowActionsManager
         tableContainer={container}
+        renderTick={0}
         features={transientFeatures}
         inFlightIds={new Set()}
         {...defaultCallbacks}
@@ -293,6 +300,7 @@ describe('FeatureRowActionsManager', () => {
     render(
       <FeatureRowActionsManager
         tableContainer={container}
+        renderTick={0}
         features={sampleFeatures}
         inFlightIds={new Set(['feat-1'])}
         {...defaultCallbacks}
@@ -354,6 +362,7 @@ describe('FeatureRowActionsManager', () => {
     render(
       <FeatureRowActionsManager
         tableContainer={container}
+        renderTick={0}
         features={nestedFeatures}
         inFlightIds={new Set()}
         {...defaultCallbacks}

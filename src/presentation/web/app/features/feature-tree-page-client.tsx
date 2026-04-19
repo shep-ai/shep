@@ -167,6 +167,7 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
 
   // Action wiring state
   const [tableContainer, setTableContainer] = useState<HTMLDivElement | null>(null);
+  const [renderTick, setRenderTick] = useState(0);
   const [inFlightIds, setInFlightIds] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<ArchiveTarget | null>(null);
@@ -198,6 +199,7 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
 
   const handleTableRender = useCallback((container: HTMLDivElement) => {
     setTableContainer(container);
+    setRenderTick((t) => t + 1);
   }, []);
 
   // ── Create actions ────────────────────────────────────────────
@@ -919,6 +921,7 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
       {/* Portal manager for row action dropdowns */}
       <FeatureRowActionsManager
         tableContainer={tableContainer}
+        renderTick={renderTick}
         features={filteredFeatures}
         inFlightIds={inFlightIds}
         onStart={handleStart}
@@ -933,6 +936,7 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
       {/* Portal manager for repository group action buttons */}
       <RepositoryGroupActionsManager
         tableContainer={tableContainer}
+        renderTick={renderTick}
         callbacks={repoActionCallbacks}
       />
 

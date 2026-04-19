@@ -20,6 +20,8 @@ export interface RepoActionCallbacks {
 
 export interface RepositoryGroupActionsManagerProps {
   tableContainer: HTMLDivElement | null;
+  /** Monotonic counter incremented on each Tabulator render, forces portal re-discovery. */
+  renderTick: number;
   callbacks: RepoActionCallbacks;
 }
 
@@ -200,11 +202,15 @@ function RepoActionButtons({
 
 export function RepositoryGroupActionsManager({
   tableContainer,
+  renderTick,
   callbacks,
 }: RepositoryGroupActionsManagerProps) {
   const [portalEntries, setPortalEntries] = useState<PortalEntry[]>([]);
 
-  const discoverContainers = useCallback(() => {
+  // Re-discover portal targets whenever the container changes OR Tabulator re-renders (renderTick).
+  // Tabulator destroys and recreates group header DOM on tree expand/collapse, so renderTick
+  // forces re-discovery even when the container element reference stays the same.
+  useEffect(() => {
     if (!tableContainer) {
       setPortalEntries([]);
       return;
@@ -235,11 +241,7 @@ export function RepositoryGroupActionsManager({
       }
       return prev;
     });
-  }, [tableContainer]);
-
-  useEffect(() => {
-    discoverContainers();
-  }, [discoverContainers]);
+  }, [tableContainer, renderTick]);
 
   const portals: JSX.Element[] = portalEntries.map(
     (entry) =>

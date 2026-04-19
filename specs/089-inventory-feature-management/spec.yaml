@@ -113,3 +113,9 @@ rejectionFeedback:
     message: "The inventory page now seems to be broken. also from the inventory page I should be able to do action on the repo like open folder, terminal, ide and start server"
     phase: "merge"
     timestamp: "2026-04-16T16:15:23.833Z"
+  - iteration: 5
+    message: "bugfix:\nclicking on item in inventory all action are gone. click again toggle back they dont come back"
+    phase: "merge"
+    timestamp: "2026-04-19T20:12:56.114Z"
+    attachments:
+      - "/Users/arielshadkhan/.shep/attachments/pending-1b153176-c85a-4ce2-a026-38a4cf937885/image-02801e59.png"
