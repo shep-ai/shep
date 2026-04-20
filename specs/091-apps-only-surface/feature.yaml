@@ -1,0 +1,42 @@
+feature:
+  id: '091-apps-only-surface'
+  name: 'apps-only-surface'
+  number: 91
+  branch: 'feat/091-apps-only-surface'
+  lifecycle: 'implementation'
+  createdAt: '2026-04-20T16:42:44Z'
+
+status:
+  phase: 'ready-to-implement'
+  progress:
+    completed: 0
+    total: 6
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-04-20T16:42:44Z'
+  lastUpdatedBy: 'shep-kit:new-feature-fast'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-04-20T16:42:44Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'research-complete'
+    completedAt: '2026-04-20T16:42:44Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'plan-complete'
+    completedAt: '2026-04-20T16:42:44Z'
+    completedBy: 'shep-kit:new-feature-fast'
+
+errors:
+  current: null
+  history: []

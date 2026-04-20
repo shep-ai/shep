@@ -1,0 +1,193 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: apps-only-surface
+summary: Implementation plan for 091-apps-only-surface
+
+# Relationships
+relatedFeatures:
+  - "085-electron-desktop-wrapper"
+technologies:
+  - TypeScript
+  - Next.js App Router
+  - React
+  - Electron
+relatedLinks: []
+
+# Structured implementation phases
+phases:
+  - id: phase-1
+    name: "Shell variant plumbing (cookie → AppShell prop)"
+    parallel: false
+    taskIds:
+      - task-1
+      - task-2
+
+  - id: phase-2
+    name: "Slim chrome + route guard (TDD)"
+    parallel: false
+    taskIds:
+      - task-3
+      - task-4
+
+  - id: phase-3
+    name: "Electron integration"
+    parallel: false
+    taskIds:
+      - task-5
+
+  - id: phase-4
+    name: "Verification"
+    parallel: false
+    taskIds:
+      - task-6
+
+# File change tracking
+filesToCreate:
+  - src/presentation/web/lib/shell-variant.ts
+  - src/presentation/web/hooks/use-apps-only-route-guard.ts
+  - src/presentation/web/components/layouts/app-shell/apps-only-shell.tsx
+  - tests/unit/presentation/web/layouts/app-shell-variant.test.tsx
+  - tests/unit/presentation/web/hooks/use-apps-only-route-guard.test.ts
+
+filesToModify:
+  - src/presentation/web/app/layout.tsx
+  - src/presentation/web/components/layouts/app-shell/app-shell.tsx
+  - src/presentation/web/components/layouts/app-shell/index.ts
+  - packages/electron/src/main.ts
+  - packages/electron/src/app.ts
+
+# Open questions (all resolved)
+openQuestions: []
+
+# Markdown content — architecture, strategy, and risks only.
+# Task-level detail lives in tasks.yaml (no duplication).
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-04-20
+
+  ## Architecture Overview
+
+  ```
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  Electron launcher                                               │
+  │  ────────────────                                                │
+  │  env: SHEP_SHELL_VARIANT=apps-only                               │
+  │         │                                                        │
+  │         ▼ before loadURL                                         │
+  │  session.defaultSession.cookies.set({                            │
+  │    url: http://localhost:<port>,                                 │
+  │    name: 'shep-shell-variant',                                   │
+  │    value: 'apps-only',                                           │
+  │  })                                                              │
+  │         │                                                        │
+  │         ▼ win.loadURL(`http://localhost:${port}/applications`)  │
+  └──────────────────────────────────────────────────────────────────┘
+                                 │
+                                 ▼
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  Next.js server (same DI, same API, same SSE)                    │
+  │                                                                  │
+  │  app/layout.tsx                                                  │
+  │   └─ reads shep-shell-variant cookie → ShellVariant type         │
+  │       └─ passes variant prop to AppShell                         │
+  │                                                                  │
+  │  AppShell(variant)                                               │
+  │   ├─ providers (always): AgentEventsProvider, QueryProvider, …  │
+  │   ├─ if variant === 'apps-only':                                │
+  │   │    <AppsOnlyShell>{children}</AppsOnlyShell>                │
+  │   │       └─ thin top bar (logo + theme toggle)                 │
+  │   │       └─ useAppsOnlyRouteGuard() redirects disallowed paths │
+  │   └─ else:                                                       │
+  │        <SidebarProvider>…<AppSidebar/>…{children}…</…>           │
+  │        (full chrome — unchanged)                                 │
+  └──────────────────────────────────────────────────────────────────┘
+  ```
+
+  ## Implementation Strategy
+
+  **MANDATORY TDD** for tasks that ship runtime behavior (task-3 AppShell
+  variant + task-4 route guard). Config / wiring tasks (task-1 cookie
+  reader helper, task-2 AppShell prop threading, task-5 Electron) are
+  verified via the downstream tests + a dedicated Electron integration
+  probe.
+
+  **Phase ordering:**
+
+  1. **Variant plumbing first.** The `shell-variant.ts` helper + the
+     AppShell `variant` prop are the foundation — everything else
+     depends on them.
+  2. **Slim chrome + guard together.** Both only make sense once the
+     variant prop exists. They're built TDD in the same phase because
+     they share a test harness (renders AppShell with variant=apps-only
+     and asserts chrome + navigation behavior).
+  3. **Electron integration last.** No point wiring the Electron cookie
+     until the server-side variant handling is proven green.
+  4. **Verification.** lint + typecheck + tests + storybook, plus a
+     manual Electron launch with `SHEP_SHELL_VARIANT=apps-only`.
+
+  **Invariants:**
+
+  - Full-shell code path is untouched — the variant defaults to `full`
+    and every existing user sees no change.
+  - Providers (Agent events, Query, Feature flags, FabLayout, i18n,
+    etc.) stay ACTIVE in apps-only mode — only the visual chrome is
+    skipped. Applications surface relies on AgentEventsProvider for
+    real-time updates (spec 090), and that must keep working.
+  - Route guard does not intercept the initial landing path — it only
+    runs on client-side navigation changes. The Electron launcher is
+    responsible for loading a valid initial URL.
+
+  ## Files to Create/Modify
+
+  ### New Files
+
+  | File | Purpose |
+  | ---- | ------- |
+  | `src/presentation/web/lib/shell-variant.ts` | Exports `ShellVariant` type + `SHELL_VARIANT_COOKIE` constant + `parseShellVariant()` helper used by the root layout |
+  | `src/presentation/web/hooks/use-apps-only-route-guard.ts` | Client hook that watches pathname in apps-only mode and redirects disallowed paths to /applications |
+  | `src/presentation/web/components/layouts/app-shell/apps-only-shell.tsx` | Slim chrome: thin top bar (logo + theme toggle), bounded width content area; wraps children and installs the route guard |
+  | `tests/unit/presentation/web/layouts/app-shell-variant.test.tsx` | Renders AppShell with variant=apps-only, asserts no sidebar, no FAB, no control-center |
+  | `tests/unit/presentation/web/hooks/use-apps-only-route-guard.test.ts` | Asserts router.replace('/applications') is called when pathname is not allowed |
+
+  ### Modified Files
+
+  | File | Changes |
+  | ---- | ------- |
+  | `src/presentation/web/app/layout.tsx` | Read `shep-shell-variant` cookie, parse via `parseShellVariant`, pass `variant` prop to `<AppShell>` |
+  | `src/presentation/web/components/layouts/app-shell/app-shell.tsx` | Accept `variant` prop; branch on it after mounting providers |
+  | `src/presentation/web/components/layouts/app-shell/index.ts` | Export `AppsOnlyShell` alongside the existing AppShell |
+  | `packages/electron/src/main.ts` | Read `SHEP_SHELL_VARIANT` env; when `apps-only`, call `session.defaultSession.cookies.set` with the cookie before `loadURL`; alter `loadURL` path to `/applications` when apps-only |
+  | `packages/electron/src/app.ts` | Extend `AppDeps` to accept optional `shellVariant?: 'full' \| 'apps-only'`; thread through to window loader |
+
+  ## Testing Strategy (TDD: Tests FIRST)
+
+  **CRITICAL:** Tasks 3 and 4 land their failing tests before any
+  runtime code.
+
+  ### Unit Tests (RED → GREEN → REFACTOR)
+
+  - **AppShell variant rendering** — render `<AppShell variant="apps-only">{child}</AppShell>`; assert (a) no `[data-sidebar]` element, (b) no global chat FAB, (c) no control-center canvas, (d) child is still rendered inside the providers stack.
+  - **Route guard** — mount a test harness with `variant="apps-only"` and a mocked `useRouter`/`usePathname`; assert `router.replace('/applications')` fires for disallowed paths (`/features`, `/projects`, `/settings`) and does NOT fire for allowed paths (`/applications`, `/application/foo`).
+
+  ### Integration Tests
+
+  None — the Electron integration is covered by a manual launch probe
+  in task-6 because CI already runs the Electron build on three
+  platforms.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | User tampers with the cookie to force apps-only mode in the web browser | Non-authoritative cookie; all API endpoints remain fully functional. UI chrome gate only. |
+  | Providers not firing in apps-only mode break the applications surface | Conditional only wraps visual chrome; all providers stay in the tree above the conditional. |
+  | Route guard fires on initial render and races the page | Guard uses `useEffect` + `pathname` watch; initial render paints before the guard runs. Electron always launches at a valid path (`/applications`). |
+  | Electron cookie set races the first loadURL | `session.cookies.set` returns a Promise — await before calling `loadURL`. |
+  | Storybook stories mounting AppShell need variant fallback | AppShell defaults `variant="full"`; no story changes required. |
+
+  ---
+
+  _Updated by `/shep-kit:new-feature-fast` — task breakdown in tasks.yaml_

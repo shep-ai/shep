@@ -1,0 +1,193 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: apps-only-surface
+summary: Task breakdown for 091-apps-only-surface
+
+# Relationships
+relatedFeatures:
+  - "085-electron-desktop-wrapper"
+technologies:
+  - TypeScript
+  - Next.js
+  - React
+  - Electron
+relatedLinks: []
+
+# Structured task list — this is the single source of truth for tasks.
+# The content field below is a summary only; it does NOT duplicate task details.
+tasks:
+  - id: task-1
+    title: "Add shell-variant helper + cookie constant"
+    description: >
+      Create `src/presentation/web/lib/shell-variant.ts` exporting the
+      `ShellVariant` type (`'full' | 'apps-only'`), the cookie name
+      constant `SHELL_VARIANT_COOKIE = 'shep-shell-variant'`, and a
+      `parseShellVariant(raw: string | undefined): ShellVariant` helper
+      that defaults to `'full'` on unknown / absent values.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - "`ShellVariant` type exported"
+      - "`SHELL_VARIANT_COOKIE` constant exported"
+      - "`parseShellVariant` returns 'full' for undefined, empty string, and unknown values"
+      - "`parseShellVariant('apps-only')` returns 'apps-only'"
+    tdd: null
+    estimatedEffort: XS
+
+  - id: task-2
+    title: "Thread variant prop through root layout + AppShell"
+    description: >
+      Modify `src/presentation/web/app/layout.tsx` to read the cookie
+      and call `parseShellVariant`. Pass `variant` as a prop to
+      `<AppShell>`. Extend `AppShellProps` to accept an optional
+      `variant?: ShellVariant` defaulting to `'full'`. No branching
+      logic yet — this task just wires the prop. Visual behavior
+      unchanged.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "Root layout reads `shep-shell-variant` cookie"
+      - "AppShell accepts optional `variant` prop with default 'full'"
+      - "Typecheck + existing tests stay green"
+      - "No visual change with cookie absent or 'full'"
+    tdd: null
+    estimatedEffort: XS
+
+  - id: task-3
+    title: "AppsOnlyShell component + AppShell variant branch (TDD)"
+    description: >
+      Add `src/presentation/web/components/layouts/app-shell/apps-only-shell.tsx`
+      rendering a slim chrome (logo + theme toggle at top, bounded
+      content area). Modify `app-shell.tsx` so that when
+      `variant === 'apps-only'`, it renders `<AppsOnlyShell>{children}</AppsOnlyShell>`
+      INSTEAD OF the full sidebar / FAB / chat / canvas chrome —
+      while keeping ALL providers (AgentEventsProvider, QueryProvider,
+      FeatureFlagsProvider, FabLayoutProvider, I18nProvider, SidebarFeaturesProvider,
+      TurnStatusesProvider, DrawerCloseGuardProvider) mounted above the
+      conditional so real-time updates and deployment status still
+      flow into the applications surface.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - "When variant='full' the existing AppShell renders unchanged"
+      - "When variant='apps-only' the AppsOnlyShell renders without sidebar, FAB, chat, or canvas"
+      - "All providers remain mounted in both variants"
+      - "AppsOnlyShell renders children inside a bounded content region"
+    tdd:
+      red:
+        - "Write `tests/unit/presentation/web/layouts/app-shell-variant.test.tsx` rendering `<AppShell variant='apps-only'>{child}</AppShell>` and asserting: no `[data-sidebar]`, no `[data-fab]` or equivalent FAB selector, child is in the DOM, AgentEventsProvider is in the React tree (via a test-only probe component that reads `useOptionalAgentEventsContext`)"
+      green:
+        - "Create AppsOnlyShell; branch inside AppShell on variant after providers"
+      refactor:
+        - "Extract a `FullShell` subcomponent if it makes the conditional cleaner; reuse existing Tailwind classes"
+    estimatedEffort: M
+
+  - id: task-4
+    title: "Apps-only route guard hook (TDD)"
+    description: >
+      Add `src/presentation/web/hooks/use-apps-only-route-guard.ts`
+      exporting `useAppsOnlyRouteGuard(variant: ShellVariant): void`.
+      When variant is `'apps-only'` and `usePathname()` returns a path
+      NOT in the allowed list (`/applications`, `/application/<anything>`),
+      call `router.replace('/applications')`. No-op when variant is
+      `'full'`. Call the hook from inside `AppsOnlyShell`.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - "Does nothing when variant === 'full'"
+      - "Does nothing when pathname === '/applications'"
+      - "Does nothing when pathname matches `/application/<id>`"
+      - "Calls `router.replace('/applications')` for `/features`, `/projects`, `/settings`, `/tools`, `/skills`"
+      - "Does NOT call `router.replace` on initial render when pathname is already allowed"
+    tdd:
+      red:
+        - "Write `tests/unit/presentation/web/hooks/use-apps-only-route-guard.test.ts` mocking `next/navigation`'s `useRouter` + `usePathname`; render a harness component that calls the hook; change the pathname via rerender; assert `replace` is called with '/applications' only for disallowed paths"
+      green:
+        - "Implement the hook with a small allowlist array + `useEffect([pathname, variant])`"
+      refactor:
+        - "Export the allowlist array for reuse; consider test-only factory to simplify the harness"
+    estimatedEffort: S
+
+  - id: task-5
+    title: "Electron SHEP_SHELL_VARIANT integration"
+    description: >
+      Modify `packages/electron/src/main.ts` and
+      `packages/electron/src/app.ts` so that when
+      `process.env.SHEP_SHELL_VARIANT === 'apps-only'`, the main
+      process (a) calls `session.defaultSession.cookies.set({ url:
+      \`http://localhost:\${port}\`, name: 'shep-shell-variant', value:
+      'apps-only', path: '/' })` and AWAITS the promise BEFORE
+      `win.loadURL`, and (b) loads `/applications` instead of `/`.
+      Thread a `shellVariant` field through `AppDeps` so the app.ts
+      orchestrator receives the decision from main.ts.
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - "When SHEP_SHELL_VARIANT is unset or 'full', electron behavior is unchanged"
+      - "When SHEP_SHELL_VARIANT='apps-only', the cookie is set BEFORE loadURL (verified by the order of awaits in the main process flow)"
+      - "When SHEP_SHELL_VARIANT='apps-only', the initial URL loaded is `http://localhost:<port>/applications`"
+      - "pnpm --filter @shepai/electron typecheck passes"
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-6
+    title: "Full verification: lint / typecheck / tests / storybook / electron probe"
+    description: >
+      Run local CI gates and fix anything red: pnpm lint, pnpm typecheck,
+      pnpm test:unit, pnpm build:storybook, pnpm --filter
+      @shepai/electron typecheck. Then run a quick manual probe of
+      apps-only mode in the dev server: curl with
+      `Cookie: shep-shell-variant=apps-only` to `/applications` and
+      verify the response body doesn't contain sidebar markup
+      (`data-sidebar`). Full Electron launch is optional (requires
+      display).
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - "pnpm lint clean"
+      - "pnpm typecheck clean"
+      - "pnpm test:unit clean (new variant + guard tests green)"
+      - "pnpm build:storybook clean"
+      - "curl with cookie to /applications returns HTML without sidebar markup"
+    tdd: null
+    estimatedEffort: S
+
+# Total effort estimate
+totalEstimate: S-M (~half day)
+
+# Open questions
+openQuestions: []
+
+# Markdown content — summary and acceptance checklist only.
+# Individual task details live in the tasks[] array above (no duplication).
+content: |
+  ## Summary
+
+  Cookie-driven shell variant for an Applications-only desktop-style
+  surface — 6 tasks across 4 phases. TDD required for task-3 (AppShell
+  variant branch) and task-4 (route guard). Plumbing / wiring / Electron
+  tasks carry `tdd: null` and are verified by downstream tests + the
+  manual curl probe in task-6.
+
+  ## Acceptance Checklist
+
+  Before marking feature complete:
+
+  - [ ] All tasks completed
+  - [ ] Tests passing (`pnpm test:unit`)
+  - [ ] Linting clean (`pnpm lint`)
+  - [ ] Types valid (`pnpm typecheck`)
+  - [ ] Storybook builds (`pnpm build:storybook`)
+  - [ ] Electron typecheck (`pnpm --filter @shepai/electron typecheck`)
+  - [ ] Curl probe confirms no sidebar markup when cookie is set
+  - [ ] PR created and reviewed
+
+  ---
+
+  _Task details are in the tasks[] array of tasks.yaml_

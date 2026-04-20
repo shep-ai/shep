@@ -1,0 +1,127 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: apps-only-surface
+number: 091
+branch: feat/091-apps-only-surface
+oneLiner: Slim "Applications only" shell variant — desktop app surface without full chrome
+summary: >
+  Add a cookie-driven shell variant so the existing Next.js web UI can
+  render a focused "Applications only" experience (applications list +
+  application detail: chat, preview, deploy) without the full sidebar
+  chrome, features tree, projects, tools, or global chat FAB. Same
+  server, same API, same DI — only the outer AppShell's chrome
+  changes based on the `shep-shell-variant` cookie. The existing
+  `@shepai/electron` binary can set the cookie via
+  `session.cookies.set` before `loadURL('/applications')` to launch a
+  slim desktop experience without creating a new Electron package.
+  Navigation in apps-only mode is bounded to `/applications` and
+  `/application/[id]` via a client-side route guard that redirects
+  disallowed paths back to `/applications`.
+phase: Requirements
+sizeEstimate: M
+
+# Relationships
+relatedFeatures:
+  - "085-electron-desktop-wrapper"
+  - "089-one-click-cloud-deploy"
+  - "090-application-sse-deltas"
+
+technologies:
+  - TypeScript
+  - Next.js (App Router)
+  - React
+  - Electron (existing @shepai/electron)
+  - HTTP cookies
+
+relatedLinks:
+  - title: Existing AppShell
+    url: src/presentation/web/components/layouts/app-shell/app-shell.tsx
+  - title: Root layout (cookie reader)
+    url: src/presentation/web/app/layout.tsx
+  - title: Electron main
+    url: packages/electron/src/main.ts
+  - title: Applications page
+    url: src/presentation/web/app/applications/page.tsx
+  - title: Application detail page
+    url: src/presentation/web/app/application/[id]/page.tsx
+
+# Open questions (must be resolved before implementation)
+openQuestions: []
+
+# Markdown content (the actual spec)
+content: |
+  ## Problem Statement
+
+  Users who want a focused "desktop app launcher" experience don't need
+  the full Shep chrome (sidebar with features tree, projects, tools,
+  settings, global chat FAB, control-center canvas). They need ONLY the
+  Applications list and the Application detail surface (chat + preview +
+  deploy). Building a separate Electron package that ships a second
+  compiled Next.js app would double the binary size and fork the
+  maintenance surface. Adding a new Next.js route group can't help
+  because the root layout always applies — and that's where AppShell
+  lives.
+
+  The right shape is a cookie-driven **shell variant**: the same server,
+  the same routes, the same DI container, but a different outer chrome
+  when the cookie says so. The existing `@shepai/electron` binary can
+  set that cookie via `session.defaultSession.cookies.set(...)` before
+  `loadURL`, turning a single codebase into two product surfaces
+  depending on how you launch it.
+
+  ## Success Criteria
+
+  - [ ] Visiting any URL with cookie `shep-shell-variant=apps-only`
+        renders a slim shell (no sidebar, no global chat FAB, no
+        control-center canvas, no features tree, no projects nav).
+  - [ ] Visiting `/applications` in apps-only mode renders the existing
+        ApplicationsPageClient identically to the full mode.
+  - [ ] Visiting `/application/[id]` in apps-only mode renders the
+        existing ApplicationPageLoader identically.
+  - [ ] In apps-only mode, client-side navigation to any path OUTSIDE
+        `/applications` or `/application/[id]` is redirected to
+        `/applications`.
+  - [ ] Existing full-shell behavior is unchanged when the cookie is
+        absent or `full`.
+  - [ ] The existing `@shepai/electron` binary gains a startup env flag
+        `SHEP_SHELL_VARIANT=apps-only` that sets the cookie via
+        `session.cookies.set` before `loadURL`, and loads
+        `/applications` directly.
+  - [ ] `pnpm typecheck`, `pnpm lint`, `pnpm test:unit`, and
+        `pnpm build:storybook` all stay clean.
+  - [ ] Unit tests cover (a) AppShell renders slim chrome when variant
+        is apps-only, (b) route guard redirects disallowed paths, (c)
+        root layout reads the cookie correctly.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `src/presentation/web/app/layout.tsx` | Low | Read cookie, pass variant prop to AppShell |
+  | `src/presentation/web/components/layouts/app-shell/app-shell.tsx` | Medium | Accept variant prop, conditionally render chrome |
+  | `src/presentation/web/components/layouts/app-shell/` (new slim subcomponent) | Medium | Wrap apps-only variant chrome (thin top bar, theme toggle) |
+  | `src/presentation/web/hooks/` (new route guard) | Low | Client-side redirect for disallowed paths in apps-only mode |
+  | `packages/electron/src/main.ts` | Low | Honor `SHEP_SHELL_VARIANT` env + set cookie + loadURL path |
+  | `tests/unit/presentation/web/layouts/` | Low | New AppShell variant tests + guard tests |
+
+  ## Dependencies
+
+  - `085-electron-desktop-wrapper` (provides the Electron binary that
+    this feature reuses)
+  - `089-one-click-cloud-deploy` (deploy surface reused in application
+    detail — no changes required)
+  - `090-application-sse-deltas` (real-time UX reused — no changes
+    required)
+
+  ## Size Estimate
+
+  **M** — Single-digit files touched, mostly presentation layer.
+  Core concept (cookie → AppShell branch) is simple; the only
+  non-trivial piece is the client-side route guard and the
+  Electron-side cookie set before `loadURL`. Bounded by the
+  existing AppShell architecture which already reads cookies.
+
+  ---
+
+  _Generated by `/shep-kit:new-feature-fast` — all phases written in one pass_

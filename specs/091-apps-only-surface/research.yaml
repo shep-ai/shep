@@ -1,0 +1,164 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: apps-only-surface
+summary: Technical analysis for 091-apps-only-surface
+
+# Relationships
+relatedFeatures:
+  - "085-electron-desktop-wrapper"
+technologies:
+  - TypeScript
+  - Next.js App Router
+  - React
+  - Electron
+relatedLinks:
+  - title: Next.js route groups
+    url: https://nextjs.org/docs/app/building-your-application/routing/route-groups
+  - title: Electron session.cookies
+    url: https://www.electronjs.org/docs/latest/api/cookies
+
+# Structured technology decisions
+decisions:
+  - title: "Shell variant transport: cookie vs query param vs separate route group"
+    chosen: "HTTP cookie (shep-shell-variant)"
+    rejected:
+      - "Query string ?shell=apps-only (would require every internal link to preserve it)"
+      - "New Next.js route group (apps-only) (route groups inherit root layout so AppShell still applies)"
+      - "New Next.js app workspace (double bundle size, fork maintenance)"
+    rationale: >
+      The root layout (app/layout.tsx) already reads cookies (sidebar
+      state), so cookie-based variant switching is a natural extension.
+      Cookies survive navigation and reload, are server-readable, and
+      let one Electron session.cookies.set call switch the entire
+      shell. Query strings leak into every client-side Link and break
+      on router.push. Route groups in Next.js cannot opt out of the
+      root layout — AppShell is applied unconditionally regardless of
+      (group) membership, so they don't help us here. A second Next.js
+      app would ship a duplicate bundle and fork the maintenance.
+
+  - title: "Chrome toggle strategy: full rewrite vs conditional render"
+    chosen: "Conditional render inside existing AppShell"
+    rejected:
+      - "Two separate shell components with a switch at root"
+      - "Server component split by variant"
+    rationale: >
+      AppShell already composes many subsystems (AgentEventsProvider,
+      DrawerCloseGuardProvider, SidebarFeaturesProvider, etc.). Some of
+      these MUST remain active even in apps-only mode (SSE for
+      applications, deployment status). Keeping one AppShell with a
+      `variant` prop that gates ONLY the visual chrome (sidebar, FAB,
+      chat, canvas) gives us minimal code churn and no risk of
+      divergence between the two surfaces.
+
+  - title: "Route-bounding: server middleware vs client guard"
+    chosen: "Client-side guard (useRouteGuard hook)"
+    rejected:
+      - "Next.js middleware redirect"
+      - "Server component redirect in layout"
+    rationale: >
+      Client-side guard keeps the decision close to the navigation
+      intent — any `router.push` or link click triggers the check and
+      redirects in the same tick. Middleware adds request latency for
+      every request and complicates local dev HMR. Server-side layout
+      redirect would force a full page load on every bounced nav.
+
+  - title: "Electron cookie injection: before vs after loadURL"
+    chosen: "Before loadURL (session.defaultSession.cookies.set)"
+    rejected:
+      - "After loadURL via webContents.executeJavaScript"
+      - "HTTP header injection via webRequest.onBeforeSendHeaders"
+    rationale: >
+      Setting the cookie BEFORE loadURL guarantees the very first
+      render of the page sees the correct variant — no "flash of full
+      shell" before the cookie lands. executeJavaScript races the
+      initial render. webRequest header injection works but is heavier
+      and applies to all requests (we only need the first HTML doc
+      request).
+
+# Open questions (all resolved)
+openQuestions: []
+
+# Markdown content (the full research document)
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-04-20
+
+  ## Technology Decisions
+
+  ### Shell variant transport
+
+  **Decision:** HTTP cookie (`shep-shell-variant`).
+
+  **Rationale:** the root layout already reads cookies for sidebar
+  state. Adding another cookie is a zero-cost extension. Cookies
+  survive navigation and reload, are server-readable, and a single
+  Electron `session.cookies.set` call switches the whole shell. Query
+  strings leak into internal links and break on `router.push`. Next.js
+  route groups cannot opt out of the root layout, so moving the
+  Applications routes into a `(apps-only)` group would still apply
+  AppShell. A second Next.js app would ship a duplicate bundle.
+
+  ### Chrome toggle strategy
+
+  **Decision:** conditional render inside the existing AppShell, gated
+  by a new `variant` prop.
+
+  **Rationale:** AppShell composes providers that must remain active
+  in apps-only mode (SSE, deployment status). One shell with a prop
+  keeps the providers shared and eliminates the divergence risk of two
+  parallel shells.
+
+  ### Route-bounding
+
+  **Decision:** client-side guard via a `useRouteGuard(variant)` hook
+  that watches `usePathname()` and calls `router.replace('/applications')`
+  on any path outside the allowed list when `variant === 'apps-only'`.
+
+  **Rationale:** client-side decision happens in the same tick as the
+  navigation, no extra network hop, no middleware latency, no full-page
+  reloads. Middleware would add request latency and complicate HMR.
+
+  ### Electron cookie injection
+
+  **Decision:** `session.defaultSession.cookies.set` called BEFORE
+  `loadURL`, gated by the `SHEP_SHELL_VARIANT=apps-only` env var.
+
+  **Rationale:** first render sees the correct variant — no flash of
+  full shell. `executeJavaScript` races the first render;
+  `webRequest.onBeforeSendHeaders` is heavier and runs for every
+  request when we only need the first HTML doc.
+
+  ## Library Analysis
+
+  No new libraries. All infrastructure already exists: Next.js App
+  Router, React cookies (`next/headers`), and Electron
+  `session.defaultSession.cookies` are all already in use.
+
+  ## Security Considerations
+
+  The cookie is non-authoritative — it only controls UI chrome. Even
+  if a user tampers with the cookie to force apps-only mode in the
+  browser, all API endpoints and data access remain unchanged (same
+  DI, same auth, same authorization). The cookie does NOT bypass any
+  security control.
+
+  ## Performance Implications
+
+  - Zero overhead for full-shell users (cookie absent → same code path).
+  - Apps-only mode is actually LIGHTER: we skip mounting the
+    control-center canvas, sidebar, features tree, and FAB — measurable
+    reduction in initial React tree size.
+  - Client-side route guard is O(1) per navigation; no polling, no
+    timers.
+  - Electron cookie set is one async call during startup, imperceptible.
+
+  ## Open Questions
+
+  All resolved.
+
+  ---
+
+  _Updated by `/shep-kit:new-feature-fast` — proceed with plan/tasks_
