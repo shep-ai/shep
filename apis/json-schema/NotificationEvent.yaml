@@ -27,6 +27,12 @@ properties:
     type: string
     format: date-time
     description: When the event occurred
+  applicationUpdate:
+    $ref: ApplicationUpdatePayload.yaml
+    description: Scoped payload for ApplicationUpdated events — present iff eventType === ApplicationUpdated
+  operationLogAppend:
+    $ref: OperationLogAppendPayload.yaml
+    description: Scoped payload for OperationLogAppended events — present iff eventType === OperationLogAppended
 required:
   - eventType
   - agentRunId

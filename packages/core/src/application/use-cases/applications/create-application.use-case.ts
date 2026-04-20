@@ -14,8 +14,14 @@
 import { injectable, inject } from 'tsyringe';
 import { randomUUID, randomBytes } from 'node:crypto';
 import type { Application, InteractiveMessage } from '../../../domain/generated/output.js';
-import { ApplicationStatus, InteractiveMessageRole } from '../../../domain/generated/output.js';
+import {
+  ApplicationStatus,
+  InteractiveMessageRole,
+  OperationLogKind,
+  OperationLogLevel,
+} from '../../../domain/generated/output.js';
 import type { IApplicationRepository } from '../../ports/output/repositories/application-repository.interface.js';
+import type { IOperationLogRepository } from '../../ports/output/repositories/operation-log.repository.interface.js';
 import type { IApplicationCreationPromptBuilder } from '../../ports/output/services/application-creation-prompt-builder.interface.js';
 import type { IApplicationBriefStore } from '../../ports/output/services/application-brief-store.interface.js';
 import type { IApplicationScaffolder } from '../../ports/output/services/application-scaffolder.interface.js';
@@ -163,6 +169,8 @@ export class CreateApplicationUseCase {
     private readonly scaffolder: IApplicationScaffolder,
     @inject('IInteractiveMessageRepository')
     private readonly messageRepo: IInteractiveMessageRepository,
+    @inject('IOperationLogRepository')
+    private readonly operationLogRepo: IOperationLogRepository,
     @inject('ILogger')
     private readonly logger: ILogger
   ) {}
@@ -299,14 +307,46 @@ export class CreateApplicationUseCase {
     modelOverride: string | undefined;
   }): Promise<void> {
     // Phase A — scaffold the project tree.
+    //
+    // Wire an `onLog` sink that forwards every scaffolder event into
+    // the shared operation_log_entries table under the ApplicationSetup
+    // kind so the Smart Deploy Activity drawer can stream CLI output
+    // (create-vite, bun install, bun add, template overlay) in real
+    // time. Append failures are intentionally swallowed — a broken
+    // log sink must never abort a successful scaffold.
+    const appId = args.application.id;
+    const onScaffoldLog = (entry: {
+      level: 'Debug' | 'Info' | 'Warn' | 'Error';
+      message: string;
+      detail?: string;
+    }): void => {
+      void this.operationLogRepo
+        .append({
+          operationKind: OperationLogKind.ApplicationSetup,
+          operationId: appId,
+          level: entry.level as OperationLogLevel,
+          message: entry.message,
+          detail: entry.detail,
+        })
+        .catch(() => {
+          // Log-sink errors are non-fatal.
+        });
+    };
+
     try {
       await this.scaffolder.scaffold({
         repositoryPath: args.projectPath,
         projectName: args.application.name,
+        applicationId: args.application.id,
+        onLog: onScaffoldLog,
       });
     } catch (err) {
-      this.logger.error('[create-application] scaffold failed', {
-        err: err instanceof Error ? err.message : String(err),
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error('[create-application] scaffold failed', { err: message });
+      onScaffoldLog({
+        level: 'Error',
+        message: 'Application setup failed',
+        detail: message,
       });
       try {
         await this.appRepo.update(args.application.id, {

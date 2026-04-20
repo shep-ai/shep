@@ -10,6 +10,7 @@ import type Database from 'better-sqlite3';
 import { createInMemoryDatabase, tableExists } from '../../../helpers/database.helper.js';
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
 import { SQLiteOperationLogRepository } from '@/infrastructure/repositories/sqlite-operation-log.repository.js';
+import { InMemoryOperationLogEventBus } from '@/infrastructure/services/events/in-memory-operation-log-event-bus.js';
 import { OperationLogKind, OperationLogLevel } from '@/domain/generated/output.js';
 
 describe('SQLiteOperationLogRepository', () => {
@@ -19,7 +20,7 @@ describe('SQLiteOperationLogRepository', () => {
   beforeEach(async () => {
     db = createInMemoryDatabase();
     await runSQLiteMigrations(db);
-    repo = new SQLiteOperationLogRepository(db);
+    repo = new SQLiteOperationLogRepository(db, new InMemoryOperationLogEventBus());
   });
 
   it('creates the operation_log_entries table via migration 062', () => {

@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: OperationLogAppendPayload.yaml
+type: object
+properties:
+  entry:
+    $ref: OperationLogEntry.yaml
+    description: The newly-appended operation log entry
+required:
+  - entry
+description: Scoped payload for an OperationLogAppended notification — carries the newly-appended entry so clients can patch their log list in-place without a refetch.

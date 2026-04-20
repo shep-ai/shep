@@ -32,6 +32,7 @@ import {
   Github,
   Info,
   Loader2,
+  Package,
   RefreshCw,
   TriangleAlert,
 } from 'lucide-react';
@@ -42,9 +43,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { useOperationLogAppend } from '@/hooks/agent-events-provider';
 import { cn } from '@/lib/utils';
+import type { OperationLogEntry } from '@shepai/core/domain/generated/output';
 
-export type SmartOpKind = 'CloudDeploy' | 'GitRemoteCreate' | 'RepoSync';
+export type SmartOpKind = 'CloudDeploy' | 'GitRemoteCreate' | 'RepoSync' | 'ApplicationSetup';
 type LogLevel = 'Debug' | 'Info' | 'Warn' | 'Error';
 
 interface OperationLogEntryDto {
@@ -57,29 +60,77 @@ interface OperationLogEntryDto {
   createdAt: string;
 }
 
-const OP_KINDS: readonly SmartOpKind[] = ['GitRemoteCreate', 'CloudDeploy', 'RepoSync'];
+// The SSE-delivered `OperationLogEntry` carries `createdAt` as an `any`
+// because the TypeSpec generator widens date-time fields. In practice
+// it's an ISO string over the wire — coerce defensively so the drawer's
+// `new Date(createdAt)` sort never hits NaN.
+function toDto(entry: OperationLogEntry): OperationLogEntryDto {
+  const createdAt =
+    typeof entry.createdAt === 'string'
+      ? entry.createdAt
+      : entry.createdAt instanceof Date
+        ? entry.createdAt.toISOString()
+        : String(entry.createdAt);
+  return {
+    id: entry.id,
+    operationKind: entry.operationKind as SmartOpKind,
+    operationId: entry.operationId,
+    level: entry.level as LogLevel,
+    message: entry.message,
+    detail: entry.detail,
+    createdAt,
+  };
+}
+
+const OP_KINDS: readonly SmartOpKind[] = [
+  'ApplicationSetup',
+  'GitRemoteCreate',
+  'CloudDeploy',
+  'RepoSync',
+];
 
 const KIND_META: Record<
   SmartOpKind,
-  { label: string; icon: typeof Info; chipClass: string; iconClass: string }
+  {
+    label: string;
+    icon: typeof Info;
+    chipClass: string;
+    iconClass: string;
+    accentClass: string;
+    labelClass: string;
+  }
 > = {
+  ApplicationSetup: {
+    label: 'setup',
+    icon: Package,
+    chipClass: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300',
+    iconClass: 'text-indigo-500',
+    accentClass: 'bg-indigo-500/70',
+    labelClass: 'text-indigo-500/80 dark:text-indigo-400/80',
+  },
   GitRemoteCreate: {
-    label: 'GitHub',
+    label: 'github',
     icon: Github,
     chipClass: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
     iconClass: 'text-sky-500',
+    accentClass: 'bg-sky-500/70',
+    labelClass: 'text-sky-500/80 dark:text-sky-400/80',
   },
   CloudDeploy: {
-    label: 'Cloud',
+    label: 'cloud',
     icon: Cloud,
     chipClass: 'bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-300',
     iconClass: 'text-fuchsia-500',
+    accentClass: 'bg-fuchsia-500/70',
+    labelClass: 'text-fuchsia-500/80 dark:text-fuchsia-400/80',
   },
   RepoSync: {
-    label: 'Sync',
+    label: 'sync',
     icon: GitBranch,
     chipClass: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
     iconClass: 'text-emerald-500',
+    accentClass: 'bg-emerald-500/70',
+    labelClass: 'text-emerald-500/80 dark:text-emerald-400/80',
   },
 };
 
@@ -106,7 +157,8 @@ export interface SmartDeployLogsDrawerProps {
   open: boolean;
   onOpenChange(open: boolean): void;
   applicationId: string;
-  /** When true, the drawer polls for new entries every 1.5s. */
+  /** Whether the merged operation is currently live — used to pin the
+   * spinner in the header and to auto-scroll as new entries arrive. */
   isRunning: boolean;
   /** Friendly subtitle, e.g. cloud provider name. */
   subtitle?: string;
@@ -193,22 +245,41 @@ export function SmartDeployLogsDrawer({
     }
   }, [applicationId]);
 
-  // Fetch on open + poll while running. Reset the one-shot spinner
-  // flag when the drawer is closed OR the applicationId switches so
-  // the user sees "Loading logs…" on the next fresh open, not a stale
+  // Fetch on open — one-shot hydration. Reset the "first-load" flag
+  // when the drawer is closed OR the applicationId switches so the
+  // user sees "Loading logs…" on the next fresh open, not a stale
   // "No activity yet" while the first new fetch is still in flight.
+  //
+  // Live updates are driven by the shared agent-events SSE stream
+  // below — we never use a client timer to poll the log endpoint.
   useEffect(() => {
     if (!open) {
       setHasLoadedOnce(false);
       return;
     }
     void refresh();
-    if (!isRunning) return;
-    const timer = setInterval(() => {
-      void refresh();
-    }, 1500);
-    return () => clearInterval(timer);
-  }, [open, isRunning, refresh]);
+  }, [open, refresh]);
+
+  // Live updates: the backend publishes an `OperationLogAppended` SSE
+  // event the instant a new `operation_log_entries` row is written
+  // (see StreamAgentEventsUseCase + IOperationLogEventBus). We append
+  // surgically — no round-trip to `/api/operations/.../logs` — and
+  // dedup by `entry.id` in case the one-shot hydration fetch and the
+  // SSE event race for the same row. Chronological order is enforced
+  // on insert so a reconnect that delivers entries out-of-order still
+  // renders in timestamp order.
+  const appendedEntry = useOperationLogAppend(applicationId);
+  useEffect(() => {
+    if (!open) return;
+    if (!appendedEntry) return;
+    const entry = appendedEntry;
+    setEntries((prev) => {
+      if (prev.some((e) => e.id === entry.id)) return prev;
+      const next = [...prev, toDto(entry)];
+      next.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      return next;
+    });
+  }, [appendedEntry, open]);
 
   // Auto-scroll to bottom while running so new entries are visible
   // without the user chasing them. Paused otherwise so historical
@@ -286,64 +357,89 @@ export function SmartDeployLogsDrawer({
           </div>
         </SheetHeader>
 
-        <div ref={bodyRef} className="flex-1 overflow-y-auto p-4">
+        <div ref={bodyRef} className="flex-1 overflow-y-auto py-2">
           {!hasLoadedOnce ? (
-            <div className="text-muted-foreground flex items-center gap-2 text-xs">
+            <div className="text-muted-foreground flex items-center gap-2 px-4 py-2 text-xs">
               <Loader2 className="size-3 animate-spin" /> Loading logs…
             </div>
           ) : null}
           {error ? (
-            <div className="text-destructive bg-destructive/10 mb-3 rounded-md border p-2 text-xs">
+            <div className="text-destructive/90 border-destructive/60 mx-2 mb-2 border-l-2 px-3 py-1.5 font-mono text-[11px] leading-snug">
               {error}
             </div>
           ) : null}
           {visible.length === 0 && hasLoadedOnce ? (
-            <div className="text-muted-foreground text-xs">
+            <div className="text-muted-foreground px-4 py-2 text-xs">
               {error ? 'Could not load activity. Use Refresh to try again.' : 'No activity yet.'}
               {isRunning && !error ? ' The operation just started — entries will appear here.' : ''}
             </div>
           ) : null}
 
-          <ol className="flex flex-col gap-2">
+          <ol className="flex flex-col">
             {visible.map((entry) => {
               const { icon: LevelIcon, className: levelClass } = LEVEL_ICON[entry.level];
               const meta = KIND_META[entry.operationKind];
+              const hasDetail = Boolean(entry.detail);
+              const isLoud = entry.level === 'Warn' || entry.level === 'Error';
               return (
                 <li
                   key={entry.id}
-                  className="border-border/60 hover:bg-muted/30 group rounded-md border p-2 transition-colors"
+                  className={cn(
+                    'group relative flex items-start gap-3 px-4 py-[3px] font-mono text-[11.5px] leading-[1.55] transition-colors',
+                    'hover:bg-muted/40',
+                    entry.level === 'Error' && 'bg-destructive/5'
+                  )}
                 >
-                  <div className="flex items-start gap-2">
-                    <LevelIcon className={cn('mt-0.5 size-3.5 shrink-0', levelClass)} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline gap-2">
-                        <span className="text-muted-foreground shrink-0 font-mono text-[10px]">
-                          {formatTime(entry.createdAt)}
-                        </span>
-                        <span
-                          className={cn(
-                            'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0 text-[9px] font-medium tracking-wide uppercase',
-                            meta.chipClass
-                          )}
-                        >
-                          <meta.icon className={cn('size-2.5', meta.iconClass)} />
-                          {meta.label}
-                        </span>
-                        <span className="min-w-0 flex-1 text-xs leading-snug break-words">
-                          {entry.message}
-                        </span>
-                      </div>
-                      {entry.detail ? (
-                        <details className="mt-1">
-                          <summary className="text-muted-foreground hover:text-foreground cursor-pointer text-[10px]">
-                            Details
-                          </summary>
-                          <pre className="bg-muted/50 mt-1 overflow-x-auto rounded px-2 py-1 font-mono text-[10px] whitespace-pre-wrap">
-                            {entry.detail}
-                          </pre>
-                        </details>
-                      ) : null}
-                    </div>
+                  {/* Thin kind-colored accent on the left edge */}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'pointer-events-none absolute top-1 bottom-1 left-0 w-[2px] rounded-r-sm',
+                      meta.accentClass,
+                      'opacity-70 group-hover:opacity-100'
+                    )}
+                  />
+
+                  <span className="text-muted-foreground/70 shrink-0 pt-[2px] text-[10.5px] tabular-nums">
+                    {formatTime(entry.createdAt)}
+                  </span>
+
+                  <span
+                    className={cn(
+                      'shrink-0 pt-[3px] text-[10px] tracking-wide uppercase select-none',
+                      meta.labelClass
+                    )}
+                    title={entry.operationKind}
+                  >
+                    {meta.label}
+                  </span>
+
+                  {isLoud ? (
+                    <LevelIcon className={cn('mt-[3px] size-3 shrink-0', levelClass)} />
+                  ) : null}
+
+                  <div className="min-w-0 flex-1">
+                    <span
+                      className={cn(
+                        'break-words whitespace-pre-wrap',
+                        entry.level === 'Error' && 'text-destructive',
+                        entry.level === 'Warn' && 'text-amber-600 dark:text-amber-400',
+                        entry.level === 'Debug' && 'text-muted-foreground'
+                      )}
+                    >
+                      {entry.message}
+                    </span>
+                    {hasDetail ? (
+                      <details className="mt-0.5 [&:not([open])_.caret-open]:hidden [&[open]_.caret-closed]:hidden">
+                        <summary className="text-muted-foreground/70 hover:text-foreground inline-block cursor-pointer list-none text-[10px] [&::-webkit-details-marker]:hidden">
+                          <span className="caret-closed">› details</span>
+                          <span className="caret-open">‹ hide</span>
+                        </summary>
+                        <pre className="text-muted-foreground border-border/60 mt-0.5 ml-[1px] overflow-x-auto border-l pl-2 text-[10.5px] leading-[1.5] whitespace-pre-wrap">
+                          {entry.detail}
+                        </pre>
+                      </details>
+                    ) : null}
                   </div>
                 </li>
               );

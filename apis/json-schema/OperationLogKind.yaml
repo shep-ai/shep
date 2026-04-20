@@ -5,4 +5,5 @@ enum:
   - CloudDeploy
   - GitRemoteCreate
   - RepoSync
+  - ApplicationSetup
 description: Kind of long-running operation an OperationLogEntry belongs to

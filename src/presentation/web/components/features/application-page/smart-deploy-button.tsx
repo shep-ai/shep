@@ -8,8 +8,12 @@
  * most-likely-intended action based on the combined git + cloud state;
  * the chevron half opens the rich DeployPanel for full control.
  *
- * Visual design intent: read at a glance, no jargon. Target user is
- * non-technical — labels never say "repo", "sync", "push", or "commit".
+ * Visual: native desktop toolbar split button. h-8, rounded-md ends,
+ * subtle 1px border, matching tone-tinted background, shadow-xs for
+ * depth. Hover bumps the tint a level, active inverts to a pressed
+ * feel, focus adds a ring. 150ms transitions across the board. Labels
+ * never say "repo", "sync", "push", or "commit" — this button is used
+ * by non-technical people.
  */
 
 import { useState } from 'react';
@@ -42,21 +46,14 @@ export interface SmartDeployButtonProps {
   className?: string;
 }
 
-/**
- * State-driven label + icon + tone. `tone` maps to a Tailwind colour band
- * applied via the className builder below — `primary` is the default
- * "needs your attention" tone, `emerald` is success-quiet, `destructive`
- * is failure, `muted` is idle.
- */
 interface LabelSpec {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   sub?: string;
   tone: 'primary' | 'emerald' | 'amber' | 'destructive' | 'muted' | 'rocket';
   spinning?: boolean;
-  /** When true, the icon is rendered inside a vibrant gradient chip
-   *  instead of inheriting the tone color — reserved for the
-   *  one-click "Get online" surface that should visually pop. */
+  /** When true, the icon renders inside a vibrant gradient chip — reserved
+   *  for the one-click "Get online" surface that should visually pop. */
   iconChip?: boolean;
 }
 
@@ -65,13 +62,6 @@ function labelFor(state: SmartDeployState): LabelSpec {
     case 'loading':
       return { icon: Loader2, label: 'Loading…', tone: 'muted', spinning: true };
     case 'working': {
-      // Specific-per-source label instead of the generic "Working…".
-      // Sync: we're doing the git commit+push pipeline. Deploy: the
-      // cloud provider is shipping the build. GetOnline: the
-      // one-click create-repo + auto-deploy pipeline (single label
-      // covering the whole sequence so the button can't flicker
-      // between intermediate states). Fallback stays as "Working…"
-      // for any edge case where source isn't set.
       if (state.workingSource === 'getOnline') {
         return {
           icon: Loader2,
@@ -114,8 +104,6 @@ function labelFor(state: SmartDeployState): LabelSpec {
           state.changeCount > 0
             ? `${state.changeCount} change${state.changeCount === 1 ? '' : 's'} not live`
             : 'Not in sync',
-        // Amber instead of emerald so the "your live site is behind"
-        // state looks visibly different from the calm "Live" chip.
         tone: 'amber',
       };
     case 'save':
@@ -150,38 +138,27 @@ function truncateHost(url: string): string {
 }
 
 /**
- * Tone classes — square, flat, VS-Code-tab-style.
+ * Tone classes — native-toolbar split button.
  *
- * Neutral `border-border` all around so the button always sits as a
- * clean rectangle with no rounded corners, and a 2px BOTTOM accent
- * bar (`border-b-2 border-b-<tone>`) that carries the state color on
- * a single side only. Subtle background tint + matching text/icon
- * color complete the tone without painting the whole frame green or
- * amber.
- *
- * Sits next to `app-view-tabs` in the top bar so the whole row reads
- * as one flat rectangular family.
+ * Every tone is a (border, background, text, hover) tuple. `primary` is
+ * the default "needs your attention" tone; `emerald` is a calm success
+ * state; `amber` flags "your live site is behind"; `destructive` is
+ * failure; `muted` is idle/loading; `rocket` is the vibrant one-click
+ * Get-online action. Backgrounds stay subtle (5-10% tint) so the button
+ * reads as a toolbar control, not a hero CTA.
  */
 const TONE_CLASSES: Record<LabelSpec['tone'], string> = {
   primary:
-    'border-border border-b-2 border-b-primary bg-primary/5 text-primary hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/15',
+    'border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 active:bg-primary/15 dark:bg-primary/10 dark:hover:bg-primary/15 dark:active:bg-primary/20',
   emerald:
-    'border-border border-b-2 border-b-emerald-500 bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/15',
+    'border-emerald-500/30 bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 active:bg-emerald-500/15 dark:text-emerald-400 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/15 dark:active:bg-emerald-500/20',
   amber:
-    'border-border border-b-2 border-b-amber-500 bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 dark:text-amber-400 dark:bg-amber-500/10 dark:hover:bg-amber-500/15',
+    'border-amber-500/30 bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 active:bg-amber-500/15 dark:text-amber-400 dark:bg-amber-500/10 dark:hover:bg-amber-500/15 dark:active:bg-amber-500/20',
   destructive:
-    'border-border border-b-2 border-b-destructive bg-destructive/5 text-destructive hover:bg-destructive/10 dark:bg-destructive/10 dark:hover:bg-destructive/15',
-  muted:
-    'border-border border-b-2 border-b-transparent bg-background text-muted-foreground hover:bg-accent',
-  // One-click "Get online" call to action. Mirrors the structure of
-  // the `primary` tone (solid subtle tint, no body gradient) so the
-  // Tailwind build can't mis-render a multi-stop gradient with
-  // opacity modifiers as a full-saturation fuchsia block. The
-  // "cool colored" accent lives entirely in the icon chip — see
-  // `iconChip` rendering below — so the button reads as a pop of
-  // colour without drowning the label in magenta.
+    'border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 active:bg-destructive/15 dark:bg-destructive/10 dark:hover:bg-destructive/15 dark:active:bg-destructive/20',
+  muted: 'border-border bg-background text-muted-foreground hover:bg-accent active:bg-accent/80',
   rocket:
-    'border-border border-b-2 border-b-fuchsia-500 bg-fuchsia-500/5 text-fuchsia-700 hover:bg-fuchsia-500/10 dark:text-fuchsia-300 dark:bg-fuchsia-500/10 dark:hover:bg-fuchsia-500/15',
+    'border-fuchsia-500/30 bg-fuchsia-500/5 text-fuchsia-700 hover:bg-fuchsia-500/10 active:bg-fuchsia-500/15 dark:text-fuchsia-300 dark:bg-fuchsia-500/10 dark:hover:bg-fuchsia-500/15 dark:active:bg-fuchsia-500/20',
 };
 
 export function SmartDeployButton({
@@ -194,9 +171,6 @@ export function SmartDeployButton({
 }: SmartDeployButtonProps) {
   const spec = labelFor(state);
   const Icon = spec.icon;
-  // Support both controlled and uncontrolled use. Storybook stories
-  // still render the button without a parent popover state, so keep
-  // an internal fallback for those cases.
   const [internalPanelOpen, setInternalPanelOpen] = useState(false);
   const panelOpen = controlledPanelOpen ?? internalPanelOpen;
   const setPanelOpen = (open: boolean): void => {
@@ -211,21 +185,19 @@ export function SmartDeployButton({
   const isDirty = state.changeCount > 0 && state.hasRemote;
 
   return (
-    <div className={cn('inline-flex items-stretch', className)}>
+    <div className={cn('inline-flex items-stretch shadow-xs', className)}>
       {/* ── Left: smart primary action ───────────────────────── */}
       <button
         type="button"
         onClick={onPrimaryClick}
         disabled={!isInteractive}
         className={cn(
-          // Square, flat, VS-Code-tab language. Fixed h-12 matches
-          // the top bar (TOP_BAR_HEIGHT_CLASS = 'h-12') so the
-          // button sits flush top-to-bottom with no outer padding
-          // band. Using h-full here is unreliable inside a flex
-          // items-center parent — the explicit height always wins.
-          'inline-flex h-12 items-center gap-2 rounded-none border border-r-0 px-3 text-xs font-medium transition-colors',
+          'group inline-flex h-8 items-center gap-2 rounded-l-md border border-r-0 px-3 text-xs font-medium',
+          'transition-colors duration-150 ease-out',
+          'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none',
+          'focus-visible:relative focus-visible:z-10',
           TONE_CLASSES[spec.tone],
-          isInteractive ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'
+          isInteractive ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
         )}
         title={spec.label}
       >
@@ -233,7 +205,7 @@ export function SmartDeployButton({
           className={cn(
             'relative inline-flex',
             spec.iconChip &&
-              'h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 via-purple-500 to-sky-500 text-white shadow-sm'
+              'h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 via-purple-500 to-sky-500 text-white shadow-xs'
           )}
         >
           <Icon
@@ -244,10 +216,7 @@ export function SmartDeployButton({
             )}
           />
           {/* Tiny dirty-dot overlay on the icon when there are pending changes
-              and we're NOT already showing them in the label. Hidden for
-              states whose label already communicates the state so we don't
-              double-indicate: save, pushAndDeploy, saveAndRepublish,
-              working, loading, failed. */}
+              and we're NOT already showing them in the label. */}
           {isDirty &&
           state.kind !== 'save' &&
           state.kind !== 'pushAndDeploy' &&
@@ -274,15 +243,21 @@ export function SmartDeployButton({
             aria-label="Open deploy panel"
             title="More options"
             className={cn(
-              // Square chevron half, same top accent as the main
-              // button so the split reads as one rectangle with a
-              // single vertical divider between the two halves.
-              'inline-flex h-12 items-center justify-center rounded-none border px-1.5 transition-colors',
+              'inline-flex h-8 items-center justify-center rounded-r-md border px-1.5',
+              'transition-colors duration-150 ease-out',
+              'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none',
+              'focus-visible:relative focus-visible:z-10',
+              'data-[state=open]:bg-accent/60',
               TONE_CLASSES[spec.tone],
               'cursor-pointer'
             )}
           >
-            <ChevronDown className="size-3.5" />
+            <ChevronDown
+              className={cn(
+                'size-3.5 transition-transform duration-150 ease-out',
+                panelOpen && 'rotate-180'
+              )}
+            />
           </button>
         </PopoverTrigger>
         <PopoverContent align="end" sideOffset={6} className="w-[360px] p-0">

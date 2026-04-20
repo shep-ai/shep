@@ -607,6 +607,14 @@ export type NotificationEventConfig = {
    * Notify when cloud deployment status changes (spec 089)
    */
   cloudDeploymentUpdated?: boolean;
+  /**
+   * Notify when application row changes (setupComplete, status, gitRemoteUrl, cloudDeploymentProvider — spec 090)
+   */
+  applicationUpdated?: boolean;
+  /**
+   * Notify when a new operation log entry is appended (spec 090)
+   */
+  operationLogAppended?: boolean;
 };
 
 /**
@@ -1671,6 +1679,92 @@ export type Tool = BaseEntity & {
    */
   installedAt?: any;
 };
+export enum ApplicationStatus {
+  Idle = 'Idle',
+  Active = 'Active',
+  Error = 'Error',
+}
+export enum CloudDeploymentProvider {
+  CloudflarePages = 'CloudflarePages',
+  Vercel = 'Vercel',
+  Netlify = 'Netlify',
+  AwsAmplify = 'AwsAmplify',
+  GcpCloudRun = 'GcpCloudRun',
+}
+
+/**
+ * Scoped payload for an ApplicationUpdated notification — carries only the fields the client patches in-place. Deltas for unchanged fields are omitted.
+ */
+export type ApplicationUpdatePayload = {
+  /**
+   * The application whose row changed
+   */
+  applicationId: string;
+  /**
+   * Current setup_complete flag (after the transition)
+   */
+  setupComplete: boolean;
+  /**
+   * Current application status (after the transition)
+   */
+  status: ApplicationStatus;
+  /**
+   * Current git remote URL, if one is set
+   */
+  gitRemoteUrl?: string;
+  /**
+   * Selected cloud deployment provider, if one is set
+   */
+  cloudDeploymentProvider?: CloudDeploymentProvider;
+};
+export enum OperationLogKind {
+  CloudDeploy = 'CloudDeploy',
+  GitRemoteCreate = 'GitRemoteCreate',
+  RepoSync = 'RepoSync',
+  ApplicationSetup = 'ApplicationSetup',
+}
+export enum OperationLogLevel {
+  Debug = 'Debug',
+  Info = 'Info',
+  Warn = 'Warn',
+  Error = 'Error',
+}
+
+/**
+ * A single timestamped line of progress for a long-running operation
+ */
+export type OperationLogEntry = BaseEntity & {
+  /**
+   * Kind of operation this entry belongs to
+   */
+  operationKind: OperationLogKind;
+  /**
+   * Stable id that scopes the operation — typically the application id
+   */
+  operationId: string;
+  /**
+   * Severity / level of this entry
+   */
+  level: OperationLogLevel;
+  /**
+   * Human-readable single-line message
+   */
+  message: string;
+  /**
+   * Optional structured detail (JSON-serialised) — multi-line stderr, error codes, etc.
+   */
+  detail?: string;
+};
+
+/**
+ * Scoped payload for an OperationLogAppended notification — carries the newly-appended entry so clients can patch their log list in-place without a refetch.
+ */
+export type OperationLogAppendPayload = {
+  /**
+   * The newly-appended operation log entry
+   */
+  entry: OperationLogEntry;
+};
 export enum NotificationEventType {
   AgentStarted = 'agent_started',
   PhaseCompleted = 'phase_completed',
@@ -1684,6 +1778,8 @@ export enum NotificationEventType {
   PrBlocked = 'pr_blocked',
   MergeReviewReady = 'merge_review_ready',
   CloudDeploymentUpdated = 'cloud_deployment_updated',
+  ApplicationUpdated = 'application_updated',
+  OperationLogAppended = 'operation_log_appended',
 }
 export enum NotificationSeverity {
   Info = 'info',
@@ -1728,45 +1824,15 @@ export type NotificationEvent = {
    * When the event occurred
    */
   timestamp: any;
+  /**
+   * Scoped payload for ApplicationUpdated events — present iff eventType === ApplicationUpdated
+   */
+  applicationUpdate?: ApplicationUpdatePayload;
+  /**
+   * Scoped payload for OperationLogAppended events — present iff eventType === OperationLogAppended
+   */
+  operationLogAppend?: OperationLogAppendPayload;
 };
-
-/**
- * A code repository tracked by the Shep platform
- */
-export type Repository = SoftDeletableEntity & {
-  /**
-   * Human-readable name for the repository (typically the directory name)
-   */
-  name: string;
-  /**
-   * Absolute file system path to the repository root (unique)
-   */
-  path: string;
-  /**
-   * Remote GitHub URL this repository was cloned from (normalized: lowercase, no .git suffix)
-   */
-  remoteUrl?: string;
-  /**
-   * Whether this repository was auto-forked by shep because the user lacked push access
-   */
-  isFork?: boolean;
-  /**
-   * Original upstream URL when isFork is true (normalized: lowercase, no .git suffix)
-   */
-  upstreamUrl?: string;
-};
-export enum ApplicationStatus {
-  Idle = 'Idle',
-  Active = 'Active',
-  Error = 'Error',
-}
-export enum CloudDeploymentProvider {
-  CloudflarePages = 'CloudflarePages',
-  Vercel = 'Vercel',
-  Netlify = 'Netlify',
-  AwsAmplify = 'AwsAmplify',
-  GcpCloudRun = 'GcpCloudRun',
-}
 export enum CloudDeploymentStatus {
   NotDeployed = 'NotDeployed',
   Building = 'Building',
@@ -1848,6 +1914,32 @@ export type Application = SoftDeletableEntity & {
    * Timestamp of the last deployment attempt (success or failure)
    */
   lastDeployedAt?: any;
+};
+
+/**
+ * A code repository tracked by the Shep platform
+ */
+export type Repository = SoftDeletableEntity & {
+  /**
+   * Human-readable name for the repository (typically the directory name)
+   */
+  name: string;
+  /**
+   * Absolute file system path to the repository root (unique)
+   */
+  path: string;
+  /**
+   * Remote GitHub URL this repository was cloned from (normalized: lowercase, no .git suffix)
+   */
+  remoteUrl?: string;
+  /**
+   * Whether this repository was auto-forked by shep because the user lacked push access
+   */
+  isFork?: boolean;
+  /**
+   * Original upstream URL when isFork is true (normalized: lowercase, no .git suffix)
+   */
+  upstreamUrl?: string;
 };
 export enum EstimateType {
   None = 'None',
@@ -2530,43 +2622,6 @@ export type PmAuditLog = BaseEntity & {
    * IP address or client identifier of the actor — optional
    */
   ipAddress?: string;
-};
-export enum OperationLogKind {
-  CloudDeploy = 'CloudDeploy',
-  GitRemoteCreate = 'GitRemoteCreate',
-  RepoSync = 'RepoSync',
-}
-export enum OperationLogLevel {
-  Debug = 'Debug',
-  Info = 'Info',
-  Warn = 'Warn',
-  Error = 'Error',
-}
-
-/**
- * A single timestamped line of progress for a long-running operation
- */
-export type OperationLogEntry = BaseEntity & {
-  /**
-   * Kind of operation this entry belongs to
-   */
-  operationKind: OperationLogKind;
-  /**
-   * Stable id that scopes the operation — typically the application id
-   */
-  operationId: string;
-  /**
-   * Severity / level of this entry
-   */
-  level: OperationLogLevel;
-  /**
-   * Human-readable single-line message
-   */
-  message: string;
-  /**
-   * Optional structured detail (JSON-serialised) — multi-line stderr, error codes, etc.
-   */
-  detail?: string;
 };
 
 /**

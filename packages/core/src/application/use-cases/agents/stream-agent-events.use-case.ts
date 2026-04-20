@@ -27,22 +27,30 @@ import { inject, injectable } from 'tsyringe';
 
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '../../ports/output/agents/phase-timing-repository.interface.js';
+import type { IApplicationRepository } from '../../ports/output/repositories/application-repository.interface.js';
 import type { IInteractiveSessionRepository } from '../../ports/output/repositories/interactive-session-repository.interface.js';
 import type { ICloudDeploymentEventBus } from '../../ports/output/services/cloud-deployment-event-bus.interface.js';
 import type { ILogger } from '../../ports/output/services/logger.interface.js';
+import type { IOperationLogEventBus } from '../../ports/output/services/operation-log-event-bus.interface.js';
 import type { IProcessLivenessProbe } from '../../ports/output/services/process-liveness.interface.js';
 
 import { ListFeaturesUseCase } from '../features/list-features.use-case.js';
 
 import type { AgentRun, Feature } from '../../../domain/generated/output.js';
-import { NotificationEventType, NotificationSeverity } from '../../../domain/generated/output.js';
+import {
+  NotificationEventType,
+  NotificationSeverity,
+  OperationLogLevel,
+} from '../../../domain/generated/output.js';
 
+import { computeApplicationDeltas } from './stream-agent-events/compute-application-deltas.js';
 import { computeFeatureDeltas } from './stream-agent-events/compute-feature-deltas.js';
 import { computePhaseCompletionDeltas } from './stream-agent-events/compute-phase-completion-deltas.js';
 import { computePrDeltas } from './stream-agent-events/compute-pr-deltas.js';
 import { computeSessionDeltas } from './stream-agent-events/compute-session-deltas.js';
 import { computeStatusDeltas } from './stream-agent-events/compute-status-deltas.js';
 import type {
+  CachedApplicationState,
   CachedFeatureState,
   CachedSessionState,
   StreamedAgentEvent,
@@ -83,6 +91,10 @@ export class StreamAgentEventsUseCase {
     private readonly processLiveness: IProcessLivenessProbe,
     @inject('ICloudDeploymentEventBus')
     private readonly cloudEventBus: ICloudDeploymentEventBus,
+    @inject('IApplicationRepository')
+    private readonly applicationRepo: IApplicationRepository,
+    @inject('IOperationLogEventBus')
+    private readonly operationLogEventBus: IOperationLogEventBus,
     @inject('ILogger')
     private readonly logger: ILogger
   ) {}
@@ -102,6 +114,7 @@ export class StreamAgentEventsUseCase {
 
     const featureCache = new Map<string, CachedFeatureState>();
     const sessionCache = new Map<string, CachedSessionState>();
+    const applicationCache = new Map<string, CachedApplicationState>();
 
     const queue: StreamedAgentEvent[] = [];
     let notify: (() => void) | null = null;
@@ -115,13 +128,20 @@ export class StreamAgentEventsUseCase {
     };
 
     const unsubscribeCloudDeploy = this.subscribeCloudDeploy(enqueue);
+    const unsubscribeOperationLog = this.subscribeOperationLog(enqueue);
 
     let pollErrorCount = 0;
 
     try {
       while (!signal?.aborted) {
         try {
-          await this.pollOnce({ runIdFilter, featureCache, sessionCache, enqueue });
+          await this.pollOnce({
+            runIdFilter,
+            featureCache,
+            sessionCache,
+            applicationCache,
+            enqueue,
+          });
           pollErrorCount = 0;
         } catch (error) {
           pollErrorCount++;
@@ -178,6 +198,11 @@ export class StreamAgentEventsUseCase {
       } catch {
         // Listener may already be detached.
       }
+      try {
+        unsubscribeOperationLog();
+      } catch {
+        // Listener may already be detached.
+      }
     }
   }
 
@@ -219,6 +244,43 @@ export class StreamAgentEventsUseCase {
   }
 
   /**
+   * Subscribe to the in-process operation-log event bus and re-emit each
+   * publish as a `NotificationEventType.OperationLogAppended` notification.
+   * Returns the unsubscribe handle.
+   */
+  private subscribeOperationLog(enqueue: (event: StreamedAgentEvent) => void): () => void {
+    return this.operationLogEventBus.subscribe(({ entry }) => {
+      const severity =
+        entry.level === OperationLogLevel.Error
+          ? NotificationSeverity.Error
+          : entry.level === OperationLogLevel.Warn
+            ? NotificationSeverity.Warning
+            : NotificationSeverity.Info;
+
+      const timestamp =
+        entry.createdAt instanceof Date
+          ? entry.createdAt.toISOString()
+          : typeof entry.createdAt === 'string'
+            ? entry.createdAt
+            : String(entry.createdAt);
+
+      enqueue({
+        kind: 'notification',
+        event: {
+          eventType: NotificationEventType.OperationLogAppended,
+          agentRunId: entry.operationId,
+          featureId: entry.operationId,
+          featureName: entry.operationKind,
+          message: entry.message,
+          severity,
+          timestamp,
+          operationLogAppend: { entry },
+        },
+      });
+    });
+  }
+
+  /**
    * Single poll cycle: walk every feature's latest agent run, diff against
    * the connection cache, and enqueue notification events for any observed
    * state changes. Also polls interactive session state transitions.
@@ -227,9 +289,10 @@ export class StreamAgentEventsUseCase {
     runIdFilter?: string;
     featureCache: Map<string, CachedFeatureState>;
     sessionCache: Map<string, CachedSessionState>;
+    applicationCache: Map<string, CachedApplicationState>;
     enqueue: (event: StreamedAgentEvent) => void;
   }): Promise<void> {
-    const { runIdFilter, featureCache, sessionCache, enqueue } = args;
+    const { runIdFilter, featureCache, sessionCache, applicationCache, enqueue } = args;
 
     const features = await this.listFeatures.execute();
 
@@ -293,6 +356,27 @@ export class StreamAgentEventsUseCase {
       }
     } catch {
       // Ignore interactive session poll errors to not affect main polling.
+    }
+
+    // Application row polling — diff against per-connection cache and emit
+    // `ApplicationUpdated` on any watched-field change. Seed is silent.
+    try {
+      const applications = await this.applicationRepo.list();
+      for (const app of applications) {
+        if (runIdFilter && app.id !== runIdFilter) continue;
+        const prev = applicationCache.get(app.id);
+        for (const event of computeApplicationDeltas({ application: app, prev })) {
+          enqueue(event);
+        }
+        applicationCache.set(app.id, {
+          setupComplete: app.setupComplete,
+          status: app.status,
+          gitRemoteUrl: app.gitRemoteUrl,
+          cloudDeploymentProvider: app.cloudDeploymentProvider,
+        });
+      }
+    } catch {
+      // Ignore application-poll failures; same posture as session polling.
     }
   }
 

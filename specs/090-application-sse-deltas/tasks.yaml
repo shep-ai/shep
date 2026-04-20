@@ -1,0 +1,308 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: application-sse-deltas
+summary: Task breakdown for 090-application-sse-deltas
+
+# Relationships
+relatedFeatures:
+  - "089-one-click-cloud-deploy"
+technologies:
+  - TypeScript
+  - TypeSpec
+  - SSE
+  - React Query
+relatedLinks: []
+
+# Structured task list — this is the single source of truth for tasks.
+# The content field below is a summary only; it does NOT duplicate task details.
+tasks:
+  - id: task-1
+    title: "Extend TypeSpec: NotificationEventType + NotificationEvent payloads"
+    description: >
+      Add two enum values (`ApplicationUpdated`, `OperationLogAppended`)
+      to `NotificationEventType` and add two optional payload models
+      (`applicationUpdate`, `operationLogAppend`) to `NotificationEvent`
+      in `tsp/common/enums/notification-event.tsp` and
+      `tsp/common/types/notification-event.tsp`. Keep fields minimal —
+      only what the client actually renders / patches.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - "Enum values land in `packages/core/src/domain/generated/output.ts`"
+      - "`NotificationEvent` type exposes optional `applicationUpdate` and `operationLogAppend` fields with the right shapes"
+      - "`pnpm tsp:compile` succeeds"
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-2
+    title: "Run `pnpm tsp:compile` and commit generated output"
+    description: >
+      Run the codegen, verify the diff only touches generated files,
+      and confirm typecheck still passes across the monorepo.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "`packages/core/src/domain/generated/output.ts` contains the new enum + fields"
+      - "`pnpm typecheck` passes clean"
+    tdd: null
+    estimatedEffort: XS
+
+  - id: task-3
+    title: "Add `IOperationLogEventBus` port"
+    description: >
+      Create `packages/core/src/application/ports/output/services/operation-log-event-bus.interface.ts`
+      mirroring `ICloudDeploymentEventBus`: a `subscribe(cb) => unsubscribe`
+      method and a `publish(event)` method. The event shape references
+      the generated `OperationLogEntry` so no duplication.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - "Port file exists with JSDoc"
+      - "Event shape uses `OperationLogEntry` from generated output"
+      - "No implementation leaks (interface-only in the application layer)"
+    tdd: null
+    estimatedEffort: XS
+
+  - id: task-4
+    title: "Implement `InMemoryOperationLogEventBus` adapter (TDD)"
+    description: >
+      In-process pub/sub adapter under `packages/core/src/infrastructure/services/`.
+      `publish` must isolate subscriber failures (try/catch + logger.error)
+      so one broken subscriber cannot poison the SSE stream. `subscribe`
+      returns an idempotent unsubscribe function.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - "Multiple subscribers all receive each published event"
+      - "Unsubscribe stops delivery; calling unsubscribe twice is a no-op"
+      - "A throwing subscriber is logged but does NOT stop other subscribers from receiving the event"
+    tdd:
+      red:
+        - Write `in-memory-operation-log-event-bus.test.ts` covering basic publish-subscribe, multi-subscriber fanout, unsubscribe idempotency, and throwing-subscriber isolation
+      green:
+        - Implement the adapter with a `Set<Subscriber>` and a `publish` loop wrapping each callback in try/catch
+      refactor:
+        - Pull the subscriber shape into a small type alias; ensure `@injectable()` decoration + DI token
+    estimatedEffort: S
+
+  - id: task-5
+    title: "Publish from `SqliteOperationLogRepository.append` (TDD)"
+    description: >
+      Inject `IOperationLogEventBus` into the SQLite operation-log
+      repository and publish AFTER a successful row insert. Must not
+      publish when the insert throws (DB is source of truth).
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - "After `append`, a spy bus sees exactly one `publish` call with the inserted entry"
+      - "If the INSERT throws, the bus is NOT called"
+      - "Publish happens AFTER insert — verified by ordering assertion (row is visible via listByScope before publish payload observed)"
+    tdd:
+      red:
+        - Write `sqlite-operation-log-repository-publish.test.ts` using an in-memory DB + spy bus; initially the test fails because the repo never publishes
+      green:
+        - Add bus injection + `this.bus.publish(entry)` after the INSERT returns
+      refactor:
+        - Confirm DI wiring in `register-repositories.ts` still satisfies the constructor signature
+    estimatedEffort: S
+
+  - id: task-6
+    title: "Pure `computeApplicationDeltas` helper (TDD)"
+    description: >
+      New pure function under
+      `packages/core/src/application/use-cases/agents/stream-agent-events/compute-application-deltas.ts`.
+      Inputs: current `Application` row + cached prior state (or null).
+      Output: zero or one `StreamedAgentEvent` with kind `notification`
+      and `eventType: ApplicationUpdated`. Emits when any of
+      `setupComplete`, `status`, `gitRemoteUrl`,
+      `cloudDeploymentProvider` differ from the cached snapshot.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - "No prev → zero events (seed-only case)"
+      - "Single field change → exactly one event with the correct payload"
+      - "Multiple concurrent changes → a single event carrying the full updated payload"
+      - "Unchanged row → zero events"
+    tdd:
+      red:
+        - Write `compute-application-deltas.test.ts` with a matrix of (prev, next) pairs covering the seed, single-field-change, multi-field-change, and no-change cases
+      green:
+        - Implement the diff as a short pure function returning `StreamedAgentEvent[]`
+      refactor:
+        - Extract field-list constant; ensure no hidden allocations in the no-change path
+    estimatedEffort: S
+
+  - id: task-7
+    title: "Add `CachedApplicationState` to stream-agent-events types"
+    description: >
+      Extend `stream-agent-events.types.ts` with a new `CachedApplicationState`
+      type capturing the fields the delta helper watches. No behavior
+      change — purely a shared type surface.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - "`CachedApplicationState` exported and imported by both the helper and the use-case"
+      - "Typecheck clean"
+    tdd: null
+    estimatedEffort: XS
+
+  - id: task-8
+    title: "Wire app-deltas + bus subscription into StreamAgentEventsUseCase"
+    description: >
+      Inject `IApplicationRepository` and `IOperationLogEventBus`.
+      Maintain a per-connection `Map<applicationId, CachedApplicationState>`.
+      On each poll, `appRepo.findAll()` → call `computeApplicationDeltas`
+      per app → enqueue events. Subscribe to the OperationLog bus in
+      `execute()` and re-emit each published event as a notification.
+      Seed behavior must match features / sessions (no events on first
+      sight). Unsubscribe on generator cleanup.
+    state: Todo
+    dependencies:
+      - task-4
+      - task-6
+      - task-7
+    acceptanceCriteria:
+      - "First poll seeds the application cache and emits zero events"
+      - "Second poll with a changed application emits one `ApplicationUpdated` event"
+      - "Publishing to the OperationLog bus enqueues a notification observable by the `for await` consumer within one tick"
+      - "Generator cleanup unsubscribes from BOTH buses"
+    tdd:
+      red:
+        - Write `stream-agent-events-application.test.ts` and `stream-agent-events-operation-log-bus.test.ts` with fake repos / fake buses; assert the event sequence observed from `for await of useCase.execute(...)`
+      green:
+        - Add injections, cache, subscription, and diff loop in `pollOnce` + `execute`
+      refactor:
+        - Keep subscription lifecycle symmetric with the existing cloud-deploy subscription; add a single `unsubscribeAll()` helper if it reduces duplication
+    estimatedEffort: M
+
+  - id: task-9
+    title: "Client: `ApplicationPageLoader` surgical handler (TDD)"
+    description: >
+      Replace the "invalidate on any SSE event" effect with a typed
+      handler that selects `NotificationEventType === 'application_updated'`
+      for this page's applicationId and patches the React Query
+      cache in place — no HTTP round-trip. Add a
+      `useApplicationUpdates(applicationId)` hook in
+      `hooks/agent-events-provider.tsx` that exposes the latest
+      matching event; the loader consumes it in `useEffect`.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - "No `refetchInterval`, no `setInterval`, no `invalidateQueries` call in the loader"
+      - "Given a seeded query cache + a matching event, cache transitions to the new state without any network call"
+      - "Events for other applicationIds are ignored"
+    tdd:
+      red:
+        - "Write `application-page-loader-patch.test.ts`: mount the loader with a QueryClient holding `setupComplete: false`; dispatch a mock event through the provider; assert cache reads `setupComplete: true` and no `fetch` spy was called"
+      green:
+        - "Swap the coarse effect for the typed one; add the selector hook to the provider"
+      refactor:
+        - "Confirm Storybook story still works via `useOptionalAgentEventsContext`"
+    estimatedEffort: S
+
+  - id: task-10
+    title: "Client: `SmartDeployLogsDrawer` surgical handler (TDD)"
+    description: >
+      Replace the coarse "refresh on any SSE event" effect with a typed
+      handler that selects `OperationLogAppended` events for this
+      drawer's applicationId and appends them to local state in place.
+      Initial hydration fetch on open remains. Add a
+      `useOperationLogAppends(applicationId)` selector hook alongside
+      the Application one. Dedup by `entry.id` in case the bus and the
+      hydration fetch race.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - "No `setInterval` anywhere in the drawer"
+      - "Matching event appends to `entries` in correct chronological position"
+      - "Duplicate event (same `entry.id`) does not double-add"
+      - "Non-matching applicationId is ignored"
+    tdd:
+      red:
+        - Write `smart-deploy-logs-drawer-append.test.ts`: mount the drawer with mocked hydration fetch + provider; dispatch events; assert the rendered list grows and deduplicates correctly
+      green:
+        - Implement the selector hook + drawer effect
+      refactor:
+        - Ensure the existing "auto-scroll while running" logic keeps working
+    estimatedEffort: S
+
+  - id: task-11
+    title: "Full verification: lint / typecheck / tests / storybook"
+    description: >
+      Run the local CI gates in order and fix anything that breaks.
+      No "unrelated failure" hand-waving — every failure is owned.
+    state: Todo
+    dependencies:
+      - task-9
+      - task-10
+    acceptanceCriteria:
+      - "`pnpm lint` passes clean"
+      - "`pnpm typecheck` passes clean"
+      - "`pnpm test:unit` passes clean"
+      - "`pnpm test:int` passes clean"
+      - "`pnpm build:storybook` passes clean"
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-12
+    title: "Manual smoke: fresh app creation end-to-end"
+    description: >
+      Start the dev server, create a fresh application, observe (a)
+      the `ApplicationUpdated` event in devtools / network SSE tab,
+      (b) the "Preparing your project" card transitioning without a
+      client-side poll, (c) the Smart Deploy Activity drawer
+      populating with ApplicationSetup log lines in real time via
+      append events (not full refetches). Confirm no `setInterval` or
+      `refetchInterval` fires by grepping console + network panel.
+    state: Todo
+    dependencies:
+      - task-11
+    acceptanceCriteria:
+      - "Scaffold card transitions the instant setup_complete flips server-side"
+      - "Drawer shows entries in real time, each individual append visible in SSE stream"
+      - "No `/api/operations/.../logs` polling requests in the network panel"
+      - "No `/api/applications/:id` requests on a client timer"
+    tdd: null
+    estimatedEffort: XS
+
+# Total effort estimate
+totalEstimate: M–L (~1 day)
+
+# Open questions
+openQuestions: []
+
+# Markdown content — summary and acceptance checklist only.
+# Individual task details live in the tasks[] array above (no duplication).
+content: |
+  ## Summary
+
+  Backend-owned SSE for Application and OperationLog deltas, replacing
+  the last two client polling paths with typed, surgical handlers —
+  12 tasks across 6 phases. TDD required for every task that ships
+  code; doc / wiring tasks carry `tdd: null`.
+
+  ## Acceptance Checklist
+
+  Before marking feature complete:
+
+  - [ ] All tasks completed
+  - [ ] Tests passing (`pnpm test`)
+  - [ ] Linting clean (`pnpm lint`)
+  - [ ] Types valid (`pnpm typecheck`)
+  - [ ] TypeSpec compiles (`pnpm tsp:compile`)
+  - [ ] Storybook builds (`pnpm build:storybook`)
+  - [ ] Manual smoke pass (task-12)
+  - [ ] PR created and reviewed
+
+  ---
+
+  _Task details are in the tasks[] array of tasks.yaml_

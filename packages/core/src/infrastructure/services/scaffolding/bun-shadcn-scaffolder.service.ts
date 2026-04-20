@@ -74,6 +74,66 @@ import type {
 import { flattenSingleChildProject } from './flatten-subdirectory.js';
 import { applyTemplateOverlay } from './template-overlay.js';
 
+/**
+ * Strip ANSI escape sequences from a byte slice coming out of a child
+ * process. Spinner frames and colour codes clutter the UI log without
+ * adding information — we keep the plain text so the drawer shows the
+ * same content a user would see after stripping their terminal's
+ * rendering.
+ *
+ * This is NOT a general-purpose parser — it only handles the subset of
+ * CSI / OSC / cursor sequences that `bunx`, `bun`, `npm`, and
+ * `create-vite` actually emit.
+ */
+// eslint-disable-next-line no-control-regex
+const ANSI_PATTERN = /\x1B\[[0-?]*[ -/]*[@-~]|\x1B\][^\x07]*\x07|\x1B[@-_]/g;
+
+function stripAnsi(input: string): string {
+  return input.replace(ANSI_PATTERN, '').replace(/\r(?!\n)/g, '');
+}
+
+/**
+ * Buffered line-splitter. Holds the trailing fragment between writes
+ * and flushes each completed line to the caller. Used by `runSpawn` to
+ * turn streaming stdout/stderr bytes into discrete log entries.
+ */
+class LineBuffer {
+  private tail = '';
+  private lastEmitted: string | null = null;
+
+  constructor(private readonly onLine: (line: string) => void) {}
+
+  write(chunk: string): void {
+    const combined = this.tail + chunk;
+    const parts = combined.split(/\r?\n/);
+    this.tail = parts.pop() ?? '';
+    for (const raw of parts) {
+      this.emit(raw);
+    }
+  }
+
+  flush(): void {
+    if (this.tail.length > 0) {
+      this.emit(this.tail);
+      this.tail = '';
+    }
+  }
+
+  /**
+   * Emit a single line, after stripping ANSI and skipping empties /
+   * duplicate spinner frames. Collapsing consecutive duplicates is
+   * what prevents `⠦ Creating a new Vite project…` from spamming the
+   * drawer with hundreds of rows per second.
+   */
+  private emit(raw: string): void {
+    const cleaned = stripAnsi(raw).trimEnd();
+    if (cleaned.length === 0) return;
+    if (cleaned === this.lastEmitted) return;
+    this.lastEmitted = cleaned;
+    this.onLine(cleaned);
+  }
+}
+
 /** Packages the "components" workflow step expects to import. */
 const APP_EXTRA_DEPS = ['react-router-dom', 'react-hook-form', 'zod', 'lucide-react'] as const;
 
@@ -111,10 +171,21 @@ const CACHE_SKIP = new Set(['.git', 'node_modules']);
 @injectable()
 export class BunShadcnScaffolder implements IApplicationScaffolder {
   async scaffold(options: ScaffoldOptions): Promise<ScaffoldResult> {
-    const { repositoryPath } = options;
+    const { repositoryPath, onLog } = options;
+    const emit = (level: 'Info' | 'Warn' | 'Error', message: string, detail?: string): void => {
+      if (!onLog) return;
+      try {
+        onLog({ level, message, detail });
+      } catch {
+        // Sink failures must never abort a successful scaffold.
+      }
+    };
+
+    emit('Info', 'Starting application setup', `Project: ${options.projectName}`);
 
     // Phase 1 — bootstrap bun on first-ever run.
-    this.ensureBunOnPath();
+    emit('Info', 'Checking bun is available');
+    this.ensureBunOnPath(emit);
 
     // Phase 2 — base project files.
     //
@@ -130,6 +201,7 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
     this.emptyDirectory(repositoryPath);
 
     if (this.isCacheValid()) {
+      emit('Info', 'Using cached scaffold', 'Running `bun install --frozen-lockfile`');
       this.copyDirectory(this.getCacheDir(), repositoryPath);
       await this.runSpawn({
         command: 'bun',
@@ -137,10 +209,15 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
         cwd: repositoryPath,
         phase: 'bun install (from scaffold cache)',
         timeoutMs: PHASE_TIMEOUT_MS,
+        onLog: emit,
       });
     } else {
+      emit(
+        'Info',
+        'Scaffolding from scratch',
+        'First-run — running `bunx shadcn@latest init` (this can take a few minutes)'
+      );
       // Run shadcn init in an OS-level scratch directory.
-      // See detailed background comment in git history / original code.
       const scratchDir = mkdtempSync(join(tmpdir(), 'shep-scaffold-'));
       try {
         await this.runSpawn({
@@ -163,6 +240,7 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
           phase: 'shadcn init',
           stdinInput: '\n'.repeat(20),
           timeoutMs: PHASE_TIMEOUT_MS,
+          onLog: emit,
         });
 
         const scaffoldRoot = this.findScaffoldRoot(scratchDir);
@@ -185,17 +263,25 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
 
     // Phase 4 — install the app-specific extras the "components"
     // step will import. Batched into one `bun add` call.
+    emit('Info', 'Installing app dependencies', APP_EXTRA_DEPS.join(', '));
     await this.runSpawn({
       command: 'bun',
       args: ['add', ...APP_EXTRA_DEPS],
       cwd: repositoryPath,
       phase: 'bun add extras',
       timeoutMs: PHASE_TIMEOUT_MS,
+      onLog: emit,
     });
 
     // Phase 5 — overlay the fat template on top of the raw scaffold.
+    emit('Info', 'Applying Shep base template');
     const overlay = applyTemplateOverlay(repositoryPath);
 
+    emit(
+      'Info',
+      'Application setup complete',
+      `${overlay.templateFiles.length} template file(s) applied`
+    );
     return {
       repositoryPath,
       templateFiles: overlay.templateFiles,
@@ -208,9 +294,12 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
    * `npm install -g bun` and verify again. Runs synchronously because
    * the whole scaffold pipeline must block on a working bun.
    */
-  private ensureBunOnPath(): void {
+  private ensureBunOnPath(
+    emit: (level: 'Info' | 'Warn' | 'Error', message: string, detail?: string) => void
+  ): void {
     if (this.hasBun()) return;
 
+    emit('Warn', 'bun not on PATH — installing via `npm install -g bun`');
     // eslint-disable-next-line no-console
     console.log('[bun-shadcn-scaffolder] bun not on PATH — installing via `npm install -g bun`');
     const install = spawnSync('npm', ['install', '-g', 'bun'], {
@@ -231,6 +320,7 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
           'The bun binary may not be on PATH for this shell.'
       );
     }
+    emit('Info', 'bun installed');
   }
 
   /**
@@ -383,12 +473,14 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
   }
 
   /**
-   * Run a command to completion. Stdout and stderr inherit so the
-   * user sees progress in the terminal (for CLI invocations) and the
-   * Shep log (for web-app invocations). When `stdinInput` is set, a
-   * piped stdin is attached and the string is written to it up front,
-   * then closed — used as a safety net for interactive prompts that
-   * slip past `--yes`.
+   * Run a command to completion. Pipes stdout/stderr so progress lines
+   * can be tee'd to both the parent process's stdout/stderr (so the
+   * dev server log still shows live progress) AND to `onLog` (so the
+   * UI's operation-log drawer streams the same content).
+   *
+   * When `stdinInput` is set, a piped stdin is attached and the string
+   * is written to it up front, then closed — used as a safety net for
+   * interactive prompts that slip past `--yes`.
    *
    * When `timeoutMs` is set, the child is killed with SIGKILL (or
    * taskkill on Windows) if it hasn't exited before the deadline.
@@ -405,22 +497,44 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
     phase: string;
     stdinInput?: string;
     timeoutMs?: number;
+    onLog?: (level: 'Info' | 'Warn' | 'Error', message: string, detail?: string) => void;
   }): Promise<void> {
     return new Promise((resolve, reject) => {
       const pipeStdin = args.stdinInput !== undefined;
+      const emit =
+        args.onLog ??
+        ((): void => {
+          /* no-op default when caller does not subscribe to log events */
+        });
+      emit('Info', `▶ ${args.phase}`, `${args.command} ${args.args.join(' ')}`);
+
+      // Always pipe stdout/stderr — we forward the bytes to the parent
+      // process (preserving the live terminal experience) AND also
+      // feed a line buffer that sends each emitted line to the UI log.
       const child = spawn(args.command, args.args, {
         cwd: args.cwd,
-        // When we need to feed stdin, we MUST pipe it — inheriting
-        // from the parent would tie the child to whatever stdin the
-        // Shep process has (usually the dev server's TTY or /dev/null
-        // in production) and the interactive prompt would still hang.
-        stdio: pipeStdin ? ['pipe', 'inherit', 'inherit'] : 'inherit',
+        stdio: [pipeStdin ? 'pipe' : 'ignore', 'pipe', 'pipe'],
         // Windows needs `shell: true` to resolve `.cmd` shims for
         // `bun`, `bunx`, and `npm`. POSIX does not and benefits from
         // direct exec (no argument escaping).
         shell: IS_WINDOWS,
         windowsHide: IS_WINDOWS,
       });
+
+      const stdoutBuf = new LineBuffer((line) => emit('Info', line));
+      const stderrBuf = new LineBuffer((line) => emit('Warn', line));
+      if (child.stdout) {
+        child.stdout.on('data', (chunk: Buffer) => {
+          process.stdout.write(chunk);
+          stdoutBuf.write(chunk.toString('utf8'));
+        });
+      }
+      if (child.stderr) {
+        child.stderr.on('data', (chunk: Buffer) => {
+          process.stderr.write(chunk);
+          stderrBuf.write(chunk.toString('utf8'));
+        });
+      }
 
       // Hard timeout — SIGKILL after `timeoutMs` with no exit event.
       // On Windows `child.kill('SIGKILL')` translates to TerminateProcess
@@ -455,6 +569,9 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
       }
       child.on('error', (err) => {
         clearTimer();
+        stdoutBuf.flush();
+        stderrBuf.flush();
+        emit('Error', `${args.phase} failed to start`, err.message);
         reject(
           new Error(
             `${args.phase} failed to start: ${err.message}. ` +
@@ -464,7 +581,14 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
       });
       child.on('exit', (code, signal) => {
         clearTimer();
+        stdoutBuf.flush();
+        stderrBuf.flush();
         if (timedOut) {
+          emit(
+            'Error',
+            `${args.phase} timed out`,
+            `Killed after ${args.timeoutMs}ms. Command: ${args.command} ${args.args.join(' ')}`
+          );
           reject(
             new Error(
               `${args.phase} timed out after ${args.timeoutMs}ms and was killed. ` +
@@ -474,8 +598,14 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
           return;
         }
         if (code === 0) {
+          emit('Info', `✓ ${args.phase} done`);
           resolve();
         } else {
+          emit(
+            'Error',
+            `${args.phase} exited with ${code ?? `signal ${signal}`}`,
+            `Command: ${args.command} ${args.args.join(' ')}`
+          );
           reject(
             new Error(
               `${args.phase} exited with ${code ?? `signal ${signal}`}. ` +

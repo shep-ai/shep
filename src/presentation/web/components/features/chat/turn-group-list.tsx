@@ -22,7 +22,7 @@ import type { InteractiveMessage } from '@shepai/core/domain/generated/output';
 import { InteractiveMessageRole } from '@shepai/core/domain/generated/output';
 import { TurnGroupCard } from './turn-group-card';
 
-interface TurnGroupView {
+export interface TurnGroupView {
   id: string;
   title: string;
   userMessagePreview: string;
@@ -248,6 +248,83 @@ export function CurrentTurnCard({ view, allMessages, streaming }: CurrentTurnCar
   );
 }
 
+/**
+ * Renders a SINGLE turn group (completed or in-progress) as a
+ * standalone card. Used by `ChatTab` when it builds the unified
+ * chronological timeline — the timeline interleaves user turns
+ * with publish/deploy operation bubbles by `startedAt`, so each
+ * turn has to be renderable on its own at an arbitrary position.
+ *
+ * The in-progress variant requires `streaming` so the live card
+ * keeps its condensed "Thinking…" / "Working…" indicator. When the
+ * agent finishes, the caller flips `status` to `completed` on the
+ * SAME turn id and the card stays in place — React key stability
+ * ensures no unmount / remount, matching the user's expectation
+ * that "Working on" becomes a completed card without relocating.
+ */
+export function SingleTurnCard({
+  group,
+  allMessages,
+  streaming,
+}: {
+  group: TurnGroupView;
+  allMessages: readonly InteractiveMessage[];
+  streaming?: TurnStreamingState;
+}) {
+  const byId = new Map<string, InteractiveMessage>();
+  for (const m of allMessages) byId.set(m.id, m);
+  const isInProgress = group.status === 'in-progress';
+
+  if (!isInProgress) {
+    return (
+      <TurnGroupCard
+        id={group.id}
+        title={group.title}
+        status="completed"
+        assistantMessageCount={group.assistantMessageCount}
+      >
+        <TurnChildMessages messageIds={group.messageIds} byId={byId} />
+      </TurnGroupCard>
+    );
+  }
+
+  // In-progress — condensed default + details behind chevron.
+  const userMessageId = group.messageIds.find((mid) => {
+    const m = byId.get(mid);
+    return m?.role === InteractiveMessageRole.user;
+  });
+  const userMessage = userMessageId ? byId.get(userMessageId) : null;
+  const condensed = (
+    <div className="flex flex-col gap-2">
+      {userMessage ? (
+        <div className="text-foreground border-l-2 border-violet-500/50 pl-2 text-[12px] whitespace-pre-wrap">
+          <div className="text-muted-foreground/70 mb-0.5 text-[10px] font-medium tracking-wide uppercase">
+            You
+          </div>
+          {userMessage.content}
+        </div>
+      ) : null}
+      {streaming ? <CondensedStreamingIndicator streaming={streaming} /> : null}
+    </div>
+  );
+  const details = (
+    <div className="flex flex-col gap-2">
+      <TurnChildMessages messageIds={group.messageIds} byId={byId} />
+      {streaming ? <StreamingIndicator streaming={streaming} /> : null}
+    </div>
+  );
+  return (
+    <TurnGroupCard
+      id={group.id}
+      title={group.title}
+      status="in-progress"
+      assistantMessageCount={group.assistantMessageCount}
+      condensed={condensed}
+      details={details}
+    />
+  );
+}
+
 export interface CompletedTurnGroupsListProps {
   /** Pre-computed groups view (from `useTurnGroupsView`). */
   view: TurnGroupsView;
@@ -266,7 +343,10 @@ export function CompletedTurnGroupsList({ view, allMessages }: CompletedTurnGrou
   for (const m of allMessages) byId.set(m.id, m);
 
   return (
-    <div className="flex flex-col">
+    // `shrink-0` cascades: the outer wrapper must also refuse to
+    // shrink so its child cards keep their intrinsic height inside
+    // the ThreadPrimitive.Viewport flex column.
+    <div className="flex shrink-0 flex-col">
       {view.groups.map((g) => (
         <TurnGroupCard
           key={g.id}

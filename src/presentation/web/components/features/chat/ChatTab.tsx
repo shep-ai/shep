@@ -14,8 +14,8 @@ import { useChatRuntime } from './useChatRuntime';
 import { ChatComposer } from './ChatComposer';
 import { InteractionBubble } from './InteractionBubble';
 import { StepTracker } from './StepTracker';
-import { CurrentTurnCard, CompletedTurnGroupsList, useTurnGroupsView } from './turn-group-list';
-import { OperationBubble } from './operation-bubble';
+import { SingleTurnCard, useTurnGroupsView, type TurnGroupView } from './turn-group-list';
+import { OperationRunCard, useOperationRuns, type OperationRun } from './operation-bubble';
 import type { PlaceholderStep } from './workflow-placeholder';
 import { SCAFFOLD_STEP_KEY } from './workflow-placeholder';
 import type { EnhancedStepState } from './useChatRuntime';
@@ -212,10 +212,95 @@ export function ChatTab({
   // Client-side turn grouping — re-runs synchronously on every
   // `rawMessages` change, so a new user bubble or assistant reply
   // is reflected in the overlay in the same render tick.
-  // Only mark the latest turn as in-progress while the agent is
-  // actually running — otherwise a finished conversation would
-  // leave a permanent "Working on your request…" fuchsia card.
-  const turnGroupsView = useTurnGroupsView(rawMessages, status.isRunning);
+  //
+  // Three gating rules:
+  //   1. Only mark the latest turn as in-progress while the agent
+  //      is actually running — otherwise a finished conversation
+  //      would leave a permanent "Working on your request…" card.
+  //   2. Hide the entire overlay while the initial setup workflow
+  //      is still running. The StepTracker owns the narrative
+  //      during setup; showing an extra "Working on your request…"
+  //      card for the first user message duplicates the user's ask
+  //      and clutters the pane.
+  //   3. Once the setup workflow exists (hasPlan), the FIRST user
+  //      turn is by definition the setup-triggering ask — it is
+  //      already represented inside the StepTracker card. Drop it
+  //      from the overlay so the "Working on: …" card only appears
+  //      for genuine post-setup iterations (second user message
+  //      onwards).
+  const setupInProgress = stepProgress.hasPlan && !stepProgress.allDone;
+  const rawTurnGroupsView = useTurnGroupsView(rawMessages, status.isRunning && !setupInProgress);
+  const turnGroupsView = (() => {
+    if (setupInProgress) {
+      return { groups: [], currentTurn: null, hiddenMessageIds: [] };
+    }
+    if (!stepProgress.hasPlan) {
+      return rawTurnGroupsView;
+    }
+    // Flatten all turns (completed + current) in chronological
+    // order, drop the first (setup ask), then re-split so the
+    // latest still owns `currentTurn` if it was in-progress.
+    const all = [...rawTurnGroupsView.groups];
+    if (rawTurnGroupsView.currentTurn) all.push(rawTurnGroupsView.currentTurn);
+    const iterations = all.slice(1);
+    const hadCurrent = rawTurnGroupsView.currentTurn !== null;
+    const currentTurn =
+      hadCurrent && iterations.length > 0 ? iterations[iterations.length - 1]! : null;
+    const groups = currentTurn ? iterations.slice(0, -1) : iterations;
+    return {
+      groups,
+      currentTurn,
+      hiddenMessageIds: rawTurnGroupsView.hiddenMessageIds,
+    };
+  })();
+
+  // Layer 2 sibling feeds: publish + deploy + save-&-push operation
+  // runs, fetched once at the ChatTab level so we can interleave them
+  // chronologically with user-turn cards. Each run carries `startedAt`
+  // for the merge. "Save" writes to the RepoSync kind (distinct from
+  // the GitRemoteCreate "Publish" kind) so we MUST subscribe to it —
+  // otherwise a save+redeploy cycle would only surface the deploy
+  // bubble and the preceding save would silently disappear.
+  const publishRuns = useOperationRuns(applicationId, 'publish');
+  const deployRuns = useOperationRuns(applicationId, 'deploy');
+  const syncRuns = useOperationRuns(applicationId, 'sync');
+
+  // Single chronological merged timeline — user turns + publish +
+  // deploy, sorted by `startedAt`. Re-sorting on every render is
+  // cheap (N ~ low dozens) and guarantees the in-progress "Working
+  // on…" card stays at its chronological slot. When the agent
+  // finishes, the same turn id flips `status` from `in-progress` to
+  // `completed` inside `turnGroupsView`, and since we key the React
+  // element by the turn id, the card updates in place — no unmount,
+  // no position change.
+  interface TimelineItem {
+    kind: 'turn' | 'operation';
+    id: string;
+    startedAt: number;
+    turn?: TurnGroupView;
+    run?: OperationRun;
+  }
+  const timelineItems: TimelineItem[] = (() => {
+    const items: TimelineItem[] = [];
+    for (const g of turnGroupsView.groups) {
+      items.push({ kind: 'turn', id: g.id, startedAt: g.startedAt, turn: g });
+    }
+    if (turnGroupsView.currentTurn) {
+      const g = turnGroupsView.currentTurn;
+      items.push({ kind: 'turn', id: g.id, startedAt: g.startedAt, turn: g });
+    }
+    for (const r of publishRuns) {
+      items.push({ kind: 'operation', id: `pub-${r.id}`, startedAt: r.startedAt, run: r });
+    }
+    for (const r of deployRuns) {
+      items.push({ kind: 'operation', id: `dep-${r.id}`, startedAt: r.startedAt, run: r });
+    }
+    for (const r of syncRuns) {
+      items.push({ kind: 'operation', id: `syn-${r.id}`, startedAt: r.startedAt, run: r });
+    }
+    items.sort((a, b) => a.startedAt - b.startedAt);
+    return items;
+  })();
 
   // Fire the all-steps-complete callback exactly once per mount.
   // Using a ref (not a dependency) prevents re-firing if the parent
@@ -394,20 +479,25 @@ export function ChatTab({
             <Thread
               composer={composer}
               hideEmpty={showTracker}
+              hideMessages={turnGroupsEnabled}
               beforeMessages={
                 <>
-                  {/* Chronological timeline — top to bottom:
+                  {/* Single chronological column. Top to bottom:
                         1. Error recovery banner (when broken)
                         2. Setup workflow (StepTracker)
-                        3. Completed user turns, oldest first
-                        4. In-progress turn (always chronologically last)
-                        5. Operation bubbles (publish / deploy)
-                        6. Pending interaction (awaiting user input)
-                      All rendered in `beforeMessages` because the flat
-                      thread below is dead — `hideAllMessages` zeroes
-                      the persisted bubble list when turn groups are on,
-                      so the overlay owns the entire visible surface
-                      and there's no split between before/after. */}
+                        3. Merged timeline of user turns +
+                           publish / deploy runs, sorted by
+                           `startedAt`. The in-progress "Working
+                           on…" card lives at its chronological
+                           slot — when the agent finishes, the
+                           same item flips to `completed` status
+                           and the card updates in place (same
+                           React key, no remount).
+                        4. Pending interaction (awaiting user input)
+                     All rendered in `beforeMessages` because the flat
+                     thread below is dead — `hideAllMessages` zeroes
+                     the persisted bubble list when turn groups are on,
+                     so the overlay owns the entire visible surface. */}
                   {applicationError ? (
                     <ErrorRecoveryBanner state={applicationError} onRetry={onResumeWorkflow} />
                   ) : null}
@@ -423,37 +513,45 @@ export function ChatTab({
                       onForceStop={handleForceStopStep}
                     />
                   ) : null}
-                  {turnGroupsEnabled ? (
-                    <>
-                      <CompletedTurnGroupsList view={turnGroupsView} allMessages={rawMessages} />
-                      <CurrentTurnCard
-                        view={turnGroupsView}
-                        allMessages={rawMessages}
-                        streaming={streamingState}
-                      />
-                      {applicationId ? (
-                        <>
-                          <OperationBubble applicationId={applicationId} kind="publish" />
-                          <OperationBubble applicationId={applicationId} kind="deploy" />
-                        </>
-                      ) : null}
-                      {pendingInteraction ? (
-                        <InteractionBubble
-                          interaction={pendingInteraction}
-                          onSubmit={respondToInteraction}
-                        />
-                      ) : null}
-                    </>
-                  ) : null}
+                  {turnGroupsEnabled
+                    ? timelineItems.map((item, idx) => {
+                        if (item.kind === 'turn' && item.turn) {
+                          return (
+                            <SingleTurnCard
+                              key={item.id}
+                              group={item.turn}
+                              allMessages={rawMessages}
+                              streaming={
+                                item.turn.status === 'in-progress' ? streamingState : undefined
+                              }
+                            />
+                          );
+                        }
+                        if (item.kind === 'operation' && item.run && applicationId) {
+                          return (
+                            <OperationRunCard
+                              key={item.id}
+                              applicationId={applicationId}
+                              kind={item.run.kind}
+                              entries={item.run.entries}
+                              runIndex={idx}
+                            />
+                          );
+                        }
+                        return null;
+                      })
+                    : null}
                 </>
               }
               afterMessages={
-                // Non-grouping chats (repo/global) keep the legacy
-                // InteractionBubble surface in `afterMessages`.
-                // When turn groups are on, everything moved into
-                // the unified `beforeMessages` timeline above and
-                // this slot stays empty.
-                !turnGroupsEnabled && pendingInteraction ? (
+                turnGroupsEnabled ? (
+                  pendingInteraction ? (
+                    <InteractionBubble
+                      interaction={pendingInteraction}
+                      onSubmit={respondToInteraction}
+                    />
+                  ) : null
+                ) : pendingInteraction ? (
                   <InteractionBubble
                     interaction={pendingInteraction}
                     onSubmit={respondToInteraction}
@@ -500,7 +598,9 @@ function ErrorRecoveryBanner({
   return (
     <div
       className={cn(
-        'animate-in fade-in-0 slide-in-from-top-1 mx-3 my-3 overflow-hidden rounded-lg border shadow-sm duration-200 ease-out',
+        // `shrink-0` — direct child of the Thread viewport flex
+        // column, so it must not be squashed when siblings expand.
+        'animate-in fade-in-0 slide-in-from-top-1 mx-3 my-3 shrink-0 overflow-hidden rounded-lg border shadow-sm duration-200 ease-out',
         'border-red-500/40 bg-red-500/5 dark:bg-red-500/10'
       )}
       role="alert"

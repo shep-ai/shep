@@ -1,0 +1,200 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: application-sse-deltas
+summary: Technical analysis for 090-application-sse-deltas
+
+# Relationships
+relatedFeatures:
+  - "089-one-click-cloud-deploy"
+technologies:
+  - TypeScript
+  - TypeSpec
+  - SSE
+  - tsyringe
+  - Better-sqlite3
+relatedLinks:
+  - title: Cloud deploy event bus precedent
+    url: packages/core/src/application/ports/output/services/cloud-deployment-event-bus.interface.ts
+  - title: StreamAgentEventsUseCase
+    url: packages/core/src/application/use-cases/agents/stream-agent-events.use-case.ts
+
+# Structured technology decisions
+decisions:
+  - title: "Event transport: existing shared SSE vs dedicated per-application channel"
+    chosen: "Existing shared /api/agent-events SSE"
+    rejected:
+      - "New /api/applications/:id/updates/stream route"
+      - "WebSocket"
+      - "Long-polling"
+    rationale: >
+      The existing channel already runs through the Service Worker
+      multiplexer (one connection, all tabs), backs off exponentially
+      on reconnect, and is served by an orchestrator (StreamAgentEventsUseCase)
+      that already polls the DB. Adding two new NotificationEventType
+      values costs nothing incremental on the transport layer. A
+      per-application stream would double connection count and duplicate
+      the poll / subscribe lifecycle without a concrete benefit.
+      WebSocket is overkill for one-way server → client signals. Long
+      polling is strictly worse than SSE here.
+
+  - title: "Operation log delivery: poll-based vs in-process event bus"
+    chosen: "In-process event bus (publish on INSERT)"
+    rejected:
+      - "Add operation_log_entries to the 2s poll loop"
+      - "Database NOTIFY / LISTEN (not available in SQLite)"
+    rationale: >
+      Operation log writes happen synchronously in-process (scaffolder
+      stdout, cloud deploy lifecycle, git publish). Publishing after a
+      successful INSERT delivers events immediately — no 2s lag, no
+      "since-cursor" bookkeeping per connection, no N×scopes DB query
+      per tick. Matches the cloud-deploy event bus exactly, which is
+      already working in production. SQLite has no NOTIFY, so the
+      event bus stands in for it. If we ever fan out to multiple
+      processes, we swap the in-memory adapter for a Redis / BroadcastChannel
+      adapter without touching the port.
+
+  - title: "Application row delivery: poll-based vs event bus"
+    chosen: "Poll-based, integrated into StreamAgentEventsUseCase"
+    rejected:
+      - "New IApplicationEventBus"
+      - "Dual: poll + bus"
+    rationale: >
+      Application mutations happen from multiple call sites
+      (CreateApplicationUseCase, scaffolder completion, status
+      updaters) and a bus would require plumbing every writer to the
+      bus. The existing use-case already polls every 2s for features
+      and sessions; adding applications to the same tick is near-zero
+      cost (findAll on applications is small and cached by SQLite).
+      This keeps the write path ergonomics unchanged — any existing
+      repo caller continues to "just update the row" without needing
+      to know about events.
+
+  - title: "Client state management: invalidate-and-refetch vs patch-in-place"
+    chosen: "Patch-in-place (setQueryData / local state merge)"
+    rejected:
+      - "queryClient.invalidateQueries"
+      - "router.refresh()"
+    rationale: >
+      The SSE event payload already carries the new field values, so
+      a refetch is strictly redundant work. Patching React Query
+      directly with setQueryData flips the observable state in the
+      same tick the event arrives, and it costs zero network. If the
+      client ever wants a safety-net refetch (suspicious staleness),
+      it can still call invalidateQueries on demand — but as a hand
+      rail, not the happy path.
+
+  - title: "Seed behavior on SSE (re)connect"
+    chosen: "Connection-scoped cache, zero events on seed"
+    rejected:
+      - "Emit a full snapshot on connect"
+    rationale: >
+      Matches the existing feature / session seed behavior. Prevents a
+      burst of 'ApplicationUpdated' events every time a tab opens
+      that would force the client to re-render every application card.
+      The client already knows the current state because the route
+      hydrated it via /api/applications/:id; SSE only needs to
+      communicate DELTAS.
+
+# Open questions (all resolved)
+openQuestions: []
+
+# Markdown content (the full research document)
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-04-20
+
+  ## Technology Decisions
+
+  ### Event transport
+
+  **Decision:** piggyback on the existing `/api/agent-events` SSE.
+
+  **Rationale:** one connection through the Service Worker already
+  multiplexes to every tab with exponential backoff; the orchestrator
+  that serves the route (`StreamAgentEventsUseCase`) already polls the
+  DB on a 2s cadence. Adding two new `NotificationEventType` values
+  costs nothing on the wire — we'd be dropping a typed message into an
+  already-flowing stream. A per-application route would double the
+  connection count and duplicate the whole subscribe / reconnect
+  lifecycle for no concrete benefit.
+
+  ### Operation log delivery — bus vs poll
+
+  **Decision:** in-process `IOperationLogEventBus`, publishing after a
+  successful INSERT in `SqliteOperationLogRepository.append`.
+
+  **Rationale:** writes are synchronous in-process (scaffolder stdout,
+  deploy lifecycle, git publish). Publishing after INSERT delivers
+  events in the same ms, not on the next 2s tick. No per-connection
+  "since cursor" bookkeeping, no N × scope SQL per tick. Mirrors the
+  existing `ICloudDeploymentEventBus` exactly, so the wiring is a
+  copy-paste shape. If we go multi-process later, the port lets us
+  swap the adapter (Redis, BroadcastChannel) without touching callers.
+
+  ### Application row delivery — bus vs poll
+
+  **Decision:** add application row diffing to the existing
+  `StreamAgentEventsUseCase.pollOnce()` loop.
+
+  **Rationale:** application mutations come from several call sites
+  (`CreateApplicationUseCase`, scaffolder completion, status
+  updaters). A bus would require plumbing every writer. Piggybacking
+  on the existing 2s poll costs a single `findAll` on an already-small
+  table and leaves the write ergonomics untouched.
+
+  ### Client state management
+
+  **Decision:** patch-in-place via `setQueryData` / local state
+  merge. Refetching on SSE receipt is rejected.
+
+  **Rationale:** the payload already carries the new values. A
+  refetch is redundant network work and adds a flash of "stale, then
+  fresh" on slow connections. Invalidate stays available as a
+  hand-rail for edge cases (suspicious staleness, e2e tests) but is
+  not the happy path.
+
+  ### Seed on (re)connect
+
+  **Decision:** per-connection cache seeds silently; emits no events
+  on first poll.
+
+  **Rationale:** matches features / sessions behavior. Prevents an
+  event storm on every tab open / Service Worker restart. The client
+  already has authoritative initial state from the `/api/applications/:id`
+  hydration route; SSE communicates DELTAS only.
+
+  ## Security Considerations
+
+  - Same surface as the existing agent-events stream — no new auth /
+    origin exposure.
+  - `OperationLogEntry.detail` may contain user-provided or tool-output
+    text; the drawer already renders it safely via React text children
+    inside a whitespace-preserving `<pre>` (no raw-HTML injection
+    paths).
+  - Event bus publishes happen only after authenticated writes; no new
+    trust boundary.
+
+  ## Performance Implications
+
+  - One extra `findAll` on `applications` per 2s poll tick. Applications
+    table is small in practice (O(10s) of rows); the diff is O(n)
+    field compares. Negligible.
+  - Event bus publishes are O(subscribers); web has one subscriber
+    per connected client, CLI / TUI optionally subscribe. No change
+    in write throughput.
+  - Client handlers are O(1) per incoming event — a single
+    `setQueryData` or `setState` call.
+  - Net effect: eliminates one client `setInterval(1500ms)` that was
+    firing three HTTP requests per tick, and one per-app React Query
+    `refetchInterval(2000ms)`. Net request count drops.
+
+  ## Open Questions
+
+  All questions resolved.
+
+  ---
+
+  _Updated by `/shep-kit:research` — proceed with `/shep-kit:plan`_

@@ -8,6 +8,9 @@
  * info chip (model + session id) that used to live inline in the top bar.
  * Pulling them in here cleans up the action zone for the SmartDeployButton
  * and Preview while still leaving every control one click away.
+ *
+ * Visual: native toolbar icon button. h-8 w-8, rounded-md, borderless,
+ * background appears on hover/open. 150ms transitions.
  */
 
 import { MoreHorizontal } from 'lucide-react';
@@ -36,14 +39,12 @@ export function AppOverflowMenu({ children, className }: AppOverflowMenuProps) {
           aria-label="More options"
           title="More options"
           className={cn(
-            // Mirrors AppViewTabs flat-tab visual so the overflow trigger
-            // reads as part of the same control row, not a competing
-            // affordance. No background pill, no border-radius, no
-            // shadow — just a hover/active background shift.
             'text-muted-foreground hover:bg-muted hover:text-foreground',
-            'data-[state=open]:bg-background data-[state=open]:text-foreground',
-            'data-[state=open]:border-t-primary',
-            'relative inline-flex h-12 w-9 cursor-pointer items-center justify-center rounded-none border-t-2 border-t-transparent bg-transparent shadow-none transition-none',
+            'active:bg-muted/80',
+            'data-[state=open]:bg-muted data-[state=open]:text-foreground',
+            'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none',
+            'inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md bg-transparent',
+            'transition-colors duration-150 ease-out',
             className
           )}
         >

@@ -9,6 +9,7 @@ import type { IApplicationCreationPromptBuilder } from '@/application/ports/outp
 import type { IApplicationBriefStore } from '@/application/ports/output/services/application-brief-store.interface.js';
 import type { IApplicationScaffolder } from '@/application/ports/output/services/application-scaffolder.interface.js';
 import type { IInteractiveMessageRepository } from '@/application/ports/output/repositories/interactive-message-repository.interface.js';
+import type { IOperationLogRepository } from '@/application/ports/output/repositories/operation-log.repository.interface.js';
 import type { CreateProjectUseCase } from '@/application/use-cases/projects/create-project.use-case.js';
 import type { SendInteractiveMessageUseCase } from '@/application/use-cases/interactive/send-interactive-message.use-case.js';
 import type { RunWorkflowUseCase } from '@/application/use-cases/workflows/run-workflow.use-case.js';
@@ -92,6 +93,14 @@ function createMockMessageRepo(): IInteractiveMessageRepository {
   };
 }
 
+function createMockOperationLogRepo(): IOperationLogRepository {
+  return {
+    append: vi.fn().mockResolvedValue(undefined),
+    listByScope: vi.fn().mockResolvedValue([]),
+    pruneBefore: vi.fn().mockResolvedValue(0),
+  };
+}
+
 describe('CreateApplicationUseCase', () => {
   let useCase: CreateApplicationUseCase;
   let mockAppRepo: IApplicationRepository;
@@ -103,6 +112,7 @@ describe('CreateApplicationUseCase', () => {
   let mockSessionRepo: IInteractiveSessionRepository;
   let mockScaffolder: IApplicationScaffolder;
   let mockMessageRepo: IInteractiveMessageRepository;
+  let mockOperationLogRepo: IOperationLogRepository;
   let mockLogger: ILogger;
 
   beforeEach(() => {
@@ -119,6 +129,7 @@ describe('CreateApplicationUseCase', () => {
     } as unknown as IInteractiveSessionRepository;
     mockScaffolder = createMockScaffolder();
     mockMessageRepo = createMockMessageRepo();
+    mockOperationLogRepo = createMockOperationLogRepo();
     mockLogger = {
       debug: vi.fn(),
       info: vi.fn(),
@@ -135,6 +146,7 @@ describe('CreateApplicationUseCase', () => {
       mockSessionRepo,
       mockScaffolder,
       mockMessageRepo,
+      mockOperationLogRepo,
       mockLogger
     );
   });
@@ -166,10 +178,12 @@ describe('CreateApplicationUseCase', () => {
     // background dispatch to reach it).
     await new Promise((resolve) => setImmediate(resolve));
     expect(mockScaffolder.scaffold).toHaveBeenCalledTimes(1);
-    expect(mockScaffolder.scaffold).toHaveBeenCalledWith({
-      repositoryPath: `/shep/projects/${arg.name}`,
-      projectName: 'Rest Api Users',
-    });
+    expect(mockScaffolder.scaffold).toHaveBeenCalledWith(
+      expect.objectContaining({
+        repositoryPath: `/shep/projects/${arg.name}`,
+        projectName: 'Rest Api Users',
+      })
+    );
 
     // Application was persisted with the same slug
     expect(mockAppRepo.create).toHaveBeenCalledWith(

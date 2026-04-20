@@ -1,0 +1,24 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ApplicationUpdatePayload.yaml
+type: object
+properties:
+  applicationId:
+    type: string
+    description: The application whose row changed
+  setupComplete:
+    type: boolean
+    description: Current setup_complete flag (after the transition)
+  status:
+    $ref: ApplicationStatus.yaml
+    description: Current application status (after the transition)
+  gitRemoteUrl:
+    type: string
+    description: Current git remote URL, if one is set
+  cloudDeploymentProvider:
+    $ref: CloudDeploymentProvider.yaml
+    description: Selected cloud deployment provider, if one is set
+required:
+  - applicationId
+  - setupComplete
+  - status
+description: Scoped payload for an ApplicationUpdated notification — carries only the fields the client patches in-place. Deltas for unchanged fields are omitted.

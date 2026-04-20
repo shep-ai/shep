@@ -71,7 +71,7 @@ export function AppTopBar({
       )}
     >
       {/* ── Group 1: identity ────────────────────────────────── */}
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-violet-500">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-violet-500 shadow-xs">
         <LayoutGrid className="h-3.5 w-3.5 text-white" />
       </div>
       <h1 className="min-w-0 truncate text-sm font-semibold">{application.name}</h1>
@@ -96,8 +96,6 @@ export function AppTopBar({
         agentRunning={agentRunning}
       />
 
-      <Divider />
-
       {/* ── Group 4: view switcher (folds in local preview state) ─
           The Web tab now owns the dev-server lifecycle — the old
           standalone Preview button has been removed. Clicking the Web
@@ -112,8 +110,6 @@ export function AppTopBar({
         disabledTabs={agentRunning ? ['web'] : []}
         deploy={deploy}
       />
-
-      <Divider />
 
       {/* ── Group 5: overflow ─────────────────────────────── */}
       <AppOverflowMenu>

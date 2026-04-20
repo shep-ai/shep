@@ -17,8 +17,10 @@ import type { ListFeaturesUseCase } from '@/application/use-cases/features/list-
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
+import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
 import type { ICloudDeploymentEventBus } from '@/application/ports/output/services/cloud-deployment-event-bus.interface.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
+import type { IOperationLogEventBus } from '@/application/ports/output/services/operation-log-event-bus.interface.js';
 import type { IProcessLivenessProbe } from '@/application/ports/output/services/process-liveness.interface.js';
 
 import type { AgentRun, Feature } from '@/domain/generated/output.js';
@@ -124,6 +126,22 @@ function createUseCase(args: {
     subscribe: vi.fn().mockReturnValue(() => undefined),
   };
 
+  const applicationRepo: IApplicationRepository = {
+    create: vi.fn(),
+    findById: vi.fn().mockResolvedValue(null),
+    findBySlug: vi.fn().mockResolvedValue(null),
+    findByPath: vi.fn().mockResolvedValue(null),
+    list: vi.fn().mockResolvedValue([]),
+    update: vi.fn(),
+    softDelete: vi.fn(),
+    restore: vi.fn(),
+  };
+
+  const operationLogEventBus: IOperationLogEventBus = {
+    publish: vi.fn(),
+    subscribe: vi.fn().mockReturnValue(() => undefined),
+  };
+
   const logger: ILogger = {
     debug: vi.fn(),
     info: vi.fn(),
@@ -138,6 +156,8 @@ function createUseCase(args: {
     sessionRepo,
     processLiveness,
     cloudEventBus,
+    applicationRepo,
+    operationLogEventBus,
     logger
   );
 
@@ -242,6 +262,20 @@ describe('StreamAgentEventsUseCase', () => {
       publish: vi.fn(),
       subscribe: vi.fn().mockReturnValue(() => undefined),
     };
+    const applicationRepo: IApplicationRepository = {
+      create: vi.fn(),
+      findById: vi.fn().mockResolvedValue(null),
+      findBySlug: vi.fn().mockResolvedValue(null),
+      findByPath: vi.fn().mockResolvedValue(null),
+      list: vi.fn().mockResolvedValue([]),
+      update: vi.fn(),
+      softDelete: vi.fn(),
+      restore: vi.fn(),
+    };
+    const operationLogEventBus: IOperationLogEventBus = {
+      publish: vi.fn(),
+      subscribe: vi.fn().mockReturnValue(() => undefined),
+    };
     const logger: ILogger = {
       debug: vi.fn(),
       info: vi.fn(),
@@ -259,6 +293,8 @@ describe('StreamAgentEventsUseCase', () => {
       sessionRepo,
       processLiveness,
       cloudEventBus,
+      applicationRepo,
+      operationLogEventBus,
       logger
     );
 
@@ -327,6 +363,20 @@ describe('StreamAgentEventsUseCase', () => {
       publish: vi.fn(),
       subscribe: vi.fn().mockReturnValue(() => undefined),
     };
+    const applicationRepo: IApplicationRepository = {
+      create: vi.fn(),
+      findById: vi.fn().mockResolvedValue(null),
+      findBySlug: vi.fn().mockResolvedValue(null),
+      findByPath: vi.fn().mockResolvedValue(null),
+      list: vi.fn().mockResolvedValue([]),
+      update: vi.fn(),
+      softDelete: vi.fn(),
+      restore: vi.fn(),
+    };
+    const operationLogEventBus: IOperationLogEventBus = {
+      publish: vi.fn(),
+      subscribe: vi.fn().mockReturnValue(() => undefined),
+    };
     const logger: ILogger = {
       debug: vi.fn(),
       info: vi.fn(),
@@ -341,6 +391,8 @@ describe('StreamAgentEventsUseCase', () => {
       sessionRepo,
       processLiveness,
       cloudEventBus,
+      applicationRepo,
+      operationLogEventBus,
       logger
     );
 

@@ -13,6 +13,7 @@ import type {
   AppendOperationLogEntryInput,
   IOperationLogRepository,
 } from '../../application/ports/output/repositories/operation-log.repository.interface.js';
+import type { IOperationLogEventBus } from '../../application/ports/output/services/operation-log-event-bus.interface.js';
 import type {
   OperationLogEntry,
   OperationLogKind,
@@ -45,7 +46,10 @@ function rowToEntry(row: OperationLogRow): OperationLogEntry {
 
 @injectable()
 export class SQLiteOperationLogRepository implements IOperationLogRepository {
-  constructor(private readonly db: Database.Database) {}
+  constructor(
+    private readonly db: Database.Database,
+    private readonly bus: IOperationLogEventBus
+  ) {}
 
   async append(input: AppendOperationLogEntryInput): Promise<OperationLogEntry> {
     const id = randomUUID();
@@ -68,7 +72,7 @@ export class SQLiteOperationLogRepository implements IOperationLogRepository {
         created_at: now,
         updated_at: now,
       });
-    return {
+    const entry: OperationLogEntry = {
       id,
       operationKind: input.operationKind,
       operationId: input.operationId,
@@ -78,6 +82,8 @@ export class SQLiteOperationLogRepository implements IOperationLogRepository {
       createdAt: new Date(now),
       updatedAt: new Date(now),
     };
+    this.bus.publish({ entry });
+    return entry;
   }
 
   async listByScope(

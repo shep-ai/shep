@@ -14,4 +14,6 @@ enum:
   - pr_blocked
   - merge_review_ready
   - cloud_deployment_updated
+  - application_updated
+  - operation_log_appended
 description: Types of agent lifecycle notification events

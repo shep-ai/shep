@@ -6,10 +6,7 @@ import type { ChatState } from '@shepai/core/application/ports/output/services/i
 import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 
 import { ChatTab } from '@/components/features/chat/ChatTab';
-import type {
-  ApplicationErrorState,
-  ScaffoldingState,
-} from '@/components/features/chat/ChatTab';
+import type { ApplicationErrorState, ScaffoldingState } from '@/components/features/chat/ChatTab';
 import { APPLICATION_CREATION_PLACEHOLDER_STEPS } from '@/components/features/chat/workflow-placeholder';
 import { useCloudDeployAction } from '@/hooks/use-cloud-deploy-action';
 import { useDeployAction } from '@/hooks/use-deploy-action';

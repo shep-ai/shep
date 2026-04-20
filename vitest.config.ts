@@ -13,6 +13,10 @@ const sharedExclude = [
 
 const sharedResolve = {
   alias: [
+    {
+      find: '@tanstack/react-query',
+      replacement: resolve(__dirname, './src/presentation/web/node_modules/@tanstack/react-query'),
+    },
     { find: '@shepai/core', replacement: resolve(__dirname, './packages/core/src') },
     { find: '@/application', replacement: resolve(__dirname, './packages/core/src/application') },
     {

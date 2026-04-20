@@ -1,0 +1,48 @@
+feature:
+  id: '090-application-sse-deltas'
+  name: 'application-sse-deltas'
+  number: 90
+  branch: 'feat/chat-timeline-smart-deploy-ux'
+  lifecycle: 'planning'
+  createdAt: '2026-04-20T11:22:59Z'
+
+status:
+  phase: 'planning'
+  progress:
+    completed: 0
+    total: 12
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-04-20T11:22:59Z'
+  lastUpdatedBy: 'shep-kit:new-feature'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-04-20T11:22:59Z'
+    completedBy: 'shep-kit:new-feature'
+  - phase: 'spec-written'
+    completedAt: '2026-04-20T11:22:59Z'
+    completedBy: 'shep-kit:new-feature'
+  - phase: 'research-written'
+    completedAt: '2026-04-20T11:22:59Z'
+    completedBy: 'shep-kit:new-feature'
+  - phase: 'plan-written'
+    completedAt: '2026-04-20T11:22:59Z'
+    completedBy: 'shep-kit:new-feature'
+  - phase: 'tasks-broken-down'
+    completedAt: '2026-04-20T11:22:59Z'
+    completedBy: 'shep-kit:new-feature'
+
+errors:
+  current: null
+  history: []

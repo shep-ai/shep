@@ -1,0 +1,142 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: application-sse-deltas
+number: 090
+branch: feat/chat-timeline-smart-deploy-ux
+oneLiner: Backend-owned SSE for Application + OperationLog deltas — zero client polling
+summary: >
+  Eliminate the last client-side polling paths in the web UI by emitting
+  dedicated SSE events for Application row changes and OperationLog
+  appends. The backend remains the sole poller (StreamAgentEventsUseCase
+  already runs a 2s poll) and a new in-process event bus publishes
+  OperationLog append events synchronously as rows are inserted. Clients
+  (ApplicationPageLoader, SmartDeployLogsDrawer) stop refetching on
+  coarse "any SSE event" signals and instead patch their local state
+  directly from typed, applicationId-scoped deltas. DB remains the
+  source of truth; SSE is a hint — if the client misses an event it
+  still reads the correct state on next load.
+phase: Requirements
+sizeEstimate: L
+
+# Relationships
+relatedFeatures:
+  - "089-one-click-cloud-deploy"
+
+technologies:
+  - TypeScript
+  - TypeSpec
+  - Server-Sent Events (SSE)
+  - React Query (TanStack Query)
+  - tsyringe DI
+  - Better-sqlite3
+
+relatedLinks:
+  - title: Existing SSE route
+    url: src/presentation/web/app/api/agent-events/route.ts
+  - title: StreamAgentEventsUseCase
+    url: packages/core/src/application/use-cases/agents/stream-agent-events.use-case.ts
+  - title: Cloud deploy event bus pattern (precedent)
+    url: packages/core/src/application/ports/output/services/cloud-deployment-event-bus.interface.ts
+
+# Open questions (must be resolved before implementation)
+openQuestions: []
+
+# Markdown content (the actual spec)
+content: |
+  ## Problem Statement
+
+  The web UI has two remaining client-side polling paths that violate
+  the project's "backend polls, frontend subscribes to SSE" rule:
+
+  1. `ApplicationPageLoader` used a React Query `refetchInterval: 2_000`
+     to poll `/api/applications/:id` until `setup_complete` flipped. This
+     was hastily replaced with a coarse "invalidate on any SSE event"
+     fallback that works today only because unrelated feature / session
+     transitions happen to fire during the scaffold window.
+  2. `SmartDeployLogsDrawer` ran a `setInterval(1500ms)` refetch of
+     `/api/operations/:kind/:id/logs` while any Smart Deploy op was
+     live. It now also piggybacks on the "invalidate on any SSE event"
+     hack, which still costs N HTTP round-trips per backend poll tick.
+
+  Both are brittle: if no ambient SSE event fires during the window of
+  interest, the UI sits stale. Neither has a dedicated, typed backend
+  signal for the state change it cares about. The backend also has no
+  visibility into append deltas for `operation_log_entries` — it only
+  polls features / runs / sessions / PRs.
+
+  This feature closes the gap: the backend becomes the sole poller AND
+  the authoritative event source for every user-visible state change in
+  the Application surface, and clients consume typed deltas with
+  surgical handlers (no invalidate-and-refetch).
+
+  ## Success Criteria
+
+  - [ ] Zero `setInterval` / React Query `refetchInterval` calls in
+        `src/presentation/web/components/features/application-page/`
+        or anywhere they could fire an `/api/…` request on a client
+        timer.
+  - [ ] `NotificationEventType` gains two values: `ApplicationUpdated`
+        and `OperationLogAppended`, defined in TypeSpec and surfaced
+        through `pnpm tsp:compile`.
+  - [ ] `NotificationEvent` payload carries optional `applicationUpdate`
+        and `operationLogAppend` fields with typed, minimal shapes.
+  - [ ] `IOperationLogEventBus` port + in-memory adapter exist and are
+        wired through the DI container, mirroring
+        `ICloudDeploymentEventBus` exactly.
+  - [ ] `SqliteOperationLogRepository.append()` publishes to the bus
+        AFTER a successful DB insert (DB is source of truth — never
+        emit an event for a row that wasn't persisted).
+  - [ ] `StreamAgentEventsUseCase` subscribes to the OperationLog bus
+        (synchronous, same queue as cloud-deploy bus) and its poll loop
+        diffs `applications` rows against a per-connection cache,
+        emitting `ApplicationUpdated` on `setupComplete`, `status`,
+        `gitRemoteUrl`, or `cloudDeploymentProvider` change.
+  - [ ] Per-connection cache seeds on first sight → no burst of
+        "current state" events on reconnect (matches feature / session
+        seed behavior).
+  - [ ] `ApplicationPageLoader` uses a dedicated handler that selects
+        `ApplicationUpdated` events for its applicationId and PATCHES
+        React Query data directly — no HTTP refetch on SSE receipt.
+  - [ ] `SmartDeployLogsDrawer` uses a dedicated handler that appends
+        `OperationLogAppended` entries for its applicationId directly
+        to local state. Initial drawer open still does ONE hydration
+        fetch; after that, SSE is the only driver.
+  - [ ] Robustness: missing an event is never fatal. On reconnect the
+        seed step re-reads authoritative state; on tab return the
+        already-correct state stays correct; stale caches are bounded
+        by `staleTime`.
+  - [ ] Test coverage: new unit tests for the delta helper, the bus
+        publish path, the repo's publish-on-append, and the client
+        handlers. All existing tests continue to pass.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `tsp/` (TypeSpec) | Medium | New `NotificationEventType` values + `NotificationEvent` optional payloads |
+  | `packages/core/src/application/ports/output/services/` | Medium | New `IOperationLogEventBus` port |
+  | `packages/core/src/application/use-cases/agents/stream-agent-events/` | High | New `computeApplicationDeltas` helper + cache; use-case subscribes to new bus |
+  | `packages/core/src/infrastructure/services/` | Medium | New in-memory `OperationLogEventBus` adapter |
+  | `packages/core/src/infrastructure/repositories/sqlite-operation-log.repository.ts` | Medium | Publishes on append |
+  | `packages/core/src/infrastructure/di/` | Low | Bind new port / adapter |
+  | `src/presentation/web/components/features/application-page/application-page-loader.tsx` | Medium | Replace coarse invalidate with typed handler |
+  | `src/presentation/web/components/features/application-page/smart-deploy-logs-drawer.tsx` | Medium | Replace coarse refresh with append-on-event |
+  | `tests/unit/**` | Medium | New test coverage per port / use-case / handler |
+
+  ## Dependencies
+
+  - 089-one-click-cloud-deploy (established the cloud-deploy event bus
+    pattern this feature mirrors; same DI wiring model).
+
+  ## Size Estimate
+
+  **L** — Touches TypeSpec + codegen, adds a new port + adapter,
+  extends a hot-path use case with new cache + delta logic, rewires
+  two client components, and adds ~6 new test files. Bounded by the
+  precedent set by the cloud-deploy event bus, which makes the shape
+  of the bus + DI + SSE wiring very predictable.
+
+  ---
+
+  _Generated by `/shep-kit:new-feature` — proceed with `/shep-kit:research`_

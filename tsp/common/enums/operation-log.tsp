@@ -22,6 +22,9 @@ enum OperationLogKind {
 
   @doc("Sync local changes to an existing GitHub remote (commit + push)")
   RepoSync: "RepoSync",
+
+  @doc("Initial project scaffolding — create-vite / shadcn init / bun install output")
+  ApplicationSetup: "ApplicationSetup",
 }
 
 /**

@@ -3,10 +3,12 @@
 /**
  * AppViewTabs — right-pane view switcher for the app top bar.
  *
- * Rebuild of the old pill-style ViewSwitcher to match the visual
- * language of FeatureDrawerTabs: VS Code-style flat tabs with a top
- * accent border on the active tab, right border between tabs, and
- * 13px medium label.
+ * Segmented-control style: a pill-shaped bg-muted container with each
+ * view rendered as a rounded-sm button inside. Active tab sits on a
+ * raised bg-background card with a subtle shadow; inactive tabs sink
+ * into the container and reveal a soft hover background. Mirrors the
+ * toolbar tab control in macOS Sonoma / Windows 11 Settings / VS Code
+ * command palette — compact, rounded, depth-via-shadow not stripes.
  *
  * Folds in the old standalone `RunDevButton` ("Preview") functionality:
  * the Web tab now owns the local dev-server lifecycle. Clicking the Web
@@ -79,16 +81,11 @@ function webTooltip(status: WebStatus, deploy: DeployActionState): string {
 export function AppViewTabs({ active, onChange, disabledTabs = [], deploy }: AppViewTabsProps) {
   const webStatus = deriveWebStatus(deploy);
 
-  // Web tab click — switches view AND starts the dev server when idle/error.
-  // Booting/ready states just switch view (the pane content shows the live
-  // state). Wrapped in useCallback so identity is stable for Radix Tabs.
   const handleTabChange = useCallback(
     (value: string) => {
       const next = value as AppView;
       onChange(next);
       if (next === 'web' && (webStatus === 'idle' || webStatus === 'error')) {
-        // Fire-and-forget — the WebPreviewTab will render the booting UI
-        // as the deploy state transitions through its hook.
         void deploy.deploy();
       }
     },
@@ -98,11 +95,14 @@ export function AppViewTabs({ active, onChange, disabledTabs = [], deploy }: App
   return (
     <TooltipProvider delayDuration={400}>
       <Tabs value={active} onValueChange={handleTabChange} className="contents">
-        <TabsList className="bg-muted/40 h-12 shrink-0 justify-start gap-0 rounded-none border-0 p-0">
-          {VIEW_TABS.map((view, idx) => {
+        <TabsList
+          className={cn(
+            'bg-muted/60 border-border/60 inline-flex h-8 shrink-0 items-center gap-0.5 rounded-md border p-0.5'
+          )}
+        >
+          {VIEW_TABS.map((view) => {
             const Icon = VIEW_ICONS[view];
             const disabled = disabledTabs.includes(view);
-            const isLast = idx === VIEW_TABS.length - 1;
             const tooltip = view === 'web' ? webTooltip(webStatus, deploy) : VIEW_LABELS[view];
 
             const trigger = (
@@ -110,38 +110,28 @@ export function AppViewTabs({ active, onChange, disabledTabs = [], deploy }: App
                 value={view}
                 disabled={disabled}
                 className={cn(
-                  'text-muted-foreground hover:bg-muted hover:text-foreground',
-                  'data-[state=active]:bg-background data-[state=active]:text-foreground',
-                  'data-[state=active]:font-semibold',
-                  '[&:not([data-state=active])]:border-r-border',
-                  'relative h-12 rounded-none border-r border-r-transparent',
-                  'bg-transparent px-3 text-[12px] font-medium shadow-none transition-none',
-                  'cursor-pointer data-[state=active]:shadow-none',
-                  isLast && 'last:border-r-transparent',
-                  disabled && 'cursor-not-allowed opacity-40'
+                  'text-muted-foreground hover:text-foreground inline-flex h-7 items-center gap-1.5 rounded-[5px] px-2.5 text-[12px] font-medium whitespace-nowrap',
+                  'transition-all duration-150 ease-out',
+                  'data-[state=inactive]:hover:bg-background/60',
+                  'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs',
+                  'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none',
+                  disabled && 'cursor-not-allowed opacity-40 hover:bg-transparent',
+                  !disabled && 'cursor-pointer'
                 )}
               >
-                {/* State-aware icon for the Web tab; static icon for IDE/Terminal. */}
                 {view === 'web' ? (
                   <WebTabIcon status={webStatus} BaseIcon={Icon} />
                 ) : (
-                  <Icon className="mr-1.5 size-3.5" />
+                  <Icon className="size-3.5" />
                 )}
                 {VIEW_LABELS[view]}
-                {/* Bottom accent bar — rendered as a real div so it
-                    is 100% immune to Tailwind CSS variable cascade
-                    issues. Same 2px primary colour as the smart deploy
-                    button's bottom accent. */}
-                {active === view ? (
-                  <span className="bg-primary absolute bottom-0 left-0 h-0.5 w-full" />
-                ) : null}
               </TabsTrigger>
             );
 
             return (
               <Tooltip key={view}>
                 <TooltipTrigger asChild>{trigger}</TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={4} className="max-w-xs text-[11px]">
+                <TooltipContent side="bottom" sideOffset={6} className="max-w-xs text-[11px]">
                   {tooltip}
                 </TooltipContent>
               </Tooltip>
@@ -154,9 +144,9 @@ export function AppViewTabs({ active, onChange, disabledTabs = [], deploy }: App
 }
 
 /**
- * Web-tab icon that swaps glyph + adds a status overlay dot based on
- * the dev-server state. Kept as its own component so the Tab trigger
- * markup stays scannable.
+ * Web-tab icon — swaps glyph + adds a status overlay dot based on the
+ * dev-server state. Separate component so the TabsTrigger markup stays
+ * scannable.
  */
 function WebTabIcon({
   status,
@@ -166,13 +156,13 @@ function WebTabIcon({
   BaseIcon: React.ComponentType<{ className?: string }>;
 }) {
   if (status === 'booting') {
-    return <Loader2 className="text-primary mr-1.5 size-3.5 animate-spin" />;
+    return <Loader2 className="text-primary size-3.5 animate-spin" />;
   }
   if (status === 'error') {
-    return <TriangleAlert className="text-destructive mr-1.5 size-3.5" />;
+    return <TriangleAlert className="text-destructive size-3.5" />;
   }
   return (
-    <span className="relative mr-1.5 inline-flex">
+    <span className="relative inline-flex">
       <BaseIcon className="size-3.5" />
       {status === 'ready' ? (
         <span aria-hidden="true" className="absolute -end-0.5 -top-0.5 inline-flex size-1.5">

@@ -64,6 +64,8 @@ import type { IProcessLivenessProbe } from '../../../application/ports/output/se
 import { ProcessLivenessAdapter } from '../../services/process/process-liveness.adapter.js';
 import type { IProjectBuildService } from '../../../application/ports/output/services/project-build-service.interface.js';
 import { NodeProjectBuildService } from '../../services/build/node-project-build.service.js';
+import type { IOperationLogEventBus } from '../../../application/ports/output/services/operation-log-event-bus.interface.js';
+import { InMemoryOperationLogEventBus } from '../../services/events/in-memory-operation-log-event-bus.js';
 
 /**
  * Register core infrastructure services: validators, filesystem, git, notifications,
@@ -213,6 +215,13 @@ export function registerServices(container: DependencyContainer): void {
   // the IOperationLogRepository (registered in register-repositories) is in
   // place by the time the first use case asks for the service.
   container.registerSingleton<IOperationLogService>('IOperationLogService', OperationLogService);
+
+  // Operation log event bus — SQLite repo publishes here after each
+  // successful append; SSE route subscribes to fan out as notifications.
+  container.registerSingleton<IOperationLogEventBus>(
+    'IOperationLogEventBus',
+    InMemoryOperationLogEventBus
+  );
 
   // Process liveness probe — hides `process.kill(pid, 0)` behind a port so
   // application + presentation layers never import `infrastructure/services/

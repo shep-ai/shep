@@ -12,7 +12,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollText } from 'lucide-react';
 import { toast } from 'sonner';
-import { CloudDeploymentProvider, type Application } from '@shepai/core/domain/generated/output';
+import {
+  ApplicationStatus,
+  CloudDeploymentProvider,
+  type Application,
+} from '@shepai/core/domain/generated/output';
 import type { useCloudDeployAction } from '@/hooks/use-cloud-deploy-action';
 import { useGitStatus } from '@/hooks/use-git-status';
 import { useSyncAction } from '@/hooks/use-sync-action';
@@ -164,24 +168,27 @@ export function SmartDeployCluster({
   // still click "Activity log" inside the panel to read the entries
   // post-hoc.
 
-  // Every primary action opens the unified activity drawer so the
-  // pipeline is never invisible — the user sees the same timeline
-  // regardless of which action kicked it off.
+  // Primary actions do NOT auto-open the unified activity drawer.
+  // The in-chat OperationBubble shows a spinning in-progress card
+  // while each long-running op is live, and the SmartDeployButton
+  // label pins on "Publishing to GitHub…" / "Deploying to
+  // Cloudflare Pages…" through `workingSource`. The drawer is an
+  // on-demand deep-dive surface — users open it explicitly via
+  // the standalone log icon when they want the full cross-op
+  // timeline. Auto-opening it on every click buried the in-chat
+  // status and felt like the UI was shouting at the user.
   const handleSaveChanges = useCallback(async () => {
-    setLogsOpen(true);
     await sync.sync();
     await refreshGitStatus();
   }, [sync, refreshGitStatus]);
 
   const handlePublishToWeb = useCallback(async () => {
-    setLogsOpen(true);
     await cloudDeploy.initiate();
   }, [cloudDeploy]);
 
   const handleRedeploy = handlePublishToWeb;
 
   const handleSaveAndPublish = useCallback(async () => {
-    setLogsOpen(true);
     await sync.sync();
     await refreshGitStatus();
     if (sync.state.kind === 'failed') return;
@@ -200,7 +207,6 @@ export function SmartDeployCluster({
   // user doesn't have to click Publish to web as a separate step.
   const handleSelectProvider = useCallback(
     async (provider: CloudDeploymentProvider) => {
-      setLogsOpen(true);
       await cloudDeploy.selectProvider(provider);
       await cloudDeploy.initiate();
     },
@@ -299,10 +305,11 @@ export function SmartDeployCluster({
         return;
       }
 
-      // 3. Both tokens are on file → open the activity drawer and
-      //    run the full pipeline end-to-end with defaults.
-      setLogsOpen(true);
-
+      // 3. Both tokens are on file → run the full pipeline
+      //    end-to-end with defaults. Progress is visible via the
+      //    in-chat OperationBubble (spinning in-progress card) and
+      //    the SmartDeployButton label ("Getting online…") — no
+      //    auto-opened drawer.
       const hasRemoteNow = gitStatus?.hasRemote === true || Boolean(application.gitRemoteUrl);
       if (!hasRemoteNow) {
         const firstOwner = ownersSnapshot[0];
@@ -421,7 +428,9 @@ export function SmartDeployCluster({
       }
       setPublishModalOpen(false);
       await refreshGitStatus();
-      setLogsOpen(true);
+      // No auto-open drawer — the in-chat OperationBubble shows
+      // the publish progress; users can click the standalone log
+      // icon if they want the full log.
     },
     [application.id, refreshGitStatus]
   );
@@ -442,17 +451,17 @@ export function SmartDeployCluster({
   return (
     <>
       {/* Standalone icon-only activity-log button, detached from the
-          Smart Deploy split. Small, borderless, sits next to the main
-          surface so the user can always read the unified log without
-          the log affordance feeling welded to the deploy action. */}
+          Smart Deploy split. Native toolbar icon-button style — matches
+          the overflow-menu trigger so the whole right cluster reads as
+          a single family. */}
       <button
         type="button"
         aria-label="Open activity log"
         title="Smart Deploy activity log"
         onClick={handleOpenLogs}
-        className="text-muted-foreground hover:bg-muted hover:text-foreground mr-1 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+        className="text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-ring mr-1 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md bg-transparent transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
       >
-        <ScrollText className="size-3.5" />
+        <ScrollText className="size-4" />
       </button>
       <SmartDeployButton
         state={smartState}
@@ -496,7 +505,11 @@ export function SmartDeployCluster({
         open={logsOpen}
         onOpenChange={setLogsOpen}
         applicationId={application.id}
-        isRunning={smartState.kind === 'working' || oneClickRunning}
+        isRunning={
+          smartState.kind === 'working' ||
+          oneClickRunning ||
+          (!application.setupComplete && application.status !== ApplicationStatus.Error)
+        }
         subtitle={cloudProviderName ?? undefined}
       />
 

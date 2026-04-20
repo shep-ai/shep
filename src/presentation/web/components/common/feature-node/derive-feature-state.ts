@@ -139,8 +139,13 @@ export function mapEventTypeToState(eventType: NotificationEventType): FeatureNo
     case NotificationEventType.MergeReviewReady:
       return 'action-required';
     case NotificationEventType.CloudDeploymentUpdated:
-      // Cloud deploy updates do not affect the feature node lifecycle state —
-      // they are consumed by the application-page cloud deploy hook instead.
+    case NotificationEventType.ApplicationUpdated:
+    case NotificationEventType.OperationLogAppended:
+      // Application-scoped events do not affect the feature node lifecycle
+      // state — they are consumed by the application-page hooks (loader
+      // patch + logs-drawer append) instead. We return 'running' as a
+      // harmless no-op because the callers compare this against feature
+      // node state and never match on application events.
       return 'running';
   }
 }

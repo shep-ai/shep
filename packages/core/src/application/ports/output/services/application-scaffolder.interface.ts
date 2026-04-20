@@ -32,7 +32,43 @@ export interface ScaffoldOptions {
    * `package.json#name`, folder naming during intermediate steps, etc.
    */
   readonly projectName: string;
+
+  /**
+   * ID of the Application this scaffold belongs to. Used as the
+   * `operationId` when the adapter appends progress/error entries to
+   * the shared operation log so the UI can stream the scaffold's
+   * stdout/stderr into the same drawer that shows deploy / publish /
+   * sync activity.
+   */
+  readonly applicationId: string;
+
+  /**
+   * Progress callback. The adapter emits high-level phase events
+   * (`Starting shadcn init`, `bun add extras done`) and deduped CLI
+   * output lines from child processes as they arrive. Must never
+   * throw — errors inside the callback are swallowed by the adapter
+   * so a failing sink cannot abort a successful scaffold.
+   *
+   * Level mapping:
+   *   - `Info` — phase boundaries + stdout from child processes
+   *   - `Warn` — stderr from child processes (surfaced as warnings so
+   *     the user can see progress chatter without the whole log
+   *     turning red; real failures are emitted as `Error` by the
+   *     adapter itself on non-zero exit)
+   *   - `Error` — phase failure with the exception message
+   *   - `Debug` — low-priority bookkeeping (reserved)
+   */
+  readonly onLog?: ScaffoldLogCallback;
 }
+
+export type ScaffoldLogLevel = 'Debug' | 'Info' | 'Warn' | 'Error';
+
+export type ScaffoldLogCallback = (entry: {
+  level: ScaffoldLogLevel;
+  message: string;
+  /** Optional multi-line block — typically captured stdout/stderr. */
+  detail?: string;
+}) => void;
 
 export interface ScaffoldResult {
   /**

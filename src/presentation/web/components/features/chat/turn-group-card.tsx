@@ -3,24 +3,23 @@
 /**
  * TurnGroupCard
  *
- * One user-turn card in the chat timeline. Two modes:
+ * One user-turn card in the chat timeline. Each card has exactly two
+ * visual states: **open** (header + body) and **closed** (header only).
  *
- * - `completed`: collapsed by default, emerald check icon, click
- *   the chevron to reveal raw bubbles.
+ * - **Completed** cards default to CLOSED. Click the chevron to open
+ *   and reveal the `details` slot (raw bubbles: user message + tool
+ *   events + assistant replies).
+ * - **In-progress** cards default to OPEN showing the `condensed`
+ *   slot (user request + friendly streaming indicator — never raw
+ *   tool events, per `CLAUDE.md`'s layered rule). Clicking the
+ *   chevron FULLY collapses the card to header-only.
  *
- * - `in-progress`: the card's DEFAULT surface is the `condensed`
- *   slot — typically the user's request plus a friendly streaming
- *   indicator ("Working on…"), never raw tool events. The chevron
- *   progressively discloses the `details` slot containing every
- *   raw bubble (thinking / read / output / assistant text).
- *
- * This preserves the layered rule from `CLAUDE.md` in this
- * directory: by default the chat shows a high-level friendly
- * surface with the user request visible and nothing else raw.
- * Raw events are hidden behind a single click.
+ * When a card transitions from in-progress to completed (agent
+ * finishes), the body auto-closes so the timeline doesn't suddenly
+ * sprout a bunch of raw-bubble tails across every finished turn.
  */
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ChevronDown, CheckCircle2, MessageSquare, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -33,12 +32,11 @@ export interface TurnGroupCardProps {
   assistantMessageCount: number;
   /** Render mode — see file header. */
   status: 'completed' | 'in-progress';
-  /** Default visible content for in-progress cards (user message
-   *  + friendly streaming indicator). Ignored for completed cards. */
+  /** Body content for in-progress cards (user message + friendly
+   *  streaming indicator). Only used when `status === 'in-progress'`. */
   condensed?: ReactNode;
-  /** Progressive-disclosure body revealed when the chevron is
-   *  toggled — raw bubbles, tool events, full history. Falls back
-   *  to `children` if not provided. */
+  /** Body content for completed cards — raw bubbles, tool events,
+   *  full history. Falls back to `children` if not provided. */
   details?: ReactNode;
   /** Legacy slot used by completed cards — equivalent to `details`. */
   children?: ReactNode;
@@ -54,14 +52,25 @@ export function TurnGroupCard({
   children,
 }: TurnGroupCardProps) {
   const isInProgress = status === 'in-progress';
-  const [userExpanded, setUserExpanded] = useState(false);
+  // Start OPEN for in-progress (user wants to see live progress),
+  // CLOSED for completed (user has to click to open history).
+  const [open, setOpen] = useState<boolean>(isInProgress);
+  // When a card finishes, auto-collapse so the timeline stays
+  // compact — the user can still click to expand the details.
+  useEffect(() => {
+    if (!isInProgress) setOpen(false);
+  }, [isInProgress]);
+
   const contentId = `${id}-content`;
-  const disclosureBody = details ?? children ?? null;
+  const body = isInProgress ? condensed : (details ?? children ?? null);
 
   return (
     <div
+      // `shrink-0` — direct child of the ThreadPrimitive.Viewport
+      // flex-col. Without it a sibling card expanding (e.g. a deploy
+      // log) squashes this card's header into its own border.
       className={cn(
-        'mx-3 my-2 overflow-hidden rounded-lg border shadow-sm',
+        'mx-3 my-2 shrink-0 overflow-hidden rounded-lg border shadow-sm',
         'animate-in fade-in-0 slide-in-from-top-1 duration-200 ease-out',
         isInProgress
           ? 'border-fuchsia-500/40 bg-gradient-to-br from-fuchsia-500/5 via-purple-500/5 to-sky-500/5'
@@ -70,11 +79,11 @@ export function TurnGroupCard({
     >
       <button
         type="button"
-        onClick={() => setUserExpanded((v) => !v)}
-        aria-expanded={userExpanded}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
         aria-controls={contentId}
         className={cn(
-          'group flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-left transition-colors',
+          'group flex min-h-12 w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-left transition-colors',
           'hover:bg-muted/50'
         )}
       >
@@ -109,23 +118,12 @@ export function TurnGroupCard({
         <ChevronDown
           className={cn(
             'text-muted-foreground h-3.5 w-3.5 shrink-0 transition-transform',
-            userExpanded && 'rotate-180'
+            open && 'rotate-180'
           )}
         />
       </button>
 
-      {/* Default surface for in-progress cards — user request +
-          friendly streaming indicator. Never raw tool events.
-          Hidden while the chevron is expanded so the `details`
-          body below becomes the single source of content and the
-          user message doesn't render twice. */}
-      {isInProgress && condensed && !userExpanded ? (
-        <div className="border-border/60 bg-background/40 border-t px-3 py-2">{condensed}</div>
-      ) : null}
-
-      {/* Progressive disclosure: raw bubbles hidden until the
-          chevron is clicked. */}
-      {userExpanded ? (
+      {open && body ? (
         <div
           id={contentId}
           className={cn(
@@ -135,9 +133,7 @@ export function TurnGroupCard({
               : 'border-border/60 bg-background/40'
           )}
         >
-          {disclosureBody ?? (
-            <div className="text-muted-foreground text-[11px] italic">No content.</div>
-          )}
+          {body}
         </div>
       ) : null}
     </div>

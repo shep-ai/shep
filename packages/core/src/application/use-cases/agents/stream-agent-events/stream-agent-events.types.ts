@@ -7,7 +7,11 @@
  * next to it.
  */
 
-import type { NotificationEvent } from '../../../../domain/generated/output.js';
+import type {
+  ApplicationStatus,
+  CloudDeploymentProvider,
+  NotificationEvent,
+} from '../../../../domain/generated/output.js';
 import { AgentRunStatus, InteractiveSessionStatus } from '../../../../domain/generated/output.js';
 import {
   InteractiveSessionEventType,
@@ -63,6 +67,14 @@ export interface CachedFeatureState {
 /** Per-connection cached state for an interactive session. */
 export interface CachedSessionState {
   status: InteractiveSessionStatus;
+}
+
+/** Per-connection cached state for an application row. */
+export interface CachedApplicationState {
+  setupComplete: boolean;
+  status: ApplicationStatus;
+  gitRemoteUrl: string | undefined;
+  cloudDeploymentProvider: CloudDeploymentProvider | undefined;
 }
 
 /**

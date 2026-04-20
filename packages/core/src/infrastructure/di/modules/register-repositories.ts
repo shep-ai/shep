@@ -21,6 +21,7 @@ import { SQLiteInteractiveMessageRepository } from '../../repositories/sqlite-in
 import { SQLiteWorkflowStepRepository } from '../../repositories/sqlite-workflow-step.repository.js';
 import type { IOperationLogRepository } from '../../../application/ports/output/repositories/operation-log.repository.interface.js';
 import { SQLiteOperationLogRepository } from '../../repositories/sqlite-operation-log.repository.js';
+import type { IOperationLogEventBus } from '../../../application/ports/output/services/operation-log-event-bus.interface.js';
 
 // Project management (feature 087) repositories
 import type { IPmProjectRepository } from '../../../application/ports/output/repositories/pm-project-repository.interface.js';
@@ -140,7 +141,8 @@ export function registerRepositories(container: DependencyContainer): void {
   container.register<IOperationLogRepository>('IOperationLogRepository', {
     useFactory: (c) => {
       const database = c.resolve<Database.Database>('Database');
-      return new SQLiteOperationLogRepository(database);
+      const bus = c.resolve<IOperationLogEventBus>('IOperationLogEventBus');
+      return new SQLiteOperationLogRepository(database, bus);
     },
   });
 

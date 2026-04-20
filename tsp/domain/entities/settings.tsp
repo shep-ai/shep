@@ -525,6 +525,12 @@ model NotificationEventConfig {
 
   @doc("Notify when cloud deployment status changes (spec 089)")
   cloudDeploymentUpdated?: boolean = true;
+
+  @doc("Notify when application row changes (setupComplete, status, gitRemoteUrl, cloudDeploymentProvider — spec 090)")
+  applicationUpdated?: boolean = true;
+
+  @doc("Notify when a new operation log entry is appended (spec 090)")
+  operationLogAppended?: boolean = true;
 }
 
 /**

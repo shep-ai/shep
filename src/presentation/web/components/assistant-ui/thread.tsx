@@ -93,6 +93,7 @@ export function Thread({
   afterMessages,
   composer,
   hideEmpty,
+  hideMessages,
 }: {
   className?: string;
   /** Content rendered inside the scrollable viewport, BEFORE messages. Used by the application chat to pin the step tracker at the top of the scroll area. */
@@ -102,6 +103,18 @@ export function Thread({
   composer?: React.ReactNode;
   /** Suppress the default "empty chat" placeholder — useful when `beforeMessages` already fills the viewport (e.g. a step tracker). */
   hideEmpty?: boolean;
+  /**
+   * Suppress the flat `ThreadPrimitive.Messages` slot entirely.
+   * Required when the host owns the chat surface via a grouping
+   * overlay (turn-group cards + operation bubbles) — even with
+   * `hideAllMessages: true` returning an empty `threadMessages`
+   * array, the assistant-ui runtime still injects a synthetic
+   * pending assistant message while a response is in flight,
+   * which would otherwise render as a stray Bot avatar bubble
+   * below the overlay. Pass `hideMessages` to drop the slot from
+   * the DOM entirely.
+   */
+  hideMessages?: boolean;
 }) {
   return (
     <ThreadPrimitive.Root className={cn('flex h-full flex-col', className)}>
@@ -114,12 +127,14 @@ export function Thread({
 
         {beforeMessages}
 
-        <ThreadPrimitive.Messages
-          components={{
-            UserMessage,
-            AssistantMessage,
-          }}
-        />
+        {hideMessages ? null : (
+          <ThreadPrimitive.Messages
+            components={{
+              UserMessage,
+              AssistantMessage,
+            }}
+          />
+        )}
 
         {afterMessages}
       </ThreadPrimitive.Viewport>
