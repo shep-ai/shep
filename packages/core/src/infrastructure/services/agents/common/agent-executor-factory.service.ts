@@ -237,7 +237,12 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
 }
 
 // Static model lists per executor — update here when new models are released
-const CLAUDE_CODE_MODELS: string[] = ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
+const CLAUDE_CODE_MODELS: string[] = [
+  'claude-opus-4-7',
+  'claude-opus-4-6',
+  'claude-sonnet-4-6',
+  'claude-haiku-4-5',
+];
 const GEMINI_CLI_MODELS: string[] = [
   'gemini-3.1-pro',
   'gemini-3-flash',
@@ -245,6 +250,7 @@ const GEMINI_CLI_MODELS: string[] = [
   'gemini-2.5-flash',
 ];
 const CURSOR_MODELS: string[] = [
+  'claude-opus-4-7',
   'claude-opus-4-6',
   'claude-sonnet-4-6',
   'gpt-5.4-high',
@@ -272,6 +278,7 @@ const COPILOT_CLI_MODELS = [
   'claude-haiku-4.5',
   'claude-opus-4.5',
   'claude-opus-4.6',
+  'claude-opus-4.7',
   'claude-sonnet-4',
   'claude-sonnet-4.5',
   'claude-sonnet-4.6',

@@ -348,7 +348,12 @@ describe('AgentExecutorFactory', () => {
     it('should return claude-code model list', () => {
       const models = factory.getSupportedModels(AgentType.ClaudeCode);
 
-      expect(models).toEqual(['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5']);
+      expect(models).toEqual([
+        'claude-opus-4-7',
+        'claude-opus-4-6',
+        'claude-sonnet-4-6',
+        'claude-haiku-4-5',
+      ]);
     });
 
     it('should return gemini-cli model list', () => {
@@ -366,6 +371,7 @@ describe('AgentExecutorFactory', () => {
       const models = factory.getSupportedModels(AgentType.Cursor);
 
       expect(models).toEqual([
+        'claude-opus-4-7',
         'claude-opus-4-6',
         'claude-sonnet-4-6',
         'gpt-5.4-high',
@@ -400,11 +406,12 @@ describe('AgentExecutorFactory', () => {
     it('should return copilot-cli model list with 7 models', () => {
       const models = factory.getSupportedModels(AgentType.CopilotCli);
 
-      expect(models).toHaveLength(13);
+      expect(models).toHaveLength(14);
       expect(models).toEqual([
         'claude-haiku-4.5',
         'claude-opus-4.5',
         'claude-opus-4.6',
+        'claude-opus-4.7',
         'claude-sonnet-4',
         'claude-sonnet-4.5',
         'claude-sonnet-4.6',
