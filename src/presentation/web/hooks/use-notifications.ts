@@ -42,7 +42,7 @@ const SEVERITY_TO_ACTION: Record<NotificationSeverity, SoundAction> = {
   [NotificationSeverity.Info]: 'notification-info',
 };
 
-export function useNotifications(): void {
+export function useNotifications(enabled = true): void {
   const router = useRouter();
   const { events } = useAgentEventsContext();
 
@@ -67,6 +67,12 @@ export function useNotifications(): void {
   const processedCountRef = useRef(0);
 
   useEffect(() => {
+    if (!enabled) {
+      // Keep the cursor in sync so a later enable doesn't replay the
+      // whole backlog as a burst of toasts.
+      processedCountRef.current = events.length;
+      return;
+    }
     if (events.length <= processedCountRef.current) return;
 
     const newEvents = events.slice(processedCountRef.current);
@@ -90,5 +96,5 @@ export function useNotifications(): void {
       const actionName = SEVERITY_TO_ACTION[event.severity];
       soundsByAction[actionName]?.play();
     }
-  }, [events, soundsByAction, router]);
+  }, [enabled, events, soundsByAction, router]);
 }

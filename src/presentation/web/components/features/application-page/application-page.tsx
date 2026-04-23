@@ -192,6 +192,7 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
             applicationId={application.id}
             terminalCwd={application.repositoryPath}
             deploy={deploy}
+            isBuilding={!application.setupComplete || agentRunning}
           />
         }
       />

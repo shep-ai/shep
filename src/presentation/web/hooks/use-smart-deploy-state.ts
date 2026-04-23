@@ -51,7 +51,8 @@ import type { SyncActionState } from './use-sync-action';
 export type SmartDeployStateKind =
   | 'loading'
   | 'getOnline' // no remote yet — one click runs the full zero-brain pipeline
-  | 'deploy' // clean + has remote, no deployment yet
+  | 'connectCloud' // has remote + not deployed + NO cloud provider — click opens the connect modal
+  | 'deploy' // clean + has remote + cloud connected, no deployment yet
   | 'save' // dirty + has remote, no cloud connected
   | 'pushAndDeploy' // dirty + has remote + cloud connected (not yet live)
   | 'saveAndRepublish' // dirty + already live — republish needed to catch up
@@ -295,7 +296,23 @@ export function useSmartDeployState({
       });
     }
 
-    // 7. Clean + not deployed → Deploy
+    // 7. Clean + not deployed + NO cloud provider → ConnectCloud. The
+    //    primary action can't meaningfully be "Publish to web" because
+    //    the deploy call would fail with a clear "no provider connected"
+    //    error — surface the mandatory connect step up-front so the user
+    //    knows what to do before the pipeline runs. Clicking this state
+    //    opens the connect modal; after a successful connect the state
+    //    machine flips to `deploy` (or `pushAndDeploy`) on its own.
+    if (!hasConnectedCloudProvider) {
+      return baseState({
+        kind: 'connectCloud',
+        changeCount: 0,
+        hasRemote: true,
+        hasCloud: false,
+      });
+    }
+
+    // 8. Clean + not deployed + cloud connected → Deploy
     return baseState({
       kind: 'deploy',
       changeCount: 0,

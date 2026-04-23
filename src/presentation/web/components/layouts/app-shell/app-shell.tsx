@@ -52,8 +52,12 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
     pathname?.startsWith('/applications/') ||
     pathname?.startsWith('/application/');
 
-  // Subscribe to agent lifecycle events and dispatch toast/browser notifications
-  useNotifications();
+  // Subscribe to agent lifecycle events and dispatch toast/browser
+  // notifications. The apps-only desktop surface suppresses toasts
+  // entirely — the StepTracker + operation logs drawer already tell
+  // the story inside the app, and a stack of toasts over the preview
+  // pane just adds noise.
+  useNotifications(variant !== 'apps-only');
 
   const { features } = useSidebarFeaturesContext();
 
@@ -141,8 +145,14 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
         onAddFeature={handleAddFeature}
       />
       <SidebarInset>
-        <div className="relative h-full">
-          <main className="h-full">{children}</main>
+        {/* `h-dvh` (not `h-full`) so the full-shell page area has an
+            explicit viewport-bound height regardless of child content.
+            Without this, the outer `SidebarProvider`'s `min-h-svh`
+            allows the tree to GROW past the viewport when a child
+            (e.g. the application page's expanded step tracker) exceeds
+            viewport height, producing an outer body scrollbar. */}
+        <div className="relative h-dvh">
+          <main className="h-full min-h-0">{children}</main>
           {/* Global chat popup — fixed, visible across pages EXCEPT
               on application routes where the page owns its own
               primary actions and the chat FAB is redundant. */}

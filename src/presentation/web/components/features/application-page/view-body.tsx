@@ -15,6 +15,8 @@ export interface ViewBodyProps {
   applicationId: string;
   terminalCwd: string;
   deploy: DeployActionState;
+  /** True while the agent / scaffolder is still producing the app. */
+  isBuilding?: boolean;
 }
 
 /**
@@ -24,16 +26,27 @@ export interface ViewBodyProps {
  * PTY session, scrollback, and running processes survive tab switches.
  * Other views are placeholders until implemented.
  */
-export function ViewBody({ activeView, applicationId, terminalCwd, deploy }: ViewBodyProps) {
+export function ViewBody({
+  activeView,
+  applicationId,
+  terminalCwd,
+  deploy,
+  isBuilding = false,
+}: ViewBodyProps) {
   // Mount the Web iframe as soon as there's a URL — even if the user
   // is currently on IDE / Terminal — so the preview session doesn't
   // tear down when switching tabs. Once the app has been Previewed
   // at least once, the iframe stays alive in the background.
+  //
+  // While the app is still being built we also want the WebPreviewTab
+  // mounted so its "Building your app…" stub renders — treat `isBuilding`
+  // as meaningful deploy state for mount purposes.
   const hasWebContent =
     deploy.status === DeploymentState.Ready ||
     deploy.status === DeploymentState.Booting ||
     deploy.deployLoading ||
-    !!deploy.deployError;
+    !!deploy.deployError ||
+    isBuilding;
 
   return (
     <div className="relative flex min-h-0 flex-1">
@@ -73,10 +86,10 @@ export function ViewBody({ activeView, applicationId, terminalCwd, deploy }: Vie
           )}
           aria-hidden={activeView !== 'web'}
         >
-          <WebPreviewTab deploy={deploy} />
+          <WebPreviewTab deploy={deploy} isBuilding={isBuilding} />
         </div>
       ) : (
-        activeView === 'web' && <WebPreviewTab deploy={deploy} />
+        activeView === 'web' && <WebPreviewTab deploy={deploy} isBuilding={isBuilding} />
       )}
     </div>
   );

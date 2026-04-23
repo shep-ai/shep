@@ -19,18 +19,32 @@
  */
 
 import { useCallback } from 'react';
-import { ExternalLink, Globe, Loader2, Play, Square, TriangleAlert } from 'lucide-react';
+import { ExternalLink, Globe, Hammer, Loader2, Play, Square, TriangleAlert } from 'lucide-react';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
 import type { DeployActionState } from '@/hooks/use-deploy-action';
 
 export interface WebPreviewTabProps {
   deploy: DeployActionState;
+  /**
+   * True while the agent / scaffolder is still producing the app.
+   * Supersedes the idle / ready states and shows a friendly "Building
+   * your app…" placeholder so the Web tab has something meaningful
+   * even before a single file has been written.
+   */
+  isBuilding?: boolean;
 }
 
-export function WebPreviewTab({ deploy }: WebPreviewTabProps) {
+export function WebPreviewTab({ deploy, isBuilding = false }: WebPreviewTabProps) {
   const openInNewTab = useCallback(() => {
     if (deploy.url) window.open(deploy.url, '_blank', 'noopener,noreferrer');
   }, [deploy.url]);
+
+  // While the project tree is still being produced we own this pane —
+  // no iframe, no "Start preview" CTA, just a soft progress placeholder
+  // so the Web tab feels alive from the first moment the user lands.
+  if (isBuilding && deploy.status !== DeploymentState.Ready) {
+    return <BuildingStub />;
+  }
 
   // Ready — live iframe
   if (deploy.status === DeploymentState.Ready && deploy.url) {
@@ -142,6 +156,46 @@ interface EmptyStateProps {
   actionLabel?: string;
   actionIcon?: React.ReactNode;
   onAction?: () => void;
+}
+
+/**
+ * "Building your app…" placeholder for the Web pane — visible while
+ * the scaffolder or the agent is still producing the app. A sibling
+ * of EmptyState but with its own richer visual so it reads as an
+ * active progress stub rather than an error-adjacent empty state.
+ */
+function BuildingStub() {
+  return (
+    <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden p-6">
+      <div
+        aria-hidden
+        className="from-primary/10 via-background to-background pointer-events-none absolute inset-0 bg-gradient-to-br"
+      />
+      <div
+        aria-hidden
+        className="bg-[radial-gradient(circle,theme(colors.muted.DEFAULT)_1px,transparent_1px)] pointer-events-none absolute inset-0 [background-size:24px_24px] opacity-20"
+      />
+      <div className="relative flex max-w-sm flex-col items-center gap-4 text-center">
+        <div className="bg-background border-border ring-primary/10 relative inline-flex size-12 items-center justify-center rounded-full border shadow-sm ring-4">
+          <Hammer className="text-primary size-5" />
+          <span className="bg-primary absolute -end-1 -top-1 inline-flex size-3 items-center justify-center rounded-full">
+            <Loader2 className="text-primary-foreground size-2.5 animate-spin" />
+          </span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <h3 className="text-foreground text-sm font-semibold">Building your app…</h3>
+          <p className="text-muted-foreground text-xs leading-relaxed">
+            Setting up the project tree, installing dependencies, and generating components. Your
+            live preview will land here the moment the app is ready.
+          </p>
+        </div>
+        <div className="text-muted-foreground inline-flex items-center gap-1.5 text-[11px]">
+          <Loader2 className="size-3 animate-spin" />
+          <span>Working on it</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function EmptyState({

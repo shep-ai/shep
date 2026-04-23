@@ -71,8 +71,9 @@ export function useDevServerCoordinator({
         wasRunningBeforeAgentRef.current = true;
         void deploy.stop();
       }
-      // Switch away from web tab while agent works
-      setActiveView((view) => (view === 'web' ? 'ide' : view));
+      // Intentionally no longer auto-switch away from the Web tab —
+      // the Web pane renders a "Building your app…" stub while the
+      // agent works so the user can stay on the tab and watch progress.
     }
 
     if (!agentRunning && wasRunning) {
@@ -100,18 +101,15 @@ export function useDevServerCoordinator({
     }
   }, [deploy.status, deploy.url]);
 
-  // Prevent switching to web tab while agent is running
-  const handleViewChange = useCallback(
-    (view: AppView) => {
-      if (view === 'web' && agentRunning) return;
-      setActiveView(view);
-    },
-    [agentRunning]
-  );
+  // Web tab stays clickable even while the agent is running — the
+  // WebPreviewTab shows a building-in-progress stub in that window.
+  const handleViewChange = useCallback((view: AppView) => {
+    setActiveView(view);
+  }, []);
 
   return {
     activeView,
     handleViewChange,
-    disabledTabs: agentRunning ? (['web'] as AppView[]) : [],
+    disabledTabs: [] as AppView[],
   };
 }

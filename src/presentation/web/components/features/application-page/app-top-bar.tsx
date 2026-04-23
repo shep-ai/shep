@@ -107,8 +107,14 @@ export function AppTopBar({
       <AppViewTabs
         active={activeView}
         onChange={onViewChange}
-        disabledTabs={agentRunning ? ['web'] : []}
+        disabledTabs={[]}
         deploy={deploy}
+        // "Building" covers both the initial setup window
+        // (setupComplete flips true after the scaffolder + plan
+        // finish) AND live user iterations that rewrite the project
+        // tree — in both cases the preview is stale so we surface the
+        // building stub instead of the old iframe.
+        isBuilding={!application.setupComplete || agentRunning}
       />
 
       {/* ── Group 5: overflow ─────────────────────────────── */}

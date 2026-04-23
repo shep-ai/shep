@@ -31,7 +31,16 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import type { SmartDeployState } from '@/hooks/use-smart-deploy-state';
 
-export interface SmartDeployButtonProps {
+/** Extra-gating flag used while the initial setup workflow hasn't finished yet. */
+export interface SmartDeployButtonExtras {
+  /**
+   * Overrides every state to a disabled "Setting up…" appearance.
+   * Takes precedence over the normal `state.kind` interactivity rules.
+   */
+  forceDisabledReason?: string;
+}
+
+export interface SmartDeployButtonProps extends SmartDeployButtonExtras {
   state: SmartDeployState;
   /** Run the primary action (left half click). */
   onPrimaryClick(): void;
@@ -114,6 +123,8 @@ function labelFor(state: SmartDeployState): LabelSpec {
       };
     case 'deploy':
       return { icon: Rocket, label: 'Publish to web', tone: 'primary' };
+    case 'connectCloud':
+      return { icon: Rocket, label: 'Connect cloud', sub: 'Pick a provider', tone: 'rocket' };
     case 'live':
       return {
         icon: Check,
@@ -168,6 +179,7 @@ export function SmartDeployButton({
   panelOpen: controlledPanelOpen,
   onPanelOpenChange,
   className,
+  forceDisabledReason,
 }: SmartDeployButtonProps) {
   const spec = labelFor(state);
   const Icon = spec.icon;
@@ -181,7 +193,8 @@ export function SmartDeployButton({
     }
   };
 
-  const isInteractive = state.kind !== 'loading' && state.kind !== 'working';
+  const isInteractive =
+    !forceDisabledReason && state.kind !== 'loading' && state.kind !== 'working';
   const isDirty = state.changeCount > 0 && state.hasRemote;
 
   return (
@@ -199,7 +212,7 @@ export function SmartDeployButton({
           TONE_CLASSES[spec.tone],
           isInteractive ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
         )}
-        title={spec.label}
+        title={forceDisabledReason ?? spec.label}
       >
         <span
           className={cn(
@@ -212,7 +225,7 @@ export function SmartDeployButton({
             className={cn(
               'shrink-0',
               spec.iconChip ? 'size-3' : 'size-3.5',
-              spec.spinning && 'animate-spin'
+              (spec.spinning === true || forceDisabledReason !== undefined) && 'animate-spin'
             )}
           />
           {/* Tiny dirty-dot overlay on the icon when there are pending changes
@@ -228,8 +241,8 @@ export function SmartDeployButton({
           ) : null}
         </span>
         <span className="flex flex-col items-start leading-tight">
-          <span>{spec.label}</span>
-          {spec.sub ? (
+          <span>{forceDisabledReason ?? spec.label}</span>
+          {spec.sub && !forceDisabledReason ? (
             <span className="text-muted-foreground text-[9px] font-normal">{spec.sub}</span>
           ) : null}
         </span>

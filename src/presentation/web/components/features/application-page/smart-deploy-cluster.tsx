@@ -91,15 +91,22 @@ export function SmartDeployCluster({
   // re-fetch.
   const [owners, setOwners] = useState<PublishOwner[] | null>(null);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
-  const ensureOwners = useCallback(async () => {
-    if (owners !== null) return;
+  // Returns the fresh owner list so callers avoid the
+  // `await ensureOwners(); owners /* stale */` pitfall — reading
+  // `owners` from the closure right after a setState never sees the
+  // new value and would incorrectly route Get Online through the
+  // publish modal even when a GitHub token is already on file.
+  const ensureOwners = useCallback(async (): Promise<PublishOwner[] | null> => {
+    if (owners !== null) return owners;
     try {
       const res = await fetch('/api/cloud-providers/github/orgs');
-      if (!res.ok) return;
+      if (!res.ok) return null;
       const body = (await res.json()) as { owners: PublishOwner[] };
       setOwners(body.owners);
+      return body.owners;
     } catch {
       // surface via the publish modal's own error path
+      return null;
     }
   }, [owners]);
 
@@ -259,6 +266,11 @@ export function SmartDeployCluster({
   // pinned on "Getting online…" and the transition to `live` is a
   // single, clean flip at the end.
   const handleGetOnline = useCallback(async () => {
+    // Block the pipeline while the initial setup workflow is still
+    // producing the project tree — publish/deploy on a half-scaffolded
+    // app would push broken artifacts. The button is rendered disabled
+    // in this state so this is a belt-and-braces guard.
+    if (!application.setupComplete) return;
     if (oneClickRunning || agentRunning) return;
     setOneClickRunning(true);
 
@@ -274,13 +286,16 @@ export function SmartDeployCluster({
     // run, so token-prompt paths don't flash an empty "No activity
     // yet" drawer on the user's screen.
     try {
-      await ensureOwners();
+      // `ensureOwners` returns the fresh list so we can branch on the
+      // actual fetched value — reading the `owners` state variable right
+      // after `await` would see the stale closure snapshot and always
+      // route to the publish modal.
+      const ownersSnapshot = await ensureOwners();
 
       // 1. GitHub token gate. Empty owners ⇒ no token on file.
       //    The publish modal owns the GitHub connect + owner-picker
       //    flow so we defer to it here; once the user submits,
       //    owners repopulate and the next Get Online click runs.
-      const ownersSnapshot = owners;
       if (!ownersSnapshot || ownersSnapshot.length === 0) {
         setPublishModalOpen(true);
         return;
@@ -313,30 +328,54 @@ export function SmartDeployCluster({
       const hasRemoteNow = gitStatus?.hasRemote === true || Boolean(application.gitRemoteUrl);
       if (!hasRemoteNow) {
         const firstOwner = ownersSnapshot[0];
-        const defaultRepoName = application.name
+        const baseRepoName = application.name
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-+|-+$/g, '');
-        try {
-          const res = await fetch(`/api/applications/${application.id}/git/create-remote`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ownerLogin: firstOwner.login,
-              repoName: defaultRepoName,
-              visibility: 'private',
-            }),
-          });
-          if (!res.ok) {
-            const body = (await res.json().catch(() => ({}))) as { error?: string };
-            toast.error('GitHub publish failed', {
-              description: body.error ?? `HTTP ${res.status}`,
+
+        // Auto-retry GH repo name on collision: `name`, `name-2`, `name-3`, …
+        // up to 20 attempts. Without this, the first Get Online click against
+        // a name the user has used before errors out and forces them to pick
+        // a new name manually — breaks the zero-interaction promise.
+        const MAX_NAME_ATTEMPTS = 20;
+        let attempt = 0;
+        let lastError: string | null = null;
+        while (attempt < MAX_NAME_ATTEMPTS) {
+          const candidate = attempt === 0 ? baseRepoName : `${baseRepoName}-${attempt + 1}`;
+          try {
+            const res = await fetch(`/api/applications/${application.id}/git/create-remote`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ownerLogin: firstOwner.login,
+                repoName: candidate,
+                visibility: 'private',
+              }),
             });
+            if (res.ok) {
+              lastError = null;
+              break;
+            }
+            const body = (await res.json().catch(() => ({}))) as {
+              error?: string;
+              code?: string;
+            };
+            if (body.code === 'GH_REPO_NAME_TAKEN') {
+              // Silent retry with next suffix — the user's mental model is
+              // "just pick a name that works", so we don't toast the
+              // collision.
+              attempt += 1;
+              continue;
+            }
+            lastError = body.error ?? `HTTP ${res.status}`;
+            break;
+          } catch (err) {
+            lastError = err instanceof Error ? err.message : 'Network error';
+            break;
           }
-        } catch (err) {
-          toast.error('GitHub publish failed', {
-            description: err instanceof Error ? err.message : 'Network error',
-          });
+        }
+        if (lastError) {
+          toast.error('GitHub publish failed', { description: lastError });
         }
         await refreshGitStatus();
       }
@@ -351,9 +390,9 @@ export function SmartDeployCluster({
   }, [
     oneClickRunning,
     agentRunning,
+    application.setupComplete,
     ensureOwners,
     gitStatus,
-    owners,
     application.id,
     application.name,
     application.gitRemoteUrl,
@@ -381,6 +420,20 @@ export function SmartDeployCluster({
       case 'deploy':
         void handlePublishToWeb();
         return;
+      case 'connectCloud': {
+        // No cloud provider connected yet. Open the connect modal with
+        // the first enabled provider preselected so the user's single
+        // next action is "paste token and hit Connect". After a
+        // successful connect, the panel kicks off a deploy.
+        const defaultProvider = providers.find((p) => p.enabled) ?? null;
+        if (defaultProvider) {
+          setConnectMode('connect');
+          setConnectingProvider(defaultProvider.id);
+        } else {
+          setPanelOpen(true);
+        }
+        return;
+      }
       case 'live':
         if (cloudDeploy.state.url) {
           window.open(cloudDeploy.state.url, '_blank', 'noopener,noreferrer');
@@ -408,6 +461,7 @@ export function SmartDeployCluster({
     agentRunning,
     smartState,
     cloudDeploy.state.url,
+    providers,
     handleSaveAndPublish,
     handleSaveChanges,
     handlePublishToWeb,
@@ -415,32 +469,61 @@ export function SmartDeployCluster({
   ]);
 
   // First-time publish flow — wraps the existing PublishToGitHubModal.
+  // Auto-retries repo-name collision (GH_REPO_NAME_TAKEN) with a `-2`,
+  // `-3`, … suffix up to 20 attempts so the user never has to retype.
   const handlePublishSubmit = useCallback(
     async (input: { ownerLogin: string; repoName: string; visibility: 'public' | 'private' }) => {
-      const res = await fetch(`/api/applications/${application.id}/git/create-remote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? `Publish failed (HTTP ${res.status})`);
+      const MAX_NAME_ATTEMPTS = 20;
+      let attempt = 0;
+      let lastError: string | null = null;
+      while (attempt < MAX_NAME_ATTEMPTS) {
+        const candidate = attempt === 0 ? input.repoName : `${input.repoName}-${attempt + 1}`;
+        const res = await fetch(`/api/applications/${application.id}/git/create-remote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...input, repoName: candidate }),
+        });
+        if (res.ok) {
+          lastError = null;
+          break;
+        }
+        const body = (await res.json().catch(() => ({}))) as { error?: string; code?: string };
+        if (body.code === 'GH_REPO_NAME_TAKEN') {
+          attempt += 1;
+          continue;
+        }
+        lastError = body.error ?? `Publish failed (HTTP ${res.status})`;
+        break;
       }
+      if (lastError) throw new Error(lastError);
       setPublishModalOpen(false);
       await refreshGitStatus();
+      // Zero-interaction continuation: if the user got here from Get
+      // Online, keep walking the pipeline — if a cloud provider is
+      // already connected we deploy immediately; otherwise the state
+      // machine will surface `connectCloud` as the next CTA.
+      if (hasConnectedCloudProvider) {
+        await cloudDeploy.initiate();
+      }
       // No auto-open drawer — the in-chat OperationBubble shows
       // the publish progress; users can click the standalone log
       // icon if they want the full log.
     },
-    [application.id, refreshGitStatus]
+    [application.id, refreshGitStatus, hasConnectedCloudProvider, cloudDeploy]
   );
 
-  // Connect-cloud-provider modal — reuses the existing flow for token paste.
+  // Connect-cloud-provider modal — reuses the existing flow for token
+  // paste. After a successful connect we immediately kick off the
+  // deploy so the end-to-end path is "paste token, hit Connect, wait
+  // for live" — the user never has to hunt for another button.
   const handleConnectSubmit = useCallback(
     async (provider: CloudDeploymentProvider, token: string) => {
       await cloudDeploy.connect(provider, token);
       await refreshProviders();
       await cloudDeploy.selectProvider(provider);
+      // Zero-interaction continuation: the connect was the only
+      // mandatory step, now drive the deploy ourselves.
+      await cloudDeploy.initiate();
     },
     [cloudDeploy, refreshProviders]
   );
@@ -468,6 +551,7 @@ export function SmartDeployCluster({
         onPrimaryClick={handlePrimaryClick}
         panelOpen={panelOpen}
         onPanelOpenChange={setPanelOpen}
+        forceDisabledReason={application.setupComplete ? undefined : 'Setting up…'}
         panel={
           <DeployPanel
             state={smartState}

@@ -15,7 +15,6 @@ import {
   OperationLogLevel,
 } from '../../../domain/generated/output.js';
 import { ApplicationNotFoundError } from '../../../domain/errors/application-not-found.error.js';
-import { cleanDeployName } from '../../../domain/shared/clean-name.js';
 import { NoProviderSelectedError } from '../../../domain/errors/no-provider-selected.error.js';
 import { BuildOutputNotFoundError } from '../../../domain/errors/build-output-not-found.error.js';
 import { CloudProviderNotConnectedError } from '../../../domain/errors/cloud-provider-not-connected.error.js';
@@ -163,10 +162,17 @@ export class InitiateCloudDeploymentUseCase {
         {
           applicationId: input.applicationId,
           buildOutputDir,
-          // Use the clean display-name-derived slug (no random suffix)
-          // so the Cloudflare Pages project has a human-readable name.
-          // The random suffix stays on app.slug for local folder uniqueness.
-          projectName: cleanDeployName(app.name),
+          // Use `app.slug` (which already carries a 6-char random hex
+          // suffix for uniqueness) as the cloud project name. This is
+          // critical: without the suffix, deploying an app named e.g.
+          // "Landing Page" would silently OVERWRITE any pre-existing
+          // Cloudflare Pages project of the same name in the user's
+          // account — catastrophic when the user has an unrelated
+          // project with that name. The suffix makes collisions
+          // astronomically unlikely while still letting subsequent
+          // deploys of the same Shep application reuse the same cloud
+          // project (same slug → same project).
+          projectName: app.slug,
         },
         (status, message) => {
           void this.applicationRepo

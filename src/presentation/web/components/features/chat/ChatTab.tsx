@@ -228,13 +228,23 @@ export function ChatTab({
   //      from the overlay so the "Working on: …" card only appears
   //      for genuine post-setup iterations (second user message
   //      onwards).
-  const setupInProgress = stepProgress.hasPlan && !stepProgress.allDone;
+  // Setup is the initial workflow that creates the application: the
+  // synthetic scaffolding card (`scaffoldingState.status === 'running'`)
+  // PLUS the agent plan that follows it. Turn-group cards stay hidden
+  // for the whole window so the StepTracker owns the narrative end to
+  // end — user iterations only start appearing AFTER the setup plan
+  // has completed.
+  const setupInProgress = Boolean(
+    scaffoldingState?.status === 'running' || (stepProgress.hasPlan && !stepProgress.allDone)
+  );
   const rawTurnGroupsView = useTurnGroupsView(rawMessages, status.isRunning && !setupInProgress);
   const turnGroupsView = (() => {
     if (setupInProgress) {
       return { groups: [], currentTurn: null, hiddenMessageIds: [] };
     }
-    if (!stepProgress.hasPlan) {
+    // Non-application chats (no scaffolder, no plan) keep the raw
+    // turn overlay untouched — there's no "setup ask" to hide.
+    if (!scaffoldingState && !stepProgress.hasPlan) {
       return rawTurnGroupsView;
     }
     // Flatten all turns (completed + current) in chronological

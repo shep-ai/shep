@@ -54,11 +54,20 @@ export interface AppViewTabsProps {
   disabledTabs?: AppView[];
   /** Shared dev-server state. Drives the Web tab's status indicator + auto-start behavior. */
   deploy: DeployActionState;
+  /**
+   * True while the agent / scaffolder is still producing the app. The
+   * Web tab becomes a "Building your app…" stub in this window — we
+   * surface a spinner overlay on the tab icon and SKIP the click-to-
+   * auto-deploy path so the user doesn't kick off a dev server against
+   * a half-scaffolded tree.
+   */
+  isBuilding?: boolean;
 }
 
-type WebStatus = 'idle' | 'booting' | 'ready' | 'error';
+type WebStatus = 'idle' | 'booting' | 'ready' | 'error' | 'building';
 
-function deriveWebStatus(deploy: DeployActionState): WebStatus {
+function deriveWebStatus(deploy: DeployActionState, isBuilding: boolean): WebStatus {
+  if (isBuilding) return 'building';
   if (deploy.deployError) return 'error';
   if (deploy.status === DeploymentState.Booting || deploy.deployLoading) return 'booting';
   if (deploy.status === DeploymentState.Ready && deploy.url) return 'ready';
@@ -71,6 +80,8 @@ function webTooltip(status: WebStatus, deploy: DeployActionState): string {
       return `Live preview running at ${deploy.url} — click to view`;
     case 'booting':
       return 'Starting dev server… click to view progress';
+    case 'building':
+      return 'Your app is being built — preview will start once setup finishes';
     case 'error':
       return `Dev server failed: ${deploy.deployError ?? 'unknown error'} — click Web tab to retry`;
     default:
@@ -78,18 +89,27 @@ function webTooltip(status: WebStatus, deploy: DeployActionState): string {
   }
 }
 
-export function AppViewTabs({ active, onChange, disabledTabs = [], deploy }: AppViewTabsProps) {
-  const webStatus = deriveWebStatus(deploy);
+export function AppViewTabs({
+  active,
+  onChange,
+  disabledTabs = [],
+  deploy,
+  isBuilding = false,
+}: AppViewTabsProps) {
+  const webStatus = deriveWebStatus(deploy, isBuilding);
 
   const handleTabChange = useCallback(
     (value: string) => {
       const next = value as AppView;
       onChange(next);
-      if (next === 'web' && (webStatus === 'idle' || webStatus === 'error')) {
+      // Skip click-to-deploy while building — the user is just peeking
+      // at the "Building your app…" placeholder, not asking us to run
+      // a dev server against an incomplete project tree.
+      if (next === 'web' && !isBuilding && (webStatus === 'idle' || webStatus === 'error')) {
         void deploy.deploy();
       }
     },
-    [onChange, webStatus, deploy]
+    [onChange, webStatus, deploy, isBuilding]
   );
 
   return (
@@ -155,7 +175,7 @@ function WebTabIcon({
   status: WebStatus;
   BaseIcon: React.ComponentType<{ className?: string }>;
 }) {
-  if (status === 'booting') {
+  if (status === 'booting' || status === 'building') {
     return <Loader2 className="text-primary size-3.5 animate-spin" />;
   }
   if (status === 'error') {
