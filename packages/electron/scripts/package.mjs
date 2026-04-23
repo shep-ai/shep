@@ -40,6 +40,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const electronRoot = path.resolve(__dirname, '..');
 const monorepoRoot = path.resolve(electronRoot, '../..');
 
+// On Windows, npm and npx ship as `.cmd` batch wrappers rather than
+// native executables, so `execFileSync('npm', ...)` without shell
+// resolution returns ENOENT. Pick the right binary name per platform.
+const isWindows = process.platform === 'win32';
+const npmBin = isWindows ? 'npm.cmd' : 'npm';
+const npxBin = isWindows ? 'npx.cmd' : 'npx';
+
 const [variant = 'full', target = 'linux'] = process.argv.slice(2);
 if (!['full', 'apps-only'].includes(variant)) {
   console.error(`Unknown variant: ${variant} (expected 'full' or 'apps-only')`);
@@ -83,7 +90,7 @@ copyFileSync(path.join(electronRoot, 'package.json'), path.join(stagedDir, 'pack
 writeFileSync(path.join(stagedDir, '.npmrc'), '# npm-only tree\n');
 
 console.log(`[stage:${variant}] npm install --omit=dev (flat tree for electron-builder)`);
-execFileSync('npm', ['install', '--omit=dev', '--no-audit', '--no-fund', '--ignore-scripts'], {
+execFileSync(npmBin, ['install', '--omit=dev', '--no-audit', '--no-fund', '--ignore-scripts'], {
   cwd: stagedDir,
   stdio: 'inherit',
 });
@@ -149,7 +156,7 @@ writeFileSync(stagedPkgPath, JSON.stringify(stagedPkg, null, 2));
 const outputAbs = path.join(electronRoot, outputDir);
 console.log(`[build:${variant}] electron-builder --${target} (output → ${outputAbs})`);
 execFileSync(
-  'npx',
+  npxBin,
   [
     'electron-builder',
     `--${target}`,
