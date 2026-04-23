@@ -5,6 +5,11 @@ appId: 'ai.shep.desktop'
 productName: 'Shep'
 copyright: 'Copyright © 2024-2026 Shep AI'
 
+# Electron runtime version. Pinned so packaging from the staged tree
+# (produced by `pnpm deploy --prod`) doesn't need to auto-detect it
+# from the electron devDependency that `--prod` intentionally strips.
+electronVersion: '36.9.5'
+
 # The compiled JS output directory
 directories:
   buildResources: 'resources'
@@ -16,6 +21,11 @@ files:
   - 'dist/**/*'
   - 'resources/**/*'
   - 'package.json'
+  # Explicitly include the staged flat `node_modules/` tree.
+  # electron-builder's default smart-walk drops transitives when run
+  # from a `pnpm deploy` tree — forcing the glob guarantees the
+  # runtime deps are packaged verbatim.
+  - 'node_modules/**/*'
   - '!src/**/*'
   - '!scripts/**/*'
   - '!tsconfig*.json'
@@ -33,9 +43,12 @@ asarUnpack:
   - '**/node_modules/bindings/**'
   - '**/node_modules/file-uri-to-path/**'
 
-# Copy the pre-built web UI into the packaged app's resources
+# Copy the pre-built web UI into the packaged app's resources.
+# The staged build tree (packages/electron/staged-full/ or -apps-only/)
+# owns a local `./web` populated by scripts/package.mjs — the yaml
+# therefore references the local path, not the monorepo `../../web`.
 extraResources:
-  - from: '../../web'
+  - from: 'web'
     to: 'web'
     filter:
       - '**/*'

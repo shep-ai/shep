@@ -1,4 +1,5 @@
 dist/
 release/
 release-apps-only/
+staged-*/
 node_modules/
