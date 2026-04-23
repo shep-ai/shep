@@ -9,6 +9,9 @@ function createMockWindow() {
   return {
     minimize: vi.fn(),
     hide: vi.fn(),
+    maximize: vi.fn(),
+    unmaximize: vi.fn(),
+    isMaximized: vi.fn(() => false),
   };
 }
 

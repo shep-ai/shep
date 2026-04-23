@@ -11,9 +11,34 @@
  */
 
 import { build } from 'esbuild';
-import { copyFileSync, existsSync, readFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+/**
+ * Recursively copy a directory tree. Used to stage runtime assets
+ * (templates, etc.) alongside the bundled Electron main entry so that
+ * modules bundled from `@shepai/core` which resolve data directories
+ * via `import.meta.url` can locate them at runtime.
+ */
+function copyDirSync(src, dst) {
+  mkdirSync(dst, { recursive: true });
+  for (const entry of readdirSync(src)) {
+    const s = path.join(src, entry);
+    const d = path.join(dst, entry);
+    const st = statSync(s);
+    if (st.isDirectory()) copyDirSync(s, d);
+    else if (st.isFile()) copyFileSync(s, d);
+  }
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
@@ -105,14 +130,22 @@ async function main() {
     logLevel: 'info',
   });
 
-  // Build preload script separately (runs in isolated renderer context)
-  // Electron 28+ supports ESM preload scripts with contextIsolation: true
+  // Build preload script separately (runs in isolated renderer context).
+  //
+  // IMPORTANT: CJS format. Electron's preload loader attaches the
+  // contextBridge at document_start for CJS preloads; ESM preloads have
+  // observable races where the bridge isn't on `window` by the time
+  // React mounts in the renderer. Using CJS also avoids the
+  // sandbox-incompatibility issues with ESM preloads. The preload
+  // `require`s 'electron' synchronously, which is valid in this
+  // context.
   await build({
     entryPoints: [path.join(root, 'src/preload.ts')],
     bundle: true,
     platform: 'node',
     target: 'node22',
-    format: 'esm',
+    format: 'cjs',
+    outExtension: { '.js': '.cjs' },
     outdir: distDir,
     external: ['electron'],
     sourcemap: true,
@@ -136,6 +169,60 @@ async function main() {
   if (existsSync(entrySrc)) {
     copyFileSync(entrySrc, entryDst);
     console.log('Copied entry.cjs to dist/');
+  }
+
+  // Compile each SQLite migration .ts file into dist/migrations/*.js
+  // alongside the main bundle. `getMigrationsDir()` in the core package
+  // resolves the directory as a sibling of the compiled file via
+  // `import.meta.url` — in the Electron bundle that lands on
+  // `dist/main.cjs`, so the runtime discovery looks for
+  // `dist/migrations/`. Node 22 can't `import('./foo.ts')` so we pre-
+  // compile each file to CJS .js. Without this, migrations 035+
+  // (including the workflow_steps table) never run and startup crashes
+  // the first time a fresh SHEP_HOME is used.
+  const migrationsSrc = path.join(coreDir, 'infrastructure', 'persistence', 'sqlite', 'migrations');
+  const migrationsDst = path.join(distDir, 'migrations');
+  if (existsSync(migrationsSrc)) {
+    const entries = readdirSync(migrationsSrc)
+      .filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts'))
+      .map((f) => path.join(migrationsSrc, f));
+    if (entries.length > 0) {
+      await build({
+        entryPoints: entries,
+        bundle: false, // one-file-in/one-file-out — no bundling
+        platform: 'node',
+        target: 'node22',
+        format: 'cjs',
+        outdir: migrationsDst,
+        sourcemap: true,
+        logLevel: 'info',
+      });
+      // Electron's package.json declares "type": "module", so Node
+      // treats plain .js files as ESM and refuses `module.exports`.
+      // Drop a directory-local package.json that pins CJS for every
+      // .js file in dist/migrations/ — overrides the parent without
+      // changing migration file extensions (keeping the discovery
+      // logic in core untouched).
+      writeFileSync(
+        path.join(migrationsDst, 'package.json'),
+        JSON.stringify({ type: 'commonjs' }, null, 2)
+      );
+      console.log(`Compiled ${entries.length} migrations to dist/migrations/`);
+    }
+  }
+
+  // Copy scaffolding templates next to the bundle. The template-overlay
+  // resolver (bundled into main.cjs) falls back to `${here}/templates/
+  // vite-shadcn-base` when its default lookup fails, so placing the
+  // tree at `dist/templates/` is enough for the bundled runtime to
+  // find it. Without this, creating a new Application fails with:
+  // `Template overlay failed: template root ".../packages/templates/
+  // vite-shadcn-base" does not exist.`
+  const templatesSrc = path.join(coreDir, 'infrastructure', 'templates');
+  const templatesDst = path.join(distDir, 'templates');
+  if (existsSync(templatesSrc)) {
+    copyDirSync(templatesSrc, templatesDst);
+    console.log('Copied scaffolding templates to dist/templates/');
   }
 
   console.log('Electron build complete.');

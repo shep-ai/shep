@@ -85,6 +85,7 @@
     "prepare": "husky",
     "validate": "pnpm run lint:fix && pnpm run format && pnpm run typecheck && pnpm run tsp:compile",
     "electron:dev": "pnpm --filter @shepai/electron dev",
+    "apps:dev": "cross-env ELECTRON_RUN_AS_NODE= SHEP_SHELL_VARIANT=apps-only pnpm --filter @shepai/electron dev",
     "electron:compile": "pnpm --filter @shepai/electron compile",
     "electron:build": "pnpm --filter @shepai/electron build",
     "electron:build:mac": "pnpm --filter @shepai/electron build:mac",

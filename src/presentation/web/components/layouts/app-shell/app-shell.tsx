@@ -21,14 +21,22 @@ import { TurnStatusesProvider } from '@/hooks/turn-statuses-provider';
 
 import { useNotifications } from '@/hooks/use-notifications';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
+import type { ShellVariant } from '@/lib/shell-variant';
+import { AppsOnlyShell } from './apps-only-shell';
 
 interface AppShellProps {
   children: ReactNode;
   /** Server-read sidebar state from cookie. */
   sidebarOpen?: boolean;
+  /**
+   * Outer-chrome variant. `full` (default) renders the existing sidebar
+   * + FAB + canvas chrome. `apps-only` renders a slim shell with just a
+   * top bar — see spec 091-apps-only-surface.
+   */
+  variant?: ShellVariant;
 }
 
-function AppShellInner({ children, sidebarOpen }: AppShellProps) {
+function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { guardedNavigate } = useDrawerCloseGuard();
@@ -120,6 +128,10 @@ function AppShellInner({ children, sidebarOpen }: AppShellProps) {
     }
   }, []);
 
+  if (variant === 'apps-only') {
+    return <AppsOnlyShell>{children}</AppsOnlyShell>;
+  }
+
   return (
     <SidebarProvider defaultOpen={sidebarOpen ?? false}>
       <AppSidebar
@@ -162,7 +174,7 @@ function TurnStatusesBridge({ children }: { children: ReactNode }) {
   return <TurnStatusesProvider>{children}</TurnStatusesProvider>;
 }
 
-export function AppShell({ children, sidebarOpen }: AppShellProps) {
+export function AppShell({ children, sidebarOpen, variant = 'full' }: AppShellProps) {
   const { i18n } = useTranslation();
   const dir = i18n.dir();
 
@@ -172,7 +184,9 @@ export function AppShell({ children, sidebarOpen }: AppShellProps) {
         <DrawerCloseGuardProvider>
           <SidebarFeaturesProvider>
             <TurnStatusesBridge>
-              <AppShellInner sidebarOpen={sidebarOpen}>{children}</AppShellInner>
+              <AppShellInner sidebarOpen={sidebarOpen} variant={variant}>
+                {children}
+              </AppShellInner>
             </TurnStatusesBridge>
           </SidebarFeaturesProvider>
         </DrawerCloseGuardProvider>

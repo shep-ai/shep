@@ -21,6 +21,7 @@ import {
   type ElectronAdapterResult,
 } from './electron-adapters.js';
 import { setupIpcHandlers, type IpcHandlerDeps } from './ipc/channels.js';
+import { IPC_CHANNELS } from './ipc/constants.js';
 import { resolvePort, type PortConflictDeps } from './port-conflict.js';
 import { checkForUpdates, type UpdateCheckerDeps } from './update-checker.js';
 import type { IWebServerService } from '@shepai/core/application/ports/output/services/web-server-service.interface.js';
@@ -40,6 +41,9 @@ export interface AppBrowserWindow {
   hide(): void;
   close(): void;
   minimize(): void;
+  maximize(): void;
+  unmaximize(): void;
+  isMaximized(): boolean;
   isDestroyed(): boolean;
   isMinimized(): boolean;
   restore(): void;
@@ -61,6 +65,9 @@ export interface AppElectronApi {
   Menu: { buildFromTemplate(template: unknown[]): unknown };
   nativeImage: { createFromPath(p: string): { setTemplateImage(v: boolean): void } };
 }
+
+/** Shell variant controlling which web surface the Electron window loads. */
+export type ShellVariant = 'full' | 'apps-only';
 
 /** Dependencies for the app lifecycle. */
 export interface AppDeps {
@@ -87,6 +94,14 @@ export interface AppDeps {
   ipcHandlerDeps: Omit<IpcHandlerDeps, 'getMainWindow' | 'serverPort'>;
   /** Factory for update checker deps (needs mainWindow at runtime). */
   updateCheckerDeps: Omit<UpdateCheckerDeps, 'sendToRenderer'>;
+  /** Which web shell to load. Defaults to 'full'. */
+  shellVariant?: ShellVariant;
+  /**
+   * Sets the `shep-shell-variant` cookie on the Electron session scoped to the
+   * local web server. Awaited BEFORE loadURL so the first HTML render sees it.
+   * Only called when shellVariant === 'apps-only'.
+   */
+  setShellVariantCookie?: (port: number, variant: ShellVariant) => Promise<void>;
 }
 
 /** Application state (exposed for testing). */
@@ -139,14 +154,20 @@ export function createMainWindow(
   windowStateKeeper: AppDeps['windowStateKeeper'],
   port: number,
   preloadPath: string,
-  state: AppState
+  state: AppState,
+  initialPath = '/',
+  shellVariant: ShellVariant = 'full'
 ): AppBrowserWindow {
   const windowState = windowStateKeeper({
     defaultWidth: 1280,
     defaultHeight: 800,
   });
 
-  const win = new BrowserWindow({
+  // Apps-only mode ships a custom, sleek top bar (see AppsOnlyShell).
+  // Drop the OS window frame so the renderer owns the chrome; keep
+  // the window draggable via `-webkit-app-region: drag` on the header.
+  const isAppsOnly = shellVariant === 'apps-only';
+  const windowOpts: Record<string, unknown> = {
     x: windowState.x,
     y: windowState.y,
     width: windowState.width,
@@ -158,16 +179,42 @@ export function createMainWindow(
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      // CJS preload — Electron attaches the contextBridge at
+      // document_start, before the renderer hydrates React, so
+      // `window.shepElectron` is available from the first paint.
+      // Sandbox stays ON because CJS preloads are sandbox-compatible
+      // and we expose only typed IPC channels (no Node primitives).
       sandbox: true,
       preload: preloadPath,
     },
-  });
+  };
+  if (isAppsOnly) {
+    windowOpts.frame = false;
+    // `hiddenInset` keeps native traffic-light buttons on macOS; Linux/Windows
+    // render no native buttons — our AppsOnlyShell draws its own.
+    windowOpts.titleBarStyle = 'hiddenInset';
+    // Transparent window + CSS rounded-corner wrapper lets Linux/X11 and
+    // Windows show rounded corners on a frameless window. macOS rounds
+    // automatically; Windows 11 rounds frameless windows; on older
+    // Linux compositors the transparent bits just show the desktop
+    // behind the corner. The body/html in apps-only mode is transparent
+    // so the AppsOnlyShell's `rounded-xl overflow-hidden` clips cleanly.
+    windowOpts.transparent = true;
+    // Use a fully-transparent hex so the OS compositor can honor the
+    // rounded-corner mask set by our CSS.
+    windowOpts.backgroundColor = '#00000000';
+    // Cannot resize while keeping transparency on some X11 setups —
+    // keep resizable (default true) so the user can drag edges, but
+    // don't allow hasShadow to misalign with the rounded corners.
+    windowOpts.hasShadow = true;
+  }
+  const win = new BrowserWindow(windowOpts);
 
   // Let electron-window-state track this window
   windowState.manage(win);
 
   // Load the Next.js web UI
-  win.loadURL(`http://localhost:${port}`);
+  win.loadURL(`http://localhost:${port}${initialPath}`);
 
   // When ready, show main window and close splash
   win.once('ready-to-show', () => {
@@ -184,6 +231,17 @@ export function createMainWindow(
       (event as { preventDefault(): void }).preventDefault();
       win.hide();
     }
+  });
+
+  // Broadcast maximize state changes to the renderer so the custom window
+  // controls in apps-only mode can swap between the "maximize" and
+  // "restore" icons. Fires for OS-level gestures too (double-click title
+  // bar, Win+Up, macOS green button).
+  win.on('maximize', () => {
+    win.webContents.send(IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED, true);
+  });
+  win.on('unmaximize', () => {
+    win.webContents.send(IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED, false);
   });
 
   return win;
@@ -313,13 +371,24 @@ export async function startApp(deps: AppDeps): Promise<AppState> {
       console.log(`${TAG} Connecting to existing server at http://localhost:${port}`);
     }
 
+    // Step 4b: If apps-only variant, set the cookie BEFORE creating the window so
+    // the first HTML render already carries the variant signal.
+    const shellVariant: ShellVariant = deps.shellVariant ?? 'full';
+    if (shellVariant === 'apps-only' && deps.setShellVariantCookie) {
+      await deps.setShellVariantCookie(port, shellVariant);
+      console.log(`${TAG} shell-variant cookie set: apps-only`);
+    }
+    const initialPath = shellVariant === 'apps-only' ? '/applications' : '/';
+
     // Step 5: Create main window
     state.mainWindow = createMainWindow(
       electron.BrowserWindow,
       deps.windowStateKeeper,
       port,
       deps.preloadPath,
-      state
+      state,
+      initialPath,
+      shellVariant
     );
 
     // Step 6: Set up IPC handlers

@@ -21,6 +21,7 @@ import {
   shell,
   ipcMain,
   dialog,
+  session as electronSession,
 } from 'electron';
 import path from 'node:path';
 import windowStateKeeper from 'electron-window-state';
@@ -53,6 +54,9 @@ import fs from 'node:fs';
 
 /* eslint-disable no-console */
 
+const shellVariant: 'full' | 'apps-only' =
+  process.env.SHEP_SHELL_VARIANT === 'apps-only' ? 'apps-only' : 'full';
+
 const deps = {
   electron: { app, BrowserWindow, Tray, Menu, nativeImage },
   windowStateKeeper,
@@ -79,7 +83,7 @@ const deps = {
   },
   resourcesDir: path.join(import.meta.dirname, '..', 'resources'),
   splashHtmlPath: path.join(import.meta.dirname, 'splash.html'),
-  preloadPath: path.join(import.meta.dirname, 'preload.js'),
+  preloadPath: path.join(import.meta.dirname, 'preload.cjs'),
 
   // Phase 3: Electron adapter deps
   adapterDeps: {
@@ -144,6 +148,18 @@ const deps = {
     repoName: 'cli',
     fetch: (url: string) => globalThis.fetch(url),
     warn: (msg: string, error?: unknown) => console.warn(msg, error),
+  },
+
+  // Shell variant: controls whether the Electron window loads the full shell
+  // or the slim Applications-only surface. Driven by SHEP_SHELL_VARIANT env.
+  shellVariant,
+  setShellVariantCookie: async (port: number, variant: 'full' | 'apps-only') => {
+    await electronSession.defaultSession.cookies.set({
+      url: `http://localhost:${port}`,
+      name: 'shep-shell-variant',
+      value: variant,
+      path: '/',
+    });
   },
 };
 

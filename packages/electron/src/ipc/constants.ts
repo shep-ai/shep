@@ -9,7 +9,9 @@ export const IPC_CHANNELS = {
   GET_VERSION: 'shep:get-version',
   UPDATE_AVAILABLE: 'shep:update-available',
   MINIMIZE: 'shep:minimize',
+  MAXIMIZE_TOGGLE: 'shep:maximize-toggle',
   CLOSE: 'shep:close',
+  WINDOW_MAXIMIZED_CHANGED: 'shep:window-maximized-changed',
 } as const;
 
 /** The key used for contextBridge.exposeInMainWorld(). */

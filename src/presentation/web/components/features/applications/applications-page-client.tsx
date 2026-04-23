@@ -46,59 +46,71 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
 
   return (
     <DeploymentStatusProvider initialDeployments={[]}>
-      <div data-testid="applications-page-client" className={cn('relative space-y-4', className)}>
-        {/* Compact header */}
-        <div className="flex items-center gap-2">
-          <LayoutGrid className="text-muted-foreground h-4 w-4" />
-          <h1 className="text-sm font-bold tracking-tight">Applications</h1>
-          {!isLoading ? (
-            <span className="text-muted-foreground text-[10px]">
-              {applications.length} {applications.length === 1 ? 'app' : 'apps'}
-            </span>
-          ) : null}
+      <div
+        data-testid="applications-page-client"
+        className={cn('relative flex min-h-full flex-col', className)}
+      >
+        {/* Content sits inside padding; the create-prompt overlay sits
+            OUTSIDE this inner padded div so it can cover edge-to-edge. */}
+        <div className="flex flex-1 flex-col gap-4 p-6">
+          {/* Compact header */}
+          <div className="flex items-center gap-2">
+            <LayoutGrid className="text-muted-foreground h-4 w-4" />
+            <h1 className="text-sm font-bold tracking-tight">Applications</h1>
+            {!isLoading ? (
+              <span className="text-muted-foreground text-[10px]">
+                {applications.length} {applications.length === 1 ? 'app' : 'apps'}
+              </span>
+            ) : null}
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+            </div>
+          ) : (
+            <div
+              data-testid="applications-page-grid"
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            >
+              {/* New application placeholder card — always FIRST so the
+                  user can click immediately without scanning past their apps. */}
+              <NewApplicationCard
+                onDescribe={() => setShowCreatePrompt(true)}
+                onOpenLocalDirectory={async () => {
+                  const { pickFolder } = await import(
+                    '@/components/common/add-repository-button/pick-folder'
+                  );
+                  const path = await pickFolder();
+                  if (!path) return;
+                  const { adoptLocalDirectory } = await import(
+                    '@/app/actions/adopt-local-directory'
+                  );
+                  const result = await adoptLocalDirectory({ repositoryPath: path });
+                  if (result.applicationId) {
+                    router.push(`/application/${result.applicationId}`);
+                  }
+                }}
+                onImportGitHub={
+                  featureFlags.githubImport
+                    ? () => window.dispatchEvent(new CustomEvent('shep:open-github-import'))
+                    : undefined
+                }
+              />
+
+              {sorted.map((app) => (
+                <ApplicationCard key={app.id} application={app} />
+              ))}
+            </div>
+          )}
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-          </div>
-        ) : (
-          <div
-            data-testid="applications-page-grid"
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-          >
-            {/* New application placeholder card — always FIRST so the
-                user can click immediately without scanning past their apps. */}
-            <NewApplicationCard
-              onDescribe={() => setShowCreatePrompt(true)}
-              onOpenLocalDirectory={async () => {
-                const { pickFolder } = await import(
-                  '@/components/common/add-repository-button/pick-folder'
-                );
-                const path = await pickFolder();
-                if (!path) return;
-                const { adoptLocalDirectory } = await import('@/app/actions/adopt-local-directory');
-                const result = await adoptLocalDirectory({ repositoryPath: path });
-                if (result.applicationId) {
-                  router.push(`/application/${result.applicationId}`);
-                }
-              }}
-              onImportGitHub={
-                featureFlags.githubImport
-                  ? () => window.dispatchEvent(new CustomEvent('shep:open-github-import'))
-                  : undefined
-              }
-            />
-
-            {sorted.map((app) => (
-              <ApplicationCard key={app.id} application={app} />
-            ))}
-          </div>
-        )}
-
-        {/* Full-screen create prompt overlay */}
+        {/* Edge-to-edge create-prompt overlay. `absolute` (not `fixed`)
+            so it stays contained within the page's relative root and
+            never covers the AppsOnlyShell top bar. Sibling of the padded
+            content div so it ignores the list's `p-6`. */}
         {showCreatePrompt ? (
-          <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 z-40">
             <ControlCenterEmptyState
               onApplicationCreated={(appId) => {
                 router.push(`/application/${appId}`);

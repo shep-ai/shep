@@ -103,6 +103,9 @@ function createMockWindow(): AppBrowserWindow & {
     hide: vi.fn(),
     close: vi.fn(),
     minimize: vi.fn(),
+    maximize: vi.fn(),
+    unmaximize: vi.fn(),
+    isMaximized: vi.fn(() => false),
     isDestroyed: vi.fn(() => false),
     isMinimized: vi.fn(() => false),
     restore: vi.fn(),
@@ -353,7 +356,9 @@ describe('createMainWindow', () => {
   it('loads localhost URL with the given port', () => {
     const { MockBW, instances } = createMockBrowserWindowClass();
     createMainWindow(MockBW, mockWindowState, 3456, '/mock/preload.js', makeState());
-    expect(instances[0].loadURL).toHaveBeenCalledWith('http://localhost:3456');
+    // `createMainWindow` appends the initialPath (default `/`) to the URL
+    // so the full URL is `http://localhost:3456/`.
+    expect(instances[0].loadURL).toHaveBeenCalledWith('http://localhost:3456/');
   });
 
   it('hides window on close when not quitting', () => {
@@ -535,7 +540,9 @@ describe('startApp', () => {
   it('loads localhost URL with discovered port', async () => {
     const { deps, bwInstances } = createMockDeps();
     await startApp(deps);
-    expect(bwInstances[1].loadURL).toHaveBeenCalledWith('http://localhost:3456');
+    // Default initialPath is `/`, so the resulting URL includes the slash.
+    // In apps-only mode this becomes `/applications`; covered separately.
+    expect(bwInstances[1].loadURL).toHaveBeenCalledWith('http://localhost:3456/');
   });
 
   it('registers before-quit handler that sets isQuitting', async () => {

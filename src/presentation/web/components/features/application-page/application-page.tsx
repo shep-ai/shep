@@ -122,7 +122,11 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
       : null;
 
   return (
-    <div className="bg-background flex h-dvh flex-col">
+    // `h-full` (not `h-dvh`) so the page fills its shell's main area
+    // exactly — in the apps-only surface the main is `viewport - topbar`,
+    // and `h-dvh` would make this 40px taller than its container and
+    // trigger an outer scrollbar over the whole window.
+    <div className="bg-background flex h-full flex-col">
       <AppTopBar
         application={application}
         activeView={activeView}

@@ -16,6 +16,9 @@ import { IPC_CHANNELS } from './constants.js';
 interface WindowLike {
   minimize(): void;
   hide(): void;
+  maximize(): void;
+  unmaximize(): void;
+  isMaximized(): boolean;
 }
 
 interface IpcEvent {
@@ -69,6 +72,18 @@ export function setupIpcHandlers(deps: IpcHandlerDeps): void {
       return;
     }
     getMainWindow()?.minimize();
+  });
+
+  // shep:maximize-toggle — toggle between maximized and restored states
+  ipcMain.on(IPC_CHANNELS.MAXIMIZE_TOGGLE, (event) => {
+    if (!isValidOrigin(event, serverPort)) {
+      console.warn(`Rejected IPC on ${IPC_CHANNELS.MAXIMIZE_TOGGLE} from ${event.senderFrame.url}`);
+      return;
+    }
+    const win = getMainWindow();
+    if (!win) return;
+    if (win.isMaximized()) win.unmaximize();
+    else win.maximize();
   });
 
   // shep:close — hide the main window (minimize to tray)

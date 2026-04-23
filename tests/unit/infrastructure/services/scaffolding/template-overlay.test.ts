@@ -26,8 +26,8 @@ describe('applyTemplateOverlay', () => {
     rmSync(root, { recursive: true, force: true });
   });
 
-  it('copies the fat template into an empty project root', () => {
-    const result = applyTemplateOverlay(root);
+  it('copies the fat template into an empty project root', async () => {
+    const result = await applyTemplateOverlay(root);
 
     // Sanity check a representative file from each layer of the template:
     //  - docs
@@ -52,19 +52,19 @@ describe('applyTemplateOverlay', () => {
     expect(result.templateFiles).toContain(join('src', 'lib', 'theme.ts'));
   });
 
-  it('overwrites a pre-existing file at the destination (template wins)', () => {
+  it('overwrites a pre-existing file at the destination (template wins)', async () => {
     // Pretend shadcn init wrote a stub TEMPLATE.md already — our
     // template version must replace it.
     writeFileSync(join(root, 'TEMPLATE.md'), 'STUB FROM SHADCN');
 
-    applyTemplateOverlay(root);
+    await applyTemplateOverlay(root);
 
     const content = readFileSync(join(root, 'TEMPLATE.md'), 'utf-8');
     expect(content).not.toBe('STUB FROM SHADCN');
     expect(content).toContain('Shep template cheat sheet');
   });
 
-  it('preserves files that live OUTSIDE the template tree', () => {
+  it('preserves files that live OUTSIDE the template tree', async () => {
     // Simulate shadcn output: package.json, vite.config.ts, src/main.tsx.
     // The overlay must not touch these.
     mkdirSync(join(root, 'src'));
@@ -72,7 +72,7 @@ describe('applyTemplateOverlay', () => {
     writeFileSync(join(root, 'vite.config.ts'), 'export default {}');
     writeFileSync(join(root, 'src', 'main.tsx'), 'console.log("hi")');
 
-    applyTemplateOverlay(root);
+    await applyTemplateOverlay(root);
 
     // Untouched by the overlay:
     expect(readFileSync(join(root, 'package.json'), 'utf-8')).toBe('{"name":"user-app"}');

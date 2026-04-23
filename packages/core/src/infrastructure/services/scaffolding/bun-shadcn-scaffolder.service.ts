@@ -275,7 +275,7 @@ export class BunShadcnScaffolder implements IApplicationScaffolder {
 
     // Phase 5 — overlay the fat template on top of the raw scaffold.
     emit('Info', 'Applying Shep base template');
-    const overlay = applyTemplateOverlay(repositoryPath);
+    const overlay = await applyTemplateOverlay(repositoryPath);
 
     emit(
       'Info',
