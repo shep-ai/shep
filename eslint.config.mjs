@@ -32,6 +32,8 @@ export default tseslint.config(
       'dist/**',
       'packages/*/dist/**',
       'packages/*/release/**',
+      'packages/*/release-apps-only/**',
+      'packages/*/staged-*/**',
       'build/**',
       'web/**',
       '**/.next/**',

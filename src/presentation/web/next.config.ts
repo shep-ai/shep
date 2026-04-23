@@ -79,6 +79,18 @@ const nextConfig: NextConfig = {
   // Configure the output directory
   distDir: '.next',
 
+  // Produce a self-contained production server under
+  // `.next/standalone/`. Required for the Electron packaged app: when
+  // the web UI ships inside `resources/web/` (outside `app.asar`),
+  // Turbopack-compiled chunks emit `require('next/dist/compiled/...')`
+  // calls that can't resolve the `next` package across the asar
+  // boundary. `standalone` bundles every runtime dep into
+  // `.next/standalone/node_modules/`, sibling to the server entry, so
+  // the walks work from any caller. In dev (`pnpm dev:web` / `shep ui`)
+  // the standalone output is simply ignored — Next still serves from
+  // `.next/` directly.
+  output: 'standalone',
+
   // Inject version info from package.json for the web UI
   env: loadDevFallbacks(),
 

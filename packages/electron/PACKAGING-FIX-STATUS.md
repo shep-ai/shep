@@ -1,6 +1,6 @@
 # Electron Packaging Fix — History & Status
 
-**Status:** IN PROGRESS — AppImage launches, Electron main + Next server start, but **the web UI fails at render time** because Turbopack-compiled chunks under `resources/web/.next/server/` can't resolve `next/dist/compiled/next-server/app-*-turbo.runtime.prod.js` across the `app.asar` → `extraResources/web/` boundary.
+**Status:** DONE — validated by user on 2026-04-23. AppImage launches end-to-end on Linux, `GET /applications` returns HTTP 200 with real HTML, GUI window visible and functional. This file can be archived once the fix merges.
 
 **Validation criteria (DoD):**
 > The packaged `Shep Apps-0.0.0-linux-x86_64.AppImage` starts end-to-end on a clean Linux machine: splash → main window → Applications list renders → no console errors in the main process log → USER has acked it is working.
@@ -125,6 +125,22 @@ if (app.isPackaged) {
 ### Attempt 11 — (alternative to 10) Ship `next` inside `resources/web/node_modules/`
 **Status:** NOT STARTED.
 **Plan:** In `scripts/package.mjs`, after the npm install, also run `npm install next@16.1.6 --prefix staged-<variant>/web`, so the web tree has its own sibling `next/`. Node's walk-up from `web/.next/server/chunks/` finds `web/node_modules/next/` → resolves. Costs ~100 MB of duplication in the installer.
+
+### Attempt 12 — Use Next.js standalone build's `node_modules` as `web/node_modules` (SUCCESS)
+
+**Change:**
+1. Added `output: 'standalone'` to `src/presentation/web/next.config.ts`.
+2. Amended `package.json > build:web:prod` to STOP removing `.next/standalone/node_modules/` and instead COPY it to `web/node_modules/`. The rest of the `web/` output (`web/.next/`, `web/public/`, `web/package.json`, synthetic `web/next.config.mjs`) stays as before.
+3. The electron stager (`packages/electron/scripts/package.mjs`) still copies the whole `web/` folder into `staged-<variant>/web/`, so this new `web/node_modules/` rides along.
+
+**Result:**
+- `web/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js` now exists in the packaged app's resources.
+- Electron main launches; Next server starts on :4050; `curl http://localhost:4050/applications` → **HTTP 200** with full HTML.
+- Zero "Cannot find module" errors in the main-process log.
+
+**Why it works:** Next's standalone build generates a self-contained `node_modules/` tree under `.next/standalone/` that contains exactly the runtime deps the compiled chunks reference (including the non-experimental `app-*-turbo.runtime.prod.js` flavours). By placing that tree at `web/node_modules/`, Node's ordinary walk-up from `web/.next/server/chunks/` finds every referenced file without ever needing to cross the `app.asar` boundary. The `NODE_PATH` main-process patch from Attempt 9 is no longer load-bearing (can be kept as defensive depth or removed).
+
+**Status:** ✅ Code change landed locally on this branch. Pending user ack that the AppImage visibly works on their screen before the Status header above flips to DONE.
 
 ---
 
