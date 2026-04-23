@@ -1,0 +1,303 @@
+name: Agent request (manual)
+
+# Manual workflow: describe any fix or change in free-form text, a
+# Claude agent implements it, opens a PR with the diff. You review
+# the PR in GitHub (CI runs automatically and publishes an npm dev
+# release you can install), then merge manually when satisfied.
+#
+# Inputs:
+#   - request: free-form description of the fix/change you want
+#
+# Flow:
+#   1. Agent runs Claude Code with your request
+#   2. Runs tsp codegen + lint + typecheck + build to verify green
+#   3. Pushes the diff to `agent-preview/run-<run_id>`
+#   4. Opens a PR against main with the request in the body
+#   5. You review, preview via the PR's CI checks + dev release,
+#      merge manually when satisfied
+#
+# Previewing the change BEFORE merging:
+#   A. Wait for the PR's CI/CD run to finish — the `dev-release`
+#      job publishes an npm prerelease you can install
+#      (`npm install -g @shepai/cli@<dev-version>`), see the PR
+#      comment "Dev Release Published" for the exact version.
+#   B. Local: `gh pr checkout <number> && pnpm install && pnpm dev:cli`
+#      (or `pnpm dev:web` for the web UI)
+#   C. Just read the PR diff.
+#
+# Access control:
+#   This is a PUBLIC repo. `workflow_dispatch` is already restricted
+#   by GitHub to collaborators with `write` access — forks and
+#   drive-by visitors cannot trigger it. The `gate` job below
+#   narrows further to ONLY `admin` / `maintain` roles. A plain
+#   `write` collaborator will be blocked with a clear error.
+#
+# Required secrets:
+#   CLAUDE_CODE_OAUTH_TOKEN - same as the other agent workflows
+#   RELEASE_TOKEN           - existing PAT (already used by ci.yml
+#                             for semantic-release). Needed so the
+#                             push + PR create trigger the repo's
+#                             normal CI on the agent PR — the default
+#                             `GITHUB_TOKEN` intentionally does NOT
+#                             trigger downstream workflows.
+
+on:
+  workflow_dispatch:
+    inputs:
+      request:
+        description: 'What do you want the agent to fix or change? (free-form)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+concurrency:
+  group: agent-request
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  # Access gate: block anyone who isn't an admin or maintainer.
+  # Runs before we spend any CI minutes on setup or the Claude call.
+  gate:
+    name: Verify maintainer
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check actor permission
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Prefer `role_name` (granular: admin / maintain / write /
+          # triage / read), fall back to `permission` on older API.
+          ROLE=$(gh api "repos/${REPO}/collaborators/${ACTOR}/permission" --jq '.role_name // .permission')
+          echo "Actor: ${ACTOR}"
+          echo "Role:  ${ROLE}"
+          case "${ROLE}" in
+            admin|maintain)
+              echo "OK — ${ACTOR} is a maintainer."
+              ;;
+            *)
+              echo "::error::Actor '${ACTOR}' has role '${ROLE}' — only admin/maintain can trigger this workflow."
+              exit 1
+              ;;
+          esac
+
+  agent:
+    name: Apply request
+    needs: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Use RELEASE_TOKEN so the subsequent `git push` + `gh pr
+          # create` go out as a real user — a PR opened with the
+          # default GITHUB_TOKEN will NOT trigger the repo's CI.
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate TypeSpec output
+        run: pnpm run generate
+
+      - name: Write request to file
+        # Pass the free-form input via env var rather than inlining
+        # `${{ inputs.request }}` into the shell script source. That
+        # interpolation happens BEFORE the shell runs, so without env
+        # isolation a crafted request could break out of any quoting
+        # and execute arbitrary commands. With env, the request is
+        # just shell-quoted variable data — never evaluated as code.
+        env:
+          REQUEST: ${{ inputs.request }}
+        run: |
+          printf '%s' "$REQUEST" > /tmp/request.txt
+
+      - name: Apply request with Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          show_full_output: 'true'
+          display_report: 'true'
+          prompt: |
+            You are running inside a GitHub Actions workflow. The
+            working directory is the repo root. A human has submitted
+            a free-form change request they want implemented.
+
+            USER REQUEST: Read /tmp/request.txt for the full request.
+
+            STEP 1. Read CLAUDE.md, LESSONS.md, and any files relevant
+            to the request to understand the existing code and project
+            conventions (Clean Architecture, TypeSpec-first, TDD, etc).
+
+            STEP 2. Implement the change. Edit files directly. Follow
+            the project conventions already present in the code. Keep
+            the change MINIMAL and scoped to exactly what the user
+            asked for - do NOT refactor, rename, or "clean up"
+            surrounding code. If impact analysis matters (CSS chains,
+            downstream dependencies, DI wiring), trace it before
+            editing. Never edit generated files under
+            `packages/core/src/domain/generated/` — modify the `tsp/`
+            sources and run `pnpm run generate` instead.
+
+            STEP 3. Verify your work (all must pass, fix and retry):
+              - `pnpm run generate` (if you touched anything in `tsp/`)
+              - `pnpm run lint`
+              - `pnpm run typecheck`
+              - `pnpm run build`
+
+            STEP 4. Write a short summary (<=200 words) of what you
+            changed and why to /tmp/agent-report.txt. This will go
+            into the PR body.
+
+            STEP 5. STOP. Do NOT run `git add`, `git commit`, or
+            `git push` - the workflow handles all git ops and opens
+            the PR itself.
+          claude_args: |
+            --model claude-sonnet-4-6
+            --verbose
+            --permission-mode acceptEdits
+            --allowedTools "WebSearch,WebFetch,Read,Write,Edit,Glob,Grep,Bash(pnpm:*),Bash(npx:*),Bash(node:*),Bash(tsc:*),Bash(ls:*),Bash(cat:*),Bash(grep:*),Bash(rm:*),Bash(mv:*),Bash(cp:*),Bash(mkdir:*),Bash(find:*),Bash(git status:*),Bash(git diff:*)"
+
+      - name: Show diff
+        run: |
+          echo "::group::git status"
+          git status --short
+          echo "::endgroup::"
+          echo "::group::git diff"
+          git --no-pager diff | head -500 || true
+          echo "::endgroup::"
+
+      - name: Push branch and open PR
+        # Using RELEASE_TOKEN (not GITHUB_TOKEN) on purpose: GitHub
+        # deliberately skips triggering downstream workflows when
+        # events are authored by GITHUB_TOKEN, so CI would not run on
+        # the opened PR. A PAT authored by a real user bypasses that,
+        # which is exactly what we want here.
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "Agent made no changes - nothing to open a PR for."
+            {
+              echo "## No changes"
+              echo ""
+              echo "The agent ran successfully but did not modify any"
+              echo "files. No PR created."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          BRANCH="agent-preview/run-${GITHUB_RUN_ID}"
+
+          git config user.name  "shep-ai-bot"
+          git config user.email "shep-agent@users.noreply.github.com"
+
+          git checkout -b "${BRANCH}"
+          git add -A
+
+          # Sanitize the user's first line into a conventional-commit
+          # subject: lowercase, alphanumeric + space + hyphen only.
+          # Read from the file (never re-expand user input into shell).
+          # See .claude/rules/commit-conventions.md for the full regex.
+          RAW_FIRST_LINE=$(awk 'NF { print; exit }' /tmp/request.txt)
+          SUBJECT=$(printf '%s' "$RAW_FIRST_LINE" \
+            | tr '[:upper:]' '[:lower:]' \
+            | tr -c 'a-z0-9-' ' ' \
+            | tr -s ' ' \
+            | sed 's/^[- ]*//;s/[- ]*$//')
+          if [[ ${#SUBJECT} -gt 72 ]]; then
+            SUBJECT="${SUBJECT:0:72}"
+            SUBJECT="${SUBJECT% *}"
+          fi
+          if [[ -z "$SUBJECT" ]]; then
+            SUBJECT="apply automated change via workflow"
+          fi
+          HEADER="chore(agents): ${SUBJECT}"
+
+          # Build commit message from files — never from shell
+          # interpolation of the user request.
+          {
+            echo "${HEADER}"
+            echo ""
+            echo "Request:"
+            cat /tmp/request.txt
+            echo ""
+            echo "Co-Authored-By: Shep Bot <shep-agent@users.noreply.github.com>"
+          } > /tmp/commit-msg.txt
+          git commit -F /tmp/commit-msg.txt
+
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:${BRANCH}"
+
+          # PR body: request + agent report. Built from files.
+          {
+            echo "## Request"
+            echo ""
+            echo '```'
+            cat /tmp/request.txt
+            echo '```'
+            echo ""
+            echo "## Agent report"
+            echo ""
+            if [[ -s /tmp/agent-report.txt ]]; then
+              cat /tmp/agent-report.txt
+            else
+              echo "_(agent did not write a report)_"
+            fi
+            echo ""
+            echo "---"
+            echo ""
+            echo "Generated by \`agent-request\` workflow run ${GITHUB_RUN_ID}."
+            echo "Wait for CI on this PR (lint, typecheck, tests, build,"
+            echo "dev-release). Preview via the npm dev tag posted in the"
+            echo "PR comment or \`gh pr checkout\` locally. Merge when satisfied."
+          } > /tmp/pr-body.txt
+
+          PR_URL=$(gh pr create \
+            --base main \
+            --head "${BRANCH}" \
+            --title "${HEADER}" \
+            --body-file /tmp/pr-body.txt)
+
+          {
+            echo "## PR opened"
+            echo ""
+            echo "${PR_URL}"
+            echo ""
+            echo "### How to preview"
+            echo ""
+            echo "- **npm dev release** (published by CI on every PR):"
+            echo "  look for the \"Dev Release Published\" comment on"
+            echo "  the PR — it includes the exact install command."
+            echo "- **Local:**"
+            echo "  \`\`\`"
+            echo "  gh pr checkout <number>"
+            echo "  pnpm install"
+            echo "  pnpm dev:cli        # or: pnpm dev:web"
+            echo "  \`\`\`"
+            echo "- **Just read the diff** in the PR."
+            echo ""
+            echo "Merge the PR when satisfied. Reject by closing the PR."
+          } >> "$GITHUB_STEP_SUMMARY"
