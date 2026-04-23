@@ -81,6 +81,14 @@ async function main() {
   const distDir = path.join(root, 'dist');
   const externals = collectExternalDeps();
 
+  // Compile-time shell variant. When `SHEP_SHELL_VARIANT=apps-only` is
+  // set at build time (e.g. from `pnpm build:apps-only:*`), we bake the
+  // string into the bundle so the packaged app launches into the
+  // apps-only surface without requiring the env var at runtime. The
+  // full build leaves `process.env.SHEP_SHELL_VARIANT` untouched so
+  // runtime env still works (e.g. `pnpm apps:dev`).
+  const buildVariant = process.env.SHEP_SHELL_VARIANT === 'apps-only' ? 'apps-only' : 'full';
+  console.log(`Build variant: ${buildVariant}`);
   console.log(`Externalizing ${externals.length} packages`);
 
   // Build main process entry point
@@ -118,6 +126,12 @@ async function main() {
       'import.meta.dirname': '__dirname',
       'import.meta.filename': '__filename',
       'import.meta.url': '__shep_import_meta_url',
+      // Bake the build-time shell variant into the bundle so the
+      // apps-only binary launches into `/applications` without needing
+      // `SHEP_SHELL_VARIANT` set in the user's environment. esbuild
+      // performs a literal substitution — the string must be a JSON
+      // literal, not a bare identifier.
+      'process.env.SHEP_SHELL_VARIANT': JSON.stringify(buildVariant),
     },
     banner: {
       js: [

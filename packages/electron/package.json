@@ -11,6 +11,10 @@
     "build:mac": "node scripts/build.mjs && electron-builder --mac --publish never",
     "build:win": "node scripts/build.mjs && electron-builder --win --publish never",
     "build:linux": "node scripts/build.mjs && electron-builder --linux --publish never",
+    "compile:apps-only": "cross-env SHEP_SHELL_VARIANT=apps-only node scripts/build.mjs",
+    "build:apps-only:mac": "pnpm compile:apps-only && electron-builder -c electron-builder.apps-only.yml --mac --publish never",
+    "build:apps-only:win": "pnpm compile:apps-only && electron-builder -c electron-builder.apps-only.yml --win --publish never",
+    "build:apps-only:linux": "pnpm compile:apps-only && electron-builder -c electron-builder.apps-only.yml --linux --publish never",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -33,6 +37,7 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.1",
+    "cross-env": "^10.1.0",
     "electron": "^36.9.5",
     "electron-builder": "^26.0.12",
     "esbuild": "^0.28.0",

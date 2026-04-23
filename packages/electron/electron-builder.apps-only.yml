@@ -1,0 +1,93 @@
+# electron-builder configuration — apps-only variant
+#
+# Slim desktop surface launching directly into /applications. Bundled
+# from the SAME Electron package as the full build; the build-time
+# `SHEP_SHELL_VARIANT=apps-only` env var (read by `scripts/build.mjs`)
+# bakes the variant into the main bundle so the packaged app starts
+# on the apps-only shell without runtime configuration.
+#
+# The separate `appId` + `productName` + output directory keep the two
+# binaries installable side-by-side on a developer's machine.
+# Docs: https://www.electron.build/configuration.html
+
+appId: 'ai.shep.apps'
+productName: 'Shep Apps'
+copyright: 'Copyright © 2024-2026 Shep AI'
+
+directories:
+  buildResources: 'resources'
+  output: 'release-apps-only'
+  app: '.'
+
+files:
+  - 'dist/**/*'
+  - 'resources/**/*'
+  - 'package.json'
+  - '!src/**/*'
+  - '!scripts/**/*'
+  - '!tsconfig*.json'
+  - '!electron-builder*.yml'
+  - '!**/*.ts'
+  - '!dist/**/*.map'
+
+npmRebuild: true
+
+asar: true
+asarUnpack:
+  - '**/node_modules/better-sqlite3/**'
+  - '**/node_modules/bindings/**'
+  - '**/node_modules/file-uri-to-path/**'
+
+extraResources:
+  - from: '../../web'
+    to: 'web'
+    filter:
+      - '**/*'
+      - '!**/*.map'
+
+# Artifact filenames include the variant so the two installers are
+# visually distinct when they land in the same release folder.
+artifactName: '${productName}-${version}-${os}-${arch}.${ext}'
+
+mac:
+  target:
+    - target: 'dmg'
+      arch:
+        - 'x64'
+        - 'arm64'
+  icon: 'resources/icon.icns'
+  category: 'public.app-category.developer-tools'
+  darkModeSupport: true
+
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: 'link'
+      path: '/Applications'
+
+win:
+  target:
+    - target: 'nsis'
+      arch:
+        - 'x64'
+  icon: 'resources/icon.ico'
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: 'resources/icon.ico'
+  uninstallerIcon: 'resources/icon.ico'
+
+linux:
+  target:
+    - target: 'AppImage'
+      arch:
+        - 'x64'
+  icon: 'resources/icon.png'
+  category: 'Development'
+  synopsis: 'Shep Apps — focused desktop app surface'
+  description: 'Shep Apps — create and manage AI-built applications from a focused desktop surface'

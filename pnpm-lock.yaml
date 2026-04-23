@@ -422,6 +422,9 @@ importers:
       '@electron/rebuild':
         specifier: ^3.7.1
         version: 3.7.2
+      cross-env:
+        specifier: ^10.1.0
+        version: 10.1.0
       electron:
         specifier: ^36.9.5
         version: 36.9.5

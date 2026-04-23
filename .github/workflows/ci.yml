@@ -206,6 +206,59 @@ jobs:
           retention-days: 7
 
   # ===========================================================================
+  # Electron Apps-Only Desktop Build
+  # Builds the focused "Shep Apps" desktop binary for macOS, Windows, and
+  # Linux in parallel. Runs as a sibling of `build-electron` (no `needs:`
+  # dependency) so all 6 platform builds execute concurrently — total
+  # wall time is max(full, apps-only) per platform, not the sum.
+  # The build script bakes `SHEP_SHELL_VARIANT=apps-only` into the
+  # compiled main bundle via esbuild `define`, so the packaged binary
+  # launches into /applications without any runtime env configuration.
+  # ===========================================================================
+  build-electron-apps-only:
+    name: Electron Apps-Only (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - os: macos-latest
+            build_cmd: 'build:apps-only:mac'
+            artifact_pattern: 'packages/electron/release-apps-only/*.dmg'
+            artifact_name: 'electron-apps-only-mac'
+          - os: windows-latest
+            build_cmd: 'build:apps-only:win'
+            artifact_pattern: 'packages/electron/release-apps-only/*.exe'
+            artifact_name: 'electron-apps-only-win'
+          - os: ubuntu-latest
+            build_cmd: 'build:apps-only:linux'
+            artifact_pattern: 'packages/electron/release-apps-only/*.AppImage'
+            artifact_name: 'electron-apps-only-linux'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build web UI and CLI
+        run: pnpm run build:release
+
+      - name: Build Apps-Only Electron installer
+        run: pnpm --filter @shepai/electron ${{ matrix.build_cmd }}
+
+      - name: Upload Apps-Only Electron artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_pattern }}
+          if-no-files-found: error
+          retention-days: 7
+
+  # ===========================================================================
   # Security: Gitleaks Secret Detection
   # Uses gitleaks CLI directly (free, open source) instead of gitleaks-action
   # which requires a paid license for organizations
@@ -306,6 +359,7 @@ jobs:
       - test-e2e-web
       - storybook-build
       - build-electron
+      - build-electron-apps-only
       - security-gitleaks
       - security-semgrep
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]')
