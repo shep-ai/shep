@@ -41,11 +41,15 @@ const electronRoot = path.resolve(__dirname, '..');
 const monorepoRoot = path.resolve(electronRoot, '../..');
 
 // On Windows, npm and npx ship as `.cmd` batch wrappers rather than
-// native executables, so `execFileSync('npm', ...)` without shell
-// resolution returns ENOENT. Pick the right binary name per platform.
+// native executables. Node 22 (CVE-2024-27980 mitigation) refuses to
+// spawn `.cmd` / `.bat` via execFileSync without `shell: true`, so we
+// opt in explicitly on Windows only. Arguments are fully controlled by
+// this script (no user input reaches them), so shell injection is not
+// a concern here.
 const isWindows = process.platform === 'win32';
 const npmBin = isWindows ? 'npm.cmd' : 'npm';
 const npxBin = isWindows ? 'npx.cmd' : 'npx';
+const spawnOpts = { stdio: 'inherit', shell: isWindows };
 
 const [variant = 'full', target = 'linux'] = process.argv.slice(2);
 if (!['full', 'apps-only'].includes(variant)) {
@@ -91,8 +95,8 @@ writeFileSync(path.join(stagedDir, '.npmrc'), '# npm-only tree\n');
 
 console.log(`[stage:${variant}] npm install --omit=dev (flat tree for electron-builder)`);
 execFileSync(npmBin, ['install', '--omit=dev', '--no-audit', '--no-fund', '--ignore-scripts'], {
+  ...spawnOpts,
   cwd: stagedDir,
-  stdio: 'inherit',
 });
 
 // 2. Copy the compiled main-process bundle + resources into staged.
@@ -165,7 +169,7 @@ execFileSync(
     '--config.directories.output',
     outputAbs,
   ],
-  { cwd: stagedDir, stdio: 'inherit' }
+  { ...spawnOpts, cwd: stagedDir }
 );
 
 console.log(`Electron ${variant} ${target} build complete → ${outputAbs}`);
