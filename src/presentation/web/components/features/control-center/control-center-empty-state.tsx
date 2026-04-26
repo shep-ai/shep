@@ -127,7 +127,13 @@ export function ControlCenterEmptyState({
     setError(null);
 
     try {
-      if (buildMode === 'application') {
+      // When there's no onRepositorySelect handler (e.g. applications-only
+      // surface), fast/spec modes can't navigate to a repository canvas.
+      // Route ALL modes through the application creation flow so the user
+      // lands on /application/[id] regardless of selected mode.
+      const useApplicationFlow = buildMode === 'application' || !onRepositorySelect;
+
+      if (useApplicationFlow) {
         // The server action creates the app AND synchronously posts the
         // user's prompt as the first interactive chat message, so when we
         // navigate, /application/[id] SSR-loads chat state and the message
