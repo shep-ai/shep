@@ -108,6 +108,7 @@ export const featureFlags = {
   },
   get bedrockIntegration() {
     return getFeatureFlags().bedrockIntegration;
+  },
   get clusters() {
     return getFeatureFlags().clusters;
   },

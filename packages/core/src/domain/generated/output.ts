@@ -691,7 +691,7 @@ export type FeatureFlags = {
    * Enable project-bedrock memory integration UI and server actions (spec 098)
    */
   bedrockIntegration: boolean;
-   * Enable Clusters pages and navigation (managed Kubernetes clusters)
+  /**
    * Enable Clusters navigation and Kubernetes cluster management in the web UI
    */
   clusters: boolean;
@@ -1909,18 +1909,6 @@ export enum NotificationEventType {
   AgentMessageBlocked = 'agent_message_blocked',
   SupervisorEscalated = 'supervisor_escalated',
   SupervisorFailed = 'supervisor_failed',
-  AgentStarted = "agent_started",
-  PhaseCompleted = "phase_completed",
-  WaitingApproval = "waiting_approval",
-  AgentCompleted = "agent_completed",
-  AgentFailed = "agent_failed",
-  PrMerged = "pr_merged",
-  PrClosed = "pr_closed",
-  PrChecksPassed = "pr_checks_passed",
-  PrChecksFailed = "pr_checks_failed",
-  PrBlocked = "pr_blocked",
-  MergeReviewReady = "merge_review_ready",
-  CloudDeploymentUpdated = "cloud_deployment_updated",
 }
 export enum NotificationSeverity {
   Info = 'info',
@@ -1974,44 +1962,6 @@ export type NotificationEvent = {
    */
   operationLogAppend?: OperationLogAppendPayload;
 };
-
-/**
- * A code repository tracked by the Shep platform
- */
-export type Repository = SoftDeletableEntity & {
-  /**
-   * Human-readable name for the repository (typically the directory name)
-   */
-  name: string;
-  /**
-   * Absolute file system path to the repository root (unique)
-   */
-  path: string;
-  /**
-   * Remote GitHub URL this repository was cloned from (normalized: lowercase, no .git suffix)
-   */
-  remoteUrl?: string;
-  /**
-   * Whether this repository was auto-forked by shep because the user lacked push access
-   */
-  isFork?: boolean;
-  /**
-   * Original upstream URL when isFork is true (normalized: lowercase, no .git suffix)
-   */
-  upstreamUrl?: string;
-};
-export enum ApplicationStatus {
-  Idle = 'Idle',
-  Active = 'Active',
-  Error = 'Error',
-}
-export enum CloudDeploymentProvider {
-  CloudflarePages = 'CloudflarePages',
-  Vercel = 'Vercel',
-  Netlify = 'Netlify',
-  AwsAmplify = 'AwsAmplify',
-  GcpCloudRun = 'GcpCloudRun',
-}
 export enum CloudDeploymentStatus {
   NotDeployed = 'NotDeployed',
   Building = 'Building',
@@ -2827,16 +2777,6 @@ export type TokenUsage = {
 export enum CommentSide {
   Left = 'LEFT',
   Right = 'RIGHT',
-export enum OperationLogKind {
-  CloudDeploy = 'CloudDeploy',
-  GitRemoteCreate = 'GitRemoteCreate',
-  RepoSync = 'RepoSync',
-}
-export enum OperationLogLevel {
-  Debug = 'Debug',
-  Info = 'Info',
-  Warn = 'Warn',
-  Error = 'Error',
 }
 
 /**
@@ -4585,14 +4525,6 @@ export enum DiagnosticStatus {
   Ok = 'ok',
   Warn = 'warn',
   Fail = 'fail',
-}
-export enum ClusterStatus {
-  Provisioning = 'Provisioning',
-  Ready = 'Ready',
-  Stopping = 'Stopping',
-  Stopped = 'Stopped',
-  Error = 'Error',
-  Destroying = 'Destroying',
 }
 export enum AgentFeature {
   sessionResume = 'session-resume',

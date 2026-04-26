@@ -613,6 +613,7 @@ model FeatureFlags {
 
   @doc("Enable project-bedrock memory integration UI and server actions (spec 098)")
   bedrockIntegration: boolean = true;
+
   @doc("Enable Clusters navigation and Kubernetes cluster management in the web UI")
   clusters: boolean = false;
 }

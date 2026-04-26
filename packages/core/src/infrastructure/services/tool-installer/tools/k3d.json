@@ -1,0 +1,22 @@
+{
+  "name": "k3d",
+  "summary": "Run k3s Kubernetes clusters inside Docker",
+  "description": "k3d wraps k3s in Docker containers to provision lightweight, throw-away Kubernetes clusters on your local machine. Shep uses k3d to spin up the clusters you create with `shep cluster new`.",
+  "tags": ["cluster"],
+  "author": "Rancher",
+  "website": "https://k3d.io",
+  "platforms": ["linux", "darwin", "win32"],
+  "iconUrl": "https://cdn.simpleicons.org/kubernetes",
+  "binary": "k3d",
+  "packageManager": "brew",
+  "commands": {
+    "linux": "curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash",
+    "darwin": "brew install k3d",
+    "win32": "winget install --id Rancher.k3d -e --source winget"
+  },
+  "timeout": 300000,
+  "documentationUrl": "https://k3d.io/stable/",
+  "verifyCommand": "k3d version",
+  "autoInstall": true,
+  "required": false
+}

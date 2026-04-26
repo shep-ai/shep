@@ -1,0 +1,22 @@
+{
+  "name": "Docker",
+  "summary": "Container runtime required to host k3d clusters",
+  "description": "Docker is the container runtime that Shep uses to host local k3s Kubernetes clusters via k3d. The Docker daemon must be running before a cluster can be provisioned.",
+  "tags": ["cluster"],
+  "author": "Docker, Inc.",
+  "website": "https://www.docker.com",
+  "platforms": ["linux", "darwin", "win32"],
+  "iconUrl": "https://cdn.simpleicons.org/docker",
+  "binary": "docker",
+  "packageManager": "manual",
+  "commands": {
+    "linux": "curl -fsSL https://get.docker.com | sh",
+    "darwin": "brew install --cask docker",
+    "win32": "winget install --id Docker.DockerDesktop -e --source winget"
+  },
+  "timeout": 300000,
+  "documentationUrl": "https://docs.docker.com/get-docker/",
+  "verifyCommand": "docker --version",
+  "autoInstall": false,
+  "required": false
+}
