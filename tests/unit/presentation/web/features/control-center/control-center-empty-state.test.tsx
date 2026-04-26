@@ -104,21 +104,19 @@ describe('ControlCenterEmptyState', () => {
     expect(screen.getByTestId('control-center-empty-state')).toHaveClass('custom-class');
   });
 
-  it('routes fast mode through createApplication when onRepositorySelect is not provided', async () => {
+  it('hides the build-mode dropdown when onRepositorySelect is not provided (apps-only surface)', () => {
+    render(<ControlCenterEmptyState onApplicationCreated={vi.fn()} />, { wrapper: Wrapper });
+
+    expect(screen.queryByTestId('build-mode-selector')).not.toBeInTheDocument();
+  });
+
+  it('always submits via createApplication on the apps-only surface', async () => {
     const user = userEvent.setup();
-    const onAppCreated = vi.fn();
 
-    render(<ControlCenterEmptyState onApplicationCreated={onAppCreated} />, { wrapper: Wrapper });
+    render(<ControlCenterEmptyState onApplicationCreated={vi.fn()} />, { wrapper: Wrapper });
 
-    // Switch to fast mode via the dropdown
-    const modeSelector = screen.getByTestId('build-mode-selector');
-    await user.click(modeSelector);
-    const fastOption = screen.getByTestId('build-mode-fast');
-    await user.click(fastOption);
-
-    // Type a description and submit
     const textarea = screen.getByRole('textbox');
-    await user.type(textarea, 'Add pagination to the users list');
+    await user.type(textarea, 'A landing page with hero and pricing');
     await user.keyboard('{Meta>}{Enter}{/Meta}');
 
     await waitFor(() => {
@@ -127,27 +125,10 @@ describe('ControlCenterEmptyState', () => {
     });
   });
 
-  it('routes spec mode through createApplication when onRepositorySelect is not provided', async () => {
-    const user = userEvent.setup();
-    const onAppCreated = vi.fn();
+  it('shows the build-mode dropdown when onRepositorySelect IS provided (canvas surface)', () => {
+    render(<ControlCenterEmptyState onRepositorySelect={vi.fn()} />, { wrapper: Wrapper });
 
-    render(<ControlCenterEmptyState onApplicationCreated={onAppCreated} />, { wrapper: Wrapper });
-
-    // Switch to spec mode via the dropdown
-    const modeSelector = screen.getByTestId('build-mode-selector');
-    await user.click(modeSelector);
-    const specOption = screen.getByTestId('build-mode-spec');
-    await user.click(specOption);
-
-    // Type a description and submit
-    const textarea = screen.getByRole('textbox');
-    await user.type(textarea, 'Implement OAuth2 authentication');
-    await user.keyboard('{Meta>}{Enter}{/Meta}');
-
-    await waitFor(() => {
-      expect(mockedCreateApplication).toHaveBeenCalledTimes(1);
-      expect(mockedCreateProjectAndFeature).not.toHaveBeenCalled();
-    });
+    expect(screen.getByTestId('build-mode-selector')).toBeInTheDocument();
   });
 
   it('routes fast mode through createProjectAndFeature when onRepositorySelect IS provided', async () => {

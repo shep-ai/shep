@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 import { createFeature } from '@/app/actions/create-feature';
 import { FeatureCreateDrawer } from '@/components/common/feature-create-drawer';
-import type { FeatureCreatePayload } from '@/components/common/feature-create-drawer';
+import type { BuildMode, FeatureCreatePayload } from '@/components/common/feature-create-drawer';
 import type { ParentFeatureOption } from '@/components/common/feature-create-drawer/feature-create-drawer';
 import type { RepositoryOption } from '@/components/common/feature-create-drawer/feature-create-drawer';
 import type { WorkflowDefaults } from '@/app/actions/get-workflow-defaults';
@@ -14,6 +14,7 @@ export interface CreateDrawerClientProps {
   repositoryPath: string;
   initialParentId?: string;
   initialDescription?: string;
+  initialMode?: BuildMode;
   features: ParentFeatureOption[];
   repositories?: RepositoryOption[];
   workflowDefaults?: WorkflowDefaults;
@@ -26,6 +27,7 @@ export function CreateDrawerClient({
   repositoryPath,
   initialParentId,
   initialDescription,
+  initialMode,
   features,
   repositories,
   workflowDefaults,
@@ -106,6 +108,7 @@ export function CreateDrawerClient({
       workflowDefaults={workflowDefaults}
       initialParentId={initialParentId}
       initialDescription={initialDescription}
+      initialMode={initialMode}
       isSubmitting={isSubmitting}
       currentAgentType={currentAgentType}
       currentModel={currentModel}

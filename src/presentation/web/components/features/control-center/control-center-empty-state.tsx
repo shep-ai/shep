@@ -100,6 +100,12 @@ export function ControlCenterEmptyState({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const att = useAttachments();
 
+  // Apps-only surface (no onRepositorySelect handler): fast/spec modes don't
+  // make sense — there's no canvas to attach a feature to. Force application
+  // mode and hide the dropdown so the UI doesn't promise behavior we don't have.
+  const showModeDropdown = Boolean(onRepositorySelect);
+  const effectiveMode: BuildMode = showModeDropdown ? buildMode : 'application';
+
   // Circular mode switching with Shift+Tab, close overlay with Escape
   const cycleBuildMode = useCallback(() => {
     setBuildMode((prev) => {
@@ -111,14 +117,16 @@ export function ControlCenterEmptyState({
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && onClose) onClose();
-      if (e.key === 'Tab' && e.shiftKey) {
+      // Shift+Tab cycles only when the dropdown is actually visible —
+      // mutating hidden state would be confusing.
+      if (e.key === 'Tab' && e.shiftKey && onRepositorySelect) {
         e.preventDefault();
         cycleBuildMode();
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [onClose, cycleBuildMode]);
+  }, [onClose, cycleBuildMode, onRepositorySelect]);
 
   const handleSubmit = useCallback(async () => {
     if (!description.trim() || submitting) return;
@@ -131,7 +139,7 @@ export function ControlCenterEmptyState({
       // surface), fast/spec modes can't navigate to a repository canvas.
       // Route ALL modes through the application creation flow so the user
       // lands on /application/[id] regardless of selected mode.
-      const useApplicationFlow = buildMode === 'application' || !onRepositorySelect;
+      const useApplicationFlow = effectiveMode === 'application' || !onRepositorySelect;
 
       if (useApplicationFlow) {
         // The server action creates the app AND synchronously posts the
@@ -165,7 +173,7 @@ export function ControlCenterEmptyState({
           })),
           agentType: overrideAgent,
           model: overrideModel,
-          fast: buildMode === 'fast',
+          fast: effectiveMode === 'fast',
         });
 
         if (result.error) {
@@ -198,7 +206,7 @@ export function ControlCenterEmptyState({
   }, [
     description,
     submitting,
-    buildMode,
+    effectiveMode,
     att.completedAttachments,
     overrideAgent,
     overrideModel,
@@ -249,7 +257,7 @@ export function ControlCenterEmptyState({
     textareaRef.current?.focus();
   }, []);
 
-  const modeConfig = BUILD_MODE_CONFIG[buildMode];
+  const modeConfig = BUILD_MODE_CONFIG[effectiveMode];
   const ModeIcon = modeConfig.icon;
 
   return (
@@ -372,44 +380,48 @@ export function ControlCenterEmptyState({
               />
               <div className="flex-1" />
 
-              {/* Build mode dropdown — Shift+Tab to cycle */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    data-testid="build-mode-selector"
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
-                  >
-                    <span
-                      key={buildMode}
-                      className="flex animate-[onboard-fade-up_0.25s_ease-out_both] items-center gap-1.5"
+              {/* Build mode dropdown — Shift+Tab to cycle. Only shown when
+                  the surface can actually act on fast/spec (i.e. there's an
+                  onRepositorySelect handler tied to a canvas). */}
+              {showModeDropdown ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      data-testid="build-mode-selector"
+                      className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
                     >
-                      <ModeIcon className="h-3.5 w-3.5" />
-                      {modeConfig.label}
-                    </span>
-                    <ChevronDown className="h-3 w-3 opacity-50" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[160px]">
-                  {BUILD_MODES.map((mode) => {
-                    const cfg = BUILD_MODE_CONFIG[mode];
-                    const Icon = cfg.icon;
-                    const isActive = buildMode === mode;
-                    return (
-                      <DropdownMenuItem
-                        key={mode}
-                        onClick={() => setBuildMode(mode)}
-                        data-testid={`build-mode-${mode}`}
-                        className="flex items-center gap-2"
+                      <span
+                        key={effectiveMode}
+                        className="flex animate-[onboard-fade-up_0.25s_ease-out_both] items-center gap-1.5"
                       >
-                        <Icon className="h-3.5 w-3.5" />
-                        <span className="flex-1">{cfg.label}</span>
-                        {isActive ? <Check className="text-foreground h-3.5 w-3.5" /> : null}
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                        <ModeIcon className="h-3.5 w-3.5" />
+                        {modeConfig.label}
+                      </span>
+                      <ChevronDown className="h-3 w-3 opacity-50" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[160px]">
+                    {BUILD_MODES.map((mode) => {
+                      const cfg = BUILD_MODE_CONFIG[mode];
+                      const Icon = cfg.icon;
+                      const isActive = effectiveMode === mode;
+                      return (
+                        <DropdownMenuItem
+                          key={mode}
+                          onClick={() => setBuildMode(mode)}
+                          data-testid={`build-mode-${mode}`}
+                          className="flex items-center gap-2"
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                          <span className="flex-1">{cfg.label}</span>
+                          {isActive ? <Check className="text-foreground h-3.5 w-3.5" /> : null}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
 
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -450,7 +462,7 @@ export function ControlCenterEmptyState({
 
         {/* Suggestion chips — re-animate on mode change */}
         <div
-          key={buildMode}
+          key={effectiveMode}
           className="mt-6 flex animate-[onboard-fade-up_0.4s_ease-out_both] flex-wrap justify-center gap-2"
         >
           {modeConfig.suggestions.map((suggestion) => (

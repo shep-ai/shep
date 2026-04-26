@@ -5,16 +5,23 @@ import { getSettings } from '@shepai/core/infrastructure/services/settings.servi
 import { getWorkflowDefaults } from '@/app/actions/get-workflow-defaults';
 import { getViewerPermission } from '@/app/actions/get-viewer-permission';
 import { CreateDrawerClient } from '@/components/common/control-center-drawer/create-drawer-client';
+import type { BuildMode } from '@/components/common/feature-create-drawer';
 
 /** Skip static pre-rendering since we need runtime DI container. */
 export const dynamic = 'force-dynamic';
 
 interface CreateDrawerPageProps {
-  searchParams: Promise<{ repo?: string; parent?: string; prompt?: string }>;
+  searchParams: Promise<{ repo?: string; parent?: string; prompt?: string; mode?: string }>;
+}
+
+function parseMode(raw: string | undefined): BuildMode | undefined {
+  if (raw === 'application' || raw === 'fast' || raw === 'spec') return raw;
+  return undefined;
 }
 
 export default async function CreateDrawerPage({ searchParams }: CreateDrawerPageProps) {
-  const { repo, parent, prompt } = await searchParams;
+  const { repo, parent, prompt, mode } = await searchParams;
+  const initialMode = parseMode(mode);
 
   const listFeatures = resolve<ListFeaturesUseCase>('ListFeaturesUseCase');
   const listRepos = resolve<ListRepositoriesUseCase>('ListRepositoriesUseCase');
@@ -44,6 +51,7 @@ export default async function CreateDrawerPage({ searchParams }: CreateDrawerPag
       repositoryPath={repo ?? ''}
       initialParentId={parent}
       initialDescription={prompt}
+      initialMode={initialMode}
       features={featureOptions}
       repositories={repositoryOptions}
       workflowDefaults={workflowDefaults}

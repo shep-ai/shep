@@ -280,43 +280,58 @@ export const PrChecked: Story = {
 };
 
 /* ---------------------------------------------------------------------------
- * Fast mode stories
+ * Build mode stories
  * ------------------------------------------------------------------------- */
 
 /**
- * Fast Mode off (default) — the "Fast Mode" checkbox in the MODE section
- * is unchecked. The full SDLC pipeline (analyze, requirements, research,
- * plan, implement) will run.
+ * Application mode — the "Application" segment is selected. The full SDLC
+ * pipeline (analyze, requirements, research, plan, implement) runs and
+ * `fast: false` is sent on submit.
  */
-export const FastModeOff: Story = {
-  render: () => <CreateDrawerTrigger label="Open (Fast Mode Off)" />,
+export const ApplicationMode: Story = {
+  render: () => <CreateDrawerTrigger label="Open (Application Mode)" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('button', { name: 'Open (Fast Mode Off)' }));
+    await userEvent.click(canvas.getByRole('button', { name: 'Open (Application Mode)' }));
+
+    const body = within(canvasElement.ownerDocument.body);
+    const applicationButton = await body.findByTestId('build-mode-application');
+    await userEvent.click(applicationButton);
   },
 };
 
 /**
- * Fast Mode on — the "Fast Mode" checkbox is checked. When submitted,
+ * Fast mode — the "Fast" segment is selected (default). When submitted,
  * `fast: true` is included in the payload, skipping SDLC phases and
  * implementing directly from the user's prompt.
  */
-export const FastModeOn: Story = {
-  render: () => <CreateDrawerTrigger label="Open (Fast Mode On)" />,
+export const FastMode: Story = {
+  render: () => <CreateDrawerTrigger label="Open (Fast Mode)" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('button', { name: 'Open (Fast Mode On)' }));
-
-    const body = within(canvasElement.ownerDocument.body);
-    const fastCheckbox = await body.findByLabelText('Fast Mode');
-    await userEvent.click(fastCheckbox);
+    await userEvent.click(canvas.getByRole('button', { name: 'Open (Fast Mode)' }));
   },
 };
 
 /**
- * Fast Mode combined with approval gates and git options — demonstrates
- * that fast mode works alongside other form controls. Here fast mode,
- * auto-approve all, push, and create PR are all enabled.
+ * Spec mode — the "Spec" segment is selected. Maps to `fast: false` on submit
+ * with explicit PRD/Plan steps.
+ */
+export const SpecMode: Story = {
+  render: () => <CreateDrawerTrigger label="Open (Spec Mode)" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Open (Spec Mode)' }));
+
+    const body = within(canvasElement.ownerDocument.body);
+    const specButton = await body.findByTestId('build-mode-spec');
+    await userEvent.click(specButton);
+  },
+};
+
+/**
+ * Fast mode combined with approval gates and git options — demonstrates
+ * that the mode picker works alongside other form controls.
  */
 export const FastModeWithOptions: Story = {
   render: () => <CreateDrawerTrigger label="Open (Fast + Options)" />,
@@ -325,8 +340,6 @@ export const FastModeWithOptions: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Open (Fast + Options)' }));
 
     const body = within(canvasElement.ownerDocument.body);
-    const fastCheckbox = await body.findByLabelText('Fast Mode');
-    await userEvent.click(fastCheckbox);
 
     const autoApprove = body.getByLabelText('Auto approve all');
     await userEvent.click(autoApprove);

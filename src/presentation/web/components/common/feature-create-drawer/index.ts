@@ -7,4 +7,5 @@ export {
   type FileAttachment,
   type ParentFeatureOption,
   type RepositoryOption,
+  type BuildMode,
 } from './feature-create-drawer';

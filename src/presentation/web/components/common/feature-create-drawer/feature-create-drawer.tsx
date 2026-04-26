@@ -14,6 +14,8 @@ import {
   FileText,
   Puzzle,
   RefreshCw,
+  LayoutGrid,
+  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSoundAction } from '@/hooks/use-sound-action';
@@ -52,6 +54,25 @@ export interface FormAttachment {
   /** Optional user notes or annotations for this image */
   notes?: string;
 }
+
+/**
+ * Build mode for the create drawer. Maps to the `fast` boolean on submit:
+ * - `fast`        → fast=true  (skip SDLC phases, implement straight from prompt)
+ * - `application` → fast=false (full app-style workflow)
+ * - `spec`        → fast=false (spec-driven workflow, same operational behavior
+ *                   as `application` today; the distinction is a UI signal)
+ *
+ * Kept as a UI-only type — the persisted Feature still uses `fast: boolean`.
+ */
+export type BuildMode = 'application' | 'fast' | 'spec';
+
+const BUILD_MODE_ORDER: readonly BuildMode[] = ['application', 'fast', 'spec'] as const;
+
+const BUILD_MODE_META: Record<BuildMode, { icon: typeof Zap; labelKey: string }> = {
+  application: { icon: LayoutGrid, labelKey: 'createDrawer.modeApplication' },
+  fast: { icon: Zap, labelKey: 'createDrawer.modeFast' },
+  spec: { icon: ClipboardList, labelKey: 'createDrawer.modeSpec' },
+};
 
 /** Minimal feature descriptor for the parent selector. */
 export interface ParentFeatureOption {
@@ -194,6 +215,22 @@ export interface FeatureCreateDrawerProps {
   initialDescription?: string;
   /** When true, user has push access — Fork & PR toggle will be hidden. */
   canPushDirectly?: boolean;
+  /**
+   * Pre-select a build mode (e.g. when the drawer is opened from a UI that
+   * already chose one — apps page "fast" / "spec" buttons, FAB-with-mode).
+   * When omitted, falls back to workflowDefaults.fast (true → 'fast', false →
+   * 'application'); fully omitted defaults select 'fast'.
+   */
+  initialMode?: BuildMode;
+}
+
+function resolveInitialMode(
+  initialMode: BuildMode | undefined,
+  workflowDefaults: WorkflowDefaults | undefined
+): BuildMode {
+  if (initialMode) return initialMode;
+  if (workflowDefaults?.fast === false) return 'application';
+  return 'fast';
 }
 
 export function FeatureCreateDrawer({
@@ -210,6 +247,7 @@ export function FeatureCreateDrawer({
   currentModel,
   initialDescription,
   canPushDirectly,
+  initialMode,
 }: FeatureCreateDrawerProps) {
   const createSound = useSoundAction('create');
   const { t } = useTranslation('web');
@@ -230,7 +268,7 @@ export function FeatureCreateDrawer({
   const defaultCiWatch = workflowDefaults?.ciWatchEnabled !== false;
   const defaultEnableEvidence = workflowDefaults?.enableEvidence ?? false;
   const defaultCommitEvidence = workflowDefaults?.commitEvidence ?? false;
-  const defaultFast = workflowDefaults?.fast !== false;
+  const defaultMode = resolveInitialMode(initialMode, workflowDefaults);
 
   const [description, setDescription] = useState(initialDescription ?? '');
 
@@ -249,7 +287,8 @@ export function FeatureCreateDrawer({
   const [enableEvidence, setEnableEvidence] = useState(defaultEnableEvidence);
   const [commitEvidence, setCommitEvidence] = useState(defaultCommitEvidence);
   const [parentId, setParentId] = useState<string | undefined>(undefined);
-  const [fast, setFast] = useState(defaultFast);
+  const [mode, setMode] = useState<BuildMode>(defaultMode);
+  const fast = mode === 'fast';
   const [pending, setPending] = useState(false);
   const [forkAndPr, setForkAndPr] = useState(false);
   const [commitSpecs, setCommitSpecs] = useState(true);
@@ -270,7 +309,9 @@ export function FeatureCreateDrawer({
   const dragCounterRef = useRef(0);
   const promptContainerRef = useRef<HTMLDivElement>(null);
 
-  // Sync state when workflowDefaults load asynchronously
+  // Sync state when workflowDefaults load asynchronously. Mode is only
+  // re-synced from defaults when the caller did NOT pin an explicit
+  // initialMode — pinned modes win over async defaults.
   useEffect(() => {
     if (workflowDefaults) {
       setApprovalGates({ ...workflowDefaults.approvalGates });
@@ -279,10 +320,12 @@ export function FeatureCreateDrawer({
       setCiWatchEnabled(workflowDefaults.ciWatchEnabled !== false);
       setEnableEvidence(workflowDefaults.enableEvidence);
       setCommitEvidence(workflowDefaults.commitEvidence);
-      setFast(workflowDefaults.fast !== false);
+      if (!initialMode) {
+        setMode(workflowDefaults.fast !== false ? 'fast' : 'application');
+      }
       setInjectSkills(workflowDefaults.injectSkills ?? false);
     }
-  }, [workflowDefaults]);
+  }, [workflowDefaults, initialMode]);
 
   // Sync localRepos when repositories prop changes
   useEffect(() => {
@@ -337,7 +380,7 @@ export function FeatureCreateDrawer({
     setParentId(undefined);
     setSelectedRepoPath(validRepoPath || undefined);
     setLocalRepos(repositories ?? []);
-    setFast(defaultFast);
+    setMode(defaultMode);
     setPending(false);
     setForkAndPr(false);
     setCommitSpecs(true);
@@ -354,7 +397,7 @@ export function FeatureCreateDrawer({
     defaultEnableEvidence,
     defaultCiWatch,
     defaultCommitEvidence,
-    defaultFast,
+    defaultMode,
     validRepoPath,
     repositories,
   ]);
@@ -829,28 +872,43 @@ export function FeatureCreateDrawer({
                       {t('createDrawer.pendingModeDescription')}
                     </TooltipContent>
                   </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex cursor-pointer items-center gap-2">
-                        <Switch
-                          id="fast-mode"
-                          checked={fast}
-                          onCheckedChange={setFast}
-                          disabled={isSubmitting}
-                        />
-                        <Label
-                          htmlFor="fast-mode"
-                          className="flex cursor-pointer items-center gap-1 text-sm font-medium"
-                        >
-                          <Zap className="h-3.5 w-3.5" />
-                          {t('createDrawer.fastModeLabel')}
-                        </Label>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      {t('createDrawer.fastModeDescription')}
-                    </TooltipContent>
-                  </Tooltip>
+                  <div
+                    role="group"
+                    aria-label={t('createDrawer.modeGroupLabel')}
+                    className="border-input flex items-center gap-0.5 rounded-md border p-0.5"
+                  >
+                    {BUILD_MODE_ORDER.map((m) => {
+                      const meta = BUILD_MODE_META[m];
+                      const Icon = meta.icon;
+                      const isActive = mode === m;
+                      return (
+                        <Tooltip key={m}>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              data-testid={`build-mode-${m}`}
+                              aria-pressed={isActive}
+                              disabled={isSubmitting}
+                              onClick={() => setMode(m)}
+                              className={cn(
+                                'flex cursor-pointer items-center gap-1 rounded-sm px-2 py-1 text-xs font-medium transition-colors',
+                                isActive
+                                  ? 'bg-accent text-foreground'
+                                  : 'text-muted-foreground hover:text-foreground',
+                                'disabled:cursor-not-allowed disabled:opacity-50'
+                              )}
+                            >
+                              <Icon className="h-3.5 w-3.5" />
+                              {t(meta.labelKey)}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            {t(`${meta.labelKey}Description`)}
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button

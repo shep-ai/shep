@@ -249,8 +249,8 @@ describe('FeatureCreateDrawer', () => {
       renderDrawer({ onSubmit });
 
       await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'Add a feature');
-      // Turn off fast mode first so PRD/Plan switches are enabled
-      await user.click(screen.getByLabelText('Fast Mode'));
+      // Switch to non-fast mode first so PRD/Plan switches are enabled
+      await user.click(screen.getByTestId('build-mode-application'));
       await user.click(screen.getByLabelText('PRD'));
       await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
 
@@ -267,8 +267,8 @@ describe('FeatureCreateDrawer', () => {
       renderDrawer({ onSubmit });
 
       await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'Add a feature');
-      // Turn off fast mode first so PRD/Plan switches are enabled
-      await user.click(screen.getByLabelText('Fast Mode'));
+      // Switch to non-fast mode first so PRD/Plan switches are enabled
+      await user.click(screen.getByTestId('build-mode-application'));
       await user.click(screen.getByLabelText('PRD'));
       await user.click(screen.getByLabelText('Plan'));
       await user.click(screen.getByLabelText('Merge'));
@@ -532,9 +532,9 @@ describe('FeatureCreateDrawer', () => {
       // Check "Create PR" (which forces push=true)
       await user.click(screen.getByLabelText('PR'));
 
-      // Turn off fast mode so PRD/Plan switches can be toggled
-      await user.click(screen.getByLabelText('Fast Mode'));
-      expect(screen.getByLabelText('Fast Mode')).not.toBeChecked();
+      // Switch to non-fast mode so PRD/Plan switches can be toggled
+      await user.click(screen.getByTestId('build-mode-application'));
+      expect(screen.getByTestId('build-mode-application')).toHaveAttribute('aria-pressed', 'true');
 
       // Select a parent feature
       await user.click(screen.getByTestId('parent-feature-combobox'));
@@ -550,8 +550,8 @@ describe('FeatureCreateDrawer', () => {
 
       // Assert all fields are reset to defaults (component is still mounted)
       expect(screen.getByPlaceholderText(descriptionPlaceholder)).toHaveValue('');
-      // Fast mode resets to default (checked)
-      expect(screen.getByLabelText('Fast Mode')).toBeChecked();
+      // Mode resets to default (fast)
+      expect(screen.getByTestId('build-mode-fast')).toHaveAttribute('aria-pressed', 'true');
       expect(screen.getByLabelText('PRD')).not.toBeChecked();
       expect(screen.getByLabelText('Plan')).not.toBeChecked();
       expect(screen.getByLabelText('Merge')).not.toBeChecked();
@@ -723,18 +723,20 @@ describe('FeatureCreateDrawer', () => {
     });
   });
 
-  describe('fast mode toggle', () => {
-    it('renders fast mode switch with label', () => {
+  describe('build mode picker', () => {
+    it('renders the three mode buttons', () => {
       renderDrawer();
-      expect(screen.getByLabelText('Fast Mode')).toBeInTheDocument();
+      expect(screen.getByTestId('build-mode-application')).toBeInTheDocument();
+      expect(screen.getByTestId('build-mode-fast')).toBeInTheDocument();
+      expect(screen.getByTestId('build-mode-spec')).toBeInTheDocument();
     });
 
-    it('fast mode is checked by default (no workflowDefaults)', () => {
+    it('defaults to fast when no initialMode and no workflowDefaults', () => {
       renderDrawer();
-      expect(screen.getByLabelText('Fast Mode')).toBeChecked();
+      expect(screen.getByTestId('build-mode-fast')).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('fast mode respects workflowDefaults.fast=true', () => {
+    it('respects workflowDefaults.fast=true (selects fast)', () => {
       const defaults: WorkflowDefaults = {
         approvalGates: { allowPrd: false, allowPlan: false, allowMerge: false },
         push: false,
@@ -746,10 +748,10 @@ describe('FeatureCreateDrawer', () => {
         injectSkills: false,
       };
       renderDrawer({ workflowDefaults: defaults });
-      expect(screen.getByLabelText('Fast Mode')).toBeChecked();
+      expect(screen.getByTestId('build-mode-fast')).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('fast mode respects workflowDefaults.fast=false', () => {
+    it('respects workflowDefaults.fast=false (selects application)', () => {
       const defaults: WorkflowDefaults = {
         approvalGates: { allowPrd: false, allowPlan: false, allowMerge: false },
         push: false,
@@ -761,81 +763,88 @@ describe('FeatureCreateDrawer', () => {
         injectSkills: false,
       };
       renderDrawer({ workflowDefaults: defaults });
-      expect(screen.getByLabelText('Fast Mode')).not.toBeChecked();
+      expect(screen.getByTestId('build-mode-application')).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('toggling fast mode checkbox updates form state', async () => {
+    it('initialMode prop overrides workflowDefaults', () => {
+      const defaults: WorkflowDefaults = {
+        approvalGates: { allowPrd: false, allowPlan: false, allowMerge: false },
+        push: false,
+        openPr: false,
+        ciWatchEnabled: true,
+        enableEvidence: false,
+        commitEvidence: false,
+        fast: true,
+        injectSkills: false,
+      };
+      renderDrawer({ workflowDefaults: defaults, initialMode: 'spec' });
+      expect(screen.getByTestId('build-mode-spec')).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('clicking a mode button selects it', async () => {
       const user = userEvent.setup();
-      const defaults: WorkflowDefaults = {
-        approvalGates: { allowPrd: false, allowPlan: false, allowMerge: false },
-        push: false,
-        openPr: false,
-        ciWatchEnabled: true,
-        enableEvidence: false,
-        commitEvidence: false,
-        fast: false,
-        injectSkills: false,
-      };
-      renderDrawer({ workflowDefaults: defaults });
-
-      const checkbox = screen.getByLabelText('Fast Mode');
-      expect(checkbox).not.toBeChecked();
-      await user.click(checkbox);
-      expect(checkbox).toBeChecked();
+      renderDrawer();
+      await user.click(screen.getByTestId('build-mode-application'));
+      expect(screen.getByTestId('build-mode-application')).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId('build-mode-fast')).toHaveAttribute('aria-pressed', 'false');
     });
 
-    it('submitting with fast mode on includes fast=true in payload', async () => {
+    it('mode=fast submits with fast: true', async () => {
       const onSubmit = vi.fn();
       const user = userEvent.setup();
-      renderDrawer({ onSubmit });
+      renderDrawer({ onSubmit, initialMode: 'fast' });
 
       await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'Fix the typo');
-      // Fast mode is on by default, just submit
       await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
 
       expect(onSubmit).toHaveBeenCalledOnce();
       expect(onSubmit.mock.calls[0][0]).toEqual(expect.objectContaining({ fast: true }));
     });
 
-    it('submitting with fast mode off includes fast=false in payload', async () => {
+    it('mode=application submits with fast: false', async () => {
       const onSubmit = vi.fn();
       const user = userEvent.setup();
-      renderDrawer({ onSubmit });
+      renderDrawer({ onSubmit, initialMode: 'application' });
 
-      await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'Fix the typo');
-      // Toggle fast mode off (it's on by default)
-      await user.click(screen.getByLabelText('Fast Mode'));
+      await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'Add OAuth login');
       await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
 
       expect(onSubmit).toHaveBeenCalledOnce();
       expect(onSubmit.mock.calls[0][0]).toEqual(expect.objectContaining({ fast: false }));
     });
 
-    it('fast mode checkbox has accessible label', () => {
-      renderDrawer();
-      const checkbox = screen.getByLabelText('Fast Mode');
-      expect(checkbox).toHaveAttribute('id', 'fast-mode');
+    it('mode=spec submits with fast: false', async () => {
+      const onSubmit = vi.fn();
+      const user = userEvent.setup();
+      renderDrawer({ onSubmit, initialMode: 'spec' });
+
+      await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'Implement RBAC');
+      await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
+
+      expect(onSubmit).toHaveBeenCalledOnce();
+      expect(onSubmit.mock.calls[0][0]).toEqual(expect.objectContaining({ fast: false }));
     });
 
-    it('fast mode checkbox is disabled when isSubmitting', () => {
+    it('mode buttons are disabled while isSubmitting', () => {
       renderDrawer({ isSubmitting: true });
-      expect(screen.getByLabelText('Fast Mode')).toBeDisabled();
+      expect(screen.getByTestId('build-mode-application')).toBeDisabled();
+      expect(screen.getByTestId('build-mode-fast')).toBeDisabled();
+      expect(screen.getByTestId('build-mode-spec')).toBeDisabled();
     });
 
-    it('fast mode resets to default after submit', async () => {
+    it('mode resets to default after submit', async () => {
       const onSubmit = vi.fn();
       const user = userEvent.setup();
       renderDrawer({ onSubmit });
 
       await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'My Feature');
-      // Toggle fast mode off then submit
-      await user.click(screen.getByLabelText('Fast Mode'));
-      expect(screen.getByLabelText('Fast Mode')).not.toBeChecked();
+      await user.click(screen.getByTestId('build-mode-application'));
+      expect(screen.getByTestId('build-mode-application')).toHaveAttribute('aria-pressed', 'true');
 
       await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
 
-      // After submit, form resets — fast mode should be back to default (checked)
-      expect(screen.getByLabelText('Fast Mode')).toBeChecked();
+      // After submit, form resets — mode should be back to default (fast)
+      expect(screen.getByTestId('build-mode-fast')).toHaveAttribute('aria-pressed', 'true');
     });
   });
 
