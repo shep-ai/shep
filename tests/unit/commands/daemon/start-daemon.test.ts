@@ -274,13 +274,13 @@ describe('startDaemon()', () => {
     it('opens the browser with the correct URL', async () => {
       (findAvailablePort as ReturnType<typeof vi.fn>).mockResolvedValue(4050);
       await startDaemon();
-      expect(mockBrowserOpen).toHaveBeenCalledWith('http://localhost:4050');
+      expect(mockBrowserOpen).toHaveBeenCalledWith('http://localhost:4050/applications');
     });
 
     it('opens the browser with the custom port URL when --port is given', async () => {
       (findAvailablePort as ReturnType<typeof vi.fn>).mockResolvedValue(7070);
       await startDaemon({ port: 7070 });
-      expect(mockBrowserOpen).toHaveBeenCalledWith('http://localhost:7070');
+      expect(mockBrowserOpen).toHaveBeenCalledWith('http://localhost:7070/applications');
     });
   });
 

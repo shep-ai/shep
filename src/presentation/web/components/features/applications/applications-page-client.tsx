@@ -68,6 +68,14 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
             <div className="flex items-center justify-center py-12">
               <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
             </div>
+          ) : sorted.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center">
+              <ControlCenterEmptyState
+                onApplicationCreated={(appId) => {
+                  router.push(`/application/${appId}`);
+                }}
+              />
+            </div>
           ) : (
             <div
               data-testid="applications-page-grid"

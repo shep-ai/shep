@@ -378,7 +378,7 @@ export async function startApp(deps: AppDeps): Promise<AppState> {
       await deps.setShellVariantCookie(port, shellVariant);
       console.log(`${TAG} shell-variant cookie set: apps-only`);
     }
-    const initialPath = shellVariant === 'apps-only' ? '/applications' : '/';
+    const initialPath = '/applications';
 
     // Step 5: Create main window
     state.mainWindow = createMainWindow(

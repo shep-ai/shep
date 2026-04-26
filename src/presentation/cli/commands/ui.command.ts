@@ -117,15 +117,15 @@ Examples:
         initializeAutoArchiveWatcher(featureRepo);
         getAutoArchiveWatcher().start();
 
-        const url = `http://localhost:${port}`;
-        messages.success(t('cli:commands.ui.serverReady', { url: fmt.code(url) }));
+        const baseUrl = `http://localhost:${port}`;
+        messages.success(t('cli:commands.ui.serverReady', { url: fmt.code(baseUrl) }));
         messages.info(t('cli:commands.ui.pressCtrlC'));
         messages.newline();
 
-        // Auto-open browser (unless --no-open)
+        // Auto-open browser (unless --no-open) — default to /applications
         if (options.open !== false) {
           const opener = container.resolve<IBrowserOpener>('IBrowserOpener');
-          opener.open(url);
+          opener.open(`${baseUrl}/applications`);
         }
 
         // Handle graceful shutdown via SIGINT/SIGTERM

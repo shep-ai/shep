@@ -1,0 +1,36 @@
+feature:
+  id: '092-empty-state-routing-fix'
+  name: 'empty-state-routing-fix'
+  number: 92
+  branch: 'feat/092-empty-state-routing-fix'
+  lifecycle: 'research'
+  createdAt: '2026-04-26T14:03:09Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-04-26T14:03:09Z'
+  lastUpdatedBy: 'feature-agent'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-04-26T14:03:09Z'
+    completedBy: 'feature-agent'
+
+errors:
+  current: null
+  history: []

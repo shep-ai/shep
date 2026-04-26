@@ -540,9 +540,9 @@ describe('startApp', () => {
   it('loads localhost URL with discovered port', async () => {
     const { deps, bwInstances } = createMockDeps();
     await startApp(deps);
-    // Default initialPath is `/`, so the resulting URL includes the slash.
-    // In apps-only mode this becomes `/applications`; covered separately.
-    expect(bwInstances[1].loadURL).toHaveBeenCalledWith('http://localhost:3456/');
+    // Default initialPath is `/applications` — the applications page is
+    // the default landing page for both full and apps-only shells.
+    expect(bwInstances[1].loadURL).toHaveBeenCalledWith('http://localhost:3456/applications');
   });
 
   it('registers before-quit handler that sets isQuitting', async () => {

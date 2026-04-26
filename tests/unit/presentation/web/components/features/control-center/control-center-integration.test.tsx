@@ -224,7 +224,7 @@ describe('ControlCenterInner URL-based navigation', () => {
     it('renders empty state when no nodes exist', () => {
       renderControlCenter([]);
 
-      expect(screen.getByTestId('mock-empty-state')).toBeInTheDocument();
+      expect(screen.getByText('This workspace is empty')).toBeInTheDocument();
       expect(screen.queryByTestId('mock-features-canvas')).not.toBeInTheDocument();
     });
 

@@ -220,7 +220,7 @@ describe('UI Command', () => {
 
       await cmd.parseAsync([], { from: 'user' });
 
-      expect(mockBrowserOpen).toHaveBeenCalledWith('http://localhost:4050');
+      expect(mockBrowserOpen).toHaveBeenCalledWith('http://localhost:4050/applications');
       consoleSpy.mockRestore();
     });
 
@@ -231,7 +231,7 @@ describe('UI Command', () => {
 
       await cmd.parseAsync(['--port', '9090'], { from: 'user' });
 
-      expect(mockBrowserOpen).toHaveBeenCalledWith('http://localhost:9090');
+      expect(mockBrowserOpen).toHaveBeenCalledWith('http://localhost:9090/applications');
       consoleSpy.mockRestore();
     });
 

@@ -160,6 +160,12 @@ export function AppSidebar({
 
           <SidebarNavItem
             icon={Home}
+            label={t('navigation.applications')}
+            href="/applications"
+            active={pathname === '/applications'}
+          />
+          <SidebarNavItem
+            icon={LayoutGrid}
             label={t('navigation.controlCenter')}
             href="/"
             active={pathname === '/'}
@@ -172,12 +178,6 @@ export function AppSidebar({
               active={pathname === '/features'}
             />
           ) : null}
-          <SidebarNavItem
-            icon={LayoutGrid}
-            label={t('navigation.applications')}
-            href="/applications"
-            active={pathname === '/applications'}
-          />
           <SidebarNavItem
             icon={Wrench}
             label={t('navigation.tools')}

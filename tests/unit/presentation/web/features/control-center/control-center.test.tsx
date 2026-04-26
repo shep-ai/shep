@@ -163,7 +163,7 @@ describe('ControlCenter', () => {
     expect(screen.getByTestId('control-center')).toBeInTheDocument();
   });
 
-  it('shows empty state with agent setup when no nodes provided', async () => {
+  it('shows empty state when no nodes provided', async () => {
     render(
       <SidebarProvider>
         <DrawerCloseGuardProvider>
@@ -174,10 +174,8 @@ describe('ControlCenter', () => {
       </SidebarProvider>
     );
     await waitFor(() => {
-      expect(screen.getByTestId('control-center-empty-state')).toBeInTheDocument();
+      expect(screen.getByText('This workspace is empty')).toBeInTheDocument();
     });
-    // Prompt-first onboarding is shown directly (no wizard gate)
-    expect(screen.getByText('What do you want to build?')).toBeInTheDocument();
   });
 
   it('renders feature nodes when initialNodes has feature nodes', () => {

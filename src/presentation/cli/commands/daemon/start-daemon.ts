@@ -142,7 +142,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<void> 
   messages.newline();
 
   const opener = container.resolve<IBrowserOpener>('IBrowserOpener');
-  opener.open(url);
+  opener.open(`${url}/applications`);
 }
 
 /**
