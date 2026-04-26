@@ -1,0 +1,36 @@
+feature:
+  id: '090-cost-monitoring-dashboards'
+  name: 'cost-monitoring-dashboards'
+  number: 90
+  branch: 'feat/090-cost-monitoring-dashboards'
+  lifecycle: 'research'
+  createdAt: '2026-04-14T12:51:59Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-04-14T12:51:59Z'
+  lastUpdatedBy: 'feature-agent'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-04-14T12:51:59Z'
+    completedBy: 'feature-agent'
+
+errors:
+  current: null
+  history: []
