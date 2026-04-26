@@ -1,0 +1,13 @@
+=== Control Center Empty State Tests (new tests for fast/spec mode fix) ===
+
+> vitest run tests/unit -- --reporter=verbose tests/unit/presentation/web/features/control-center/control-center-empty-state.test.tsx
+     [33m[2m✓[22m[39m routes fast mode through createApplication when onRepositorySelect is not provided [33m 1933[2mms[22m[39m
+     [33m[2m✓[22m[39m routes spec mode through createApplication when onRepositorySelect is not provided [33m 1401[2mms[22m[39m
+     [33m[2m✓[22m[39m routes fast mode through createProjectAndFeature when onRepositorySelect IS provided [33m 1156[2mms[22m[39m
+
+=== Full Test Suite Summary ===
+[2m Test Files [22m [1m[32m503 passed[39m[22m[90m (503)[39m
+[2m      Tests [22m [1m[32m6628 passed[39m[22m[90m (6628)[39m
+[2m   Start at [22m 17:18:44
+[2m   Duration [22m 88.77s[2m (transform 28.87s, setup 93.67s, import 164.04s, tests 236.85s, environment 191.39s)[22m
+
