@@ -55,7 +55,7 @@ export function AdoptDrawerClient({ repositoryPath, repositories }: AdoptDrawerC
   }, [isOnAdoptRoute, selectedRepoPath]);
 
   const onClose = useCallback(() => {
-    router.push('/');
+    router.push('/control-center');
   }, [router]);
 
   const handleRepositoryChange = useCallback((path: string) => {
@@ -66,7 +66,7 @@ export function AdoptDrawerClient({ repositoryPath, repositories }: AdoptDrawerC
     (branchName: string, repoPath: string) => {
       setError(undefined);
       setIsSubmitting(true);
-      router.push('/');
+      router.push('/control-center');
 
       adoptBranch({ branchName, repositoryPath: repoPath })
         .then((result) => {

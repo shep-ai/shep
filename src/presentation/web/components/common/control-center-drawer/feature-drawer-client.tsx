@@ -173,7 +173,7 @@ export function FeatureDrawerClient({
   useDrawerSync(isOpen, featureNode?.featureId ?? null, setView);
 
   const onClose = useCallback(() => {
-    router.push('/');
+    router.push('/control-center');
   }, [router]);
 
   // ── Chat input state (shared across all review views) ────────────────
@@ -482,7 +482,7 @@ export function FeatureDrawerClient({
           detail: { featureId, cleanup, cascadeDelete, closePr },
         })
       );
-      router.push('/');
+      router.push('/control-center');
     },
     [router]
   );
@@ -495,7 +495,7 @@ export function FeatureDrawerClient({
           detail: { featureId },
         })
       );
-      router.push('/');
+      router.push('/control-center');
     },
     [router]
   );
@@ -508,7 +508,7 @@ export function FeatureDrawerClient({
           detail: { featureId },
         })
       );
-      router.push('/');
+      router.push('/control-center');
     },
     [router]
   );

@@ -40,7 +40,7 @@ export function CreateDrawerClient({
   // content during soft navigation, so this component is NOT unmounted when
   // navigating to `/`. We watch the pathname and let Vaul handle the close
   // animation when the path no longer matches the create route.
-  // When submitting, force the drawer closed immediately — router.push('/')
+  // When submitting, force the drawer closed immediately — router.push('/control-center')
   // is async and the pathname may not update before the next render.
   const pathname = usePathname();
   const isOnCreateRoute = pathname.startsWith('/create');
@@ -56,7 +56,7 @@ export function CreateDrawerClient({
   }, [isOnCreateRoute, isSubmitting]);
 
   const onClose = useCallback(() => {
-    router.push('/');
+    router.push('/control-center');
   }, [router]);
 
   const onSubmit = useCallback(
@@ -64,7 +64,7 @@ export function CreateDrawerClient({
       setIsSubmitting(true);
 
       // Close the drawer immediately for responsive UI
-      router.push('/');
+      router.push('/control-center');
 
       // Server action Phase 1 returns fast with real feature ID (DB record created)
       // Phase 2 (metadata, worktree, agent) runs in background on server

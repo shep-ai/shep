@@ -167,8 +167,8 @@ export function AppSidebar({
           <SidebarNavItem
             icon={LayoutGrid}
             label={t('navigation.controlCenter')}
-            href="/"
-            active={pathname === '/'}
+            href="/control-center"
+            active={pathname === '/control-center'}
           />
           {featureFlags.inventory ? (
             <SidebarNavItem

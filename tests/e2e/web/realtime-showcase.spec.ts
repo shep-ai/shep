@@ -113,7 +113,7 @@ test.describe('Showcase: Real Feature Lifecycle with Audio', () => {
   test('create → approval gates → completion with notification sounds', async ({ page }) => {
     // ── 1. Navigate and wait for the control center canvas ──────────────
 
-    await page.goto('/');
+    await page.goto('/control-center');
 
     const controlCenter = page.getByTestId('control-center');
     await expect(controlCenter).toBeVisible({ timeout: 15_000 });

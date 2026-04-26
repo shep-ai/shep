@@ -13,7 +13,7 @@ export function GlobalChatDrawerClient() {
   const isOpen = pathname === '/chat';
 
   const onClose = useCallback(() => {
-    router.push('/');
+    router.push('/control-center');
   }, [router]);
 
   return (

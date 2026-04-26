@@ -159,13 +159,11 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
           {hideGlobalChat ? null : <GlobalChatPopup />}
           {/* Global search dialog — Cmd+K / Ctrl+K */}
           <GlobalSearchDialog />
-          {featureFlags.githubImport ? (
-            <GitHubImportDialog
-              open={githubDialogOpen}
-              onOpenChange={setGithubDialogOpen}
-              onImportComplete={handleGitHubImportComplete}
-            />
-          ) : null}
+          <GitHubImportDialog
+            open={githubDialogOpen}
+            onOpenChange={setGithubDialogOpen}
+            onImportComplete={handleGitHubImportComplete}
+          />
         </div>
       </SidebarInset>
       <ReactFileManagerDialog

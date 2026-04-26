@@ -174,7 +174,7 @@ describe('ControlCenter', () => {
       </SidebarProvider>
     );
     await waitFor(() => {
-      expect(screen.getByText('This workspace is empty')).toBeInTheDocument();
+      expect(screen.getByTestId('control-center-onboarding')).toBeInTheDocument();
     });
   });
 

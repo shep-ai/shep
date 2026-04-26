@@ -61,7 +61,7 @@ export function RepositoryDrawerClient({ data, initialTab }: RepositoryDrawerCli
   );
 
   const onClose = useCallback(() => {
-    router.push('/');
+    router.push('/control-center');
   }, [router]);
 
   const deployAction = useDeployAction(

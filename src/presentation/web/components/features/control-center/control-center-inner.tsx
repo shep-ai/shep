@@ -45,6 +45,7 @@ import { useViewportPersistence } from '@/hooks/use-viewport-persistence';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useFabLayout } from '@/hooks/fab-layout-context';
 import { ControlCenterEmptyState } from './control-center-empty-state';
+import { ControlCenterOnboarding } from './control-center-onboarding';
 import { NewProjectDialog } from './new-project-dialog';
 import { useControlCenterState } from './use-control-center-state';
 import { useCanvasEventListeners } from './use-canvas-event-listeners';
@@ -252,10 +253,10 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     [nodes, router, guardedNavigate]
   );
 
-  // Close all drawers — navigate back to root
+  // Close all drawers — navigate back to the control-center canvas
   const handleClearDrawers = useCallback(() => {
-    if (pathname !== '/') {
-      guardedNavigate(() => router.push('/'));
+    if (pathname !== '/control-center') {
+      guardedNavigate(() => router.push('/control-center'));
     }
   }, [router, pathname, guardedNavigate]);
 
@@ -513,27 +514,7 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
       </div>
     </div>
   ) : (
-    <div className="pointer-events-auto flex h-full w-full flex-col items-center justify-center px-8">
-      <div className="bg-primary/10 text-primary mb-5 flex h-12 w-12 items-center justify-center rounded-2xl">
-        <Layers className="h-6 w-6" />
-      </div>
-      <h2 className="text-foreground/90 text-center text-2xl font-light tracking-tight">
-        This workspace is empty
-      </h2>
-      <p className="text-muted-foreground mt-2 max-w-sm text-center text-sm leading-relaxed">
-        Add repositories or features from the canvas to get started.
-      </p>
-      <div className="mt-6 flex items-center gap-2">
-        <Button
-          size="sm"
-          onClick={() => setWorkspaceNewProjectOpen(true)}
-          className="bg-blue-500 text-white hover:bg-blue-600"
-        >
-          <FolderPlus className="me-1.5 h-3.5 w-3.5" />
-          New project
-        </Button>
-      </div>
-    </div>
+    <ControlCenterOnboarding onRepositorySelect={addRepoAndFocus} />
   );
 
   // ── Full-screen create prompt overlay ────────────────────────────────

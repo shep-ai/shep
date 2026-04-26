@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 
-let currentPathname = '/';
+let currentPathname = '/control-center';
 const mockPush = vi.fn();
 
 vi.mock('next/navigation', () => ({
@@ -91,9 +91,9 @@ vi.mock('@/components/features/features-canvas', () => ({
   },
 }));
 
-// Mock the ControlCenterEmptyState since it's irrelevant for these tests
-vi.mock('@/components/features/control-center/control-center-empty-state', () => ({
-  ControlCenterEmptyState: () => <div data-testid="mock-empty-state" />,
+// Mock the ControlCenterOnboarding since it's irrelevant for these tests
+vi.mock('@/components/features/control-center/control-center-onboarding', () => ({
+  ControlCenterOnboarding: () => <div data-testid="mock-empty-state" />,
 }));
 
 const featureNodeA: CanvasNodeType = {
@@ -153,7 +153,7 @@ function renderControlCenter(nodes = initialNodes) {
 describe('ControlCenterInner URL-based navigation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    currentPathname = '/';
+    currentPathname = '/control-center';
     mockFitView.mockReset();
   });
 
@@ -189,8 +189,8 @@ describe('ControlCenterInner URL-based navigation', () => {
     });
   });
 
-  describe('pane click navigates to root', () => {
-    it('navigates to / when the canvas pane is clicked and a drawer route is active', () => {
+  describe('pane click navigates to control-center', () => {
+    it('navigates to /control-center when the canvas pane is clicked and a drawer route is active', () => {
       currentPathname = '/feature/#fa01';
       renderControlCenter();
 
@@ -198,11 +198,11 @@ describe('ControlCenterInner URL-based navigation', () => {
         capturedCanvasProps.onPaneClick?.({} as React.MouseEvent);
       });
 
-      expect(mockPush).toHaveBeenCalledWith('/');
+      expect(mockPush).toHaveBeenCalledWith('/control-center');
     });
 
-    it('does not navigate when pane is clicked and already at root', () => {
-      currentPathname = '/';
+    it('does not navigate when pane is clicked and already at control-center', () => {
+      currentPathname = '/control-center';
       renderControlCenter();
 
       act(() => {
@@ -224,7 +224,7 @@ describe('ControlCenterInner URL-based navigation', () => {
     it('renders empty state when no nodes exist', () => {
       renderControlCenter([]);
 
-      expect(screen.getByText('This workspace is empty')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-empty-state')).toBeInTheDocument();
       expect(screen.queryByTestId('mock-features-canvas')).not.toBeInTheDocument();
     });
 
@@ -321,7 +321,7 @@ describe('ControlCenterInner URL-based navigation', () => {
     });
 
     it('passes null when no feature route is active', () => {
-      currentPathname = '/';
+      currentPathname = '/control-center';
       renderControlCenter();
 
       expect(capturedCanvasProps.selectedFeatureId).toBeNull();

@@ -516,7 +516,7 @@ export function useControlCenterState(
         updateFeature(childId, { state: 'deleting' });
       }
       deleteSound.play();
-      router.push('/');
+      router.push('/control-center');
 
       deleteFeature(featureId, cleanup, cascadeDelete, closePr)
         .then((result) => {

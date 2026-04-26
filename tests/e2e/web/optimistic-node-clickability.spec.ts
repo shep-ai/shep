@@ -39,7 +39,7 @@ test.describe('Feature node clickability — drawer opens after feature creation
     });
 
     // Navigate to control center
-    await page.goto('/');
+    await page.goto('/control-center');
 
     // Check if any feature nodes exist
     const featureCards = page.locator('[data-testid="feature-node-card"]');
@@ -119,7 +119,7 @@ test.describe('Feature node clickability — drawer opens after feature creation
 test.describe('All feature nodes open a drawer on click', () => {
   test('clicking each non-creating feature node opens some drawer', async ({ page }) => {
     // Navigate to control center
-    await page.goto('/');
+    await page.goto('/control-center');
 
     // Check if any feature nodes exist (use isVisible with short timeout to avoid blocking)
     const featureCards = page.locator('[data-testid="feature-node-card"]');

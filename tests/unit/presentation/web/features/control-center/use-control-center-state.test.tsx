@@ -859,7 +859,7 @@ describe('useControlCenterState', () => {
       expect(screen.getByTestId('edge-count')).toHaveTextContent('1');
     });
 
-    it('navigates to root on successful deletion', async () => {
+    it('navigates to control-center on successful deletion', async () => {
       mockDeleteFeature.mockResolvedValue({ feature: { id: 'f1' } });
 
       renderHook([featureNode] as CanvasNodeType[]);
@@ -868,7 +868,7 @@ describe('useControlCenterState', () => {
         fireEvent.click(screen.getByTestId('delete-feature'));
       });
 
-      expect(mockPush).toHaveBeenCalledWith('/');
+      expect(mockPush).toHaveBeenCalledWith('/control-center');
     });
 
     it('shows error toast with server action error message', async () => {

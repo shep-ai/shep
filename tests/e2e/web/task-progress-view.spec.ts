@@ -261,7 +261,7 @@ test.describe('Task Progress View — control center integration', () => {
 
   test('displays task progress view in feature drawer plan tab', async ({ page }) => {
     // Navigate to the control center
-    await page.goto('/');
+    await page.goto('/control-center');
 
     // Wait for the graph to render (feature nodes should appear)
     await page.waitForTimeout(3000);
