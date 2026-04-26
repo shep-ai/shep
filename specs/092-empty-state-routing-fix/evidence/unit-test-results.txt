@@ -15,7 +15,8 @@
 ℹ Shep is already running at http://localhost:4050
 
 
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/gemini-cli-executor.test.ts [2m([22m[2m43 tests[22m[2m)[22m[33m 309[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/codex-cli-executor.test.ts [2m([22m[2m49 tests[22m[2m)[22m[33m 311[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/gemini-cli-executor.test.ts [2m([22m[2m43 tests[22m[2m)[22m[33m 314[2mms[22m[39m
 [90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2mfresh-start path (no existing daemon)[2m > [22m[2mcalls findAvailablePort with DEFAULT_PORT when no port option given
 [22m[39m
 Shep Web UI
@@ -23,46 +24,37 @@ Shep Web UI
 ✓ Daemon spawned at http://localhost:4050
 
 
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/codex-cli-executor.test.ts [2m([22m[2m49 tests[22m[2m)[22m[33m 319[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/upgrade/upgrade-cli.use-case.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 777[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/agents/stream-agent-events.use-case.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 756[2mms[22m[39m
-[2026-04-26T14:30:05.002Z] Spawning: cursor-agent --yolo -p Implement feature --output-format stream-json
-[2026-04-26T14:30:05.003Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.003Z] Subprocess PID: 12345
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts [2m([22m[2m49 tests[22m[2m)[22m[33m 748[2mms[22m[39m
-[2026-04-26T14:30:05.037Z] Spawning: cursor-agent --yolo -p Bad prompt --output-format stream-json
-[2026-04-26T14:30:05.037Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.037Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.048Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-26T14:30:05.048Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.048Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.069Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-26T14:30:05.069Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.069Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.091Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-26T14:30:05.091Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.091Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.112Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-26T14:30:05.112Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.112Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.134Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-26T14:30:05.134Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.134Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.155Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-26T14:30:05.155Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.155Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.166Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
-[2026-04-26T14:30:05.166Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.166Z] Subprocess PID: 12345
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/cursor-executor.test.ts [2m([22m[2m39 tests[22m[2m)[22m[32m 202[2mms[22m[39m
-[90mstdout[2m | tests/unit/infrastructure/di/container-reject-token.test.ts[2m > [22m[2mRejectAgentRunUseCase string-token alias[2m > [22m[2mresolves RejectAgentRunUseCase via string token after initialization
-[22m[39m[DeploymentService] No dev servers to recover from database
-
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-reject-token.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1189[2mms[22m[39m
-     [33m[2m✓[22m[39m resolves RejectAgentRunUseCase via string token after initialization [33m 1189[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/upgrade/upgrade-cli.use-case.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 775[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/agents/stream-agent-events.use-case.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 754[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts [2m([22m[2m49 tests[22m[2m)[22m[33m 765[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/filesystem/node-application-file-system.service.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 111[2mms[22m[39m
+[2026-04-26T14:39:21.679Z] Spawning: cursor-agent --yolo -p Implement feature --output-format stream-json
+[2026-04-26T14:39:21.680Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:21.680Z] Subprocess PID: 12345
+[2026-04-26T14:39:21.714Z] Spawning: cursor-agent --yolo -p Bad prompt --output-format stream-json
+[2026-04-26T14:39:21.714Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:21.714Z] Subprocess PID: 12345
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/agents/stream-agent-events-application.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 302[2mms[22m[39m
+[2026-04-26T14:39:21.725Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-26T14:39:21.725Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:21.725Z] Subprocess PID: 12345
+[2026-04-26T14:39:21.747Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-26T14:39:21.747Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:21.747Z] Subprocess PID: 12345
+[2026-04-26T14:39:21.768Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-26T14:39:21.768Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:21.768Z] Subprocess PID: 12345
 [90mstdout[2m | tests/unit/infrastructure/di/container-session-registrations.test.ts[2m > [22m[2msession DI registrations[2m > [22m[2mresolves ListAgentSessionsUseCase after initialization
 [22m[39m[DeploymentService] No dev servers to recover from database
 
+[90mstdout[2m | tests/unit/infrastructure/di/container-reject-token.test.ts[2m > [22m[2mRejectAgentRunUseCase string-token alias[2m > [22m[2mresolves RejectAgentRunUseCase via string token after initialization
+[22m[39m[DeploymentService] No dev servers to recover from database
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-reject-token.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1247[2mms[22m[39m
+     [33m[2m✓[22m[39m resolves RejectAgentRunUseCase via string token after initialization [33m 1246[2mms[22m[39m
+[2026-04-26T14:39:21.790Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-26T14:39:21.790Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:21.790Z] Subprocess PID: 12345
 [90mstdout[2m | tests/unit/infrastructure/di/container-session-registrations.test.ts[2m > [22m[2msession DI registrations[2m > [22m[2mresolves GetAgentSessionUseCase after initialization
 [22m[39m[DeploymentService] No dev servers to recover from database
 
@@ -75,17 +67,11 @@ Shep Web UI
 [90mstdout[2m | tests/unit/infrastructure/di/container-idempotency.test.ts[2m > [22m[2mcontainer idempotency[2m > [22m[2minitializeContainer() returns the same container on second call
 [22m[39m[DeploymentService] No dev servers to recover from database
 
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-idempotency.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1232[2mms[22m[39m
-     [33m[2m✓[22m[39m isContainerInitialized() returns false before init [33m 1186[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/agents/stream-agent-events-application.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 304[2mms[22m[39m
-[90mstdout[2m | tests/unit/infrastructure/di/container-session-registrations.test.ts[2m > [22m[2msession DI registrations[2m > [22m[2mresolves IAgentSessionRepository:cursor as StubSessionRepository
-[22m[39m[DeploymentService] No dev servers to recover from database
-
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/repositories/sqlite-operation-log-repository-publish.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 240[2mms[22m[39m
-[90mstdout[2m | tests/unit/infrastructure/di/container-session-registrations.test.ts[2m > [22m[2msession DI registrations[2m > [22m[2mresolves IAgentSessionRepository:gemini-cli as StubSessionRepository
-[22m[39m[DeploymentService] No dev servers to recover from database
-
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/tool-installer/tool-installer.service.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 179[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-idempotency.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1279[2mms[22m[39m
+     [33m[2m✓[22m[39m isContainerInitialized() returns false before init [33m 1240[2mms[22m[39m
+[2026-04-26T14:39:21.813Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-26T14:39:21.813Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:21.813Z] Subprocess PID: 12345
 [90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2mfresh-start path (no existing daemon)[2m > [22m[2mcalls findAvailablePort with the provided port override
 [22m[39m
 Shep Web UI
@@ -93,11 +79,199 @@ Shep Web UI
 ✓ Daemon spawned at http://localhost:8080
 
 
+[90mstdout[2m | tests/unit/infrastructure/di/container-session-registrations.test.ts[2m > [22m[2msession DI registrations[2m > [22m[2mresolves IAgentSessionRepository:cursor as StubSessionRepository
+[22m[39m[DeploymentService] No dev servers to recover from database
+
+[2026-04-26T14:39:21.836Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-26T14:39:21.836Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:21.836Z] Subprocess PID: 12345
+[90mstdout[2m | tests/unit/infrastructure/di/container-session-registrations.test.ts[2m > [22m[2msession DI registrations[2m > [22m[2mresolves IAgentSessionRepository:gemini-cli as StubSessionRepository
+[22m[39m[DeploymentService] No dev servers to recover from database
+
+[2026-04-26T14:39:21.850Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-26T14:39:21.850Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:21.850Z] Subprocess PID: 12345
 [90mstdout[2m | tests/unit/infrastructure/di/container-session-registrations.test.ts[2m > [22m[2msession DI registrations[2m > [22m[2mresolves IAgentSessionRepository:codex-cli as CodexCliSessionRepository
 [22m[39m[DeploymentService] No dev servers to recover from database
 
- [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-session-registrations.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1281[2mms[22m[39m
-     [33m[2m✓[22m[39m resolves ListAgentSessionsUseCase after initialization [33m 1186[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-session-registrations.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1317[2mms[22m[39m
+     [33m[2m✓[22m[39m resolves ListAgentSessionsUseCase after initialization [33m 1239[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/cursor-executor.test.ts [2m([22m[2m39 tests[22m[2m)[22m[32m 206[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/tool-installer/tool-installer.service.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 180[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/repositories/sqlite-operation-log-repository-publish.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 303[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/copilot-cli-executor.test.ts [2m([22m[2m51 tests[22m[2m)[22m[32m 180[2mms[22m[39m
+[2026-04-26T14:39:21.999Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.003Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.003Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.003Z] Prompt length: 21 chars (piped via stdin)
+[2026-04-26T14:39:22.004Z] [result] 33 chars, session=sess-abc-123
+[2026-04-26T14:39:22.004Z] Process closed with code 0, result=33 chars
+[2026-04-26T14:39:22.009Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.009Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.009Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.009Z] Prompt length: 12 chars (piped via stdin)
+[2026-04-26T14:39:22.010Z] [result] 4 chars, session=session-xyz-789
+[2026-04-26T14:39:22.010Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.011Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.011Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.011Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.011Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-26T14:39:22.011Z] [result] 4 chars, session=sess-1
+[2026-04-26T14:39:22.011Z] [tokens] 1500 in / 800 out
+[2026-04-26T14:39:22.011Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.011Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.011Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.011Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.011Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.011Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.011Z] [tokens] 500 in / 200 out
+[2026-04-26T14:39:22.011Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.012Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.012Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.012Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.012Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.012Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.012Z] [tokens] 100 in / 50 out, $0.1857
+[2026-04-26T14:39:22.012Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.013Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.013Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.013Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.013Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.013Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.013Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.013Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.013Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.013Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.013Z] Prompt length: 10 chars (piped via stdin)
+[2026-04-26T14:39:22.014Z] stderr: Error: Authentication failed
+[2026-04-26T14:39:22.014Z] Process closed with code 1, result=0 chars
+[2026-04-26T14:39:22.016Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.016Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.016Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.016Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.016Z] Process error event: spawn claude ENOENT
+[2026-04-26T14:39:22.016Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --resume prev-session-id --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.016Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.016Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.016Z] Prompt length: 13 chars (piped via stdin)
+[2026-04-26T14:39:22.016Z] [result] 7 chars, session=sess-resume
+[2026-04-26T14:39:22.016Z] Process closed with code 0, result=7 chars
+[2026-04-26T14:39:22.017Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --model claude-sonnet-4-5-20250929 --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.017Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.017Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.017Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.017Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.017Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.017Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --append-system-prompt You are a code reviewer --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.017Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.017Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.017Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.017Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.017Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.017Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --allowedTools Read,Write,Bash --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.017Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.017Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.017Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.017Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.017Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.018Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --max-turns 5 --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.018Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.018Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.018Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.018Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.018Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.018Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --json-schema {"type":"object","properties":{"summary":{"type":"string"}}} --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.018Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.018Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.018Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.018Z] [result] 18 chars, session=none
+[2026-04-26T14:39:22.018Z] Process closed with code 0, result=18 chars
+[2026-04-26T14:39:22.018Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.018Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.018Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.018Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.018Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.018Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.018Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.018Z] Spawn cwd: /some/project
+[2026-04-26T14:39:22.018Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.018Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.018Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.018Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.019Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.019Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.019Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.019Z] Prompt length: 12 chars (piped via stdin)
+[2026-04-26T14:39:27.020Z] Process closed with code null, result=0 chars
+[2026-04-26T14:39:22.020Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.020Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.020Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.020Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.020Z] Process closed with code 0, result=0 chars
+[2026-04-26T14:39:22.020Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.020Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.020Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.020Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.020Z] [tool] Read {"file_path":"/src/index.ts"}
+[2026-04-26T14:39:22.020Z] [text] Let me read the file...
+[2026-04-26T14:39:22.020Z] [result] 4 chars, session=sess-1
+[2026-04-26T14:39:22.020Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.020Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.020Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.020Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.020Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.020Z] [result] 4 chars, session=sess-1
+[2026-04-26T14:39:22.020Z] [tokens] 100 in / 50 out
+[2026-04-26T14:39:22.020Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.021Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --strict-mcp-config --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.021Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.021Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.021Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.021Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.021Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.021Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.021Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.021Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.021Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.021Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.021Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.021Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.021Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.021Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.021Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.021Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.021Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.021Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --tools Bash,Read,Write --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.021Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.021Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.021Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.021Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.021Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.021Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.021Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.021Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.021Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.022Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.022Z] Process closed with code 0, result=4 chars
+[2026-04-26T14:39:22.022Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.022Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.022Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.022Z] Prompt length: 4 chars (piped via stdin)
+[2026-04-26T14:39:22.022Z] [result] 4 chars, session=none
+[2026-04-26T14:39:22.022Z] Process closed with code 0, result=4 chars
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/agent-registry.service.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 187[2mms[22m[39m
+[2026-04-26T14:39:22.094Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.095Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.095Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.095Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-26T14:39:22.095Z] Process error event: spawn claude ENOENT
+[2026-04-26T14:39:22.095Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
+[2026-04-26T14:39:22.095Z] Spawn cwd: (inherited)
+[2026-04-26T14:39:22.095Z] Subprocess PID: 12345
+[2026-04-26T14:39:22.095Z] Prompt length: 11 chars (piped via stdin)
+[2026-04-26T14:39:22.095Z] Process error event: some other error
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/claude-code-executor.test.ts [2m([22m[2m38 tests[22m[2m)[22m[32m 102[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts [2m([22m[2m31 tests[22m[2m)[22m[32m 94[2mms[22m[39m
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould set isRunning to true when started
 [22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
@@ -168,10 +342,6 @@ Shep Web UI
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip agent run update when feature has no agentRunId
 [22m[39m[PrSyncWatcher] Stopped
 
-[2026-04-26T14:30:05.436Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.437Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.437Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.437Z] Prompt length: 21 chars (piped via stdin)
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Closed transition and update feature without lifecycle change
 [22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
@@ -184,8 +354,6 @@ Shep Web UI
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Closed transition and update feature without lifecycle change
 [22m[39m[PrSyncWatcher] Stopped
 
-[2026-04-26T14:30:05.439Z] [result] 33 chars, session=sess-abc-123
-[2026-04-26T14:30:05.439Z] Process closed with code 0, result=33 chars
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould not call update when PR status has not changed
 [22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
@@ -216,7 +384,6 @@ Shep Web UI
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould prune features that left Review from tracking map
 [22m[39m[PrSyncWatcher] Stopped
 
-[2026-04-26T14:30:05.442Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrMerged notification with correct fields including featureId and agentRunId
 [22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
@@ -226,65 +393,27 @@ Shep Web UI
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrMerged notification with correct fields including featureId and agentRunId
 [22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "Merged Feature"
 
-[2026-04-26T14:30:05.442Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.442Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.443Z] Prompt length: 12 chars (piped via stdin)
-[2026-04-26T14:30:05.443Z] [result] 4 chars, session=session-xyz-789
-[2026-04-26T14:30:05.443Z] Process closed with code 0, result=4 chars
-[2026-04-26T14:30:05.443Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.443Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.443Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.443Z] Prompt length: 11 chars (piped via stdin)
-[2026-04-26T14:30:05.443Z] [result] 4 chars, session=sess-1
-[2026-04-26T14:30:05.443Z] [tokens] 1500 in / 800 out
-[2026-04-26T14:30:05.443Z] Process closed with code 0, result=4 chars
-[2026-04-26T14:30:05.444Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.444Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.444Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.444Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-26T14:30:05.444Z] [result] 4 chars, session=none
-[2026-04-26T14:30:05.444Z] [tokens] 500 in / 200 out
-[2026-04-26T14:30:05.444Z] Process closed with code 0, result=4 chars
-[2026-04-26T14:30:05.444Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.444Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.444Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.444Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-26T14:30:05.444Z] [result] 4 chars, session=none
-[2026-04-26T14:30:05.444Z] [tokens] 100 in / 50 out, $0.1857
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrMerged notification with correct fields including featureId and agentRunId
 [22m[39m[PrSyncWatcher] Stopped
 
-[2026-04-26T14:30:05.444Z] Process closed with code 0, result=4 chars
-[2026-04-26T14:30:05.445Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.445Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.445Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.445Z] Prompt length: 4 chars (piped via stdin)
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrClosed notification with correct fields including featureId
 [22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
-[2026-04-26T14:30:05.445Z] [result] 4 chars, session=none
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrClosed notification with correct fields including featureId
 [22m[39m[PrSyncWatcher] PR #1 status changed: Open -> Closed for "Closed Feature"
 
-[2026-04-26T14:30:05.445Z] Process closed with code 0, result=4 chars
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrClosed notification with correct fields including featureId
 [22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "Closed Feature"
 
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould emit PrClosed notification with correct fields including featureId
 [22m[39m[PrSyncWatcher] Stopped
 
-[2026-04-26T14:30:05.445Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.445Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.445Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.445Z] Prompt length: 10 chars (piped via stdin)
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip already-merged PRs during branch discovery (likely stale)
 [22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip already-merged PRs during branch discovery (likely stale)
 [22m[39m[PrSyncWatcher] Stopped
 
-[2026-04-26T14:30:05.446Z] stderr: Error: Authentication failed
-[2026-04-26T14:30:05.446Z] Process closed with code 1, result=0 chars
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould discover open PR by branch name and populate feature PR data
 [22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
@@ -294,17 +423,12 @@ Shep Web UI
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould discover open PR by branch name and populate feature PR data
 [22m[39m[PrSyncWatcher] Stopped
 
-[2026-04-26T14:30:05.447Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.447Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.447Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.447Z] Prompt length: 4 chars (piped via stdin)
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould not update feature when no matching PR found by branch
 [22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould not update feature when no matching PR found by branch
 [22m[39m[PrSyncWatcher] Stopped
 
-[2026-04-26T14:30:05.448Z] Process error event: spawn claude ENOENT
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould not emit duplicate notification on subsequent polls with same status
 [22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
@@ -317,12 +441,6 @@ Shep Web UI
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould not emit duplicate notification on subsequent polls with same status
 [22m[39m[PrSyncWatcher] Stopped
 
-[2026-04-26T14:30:05.448Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --resume prev-session-id --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.448Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.448Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.449Z] Prompt length: 13 chars (piped via stdin)
-[2026-04-26T14:30:05.449Z] [result] 7 chars, session=sess-resume
-[2026-04-26T14:30:05.449Z] Process closed with code 0, result=7 chars
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould detect CI Pending→Success and update feature
 [22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
@@ -332,83 +450,36 @@ Shep Web UI
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould detect CI Pending→Success and update feature
 [22m[39m[PrSyncWatcher] Stopped
 
-[2026-04-26T14:30:05.449Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --model claude-sonnet-4-5-20250929 --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.449Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.450Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.450Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-26T14:30:05.450Z] [result] 4 chars, session=none
-[2026-04-26T14:30:05.450Z] Process closed with code 0, result=4 chars
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould detect CI Pending→Failure and update feature
 [22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould detect CI Pending→Failure and update feature
 [22m[39m[PrSyncWatcher] CI status changed: Pending -> Failure for "Test Feature"
 
-[2026-04-26T14:30:05.450Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --append-system-prompt You are a code reviewer --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.450Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.450Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.450Z] Prompt length: 4 chars (piped via stdin)
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould detect CI Pending→Failure and update feature
 [22m[39m[PrSyncWatcher] Stopped
 
-[2026-04-26T14:30:05.450Z] [result] 4 chars, session=none
-[2026-04-26T14:30:05.450Z] Process closed with code 0, result=4 chars
-[2026-04-26T14:30:05.451Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --allowedTools Read,Write,Bash --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.451Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.451Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.451Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-26T14:30:05.451Z] [result] 4 chars, session=none
-[2026-04-26T14:30:05.451Z] Process closed with code 0, result=4 chars
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould emit PrChecksPassed notification on CI success
 [22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould emit PrChecksPassed notification on CI success
 [22m[39m[PrSyncWatcher] CI status changed: Pending -> Success for "CI Pass Feature"
 
-[2026-04-26T14:30:05.451Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --max-turns 5 --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.451Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.451Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.451Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-26T14:30:05.451Z] [result] 4 chars, session=none
-[2026-04-26T14:30:05.451Z] Process closed with code 0, result=4 chars
-[2026-04-26T14:30:05.451Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --json-schema {"type":"object","properties":{"summary":{"type":"string"}}} --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.451Z] Spawn cwd: (inherited)
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould emit PrChecksPassed notification on CI success
 [22m[39m[PrSyncWatcher] Stopped
 
-[2026-04-26T14:30:05.451Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.451Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-26T14:30:05.451Z] [result] 18 chars, session=none
-[2026-04-26T14:30:05.451Z] Process closed with code 0, result=18 chars
-[2026-04-26T14:30:05.451Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.451Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.451Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.451Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-26T14:30:05.451Z] [result] 4 chars, session=none
-[2026-04-26T14:30:05.451Z] Process closed with code 0, result=4 chars
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould emit PrChecksFailed notification on CI failure
 [22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould emit PrChecksFailed notification on CI failure
 [22m[39m[PrSyncWatcher] CI status changed: Pending -> Failure for "CI Fail Feature"
 
-[2026-04-26T14:30:05.452Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.452Z] Spawn cwd: /some/project
-[2026-04-26T14:30:05.452Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.452Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-26T14:30:05.452Z] [result] 4 chars, session=none
-[2026-04-26T14:30:05.452Z] Process closed with code 0, result=4 chars
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould emit PrChecksFailed notification on CI failure
 [22m[39m[PrSyncWatcher] Stopped
 
-[2026-04-26T14:30:05.452Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.452Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.452Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.452Z] Prompt length: 12 chars (piped via stdin)
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould not trigger update when CI status is unchanged
 [22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
 
-[2026-04-26T14:30:10.453Z] Process closed with code null, result=0 chars
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould not trigger update when CI status is unchanged
 [22m[39m[PrSyncWatcher] Stopped
 
@@ -418,86 +489,16 @@ Shep Web UI
 [90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould handle getCiStatus errors gracefully and continue
 [22m[39m[PrSyncWatcher] PR #1 status changed: Open -> Merged for "Feature 1"
 
-[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould handle getCiStatus errors gracefully and continue
-[22m[39m[PrSyncWatcher] CI status changed: none -> Success for "Feature 2"
+... [output truncated at 490 lines] ...
 
-[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mCI status polling and transition detection[2m > [22m[2mshould handle getCiStatus errors gracefully and continue
-[22m[39m[PrSyncWatcher] Stopped
-
-[2026-04-26T14:30:05.454Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.454Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.454Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.454Z] Prompt length: 4 chars (piped via stdin)
-[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould not make API calls when no features are in Review
-[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
-
-[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould not make API calls when no features are in Review
-[22m[39m[PrSyncWatcher] Stopped
-
-[2026-04-26T14:30:05.454Z] Process closed with code 0, result=0 chars
-[2026-04-26T14:30:05.455Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.455Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.455Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.455Z] Prompt length: 4 chars (piped via stdin)
-[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould still poll GitHub for features without PR data (for branch-based discovery)
-[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
-
-[2026-04-26T14:30:05.455Z] [tool] Read {"file_path":"/src/index.ts"}
-[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould still poll GitHub for features without PR data (for branch-based discovery)
-[22m[39m[PrSyncWatcher] Stopped
-
-[2026-04-26T14:30:05.455Z] [text] Let me read the file...
-[2026-04-26T14:30:05.455Z] [result] 4 chars, session=sess-1
-[2026-04-26T14:30:05.455Z] Process closed with code 0, result=4 chars
-[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould skip features with missing repositoryPath
-[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
-
-[2026-04-26T14:30:05.455Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.455Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.455Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.455Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-26T14:30:05.456Z] [result] 4 chars, session=sess-1
-[2026-04-26T14:30:05.456Z] [tokens] 100 in / 50 out
-[2026-04-26T14:30:05.456Z] Process closed with code 0, result=4 chars
-[2026-04-26T14:30:05.456Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --strict-mcp-config --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.456Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.456Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.456Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-26T14:30:05.456Z] [result] 4 chars, session=none
-[2026-04-26T14:30:05.456Z] Process closed with code 0, result=4 chars
-[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould skip features with missing repositoryPath
-[22m[39m[PrSyncWatcher] Stopped
-
-[2026-04-26T14:30:05.457Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.457Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.457Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.457Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-26T14:30:05.457Z] [result] 4 chars, session=none
-[2026-04-26T14:30:05.457Z] Process closed with code 0, result=4 chars
-[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould skip feature when PR number is not found in listPrStatuses response
-[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
-
-[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould skip feature when PR number is not found in listPrStatuses response
-[22m[39m[PrSyncWatcher] Stopped
-
-[2026-04-26T14:30:05.458Z] Spawning: claude -p --output-format stream-json --dangerously-skip-permissions --verbose --include-partial-messages --no-chrome
-[2026-04-26T14:30:05.458Z] Spawn cwd: (inherited)
-[2026-04-26T14:30:05.458Z] Subprocess PID: 12345
-[2026-04-26T14:30:05.458Z] Prompt length: 4 chars (piped via stdin)
-[2026-04-26T14:30:05.458Z] [result] 4 chars, session=none
-[2026-04-26T14:30:05.458Z] Process closed with code 0, result=4 chars
-[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2merror handling and edge cases[2m > [22m[2mshould isolate listPrStatuses errors per repository
-[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
-
-... [output truncated - showing final summary] ...
-
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/list-github-organizations.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-review-config.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/features/control-center/derive-state.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/format-duration.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 3[2mms[22m[39m
  [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/compose-user-input.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 2[2mms[22m[39m
  [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/features/chat/is-workflow-in-flight.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 2[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m503 passed[39m[22m[90m (503)[39m
 [2m      Tests [22m [1m[32m6625 passed[39m[22m[90m (6625)[39m
-[2m   Start at [22m 17:30:03
-[2m   Duration [22m 37.47s[2m (transform 15.05s, setup 49.63s, import 59.19s, tests 88.12s, environment 79.95s)[22m
+[2m   Start at [22m 17:39:20
+[2m   Duration [22m 36.06s[2m (transform 14.04s, setup 45.05s, import 57.50s, tests 86.91s, environment 77.21s)[22m
 
+Total lines in full output: 4537
