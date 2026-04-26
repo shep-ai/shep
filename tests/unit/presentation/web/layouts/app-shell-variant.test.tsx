@@ -29,6 +29,7 @@ const defaultFlags = {
   reactFileManager: false,
   inventory: false,
   projects: false,
+  codeReview: false,
 };
 
 /**
