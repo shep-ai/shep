@@ -2,15 +2,36 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useTranslation } from 'react-i18next';
 import { Direction } from 'radix-ui';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layouts/app-sidebar';
-import { ReactFileManagerDialog } from '@/components/common/react-file-manager-dialog';
-import { GlobalChatPopup } from '@/components/features/chat/ChatSheet';
-import { GlobalSearchDialog } from '@/components/features/search/global-search-dialog';
 import { pickFolder } from '@/components/common/add-repository-button/pick-folder';
-import { GitHubImportDialog } from '@/components/common/github-import-dialog';
+
+// Heavy global overlays — defer their JS chunks until the user actually
+// needs them. Each pulls in a non-trivial dependency chain (assistant-ui,
+// radix-dialog content, etc.) that we don't want on the critical path of
+// the initial page load. `ssr: false` because none of them need to render
+// during SSR (they're modals/popovers triggered by client interaction).
+const GlobalChatPopup = dynamic(
+  () => import('@/components/features/chat/ChatSheet').then((m) => m.GlobalChatPopup),
+  { ssr: false }
+);
+const GlobalSearchDialog = dynamic(
+  () =>
+    import('@/components/features/search/global-search-dialog').then((m) => m.GlobalSearchDialog),
+  { ssr: false }
+);
+const GitHubImportDialog = dynamic(
+  () => import('@/components/common/github-import-dialog').then((m) => m.GitHubImportDialog),
+  { ssr: false }
+);
+const ReactFileManagerDialog = dynamic(
+  () =>
+    import('@/components/common/react-file-manager-dialog').then((m) => m.ReactFileManagerDialog),
+  { ssr: false }
+);
 import { AgentEventsProvider } from '@/hooks/agent-events-provider';
 import { DrawerCloseGuardProvider, useDrawerCloseGuard } from '@/hooks/drawer-close-guard';
 import {

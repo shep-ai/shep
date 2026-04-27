@@ -1,13 +1,21 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { Plus, FileText, Trash2, Star, StarOff, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { Page } from '@shepai/core/domain/generated/output';
-import { PageEditor } from './page-editor';
 import { createPage, updatePage, deletePage } from '@/app/actions/manage-pages';
+
+// Defer the Tiptap-based editor (13 @tiptap/* packages + lowlight syntax
+// grammars). This panel is mounted on every project route but most users
+// don't open the editor on every visit — splitting the editor chunk cuts
+// the project-route initial bundle by ~200KB gzip.
+const PageEditor = dynamic(() => import('./page-editor').then((m) => m.PageEditor), {
+  ssr: false,
+});
 
 export interface PagesPanelProps {
   projectId: string;

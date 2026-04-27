@@ -168,7 +168,7 @@ export function useControlCenterState(
   // Track previous feature states for fallback notifications
   const prevFeatureStatesRef = useRef<Map<string, FeatureNodeData['state']>>(new Map());
 
-  const { events } = useAgentEventsContext();
+  const { events, connectionStatus } = useAgentEventsContext();
   const { store: deploymentStore } = useDeploymentStatusContext();
 
   useEffect(() => {
@@ -285,13 +285,23 @@ export function useControlCenterState(
     }
   }, [events, updateFeature]);
 
-  // --- Polling fallback: catch any SSE events that were missed ---
+  // --- Polling fallback: only run as recovery when SSE is unhealthy ---
+  // While SSE is connected, every state change is delivered via the stream
+  // and reconciliation happens on the next render — there's no need to
+  // re-fetch the whole graph. Polling only kicks in when SSE has been
+  // disconnected or stuck connecting (e.g. server restarted, network
+  // glitch, service worker not yet activated).
+  const sseHealthyRef = useRef(connectionStatus === 'connected');
+  sseHealthyRef.current = connectionStatus === 'connected';
+
   useEffect(() => {
-    log.debug(`polling enabled (${POLL_INTERVAL_MS}ms interval)`);
+    log.debug(`polling enabled (${POLL_INTERVAL_MS}ms recovery interval)`);
 
     const timer = setInterval(async () => {
       // Skip when tab is hidden — no point polling for a user who isn't looking.
       if (document.hidden) return;
+      // Skip while SSE is healthy — the stream is the source of truth.
+      if (sseHealthyRef.current) return;
       // Skip fetch entirely while a mutation is in-flight — the response
       // would contain pre-mutation data that reconcile would discard anyway.
       if (isMutating()) return;
@@ -311,7 +321,7 @@ export function useControlCenterState(
           deploymentStore.hydrate(freshDeployments);
         }
       } catch {
-        log.warn('poll fetch failed — will retry next interval');
+        log.warn('recovery poll failed — will retry next interval');
       }
     }, POLL_INTERVAL_MS);
 
