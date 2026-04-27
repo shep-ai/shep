@@ -69,6 +69,17 @@ export interface IPhaseTimingRepository {
   findByRunId(agentRunId: string): Promise<PhaseTiming[]>;
 
   /**
+   * Batch-fetch phase timings for many agent runs. Used by the SSE poll
+   * loop to replace per-run `findByRunId` calls (kills the N+1 query
+   * pattern). Empty input returns `[]` without touching the database.
+   * Returns a flat array; callers can group by `agentRunId` themselves.
+   *
+   * @param agentRunIds - Agent run IDs to fetch timings for
+   * @returns Array of phase timings whose `agentRunId` is in the input
+   */
+  findByRunIds(agentRunIds: readonly string[]): Promise<PhaseTiming[]>;
+
+  /**
    * Find all phase timings for a feature (via agent_runs join).
    *
    * @param featureId - The feature ID

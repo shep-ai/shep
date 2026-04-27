@@ -76,6 +76,7 @@ function makeMockRunRepository() {
       return stored.get(id) ?? null;
     }),
     findByThreadId: vi.fn().mockResolvedValue(null),
+    findByIds: vi.fn().mockResolvedValue([]),
     updateStatus: vi
       .fn()
       .mockImplementation(

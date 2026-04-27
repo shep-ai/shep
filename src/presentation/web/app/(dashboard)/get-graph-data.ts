@@ -186,12 +186,17 @@ export async function getGraphData(): Promise<{
     // Use case not registered — skip silently (e.g. test environments)
   }
 
-  const featuresWithRuns = await Promise.all(
-    features.map(async (feature) => {
-      const run = feature.agentRunId ? await agentRunRepo.findById(feature.agentRunId) : null;
-      return { feature, run };
-    })
-  );
+  // Batch-fetch all agent runs in one query instead of N findById calls
+  // (the SSE poll uses the same shape — see StreamAgentEventsUseCase).
+  const runIds = features
+    .map((f) => f.agentRunId)
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
+  const runs = runIds.length > 0 ? await agentRunRepo.findByIds(runIds) : [];
+  const runById = new Map(runs.map((r) => [r.id, r]));
+  const featuresWithRuns = features.map((feature) => ({
+    feature,
+    run: feature.agentRunId ? (runById.get(feature.agentRunId) ?? null) : null,
+  }));
 
   const { workflow } = getSettings();
   const { nodes, edges } = buildGraphNodes(repositories, featuresWithRuns, {

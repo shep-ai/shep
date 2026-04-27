@@ -29,6 +29,7 @@ function createMockRunRepo() {
     create: vi.fn(),
     findById: vi.fn(),
     findByThreadId: vi.fn(),
+    findByIds: vi.fn().mockResolvedValue([]),
     updateStatus: vi.fn(),
     findRunningByPid: vi.fn(),
     list: vi.fn(),

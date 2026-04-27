@@ -53,6 +53,7 @@ function buildUseCase(listMock: () => Promise<Application[]>): StreamAgentEvents
     create: vi.fn(),
     findById: vi.fn().mockResolvedValue(null),
     findByThreadId: vi.fn(),
+    findByIds: vi.fn().mockResolvedValue([]),
     updateStatus: vi.fn(),
     updatePinnedConfig: vi.fn(),
     findRunningByPid: vi.fn(),
@@ -65,6 +66,7 @@ function buildUseCase(listMock: () => Promise<Application[]>): StreamAgentEvents
     update: vi.fn(),
     updateApprovalWait: vi.fn(),
     findByRunId: vi.fn().mockResolvedValue([]),
+    findByRunIds: vi.fn().mockResolvedValue([]),
     findByFeatureId: vi.fn().mockResolvedValue([]),
   };
 

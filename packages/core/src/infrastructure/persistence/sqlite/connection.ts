@@ -64,8 +64,23 @@ export async function getSQLiteConnection(): Promise<Database.Database> {
   // Defensive mode: Additional safety checks
   dbInstance.pragma('defensive = ON');
 
-  // Cache size: 2000 pages (~8MB with 4KB page size)
-  dbInstance.pragma('cache_size = -2000');
+  // Cache size: 16384 pages (~64MB with 4KB page size). The web UI's SSE
+  // poll re-reads features/runs/timings every 2s; the previous 8MB cache
+  // was too small to keep the hot pages resident across cycles.
+  dbInstance.pragma('cache_size = -65536');
+
+  // Keep temp tables (sorts, GROUP BY spills, intermediate joins) in RAM
+  // instead of writing them to disk.
+  dbInstance.pragma('temp_store = MEMORY');
+
+  // Memory-map up to 256MB of the database file for faster reads. The OS
+  // backs this with the page cache; cost is virtual address space only.
+  dbInstance.pragma('mmap_size = 268435456');
+
+  // Wait up to 5s for write locks before failing with SQLITE_BUSY. Without
+  // this, concurrent SSE polls + watcher writes (PR sync, notifications,
+  // auto-archive) can race and surface "database is locked" errors.
+  dbInstance.pragma('busy_timeout = 5000');
 
   return dbInstance;
 }

@@ -106,6 +106,7 @@ describe('DeleteFeatureUseCase', () => {
       create: vi.fn(),
       findById: vi.fn().mockResolvedValue(null),
       findByThreadId: vi.fn(),
+      findByIds: vi.fn().mockResolvedValue([]),
       updateStatus: vi.fn(),
       updatePinnedConfig: vi.fn(),
       findRunningByPid: vi.fn(),

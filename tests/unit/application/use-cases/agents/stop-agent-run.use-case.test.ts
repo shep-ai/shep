@@ -33,6 +33,7 @@ function createMockTimingRepo(): IPhaseTimingRepository {
     update: vi.fn().mockResolvedValue(undefined),
     updateApprovalWait: vi.fn().mockResolvedValue(undefined),
     findByRunId: vi.fn().mockResolvedValue([]),
+    findByRunIds: vi.fn().mockResolvedValue([]),
     findByFeatureId: vi.fn().mockResolvedValue([]),
   };
 }
@@ -54,6 +55,7 @@ describe('StopAgentRunUseCase', () => {
       create: vi.fn().mockResolvedValue(undefined),
       findById: vi.fn().mockResolvedValue(null),
       findByThreadId: vi.fn().mockResolvedValue(null),
+      findByIds: vi.fn().mockResolvedValue([]),
       updateStatus: vi.fn().mockResolvedValue(undefined),
       updatePinnedConfig: vi.fn().mockResolvedValue(undefined),
       findRunningByPid: vi.fn().mockResolvedValue([]),

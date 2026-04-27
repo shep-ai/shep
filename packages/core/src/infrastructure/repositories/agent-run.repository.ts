@@ -72,6 +72,28 @@ export class SQLiteAgentRunRepository implements IAgentRunRepository {
     return fromDatabase(row);
   }
 
+  async findByIds(ids: readonly string[]): Promise<AgentRun[]> {
+    if (ids.length === 0) return [];
+
+    // SQLite's default SQLITE_MAX_VARIABLE_NUMBER is 32766 in modern builds,
+    // but better-sqlite3 still defaults to 999. Chunk conservatively at 500
+    // so the same code works regardless of the underlying limit.
+    const CHUNK_SIZE = 500;
+    const out: AgentRun[] = [];
+
+    for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+      const chunk = ids.slice(i, i + CHUNK_SIZE);
+      const placeholders = chunk.map(() => '?').join(',');
+      const stmt = this.db.prepare(`SELECT * FROM agent_runs WHERE id IN (${placeholders})`);
+      const rows = stmt.all(...chunk) as AgentRunRow[];
+      for (const row of rows) {
+        out.push(fromDatabase(row));
+      }
+    }
+
+    return out;
+  }
+
   async findByThreadId(threadId: string): Promise<AgentRun | null> {
     const stmt = this.db.prepare('SELECT * FROM agent_runs WHERE thread_id = ?');
     const row = stmt.get(threadId) as AgentRunRow | undefined;

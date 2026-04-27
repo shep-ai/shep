@@ -261,6 +261,27 @@ export class SQLitePhaseTimingRepository implements IPhaseTimingRepository {
     return rows.map(fromDatabase);
   }
 
+  async findByRunIds(agentRunIds: readonly string[]): Promise<PhaseTiming[]> {
+    if (agentRunIds.length === 0) return [];
+
+    const CHUNK_SIZE = 500;
+    const out: PhaseTiming[] = [];
+
+    for (let i = 0; i < agentRunIds.length; i += CHUNK_SIZE) {
+      const chunk = agentRunIds.slice(i, i + CHUNK_SIZE);
+      const placeholders = chunk.map(() => '?').join(',');
+      const stmt = this.db.prepare(
+        `SELECT * FROM phase_timings WHERE agent_run_id IN (${placeholders}) ORDER BY agent_run_id, created_at`
+      );
+      const rows = stmt.all(...chunk) as PhaseTimingRow[];
+      for (const row of rows) {
+        out.push(fromDatabase(row));
+      }
+    }
+
+    return out;
+  }
+
   async findByFeatureId(featureId: string): Promise<PhaseTiming[]> {
     const stmt = this.db.prepare(`
       SELECT pt.* FROM phase_timings pt

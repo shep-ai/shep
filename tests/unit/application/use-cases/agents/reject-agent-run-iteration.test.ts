@@ -53,6 +53,7 @@ function createMockRunRepository() {
     create: vi.fn(),
     findById: vi.fn(),
     findByThreadId: vi.fn(),
+    findByIds: vi.fn().mockResolvedValue([]),
     updateStatus: vi.fn(),
     findRunningByPid: vi.fn(),
     list: vi.fn(),
@@ -86,6 +87,7 @@ function createMockTimingRepository() {
     update: vi.fn(),
     updateApprovalWait: vi.fn(),
     findByRunId: vi.fn().mockResolvedValue([]),
+    findByRunIds: vi.fn().mockResolvedValue([]),
     findByFeatureId: vi.fn(),
   };
 }

@@ -42,6 +42,17 @@ export interface IAgentRunRepository {
   findById(id: string): Promise<AgentRun | null>;
 
   /**
+   * Batch-fetch multiple agent runs by id. Used by the SSE poll loop and
+   * the dashboard SSR layout to replace per-feature `findById` calls
+   * (kills the N+1 query pattern). Empty input returns `[]` without
+   * touching the database. Missing ids are silently dropped.
+   *
+   * @param ids - Agent run IDs to fetch
+   * @returns Array of matching agent runs (length <= ids.length)
+   */
+  findByIds(ids: readonly string[]): Promise<AgentRun[]>;
+
+  /**
    * Find an agent run by its LangGraph thread ID.
    *
    * @param threadId - The LangGraph thread ID

@@ -58,6 +58,7 @@ function createMockRunRepository(runs: AgentRun[] = []): IAgentRunRepository {
     create: vi.fn(),
     findById: vi.fn(),
     findByThreadId: vi.fn(),
+    findByIds: vi.fn().mockResolvedValue([]),
     updateStatus: vi.fn(),
     updatePinnedConfig: vi.fn(),
     findRunningByPid: vi.fn(),
@@ -72,6 +73,7 @@ function createMockPhaseTimingRepository(timings: PhaseTiming[] = []): IPhaseTim
     update: vi.fn(),
     updateApprovalWait: vi.fn(),
     findByRunId: vi.fn().mockResolvedValue(timings),
+    findByRunIds: vi.fn().mockResolvedValue([]),
     findByFeatureId: vi.fn(),
   };
 }

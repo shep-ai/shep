@@ -296,14 +296,41 @@ export class StreamAgentEventsUseCase {
 
     const features = await this.listFeatures.execute();
 
-    const entries: { feature: Feature; run: AgentRun | null }[] = await Promise.all(
-      features.map(async (feature) => {
-        const run = feature.agentRunId
-          ? await this.agentRunRepo.findById(feature.agentRunId)
-          : null;
-        return { feature, run };
-      })
-    );
+    // Batch-fetch all agent runs in one query instead of N findById calls
+    // (kills the N+1 — was the dominant per-poll DB cost).
+    const runIds = features
+      .map((f) => f.agentRunId)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+    const runs = runIds.length > 0 ? await this.agentRunRepo.findByIds(runIds) : [];
+    const runById = new Map<string, AgentRun>(runs.map((r) => [r.id, r]));
+
+    const entries: { feature: Feature; run: AgentRun | null }[] = features.map((feature) => ({
+      feature,
+      run: feature.agentRunId ? (runById.get(feature.agentRunId) ?? null) : null,
+    }));
+
+    // Batch-fetch phase timings for every active run in one query, grouped
+    // by agent_run_id. Replaces the per-feature findByRunId loop below.
+    const activeRunIds = entries
+      .filter(({ run }) => run !== null && (!runIdFilter || run.id === runIdFilter))
+      .map(({ run }) => run!.id);
+    const timingsByRunId = new Map<
+      string,
+      Awaited<ReturnType<typeof this.phaseTimingRepo.findByRunIds>>
+    >();
+    if (activeRunIds.length > 0) {
+      try {
+        const allTimings = await this.phaseTimingRepo.findByRunIds(activeRunIds);
+        for (const t of allTimings) {
+          const list = timingsByRunId.get(t.agentRunId) ?? [];
+          list.push(t);
+          timingsByRunId.set(t.agentRunId, list);
+        }
+      } catch {
+        // Ignore timing errors mid-stream — phase-completion deltas just
+        // won't be emitted this cycle.
+      }
+    }
 
     for (const { feature, run } of entries) {
       if (!run) continue;
@@ -332,13 +359,9 @@ export class StreamAgentEventsUseCase {
       }
 
       // New phase completions (timing rows only appear after finish).
-      try {
-        const timings = await this.phaseTimingRepo.findByRunId(run.id);
-        for (const event of computePhaseCompletionDeltas({ feature, run, prev, timings })) {
-          enqueue(event);
-        }
-      } catch {
-        // Ignore timing errors mid-stream.
+      const timings = timingsByRunId.get(run.id) ?? [];
+      for (const event of computePhaseCompletionDeltas({ feature, run, prev, timings })) {
+        enqueue(event);
       }
     }
 

@@ -19,6 +19,7 @@ describe('heartbeat', () => {
       create: vi.fn().mockResolvedValue(undefined),
       findById: vi.fn().mockResolvedValue(null),
       findByThreadId: vi.fn().mockResolvedValue(null),
+      findByIds: vi.fn().mockResolvedValue([]),
       updateStatus: vi.fn().mockResolvedValue(undefined),
       updatePinnedConfig: vi.fn().mockResolvedValue(undefined),
       findRunningByPid: vi.fn().mockResolvedValue([]),
