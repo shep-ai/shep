@@ -1,0 +1,321 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: web-ui-performance-pass
+summary: >
+  Task-level breakdown for 093-web-ui-performance-pass. 15 tasks across 9 phases.
+  Phases 1–4 are the backend hot-path fixes (highest user impact). Phases 5–7
+  are the frontend bundle wins. Phase 8 is server caching. Phase 9 validates.
+
+relatedFeatures:
+  - "089-clean-arch-fixes"
+  - "090-application-sse-deltas"
+technologies:
+  - TypeScript
+  - SQLite
+  - Next.js
+  - React
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: "Add SQLite performance PRAGMAs"
+    description: >
+      Extend `connection.ts` to set `temp_store=MEMORY`, `mmap_size=268435456`
+      (256MB), `busy_timeout=5000`, and bump `cache_size` from -2000 (8MB) to
+      -65536 (64MB). Existing PRAGMAs (WAL, NORMAL, foreign_keys, defensive)
+      stay unchanged.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - All four new PRAGMAs are applied via `dbInstance.pragma(...)`
+      - Order matches existing pattern (single `pragma()` call per setting)
+      - Connection still opens cleanly on a fresh `~/.shep/data` file
+    tdd: null # Configuration change — no new logic to test
+    estimatedEffort: 5m
+
+  - id: task-2
+    title: "Add migration for missing perf indexes"
+    description: >
+      Create `093-add-perf-indexes.ts` that adds idempotent
+      `CREATE INDEX IF NOT EXISTS idx_interactive_sessions_feature_id ON interactive_sessions(feature_id)`
+      and `CREATE INDEX IF NOT EXISTS idx_features_agent_run_id ON features(agent_run_id) WHERE agent_run_id IS NOT NULL`.
+      Follow the shape of existing migrations (`up()` function, no down()).
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Migration file exports `up(db)` and follows existing migration shape
+      - Both indexes use `IF NOT EXISTS` (re-runnable safely)
+      - Migration is registered in the migrations array (if explicit) or auto-discovered
+    tdd: null # Pure DDL, idempotent
+    estimatedEffort: 10m
+
+  - id: task-3
+    title: "RED: write findByIds test for agent-run repo"
+    description: >
+      Add `tests/unit/infrastructure/repositories/sqlite-agent-run.repository.find-by-ids.test.ts`
+      with cases: empty input → []; multiple ids → matching rows; missing ids
+      silently dropped; large input (>500 ids) does not throw SQLite parameter
+      error.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Test file follows existing repo-test patterns (in-memory SQLite via the same harness)
+      - All four cases present
+      - Tests fail (RED) before implementation
+    tdd:
+      red:
+        - Write failing tests for findByIds
+      green:
+        - Implement findByIds in next phase
+      refactor:
+        - Extract id-chunking helper if reused
+    estimatedEffort: 30m
+
+  - id: task-4
+    title: "RED: write findByRunIds test for phase-timing repo"
+    description: >
+      Add `tests/unit/infrastructure/repositories/sqlite-phase-timing.repository.find-by-run-ids.test.ts`
+      with cases mirroring task-3, plus: results group correctly by `agent_run_id`.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Same four cases as task-3
+      - Additional grouping case
+      - Tests fail (RED) before implementation
+    tdd:
+      red:
+        - Write failing tests for findByRunIds
+      green:
+        - Implement findByRunIds in next phase
+      refactor:
+        - Share chunking helper with agent-run repo
+    estimatedEffort: 30m
+
+  - id: task-5
+    title: "GREEN: implement IAgentRunRepository.findByIds"
+    description: >
+      Add `findByIds(ids: string[]): Promise<AgentRun[]>` to the port interface.
+      Implement in `sqlite-agent-run.repository.ts` using `WHERE id IN (?,?,...)`,
+      chunked at 500 ids. Cache the prepared statement keyed by chunk size
+      (LRU of 4 entries: 1, 10, 100, 500).
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Port interface updated
+      - Implementation passes the RED tests from task-3
+      - Empty input returns [] without touching SQLite
+      - Prepared statements cached on the class
+    tdd:
+      red: []
+      green:
+        - Make the four RED cases pass
+      refactor:
+        - Cache prepared statements; extract chunk helper
+    estimatedEffort: 45m
+
+  - id: task-6
+    title: "GREEN: implement IPhaseTimingRepository.findByRunIds"
+    description: >
+      Mirror task-5 for phase timings. Returns flat array; callers group by
+      `agentRunId` themselves (fewer assumptions than a Map<runId, timings[]>).
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - Port interface updated
+      - Implementation passes RED tests from task-4
+      - Empty input returns [] without touching SQLite
+      - Prepared statements cached on the class
+    tdd:
+      red: []
+      green:
+        - Make RED cases pass
+      refactor:
+        - Reuse chunk helper from task-5
+    estimatedEffort: 45m
+
+  - id: task-7
+    title: "Wire batch fetch into StreamAgentEventsUseCase"
+    description: >
+      Replace the per-feature `findById` loop at `stream-agent-events.use-case.ts:299-306`
+      with a single `findByIds(featureRunIds)` call. Replace the per-running-feature
+      `findByRunId(run.id)` calls at line 336 with one `findByRunIds(runIds)` call
+      hoisted out of the loop and grouped into `Map<runId, timings[]>`.
+    state: Todo
+    dependencies:
+      - task-5
+      - task-6
+    acceptanceCriteria:
+      - No behavioral change observed by integration tests
+      - Per-poll DB query count for runs+timings is O(1), not O(N)
+      - Existing tests in `stream-agent-events.use-case.test.ts` still pass
+    tdd:
+      red: []
+      green:
+        - Existing integration tests stay green
+      refactor:
+        - Extract grouping helper if reused
+    estimatedEffort: 30m
+
+  - id: task-8
+    title: "Wire batch fetch into getGraphData (SSR layout)"
+    description: >
+      Replace the per-feature `findById` loop at `get-graph-data.ts:189-194`
+      with a single `findByIds(runIds)` call. Build `featuresWithRuns` from the
+      resulting Map.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - Dashboard layout still renders
+      - Per-navigation DB query count for runs is O(1)
+      - No type errors
+    tdd: null # Functional change covered by manual smoke
+    estimatedEffort: 15m
+
+  - id: task-9
+    title: "Code-split global dialogs in app-shell"
+    description: >
+      In `app-shell.tsx`, replace static imports of `GlobalChatPopup`,
+      `GlobalSearchDialog`, `GitHubImportDialog`, `ReactFileManagerDialog` with
+      `next/dynamic({ ssr: false })`. Keep mount logic identical — only the
+      JS chunk fetch is deferred.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Initial chunk for `/` no longer contains assistant-ui or radix-dialog content
+      - Dialogs still open and function on user trigger
+      - No flicker or hydration warning in dev mode
+    tdd: null # Bundling change — manual smoke
+    estimatedEffort: 30m
+
+  - id: task-10
+    title: "Lazy-load Tiptap PageEditor"
+    description: >
+      Wrap the Tiptap-using `PageEditor` in `pages-panel.tsx` with `next/dynamic`
+      (or split into a thin loader + heavy inner). Static imports of @tiptap/*
+      and lowlight must move to the lazy chunk.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - `/projects/*/pages` initial chunk no longer contains @tiptap or lowlight
+      - Editor still renders when navigating into a page
+    tdd: null # Bundling change — manual smoke
+    estimatedEffort: 30m
+
+  - id: task-11
+    title: "Lazy-load xterm Terminal"
+    description: >
+      Move the `@xterm/*` imports out of `terminal-tab.tsx`'s static import
+      graph by extracting the xterm-using component and wrapping with
+      `next/dynamic({ ssr: false })`.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Application page initial chunk no longer contains @xterm
+      - Terminal tab still works on first click
+    tdd: null # Bundling change — manual smoke
+    estimatedEffort: 30m
+
+  - id: task-12
+    title: "Bump React Query staleTime"
+    description: >
+      Change `staleTime: 1000` to `staleTime: 30_000` in `query-provider.tsx`.
+      Add `gcTime: 5 * 60_000` to keep cached data while user navigates between
+      tabs.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - `staleTime` is 30s, `gcTime` is 5min
+      - SSE-driven views still update live (they invalidate manually anyway)
+    tdd: null
+    estimatedEffort: 5m
+
+  - id: task-13
+    title: "Gate /api/graph-data 15s poll on SSE health"
+    description: >
+      In `use-control-center-state.ts`, only run the 15s `/api/graph-data` poll
+      when SSE has been disconnected or silent for >30s. While SSE is healthy
+      (events arriving or heartbeat OK), the poll is a no-op.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - When SSE is healthy, no `/api/graph-data` requests are made
+      - When SSE goes down, recovery poll resumes
+      - No regression in graph reconciliation
+    tdd: null # Manual smoke against `/api/agent-events/health`
+    estimatedEffort: 30m
+
+  - id: task-14
+    title: "Cache /api/npm-version response"
+    description: >
+      In `app/api/npm-version/route.ts`, add a process-global memo (5 min TTL)
+      around the npm registry fetch and return `Cache-Control: public, max-age=300`.
+      Multiple tabs hitting the route share one upstream call.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Repeated calls within TTL return cached value without hitting npm
+      - Response sets Cache-Control header
+      - Errors from upstream are not cached
+    tdd: null # Trivial caching layer
+    estimatedEffort: 20m
+
+  - id: task-15
+    title: "Validate: typecheck, lint, build, tests"
+    description: >
+      Run the local CI verification sequence per `.claude/rules/cicd.md`:
+      `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test:unit`,
+      `pnpm test:int`, `pnpm build`. Fix any breakages introduced by the pass.
+    state: Todo
+    dependencies:
+      - task-1
+      - task-2
+      - task-3
+      - task-4
+      - task-5
+      - task-6
+      - task-7
+      - task-8
+      - task-9
+      - task-10
+      - task-11
+      - task-12
+      - task-13
+      - task-14
+    acceptanceCriteria:
+      - All commands exit 0
+      - No new lint warnings
+      - No type errors
+    tdd: null
+    estimatedEffort: 30m
+
+totalEstimate: ~6h focused work
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  Web UI performance pass — 15 tasks across 9 phases. Backend hot-path fixes
+  (PRAGMAs, indexes, kill N+1) ship first; frontend bundle splitting and client
+  polling cleanup follow; server-side caching last; full validation closes out.
+
+  ## Acceptance Checklist
+
+  Before marking feature complete:
+
+  - [ ] All 15 tasks completed
+  - [ ] `pnpm test` passes
+  - [ ] `pnpm lint` clean
+  - [ ] `pnpm typecheck` clean
+  - [ ] `pnpm build` succeeds
+  - [ ] `shep ui` smoke: dashboard renders, SSE health 200, chat opens, terminal opens
+  - [ ] PR created with before/after notes on bundle size and per-poll DB query count
+
+  ---
+
+  _Task details are in the tasks[] array of tasks.yaml_

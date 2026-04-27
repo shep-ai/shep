@@ -1,0 +1,244 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: web-ui-performance-pass
+summary: >
+  Phased implementation plan for 093-web-ui-performance-pass. Backend hot-path
+  fixes (SQLite tuning, batch repos, kill N+1) ship first because they fix the
+  symptom every user reports. Frontend bundle splitting follows. Each phase is
+  independently shippable; later phases never assume earlier work.
+
+# Relationships
+relatedFeatures:
+  - "089-clean-arch-fixes"
+  - "090-application-sse-deltas"
+technologies:
+  - TypeScript
+  - Next.js 16
+  - React 19
+  - SQLite (better-sqlite3)
+  - tanstack/react-query
+relatedLinks: []
+
+# Structured implementation phases
+phases:
+  - id: phase-1
+    name: "SQLite tuning (PRAGMAs + indexes)"
+    parallel: false
+    taskIds:
+      - task-1
+      - task-2
+
+  - id: phase-2
+    name: "Batch fetch repo methods (RED)"
+    parallel: false
+    taskIds:
+      - task-3
+      - task-4
+
+  - id: phase-3
+    name: "Batch fetch repo methods (GREEN)"
+    parallel: false
+    taskIds:
+      - task-5
+      - task-6
+
+  - id: phase-4
+    name: "Kill N+1 in SSE use case + SSR layout"
+    parallel: false
+    taskIds:
+      - task-7
+      - task-8
+
+  - id: phase-5
+    name: "Code-split global dialogs in app-shell"
+    parallel: false
+    taskIds:
+      - task-9
+
+  - id: phase-6
+    name: "Lazy-load Tiptap PageEditor and xterm Terminal"
+    parallel: true
+    taskIds:
+      - task-10
+      - task-11
+
+  - id: phase-7
+    name: "React-Query staleTime + gate redundant poll"
+    parallel: false
+    taskIds:
+      - task-12
+      - task-13
+
+  - id: phase-8
+    name: "Server-side caching for npm-version"
+    parallel: false
+    taskIds:
+      - task-14
+
+  - id: phase-9
+    name: "Validation (typecheck/lint/build/tests)"
+    parallel: false
+    taskIds:
+      - task-15
+
+# File change tracking
+filesToCreate:
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/093-add-perf-indexes.ts
+  - tests/unit/infrastructure/repositories/sqlite-agent-run.repository.find-by-ids.test.ts
+  - tests/unit/infrastructure/repositories/sqlite-phase-timing.repository.find-by-run-ids.test.ts
+
+filesToModify:
+  - packages/core/src/infrastructure/persistence/sqlite/connection.ts
+  - packages/core/src/application/ports/output/agents/agent-run-repository.interface.ts
+  - packages/core/src/application/ports/output/agents/phase-timing-repository.interface.ts
+  - packages/core/src/infrastructure/repositories/sqlite-agent-run.repository.ts
+  - packages/core/src/infrastructure/repositories/sqlite-phase-timing.repository.ts
+  - packages/core/src/application/use-cases/agents/stream-agent-events.use-case.ts
+  - src/presentation/web/app/(dashboard)/get-graph-data.ts
+  - src/presentation/web/components/layouts/app-shell/app-shell.tsx
+  - src/presentation/web/components/pm/page-editor/pages-panel.tsx
+  - src/presentation/web/components/features/application-page/terminal-tab.tsx
+  - src/presentation/web/components/providers/query-provider.tsx
+  - src/presentation/web/components/features/control-center/use-control-center-state.ts
+  - src/presentation/web/app/api/npm-version/route.ts
+
+openQuestions: []
+
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-04-27
+
+  ## Architecture Overview
+
+  ```
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │                        BEFORE (each 2s tick)                         │
+  ├─────────────────────────────────────────────────────────────────────┤
+  │  SSE poll  →  listFeatures()                                         │
+  │              ├─ findById(run) × N  ← N+1                             │
+  │              ├─ findByRunId(timings) × N_running  ← N+1              │
+  │              ├─ findAllActive(sessions) + findById × M               │
+  │              └─ applications.list()                                  │
+  │                                                                       │
+  │  SSR layout → same N+1 on every navigation                           │
+  ├─────────────────────────────────────────────────────────────────────┤
+  │                          AFTER (each tick)                           │
+  ├─────────────────────────────────────────────────────────────────────┤
+  │  SSE poll  →  listFeatures()                                         │
+  │              ├─ findByIds(run, [..ids])         ← 1 query            │
+  │              ├─ findByRunIds(timings, [..ids])  ← 1 query            │
+  │              ├─ findAllActive(sessions) + findById × M (unchanged)   │
+  │              └─ applications.list()                                  │
+  │                                                                       │
+  │  SSR layout → same batch fetch                                       │
+  └─────────────────────────────────────────────────────────────────────┘
+  ```
+
+  Frontend:
+
+  ```
+  BEFORE                                  AFTER
+  ─────────────────────────────────       ─────────────────────────────
+  AppShell statically imports:            AppShell uses next/dynamic for:
+    GlobalChatPopup (assistant-ui)         GlobalChatPopup (lazy)
+    GlobalSearchDialog                     GlobalSearchDialog (lazy)
+    GitHubImportDialog                     GitHubImportDialog (lazy)
+    ReactFileManagerDialog                 ReactFileManagerDialog (lazy)
+
+  PagesPanel statically imports             PagesPanel dynamic-imports
+    PageEditor (Tiptap × 13 + lowlight)    PageEditor inner
+
+  TerminalTab statically imports xterm    TerminalTab dynamic-imports xterm
+
+  Query staleTime: 1s                     Query staleTime: 30s
+
+  /api/graph-data polled every 15s        Polled only when SSE down >30s
+  ```
+
+  ## Implementation Strategy
+
+  **MANDATORY TDD** for the new repo methods (`findByIds`, `findByRunIds`):
+  RED unit tests first, then GREEN implementation, then wire into use case.
+
+  Phase ordering rationale:
+
+  1. **PRAGMAs and indexes first** — zero-risk wins, immediate effect on every
+     query the rest of the work runs.
+  2. **Add new batch methods on the ports + tests (RED)** before touching call sites.
+  3. **Implement batch methods (GREEN)** with prepared-statement caching.
+  4. **Wire batch methods** into both the SSE use case and the SSR layout in
+     the same phase — they share the same N+1 pattern.
+  5. **Frontend code-split** is independent of backend; can be done in parallel
+     across files but kept sequential here for review clarity.
+  6. **Validation** at the end runs typecheck + lint + unit + integration tests.
+
+  Each phase produces a self-contained, runnable state. If we have to ship
+  early, every phase up to that point is independently valuable.
+
+  ## Files to Create/Modify
+
+  ### New Files
+
+  | File | Purpose |
+  | ---- | ------- |
+  | `packages/core/src/infrastructure/persistence/sqlite/migrations/093-add-perf-indexes.ts` | Idempotent CREATE INDEX IF NOT EXISTS for the two missing indexes |
+  | `tests/unit/infrastructure/repositories/sqlite-agent-run.repository.find-by-ids.test.ts` | RED test for `findByIds` |
+  | `tests/unit/infrastructure/repositories/sqlite-phase-timing.repository.find-by-run-ids.test.ts` | RED test for `findByRunIds` |
+
+  ### Modified Files
+
+  | File | Changes |
+  | ---- | ------- |
+  | `connection.ts` | Add `temp_store=MEMORY`, `mmap_size=256MB`, `busy_timeout=5000`, bump `cache_size` |
+  | `agent-run-repository.interface.ts` | Add `findByIds(ids: string[])` |
+  | `phase-timing-repository.interface.ts` | Add `findByRunIds(runIds: string[])` |
+  | `sqlite-agent-run.repository.ts` | Implement `findByIds` with cached statements |
+  | `sqlite-phase-timing.repository.ts` | Implement `findByRunIds` with cached statements |
+  | `stream-agent-events.use-case.ts` | Replace per-feature `findById` loop with batch |
+  | `get-graph-data.ts` | Replace per-feature `findById` loop with batch |
+  | `app-shell.tsx` | Wrap 4 global dialogs in `next/dynamic({ ssr: false })` |
+  | `pages-panel.tsx` | Dynamic import PageEditor inner |
+  | `terminal-tab.tsx` | Dynamic import xterm-using inner component |
+  | `query-provider.tsx` | `staleTime: 30_000` |
+  | `use-control-center-state.ts` | Disable 15s `/api/graph-data` poll while SSE healthy |
+  | `npm-version/route.ts` | In-process memo + `Cache-Control: public, max-age=300` |
+
+  ## Testing Strategy (TDD: Tests FIRST)
+
+  ### Unit Tests (RED -> GREEN -> REFACTOR)
+
+  - `sqlite-agent-run.repository.find-by-ids.test.ts`: empty input returns `[]`,
+    multiple ids return matching rows, missing ids are silently dropped, ordering
+    is stable, large input (>500) doesn't blow up SQLite param limit.
+  - `sqlite-phase-timing.repository.find-by-run-ids.test.ts`: same shape as above
+    plus grouping by `agent_run_id`.
+
+  ### Integration Tests
+
+  - `tests/integration/use-cases/stream-agent-events.use-case.test.ts` (existing):
+    must still pass after the batch refactor — same observable behavior.
+
+  ### E2E Sanity (manual)
+
+  - Run `pnpm dev:cli ui`, hit `http://localhost:4050/api/agent-events/health` →
+    200. Open `/`, verify graph still renders, no console errors. Open chat
+    popup → verify it loads (lazy chunk).
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | New PRAGMAs ignored or misspelled | Apply via `dbInstance.pragma()`; existing PRAGMAs use the same pattern. Easy to revert. |
+  | Index migration fails on a partial DB | `CREATE INDEX IF NOT EXISTS`; idempotent. Worst case: no-op. |
+  | Batch `IN (?,?,...)` exceeds SQLite param limit | Chunk into batches of 500 ids inside the repo method. |
+  | Tiptap dynamic import flickers on first edit | Show same skeleton the page already uses; PageEditor itself sets `loading: () => null` since the parent already handles loading state. |
+  | Removing the 15s `/api/graph-data` poll could mask SSE bugs | Re-enable when SSE health endpoint reports unhealthy or last event >30s ago. |
+  | `next/dynamic` for `GlobalChatPopup` breaks the `hideGlobalChat` route logic | Wrapper component still mounts; dynamic only affects when JS for the inner widget is fetched. |
+  | npm-version cache returns stale data after release | Cache TTL is 5 min; users can refresh. |
+
+  ---
+
+  _Updated by `/shep-kit:plan` — see tasks.yaml for detailed task breakdown_

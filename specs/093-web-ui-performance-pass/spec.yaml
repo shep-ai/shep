@@ -1,0 +1,133 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: web-ui-performance-pass
+number: 093
+branch: feat/093-web-ui-performance-pass
+oneLiner: Eliminate N+1 queries, tune SQLite, code-split heavy frontend libs, and remove redundant polling so `shep ui` on :4050 feels instant.
+summary: >
+  The npm-installed Shep web UI feels stuck and slow at :4050. Audit identified four
+  compounding causes: (1) a 2s SSE poll re-issues N+1 queries against SQLite for every
+  feature/run/timing/session; (2) the SSR dashboard layout repeats the same N+1 on every
+  navigation; (3) the SQLite connection is missing key PRAGMAs and indexes; (4) heavy
+  frontend libraries (@assistant-ui, @tiptap×13, @xterm, @xyflow, lowlight) are statically
+  imported into the global app shell or dashboard layout, shipping ~750KB of JS on every
+  first paint. This pass ships a focused set of fixes that target the hot paths without
+  changing architecture.
+phase: Requirements
+sizeEstimate: L
+
+# Relationships
+relatedFeatures:
+  - "089-clean-arch-fixes"
+  - "090-application-sse-deltas"
+
+technologies:
+  - TypeScript
+  - Next.js 16 (App Router, Turbopack)
+  - React 19
+  - SQLite (better-sqlite3)
+  - tsyringe (DI)
+  - tanstack/react-query
+
+relatedLinks: []
+
+# Open questions (must be resolved before implementation)
+openQuestions: []
+
+# Markdown content (the actual spec)
+content: |
+  ## Problem Statement
+
+  Users running the npm-published `@shepai/cli` via `shep ui` on `localhost:4050`
+  report the dashboard as "stuck and super slow". A deep audit found four
+  compounding root causes that all hit the same hot paths simultaneously:
+
+  1. **N+1 queries every 2s.** The SSE endpoint at
+     `src/presentation/web/app/api/agent-events/route.ts` runs
+     `StreamAgentEventsUseCase`, which on each 2s tick lists all features, then
+     issues `agentRunRepo.findById` per feature, then `phaseTimingRepo.findByRunId`
+     per run, plus `applicationRepo.list()` and per-session `findById` calls. With
+     N features and M sessions, that's ~`2 + 2N + M` queries per tab per 2s.
+
+  2. **The SSR dashboard layout repeats the same N+1 on every navigation.**
+     `src/presentation/web/app/(dashboard)/layout.tsx` is `force-dynamic` and
+     awaits `getGraphData()`, which runs the same per-feature `agentRunRepo.findById`
+     loop at `get-graph-data.ts:189-194`. Every link click pays this cost.
+
+  3. **SQLite is configured for correctness, not throughput.** Only WAL,
+     synchronous=NORMAL, foreign_keys, defensive, and an 8MB cache are set
+     (`packages/core/src/infrastructure/persistence/sqlite/connection.ts:54-68`).
+     Missing: `temp_store=MEMORY`, `mmap_size`, `busy_timeout`, larger cache.
+     Indexes missing on `interactive_sessions(feature_id)` and
+     `features(agent_run_id)` — both used by the 2s poll.
+
+  4. **No code-splitting for heavy client libraries.** `AppShell` eagerly mounts
+     `GlobalChatPopup` (@assistant-ui/react), `GlobalSearchDialog`,
+     `GitHubImportDialog`, `ReactFileManagerDialog` on every page. The dashboard
+     layout pulls in `@xyflow/react` + dagre even on `/projects`/`/applications`.
+     PM PageEditor pulls in 13 Tiptap packages + lowlight statically.
+     `@xterm/xterm` is statically imported by the application page. ~750KB gzip
+     of JS that doesn't need to be on the critical path.
+
+  Compounding effect: the React-Query default `staleTime` is `1000` (effectively
+  no cache), and there's a redundant 15s `/api/graph-data` client poll on top of
+  the 2s SSE — so the same N+1 work runs from multiple directions.
+
+  ## Success Criteria
+
+  - [ ] Per-poll DB query count for the SSE loop drops from O(N) to O(1) for
+        agent runs and O(1) for phase timings (batch fetch).
+  - [ ] `getGraphData()` on dashboard navigation no longer issues per-feature
+        `findById` calls.
+  - [ ] SQLite connection sets `temp_store=MEMORY`, `mmap_size`, `busy_timeout`,
+        and a larger `cache_size` PRAGMA.
+  - [ ] Indexes exist on `interactive_sessions(feature_id)` and
+        `features(agent_run_id)` (idempotent migration).
+  - [ ] Heavy global dialogs (chat, search, GitHub import, file manager) are
+        loaded via `next/dynamic` and do not appear in the initial chunk for `/`.
+  - [ ] Tiptap PageEditor is loaded via `next/dynamic` and only fetched on the
+        pages route.
+  - [ ] xterm Terminal is loaded via `next/dynamic` and only fetched when the
+        Terminal tab is opened.
+  - [ ] React-Query `staleTime` is increased from 1s; redundant 15s
+        `/api/graph-data` poll is gated to "SSE unhealthy" recovery only.
+  - [ ] `/api/npm-version` is cached at the server (Cache-Control + in-process
+        memo) — no per-tab fanout to the npm registry.
+  - [ ] Hot-path SQLite repositories cache prepared statements as class fields.
+  - [ ] All existing unit + integration tests still pass; build, lint, typecheck
+        all green; e2e smoke (control-center loads, SSE health check 200) passes.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `packages/core/src/infrastructure/persistence/sqlite/connection.ts` | High | New PRAGMAs |
+  | `packages/core/src/infrastructure/persistence/sqlite/migrations/` | High | New idempotent migration for missing indexes |
+  | `packages/core/src/application/ports/output/agents/agent-run-repository.interface.ts` | High | Add `findByIds` batch method |
+  | `packages/core/src/application/ports/output/agents/phase-timing-repository.interface.ts` | High | Add `findByRunIds` batch method |
+  | `packages/core/src/infrastructure/repositories/sqlite-agent-run.repository.ts` | High | Implement batch + cache prepared statements |
+  | `packages/core/src/infrastructure/repositories/sqlite-phase-timing.repository.ts` | High | Implement batch + cache prepared statements |
+  | `packages/core/src/application/use-cases/agents/stream-agent-events.use-case.ts` | High | Wire batch fetch into poll loop |
+  | `src/presentation/web/app/(dashboard)/get-graph-data.ts` | High | Use batch fetch in SSR layout |
+  | `src/presentation/web/components/layouts/app-shell/app-shell.tsx` | High | `next/dynamic` global dialogs |
+  | `src/presentation/web/components/pm/page-editor/` | Medium | Lazy editor inner |
+  | `src/presentation/web/components/features/application-page/terminal-tab.tsx` | Medium | Lazy xterm wrapper |
+  | `src/presentation/web/components/providers/query-provider.tsx` | Low | Bump staleTime |
+  | `src/presentation/web/components/features/control-center/use-control-center-state.ts` | Medium | Gate the redundant poll |
+  | `src/presentation/web/app/api/npm-version/route.ts` | Low | Add caching |
+
+  ## Dependencies
+
+  None — pure performance pass on top of existing arch.
+
+  ## Size Estimate
+
+  **L** — Multiple layers touched (DB + repos + use case + SSR layout +
+  client bundling + caching). Each individual change is small and well-scoped,
+  but the surface area is wide. Roughly 12 files, 1 new migration, 0 new
+  domain models.
+
+  ---
+
+  _Generated by `/shep-kit:new-feature` — proceed with `/shep-kit:research`_
