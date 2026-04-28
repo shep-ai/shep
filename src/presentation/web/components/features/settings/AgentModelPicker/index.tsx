@@ -202,7 +202,6 @@ export function AgentModelPicker({
           className="z-[70] w-(--radix-popover-trigger-width) overflow-hidden p-0"
           align="start"
           side="bottom"
-          avoidCollisions={false}
         >
           {/* Sliding container — both panels side by side, translateX controlled by level */}
           <div
