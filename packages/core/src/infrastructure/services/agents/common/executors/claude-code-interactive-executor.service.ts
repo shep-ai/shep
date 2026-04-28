@@ -151,31 +151,36 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
     // Strip CLAUDECODE env var to prevent nested-session detection errors.
     const { CLAUDECODE: _, ...cleanEnv } = process.env;
 
-    // Build the canUseTool callback that intercepts AskUserQuestion.
-    // When the agent calls AskUserQuestion, this callback:
-    // 1. Delegates to onUserQuestion (which notifies the UI and waits for user response)
-    // 2. Returns { behavior: 'allow', updatedInput } with the user's answers injected
-    // 3. The SDK passes the updated input to AskUserQuestion, which sees pre-filled answers
+    // Build the canUseTool callback. This callback acts as both:
+    //   1. The interception point for AskUserQuestion (delegates to onUserQuestion).
+    //   2. The fallback approver for any tool NOT in `allowedTools` — most
+    //      importantly, MCP tools (named `mcp__<server>__<tool>`).
     //
-    // For ALL other tools: auto-allow (same effect as bypassPermissions).
-    const canUseTool = options.onUserQuestion
-      ? async (toolName: string, input: Record<string, unknown>, opts: { toolUseID: string }) => {
-          if (toolName === 'AskUserQuestion') {
-            const questions = (input.questions as UserQuestion[]) ?? [];
-            const answers = await options.onUserQuestion!({
-              toolCallId: opts.toolUseID,
-              questions,
-            });
-            // Inject answers into the tool input so the SDK treats it as already answered
-            return {
-              behavior: 'allow' as const,
-              updatedInput: { ...input, answers },
-            };
-          }
-          // Auto-allow all other tools
-          return { behavior: 'allow' as const };
-        }
-      : undefined;
+    // Issue #582: MCP tools were blocked because canUseTool was only set when
+    // onUserQuestion was provided, and AUTO_ALLOWED_TOOLS doesn't enumerate
+    // every MCP tool the user has configured. Always installing canUseTool
+    // ensures unknown / dynamic MCP tools fall through to "allow" instead
+    // of being rejected by the SDK's default permission gate.
+    const canUseTool = async (
+      toolName: string,
+      input: Record<string, unknown>,
+      opts: { toolUseID: string }
+    ) => {
+      if (toolName === 'AskUserQuestion' && options.onUserQuestion) {
+        const questions = (input.questions as UserQuestion[]) ?? [];
+        const answers = await options.onUserQuestion({
+          toolCallId: opts.toolUseID,
+          questions,
+        });
+        // Inject answers into the tool input so the SDK treats it as already answered
+        return {
+          behavior: 'allow' as const,
+          updatedInput: { ...input, answers },
+        };
+      }
+      // Auto-allow all other tools (including dynamically-discovered MCP tools)
+      return { behavior: 'allow' as const };
+    };
 
     // NOTE: The V2 Agent SDK `SDKSessionOptions` type does NOT include
     // a `systemPrompt` field — anything we pass there is silently
@@ -198,9 +203,10 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
       // bypassPermissions approach — V2 hardcodes allowDangerouslySkipPermissions
       // to false, so bypassPermissions silently falls back to default mode.
       allowedTools: AUTO_ALLOWED_TOOLS,
-      // When onUserQuestion is provided, use canUseTool to intercept
-      // AskUserQuestion while auto-allowing any unlisted tools as a fallback.
-      ...(canUseTool ? { canUseTool } : {}),
+      // canUseTool is ALWAYS installed (issue #582) so MCP tools and any
+      // other tool not in AUTO_ALLOWED_TOOLS fall through to "allow" rather
+      // than being rejected by the SDK's default permission gate.
+      canUseTool,
       env: cleanEnv,
     };
   }

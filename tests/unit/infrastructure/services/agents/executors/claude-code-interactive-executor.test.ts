@@ -105,13 +105,37 @@ describe('ClaudeCodeInteractiveExecutor', () => {
       expect(typeof capturedOptions.canUseTool).toBe('function');
     });
 
-    it('should NOT pass canUseTool when onUserQuestion is not provided', async () => {
+    it('should ALWAYS pass canUseTool — even without onUserQuestion (issue #582)', async () => {
+      // canUseTool is the fallback approver for any tool not in
+      // AUTO_ALLOWED_TOOLS — most importantly MCP tools the user has
+      // configured. Without this, MCP calls from chat are blocked.
       await executor.createSession({
         cwd: process.cwd(),
         model: 'claude-sonnet-4-6',
       });
 
-      expect(capturedOptions.canUseTool).toBeUndefined();
+      expect(capturedOptions.canUseTool).toBeDefined();
+      expect(typeof capturedOptions.canUseTool).toBe('function');
+    });
+
+    it('canUseTool should auto-allow MCP tools so chat can call them (issue #582)', async () => {
+      await executor.createSession({
+        cwd: process.cwd(),
+        model: 'claude-sonnet-4-6',
+      });
+
+      const canUseTool = capturedOptions.canUseTool as (
+        name: string,
+        input: Record<string, unknown>,
+        opts: { toolUseID: string }
+      ) => Promise<{ behavior: string }>;
+
+      const mcpResult = await canUseTool(
+        'mcp__atlassian__search_issues',
+        { jql: 'assignee = currentUser()' },
+        { toolUseID: 'tu_mcp' }
+      );
+      expect(mcpResult.behavior).toBe('allow');
     });
 
     it('canUseTool should auto-allow non-AskUserQuestion tools', async () => {
