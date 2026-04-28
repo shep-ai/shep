@@ -1,0 +1,500 @@
+
+> @shepai/cli@1.194.1 test:unit /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-flip-model-dropdown-up
+> vitest run tests/unit
+
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-flip-model-dropdown-up[39m
+
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2malready-running path (idempotent)[2m > [22m[2mdoes NOT spawn a new process when daemon is already alive
+[22m[39m
+ℹ Shep is already running at http://localhost:4050
+
+
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2malready-running path (idempotent)[2m > [22m[2mdoes NOT write daemon.json when daemon is already alive
+[22m[39m
+ℹ Shep is already running at http://localhost:4050
+
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/spec-yaml-backward-compatibility.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 133[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/repositories/sqlite-operation-log-repository-publish.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 366[2mms[22m[39m
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2mfresh-start path (no existing daemon)[2m > [22m[2mcalls findAvailablePort with DEFAULT_PORT when no port option given
+[22m[39m
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts [2m([22m[2m49 tests[22m[2m)[22m[33m 911[2mms[22m[39m
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2mfresh-start path (no existing daemon)[2m > [22m[2mcalls findAvailablePort with the provided port override
+[22m[39m
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:8080
+
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/upgrade/upgrade-cli.use-case.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 776[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/agent-registry.service.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 152[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-reject-token.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1553[2mms[22m[39m
+     [33m[2m✓[22m[39m resolves RejectAgentRunUseCase via string token after initialization [33m 1552[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/agents/stream-agent-events.use-case.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 755[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-idempotency.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1594[2mms[22m[39m
+     [33m[2m✓[22m[39m isContainerInitialized() returns false before init [33m 1544[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-session-registrations.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1657[2mms[22m[39m
+     [33m[2m✓[22m[39m resolves ListAgentSessionsUseCase after initialization [33m 1551[2mms[22m[39m
+[2026-04-28T20:59:33.189Z] Spawning: cursor-agent --yolo -p Implement feature --output-format stream-json
+[2026-04-28T20:59:33.190Z] Spawn cwd: (inherited)
+[2026-04-28T20:59:33.190Z] Subprocess PID: 12345
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/filesystem/node-application-file-system.service.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 122[2mms[22m[39m
+[2026-04-28T20:59:33.222Z] Spawning: cursor-agent --yolo -p Bad prompt --output-format stream-json
+[2026-04-28T20:59:33.222Z] Spawn cwd: (inherited)
+[2026-04-28T20:59:33.222Z] Subprocess PID: 12345
+[2026-04-28T20:59:33.234Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-28T20:59:33.234Z] Spawn cwd: (inherited)
+[2026-04-28T20:59:33.234Z] Subprocess PID: 12345
+[2026-04-28T20:59:33.255Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-28T20:59:33.255Z] Spawn cwd: (inherited)
+[2026-04-28T20:59:33.255Z] Subprocess PID: 12345
+[2026-04-28T20:59:33.277Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-28T20:59:33.277Z] Spawn cwd: (inherited)
+[2026-04-28T20:59:33.277Z] Subprocess PID: 12345
+[2026-04-28T20:59:33.300Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-28T20:59:33.300Z] Spawn cwd: (inherited)
+[2026-04-28T20:59:33.300Z] Subprocess PID: 12345
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/codex-cli-executor.test.ts [2m([22m[2m49 tests[22m[2m)[22m[33m 322[2mms[22m[39m
+[2026-04-28T20:59:33.322Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-28T20:59:33.322Z] Spawn cwd: (inherited)
+[2026-04-28T20:59:33.322Z] Subprocess PID: 12345
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2mfresh-start path (no existing daemon)[2m > [22m[2mspawns the daemon process using process.execPath and _serve args
+[22m[39m
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+[2026-04-28T20:59:33.344Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-28T20:59:33.344Z] Spawn cwd: (inherited)
+[2026-04-28T20:59:33.344Z] Subprocess PID: 12345
+[2026-04-28T20:59:33.349Z] [analyze] Starting...
+[2026-04-28T20:59:33.351Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.351Z] [analyze] Prompt length: 4303 chars
+[2026-04-28T20:59:33.351Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.353Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.353Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.354Z] [requirements] Starting...
+[2026-04-28T20:59:33.355Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.355Z] [requirements] Prompt length: 5551 chars
+[2026-04-28T20:59:33.355Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.355Z] [requirements] Interrupting for human approval
+[2026-04-28T20:59:33.355Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-04-28T20:59:33.355Z] Spawn cwd: (inherited)
+[2026-04-28T20:59:33.355Z] Subprocess PID: 12345
+[2026-04-28T20:59:33.359Z] [analyze] Starting...
+[2026-04-28T20:59:33.359Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.359Z] [analyze] Prompt length: 4303 chars
+[2026-04-28T20:59:33.359Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.360Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.360Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.363Z] [requirements] Starting...
+[2026-04-28T20:59:33.363Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.363Z] [requirements] Prompt length: 5551 chars
+[2026-04-28T20:59:33.363Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.364Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.364Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.365Z] [research] Starting...
+[2026-04-28T20:59:33.366Z] [research] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.366Z] [research] Prompt length: 5508 chars
+[2026-04-28T20:59:33.366Z] [research] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.366Z] [validate:research.yaml] Validating research.yaml
+[2026-04-28T20:59:33.366Z] [validate:research.yaml] Validation passed
+[2026-04-28T20:59:33.367Z] [plan] Starting...
+[2026-04-28T20:59:33.367Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.367Z] [plan] Prompt length: 6560 chars
+[2026-04-28T20:59:33.367Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.368Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-28T20:59:33.368Z] [validate:plan+tasks] Validation passed
+[2026-04-28T20:59:33.369Z] [implement] Starting implementation phase orchestration
+[2026-04-28T20:59:33.369Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-28T20:59:33.369Z] [implement] Executing phase prompt — 2605 chars
+[2026-04-28T20:59:33.370Z] [implement] Phase complete (20 chars)
+[2026-04-28T20:59:33.370Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-28T20:59:33.370Z] [evidence] Starting evidence collection
+[2026-04-28T20:59:33.370Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.370Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.370Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.370Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-28T20:59:33.370Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.371Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.371Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.371Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-28T20:59:33.371Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.371Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.371Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.371Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+[2026-04-28T20:59:33.376Z] [analyze] Starting...
+[2026-04-28T20:59:33.376Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.376Z] [analyze] Prompt length: 4342 chars
+[2026-04-28T20:59:33.376Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.376Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.377Z] [validate:spec.yaml] Validation passed
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/gemini-cli-executor.test.ts [2m([22m[2m43 tests[22m[2m)[22m[33m 314[2mms[22m[39m
+[2026-04-28T20:59:33.377Z] [requirements] Starting...
+[2026-04-28T20:59:33.377Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.377Z] [requirements] Prompt length: 5590 chars
+[2026-04-28T20:59:33.377Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.378Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.378Z] [validate:spec.yaml] Validation passed
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/cursor-executor.test.ts [2m([22m[2m39 tests[22m[2m)[22m[32m 203[2mms[22m[39m
+[2026-04-28T20:59:33.380Z] [research] Starting...
+[2026-04-28T20:59:33.380Z] [research] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.380Z] [research] Prompt length: 5547 chars
+[2026-04-28T20:59:33.380Z] [research] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.381Z] [validate:research.yaml] Validating research.yaml
+[2026-04-28T20:59:33.381Z] [validate:research.yaml] Validation passed
+[2026-04-28T20:59:33.383Z] [plan] Starting...
+[2026-04-28T20:59:33.383Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.383Z] [plan] Prompt length: 6638 chars
+[2026-04-28T20:59:33.383Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.384Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-28T20:59:33.384Z] [validate:plan+tasks] Validation passed
+[2026-04-28T20:59:33.385Z] [implement] Starting implementation phase orchestration
+[2026-04-28T20:59:33.385Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-28T20:59:33.385Z] [implement] Executing phase prompt — 2605 chars
+[2026-04-28T20:59:33.385Z] [implement] Phase complete (20 chars)
+[2026-04-28T20:59:33.385Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-28T20:59:33.385Z] [evidence] Starting evidence collection
+[2026-04-28T20:59:33.385Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.385Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.385Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.385Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-28T20:59:33.385Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.385Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.385Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.385Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-28T20:59:33.385Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.385Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.385Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.385Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+[2026-04-28T20:59:33.388Z] [analyze] Starting...
+[2026-04-28T20:59:33.388Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.388Z] [analyze] Prompt length: 4303 chars
+[2026-04-28T20:59:33.388Z] [analyze] ERROR: Executor failed (after 0.0s)
+[2026-04-28T20:59:33.390Z] [analyze] Starting...
+[2026-04-28T20:59:33.390Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.390Z] [analyze] Prompt length: 4303 chars
+[2026-04-28T20:59:33.390Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.392Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.392Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.393Z] [requirements] Starting...
+[2026-04-28T20:59:33.393Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.393Z] [requirements] Prompt length: 5551 chars
+[2026-04-28T20:59:33.393Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.394Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.394Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.394Z] [research] Starting...
+[2026-04-28T20:59:33.394Z] [research] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.394Z] [research] Prompt length: 5508 chars
+[2026-04-28T20:59:33.394Z] [research] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.395Z] [validate:research.yaml] Validating research.yaml
+[2026-04-28T20:59:33.395Z] [validate:research.yaml] Validation passed
+[2026-04-28T20:59:33.395Z] [plan] Starting...
+[2026-04-28T20:59:33.395Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.395Z] [plan] Prompt length: 6560 chars
+[2026-04-28T20:59:33.395Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.396Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-28T20:59:33.396Z] [validate:plan+tasks] Validation passed
+[2026-04-28T20:59:33.397Z] [implement] Starting implementation phase orchestration
+[2026-04-28T20:59:33.397Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-28T20:59:33.397Z] [implement] Executing phase prompt — 2605 chars
+[2026-04-28T20:59:33.397Z] [implement] Phase complete (20 chars)
+[2026-04-28T20:59:33.397Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-28T20:59:33.397Z] [evidence] Starting evidence collection
+[2026-04-28T20:59:33.397Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.397Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.397Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.397Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-28T20:59:33.397Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.397Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.397Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.397Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-28T20:59:33.398Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.398Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.398Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.398Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+[2026-04-28T20:59:33.400Z] [analyze] Starting...
+[2026-04-28T20:59:33.400Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.400Z] [analyze] Prompt length: 4303 chars
+[2026-04-28T20:59:33.400Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.400Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.400Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.401Z] [requirements] Starting...
+[2026-04-28T20:59:33.401Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.401Z] [requirements] Prompt length: 5551 chars
+[2026-04-28T20:59:33.401Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.401Z] [requirements] Interrupting for human approval
+[2026-04-28T20:59:33.402Z] [analyze] Starting...
+[2026-04-28T20:59:33.402Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.402Z] [analyze] Prompt length: 4303 chars
+[2026-04-28T20:59:33.402Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.403Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.403Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.403Z] [requirements] Starting...
+[2026-04-28T20:59:33.403Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.403Z] [requirements] Prompt length: 5551 chars
+[2026-04-28T20:59:33.403Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.403Z] [requirements] Interrupting for human approval
+[2026-04-28T20:59:33.413Z] [requirements] Starting...
+[2026-04-28T20:59:33.413Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.413Z] [requirements] Prompt length: 5551 chars
+[2026-04-28T20:59:33.413Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.414Z] [requirements] Interrupting for human approval
+[2026-04-28T20:59:33.414Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.414Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.415Z] [research] Starting...
+[2026-04-28T20:59:33.415Z] [research] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.415Z] [research] Prompt length: 5508 chars
+[2026-04-28T20:59:33.415Z] [research] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.416Z] [validate:research.yaml] Validating research.yaml
+[2026-04-28T20:59:33.416Z] [validate:research.yaml] Validation passed
+[2026-04-28T20:59:33.416Z] [plan] Starting...
+[2026-04-28T20:59:33.416Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.416Z] [plan] Prompt length: 6560 chars
+[2026-04-28T20:59:33.416Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.416Z] [plan] Interrupting for human approval
+[2026-04-28T20:59:33.418Z] [analyze] Starting...
+[2026-04-28T20:59:33.418Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.418Z] [analyze] Prompt length: 4303 chars
+[2026-04-28T20:59:33.418Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.419Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.419Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.420Z] [requirements] Starting...
+[2026-04-28T20:59:33.420Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.420Z] [requirements] Prompt length: 5551 chars
+[2026-04-28T20:59:33.420Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.420Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.420Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.421Z] [research] Starting...
+[2026-04-28T20:59:33.421Z] [research] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.421Z] [research] Prompt length: 5508 chars
+[2026-04-28T20:59:33.421Z] [research] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.422Z] [validate:research.yaml] Validating research.yaml
+[2026-04-28T20:59:33.422Z] [validate:research.yaml] Validation passed
+[2026-04-28T20:59:33.422Z] [plan] Starting...
+[2026-04-28T20:59:33.422Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.422Z] [plan] Prompt length: 6560 chars
+[2026-04-28T20:59:33.422Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.423Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-28T20:59:33.423Z] [validate:plan+tasks] Validation passed
+[2026-04-28T20:59:33.423Z] [implement] Starting implementation phase orchestration
+[2026-04-28T20:59:33.423Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-28T20:59:33.423Z] [implement] Executing phase prompt — 2605 chars
+[2026-04-28T20:59:33.423Z] [implement] Phase complete (20 chars)
+[2026-04-28T20:59:33.423Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-28T20:59:33.423Z] [evidence] Starting evidence collection
+[2026-04-28T20:59:33.423Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.423Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.423Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.424Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-28T20:59:33.424Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.424Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.424Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.424Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-28T20:59:33.424Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.424Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.424Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.424Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/agents/stream-agent-events-application.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 304[2mms[22m[39m
+[2026-04-28T20:59:33.425Z] [analyze] Starting...
+[2026-04-28T20:59:33.425Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.425Z] [analyze] Prompt length: 4303 chars
+[2026-04-28T20:59:33.425Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.426Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.426Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.426Z] [requirements] Starting...
+[2026-04-28T20:59:33.426Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.426Z] [requirements] Prompt length: 5551 chars
+[2026-04-28T20:59:33.426Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.427Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.427Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.428Z] [research] Starting...
+[2026-04-28T20:59:33.428Z] [research] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.428Z] [research] Prompt length: 5508 chars
+[2026-04-28T20:59:33.428Z] [research] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.429Z] [validate:research.yaml] Validating research.yaml
+[2026-04-28T20:59:33.429Z] [validate:research.yaml] Validation passed
+[2026-04-28T20:59:33.430Z] [plan] Starting...
+[2026-04-28T20:59:33.430Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.430Z] [plan] Prompt length: 6560 chars
+[2026-04-28T20:59:33.430Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.431Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-28T20:59:33.431Z] [validate:plan+tasks] Validation passed
+[2026-04-28T20:59:33.432Z] [implement] Starting implementation phase orchestration
+[2026-04-28T20:59:33.432Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-28T20:59:33.433Z] [implement] Executing phase prompt — 2605 chars
+[2026-04-28T20:59:33.433Z] [implement] Phase complete (20 chars)
+[2026-04-28T20:59:33.433Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-28T20:59:33.433Z] [evidence] Starting evidence collection
+[2026-04-28T20:59:33.434Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.434Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.434Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.434Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-28T20:59:33.434Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.434Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.434Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.434Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-28T20:59:33.434Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.434Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.434Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.434Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+[2026-04-28T20:59:33.436Z] [analyze] Starting...
+[2026-04-28T20:59:33.437Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.437Z] [analyze] Prompt length: 4303 chars
+[2026-04-28T20:59:33.437Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.438Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.438Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.439Z] [requirements] Starting...
+[2026-04-28T20:59:33.439Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.439Z] [requirements] Prompt length: 5551 chars
+[2026-04-28T20:59:33.439Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.440Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.440Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.440Z] [research] Starting...
+[2026-04-28T20:59:33.440Z] [research] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.440Z] [research] Prompt length: 5508 chars
+[2026-04-28T20:59:33.440Z] [research] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.441Z] [validate:research.yaml] Validating research.yaml
+[2026-04-28T20:59:33.441Z] [validate:research.yaml] Validation passed
+[2026-04-28T20:59:33.441Z] [plan] Starting...
+[2026-04-28T20:59:33.441Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.441Z] [plan] Prompt length: 6560 chars
+[2026-04-28T20:59:33.441Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.441Z] [plan] Interrupting for human approval
+[2026-04-28T20:59:33.443Z] [analyze] Starting...
+[2026-04-28T20:59:33.443Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.443Z] [analyze] Prompt length: 4306 chars
+[2026-04-28T20:59:33.443Z] [analyze] Complete (20 chars, 0.0s)
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/translations/translation-completeness.test.ts [2m([22m[2m139 tests[22m[2m)[22m[32m 67[2mms[22m[39m
+[2026-04-28T20:59:33.444Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.444Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.444Z] [requirements] Starting...
+[2026-04-28T20:59:33.444Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.444Z] [requirements] Prompt length: 5554 chars
+[2026-04-28T20:59:33.444Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.445Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.445Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.445Z] [research] Starting...
+[2026-04-28T20:59:33.445Z] [research] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.445Z] [research] Prompt length: 5321 chars
+[2026-04-28T20:59:33.445Z] [research] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.446Z] [validate:research.yaml] Validating research.yaml
+[2026-04-28T20:59:33.446Z] [validate:research.yaml] ERROR: Validation failed: Missing required string field 'summary'; Missing required string field 'content'; Missing required array field 'decisions'
+[2026-04-28T20:59:33.446Z] [repair:research.yaml] Repairing research.yaml (attempt 1)
+[2026-04-28T20:59:33.446Z] [repair:research.yaml] Repair complete (20 chars)
+[2026-04-28T20:59:33.447Z] [validate:research.yaml] Validating research.yaml
+[2026-04-28T20:59:33.447Z] [validate:research.yaml] ERROR: Validation failed: Missing required string field 'summary'; Missing required string field 'content'; Missing required array field 'decisions'
+[2026-04-28T20:59:33.447Z] [repair:research.yaml] Repairing research.yaml (attempt 2)
+[2026-04-28T20:59:33.447Z] [repair:research.yaml] Repair complete (20 chars)
+[2026-04-28T20:59:33.448Z] [validate:research.yaml] Validating research.yaml
+[2026-04-28T20:59:33.448Z] [validate:research.yaml] ERROR: Validation failed: Missing required string field 'summary'; Missing required string field 'content'; Missing required array field 'decisions'
+[2026-04-28T20:59:33.448Z] [routeValidation] Clearing completed phase 'research' so retry re-runs the agent
+[2026-04-28T20:59:33.450Z] [analyze] Starting...
+[2026-04-28T20:59:33.450Z] [analyze] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.450Z] [analyze] Prompt length: 4327 chars
+[2026-04-28T20:59:33.450Z] [analyze] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.450Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.450Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.451Z] [requirements] Starting...
+[2026-04-28T20:59:33.451Z] [requirements] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.451Z] [requirements] Prompt length: 5575 chars
+[2026-04-28T20:59:33.451Z] [requirements] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.452Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-28T20:59:33.452Z] [validate:spec.yaml] Validation passed
+[2026-04-28T20:59:33.452Z] [research] Starting...
+[2026-04-28T20:59:33.452Z] [research] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.452Z] [research] Prompt length: 5532 chars
+[2026-04-28T20:59:33.452Z] [research] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.453Z] [validate:research.yaml] Validating research.yaml
+[2026-04-28T20:59:33.453Z] [validate:research.yaml] Validation passed
+[2026-04-28T20:59:33.453Z] [plan] Starting...
+[2026-04-28T20:59:33.453Z] [plan] Executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.453Z] [plan] Prompt length: 6608 chars
+[2026-04-28T20:59:33.453Z] [plan] Complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.454Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-04-28T20:59:33.454Z] [validate:plan+tasks] Validation passed
+[2026-04-28T20:59:33.454Z] [implement] Starting implementation phase orchestration
+[2026-04-28T20:59:33.454Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-04-28T20:59:33.455Z] [implement] Executing phase prompt — 2605 chars
+[2026-04-28T20:59:33.455Z] [implement] Phase complete (20 chars)
+[2026-04-28T20:59:33.455Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-04-28T20:59:33.455Z] [evidence] Starting evidence collection
+[2026-04-28T20:59:33.455Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.455Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.455Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.455Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-28T20:59:33.455Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.455Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.455Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.455Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-04-28T20:59:33.455Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-04-28T20:59:33.455Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-04-28T20:59:33.455Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-04-28T20:59:33.455Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/langgraph/feature-agent-graph.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 118[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/copilot-cli-executor.test.ts [2m([22m[2m51 tests[22m[2m)[22m[32m 179[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/translations/language-switching.test.ts [2m([22m[2m43 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould set isRunning to true when started
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould set isRunning to true when started
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould set isRunning to false when stopped
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould be no-op when start() is called while already running
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould be no-op when start() is called while already running
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould poll at configured interval
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould poll at configured interval
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould stop polling when stop() is called
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould stop polling when stop() is called
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould support custom poll interval
+[22m[39m[PrSyncWatcher] Starting (poll every 1000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mstart/stop lifecycle[2m > [22m[2mshould support custom poll interval
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Merged transition and update feature and agent run
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Merged transition and update feature and agent run
+[22m[39m[PrSyncWatcher] PR #1 status changed: Open -> Merged for "My Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Merged transition and update feature and agent run
+[22m[39m[PrSyncWatcher] CI status changed: none -> Pending for "My Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould detect Open→Merged transition and update feature and agent run
+[22m[39m[PrSyncWatcher] Stopped
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip duplicate Maintain transition when merge node already handled it (#354)
+[22m[39m[PrSyncWatcher] Starting (poll every 30000ms)
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip duplicate Maintain transition when merge node already handled it (#354)
+[22m[39m[PrSyncWatcher] PR #1 status changed: Open -> Merged for "My Feature"
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip duplicate Maintain transition when merge node already handled it (#354)
+[22m[39m[PrSyncWatcher] Feature "My Feature" already in Maintain — skipping duplicate transition
+
+[90mstdout[2m | tests/unit/infrastructure/services/pr-sync/pr-sync-watcher.service.test.ts[2m > [22m[2mPrSyncWatcherService[2m > [22m[2mPR status polling and transition detection[2m > [22m[2mshould skip duplicate Maintain transition when merge node already handled it (#354)
+[22m[39m[PrSyncWatcher] Stopped
