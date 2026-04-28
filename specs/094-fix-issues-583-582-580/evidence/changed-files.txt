@@ -1,0 +1,6 @@
+ .../claude-code-interactive-executor.service.ts    |  60 ++++++------
+ src/presentation/web/app/actions/open-shell.ts     |  44 ++++++++-
+ .../feature-tree-table/feature-tree-table.css      |   8 ++
+ .../claude-code-interactive-executor.test.ts       |  28 +++++-
+ .../presentation/web/actions/open-shell.test.ts    | 104 ++++++++++++++++++---
+ 5 files changed, 197 insertions(+), 47 deletions(-)
