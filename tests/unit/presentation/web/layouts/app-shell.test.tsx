@@ -132,7 +132,7 @@ describe('AppShell', () => {
   });
 
   describe('global chat popup', () => {
-    it('renders the chat toggle button when repos exist', () => {
+    it('renders the chat toggle button when repos exist', async () => {
       render(
         <FeatureFlagsProvider flags={defaultFlags}>
           <AppShell>
@@ -141,12 +141,16 @@ describe('AppShell', () => {
           </AppShell>
         </FeatureFlagsProvider>
       );
-      // GlobalChatPopup renders a "Shep Chat" tooltip label
-      expect(screen.getByText('Shep Chat')).toBeInTheDocument();
+      // GlobalChatPopup is loaded via next/dynamic, so the "Shep Chat" tooltip
+      // label appears asynchronously after the lazy chunk resolves.
+      expect(await screen.findByText('Shep Chat')).toBeInTheDocument();
     });
 
     it('hides the chat toggle button during onboarding', () => {
       renderShell(<div>Content</div>);
+      // GlobalChatPopup is hidden via the `hideGlobalChat` branch and is
+      // never mounted (the dynamic chunk is never even requested), so a
+      // synchronous query is correct here.
       expect(screen.queryByText('Shep Chat')).not.toBeInTheDocument();
     });
   });
