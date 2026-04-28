@@ -31,6 +31,14 @@
   font-size: 14px;
 }
 
+/* tabulator_simple.css hardcodes `.tabulator-table { background: #fff }` —
+   that creates a solid white plate behind the rows in dark mode, producing
+   the "white over white" titles reported in issue #580. Force transparent
+   so the .tabulator card colour shows through in both themes. */
+.tabulator .tabulator-tableholder .tabulator-table {
+  background-color: transparent;
+}
+
 /* ── Header — light fill with bottom border ────────────────── */
 .tabulator .tabulator-header {
   background-color: var(--color-muted, #f1f5f9);
