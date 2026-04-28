@@ -18,9 +18,10 @@ summary: >
   is not surfaced as an action on application nodes or the application page.
   This feature wires the missing entry point: from an application (node menu or
   app top-bar) the user can launch the create drawer pre-scoped to that app's
-  repository with mode 'spec' pre-selected, and the resulting feature shows up
-  on the Control Center canvas linked to the application node.
-phase: "Analysis"
+  repository with mode 'spec' pre-selected, persists the resulting feature's
+  link back to the application, and renders a parent edge from the new spec
+  feature node to the application node on the Control Center canvas.
+phase: "Requirements"
 sizeEstimate: "M"
 
 # Relationships
@@ -58,10 +59,167 @@ relatedLinks:
 
 # Open questions (must be resolved before implementation)
 openQuestions:
-  - "Does 'work on it in control center in SDD mode' mean (a) launch a NEW spec-mode feature against the application's repo, or (b) re-render the application's existing setup workflow as a spec-driven flow with editable spec.yaml? Research must confirm with user before planning."
-  - "Should 'spec' BuildMode get behavioral differentiation now (e.g., produce specs/NNN-* artifacts via shep-kit pipeline) or remain a UI label that just sets fast=false? The drawer comment says it is currently identical to 'application' mode."
-  - "Where does the entry point live: (a) AppOverflowMenu on the app top-bar, (b) a context action on the application node in the canvas, (c) FAB action 'New SDD feature for app…', or (d) all three?"
-  - "On the canvas, should features spawned from an application visually link to the application node (parent edge) the same way features link to repository nodes today?"
+  - question: "Where should the entry points to launch SDD mode for an existing application live?"
+    resolved: true
+    options:
+      - option: "Application node menu only"
+        description: "Add the action only to the ApplicationNode overflow menu on the canvas. Lowest surface area, but invisible from the app detail page where users spend most of their time."
+        selected: false
+      - option: "Application page top-bar only"
+        description: "Add the action only to the AppOverflowMenu / AppTopBar inside /application/[id]. Discoverable inside the app, but invisible from the Control Center canvas."
+        selected: false
+      - option: "Both surfaces"
+        description: "Add the action to both the ApplicationNode menu on the canvas AND to the application page overflow menu / top-bar. Maximum discoverability; both are small UI plumbing changes."
+        selected: true
+    selectionRationale: >
+      The user's request comes from inside the application page, but the feature name is
+      'control-center-sdd-mode' — it must be reachable from the canvas too. Both surfaces
+      are cheap to wire (each is one menu item dispatching a custom event with the same
+      payload) and align with how every existing 'create feature' flow already exposes
+      multiple entry points (FAB + per-node menus).
+    answer: "Both surfaces"
+
+  - question: "How should a spec-mode feature be linked back to its parent application in the domain model?"
+    resolved: true
+    options:
+      - option: "Reuse featureIdForApplication(appId) as the feature id"
+        description: "Treat the spec run as a continuation of the application's existing feature row. No schema change. Cannot represent multiple SDD features per application; conflates application workflow state with feature run state."
+        selected: false
+      - option: "New applicationId field on Feature"
+        description: "Add an optional applicationId column to Feature in TypeSpec, persist it on creation, and have derive-graph render a feature→application edge when set. Explicit, queryable, supports many features per app, and matches how repositoryPath already links features to repos."
+        selected: true
+      - option: "String-prefix parentNodeId convention"
+        description: "Encode the application id inside an existing parentNodeId-style string. Avoids a migration but requires runtime parsing everywhere and contradicts 'no magic values' and 'no string-prefix gymnastics' rules."
+        selected: false
+    selectionRationale: >
+      Adding an applicationId field is the only option that (a) survives a schema audit,
+      (b) supports multiple SDD features per application without overloading
+      featureIdForApplication, (c) lets derive-graph render the parent edge from a typed
+      field instead of parsing strings, and (d) matches the existing pattern where
+      repositoryPath links a feature to its repo. The migration is small (one nullable
+      column) and the TypeSpec extension is one optional property.
+    answer: "New applicationId field on Feature"
+
+  - question: "How should BuildMode be persisted on a Feature so the run's intent survives refresh and is queryable in the domain?"
+    resolved: true
+    options:
+      - option: "Keep as UI-only TypeScript union"
+        description: "Leave BuildMode in the create drawer as a UI-only type, continue persisting only the boolean fast flag. Cheapest, but the canvas cannot tell a spec feature from an application-mode feature after refresh, and edge styling cannot reflect mode."
+        selected: false
+      - option: "Persist as TypeSpec enum on Feature"
+        description: "Promote BuildMode to a TypeSpec enum (application | fast | spec), add a buildMode field to Feature, write a migration with a default that backfills legacy rows from the existing fast boolean. Enables mode-aware UI, queries, and validation downstream."
+        selected: true
+      - option: "Derive at read time from applicationId + fast"
+        description: "Compute mode = applicationId ? 'spec' : (fast ? 'fast' : 'application'). No new column, but conflates 'has application parent' with 'spec mode' — a feature could legitimately be application-mode against an app's repo without being SDD."
+        selected: false
+    selectionRationale: >
+      'No magic values' rule explicitly demands TypeSpec-defined enums for domain
+      concepts like mode. Persisting buildMode is required for the canvas to render
+      spec features distinctly after refresh, for the application page to know which
+      child features are SDD runs, and for future use cases (reports, filters,
+      analytics) to query by mode without inferring it. The migration is trivial — one
+      nullable column with a backfill expression based on the existing fast flag.
+    answer: "Persist as TypeSpec enum on Feature"
+
+  - question: "When the user triggers 'Open in Control Center (SDD mode)' from inside the application page, what should happen?"
+    resolved: true
+    options:
+      - option: "Open the drawer in-place on the application page"
+        description: "Mount the FeatureCreateDrawer inside /application/[id] and open it pre-scoped. Avoids a navigation, but duplicates drawer-host wiring and breaks the user's stated mental model of 'open in Control Center'."
+        selected: false
+      - option: "Navigate to / with a URL intent param"
+        description: "Push to / with a query param like ?createFeatureForApp=<appId>&mode=spec. ControlCenterInner reads the intent on mount, opens the existing drawer with applicationId + initialMode='spec', and removes the param. Single drawer host, matches the user's stated intent ('in Control Center'), survives refresh of the destination URL."
+        selected: true
+      - option: "Navigate to / and rely on a transient client event"
+        description: "Push to / and dispatch a window CustomEvent that ControlCenter listens for. Simpler than a URL param but loses the intent on refresh and is harder to deep-link or test."
+        selected: false
+    selectionRationale: >
+      The user's wording — 'work on it in control center in SDD mode' — explicitly asks
+      for the Control Center surface, so we must navigate there. URL intent params are
+      already the project's standard for cross-page intent (existing /create route, FAB
+      flows) and they survive refresh, are deep-linkable, are easy to assert in
+      Playwright, and need only one drawer host. The transient event variant is strictly
+      worse on every axis.
+    answer: "Navigate to / with a URL intent param"
+
+  - question: "Should an SDD feature launched from an application also create a new git worktree, or run directly against the application's existing working directory?"
+    resolved: true
+    options:
+      - option: "Create a new worktree"
+        description: "Treat the spec feature like every other feature: provision a new branch + worktree under .worktrees/, run the agent there. Isolation is preserved and the application's working tree is never disturbed. Matches existing feature-run lifecycle with zero special cases."
+        selected: true
+      - option: "Run in the application's working directory"
+        description: "Reuse the application's existing repo path as the feature's working directory. Saves a clone, but lets two agent runs (the application's resume workflow and the new spec feature) collide on the same files, branches, and dev server."
+        selected: false
+    selectionRationale: >
+      Worktree-per-feature is the load-bearing isolation guarantee of the entire Shep
+      platform. Sharing a working directory between an application and its child SDD
+      feature would make concurrent runs unsafe, break the dev-server-per-app
+      assumption, and contradict every other feature flow. The cost of provisioning a
+      worktree is already paid by the existing infrastructure — there is no reason to
+      special-case this entry point.
+    answer: "Create a new worktree"
+
+  - question: "When the drawer opens scoped to an application, what should be pre-filled and what should remain editable?"
+    resolved: true
+    options:
+      - option: "Pre-fill repo + lock mode, leave the rest blank"
+        description: "Pre-fill repositoryPath from the application's repo and pin BuildMode to 'spec'. Leave one-liner / description blank for the user. Other repo / mode toggles remain visible but disabled with a tooltip explaining they are pinned by the application context."
+        selected: true
+      - option: "Pre-fill everything including a description template"
+        description: "Pre-fill repo, mode, and a templated one-liner ('Continue work on <app name>'). Faster for a one-click launch, but the templated one-liner is almost always wrong and forces the user to delete it."
+        selected: false
+      - option: "Pre-fill nothing — pass appId as a hidden context only"
+        description: "Drawer remains a blank form but knows the application context for persistence. Highest friction; defeats the purpose of having an app-scoped entry point."
+        selected: false
+    selectionRationale: >
+      Pinning what is determined by the entry point (repo + mode) and leaving what is
+      authored by the user (the one-liner / description) blank matches every existing
+      pre-scoped flow in this codebase and respects user agency. Disabling the locked
+      controls (rather than hiding them) keeps the drawer's spatial layout stable, so
+      Storybook stories and visual regression tests stay simple. Templated one-liners
+      have repeatedly been rejected in past UX iterations because they are noise the
+      user must delete.
+    answer: "Pre-fill repo + lock mode, leave the rest blank"
+
+  - question: "Are users allowed to launch multiple SDD features against the same application concurrently?"
+    resolved: true
+    options:
+      - option: "Allow many concurrent SDD features per application"
+        description: "No uniqueness constraint. Each launch creates a new Feature row with its own worktree. The canvas renders each spec feature as its own child node of the application. Matches how features-per-repo already works."
+        selected: true
+      - option: "Limit to one active SDD feature per application"
+        description: "Block (or queue) a second launch while a prior SDD feature is still running. Simpler mental model but contradicts the per-feature-worktree isolation that already supports concurrency, and would require a new lock concept in the domain."
+        selected: false
+    selectionRationale: >
+      The architecture already supports many concurrent feature runs against a single
+      repo with no special locking — each run gets its own worktree and SSE channel.
+      Adding an artificial uniqueness constraint here would invent a new domain
+      restriction with no infrastructural justification, and would surprise users who
+      already run parallel features elsewhere. The 'allow many' option is also strictly
+      a superset, so the limit can be added later if real-world usage demands it.
+    answer: "Allow many concurrent SDD features per application"
+
+  - question: "What should the FAB do when the canvas selection includes an application node?"
+    resolved: true
+    options:
+      - option: "Add a context-aware 'New SDD feature for <app>' FAB action"
+        description: "When exactly one application node is selected, the FAB exposes an extra item that opens the drawer pre-scoped to that app in spec mode. Other FAB actions remain unchanged."
+        selected: true
+      - option: "Replace 'New feature' with the app-scoped variant"
+        description: "When an app is selected, swap the generic 'New feature' for 'New SDD feature for <app>'. Lower clutter, but loses the ability to start an unrelated feature from the FAB without first deselecting."
+        selected: false
+      - option: "Do nothing in the FAB — entry points only on the node + app page"
+        description: "Skip FAB integration. The two existing entry points cover the user's stated path. Smallest blast radius."
+        selected: false
+    selectionRationale: >
+      A context-aware extra item is the lowest-friction way to surface the action where
+      the user is already pointing, without removing the unconditional 'New feature'
+      escape hatch. Replacing actions based on selection is fragile UX (selection state
+      can change between hover and click) and goes against the existing FAB patterns.
+      Skipping the FAB entirely would be defensible but leaves a discoverability gap
+      for keyboard / FAB-first users that costs essentially nothing to fill.
+    answer: "Add a context-aware 'New SDD feature for <app>' FAB action"
 
 # Markdown content (the actual spec)
 content: |
@@ -102,78 +260,173 @@ content: |
   The result: the user has an application but cannot do spec-driven work
   on it from the Control Center.
 
-  ## Codebase Analysis
+  ## Success Criteria
 
-  ### Project Structure
+  - [ ] From the Control Center canvas, right-clicking (or opening the
+    overflow menu of) an `ApplicationNode` exposes a "New SDD feature"
+    action that opens the create drawer with the application's
+    `repositoryPath` pre-filled and `initialMode='spec'` pinned.
+  - [ ] From `/application/[id]`, the app top-bar / overflow menu exposes
+    an "Open in Control Center (SDD mode)" action that navigates to `/`
+    with a URL intent param and immediately opens the create drawer
+    pre-scoped (repo pre-filled, mode locked to `'spec'`).
+  - [ ] When exactly one application node is selected on the canvas, the
+    FAB shows an additional "New SDD feature for &lt;app&gt;" action with
+    the same behavior.
+  - [ ] Submitting the drawer in this scoped mode persists a `Feature`
+    row whose new `applicationId` field equals the source application's
+    id and whose new `buildMode` field equals `'spec'`.
+  - [ ] On the canvas, the new spec `FeatureNode` renders with a parent
+    edge to its `ApplicationNode`, derived from `Feature.applicationId`
+    in `derive-graph.ts` (no string-prefix parsing).
+  - [ ] The spec feature runs in its own git worktree (no shared working
+    directory with the application's resume workflow).
+  - [ ] After a hard refresh, the canvas, the application page, and any
+    feature detail view continue to identify the new feature as a
+    `'spec'` build mode tied to its application — i.e., state is loaded
+    from persistence, not derived from transient UI props.
+  - [ ] Multiple SDD features can be launched concurrently against the
+    same application; each gets its own worktree and SSE stream and is
+    rendered as a sibling child of the application node.
+  - [ ] All new and modified web components ship with colocated
+    `.stories.tsx` files (Default, Loading, Error, plus an "app-scoped"
+    variant for the create drawer).
+  - [ ] `pnpm lint`, `pnpm typecheck`, `pnpm test:unit`, `pnpm test:int`,
+    `pnpm build`, and `pnpm tsp:compile` all pass; CI runs are green.
+  - [ ] No regression in the existing FAB flows, application detail
+    page, or canvas drag/zoom/select behaviors.
 
-  - `packages/core/src/` — Clean-architecture core split into
-    `domain/`, `application/` (use cases + ports), and `infrastructure/`.
-    Application-related use cases live under
-    `packages/core/src/application/use-cases/applications/`
-    (create, resume, list, delete, file IO, watch-files, plus the
-    `application-creation.workflow.ts` step definitions).
-  - `src/presentation/web/` — Next.js App Router UI. Control Center is
-    the default homepage; the canvas, drawers, and FAB live under
-    `components/features/control-center/` and
-    `components/common/feature-create-drawer/`. The application detail
-    page lives at `app/application/[id]/page.tsx` and pulls in
-    `components/features/application-page/`.
-  - `tsp/` — TypeSpec source for domain models. `Application`,
-    `Feature`, `WorkflowStep`, `BuildMode`-adjacent enums are emitted
-    into `packages/core/src/domain/generated/output.ts`.
-  - `specs/` — Feature specs in YAML. Existing precedents:
-    `016-control-center` (canvas/drawer architecture),
-    `021-control-center-create-feature-2` (drawer wiring),
-    `088-cli-application-management`,
-    `090-application-sse-deltas` (SSE deltas for app state).
+  ## Functional Requirements
 
-  ### Architecture Patterns
+  - **FR-1 — App node entry point.** `ApplicationNode` exposes a "New
+    SDD feature" action (overflow menu / context menu) that dispatches a
+    create-drawer intent carrying the application's id and
+    `initialMode='spec'`.
+  - **FR-2 — App page entry point.** The application page top-bar /
+    overflow menu (`app-overflow-menu.tsx`, `app-top-bar.tsx`) exposes
+    an "Open in Control Center (SDD mode)" action that navigates to `/`
+    with a URL intent param (e.g.
+    `?createFeatureForApp=<appId>&mode=spec`).
+  - **FR-3 — FAB context-awareness.** When exactly one
+    `ApplicationNode` is selected, `useFabActions` injects an extra
+    "New SDD feature for &lt;app&gt;" item whose handler is the same
+    intent as FR-1.
+  - **FR-4 — Drawer accepts an application context.**
+    `FeatureCreateDrawer` accepts an `initialApplicationId` prop. When
+    set, the drawer pre-fills `repositoryPath` from that application,
+    pins `initialMode='spec'`, and disables the repo / mode controls
+    with a tooltip explaining they are bound by the application context.
+    All other fields (one-liner, description, advanced options) remain
+    editable and blank.
+  - **FR-5 — Control Center reads the URL intent.**
+    `ControlCenterInner` / `useControlCenterState` reads
+    `createFeatureForApp` and `mode` from the URL, opens the drawer
+    with the corresponding props, and clears the params from the URL
+    after the drawer is mounted to keep the address bar clean.
+  - **FR-6 — `Feature.applicationId` field.** Add an optional
+    `applicationId: string` to the `Feature` TypeSpec model, regenerate
+    `packages/core/src/domain/generated/output.ts`, write a migration
+    that adds a nullable `application_id` column to the `features`
+    table, and update relevant repository read/write paths.
+  - **FR-7 — `Feature.buildMode` enum.** Promote `BuildMode` to a
+    TypeSpec enum (`application | fast | spec`), add a `buildMode`
+    field to `Feature`, write a migration that backfills the column
+    from the existing `fast` boolean (`fast=true → 'fast'`,
+    `fast=false → 'application'`), and switch the create-feature use
+    case to persist `buildMode` from the drawer's mode selection.
+  - **FR-8 — Create-feature use case accepts the new inputs.** The
+    use case (`create-feature.use-case.ts` or its equivalent) accepts
+    optional `applicationId` and required `buildMode` inputs and
+    persists both. Validation: if `buildMode='spec'`, `applicationId`
+    SHOULD be present (warn but do not block, to preserve generic
+    "spec mode without app" use cases that already exist via FAB →
+    New feature → Spec).
+  - **FR-9 — Canvas derives the parent edge.** `derive-graph.ts`
+    emits an edge from each spec `FeatureNode` to its
+    `ApplicationNode` when `Feature.applicationId` is set. The edge
+    uses the existing parent-style edge component (no new type unless
+    visual differentiation is needed).
+  - **FR-10 — Worktree isolation.** The agent runner provisioned for
+    the new spec feature uses its own branch + worktree under
+    `.worktrees/`, never the application's working directory.
+  - **FR-11 — Concurrent SDD features per application.** No new
+    uniqueness constraint is introduced. Multiple spec features can
+    coexist for the same `applicationId`; each renders as a separate
+    sibling node on the canvas.
+  - **FR-12 — i18n.** All new user-visible strings are added to
+    `src/presentation/web/locales/*/web.json` for every locale the
+    project currently maintains.
+  - **FR-13 — Storybook coverage.** Every new or modified web
+    component ships a colocated `.stories.tsx` covering at minimum
+    Default, Loading, Error, and (where applicable) an "app-scoped"
+    variant.
 
-  - **Use-cases are the only entry point.** Presentation never calls
-    repositories directly; it calls a use case via DI. Any new behavior
-    here must land as a new (or extended) use case in `application/`,
-    not as logic inside the React component.
-  - **Domain-Map-driven canvas state.** `useGraphState` keeps three Maps
-    (featureMap, repoMap, pendingMap) as the single source of truth;
-    nodes/edges are derived. Adding "application-scoped feature" edges
-    will likely extend `lib/derive-graph.ts` rather than adding ad-hoc
-    state.
-  - **`featureIdForApplication(appId)`** already bridges Application ids
-    into the feature/session/workflow-step namespace. Any spec-mode
-    feature launched against an app will need to either reuse that id
-    (continue the same session) or generate a fresh feature id whose
-    `parentNodeId` points to the application — the design choice is one
-    of the open questions.
-  - **SSE for live updates.** `app/api/agent-events/route.ts` and the
-    service-worker multiplexer drive node lifecycle changes; new spec-
-    mode features will hit this stream automatically as long as they
-    persist as `Feature` rows.
+  ## Non-Functional Requirements
 
-  ### Relevant Technologies
+  - **NFR-1 — Clean architecture.** Presentation never imports from
+    `infrastructure/`. All new behavior is plumbed through use cases
+    and ports per `.claude/rules/code-quality.md`.
+  - **NFR-2 — TypeSpec-first.** Domain changes (`applicationId`,
+    `buildMode` enum) are authored in `tsp/` and codegen
+    (`pnpm tsp:compile`) is rerun before any consumer change. The
+    generated file is never hand-edited.
+  - **NFR-3 — TDD.** Every new use-case behavior, drawer prop path,
+    and derive-graph edge is covered by a failing test first
+    (RED → GREEN → REFACTOR). Migration is covered by an idempotent
+    up-test that runs against a temporary sqlite db.
+  - **NFR-4 — No magic values.** Modes are referenced by the
+    generated TypeSpec enum, not by string literals. URL intent param
+    keys live in a shared constants module.
+  - **NFR-5 — Migration safety.** The migration is idempotent and
+    backfills sensibly so existing rows remain valid after deploy.
+    `Feature.applicationId` is nullable; `Feature.buildMode` is
+    backfilled from the legacy `fast` flag.
+  - **NFR-6 — Performance.** Drawer open from intent to first paint
+    is &lt; 100ms on the dev machine baseline; canvas re-render after
+    edge derivation is bounded by the existing `useGraphState`
+    memoization (no new full-graph recomputes).
+  - **NFR-7 — Accessibility.** All new menu items / FAB items are
+    keyboard-reachable, have visible focus states, and announce their
+    purpose to screen readers (proper `aria-label` and `role`).
+    Disabled drawer controls expose a tooltip describing why.
+  - **NFR-8 — Observability.** Existing SSE deltas continue to
+    surface lifecycle changes for the new feature without a new
+    channel. Logging via `ILogger` (no `console.*`).
+  - **NFR-9 — Backward compatibility.** Pre-existing features
+    (`applicationId === null`, `buildMode` backfilled from `fast`)
+    render and behave identically on the canvas and detail pages —
+    no regression on the existing 016 / 021 / 088 / 090 flows.
 
-  - React 19 + Next.js 16 + `@xyflow/react` v12 for the canvas.
-  - tsyringe for DI; TypeSpec for the `Application`, `Feature`, and
-    `BuildMode` shape (today `BuildMode` is a UI-only TypeScript union
-    in the create drawer — the persisted contract is `fast: boolean`).
-  - shadcn/ui + Tailwind v4 for drawer/menu components.
-  - Better-sqlite3 + migrations under
-    `packages/core/src/infrastructure/persistence/migrations/`.
+  ## Product Questions & AI Recommendations
+
+  | # | Question | AI Recommendation | Rationale |
+  | - | -------- | ----------------- | --------- |
+  | 1 | Where should the SDD entry points live? | Both surfaces (app node menu + app page top-bar) | Maximum discoverability; both are cheap and dispatch the same intent. |
+  | 2 | How is a spec feature linked to its parent application? | New `applicationId` field on `Feature` | Explicit, queryable, supports many features per app, no string parsing. |
+  | 3 | How is `BuildMode` persisted? | Promote to TypeSpec enum + new `buildMode` field on `Feature` | Required for refresh-stable, query-stable mode; satisfies the "no magic values" rule. |
+  | 4 | What happens when triggered from the application page? | Navigate to `/` with a URL intent param | Matches user's stated mental model, deep-linkable, single drawer host, easy to test. |
+  | 5 | Should an SDD feature reuse the app's working directory? | Create a new worktree | Worktree-per-feature isolation is the platform's load-bearing guarantee. |
+  | 6 | What does the drawer pre-fill in app-scoped mode? | Pre-fill repo + lock mode; leave one-liner blank | Locks what's determined by entry point, leaves user-authored fields editable; matches every other pre-scoped flow. |
+  | 7 | Allow multiple concurrent SDD features per app? | Yes — no new uniqueness constraint | Architecture already supports concurrent feature runs per repo; adding a lock invents a new restriction with no justification. |
+  | 8 | What does the FAB do for a selected app? | Add a context-aware "New SDD feature for &lt;app&gt;" item | Lowest-friction, preserves the unconditional "New feature" escape hatch. |
 
   ## Affected Areas
 
   | Area | Impact | Reasoning |
   | ---- | ------ | --------- |
   | `src/presentation/web/components/common/feature-create-drawer/feature-create-drawer.tsx` | High | Already supports `initialMode`. Needs to accept an `initialApplicationId` (or pre-selected app context) and keep `'spec'` mode pinned when launched from an app. |
-  | `src/presentation/web/components/features/control-center/use-fab-actions.tsx` | Medium | Add a "Continue in SDD mode for app…" action OR make existing actions app-aware when an application node is selected. |
-  | `src/presentation/web/components/common/application-node/application-node.tsx` | Medium | Add a node-level action ("New spec feature" / "Open in SDD mode") that dispatches the create-drawer event with `applicationId` + `initialMode='spec'`. |
+  | `src/presentation/web/components/features/control-center/use-fab-actions.tsx` | Medium | Add a "New SDD feature for &lt;app&gt;" action when exactly one application node is selected. |
+  | `src/presentation/web/components/common/application-node/application-node.tsx` | Medium | Add a node-level action ("New SDD feature") that dispatches the create-drawer event with `applicationId` + `initialMode='spec'`. |
   | `src/presentation/web/components/features/application-page/app-overflow-menu.tsx` and `app-top-bar.tsx` | Medium | Surface an "Open in Control Center (SDD mode)" entry that navigates back to `/` with the create drawer pre-scoped. |
-  | `src/presentation/web/components/features/control-center/control-center-inner.tsx` and `use-control-center-state.ts` | Medium | Read incoming "create-feature-for-app" intent (URL param, custom event, or selected node) and forward `applicationId` + mode to the drawer. |
-  | `packages/core/src/application/use-cases/features/create-feature.use-case.ts` (or equivalent) | Medium | If `applicationId` is plumbed through, the use case must persist the relationship — either via `parentNodeId`, `repositoryPath`, or a new field — and surface it to the canvas via `derive-graph`. |
-  | `tsp/` (likely `Feature` model) | Low–Medium | Possibly add `applicationId` to `Feature` so the canvas can render a parent edge from feature → application without string-prefix gymnastics. Open question. |
-  | `packages/core/src/infrastructure/persistence/migrations/` | Low–Medium | Required only if `Feature` gains an `applicationId` column. |
-  | `src/presentation/web/lib/derive-graph.ts` | Medium | Extend edge derivation to draw feature → application edges when the new field is present. |
+  | `src/presentation/web/components/features/control-center/control-center-inner.tsx` and `use-control-center-state.ts` | Medium | Read URL intent params (`createFeatureForApp`, `mode`), open drawer with the matching props, and clear the params from the URL afterwards. |
+  | `packages/core/src/application/use-cases/features/create-feature.use-case.ts` (or equivalent) | Medium | Accept and persist `applicationId` + `buildMode`. Add a soft-warn validation when `buildMode='spec'` without `applicationId`. |
+  | `tsp/` (`Feature` model + new `BuildMode` enum) | Medium | Add `applicationId?: string` and `buildMode: BuildMode` to `Feature`; declare `BuildMode` as a TypeSpec enum. |
+  | `packages/core/src/infrastructure/persistence/migrations/` | Medium | Add a migration that adds nullable `application_id` and `build_mode` columns to the `features` table, with a backfill expression based on the existing `fast` flag. |
+  | `packages/core/src/infrastructure/persistence/repositories/feature.repository.ts` (or equivalent) | Medium | Read/write the new columns. |
+  | `src/presentation/web/lib/derive-graph.ts` | Medium | Extend edge derivation to draw feature → application edges when `Feature.applicationId` is set. |
   | i18n catalogs under `src/presentation/web/locales/*/web.json` | Low | New labels for the SDD entry points. |
   | Storybook stories for every touched component | Low (mandatory) | Project rule: every component MUST have colocated `.stories.tsx`. |
+  | URL intent constants module | Low | Centralize `createFeatureForApp` / `mode` param keys to avoid magic strings. |
 
   ## Dependencies
 
@@ -182,32 +435,35 @@ content: |
   - Application domain model and use cases under
     `packages/core/src/application/use-cases/applications/`.
   - `featureIdForApplication` in `domain/shared/feature-id.ts` for
-    bridging app↔feature ids.
+    bridging app↔feature ids (read-only — not reused as the spec
+    feature id).
   - SSE stream defined in `app/api/agent-events/route.ts` and
     `agent-events-sw.js` for live status updates of the new spec
     feature.
-  - The existing `BuildMode` UI type in the create drawer (no new
-    framework or library needed).
+  - The existing `BuildMode` UI type in the create drawer (will be
+    superseded by the new TypeSpec enum).
+  - Migration runner under `packages/core/src/infrastructure/persistence/migrations/`.
 
   ## Size Estimate
 
-  **M** — The required pieces are mostly UI plumbing and a small
-  domain extension:
+  **M** — Two small domain extensions (`Feature.applicationId`,
+  `Feature.buildMode` enum) plus the corresponding migration drive
+  the cost; everything else is plumbing existing primitives:
 
-  - One new entry point UI on the application node + app overflow menu
-    (small).
-  - Drawer accepts an `applicationId` + pinned `initialMode='spec'`
-    (small; `initialMode` already exists).
-  - Optional but likely: add `applicationId` to `Feature`, write a
-    migration, regenerate TypeSpec output, update derive-graph to
-    render the parent edge, and update one or two use cases to persist
-    + read the new field (medium).
-  - Mandatory Storybook stories + tests for every new/modified
-    component (medium).
+  - Three entry-point UI changes (app node menu, app page overflow,
+    FAB context-aware item) — small.
+  - Drawer accepts `initialApplicationId`, pins repo + mode — small;
+    `initialMode` already exists.
+  - URL intent reader on the Control Center page — small.
+  - TypeSpec `BuildMode` enum + `Feature` extension + codegen +
+    migration + repo read/write update — medium.
+  - `derive-graph.ts` parent-edge derivation — small.
+  - Mandatory Storybook stories + RED-first tests for every
+    new/modified component, plus migration test — medium.
 
   No new agent infrastructure, no new SSE channel, no new external
-  service — everything composes existing primitives. Days, not weeks.
+  service. Days, not weeks.
 
   ---
 
-  _Generated by feature agent — proceed with research_
+  _Generated by feature agent — proceed with planning_
