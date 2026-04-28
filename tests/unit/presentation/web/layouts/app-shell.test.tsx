@@ -14,6 +14,35 @@ vi.mock('@/hooks/use-turn-statuses', () => ({
   useAllTurnStatuses: () => ({}),
 }));
 
+// AppShell wraps several global popups with next/dynamic for bundle-
+// splitting. In vitest+jsdom the dynamic chunk loader doesn't resolve
+// reliably across platforms (worked on macOS, timed out on Windows). The
+// mock below replaces next/dynamic with a thin React.useState/useEffect
+// wrapper that calls the loader and re-renders synchronously when the
+// promise resolves — which happens on the next microtask in a test
+// environment because the import is already in the module graph.
+vi.mock('next/dynamic', () => ({
+  default: (loader: () => Promise<unknown>) => {
+    return function DynamicMock(props: Record<string, unknown>) {
+      const [Component, setComponent] = React.useState<React.ComponentType<unknown> | null>(null);
+      React.useEffect(() => {
+        void loader().then((resolved) => {
+          // Loaders in app-shell.tsx use `.then((m) => m.GlobalChatPopup)`
+          // which resolves to the component itself, not a module record.
+          // Support both shapes for robustness.
+          const maybeModule = resolved as { default?: React.ComponentType<unknown> };
+          const Comp =
+            typeof resolved === 'function'
+              ? (resolved as React.ComponentType<unknown>)
+              : (maybeModule.default ?? null);
+          if (Comp) setComponent(() => Comp);
+        });
+      }, []);
+      return Component ? React.createElement(Component, props) : null;
+    };
+  },
+}));
+
 import { AppShell } from '@/components/layouts/app-shell';
 import { FeatureFlagsProvider } from '@/hooks/feature-flags-context';
 import { useSidebarFeaturesContext } from '@/hooks/sidebar-features-context';
@@ -141,15 +170,14 @@ describe('AppShell', () => {
           </AppShell>
         </FeatureFlagsProvider>
       );
-      // GlobalChatPopup is loaded via next/dynamic, so the "Shep Chat" tooltip
-      // label appears asynchronously after the lazy chunk resolves.
+      // GlobalChatPopup is wrapped in next/dynamic; the mock at the top of
+      // this file resolves the loader on the next microtask.
       expect(await screen.findByText('Shep Chat')).toBeInTheDocument();
     });
 
     it('hides the chat toggle button during onboarding', () => {
       renderShell(<div>Content</div>);
-      // GlobalChatPopup is hidden via the `hideGlobalChat` branch and is
-      // never mounted (the dynamic chunk is never even requested), so a
+      // The dynamic chunk is never requested when chat is hidden, so the
       // synchronous query is correct here.
       expect(screen.queryByText('Shep Chat')).not.toBeInTheDocument();
     });
