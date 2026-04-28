@@ -88,7 +88,7 @@ export async function openShell(
             // shell:true accepts a single command string and lets the OS shell
             // parse quoting — replace {dir} with a quoted path so spaces work.
             const quoted =
-              process.platform === 'win32'
+              platform() === 'win32'
                 ? `"${targetPath}"`
                 : `'${escapePosixSingleQuote(targetPath)}'`;
             const resolved = config.openDirectory.replace('{dir}', quoted);
