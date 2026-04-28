@@ -44,6 +44,22 @@ export class DeploymentStatusStore {
   private entries = new Map<string, DeploymentEntryState>();
   private listeners = new Map<string, Set<Listener>>();
   private globalListeners = new Set<Listener>();
+  /**
+   * Set true after the first SSR seed runs. Because `ListDeploymentsUseCase`
+   * returns the full universe of currently-tracked deployments, any
+   * targetId NOT present in that list is definitively idle — there is no
+   * need to fire a per-node `getDeploymentStatus` server action on mount.
+   * Without this flag, every canvas node (most of which have no
+   * deployment) was triggering one POST /control-center on initial render,
+   * producing the burst of 30+ server-action calls observed on dashboard
+   * load.
+   */
+  private fullyHydrated = false;
+
+  /** Has the store been seeded at least once from SSR? */
+  isFullyHydrated(): boolean {
+    return this.fullyHydrated;
+  }
 
   /** Seed the store from SSR data (ListDeploymentsUseCase output). */
   hydrate(entries: DeploymentStatusEntry[]): void {
@@ -68,6 +84,7 @@ export class DeploymentStatusStore {
         this.update(targetId, { hydrated: true });
       }
     }
+    this.fullyHydrated = true;
   }
 
   getEntry(targetId: string): DeploymentEntryState {

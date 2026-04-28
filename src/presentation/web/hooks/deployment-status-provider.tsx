@@ -148,6 +148,16 @@ export function DeploymentStatusProvider({
       if (!targetId) return;
       const entry = store.getEntry(targetId);
       if (entry.hydrated) return;
+      // After the first SSR seed runs, ListDeploymentsUseCase has provided
+      // the complete deployment universe — any targetId not in that list
+      // is definitively idle, so there is no need to ask the server again.
+      // Just mark this id hydrated locally and skip the network call.
+      // This kills the burst of N server-action POSTs that happened on
+      // canvas mount when most nodes had no active deployment.
+      if (store.isFullyHydrated()) {
+        store.update(targetId, { hydrated: true });
+        return;
+      }
       // Mark hydrated immediately to dedupe concurrent callers.
       store.update(targetId, { hydrated: true });
       void (async () => {
