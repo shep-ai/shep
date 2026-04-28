@@ -1,0 +1,753 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "control-center-sdd-mode"
+summary: >
+  22 tasks across 9 phases. The breakdown follows the dependency
+  direction of Clean Architecture: domain (TypeSpec + migration) →
+  persistence (mapper + repo) → application (use case) → presentation
+  (URL constants → /create page → drawer → canvas → three entry points)
+  → coverage (i18n + Storybook + E2E) → validation gate.
+
+relatedFeatures:
+  - "016-control-center"
+  - "021-control-center-create-feature-2"
+  - "088-cli-application-management"
+  - "090-application-sse-deltas"
+
+technologies:
+  - "TypeScript 5.x"
+  - "TypeSpec"
+  - "Better-sqlite3 + umzug"
+  - "tsyringe"
+  - "React 19 + Next.js 16"
+  - "@xyflow/react"
+  - "Vitest"
+  - "Playwright"
+  - "Storybook 9"
+
+relatedLinks:
+  - title: "Plan document for this feature"
+    url: "specs/094-control-center-sdd-mode/plan.yaml"
+  - title: "Spec document for this feature"
+    url: "specs/094-control-center-sdd-mode/spec.yaml"
+  - title: "Research document for this feature"
+    url: "specs/094-control-center-sdd-mode/research.yaml"
+  - title: "TDD guide"
+    url: "docs/development/tdd-guide.md"
+  - title: "TypeSpec guide"
+    url: "docs/development/typespec-guide.md"
+
+tasks:
+  # ---- Phase 1: Foundation — TypeSpec + Migration ----
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Add BuildMode TypeSpec enum"
+    description: >
+      Create tsp/common/enums/build-mode.tsp declaring
+      enum BuildMode { Application: \"application\", Fast: \"fast\", Spec: \"spec\" }
+      with @doc decorators per member, mirroring the SdlcLifecycle enum
+      in tsp/common/enums/lifecycle.tsp. Re-export from the common enums
+      barrel if one exists.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "tsp/common/enums/build-mode.tsp exists and compiles via pnpm tsp:compile"
+      - "Each member has a @doc decorator describing its semantics"
+      - "Member values are the lowercase strings 'application', 'fast', 'spec'"
+      - "Generated output.ts exposes BuildMode with matching string values"
+    tdd:
+      red: |
+        - Add a unit test (e.g. packages/core/src/domain/__tests__/build-mode.test.ts) that imports
+          BuildMode from the generated module and asserts the three string values exactly.
+        - Confirm the test fails before the enum exists / is regenerated.
+      green: |
+        - Author tsp/common/enums/build-mode.tsp with the three members and @doc lines.
+        - Run pnpm tsp:compile to regenerate packages/core/src/domain/generated/output.ts.
+        - Re-run the test to confirm GREEN.
+      refactor: |
+        - Verify @doc strings are clear and consistent with SdlcLifecycle's style.
+        - Ensure no inline string union of 'application' | 'fast' | 'spec' remains in any
+          newly-touched file (existing UI usage is migrated in later tasks, not here).
+    estimatedEffort: "30min"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Extend Feature TypeSpec model with applicationId + buildMode"
+    description: >
+      Add applicationId?: UUID and buildMode: BuildMode to the Feature model
+      in tsp/domain/entities/feature.tsp. applicationId is optional (legacy
+      rows) and buildMode is required (default applied at the SQL layer).
+      Regenerate domain/generated/output.ts.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Feature has applicationId?: UUID alongside existing repositoryId / parentId"
+      - "Feature has buildMode: BuildMode (non-optional in TypeSpec)"
+      - "pnpm tsp:compile succeeds with no errors"
+      - "Generated TypeScript Feature type exposes both new fields"
+    tdd:
+      red: |
+        - Extend the Feature type test (or write one if absent) asserting that the generated Feature
+          shape includes applicationId?: string and buildMode: BuildMode.
+        - Test fails until codegen runs.
+      green: |
+        - Edit tsp/domain/entities/feature.tsp to add the two fields with appropriate @doc lines.
+        - Run pnpm tsp:compile.
+        - Re-run the test to confirm GREEN.
+      refactor: |
+        - Confirm field ordering follows the existing convention (ids first, then meta, then
+          relations) and JSDoc-style @doc lines explain the semantic role of each field.
+    estimatedEffort: "30min"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Add idempotent migration for application_id + build_mode columns"
+    description: >
+      Create
+      packages/core/src/infrastructure/persistence/sqlite/migrations/NNN-add-feature-application-id-and-build-mode.ts
+      following the migration 049/050 pattern. Add nullable application_id TEXT,
+      add build_mode TEXT NOT NULL DEFAULT 'application', then run an idempotent
+      backfill UPDATE setting build_mode from CASE WHEN fast = 1 THEN 'fast' ELSE 'application' END
+      bounded by WHERE build_mode = 'application'. Guard each ALTER with pragma table_info.
+      down() is a no-op.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "Migration file is timestamped/numbered to follow the latest existing migration"
+      - "Running the migration twice on the same DB produces the same final schema (idempotent)"
+      - "Existing rows with fast = 1 end up with build_mode = 'fast'"
+      - "Existing rows with fast = 0 end up with build_mode = 'application'"
+      - "application_id column is nullable; existing rows have NULL"
+      - "down() exists and is a no-op (matches migrations 049/050)"
+    tdd:
+      red: |
+        - Write an integration test under packages/core that opens a temp sqlite DB, applies all
+          prior migrations, seeds two feature rows (one with fast=1, one with fast=0), runs the
+          new migration, asserts the column shapes and backfilled values, and then runs the
+          migration a SECOND time to assert idempotency (no exceptions, no row mutations).
+        - Test fails because the migration file does not exist yet.
+      green: |
+        - Author the migration with pragma table_info guards on each ALTER and a bounded
+          UPDATE backfill. Number it according to the next available NNN.
+        - Re-run the test to confirm GREEN, including the second-run idempotency assertion.
+      refactor: |
+        - Extract any helper used in multiple migrations only if there is genuine
+          duplication; otherwise inline. Verify the file matches the migration 049/050 style
+          (single up() + no-op down()).
+    estimatedEffort: "1h"
+
+  # ---- Phase 2: Persistence — Mapper + Repository ----
+  - id: "task-4"
+    phaseId: "phase-2"
+    title: "Update feature.mapper to round-trip applicationId + buildMode"
+    description: >
+      Extend toDatabase / fromDatabase in
+      packages/core/src/infrastructure/persistence/sqlite/mappers/feature.mapper.ts
+      so the new domain fields map to and from application_id and build_mode columns.
+      Continue writing the legacy fast column as fast = (buildMode === BuildMode.Fast)
+      so existing read paths (e.g., create-feature.use-case.ts:104 lifecycle decision)
+      keep working without coordinated changes.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+      - "task-3"
+    acceptanceCriteria:
+      - "toDatabase writes application_id and build_mode columns"
+      - "toDatabase still writes the legacy fast column derived from buildMode === Fast"
+      - "fromDatabase reads both columns into the domain Feature shape"
+      - "Round-trip test: domain → row → domain returns an equal object"
+    tdd:
+      red: |
+        - Add a unit test for feature.mapper covering the round-trip with both new fields set
+          (applicationId = some uuid, buildMode = Spec) and a second case with applicationId = null
+          and buildMode = Application. Assert both directions and the derived fast value.
+        - Test fails because the mapper does not handle the new columns.
+      green: |
+        - Edit feature.mapper.ts to handle both columns in both directions, deriving fast from
+          buildMode.
+        - Re-run the test to confirm GREEN.
+      refactor: |
+        - Inline the BuildMode → fast derivation as a simple equality check; do not extract a
+          helper for a one-liner. Confirm consistent column naming (snake_case) on the row side
+          and camelCase on the domain side.
+    estimatedEffort: "45min"
+
+  - id: "task-5"
+    phaseId: "phase-2"
+    title: "Update sqlite-feature.repository to read/write the new columns"
+    description: >
+      Update INSERT, UPDATE, and SELECT statements in
+      packages/core/src/infrastructure/persistence/sqlite/repositories/sqlite-feature.repository.ts
+      so application_id and build_mode are persisted and loaded. No changes to the
+      repository's public interface beyond what the mapper already exposes.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+    acceptanceCriteria:
+      - "Saving a feature with applicationId + buildMode persists both columns"
+      - "Loading the same feature returns both fields"
+      - "Existing INSERT/UPDATE statements still pass parameterized values (no string interpolation)"
+      - "All existing repository tests still pass"
+    tdd:
+      red: |
+        - Add an integration test: open a temp sqlite DB, run all migrations, save a Feature with
+          applicationId set and buildMode = Spec, load by id, assert the loaded object matches.
+          Add a second case with applicationId = null and buildMode = Application.
+        - Test fails because the repository does not yet include the new columns in its SQL.
+      green: |
+        - Update the SQL templates to include application_id, build_mode in INSERT and SELECT;
+          extend any UPDATE statements to write build_mode (and application_id where appropriate).
+        - Re-run all repository tests to confirm GREEN with no regression.
+      refactor: |
+        - Confirm SQL is parameterized everywhere (no string concatenation). Confirm column lists
+          stay alphabetized or grouped consistently with the existing style in this file.
+    estimatedEffort: "45min"
+
+  # ---- Phase 3: Application — Use Case Inputs + Soft-Warn ----
+  - id: "task-6"
+    phaseId: "phase-3"
+    title: "Extend CreateFeatureUseCase to accept applicationId + buildMode and soft-warn"
+    description: >
+      Update packages/core/src/application/use-cases/features/create-feature.use-case.ts
+      to accept optional applicationId and required buildMode in its input, persist
+      both via the repository, and emit ILogger.warn when buildMode === BuildMode.Spec
+      and applicationId is undefined. No exception, no domain error — the legacy
+      "spec mode without app" flow must continue to work.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+      - "task-5"
+    acceptanceCriteria:
+      - "Use case input type includes applicationId?: string and buildMode: BuildMode"
+      - "Use case persists both fields via the existing repository path"
+      - "Use case emits ILogger.warn iff buildMode === Spec and applicationId === undefined"
+      - "Use case does NOT throw or short-circuit in that case"
+      - "Existing callers (FAB → New feature → Spec) compile after the change"
+    tdd:
+      red: |
+        - Add a unit test for CreateFeatureUseCase with an injected mock ILogger and mock
+          IFeatureRepository. Cover four cases:
+          (1) buildMode = Spec, applicationId = uuid → no warn, persists with applicationId
+          (2) buildMode = Spec, applicationId = undefined → warn fired, persists with null
+          (3) buildMode = Application, applicationId = uuid → no warn, persists both
+          (4) buildMode = Fast, applicationId = undefined → no warn, persists with fast = true
+        - Test fails until the use case is extended.
+      green: |
+        - Add the new fields to the input shape, route them through to the repository write,
+          and add the soft-warn branch. Use the canonical wording
+          "spec-mode feature created without an applicationId — proceeding" so logs are
+          self-explanatory.
+        - Re-run the test to confirm GREEN.
+      refactor: |
+        - Verify the use case still has zero infrastructure imports (it should already inject
+          ILogger and IFeatureRepository by token).
+        - Confirm there is no console.* call introduced.
+        - Confirm the warn message references domain enum values, not magic strings.
+    estimatedEffort: "1h"
+
+  # ---- Phase 4: URL Constants + /create Page Parsing ----
+  - id: "task-7"
+    phaseId: "phase-4"
+    title: "Introduce src/presentation/web/lib/url-params.ts"
+    description: >
+      Create the constants module exporting URL_PARAMS = { repo, parent, prompt, mode,
+      applicationId } and the derived UrlParam type. Migrate every existing inline
+      literal at touched callsites (the /create page, control-center-inner, any place
+      reading or writing /create query keys today) to import from the new module.
+      Do this in a single coordinated edit so the module starts life with complete
+      coverage.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "src/presentation/web/lib/url-params.ts exists with the five keys and a typed UrlParam union"
+      - "Every callsite that reads or writes /create query params imports from this module"
+      - "No inline 'repo' / 'parent' / 'prompt' / 'mode' / 'applicationId' string literal
+        appears in the touched files for these param keys"
+      - "All existing tests still pass"
+    tdd:
+      red: |
+        - Add a unit test for the constants module that asserts the exported keys and their values.
+        - Add a grep-style assertion in the test (or a lint check) that fails if any of the four
+          centralized literals appear inline outside lib/url-params.ts in the files touched by
+          this task. (If a lint rule is impractical, instead add a CHECKLIST comment in the PR
+          description and a unit test of the helper that builds the URL.)
+        - Confirm the constants test fails before the file exists.
+      green: |
+        - Author lib/url-params.ts.
+        - Migrate the touched callsites to import from it.
+        - Re-run all tests and lint to confirm GREEN.
+      refactor: |
+        - If three or more callsites build the same /create URL, extract a buildCreateUrl helper
+          in the same file. Otherwise, inline.
+    estimatedEffort: "1h"
+
+  - id: "task-8"
+    phaseId: "phase-4"
+    title: "Extend /create parallel-slot page to parse applicationId and load the application"
+    description: >
+      Update src/presentation/web/app/(dashboard)/@drawer/create/page.tsx to read
+      searchParams.applicationId via the URL_PARAMS constant. When present, load the
+      Application server-side via the existing application-fetch use case (resolved
+      through the DI container). On success, forward repositoryPath and applicationId
+      to FeatureCreateDrawer as initialApplicationId + initialRepositoryPath. On
+      failure (UUID malformed or app not found), render the drawer in non-scoped mode
+      and let the existing toast surface a non-blocking error (no 404 — the drawer is
+      a parallel overlay).
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "Page reads applicationId from search params via URL_PARAMS"
+      - "Page loads the Application via the existing use case (no direct repository import)"
+      - "Drawer receives initialApplicationId + initialRepositoryPath when load succeeds"
+      - "Drawer receives undefined props when load fails or applicationId is missing"
+      - "No 404 / hard error path — failure path is a soft fallback"
+    tdd:
+      red: |
+        - Add a server-component unit test (or a route integration test if server-component tests
+          are not yet in use here) that mounts /create with applicationId set, mocks the
+          application-fetch use case to return a known app, and asserts the drawer is rendered
+          with the correct props. Add a second case where the use case returns null and the
+          drawer mounts in non-scoped mode.
+        - Test fails until the page is extended.
+      green: |
+        - Wire the new parsing + load + prop-forwarding in the server component.
+        - Re-run the test to confirm GREEN.
+      refactor: |
+        - Confirm there is no direct infrastructure import in this file (only use cases via
+          resolve()).
+        - Confirm constants are used (no inline 'applicationId' literal).
+    estimatedEffort: "1h"
+
+  # ---- Phase 5: Drawer — App-Scoped Lock ----
+  - id: "task-9"
+    phaseId: "phase-5"
+    title: "Add initialApplicationId prop to FeatureCreateDrawer with disabled-control lock"
+    description: >
+      Extend src/presentation/web/components/common/feature-create-drawer/feature-create-drawer.tsx
+      with a new optional prop initialApplicationId?: string. When set:
+      - pin initialMode to BuildMode.Spec (override any conflicting initialMode prop with a
+        clear precedence rule);
+      - set repositoryPath from the parent-supplied initialRepositoryPath;
+      - disable (not hide) the repo + mode selectors with shadcn Tooltip rationale messages;
+      - leave one-liner, description, advanced options editable and at defaults.
+      Replace the inline BuildMode UI union with the generated TypeSpec enum throughout
+      the drawer.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Drawer accepts initialApplicationId?: string"
+      - "When set, repo + mode selectors are disabled and show a Tooltip explaining why"
+      - "When set, mode is pinned to BuildMode.Spec regardless of conflicting initialMode"
+      - "When undefined, drawer behaves exactly as before (existing FAB → spec path unaffected)"
+      - "All references to 'application' / 'fast' / 'spec' inside the drawer use BuildMode enum"
+    tdd:
+      red: |
+        - Add a Vitest + React Testing Library test rendering the drawer with
+          initialApplicationId='app-1' and initialRepositoryPath='/path/to/repo'. Assert: repo
+          input is disabled, mode selector is disabled, mode is Spec, and tooltip text appears
+          on focus/hover of the disabled controls.
+        - Add a second test rendering the drawer without initialApplicationId, asserting both
+          controls are enabled.
+        - Test fails until the prop is added.
+      green: |
+        - Add the prop, derive lock state, render disabled selectors with Tooltip.
+        - Replace the inline BuildMode union import with the generated enum.
+        - Re-run the test to confirm GREEN.
+      refactor: |
+        - If lock-state derivation grows past a one-liner, extract a useDrawerLockState helper
+          colocated with the drawer. Otherwise, inline.
+        - Verify a11y: disabled controls have aria-disabled, aria-describedby pointing at the
+          tooltip text, and focus order is preserved.
+    estimatedEffort: "1.5h"
+
+  # ---- Phase 6: Canvas — Re-Enable Applications ----
+  - id: "task-10"
+    phaseId: "phase-6"
+    title: "Update derive-graph.ts to render ApplicationNode + parent edges"
+    description: >
+      Update src/presentation/web/lib/derive-graph.ts to consume the currently-ignored
+      applicationMap argument. For every workspace application, emit an ApplicationNode
+      using the existing layout helpers; for every Feature with applicationId set,
+      emit a dependencyEdge { source: appNodeId, target: featureNodeId }. Existing
+      repo + feature node placement and edge derivation are unchanged.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "derive-graph emits an ApplicationNode for every application in applicationMap"
+      - "derive-graph emits a dependencyEdge from app node to feature node when applicationId is set"
+      - "derive-graph does NOT emit such an edge when applicationId is null/undefined"
+      - "Existing repo + feature derivation outputs are byte-identical for inputs without applications"
+    tdd:
+      red: |
+        - Add a unit test for derive-graph with three input scenarios:
+          (a) one repo + one feature, no applications → output identical to current snapshot
+          (b) one repo + one feature + one application, feature.applicationId = appId → output
+              includes ApplicationNode and one app→feature dependencyEdge
+          (c) one application + one feature with applicationId = null → ApplicationNode emitted,
+              no app→feature edge
+        - Test fails until derive-graph stops ignoring applicationMap.
+      green: |
+        - Replace the "intentionally ignored" comment + branch with the new derivation logic
+          using existing layout helpers and edge factories.
+        - Re-run the test to confirm GREEN.
+      refactor: |
+        - Verify the new branch reuses the same edge factory used elsewhere (no new edge type).
+        - Verify no new full-graph recompute paths are introduced (memoization in useGraphState
+          remains the bound).
+    estimatedEffort: "1.5h"
+
+  - id: "task-11"
+    phaseId: "phase-6"
+    title: "Register applicationNode in canvas nodeTypes"
+    description: >
+      Update the canvas (most likely src/presentation/web/components/features/control-center/control-center-inner.tsx
+      or a colocated nodeTypes module) to register applicationNode →
+      ApplicationNode in the React Flow nodeTypes map so emitted ApplicationNodes
+      render. The ApplicationNode component already exists and is fully implemented.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "applicationNode is registered in the canvas nodeTypes map"
+      - "Storybook story rendering a canvas with one application shows the ApplicationNode component"
+      - "No regression in existing repo / feature node rendering"
+    tdd:
+      red: |
+        - Add a Storybook integration story (or extend an existing canvas story) rendering a
+          workspace state with one application, one repo, one feature. Snapshot test asserts the
+          ApplicationNode renders.
+        - Story / test fails until applicationNode is registered.
+      green: |
+        - Register applicationNode → ApplicationNode in the nodeTypes map.
+        - Re-run the story / snapshot to confirm GREEN.
+      refactor: |
+        - If the nodeTypes map is inline and growing, consider extracting it to a colocated module
+          — but only if it is already over the file-length threshold. Otherwise, inline.
+    estimatedEffort: "30min"
+
+  # ---- Phase 7: Entry Points ----
+  - id: "task-12"
+    phaseId: "phase-7"
+    title: "Add 'Open in Control Center (SDD mode)' to AppOverflowMenu / app-top-bar"
+    description: >
+      Add a DropdownMenuItem to
+      src/presentation/web/components/features/application-page/app-overflow-menu.tsx
+      (and surface it in app-top-bar.tsx if that is the host) that calls
+      router.push(buildCreateUrl({ applicationId, mode: BuildMode.Spec })) using the
+      url-params constants. Label is i18n key fab.openInControlCenterSdd or similar.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+      - "task-8"
+    acceptanceCriteria:
+      - "AppOverflowMenu exposes a new menu item labeled 'Open in Control Center (SDD mode)'"
+      - "Click handler calls router.push with /create?applicationId=<id>&mode=spec via the URL_PARAMS module"
+      - "Item is keyboard-reachable and has aria-label"
+      - "i18n key exists for the label"
+    tdd:
+      red: |
+        - Add a Vitest + RTL test rendering AppOverflowMenu with a mock router. Assert that
+          clicking the new item calls router.push with the expected URL.
+        - Test fails until the item is added.
+      green: |
+        - Add the DropdownMenuItem with onClick using buildCreateUrl + router.push.
+        - Re-run the test to confirm GREEN.
+      refactor: |
+        - Confirm no inline string literal for the URL is added; everything goes through the
+          constants module (url-params.ts).
+    estimatedEffort: "45min"
+
+  - id: "task-13"
+    phaseId: "phase-7"
+    title: "Add 'New SDD feature' action to ApplicationNode overflow menu"
+    description: >
+      Extend src/presentation/web/components/common/application-node/application-node.tsx
+      (or its colocated overflow menu component) with a "New SDD feature" item that pushes
+      to /create with the same param schema. The handler is the same as the app-page entry —
+      both must converge on a single buildCreateUrl call.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+      - "task-11"
+    acceptanceCriteria:
+      - "ApplicationNode menu (or context menu) exposes 'New SDD feature'"
+      - "Click handler calls router.push with the canonical /create URL"
+      - "Item is keyboard-reachable and has aria-label"
+      - "i18n key exists for the label"
+    tdd:
+      red: |
+        - Add a Vitest + RTL test rendering ApplicationNode (with appropriate ReactFlowProvider
+          decorator) and asserting that clicking the new menu item calls router.push correctly.
+        - Test fails until the item is added.
+      green: |
+        - Add the menu item and wire the handler.
+        - Re-run the test to confirm GREEN.
+      refactor: |
+        - If the same handler logic exists in three places (app page, app node, FAB), extract a
+          shared useOpenSddDrawerForApp hook colocated under presentation/web/lib or the
+          control-center features folder.
+    estimatedEffort: "45min"
+
+  - id: "task-14"
+    phaseId: "phase-7"
+    title: "Add context-aware 'New SDD feature for <app>' action to useFabActions"
+    description: >
+      Extend UseFabActionsParams in
+      src/presentation/web/components/features/control-center/use-fab-actions.tsx with
+      selectedApplicationId?: string (resolved upstream from React Flow selection state —
+      exactly one ApplicationNode selected). When set, append a single extra action item
+      whose onClick performs router.push(buildCreateUrl({ applicationId, mode: BuildMode.Spec })).
+      Must NOT replace the existing 'New feature' item. Update control-center-inner.tsx (or
+      the hook's caller) to derive selectedApplicationId from the canvas selection.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+      - "task-11"
+    acceptanceCriteria:
+      - "useFabActions accepts selectedApplicationId?: string"
+      - "FAB shows an extra action labeled 'New SDD feature for <appName>' iff exactly one application is selected"
+      - "Existing 'New feature' action is preserved unconditionally"
+      - "control-center-inner correctly derives selectedApplicationId from canvas selection"
+      - "i18n key with appName interpolation exists for the label"
+    tdd:
+      red: |
+        - Add unit tests for useFabActions: (a) selectedApplicationId undefined → returned action
+          list does not contain the new item; (b) selectedApplicationId set → returned list
+          contains the new item with the expected handler.
+        - Test fails until the parameter is added.
+      green: |
+        - Extend the hook's params and conditional return.
+        - Update the caller to compute selectedApplicationId from selection state.
+        - Re-run tests to confirm GREEN.
+      refactor: |
+        - If selection-derivation logic in the caller grows beyond a few lines, extract a
+          useSelectedApplicationId hook colocated with the canvas state hooks.
+        - Confirm the new action's id is unique and stable for downstream a11y / keyboard handlers.
+    estimatedEffort: "1h"
+
+  # ---- Phase 8: i18n + Storybook + E2E ----
+  - id: "task-15"
+    phaseId: "phase-8"
+    title: "Add i18n keys for all new user-visible strings"
+    description: >
+      Add new strings to src/presentation/web/locales/en/web.json and every other locale
+      the project currently maintains. Keys cover: app-page menu item, app-node menu item,
+      FAB context-aware item (with appName interpolation), drawer Tooltip rationale for
+      the disabled repo selector, drawer Tooltip rationale for the disabled mode selector.
+    state: "Todo"
+    dependencies:
+      - "task-9"
+      - "task-12"
+      - "task-13"
+      - "task-14"
+    acceptanceCriteria:
+      - "Every locale catalog has the new keys"
+      - "FAB key supports {{appName}} interpolation"
+      - "No new user-visible string is hardcoded outside the catalogs"
+      - "i18n lint / extraction passes"
+    tdd: null
+    estimatedEffort: "30min"
+
+  - id: "task-16"
+    phaseId: "phase-8"
+    title: "Add / update Storybook stories for touched components"
+    description: >
+      Mandatory per the project rule. Add or extend colocated .stories.tsx files for:
+      - FeatureCreateDrawer: existing Default + Loading + Error + new "AppScoped" variant
+        showing locked repo + mode controls with tooltips visible.
+      - ApplicationNode: existing variants + new "MenuOpen" variant showing the
+        New SDD feature item.
+      - AppOverflowMenu: existing Default + Open variants with the new item visible.
+      - Canvas / ControlCenterInner: existing variants + new "WithApplications"
+        story rendering one app + one repo + one feature, asserting the ApplicationNode
+        renders.
+    state: "Todo"
+    dependencies:
+      - "task-9"
+      - "task-11"
+      - "task-12"
+      - "task-13"
+    acceptanceCriteria:
+      - "Each touched component has a colocated .stories.tsx with the new variant"
+      - "Stories use the existing decorator patterns (ReactFlowProvider where needed)"
+      - "pnpm build:storybook succeeds"
+      - "No new console warnings during story render"
+    tdd: null
+    estimatedEffort: "1.5h"
+
+  - id: "task-17"
+    phaseId: "phase-8"
+    title: "Add Playwright E2E for the full app-page → drawer → canvas flow"
+    description: >
+      Add a single Playwright test under the appropriate e2e directory that:
+      1) Creates an application via the existing fixtures.
+      2) Navigates to /application/[id].
+      3) Opens the overflow menu and clicks 'Open in Control Center (SDD mode)'.
+      4) Asserts the drawer is mounted with repo pre-filled, mode = Spec, both
+         selectors disabled.
+      5) Submits the drawer with a one-liner.
+      6) Navigates back to / (or asserts the canvas is mounted under the drawer).
+      7) Asserts the new feature node is present and an app→feature edge connects them.
+    state: "Todo"
+    dependencies:
+      - "task-9"
+      - "task-10"
+      - "task-11"
+      - "task-12"
+    acceptanceCriteria:
+      - "Playwright test exists and passes locally"
+      - "Test asserts the drawer's locked state explicitly"
+      - "Test asserts the canvas edge between the application and the new feature"
+      - "Test cleans up the application + feature it creates"
+    tdd: null
+    estimatedEffort: "1.5h"
+
+  # ---- Phase 9: Validation Gate ----
+  - id: "task-18"
+    phaseId: "phase-9"
+    title: "Run pnpm tsp:compile + pnpm validate locally"
+    description: >
+      Run the codegen and the canonical local validation gate
+      (lint + format:check + typecheck + tsp). Fix any failure surfaced by the
+      new TypeSpec extension or the URL constants migration.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+      - "task-2"
+      - "task-7"
+    acceptanceCriteria:
+      - "pnpm tsp:compile completes with no errors"
+      - "pnpm validate passes (lint + format + typecheck + tsp)"
+    tdd: null
+    estimatedEffort: "30min"
+
+  - id: "task-19"
+    phaseId: "phase-9"
+    title: "Run pnpm test:unit + pnpm test:int locally"
+    description: >
+      Run the full unit and integration test suites. Confirm zero failures.
+      Investigate and fix anything that breaks — per .claude/rules/integrity.md,
+      every failure is owned and the words 'unrelated' / 'pre-existing' are banned.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+      - "task-4"
+      - "task-5"
+      - "task-6"
+      - "task-9"
+      - "task-10"
+      - "task-11"
+      - "task-12"
+      - "task-13"
+      - "task-14"
+    acceptanceCriteria:
+      - "pnpm test:unit passes with zero failures"
+      - "pnpm test:int passes with zero failures"
+    tdd: null
+    estimatedEffort: "30min"
+
+  - id: "task-20"
+    phaseId: "phase-9"
+    title: "Run pnpm build + pnpm build:storybook locally"
+    description: >
+      Compile the CLI build and the Storybook bundle to confirm there is no
+      lint-clean / type-clean code that nevertheless fails to build (e.g., circular
+      imports, missing exports).
+    state: "Todo"
+    dependencies:
+      - "task-15"
+      - "task-16"
+    acceptanceCriteria:
+      - "pnpm build succeeds"
+      - "pnpm build:storybook succeeds with zero warnings"
+    tdd: null
+    estimatedEffort: "15min"
+
+  - id: "task-21"
+    phaseId: "phase-9"
+    title: "Run the relevant Playwright E2E suite locally"
+    description: >
+      Run the suite covering Control Center + Application page (whichever
+      pnpm test:e2e:* target maps to it) to confirm the new flow passes and no
+      existing flow regresses.
+    state: "Todo"
+    dependencies:
+      - "task-17"
+    acceptanceCriteria:
+      - "Relevant pnpm test:e2e:* target passes locally"
+      - "New E2E test passes"
+      - "No existing E2E regresses"
+    tdd: null
+    estimatedEffort: "30min"
+
+  - id: "task-22"
+    phaseId: "phase-9"
+    title: "Final review pass against the spec's success criteria"
+    description: >
+      Walk through every checkbox in the spec's "Success Criteria" section and
+      confirm each is satisfied by the merged work. Walk through every FR-x and
+      NFR-x and confirm the implementation matches. Walk the .claude/rules/
+      checklist (clean architecture, no magic values, no infrastructure imports
+      in outer layers, no console.*, mandatory stories, TDD evidence in commits).
+      Document anything missed and address it before pushing.
+    state: "Todo"
+    dependencies:
+      - "task-18"
+      - "task-19"
+      - "task-20"
+      - "task-21"
+    acceptanceCriteria:
+      - "Every spec success-criterion checkbox is observably satisfied"
+      - "Every FR-x and NFR-x is satisfied"
+      - "No banned phrase ('unrelated', 'pre-existing', 'flaky', etc.) appears in any commit message or comment"
+      - "Every touched web component has a colocated .stories.tsx file"
+    tdd: null
+    estimatedEffort: "30min"
+
+totalEstimate: "~14.5h"
+openQuestions: []
+
+content: |
+  ## Summary
+
+  The work follows the dependency direction of Clean Architecture. We
+  start in the domain layer with the `BuildMode` TypeSpec enum and the
+  `Feature` extension (`applicationId`, `buildMode`), land the single
+  idempotent migration, then ripple outward through the persistence
+  mapper / repository, the application layer's `CreateFeatureUseCase`,
+  and finally the presentation layer.
+
+  In presentation, we first introduce a small URL-constants module and
+  extend the existing `/create` parallel-slot drawer route to parse
+  `applicationId` and load the application server-side. Then we add the
+  drawer's `initialApplicationId` prop and its disabled-control lock
+  behavior. With the data flow proven, we re-enable
+  `ApplicationNode` derivation in `derive-graph.ts` (a critical
+  research finding — `applicationMap` is currently ignored on the
+  canvas) and register the existing `ApplicationNode` component in
+  the canvas's React Flow `nodeTypes` map.
+
+  Only then do we wire the three converging entry points — the app
+  page overflow menu, the app-node menu, and the context-aware FAB
+  item — all of which `router.push` to the same canonical
+  `/create?repo=...&mode=spec&applicationId=...` URL.
+
+  Coverage tasks (i18n, Storybook variants, Playwright E2E) come at
+  the end of feature work, followed by a strict validation gate that
+  mirrors CI locally per `.claude/rules/cicd.md`.
+
+  Every code task uses TDD: a failing test first, then the smallest
+  change that makes it pass, then a refactor pass. Non-code tasks
+  (i18n, Storybook stories, validation runs) have `tdd: null`
+  because their correctness is asserted by tooling rather than unit
+  tests.
+
+  ---
+
+  _Tasks complete — proceed to implementation_

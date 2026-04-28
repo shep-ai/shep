@@ -1,0 +1,348 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "control-center-sdd-mode"
+summary: >
+  Implementation strategy for wiring a "New SDD feature for an application"
+  flow into the Control Center. The plan extends the existing /create
+  parallel-slot drawer with an applicationId search param, promotes
+  BuildMode to a TypeSpec enum, adds applicationId + buildMode fields to
+  Feature with a single idempotent migration, re-enables ApplicationNode
+  rendering in derive-graph (which currently ignores applicationMap), and
+  adds three converging entry points (app-page overflow, app-node menu,
+  context-aware FAB) — all of which push to the same canonical URL.
+  Worktree, SSE, and DI primitives are reused unchanged.
+
+relatedFeatures:
+  - "016-control-center"
+  - "021-control-center-create-feature-2"
+  - "088-cli-application-management"
+  - "090-application-sse-deltas"
+
+technologies:
+  - "TypeScript 5.x"
+  - "React 19 + Next.js 16 (App Router, parallel slot routes)"
+  - "@xyflow/react (React Flow v12)"
+  - "tsyringe (DI)"
+  - "TypeSpec (domain models + enums)"
+  - "Better-sqlite3 + umzug (persistence + migrations)"
+  - "Server-Sent Events (existing agent-events stream)"
+  - "Tailwind CSS v4 + shadcn/ui (DropdownMenu, Tooltip)"
+  - "Vitest + Playwright"
+  - "Storybook 9"
+
+relatedLinks:
+  - title: "FeatureCreateDrawer source (BuildMode declared inline)"
+    url: "src/presentation/web/components/common/feature-create-drawer/feature-create-drawer.tsx"
+  - title: "/create parallel-slot drawer page"
+    url: "src/presentation/web/app/(dashboard)/@drawer/create/page.tsx"
+  - title: "derive-graph.ts (currently ignores applicationMap)"
+    url: "src/presentation/web/lib/derive-graph.ts"
+  - title: "ApplicationNode component"
+    url: "src/presentation/web/components/common/application-node/application-node.tsx"
+  - title: "AppOverflowMenu (app page entry point host)"
+    url: "src/presentation/web/components/features/application-page/app-overflow-menu.tsx"
+  - title: "useFabActions (FAB hook)"
+    url: "src/presentation/web/components/features/control-center/use-fab-actions.tsx"
+  - title: "Feature TypeSpec model"
+    url: "tsp/domain/entities/feature.tsp"
+  - title: "SdlcLifecycle enum (TypeSpec enum precedent)"
+    url: "tsp/common/enums/lifecycle.tsp"
+  - title: "Idempotent ALTER TABLE migration template (049)"
+    url: "packages/core/src/infrastructure/persistence/sqlite/migrations/049-add-default-fast-mode.ts"
+  - title: "feature.mapper.ts (domain ↔ row mapping)"
+    url: "packages/core/src/infrastructure/persistence/sqlite/mappers/feature.mapper.ts"
+  - title: "create-feature.use-case.ts"
+    url: "packages/core/src/application/use-cases/features/create-feature.use-case.ts"
+
+phases:
+  - id: "phase-1"
+    name: "Foundation — TypeSpec Enum + Feature Schema Extension"
+    description: >
+      Author the BuildMode TypeSpec enum and extend the Feature model with
+      applicationId + buildMode fields. Regenerate domain types. Land the
+      single idempotent migration that adds the two columns and backfills
+      build_mode from the legacy fast boolean. This phase MUST come first
+      because every downstream layer depends on the generated types and
+      the new columns.
+    parallel: false
+
+  - id: "phase-2"
+    name: "Persistence — Mapper + Repository"
+    description: >
+      Update the Feature mapper to round-trip applicationId + buildMode
+      and update sqlite-feature.repository to include the new columns in
+      INSERT / UPDATE / SELECT statements. Round-trip integration test on
+      a temp sqlite DB asserts both fields persist and read back.
+    parallel: false
+
+  - id: "phase-3"
+    name: "Application Layer — Use Case Inputs + Soft-Warn Validation"
+    description: >
+      Extend CreateFeatureUseCase with optional applicationId and required
+      buildMode inputs. Persist both via the repository. Soft-warn
+      (ILogger.warn, do not throw) when buildMode === Spec without
+      applicationId so the existing FAB → New feature → Spec flow keeps
+      working. Continue to write the legacy fast column derived from
+      buildMode === Fast to avoid coordinated changes in downstream
+      lifecycle code.
+    parallel: false
+
+  - id: "phase-4"
+    name: "URL Constants + /create Param Parsing"
+    description: >
+      Introduce src/presentation/web/lib/url-params.ts as the single
+      source of truth for /create query keys (repo, parent, prompt, mode,
+      applicationId). Migrate every existing inline literal at touched
+      callsites. Extend the /create parallel-slot page to parse
+      applicationId, load the application server-side, and forward
+      repositoryPath + applicationId to the drawer.
+    parallel: false
+
+  - id: "phase-5"
+    name: "Drawer — App-Scoped Lock Behavior"
+    description: >
+      Add initialApplicationId prop to FeatureCreateDrawer. When set,
+      the drawer pins initialMode = BuildMode.Spec, sets repositoryPath
+      from the parent's app-derived value, and disables (not hides) the
+      repo + mode selectors with shadcn Tooltip rationale messages.
+      Replaces the inline BuildMode UI union with the generated enum
+      everywhere in the drawer.
+    parallel: false
+
+  - id: "phase-6"
+    name: "Canvas — Re-Enable Applications + Parent Edge Derivation"
+    description: >
+      Update derive-graph.ts to consume the currently-ignored
+      applicationMap argument: emit an ApplicationNode for every
+      workspace application and a dependencyEdge from each application
+      to every feature whose applicationId matches. Register
+      applicationNode in the ReactFlow nodeTypes map of the canvas.
+      Existing repo + feature placement and behavior are unchanged.
+    parallel: false
+
+  - id: "phase-7"
+    name: "Entry Points — App Page, App Node, FAB"
+    description: >
+      Wire the three converging entry points, all of which push to
+      /create with the same param schema (?repo=...&mode=spec&applicationId=...):
+      (a) AppOverflowMenu / app-top-bar action "Open in Control Center
+      (SDD mode)"; (b) ApplicationNode overflow menu action "New SDD
+      feature"; (c) useFabActions context-aware item
+      "New SDD feature for <app>" appended only when exactly one
+      ApplicationNode is selected on the canvas.
+    parallel: false
+
+  - id: "phase-8"
+    name: "i18n, Storybook & E2E Coverage"
+    description: >
+      Add new user-visible strings to web.json for every locale.
+      Update / add colocated Storybook stories for FeatureCreateDrawer
+      ("app-scoped" variant), ApplicationNode (menu-open variant), the
+      app top-bar / overflow menu, and any new component states. Add a
+      single Playwright E2E asserting the full flow (app page → menu →
+      drawer pre-scoped → submit → canvas shows app→feature edge).
+    parallel: false
+
+  - id: "phase-9"
+    name: "Validation Gate"
+    description: >
+      Run pnpm tsp:compile, pnpm lint, pnpm typecheck, pnpm test:unit,
+      pnpm test:int, pnpm build, and the relevant pnpm test:e2e suite
+      to confirm zero failures locally before any push. Fix any
+      regression surfaced by the new ApplicationNode rendering or the
+      drawer's new prop path.
+    parallel: false
+
+filesToCreate:
+  - "tsp/common/enums/build-mode.tsp"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/NNN-add-feature-application-id-and-build-mode.ts"
+  - "src/presentation/web/lib/url-params.ts"
+
+filesToModify:
+  - "tsp/domain/entities/feature.tsp"
+  - "packages/core/src/domain/generated/output.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/feature.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/repositories/sqlite-feature.repository.ts"
+  - "packages/core/src/application/use-cases/features/create-feature.use-case.ts"
+  - "src/presentation/web/app/(dashboard)/@drawer/create/page.tsx"
+  - "src/presentation/web/components/common/feature-create-drawer/feature-create-drawer.tsx"
+  - "src/presentation/web/components/common/feature-create-drawer/feature-create-drawer.stories.tsx"
+  - "src/presentation/web/components/common/application-node/application-node.tsx"
+  - "src/presentation/web/components/common/application-node/application-node.stories.tsx"
+  - "src/presentation/web/components/features/application-page/app-overflow-menu.tsx"
+  - "src/presentation/web/components/features/application-page/app-top-bar.tsx"
+  - "src/presentation/web/components/features/control-center/control-center-inner.tsx"
+  - "src/presentation/web/components/features/control-center/use-control-center-state.ts"
+  - "src/presentation/web/components/features/control-center/use-fab-actions.tsx"
+  - "src/presentation/web/lib/derive-graph.ts"
+  - "src/presentation/web/locales/en/web.json"
+
+openQuestions: []
+
+content: |
+  ## Architecture Overview
+
+  This feature is largely plumbing across existing primitives. Clean
+  Architecture is preserved end-to-end — no presentation file imports
+  from `infrastructure/`, every cross-layer hand-off is via use cases
+  and ports, and the only domain extension (a new TypeSpec enum and two
+  new optional/typed fields on `Feature`) is authored in `tsp/` and
+  flows to the rest of the codebase through `pnpm tsp:compile`.
+
+  The flow is:
+
+  ```
+  [App page menu / App node menu / FAB context-action]
+     └─ router.push('/create?repo=...&mode=spec&applicationId=...')
+        └─ /create parallel-slot page (server)
+             ├─ parses params via lib/url-params.ts
+             ├─ loads Application server-side (existing use case)
+             └─ renders FeatureCreateDrawer
+                  with initialMode=Spec, initialApplicationId, and
+                  pre-filled repositoryPath
+                  └─ on submit → CreateFeatureUseCase
+                       └─ persists Feature {applicationId, buildMode, fast}
+                            └─ existing worktree + SSE pipeline runs
+                                 └─ derive-graph emits app→feature edge
+  ```
+
+  ## Key Design Decisions
+
+  ### 1. Reuse `/create` as the single drawer host (research §1)
+
+  The codebase has already converged on `/create` as a Next.js
+  parallel-slot drawer that consumes `?mode=`, `?repo=`, `?parent=`,
+  and `?prompt=`. Adding a single new optional `applicationId` param is
+  strictly additive. The originally-hypothesized
+  `?createFeatureForApp=...` intent on `/` was rejected because it
+  would invent a parallel drawer host alongside one that already
+  exists. Every entry point in this feature pushes to the same
+  canonical URL.
+
+  ### 2. Domain link via a dedicated `Feature.applicationId` field (research §2)
+
+  `Feature` already has a precedent of optional foreign-key-like
+  fields (`repositoryId`, `parentId`, `agentRunId`); `applicationId`
+  follows that pattern as a nullable `UUID`. Reusing
+  `featureIdForApplication(applicationId)` as the spec feature id was
+  rejected because it forces a 1:1 relationship and conflates the
+  application's resume-workflow row with brand-new SDD runs.
+  Overloading `parentId` with a `parent_kind` discriminator was
+  rejected because it would break dependencyEdge semantics.
+
+  ### 3. Promote `BuildMode` to a TypeSpec enum (research §3)
+
+  The no-magic-values rule (`.claude/rules/code-quality.md`) plus the
+  TypeSpec-first rule (CLAUDE.md) together require this. Lowercase
+  string values (`"application" | "fast" | "spec"`) match every
+  existing UI string and URL param verbatim, so the migration is wire-
+  compatible with no translation layer. We retain the legacy
+  `fast: boolean` column and continue to write it as
+  `fast = (buildMode === BuildMode.Fast)` so existing read paths keep
+  working without coordinated changes.
+
+  ### 4. Single idempotent migration (research §4)
+
+  One migration file adds both columns and backfills `build_mode` from
+  the legacy `fast` flag via
+  `CASE WHEN fast = 1 THEN 'fast' ELSE 'application' END`.
+  `pragma table_info` guards every `ALTER TABLE` and the backfill
+  `UPDATE` is bounded by `WHERE build_mode = 'application'`, so
+  re-runs are safe. Pattern matches migrations 049/050.
+
+  ### 5. Re-enable ApplicationNode rendering (research §5)
+
+  Critical research finding: `derive-graph.ts` "intentionally ignores"
+  the `applicationMap` argument today (apps were moved exclusively to
+  `/applications`). The spec's framing — "an Application already
+  renders as an ApplicationNode on the Control Center canvas" — is
+  not currently true. Drawing the FR-9 parent edge requires an
+  `ApplicationNode` target on the canvas, so this feature re-enables
+  the existing component (which is fully implemented with Storybook
+  coverage) inside `derive-graph.ts`. Strictly additive — `/applications`
+  remains unchanged.
+
+  ### 6. Drawer lock derived from a single `initialApplicationId` prop (research §6)
+
+  One new optional prop. When set: pin `initialMode = BuildMode.Spec`,
+  set `repositoryPath` from the parent (server-loaded), disable the
+  repo + mode selectors with Tooltip rationale. Disabled-not-hidden
+  preserves spatial layout and Storybook regression baselines. Granular
+  per-control lock flags were rejected as flag soup.
+
+  ### 7. FAB context-awareness via a new `selectedApplicationId` parameter (research §7)
+
+  `useFabActions` already returns a memoized array driven entirely by
+  parameters; one new optional parameter adds the conditional
+  "New SDD feature for &lt;app&gt;" item only when exactly one
+  ApplicationNode is selected. Replacing the unconditional
+  "New feature" was rejected per spec Q8 (fragile UX, removes escape
+  hatch). A global selection store was rejected as inventing a pattern
+  not used elsewhere.
+
+  ### 8. Soft-warn validation in the use case (research §8)
+
+  When `buildMode === Spec` without `applicationId`, log via the
+  existing `ILogger` port and persist anyway. Throwing was rejected
+  because it would regress the existing FAB → New feature → Spec
+  flow (per success criterion "no regression in existing FAB flows").
+
+  ### 9. Reuse existing worktree + SSE infrastructure (research §10–§11)
+
+  No infrastructure changes. Worktrees are provisioned per-feature via
+  the existing `IWorktreeService.create()` path, never sharing the
+  application's working directory. SSE deltas continue through the
+  existing `agent-events` channel. NFR-8 (observability) is satisfied
+  for free.
+
+  ## Implementation Strategy
+
+  Phases are ordered by dependency direction (innermost → outermost
+  of Clean Architecture):
+
+  1. **Phase 1 (Foundation)** lands the TypeSpec enum, the Feature
+     extension, and the migration. Every other layer depends on the
+     generated types and the new columns existing.
+  2. **Phase 2 (Persistence)** rounds-trips the new fields through the
+     mapper and repository — verified by an integration test on a
+     temp sqlite db.
+  3. **Phase 3 (Application)** extends `CreateFeatureUseCase` with the
+     new inputs and the soft-warn validation.
+  4. **Phase 4 (URL Constants + /create page)** introduces the constants
+     module and updates the parallel-slot route to parse
+     `applicationId` and load the app server-side.
+  5. **Phase 5 (Drawer)** adds the `initialApplicationId` prop and the
+     lock behavior. The drawer remains a pure presentation component;
+     the page does the application lookup.
+  6. **Phase 6 (Canvas)** re-enables ApplicationNode derivation and
+     emits the parent edge from `derive-graph.ts`. This must happen
+     before the entry points so the result of using them is visible on
+     the canvas after submit.
+  7. **Phase 7 (Entry Points)** wires the three converging entry
+     points. They all push to the same canonical URL.
+  8. **Phase 8 (i18n + Storybook + E2E)** rounds out coverage. Stories
+     and locale strings are mandatory per the project rules.
+  9. **Phase 9 (Validation Gate)** runs the full local CI mirror per
+     `.claude/rules/cicd.md` before push.
+
+  Within each phase, every code change follows TDD strictly: a failing
+  test is written first, then the minimum code to pass, then a
+  refactor pass. Phases are sequential — each one's tests rely on the
+  prior phase being green.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Re-enabling ApplicationNode rendering regresses prior canvas layouts (016/021). | Add a Playwright snapshot of a canvas containing one repo + one feature + one application; assert the existing repo+feature placement is unchanged and the application appears as a sibling node. Storybook stories cover the canvas-with-apps case. |
+  | Migration runs against a database missing the legacy `fast` column. | Guard the backfill with `pragma table_info(features)` to confirm both `fast` and `build_mode` exist before the UPDATE. If `fast` is missing, the column default `'application'` is sufficient and no backfill runs. |
+  | Drawer's `initialApplicationId`-derived lock leaks into the non-scoped FAB → New feature → Spec path. | Storybook variant + integration test asserts that opening `/create?mode=spec` (no `applicationId`) leaves the repo selector enabled. Drawer treats `undefined` explicitly as the unlocked path. |
+  | Multiple concurrent SDD features per application overwhelm the agent runner. | No new lock added (per spec Q7). Existing per-feature SSE channels and worktree isolation are sufficient. If real-world usage reveals contention, a per-app concurrency limit can be added later as a domain restriction. |
+  | URL constants migration misses a callsite, leaving a hidden magic-value violation. | Constants module exports a typed `UrlParam` union. PR checklist includes a grep gate for the centralized param names outside `lib/url-params.ts`. |
+  | Create-feature use case soft-warn fires unexpectedly across all spec-mode flows. | The warn's wording calls out the case explicitly ("spec-mode feature created without applicationId — proceeding"). Unit test asserts that the warn fires only when both predicates hold. |
+  | Wire format / URL params drift from the new enum values. | Enum string values are lowercase and match the existing UI strings (`"application" | "fast" | "spec"`) verbatim — zero migration of in-flight payloads required. Unit test asserts the enum's string values. |
+
+  ---
+
+  _Plan complete — proceed to task breakdown_
