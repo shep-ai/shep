@@ -263,6 +263,59 @@ describe('ClaudeCodeExecutorService', () => {
       await expect(executePromise).rejects.toThrow('Authentication failed');
     });
 
+    it('should kill subprocess and resolve when result is received but process never exits', async () => {
+      // Regression: feature 92701aa8 hung 3+ hours after `[result]` because
+      // MCP servers and a leaked `pnpm dev:web` background process kept the
+      // claude CLI subprocess alive. The executor must not depend on natural
+      // exit — once we have the result, we must enforce a grace period and
+      // kill the subprocess so proc.on('close') fires and we resolve.
+      vi.useFakeTimers();
+      try {
+        const mockProc = createMockChildProcess();
+        vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+        // Make kill() actually emit close so the executor resolves.
+        mockProc.kill.mockImplementation(() => {
+          setImmediate(() => {
+            mockProc.stdout.end();
+            mockProc.stderr.end();
+            mockProc.emit('close', null);
+          });
+          return true;
+        });
+
+        const resultLine = buildStreamResult({
+          result: 'Implementation complete',
+          session_id: 'sess-stuck-1',
+        });
+
+        const executePromise = executor.execute('Long-running task');
+
+        // Emit the result line but never close the process (mimicking the
+        // real-world hang where MCP children pin the parent open).
+        await Promise.resolve();
+        mockProc.stdout.write(`${resultLine}\n`);
+        await vi.advanceTimersByTimeAsync(0);
+
+        // Before the grace period elapses, kill must NOT have been called.
+        expect(mockProc.kill).not.toHaveBeenCalled();
+
+        // Advance past the 30s post-result grace period.
+        await vi.advanceTimersByTimeAsync(31_000);
+
+        // Executor must have force-killed the subprocess.
+        expect(mockProc.kill).toHaveBeenCalled();
+
+        // And the captured result data must be returned, not lost.
+        await vi.runAllTimersAsync();
+        const result = await executePromise;
+        expect(result.result).toBe('Implementation complete');
+        expect(result.sessionId).toBe('sess-stuck-1');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('should handle spawn error event', async () => {
       // Arrange
       const mockProc = createMockChildProcess();
