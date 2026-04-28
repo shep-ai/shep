@@ -462,6 +462,7 @@ export function ChatTab({
             setOverrideModel(model);
           }}
           className="w-55"
+          popoverSide="top"
         />
       }
     />

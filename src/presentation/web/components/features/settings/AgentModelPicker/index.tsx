@@ -28,6 +28,8 @@ export interface AgentModelPickerProps {
   mode: 'settings' | 'override';
   /** Show installed/not-installed badges next to agent names */
   showInstallStatus?: boolean;
+  /** Which side to open the popover. Defaults to 'bottom'; use 'top' when the trigger is near the bottom of the viewport. */
+  popoverSide?: 'top' | 'bottom';
 }
 
 export interface AgentModelPickerSaveResult {
@@ -48,6 +50,7 @@ export function AgentModelPicker({
   className,
   mode,
   showInstallStatus,
+  popoverSide = 'bottom',
 }: AgentModelPickerProps) {
   const [open, setOpen] = React.useState(false);
   const [groups, setGroups] = React.useState<AgentModelGroup[]>([]);
@@ -201,7 +204,7 @@ export function AgentModelPicker({
         <PopoverContent
           className="z-[70] w-(--radix-popover-trigger-width) overflow-hidden p-0"
           align="start"
-          side="bottom"
+          side={popoverSide}
         >
           {/* Sliding container — both panels side by side, translateX controlled by level */}
           <div
