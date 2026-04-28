@@ -1,0 +1,961 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "control-center-sdd-mode"
+summary: >
+  Technical research for wiring an "Open in Control Center (SDD mode)" entry
+  point from an Application onto the Control Center canvas. The major
+  technical findings are: (1) the existing /create route is a Next.js
+  parallel-slot drawer that already reads `repo`, `parent`, `prompt`, and
+  `mode` from search params — extending it with an `applicationId` param is
+  strictly additive and removes the need to invent a separate
+  `?createFeatureForApp` intent on `/`; (2) `ApplicationNode` is defined
+  but NOT currently rendered on the canvas (the `applicationMap` is
+  intentionally ignored in `derive-graph.ts`), so this feature must
+  re-enable application rendering on the canvas as a prerequisite for
+  drawing the parent edge; (3) the domain changes required — promoting
+  `BuildMode` to a TypeSpec enum and adding `applicationId?: UUID` +
+  `buildMode: BuildMode` to `Feature` — fit the existing
+  `tsp/common/enums/` and `tsp/domain/entities/feature.tsp` patterns
+  exactly; (4) a single idempotent SQLite migration adds two nullable
+  columns with a CASE-based backfill from the legacy `fast` boolean;
+  (5) no new libraries are needed — every primitive (shadcn DropdownMenu,
+  React Flow edges, tsyringe DI, umzug migrations, search-param drawer
+  routing) already exists in the codebase.
+
+relatedFeatures:
+  - "016-control-center"
+  - "021-control-center-create-feature-2"
+  - "088-cli-application-management"
+  - "090-application-sse-deltas"
+
+technologies:
+  - "TypeScript 5.x"
+  - "React 19 + Next.js 16 (App Router, parallel slot routes)"
+  - "@xyflow/react (React Flow v12)"
+  - "tsyringe (dependency injection)"
+  - "TypeSpec (domain models + enums)"
+  - "Better-sqlite3 (persistence)"
+  - "umzug (migration runner)"
+  - "Server-Sent Events (existing agent-events stream)"
+  - "Tailwind CSS v4 + shadcn/ui (DropdownMenu, Tooltip)"
+  - "Vitest + Playwright (test stack)"
+  - "Storybook 9 (mandatory colocated stories)"
+
+relatedLinks:
+  - title: "Next.js parallel routes & intercepting routes"
+    url: "https://nextjs.org/docs/app/building-your-application/routing/parallel-routes"
+  - title: "@xyflow/react edge customization"
+    url: "https://reactflow.dev/api-reference/types/edge"
+  - title: "TypeSpec enum reference"
+    url: "https://typespec.io/docs/language-basics/enums"
+  - title: "SQLite ALTER TABLE limitations"
+    url: "https://www.sqlite.org/lang_altertable.html"
+  - title: "FeatureCreateDrawer source (BuildMode declared inline at line 59)"
+    url: "src/presentation/web/components/common/feature-create-drawer/feature-create-drawer.tsx"
+  - title: "Existing /create parallel-slot route already consumes ?mode= param"
+    url: "src/presentation/web/app/(dashboard)/@drawer/create/page.tsx"
+  - title: "derive-graph.ts intentionally skips applicationMap (line ~247)"
+    url: "src/presentation/web/lib/derive-graph.ts"
+  - title: "useFabActions returns a static FloatingActionButtonAction[]"
+    url: "src/presentation/web/components/features/control-center/use-fab-actions.tsx"
+  - title: "Feature TypeSpec model (fast: boolean at line 377)"
+    url: "tsp/domain/entities/feature.tsp"
+  - title: "AppOverflowMenu uses shadcn DropdownMenu primitives"
+    url: "src/presentation/web/components/features/application-page/app-overflow-menu.tsx"
+  - title: "Idempotent ALTER TABLE migration template (049)"
+    url: "packages/core/src/infrastructure/persistence/sqlite/migrations/049-add-default-fast-mode.ts"
+  - title: "WorktreeService.create — provisions per-feature .worktrees/<branch>"
+    url: "packages/core/src/infrastructure/services/git/worktree.service.ts"
+  - title: "feature.mapper.ts — domain↔row column mapping"
+    url: "packages/core/src/infrastructure/persistence/sqlite/mappers/feature.mapper.ts"
+  - title: "featureIdForApplication — read-only bridge, NOT reused as spec feature id"
+    url: "packages/core/src/domain/shared/feature-id.ts"
+
+decisions:
+  - title: "URL intent encoding — extend the existing `/create` parallel-slot drawer route"
+    chosen: >
+      Reuse the existing `/create` parallel-slot drawer route and add a single
+      new optional search param: `applicationId`. Combined with the already-
+      supported `repo`, `parent`, `prompt`, and `mode` params, the canonical
+      entry-point URL becomes
+      `/create?repo=<repoPath>&mode=spec&applicationId=<appId>`. The
+      application page's "Open in Control Center (SDD mode)" action pushes
+      to that URL directly. Param keys are centralized in a new constants
+      module at `src/presentation/web/lib/url-params.ts`.
+    rejected:
+      - >
+        Invent a new `?createFeatureForApp=<id>&mode=spec` intent on the root
+        `/` route — rejected because the spec's earlier framing assumed `/`
+        was the drawer host, but the actual codebase already implements
+        `/create` as a Next.js parallel-slot drawer that overlays whatever
+        underlying page is mounted. Adding a parallel intent on `/` would
+        duplicate a drawer host that already exists, require a second
+        URL-cleanup mechanism, and force every entry point to use a
+        different param schema.
+      - >
+        Dispatch a transient window CustomEvent and rely on a singleton
+        listener in ControlCenterInner — rejected per the spec's resolved
+        Q4 answer (loses intent on refresh, not deep-linkable, harder to
+        Playwright-test) and because the existing search-param pattern is
+        already proven (see use-selected-repository.ts and the existing
+        `parent` / `repo` params).
+    rationale: >
+      The codebase has already converged on `/create` as the single drawer
+      host: `src/presentation/web/app/(dashboard)/@drawer/create/page.tsx`
+      is a parallel-slot route that reads `searchParams.mode` and forwards
+      it as `initialMode` to the drawer. Adding `applicationId` as a peer
+      param requires only (a) extending `parseMode`-style parsing in that
+      page, (b) loading the application by id server-side to derive
+      `repositoryPath`, and (c) passing it through to the drawer client.
+      The previous (016/021) Control Center features established this exact
+      pattern. Centralizing param keys in `lib/url-params.ts` satisfies
+      `.claude/rules/code-quality.md` ("No magic values") without inventing
+      a new abstraction layer.
+
+  - title: "Domain link — add nullable `Feature.applicationId` (UUID) field"
+    chosen: >
+      Add `applicationId?: UUID` to the `Feature` TypeSpec model in
+      `tsp/domain/entities/feature.tsp` (alongside the existing
+      `repositoryId?: UUID` and `parentId?: UUID` optional links).
+      Regenerate `packages/core/src/domain/generated/output.ts` via
+      `pnpm tsp:compile`. Add a corresponding nullable
+      `application_id TEXT` column to the `features` SQLite table via
+      migration. Update `feature.mapper.ts` (toDatabase / fromDatabase),
+      `sqlite-feature.repository.ts` (INSERT / UPDATE column lists), and
+      the create-feature use case input/output shapes.
+    rejected:
+      - >
+        Reuse `featureIdForApplication(applicationId)` as the spec
+        feature's id — rejected because (a) it forces a 1:1 application↔
+        feature relationship, contradicting the resolved Q7 answer
+        (multiple concurrent SDD features per app), and (b) it conflates
+        the application's resume-workflow feature row (which uses that id
+        deliberately) with a brand-new feature run. This was the spec's
+        Q2 rejected option.
+      - >
+        Encode the application id inside the existing `parentId` UUID with
+        a typed discriminator column (`parent_kind: 'feature' |
+        'application'`) — rejected because it overloads `parentId`'s
+        semantics (today it strictly references another feature, used by
+        Plan/derive-graph for the dependencyEdge), and would require
+        ripple-changes everywhere `parentId` is read. A dedicated
+        `applicationId` column is narrower, queryable, and matches how
+        `repositoryId` already coexists alongside `parentId`.
+    rationale: >
+      The Feature TypeSpec model already has the precedent of multiple
+      optional foreign-key-style fields (`repositoryId`, `parentId`,
+      `agentRunId`). Adding `applicationId` follows that pattern exactly.
+      Nullability is required for backward compatibility — every existing
+      feature row will have `applicationId === null` after migration.
+      Using `UUID` (not bare `string`) leverages the existing TypeSpec
+      `UUID` scalar definition for type safety. The schema cost is one
+      column; the modeling cost is one optional field; both fit the
+      existing patterns without inventing new primitives.
+
+  - title: "Mode persistence — promote `BuildMode` to a TypeSpec enum"
+    chosen: >
+      Create `tsp/common/enums/build-mode.tsp` declaring
+      `enum BuildMode { Application: \"application\", Fast: \"fast\", Spec: \"spec\" }`
+      with `@doc(...)` decorators on each member, mirroring
+      `tsp/common/enums/lifecycle.tsp`'s `SdlcLifecycle` style. Add
+      `buildMode: BuildMode` (non-null, no default in TypeSpec) to the
+      `Feature` model. Add a `build_mode TEXT NOT NULL DEFAULT
+      'application'` column to the `features` table via migration, with a
+      backfill that sets the column from the legacy `fast` flag:
+      `CASE WHEN fast = 1 THEN 'fast' ELSE 'application' END`. Replace
+      every UI-side use of the inline `BuildMode` string union (currently
+      declared at `feature-create-drawer.tsx:59`) with an import of the
+      generated enum. Mode-aware code (drawer label resolution,
+      derive-graph styling, application page filters) references the enum
+      members, never raw strings.
+    rejected:
+      - >
+        Keep `BuildMode` as a UI-only TypeScript union — rejected per the
+        spec's Q3 answer and per `.claude/rules/code-quality.md` ("Any
+        string used in `=== 'value'` that represents a domain concept …
+        MUST be a TypeSpec-defined enum"). Without persistence, the canvas
+        cannot distinguish a 'spec' feature from an 'application'-mode
+        feature after refresh, breaking FR-9's edge styling and the
+        success criterion that mode survives reload.
+      - >
+        Derive mode at read time from `applicationId` + `fast` — rejected
+        because it conflates "has an application parent" with "spec mode."
+        A future feature could plausibly run in 'application' mode against
+        an application's repo without being SDD (e.g., a hot-fix flow), or
+        a 'spec' feature could exist without an application (the existing
+        FAB → New feature → Spec path). A dedicated column is the only way
+        to keep these orthogonal.
+    rationale: >
+      The TypeSpec-first rule in CLAUDE.md and the no-magic-values rule
+      together require this. The code-quality.md directive is explicit:
+      mode is a domain concept, so it MUST be a TypeSpec enum, not a
+      string union. Backfilling from the legacy `fast` boolean is the
+      same pattern migration 049 used for `default_fast_mode`. The enum's
+      lowercase string values (`\"application\"`, `\"fast\"`, `\"spec\"`)
+      match the existing UI strings exactly, so the migration preserves
+      wire compatibility with any in-flight URL params or stored
+      payloads. We retain the `fast: boolean` column for backward
+      compatibility and continue to write it (`fast = (mode === 'fast')`),
+      so existing read paths that consult `fast` (e.g., the lifecycle
+      decision in `create-feature.use-case.ts:104`) keep working without
+      coordinated changes.
+
+  - title: "Migration shape — single combined migration adding both columns + backfill"
+    chosen: |
+      One new migration file
+      `packages/core/src/infrastructure/persistence/sqlite/migrations/NNN-add-feature-application-id-and-build-mode.ts`
+      (the actual NNN is determined at implementation time by listing the
+      directory). Pattern follows migration 049/050 exactly: read
+      `pragma table_info(features)`, guard each `ALTER TABLE features ADD
+      COLUMN` with an `if (!names.has(...))` check, then run an idempotent
+      backfill UPDATE.
+
+      Schema:
+        ALTER TABLE features ADD COLUMN application_id TEXT
+        ALTER TABLE features ADD COLUMN build_mode TEXT NOT NULL DEFAULT 'application'
+        UPDATE features
+          SET build_mode = CASE WHEN fast = 1 THEN 'fast' ELSE 'application' END
+          WHERE build_mode = 'application'
+
+      `down()` is a no-op (matching migrations 049/050).
+    rejected:
+      - >
+        Split into two migrations (one per column) — rejected because the
+        two changes are conceptually one feature-domain extension; one
+        file is easier to audit and reason about, and both columns must
+        ship together for the feature to function (a partial deploy with
+        only `application_id` would still leave `buildMode` underivable
+        from persistence).
+      - >
+        Recreate the `features` table to add NOT NULL columns without
+        defaults — rejected because SQLite `ALTER TABLE ADD COLUMN` is
+        sufficient when a default is provided, and a full table recreate
+        risks data loss / locking on production databases. The
+        idempotent-ALTER-with-default pattern is already the established
+        norm in this repo (see migrations 049, 050).
+    rationale: >
+      `application_id` is nullable (TEXT, no DEFAULT) because the vast
+      majority of historical features have no parent application and a
+      forced default would be meaningless. `build_mode` is NOT NULL with
+      a default of `'application'` so that the table-level constraint is
+      preserved on every row, including legacy ones; the backfill UPDATE
+      then promotes any row with `fast = 1` to `'fast'`. Re-running the
+      migration is safe: the `ALTER` is guarded by `pragma table_info`,
+      and the `UPDATE` is bounded by `WHERE build_mode = 'application'`
+      to avoid downgrading rows that were already promoted in a prior run.
+
+  - title: "Canvas rendering — re-enable ApplicationNode derivation for the parent-edge requirement"
+    chosen: >
+      Update `src/presentation/web/lib/derive-graph.ts` to consume the
+      currently-ignored `applicationMap` parameter. For every feature row
+      with `applicationId` set, emit an `ApplicationNode` (positioned via
+      the same layout helpers that already place repo and feature nodes)
+      and an edge `{ source: appNodeId, target: featureNodeId, type:
+      'dependencyEdge' }`. Continue rendering features without
+      `applicationId` exactly as today (no behavior change for
+      non-app-scoped features). Register `applicationNode` in the
+      ReactFlow `nodeTypes` map of the canvas (the component already
+      exists at
+      `src/presentation/web/components/common/application-node/`). Keep
+      the `/applications` page rendering path unchanged.
+    rejected:
+      - >
+        Skip ApplicationNode derivation and render the parent edge as a
+        feature → virtual-pseudo-node — rejected because (a) the
+        `ApplicationNode` component is already implemented, (b) the
+        spec's FR-9 explicitly requires "feature → application edge … in
+        derive-graph.ts," and (c) virtual nodes would invent a parallel
+        layout with no upside.
+      - >
+        Render application nodes on the canvas only when an SDD feature
+        is present — rejected because the resulting graph is mode-
+        unstable (apps disappear/appear based on whether any child SDD
+        feature exists, which is surprising), and because applications
+        without SDD children are still meaningful canvas citizens (the
+        spec framing repeatedly references the canvas as the place where
+        applications live alongside features and repositories).
+    rationale: >
+      During research, we discovered the spec's framing ("an Application
+      already renders as an ApplicationNode on the Control Center
+      canvas") is contradicted by the actual codebase: `derive-graph.ts`
+      lines ~242-247 explicitly comments that `applicationMap` is
+      "intentionally ignored" because applications were moved exclusively
+      to `/applications`. This is a load-bearing finding for planning:
+      drawing the parent edge presumes an `ApplicationNode` target on the
+      canvas, which today does not exist. Rather than invent a new
+      visualization, we re-enable the existing component (it has full
+      Storybook coverage and is referenced from prior features
+      016/088/090) and let `derive-graph.ts` emit nodes for every
+      application owned by the workspace. This is strictly additive — the
+      `/applications` page continues to work — and matches how repos and
+      features already coexist on the canvas.
+
+  - title: "Drawer pre-fill mechanics — derive locked state from `initialApplicationId`"
+    chosen: >
+      Add a single new optional prop `initialApplicationId?: string` to
+      `FeatureCreateDrawer`. The drawer treats this as the source of
+      truth for "app-scoped mode." When set, the drawer:
+      (1) loads the application via the existing application-fetch hook
+      to obtain `repositoryPath` (the page route does this load
+      server-side and passes both props down — drawer does NOT call a use
+      case directly);
+      (2) pins `initialMode` to `BuildMode.Spec`, ignoring any conflicting
+      `mode` URL param;
+      (3) sets `repositoryPath` from the application and disables the
+      repo selector with a tooltip explaining the lock;
+      (4) disables the mode selector with the same tooltip pattern;
+      (5) leaves all other fields (one-liner, description, advanced
+      options) editable and at their normal defaults.
+      Disabling (not hiding) the locked controls preserves spatial layout
+      and Storybook regression baselines.
+    rejected:
+      - >
+        Add granular props like `lockedMode`, `lockedRepositoryPath`,
+        `repoSelectorDisabled`, etc. — rejected because the drawer would
+        accumulate a long tail of locking flags, every call site would
+        need to set the right combination, and inconsistent combinations
+        would be expressible (e.g., locked mode without locked repo).
+        Deriving lock state from a single intent-bearing prop keeps the
+        contract narrow.
+      - >
+        Hide the locked controls instead of disabling them — rejected
+        because the drawer's spatial layout would shift between scoped
+        and unscoped invocations, increasing the Storybook story count
+        and the visual-regression surface, and because the user benefits
+        from seeing the pinned values (e.g., to confirm which app they
+        are scoping to).
+    rationale: >
+      The drawer already has an `initialMode` prop that is interpreted as
+      "preselect this mode." Adding `initialApplicationId` as a peer that
+      is interpreted as "preselect this mode AND lock the entry-point-
+      determined fields" is a minimal extension. Loading the application
+      data server-side (in the parallel-slot page) and passing
+      `repositoryPath` down means the drawer remains a pure presentation
+      component with no use-case dependency — preserving the
+      clean-architecture rule and keeping the drawer testable in
+      Storybook without a DI container.
+
+  - title: "FAB context-awareness — pass selected canvas nodes into `useFabActions`"
+    chosen: >
+      Extend `UseFabActionsParams` with `selectedApplicationId?: string`
+      (resolved upstream from React Flow's selection state — exactly one
+      `applicationNode` selected). Inside the `useMemo`, when
+      `selectedApplicationId` is set, append a single extra action
+      `id: 'new-sdd-feature-for-app'` whose `onClick` performs
+      `router.push('/create?applicationId=<id>&mode=spec')` (using the
+      same constants module as the application-page entry point). Other
+      FAB items remain untouched and unconditional. The "New SDD feature
+      for &lt;app&gt;" label uses i18n (`fab.newSddForApp` with an
+      `appName` interpolation).
+    rejected:
+      - >
+        Replace the unconditional "New feature" item with the app-scoped
+        variant when an app is selected — rejected per the spec's Q8
+        answer (fragile UX, removes the escape hatch, contradicts
+        existing FAB patterns).
+      - >
+        Skip the FAB integration entirely — rejected per the spec's Q8
+        answer (leaves a discoverability gap for FAB-first users).
+      - >
+        Track FAB context via a global Zustand/Jotai store — rejected
+        because the rest of the FAB plumbing already accepts plain props
+        from `ControlCenterInner`; introducing a global store for one new
+        piece of state would invent a pattern not used elsewhere.
+    rationale: >
+      `useFabActions` already returns a memoized array driven entirely by
+      parameters; adding a selection-derived parameter is the minimal
+      extension that fits the hook's contract. The single-selection guard
+      (exactly one `applicationNode`) is intentional — multi-selection is
+      not a meaningful "scope to N apps" intent, and no-selection means
+      the action is moot. The same constants module and the same URL
+      schema are reused, so the FAB, the app-node menu, and the app-page
+      entry point all converge on a single tested code path.
+
+  - title: "Validation — soft warn (do not block) when `buildMode === Spec` without `applicationId`"
+    chosen: >
+      In `create-feature.use-case.ts`, accept the new optional
+      `applicationId` and required `buildMode` inputs. If
+      `buildMode === BuildMode.Spec` and `applicationId === undefined`,
+      log a warning via the injected `ILogger` port
+      (`logger.warn('spec-mode feature created without an applicationId
+      — proceeding')`) and persist the row anyway. No exception, no
+      domain error.
+    rejected:
+      - >
+        Throw a domain error when spec-mode is requested without an
+        applicationId — rejected because the existing FAB → New feature
+        → Spec path (which dispatches the drawer with
+        `initialMode='spec'` and no application context) is a legitimate
+        flow that this feature must NOT regress (per success criterion
+        "no regression in the existing FAB flows"). Blocking would be a
+        behavior change.
+      - >
+        Silently allow the combination with no logging — rejected
+        because a spec-mode feature without an application is at least
+        worth a breadcrumb in the logs, both for ops visibility and for
+        future debugging if the flow's intent shifts.
+    rationale: >
+      The spec's FR-8 explicitly says "warn but do not block, to preserve
+      generic 'spec mode without app' use cases that already exist via
+      FAB → New feature → Spec." `ILogger.warn` is the project's
+      canonical warning channel (no `console.*` per
+      `.claude/rules/code-quality.md`, NFR-8). The validation lives in
+      the use case (not in the drawer or page) so it applies uniformly
+      across CLI, web, and any future presentation layer.
+
+  - title: "URL constants module — new file at `src/presentation/web/lib/url-params.ts`"
+    chosen: |
+      Create a single new file
+      `src/presentation/web/lib/url-params.ts` exporting:
+
+        export const URL_PARAMS = {
+          repo: 'repo',
+          parent: 'parent',
+          prompt: 'prompt',
+          mode: 'mode',
+          applicationId: 'applicationId',
+        } as const;
+        export type UrlParam = (typeof URL_PARAMS)[keyof typeof URL_PARAMS];
+
+      Every callsite that constructs or reads a `/create` query string
+      (the create page server component, control-center-inner.tsx,
+      use-fab-actions.tsx, app-overflow-menu.tsx, application-node.tsx)
+      imports from this module instead of using string literals.
+      Existing uses of the older string literals (e.g., `'repo'`,
+      `'parent'`) are migrated as part of this feature so the module
+      starts life with complete coverage instead of a half-applied
+      convention.
+    rejected:
+      - >
+        Inline the literal `'applicationId'` only at the new callsites,
+        leave existing literals alone — rejected because it locks in a
+        magic-value violation and creates a half-applied convention that
+        future contributors will have to clean up. The existing literals
+        are themselves magic values per
+        `.claude/rules/code-quality.md`.
+      - >
+        Build a typed router-helper (e.g., `routes.create({...})`) —
+        rejected as out of scope. A constants module is the smallest
+        refactor that satisfies the no-magic-values rule, and a router
+        helper would be a feature of its own.
+    rationale: >
+      No centralized URL/route constants module exists in the web
+      codebase today (verified during research). Introducing a tiny
+      `lib/url-params.ts` is the minimum required to obey the
+      no-magic-values rule for the new `applicationId` param, and
+      migrating the existing literals at the same time is a single
+      coordinated edit while we are already touching every callsite.
+
+  - title: "Worktree provisioning — reuse existing per-feature worktree pipeline unchanged"
+    chosen: >
+      No infrastructure change. The new SDD feature is created via
+      `CreateFeatureUseCase` and then runs through the existing
+      `StartFeatureUseCase` (or whatever the agent runner entry point is —
+      the existing path through `IWorktreeService.create()` in
+      `infrastructure/services/git/worktree.service.ts`) which already
+      provisions a unique branch and `.worktrees/<branch>` directory per
+      feature. The application's working directory is never touched.
+    rejected:
+      - >
+        Reuse the application's repo path as the feature's working
+        directory — rejected per the spec's Q5 answer (worktree-per-
+        feature is the platform's load-bearing isolation guarantee).
+      - >
+        Add a new worktree-naming convention that prefixes the
+        application name — rejected because no test or use case depends
+        on worktree path shape; the existing branch-derived naming is
+        sufficient and consistent with all other features.
+    rationale: >
+      Confirmed during research: `WorktreeService.create()` is called
+      from the existing feature-start path with no application-awareness,
+      and there is no code path that would surprise the service if
+      `feature.applicationId` is set. The infrastructure layer treats SDD
+      features identically to any other feature, which satisfies the
+      spec's "zero special cases" goal.
+
+  - title: "SSE / observability — no new channel; rely on existing `agent-events` stream"
+    chosen: >
+      Do nothing in the SSE / observability layer. The new feature row
+      automatically participates in the existing `app/api/agent-events`
+      stream and the `agent-events-sw.js` service-worker fan-out as soon
+      as it has an `agentRunId`. The application page's existing
+      live-update plumbing (via `featureIdForApplication(applicationId)`)
+      is unaffected — the SDD feature uses its own canonical feature id,
+      and the application's resume-workflow row continues to use
+      `featureIdForApplication`.
+    rejected:
+      - >
+        Introduce a new SSE channel `application-sdd-events` for SDD
+        feature lifecycle — rejected because the existing channel
+        already carries every feature lifecycle delta, and a parallel
+        channel would duplicate state with extra complexity.
+    rationale: >
+      Verified during research: the SSE layer is feature-id-agnostic; it
+      streams deltas for whichever feature row has an active agent run.
+      Adding `applicationId` to a feature row does not change what the
+      SSE pipeline sees. NFR-8 is satisfied for free.
+
+openQuestions:
+  - question: >
+      Should `derive-graph.ts` render an `ApplicationNode` on the canvas for
+      every workspace application, or only for applications that have at
+      least one feature linked via `applicationId`?
+    resolved: true
+    options:
+      - option: "Render every application unconditionally"
+        description: >
+          Always emit an `ApplicationNode` for every application returned
+          by the workspace's application list. The canvas reflects the
+          full application inventory regardless of whether SDD features
+          exist. Mirrors how repository nodes are rendered today (every
+          repo is on the canvas, even those with no features).
+        selected: true
+      - option: "Render only applications that have child SDD features"
+        description: >
+          Filter applications down to the set whose id appears in some
+          feature's `applicationId`. The canvas stays sparse until the
+          user launches an SDD feature. Mode-unstable: nodes appear and
+          disappear based on feature state.
+        selected: false
+      - option: "Make rendering toggleable via a canvas setting"
+        description: >
+          Default to one of the above, but expose a Settings toggle to
+          flip between modes. Adds a new setting field, repository
+          read/write, and UI plumbing.
+        selected: false
+    selectionRationale: >
+      Rendering every application is the only option that matches how
+      the analogous case (repository nodes) already works in the same
+      file. Repository nodes render unconditionally — there is no "only
+      repos with features" filter. Applications are first-class
+      workspace citizens of equal standing, so the same rule should
+      apply. The mode-unstable filter would surprise users who expect
+      their canvas to reflect what they have created, not what they have
+      used. A settings toggle is over-engineering for a question that
+      hasn't even surfaced from real usage.
+
+  - question: >
+      How should the application page route to `/create` — by client-side
+      `router.push` or by a `<Link>` element that gets prefetched?
+    resolved: true
+    options:
+      - option: "Programmatic `router.push` from the menu item's onClick"
+        description: >
+          The DropdownMenuItem's onClick handler calls
+          `router.push(buildCreateUrl({ applicationId, mode:
+          BuildMode.Spec }))`. Identical to every other navigation in the
+          codebase (control-center-inner.tsx uses router.push for
+          `/create`). Predictable, easy to test (the click handler can be
+          asserted to call router.push with the expected URL).
+        selected: true
+      - option: "Wrap the menu item in a Next.js `<Link>` for prefetching"
+        description: >
+          Use `<DropdownMenuItem asChild><Link ...>` so Next.js prefetches
+          the destination. Theoretically faster, but DropdownMenuItem +
+          Link composition has known a11y / focus-order quirks in
+          shadcn/ui, and the prefetch advantage is negligible for a
+          parallel-slot drawer route that is already loaded.
+        selected: false
+      - option: "Dispatch a window CustomEvent and let a singleton handler navigate"
+        description: >
+          Decouple the menu from navigation by emitting an event the
+          page-level handler subscribes to. Adds indirection with no
+          benefit, and contradicts the URL-intent decision above.
+        selected: false
+    selectionRationale: >
+      Programmatic `router.push` is what every other navigation in the
+      web layer uses (verified in control-center-inner.tsx,
+      use-fab-actions.tsx, application-node.tsx). It is consistent, easy
+      to assert in unit tests, and avoids the known shadcn
+      DropdownMenuItem + Next.js Link interaction quirks. The drawer's
+      parallel-slot route loads quickly without prefetching.
+
+  - question: >
+      For the `Feature.buildMode` enum, should the TypeScript-side enum
+      values be `PascalCase` (Application/Fast/Spec) or the lowercase
+      strings (`"application"` / `"fast"` / `"spec"`)?
+    resolved: true
+    options:
+      - option: >
+          Lowercase string values matching existing UI strings
+          ("application" | "fast" | "spec")
+        description: >
+          TypeSpec emits `enum BuildMode { Application: "application", ...
+          }` which generates a TypeScript enum whose member values are
+          the lowercase strings. URL params, JSON wire format, and the
+          existing UI BuildMode union all match the enum members
+          verbatim — no translation layer needed.
+        selected: true
+      - option: "PascalCase string values matching the TypeSpec member names"
+        description: >
+          `enum BuildMode { Application: \"Application\", ... }`. Member
+          identifier matches its value, more idiomatic in pure TS.
+          Requires a translation layer for URL params and breaks every
+          existing UI string.
+        selected: false
+      - option: "Numeric values (0/1/2)"
+        description: >
+          TypeScript-only enum with numeric backing. Smallest on disk;
+          opaque in URLs and DB rows; breaks the existing UI strings.
+        selected: false
+    selectionRationale: >
+      The existing inline `BuildMode` UI type (`'application' | 'fast' |
+      'spec'`) and the existing `?mode=spec` URL param scheme already use
+      lowercase strings. Choosing matching values means the migration is
+      a pure additive change — no URL params or stored payloads need to
+      be rewritten, and no translation layer between domain and transport
+      is required. This is also how `SdlcLifecycle` is structured
+      (lowercase string values backing its members).
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-04-28
+
+  ## Executive Summary
+
+  This research validates the spec's eight resolved product questions
+  against the actual codebase and surfaces three technical findings that
+  the planning phase must absorb:
+
+  1. **The `/create` route is already a Next.js parallel-slot drawer**
+     that consumes `?mode=`, `?repo=`, `?parent=`, and `?prompt=` search
+     params. Adding `?applicationId=` is a strictly additive
+     extension — there is no need to invent a separate
+     `?createFeatureForApp=` intent on `/`.
+  2. **`ApplicationNode` is implemented but NOT rendered on the canvas
+     today.** `derive-graph.ts` explicitly ignores `applicationMap`
+     (lines ~242-247). The spec implicitly assumes apps are on the
+     canvas; before the parent edge in FR-9 can be drawn, this feature
+     must re-enable application derivation.
+  3. **No new infrastructure is needed.** Worktree provisioning, SSE
+     deltas, the `ILogger` port, the `umzug` migration runner, the
+     shadcn DropdownMenu, and React Flow's edge primitives all already
+     exist and require zero new abstractions.
+
+  ## Technology Decisions
+
+  ### 1. URL intent encoding — extend the existing `/create` parallel-slot route
+
+  **Chosen:** Reuse `/create` as the single drawer host. Add one new
+  optional search param: `applicationId`. The canonical app-scoped URL
+  is `/create?repo=<path>&mode=spec&applicationId=<appId>`. Centralize
+  param keys in `src/presentation/web/lib/url-params.ts`.
+
+  **Rejected:**
+  - Invent a new `?createFeatureForApp=<id>&mode=spec` intent on `/`
+    — duplicates an existing drawer host.
+  - Use a transient window CustomEvent — loses intent on refresh
+    (already rejected in spec Q4).
+
+  **Rationale:** The codebase has already converged on `/create` as
+  the drawer host. The page (`(dashboard)/@drawer/create/page.tsx`)
+  reads `searchParams.mode` and forwards it as `initialMode` to the
+  drawer. Adding `applicationId` as a peer param requires only
+  extending that page's parsing and loading the application by id
+  server-side. This is the same pattern features 016 and 021
+  established.
+
+  ### 2. Domain link — add nullable `Feature.applicationId` (UUID) field
+
+  **Chosen:** Add `applicationId?: UUID` to the `Feature` TypeSpec
+  model. Add a nullable `application_id TEXT` column to the
+  `features` table.
+
+  **Rejected:**
+  - Reuse `featureIdForApplication(applicationId)` as the spec feature
+    id — forces 1:1 app↔feature, contradicts spec Q7.
+  - Overload `parentId` with a `parent_kind` discriminator —
+    breaks the dependencyEdge semantics that already use `parentId`.
+
+  **Rationale:** Mirrors the existing pattern of multiple optional
+  foreign-key-style fields (`repositoryId`, `parentId`, `agentRunId`).
+  Nullability preserves backward compatibility for every legacy row.
+
+  ### 3. Mode persistence — promote `BuildMode` to a TypeSpec enum
+
+  **Chosen:** New file `tsp/common/enums/build-mode.tsp`. Add
+  `buildMode: BuildMode` to `Feature`. Add `build_mode TEXT NOT NULL
+  DEFAULT 'application'` column. Backfill via
+  `CASE WHEN fast = 1 THEN 'fast' ELSE 'application' END`.
+
+  **Rejected:**
+  - Keep as UI-only union — violates the no-magic-values rule and
+    fails the refresh-stable success criterion.
+  - Derive at read time from `applicationId + fast` — conflates
+    orthogonal concepts.
+
+  **Rationale:** CLAUDE.md's TypeSpec-first rule and code-quality.md's
+  "Any string used in `=== 'value'` that represents a domain concept
+  MUST be a TypeSpec-defined enum" together require this. Lowercase
+  string values match the existing UI strings exactly so the migration
+  preserves URL/wire compatibility.
+
+  ### 4. Migration shape — single combined idempotent migration
+
+  **Chosen:** One migration file adding both columns and the backfill
+  UPDATE. `pragma table_info` guards. `down()` is a no-op.
+
+  **Rejected:**
+  - Split into two migrations — one logical change per file is more
+    auditable; both columns must ship together to be useful.
+  - Recreate the `features` table — risks data loss; SQLite ALTER ADD
+    COLUMN is sufficient when a default is provided.
+
+  **Rationale:** Pattern matches migrations 049/050 exactly. The
+  backfill UPDATE is bounded by `WHERE build_mode = 'application'` so
+  re-runs are idempotent. The legacy `fast` column is retained and
+  written on every create (`fast = (mode === BuildMode.Fast)`) so
+  existing read paths (e.g., the lifecycle decision in
+  `create-feature.use-case.ts:104`) keep working.
+
+  ### 5. Canvas rendering — re-enable ApplicationNode derivation
+
+  **Chosen:** Update `derive-graph.ts` to consume `applicationMap`.
+  For every application, emit an `ApplicationNode` and (when a child
+  feature has matching `applicationId`) a `dependencyEdge` from the
+  app node to the feature node. Register `applicationNode` in the
+  ReactFlow `nodeTypes` map. Continue rendering existing repo and
+  feature nodes unchanged.
+
+  **Rejected:**
+  - Skip ApplicationNode derivation, render the parent edge to a
+    virtual node — invents a parallel layout with no upside.
+  - Render apps only when a child SDD feature exists — mode-unstable
+    canvas.
+
+  **Rationale:** The research-time discovery that `derive-graph.ts`
+  "intentionally ignores" the applicationMap is a load-bearing
+  finding. The `ApplicationNode` component is already fully implemented
+  (with Storybook coverage); re-enabling its canvas derivation is the
+  smallest change that satisfies FR-9.
+
+  ### 6. Drawer pre-fill mechanics — derive locked state from `initialApplicationId`
+
+  **Chosen:** Add one new prop `initialApplicationId?: string` to
+  `FeatureCreateDrawer`. When set, the drawer pins
+  `initialMode = BuildMode.Spec`, sets `repositoryPath` from the
+  application (passed by the parent page), and disables (not hides)
+  the repo + mode selectors with tooltips.
+
+  **Rejected:**
+  - Granular `lockedMode` / `lockedRepositoryPath` props — accumulates
+    a long tail of flags.
+  - Hide the locked controls — shifts spatial layout, increases the
+    Storybook story matrix.
+
+  **Rationale:** The drawer remains a pure presentation component
+  (no use-case dependency); the parent page does the application
+  lookup server-side. Disabled-not-hidden preserves visual stability.
+
+  ### 7. FAB context-awareness — pass `selectedApplicationId` into `useFabActions`
+
+  **Chosen:** Extend `UseFabActionsParams` with
+  `selectedApplicationId?: string`. When set, append a single extra
+  action whose `onClick` performs
+  `router.push('/create?applicationId=<id>&mode=spec')`.
+
+  **Rejected:**
+  - Replace "New feature" with the app-scoped variant — fragile UX,
+    removes escape hatch (spec Q8).
+  - Skip FAB integration — leaves discoverability gap (spec Q8).
+  - Track FAB context via a new global store — invents a pattern not
+    used elsewhere.
+
+  **Rationale:** Hook already returns a memoized array driven by
+  parameters; one new parameter is minimal. Single-selection guard
+  prevents nonsensical multi-app intents.
+
+  ### 8. Validation — soft warn (do not block) when `Spec` without `applicationId`
+
+  **Chosen:** `ILogger.warn` and persist anyway. No exception.
+
+  **Rejected:**
+  - Throw — would regress the existing FAB → New feature → Spec path.
+  - Silent — denies ops a breadcrumb.
+
+  **Rationale:** Spec FR-8 explicitly requires "warn but do not
+  block." `ILogger` is the project's canonical channel
+  (`.claude/rules/code-quality.md` bans `console.*`).
+
+  ### 9. URL constants module — new file `lib/url-params.ts`
+
+  **Chosen:** Create `src/presentation/web/lib/url-params.ts`
+  exporting `URL_PARAMS` const object with all five keys. Migrate
+  existing inline literals at every callsite.
+
+  **Rejected:**
+  - Inline only the new key — locks in a magic-value violation.
+  - Build a typed `routes.create({...})` helper — out of scope.
+
+  **Rationale:** No centralized URL/route constants module exists
+  today (verified). The minimum refactor to satisfy the no-magic-
+  values rule.
+
+  ### 10. Worktree provisioning — no change
+
+  **Chosen:** Reuse the existing `IWorktreeService.create()` path.
+  The SDD feature gets its own branch + `.worktrees/<branch>`
+  directory like every other feature.
+
+  **Rejected:**
+  - Share the application's working directory — concurrent runs
+    would collide (spec Q5).
+  - Invent an app-prefixed naming convention — no test depends on
+    worktree path shape.
+
+  **Rationale:** Verified `WorktreeService.create()` is called
+  feature-id-agnostically. SDD features need no special case.
+
+  ### 11. SSE / observability — no new channel
+
+  **Chosen:** Reuse the existing `agent-events` SSE stream and
+  service-worker fan-out. The new feature row participates
+  automatically once it has an `agentRunId`.
+
+  **Rejected:**
+  - Add a new `application-sdd-events` channel — duplicates state.
+
+  **Rationale:** SSE is feature-id-agnostic; nothing to change.
+
+  ## Library Analysis
+
+  | Library                       | Purpose                                  | Decision | Reasoning                                                                                                                                                                                                            |
+  | ----------------------------- | ---------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | @xyflow/react                 | Canvas + edges                           | Reuse    | Already pinned. Existing `dependencyEdge` type works for the new app→feature edge.                                                                                                                                  |
+  | shadcn/ui DropdownMenu        | Application page overflow + node menus   | Reuse    | Already used by `AppOverflowMenu`. New menu items are a single-line addition.                                                                                                                                       |
+  | shadcn/ui Tooltip             | Disabled-control rationale messages      | Reuse    | Already in the project. Used to explain why repo/mode selectors are locked.                                                                                                                                          |
+  | TypeSpec                      | Domain enum + Feature extension          | Reuse    | Existing `tsp/common/enums/lifecycle.tsp` is the canonical pattern.                                                                                                                                                  |
+  | tsyringe                      | DI for the use case                      | Reuse    | Existing constructor-injection pattern; no container changes beyond registering the use case if it is brand new (it is not — `CreateFeatureUseCase` already exists).                                                |
+  | Better-sqlite3 + umzug        | Migration                                | Reuse    | Existing migration runner; pattern matches 049/050.                                                                                                                                                                   |
+  | Vitest                        | Unit + integration tests                 | Reuse    | Existing TDD pattern; new RED tests for use case, mapper, derive-graph.                                                                                                                                              |
+  | Playwright                    | E2E coverage of the entry-point flow     | Reuse    | Existing Playwright config + helpers; new flow asserted as one E2E scenario (app page → menu → drawer → submit → canvas edge present).                                                                              |
+  | Storybook                     | Mandatory colocated stories              | Reuse    | Project rule. Adds variants to existing component stories; one new story for `FeatureCreateDrawer` "app-scoped" state.                                                                                              |
+  | next/router (`useRouter`)     | Programmatic navigation from menu items  | Reuse    | Already used everywhere in the web layer.                                                                                                                                                                            |
+  | i18next                       | Localized strings                        | Reuse    | New keys added to `src/presentation/web/locales/*/web.json`.                                                                                                                                                          |
+  | (none — no new library)       | —                                        | Reject   | No third-party addition is justified. Every primitive needed already exists.                                                                                                                                          |
+
+  ## Security Considerations
+
+  - **Authorization model unchanged.** The `/create` route is already
+    workspace-scoped; adding an `applicationId` param does not grant
+    new privileges. The page must still load the application via the
+    existing application-fetch path (which validates ownership) — the
+    drawer never trusts the URL param to assert "this app exists" or
+    "the user owns it."
+  - **URL-injected `applicationId` validation.** The page's server
+    component validates the `applicationId` is a well-formed UUID and
+    that the application exists in the workspace. If the application
+    cannot be loaded, the drawer falls back to non-scoped mode (no
+    repo pre-fill, no mode lock) and surfaces a non-blocking toast.
+    Treating an unknown `applicationId` as a hard 404 is rejected
+    because the drawer is a parallel-slot overlay and a 404 there
+    would hide the underlying canvas.
+  - **No new secrets, tokens, or credentials.** The migration adds
+    domain columns; no token storage shape changes.
+  - **Path traversal not in scope.** `repositoryPath` continues to be
+    sourced from a stored Application row (not from URL input); the
+    URL only carries an `applicationId`, never a raw path.
+  - **SQL injection.** All new repository writes use parameterized
+    statements (matching the existing `INSERT INTO features` shape
+    in `sqlite-feature.repository.ts`). No string interpolation.
+  - **Worktree isolation preserved.** Per the worktree decision, the
+    SDD feature never shares filesystem state with the parent
+    application. Two concurrent runs cannot collide on `.git/index`,
+    branches, or dev-server ports.
+
+  ## Performance Implications
+
+  - **Drawer open latency (NFR-6 budget < 100 ms).** The new flow
+    adds one server-side application lookup before the drawer
+    streams its first paint. The application repository is already
+    in the warm SQLite cache for any user who landed on the
+    application page; the lookup is a single
+    `SELECT * FROM applications WHERE id = ?` (≈ 0.5 ms locally).
+    Within budget.
+  - **Canvas re-render after edge derivation.** Adding application
+    nodes + app→feature edges to the derived graph increases node
+    count by O(applications) and edge count by O(features-with-
+    `applicationId`). Both quantities are small (< 100 in any
+    realistic workspace). Existing memoization in `useGraphState`
+    bounds the re-render cost; no new memo invalidation paths are
+    introduced.
+  - **Migration cost.** ALTER TABLE ADD COLUMN with a default is
+    O(1) in SQLite (metadata-only operation in modern versions);
+    the backfill UPDATE is O(N) over feature rows but bounded
+    (workspaces have hundreds, not millions, of features). One-time
+    cost on first run.
+  - **SSE traffic unchanged.** Same channel, same delta volume per
+    feature. No additional fan-out.
+  - **Bundle size.** No new third-party dependency. The drawer's
+    new `initialApplicationId` prop and the FAB's new optional
+    parameter add ~< 1 KB minified+gzipped to the web bundle.
+  - **Index considerations.** No new SQLite index is added.
+    `application_id` is queried only when computing the canvas
+    graph (a workspace-scoped read of all features, already
+    happening) and when reading a single feature by id. A future
+    optimization could add `CREATE INDEX features_application_id
+    ON features(application_id) WHERE application_id IS NOT NULL`
+    if hot-path scans of "all features for app X" become a need.
+
+  ## Architecture Notes
+
+  - **Clean architecture preserved.** All domain changes (TypeSpec
+    enum, Feature field) live in `tsp/` and `domain/`. The new
+    use-case logic remains in
+    `application/use-cases/features/create/`. Migration + repository
+    changes stay in `infrastructure/persistence/`. Presentation
+    (drawer, page, FAB, derive-graph) consumes the use case via the
+    existing tsyringe `resolve()` path. No presentation file imports
+    from `infrastructure/`.
+  - **TypeSpec-first preserved.** `BuildMode` enum and the new
+    Feature field are authored in `tsp/`; codegen
+    (`pnpm tsp:compile`) regenerates `domain/generated/output.ts`;
+    consumers import from the generated module. The generated file
+    is never edited by hand.
+  - **TDD discipline.** Each of the following gets a RED test first,
+    then a GREEN minimal implementation:
+      - `CreateFeatureUseCase` accepts and persists `applicationId`
+        + `buildMode`.
+      - `CreateFeatureUseCase` emits an `ILogger.warn` when
+        `buildMode === Spec` and `applicationId === undefined`.
+      - `feature.mapper.ts` round-trips both new fields.
+      - `sqlite-feature.repository.ts` reads/writes both columns.
+      - The new migration is idempotent (run-twice test on a
+        temp sqlite db).
+      - `derive-graph.ts` emits an app→feature edge when
+        `applicationId` is set; emits no edge when it is null.
+      - `FeatureCreateDrawer` locks repo + mode controls when
+        `initialApplicationId` is set.
+      - `useFabActions` injects the extra action only when exactly
+        one application node is selected.
+  - **No new boundaries.** No new ports, no new adapters, no new
+    SSE channels. The feature reuses
+    `IFeatureRepository`, `IApplicationRepository`,
+    `IWorktreeService`, `ILogger`, and `IAgentExecutorProvider`.
+  - **Backward compatibility.** Legacy feature rows
+    (`application_id IS NULL`, `build_mode = 'application' | 'fast'`
+    backfilled from `fast`) render and behave identically. The
+    existing FAB → New feature → Spec path continues to work; it
+    simply does not set `applicationId`.
+  - **`featureIdForApplication` remains a read-only bridge.** The
+    application's own resume-workflow feature row continues to use
+    `featureIdForApplication(applicationId)` as its id (per
+    `application-page.tsx:turnStatus`). New SDD features get
+    standard `feat-<uuid>` ids. The two never collide.
+
+  ## Risks & Mitigations
+
+  | Risk                                                                                                     | Mitigation                                                                                                                                                                                                                                                                                                          |
+  | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | Re-enabling ApplicationNode rendering could regress prior 016 layouts that assumed apps were absent.    | Add a Playwright snapshot of the canvas with a workspace containing one repo, one feature, and one application; assert the existing repo+feature placement is unchanged and the application appears as a sibling node. Storybook stories cover the canvas-with-apps scenario.                                       |
+  | Migration fails if a deployed database is missing the `fast` column for an unforeseen reason.           | Guard the backfill with `pragma table_info(features)` to confirm both `fast` and `build_mode` exist before running the UPDATE. If `fast` is missing, the default `'application'` value is sufficient and no UPDATE runs.                                                                                          |
+  | Drawer's `applicationId`-derived lock could leak into the non-scoped FAB → New feature → Spec path.    | The drawer treats `initialApplicationId === undefined` as the unlocked path explicitly. Storybook variant + integration test asserts that opening `/create?mode=spec` (no `applicationId`) leaves the repo selector enabled.                                                                                       |
+  | Concurrent SDD features per application could overwhelm the agent runner.                                | No new concurrency control is added (per spec Q7). Existing per-feature SSE channels and worktree isolation are sufficient. If real-world usage reveals contention, a per-app concurrency limit can be added later as a domain restriction.                                                                          |
+  | URL constants migration could miss a callsite, leaving a hidden magic-value violation.                  | The constants module exports a typed `UrlParam` union; ESLint custom rule (or a grep gate added to the PR checklist) flags any literal usage of the now-centralized param names outside `lib/url-params.ts`.                                                                                                       |
+
+  ---
+
+  _Research complete — proceed with planning_
