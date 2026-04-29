@@ -1498,4 +1498,127 @@ describe('FeatureCreateDrawer', () => {
       expect(onSubmit.mock.calls[0][0].forkAndPr).toBe(false);
     });
   });
+
+  describe('initialApplicationId — application-scoped lock behavior', () => {
+    it('pins mode to spec when initialApplicationId is set, ignoring conflicting initialMode', () => {
+      renderDrawer({
+        repositoryPath: '/Users/dev/my-repo',
+        initialApplicationId: 'app-001',
+        initialMode: 'fast',
+      });
+      expect(screen.getByTestId('build-mode-spec')).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId('build-mode-fast')).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByTestId('build-mode-application')).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('disables all mode buttons when initialApplicationId is set', () => {
+      renderDrawer({
+        repositoryPath: '/Users/dev/my-repo',
+        initialApplicationId: 'app-001',
+      });
+      expect(screen.getByTestId('build-mode-application')).toBeDisabled();
+      expect(screen.getByTestId('build-mode-fast')).toBeDisabled();
+      expect(screen.getByTestId('build-mode-spec')).toBeDisabled();
+    });
+
+    it('exposes locked-by-application tooltip rationale on the mode buttons', () => {
+      renderDrawer({
+        repositoryPath: '/Users/dev/my-repo',
+        initialApplicationId: 'app-001',
+      });
+      const specButton = screen.getByTestId('build-mode-spec');
+      expect(specButton).toHaveAttribute('title', expect.stringMatching(/locked/i));
+      expect(specButton).toHaveAttribute('aria-disabled', 'true');
+      expect(specButton).toHaveAttribute('aria-describedby', 'locked-by-application-tooltip');
+    });
+
+    it('renders repo as locked read-only label (not combobox) when initialApplicationId is set', () => {
+      const sampleRepos = [{ id: 'repo-001', name: 'my-app', path: '/Users/dev/projects/my-app' }];
+      // Even though repositoryPath is empty (which would normally show the combobox),
+      // an app-scoped invocation must always render the locked read-only label.
+      renderDrawer({
+        repositoryPath: '',
+        repositories: sampleRepos,
+        initialApplicationId: 'app-001',
+      });
+      expect(screen.queryByTestId('repository-combobox')).not.toBeInTheDocument();
+      const section = screen.getByTestId('repo-readonly-section');
+      expect(section).toHaveAttribute('data-locked-by-application', 'true');
+      const label = screen.getByTestId('repo-readonly-label');
+      expect(label).toHaveAttribute('aria-disabled', 'true');
+      expect(label).toHaveAttribute('title', expect.stringMatching(/locked/i));
+    });
+
+    it('renders repo readonly label with the supplied repositoryPath name when app-scoped', () => {
+      const sampleRepos = [{ id: 'repo-001', name: 'my-app', path: '/Users/dev/projects/my-app' }];
+      renderDrawer({
+        repositoryPath: '/Users/dev/projects/my-app',
+        repositories: sampleRepos,
+        initialApplicationId: 'app-001',
+      });
+      expect(screen.getByTestId('repo-readonly-label')).toHaveTextContent('my-app');
+    });
+
+    it('leaves description editable when initialApplicationId is set', async () => {
+      const user = userEvent.setup();
+      renderDrawer({
+        repositoryPath: '/Users/dev/my-repo',
+        initialApplicationId: 'app-001',
+      });
+      const descInput = screen.getByPlaceholderText(descriptionPlaceholder);
+      await user.type(descInput, 'Implement RBAC');
+      expect(descInput).toHaveValue('Implement RBAC');
+    });
+
+    it('submit payload uses fast=false (spec mode) when initialApplicationId is set', async () => {
+      const onSubmit = vi.fn();
+      const user = userEvent.setup();
+      renderDrawer({
+        repositoryPath: '/Users/dev/my-repo',
+        initialApplicationId: 'app-001',
+        onSubmit,
+      });
+
+      await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'Implement RBAC');
+      await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
+
+      expect(onSubmit).toHaveBeenCalledOnce();
+      expect(onSubmit.mock.calls[0][0]).toEqual(
+        expect.objectContaining({
+          repositoryPath: '/Users/dev/my-repo',
+          fast: false,
+        })
+      );
+    });
+
+    it('mode + repo controls are enabled and unlocked when initialApplicationId is undefined', () => {
+      const sampleRepos = [{ id: 'repo-001', name: 'my-app', path: '/Users/dev/projects/my-app' }];
+      renderDrawer({
+        repositoryPath: '',
+        repositories: sampleRepos,
+      });
+      // Repo: combobox visible (NOT locked read-only)
+      expect(screen.getByTestId('repository-combobox')).toBeInTheDocument();
+      expect(screen.queryByTestId('repo-readonly-section')).not.toBeInTheDocument();
+      // Mode buttons: enabled, no lock title
+      expect(screen.getByTestId('build-mode-application')).toBeEnabled();
+      expect(screen.getByTestId('build-mode-fast')).toBeEnabled();
+      expect(screen.getByTestId('build-mode-spec')).toBeEnabled();
+      expect(screen.getByTestId('build-mode-spec')).not.toHaveAttribute('title');
+    });
+
+    it('non-app-scoped initialMode=spec keeps repo selector enabled (regression guard for FAB → spec path)', () => {
+      const sampleRepos = [{ id: 'repo-001', name: 'my-app', path: '/Users/dev/projects/my-app' }];
+      renderDrawer({
+        repositoryPath: '',
+        repositories: sampleRepos,
+        initialMode: 'spec',
+      });
+      expect(screen.getByTestId('repository-combobox')).toBeInTheDocument();
+      // Mode buttons: spec is selected but the segmented control is NOT locked.
+      expect(screen.getByTestId('build-mode-spec')).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId('build-mode-spec')).toBeEnabled();
+      expect(screen.getByTestId('build-mode-application')).toBeEnabled();
+    });
+  });
 });

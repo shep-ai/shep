@@ -785,3 +785,121 @@ export const ForkToggleHidden: Story = {
     await expect(forkToggle).toBeNull();
   },
 };
+
+/* ---------------------------------------------------------------------------
+ * Application-scoped (SDD-mode) lock variant
+ * ------------------------------------------------------------------------- */
+
+function CreateDrawerAppScopedTrigger({
+  label,
+  initialApplicationId,
+  repositoryPath,
+}: {
+  label: string;
+  initialApplicationId: string;
+  repositoryPath: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="flex h-screen items-start p-4">
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        {label}
+      </Button>
+      <FeatureCreateDrawer
+        open={open}
+        onClose={() => {
+          setOpen(false);
+          logClose();
+        }}
+        onSubmit={(data) => {
+          logSubmit(data);
+          setOpen(false);
+        }}
+        repositoryPath={repositoryPath}
+        initialApplicationId={initialApplicationId}
+        currentAgentType="claude-code"
+        currentModel="claude-sonnet-4-6"
+      />
+    </div>
+  );
+}
+
+/**
+ * **App-scoped (SDD mode)** — drawer opened from an application context
+ * (canvas app-node menu, app-page top bar, or FAB context action).
+ *
+ * - mode is pinned to **Spec** regardless of any conflicting `initialMode`
+ * - mode segmented control is rendered as disabled with a tooltip explaining
+ *   the lock
+ * - repository selector is replaced by a locked read-only label of the app's
+ *   repository
+ * - all other fields (description, attachments, advanced toggles) remain
+ *   editable
+ */
+export const AppScopedSpec: Story = {
+  render: () => (
+    <CreateDrawerAppScopedTrigger
+      label="Open (SDD mode for app)"
+      initialApplicationId="app-001"
+      repositoryPath="/Users/dev/projects/my-app"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Open (SDD mode for app)' }));
+
+    const body = within(canvasElement.ownerDocument.body);
+    // Spec mode is selected and locked
+    const specButton = await body.findByTestId('build-mode-spec');
+    await expect(specButton).toHaveAttribute('aria-pressed', 'true');
+    await expect(specButton).toBeDisabled();
+    // Repo is rendered read-only with the lock data attribute
+    const repoSection = body.getByTestId('repo-readonly-section');
+    await expect(repoSection).toHaveAttribute('data-locked-by-application', 'true');
+  },
+};
+
+function CreateDrawerAppScopedOverridesInitialModeRender() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex h-screen items-start p-4">
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        Open (SDD mode wins over fast)
+      </Button>
+      <FeatureCreateDrawer
+        open={open}
+        onClose={() => {
+          setOpen(false);
+          logClose();
+        }}
+        onSubmit={(data) => {
+          logSubmit(data);
+          setOpen(false);
+        }}
+        repositoryPath="/Users/dev/projects/my-app"
+        initialApplicationId="app-001"
+        initialMode="fast"
+        currentAgentType="claude-code"
+        currentModel="claude-sonnet-4-6"
+      />
+    </div>
+  );
+}
+
+/**
+ * **App-scoped (SDD mode) — locks override caller-supplied initialMode.**
+ * Even when the caller passes `initialMode='fast'`, an app-scoped drawer
+ * pins the mode to `'spec'` because the entry-point context wins.
+ */
+export const AppScopedOverridesInitialMode: Story = {
+  render: () => <CreateDrawerAppScopedOverridesInitialModeRender />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Open (SDD mode wins over fast)' }));
+
+    const body = within(canvasElement.ownerDocument.body);
+    const specButton = await body.findByTestId('build-mode-spec');
+    await expect(specButton).toHaveAttribute('aria-pressed', 'true');
+  },
+};

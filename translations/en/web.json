@@ -492,6 +492,7 @@
     "modeFastDescription": "Skip SDLC phases and implement directly from your prompt.",
     "modeSpec": "Spec",
     "modeSpecDescription": "Spec-driven workflow with explicit PRD + plan steps.",
+    "lockedByApplication": "Locked by application context — open from a different entry point to change.",
     "fileDropZone": "File drop zone",
     "prd": "PRD",
     "prdDescription": "Auto-approve requirements move to planning.",
