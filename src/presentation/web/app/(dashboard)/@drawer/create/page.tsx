@@ -74,8 +74,11 @@ export default async function CreateDrawerPage({ searchParams }: CreateDrawerPag
 
   // Application-scoped overrides: the entry-point-determined fields are
   // pinned, everything else stays user-editable per the spec's resolved Q6.
+  // The URL `applicationId` is the canonical scope signal — it locks the
+  // drawer even if the server-side Application lookup couldn't resolve a
+  // repository path (e.g., DI not yet warm in tests).
   const scopedRepositoryPath = application?.repositoryPath ?? repo ?? '';
-  const scopedApplicationId = application?.id;
+  const scopedApplicationId = application?.id ?? applicationId;
 
   return (
     <CreateDrawerClient
