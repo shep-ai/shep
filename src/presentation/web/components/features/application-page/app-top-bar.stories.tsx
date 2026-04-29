@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { within, userEvent, expect } from '@storybook/test';
 import type { Application } from '@shepai/core/domain/generated/output';
 import {
   ApplicationStatus,
@@ -95,5 +96,30 @@ export const AgentRunning: Story = {
     agentRunning: true,
     deploy: idleDeploy,
     cloudDeploy: idleCloudDeploy,
+  },
+};
+
+/**
+ * **OverflowMenuOpen** — opens the `⋯` overflow menu and asserts the new
+ * "Open in Control Center (SDD mode)" entry is rendered. Verifies the
+ * SDD entry-point on the application page.
+ */
+export const OverflowMenuOpen: Story = {
+  args: {
+    application: baseApp,
+    activeView: 'ide',
+    onViewChange: () => undefined,
+    agentRunning: false,
+    deploy: idleDeploy,
+    cloudDeploy: idleCloudDeploy,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole('button', { name: 'More options' });
+    await userEvent.click(trigger);
+
+    const body = within(canvasElement.ownerDocument.body);
+    const item = await body.findByTestId('open-in-control-center-sdd-menu-item');
+    await expect(item).toBeInTheDocument();
   },
 };

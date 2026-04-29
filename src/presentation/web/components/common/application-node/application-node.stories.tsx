@@ -81,6 +81,24 @@ export const WithDeleteButton: Story = {
   render: (args) => <ApplicationNodeCanvas data={args} style={{ width: 600, height: 350 }} />,
 };
 
+/**
+ * **WithCreateSddFeature** — application node with the "New SDD feature"
+ * action handle wired. Hover the right edge of the card to reveal the
+ * violet (+) sparkle button; click invokes the `onCreateSddFeature`
+ * callback with this app's id, which the canvas owner uses to push to
+ * `/create?applicationId=<id>&mode=spec`.
+ */
+export const WithCreateSddFeature: Story = {
+  args: {
+    id: 'app-abc-123',
+    name: 'Dashboard App',
+  },
+  argTypes: {
+    onCreateSddFeature: { action: 'onCreateSddFeature' },
+  },
+  render: (args) => <ApplicationNodeCanvas data={args} style={{ width: 600, height: 350 }} />,
+};
+
 export const LongName: Story = {
   args: {
     name: 'A Very Long Application Name That Should Truncate Nicely In The Card Header',

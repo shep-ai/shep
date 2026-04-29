@@ -44,7 +44,7 @@ export function ApplicationNode({
   selected?: boolean;
   [key: string]: unknown;
 }) {
-  const { i18n } = useTranslation('web');
+  const { i18n, t } = useTranslation('web');
   const isRtl = i18n.dir() === 'rtl';
   const targetHandlePos = isRtl ? Position.Right : Position.Left;
   const sourceHandlePos = isRtl ? Position.Left : Position.Right;
@@ -457,7 +457,7 @@ export function ApplicationNode({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  aria-label="New SDD feature"
+                  aria-label={t('fab.newSddFeature')}
                   data-testid="application-node-new-sdd-feature-button"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -469,7 +469,7 @@ export function ApplicationNode({
                   <Sparkles className="h-3.5 w-3.5" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="right">New SDD feature</TooltipContent>
+              <TooltipContent side="right">{t('fab.newSddFeature')}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </Handle>
