@@ -1102,3 +1102,82 @@ export const FullSpectrum: Story = {
     edges: [],
   },
 };
+
+// --- Application + Repository + Feature: SDD-mode parent edge ---
+//
+// Demonstrates that `applicationNode` is registered in the canvas
+// nodeTypes map and that an app→feature dependency edge renders
+// alongside the existing repo→feature edge.
+
+const appRepoFeatureNodesRaw: CanvasNodeType[] = [
+  {
+    id: 'repo-1',
+    type: 'repositoryNode',
+    position: { x: 0, y: 0 },
+    data: { name: 'shep-ai/shep' },
+  },
+  {
+    id: 'app-1',
+    type: 'applicationNode',
+    position: { x: 0, y: 0 },
+    data: {
+      id: 'app-uuid-1',
+      name: 'Dashboard App',
+      description: 'Main web dashboard for analytics',
+      status: 'Active',
+      repositoryPath: '/home/dev/dashboard-app',
+      additionalPathCount: 0,
+    },
+  },
+  {
+    id: 'feat-spec-1',
+    type: 'featureNode',
+    position: { x: 0, y: 0 },
+    data: {
+      name: 'Add password reset flow',
+      description: 'SDD-mode feature scoped to Dashboard App',
+      featureId: '#fs1',
+      lifecycle: 'requirements',
+      state: 'running',
+      progress: 30,
+      repositoryPath: '/home/dev/dashboard-app',
+      branch: 'feat/password-reset',
+    },
+  },
+  {
+    id: 'feat-plain-1',
+    type: 'featureNode',
+    position: { x: 0, y: 0 },
+    data: {
+      name: 'CLI command rename',
+      description: 'Repo-scoped feature, no application parent',
+      featureId: '#fp1',
+      lifecycle: 'implementation',
+      state: 'running',
+      progress: 55,
+      repositoryPath: '/home/user/my-repo',
+      branch: 'feat/cli-rename',
+    },
+  },
+];
+
+const appRepoFeatureEdgesRaw: Edge[] = [
+  // Existing repo→feature edge for the unrelated, plain feature
+  { id: 'e-r1-fp1', source: 'repo-1', target: 'feat-plain-1', ...dashedEdge },
+  // App→feature dependency edge (SDD-mode parent edge)
+  { id: 'e-app1-fs1', source: 'app-1', target: 'feat-spec-1', type: 'dependencyEdge' },
+];
+
+const { nodes: appRepoFeatureLayoutedNodes, edges: appRepoFeatureLayoutedEdges } = layoutWithDagre(
+  appRepoFeatureNodesRaw,
+  appRepoFeatureEdgesRaw,
+  { direction: 'LR' }
+);
+
+export const ApplicationWithChildSpecFeature: Story = {
+  name: 'Application + Repo + Feature (SDD-mode parent edge)',
+  args: {
+    nodes: appRepoFeatureLayoutedNodes,
+    edges: appRepoFeatureLayoutedEdges,
+  },
+};

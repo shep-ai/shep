@@ -17,6 +17,12 @@ export interface FeatureEntry {
   data: FeatureNodeData;
   /** If set, this feature connects to a parent feature via a dependency edge (no repo→feature edge). */
   parentNodeId?: string;
+  /**
+   * If set, this feature was launched scoped to an Application. Matched against
+   * ApplicationEntry.data.id to derive an app→feature dependency edge instead of
+   * the default repo→feature edge.
+   */
+  applicationId?: string;
 }
 
 /** A repository node entry stored in the domain Map. */
@@ -93,6 +99,18 @@ export function deriveGraph(
   for (const [nodeId, entry] of repoMap) {
     if (entry.data.repositoryPath) {
       repoByPath.set(normalizePath(entry.data.repositoryPath), nodeId);
+    }
+  }
+
+  // Build a lookup: application domain UUID → applicationNodeId. Used to
+  // resolve a feature's `applicationId` (a domain UUID, not a node id)
+  // to its rendered ApplicationNode on the canvas.
+  const appByDomainId = new Map<string, string>();
+  if (applicationMap) {
+    for (const [nodeId, entry] of applicationMap) {
+      if (entry.data.id) {
+        appByDomainId.set(entry.data.id, nodeId);
+      }
     }
   }
 
@@ -213,8 +231,13 @@ export function deriveGraph(
     } as CanvasNodeType);
 
     // Edge derivation
+    // Priority order:
+    //   1) parentNodeId → feature→feature dep edge (existing behavior)
+    //   2) applicationId matching a known ApplicationNode → app→feature dep edge
+    //   3) repositoryPath → repo→feature edge (existing fallback)
     // If parentNodeId references a feature that's not visible (e.g. archived/filtered),
-    // fall through to repo→feature edge so the child reconnects to the repository.
+    // fall through so the child reconnects to its application or repository.
+    const appNodeId = entry.applicationId ? appByDomainId.get(entry.applicationId) : undefined;
     if (
       entry.parentNodeId &&
       (featureMap.has(entry.parentNodeId) || pendingMap.has(entry.parentNodeId))
@@ -223,6 +246,14 @@ export function deriveGraph(
       edges.push({
         id: `dep-${entry.parentNodeId}-${nodeId}`,
         source: entry.parentNodeId,
+        target: nodeId,
+        type: 'dependencyEdge',
+      });
+    } else if (appNodeId) {
+      // Application→feature dep edge (SDD-mode features launched from an app)
+      edges.push({
+        id: `dep-${appNodeId}-${nodeId}`,
+        source: appNodeId,
         target: nodeId,
         type: 'dependencyEdge',
       });
@@ -239,12 +270,29 @@ export function deriveGraph(
     }
   }
 
-  // Applications are NOT derived onto the canvas anymore — they live
-  // exclusively on the `/applications` page. The `applicationMap`
-  // parameter is kept (and intentionally ignored) so existing callers
-  // compile; a follow-up cleanup can drop it once all graph-state
-  // plumbing is rewritten to not build an application map at all.
-  void applicationMap;
+  // Emit ApplicationNodes for every workspace application. Features whose
+  // `applicationId` matches an entry above already have an app→feature edge;
+  // applications without any child SDD feature simply render as standalone
+  // nodes (mirrors how repository nodes appear with no children).
+  if (applicationMap) {
+    for (const [nodeId, entry] of applicationMap) {
+      const data: ApplicationNodeData = {
+        ...entry.data,
+        ...(callbacks?.onApplicationClick && {
+          onClick: () => callbacks.onApplicationClick!(entry.data.id),
+        }),
+        ...(callbacks?.onApplicationDelete && {
+          onDelete: callbacks.onApplicationDelete,
+        }),
+      };
+      nodes.push({
+        id: nodeId,
+        type: 'applicationNode',
+        position: { x: 0, y: 0 },
+        data,
+      } as CanvasNodeType);
+    }
+  }
 
   // Build set of feature node IDs that have children (are dependency edge sources)
   const parentNodeIds = new Set<string>();
