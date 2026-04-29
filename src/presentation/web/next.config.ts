@@ -48,6 +48,13 @@ function loadDevFallbacks(): Record<string, string> {
 }
 
 const nextConfig: NextConfig = {
+  // Prefix all static asset URLs so a reverse proxy can forward them
+  // without ambiguity. Unset locally (assets served at /_next/…); set to
+  // '/cli' in the org-runner image so the shep-cloud proxy can route
+  // /cli/_next/… → the pod's /_next/… without namespace collision with
+  // the cloud app's own /_next/… files.
+  assetPrefix: process.env.NEXT_ASSET_PREFIX,
+
   // Pin turbopack root to the monorepo root so it doesn't infer a wrong
   // workspace root from unrelated lockfiles higher in the filesystem.
   turbopack: {
