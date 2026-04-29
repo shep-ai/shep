@@ -89,7 +89,7 @@ describe('CreateDrawerPage (server component)', () => {
     });
   });
 
-  it('renders the drawer in non-scoped mode when the application is not found', async () => {
+  it('keeps the drawer locked from the URL applicationId when the application is not found', async () => {
     mockGetApplicationExecute.mockResolvedValue(null);
 
     const element = await CreateDrawerPage({
@@ -97,13 +97,16 @@ describe('CreateDrawerPage (server component)', () => {
     });
 
     const props = getDrawerProps(element);
-    expect(props.initialApplicationId).toBeUndefined();
+    // URL applicationId is the canonical scope signal — even when the app
+    // can't be resolved we keep the drawer locked so the lock state matches
+    // what the user clicked. The empty repo path lets the drawer surface a
+    // recoverable, non-blocking error rather than fall back to non-scoped.
+    expect(props.initialApplicationId).toBe('app-missing');
     expect(props.repositoryPath).toBe('');
-    // initialMode is preserved — phase 5 owns the lock behavior
     expect(props.initialMode).toBe('spec');
   });
 
-  it('renders the drawer in non-scoped mode when GetApplicationUseCase rejects (malformed UUID)', async () => {
+  it('keeps the drawer locked from the URL applicationId when GetApplicationUseCase rejects', async () => {
     mockGetApplicationExecute.mockRejectedValue(new Error('invalid uuid'));
 
     const element = await CreateDrawerPage({
@@ -111,7 +114,7 @@ describe('CreateDrawerPage (server component)', () => {
     });
 
     const props = getDrawerProps(element);
-    expect(props.initialApplicationId).toBeUndefined();
+    expect(props.initialApplicationId).toBe('not-a-uuid');
     expect(props.repositoryPath).toBe('');
   });
 
