@@ -1,4 +1,9 @@
-import type { ApprovalGates, Attachment, Feature } from '../../../../domain/generated/output.js';
+import type {
+  ApprovalGates,
+  Attachment,
+  BuildMode,
+  Feature,
+} from '../../../../domain/generated/output.js';
 
 export interface CreateFeatureInput {
   userInput: string;
@@ -8,6 +13,17 @@ export interface CreateFeatureInput {
   openPr?: boolean;
   /** Optional ID of the parent feature. When set, child may be created in Blocked state. */
   parentId?: string;
+  /**
+   * Optional ID of the parent application. When set, the new feature is rendered
+   * as a child of the application on the Control Center canvas and queryable by
+   * `applicationId`. Used by the SDD-mode entry points scoped to an existing app.
+   */
+  applicationId?: string;
+  /**
+   * Build mode for the new feature. When omitted, the use case derives a
+   * sensible default from the legacy `fast` flag for backward compatibility.
+   */
+  buildMode?: BuildMode;
   /** Pre-supplied name (skips AI metadata extraction for name). */
   name?: string;
   /** Pre-supplied description (skips AI metadata extraction for description). */

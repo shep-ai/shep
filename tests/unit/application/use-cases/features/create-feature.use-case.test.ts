@@ -23,6 +23,7 @@ import type { IRepositoryRepository } from '@/application/ports/output/repositor
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { IAgentValidator } from '@/application/ports/output/agents/agent-validator.interface.js';
 import type { ISkillInjectorService } from '@/application/ports/output/services/skill-injector.interface.js';
+import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 import { SdlcLifecycle, SkillSourceType, BuildMode } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
 import type { MetadataGenerator } from '@/application/use-cases/features/create/metadata-generator.js';
@@ -90,6 +91,7 @@ describe('CreateFeatureUseCase', () => {
   let mockSkillInjector: ISkillInjectorService;
   let mockSettingsRepository: ISettingsRepository;
   let mockLoadSettings: ReturnType<typeof vi.fn>;
+  let mockLogger: ILogger;
 
   const baseInput: CreateFeatureInput = {
     userInput: 'Add authentication',
@@ -212,6 +214,13 @@ describe('CreateFeatureUseCase', () => {
       update: vi.fn().mockResolvedValue(undefined),
     };
 
+    mockLogger = {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
+
     useCase = new CreateFeatureUseCase(
       mockFeatureRepo,
       mockWorktreeService,
@@ -225,7 +234,8 @@ describe('CreateFeatureUseCase', () => {
       mockAttachmentStorage as any,
       mockAgentValidator,
       mockSkillInjector,
-      mockSettingsRepository
+      mockSettingsRepository,
+      mockLogger
     );
   });
 
@@ -1001,6 +1011,112 @@ describe('CreateFeatureUseCase', () => {
       await useCase.execute(baseInput);
 
       expect(mockSkillInjector.inject).not.toHaveBeenCalled();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // task-6: applicationId + buildMode persistence and soft-warn validation
+  // -------------------------------------------------------------------------
+
+  describe('applicationId and buildMode', () => {
+    const APP_ID = '11111111-1111-1111-1111-111111111111';
+
+    function getCreatedFeature(): Feature {
+      const calls = (mockFeatureRepo.create as ReturnType<typeof vi.fn>).mock.calls;
+      expect(calls.length).toBeGreaterThan(0);
+      return calls[0][0] as Feature;
+    }
+
+    it('case 1 — buildMode=Spec + applicationId=uuid: persists both, no warn', async () => {
+      const result = await useCase.execute({
+        ...baseInput,
+        buildMode: BuildMode.Spec,
+        applicationId: APP_ID,
+      });
+
+      expect(mockLogger.warn).not.toHaveBeenCalled();
+      const persisted = getCreatedFeature();
+      expect(persisted.applicationId).toBe(APP_ID);
+      expect(persisted.buildMode).toBe(BuildMode.Spec);
+      expect(persisted.fast).toBe(false);
+      expect(result.feature.applicationId).toBe(APP_ID);
+      expect(result.feature.buildMode).toBe(BuildMode.Spec);
+    });
+
+    it('case 2 — buildMode=Spec without applicationId: warn fired, persists with no applicationId', async () => {
+      const result = await useCase.execute({
+        ...baseInput,
+        buildMode: BuildMode.Spec,
+      });
+
+      expect(mockLogger.warn).toHaveBeenCalledOnce();
+      const [warnMessage] = (mockLogger.warn as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(warnMessage).toMatch(/spec-mode feature created without an applicationId/i);
+
+      const persisted = getCreatedFeature();
+      expect(persisted.applicationId).toBeUndefined();
+      expect(persisted.buildMode).toBe(BuildMode.Spec);
+      expect(persisted.fast).toBe(false);
+      expect(result.feature.buildMode).toBe(BuildMode.Spec);
+      expect(result.feature.applicationId).toBeUndefined();
+    });
+
+    it('case 3 — buildMode=Application + applicationId=uuid: persists both, no warn', async () => {
+      const result = await useCase.execute({
+        ...baseInput,
+        buildMode: BuildMode.Application,
+        applicationId: APP_ID,
+      });
+
+      expect(mockLogger.warn).not.toHaveBeenCalled();
+      const persisted = getCreatedFeature();
+      expect(persisted.applicationId).toBe(APP_ID);
+      expect(persisted.buildMode).toBe(BuildMode.Application);
+      expect(persisted.fast).toBe(false);
+      expect(result.feature.applicationId).toBe(APP_ID);
+      expect(result.feature.buildMode).toBe(BuildMode.Application);
+    });
+
+    it('case 4 — buildMode=Fast without applicationId: persists with fast=true, no warn', async () => {
+      const result = await useCase.execute({
+        ...baseInput,
+        buildMode: BuildMode.Fast,
+      });
+
+      expect(mockLogger.warn).not.toHaveBeenCalled();
+      const persisted = getCreatedFeature();
+      expect(persisted.applicationId).toBeUndefined();
+      expect(persisted.buildMode).toBe(BuildMode.Fast);
+      expect(persisted.fast).toBe(true);
+      expect(result.feature.buildMode).toBe(BuildMode.Fast);
+    });
+
+    it('does not throw when buildMode=Spec without applicationId (soft-warn only)', async () => {
+      await expect(
+        useCase.execute({ ...baseInput, buildMode: BuildMode.Spec })
+      ).resolves.toBeDefined();
+    });
+
+    it('preserves legacy fast flag derivation when buildMode is omitted (back-compat)', async () => {
+      // Legacy callers (web action / CLI) only pass `fast` — they do not yet
+      // pass an explicit buildMode. The use case should still persist a
+      // sensible buildMode derived from the legacy fast flag.
+      await useCase.execute({ ...baseInput, fast: true });
+
+      expect(mockLogger.warn).not.toHaveBeenCalled();
+      const persisted = getCreatedFeature();
+      expect(persisted.buildMode).toBe(BuildMode.Fast);
+      expect(persisted.fast).toBe(true);
+    });
+
+    it('preserves legacy non-fast feature behavior when buildMode is omitted', async () => {
+      await useCase.execute(baseInput);
+
+      expect(mockLogger.warn).not.toHaveBeenCalled();
+      const persisted = getCreatedFeature();
+      expect(persisted.buildMode).toBe(BuildMode.Application);
+      expect(persisted.fast).toBe(false);
+      expect(persisted.applicationId).toBeUndefined();
     });
   });
 });

@@ -35,6 +35,7 @@ import type { IGitPrService } from '../../../ports/output/services/git-pr-servic
 import type { IAgentValidator } from '../../../ports/output/agents/agent-validator.interface.js';
 import type { ISkillInjectorService } from '../../../ports/output/services/skill-injector.interface.js';
 import type { ISettingsRepository } from '../../../ports/output/repositories/settings.repository.interface.js';
+import type { ILogger } from '../../../ports/output/services/logger.interface.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import { POST_IMPLEMENTATION } from '../../../../domain/lifecycle-gates.js';
 import type { IAttachmentStorageService } from '../../../ports/output/services/feature-attachment-storage.interface.js';
@@ -70,7 +71,9 @@ export class CreateFeatureUseCase {
     @inject('ISkillInjectorService')
     private readonly skillInjector: ISkillInjectorService,
     @inject('ISettingsRepository')
-    private readonly settingsRepository: ISettingsRepository
+    private readonly settingsRepository: ISettingsRepository,
+    @inject('ILogger')
+    private readonly logger: ILogger
   ) {}
 
   /**
@@ -102,7 +105,24 @@ export class CreateFeatureUseCase {
    * No AI calls, no git operations — just DB writes.
    */
   async createRecord(input: CreateFeatureInput): Promise<CreateRecordResult> {
-    let initialLifecycle: SdlcLifecycle = input.fast
+    // Resolve the effective build mode. When the caller does not specify one,
+    // we derive a sensible default from the legacy `fast` flag so existing
+    // callers (web action / CLI) continue to compile and behave identically.
+    const effectiveBuildMode: BuildMode =
+      input.buildMode ?? ((input.fast ?? false) ? BuildMode.Fast : BuildMode.Application);
+    const isFastMode = effectiveBuildMode === BuildMode.Fast;
+
+    // Soft-warn when a spec-mode feature is created without a parent
+    // application. The legacy "FAB → New feature → Spec" path intentionally
+    // creates spec features without an application context, so this MUST NOT
+    // throw — it is a breadcrumb only.
+    if (effectiveBuildMode === BuildMode.Spec && input.applicationId === undefined) {
+      this.logger.warn(
+        '[CreateFeatureUseCase] spec-mode feature created without an applicationId — proceeding'
+      );
+    }
+
+    let initialLifecycle: SdlcLifecycle = isFastMode
       ? SdlcLifecycle.Implementation
       : SdlcLifecycle.Requirements;
     let shouldSpawn = true;
@@ -189,8 +209,9 @@ export class CreateFeatureUseCase {
       lifecycle: initialLifecycle,
       messages: [],
       relatedArtifacts: [],
-      buildMode: (input.fast ?? false) ? BuildMode.Fast : BuildMode.Application,
-      fast: input.fast ?? false,
+      buildMode: effectiveBuildMode,
+      fast: isFastMode,
+      ...(input.applicationId ? { applicationId: input.applicationId } : {}),
       push: input.push ?? false,
       openPr: input.openPr ?? false,
       forkAndPr: input.forkAndPr ?? false,
