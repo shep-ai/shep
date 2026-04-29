@@ -8,14 +8,9 @@ interface DecoratorContext {
 }
 
 const defaultFeatureFlags = {
-  skills: true,
   envDeploy: true,
   debug: false,
-  githubImport: false,
-  adoptBranch: false,
-  gitRebaseSync: false,
   reactFileManager: false,
-  inventory: false,
   projects: false,
   codeReview: false,
 };

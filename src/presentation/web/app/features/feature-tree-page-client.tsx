@@ -75,7 +75,6 @@ import { deployRepository } from '@/app/actions/deploy-repository';
 import { stopDeployment } from '@/app/actions/stop-deployment';
 import type { FeatureStatus } from '@/components/common/feature-status-config';
 import type { InventoryCreateData } from './get-feature-tree-data';
-import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useFabLayout } from '@/hooks/fab-layout-context';
 
@@ -150,7 +149,6 @@ interface ArchiveTarget {
 export function FeatureTreePageClient({ features, repos, createData }: FeatureTreePageClientProps) {
   const router = useRouter();
   const { t } = useTranslation('web');
-  const featureFlags = useFeatureFlags();
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -288,26 +286,22 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
         onClick: () => setShowCreatePrompt(true),
       },
     ];
-    if (featureFlags.adoptBranch) {
-      actions.push({
-        id: 'adopt-branch',
-        label: t('fab.adoptBranch'),
-        icon: <GitBranch className="h-4 w-4" />,
-        onClick: () => router.push('/adopt'),
-      });
-    }
-    if (featureFlags.githubImport) {
-      actions.push({
-        id: 'add-github-repo',
-        label: t('fab.fromGithub'),
-        icon: <Github className="h-4 w-4" />,
-        onClick: () => {
-          window.dispatchEvent(new CustomEvent('shep:open-github-import'));
-        },
-      });
-    }
+    actions.push({
+      id: 'adopt-branch',
+      label: t('fab.adoptBranch'),
+      icon: <GitBranch className="h-4 w-4" />,
+      onClick: () => router.push('/adopt'),
+    });
+    actions.push({
+      id: 'add-github-repo',
+      label: t('fab.fromGithub'),
+      icon: <Github className="h-4 w-4" />,
+      onClick: () => {
+        window.dispatchEvent(new CustomEvent('shep:open-github-import'));
+      },
+    });
     return actions;
-  }, [t, handlePickFolder, router, featureFlags.adoptBranch, featureFlags.githubImport]);
+  }, [t, handlePickFolder, router]);
 
   // ── Action handlers ──────────────────────────────────────────
 
@@ -868,19 +862,17 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
             <LayoutGrid className="size-3.5" />
             New application
           </Button>
-          {featureFlags.githubImport ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 gap-1.5 text-xs"
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('shep:open-github-import'));
-              }}
-            >
-              <Github className="size-3.5" />
-              {t('fab.fromGithub')}
-            </Button>
-          ) : null}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1.5 text-xs"
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('shep:open-github-import'));
+            }}
+          >
+            <Github className="size-3.5" />
+            {t('fab.fromGithub')}
+          </Button>
         </div>
       </div>
 

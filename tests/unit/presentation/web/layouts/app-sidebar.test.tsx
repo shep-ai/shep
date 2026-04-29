@@ -39,14 +39,9 @@ afterEach(() => {
 });
 
 const defaultFlags = {
-  skills: true,
   envDeploy: false,
   debug: false,
-  githubImport: false,
-  adoptBranch: false,
-  gitRebaseSync: false,
   reactFileManager: false,
-  inventory: true,
   projects: false,
   codeReview: false,
 };

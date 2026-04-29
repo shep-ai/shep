@@ -214,14 +214,9 @@ export function createDefaultSettings(): Settings {
   };
 
   const featureFlags: FeatureFlags = {
-    skills: false,
     envDeploy: true,
     debug: false,
-    githubImport: false,
-    adoptBranch: false,
-    gitRebaseSync: false,
     reactFileManager: false,
-    inventory: false,
     projects: false,
     codeReview: false,
   };

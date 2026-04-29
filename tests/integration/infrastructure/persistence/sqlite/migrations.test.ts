@@ -686,16 +686,6 @@ describe('SQLite Migrations', () => {
       await runSQLiteMigrations(db);
     });
 
-    it('should add feature_flag_skills column as INTEGER NOT NULL DEFAULT 0', () => {
-      const schema = getTableSchema(db, 'settings');
-      const col = schema.find((c) => c.name === 'feature_flag_skills');
-
-      expect(col).toBeDefined();
-      expect(col?.type).toBe('INTEGER');
-      expect(col?.notnull).toBe(1);
-      expect(col?.dflt_value).toBe('0');
-    });
-
     it('should add feature_flag_env_deploy column as INTEGER NOT NULL DEFAULT 1', () => {
       const schema = getTableSchema(db, 'settings');
       const col = schema.find((c) => c.name === 'feature_flag_env_deploy');
@@ -754,12 +744,9 @@ describe('SQLite Migrations', () => {
       ).run();
 
       const row = db
-        .prepare(
-          'SELECT feature_flag_skills, feature_flag_env_deploy, feature_flag_debug FROM settings WHERE id = ?'
-        )
+        .prepare('SELECT feature_flag_env_deploy, feature_flag_debug FROM settings WHERE id = ?')
         .get('test') as Record<string, number>;
 
-      expect(row.feature_flag_skills).toBe(0);
       expect(row.feature_flag_env_deploy).toBe(1);
       expect(row.feature_flag_debug).toBe(0);
     });

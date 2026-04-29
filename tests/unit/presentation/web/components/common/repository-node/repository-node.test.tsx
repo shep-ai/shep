@@ -70,7 +70,7 @@ vi.mock('@/components/common/feature-node/feature-sessions-dropdown', () => ({
 
 // Mock feature flags — enable envDeploy so deploy buttons render
 vi.mock('@/hooks/feature-flags-context', () => ({
-  useFeatureFlags: () => ({ envDeploy: true, skills: false, debug: false, githubImport: false }),
+  useFeatureFlags: () => ({ envDeploy: true, debug: false }),
 }));
 
 // Mock radix-ui tooltip — render trigger children directly, hide content to avoid DOM noise

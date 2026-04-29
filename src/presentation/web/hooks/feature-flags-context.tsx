@@ -4,14 +4,9 @@ import { createContext, useContext, type ReactNode } from 'react';
 import type { FeatureFlagsState } from '@/lib/feature-flags';
 
 const defaultFlags: FeatureFlagsState = {
-  skills: false,
   envDeploy: true,
   debug: false,
-  githubImport: false,
-  adoptBranch: false,
-  gitRebaseSync: false,
   reactFileManager: false,
-  inventory: false,
   projects: false,
   codeReview: false,
 };

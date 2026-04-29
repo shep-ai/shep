@@ -104,27 +104,23 @@ export function AddRepositoryButton({ onSelect, onGitHubImport }: AddRepositoryB
             <FolderPlus className="h-4 w-4" />
             Local folder
           </button>
-          {featureFlags.githubImport ? (
-            <button
-              type="button"
-              className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
-              onClick={handleFromGitHub}
-              data-testid="add-repo-from-github"
-            >
-              <Github className="h-4 w-4" />
-              From GitHub
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
+            onClick={handleFromGitHub}
+            data-testid="add-repo-from-github"
+          >
+            <Github className="h-4 w-4" />
+            From GitHub
+          </button>
         </PopoverContent>
       </Popover>
 
-      {featureFlags.githubImport ? (
-        <GitHubImportDialog
-          open={githubDialogOpen}
-          onOpenChange={setGithubDialogOpen}
-          onImportComplete={handleImportComplete}
-        />
-      ) : null}
+      <GitHubImportDialog
+        open={githubDialogOpen}
+        onOpenChange={setGithubDialogOpen}
+        onImportComplete={handleImportComplete}
+      />
       <ReactFileManagerDialog
         open={showReactPicker}
         onOpenChange={(open) => {

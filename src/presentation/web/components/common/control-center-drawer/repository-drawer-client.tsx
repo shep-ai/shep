@@ -224,7 +224,7 @@ export function RepositoryDrawerClient({ data, initialTab }: RepositoryDrawerCli
                   </div>
 
                   {/* Git sync */}
-                  {data.id && featureFlags.gitRebaseSync ? (
+                  {data.id ? (
                     <>
                       <div className={tbSep} />
                       <Tooltip>

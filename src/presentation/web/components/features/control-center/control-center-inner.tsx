@@ -35,7 +35,6 @@ import {
   mapNodeStateToSidebarStatus,
 } from '@/hooks/sidebar-features-context';
 import { useTranslation } from 'react-i18next';
-import { useFeatureFlags } from '@/hooks/feature-flags-context';
 
 import { useSelectedFeatureId } from '@/hooks/use-selected-feature-id';
 import { useSelectedRepository } from '@/hooks/use-selected-repository';
@@ -520,8 +519,6 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
   // ── Full-screen create prompt overlay ────────────────────────────────
   const [showCreatePrompt, setShowCreatePrompt] = useState(false);
 
-  const featureFlags = useFeatureFlags();
-
   // (+) FAB actions — only visible on control center. Action list lives in
   // its own hook so this component stays focused on graph state + rendering.
   const fabActions = useFabActions({
@@ -531,7 +528,6 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     handlePickFolder,
     onNewProject: () => setWorkspaceNewProjectOpen(true),
     onNewApplication: () => setShowCreatePrompt(true),
-    featureFlags,
   });
 
   const canvasToolbar = (

@@ -1,8 +1,6 @@
-import { redirect } from 'next/navigation';
 import { resolve } from '@/lib/server-container';
 import type { ListRepositoriesUseCase } from '@shepai/core/application/use-cases/repositories/list-repositories.use-case';
 import { AdoptDrawerClient } from '@/components/common/control-center-drawer/adopt-drawer-client';
-import { getFeatureFlags } from '@/lib/feature-flags';
 
 /** Skip static pre-rendering since we need runtime DI container. */
 export const dynamic = 'force-dynamic';
@@ -12,11 +10,6 @@ interface AdoptDrawerPageProps {
 }
 
 export default async function AdoptDrawerPage({ searchParams }: AdoptDrawerPageProps) {
-  const flags = getFeatureFlags();
-  if (!flags.adoptBranch) {
-    redirect('/');
-  }
-
   const { repo } = await searchParams;
 
   let repositoryPath = repo ?? '';

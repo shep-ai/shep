@@ -49,13 +49,9 @@ vi.mock('@/components/common/react-file-manager-dialog', () => ({
 // Mock feature flags context
 vi.mock('@/hooks/feature-flags-context', () => ({
   useFeatureFlags: vi.fn(() => ({
-    skills: false,
     envDeploy: true,
     debug: false,
-    githubImport: true,
-    adoptBranch: false,
     reactFileManager: false,
-    inventory: false,
     projects: false,
     codeReview: false,
   })),
@@ -72,14 +68,9 @@ describe('AddRepositoryButton', () => {
     mockListGitHubRepositories.mockResolvedValue({ repos: [] });
     mockPickFolder.mockResolvedValue(null);
     mockUseFeatureFlags.mockReturnValue({
-      skills: false,
       envDeploy: true,
       debug: false,
-      githubImport: true,
-      adoptBranch: false,
       reactFileManager: false,
-      gitRebaseSync: false,
-      inventory: false,
       projects: false,
       codeReview: false,
     });
@@ -171,14 +162,9 @@ describe('AddRepositoryButton', () => {
   describe('feature flag reactFileManager OFF (native picker with fallback)', () => {
     beforeEach(() => {
       mockUseFeatureFlags.mockReturnValue({
-        skills: false,
         envDeploy: true,
         debug: false,
-        githubImport: true,
-        adoptBranch: false,
         reactFileManager: false,
-        gitRebaseSync: false,
-        inventory: false,
         projects: false,
         codeReview: false,
       });
@@ -303,14 +289,9 @@ describe('AddRepositoryButton', () => {
   describe('feature flag reactFileManager ON (direct React picker)', () => {
     beforeEach(() => {
       mockUseFeatureFlags.mockReturnValue({
-        skills: false,
         envDeploy: true,
         debug: false,
-        githubImport: true,
-        adoptBranch: false,
         reactFileManager: true,
-        gitRebaseSync: false,
-        inventory: false,
         projects: false,
         codeReview: false,
       });
@@ -377,14 +358,9 @@ describe('AddRepositoryButton', () => {
   describe('dialog state management', () => {
     it('resets showReactPicker when dialog closes', async () => {
       mockUseFeatureFlags.mockReturnValue({
-        skills: false,
         envDeploy: true,
         debug: false,
-        githubImport: true,
-        adoptBranch: false,
         reactFileManager: true,
-        gitRebaseSync: false,
-        inventory: false,
         projects: false,
         codeReview: false,
       });

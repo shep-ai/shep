@@ -312,14 +312,9 @@ describe('createDefaultSettings', () => {
     it('should default feature flags with envDeploy enabled', () => {
       const settings = createDefaultSettings();
       expect(settings.featureFlags).toEqual({
-        skills: false,
         envDeploy: true,
         debug: false,
-        githubImport: false,
-        adoptBranch: false,
-        gitRebaseSync: false,
         reactFileManager: false,
-        inventory: false,
         projects: false,
         codeReview: false,
       });

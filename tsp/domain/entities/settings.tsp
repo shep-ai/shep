@@ -572,34 +572,19 @@ model NotificationPreferences {
  * Controls runtime feature visibility in the web UI.
  * Stored in the Settings database as INTEGER columns (0/1).
  * When not set in the database, the feature flags resolution
- * falls back to NEXT_PUBLIC_ environment variables for skills
- * and envDeploy (backward compatibility).
+ * falls back to NEXT_PUBLIC_ environment variables for envDeploy
+ * (backward compatibility).
  */
 @doc("Feature flag toggles for runtime feature control")
 model FeatureFlags {
-  @doc("Enable Skills navigation and functionality in the web UI")
-  skills: boolean = false;
-
   @doc("Enable environment deployment features in the web UI")
   envDeploy: boolean = true;
 
   @doc("Enable debug UI elements and verbose client-side logging")
   debug: boolean = false;
 
-  @doc("Enable GitHub repository import in the web UI")
-  githubImport: boolean = false;
-
-  @doc("Enable adopt branch feature to import existing branches as tracked features")
-  adoptBranch: boolean = false;
-
-  @doc("Enable git rebase-on-main and sync-main operations in the web UI")
-  gitRebaseSync: boolean = false;
-
   @doc("Use the built-in React file manager instead of the native OS folder picker")
   reactFileManager: boolean = false;
-
-  @doc("Enable the Inventory page showing all repositories and features")
-  inventory: boolean = false;
 
   @doc("Enable Projects pages and navigation (project management)")
   projects: boolean = false;

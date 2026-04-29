@@ -644,10 +644,6 @@ export type NotificationPreferences = {
  */
 export type FeatureFlags = {
   /**
-   * Enable Skills navigation and functionality in the web UI
-   */
-  skills: boolean;
-  /**
    * Enable environment deployment features in the web UI
    */
   envDeploy: boolean;
@@ -656,25 +652,9 @@ export type FeatureFlags = {
    */
   debug: boolean;
   /**
-   * Enable GitHub repository import in the web UI
-   */
-  githubImport: boolean;
-  /**
-   * Enable adopt branch feature to import existing branches as tracked features
-   */
-  adoptBranch: boolean;
-  /**
-   * Enable git rebase-on-main and sync-main operations in the web UI
-   */
-  gitRebaseSync: boolean;
-  /**
    * Use the built-in React file manager instead of the native OS folder picker
    */
   reactFileManager: boolean;
-  /**
-   * Enable the Inventory page showing all repositories and features
-   */
-  inventory: boolean;
   /**
    * Enable Projects pages and navigation (project management)
    */

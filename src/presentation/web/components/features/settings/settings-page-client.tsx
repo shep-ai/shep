@@ -390,15 +390,10 @@ export function SettingsPageClient({
   const { t, i18n: i18nInstance } = useTranslation('web');
   const { showSaving, showSaved, save } = useSaveIndicator();
   const featureFlags = settings.featureFlags ?? {
-    skills: false,
     envDeploy: false,
     debug: false,
-    githubImport: false,
-    adoptBranch: false,
-    gitRebaseSync: false,
     reactFileManager: false,
     projects: false,
-    inventory: false,
     codeReview: false,
   };
 
@@ -1696,18 +1691,6 @@ export function SettingsPageClient({
             testId="feature-flags-settings-section"
           >
             <SwitchRow
-              label={t('settings.featureFlags.skills')}
-              description={t('settings.featureFlags.skillsDescription')}
-              id="flag-skills"
-              testId="switch-flag-skills"
-              checked={flags.skills}
-              onChange={(v) => {
-                const newFlags = { ...flags, skills: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
               label={t('settings.featureFlags.deployments')}
               description={t('settings.featureFlags.deploymentsDescription')}
               id="flag-envDeploy"
@@ -1732,42 +1715,6 @@ export function SettingsPageClient({
               }}
             />
             <SwitchRow
-              label={t('settings.featureFlags.githubImport')}
-              description={t('settings.featureFlags.githubImportDescription')}
-              id="flag-githubImport"
-              testId="switch-flag-githubImport"
-              checked={flags.githubImport}
-              onChange={(v) => {
-                const newFlags = { ...flags, githubImport: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.adoptBranch')}
-              description={t('settings.featureFlags.adoptBranchDescription')}
-              id="flag-adoptBranch"
-              testId="switch-flag-adoptBranch"
-              checked={flags.adoptBranch}
-              onChange={(v) => {
-                const newFlags = { ...flags, adoptBranch: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.gitRebaseSync')}
-              description={t('settings.featureFlags.gitRebaseSyncDescription')}
-              id="flag-gitRebaseSync"
-              testId="switch-flag-gitRebaseSync"
-              checked={flags.gitRebaseSync}
-              onChange={(v) => {
-                const newFlags = { ...flags, gitRebaseSync: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
               label={t('settings.featureFlags.reactFileManager')}
               description={t('settings.featureFlags.reactFileManagerDescription')}
               id="flag-reactFileManager"
@@ -1775,18 +1722,6 @@ export function SettingsPageClient({
               checked={flags.reactFileManager}
               onChange={(v) => {
                 const newFlags = { ...flags, reactFileManager: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.inventory')}
-              description={t('settings.featureFlags.inventoryDescription')}
-              id="flag-inventory"
-              testId="switch-flag-inventory"
-              checked={flags.inventory}
-              onChange={(v) => {
-                const newFlags = { ...flags, inventory: v };
                 setFlags(newFlags);
                 save({ featureFlags: newFlags });
               }}

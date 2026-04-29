@@ -107,13 +107,11 @@ describe('updateSettingsAction server action', () => {
 
   it('handles featureFlags partial update', async () => {
     await updateSettingsAction({
-      featureFlags: { skills: true },
+      featureFlags: { debug: true },
     } as any);
 
     const persisted = mockUpdateExecute.mock.calls[0][0];
-    expect(persisted.featureFlags.skills).toBe(true);
+    expect(persisted.featureFlags.debug).toBe(true);
     expect(persisted.featureFlags.envDeploy).toBe(true);
-    expect(persisted.featureFlags.debug).toBe(false);
-    expect(persisted.featureFlags.adoptBranch).toBe(false);
   });
 });

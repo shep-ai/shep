@@ -170,14 +170,12 @@ export function AppSidebar({
             href="/control-center"
             active={pathname === '/control-center'}
           />
-          {featureFlags.inventory ? (
-            <SidebarNavItem
-              icon={TableProperties}
-              label={t('navigation.inventory')}
-              href="/features"
-              active={pathname === '/features'}
-            />
-          ) : null}
+          <SidebarNavItem
+            icon={TableProperties}
+            label={t('navigation.inventory')}
+            href="/features"
+            active={pathname === '/features'}
+          />
           <SidebarNavItem
             icon={Wrench}
             label={t('navigation.tools')}
@@ -192,14 +190,12 @@ export function AppSidebar({
               active={pathname?.startsWith('/projects') ?? false}
             />
           ) : null}
-          {featureFlags.skills ? (
-            <SidebarNavItem
-              icon={Puzzle}
-              label={t('navigation.skills')}
-              href="/skills"
-              active={pathname === '/skills'}
-            />
-          ) : null}
+          <SidebarNavItem
+            icon={Puzzle}
+            label={t('navigation.skills')}
+            href="/skills"
+            active={pathname === '/skills'}
+          />
           <SidebarNavItem
             icon={Settings}
             label={t('navigation.settings')}

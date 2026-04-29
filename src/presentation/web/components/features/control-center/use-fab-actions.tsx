@@ -10,7 +10,6 @@ import type { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 
 import type { FloatingActionButtonAction } from '@/components/common/floating-action-button';
-import type { useFeatureFlags } from '@/hooks/feature-flags-context';
 
 type RouterPushParam = Parameters<ReturnType<typeof useRouter>['push']>[0];
 
@@ -21,7 +20,6 @@ interface UseFabActionsParams {
   handlePickFolder: () => void;
   onNewProject: () => void;
   onNewApplication: () => void;
-  featureFlags: ReturnType<typeof useFeatureFlags>;
 }
 
 export function useFabActions({
@@ -31,7 +29,6 @@ export function useFabActions({
   handlePickFolder,
   onNewProject,
   onNewApplication,
-  featureFlags,
 }: UseFabActionsParams): FloatingActionButtonAction[] {
   const { t } = useTranslation('web');
 
@@ -68,36 +65,22 @@ export function useFabActions({
         onClick: onNewApplication,
       },
     ];
-    if (featureFlags.adoptBranch) {
-      actions.push({
-        id: 'adopt-branch',
-        label: t('fab.adoptBranch'),
-        icon: <GitBranch className="h-4 w-4" />,
-        onClick: () => {
-          guardedNavigate(() => router.push('/adopt' as RouterPushParam));
-        },
-      });
-    }
-    if (featureFlags.githubImport) {
-      actions.push({
-        id: 'add-github-repo',
-        label: t('fab.fromGithub'),
-        icon: <Github className="h-4 w-4" />,
-        onClick: () => {
-          window.dispatchEvent(new CustomEvent('shep:open-github-import'));
-        },
-      });
-    }
+    actions.push({
+      id: 'adopt-branch',
+      label: t('fab.adoptBranch'),
+      icon: <GitBranch className="h-4 w-4" />,
+      onClick: () => {
+        guardedNavigate(() => router.push('/adopt' as RouterPushParam));
+      },
+    });
+    actions.push({
+      id: 'add-github-repo',
+      label: t('fab.fromGithub'),
+      icon: <Github className="h-4 w-4" />,
+      onClick: () => {
+        window.dispatchEvent(new CustomEvent('shep:open-github-import'));
+      },
+    });
     return actions;
-  }, [
-    t,
-    clickSound,
-    guardedNavigate,
-    router,
-    handlePickFolder,
-    onNewProject,
-    onNewApplication,
-    featureFlags.adoptBranch,
-    featureFlags.githubImport,
-  ]);
+  }, [t, clickSound, guardedNavigate, router, handlePickFolder, onNewProject, onNewApplication]);
 }

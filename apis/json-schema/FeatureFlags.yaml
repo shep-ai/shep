@@ -2,10 +2,6 @@ $schema: https://json-schema.org/draft/2020-12/schema
 $id: FeatureFlags.yaml
 type: object
 properties:
-  skills:
-    type: boolean
-    default: false
-    description: Enable Skills navigation and functionality in the web UI
   envDeploy:
     type: boolean
     default: true
@@ -14,26 +10,10 @@ properties:
     type: boolean
     default: false
     description: Enable debug UI elements and verbose client-side logging
-  githubImport:
-    type: boolean
-    default: false
-    description: Enable GitHub repository import in the web UI
-  adoptBranch:
-    type: boolean
-    default: false
-    description: Enable adopt branch feature to import existing branches as tracked features
-  gitRebaseSync:
-    type: boolean
-    default: false
-    description: Enable git rebase-on-main and sync-main operations in the web UI
   reactFileManager:
     type: boolean
     default: false
     description: Use the built-in React file manager instead of the native OS folder picker
-  inventory:
-    type: boolean
-    default: false
-    description: Enable the Inventory page showing all repositories and features
   projects:
     type: boolean
     default: false
@@ -43,14 +23,9 @@ properties:
     default: false
     description: Enable AI-powered code review for pull requests
 required:
-  - skills
   - envDeploy
   - debug
-  - githubImport
-  - adoptBranch
-  - gitRebaseSync
   - reactFileManager
-  - inventory
   - projects
   - codeReview
 description: Feature flag toggles for runtime feature control

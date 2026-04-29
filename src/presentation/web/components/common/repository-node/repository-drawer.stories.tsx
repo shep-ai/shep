@@ -85,20 +85,15 @@ export const InDrawer: Story = {
 };
 
 /* ---------------------------------------------------------------------------
- * Git operations story — wraps with FeatureFlagsProvider to enable gitRebaseSync
+ * Git operations story — wraps with FeatureFlagsProvider for full UI rendering
  * ------------------------------------------------------------------------- */
 
 function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
   const [selected, setSelected] = useState<RepositoryNodeData | null>(data);
   const allEnabledFlags = {
-    skills: true,
     envDeploy: true,
     debug: true,
-    githubImport: true,
-    adoptBranch: true,
-    gitRebaseSync: true,
     reactFileManager: true,
-    inventory: false,
     projects: false,
     codeReview: false,
   };
@@ -119,7 +114,7 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
   );
 }
 
-/** Repository drawer with git operations section visible (gitRebaseSync flag enabled). */
+/** Repository drawer with git operations section visible. */
 export const WithGitOperations: Story = {
   render: () => <WithGitOpsTemplate data={repoData} />,
 };

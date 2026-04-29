@@ -50,14 +50,9 @@ import { FeatureFlagsProvider } from '@/hooks/feature-flags-context';
 import { useSidebarFeaturesContext } from '@/hooks/sidebar-features-context';
 
 const defaultFlags = {
-  skills: false,
   envDeploy: false,
   debug: false,
-  githubImport: false,
-  adoptBranch: false,
-  gitRebaseSync: false,
   reactFileManager: false,
-  inventory: false,
   projects: false,
   codeReview: false,
 };
