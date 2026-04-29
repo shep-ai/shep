@@ -6,7 +6,12 @@ import type { IDeploymentService } from '@/application/ports/output/services/dep
 import type { IFileSystemService } from '@/application/ports/output/services/file-system-service.interface.js';
 import type { IShepInstanceService } from '@/application/ports/output/services/shep-instance-service.interface.js';
 import type { IWorktreePathProvider } from '@/application/ports/output/services/worktree-path-provider.interface.js';
-import { DeploymentState, SdlcLifecycle, type Feature } from '@/domain/generated/output.js';
+import {
+  DeploymentState,
+  SdlcLifecycle,
+  type Feature,
+  BuildMode,
+} from '@/domain/generated/output.js';
 
 function makeFeature(overrides?: Partial<Feature>): Feature {
   return {
@@ -20,6 +25,7 @@ function makeFeature(overrides?: Partial<Feature>): Feature {
     lifecycle: SdlcLifecycle.Implementation,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

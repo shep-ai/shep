@@ -15,7 +15,13 @@ import type { IWorktreeService } from '@/application/ports/output/services/workt
 import type { IFeatureAgentProcessService } from '@/application/ports/output/agents/feature-agent-process.interface.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
-import { AgentRunStatus, AgentType, PrStatus, SdlcLifecycle } from '@/domain/generated/output.js';
+import {
+  AgentRunStatus,
+  AgentType,
+  PrStatus,
+  SdlcLifecycle,
+  BuildMode,
+} from '@/domain/generated/output.js';
 import type { Feature, AgentRun } from '@/domain/generated/output.js';
 
 function createMockFeature(overrides?: Partial<Feature>): Feature {
@@ -30,6 +36,7 @@ function createMockFeature(overrides?: Partial<Feature>): Feature {
     lifecycle: SdlcLifecycle.Implementation,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

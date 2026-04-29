@@ -15,7 +15,12 @@
  */
 
 import type { Feature } from '../../../../domain/generated/output.js';
-import type { SdlcLifecycle, PrStatus, CiStatus } from '../../../../domain/generated/output.js';
+import {
+  BuildMode,
+  type SdlcLifecycle,
+  type PrStatus,
+  type CiStatus,
+} from '../../../../domain/generated/output.js';
 
 /**
  * Database row type matching the features table schema.
@@ -173,6 +178,9 @@ export function fromDatabase(row: FeatureRow): Feature {
     ...(row.plan != null && { plan: JSON.parse(row.plan) }),
     ...(row.agent_run_id != null && { agentRunId: row.agent_run_id }),
     ...(row.spec_path != null && { specPath: row.spec_path }),
+    // Build mode — derived from the legacy fast flag until phase 2 wires
+    // up the dedicated build_mode column on the row type.
+    buildMode: row.fast === 1 ? BuildMode.Fast : BuildMode.Application,
     // Fast mode flag
     fast: row.fast === 1,
     // Assemble workflow flags from flat columns

@@ -15,6 +15,7 @@ import {
   CiStatus,
   NotificationEventType,
   NotificationSeverity,
+  BuildMode,
 } from '@/domain/generated/output.js';
 import {
   PrSyncWatcherService,
@@ -41,6 +42,7 @@ function createMockFeature(overrides: Partial<Feature> = {}): Feature {
     lifecycle: SdlcLifecycle.Review,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: true,
     openPr: true,

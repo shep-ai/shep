@@ -7,6 +7,7 @@ import {
 import {
   PrStatus,
   SdlcLifecycle,
+  BuildMode,
   type Feature,
   type Attachment,
 } from '@/domain/generated/output.js';
@@ -40,6 +41,7 @@ function createTestFeature(overrides: Partial<Feature> = {}): Feature {
     enableEvidence: false,
     injectSkills: false,
     commitEvidence: false,
+    buildMode: BuildMode.Application,
     fast: false,
     approvalGates: { allowPrd: false, allowPlan: false, allowMerge: false },
     createdAt: new Date('2026-03-08T10:00:00Z'),

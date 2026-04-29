@@ -19,7 +19,7 @@ import { SQLiteFeatureRepository } from '@/infrastructure/repositories/sqlite-fe
 import { SQLiteAgentRunRepository } from '@/infrastructure/repositories/agent-run.repository.js';
 import { StartFeatureUseCase } from '@/application/use-cases/features/start-feature.use-case.js';
 import type { Feature, AgentRun } from '@/domain/generated/output.js';
-import { SdlcLifecycle, AgentRunStatus, AgentType } from '@/domain/generated/output.js';
+import { SdlcLifecycle, AgentRunStatus, AgentType, BuildMode } from '@/domain/generated/output.js';
 
 function createMockProcessService() {
   return {
@@ -67,6 +67,7 @@ describe('StartFeatureUseCase (integration)', () => {
     lifecycle: SdlcLifecycle.Pending,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

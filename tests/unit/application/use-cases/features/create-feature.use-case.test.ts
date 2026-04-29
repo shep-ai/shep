@@ -23,7 +23,7 @@ import type { IRepositoryRepository } from '@/application/ports/output/repositor
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { IAgentValidator } from '@/application/ports/output/agents/agent-validator.interface.js';
 import type { ISkillInjectorService } from '@/application/ports/output/services/skill-injector.interface.js';
-import { SdlcLifecycle, SkillSourceType } from '@/domain/generated/output.js';
+import { SdlcLifecycle, SkillSourceType, BuildMode } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
 import type { MetadataGenerator } from '@/application/use-cases/features/create/metadata-generator.js';
 import type { SlugResolver } from '@/application/use-cases/features/create/slug-resolver.js';
@@ -54,6 +54,7 @@ function makeParentFeature(overrides?: Partial<Feature>): Feature {
     lifecycle: SdlcLifecycle.Implementation,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

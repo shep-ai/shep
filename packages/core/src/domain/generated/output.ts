@@ -914,6 +914,11 @@ export enum SdlcLifecycle {
   AwaitingUpstream = 'AwaitingUpstream',
   Archived = 'Archived',
 }
+export enum BuildMode {
+  Application = 'application',
+  Fast = 'fast',
+  Spec = 'spec',
+}
 
 /**
  * Configuration for human-in-the-loop approval gates
@@ -1109,6 +1114,14 @@ export type Feature = SoftDeletableEntity & {
    * ID of the Repository entity this feature belongs to
    */
   repositoryId?: UUID;
+  /**
+   * Parent application ID when this feature was launched scoped to an Application (optional)
+   */
+  applicationId?: UUID;
+  /**
+   * Build mode controlling which SDLC pipeline the feature follows
+   */
+  buildMode: BuildMode;
   /**
    * When true, SDLC phases were skipped and the feature was implemented directly from the prompt
    */

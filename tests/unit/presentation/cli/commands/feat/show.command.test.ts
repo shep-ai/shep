@@ -8,7 +8,7 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentRunStatus } from '@/domain/generated/output.js';
+import { AgentRunStatus, BuildMode } from '@/domain/generated/output.js';
 import type { Feature, AgentRun, PhaseTiming } from '@/domain/generated/output.js';
 
 const { mockResolve, mockShowExecute, mockFindById, mockFindByRunId, mockFindByFeatureId } =
@@ -53,6 +53,7 @@ function makeFeature(overrides?: Partial<Feature>): Feature {
     messages: [],
     relatedArtifacts: [],
     agentRunId: 'run-001',
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

@@ -10,7 +10,7 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StartFeatureUseCase } from '@/application/use-cases/features/start-feature.use-case.js';
-import { SdlcLifecycle, AgentRunStatus } from '@/domain/generated/output.js';
+import { SdlcLifecycle, AgentRunStatus, BuildMode } from '@/domain/generated/output.js';
 import type { Feature, AgentRun } from '@/domain/generated/output.js';
 
 function createMockFeatureRepo() {
@@ -70,6 +70,7 @@ function createTestFeature(overrides?: Partial<Feature>): Feature {
     lifecycle: SdlcLifecycle.Pending,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

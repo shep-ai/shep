@@ -14,7 +14,7 @@ import type { IFeatureRepository } from '@/application/ports/output/repositories
 import type { IWorktreeService } from '@/application/ports/output/services/worktree-service.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
-import { SdlcLifecycle } from '@/domain/generated/output.js';
+import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
 
 function createMockFeature(overrides?: Partial<Feature>): Feature {
@@ -30,6 +30,7 @@ function createMockFeature(overrides?: Partial<Feature>): Feature {
     lifecycle: SdlcLifecycle.Maintain,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

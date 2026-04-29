@@ -5,7 +5,7 @@ import type { IFeatureRepository } from '@/application/ports/output/repositories
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface';
 import type { IWorktreeService } from '@/application/ports/output/services/worktree-service.interface';
 import type { Feature } from '@/domain/generated/output';
-import { SdlcLifecycle } from '@/domain/generated/output';
+import { SdlcLifecycle, BuildMode } from '@/domain/generated/output';
 
 describe('GetBranchSyncStatusUseCase', () => {
   let featureRepo: IFeatureRepository;
@@ -24,6 +24,7 @@ describe('GetBranchSyncStatusUseCase', () => {
     lifecycle: SdlcLifecycle.Implementation,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

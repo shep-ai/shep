@@ -50,6 +50,12 @@ properties:
   repositoryId:
     $ref: UUID.yaml
     description: ID of the Repository entity this feature belongs to
+  applicationId:
+    $ref: UUID.yaml
+    description: Parent application ID when this feature was launched scoped to an Application (optional)
+  buildMode:
+    $ref: BuildMode.yaml
+    description: Build mode controlling which SDLC pipeline the feature follows
   fast:
     type: boolean
     default: false
@@ -116,6 +122,7 @@ required:
   - lifecycle
   - messages
   - relatedArtifacts
+  - buildMode
   - fast
   - push
   - openPr

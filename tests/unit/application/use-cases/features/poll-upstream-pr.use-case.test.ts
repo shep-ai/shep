@@ -10,7 +10,7 @@ import { PollUpstreamPrUseCase } from '@/application/use-cases/features/poll-ups
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface';
 import type { IGitForkService } from '@/application/ports/output/services/git-fork-service.interface';
 import type { Feature } from '@/domain/generated/output';
-import { SdlcLifecycle, PrStatus } from '@/domain/generated/output';
+import { SdlcLifecycle, PrStatus, BuildMode } from '@/domain/generated/output';
 
 function createMockFeature(overrides: Partial<Feature> = {}): Feature {
   return {
@@ -24,6 +24,7 @@ function createMockFeature(overrides: Partial<Feature> = {}): Feature {
     lifecycle: SdlcLifecycle.AwaitingUpstream,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: true,
     openPr: true,

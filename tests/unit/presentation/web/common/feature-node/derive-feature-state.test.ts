@@ -4,6 +4,7 @@ import {
   TaskState,
   AgentRunStatus,
   AgentType,
+  BuildMode,
   NotificationEventType,
 } from '@shepai/core/domain/generated';
 import type { Feature, AgentRun } from '@shepai/core/domain/generated';
@@ -27,6 +28,7 @@ function createMinimalFeature(overrides: Partial<Feature> = {}): Feature {
     lifecycle: SdlcLifecycle.Implementation,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

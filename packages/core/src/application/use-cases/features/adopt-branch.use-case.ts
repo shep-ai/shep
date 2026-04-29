@@ -13,7 +13,7 @@
 import { injectable, inject } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import type { Feature, PullRequest } from '../../../domain/generated/output.js';
-import { SdlcLifecycle, PrStatus } from '../../../domain/generated/output.js';
+import { SdlcLifecycle, PrStatus, BuildMode } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { IRepositoryRepository } from '../../ports/output/repositories/repository-repository.interface.js';
 import type { IWorktreeService } from '../../ports/output/services/worktree-service.interface.js';
@@ -114,6 +114,7 @@ export class AdoptBranchUseCase {
       lifecycle,
       messages: [],
       relatedArtifacts: [],
+      buildMode: BuildMode.Application,
       fast: false,
       push: false,
       openPr: hasOpenPr,

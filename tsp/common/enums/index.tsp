@@ -22,3 +22,4 @@ import "./cloud-deployment.tsp";
 import "./interactive-session-event.tsp";
 import "./operation-log.tsp";
 import "./code-review.tsp";
+import "./build-mode.tsp";

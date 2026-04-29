@@ -22,6 +22,7 @@ import type { Feature } from '../../../../domain/generated/output.js';
 import {
   SdlcLifecycle,
   AgentRunStatus,
+  BuildMode,
   type AgentType,
 } from '../../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../../ports/output/repositories/feature-repository.interface.js';
@@ -188,6 +189,7 @@ export class CreateFeatureUseCase {
       lifecycle: initialLifecycle,
       messages: [],
       relatedArtifacts: [],
+      buildMode: (input.fast ?? false) ? BuildMode.Fast : BuildMode.Application,
       fast: input.fast ?? false,
       push: input.push ?? false,
       openPr: input.openPr ?? false,

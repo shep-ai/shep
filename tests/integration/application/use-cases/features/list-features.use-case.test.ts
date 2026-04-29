@@ -17,7 +17,7 @@ import {
   closeSQLiteConnection,
 } from '@/infrastructure/persistence/sqlite/connection.js';
 import type { Feature } from '@/domain/generated/output.js';
-import { SdlcLifecycle } from '@/domain/generated/output.js';
+import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 
 describe('ListFeaturesUseCase (integration)', () => {
   const testRepoPath = `/integration-tests/list-features/${randomUUID()}`;
@@ -41,6 +41,7 @@ describe('ListFeaturesUseCase (integration)', () => {
     lifecycle: SdlcLifecycle.Requirements,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

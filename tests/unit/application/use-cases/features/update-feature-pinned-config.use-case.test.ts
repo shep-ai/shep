@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UpdateFeaturePinnedConfigUseCase } from '@/application/use-cases/features/update-feature-pinned-config.use-case.js';
-import { AgentRunStatus, AgentType, SdlcLifecycle } from '@/domain/generated/output.js';
+import { AgentRunStatus, AgentType, SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { AgentRun, Feature } from '@/domain/generated/output.js';
 
 function createMockFeatureRepo() {
@@ -60,6 +60,7 @@ function createTestFeature(overrides?: Partial<Feature>): Feature {
     lifecycle: SdlcLifecycle.Requirements,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

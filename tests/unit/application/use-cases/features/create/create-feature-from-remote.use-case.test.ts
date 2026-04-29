@@ -12,7 +12,7 @@ import { CreateFeatureFromRemoteUseCase } from '@/application/use-cases/features
 import type { ImportGitHubRepositoryUseCase } from '@/application/use-cases/repositories/import-github-repository.use-case.js';
 import type { CreateFeatureUseCase } from '@/application/use-cases/features/create/create-feature.use-case.js';
 import type { Repository, Feature } from '@/domain/generated/output.js';
-import { SdlcLifecycle } from '@/domain/generated/output.js';
+import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { CreateFeatureFromRemoteInput } from '@/application/use-cases/features/create/create-feature-from-remote.use-case.js';
 
 // ---------------------------------------------------------------------------
@@ -42,6 +42,7 @@ function createMockFeature(overrides?: Partial<Feature>): Feature {
     lifecycle: SdlcLifecycle.Requirements,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

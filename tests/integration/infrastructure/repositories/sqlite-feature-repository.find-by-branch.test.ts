@@ -12,7 +12,7 @@ import { createInMemoryDatabase } from '../../../helpers/database.helper.js';
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
 import { SQLiteFeatureRepository } from '@/infrastructure/repositories/sqlite-feature.repository.js';
 import type { Feature } from '@/domain/generated/output.js';
-import { SdlcLifecycle } from '@/domain/generated/output.js';
+import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 
 describe('SQLiteFeatureRepository.findByBranch', () => {
   let db: Database.Database;
@@ -29,6 +29,7 @@ describe('SQLiteFeatureRepository.findByBranch', () => {
     lifecycle: SdlcLifecycle.Requirements,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

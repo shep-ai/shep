@@ -11,7 +11,7 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ArchiveFeatureUseCase } from '@/application/use-cases/features/archive-feature.use-case.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
-import { SdlcLifecycle } from '@/domain/generated/output.js';
+import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
 
 function createMockFeature(overrides?: Partial<Feature>): Feature {
@@ -26,6 +26,7 @@ function createMockFeature(overrides?: Partial<Feature>): Feature {
     lifecycle: SdlcLifecycle.Maintain,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

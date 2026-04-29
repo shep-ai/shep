@@ -10,7 +10,7 @@ import type { IFeatureRepository } from '@/application/ports/output/repositories
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface';
 import type { Feature } from '@/domain/generated/output';
-import { SdlcLifecycle, PrStatus, AgentRunStatus } from '@/domain/generated/output';
+import { SdlcLifecycle, PrStatus, AgentRunStatus, BuildMode } from '@/domain/generated/output';
 
 function createMockFeature(overrides: Partial<Feature> = {}): Feature {
   return {
@@ -24,6 +24,7 @@ function createMockFeature(overrides: Partial<Feature> = {}): Feature {
     lifecycle: SdlcLifecycle.Review,
     messages: [],
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: true,
     openPr: true,

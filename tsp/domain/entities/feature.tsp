@@ -114,6 +114,7 @@ import "../../common/base.tsp";
 import "../../common/scalars.tsp";
 import "../../common/enums/lifecycle.tsp";
 import "../../common/enums/workflow.tsp";
+import "../../common/enums/build-mode.tsp";
 import "./message.tsp";
 import "./plan.tsp";
 import "./artifact.tsp";
@@ -371,7 +372,38 @@ model Feature extends SoftDeletableEntity {
   @doc("ID of the Repository entity this feature belongs to")
   repositoryId?: UUID;
 
+  /**
+   * Optional reference to an Application that this feature is scoped to.
+   *
+   * When set, the feature was launched from the Control Center as a
+   * spec-driven (SDD) run against the given application. Used by
+   * `derive-graph` to render a parent edge from the application node
+   * to the feature node on the Control Center canvas, and by future
+   * use cases to query features by their parent application.
+   *
+   * Nullable for backward compatibility — pre-existing feature rows
+   * have no application link.
+   */
+  @doc("Parent application ID when this feature was launched scoped to an Application (optional)")
+  applicationId?: UUID;
+
   // ── Workflow Configuration ──────────────────────────────────
+
+  /**
+   * Persisted build mode for this feature run.
+   *
+   * Determines which SDLC pipeline the feature follows:
+   *  - `application` runs the standard application-mode pipeline.
+   *  - `fast` skips spec/planning phases and implements directly.
+   *  - `spec` runs the full spec-driven pipeline (typically scoped
+   *    to an `applicationId`).
+   *
+   * The legacy `fast: boolean` flag is retained and continues to be
+   * written (`fast = (buildMode === Fast)`) so existing read paths
+   * remain compatible without coordinated changes.
+   */
+  @doc("Build mode controlling which SDLC pipeline the feature follows")
+  buildMode: BuildMode;
 
   @doc("When true, SDLC phases were skipped and the feature was implemented directly from the prompt")
   fast: boolean = false;
