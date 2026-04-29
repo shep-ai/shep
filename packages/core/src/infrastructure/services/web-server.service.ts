@@ -135,11 +135,13 @@ export class WebServerService implements IWebServerService {
       }
     }
 
+    const hostname = process.env.SHEP_BIND_HOST ?? 'localhost';
+
     const app = this.deps.createNextApp({
       dev,
       dir,
       port,
-      hostname: 'localhost',
+      hostname,
     });
 
     const handle = app.getRequestHandler();
@@ -154,7 +156,7 @@ export class WebServerService implements IWebServerService {
 
       server.on('error', reject);
 
-      server.listen(port, 'localhost', () => {
+      server.listen(port, hostname, () => {
         this.server = server;
         resolve();
       });
