@@ -415,7 +415,10 @@
     "localFolder": "Pasta local",
     "adoptBranch": "Adotar branch",
     "fromGithub": "Do GitHub",
-    "newApplication": "Nova Aplicação"
+    "newApplication": "Nova Aplicação",
+    "newSddFeature": "Nova funcionalidade SDD",
+    "newSddForApp": "Nova funcionalidade SDD para {{appName}}",
+    "openInControlCenterSdd": "Abrir no Control Center (modo SDD)"
   },
   "chat": {
     "shepChat": "Shep Chat",
@@ -488,6 +491,7 @@
     "modeFastDescription": "Pular fases SDLC e implementar direto do prompt.",
     "modeSpec": "Spec",
     "modeSpecDescription": "Fluxo orientado por spec com etapas explícitas de PRD e plano.",
+    "lockedByApplication": "Bloqueado pelo contexto da aplicação — abra a partir de outro ponto de entrada para alterar.",
     "fileDropZone": "Zona de arraste de arquivos",
     "prd": "PRD",
     "prdDescription": "Auto-aprovar transição de requisitos para planejamento.",

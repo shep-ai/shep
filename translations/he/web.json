@@ -415,7 +415,10 @@
     "localFolder": "תיקייה מקומית",
     "adoptBranch": "אימוץ ענף",
     "fromGithub": "מ-GitHub",
-    "newApplication": "אפליקציה חדשה"
+    "newApplication": "אפליקציה חדשה",
+    "newSddFeature": "פיצ'ר SDD חדש",
+    "newSddForApp": "פיצ'ר SDD חדש עבור {{appName}}",
+    "openInControlCenterSdd": "פתיחה ב-Control Center (מצב SDD)"
   },
   "chat": {
     "shepChat": "צ'אט Shep",
@@ -488,6 +491,7 @@
     "modeFastDescription": "דילוג על שלבי SDLC ויישום ישירות מהפרומפט.",
     "modeSpec": "מפרט",
     "modeSpecDescription": "זרימה מבוססת מפרט עם שלבי PRD ותוכנית מפורשים.",
+    "lockedByApplication": "נעול לפי הקשר האפליקציה — פתחו מנקודת כניסה אחרת כדי לשנות.",
     "fileDropZone": "אזור שחרור קבצים",
     "prd": "PRD",
     "prdDescription": "אישור אוטומטי של מעבר דרישות לתכנון.",

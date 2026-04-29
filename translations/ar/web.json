@@ -415,7 +415,10 @@
     "localFolder": "مجلد محلي",
     "adoptBranch": "تبني فرع",
     "fromGithub": "من GitHub",
-    "newApplication": "تطبيق جديد"
+    "newApplication": "تطبيق جديد",
+    "newSddFeature": "ميزة SDD جديدة",
+    "newSddForApp": "ميزة SDD جديدة لـ {{appName}}",
+    "openInControlCenterSdd": "فتح في مركز التحكم (وضع SDD)"
   },
   "chat": {
     "shepChat": "محادثة Shep",
@@ -488,6 +491,7 @@
     "modeFastDescription": "تخطي مراحل SDLC والتنفيذ مباشرة من الأمر.",
     "modeSpec": "مواصفات",
     "modeSpecDescription": "سير عمل قائم على المواصفات مع خطوات PRD وخطة صريحة.",
+    "lockedByApplication": "مقفل بسياق التطبيق — افتح من نقطة دخول أخرى للتغيير.",
     "fileDropZone": "منطقة إسقاط الملفات",
     "prd": "PRD",
     "prdDescription": "الموافقة التلقائية على انتقال المتطلبات إلى التخطيط.",

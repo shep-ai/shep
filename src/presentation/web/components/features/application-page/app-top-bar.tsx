@@ -28,6 +28,7 @@ import { AppOverflowMenu } from './app-overflow-menu';
 import { AppViewTabs, type AppView } from './app-view-tabs';
 import { CopyPromptButton } from './copy-prompt-button';
 import { DeleteApplicationMenuItem } from './delete-application-menu-item';
+import { OpenInControlCenterMenuItem } from './open-in-control-center-menu-item';
 import { PathCluster } from './path-cluster';
 import { SessionChip } from './session-chip';
 import { StatusPill } from './status-pill';
@@ -132,6 +133,7 @@ export function AppTopBar({
         <div className="px-2 pb-2">
           <CopyPromptButton applicationId={application.id} />
         </div>
+        <OpenInControlCenterMenuItem applicationId={application.id} />
         <DeleteApplicationMenuItem
           applicationId={application.id}
           applicationName={application.name}

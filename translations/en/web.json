@@ -415,7 +415,10 @@
     "localFolder": "Local Folder",
     "adoptBranch": "Adopt Branch",
     "fromGithub": "From GitHub",
-    "newApplication": "New Application"
+    "newApplication": "New Application",
+    "newSddFeature": "New SDD feature",
+    "newSddForApp": "New SDD feature for {{appName}}",
+    "openInControlCenterSdd": "Open in Control Center (SDD mode)"
   },
   "chat": {
     "shepChat": "Shep Chat",
