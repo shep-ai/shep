@@ -49,6 +49,12 @@ playwright/.cache/
 # Local agent-tool scratch dirs (not part of the project)
 .cline/
 .superpowers/
+.continue
+.continue.md
+.continue/
+**/.continue
+**/.continue.md
+**/.record-*.mjs
 
 # =============================================================================
 # OS files

@@ -1,0 +1,24 @@
+/tmp/shep-issue-583 demo path
+--- issue #583 evidence: Terminal opened in supplied cwd (path contains a space) ---
+➜  shep-issue-583 demo path 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
