@@ -5,12 +5,22 @@
  */
 
 import { useMemo } from 'react';
-import { FolderOpen, FolderPlus, GitBranch, Github, LayoutGrid, Sparkles } from 'lucide-react';
+import {
+  ClipboardList,
+  FolderOpen,
+  FolderPlus,
+  GitBranch,
+  Github,
+  LayoutGrid,
+  Sparkles,
+} from 'lucide-react';
 import type { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 
+import { BuildMode } from '@shepai/core/domain/generated/output';
 import type { FloatingActionButtonAction } from '@/components/common/floating-action-button';
 import type { useFeatureFlags } from '@/hooks/feature-flags-context';
+import { buildCreateUrl } from '@/lib/url-params';
 
 type RouterPushParam = Parameters<ReturnType<typeof useRouter>['push']>[0];
 
@@ -22,6 +32,15 @@ interface UseFabActionsParams {
   onNewProject: () => void;
   onNewApplication: () => void;
   featureFlags: ReturnType<typeof useFeatureFlags>;
+  /** Domain UUID of the application currently scoped on the canvas — when
+   *  exactly one ApplicationNode is selected/visible, the FAB exposes an
+   *  extra "New SDD feature for <app>" item that opens the create drawer
+   *  pre-scoped to this application in spec mode. Undefined disables the
+   *  action; the rest of the FAB items are unconditional. */
+  selectedApplicationId?: string;
+  /** Display name of the selected application — used purely for the
+   *  i18n interpolation of the FAB item label. */
+  selectedApplicationName?: string;
 }
 
 export function useFabActions({
@@ -32,6 +51,8 @@ export function useFabActions({
   onNewProject,
   onNewApplication,
   featureFlags,
+  selectedApplicationId,
+  selectedApplicationName,
 }: UseFabActionsParams): FloatingActionButtonAction[] {
   const { t } = useTranslation('web');
 
@@ -68,6 +89,21 @@ export function useFabActions({
         onClick: onNewApplication,
       },
     ];
+    if (selectedApplicationId) {
+      actions.push({
+        id: 'new-sdd-feature-for-app',
+        label: t('fab.newSddForApp', { appName: selectedApplicationName ?? '' }),
+        icon: <ClipboardList className="h-4 w-4" />,
+        onClick: () => {
+          clickSound.play();
+          guardedNavigate(() =>
+            router.push(
+              buildCreateUrl({ applicationId: selectedApplicationId, mode: BuildMode.Spec })
+            )
+          );
+        },
+      });
+    }
     if (featureFlags.adoptBranch) {
       actions.push({
         id: 'adopt-branch',
@@ -99,5 +135,7 @@ export function useFabActions({
     onNewApplication,
     featureFlags.adoptBranch,
     featureFlags.githubImport,
+    selectedApplicationId,
+    selectedApplicationName,
   ]);
 }

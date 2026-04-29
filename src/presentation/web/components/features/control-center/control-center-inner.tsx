@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import type { CanvasNodeType } from '@/components/features/features-canvas';
 import type { FeatureNodeData } from '@/components/common/feature-node';
 import type { RepositoryNodeData } from '@/components/common/repository-node';
+import type { ApplicationNodeData } from '@/components/common/application-node/application-node-config';
 import {
   FloatingActionButton,
   type FloatingActionButtonAction,
@@ -52,6 +53,7 @@ import { useCanvasEventListeners } from './use-canvas-event-listeners';
 import { useWorkspaceFitView } from './use-workspace-fit-view';
 import { useFabActions } from './use-fab-actions';
 import { buildCreateUrl } from '@/lib/url-params';
+import { BuildMode } from '@shepai/core/domain/generated/output';
 
 const AUTO_FOCUS_OPTIONS = {
   maxZoom: 1.0,
@@ -185,6 +187,14 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
       guardedNavigate(() => router.push(`/application/${applicationId}`));
     },
     [router, guardedNavigate]
+  );
+
+  const handleApplicationCreateSddFeature = useCallback(
+    (applicationId: string) => {
+      clickSound.play();
+      guardedNavigate(() => router.push(buildCreateUrl({ applicationId, mode: BuildMode.Spec })));
+    },
+    [router, clickSound, guardedNavigate]
   );
 
   const handleNodeClick = useCallback(
@@ -336,6 +346,7 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
       onRepositoryDelete: handleDeleteRepository,
       onApplicationClick: handleApplicationClick,
       onApplicationDelete: handleDeleteApplication,
+      onApplicationCreateSddFeature: handleApplicationCreateSddFeature,
     });
   }, [
     setCallbacks,
@@ -351,6 +362,7 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     handleDeleteRepository,
     handleApplicationClick,
     handleDeleteApplication,
+    handleApplicationCreateSddFeature,
   ]);
 
   const handleMoveEnd = useCallback(
@@ -516,6 +528,25 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
 
   const featureFlags = useFeatureFlags();
 
+  // Derive the FAB's app context from the canvas. When exactly one
+  // ApplicationNode is on the visible canvas we treat it as the scoped
+  // application — surfacing the contextual "New SDD feature for <app>"
+  // FAB action without forcing the user to make an explicit selection
+  // gesture (the canvas runs with `elementsSelectable={false}` so React
+  // Flow's native multi-select isn't available here).
+  const applicationNodes = useMemo(
+    () => displayNodes.filter((n) => n.type === 'applicationNode'),
+    [displayNodes]
+  );
+  const selectedApplicationId =
+    applicationNodes.length === 1
+      ? (applicationNodes[0].data as ApplicationNodeData).id
+      : undefined;
+  const selectedApplicationName =
+    applicationNodes.length === 1
+      ? (applicationNodes[0].data as ApplicationNodeData).name
+      : undefined;
+
   // (+) FAB actions — only visible on control center. Action list lives in
   // its own hook so this component stays focused on graph state + rendering.
   const fabActions = useFabActions({
@@ -526,6 +557,8 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     onNewProject: () => setWorkspaceNewProjectOpen(true),
     onNewApplication: () => setShowCreatePrompt(true),
     featureFlags,
+    ...(selectedApplicationId !== undefined && { selectedApplicationId }),
+    ...(selectedApplicationName !== undefined && { selectedApplicationName }),
   });
 
   const canvasToolbar = (
