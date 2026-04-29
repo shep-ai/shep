@@ -70,6 +70,10 @@ export interface GraphCallbacks {
   onApplicationClick?: (applicationId: string) => void;
   /** Called when the user deletes an application. */
   onApplicationDelete?: (applicationId: string) => void;
+  /** Called when the user triggers "New SDD feature" on an application node —
+   *  the consumer is expected to navigate to the create drawer pre-scoped to
+   *  this application in spec mode. */
+  onApplicationCreateSddFeature?: (applicationId: string) => void;
 }
 
 /**
@@ -283,6 +287,9 @@ export function deriveGraph(
         }),
         ...(callbacks?.onApplicationDelete && {
           onDelete: callbacks.onApplicationDelete,
+        }),
+        ...(callbacks?.onApplicationCreateSddFeature && {
+          onCreateSddFeature: callbacks.onApplicationCreateSddFeature,
         }),
       };
       nodes.push({

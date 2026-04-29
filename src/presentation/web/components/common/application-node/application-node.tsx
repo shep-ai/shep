@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   Loader2,
   Play,
+  Sparkles,
   Square,
   Trash2,
   TriangleAlert,
@@ -440,14 +441,47 @@ export function ApplicationNode({
         </div>
       </div>
 
-      {/* Source handle (right in LTR) — always rendered for edge connections */}
-      <Handle
-        type="source"
-        position={sourceHandlePos}
-        isConnectable={false}
-        className="opacity-0!"
-        style={{ top: 70 }}
-      />
+      {/* Source handle (right in LTR) — hosts the "New SDD feature" action
+          button when a callback is wired, mirroring the feature-node pattern.
+          Falls back to a hidden handle when no callback is provided so edge
+          connections still attach to the same coordinate. */}
+      {data.onCreateSddFeature && data.id ? (
+        <Handle
+          type="source"
+          position={sourceHandlePos}
+          className="h-0! w-0! border-0! bg-transparent!"
+          style={{ top: 70 }}
+        >
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="New SDD feature"
+                  data-testid="application-node-new-sdd-feature-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    data.onCreateSddFeature?.(data.id);
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="nodrag absolute start-1/2 top-1/2 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-violet-500 text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 hover:bg-violet-600 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:outline-none"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">New SDD feature</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </Handle>
+      ) : (
+        <Handle
+          type="source"
+          position={sourceHandlePos}
+          isConnectable={false}
+          className="opacity-0!"
+          style={{ top: 70 }}
+        />
+      )}
     </div>
   );
 }

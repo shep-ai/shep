@@ -214,6 +214,8 @@ export function useGraphState(
         callbacksRef.current.onApplicationClick?.(applicationId),
       onApplicationDelete: (applicationId) =>
         callbacksRef.current.onApplicationDelete?.(applicationId),
+      onApplicationCreateSddFeature: (applicationId) =>
+        callbacksRef.current.onApplicationCreateSddFeature?.(applicationId),
     }),
     []
   );

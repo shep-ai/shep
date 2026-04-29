@@ -6,11 +6,19 @@ import { DeploymentStatusProvider } from '@/hooks/deployment-status-provider';
 import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
 
-// Mock @xyflow/react — ApplicationNode uses Handle and Position
+// Mock @xyflow/react — ApplicationNode uses Handle and Position. The real
+// Handle renders its children, and the SDD-feature action button is mounted
+// as a child of the source handle, so the mock has to forward children too.
 vi.mock('@xyflow/react', () => ({
-  Handle: ({ type, position }: { type: string; position: string }) => (
-    <div data-testid={`handle-${type}-${position}`} />
-  ),
+  Handle: ({
+    type,
+    position,
+    children,
+  }: {
+    type: string;
+    position: string;
+    children?: React.ReactNode;
+  }) => <div data-testid={`handle-${type}-${position}`}>{children}</div>,
   Position: { Left: 'left', Right: 'right' },
 }));
 
@@ -233,6 +241,49 @@ describe('ApplicationNode', () => {
 
       expect(screen.getByTestId('handle-target-left')).toBeInTheDocument();
       expect(screen.getByTestId('handle-source-right')).toBeInTheDocument();
+    });
+  });
+
+  describe('new SDD feature action', () => {
+    it('renders the "New SDD feature" button when onCreateSddFeature is provided', () => {
+      renderNode({ ...defaultData, onCreateSddFeature: vi.fn() });
+
+      expect(screen.getByTestId('application-node-new-sdd-feature-button')).toBeInTheDocument();
+    });
+
+    it('does not render the action button when onCreateSddFeature is absent', () => {
+      renderNode(defaultData);
+
+      expect(
+        screen.queryByTestId('application-node-new-sdd-feature-button')
+      ).not.toBeInTheDocument();
+    });
+
+    it('calls onCreateSddFeature with the application id when clicked', () => {
+      const onCreateSddFeature = vi.fn();
+      renderNode({ ...defaultData, id: 'app-xyz', onCreateSddFeature });
+
+      fireEvent.click(screen.getByTestId('application-node-new-sdd-feature-button'));
+
+      expect(onCreateSddFeature).toHaveBeenCalledOnce();
+      expect(onCreateSddFeature).toHaveBeenCalledWith('app-xyz');
+    });
+
+    it('does not trigger the parent onClick when the SDD action is clicked', () => {
+      const onClick = vi.fn();
+      const onCreateSddFeature = vi.fn();
+      renderNode({ ...defaultData, id: 'app-xyz', onClick, onCreateSddFeature });
+
+      fireEvent.click(screen.getByTestId('application-node-new-sdd-feature-button'));
+
+      expect(onClick).not.toHaveBeenCalled();
+    });
+
+    it('exposes an aria-label for keyboard / screen-reader users', () => {
+      renderNode({ ...defaultData, onCreateSddFeature: vi.fn() });
+
+      const button = screen.getByTestId('application-node-new-sdd-feature-button');
+      expect(button).toHaveAttribute('aria-label', 'New SDD feature');
     });
   });
 });

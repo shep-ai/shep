@@ -18,6 +18,10 @@ export interface ApplicationNodeData {
   onClick?: () => void;
   /** Callback when the delete button is confirmed */
   onDelete?: (id: string) => void;
+  /** Callback when the "New SDD feature" action is selected from the
+   *  card's hover menu. Wired up by control-center-inner to navigate to
+   *  the create drawer pre-scoped to this application in spec mode. */
+  onCreateSddFeature?: (id: string) => void;
   /** Whether to render React Flow handles for edge connections */
   showHandles?: boolean;
 }
