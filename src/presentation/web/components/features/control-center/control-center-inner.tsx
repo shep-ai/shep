@@ -51,6 +51,7 @@ import { useControlCenterState } from './use-control-center-state';
 import { useCanvasEventListeners } from './use-canvas-event-listeners';
 import { useWorkspaceFitView } from './use-workspace-fit-view';
 import { useFabActions } from './use-fab-actions';
+import { buildCreateUrl } from '@/lib/url-params';
 
 const AUTO_FOCUS_OPTIONS = {
   maxZoom: 1.0,
@@ -214,11 +215,7 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
       clickSound.play();
       const node = nodes.find((n) => n.id === repoNodeId);
       const repoPath = (node?.data as { repositoryPath?: string } | undefined)?.repositoryPath;
-      if (repoPath) {
-        router.push(`/create?repo=${encodeURIComponent(repoPath)}`);
-      } else {
-        router.push('/create');
-      }
+      router.push(buildCreateUrl(repoPath ? { repo: repoPath } : {}));
     },
     [nodes, router, clickSound]
   );
@@ -232,10 +229,7 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
       const repoPath = (repoNode?.data as { repositoryPath?: string } | undefined)?.repositoryPath;
 
       clickSound.play();
-      const params = new URLSearchParams();
-      if (repoPath) params.set('repo', repoPath);
-      params.set('parent', featureId);
-      router.push(`/create?${params.toString()}`);
+      router.push(buildCreateUrl({ repo: repoPath, parent: featureId }));
     },
     [nodes, edges, router, clickSound]
   );
@@ -269,7 +263,7 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
 
         // Open the create-feature drawer after the fitView animation completes
         drawerTimerRef.current = setTimeout(() => {
-          guardedNavigate(() => router.push(`/create?repo=${encodeURIComponent(repoPath)}`));
+          guardedNavigate(() => router.push(buildCreateUrl({ repo: repoPath })));
         }, AUTO_FOCUS_DRAWER_DELAY_MS);
       }, 0);
     },

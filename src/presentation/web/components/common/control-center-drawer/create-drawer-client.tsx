@@ -15,6 +15,13 @@ export interface CreateDrawerClientProps {
   initialParentId?: string;
   initialDescription?: string;
   initialMode?: BuildMode;
+  /**
+   * When set, the drawer is scoped to an existing Application: repository
+   * path + mode are pinned by the parent and the resulting feature row is
+   * persisted with this applicationId. The actual lock behavior on the
+   * drawer's controls is implemented in phase 5 of the SDD-mode feature.
+   */
+  initialApplicationId?: string;
   features: ParentFeatureOption[];
   repositories?: RepositoryOption[];
   workflowDefaults?: WorkflowDefaults;
@@ -23,18 +30,23 @@ export interface CreateDrawerClientProps {
   canPushDirectly?: boolean;
 }
 
-export function CreateDrawerClient({
-  repositoryPath,
-  initialParentId,
-  initialDescription,
-  initialMode,
-  features,
-  repositories,
-  workflowDefaults,
-  currentAgentType,
-  currentModel,
-  canPushDirectly,
-}: CreateDrawerClientProps) {
+export function CreateDrawerClient(props: CreateDrawerClientProps) {
+  const {
+    repositoryPath,
+    initialParentId,
+    initialDescription,
+    initialMode,
+    features,
+    repositories,
+    workflowDefaults,
+    currentAgentType,
+    currentModel,
+    canPushDirectly,
+  } = props;
+  // initialApplicationId is part of the public prop contract (the /create page
+  // forwards it from the URL). Its consumer — the drawer's lock behavior — is
+  // wired in a follow-up phase, so we intentionally don't destructure it here.
+  void props.initialApplicationId;
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

@@ -8,6 +8,7 @@ import { Direction } from 'radix-ui';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layouts/app-sidebar';
 import { pickFolder } from '@/components/common/add-repository-button/pick-folder';
+import { buildCreateUrl } from '@/lib/url-params';
 
 // Heavy global overlays — defer their JS chunks until the user actually
 // needs them. Each pulls in a non-trivial dependency chain (assistant-ui,
@@ -91,7 +92,7 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
 
   const handleAddFeature = useCallback(
     (repositoryPath: string) => {
-      guardedNavigate(() => router.push(`/create?repo=${encodeURIComponent(repositoryPath)}`));
+      guardedNavigate(() => router.push(buildCreateUrl({ repo: repositoryPath })));
     },
     [router, guardedNavigate]
   );

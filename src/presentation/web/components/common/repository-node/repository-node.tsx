@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import { buildCreateUrl } from '@/lib/url-params';
 import { ActionButton } from '@/components/common/action-button';
 import {
   Dialog,
@@ -106,11 +107,7 @@ export function RepositoryNode({
         .filter(Boolean)
         .join('\n');
 
-      const params = new URLSearchParams({
-        repo: data.repositoryPath,
-        prompt,
-      });
-      router.push(`/create?${params.toString()}`);
+      router.push(buildCreateUrl({ repo: data.repositoryPath, prompt }));
     },
     [data.repositoryPath, router]
   );

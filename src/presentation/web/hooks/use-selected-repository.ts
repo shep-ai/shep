@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname, useSearchParams } from 'next/navigation';
+import { URL_PARAMS } from '@/lib/url-params';
 
 /**
  * Extracts the selected repository context from the current URL.
@@ -18,7 +19,7 @@ export function useSelectedRepository(): { id: string | null; path: string | nul
   const id = repoIdMatch?.[1] ?? null;
 
   const isCreate = pathname.startsWith('/create');
-  const path = isCreate ? searchParams.get('repo') : null;
+  const path = isCreate ? searchParams.get(URL_PARAMS.repo) : null;
 
   return { id, path };
 }
