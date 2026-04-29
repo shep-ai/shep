@@ -1,0 +1,21 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-control-center-sdd-mode[39m
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/domain/generated/build-mode-enum.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/domain/generated/feature-application-id-build-mode.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/persistence/sqlite/mappers/feature.mapper.test.ts [2m([22m[2m33 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/create-feature.use-case.test.ts [2m([22m[2m64 tests[22m[2m)[22m[32m 82[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/dashboard/drawer/create/create-page.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/url-params.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/derive-graph.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/features/control-center/use-fab-actions.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/features/application-page/open-in-control-center-menu-item.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/application-node/application-node.test.tsx [2m([22m[2m21 tests[22m[2m)[22m[32m 239[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/feature-create-drawer/feature-create-drawer.test.tsx [2m([22m[2m101 tests[22m[2m)[22m[33m 6362[2mms[22m[39m
+       [33m[2m✓[22m[39m clears all form fields after submit without unmounting [33m 360[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m      Tests [22m [1m[32m268 passed[39m[22m[90m (268)[39m
+[2m   Start at [22m 02:15:11
+[2m   Duration [22m 7.69s[2m (transform 1.24s, setup 1.65s, import 1.38s, tests 6.75s, environment 3.34s)[22m
+
