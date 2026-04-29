@@ -92,6 +92,8 @@ function createTestRow(overrides: Partial<FeatureRow> = {}): FeatureRow {
     parent_id: null,
     previous_lifecycle: null,
     fast: 0,
+    application_id: null,
+    build_mode: 'application',
     attachments: '[]',
     injected_skills: null,
     inject_skills: 0,
@@ -337,6 +339,83 @@ describe('Feature Mapper — injectedSkills', () => {
       const row = createTestRow({ injected_skills: null });
       const feature = fromDatabase(row);
       expect(feature.injectedSkills).toBeUndefined();
+    });
+  });
+});
+
+describe('Feature Mapper — applicationId + buildMode', () => {
+  describe('toDatabase()', () => {
+    it('writes application_id and build_mode for a spec-mode feature scoped to an application', () => {
+      const feature = createTestFeature({
+        applicationId: '1c1f6f3e-3a89-4b48-90fa-9ae0c0e43d11',
+        buildMode: BuildMode.Spec,
+      });
+      const row = toDatabase(feature);
+      expect(row.application_id).toBe('1c1f6f3e-3a89-4b48-90fa-9ae0c0e43d11');
+      expect(row.build_mode).toBe(BuildMode.Spec);
+      // Spec mode is not the legacy `fast` flag.
+      expect(row.fast).toBe(0);
+    });
+
+    it('writes null application_id and build_mode=application for a non-scoped application-mode feature', () => {
+      const feature = createTestFeature({
+        applicationId: undefined,
+        buildMode: BuildMode.Application,
+      });
+      const row = toDatabase(feature);
+      expect(row.application_id).toBeNull();
+      expect(row.build_mode).toBe(BuildMode.Application);
+      expect(row.fast).toBe(0);
+    });
+
+    it('derives the legacy fast column from buildMode === Fast', () => {
+      const feature = createTestFeature({ buildMode: BuildMode.Fast });
+      const row = toDatabase(feature);
+      expect(row.build_mode).toBe(BuildMode.Fast);
+      expect(row.fast).toBe(1);
+    });
+  });
+
+  describe('fromDatabase()', () => {
+    it('reads application_id and build_mode from the row', () => {
+      const row = createTestRow({
+        application_id: '1c1f6f3e-3a89-4b48-90fa-9ae0c0e43d11',
+        build_mode: BuildMode.Spec,
+      });
+      const feature = fromDatabase(row);
+      expect(feature.applicationId).toBe('1c1f6f3e-3a89-4b48-90fa-9ae0c0e43d11');
+      expect(feature.buildMode).toBe(BuildMode.Spec);
+    });
+
+    it('omits applicationId when application_id is null', () => {
+      const row = createTestRow({ application_id: null, build_mode: BuildMode.Application });
+      const feature = fromDatabase(row);
+      expect(feature.applicationId).toBeUndefined();
+      expect(feature.buildMode).toBe(BuildMode.Application);
+    });
+  });
+
+  describe('round-trip', () => {
+    it('round-trips spec-mode + applicationId through toDatabase → fromDatabase', () => {
+      const original = createTestFeature({
+        applicationId: '1c1f6f3e-3a89-4b48-90fa-9ae0c0e43d11',
+        buildMode: BuildMode.Spec,
+      });
+      const restored = fromDatabase(toDatabase(original));
+      expect(restored.applicationId).toBe(original.applicationId);
+      expect(restored.buildMode).toBe(BuildMode.Spec);
+      expect(restored.fast).toBe(false);
+    });
+
+    it('round-trips fast-mode without an application through toDatabase → fromDatabase', () => {
+      const original = createTestFeature({
+        applicationId: undefined,
+        buildMode: BuildMode.Fast,
+      });
+      const restored = fromDatabase(toDatabase(original));
+      expect(restored.applicationId).toBeUndefined();
+      expect(restored.buildMode).toBe(BuildMode.Fast);
+      expect(restored.fast).toBe(true);
     });
   });
 });
