@@ -186,7 +186,11 @@ describe('StartFeatureUseCase (integration)', () => {
 
   it('should transition fast Pending feature to Implementation', async () => {
     const run = createTestRun();
-    const feature = createTestFeature({ agentRunId: run.id, fast: true });
+    const feature = createTestFeature({
+      agentRunId: run.id,
+      buildMode: BuildMode.Fast,
+      fast: true,
+    });
     createdFeatureIds.push(feature.id);
     createdRunIds.push(run.id);
 
