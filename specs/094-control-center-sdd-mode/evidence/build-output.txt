@@ -1,0 +1,225 @@
+==========================================
+task-20: pnpm build + pnpm build:storybook
+Captured: 2026-04-29T23:27:35Z
+Branch: feat/control-center-sdd-mode
+==========================================
+
+### $ pnpm build ###
+
+
+> @shepai/cli@1.194.1 build /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-control-center-sdd-mode
+> pnpm build:cli
+
+
+> @shepai/cli@1.194.1 build:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-control-center-sdd-mode
+> tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths && shx mkdir -p dist/packages/core/src/infrastructure/services/tool-installer && shx rm -rf dist/packages/core/src/infrastructure/services/tool-installer/tools && shx cp -r packages/core/src/infrastructure/services/tool-installer/tools dist/packages/core/src/infrastructure/services/tool-installer/tools && shx mkdir -p dist/packages/core/src/infrastructure/templates && shx rm -rf dist/packages/core/src/infrastructure/templates/vite-shadcn-base && shx cp -r packages/core/src/infrastructure/templates/vite-shadcn-base dist/packages/core/src/infrastructure/templates/vite-shadcn-base && shx rm -rf dist/translations && shx cp -r translations dist/translations
+
+
+Exit status: 0 (success)
+
+==========================================
+
+### $ pnpm build:storybook (last 200 lines) ###
+
+storybook-static/assets/code-review-panel-DFLZJrdu.js                           4.15 kB │ gzip:   1.45 kB
+storybook-static/assets/sheet-C218hNpc.js                                       4.17 kB │ gzip:   1.17 kB
+storybook-static/assets/sub-items-section-C2PaCvVn.js                           4.23 kB │ gzip:   1.71 kB
+storybook-static/assets/tabs-C20XzHmA.js                                        4.25 kB │ gzip:   1.56 kB
+storybook-static/assets/github-import-dialog.stories-BEkYZDJQ.js                4.26 kB │ gzip:   1.78 kB
+storybook-static/assets/app-view-tabs-DBNuKlY5.js                               4.27 kB │ gzip:   1.97 kB
+storybook-static/assets/table-view.stories-DcV2YPzC.js                          4.28 kB │ gzip:   1.30 kB
+storybook-static/assets/button.stories-f1deqLz-.js                              4.29 kB │ gzip:   1.15 kB
+storybook-static/assets/provider-dropdown.stories-BHfdpb_m.js                   4.33 kB │ gzip:   1.21 kB
+storybook-static/assets/inline-attachments-BH_Swikc.js                          4.34 kB │ gzip:   1.86 kB
+storybook-static/assets/open-in-control-center-menu-item.stories-2xxJ51gY.js    4.39 kB │ gzip:   1.44 kB
+storybook-static/assets/dependency-edge.stories-CDLd8GBZ.js                     4.40 kB │ gzip:   1.88 kB
+storybook-static/assets/tool-card-DbbJ6j0J.js                                   4.44 kB │ gzip:   1.74 kB
+storybook-static/assets/time-entry-list-EAcJGXGK.js                             4.50 kB │ gzip:   1.67 kB
+storybook-static/assets/drawer-action-bar.stories-DZfB5Sbx.js                   4.50 kB │ gzip:   1.48 kB
+storybook-static/assets/sonner.stories-yvG6IarA.js                              4.51 kB │ gzip:   1.38 kB
+storybook-static/assets/dashboard-layout.stories-CuOK24Jn.js                    4.52 kB │ gzip:   1.26 kB
+storybook-static/assets/code-review-panel.stories-CDcUz2Ln.js                   4.52 kB │ gzip:   1.64 kB
+storybook-static/assets/useTranslation-C5MQSD_F.js                              4.54 kB │ gzip:   2.25 kB
+storybook-static/assets/skill-detail-drawer.stories-DJGKwKIl.js                 4.55 kB │ gzip:   1.83 kB
+storybook-static/assets/project-members-panel-CO4d0D71.js                       4.57 kB │ gzip:   1.63 kB
+storybook-static/assets/base-drawer-lStAFyiG.js                                 4.64 kB │ gzip:   1.86 kB
+storybook-static/assets/agent-events-provider-CrekEIN9.js                       4.69 kB │ gzip:   1.91 kB
+storybook-static/assets/feature-list-item.stories-Df2sbdSf.js                   4.72 kB │ gzip:   1.49 kB
+storybook-static/assets/work-item-relations-panel-VcAXpe1D.js                   4.75 kB │ gzip:   1.93 kB
+storybook-static/assets/sub-items-section.stories-CiSfeis6.js                   4.77 kB │ gzip:   1.46 kB
+storybook-static/assets/checkbox-CItJjEss.js                                    4.79 kB │ gzip:   2.00 kB
+storybook-static/assets/diff-view.stories-DfBvdx0a.js                           4.82 kB │ gzip:   1.51 kB
+storybook-static/assets/welcome-agent-setup-DU1GdFeF.js                         4.84 kB │ gzip:   1.75 kB
+storybook-static/assets/cloud-provider-icons-DlULxXPR.js                        4.84 kB │ gzip:   2.22 kB
+storybook-static/assets/projects-page-client.stories-Cuf9WakP.js                4.84 kB │ gzip:   1.88 kB
+storybook-static/assets/alert-dialog.stories-BHynYmps.js                        4.84 kB │ gzip:   1.19 kB
+storybook-static/assets/preview-DGZ5Qq08.js                                     4.87 kB │ gzip:   1.79 kB
+storybook-static/assets/repository-drawer.stories-BWwvAIoV.js                   4.97 kB │ gzip:   1.82 kB
+storybook-static/assets/github-repo-browser.stories-DERYBIA2.js                 5.00 kB │ gzip:   1.64 kB
+storybook-static/assets/global-search-dialog.stories-1ubGRTT7.js                5.06 kB │ gzip:   1.91 kB
+storybook-static/assets/application-card.stories-C5FwWeOw.js                    5.07 kB │ gzip:   1.76 kB
+storybook-static/assets/feature-status-badges.stories-DiGDpI41.js               5.07 kB │ gzip:   1.70 kB
+storybook-static/assets/github-repo-browser-Byu-NwbX.js                         5.07 kB │ gzip:   2.08 kB
+storybook-static/assets/dynamic-DP2bY63L.js                                     5.11 kB │ gzip:   2.07 kB
+storybook-static/assets/ChatInput.stories-BYfgi061.js                           5.12 kB │ gzip:   1.98 kB
+storybook-static/assets/select.stories-Csg45iTR.js                              5.15 kB │ gzip:   1.24 kB
+storybook-static/assets/AgentModelPicker.stories-vTiXuFDJ.js                    5.20 kB │ gzip:   1.42 kB
+storybook-static/assets/selectable-work-item-row.stories-hE1C3NMT.js            5.24 kB │ gzip:   1.78 kB
+storybook-static/assets/use-deploy-action-BbnFjWzC.js                           5.24 kB │ gzip:   1.93 kB
+storybook-static/assets/language-settings-section.stories-R-FFqImd.js           5.25 kB │ gzip:   1.98 kB
+storybook-static/assets/index-Cqwytjpk.js                                       5.39 kB │ gzip:   2.05 kB
+storybook-static/assets/jsx-runtime-BgOmbJEW.js                                 5.47 kB │ gzip:   2.31 kB
+storybook-static/assets/action-button.stories-DrTZ3wS3.js                       5.52 kB │ gzip:   1.43 kB
+storybook-static/assets/version-badge-pUidqPax.js                               5.53 kB │ gzip:   2.16 kB
+storybook-static/assets/reject-feedback-dialog.stories-cOb6bEyc.js              5.56 kB │ gzip:   2.02 kB
+storybook-static/assets/popover.stories-CWosiS56.js                             5.66 kB │ gzip:   1.39 kB
+storybook-static/assets/GettingStarted-DXMTyE6s.js                              5.69 kB │ gzip:   1.86 kB
+storybook-static/assets/AgentStatusBadge.stories-D3482g3o.js                    5.70 kB │ gzip:   1.82 kB
+storybook-static/assets/ModelPicker.stories-pK90h2vB.js                         5.74 kB │ gzip:   2.39 kB
+storybook-static/assets/smart-deploy-button.stories-BYa9l0fZ.js                 5.79 kB │ gzip:   1.65 kB
+storybook-static/assets/attachment-chip-BhT3gL0f.js                             5.85 kB │ gzip:   2.04 kB
+storybook-static/assets/task-progress-view.stories-BB8Ti-yR.js                  5.87 kB │ gzip:   1.97 kB
+storybook-static/assets/tech-decisions-review-CtRwct_U.js                       5.90 kB │ gzip:   2.10 kB
+storybook-static/assets/notification-settings-section.stories-Bnk-Yeku.js       5.91 kB │ gzip:   1.86 kB
+storybook-static/assets/prd-questionnaire-Bh0H1sSm.js                           5.91 kB │ gzip:   2.21 kB
+storybook-static/assets/application-page.stories-CivF9B4n.js                    5.92 kB │ gzip:   2.40 kB
+storybook-static/assets/tool-detail-drawer.stories-IVxE-u8o.js                  6.00 kB │ gzip:   1.91 kB
+storybook-static/assets/cycle-panel-cwHKg-MJ.js                                 6.03 kB │ gzip:   2.06 kB
+storybook-static/assets/web-preview-tab-DQx-dYPY.js                             6.16 kB │ gzip:   2.28 kB
+storybook-static/assets/timeline-view-mfwwuNoJ.js                               6.17 kB │ gzip:   2.14 kB
+storybook-static/assets/popover-B9AJCd0N.js                                     6.25 kB │ gzip:   2.15 kB
+storybook-static/assets/tabs.stories-rSooAqn4.js                                6.26 kB │ gzip:   1.45 kB
+storybook-static/assets/task-progress-view-Bbf3C5LJ.js                          6.27 kB │ gzip:   2.10 kB
+storybook-static/assets/dialog.stories-BH8K_Xs1.js                              6.34 kB │ gzip:   1.58 kB
+storybook-static/assets/calendar-view-BvQf7ohl.js                               6.36 kB │ gzip:   2.28 kB
+storybook-static/assets/repository-combobox.stories-B1E53FOx.js                 6.48 kB │ gzip:   2.35 kB
+storybook-static/assets/checkbox-group.stories-CzPEq6Ex.js                      6.48 kB │ gzip:   2.02 kB
+storybook-static/assets/application-node.stories-BzQRfa4R.js                    6.50 kB │ gzip:   2.21 kB
+storybook-static/assets/application-page-CPAaffr6.js                            6.54 kB │ gzip:   2.71 kB
+storybook-static/assets/tech-decisions-review.stories-C5TKFXQl.js               6.63 kB │ gzip:   2.40 kB
+storybook-static/assets/smart-deploy-button-CRz5QbDq.js                         6.71 kB │ gzip:   2.45 kB
+storybook-static/assets/version-badge.stories-BWY0UNkH.js                       6.75 kB │ gzip:   1.84 kB
+storybook-static/assets/react-file-manager-dialog-6NsquvBl.js                   6.81 kB │ gzip:   2.69 kB
+storybook-static/assets/open-action-menu.stories-fSULfpYi.js                    6.92 kB │ gzip:   2.04 kB
+storybook-static/assets/app-top-bar.stories-BDqoFkIi.js                         6.92 kB │ gzip:   2.64 kB
+storybook-static/assets/notification-center.stories-DilcGr02.js                 6.97 kB │ gzip:   2.43 kB
+storybook-static/assets/feature-sessions-dropdown-Be4syP3_.js                   7.14 kB │ gzip:   2.84 kB
+storybook-static/assets/environment-settings-section.stories-BQ21WSAL.js        7.22 kB │ gzip:   2.08 kB
+storybook-static/assets/table-view-DB_WsZwj.js                                  7.43 kB │ gzip:   2.54 kB
+storybook-static/assets/repo-group.stories-DpdZrJxq.js                          7.44 kB │ gzip:   1.77 kB
+storybook-static/assets/tool-detail-drawer-DddG3k90.js                          7.44 kB │ gzip:   2.67 kB
+storybook-static/assets/redux-CD_XgLLb.js                                       7.54 kB │ gzip:   2.88 kB
+storybook-static/assets/operation-logs-icon-button-CyrQXWeC.js                  7.61 kB │ gzip:   2.90 kB
+storybook-static/assets/preview-BWzBA1C2.js                                     7.62 kB │ gzip:   1.56 kB
+storybook-static/assets/publish-to-github-modal-CfeUrnVb.js                     7.65 kB │ gzip:   2.83 kB
+storybook-static/assets/csv-import-export-panel.stories-DohknPhk.js             7.76 kB │ gzip:   2.96 kB
+storybook-static/assets/preview-DJ2VKeJl.js                                     8.13 kB │ gzip:   3.11 kB
+storybook-static/assets/publish-to-github-button.stories-vS18lQPy.js            8.25 kB │ gzip:   3.04 kB
+storybook-static/assets/pages-panel.stories-DMGs326F.js                         8.31 kB │ gzip:   3.14 kB
+storybook-static/assets/index-D_szLCSR.js                                       8.34 kB │ gzip:   2.97 kB
+storybook-static/assets/deploy-panel.stories-8Y64vNu2.js                        8.36 kB │ gzip:   2.23 kB
+storybook-static/assets/plan-tab.stories-C9clP20S.js                            8.40 kB │ gzip:   2.58 kB
+storybook-static/assets/bulk-action-toolbar.stories-BDzAs_ea.js                 8.51 kB │ gzip:   3.04 kB
+storybook-static/assets/deploy-button.stories-iL0PJxsx.js                       8.53 kB │ gzip:   3.14 kB
+storybook-static/assets/agent-settings-section.stories-BENNocx-.js              8.58 kB │ gzip:   2.80 kB
+storybook-static/assets/alert-dialog-HfeH2kmN.js                                8.68 kB │ gzip:   2.39 kB
+storybook-static/assets/branch-sync-status.stories-D01SaZzI.js                  8.72 kB │ gzip:   2.24 kB
+storybook-static/assets/tool-card.stories-Dh13viyA.js                           8.73 kB │ gzip:   2.75 kB
+storybook-static/assets/intake-triage-panel.stories-BZdWFmJD.js                 8.75 kB │ gzip:   2.90 kB
+storybook-static/assets/work-item-detail-client.stories-BwLLA6wb.js             8.83 kB │ gzip:   2.87 kB
+storybook-static/assets/event-log-viewer-PJ0gUDEk.js                            9.23 kB │ gzip:   2.52 kB
+storybook-static/assets/server-log-viewer.stories-Z1P-gvAE.js                   9.28 kB │ gzip:   2.79 kB
+storybook-static/assets/tools-page-client.stories-eLUs1jcJ.js                   9.29 kB │ gzip:   3.20 kB
+storybook-static/assets/slider-D07lDDlu.js                                      9.30 kB │ gzip:   3.67 kB
+storybook-static/assets/index-C2xmdq4z.js                                       9.32 kB │ gzip:   2.93 kB
+storybook-static/assets/value-BGBiTkF3.js                                       9.37 kB │ gzip:   4.00 kB
+storybook-static/assets/feature-row-actions.stories-B-IoOfYB.js                 9.62 kB │ gzip:   2.49 kB
+storybook-static/assets/tooltip-DnVzjFmS.js                                     9.68 kB │ gzip:   3.44 kB
+storybook-static/assets/skills-page-client.stories-Atwq_u3M.js                  9.93 kB │ gzip:   3.36 kB
+storybook-static/assets/index-FWVHTMSL.js                                      10.03 kB │ gzip:   3.48 kB
+storybook-static/assets/drawer-action-bar-BSeBFMzV.js                          10.13 kB │ gzip:   3.96 kB
+storybook-static/assets/event-log-viewer.stories-Dp2zghSG.js                   10.77 kB │ gzip:   2.47 kB
+storybook-static/assets/applications-page-client.stories-C_slsiEh.js           10.81 kB │ gzip:   4.01 kB
+storybook-static/assets/accordion.stories-6FCosROx.js                          10.85 kB │ gzip:   3.08 kB
+storybook-static/assets/application-node-4dPF_HHK.js                           10.86 kB │ gzip:   3.18 kB
+storybook-static/assets/drawer.stories-D8A71N_Z.js                             10.93 kB │ gzip:   1.98 kB
+storybook-static/assets/merge-review-CjjaburH.js                               11.02 kB │ gzip:   3.53 kB
+storybook-static/assets/project-settings-client.stories-GTKJv6Jh.js            11.45 kB │ gzip:   3.38 kB
+storybook-static/assets/ChatMessageBubble.stories-CDIqI3TA.js                  11.63 kB │ gzip:   3.47 kB
+storybook-static/assets/log-tab.stories-BBVpE0es.js                            11.70 kB │ gzip:   3.32 kB
+storybook-static/assets/control-center-empty-state-DL1UEbYq.js                 12.79 kB │ gzip:   5.01 kB
+storybook-static/assets/repository-node-D2Vj8hCt.js                            13.06 kB │ gzip:   3.87 kB
+storybook-static/assets/board-view-D9hWOYxp.js                                 13.08 kB │ gzip:   4.88 kB
+storybook-static/assets/InteractionBubble.stories-DvbGBFdK.js                  13.16 kB │ gzip:   4.04 kB
+storybook-static/assets/scroll-area-Bx8zqRtW.js                                13.25 kB │ gzip:   4.18 kB
+storybook-static/assets/control-center-onboarding-Cc32OuPB.js                  13.28 kB │ gzip:   4.05 kB
+storybook-static/assets/merge-review.stories-nLSEZ5Ln.js                       13.46 kB │ gzip:   3.50 kB
+storybook-static/assets/repository-node.stories-CsLSZuk6.js                    13.54 kB │ gzip:   3.23 kB
+storybook-static/assets/base-drawer.stories-D2oJlSN4.js                        13.95 kB │ gzip:   3.45 kB
+storybook-static/assets/application-card-CS7kzpJn.js                           14.26 kB │ gzip:   4.39 kB
+storybook-static/assets/index-DyccO2nT.js                                      14.63 kB │ gzip:   5.10 kB
+storybook-static/assets/activity-tab-B0Y3Vh0-.js                               15.32 kB │ gzip:   5.00 kB
+storybook-static/assets/deploy-panel-VWqczlN-.js                               15.76 kB │ gzip:   5.15 kB
+storybook-static/assets/workflow-settings-section.stories-DcUkOnKR.js          15.98 kB │ gzip:   3.87 kB
+storybook-static/assets/overview-tab-CV6Q-Vgr.js                               16.09 kB │ gzip:   4.96 kB
+storybook-static/assets/project-detail-client.stories-DVGx4fYB.js              16.33 kB │ gzip:   5.26 kB
+storybook-static/assets/index-CrGXIQRT.js                                      16.70 kB │ gzip:   6.33 kB
+storybook-static/assets/prd-questionnaire.stories-BL7eTdKP.js                  16.77 kB │ gzip:   4.79 kB
+storybook-static/assets/BarChart-BSim32xc.js                                   17.49 kB │ gzip:   6.16 kB
+storybook-static/assets/adopt-branch-drawer.stories-DCyB4Lmu.js                17.53 kB │ gzip:   5.19 kB
+storybook-static/assets/application-page-loader.stories-CBPSp03l.js            18.12 kB │ gzip:   6.48 kB
+storybook-static/assets/app-sidebar.stories-BibyMQCV.js                        18.53 kB │ gzip:   5.47 kB
+storybook-static/assets/sidebar-DggqqWAX.js                                    19.11 kB │ gzip:   4.62 kB
+storybook-static/assets/index-D6gEHKp6.js                                      20.38 kB │ gzip:   7.27 kB
+storybook-static/assets/activity-tab.stories-Dt4pHIjp.js                       20.43 kB │ gzip:   3.45 kB
+storybook-static/assets/overview-tab.stories-C9ilPBfl.js                       20.92 kB │ gzip:   5.45 kB
+storybook-static/assets/feature-node-DWvDAjIw.js                               21.59 kB │ gzip:   5.50 kB
+storybook-static/assets/StepTracker.stories-xD9PzU29.js                        23.08 kB │ gzip:   6.93 kB
+storybook-static/assets/select-DWbnzX0g.js                                     23.55 kB │ gzip:   7.68 kB
+storybook-static/assets/useQuery-Da965fZo.js                                   23.93 kB │ gzip:   8.11 kB
+storybook-static/assets/dropdown-menu-BjN5uxZw.js                              24.91 kB │ gzip:   6.66 kB
+storybook-static/assets/utils-BykweIWy.js                                      25.18 kB │ gzip:   8.06 kB
+storybook-static/assets/app-top-bar-CoCpbBnP.js                                25.55 kB │ gzip:   8.67 kB
+storybook-static/assets/index-jlApODKl.js                                      27.17 kB │ gzip:  10.48 kB
+storybook-static/assets/features-canvas.stories-vbb4gRWL.js                    28.68 kB │ gzip:   6.43 kB
+storybook-static/assets/Color-YHDXOIA2-Dah6i_Tb.js                             29.24 kB │ gzip:  11.03 kB
+storybook-static/assets/matchers-7Z3WT2CE-Dw4MQV_s.js                          29.66 kB │ gzip:  10.28 kB
+storybook-static/assets/entry-preview-B2RB7kE3.js                              30.03 kB │ gzip:   9.62 kB
+storybook-static/assets/burndown-chart-C2OVCc3a.js                             30.68 kB │ gzip:   8.66 kB
+storybook-static/assets/feature-create-drawer-CQcL0LPt.js                      31.43 kB │ gzip:   8.54 kB
+storybook-static/assets/index-BRUWaefh.js                                      33.45 kB │ gzip:   9.56 kB
+storybook-static/assets/feature-node.stories-s1JX6Kkb.js                       33.46 kB │ gzip:   7.22 kB
+storybook-static/assets/feature-drawer-tabs.stories-BTbvhkHT.js                34.70 kB │ gzip:  10.52 kB
+storybook-static/assets/drawer-CTDMDYFU.js                                     38.03 kB │ gzip:  11.09 kB
+storybook-static/assets/core.esm-DEm_Fm05.js                                   39.03 kB │ gzip:  13.10 kB
+storybook-static/assets/index-BUFs46LR.js                                      39.48 kB │ gzip:  11.98 kB
+storybook-static/assets/feature-create-drawer.stories-BeNg9sPp.js              40.56 kB │ gzip:   8.72 kB
+storybook-static/assets/settings-page-client.stories-DCzTEczM.js               46.07 kB │ gzip:  11.36 kB
+storybook-static/assets/layout-with-dagre-BjSJiE3g.js                          51.39 kB │ gzip:  18.50 kB
+storybook-static/assets/Trans-CdW1NE4L.js                                      51.78 kB │ gzip:  17.26 kB
+storybook-static/assets/index-CcR1FEzS.js                                      56.79 kB │ gzip:  16.19 kB
+storybook-static/assets/control-center.stories-DZqW0UXw.js                     63.23 kB │ gzip:  19.38 kB
+storybook-static/assets/index-BOrkKg2r.js                                     117.84 kB │ gzip:  36.31 kB
+storybook-static/assets/ChatTab.stories-BFmvHsJs.js                           152.94 kB │ gzip:  42.24 kB
+storybook-static/assets/index-Df2agM5_.js                                     165.39 kB │ gzip:  53.24 kB
+storybook-static/assets/ide-tab-Q72LUrQD.js                                   184.21 kB │ gzip:  51.02 kB
+storybook-static/assets/entry-preview-docs-BE740tdI.js                        258.83 kB │ gzip:  77.30 kB
+storybook-static/assets/iframe-_jTau90k.js                                    278.73 kB │ gzip:  87.18 kB
+storybook-static/assets/CartesianChart-B4gWCbkO.js                            335.23 kB │ gzip: 101.09 kB
+storybook-static/assets/terminal-tab-inner-bBEC2U5M.js                        336.55 kB │ gzip:  85.96 kB
+storybook-static/assets/react-18-ChdFx4W1.js                                  354.48 kB │ gzip: 106.72 kB
+storybook-static/assets/feature-tree-table.stories-D8oQlHX7.js                460.60 kB │ gzip: 107.95 kB
+storybook-static/assets/axe-d9UbSZVA.js                                       579.71 kB │ gzip: 159.60 kB
+storybook-static/assets/page-editor-Ce8VPbFE.js                               606.60 kB │ gzip: 190.71 kB
+storybook-static/assets/index-Dyl-PM_s.js                                     660.99 kB │ gzip: 156.90 kB
+storybook-static/assets/index-IegLx1eI.js                                     897.62 kB │ gzip: 276.83 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 11.29s
+info => Preview built ([38;2;181;126;229m14 s[39m)
+info => Output directory: /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-control-center-sdd-mode/storybook-static
+
+Exit status: 0 (success)
