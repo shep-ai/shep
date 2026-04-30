@@ -40,6 +40,7 @@ import type { IInteractiveMessageRepository } from '@shepai/core/application/por
 import type { IWorkflowStepRepository } from '@shepai/core/application/ports/output/repositories/workflow-step-repository.interface';
 import type { IOperationLogRepository } from '@shepai/core/application/ports/output/repositories/operation-log.repository.interface';
 import { OperationLogKind } from '@shepai/core/domain/generated/output';
+import type { InteractiveSessionFull } from '@shepai/core/infrastructure/persistence/sqlite/mappers/interactive-session.mapper';
 import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 
 export const dynamic = 'force-dynamic';
@@ -63,29 +64,29 @@ export async function GET(_request: NextRequest, { params }: RouteParams): Promi
     const stepRepo = resolve<IWorkflowStepRepository>('IWorkflowStepRepository');
     const operationLogRepo = resolve<IOperationLogRepository>('IOperationLogRepository');
 
-    const [application, session, steps, allMessages, scaffoldLogs] = await Promise.all([
+    const [application, sessionRaw, steps, allMessages, scaffoldLogs] = await Promise.all([
       appRepo.findById(id),
       sessionRepo.findByFeatureId(featureId),
       stepRepo.listByFeature(featureId),
       messageRepo.findByFeatureId(featureId, 500),
       operationLogRepo.listByScope(OperationLogKind.ApplicationSetup, id),
     ]);
+    // The mapper returns InteractiveSessionFull (with turnStatus, agentSessionId, totals)
+    // even though the TypeSpec type doesn't yet include those fields.
+    const session = sessionRaw as InteractiveSessionFull | null;
 
     if (!application) {
       return NextResponse.json({ error: 'Application not found' }, { status: 404 });
     }
 
     const lastMessage = allMessages.at(-1) ?? null;
-    const lastAssistantMessage =
-      [...allMessages].reverse().find((m) => m.role !== 'user') ?? null;
+    const lastAssistantMessage = [...allMessages].reverse().find((m) => m.role !== 'user') ?? null;
 
-    const indicators: Array<{ kind: 'info' | 'warn' | 'error'; message: string }> = [];
+    const indicators: { kind: 'info' | 'warn' | 'error'; message: string }[] = [];
 
     const runningStep = steps.find((s) => s.status === 'running') ?? null;
     if (runningStep) {
-      const startedAt = runningStep.startedAt
-        ? new Date(runningStep.startedAt).getTime()
-        : null;
+      const startedAt = runningStep.startedAt ? new Date(runningStep.startedAt).getTime() : null;
       const stepRunningMs = startedAt !== null ? now - startedAt : null;
       if (stepRunningMs !== null && stepRunningMs > STUCK_STEP_THRESHOLD_MS) {
         indicators.push({
@@ -96,8 +97,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams): Promi
     }
 
     if (lastAssistantMessage) {
-      const sinceLastAgentMs =
-        now - new Date(lastAssistantMessage.createdAt).getTime();
+      const sinceLastAgentMs = now - new Date(lastAssistantMessage.createdAt).getTime();
       if (
         runningStep &&
         sinceLastAgentMs > STALE_AGENT_THRESHOLD_MS &&
@@ -113,8 +113,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams): Promi
     if (steps.length === 0 && lastMessage !== null) {
       indicators.push({
         kind: 'warn',
-        message:
-          'Messages exist but no workflow_steps rows — workflow ensureSteps never ran.',
+        message: 'Messages exist but no workflow_steps rows — workflow ensureSteps never ran.',
       });
     }
 
@@ -128,7 +127,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams): Promi
 
     const messagesByStep = new Map<string | null, number>();
     for (const m of allMessages) {
-      const key = m.workflowStepId ?? null;
+      const key = m.stepId ?? null;
       messagesByStep.set(key, (messagesByStep.get(key) ?? 0) + 1);
     }
 
@@ -192,16 +191,14 @@ export async function GET(_request: NextRequest, { params }: RouteParams): Promi
         firstAt: allMessages[0] ? toIso(allMessages[0].createdAt) : null,
         lastAt: lastMessage ? toIso(lastMessage.createdAt) : null,
         lastAgentAt: lastAssistantMessage ? toIso(lastAssistantMessage.createdAt) : null,
-        sinceLastMs: lastMessage
-          ? now - new Date(lastMessage.createdAt).getTime()
-          : null,
+        sinceLastMs: lastMessage ? now - new Date(lastMessage.createdAt).getTime() : null,
         sinceLastAgentMs: lastAssistantMessage
           ? now - new Date(lastAssistantMessage.createdAt).getTime()
           : null,
         recentTail: allMessages.slice(-5).map((m) => ({
           id: m.id,
           role: m.role,
-          stepId: m.workflowStepId ?? null,
+          stepId: m.stepId ?? null,
           createdAt: toIso(m.createdAt),
           preview: (m.content ?? '').slice(0, 160),
         })),

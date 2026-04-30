@@ -1,3 +1,5 @@
+import { CLAUDE_CODE_MODELS } from '@shepai/core/infrastructure/services/agents/common/agent-model-catalog';
+
 export async function getSupportedModels(): Promise<string[]> {
-  return ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
+  return CLAUDE_CODE_MODELS;
 }
