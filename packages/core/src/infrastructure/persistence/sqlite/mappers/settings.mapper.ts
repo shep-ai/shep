@@ -23,6 +23,7 @@ import {
   type EditorType,
   type Language,
   type TerminalType,
+  type DefaultHomePage,
 } from '../../../../domain/generated/output.js';
 
 /**
@@ -135,6 +136,9 @@ export interface SettingsRow {
   // Skill injection config (added in migration 051)
   skill_injection_enabled: number;
   skill_injection_skills: string | null;
+
+  // Default home page (added in migration 095)
+  default_home_page: string;
 }
 
 /**
@@ -259,6 +263,9 @@ export function toDatabase(settings: Settings): SettingsRow {
     skill_injection_skills: settings.workflow.skillInjection?.skills?.length
       ? JSON.stringify(settings.workflow.skillInjection.skills)
       : null,
+
+    // Default home page (default: control-center)
+    default_home_page: settings.defaultHomePage ?? 'control-center',
   };
 }
 
@@ -435,6 +442,9 @@ export function fromDatabase(row: SettingsRow): Settings {
     fabLayout: {
       swapPosition: (row.fab_position_swapped ?? 0) !== 0,
     },
+
+    // Default home page
+    defaultHomePage: (row.default_home_page ?? 'control-center') as DefaultHomePage,
 
     // Onboarding (INTEGER → boolean)
     onboardingComplete: row.onboarding_complete === 1,

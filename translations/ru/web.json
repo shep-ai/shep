@@ -14,6 +14,7 @@
       "notifications": "Уведомления",
       "flags": "Флаги",
       "chat": "Чат",
+      "homePage": "Home page",
       "layout": "Расположение",
       "database": "База данных"
     },
@@ -210,6 +211,18 @@
       "maxConcurrentSessions": "Максимум параллельных сессий",
       "maxConcurrentSessionsDescription": "Максимальное количество активных интерактивных сессий агента одновременно (1-10)",
       "hint": "Вкладка чата запускает постоянный процесс агента для каждой функции. Автоматический таймаут останавливает неактивные сессии для экономии ресурсов. Ограничение параллельных сессий предотвращает чрезмерное использование ресурсов на машинах разработчиков."
+    },
+    "homePage": {
+      "title": "Home page",
+      "description": "Choose which page opens when you navigate to the root URL",
+      "label": "Default page",
+      "labelDescription": "The page you land on when opening the web UI",
+      "options": {
+        "control-center": "Control Center",
+        "applications": "Applications",
+        "features": "Features"
+      },
+      "hint": "This controls where you land when you open the web UI. You can change it at any time."
     },
     "fabLayout": {
       "title": "Расположение",

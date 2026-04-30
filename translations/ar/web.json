@@ -14,6 +14,7 @@
       "notifications": "الإشعارات",
       "flags": "العلامات",
       "chat": "المحادثة",
+      "homePage": "Home page",
       "layout": "التخطيط",
       "database": "قاعدة البيانات"
     },
@@ -210,6 +211,18 @@
       "maxConcurrentSessions": "الحد الأقصى للجلسات المتزامنة",
       "maxConcurrentSessionsDescription": "الحد الأقصى لعدد جلسات الوكيل التفاعلية النشطة في وقت واحد (1–10)",
       "hint": "علامة المحادثة تُنشئ عملية وكيل مستمرة لكل ميزة. المهلة التلقائية تُوقف الجلسات الخاملة تلقائيًا لتوفير الموارد. حد الجلسات المتزامنة يمنع الاستخدام المفرط للموارد على أجهزة المطورين."
+    },
+    "homePage": {
+      "title": "Home page",
+      "description": "Choose which page opens when you navigate to the root URL",
+      "label": "Default page",
+      "labelDescription": "The page you land on when opening the web UI",
+      "options": {
+        "control-center": "Control Center",
+        "applications": "Applications",
+        "features": "Features"
+      },
+      "hint": "This controls where you land when you open the web UI. You can change it at any time."
     },
     "fabLayout": {
       "title": "التخطيط",

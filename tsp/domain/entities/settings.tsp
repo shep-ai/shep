@@ -658,6 +658,20 @@ model InteractiveAgentConfig {
  * the positions are mirrored so that the Chat FAB moves to the start side
  * and the Create FAB moves to the end side.
  */
+/**
+ * Pages that can be set as the default home (landing) page in the web UI.
+ */
+enum DefaultHomePage {
+  @doc("Control Center canvas view")
+  ControlCenter: "control-center",
+
+  @doc("Applications list")
+  Applications: "applications",
+
+  @doc("Feature inventory table")
+  Features: "features",
+}
+
 @doc("FAB (floating action button) layout configuration")
 model FabLayoutConfig {
   /**
@@ -817,4 +831,11 @@ model Settings extends BaseEntity {
    */
   @doc("FAB layout configuration (optional, defaults applied at runtime)")
   fabLayout?: FabLayoutConfig;
+
+  /**
+   * The page shown when the user navigates to the root URL.
+   * Optional for backward compatibility — defaults to control-center at runtime.
+   */
+  @doc("Default landing page when opening the web UI (default: control-center)")
+  defaultHomePage?: DefaultHomePage;
 }

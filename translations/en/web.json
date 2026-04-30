@@ -14,6 +14,7 @@
       "notifications": "Notifications",
       "flags": "Flags",
       "chat": "Chat",
+      "homePage": "Home page",
       "layout": "Layout",
       "database": "Database"
     },
@@ -210,6 +211,18 @@
       "maxConcurrentSessions": "Max concurrent sessions",
       "maxConcurrentSessionsDescription": "Maximum number of active interactive agent sessions at once (1–10)",
       "hint": "The Chat tab spawns a persistent agent process per feature. Auto-timeout stops idle sessions automatically to conserve resources. The concurrent session cap prevents runaway resource usage on developer machines."
+    },
+    "homePage": {
+      "title": "Home page",
+      "description": "Choose which page opens when you navigate to the root URL",
+      "label": "Default page",
+      "labelDescription": "The page you land on when opening the web UI",
+      "options": {
+        "control-center": "Control Center",
+        "applications": "Applications",
+        "features": "Features"
+      },
+      "hint": "This controls where you land when you open the web UI. You can change it at any time."
     },
     "fabLayout": {
       "title": "Layout",

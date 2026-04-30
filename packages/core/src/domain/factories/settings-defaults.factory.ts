@@ -28,6 +28,7 @@ import type {
 import {
   AgentType,
   AgentAuthMethod,
+  DefaultHomePage,
   EditorType,
   SkillSourceType,
   TerminalType,
@@ -231,6 +232,7 @@ export function createDefaultSettings(): Settings {
     notifications,
     workflow,
     featureFlags,
+    defaultHomePage: DefaultHomePage.ControlCenter,
     onboardingComplete: false,
     createdAt: now,
     updatedAt: now,

@@ -14,6 +14,7 @@
       "notifications": "Notifications",
       "flags": "Drapeaux",
       "chat": "Chat",
+      "homePage": "Home page",
       "layout": "Disposition",
       "database": "Base de données"
     },
@@ -210,6 +211,18 @@
       "maxConcurrentSessions": "Sessions simultanées max",
       "maxConcurrentSessionsDescription": "Nombre maximum de sessions d'agent interactif actives simultanément (1-10)",
       "hint": "L'onglet Chat lance un processus d'agent persistant par fonctionnalité. Le délai d'inactivité automatique arrête les sessions inactives pour économiser les ressources. Le plafond de sessions simultanées empêche l'utilisation incontrôlée des ressources sur les machines de développement."
+    },
+    "homePage": {
+      "title": "Home page",
+      "description": "Choose which page opens when you navigate to the root URL",
+      "label": "Default page",
+      "labelDescription": "The page you land on when opening the web UI",
+      "options": {
+        "control-center": "Control Center",
+        "applications": "Applications",
+        "features": "Features"
+      },
+      "hint": "This controls where you land when you open the web UI. You can change it at any time."
     },
     "fabLayout": {
       "title": "Disposition",

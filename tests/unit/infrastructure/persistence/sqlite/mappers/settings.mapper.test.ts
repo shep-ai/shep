@@ -165,6 +165,7 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     fab_position_swapped: 0,
     skill_injection_enabled: 0,
     skill_injection_skills: null,
+    default_home_page: 'control-center',
     ...overrides,
   };
 }

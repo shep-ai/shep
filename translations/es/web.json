@@ -14,6 +14,7 @@
       "notifications": "Notificaciones",
       "flags": "Opciones",
       "chat": "Chat",
+      "homePage": "Home page",
       "layout": "Diseño",
       "database": "Base de datos"
     },
@@ -210,6 +211,18 @@
       "maxConcurrentSessions": "Máximo de sesiones concurrentes",
       "maxConcurrentSessionsDescription": "Número máximo de sesiones de agente interactivo activas a la vez (1-10)",
       "hint": "La pestaña de chat genera un proceso de agente persistente por funcionalidad. El tiempo de espera automático detiene las sesiones inactivas automáticamente para conservar recursos. El límite de sesiones concurrentes previene el uso excesivo de recursos en las máquinas de los desarrolladores."
+    },
+    "homePage": {
+      "title": "Home page",
+      "description": "Choose which page opens when you navigate to the root URL",
+      "label": "Default page",
+      "labelDescription": "The page you land on when opening the web UI",
+      "options": {
+        "control-center": "Control Center",
+        "applications": "Applications",
+        "features": "Features"
+      },
+      "hint": "This controls where you land when you open the web UI. You can change it at any time."
     },
     "fabLayout": {
       "title": "Diseño",

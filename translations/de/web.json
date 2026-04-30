@@ -14,6 +14,7 @@
       "notifications": "Benachrichtigungen",
       "flags": "Flags",
       "chat": "Chat",
+      "homePage": "Home page",
       "layout": "Layout",
       "database": "Datenbank"
     },
@@ -210,6 +211,18 @@
       "maxConcurrentSessions": "Maximale gleichzeitige Sitzungen",
       "maxConcurrentSessionsDescription": "Maximale Anzahl aktiver interaktiver Agenten-Sitzungen gleichzeitig (1–10)",
       "hint": "Der Chat-Tab startet einen persistenten Agentenprozess pro Feature. Das Auto-Zeitlimit stoppt inaktive Sitzungen automatisch, um Ressourcen zu sparen. Das Limit für gleichzeitige Sitzungen verhindert unkontrollierten Ressourcenverbrauch auf Entwicklermaschinen."
+    },
+    "homePage": {
+      "title": "Home page",
+      "description": "Choose which page opens when you navigate to the root URL",
+      "label": "Default page",
+      "labelDescription": "The page you land on when opening the web UI",
+      "options": {
+        "control-center": "Control Center",
+        "applications": "Applications",
+        "features": "Features"
+      },
+      "hint": "This controls where you land when you open the web UI. You can change it at any time."
     },
     "fabLayout": {
       "title": "Layout",

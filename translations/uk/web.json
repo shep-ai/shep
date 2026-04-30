@@ -14,6 +14,7 @@
       "notifications": "Сповіщення",
       "flags": "Прапорці",
       "chat": "Чат",
+      "homePage": "Home page",
       "layout": "Розташування",
       "database": "База даних"
     },
@@ -210,6 +211,18 @@
       "maxConcurrentSessions": "Максимум паралельних сесій",
       "maxConcurrentSessionsDescription": "Максимальна кількість активних інтерактивних сесій агента одночасно (1-10)",
       "hint": "Вкладка чату запускає постійний процес агента для кожної функції. Автоматичний тайм-аут зупиняє неактивні сесії для економії ресурсів. Обмеження паралельних сесій запобігає надмірному використанню ресурсів на машинах розробників."
+    },
+    "homePage": {
+      "title": "Home page",
+      "description": "Choose which page opens when you navigate to the root URL",
+      "label": "Default page",
+      "labelDescription": "The page you land on when opening the web UI",
+      "options": {
+        "control-center": "Control Center",
+        "applications": "Applications",
+        "features": "Features"
+      },
+      "hint": "This controls where you land when you open the web UI. You can change it at any time."
     },
     "fabLayout": {
       "title": "Розташування",
