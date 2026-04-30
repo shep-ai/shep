@@ -15,10 +15,14 @@ const MODEL_METADATA: Record<string, ModelMeta> = {
   'claude-haiku-4-5': { displayName: 'Haiku 4.5', description: 'Lightweight & quick' },
 
   // Gemini models
-  'gemini-3.1-pro': { displayName: 'Gemini 3.1 Pro', description: 'Advanced reasoning' },
-  'gemini-3-flash': { displayName: 'Gemini 3 Flash', description: 'Ultra-fast responses' },
+  'gemini-3.1-pro-preview': { displayName: 'Gemini 3.1 Pro', description: 'Advanced reasoning' },
+  'gemini-3-flash-preview': { displayName: 'Gemini 3 Flash', description: 'Ultra-fast responses' },
   'gemini-2.5-pro': { displayName: 'Gemini 2.5 Pro', description: 'Reliable workhorse' },
   'gemini-2.5-flash': { displayName: 'Gemini 2.5 Flash', description: 'Speed-optimized' },
+  'gemini-2.5-flash-lite': {
+    displayName: 'Gemini 2.5 Flash Lite',
+    description: 'Fastest & lightest',
+  },
 
   // OpenAI models
   'gpt-5.4-high': { displayName: 'GPT-5.4', description: 'Latest reasoning model' },

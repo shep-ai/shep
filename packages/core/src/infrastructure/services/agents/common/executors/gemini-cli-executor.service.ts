@@ -368,7 +368,9 @@ export class GeminiCliExecutorService implements IAgentExecutor {
   ): string[] {
     // Prompt is piped via stdin — not passed as a CLI argument — to avoid
     // ENAMETOOLONG on Windows when prompts exceed the ~32 KB arg-length limit.
-    const args = ['-p', '--output-format', outputFormat, '-y'];
+    // -p requires a value (yargs won't accept it as a bare flag), so pass an
+    // empty string; the actual prompt arrives via stdin and is used as-is.
+    const args = ['-p', '', '--output-format', outputFormat, '-y'];
 
     if (options?.resumeSession) args.push('--resume', options.resumeSession);
     if (options?.model) args.push('-m', options.model);

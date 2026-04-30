@@ -36,6 +36,9 @@ properties:
   fabLayout:
     $ref: FabLayoutConfig.yaml
     description: FAB layout configuration (optional, defaults applied at runtime)
+  defaultHomePage:
+    $ref: DefaultHomePage.yaml
+    description: "Default landing page when opening the web UI (default: control-center)"
 required:
   - models
   - user

@@ -1,0 +1,19 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DefaultHomePage.yaml
+type: string
+enum:
+  - control-center
+  - applications
+  - features
+description: |-
+  FAB Layout Configuration
+
+  Controls the horizontal placement of the two floating action buttons (FABs)
+  in the web UI control center:
+  - Create FAB (+): opens the new-feature/add-repo speed-dial
+  - Chat FAB: opens the global Shep Chat popup
+
+  By default the Create FAB sits on the start side (left in LTR) and the
+  Chat FAB sits on the end side (right in LTR). When `swapPosition` is true
+  the positions are mirrored so that the Chat FAB moves to the start side
+  and the Create FAB moves to the end side.Pages that can be set as the default home (landing) page in the web UI.

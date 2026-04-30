@@ -692,6 +692,11 @@ export type FabLayoutConfig = {
    */
   swapPosition: boolean;
 };
+export enum DefaultHomePage {
+  ControlCenter = 'control-center',
+  Applications = 'applications',
+  Features = 'features',
+}
 
 /**
  * Global Shep platform settings (singleton)
@@ -741,6 +746,10 @@ export type Settings = BaseEntity & {
    * FAB layout configuration (optional, defaults applied at runtime)
    */
   fabLayout?: FabLayoutConfig;
+  /**
+   * Default landing page when opening the web UI (default: control-center)
+   */
+  defaultHomePage?: DefaultHomePage;
 };
 export enum TaskState {
   Todo = 'Todo',
