@@ -200,10 +200,10 @@ export class CreateApplicationUseCase {
    * to surface the demo `dev` agent in interactive boots and crash
    * the session.
    */
-  private resolveAgentAndModel(input: {
-    agentType?: string;
-    modelOverride?: string;
-  }): { agentType: string | undefined; modelOverride: string | undefined } {
+  private resolveAgentAndModel(input: { agentType?: string; modelOverride?: string }): {
+    agentType: string | undefined;
+    modelOverride: string | undefined;
+  } {
     if (input.agentType && input.modelOverride) {
       return { agentType: input.agentType, modelOverride: input.modelOverride };
     }
