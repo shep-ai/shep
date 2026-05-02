@@ -53,6 +53,7 @@ extraResources:
     filter:
       - '**/*'
       - '!**/*.map'
+      - '!**/.next/node_modules/**'
 
 # macOS configuration
 mac:

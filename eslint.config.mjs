@@ -276,7 +276,7 @@ export default tseslint.config(
       'react-hooks/exhaustive-deps': 'warn',
 
       // Next.js rules
-      '@next/next/no-html-link-for-pages': 'error',
+      '@next/next/no-html-link-for-pages': ['error', 'src/presentation/web/app'],
       '@next/next/no-img-element': 'warn',
       '@next/next/no-sync-scripts': 'error',
 

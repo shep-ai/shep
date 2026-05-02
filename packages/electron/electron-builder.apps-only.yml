@@ -58,6 +58,7 @@ extraResources:
     filter:
       - '**/*'
       - '!**/*.map'
+      - '!**/.next/node_modules/**'
 
 # Artifact filenames include the variant so the two installers are
 # visually distinct when they land in the same release folder.
