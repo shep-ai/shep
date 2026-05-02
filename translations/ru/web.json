@@ -14,6 +14,7 @@
       "notifications": "Уведомления",
       "flags": "Флаги",
       "chat": "Чат",
+      "homePage": "Home page",
       "layout": "Расположение",
       "database": "База данных"
     },
@@ -188,22 +189,12 @@
       "description": "Включить или отключить экспериментальные и бета-функции",
       "sectionDescription": "Включение или отключение экспериментальных функций",
       "badge": "Экспериментальный",
-      "skills": "Навыки",
-      "skillsDescription": "Включить систему навыков для возможностей агента",
       "deployments": "Развёртывания",
       "deploymentsDescription": "Включить рабочие процессы развёртывания окружений",
       "debug": "Отладка",
       "debugDescription": "Показать панели отладки и подробное логирование",
-      "githubImport": "Импорт из GitHub",
-      "githubImportDescription": "Включить импорт репозиториев GitHub в веб-интерфейсе",
-      "adoptBranch": "Принять ветку",
-      "adoptBranchDescription": "Импортировать существующие ветки как отслеживаемые функции",
-      "gitRebaseSync": "Git Rebase и синхронизация",
-      "gitRebaseSyncDescription": "Включить операции git rebase-on-main и sync-main",
       "reactFileManager": "Файловый менеджер React",
       "reactFileManagerDescription": "Использовать встроенный файловый менеджер React вместо системного выбора папок",
-      "inventory": "Инвентарь",
-      "inventoryDescription": "Включить страницу Инвентаря, отображающую все репозитории и функции в виде дерева",
       "projects": "Проекты",
       "projectsDescription": "Включить навигацию Проектов и страницы управления проектами в веб-интерфейсе",
       "codeReview": "AI Code Review",
@@ -220,6 +211,18 @@
       "maxConcurrentSessions": "Максимум параллельных сессий",
       "maxConcurrentSessionsDescription": "Максимальное количество активных интерактивных сессий агента одновременно (1-10)",
       "hint": "Вкладка чата запускает постоянный процесс агента для каждой функции. Автоматический таймаут останавливает неактивные сессии для экономии ресурсов. Ограничение параллельных сессий предотвращает чрезмерное использование ресурсов на машинах разработчиков."
+    },
+    "homePage": {
+      "title": "Home page",
+      "description": "Choose which page opens when you navigate to the root URL",
+      "label": "Default page",
+      "labelDescription": "The page you land on when opening the web UI",
+      "options": {
+        "control-center": "Control Center",
+        "applications": "Applications",
+        "features": "Features"
+      },
+      "hint": "This controls where you land when you open the web UI. You can change it at any time."
     },
     "fabLayout": {
       "title": "Расположение",

@@ -360,10 +360,11 @@ describe('AgentExecutorFactory', () => {
       const models = factory.getSupportedModels(AgentType.GeminiCli);
 
       expect(models).toEqual([
-        'gemini-3.1-pro',
-        'gemini-3-flash',
+        'gemini-3.1-pro-preview',
+        'gemini-3-flash-preview',
         'gemini-2.5-pro',
         'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
       ]);
     });
 
@@ -377,7 +378,7 @@ describe('AgentExecutorFactory', () => {
         'gpt-5.4-high',
         'gpt-5.2',
         'gpt-5.3-codex',
-        'gemini-3.1-pro',
+        'gemini-3.1-pro-preview',
         'composer-1.5',
         'grok-code',
       ]);
@@ -436,8 +437,8 @@ describe('AgentExecutorFactory', () => {
         'openai/gpt-5.2',
         'meta-llama/llama-4-maverick',
         'meta-llama/llama-4-scout',
-        'google/gemini-3-flash',
-        'google/gemini-3-pro',
+        'google/gemini-3-flash-preview',
+        'google/gemini-3.1-pro-preview',
         'deepseek/deepseek-chat-v3-0324',
         'mistralai/mistral-large-latest',
       ]);

@@ -14,6 +14,7 @@
       "notifications": "Benachrichtigungen",
       "flags": "Flags",
       "chat": "Chat",
+      "homePage": "Home page",
       "layout": "Layout",
       "database": "Datenbank"
     },
@@ -188,22 +189,12 @@
       "description": "Experimentelle und Beta-Features umschalten",
       "sectionDescription": "Experimentelle Features aktivieren oder deaktivieren",
       "badge": "Experimentell",
-      "skills": "Skills",
-      "skillsDescription": "Skills-System für Agentenfähigkeiten aktivieren",
       "deployments": "Deployments",
       "deploymentsDescription": "Umgebungs-Deployment-Workflows aktivieren",
       "debug": "Debug",
       "debugDescription": "Debug-Panels und ausführliche Protokollierung anzeigen",
-      "githubImport": "GitHub-Import",
-      "githubImportDescription": "GitHub-Repository-Import in der Web-UI aktivieren",
-      "adoptBranch": "Branch übernehmen",
-      "adoptBranchDescription": "Bestehende Branches als verfolgte Features importieren",
-      "gitRebaseSync": "Git Rebase & Sync",
-      "gitRebaseSyncDescription": "Git Rebase-on-Main- und Sync-Main-Operationen aktivieren",
       "reactFileManager": "React-Dateimanager",
       "reactFileManagerDescription": "Den integrierten React-Dateimanager anstelle der nativen Betriebssystem-Ordnerauswahl verwenden",
-      "inventory": "Inventar",
-      "inventoryDescription": "Inventarseite mit allen Repositories und Features in einer Baumansicht aktivieren",
       "projects": "Projekte",
       "projectsDescription": "Projekte-Navigation und Projektmanagement-Seiten in der Web-UI aktivieren",
       "codeReview": "AI Code Review",
@@ -220,6 +211,18 @@
       "maxConcurrentSessions": "Maximale gleichzeitige Sitzungen",
       "maxConcurrentSessionsDescription": "Maximale Anzahl aktiver interaktiver Agenten-Sitzungen gleichzeitig (1–10)",
       "hint": "Der Chat-Tab startet einen persistenten Agentenprozess pro Feature. Das Auto-Zeitlimit stoppt inaktive Sitzungen automatisch, um Ressourcen zu sparen. Das Limit für gleichzeitige Sitzungen verhindert unkontrollierten Ressourcenverbrauch auf Entwicklermaschinen."
+    },
+    "homePage": {
+      "title": "Home page",
+      "description": "Choose which page opens when you navigate to the root URL",
+      "label": "Default page",
+      "labelDescription": "The page you land on when opening the web UI",
+      "options": {
+        "control-center": "Control Center",
+        "applications": "Applications",
+        "features": "Features"
+      },
+      "hint": "This controls where you land when you open the web UI. You can change it at any time."
     },
     "fabLayout": {
       "title": "Layout",

@@ -14,17 +14,53 @@
       "import": "./src/domain/index.ts",
       "types": "./src/domain/index.ts"
     },
-    "./domain/*": {
-      "import": "./src/domain/*.ts",
-      "types": "./src/domain/*.ts"
-    },
     "./domain/generated": {
       "import": "./src/domain/generated/output.ts",
       "types": "./src/domain/generated/output.ts"
     },
+    "./domain/generated/output": {
+      "import": "./src/domain/generated/output.ts",
+      "types": "./src/domain/generated/output.ts"
+    },
+    "./domain/errors/*": {
+      "import": "./src/domain/errors/*.ts",
+      "types": "./src/domain/errors/*.ts"
+    },
+    "./domain/factories/*": {
+      "import": "./src/domain/factories/*.ts",
+      "types": "./src/domain/factories/*.ts"
+    },
+    "./domain/shared/*": {
+      "import": "./src/domain/shared/*.ts",
+      "types": "./src/domain/shared/*.ts"
+    },
+    "./domain/value-objects/*": {
+      "import": "./src/domain/value-objects/*.ts",
+      "types": "./src/domain/value-objects/*.ts"
+    },
+    "./domain/*": {
+      "import": "./src/domain/*.ts",
+      "types": "./src/domain/*.ts"
+    },
     "./application": {
       "import": "./src/application/index.ts",
       "types": "./src/application/index.ts"
+    },
+    "./application/ports/output/services/*": {
+      "import": "./src/application/ports/output/services/*.ts",
+      "types": "./src/application/ports/output/services/*.ts"
+    },
+    "./application/ports/output/repositories/*": {
+      "import": "./src/application/ports/output/repositories/*.ts",
+      "types": "./src/application/ports/output/repositories/*.ts"
+    },
+    "./application/ports/output/agents/*": {
+      "import": "./src/application/ports/output/agents/*.ts",
+      "types": "./src/application/ports/output/agents/*.ts"
+    },
+    "./application/use-cases/*": {
+      "import": "./src/application/use-cases/*.ts",
+      "types": "./src/application/use-cases/*.ts"
     },
     "./application/*": {
       "import": "./src/application/*.ts",
@@ -33,6 +69,26 @@
     "./infrastructure": {
       "import": "./src/infrastructure/index.ts",
       "types": "./src/infrastructure/index.ts"
+    },
+    "./infrastructure/services/deployment/*": {
+      "import": "./src/infrastructure/services/deployment/*.ts",
+      "types": "./src/infrastructure/services/deployment/*.ts"
+    },
+    "./infrastructure/services/filesystem/*": {
+      "import": "./src/infrastructure/services/filesystem/*.ts",
+      "types": "./src/infrastructure/services/filesystem/*.ts"
+    },
+    "./infrastructure/services/ide-launchers/*": {
+      "import": "./src/infrastructure/services/ide-launchers/*.ts",
+      "types": "./src/infrastructure/services/ide-launchers/*.ts"
+    },
+    "./infrastructure/services/process/*": {
+      "import": "./src/infrastructure/services/process/*.ts",
+      "types": "./src/infrastructure/services/process/*.ts"
+    },
+    "./infrastructure/services/*": {
+      "import": "./src/infrastructure/services/*.ts",
+      "types": "./src/infrastructure/services/*.ts"
     },
     "./infrastructure/*": {
       "import": "./src/infrastructure/*.ts",

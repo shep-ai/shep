@@ -20,14 +20,9 @@ import { FeatureFlagsProvider } from '@/hooks/feature-flags-context';
 import { useOptionalAgentEventsContext } from '@/hooks/agent-events-provider';
 
 const defaultFlags = {
-  skills: false,
   envDeploy: false,
   debug: false,
-  githubImport: false,
-  adoptBranch: false,
-  gitRebaseSync: false,
   reactFileManager: false,
-  inventory: false,
   projects: false,
   codeReview: false,
 };

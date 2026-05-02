@@ -19,10 +19,7 @@ import { useTranslation } from 'react-i18next';
 
 import { BuildMode } from '@shepai/core/domain/generated/output';
 import type { FloatingActionButtonAction } from '@/components/common/floating-action-button';
-import type { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { buildCreateUrl } from '@/lib/url-params';
-
-type RouterPushParam = Parameters<ReturnType<typeof useRouter>['push']>[0];
 
 interface UseFabActionsParams {
   router: ReturnType<typeof useRouter>;
@@ -31,7 +28,6 @@ interface UseFabActionsParams {
   handlePickFolder: () => void;
   onNewProject: () => void;
   onNewApplication: () => void;
-  featureFlags: ReturnType<typeof useFeatureFlags>;
   /** Domain UUID of the application currently scoped on the canvas — when
    *  exactly one ApplicationNode is selected/visible, the FAB exposes an
    *  extra "New SDD feature for <app>" item that opens the create drawer
@@ -50,7 +46,6 @@ export function useFabActions({
   handlePickFolder,
   onNewProject,
   onNewApplication,
-  featureFlags,
   selectedApplicationId,
   selectedApplicationName,
 }: UseFabActionsParams): FloatingActionButtonAction[] {
@@ -98,32 +93,31 @@ export function useFabActions({
           clickSound.play();
           guardedNavigate(() =>
             router.push(
-              buildCreateUrl({ applicationId: selectedApplicationId, mode: BuildMode.Spec })
+              buildCreateUrl({
+                applicationId: selectedApplicationId,
+                mode: BuildMode.Spec,
+              })
             )
           );
         },
       });
     }
-    if (featureFlags.adoptBranch) {
-      actions.push({
-        id: 'adopt-branch',
-        label: t('fab.adoptBranch'),
-        icon: <GitBranch className="h-4 w-4" />,
-        onClick: () => {
-          guardedNavigate(() => router.push('/adopt' as RouterPushParam));
-        },
-      });
-    }
-    if (featureFlags.githubImport) {
-      actions.push({
-        id: 'add-github-repo',
-        label: t('fab.fromGithub'),
-        icon: <Github className="h-4 w-4" />,
-        onClick: () => {
-          window.dispatchEvent(new CustomEvent('shep:open-github-import'));
-        },
-      });
-    }
+    actions.push({
+      id: 'adopt-branch',
+      label: t('fab.adoptBranch'),
+      icon: <GitBranch className="h-4 w-4" />,
+      onClick: () => {
+        guardedNavigate(() => router.push('/adopt'));
+      },
+    });
+    actions.push({
+      id: 'add-github-repo',
+      label: t('fab.fromGithub'),
+      icon: <Github className="h-4 w-4" />,
+      onClick: () => {
+        window.dispatchEvent(new CustomEvent('shep:open-github-import'));
+      },
+    });
     return actions;
   }, [
     t,
@@ -133,8 +127,6 @@ export function useFabActions({
     handlePickFolder,
     onNewProject,
     onNewApplication,
-    featureFlags.adoptBranch,
-    featureFlags.githubImport,
     selectedApplicationId,
     selectedApplicationName,
   ]);

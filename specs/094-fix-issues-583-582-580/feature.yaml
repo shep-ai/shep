@@ -1,0 +1,33 @@
+feature:
+  id: "094-fix-issues-583-582-580"
+  name: "fix-issues-583-582-580"
+  number: 94
+  branch: "feat/094-fix-issues-583-582-580"
+  lifecycle: "research"
+  createdAt: "2026-04-28T17:52:43Z"
+status:
+  phase: "research"
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: "2026-04-28T17:52:43Z"
+  lastUpdatedBy: "feature-agent"
+  completedPhases:
+    - "fast-implement"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-04-28T17:52:43Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []

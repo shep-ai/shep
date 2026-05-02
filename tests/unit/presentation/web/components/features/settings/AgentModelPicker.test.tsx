@@ -175,6 +175,52 @@ describe('AgentModelPicker', () => {
     });
   });
 
+  // Regression: in `mode="override"`, the picker MUST notify its
+  // parent of the active selection on mount. Without this, a parent
+  // that initialises its override state to `undefined` (the empty
+  // create-application composer is the canonical example) would
+  // silently leave the value unset when the user did not interact
+  // with the picker, and the eventual `createApplication` call would
+  // fall back to the global `settings.agent.type` resolver — which
+  // can resolve to a non-interactive agent (e.g. `dev`) and crash
+  // the interactive session boot. "What you see in the picker" must
+  // equal "what gets sent" even with zero clicks.
+  it('fires onAgentModelChange on mount in override mode so parent state matches the displayed value', async () => {
+    const onAgentModelChange = vi.fn();
+
+    render(
+      <AgentModelPicker
+        initialAgentType="claude-code"
+        initialModel="claude-sonnet-4-6"
+        onAgentModelChange={onAgentModelChange}
+        mode="override"
+      />
+    );
+
+    await waitFor(() => {
+      expect(onAgentModelChange).toHaveBeenCalledWith('claude-code', 'claude-sonnet-4-6');
+    });
+  });
+
+  it('does NOT fire onAgentModelChange on mount in settings mode (settings mode persists explicit user selections only)', async () => {
+    const onAgentModelChange = vi.fn();
+
+    render(
+      <AgentModelPicker
+        initialAgentType="claude-code"
+        initialModel="claude-sonnet-4-6"
+        onAgentModelChange={onAgentModelChange}
+        mode="settings"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('combobox')).toHaveTextContent('Claude Code');
+    });
+
+    expect(onAgentModelChange).not.toHaveBeenCalled();
+  });
+
   it('keeps override mode local and does not attempt persistence', async () => {
     const user = userEvent.setup();
     const onAgentModelChange = vi.fn();

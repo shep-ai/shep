@@ -36,7 +36,6 @@ import {
   mapNodeStateToSidebarStatus,
 } from '@/hooks/sidebar-features-context';
 import { useTranslation } from 'react-i18next';
-import { useFeatureFlags } from '@/hooks/feature-flags-context';
 
 import { useSelectedFeatureId } from '@/hooks/use-selected-feature-id';
 import { useSelectedRepository } from '@/hooks/use-selected-repository';
@@ -526,8 +525,6 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
   // ── Full-screen create prompt overlay ────────────────────────────────
   const [showCreatePrompt, setShowCreatePrompt] = useState(false);
 
-  const featureFlags = useFeatureFlags();
-
   // Derive the FAB's app context from the canvas. When exactly one
   // ApplicationNode is on the visible canvas we treat it as the scoped
   // application — surfacing the contextual "New SDD feature for <app>"
@@ -556,7 +553,6 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     handlePickFolder,
     onNewProject: () => setWorkspaceNewProjectOpen(true),
     onNewApplication: () => setShowCreatePrompt(true),
-    featureFlags,
     ...(selectedApplicationId !== undefined && { selectedApplicationId }),
     ...(selectedApplicationName !== undefined && { selectedApplicationName }),
   });

@@ -135,8 +135,12 @@ export async function initializeContainer(): Promise<typeof container> {
   );
   // Settings-provider port + agent-config resolver. The adapter is the
   // one legitimate place the `settings.service` singleton is called —
-  // everywhere else consults it through the injected port.
+  // everywhere else consults it through the injected port. Registered
+  // by token so application-layer use cases (e.g. CreateApplicationUseCase)
+  // can resolve the user's default agent without bypassing the port
+  // contract.
   const settingsProvider = new SettingsProviderAdapter();
+  container.registerInstance('ISettingsProvider', settingsProvider);
   const agentConfigResolver = new AgentConfigResolver(settingsProvider);
 
   const logger: ILogger = {

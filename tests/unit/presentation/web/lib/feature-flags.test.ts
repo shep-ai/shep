@@ -17,7 +17,6 @@ const { getFeatureFlags, featureFlags } = await import(
 describe('getFeatureFlags', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    delete process.env.NEXT_PUBLIC_FLAG_SKILLS;
     delete process.env.NEXT_PUBLIC_FLAG_ENV_DEPLOY;
     delete process.env.NEXT_PUBLIC_FLAG_REACT_FILE_MANAGER;
   });
@@ -26,35 +25,26 @@ describe('getFeatureFlags', () => {
     mockHasSettings.mockReturnValue(true);
     mockGetSettings.mockReturnValue({
       featureFlags: {
-        skills: true,
         envDeploy: false,
         debug: true,
-        githubImport: false,
-        adoptBranch: false,
-        gitRebaseSync: false,
         reactFileManager: false,
       },
     });
 
     const flags = getFeatureFlags();
 
-    expect(flags.skills).toBe(true);
     expect(flags.envDeploy).toBe(false);
     expect(flags.debug).toBe(true);
-    expect(flags.githubImport).toBe(false);
-    expect(flags.adoptBranch).toBe(false);
     expect(flags.reactFileManager).toBe(false);
   });
 
   it('falls back to env vars when featureFlags is undefined', () => {
     mockHasSettings.mockReturnValue(true);
     mockGetSettings.mockReturnValue({});
-    process.env.NEXT_PUBLIC_FLAG_SKILLS = 'true';
     process.env.NEXT_PUBLIC_FLAG_ENV_DEPLOY = '1';
 
     const flags = getFeatureFlags();
 
-    expect(flags.skills).toBe(true);
     expect(flags.envDeploy).toBe(true);
     expect(flags.debug).toBe(false); // debug has no env var fallback
     expect(flags.reactFileManager).toBe(false);
@@ -62,11 +52,9 @@ describe('getFeatureFlags', () => {
 
   it('falls back to env vars when settings not initialized', () => {
     mockHasSettings.mockReturnValue(false);
-    process.env.NEXT_PUBLIC_FLAG_SKILLS = 'true';
 
     const flags = getFeatureFlags();
 
-    expect(flags.skills).toBe(true);
     expect(flags.envDeploy).toBe(true);
     expect(flags.debug).toBe(false);
     expect(flags.reactFileManager).toBe(false);
@@ -76,23 +64,19 @@ describe('getFeatureFlags', () => {
     mockHasSettings.mockImplementation(() => {
       throw new Error('Not available');
     });
-    process.env.NEXT_PUBLIC_FLAG_SKILLS = '1';
 
     const flags = getFeatureFlags();
 
-    expect(flags.skills).toBe(true);
     expect(flags.debug).toBe(false);
     expect(flags.reactFileManager).toBe(false);
   });
 
   it('defaults envDeploy to true when no settings and no env vars', () => {
     mockHasSettings.mockReturnValue(false);
-    delete process.env.NEXT_PUBLIC_FLAG_SKILLS;
     delete process.env.NEXT_PUBLIC_FLAG_ENV_DEPLOY;
 
     const flags = getFeatureFlags();
 
-    expect(flags.skills).toBe(false);
     expect(flags.envDeploy).toBe(true);
     expect(flags.debug).toBe(false);
     expect(flags.reactFileManager).toBe(false);
@@ -102,12 +86,8 @@ describe('getFeatureFlags', () => {
     mockHasSettings.mockReturnValue(true);
     mockGetSettings.mockReturnValue({
       featureFlags: {
-        skills: false,
         envDeploy: false,
         debug: false,
-        githubImport: false,
-        adoptBranch: false,
-        gitRebaseSync: false,
         reactFileManager: false,
       },
     });
@@ -120,7 +100,7 @@ describe('getFeatureFlags', () => {
   it('returns reactFileManager from DB when settings exist', () => {
     mockHasSettings.mockReturnValue(true);
     mockGetSettings.mockReturnValue({
-      featureFlags: { skills: false, envDeploy: false, debug: false, reactFileManager: true },
+      featureFlags: { envDeploy: false, debug: false, reactFileManager: true },
     });
 
     const flags = getFeatureFlags();
@@ -160,33 +140,12 @@ describe('featureFlags (backward-compatible const)', () => {
     vi.clearAllMocks();
   });
 
-  it('exposes skills via getter that calls getFeatureFlags', () => {
-    mockHasSettings.mockReturnValue(true);
-    mockGetSettings.mockReturnValue({
-      featureFlags: {
-        skills: true,
-        envDeploy: false,
-        debug: false,
-        githubImport: false,
-        adoptBranch: false,
-        gitRebaseSync: false,
-        reactFileManager: false,
-      },
-    });
-
-    expect(featureFlags.skills).toBe(true);
-  });
-
   it('exposes envDeploy via getter', () => {
     mockHasSettings.mockReturnValue(true);
     mockGetSettings.mockReturnValue({
       featureFlags: {
-        skills: false,
         envDeploy: true,
         debug: false,
-        githubImport: false,
-        adoptBranch: false,
-        gitRebaseSync: false,
         reactFileManager: false,
       },
     });
@@ -198,12 +157,8 @@ describe('featureFlags (backward-compatible const)', () => {
     mockHasSettings.mockReturnValue(true);
     mockGetSettings.mockReturnValue({
       featureFlags: {
-        skills: false,
         envDeploy: false,
         debug: true,
-        githubImport: false,
-        adoptBranch: false,
-        gitRebaseSync: false,
         reactFileManager: false,
       },
     });
@@ -214,7 +169,7 @@ describe('featureFlags (backward-compatible const)', () => {
   it('exposes reactFileManager via getter', () => {
     mockHasSettings.mockReturnValue(true);
     mockGetSettings.mockReturnValue({
-      featureFlags: { skills: false, envDeploy: false, debug: false, reactFileManager: true },
+      featureFlags: { envDeploy: false, debug: false, reactFileManager: true },
     });
 
     expect(featureFlags.reactFileManager).toBe(true);

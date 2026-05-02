@@ -6,7 +6,6 @@ import { useQuery } from '@tanstack/react-query';
 import { FolderOpen, Github, LayoutGrid, Loader2, Plus, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DeploymentStatusProvider } from '@/hooks/deployment-status-provider';
-import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { ControlCenterEmptyState } from '@/components/features/control-center/control-center-empty-state';
 import { ApplicationCard } from './application-card';
 import type { ApplicationWithStatus } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
@@ -23,7 +22,6 @@ interface NewApplicationCardProps {
 
 export function ApplicationsPageClient({ className }: ApplicationsPageClientProps) {
   const router = useRouter();
-  const featureFlags = useFeatureFlags();
   const [showCreatePrompt, setShowCreatePrompt] = useState(false);
 
   const { data: applications = [], isLoading } = useQuery<ApplicationWithStatus[]>({
@@ -99,10 +97,8 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
                     router.push(`/application/${result.applicationId}`);
                   }
                 }}
-                onImportGitHub={
-                  featureFlags.githubImport
-                    ? () => window.dispatchEvent(new CustomEvent('shep:open-github-import'))
-                    : undefined
+                onImportGitHub={() =>
+                  window.dispatchEvent(new CustomEvent('shep:open-github-import'))
                 }
               />
 

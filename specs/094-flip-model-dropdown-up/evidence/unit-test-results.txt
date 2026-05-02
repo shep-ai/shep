@@ -1,0 +1,100 @@
+[90mstdout[2m | tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22m[2mdeployFeature server action[2m > [22m[2mresolves StartFeatureDeploymentUseCase and returns {success, state}
+[22m[39m[deployFeature] start succeeded — state=Booting
+
+[90mstdout[2m | tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22m[2mdeployFeature server action[2m > [22m[2mreturns {success:false, error} when the use case throws
+[22m[39m[deployFeature] called — featureId="nonexistent-id"
+
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22m[2mdeployFeature server action[2m > [22m[2mreturns {success:false, error} when the use case throws
+[22m[39m[deployFeature] error: Feature not found: nonexistent-id Error: Feature not found: nonexistent-id
+    at [90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-flip-model-dropdown-up/[39mtests/unit/presentation/web/actions/deploy-feature.test.ts:37:35
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-flip-model-dropdown-up/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-flip-model-dropdown-up/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-flip-model-dropdown-up/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-flip-model-dropdown-up/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1209:10[90m)[39m
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-flip-model-dropdown-up/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1653:37
+    at Traces.$ [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-flip-model-dropdown-up/[39mnode_modules/[4m.pnpm[24m/vitest@4.0.18_@opentelemetry+api@1.9.0_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_light_aa59cdbaf81e3a86c6d640de00a60c1e/node_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[39m
+    at trace [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-flip-model-dropdown-up/[39mnode_modules/[4m.pnpm[24m/vitest@4.0.18_@opentelemetry+api@1.9.0_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_light_aa59cdbaf81e3a86c6d640de00a60c1e/node_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-flip-model-dropdown-up/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1653:12[90m)[39m
+
+[90mstdout[2m | tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22m[2mdeployFeature server action[2m > [22m[2mreturns a generic error for non-Error throws
+[22m[39m[deployFeature] called — featureId="feat-123"
+
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22m[2mdeployFeature server action[2m > [22m[2mreturns a generic error for non-Error throws
+[22m[39m[deployFeature] error: Failed to deploy feature unexpected
+
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-feature.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 55[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/parse-log-line.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/update-feature-pinned-config.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-feature-drawer-data.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/load-settings.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/features/inventory-filters.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/reject-feature.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/chat/tool-bubble-detect.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/approve-feature.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/api/version.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/features/feature-tree-table/build-tree-data.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-workflow-defaults.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/feature-create-drawer/feature-create-drawer.test.tsx [2m([22m[2m92 tests[22m[2m)[22m[33m 24928[2mms[22m[39m
+       [33m[2m✓[22m[39m renders the drawer header when open [33m 312[2mms[22m[39m
+       [33m[2m✓[22m[39m accepts text in the description field [33m 557[2mms[22m[39m
+       [33m[2m✓[22m[39m enables submit button when description has content [33m 398[2mms[22m[39m
+       [33m[2m✓[22m[39m calls onSubmit with payload containing description (no name field) [33m 536[2mms[22m[39m
+       [33m[2m✓[22m[39m includes attachments array with file objects [33m 585[2mms[22m[39m
+       [33m[2m✓[22m[39m sends approvalGates with only PRD checked [33m 747[2mms[22m[39m
+       [33m[2m✓[22m[39m sends all-true approvalGates when all checkboxes are checked [33m 708[2mms[22m[39m
+       [33m[2m✓[22m[39m sends all-false approvalGates when no checkboxes are checked [33m 463[2mms[22m[39m
+       [33m[2m✓[22m[39m resets all switches to defaults after close and reopen [33m 401[2mms[22m[39m
+       [33m[2m✓[22m[39m submits correct approvalGates after All toggle [33m 631[2mms[22m[39m
+       [33m[2m✓[22m[39m clears all form fields after submit without unmounting [33m 1346[2mms[22m[39m
+       [33m[2m✓[22m[39m clears form data on submit so next open starts fresh [33m 553[2mms[22m[39m
+       [33m[2m✓[22m[39m supports multiple file selections across multiple picks [33m 347[2mms[22m[39m
+       [33m[2m✓[22m[39m plays create sound on form submit [33m 302[2mms[22m[39m
+       [33m[2m✓[22m[39m mode=fast submits with fast: true [33m 404[2mms[22m[39m
+       [33m[2m✓[22m[39m mode=application submits with fast: false [33m 738[2mms[22m[39m
+       [33m[2m✓[22m[39m mode=spec submits with fast: false [33m 585[2mms[22m[39m
+       [33m[2m✓[22m[39m mode resets to default after submit [33m 322[2mms[22m[39m
+       [33m[2m✓[22m[39m submits the form when Ctrl+Enter is pressed in the textarea [33m 402[2mms[22m[39m
+       [33m[2m✓[22m[39m submits the form when Meta+Enter is pressed in the textarea [33m 414[2mms[22m[39m
+       [33m[2m✓[22m[39m includes sessionId in submitted payload [33m 559[2mms[22m[39m
+       [33m[2m✓[22m[39m submit button is enabled when repo is selected via combobox [33m 545[2mms[22m[39m
+       [33m[2m✓[22m[39m submit button is enabled when repositoryPath is provided (canvas flow) [33m 362[2mms[22m[39m
+       [33m[2m✓[22m[39m handleSubmit includes selectedRepoPath in payload [33m 601[2mms[22m[39m
+       [33m[2m✓[22m[39m shows check icon for selected repository [33m 315[2mms[22m[39m
+       [33m[2m✓[22m[39m can submit feature after adding new repo via combobox [33m 619[2mms[22m[39m
+       [33m[2m✓[22m[39m resets forkAndPr state to false when canPushDirectly changes from false to true [33m 561[2mms[22m[39m
+       [33m[2m✓[22m[39m reverts push and openPr to defaults when canPushDirectly becomes true [33m 306[2mms[22m[39m
+       [33m[2m✓[22m[39m calls getViewerPermission on repo change and updates toggle visibility [33m 417[2mms[22m[39m
+       [33m[2m✓[22m[39m excludes forkAndPr from submission payload when canPush is true [33m 514[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/features/delete-feature.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/merge-review/get-merge-review-data.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/list-github-organizations.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/hooks/deployment-status-store.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/common/feature-node/derive-feature-state.test.ts [2m([22m[2m47 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/language.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/update-settings.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-supported-models.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/stop-deployment.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/get-feature-phase-timings.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-deployment-status.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/list-github-repositories.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/update-model.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/control-center-drawer/drawer-view.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/format-duration.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-deployment-logs.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-review-config.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/features/control-center/derive-state.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-viewer-permission.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/get-feature-plan.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/compare-versions.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/pick-folder.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/compose-user-input.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/features/chat/is-workflow-in-flight.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m520 passed[39m[22m[90m (520)[39m
+[2m      Tests [22m [1m[32m6836 passed[39m[22m[90m (6836)[39m
+[2m   Start at [22m 01:55:55
+[2m   Duration [22m 40.63s[2m (transform 17.62s, setup 49.42s, import 68.51s, tests 101.54s, environment 81.27s)[22m
+

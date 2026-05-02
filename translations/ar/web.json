@@ -14,6 +14,7 @@
       "notifications": "الإشعارات",
       "flags": "العلامات",
       "chat": "المحادثة",
+      "homePage": "Home page",
       "layout": "التخطيط",
       "database": "قاعدة البيانات"
     },
@@ -188,22 +189,12 @@
       "description": "تبديل الميزات التجريبية والتجريبية المبكرة",
       "sectionDescription": "تمكين أو تعطيل الميزات التجريبية",
       "badge": "تجريبي",
-      "skills": "المهارات",
-      "skillsDescription": "تمكين نظام المهارات لإمكانيات الوكيل",
       "deployments": "النشر",
       "deploymentsDescription": "تمكين سير عمل نشر البيئات",
       "debug": "التصحيح",
       "debugDescription": "عرض لوحات التصحيح والتسجيل المفصل",
-      "githubImport": "استيراد GitHub",
-      "githubImportDescription": "تمكين استيراد مستودعات GitHub في واجهة الويب",
-      "adoptBranch": "تبني فرع",
-      "adoptBranchDescription": "استيراد الفروع الموجودة كميزات متتبعة",
-      "gitRebaseSync": "إعادة تأسيس ومزامنة Git",
-      "gitRebaseSyncDescription": "تمكين عمليات إعادة التأسيس على main ومزامنة main",
       "reactFileManager": "مدير ملفات React",
       "reactFileManagerDescription": "استخدام مدير ملفات React المدمج بدلاً من منتقي مجلدات نظام التشغيل الأصلي",
-      "inventory": "المخزون",
-      "inventoryDescription": "تمكين صفحة المخزون التي تعرض جميع المستودعات والميزات في عرض شجري",
       "projects": "المشاريع",
       "projectsDescription": "تمكين التنقل إلى المشاريع وصفحات إدارة المشاريع في واجهة الويب",
       "codeReview": "AI Code Review",
@@ -220,6 +211,18 @@
       "maxConcurrentSessions": "الحد الأقصى للجلسات المتزامنة",
       "maxConcurrentSessionsDescription": "الحد الأقصى لعدد جلسات الوكيل التفاعلية النشطة في وقت واحد (1–10)",
       "hint": "علامة المحادثة تُنشئ عملية وكيل مستمرة لكل ميزة. المهلة التلقائية تُوقف الجلسات الخاملة تلقائيًا لتوفير الموارد. حد الجلسات المتزامنة يمنع الاستخدام المفرط للموارد على أجهزة المطورين."
+    },
+    "homePage": {
+      "title": "Home page",
+      "description": "Choose which page opens when you navigate to the root URL",
+      "label": "Default page",
+      "labelDescription": "The page you land on when opening the web UI",
+      "options": {
+        "control-center": "Control Center",
+        "applications": "Applications",
+        "features": "Features"
+      },
+      "hint": "This controls where you land when you open the web UI. You can change it at any time."
     },
     "fabLayout": {
       "title": "التخطيط",

@@ -14,6 +14,7 @@
       "notifications": "Notifications",
       "flags": "Drapeaux",
       "chat": "Chat",
+      "homePage": "Home page",
       "layout": "Disposition",
       "database": "Base de données"
     },
@@ -188,22 +189,12 @@
       "description": "Activer ou désactiver les fonctionnalités expérimentales et bêta",
       "sectionDescription": "Activer ou désactiver les fonctionnalités expérimentales",
       "badge": "Expérimental",
-      "skills": "Compétences",
-      "skillsDescription": "Activer le système de compétences pour les capacités de l'agent",
       "deployments": "Déploiements",
       "deploymentsDescription": "Activer les workflows de déploiement d'environnement",
       "debug": "Débogage",
       "debugDescription": "Afficher les panneaux de débogage et la journalisation détaillée",
-      "githubImport": "Import GitHub",
-      "githubImportDescription": "Activer l'import de dépôts GitHub dans l'interface web",
-      "adoptBranch": "Adopter une branche",
-      "adoptBranchDescription": "Importer des branches existantes comme fonctionnalités suivies",
-      "gitRebaseSync": "Git Rebase et synchronisation",
-      "gitRebaseSyncDescription": "Activer les opérations de rebase-on-main et sync-main de git",
       "reactFileManager": "Gestionnaire de fichiers React",
       "reactFileManagerDescription": "Utiliser le gestionnaire de fichiers React intégré au lieu du sélecteur de dossier natif du système",
-      "inventory": "Inventaire",
-      "inventoryDescription": "Activer la page Inventaire affichant tous les dépôts et fonctionnalités en vue arborescente",
       "projects": "Projets",
       "projectsDescription": "Activer la navigation Projets et les pages de gestion de projets dans l'interface web",
       "codeReview": "AI Code Review",
@@ -220,6 +211,18 @@
       "maxConcurrentSessions": "Sessions simultanées max",
       "maxConcurrentSessionsDescription": "Nombre maximum de sessions d'agent interactif actives simultanément (1-10)",
       "hint": "L'onglet Chat lance un processus d'agent persistant par fonctionnalité. Le délai d'inactivité automatique arrête les sessions inactives pour économiser les ressources. Le plafond de sessions simultanées empêche l'utilisation incontrôlée des ressources sur les machines de développement."
+    },
+    "homePage": {
+      "title": "Home page",
+      "description": "Choose which page opens when you navigate to the root URL",
+      "label": "Default page",
+      "labelDescription": "The page you land on when opening the web UI",
+      "options": {
+        "control-center": "Control Center",
+        "applications": "Applications",
+        "features": "Features"
+      },
+      "hint": "This controls where you land when you open the web UI. You can change it at any time."
     },
     "fabLayout": {
       "title": "Disposition",

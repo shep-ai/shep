@@ -27,6 +27,7 @@ import type { IApplicationBriefStore } from '../../ports/output/services/applica
 import type { IApplicationScaffolder } from '../../ports/output/services/application-scaffolder.interface.js';
 import type { IInteractiveMessageRepository } from '../../ports/output/repositories/interactive-message-repository.interface.js';
 import type { ILogger } from '../../ports/output/services/logger.interface.js';
+import type { ISettingsProvider } from '../../ports/output/services/settings-provider.interface.js';
 import type { CreateProjectUseCase } from '../projects/create-project.use-case.js';
 import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
 import type { RunWorkflowUseCase } from '../workflows/run-workflow.use-case.js';
@@ -172,10 +173,62 @@ export class CreateApplicationUseCase {
     @inject('IOperationLogRepository')
     private readonly operationLogRepo: IOperationLogRepository,
     @inject('ILogger')
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
+    @inject('ISettingsProvider')
+    private readonly settingsProvider: ISettingsProvider
   ) {}
 
+  /**
+   * Resolve the agent type + model that this Application should be
+   * pinned to. Resolution rules — settings is the SINGLE source of
+   * truth; explicit overrides win over it; nothing is hardcoded:
+   *
+   *   1. Explicit `input.agentType` / `input.modelOverride` win when set.
+   *   2. Otherwise the user's `settings.agent.type` and
+   *      `settings.models.default` are used.
+   *   3. If settings haven't been initialised yet (impossible in
+   *      practice once onboarding runs, but kept defensive for the
+   *      first run before the seed migration completes), the values
+   *      flow through as `undefined`. In that case the per-app
+   *      session resolver falls through to `AgentType.ClaudeCode` —
+   *      see `AgentConfigResolver.resolveAgentType`.
+   *
+   * Persisting the resolved values onto the Application row means
+   * downstream callers (`ChatTab`, `RunWorkflowUseCase`, the
+   * `AgentConfigResolver`) all see a stable per-app pin instead of
+   * silently falling back to settings on every message — which used
+   * to surface the demo `dev` agent in interactive boots and crash
+   * the session.
+   */
+  private resolveAgentAndModel(input: { agentType?: string; modelOverride?: string }): {
+    agentType: string | undefined;
+    modelOverride: string | undefined;
+  } {
+    if (input.agentType && input.modelOverride) {
+      return { agentType: input.agentType, modelOverride: input.modelOverride };
+    }
+    if (!this.settingsProvider.has()) {
+      return {
+        agentType: input.agentType,
+        modelOverride: input.modelOverride,
+      };
+    }
+    const settings = this.settingsProvider.get();
+    return {
+      agentType: input.agentType ?? settings.agent.type,
+      modelOverride: input.modelOverride ?? settings.models.default,
+    };
+  }
+
   async execute(input: CreateApplicationInput): Promise<CreateApplicationResult> {
+    // 0. Resolve agent type + model FIRST so every downstream side
+    //    effect (DB row, scaffold log, workflow dispatch) sees the
+    //    same pinned values. See `resolveAgentAndModel` for the rule.
+    const resolved = this.resolveAgentAndModel({
+      agentType: input.agentType,
+      modelOverride: input.modelOverride,
+    });
+
     // 1. Derive a stable slug stem from the description.
     const baseSlug = slugify(input.description);
 
@@ -214,8 +267,8 @@ export class CreateApplicationUseCase {
       additionalPaths: [],
       status: ApplicationStatus.Idle,
       setupComplete: false,
-      agentType: input.agentType,
-      modelOverride: input.modelOverride,
+      agentType: resolved.agentType,
+      modelOverride: resolved.modelOverride,
       createdAt: now,
       updatedAt: now,
     };
@@ -282,8 +335,8 @@ export class CreateApplicationUseCase {
       application,
       projectPath,
       initialPrompt: input.initialPrompt?.trim() ? input.initialPrompt.trim() : undefined,
-      agentType: input.agentType,
-      modelOverride: input.modelOverride,
+      agentType: resolved.agentType,
+      modelOverride: resolved.modelOverride,
     });
 
     return { application, repositoryPath: projectPath };

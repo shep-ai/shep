@@ -30,6 +30,17 @@ import { TogetherAiExecutorService } from './executors/together-ai-executor.serv
 import { OllamaExecutorService } from './executors/ollama-executor.service.js';
 import { ClineExecutorService } from './executors/cline-executor.service.js';
 import type { SpawnFunction } from './types.js';
+import {
+  CLAUDE_CODE_MODELS,
+  GEMINI_CLI_MODELS,
+  CURSOR_MODELS,
+  CODEX_CLI_MODELS,
+  COPILOT_CLI_MODELS,
+  CLINE_MODELS,
+  OPENROUTER_MODELS,
+  TOGETHER_AI_MODELS,
+  OLLAMA_MODELS,
+} from './agent-model-catalog.js';
 
 /**
  * Factory that creates and caches agent executor instances.
@@ -236,106 +247,4 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
   }
 }
 
-// Static model lists per executor — update here when new models are released
-const CLAUDE_CODE_MODELS: string[] = [
-  'claude-opus-4-7',
-  'claude-opus-4-6',
-  'claude-sonnet-4-6',
-  'claude-haiku-4-5',
-];
-const GEMINI_CLI_MODELS: string[] = [
-  'gemini-3.1-pro',
-  'gemini-3-flash',
-  'gemini-2.5-pro',
-  'gemini-2.5-flash',
-];
-const CURSOR_MODELS: string[] = [
-  'claude-opus-4-7',
-  'claude-opus-4-6',
-  'claude-sonnet-4-6',
-  'gpt-5.4-high',
-  'gpt-5.2',
-  'gpt-5.3-codex',
-  'gemini-3.1-pro',
-  'composer-1.5',
-  'grok-code',
-];
-const CODEX_CLI_MODELS: string[] = [
-  'gpt-5.4',
-  'gpt-5.4-mini',
-  'gpt-5.3-codex',
-  'gpt-5.3-codex-spark',
-  'gpt-5.2-codex',
-  'gpt-5.2',
-  'gpt-5.1-codex-max',
-  'gpt-5.1-codex',
-  'gpt-5.1',
-  'gpt-5-codex',
-  'gpt-5-codex-mini',
-  'gpt-5',
-];
-const COPILOT_CLI_MODELS = [
-  'claude-haiku-4.5',
-  'claude-opus-4.5',
-  'claude-opus-4.6',
-  'claude-opus-4.7',
-  'claude-sonnet-4',
-  'claude-sonnet-4.5',
-  'claude-sonnet-4.6',
-  'gpt-4.1',
-  'gpt-5-mini',
-  'gpt-5.2',
-  'gpt-5.2-codex',
-  'gpt-5.3-codex',
-  'gpt-5.4',
-  'gpt-5.4-mini',
-];
-
-// Cline — multi-provider agentic assistant (models depend on configured provider)
-const CLINE_MODELS: string[] = [
-  'claude-sonnet-4-20250514',
-  'claude-haiku-4-5-20251001',
-  'gpt-4.1',
-  'gpt-4.1-mini',
-  'deepseek-chat',
-  'llama3.2',
-];
-
-// OpenRouter — popular coding-capable models from multiple vendors
-const OPENROUTER_MODELS: string[] = [
-  'anthropic/claude-sonnet-4.5',
-  'anthropic/claude-haiku-4.5',
-  'openai/gpt-5.4',
-  'openai/gpt-5.2',
-  'meta-llama/llama-4-maverick',
-  'meta-llama/llama-4-scout',
-  'google/gemini-3-flash',
-  'google/gemini-3-pro',
-  'deepseek/deepseek-chat-v3-0324',
-  'mistralai/mistral-large-latest',
-];
-
-// Together AI — fast open-source model inference, coding-focused
-const TOGETHER_AI_MODELS: string[] = [
-  'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8',
-  'meta-llama/Meta-Llama-3.3-70B-Instruct-Turbo',
-  'Qwen/Qwen2.5-Coder-32B-Instruct',
-  'deepseek-ai/DeepSeek-V3',
-  'deepseek-ai/DeepSeek-R1',
-  'mistralai/Mistral-Small-24B-Instruct-2501',
-  'google/gemma-2-27b-it',
-  'codellama/CodeLlama-70b-Instruct-hf',
-];
-
-// Ollama — popular local models for coding and general use
-const OLLAMA_MODELS: string[] = [
-  'llama3.2',
-  'llama3.1',
-  'codellama',
-  'deepseek-coder-v2',
-  'qwen2.5-coder',
-  'mistral',
-  'gemma2',
-  'phi3',
-  'starcoder2',
-];
+// Model lists are defined in agent-model-catalog.ts — imported above.

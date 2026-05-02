@@ -14,6 +14,7 @@
       "notifications": "התראות",
       "flags": "דגלים",
       "chat": "צ'אט",
+      "homePage": "Home page",
       "layout": "פריסה",
       "database": "מסד נתונים"
     },
@@ -188,22 +189,12 @@
       "description": "הפעל או השבת תכונות ניסיוניות ובטא",
       "sectionDescription": "הפעל או השבת תכונות ניסיוניות",
       "badge": "ניסיוני",
-      "skills": "כישורים",
-      "skillsDescription": "הפעל את מערכת הכישורים עבור יכולות הסוכן",
       "deployments": "פריסות",
       "deploymentsDescription": "הפעל תהליכי פריסה לסביבות",
       "debug": "ניפוי שגיאות",
       "debugDescription": "הצג לוחות ניפוי שגיאות ורישום מפורט",
-      "githubImport": "ייבוא GitHub",
-      "githubImportDescription": "הפעל ייבוא מאגרי GitHub בממשק ה-Web",
-      "adoptBranch": "אימוץ ענף",
-      "adoptBranchDescription": "ייבא ענפים קיימים כפיצ'רים מנוטרים",
-      "gitRebaseSync": "Git Rebase וסנכרון",
-      "gitRebaseSyncDescription": "הפעל פעולות rebase-on-main וסנכרון main ב-Git",
       "reactFileManager": "מנהל קבצים React",
       "reactFileManagerDescription": "השתמש במנהל הקבצים המובנה של React במקום בוחר התיקיות של מערכת ההפעלה",
-      "inventory": "מלאי",
-      "inventoryDescription": "הפעל את דף המלאי המציג את כל המאגרים והתכונות בתצוגת עץ",
       "projects": "פרויקטים",
       "projectsDescription": "הפעל ניווט פרויקטים ודפי ניהול פרויקטים בממשק הווב",
       "codeReview": "AI Code Review",
@@ -220,6 +211,18 @@
       "maxConcurrentSessions": "מספר מרבי של סשנים מקבילים",
       "maxConcurrentSessionsDescription": "מספר מרבי של סשנים אינטראקטיביים פעילים בו-זמנית (1-10)",
       "hint": "לשונית הצ'אט מפעילה תהליך סוכן מתמשך לכל פיצ'ר. תפוגת זמן אוטומטית עוצרת סשנים לא פעילים כדי לחסוך במשאבים. מגבלת הסשנים המקבילים מונעת שימוש מופרז במשאבים על מכונות מפתחים."
+    },
+    "homePage": {
+      "title": "Home page",
+      "description": "Choose which page opens when you navigate to the root URL",
+      "label": "Default page",
+      "labelDescription": "The page you land on when opening the web UI",
+      "options": {
+        "control-center": "Control Center",
+        "applications": "Applications",
+        "features": "Features"
+      },
+      "hint": "This controls where you land when you open the web UI. You can change it at any time."
     },
     "fabLayout": {
       "title": "פריסה",

@@ -1,0 +1,4 @@
+
+> @shepai/cli@1.194.3 typecheck /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-issues-583-582-580
+> tsc --noEmit
+

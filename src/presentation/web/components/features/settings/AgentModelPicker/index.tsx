@@ -28,6 +28,8 @@ export interface AgentModelPickerProps {
   mode: 'settings' | 'override';
   /** Show installed/not-installed badges next to agent names */
   showInstallStatus?: boolean;
+  /** Which side to open the popover. Defaults to 'bottom'; use 'top' when the trigger is near the bottom of the viewport. */
+  popoverSide?: 'top' | 'bottom';
 }
 
 export interface AgentModelPickerSaveResult {
@@ -48,6 +50,7 @@ export function AgentModelPicker({
   className,
   mode,
   showInstallStatus,
+  popoverSide = 'bottom',
 }: AgentModelPickerProps) {
   const [open, setOpen] = React.useState(false);
   const [groups, setGroups] = React.useState<AgentModelGroup[]>([]);
@@ -81,6 +84,29 @@ export function AgentModelPicker({
   React.useEffect(() => {
     setModel(controlledModel ?? initialModel);
   }, [controlledModel, initialModel]);
+
+  // In override mode, fire onAgentModelChange ONCE the picker has its
+  // initial values resolved so the parent's "current selection" state
+  // matches what the user sees in the trigger button. Without this,
+  // a user who never opens the popover (because the displayed default
+  // already looks correct) would leave the parent's override state at
+  // `undefined`, and the eventual `createApplication` / `sendMessage`
+  // call would fall back to the global `settings.agent.type` resolver
+  // — which can resolve to a non-interactive agent like `dev` and kill
+  // the session boot. Fire-once-on-mount keeps "what you see" === "what
+  // gets sent" without forcing the user to click through the picker.
+  const hasFiredInitialChangeRef = React.useRef(false);
+  React.useEffect(() => {
+    if (mode !== 'override') return;
+    if (hasFiredInitialChangeRef.current) return;
+    if (!agentType) return;
+    hasFiredInitialChangeRef.current = true;
+    onAgentModelChange?.(agentType, model);
+    // Intentionally limited deps — we only want this to fire once the
+    // initial values resolve. Subsequent changes flow through the
+    // explicit `handleSelect` path.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentType, model, mode]);
 
   // Reset drill-down when popover transitions from open → closed (not on initial mount)
   const prevOpenRef = React.useRef(open);
@@ -201,8 +227,7 @@ export function AgentModelPicker({
         <PopoverContent
           className="z-[70] w-(--radix-popover-trigger-width) overflow-hidden p-0"
           align="start"
-          side="bottom"
-          avoidCollisions={false}
+          side={popoverSide}
         >
           {/* Sliding container — both panels side by side, translateX controlled by level */}
           <div

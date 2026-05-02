@@ -28,6 +28,7 @@ import type {
 import {
   AgentType,
   AgentAuthMethod,
+  DefaultHomePage,
   EditorType,
   SkillSourceType,
   TerminalType,
@@ -214,14 +215,9 @@ export function createDefaultSettings(): Settings {
   };
 
   const featureFlags: FeatureFlags = {
-    skills: false,
     envDeploy: true,
     debug: false,
-    githubImport: false,
-    adoptBranch: false,
-    gitRebaseSync: false,
     reactFileManager: false,
-    inventory: false,
     projects: false,
     codeReview: false,
   };
@@ -236,6 +232,7 @@ export function createDefaultSettings(): Settings {
     notifications,
     workflow,
     featureFlags,
+    defaultHomePage: DefaultHomePage.ControlCenter,
     onboardingComplete: false,
     createdAt: now,
     updatedAt: now,

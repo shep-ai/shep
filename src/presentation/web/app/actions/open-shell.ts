@@ -9,14 +9,39 @@ import { computeWorktreePath } from '@shepai/core/infrastructure/services/ide-la
 import { resolve } from '@/lib/server-container';
 import type { IToolInstallerService } from '@shepai/core/application/ports/output/services/tool-installer.service';
 
+// Escape a path for embedding inside an AppleScript string literal:
+// only backslashes and double-quotes need escaping for AppleScript text.
+function escapeAppleScript(p: string): string {
+  return p.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+// Escape a path for embedding inside a single-quoted POSIX shell string used
+// inside `cd ...` so spaces and shell metacharacters don't break the cd.
+function escapePosixSingleQuote(p: string): string {
+  return p.replace(/'/g, `'\\''`);
+}
+
 // Fallback commands for the "system" terminal when no tool metadata entry exists.
 // Uses a record lookup instead of if/else to prevent the bundler from
 // tree-shaking platform branches at build time. Turbopack evaluates
 // os.platform() during the build and dead-code-eliminates unused branches,
 // baking in the CI platform (linux) and breaking macOS/Windows installs.
+//
+// On macOS, `open -a Terminal /path` is unreliable: when Terminal.app is
+// already running, the new window can land in $HOME instead of the supplied
+// path. Use osascript with `do script "cd ..."` so we explicitly cd into the
+// target — see issue #583.
 const SYSTEM_TERMINAL_COMMANDS: Record<string, { cmd: string; args: (path: string) => string[] }> =
   {
-    darwin: { cmd: 'open', args: (p) => ['-a', 'Terminal', p] },
+    darwin: {
+      cmd: 'osascript',
+      args: (p) => [
+        '-e',
+        `tell application "Terminal" to do script "cd '${escapePosixSingleQuote(escapeAppleScript(p))}'; clear"`,
+        '-e',
+        'tell application "Terminal" to activate',
+      ],
+    },
     linux: { cmd: 'x-terminal-emulator', args: (p) => [`--working-directory=${p}`] },
     win32: {
       cmd: 'cmd.exe',
@@ -59,9 +84,14 @@ export async function openShell(
         const config = service.getTerminalOpenConfig(terminalPref);
 
         if (config?.openDirectory.includes('{dir}')) {
-          const resolved = config.openDirectory.replace('{dir}', targetPath);
-
           if (config.shell) {
+            // shell:true accepts a single command string and lets the OS shell
+            // parse quoting — replace {dir} with a quoted path so spaces work.
+            const quoted =
+              platform() === 'win32'
+                ? `"${targetPath}"`
+                : `'${escapePosixSingleQuote(targetPath)}'`;
+            const resolved = config.openDirectory.replace('{dir}', quoted);
             const child = spawn(resolved, [], {
               detached: true,
               stdio: 'ignore',
@@ -70,7 +100,13 @@ export async function openShell(
             child.on('error', () => undefined);
             child.unref();
           } else {
-            const [command, ...args] = resolved.split(/\s+/);
+            // Tokenize the TEMPLATE first (which has no spaces in {dir}),
+            // then substitute the literal path into the matching arg. This
+            // preserves paths with spaces — splitting after substitution
+            // would shred them into multiple args.
+            const tokens = config.openDirectory.split(/\s+/).filter(Boolean);
+            const [command, ...rest] = tokens;
+            const args = rest.map((tok) => tok.replace('{dir}', targetPath));
             const child = spawn(command, args, {
               detached: true,
               stdio: 'ignore',

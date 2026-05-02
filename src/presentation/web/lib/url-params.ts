@@ -6,6 +6,8 @@
  * source of truth (no magic values; see .claude/rules/code-quality.md).
  */
 
+import type { Route } from 'next';
+
 export const URL_PARAMS = {
   repo: 'repo',
   parent: 'parent',
@@ -26,9 +28,10 @@ export interface CreateUrlParams {
 
 /**
  * Builds a `/create?...` URL from the given param object. Empty / undefined
- * values are skipped. All values are URL-encoded.
+ * values are skipped. All values are URL-encoded. Cast to `Route` so
+ * Next's typed-routes accept the dynamic query string at router.push().
  */
-export function buildCreateUrl(params: CreateUrlParams = {}): string {
+export function buildCreateUrl(params: CreateUrlParams = {}): Route {
   const search = new URLSearchParams();
   if (params.repo) search.set(URL_PARAMS.repo, params.repo);
   if (params.parent) search.set(URL_PARAMS.parent, params.parent);
@@ -36,5 +39,5 @@ export function buildCreateUrl(params: CreateUrlParams = {}): string {
   if (params.mode) search.set(URL_PARAMS.mode, params.mode);
   if (params.applicationId) search.set(URL_PARAMS.applicationId, params.applicationId);
   const qs = search.toString();
-  return qs ? `/create?${qs}` : '/create';
+  return (qs ? `/create?${qs}` : '/create') as Route;
 }

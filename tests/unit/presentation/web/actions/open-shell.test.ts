@@ -124,11 +124,47 @@ describe('openShell server action', () => {
     const result = await openShell({ repositoryPath: '/home/user/project', branch: 'feat/test' });
 
     expect(result.success).toBe(true);
-    expect(mockSpawn).toHaveBeenCalledWith('open', ['-a', 'Terminal', MOCK_WORKTREE_PATH], {
-      detached: true,
-      stdio: 'ignore',
-    });
+    // Issue #583: use osascript with `do script "cd ..."` to reliably cd
+    // into the target — `open -a Terminal /path` was unreliable when
+    // Terminal was already running and would land at $HOME.
+    expect(mockSpawn).toHaveBeenCalledWith(
+      'osascript',
+      [
+        '-e',
+        `tell application "Terminal" to do script "cd '${MOCK_WORKTREE_PATH}'; clear"`,
+        '-e',
+        'tell application "Terminal" to activate',
+      ],
+      {
+        detached: true,
+        stdio: 'ignore',
+      }
+    );
     expect(mockUnref).toHaveBeenCalled();
+  });
+
+  it('escapes single quotes in path on darwin to prevent shell injection', async () => {
+    mockPlatform.mockReturnValue('darwin');
+    const trickyPath = "/Users/me/it's/repo";
+
+    const result = await openShell({ repositoryPath: trickyPath });
+
+    expect(result.success).toBe(true);
+    expect(mockSpawn).toHaveBeenCalledWith(
+      'osascript',
+      [
+        '-e',
+        // The single quote inside the path must be escaped for the
+        // outer single-quoted shell string so `cd` receives the right path.
+        `tell application "Terminal" to do script "cd '/Users/me/it'\\''s/repo'; clear"`,
+        '-e',
+        'tell application "Terminal" to activate',
+      ],
+      {
+        detached: true,
+        stdio: 'ignore',
+      }
+    );
   });
 
   it('spawns correct command on linux', async () => {
@@ -196,10 +232,19 @@ describe('openShell server action', () => {
     const result = await openShell({ repositoryPath: '/home/user/project' });
 
     expect(result.success).toBe(true);
-    expect(mockSpawn).toHaveBeenCalledWith('open', ['-a', 'Terminal', '/home/user/project'], {
-      detached: true,
-      stdio: 'ignore',
-    });
+    expect(mockSpawn).toHaveBeenCalledWith(
+      'osascript',
+      [
+        '-e',
+        `tell application "Terminal" to do script "cd '/home/user/project'; clear"`,
+        '-e',
+        'tell application "Terminal" to activate',
+      ],
+      {
+        detached: true,
+        stdio: 'ignore',
+      }
+    );
     expect(result.path).toBe('/home/user/project');
   });
 
@@ -237,10 +282,32 @@ describe('openShell server action', () => {
     const result = await openShell({ repositoryPath: '/home/user/project' });
 
     expect(result.success).toBe(true);
-    expect(mockSpawn).toHaveBeenCalledWith('tmux new-session -c /home/user/project', [], {
+    // Issue #583: when running through a shell, the path is single-quoted
+    // so paths with spaces or shell metacharacters survive shell parsing.
+    expect(mockSpawn).toHaveBeenCalledWith(`tmux new-session -c '/home/user/project'`, [], {
       detached: true,
       stdio: 'ignore',
       shell: true,
+    });
+  });
+
+  it('preserves paths with spaces when launching a non-shell terminal', async () => {
+    mockPlatform.mockReturnValue('darwin');
+    mockGetSettings.mockReturnValue({
+      environment: { shellPreference: 'zsh', terminalPreference: 'warp' },
+    });
+    mockGetTerminalOpenConfig.mockReturnValue({
+      openDirectory: 'open -a Warp {dir}',
+      shell: false,
+    });
+
+    const result = await openShell({ repositoryPath: '/Users/me/My Code/repo' });
+
+    expect(result.success).toBe(true);
+    // Path with spaces must remain a SINGLE arg — issue #583.
+    expect(mockSpawn).toHaveBeenCalledWith('open', ['-a', 'Warp', '/Users/me/My Code/repo'], {
+      detached: true,
+      stdio: 'ignore',
     });
   });
 
@@ -256,11 +323,20 @@ describe('openShell server action', () => {
     const result = await openShell({ repositoryPath: '/home/user/project' });
 
     expect(result.success).toBe(true);
-    // Should fall back to system terminal
-    expect(mockSpawn).toHaveBeenCalledWith('open', ['-a', 'Terminal', '/home/user/project'], {
-      detached: true,
-      stdio: 'ignore',
-    });
+    // Should fall back to system terminal (osascript on darwin)
+    expect(mockSpawn).toHaveBeenCalledWith(
+      'osascript',
+      [
+        '-e',
+        `tell application "Terminal" to do script "cd '/home/user/project'; clear"`,
+        '-e',
+        'tell application "Terminal" to activate',
+      ],
+      {
+        detached: true,
+        stdio: 'ignore',
+      }
+    );
   });
 
   it('returns error when repositoryPath does not exist and no branch provided', async () => {

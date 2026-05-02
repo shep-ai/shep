@@ -1,138 +1,124 @@
+import { getModelMeta } from '@/lib/model-metadata';
+
+const CATALOG: { agentType: string; label: string; models: string[] }[] = [
+  {
+    agentType: 'claude-code',
+    label: 'Claude Code',
+    models: ['claude-opus-4-7', 'claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'],
+  },
+  {
+    agentType: 'codex-cli',
+    label: 'Codex CLI',
+    models: [
+      'gpt-5.4',
+      'gpt-5.4-mini',
+      'gpt-5.3-codex',
+      'gpt-5.3-codex-spark',
+      'gpt-5.2-codex',
+      'gpt-5.2',
+      'gpt-5.1-codex-max',
+      'gpt-5.1-codex',
+      'gpt-5.1',
+      'gpt-5-codex',
+      'gpt-5-codex-mini',
+      'gpt-5',
+    ],
+  },
+  {
+    agentType: 'copilot-cli',
+    label: 'Copilot CLI',
+    models: [
+      'claude-haiku-4.5',
+      'claude-opus-4.5',
+      'claude-opus-4.6',
+      'claude-opus-4.7',
+      'claude-sonnet-4',
+      'claude-sonnet-4.5',
+      'claude-sonnet-4.6',
+      'gpt-4.1',
+      'gpt-5-mini',
+      'gpt-5.2',
+      'gpt-5.2-codex',
+      'gpt-5.3-codex',
+      'gpt-5.4',
+      'gpt-5.4-mini',
+    ],
+  },
+  {
+    agentType: 'cursor',
+    label: 'Cursor CLI',
+    models: [
+      'claude-opus-4-7',
+      'claude-opus-4-6',
+      'claude-sonnet-4-6',
+      'gpt-5.4-high',
+      'gpt-5.2',
+      'gpt-5.3-codex',
+      'gemini-3.1-pro-preview',
+      'composer-1.5',
+      'grok-code',
+    ],
+  },
+  {
+    agentType: 'gemini-cli',
+    label: 'Gemini CLI',
+    models: [
+      'gemini-3.1-pro-preview',
+      'gemini-3-flash-preview',
+      'gemini-2.5-pro',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
+    ],
+  },
+  {
+    agentType: 'cline',
+    label: 'Cline',
+    models: [
+      'claude-sonnet-4-20250514',
+      'claude-haiku-4-5-20251001',
+      'gpt-4.1',
+      'gpt-4.1-mini',
+      'deepseek-chat',
+      'llama3.2',
+    ],
+  },
+  {
+    agentType: 'openrouter',
+    label: 'OpenRouter',
+    models: [
+      'anthropic/claude-sonnet-4.5',
+      'anthropic/claude-haiku-4.5',
+      'openai/gpt-5.4',
+      'openai/gpt-5.2',
+      'meta-llama/llama-4-maverick',
+      'meta-llama/llama-4-scout',
+      'google/gemini-3-flash-preview',
+      'google/gemini-3.1-pro-preview',
+      'deepseek/deepseek-chat-v3-0324',
+      'mistralai/mistral-large-latest',
+    ],
+  },
+  {
+    agentType: 'together-ai',
+    label: 'Together AI',
+    models: [
+      'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8',
+      'meta-llama/Meta-Llama-3.3-70B-Instruct-Turbo',
+      'Qwen/Qwen2.5-Coder-32B-Instruct',
+      'deepseek-ai/DeepSeek-V3',
+      'deepseek-ai/DeepSeek-R1',
+      'mistralai/Mistral-Small-24B-Instruct-2501',
+      'google/gemma-2-27b-it',
+      'codellama/CodeLlama-70b-Instruct-hf',
+    ],
+  },
+  { agentType: 'dev', label: 'Demo', models: ['gpt-8', 'opus-7'] },
+];
+
 export async function getAllAgentModels() {
-  return [
-    {
-      agentType: 'claude-code',
-      label: 'Claude Code',
-      models: [
-        {
-          id: 'claude-opus-4-6',
-          displayName: 'Opus 4.6',
-          description: 'Most capable, complex tasks',
-        },
-        { id: 'claude-sonnet-4-6', displayName: 'Sonnet 4.6', description: 'Fast & balanced' },
-        { id: 'claude-haiku-4-5', displayName: 'Haiku 4.5', description: 'Lightweight & quick' },
-      ],
-    },
-    {
-      agentType: 'cursor',
-      label: 'Cursor CLI',
-      models: [
-        {
-          id: 'claude-opus-4-6',
-          displayName: 'Opus 4.6',
-          description: 'Most capable, complex tasks',
-        },
-        { id: 'claude-sonnet-4-6', displayName: 'Sonnet 4.6', description: 'Fast & balanced' },
-        { id: 'gpt-5.4-high', displayName: 'GPT-5.4', description: 'Latest reasoning model' },
-        { id: 'gpt-5.2', displayName: 'GPT-5.2', description: 'Flagship model' },
-        { id: 'gpt-5.3-codex', displayName: 'GPT-5.3 Codex', description: 'Code specialist' },
-        { id: 'gemini-3.1-pro', displayName: 'Gemini 3.1 Pro', description: 'Advanced reasoning' },
-        { id: 'composer-1.5', displayName: 'Composer 1.5', description: 'Multi-file editing' },
-        { id: 'grok-code', displayName: 'Grok Code', description: 'xAI code model' },
-      ],
-    },
-    {
-      agentType: 'gemini-cli',
-      label: 'Gemini CLI',
-      models: [
-        { id: 'gemini-3.1-pro', displayName: 'Gemini 3.1 Pro', description: 'Advanced reasoning' },
-        {
-          id: 'gemini-3-flash',
-          displayName: 'Gemini 3 Flash',
-          description: 'Ultra-fast responses',
-        },
-        { id: 'gemini-2.5-pro', displayName: 'Gemini 2.5 Pro', description: 'Reliable workhorse' },
-        { id: 'gemini-2.5-flash', displayName: 'Gemini 2.5 Flash', description: 'Speed-optimized' },
-      ],
-    },
-    {
-      agentType: 'openrouter',
-      label: 'OpenRouter',
-      models: [
-        {
-          id: 'anthropic/claude-sonnet-4-5',
-          displayName: 'Claude Sonnet 4.5',
-          description: 'Fast & balanced via OpenRouter',
-        },
-        {
-          id: 'anthropic/claude-haiku-4-5',
-          displayName: 'Claude Haiku 4.5',
-          description: 'Lightweight via OpenRouter',
-        },
-        {
-          id: 'openai/gpt-5.4-high',
-          displayName: 'GPT-5.4',
-          description: 'Latest OpenAI reasoning',
-        },
-        {
-          id: 'meta-llama/llama-4-maverick-17b-128e-instruct',
-          displayName: 'Llama 4 Maverick',
-          description: 'Meta flagship open-source',
-        },
-        {
-          id: 'google/gemini-3-flash',
-          displayName: 'Gemini 3 Flash',
-          description: 'Ultra-fast Google model',
-        },
-        {
-          id: 'deepseek/deepseek-v3-0324',
-          displayName: 'DeepSeek V3',
-          description: 'Strong open-source reasoning',
-        },
-        {
-          id: 'mistralai/mistral-small-2501',
-          displayName: 'Mistral Small 24B',
-          description: 'Efficient Mistral model',
-        },
-      ],
-    },
-    {
-      agentType: 'together-ai',
-      label: 'Together AI',
-      models: [
-        {
-          id: 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8',
-          displayName: 'Llama 4 Maverick',
-          description: 'Meta flagship open-source',
-        },
-        {
-          id: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
-          displayName: 'Llama 3.3 70B',
-          description: 'Strong instruction following',
-        },
-        {
-          id: 'Qwen/Qwen2.5-Coder-32B-Instruct',
-          displayName: 'Qwen 2.5 Coder 32B',
-          description: 'Code specialist',
-        },
-        {
-          id: 'deepseek-ai/DeepSeek-V3',
-          displayName: 'DeepSeek V3',
-          description: 'Reasoning & code',
-        },
-        {
-          id: 'deepseek-ai/DeepSeek-R1',
-          displayName: 'DeepSeek R1',
-          description: 'Chain-of-thought reasoning',
-        },
-        {
-          id: 'mistralai/Mistral-Small-24B-Instruct-2501',
-          displayName: 'Mistral Small 24B',
-          description: 'Efficient instruct model',
-        },
-      ],
-    },
-    {
-      agentType: 'dev',
-      label: 'Demo',
-      models: [
-        { id: 'gpt-8', displayName: 'GPT-8', description: 'Writes code before you think it' },
-        {
-          id: 'opus-7',
-          displayName: 'Opus 7',
-          description: 'Achieved consciousness, ships on time',
-        },
-      ],
-    },
-  ];
+  return CATALOG.map(({ agentType, label, models }) => ({
+    agentType,
+    label,
+    models: models.map((id) => ({ id, ...getModelMeta(id) })),
+  }));
 }

@@ -897,8 +897,14 @@ export function FeatureCreateDrawer({
                 ) : null}
                 <div className="border-input flex items-center gap-3 border-t px-3 py-1.5">
                   <AgentModelPicker
-                    initialAgentType={overrideAgent ?? currentAgentType ?? 'claude-code'}
-                    initialModel={overrideModel ?? currentModel ?? 'claude-sonnet-4-6'}
+                    // No hardcoded `'claude-code'` fallback — `currentAgentType`
+                    // already comes from the user's settings via the create
+                    // drawer page's SSR pass (single source of truth). When
+                    // settings is absent (impossible in practice but kept
+                    // defensive), the picker shows an empty label and the
+                    // user can pick an agent explicitly.
+                    initialAgentType={overrideAgent ?? currentAgentType ?? ''}
+                    initialModel={overrideModel ?? currentModel ?? ''}
                     mode="override"
                     onAgentModelChange={(agent, model) => {
                       setOverrideAgent(agent);

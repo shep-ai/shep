@@ -31,6 +31,17 @@ const SUPPORTED_FEATURES = new Set<string>([
 ]);
 
 /**
+ * Maximum time to wait for the `claude` subprocess to exit on its own
+ * after it has emitted its final `result` event. The CLI is supposed to
+ * tear down its MCP servers and exit, but in practice it can hang
+ * indefinitely if MCP children (e.g. Playwright) or background bash tools
+ * (e.g. `pnpm dev:web`) keep stdio open. After this grace period we send
+ * SIGKILL so the close handler fires and execute() resolves with the
+ * captured result instead of leaving the worker stuck for hours.
+ */
+const RESULT_TO_CLOSE_GRACE_MS = 30_000;
+
+/**
  * Executor service for Claude Code agent.
  * Uses subprocess spawning to interact with the `claude` CLI.
  */
@@ -78,6 +89,7 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
       let stderr = '';
       let timedOut = false;
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      let postResultKillTimer: ReturnType<typeof setTimeout> | undefined;
 
       // Collected from the stream — only the final result line matters
       let resultText = '';
@@ -103,6 +115,22 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
 
             const { type: _t, result: _r, session_id: _s, usage: _u, ...rest } = parsed;
             if (Object.keys(rest).length > 0) metadata = rest;
+
+            // The CLI emitted its final result. Give it a grace period to tear
+            // down MCP servers and exit on its own; if it still hasn't closed,
+            // send SIGKILL so the close handler runs and we resolve. Without
+            // this, leaked MCP/background children (issue: feature 92701aa8
+            // hung 3+ hours after [result]) trap the worker forever.
+            postResultKillTimer ??= setTimeout(() => {
+              this.log(
+                `Subprocess did not exit within ${RESULT_TO_CLOSE_GRACE_MS / 1000}s of [result] — sending SIGKILL`
+              );
+              try {
+                proc.kill('SIGKILL');
+              } catch {
+                /* already dead — close handler will resolve */
+              }
+            }, RESULT_TO_CLOSE_GRACE_MS);
           }
         } catch {
           /* not JSON — already logged by logStreamEvent */
@@ -145,6 +173,7 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
 
         this.log(`Process closed with code ${code}, result=${resultText.length} chars`);
         if (timeoutId) clearTimeout(timeoutId);
+        if (postResultKillTimer) clearTimeout(postResultKillTimer);
 
         if (timedOut) {
           reject(new Error('Agent execution timed out'));

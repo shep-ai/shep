@@ -18,6 +18,7 @@ import {
   Timer,
   MessageSquare,
   LayoutGrid,
+  Home,
   Eye,
   EyeOff,
 } from 'lucide-react';
@@ -64,6 +65,7 @@ import type {
   InteractiveAgentConfig,
   FabLayoutConfig,
 } from '@shepai/core/domain/generated/output';
+import { DefaultHomePage } from '@shepai/core/domain/generated/output';
 import type { AvailableTerminal } from '@/app/actions/get-available-terminals';
 
 const EDITOR_OPTIONS = [
@@ -101,6 +103,7 @@ const SECTIONS = [
   { id: 'notifications', labelKey: 'settings.sections.notifications', icon: Bell },
   { id: 'feature-flags', labelKey: 'settings.sections.flags', icon: Flag },
   { id: 'interactive-agent', labelKey: 'settings.sections.chat', icon: MessageSquare },
+  { id: 'home-page', labelKey: 'settings.sections.homePage', icon: Home },
   { id: 'fab-layout', labelKey: 'settings.sections.layout', icon: LayoutGrid },
   { id: 'database', labelKey: 'settings.sections.database', icon: Database },
 ] as const;
@@ -390,15 +393,10 @@ export function SettingsPageClient({
   const { t, i18n: i18nInstance } = useTranslation('web');
   const { showSaving, showSaved, save } = useSaveIndicator();
   const featureFlags = settings.featureFlags ?? {
-    skills: false,
     envDeploy: false,
     debug: false,
-    githubImport: false,
-    adoptBranch: false,
-    gitRebaseSync: false,
     reactFileManager: false,
     projects: false,
-    inventory: false,
     codeReview: false,
   };
 
@@ -518,6 +516,11 @@ export function SettingsPageClient({
   );
   const [interactiveSessions, setInteractiveSessions] = useState(
     String(interactiveAgentConfig.maxConcurrentSessions)
+  );
+
+  // Default home page state
+  const [defaultHomePage, setDefaultHomePage] = useState<DefaultHomePage>(
+    settings.defaultHomePage ?? DefaultHomePage.ControlCenter
   );
 
   // FAB layout state
@@ -1696,18 +1699,6 @@ export function SettingsPageClient({
             testId="feature-flags-settings-section"
           >
             <SwitchRow
-              label={t('settings.featureFlags.skills')}
-              description={t('settings.featureFlags.skillsDescription')}
-              id="flag-skills"
-              testId="switch-flag-skills"
-              checked={flags.skills}
-              onChange={(v) => {
-                const newFlags = { ...flags, skills: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
               label={t('settings.featureFlags.deployments')}
               description={t('settings.featureFlags.deploymentsDescription')}
               id="flag-envDeploy"
@@ -1732,42 +1723,6 @@ export function SettingsPageClient({
               }}
             />
             <SwitchRow
-              label={t('settings.featureFlags.githubImport')}
-              description={t('settings.featureFlags.githubImportDescription')}
-              id="flag-githubImport"
-              testId="switch-flag-githubImport"
-              checked={flags.githubImport}
-              onChange={(v) => {
-                const newFlags = { ...flags, githubImport: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.adoptBranch')}
-              description={t('settings.featureFlags.adoptBranchDescription')}
-              id="flag-adoptBranch"
-              testId="switch-flag-adoptBranch"
-              checked={flags.adoptBranch}
-              onChange={(v) => {
-                const newFlags = { ...flags, adoptBranch: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.gitRebaseSync')}
-              description={t('settings.featureFlags.gitRebaseSyncDescription')}
-              id="flag-gitRebaseSync"
-              testId="switch-flag-gitRebaseSync"
-              checked={flags.gitRebaseSync}
-              onChange={(v) => {
-                const newFlags = { ...flags, gitRebaseSync: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
               label={t('settings.featureFlags.reactFileManager')}
               description={t('settings.featureFlags.reactFileManagerDescription')}
               id="flag-reactFileManager"
@@ -1775,18 +1730,6 @@ export function SettingsPageClient({
               checked={flags.reactFileManager}
               onChange={(v) => {
                 const newFlags = { ...flags, reactFileManager: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.inventory')}
-              description={t('settings.featureFlags.inventoryDescription')}
-              id="flag-inventory"
-              testId="switch-flag-inventory"
-              checked={flags.inventory}
-              onChange={(v) => {
-                const newFlags = { ...flags, inventory: v };
                 setFlags(newFlags);
                 save({ featureFlags: newFlags });
               }}
@@ -1906,6 +1849,50 @@ export function SettingsPageClient({
             </SettingsRow>
           </SettingsSection>
           <SectionHint>{t('settings.interactiveAgent.hint')}</SectionHint>
+        </div>
+
+        {/* ── Home Page ── */}
+        <div
+          id="section-home-page"
+          className="grid scroll-mt-18 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[1fr_280px]"
+        >
+          <SettingsSection
+            icon={Home}
+            title={t('settings.homePage.title')}
+            description={t('settings.homePage.description')}
+            testId="home-page-settings-section"
+          >
+            <SettingsRow
+              label={t('settings.homePage.label')}
+              description={t('settings.homePage.labelDescription')}
+              htmlFor="default-home-page"
+            >
+              <Select
+                value={defaultHomePage}
+                onValueChange={(v) => {
+                  const page = v as DefaultHomePage;
+                  setDefaultHomePage(page);
+                  save({ defaultHomePage: page });
+                }}
+              >
+                <SelectTrigger
+                  id="default-home-page"
+                  data-testid="default-home-page-select"
+                  className="w-44"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(DefaultHomePage).map((page) => (
+                    <SelectItem key={page} value={page}>
+                      {t(`settings.homePage.options.${page}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SettingsRow>
+          </SettingsSection>
+          <SectionHint>{t('settings.homePage.hint')}</SectionHint>
         </div>
 
         {/* ── FAB Layout ── */}

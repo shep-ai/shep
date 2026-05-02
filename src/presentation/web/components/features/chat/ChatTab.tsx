@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Thread } from '@/components/assistant-ui/thread';
 import { useAttachments } from '@/hooks/use-attachments';
 import { composeUserInput } from '@/app/actions/compose-user-input';
+import { getDefaultAgentAndModel } from '@/app/actions/get-default-agent-and-model';
 import { AgentModelPicker } from '@/components/features/settings/AgentModelPicker';
 import { useChatRuntime } from './useChatRuntime';
 import { ChatComposer } from './ChatComposer';
@@ -157,8 +158,26 @@ export function ChatTab({
   scaffoldingState,
   applicationError,
 }: ChatTabProps) {
+  // Override resolution layers (highest precedence first):
+  //   1. `initialAgent` / `initialModel` — pinned by the host (e.g.
+  //      `application.agentType` / `application.modelOverride` from the
+  //      Application page).
+  //   2. User's global settings — fetched once on mount via the
+  //      `getDefaultAgentAndModel` server action so we never lie in the
+  //      picker. Hardcoded defaults like `'claude-code'` are BANNED
+  //      here; settings is the SINGLE source of truth.
   const [overrideAgent, setOverrideAgent] = useState<string | undefined>(initialAgent);
   const [overrideModel, setOverrideModel] = useState<string | undefined>(initialModel);
+  useEffect(() => {
+    if (overrideAgent && overrideModel) return;
+    void getDefaultAgentAndModel().then((d) => {
+      setOverrideAgent((prev) => prev ?? d.agentType);
+      setOverrideModel((prev) => prev ?? d.model);
+    });
+    // Run once on mount — host overrides flow through the explicit
+    // `initialAgent`/`initialModel` props above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [debugMode, setDebugMode] = useState(false);
   const att = useAttachments();
 
@@ -454,14 +473,15 @@ export function ChatTab({
       onPickFiles={handlePickFiles}
       agentPicker={
         <AgentModelPicker
-          initialAgentType={overrideAgent ?? 'claude-code'}
-          initialModel={overrideModel ?? 'claude-sonnet-4-6'}
+          initialAgentType={overrideAgent ?? ''}
+          initialModel={overrideModel ?? ''}
           mode="override"
           onAgentModelChange={(agent, model) => {
             setOverrideAgent(agent);
             setOverrideModel(model);
           }}
           className="w-55"
+          popoverSide="top"
         />
       }
     />

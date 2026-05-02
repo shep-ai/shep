@@ -62,7 +62,7 @@ vi.mock('@/app/actions/add-repository', () => ({
 }));
 
 vi.mock('@/hooks/feature-flags-context', () => ({
-  useFeatureFlags: () => ({ adoptBranch: false, githubImport: false }),
+  useFeatureFlags: () => ({}),
 }));
 
 vi.mock('@/hooks/fab-layout-context', () => ({

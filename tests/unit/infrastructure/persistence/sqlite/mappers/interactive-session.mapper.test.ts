@@ -35,6 +35,10 @@ function createTestRow(overrides: Partial<InteractiveSessionRow> = {}): Interact
     last_activity_at: LATER.getTime(),
     created_at: NOW.getTime(),
     updated_at: LATER.getTime(),
+    total_cost_usd: 0,
+    total_input_tokens: 0,
+    total_output_tokens: 0,
+    total_turns: 0,
     ...overrides,
   };
 }

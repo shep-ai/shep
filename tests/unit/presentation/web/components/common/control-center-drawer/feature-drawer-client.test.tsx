@@ -72,7 +72,6 @@ vi.mock('@/app/actions/update-feature-pinned-config', () => ({
 vi.mock('@/hooks/feature-flags-context', () => ({
   useFeatureFlags: () => ({
     envDeploy: false,
-    gitRebaseSync: false,
   }),
 }));
 

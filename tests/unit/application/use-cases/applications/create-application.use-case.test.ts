@@ -15,6 +15,7 @@ import type { SendInteractiveMessageUseCase } from '@/application/use-cases/inte
 import type { RunWorkflowUseCase } from '@/application/use-cases/workflows/run-workflow.use-case.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
+import type { ISettingsProvider } from '@/application/ports/output/services/settings-provider.interface.js';
 import { ApplicationStatus } from '@/domain/generated/output.js';
 
 function createMockAppRepo(): IApplicationRepository {
@@ -114,6 +115,7 @@ describe('CreateApplicationUseCase', () => {
   let mockMessageRepo: IInteractiveMessageRepository;
   let mockOperationLogRepo: IOperationLogRepository;
   let mockLogger: ILogger;
+  let mockSettingsProvider: ISettingsProvider;
 
   beforeEach(() => {
     mockAppRepo = createMockAppRepo();
@@ -136,6 +138,12 @@ describe('CreateApplicationUseCase', () => {
       warn: vi.fn(),
       error: vi.fn(),
     };
+    // Default: settings absent. Tests that need a specific
+    // user-default agent/model override `has()` and `get()` per case.
+    mockSettingsProvider = {
+      has: vi.fn().mockReturnValue(false),
+      get: vi.fn(),
+    };
     useCase = new CreateApplicationUseCase(
       mockAppRepo,
       mockCreateProject,
@@ -147,7 +155,8 @@ describe('CreateApplicationUseCase', () => {
       mockScaffolder,
       mockMessageRepo,
       mockOperationLogRepo,
-      mockLogger
+      mockLogger,
+      mockSettingsProvider
     );
   });
 
@@ -257,6 +266,50 @@ describe('CreateApplicationUseCase', () => {
         modelOverride: 'gpt-4o',
       })
     );
+  });
+
+  // Regression for the "stuck on bootstrap" bug: when no override is
+  // provided, the use case MUST resolve from settings and persist a
+  // non-null agent_type / model_override on the row. Otherwise the
+  // interactive session resolver later falls back to settings on every
+  // boot, and a non-interactive default (like the demo `dev` agent)
+  // crashes the session with "Agent type 'dev' does not support
+  // interactive sessions". Persisting the resolved values pins the
+  // app to a known agent for its lifetime.
+  it('resolves agent + model from settings when no override is provided', async () => {
+    vi.mocked(mockSettingsProvider.has).mockReturnValue(true);
+    vi.mocked(mockSettingsProvider.get).mockReturnValue({
+      agent: { type: 'claude-code', authMethod: 'session' },
+      models: { default: 'claude-sonnet-4-6' },
+    } as unknown as ReturnType<ISettingsProvider['get']>);
+
+    const result = await useCase.execute({ description: 'Build a calendar app' });
+
+    expect(result.application.agentType).toBe('claude-code');
+    expect(result.application.modelOverride).toBe('claude-sonnet-4-6');
+    expect(mockAppRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentType: 'claude-code',
+        modelOverride: 'claude-sonnet-4-6',
+      })
+    );
+  });
+
+  it('explicit override still wins over settings', async () => {
+    vi.mocked(mockSettingsProvider.has).mockReturnValue(true);
+    vi.mocked(mockSettingsProvider.get).mockReturnValue({
+      agent: { type: 'dev', authMethod: 'session' },
+      models: { default: 'opus-7' },
+    } as unknown as ReturnType<ISettingsProvider['get']>);
+
+    const result = await useCase.execute({
+      description: 'Build a calendar app',
+      agentType: 'claude-code',
+      modelOverride: 'claude-sonnet-4-6',
+    });
+
+    expect(result.application.agentType).toBe('claude-code');
+    expect(result.application.modelOverride).toBe('claude-sonnet-4-6');
   });
 
   it('retries with a fresh tag when the first random slug already exists in DB', async () => {

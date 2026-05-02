@@ -14,6 +14,7 @@
       "notifications": "Notifications",
       "flags": "Flags",
       "chat": "Chat",
+      "homePage": "Home page",
       "layout": "Layout",
       "database": "Database"
     },
@@ -188,22 +189,12 @@
       "description": "Toggle experimental and beta features",
       "sectionDescription": "Enable or disable experimental features",
       "badge": "Experimental",
-      "skills": "Skills",
-      "skillsDescription": "Enable the skills system for agent capabilities",
       "deployments": "Deployments",
       "deploymentsDescription": "Enable environment deployment workflows",
       "debug": "Debug",
       "debugDescription": "Show debug panels and verbose logging",
-      "githubImport": "GitHub Import",
-      "githubImportDescription": "Enable GitHub repository import in the web UI",
-      "adoptBranch": "Adopt Branch",
-      "adoptBranchDescription": "Import existing branches as tracked features",
-      "gitRebaseSync": "Git Rebase & Sync",
-      "gitRebaseSyncDescription": "Enable git rebase-on-main and sync-main operations",
       "reactFileManager": "React File Manager",
       "reactFileManagerDescription": "Use the built-in React file manager instead of the native OS folder picker",
-      "inventory": "Inventory",
-      "inventoryDescription": "Enable the Inventory page showing all repositories and features in a tree view",
       "projects": "Projects",
       "projectsDescription": "Enable Projects navigation and project management pages in the web UI",
       "codeReview": "AI Code Review",
@@ -220,6 +211,18 @@
       "maxConcurrentSessions": "Max concurrent sessions",
       "maxConcurrentSessionsDescription": "Maximum number of active interactive agent sessions at once (1–10)",
       "hint": "The Chat tab spawns a persistent agent process per feature. Auto-timeout stops idle sessions automatically to conserve resources. The concurrent session cap prevents runaway resource usage on developer machines."
+    },
+    "homePage": {
+      "title": "Home page",
+      "description": "Choose which page opens when you navigate to the root URL",
+      "label": "Default page",
+      "labelDescription": "The page you land on when opening the web UI",
+      "options": {
+        "control-center": "Control Center",
+        "applications": "Applications",
+        "features": "Features"
+      },
+      "hint": "This controls where you land when you open the web UI. You can change it at any time."
     },
     "fabLayout": {
       "title": "Layout",
@@ -274,7 +277,7 @@
     "deleteSubFeatures": "Delete sub-features",
     "closePullRequest": "Close pull request",
     "cancel": "Cancel",
-    "deleting": "Deleting\u2026",
+    "deleting": "Deleting…",
     "delete": "Delete"
   },
   "rejectFeedback": {
@@ -283,25 +286,25 @@
     "ariaLabel": "Rejection feedback",
     "placeholder": "Describe what needs to change...",
     "cancel": "Cancel",
-    "rejecting": "Rejecting\u2026",
+    "rejecting": "Rejecting…",
     "confirmReject": "Confirm Reject"
   },
   "emptyState": {
     "addProject": "Add a project",
     "addProjectDescription": "Add your project folder to unlock feature creation.",
-    "addProjectDescriptionLine2": "Describe what you need \u2014 Shep handles the rest.",
-    "checkingSetup": "Checking setup\u2026",
+    "addProjectDescriptionLine2": "Describe what you need — Shep handles the rest.",
+    "checkingSetup": "Checking setup…",
     "ready": "{{label}} ready",
     "notInstalled": "{{label}} not installed",
     "reCheck": "Re-check",
     "needsAuth": "{{label}} needs authentication",
     "open": "Open {{label}}",
-    "checking": "Checking {{label}}\u2026",
+    "checking": "Checking {{label}}…",
     "notFound": "{{label}} not found",
     "docs": "Docs",
-    "opening": "Opening\u2026",
+    "opening": "Opening…",
     "chooseFolder": "Choose a Folder",
-    "folderHint": "Any folder works \u2014 git will be initialized automatically if needed.",
+    "folderHint": "Any folder works — git will be initialized automatically if needed.",
     "orUseCli": "or use the CLI",
     "copyCommands": "Copy commands",
     "git": "Git",
@@ -310,7 +313,7 @@
     "githubCliRequired": "Required for pull requests"
   },
   "welcome": {
-    "loadingAgents": "Loading agents\u2026",
+    "loadingAgents": "Loading agents…",
     "chooseAgent": "Choose your agent",
     "pickModel": "Pick a model",
     "selectAgentSubtitle": "Select the AI coding agent you want Shep to use.",
@@ -358,11 +361,11 @@
     "stopDevServer": "Stop Dev Server",
     "startDevServer": "Start Dev Server",
     "retryDevServer": "Retry Dev Server",
-    "starting": "Starting\u2026",
+    "starting": "Starting…",
     "retry": "Retry",
     "start": "Start",
     "failed": "Failed",
-    "deleting": "Deleting\u2026",
+    "deleting": "Deleting…",
     "addFeature": "Add feature",
     "reviewRequirements": "Review Requirements",
     "reviewTechnicalPlan": "Review Technical Plan",
@@ -616,7 +619,7 @@
     "addRepository": "Add Repository"
   },
   "modelPicker": {
-    "searchPlaceholder": "Search or type a model ID\u2026"
+    "searchPlaceholder": "Search or type a model ID…"
   },
   "skills": {
     "searchPlaceholder": "Search skills..."

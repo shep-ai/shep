@@ -1,3 +1,52 @@
+# [1.196.0](https://github.com/shep-ai/shep/compare/v1.195.1...v1.196.0) (2026-05-02)
+
+
+### Bug Fixes
+
+* **ci:** exclude .next/node_modules and fix eslint pages dir ([#593](https://github.com/shep-ai/shep/issues/593)) ([0b8e17a](https://github.com/shep-ai/shep/commit/0b8e17a06e54389e558bae8dfe110f2bfadd8b78))
+
+
+### Features
+
+* **web:** gemini-cli fixes, model catalog refactor, and configurable default home page ([#592](https://github.com/shep-ai/shep/issues/592)) ([9679c04](https://github.com/shep-ai/shep/commit/9679c041c8714acb311bb5484c93d2d624fa096f))
+* **web:** resolve agent and model from settings for application creation ([fe93673](https://github.com/shep-ai/shep/commit/fe93673da8e07db20297a8d2d005b26a0d5c0874))
+
+## [1.195.1](https://github.com/shep-ai/shep/compare/v1.195.0...v1.195.1) (2026-04-29)
+
+
+### Bug Fixes
+
+* **web:** make server bind address configurable via env var ([#589](https://github.com/shep-ai/shep/issues/589)) ([abfdd76](https://github.com/shep-ai/shep/commit/abfdd7639c09a46dcc75266182754851698b2038))
+* resolve github issues [#583](https://github.com/shep-ai/shep/issues/583), [#582](https://github.com/shep-ai/shep/issues/582), [#580](https://github.com/shep-ai/shep/issues/580) ([#585](https://github.com/shep-ai/shep/issues/585)) ([9e8fcfa](https://github.com/shep-ai/shep/commit/9e8fcfaf1c1d40e6084c4253a4793249e9798fd8)), closes [#584](https://github.com/shep-ai/shep/issues/584)
+
+# [1.195.0](https://github.com/shep-ai/shep/compare/v1.194.4...v1.195.0) (2026-04-29)
+
+
+### Features
+
+* **web:** always-on skills inventory adopt-branch rebase-sync github-import ([#588](https://github.com/shep-ai/shep/issues/588)) ([95d87c2](https://github.com/shep-ai/shep/commit/95d87c2be2f6df0b77dbc1587f965bd7ccc78065))
+
+## [1.194.4](https://github.com/shep-ai/shep/compare/v1.194.3...v1.194.4) (2026-04-28)
+
+
+### Bug Fixes
+
+* **web:** flip model picker dropdown upward when near bottom of viewport ([#586](https://github.com/shep-ai/shep/issues/586)) ([88b9b56](https://github.com/shep-ai/shep/commit/88b9b56022b6638279f6e074a4f9e513c2fbca33))
+
+## [1.194.3](https://github.com/shep-ai/shep/compare/v1.194.2...v1.194.3) (2026-04-28)
+
+
+### Bug Fixes
+
+* **agents:** kill claude subprocess if it hangs after result event ([#584](https://github.com/shep-ai/shep/issues/584)) ([4895503](https://github.com/shep-ai/shep/commit/4895503c9ce03200383b702ad8148a95092c0f67))
+
+## [1.194.2](https://github.com/shep-ai/shep/compare/v1.194.1...v1.194.2) (2026-04-28)
+
+
+### Bug Fixes
+
+* **core:** explicit subpath exports for cloud bundlers ([c2ef7a9](https://github.com/shep-ai/shep/commit/c2ef7a9e3d8bb8eef2bbdebf83669e36df41cbbe))
+
 ## [1.194.1](https://github.com/shep-ai/shep/compare/v1.194.0...v1.194.1) (2026-04-28)
 
 

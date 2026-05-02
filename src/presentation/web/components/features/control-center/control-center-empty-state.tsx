@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { createProjectAndFeature } from '@/app/actions/create-project-and-feature';
 import { createApplication } from '@/app/actions/create-application';
+import { getDefaultAgentAndModel } from '@/app/actions/get-default-agent-and-model';
 import { AgentModelPicker } from '@/components/features/settings/AgentModelPicker';
 import { AttachmentChip } from '@/components/common/attachment-chip';
 import { ShepLogo } from '@/components/common/shep-logo';
@@ -91,8 +92,23 @@ export function ControlCenterEmptyState({
 }: ControlCenterEmptyStateProps) {
   const { t } = useTranslation('web');
   const [description, setDescription] = useState('');
+  // Default agent + model come from the user's settings (the SINGLE
+  // source of truth). We seed them from the server action on mount so
+  // the picker shows what the system would actually use, and so the
+  // values flow through to createApplication even when the user does
+  // not interact with the picker. Hardcoding `'claude-code'` here is
+  // BANNED — it lies about what's active when the user's settings
+  // point elsewhere (e.g. the demo `dev` agent), causing interactive
+  // session boots to fail with "Agent type 'dev' does not support
+  // interactive sessions".
   const [overrideAgent, setOverrideAgent] = useState<string | undefined>(undefined);
   const [overrideModel, setOverrideModel] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    void getDefaultAgentAndModel().then((d) => {
+      setOverrideAgent((prev) => prev ?? d.agentType);
+      setOverrideModel((prev) => prev ?? d.model);
+    });
+  }, []);
   const [buildMode, setBuildMode] = useState<BuildMode>('application');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -368,8 +384,8 @@ export function ControlCenterEmptyState({
             {/* Controls bar */}
             <div className="border-border/60 flex shrink-0 items-center gap-3 border-t px-3 py-2 dark:border-white/10">
               <AgentModelPicker
-                initialAgentType={overrideAgent ?? 'claude-code'}
-                initialModel={overrideModel ?? 'claude-sonnet-4-6'}
+                initialAgentType={overrideAgent ?? ''}
+                initialModel={overrideModel ?? ''}
                 mode="override"
                 showInstallStatus
                 onAgentModelChange={(agent, model) => {

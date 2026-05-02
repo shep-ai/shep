@@ -3,17 +3,14 @@ import { renderHook } from '@testing-library/react';
 import type { useRouter } from 'next/navigation';
 import { BuildMode } from '@shepai/core/domain/generated/output';
 import { useFabActions } from '@/components/features/control-center/use-fab-actions';
-import type { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { buildCreateUrl } from '@/lib/url-params';
 
 type Router = ReturnType<typeof useRouter>;
-type FeatureFlags = ReturnType<typeof useFeatureFlags>;
 
 interface BuildParamsOverrides {
   router?: Router;
   selectedApplicationId?: string;
   selectedApplicationName?: string;
-  featureFlags?: { adoptBranch?: boolean; githubImport?: boolean };
 }
 
 function makeRouter(): Router {
@@ -36,10 +33,6 @@ function buildParams(overrides: BuildParamsOverrides = {}) {
     handlePickFolder: vi.fn(),
     onNewProject: vi.fn(),
     onNewApplication: vi.fn(),
-    featureFlags: {
-      adoptBranch: overrides.featureFlags?.adoptBranch ?? false,
-      githubImport: overrides.featureFlags?.githubImport ?? false,
-    } as FeatureFlags,
     ...(overrides.selectedApplicationId !== undefined && {
       selectedApplicationId: overrides.selectedApplicationId,
     }),

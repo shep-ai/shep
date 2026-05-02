@@ -135,6 +135,11 @@ export class WebServerService implements IWebServerService {
       }
     }
 
+    // Bind to SHEP_BIND_HOST (default: localhost). Next's own hostname is
+    // always 'localhost' so it generates correct relative URLs regardless of
+    // which interface the HTTP server actually listens on.
+    const bindHost = process.env.SHEP_BIND_HOST ?? 'localhost';
+
     const app = this.deps.createNextApp({
       dev,
       dir,
@@ -154,7 +159,7 @@ export class WebServerService implements IWebServerService {
 
       server.on('error', reject);
 
-      server.listen(port, 'localhost', () => {
+      server.listen(port, bindHost, () => {
         this.server = server;
         resolve();
       });

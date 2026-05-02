@@ -1,0 +1,29 @@
+name: deploy
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  pin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout shep-cloud
+        uses: actions/checkout@v4
+        with:
+          repository: shep-ai/shep-cloud
+          token: ${{ secrets.SHEP_CLOUD_PAT }}
+          path: shep-cloud
+
+      - name: bump core.pin to new CLI SHA
+        run: |
+          echo "${{ github.sha }}" > shep-cloud/core.pin
+          cd shep-cloud
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add core.pin
+          git diff --staged --quiet && echo "pin unchanged, skipping" && exit 0
+          git commit -m "chore: bump cli pin to ${{ github.sha }}"
+          git push

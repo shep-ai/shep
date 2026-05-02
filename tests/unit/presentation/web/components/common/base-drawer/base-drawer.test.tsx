@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { BaseDrawer } from '@/components/common/base-drawer';
 
 vi.mock('@/hooks/feature-flags-context', () => ({
-  useFeatureFlags: () => ({ envDeploy: true, skills: false, debug: false, githubImport: false }),
+  useFeatureFlags: () => ({ envDeploy: true, debug: false }),
 }));
 
 const mockDeployAction = {

@@ -1,5 +1,39 @@
 # Lessons Learned
 
+## Settings Is the Single Source of Truth for Agent + Model — Never Hardcode UI Defaults
+
+A user reported their newly-created application got stuck on bootstrap with `Agent type 'dev' does not support interactive sessions. Only 'claude-code' supports interactive mode.` They were certain they had selected "Claude Code · Sonnet 4.6" — and the picker DID show that as the default. The bug: the picker's displayed default was a hardcoded literal that lied about what the system would actually use.
+
+**Root cause chain:**
+
+1. `ControlCenterEmptyState` initialised `overrideAgent` / `overrideModel` to `undefined`.
+2. `AgentModelPicker` was passed `initialAgentType={overrideAgent ?? 'claude-code'}` and `initialModel={overrideModel ?? 'claude-sonnet-4-6'}` — hardcoded fallback literals.
+3. The picker shows "Claude Code · Sonnet 4.6". User accepts it (no click).
+4. `mode="override"` only fires `onAgentModelChange` when the user actually picks something. Without a click, the parent's override state stays `undefined`.
+5. `createApplication({ agentType: undefined, modelOverride: undefined, ... })` runs.
+6. The Application row is persisted with `agent_type=NULL`.
+7. Background workflow boots an interactive session passing `agentType=undefined`.
+8. `AgentConfigResolver.resolveAgentType(undefined)` falls through to `settings.agent.type` — which was `'dev'` (demo agent, no interactive support).
+9. `createInteractiveExecutor('dev', ...)` throws → boot fails → app stuck.
+
+**Rules for any UI surface that lets the user pick an agent or model:**
+
+1. **The user's `settings.agent.type` and `settings.models.default` are the single source of truth for "the active default".** Defaults are baked once in `packages/core/src/domain/factories/settings-defaults.factory.ts` (`claude-code` / `claude-sonnet-4-6`). Settings reads from there on first run. Nothing else gets to define a default.
+2. **Never put hardcoded `'claude-code'` / `'claude-sonnet-4-6'` literals in a component as a "fallback".** That's a lie — it shows a value the system will not actually use when settings disagree. Fetch via the `getDefaultAgentAndModel` server action (`src/presentation/web/app/actions/get-default-agent-and-model.ts`) instead.
+3. **Pickers in `mode="override"` MUST fire `onAgentModelChange` once on mount with their resolved initial values.** Otherwise a user who never opens the popover leaves the parent's override state at `undefined`, and the value silently falls back to settings on the server side. "What you see in the trigger button" must equal "what gets sent" with zero clicks.
+4. **Use cases that create per-app records (e.g. `CreateApplicationUseCase`) MUST resolve the agent/model from the injected `ISettingsProvider` when no override is given, and persist non-null values onto the entity.** A `NULL` `agent_type` column is a trap — it means every subsequent message has to re-resolve via settings, and a stale settings value will keep biting forever. Pinning the resolved value at creation time freezes the pick for the application's lifetime.
+5. **`'dev'` is a demo agent with no interactive support.** If your codepath needs interactive (every Application chat does), `factory.supportsInteractive(agentType)` must be honoured — surface a clear error pointing the user at Settings rather than letting it crash inside the executor factory.
+
+**Files that must stay in sync:**
+
+- `packages/core/src/domain/factories/settings-defaults.factory.ts` — defaults (the ONE place).
+- `packages/core/src/infrastructure/services/interactive/lifecycle/agent-config.resolver.ts` — runtime resolver (settings → fallback → ClaudeCode).
+- `src/presentation/web/app/actions/get-default-agent-and-model.ts` — UI-side getter, reads same settings.
+- `src/presentation/web/components/features/settings/AgentModelPicker/index.tsx` — fires onChange-on-mount in override mode.
+- `packages/core/src/application/use-cases/applications/create-application.use-case.ts` — resolves + persists.
+
+If you add another agent picker or another use case that creates per-entity agent overrides, plug them into THIS chain. Do not add a sixth source of "what's the default agent".
+
 ## Adding a Web Feature Flag — Full Wiring Checklist
 
 Feature flags are persisted in the Settings singleton and toggled via the Settings page. A new flag is NOT just an env var or a hardcoded boolean — it must be wired end-to-end or the Settings toggle will silently fail to persist.
@@ -324,3 +358,82 @@ When the user asks to restore "the original" or "the version we had before", che
 
 **How this came up:** A user asked to restore the "original getting started" in the control center. The first attempt restored the prompt version (recent), but the user clarified there was an even older version. Always trace the file back through `git log --follow --oneline` and look at the version BEFORE the major UX rewrites (e.g. commits with "replace onboarding with prompt-first experience").
 
+
+## Third-Party CSS With Hardcoded Light-Theme Colors Needs ALL Layers Overridden
+
+`tabulator-tables/dist/css/tabulator_simple.css` hardcodes `background: #fff` on
+**both** `.tabulator-row` AND `.tabulator-table`. Overriding only the row leaves
+a solid white plate on the table element behind the rows — invisible in light
+mode, glaringly white in dark mode (issue #580: "white over white titles").
+
+**Rule:** when overriding a third-party stylesheet for theme support, list
+every element in the visual stack (table, tableholder, row, cell) — not just
+the one you debug first. Use the dev-tools "find all elements with
+`background-color: rgb(255,255,255)`" trick rather than guessing.
+
+```js
+[...document.querySelectorAll('*')].filter(
+  e => getComputedStyle(e).backgroundColor === 'rgb(255, 255, 255)'
+)
+```
+
+
+## Claude Agent SDK V2 — `canUseTool` Must Be ALWAYS Set, Not Gated on `onUserQuestion`
+
+The V2 session API hardcodes `allowDangerouslySkipPermissions: false`. With
+only `allowedTools` enumerated (no wildcard support in V2), every tool name
+not in the list — including dynamically discovered MCP tools like
+`mcp__atlassian__search_issues` — falls through to the SDK's permission gate
+and gets denied. If `canUseTool` is `undefined`, denial is silent and the
+agent reports the tool as unavailable (issue #582).
+
+**Rule:** install `canUseTool` unconditionally and use it as both the
+AskUserQuestion interception point AND the catch-all "allow" for unknown
+tools. Do NOT make installing the callback conditional on whether the caller
+provided `onUserQuestion`.
+
+
+## macOS Terminal Launch — `open -a Terminal /path` Is Unreliable, Use `osascript`
+
+`spawn('open', ['-a', 'Terminal', '/path'])` opens Terminal but, when
+Terminal.app is already running, the new window often lands at `$HOME`
+instead of the supplied path (issue #583, varies by Terminal preferences).
+
+**Rule:** for macOS Terminal launches, use `osascript` with an explicit
+`do script "cd '...'"` so the working directory is set programmatically
+inside the new window:
+
+```js
+spawn('osascript', [
+  '-e', `tell application "Terminal" to do script "cd '${escapeSingleQuote(p)}'; clear"`,
+  '-e', 'tell application "Terminal" to activate',
+])
+```
+
+The same `open -a` pattern is unreliable for iTerm2 and Warp too —
+they need their own URL-scheme or osascript launchers.
+
+
+## Spawn-from-Template Tokenization — Tokenize the Template, Not the Resolved Command
+
+Code that resolves a template like `"open -a Warp {dir}"` into a shell-less
+spawn invocation must NOT do `template.replace('{dir}', path).split(/\s+/)` —
+that shreds paths with spaces (`'/Users/me/My Code/repo'`) into multiple
+args (`'/Users/me/My'`, `'Code/repo'`).
+
+**Rule:** tokenize the TEMPLATE first (the placeholder is one token by
+construction), then substitute the literal path into whichever arg contains
+`{dir}`:
+
+```js
+const tokens = template.split(/\s+/);
+const [cmd, ...rest] = tokens;
+const args = rest.map(t => t.replace('{dir}', actualPath));
+```
+
+
+## Subprocess Executor Must Not Trust Natural Exit After `[result]`
+
+The `claude` CLI emits a final `result` event over stream-json and is supposed to tear down its MCP servers and exit — but in practice it can hang for hours. Confirmed offenders, all spawned by the agent itself: `npm exec @playwright/mcp`, `npm exec @upstash/context7-mcp`, `typescript-language-server --stdio`, and any backgrounded `pnpm dev:web` / shell the agent forgot to kill. They keep stdio open and the parent claude process never closes. A worker that resolves only on `proc.on('close')` then sleeps forever — feature 92701aa8 was stuck `fast-implement` for 3+ hours after the agent had finished, committed, and pushed.
+
+**Rule:** any executor that depends on a subprocess emitting a final event must enforce a grace timer once that event is observed and SIGKILL the subprocess if it fails to exit. Don't trust the child to clean up its own children. Implemented in `claude-code-executor.service.ts` via `RESULT_TO_CLOSE_GRACE_MS = 30_000`: after seeing `type: 'result'` in stream-json, schedule a SIGKILL; the existing `proc.on('close')` handler then resolves with the already-captured result data.
