@@ -81,6 +81,7 @@ export class PtyTerminalSessionService implements ITerminalSessionService {
         TERM: 'xterm-256color',
         COLORTERM: 'truecolor',
         FORCE_COLOR: '1',
+        ...(input.extraEnv ?? {}),
       },
     });
 

@@ -21,6 +21,7 @@ import {
   Home,
   Eye,
   EyeOff,
+  Github,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -46,6 +47,7 @@ import {
 } from '@shepai/core/domain/generated/output';
 import { getEditorTypeIcon } from '@/components/common/editor-type-icons';
 import { AgentModelPicker } from '@/components/features/settings/AgentModelPicker';
+import { GithubIntegrationSection } from '@/components/features/settings/github-integration-section';
 const LANGUAGE_OPTIONS = [
   { value: Language.English, nativeName: 'English' },
   { value: Language.Ukrainian, nativeName: 'Українська' },
@@ -105,6 +107,7 @@ const SECTIONS = [
   { id: 'interactive-agent', labelKey: 'settings.sections.chat', icon: MessageSquare },
   { id: 'home-page', labelKey: 'settings.sections.homePage', icon: Home },
   { id: 'fab-layout', labelKey: 'settings.sections.layout', icon: LayoutGrid },
+  { id: 'integrations', labelKey: 'settings.sections.integrations', icon: Github },
   { id: 'database', labelKey: 'settings.sections.database', icon: Database },
 ] as const;
 
@@ -1919,6 +1922,25 @@ export function SettingsPageClient({
             />
           </SettingsSection>
           <SectionHint>{t('settings.fabLayout.hint')}</SectionHint>
+        </div>
+
+        {/* ── Integrations ── */}
+        <div
+          id="section-integrations"
+          className="grid scroll-mt-18 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[1fr_280px]"
+        >
+          <SettingsSection
+            icon={Github}
+            title="GitHub"
+            description="Connect a Personal Access Token so gh, git push, and other tools authenticate automatically in shep terminals."
+            testId="github-integration-section"
+          >
+            <GithubIntegrationSection />
+          </SettingsSection>
+          <SectionHint>
+            The token is encrypted with your local LocalSecretBox and only injected into terminal
+            sessions you start from shep. It never leaves this machine.
+          </SectionHint>
         </div>
 
         {/* ── Database ── */}
