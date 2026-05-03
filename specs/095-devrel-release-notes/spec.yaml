@@ -4,35 +4,27 @@
 name: devrel-release-notes
 number: 095
 branch: feat/095-devrel-release-notes
-oneLiner: Shep release note are not state of the art and not dev rel / community building freindly it looks like this (see link and attached screenshot)
-https://github.com/shep-ai/shep/releases.
-
-we want to have high visibility for the github feed and be trendy
-atttch screenshot from feed
-
-lets optimize it
-
-@/Users/arielshadkhan/.shep/attachments/pending-48591e45-4645-46af-8242-4fd33881f12e/image-19398d64.png @/Users/arielshadkhan/.shep/attachments/pending-48591e45-4645-46af-8242-4fd33881f12e/image-a9a7a865.png
-userQuery: >
+oneLiner: 'Make GitHub release notes dev-rel friendly with high visibility in the github feed'
+userQuery: |
   Shep release note are not state of the art and not dev rel / community building freindly it looks like this (see link and attached screenshot)
-https://github.com/shep-ai/shep/releases.
+  https://github.com/shep-ai/shep/releases.
 
-we want to have high visibility for the github feed and be trendy
-atttch screenshot from feed
+  we want to have high visibility for the github feed and be trendy
+  atttch screenshot from feed
 
-lets optimize it
+  lets optimize it
 
-@/Users/arielshadkhan/.shep/attachments/pending-48591e45-4645-46af-8242-4fd33881f12e/image-19398d64.png @/Users/arielshadkhan/.shep/attachments/pending-48591e45-4645-46af-8242-4fd33881f12e/image-a9a7a865.png
-summary: >
+  @/Users/arielshadkhan/.shep/attachments/pending-48591e45-4645-46af-8242-4fd33881f12e/image-19398d64.png @/Users/arielshadkhan/.shep/attachments/pending-48591e45-4645-46af-8242-4fd33881f12e/image-a9a7a865.png
+summary: |
   Shep release note are not state of the art and not dev rel / community building freindly it looks like this (see link and attached screenshot)
-https://github.com/shep-ai/shep/releases.
+  https://github.com/shep-ai/shep/releases.
 
-we want to have high visibility for the github feed and be trendy
-atttch screenshot from feed
+  we want to have high visibility for the github feed and be trendy
+  atttch screenshot from feed
 
-lets optimize it
+  lets optimize it
 
-@/Users/arielshadkhan/.shep/attachments/pending-48591e45-4645-46af-8242-4fd33881f12e/image-19398d64.png @/Users/arielshadkhan/.shep/attachments/pending-48591e45-4645-46af-8242-4fd33881f12e/image-a9a7a865.png
+  @/Users/arielshadkhan/.shep/attachments/pending-48591e45-4645-46af-8242-4fd33881f12e/image-19398d64.png @/Users/arielshadkhan/.shep/attachments/pending-48591e45-4645-46af-8242-4fd33881f12e/image-a9a7a865.png
 phase: Analysis
 sizeEstimate: M
 
@@ -55,14 +47,14 @@ content: |
   ## Problem Statement
 
   Shep release note are not state of the art and not dev rel / community building freindly it looks like this (see link and attached screenshot)
-https://github.com/shep-ai/shep/releases.
+  https://github.com/shep-ai/shep/releases.
 
-we want to have high visibility for the github feed and be trendy
-atttch screenshot from feed
+  we want to have high visibility for the github feed and be trendy
+  atttch screenshot from feed
 
-lets optimize it
+  lets optimize it
 
-@/Users/arielshadkhan/.shep/attachments/pending-48591e45-4645-46af-8242-4fd33881f12e/image-19398d64.png @/Users/arielshadkhan/.shep/attachments/pending-48591e45-4645-46af-8242-4fd33881f12e/image-a9a7a865.png
+  @/Users/arielshadkhan/.shep/attachments/pending-48591e45-4645-46af-8242-4fd33881f12e/image-19398d64.png @/Users/arielshadkhan/.shep/attachments/pending-48591e45-4645-46af-8242-4fd33881f12e/image-a9a7a865.png
 
   ## Success Criteria
 
