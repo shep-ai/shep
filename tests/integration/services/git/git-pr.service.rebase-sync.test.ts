@@ -102,17 +102,31 @@ async function addUpstreamCommit(
     await git(tmpClone, ['commit', '-m', message]);
     await git(tmpClone, ['push', 'origin', 'main']);
   } finally {
-    rmSync(tmpClone, { recursive: true, force: true });
+    // maxRetries + retryDelay: Windows holds transient file locks (antivirus,
+    // indexer, lingering git child handles) that briefly raise EBUSY/EPERM on
+    // rmdir; Node's built-in retry loop turns those flakes into a single
+    // visible failure only when something is genuinely stuck.
+    rmSync(tmpClone, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 }
 
 function destroyDirs(dirs: string[]): void {
   for (const dir of dirs) {
     if (existsSync(dir)) {
-      rmSync(dir, { recursive: true, force: true });
+      // See note above on rmSync retry options — same Windows safety net.
+      rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   }
 }
+
+/**
+ * `beforeEach` timeout for the git-harness setup blocks below. Each
+ * harness creation runs ~10 git subprocesses; on Windows CI runners
+ * git's process spawn cost (plus filesystem latency) can easily push
+ * a single setup past vitest's default 10s hook timeout. Bumping it
+ * removes the flake without changing test semantics.
+ */
+const HARNESS_HOOK_TIMEOUT_MS = 60_000;
 
 /* ------------------------------------------------------------------ */
 /*  Tests                                                              */
@@ -132,7 +146,7 @@ describe('GitPrService — syncMain (integration)', () => {
     featureBranch = harness.featureBranch;
     dirs.push(bareDir, cloneDir);
     service = new GitPrService(makeRealExec());
-  });
+  }, HARNESS_HOOK_TIMEOUT_MS);
 
   afterEach(() => {
     destroyDirs(dirs);
@@ -247,7 +261,7 @@ describe('GitPrService — rebaseOnMain (integration)', () => {
     featureBranch = harness.featureBranch;
     dirs.push(bareDir, cloneDir);
     service = new GitPrService(makeRealExec());
-  });
+  }, HARNESS_HOOK_TIMEOUT_MS);
 
   afterEach(async () => {
     // Ensure no mid-rebase state before cleanup (prevents rmSync errors)
@@ -396,7 +410,7 @@ describe('GitPrService — helper methods (integration)', () => {
     featureBranch = harness.featureBranch;
     dirs.push(bareDir, cloneDir);
     service = new GitPrService(makeRealExec());
-  });
+  }, HARNESS_HOOK_TIMEOUT_MS);
 
   afterEach(async () => {
     for (const dir of dirs) {
@@ -511,7 +525,7 @@ describe('GitPrService — stash (integration)', () => {
     featureBranch = harness.featureBranch;
     dirs.push(bareDir, cloneDir);
     service = new GitPrService(makeRealExec());
-  });
+  }, HARNESS_HOOK_TIMEOUT_MS);
 
   afterEach(async () => {
     for (const dir of dirs) {
@@ -622,7 +636,7 @@ describe('GitPrService — stash + rebase + pop flow (integration)', () => {
     featureBranch = harness.featureBranch;
     dirs.push(bareDir, cloneDir);
     service = new GitPrService(makeRealExec());
-  });
+  }, HARNESS_HOOK_TIMEOUT_MS);
 
   afterEach(async () => {
     for (const dir of dirs) {

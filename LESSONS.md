@@ -466,3 +466,14 @@ The Vite-based Storybook config aliases `@/app/actions/*` to `.storybook/mocks/a
 Adding a key to `translations/en/web.json` without mirroring it in `ar, de, es, fr, he, pt, ru, uk` fails the `tests/unit/translations/translation-completeness.test.ts` parity check on CI. The full locale set is enumerated by the `Language` enum in `packages/core/src/domain/generated/output.ts`. Test failure looks like: `AssertionError: Keys missing in <locale>/web.json: expected ['settings.x.y'] to deeply equal []`.
 
 **Rule:** every new `t('foo.bar')` call requires a key added to ALL nine `translations/*/web.json` files in the same commit, including a real translation (not a copy of the English string). Run `pnpm test:unit -- tests/unit/translations/translation-completeness.test.ts` before pushing — it completes in under a minute and catches all missing keys at once.
+
+## Windows CI Integration-Test Flakes Have Two Specific Root Causes
+
+The Windows runner failed `pnpm test:int` with two error patterns: `Hook timed out in 10000ms` inside `beforeEach` blocks that build a real git harness, and `EBUSY: resource busy or locked, rmdir 'C:\Users\RUNNER~1\...'` inside `afterEach` cleanup. Ubuntu was green on the same commit. Both errors are environmental, not behavioural — the tests work, they just don't fit the default timing budget on Windows where git process startup is slower and the filesystem occasionally holds transient locks (antivirus, indexer, lingering child handles).
+
+**Rules for any integration test that spawns real git/sqlite/filesystem subprocesses:**
+
+1. **Default vitest hookTimeout is 10s.** A `beforeEach` that spawns ~10 git subprocesses (`init --bare`, `clone`, `config`, `checkout`, `commit`, ...) will pass that on Linux but cut it close on Windows under load. Either bump the project-wide `hookTimeout` in `vitest.config.ts` (current setting: 20s for the `node` project) or pass an explicit timeout as the third arg: `beforeEach(async () => { ... }, 60_000)`.
+2. **`rmSync(dir, { recursive: true, force: true })` is not enough on Windows.** Always pass `maxRetries: 5, retryDelay: 100` so a transient file lock turns into a single retry instead of a whole-test failure. This applies to every cleanup helper (`destroyHarness`, `destroyDirs`, ad-hoc `finally` blocks).
+3. **`testTimeout` for the `node` project is 60s in `vitest.config.ts`.** That covers heavy real-git tests like the merge-step suite. Tests that take longer than that on Linux are bugs, not slow-machine excuses — fix the test, do not bump the timeout further.
+4. **Always check failures across ALL OS targets before claiming a fix.** `gh run view <id> --json jobs` lists every job; a green Ubuntu does not mean a green PR. Required check is `Unit Tests (windows-latest)` AND `Unit Tests (ubuntu-latest)`.

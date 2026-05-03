@@ -76,7 +76,16 @@ export default defineConfig({
           ],
           environment: 'node',
           setupFiles: ['tests/unit/setup.ts'],
-          testTimeout: 30000,
+          // testTimeout / hookTimeout are sized for the heaviest integration
+          // tests, which spawn real git harnesses. On the Windows CI runner
+          // git's process startup + filesystem latency can push a single
+          // setup or test past vitest's defaults (10s hook / 30s test) even
+          // when the test itself is healthy. Bumping the project ceilings
+          // turns Windows-only flakes into either a clean pass or a real
+          // signal we have to investigate, never a false positive at the
+          // arbitrary default boundary.
+          testTimeout: 60000,
+          hookTimeout: 20000,
         },
         resolve: sharedResolve,
       },
