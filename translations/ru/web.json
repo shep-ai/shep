@@ -16,7 +16,8 @@
       "chat": "Чат",
       "homePage": "Home page",
       "layout": "Расположение",
-      "database": "База данных"
+      "database": "База данных",
+      "integrations": "Интеграции"
     },
     "language": {
       "title": "Язык",

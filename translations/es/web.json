@@ -16,7 +16,8 @@
       "chat": "Chat",
       "homePage": "Home page",
       "layout": "Diseño",
-      "database": "Base de datos"
+      "database": "Base de datos",
+      "integrations": "Integraciones"
     },
     "language": {
       "title": "Idioma",
