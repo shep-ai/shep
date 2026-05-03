@@ -97,10 +97,14 @@ function computeVisibleTabs(
   if (node.lifecycle === 'requirements' && node.state === 'action-required') {
     tabs.push('prd-review');
   }
-  // Tech / Product spec tabs are visible for the entire implementation phase
-  // so users can review the locked-in technical and product decisions while
-  // the agent is running, on error, or paused for approval.
-  if (node.lifecycle === 'implementation') {
+  // Tech / Product spec tabs stay visible from implementation onwards so
+  // users can review the locked-in decisions while the agent works, while
+  // a PR is open in review, and after the feature is merged in maintain.
+  if (
+    node.lifecycle === 'implementation' ||
+    node.lifecycle === 'review' ||
+    node.lifecycle === 'maintain'
+  ) {
     tabs.push('tech-decisions', 'product-decisions');
   }
   if (node.lifecycle === 'review' && (node.state === 'action-required' || node.state === 'error')) {
@@ -661,7 +665,8 @@ export function FeatureDrawerTabs({
                 <div className="flex-1 overflow-y-auto">
                   <TechDecisionsContent data={techData} />
                 </div>
-                {featureNode.state === 'action-required' ? (
+                {featureNode.lifecycle === 'implementation' &&
+                featureNode.state === 'action-required' ? (
                   <DrawerActionBarForTech
                     onApprove={onTechApprove ?? (() => undefined)}
                     onReject={onTechReject}

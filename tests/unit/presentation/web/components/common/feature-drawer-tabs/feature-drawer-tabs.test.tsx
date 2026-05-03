@@ -622,16 +622,67 @@ describe('FeatureDrawerTabs', () => {
       expect(screen.getByRole('tab', { name: 'Product' })).toBeInTheDocument();
     });
 
-    it('hides tech-decisions and product-decisions tabs outside implementation phase', () => {
+    it('hides tech-decisions and product-decisions tabs in early phases (requirements/research)', () => {
+      for (const lifecycle of ['requirements', 'research'] as const) {
+        const { unmount } = renderTabs({
+          featureNode: {
+            ...defaultFeatureNode,
+            lifecycle,
+            state: 'running',
+          },
+        });
+        expect(screen.queryByRole('tab', { name: 'Tech Decisions' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('tab', { name: 'Product' })).not.toBeInTheDocument();
+        unmount();
+      }
+    });
+
+    it('keeps tech-decisions and product-decisions tabs visible in review phase', () => {
       renderTabs({
         featureNode: {
           ...defaultFeatureNode,
-          lifecycle: 'requirements',
-          state: 'running',
+          lifecycle: 'review',
+          state: 'action-required',
         },
+        techData: sampleTechData,
+        productData: sampleProductData,
       });
-      expect(screen.queryByRole('tab', { name: 'Tech Decisions' })).not.toBeInTheDocument();
-      expect(screen.queryByRole('tab', { name: 'Product' })).not.toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Tech Decisions' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Product' })).toBeInTheDocument();
+    });
+
+    it('keeps tech-decisions and product-decisions tabs visible in maintain phase', () => {
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'maintain',
+          state: 'done',
+        },
+        techData: sampleTechData,
+        productData: sampleProductData,
+      });
+      expect(screen.getByRole('tab', { name: 'Tech Decisions' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Product' })).toBeInTheDocument();
+    });
+
+    it('does not render the action bar in review/maintain even when tech data is present', async () => {
+      const user = userEvent.setup();
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'review',
+          state: 'action-required',
+        },
+        techData: sampleTechData,
+        onTechApprove: vi.fn(),
+      });
+
+      await user.click(screen.getByRole('tab', { name: 'Tech Decisions' }));
+
+      // Action bar is gated to lifecycle=implementation + state=action-required.
+      // Review's action-required state shows merge-review's action bar, not tech's.
+      expect(screen.getByText('Technical Implementation Plan Review')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /approve plan/i })).not.toBeInTheDocument();
     });
 
     it('renders tech decisions content without action bar when state is not action-required', async () => {
