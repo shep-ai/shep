@@ -1,55 +1,89 @@
-# Feature Specification (YAML)
-# This is the source of truth. Markdown is auto-generated from this file.
-
-name: spec-visualization-tabs
-number: 095
-branch: feat/095-spec-visualization-tabs
-oneLiner: When feature is in implemention phase we should have tabs that visualize the product/tech specs
-userQuery: >
-  When feature is in implemention phase we should have tabs that visualize the product/tech specs
-summary: >
-  When feature is in implemention phase we should have tabs that visualize the product/tech specs
-phase: Analysis
-sizeEstimate: M
-
-# Relationships
-relatedFeatures:
-  []
-
+name: "spec-visualization-tabs"
+number: 95
+branch: "feat/095-spec-visualization-tabs"
+oneLiner: "When a feature is in implementation phase, expose Tech Decisions and Product tabs in the feature drawer so users can review the locked-in technical and product choices while the agent is running."
+userQuery: "When feature is in implemention phase we should have tabs that visualize the product/tech specs\n"
+summary: "Make the Tech Decisions and Product tabs visible for the entire implementation lifecycle (running, action-required, error) — not only on action-required — so users can browse the chosen tech stack and resolved product questions while the agent is implementing. Action bars on those tabs remain gated to the action-required state so the tabs are read-only by default and only invite approval/reject when the agent has paused for review.\n"
+phase: "Implementation"
+sizeEstimate: "M"
+relatedFeatures: []
 technologies:
-  []
-
+  - "Next.js 15 (App Router, server actions)"
+  - "React 19"
+  - "Storybook 9 (component states)"
+  - "Vitest + Testing Library (component tests)"
+  - "Tailwind CSS + lucide-react icons"
+  - "TypeScript 5"
 relatedLinks:
-  []
-
-# Open questions (must be resolved before implementation)
+  - title: "FeatureDrawerTabs source"
+    url: "src/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.tsx"
+  - title: "TechDecisionsContent source"
+    url: "src/presentation/web/components/common/tech-decisions-review/tech-decisions-review.tsx"
+  - title: "ProductDecisionsSummary source"
+    url: "src/presentation/web/components/common/product-decisions-summary/product-decisions-summary.tsx"
 openQuestions:
-  []
+  - question: "During which lifecycle phases and feature states should the Tech Decisions and Product tabs be visible?"
+    resolved: true
+    options:
+      - option: "Only during implementation, regardless of state (running, action-required, error)"
+        description: "Show both tabs for the entire implementation phase so users can review locked-in decisions while the agent is running, paused for approval, or stopped on error. Tab visibility is purely a function of lifecycle, not transient state."
+        selected: true
+      - option: "Only during implementation + action-required (current behavior)"
+        description: "Keep the existing narrow gate — tabs only appear when the agent has paused for plan/product approval. Users cannot browse decisions while the implementation is actively running."
+        selected: false
+      - option: "Always visible after research phase completes"
+        description: "Show the tabs from the moment research finishes (so they appear during planning and implementation alike). Broader surface area but conflates 'plan being decided' with 'plan locked in'."
+        selected: false
+    selectionRationale: "The user story is 'while the feature is being implemented I want to see the chosen tech and product decisions.' Lifecycle-only gating (option 1) is the smallest change that satisfies it: we already have the lifecycle on the FeatureNode, and dropping the state check from `computeVisibleTabs` is one boolean. Keeping the gate to lifecycle === 'implementation' (rather than 'after research') prevents the tabs from appearing before the artifacts are written and avoids confusing users with empty tabs during the planning phase."
+    answer: "Only during implementation, regardless of state"
 
-# Markdown content (the actual spec)
-content: |
-  ## Problem Statement
+  - question: "Should the approve/reject action bar appear on the Tech Decisions tab whenever the tab is visible, or only when the agent has paused for approval?"
+    resolved: true
+    options:
+      - option: "Show action bar only when state === 'action-required'"
+        description: "The tab is browsable in all implementation states, but the approve/reject DrawerActionBar only mounts when the agent has explicitly paused for plan approval. In running/error states the tab is read-only — a pure visualization of the locked-in decisions."
+        selected: true
+      - option: "Always show the action bar when the tab is visible"
+        description: "Simpler render path — the action bar is part of the tab. But it would let users 'approve' a plan that is already executing, which has no defined backend behavior and would create a misleading UX."
+        selected: false
+      - option: "Replace the action bar with a 'View only' badge in non-action states"
+        description: "Explicitly signals read-only mode but adds a third UI surface (badge, action bar, content) for very little user benefit — the absence of buttons already communicates read-only."
+        selected: false
+    selectionRationale: "Gating only the action bar on `state === 'action-required'` cleanly separates 'can I see the data?' (lifecycle question) from 'can I act on it?' (state question). It reuses the existing approve/reject flow without modification and has zero risk of double-approving an in-progress plan. Tested explicitly via the `feature-drawer-tabs.test.tsx` 'spec visualization tabs during implementation phase' describe block."
+    answer: "Show action bar only when state === 'action-required'"
 
-  When feature is in implemention phase we should have tabs that visualize the product/tech specs
+  - question: "How should the Product tab present resolved open questions — as a structured questionnaire with options, or as a flat decisions summary?"
+    resolved: true
+    options:
+      - option: "Read-only ProductDecisionsSummary (question + selected option + rationale)"
+        description: "Map each resolved openQuestion in spec.yaml to a single line: the question, the selected option (or free-text answer), and the selection rationale. Mirrors the Tech Decisions card layout (chosen + rationale) for visual consistency. Filters out unresolved questions so the tab only shows locked-in decisions."
+        selected: true
+      - option: "Reuse the full PrdQuestionnaire UI in disabled mode"
+        description: "Shows every question with all options visible (selected highlighted), matching the requirements-phase view. More information per question but visually noisier and conflates 'review the decision' with 'change the decision'."
+        selected: false
+      - option: "Render the raw spec.yaml content block as Markdown"
+        description: "Zero new components — just dump the rendered spec markdown. Loses all structure (no per-question rationale highlighting) and would also leak unresolved/draft content into the implementation view."
+        selected: false
+    selectionRationale: "A dedicated ProductDecisionsSummary keeps the implementation-phase view focused on outcomes (what was decided + why) rather than inputs (the menu of options). It also keeps a clean separation between the requirements-phase questionnaire (interactive, action-required) and the implementation-phase summary (read-only, browseable), so the two presentations can evolve independently. Confirmed in `app-feature-product-decisions-during-implementation.png`, which shows this exact summary rendered against the live spec.yaml openQuestions for this feature."
+    answer: "Read-only ProductDecisionsSummary"
 
-  ## Success Criteria
-
-  - [ ] TBD
-
-  ## Affected Areas
-
-  | Area | Impact | Reasoning |
-  | ---- | ------ | --------- |
-  | TBD  | TBD    | TBD       |
-
-  ## Dependencies
-
-  None identified.
-
-  ## Size Estimate
-
-  **M** - To be refined during research
-
-  ---
-
-  _Generated by feature agent — proceed with research_
+  - question: "What should the empty state look like when a feature in the implementation phase has no research/feature artifact yet?"
+    resolved: true
+    options:
+      - option: "Render a single-line muted message ('No technical decisions available.' / 'No product decisions available.')"
+        description: "Lightweight, consistent with the empty-state pattern used by the Activity and Plan tabs. Communicates 'tab is wired up, data just hasn't arrived yet' without alarming the user."
+        selected: true
+      - option: "Hide the tab entirely until artifact data is loaded"
+        description: "Looks cleaner but causes the tab bar to flicker as artifacts stream in, and makes it hard for the user to know the feature is supposed to have decisions at all."
+        selected: false
+      - option: "Show a full-page error state with a retry button"
+        description: "Overstated for the common case where the agent simply hasn't produced the artifact yet. Reserved for true fetch failures, which already surface via the loading→error transition."
+        selected: false
+    selectionRationale: "The muted-text empty state matches the existing Activity / Plan tab empty-state convention, lets the tab stay visible (so the user can confirm the feature has the visualization) and is one trivial paragraph element per tab. After this iteration the live spec-visualization-tabs feature now ships with both research.yaml and populated openQuestions, so the Tech Decisions and Product tabs render real content in `app-feature-tech-decisions-during-implementation.png` / `app-feature-product-decisions-during-implementation.png` rather than the empty state — the muted message is still the documented fallback when an artifact is genuinely missing."
+    answer: "Single-line muted message"
+content: "## Problem Statement\n\nWhen a feature is in the implementation phase, the user has no way to browse the locked-in technical decisions or product decisions from the feature drawer. The Tech Decisions and Product tabs only appear when the agent has paused for explicit approval (state === action-required), which means while the agent is actively coding (state === running) or after a failure (state === error) the user cannot see what the agent decided.\n\nThis breaks the implementation-phase workflow: users want to glance at the chosen tech stack and resolved product questions while the work is in flight, not only at approval gates.\n\n## Success Criteria\n\n- [x] Tech Decisions tab is visible whenever lifecycle === implementation (running, action-required, error)\n- [x] Product tab is visible whenever lifecycle === implementation (running, action-required, error)\n- [x] Approve/Reject action bar on Tech Decisions only renders when state === action-required\n- [x] Both tabs render a clear empty state when the underlying artifact is missing\n- [x] Tabs disappear automatically when the lifecycle transitions out of implementation\n- [x] Existing requirements-phase PRD questionnaire and review-phase merge review remain unchanged\n- [x] Component test coverage in feature-drawer-tabs.test.tsx (8 new tests, all passing)\n\n## Affected Areas\n\n| Area | Impact | Reasoning |\n| ---- | ------ | --------- |\n| `feature-drawer-tabs.tsx` | Modify `computeVisibleTabs` to expose tech-decisions and product-decisions for the entire implementation lifecycle, and gate the DrawerActionBar on state === action-required. | Core change — single source of truth for tab visibility. |\n| `tech-decisions-review/` | Add `TechDecisionsContent` export so the tabs can compose the content without the always-on action bar. | Decouples the read-only renderer from the action bar wrapper. |\n| `product-decisions-summary/` | Read-only summary component used by the new Product tab. | Keeps the requirements-phase questionnaire and the implementation-phase summary visually distinct. |\n| `feature-drawer-tabs.test.tsx` | New describe block (8 tests) for the during-implementation behaviors. | TDD coverage for the new visibility + gating rules. |\n| Storybook stories | New `TechSpecsDuringImplementation` / `ProductSpecsDuringImplementation` / `TechReviewActive` variants. | Visual regression for the three meaningful states. |\n\n## Dependencies\n\nNone — this feature stays inside the existing presentation layer and reuses the existing `getResearchArtifact` / `getFeatureArtifact` server actions.\n\n## Size Estimate\n\n**M** — one tab-visibility rule change, one read-only component, one new test block, three new Storybook stories.\n"
+rejectionFeedback:
+  - iteration: 1
+    message: "the evidence doesn't have actual evidence showing there are info in the tech decision and product the eviedence is just from the mocks (storybook) bring from the real app as well and update the mrege review"
+    phase: "merge"
+    timestamp: "2026-05-03T16:37:29.067Z"

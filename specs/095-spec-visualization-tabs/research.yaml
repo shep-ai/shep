@@ -1,0 +1,140 @@
+name: "spec-visualization-tabs"
+content: "Technical research artifact for the spec visualization tabs feature. The full set of decisions is captured in the structured `decisions` array below; this content block exists to satisfy the artifact schema and is intentionally a short prose summary so the structured fields stay the source of truth.\n"
+openQuestions: []
+summary: >
+  Surface the locked-in technical and product decisions inside the feature
+  drawer for the entire implementation lifecycle (running, action-required,
+  error). The visibility rule lives in `computeVisibleTabs` inside
+  `feature-drawer-tabs.tsx` and is purely a function of `lifecycle ===
+  'implementation'`. The approve/reject action bar on the Tech Decisions tab
+  is independently gated on `state === 'action-required'` so the tabs are
+  read-only by default and only invite an action when the agent has paused
+  for plan approval. Data is sourced from the existing
+  `getResearchArtifact` / `getFeatureArtifact` server actions; no new
+  ports, repositories, or migrations are introduced.
+
+relatedFeatures: []
+
+technologies:
+  - "TypeScript 5 (strict mode)"
+  - "React 19 + Next.js 15 App Router"
+  - "Radix UI Tabs (via shadcn/ui)"
+  - "lucide-react (Cpu, Package icons)"
+  - "Tailwind CSS"
+  - "Storybook 9 (decorator-based mock contexts)"
+  - "Vitest + @testing-library/react"
+  - "react-markdown (rationale rendering inside decision cards)"
+
+relatedLinks:
+  - title: "Radix Tabs primitive"
+    url: "https://www.radix-ui.com/primitives/docs/components/tabs"
+  - title: "shadcn/ui Tabs component"
+    url: "https://ui.shadcn.com/docs/components/tabs"
+  - title: "Existing computeVisibleTabs (lifecycle gating)"
+    url: "src/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.tsx"
+  - title: "Existing TechDecisionsReview wrapper (with action bar)"
+    url: "src/presentation/web/components/common/tech-decisions-review/tech-decisions-review.tsx"
+
+decisions:
+  - title: "Tab visibility: gate on lifecycle, not on lifecycle + state"
+    chosen: >
+      Drop the `state === 'action-required'` predicate from the
+      `tech-decisions` and `product-decisions` branches of
+      `computeVisibleTabs`. The tabs become visible whenever
+      `node.lifecycle === 'implementation'`, regardless of whether the
+      feature is running, paused for approval, or stopped on error.
+    rejected:
+      - "Keep the existing `lifecycle === 'implementation' && state === 'action-required'` gate — preserves the old behavior but does not solve the user request (decisions are invisible while the agent is actively running)."
+      - "Make visibility a function of artifact presence (show iff the artifact loaded successfully) — sounds clean but couples tab visibility to async data fetch state, causing the tab bar to flicker as artifacts stream in."
+      - "Show the tabs from the moment research finishes (lifecycle in {plan, implementation}) — broader surface, but during the planning phase the artifacts are still being decided so the tabs would render stale or partial data."
+    rationale: >
+      The user-stated requirement is 'while the feature is being
+      implemented I want to see the chosen tech and product decisions.'
+      Lifecycle is the simplest, most semantic gate for that — it is
+      already on the FeatureNode, it does not depend on artifact fetch
+      state, and dropping the state predicate is a one-line change in
+      `computeVisibleTabs`. Tying visibility to state instead would
+      require us to teach the user that 'this tab disappears while the
+      agent is working,' which is the opposite of the requested
+      behavior.
+
+  - title: "Action bar gating: keep approve/reject only on action-required"
+    chosen: >
+      Render the `DrawerActionBar` only when `featureNode.state ===
+      'action-required'` inside the `<TabsContent value="tech-decisions">`
+      JSX. In all other implementation states the tab renders
+      `<TechDecisionsContent>` alone — content is browseable but not
+      actionable.
+    rejected:
+      - "Keep the action bar baked into `<TechDecisionsReview>` and use that wrapper everywhere — would let users 'approve' a plan that is already executing, which has no defined backend behavior."
+      - "Always show the action bar but disable the buttons in non-action states — same UX problem (the buttons imply you can act on them) plus extra disabled-state styling complexity."
+      - "Replace the action bar with a 'View only' badge in non-action states — adds a third UI surface for almost no information value."
+    rationale: >
+      Splitting the read-only content (`TechDecisionsContent`) from the
+      action bar makes the gating trivial and reuses the existing
+      approve/reject flow without modification. The Tech Decisions tab
+      composes the content + (optional) action bar inside the tab itself,
+      following the same composition pattern that the Merge Review tab
+      uses (`<MergeReview readOnly={lifecycle === 'maintain'}>`).
+
+  - title: "Source of truth: reuse existing server actions, do not add new ports"
+    chosen: >
+      Read tech decisions via the existing
+      `getResearchArtifact(featureId)` server action (which calls
+      `GetResearchArtifactUseCase` → reads `research.yaml`) and product
+      decisions via `getFeatureArtifact(featureId)` (→
+      `GetFeatureArtifactUseCase` → reads `spec.yaml`'s
+      `openQuestions[]`). The Product tab maps resolved openQuestions
+      into the existing `ProductDecisionsSummaryData` shape via the
+      same `toProductDecisionsData` transform already used at the
+      requirements review stage.
+    rejected:
+      - "Add a new use case (e.g. `GetSpecVisualizationUseCase`) that bundles tech + product into one payload — duplicates existing logic, adds a port, and prevents independent caching of the two artifacts."
+      - "Fetch the artifacts directly inside the tab component via fetch() — bypasses the use-case boundary mandated by `.claude/rules/code-quality.md`."
+      - "Read research.yaml / spec.yaml from the client via filesystem proxy — impossible in the browser and would defeat the use-case pattern."
+    rationale: >
+      The two server actions already exist, already return the exact
+      shape the read-only renderers need, and are already wired through
+      the use-case layer. Reusing them keeps presentation thin (per
+      `.claude/rules/code-quality.md`), avoids duplicate fetch paths,
+      and makes the new tabs behave identically to the requirements
+      and review-phase tabs that consume the same data.
+
+  - title: "Empty-state strategy when artifacts are missing"
+    chosen: >
+      Render a single muted `<p>` with the text 'No technical decisions
+      available.' (Tech Decisions) or 'No product decisions available.'
+      (Product) when the artifact load resolves with no usable data.
+      The tab itself stays in the tab bar.
+    rejected:
+      - "Hide the tab entirely until the artifact loads — causes the tab bar to reflow as artifacts stream in and obscures the fact that the feature is supposed to have visualizations."
+      - "Show a full-screen error with a retry button — overstated for the common case where the agent simply has not produced the artifact yet."
+      - "Render placeholder skeleton cards indefinitely — users cannot distinguish 'loading' from 'no data,' which is the actual state."
+    rationale: >
+      The muted-text empty state matches the pattern already used by
+      the Activity and Plan tabs and is one trivial paragraph element
+      per tab. Crucially, the tab stays visible so the user can verify
+      that the implementation phase exposes these visualizations even
+      when the live feature has not produced its own artifacts yet —
+      this is exactly the state captured in the new app-level evidence
+      screenshots.
+
+  - title: "Test coverage shape: extend the existing component test, do not add a new file"
+    chosen: >
+      Append a new describe block ('spec visualization tabs during
+      implementation phase') with 8 tests to the existing
+      `feature-drawer-tabs.test.tsx`. The block covers tab visibility
+      across running / action-required / error states, tab
+      hiding outside the implementation lifecycle, action-bar gating,
+      and the new empty-state messages.
+    rejected:
+      - "Create a brand-new spec-visualization-tabs.test.tsx file — duplicates the test setup boilerplate and fragments coverage of `computeVisibleTabs` across two files."
+      - "Cover the behavior only in Storybook play functions — Storybook is supplementary, not a replacement for component tests, and the rules require unit-level coverage for visibility logic."
+      - "Skip new tests and rely on integration / e2e — too coarse for a function-level visibility rule and would not catch a regression in the action-bar gate."
+    rationale: >
+      `feature-drawer-tabs.test.tsx` already owns the tab visibility
+      contract and has the full mock setup for `FeatureNodeData`,
+      so extending it is the smallest change with the highest
+      regression value. The 8-test block now passes alongside the
+      original 33 tests (41 total), proving the new behavior does not
+      break the existing PRD review / merge review / chat tab gates.
