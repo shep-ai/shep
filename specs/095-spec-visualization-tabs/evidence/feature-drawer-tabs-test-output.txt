@@ -1,0 +1,50 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-spec-visualization-tabs
+
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > tab triggers > renders four tab triggers when hasPlan is true 136ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > tab triggers > hides Log tab when hasAgentRun is not set (adopted features) 25ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > tab triggers > hides Plan tab when hasPlan is false 21ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > tab triggers > hides Plan tab when hasPlan is undefined 15ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > tab triggers > shows Plan tab regardless of lifecycle when hasPlan is true 13ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > default tab > overview tab is active by default 14ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > default tab > renders overview content by default 10ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > lazy data fetching > does not fetch any data on initial render 9ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > lazy data fetching > clicking Activity tab triggers phase timings fetch 54ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > lazy data fetching > clicking Plan tab triggers plan fetch 43ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > lazy data fetching > clicking Activity tab again does not trigger another fetch (cache hit) 102ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > feature id change > resets to Overview tab when featureId changes 50ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > SSE refresh > re-fetches active tab data when SSE events arrive for this feature 27ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > SSE refresh > refreshes activity data even when overview tab is active and SSE events arrive 11ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > SSE refresh > ignores SSE events for a different feature 29ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > SSE refresh > does not re-process already-seen SSE events 28ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > phase transition tab switching > switches to merge-review tab when initialTab changes due to lifecycle transition 26ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > phase transition tab switching > switches to prd-review tab when feature enters requirements action-required 21ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > phase transition tab switching > falls back to overview when active tab becomes invisible after lifecycle change 16ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > merge-review tab visibility for maintain lifecycle > includes merge-review tab when lifecycle=maintain and pr exists 10ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > merge-review tab visibility for maintain lifecycle > excludes merge-review tab when lifecycle=maintain and pr is undefined 9ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > merge-review tab visibility for maintain lifecycle > renders Merge History label when lifecycle=maintain (not Merge Review) 14ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > merge-review tab visibility for maintain lifecycle > renders Merge Review label when lifecycle=review 12ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > merge-review readOnly prop threading > passes readOnly to MergeReview when lifecycle=maintain (no action bar) 32ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > merge-review readOnly prop threading > does not pass readOnly when lifecycle=review (action bar present) 29ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > spec visualization tabs during implementation phase > shows tech-decisions and product-decisions tabs during implementation+running 13ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > spec visualization tabs during implementation phase > shows tech-decisions and product-decisions tabs during implementation+action-required 13ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > spec visualization tabs during implementation phase > shows tech-decisions and product-decisions tabs during implementation+error 12ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > spec visualization tabs during implementation phase > hides tech-decisions and product-decisions tabs outside implementation phase 9ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > spec visualization tabs during implementation phase > renders tech decisions content without action bar when state is not action-required 28ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > spec visualization tabs during implementation phase > renders tech decisions content with action bar when state is action-required 24ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > spec visualization tabs during implementation phase > renders product decisions content for any implementation state 19ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > spec visualization tabs during implementation phase > shows empty-state message when tech data is unavailable and not loading 18ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > URL tab routing > activates the tab specified in urlTab prop 12ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > URL tab routing > defaults to overview when no urlTab is provided 11ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > URL tab routing > ignores urlTab for a tab not visible in current lifecycle 11ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > URL tab routing > updates URL via pushState when user clicks a different tab 20ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > URL tab routing > updates URL to base path via pushState when switching back to overview 22ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > URL tab routing > fetches lazy tab data when opened via URL 5ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > URL tab routing > fetches plan tab data when opened via URL 6ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx > FeatureDrawerTabs > URL tab routing > URL tab takes priority over initialTab prop 9ms
+
+ Test Files  1 passed (1)
+      Tests  41 passed (41)
+   Start at  11:55:11
+   Duration  2.49s (transform 441ms, setup 163ms, import 922ms, tests 989ms, environment 352ms)
+
