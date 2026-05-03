@@ -437,3 +437,21 @@ const args = rest.map(t => t.replace('{dir}', actualPath));
 The `claude` CLI emits a final `result` event over stream-json and is supposed to tear down its MCP servers and exit — but in practice it can hang for hours. Confirmed offenders, all spawned by the agent itself: `npm exec @playwright/mcp`, `npm exec @upstash/context7-mcp`, `typescript-language-server --stdio`, and any backgrounded `pnpm dev:web` / shell the agent forgot to kill. They keep stdio open and the parent claude process never closes. A worker that resolves only on `proc.on('close')` then sleeps forever — feature 92701aa8 was stuck `fast-implement` for 3+ hours after the agent had finished, committed, and pushed.
 
 **Rule:** any executor that depends on a subprocess emitting a final event must enforce a grace timer once that event is observed and SIGKILL the subprocess if it fails to exit. Don't trust the child to clean up its own children. Implemented in `claude-code-executor.service.ts` via `RESULT_TO_CLOSE_GRACE_MS = 30_000`: after seeing `type: 'result'` in stream-json, schedule a SIGKILL; the existing `proc.on('close')` handler then resolves with the already-captured result data.
+
+## New DI Module → Add to BOTH Production Container AND Bootstrap Test
+
+When adding a new `register<Foo>(container)` module to `packages/core/src/infrastructure/di/modules/`, the production wiring lives in `container.ts`. The integration test `tests/integration/infrastructure/di/container-bootstrap.test.ts` has its OWN parallel list of `register*()` calls — it does NOT import `initializeContainer()`. Forgetting to add your new module there causes downstream resolution failures (e.g. "Cannot inject the dependency 'X' at position #N of YUseCase") only at CI time, not locally for the affected use case.
+
+**Rule:** any new `register<Foo>(container)` module must be added in TWO places at once: (1) `container.ts` and (2) the `beforeAll()` block in `container-bootstrap.test.ts`. Add the import alongside the others in alphabetical order to make missing entries visually obvious in PR diffs.
+
+## New Server Action → Add Storybook Mock at .storybook/mocks/app/actions/
+
+The Vite-based Storybook config aliases `@/app/actions/*` to `.storybook/mocks/app/actions/*`. Any web component that imports `@/app/actions/<new-action>` will break the Storybook build with `[vite:load-fallback] Could not load ./.storybook/mocks/app/actions/<new-action>` unless a mock file with the same name and the same exported function signatures exists. The runtime app does not need this — only Storybook does.
+
+**Rule:** when you add `src/presentation/web/app/actions/<name>.ts` AND any component imports from it, immediately create `.storybook/mocks/app/actions/<name>.ts` exporting stubbed versions of every function the component uses. Match exported names exactly; types can be re-imported from the same domain interfaces. See `.storybook/mocks/app/actions/load-settings.ts` for the canonical pattern.
+
+## New Translation Key → Add to ALL 9 Locales in the Same Commit
+
+Adding a key to `translations/en/web.json` without mirroring it in `ar, de, es, fr, he, pt, ru, uk` fails the `tests/unit/translations/translation-completeness.test.ts` parity check on CI. The full locale set is enumerated by the `Language` enum in `packages/core/src/domain/generated/output.ts`. Test failure looks like: `AssertionError: Keys missing in <locale>/web.json: expected ['settings.x.y'] to deeply equal []`.
+
+**Rule:** every new `t('foo.bar')` call requires a key added to ALL nine `translations/*/web.json` files in the same commit, including a real translation (not a copy of the English string). Run `pnpm test:unit -- tests/unit/translations/translation-completeness.test.ts` before pushing — it completes in under a minute and catches all missing keys at once.
