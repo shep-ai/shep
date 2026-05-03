@@ -93,6 +93,15 @@ export interface AgentExecutionOptions {
   disableMcp?: boolean;
   /** Restrict available built-in tools via --tools flag */
   tools?: string[];
+  /**
+   * When true, request per-token streaming deltas from the underlying agent
+   * (e.g. Claude CLI's --include-partial-messages). Only set this when the
+   * caller will actually consume `progress` events for live typing UX —
+   * deltas multiply stdout volume by ~10× and are pure overhead for
+   * non-streaming workers that only need the final result + tool-call log.
+   * Defaults to false; set true via StreamingExecutorProxy automatically.
+   */
+  streamProgress?: boolean;
 }
 
 /**

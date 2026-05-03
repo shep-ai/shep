@@ -362,9 +362,14 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
     const args = this.buildArgs(prompt, options);
     const fmtIdx = args.indexOf('--output-format');
     if (fmtIdx !== -1) args[fmtIdx + 1] = 'stream-json';
-    // stream-json requires --verbose and --include-partial-messages when using -p (--print)
-    // --no-chrome ensures it runs in non-interactive mode without browser integration
-    args.push('--verbose', '--include-partial-messages', '--no-chrome');
+    // stream-json with -p (--print) requires --verbose so the CLI emits
+    // per-message events. --include-partial-messages adds per-token deltas
+    // on top — only opt in when the caller will consume them (interactive
+    // streaming UX). For batch workers it's pure stdout bloat (~10× more
+    // lines that are JSON-parsed and discarded).
+    args.push('--verbose');
+    if (options?.streamProgress) args.push('--include-partial-messages');
+    args.push('--no-chrome');
     return args;
   }
 

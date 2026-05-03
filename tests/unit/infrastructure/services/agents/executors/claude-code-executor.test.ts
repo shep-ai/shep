@@ -649,6 +649,43 @@ describe('ClaudeCodeExecutorService', () => {
         expect(args).not.toContain('--tools');
       });
     });
+
+    describe('streamProgress option', () => {
+      it('should NOT add --include-partial-messages by default (worker path)', async () => {
+        const mockProc = createMockChildProcess();
+        vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+        const resultLine = buildStreamResult({ result: 'Done' });
+        const executePromise = executor.execute('Test');
+        emitStreamData(mockProc, [resultLine], null, 0);
+        await executePromise;
+        const args = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
+        expect(args).toContain('--verbose');
+        expect(args).not.toContain('--include-partial-messages');
+      });
+
+      it('should add --include-partial-messages when streamProgress is true', async () => {
+        const mockProc = createMockChildProcess();
+        vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+        const resultLine = buildStreamResult({ result: 'Done' });
+        const executePromise = executor.execute('Test', { streamProgress: true });
+        emitStreamData(mockProc, [resultLine], null, 0);
+        await executePromise;
+        const args = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
+        expect(args).toContain('--verbose');
+        expect(args).toContain('--include-partial-messages');
+      });
+
+      it('should NOT add --include-partial-messages when streamProgress is explicitly false', async () => {
+        const mockProc = createMockChildProcess();
+        vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+        const resultLine = buildStreamResult({ result: 'Done' });
+        const executePromise = executor.execute('Test', { streamProgress: false });
+        emitStreamData(mockProc, [resultLine], null, 0);
+        await executePromise;
+        const args = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
+        expect(args).not.toContain('--include-partial-messages');
+      });
+    });
   });
 
   describe('executeStream', () => {

@@ -60,7 +60,48 @@ describe('StreamingExecutorProxy', () => {
       await proxy.execute('test prompt', { cwd: '/repo' });
 
       expect(inner.execute).not.toHaveBeenCalled();
-      expect(executeStreamSpy).toHaveBeenCalledWith('test prompt', { cwd: '/repo' });
+      expect(executeStreamSpy).toHaveBeenCalledWith('test prompt', {
+        cwd: '/repo',
+        streamProgress: true,
+      });
+
+      await consumer;
+    });
+
+    it('should inject streamProgress=true even when caller passes no options', async () => {
+      const events = [makeEvent('result', 'done')];
+      const inner = createMockExecutor(events);
+      const executeStreamSpy = vi.spyOn(inner, 'executeStream');
+      const proxy = new StreamingExecutorProxy(inner, channel);
+
+      const consumer = (async () => {
+        for await (const _event of channel) {
+          /* drain */
+        }
+      })();
+
+      await proxy.execute('test prompt');
+
+      expect(executeStreamSpy).toHaveBeenCalledWith('test prompt', { streamProgress: true });
+
+      await consumer;
+    });
+
+    it('should preserve streamProgress=true even when caller explicitly sets it to false', async () => {
+      const events = [makeEvent('result', 'done')];
+      const inner = createMockExecutor(events);
+      const executeStreamSpy = vi.spyOn(inner, 'executeStream');
+      const proxy = new StreamingExecutorProxy(inner, channel);
+
+      const consumer = (async () => {
+        for await (const _event of channel) {
+          /* drain */
+        }
+      })();
+
+      await proxy.execute('test prompt', { streamProgress: false });
+
+      expect(executeStreamSpy).toHaveBeenCalledWith('test prompt', { streamProgress: true });
 
       await consumer;
     });
