@@ -14,6 +14,12 @@ export interface CreateTerminalSessionInput {
   cols?: number;
   /** Initial terminal size in rows. */
   rows?: number;
+  /**
+   * Extra environment variables merged into the PTY's env at spawn. Used by
+   * the use case to inject integration tokens (GH_TOKEN, etc.) without
+   * coupling the terminal service to specific integrations.
+   */
+  extraEnv?: Record<string, string>;
 }
 
 export interface CreatedTerminalSession {

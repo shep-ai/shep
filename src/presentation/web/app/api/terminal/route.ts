@@ -27,7 +27,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     const useCase = resolve<CreateTerminalSessionUseCase>('CreateTerminalSessionUseCase');
-    const session = useCase.execute({
+    const session = await useCase.execute({
       cwd: body.cwd,
       cols: typeof body.cols === 'number' ? body.cols : undefined,
       rows: typeof body.rows === 'number' ? body.rows : undefined,

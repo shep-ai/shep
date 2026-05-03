@@ -438,7 +438,6 @@ The `claude` CLI emits a final `result` event over stream-json and is supposed t
 
 **Rule:** any executor that depends on a subprocess emitting a final event must enforce a grace timer once that event is observed and SIGKILL the subprocess if it fails to exit. Don't trust the child to clean up its own children. Implemented in `claude-code-executor.service.ts` via `RESULT_TO_CLOSE_GRACE_MS = 30_000`: after seeing `type: 'result'` in stream-json, schedule a SIGKILL; the existing `proc.on('close')` handler then resolves with the already-captured result data.
 
-
 ## Canvas Node Wiring Has TWO Halves — Server Loader AND Client Deriver
 
 A user reported "I don't see anything related to applications in the Control Center" after a feature whose entire premise was rendering ApplicationNodes on the canvas. The client-side `derive-graph.ts` had full support for application nodes and parent edges; tests for it were green. What was missing: the server-side `getGraphData()` / `buildGraphNodes` had been changed by an unrelated PR (#559) to explicitly skip loading applications, with a comment block instructing future readers not to add them. The new feature's spec, plan, and PR all assumed the server was loading apps. The plumbing was wired, the data was never fed in, the canvas was empty.
@@ -449,3 +448,21 @@ A user reported "I don't see anything related to applications in the Control Cen
 2. **Cross-reference comment blocks that forbid behavior with the spec you're implementing.** A `// X is intentionally NOT loaded here` comment in `getGraphData` is a load-bearing decision from a prior PR. If your spec contradicts it, one of them is wrong — surface the conflict to the user before writing code, do not silently re-enable.
 3. **Any field that crosses the server→client boundary on a node must be on the node's `data` interface.** Adding a property to a `FeatureEntry`-style domain Map type alone is invisible to the boundary because `parseMaps` only sees `node.data`. New cross-boundary fields go on `FeatureNodeData` / `RepositoryNodeData` / `ApplicationNodeData` first, then `parseMaps` lifts them into the entry.
 4. **Choosing how aggressively to load canvas-rendered entities is a UX call, not a tech call.** Three positions exist: (a) load every entity unconditionally (entity is a first-class peer of repos — chosen for `Application` since users expect it on the canvas the moment they create one, like a repo), (b) load only entities referenced by another rendered node (entity is a relationship target — only appears when something points to it), or (c) skip loading entirely (entity lives only on its dedicated page). Pick deliberately based on the user's mental model; do not default to (b) "to keep the graph clean" if (a) is what the user actually wants.
+
+## New DI Module → Add to BOTH Production Container AND Bootstrap Test
+
+When adding a new `register<Foo>(container)` module to `packages/core/src/infrastructure/di/modules/`, the production wiring lives in `container.ts`. The integration test `tests/integration/infrastructure/di/container-bootstrap.test.ts` has its OWN parallel list of `register*()` calls — it does NOT import `initializeContainer()`. Forgetting to add your new module there causes downstream resolution failures (e.g. "Cannot inject the dependency 'X' at position #N of YUseCase") only at CI time, not locally for the affected use case.
+
+**Rule:** any new `register<Foo>(container)` module must be added in TWO places at once: (1) `container.ts` and (2) the `beforeAll()` block in `container-bootstrap.test.ts`. Add the import alongside the others in alphabetical order to make missing entries visually obvious in PR diffs.
+
+## New Server Action → Add Storybook Mock at .storybook/mocks/app/actions/
+
+The Vite-based Storybook config aliases `@/app/actions/*` to `.storybook/mocks/app/actions/*`. Any web component that imports `@/app/actions/<new-action>` will break the Storybook build with `[vite:load-fallback] Could not load ./.storybook/mocks/app/actions/<new-action>` unless a mock file with the same name and the same exported function signatures exists. The runtime app does not need this — only Storybook does.
+
+**Rule:** when you add `src/presentation/web/app/actions/<name>.ts` AND any component imports from it, immediately create `.storybook/mocks/app/actions/<name>.ts` exporting stubbed versions of every function the component uses. Match exported names exactly; types can be re-imported from the same domain interfaces. See `.storybook/mocks/app/actions/load-settings.ts` for the canonical pattern.
+
+## New Translation Key → Add to ALL 9 Locales in the Same Commit
+
+Adding a key to `translations/en/web.json` without mirroring it in `ar, de, es, fr, he, pt, ru, uk` fails the `tests/unit/translations/translation-completeness.test.ts` parity check on CI. The full locale set is enumerated by the `Language` enum in `packages/core/src/domain/generated/output.ts`. Test failure looks like: `AssertionError: Keys missing in <locale>/web.json: expected ['settings.x.y'] to deeply equal []`.
+
+**Rule:** every new `t('foo.bar')` call requires a key added to ALL nine `translations/*/web.json` files in the same commit, including a real translation (not a copy of the English string). Run `pnpm test:unit -- tests/unit/translations/translation-completeness.test.ts` before pushing — it completes in under a minute and catches all missing keys at once.

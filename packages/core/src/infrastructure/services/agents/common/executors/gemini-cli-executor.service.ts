@@ -404,11 +404,17 @@ export class GeminiCliExecutorService implements IAgentExecutor {
     // is invoked from within a Claude Code session.
     const { CLAUDECODE: _, ...cleanEnv } = process.env;
 
+    // Auto-trust the workspace. Recent gemini-cli versions exit (code 55) in
+    // headless mode when the cwd isn't on the user's trusted-folders list,
+    // even with -y (YOLO) — the trust check overrides YOLO. shep always runs
+    // gemini against worktrees we just created, so the trust prompt is moot.
+    const baseEnv = { ...cleanEnv, GEMINI_CLI_TRUST_WORKSPACE: 'true' };
+
     // Inject GEMINI_API_KEY when using token auth
     if (this.authConfig?.authMethod === 'token' && this.authConfig.token) {
-      spawnOpts.env = { ...cleanEnv, GEMINI_API_KEY: this.authConfig.token };
+      spawnOpts.env = { ...baseEnv, GEMINI_API_KEY: this.authConfig.token };
     } else {
-      spawnOpts.env = cleanEnv;
+      spawnOpts.env = baseEnv;
     }
 
     return spawnOpts;

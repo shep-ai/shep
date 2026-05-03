@@ -1,3 +1,17 @@
+# [1.197.0](https://github.com/shep-ai/shep/compare/v1.196.1...v1.197.0) (2026-05-03)
+
+
+### Features
+
+* **domain:** connect github via pat, auto-inject gh_token in terminals ([#595](https://github.com/shep-ai/shep/issues/595)) ([aedafc1](https://github.com/shep-ai/shep/commit/aedafc11f567f441823887f1eb3a1d965e76f47c))
+
+## [1.196.1](https://github.com/shep-ai/shep/compare/v1.196.0...v1.196.1) (2026-05-02)
+
+
+### Bug Fixes
+
+* **agents:** auto-trust workspace in gemini-cli headless executor ([#594](https://github.com/shep-ai/shep/issues/594)) ([b15b80f](https://github.com/shep-ai/shep/commit/b15b80f20cc83c3c440c2fccf42d39b9b7adea1b))
+
 # [1.196.0](https://github.com/shep-ai/shep/compare/v1.195.1...v1.196.0) (2026-05-02)
 
 
