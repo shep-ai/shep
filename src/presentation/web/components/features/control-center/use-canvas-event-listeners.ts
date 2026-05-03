@@ -68,6 +68,7 @@ export function useCanvasEventListeners(handlers: CanvasEventListenerHandlers): 
           description?: string;
           repositoryPath: string;
           parentId?: string;
+          applicationId?: string;
         }>
       ).detail;
 
@@ -87,6 +88,31 @@ export function useCanvasEventListeners(handlers: CanvasEventListenerHandlers): 
           'dependencyEdge'
         );
         return;
+      }
+
+      // When applicationId is provided, attach to the matching application
+      // node via a dependency edge so the optimistic feature renders as a
+      // child of its application — never as a sibling of a virtual repo.
+      // The `applicationId` data field also lets `derive-graph` keep the
+      // app→feature edge stable across reconciliation.
+      if (detail.applicationId) {
+        const appNodeId = `app-${detail.applicationId}`;
+        const appNode = nodes.find((n) => n.id === appNodeId && n.type === 'applicationNode');
+        if (appNode) {
+          createFeatureNode(
+            appNodeId,
+            {
+              state: 'running',
+              featureId: detail.featureId,
+              name: detail.name,
+              description: detail.description,
+              repositoryPath: detail.repositoryPath,
+              applicationId: detail.applicationId,
+            },
+            'dependencyEdge'
+          );
+          return;
+        }
       }
 
       const repoNode = nodes.find(

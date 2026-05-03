@@ -59,20 +59,22 @@ export interface FormAttachment {
 /**
  * Build mode for the create drawer. Type alias derived from the generated
  * TypeSpec `BuildMode` enum so the UI cannot drift from the domain. Internal
- * code uses the enum members (`BuildModeEnum.Application | .Fast | .Spec`)
- * per the no-magic-values rule; the exported type is a string-literal union
- * so call sites can pass either enum members (preferred) or matching string
- * literals.
+ * code uses the enum members (`BuildModeEnum.Fast | .Spec`) per the
+ * no-magic-values rule; the exported type is a string-literal union so call
+ * sites can pass either enum members (preferred) or matching string literals.
+ *
+ * Note: the TypeSpec enum still includes `Application` for legacy rows that
+ * were created before the picker was simplified — those features keep
+ * working, but the drawer no longer offers `Application` as a selectable
+ * option since it is operationally identical to `Spec` (both set fast=false).
  */
 export type BuildMode = `${BuildModeEnum}`;
 
-const BUILD_MODE_ORDER: readonly BuildMode[] = [
-  BuildModeEnum.Application,
-  BuildModeEnum.Fast,
-  BuildModeEnum.Spec,
-] as const;
+const BUILD_MODE_ORDER: readonly BuildMode[] = [BuildModeEnum.Fast, BuildModeEnum.Spec] as const;
 
 const BUILD_MODE_META: Record<BuildMode, { icon: typeof Zap; labelKey: string }> = {
+  // Application is retained in the meta map only so legacy `buildMode='application'`
+  // rows do not crash if they ever flow through this path; it is never rendered.
   [BuildModeEnum.Application]: { icon: LayoutGrid, labelKey: 'createDrawer.modeApplication' },
   [BuildModeEnum.Fast]: { icon: Zap, labelKey: 'createDrawer.modeFast' },
   [BuildModeEnum.Spec]: { icon: ClipboardList, labelKey: 'createDrawer.modeSpec' },
@@ -125,6 +127,11 @@ export interface FeatureCreatePayload {
   /** Optional model override for this feature run */
   model?: string;
   sessionId?: string;
+  /** When the drawer was launched scoped to an Application, the
+   *  application's domain UUID. Persisted on the Feature so the
+   *  Control Center can render an app→feature parent edge instead
+   *  of a virtual repository node. */
+  applicationId?: string;
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -223,23 +230,27 @@ export interface FeatureCreateDrawerProps {
    * Pre-select a build mode (e.g. when the drawer is opened from a UI that
    * already chose one — apps page "fast" / "spec" buttons, FAB-with-mode).
    * When omitted, falls back to workflowDefaults.fast (true → 'fast', false →
-   * 'application'); fully omitted defaults select 'fast'.
+   * 'spec'); fully omitted defaults select 'fast'.
    *
-   * Ignored when `initialApplicationId` is set — application-scoped
-   * invocations always pin the mode to `Spec`.
+   * App-scoped invocations (`initialApplicationId` set) seed the picker with
+   * `Spec` by default but the mode remains user-editable, so launching a
+   * feature against an application behaves like launching one against a
+   * regular repository — the user can switch to Fast in one click.
    */
   initialMode?: BuildMode;
   /**
    * Application context for the drawer. When set:
-   * - mode is pinned to `Spec` regardless of any conflicting `initialMode`
-   * - the repository selector + mode segmented control are rendered as
-   *   disabled with a tooltip explaining the lock
+   * - the repository selector is rendered as a locked read-only label (the
+   *   app determines the repo, so the user cannot pick a different one)
+   * - the mode picker stays editable; it just defaults to `Spec` so the SDD
+   *   intent is the easy path while the user can still pick `Fast`
    * - all other fields (description, attachments, advanced toggles) remain
    *   editable
    *
-   * Used by the "Open in Control Center (SDD mode)" entry points so a
-   * feature created from inside an application's context cannot drift away
-   * from that context.
+   * Used by entry points launched from an Application (app card "+" button,
+   * FAB context-aware action, app top-bar "Open in Control Center") so the
+   * created feature is correctly scoped to the application without forcing
+   * the user into a single mode.
    */
   initialApplicationId?: string;
 }
@@ -249,7 +260,7 @@ function resolveInitialMode(
   workflowDefaults: WorkflowDefaults | undefined
 ): BuildMode {
   if (initialMode) return initialMode;
-  if (workflowDefaults?.fast === false) return BuildModeEnum.Application;
+  if (workflowDefaults?.fast === false) return BuildModeEnum.Spec;
   return BuildModeEnum.Fast;
 }
 
@@ -271,21 +282,24 @@ export function FeatureCreateDrawer({
   initialApplicationId,
 }: FeatureCreateDrawerProps) {
   const isAppScoped = initialApplicationId !== undefined;
-  // App-scoped invocations override any explicit initialMode prop — the
-  // entry-point determines the mode, and the drawer must surface that lock
-  // consistently regardless of caller wiring.
-  const effectiveInitialMode: BuildMode | undefined = isAppScoped
-    ? BuildModeEnum.Spec
-    : initialMode;
+  // App-scoped invocations seed the picker with `Spec` (the SDD intent) so
+  // the easy path matches the entry-point name, but the picker remains
+  // user-editable: launching a feature against an application should feel
+  // like launching one against a regular repository.
+  const effectiveInitialMode: BuildMode | undefined =
+    isAppScoped && !initialMode ? BuildModeEnum.Spec : initialMode;
   const createSound = useSoundAction('create');
   const { t } = useTranslation('web');
   // Validate repositoryPath from URL against active repos — prevents stale URL params
   // from selecting deleted repos after add/delete/re-add cycles.
-  // Trust the prop when: repos not loaded yet (undefined), empty list (no repos to check),
-  // or the path matches an active repo.
+  // Trust the prop when: app-scoped (the application is the authority on its
+  // own repo path, even if that path is not a registered Repository entity),
+  // repos not loaded yet (undefined), empty list (no repos to check), or the
+  // path matches an active repo.
   const validRepoPath = !repositoryPath
     ? ''
-    : !repositories ||
+    : isAppScoped ||
+        !repositories ||
         repositories.length === 0 ||
         repositories.some((r) => r.path === repositoryPath)
       ? repositoryPath
@@ -350,7 +364,7 @@ export function FeatureCreateDrawer({
       setEnableEvidence(workflowDefaults.enableEvidence);
       setCommitEvidence(workflowDefaults.commitEvidence);
       if (!effectiveInitialMode) {
-        setMode(workflowDefaults.fast !== false ? BuildModeEnum.Fast : BuildModeEnum.Application);
+        setMode(workflowDefaults.fast !== false ? BuildModeEnum.Fast : BuildModeEnum.Spec);
       }
       setInjectSkills(workflowDefaults.injectSkills ?? false);
     }
@@ -594,6 +608,7 @@ export function FeatureCreateDrawer({
         ...(overrideAgent ? { agentType: overrideAgent } : {}),
         ...(overrideModel ? { model: overrideModel } : {}),
         ...(parentId ? { parentId } : {}),
+        ...(initialApplicationId ? { applicationId: initialApplicationId } : {}),
         sessionId: sessionIdRef.current,
       });
       resetForm();
@@ -619,6 +634,7 @@ export function FeatureCreateDrawer({
       overrideAgent,
       overrideModel,
       parentId,
+      initialApplicationId,
       createSound,
       resetForm,
     ]
@@ -938,7 +954,6 @@ export function FeatureCreateDrawer({
                   <div
                     role="group"
                     aria-label={t('createDrawer.modeGroupLabel')}
-                    data-locked-by-application={isAppScoped ? 'true' : 'false'}
                     className="border-input flex items-center gap-0.5 rounded-md border p-0.5"
                   >
                     {BUILD_MODE_ORDER.map((m) => {
@@ -952,15 +967,9 @@ export function FeatureCreateDrawer({
                               type="button"
                               data-testid={`build-mode-${m}`}
                               aria-pressed={isActive}
-                              aria-disabled={isAppScoped || isSubmitting}
-                              aria-describedby={
-                                isAppScoped ? 'locked-by-application-tooltip' : undefined
-                              }
-                              disabled={isSubmitting || isAppScoped}
+                              aria-disabled={isSubmitting}
+                              disabled={isSubmitting}
                               onClick={() => setMode(m)}
-                              title={
-                                isAppScoped ? t('createDrawer.lockedByApplication') : undefined
-                              }
                               className={cn(
                                 'flex cursor-pointer items-center gap-1 rounded-sm px-2 py-1 text-xs font-medium transition-colors',
                                 isActive
@@ -973,14 +982,8 @@ export function FeatureCreateDrawer({
                               {t(meta.labelKey)}
                             </button>
                           </TooltipTrigger>
-                          <TooltipContent
-                            id={isAppScoped ? 'locked-by-application-tooltip' : undefined}
-                            role="tooltip"
-                            side="bottom"
-                          >
-                            {isAppScoped
-                              ? t('createDrawer.lockedByApplication')
-                              : t(`${meta.labelKey}Description`)}
+                          <TooltipContent role="tooltip" side="bottom">
+                            {t(`${meta.labelKey}Description`)}
                           </TooltipContent>
                         </Tooltip>
                       );

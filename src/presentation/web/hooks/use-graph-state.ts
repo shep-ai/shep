@@ -95,10 +95,12 @@ function parseMaps(
 
   for (const node of initialNodes) {
     if (node.type === 'featureNode') {
+      const data = node.data as FeatureNodeData;
       featureMap.set(node.id, {
         nodeId: node.id,
-        data: node.data as FeatureNodeData,
+        data,
         parentNodeId: parentByChild.get(node.id),
+        ...(data.applicationId && { applicationId: data.applicationId }),
       });
     } else if (node.type === 'repositoryNode') {
       repoMap.set(node.id, {
@@ -487,7 +489,14 @@ export function useGraphState(
     (nodeId: string, data: FeatureNodeData, parentNodeId?: string) => {
       setPendingMap((prev) => {
         const next = new Map(prev);
-        next.set(nodeId, { nodeId, data, parentNodeId });
+        // Mirror parseMaps: lift data.applicationId into the FeatureEntry so
+        // derive-graph emits an app→feature edge for the optimistic node.
+        next.set(nodeId, {
+          nodeId,
+          data,
+          parentNodeId,
+          ...(data.applicationId && { applicationId: data.applicationId }),
+        });
         return next;
       });
     },

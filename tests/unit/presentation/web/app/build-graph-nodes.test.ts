@@ -3,6 +3,7 @@ import { buildGraphNodes } from '@/app/build-graph-nodes';
 import { layoutWithDagre, CANVAS_LAYOUT_DEFAULTS } from '@/lib/layout-with-dagre';
 import { SdlcLifecycle } from '@shepai/core/domain/generated/output';
 import type { Feature, Repository } from '@shepai/core/domain/generated/output';
+import type { ApplicationWithStatus } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 
 const makeFeature = (overrides: Partial<Feature> = {}): Feature =>
   ({
@@ -344,6 +345,70 @@ describe('buildGraphNodes', () => {
       const repoNode = nodes.find((n) => n.id === 'repo-repo-1');
       const data = repoNode!.data as Record<string, unknown>;
       expect(data.branch).toBeUndefined();
+    });
+  });
+
+  describe('application rendering on the canvas', () => {
+    const makeApp = (overrides: Partial<ApplicationWithStatus> = {}): ApplicationWithStatus =>
+      ({
+        id: 'app-uuid-1',
+        name: 'My App',
+        slug: 'my-app',
+        description: 'An SDD app',
+        repositoryPath: '/my/repo',
+        additionalPaths: [],
+        status: 'Idle',
+        setupComplete: true,
+        agentRunId: null,
+        agentSessionId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+        effectiveStatus: 'ready',
+        ...overrides,
+      }) as ApplicationWithStatus;
+
+    it('emits no application nodes when applications option is omitted', () => {
+      const repo = makeRepo();
+      const { nodes } = buildGraphNodes([repo], []);
+      expect(nodes.find((n) => n.type === 'applicationNode')).toBeUndefined();
+    });
+
+    it('emits an application node for each application passed in', () => {
+      const repo = makeRepo();
+      const app = makeApp();
+      const { nodes } = buildGraphNodes([repo], [], { applications: [app] });
+
+      const appNode = nodes.find((n) => n.id === 'app-app-uuid-1');
+      expect(appNode).toBeDefined();
+      expect(appNode?.type).toBe('applicationNode');
+      const data = appNode!.data as Record<string, unknown>;
+      expect(data.id).toBe('app-uuid-1');
+      expect(data.name).toBe('My App');
+    });
+
+    it('threads applicationId from the feature into FeatureNodeData so derive-graph can pick it up', () => {
+      const feature = makeFeature({
+        id: 'feat-spec',
+        repositoryPath: '/my/repo',
+        applicationId: 'app-uuid-1',
+      });
+      const { nodes } = buildGraphNodes([makeRepo()], [{ feature, run: null }], {
+        applications: [makeApp()],
+      });
+
+      const featNode = nodes.find((n) => n.id === 'feat-feat-spec');
+      const data = featNode!.data as Record<string, unknown>;
+      expect(data.applicationId).toBe('app-uuid-1');
+    });
+
+    it('omits applicationId on FeatureNodeData when the feature is not app-scoped', () => {
+      const feature = makeFeature({ id: 'feat-plain' });
+      const { nodes } = buildGraphNodes([makeRepo()], [{ feature, run: null }]);
+
+      const featNode = nodes.find((n) => n.id === 'feat-feat-plain');
+      const data = featNode!.data as Record<string, unknown>;
+      expect(data.applicationId).toBeUndefined();
     });
   });
 });

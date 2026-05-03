@@ -361,6 +361,7 @@ export function useControlCenterState(
         progress: 0,
         repositoryPath: dataOverride?.repositoryPath ?? '',
         branch: dataOverride?.branch ?? '',
+        ...(dataOverride?.applicationId && { applicationId: dataOverride.applicationId }),
       };
 
       const parentNodeId = edgeType === 'dependencyEdge' && sourceNodeId ? sourceNodeId : undefined;

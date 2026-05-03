@@ -10,6 +10,8 @@ import { computeWorktreePath } from '@shepai/core/infrastructure/services/ide-la
 import type { CanvasNodeType } from '@/components/features/features-canvas';
 import type { Edge } from '@xyflow/react';
 import type { FeatureNodeData } from '@/components/common/feature-node';
+import type { ApplicationNodeData } from '@/components/common/application-node/application-node-config';
+import type { ApplicationWithStatus } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 
 export interface FeatureWithRun {
   feature: Feature;
@@ -38,6 +40,11 @@ export interface BuildGraphNodesOptions {
   >;
   /** Git info resolution status keyed by repository path */
   repoGitStatus?: Map<string, 'loading' | 'ready' | 'not-a-repo'>;
+  /** Applications to render on the canvas. Callers are expected to filter
+   *  this list to only include applications that are referenced by at least
+   *  one feature's `applicationId` so the canvas stays uncluttered for users
+   *  who do not use SDD mode. */
+  applications?: ApplicationWithStatus[];
 }
 
 export function buildGraphNodes(
@@ -48,9 +55,27 @@ export function buildGraphNodes(
   // Normalize path separators so Windows backslash paths match forward-slash paths
   const normalizePath = (p: string) => p.replace(/\\/g, '/');
 
-  // Group features by normalized repository path
+  // App-scoped features attach to their parent application node, not to a
+  // repository — the client's `derive-graph` emits an app→feature edge from
+  // `Feature.applicationId`. We must NOT group them under `featuresByRepo`,
+  // otherwise the second-pass virtual-repo loop would invent a duplicate
+  // `repositoryNode` for the application's repo path and attach the feature
+  // there instead.
+  const renderedAppIds = new Set<string>();
+  for (const app of options?.applications ?? []) {
+    renderedAppIds.add(app.id);
+  }
+
+  // Group features by normalized repository path, except app-scoped ones.
+  // App-scoped features are emitted standalone below; the client wires them
+  // to their application via `applicationId` in the feature node data.
   const featuresByRepo: Record<string, FeatureWithRun[]> = {};
+  const appScopedFeatures: FeatureWithRun[] = [];
   featuresWithRuns.forEach((entry) => {
+    if (entry.feature.applicationId && renderedAppIds.has(entry.feature.applicationId)) {
+      appScopedFeatures.push(entry);
+      return;
+    }
     const repoKey = normalizePath(entry.feature.repositoryPath);
     if (!featuresByRepo[repoKey]) {
       featuresByRepo[repoKey] = [];
@@ -143,9 +168,33 @@ export function buildGraphNodes(
     }
   }
 
-  // Applications are NOT rendered on the canvas anymore — they live
-  // on the dedicated `/applications` page. Do not add application
-  // nodes here regardless of what the caller passes.
+  // Render application nodes — first-class peers of repository nodes on the
+  // canvas. The caller passes every application; the client's `derive-graph`
+  // wires app→feature dependency edges from each feature's `applicationId`.
+  for (const app of options?.applications ?? []) {
+    const data: ApplicationNodeData = {
+      id: app.id,
+      name: app.name,
+      description: app.description,
+      status: app.status,
+      repositoryPath: normalizePath(app.repositoryPath),
+      additionalPathCount: app.additionalPaths.length,
+    };
+    nodes.push({
+      id: `app-${app.id}`,
+      type: 'applicationNode',
+      position: { x: 0, y: 0 },
+      data,
+    });
+  }
+
+  // Emit app-scoped feature nodes standalone. We deliberately do NOT push a
+  // server-side edge here — `parseMaps` only uses `dependencyEdge` types to
+  // recover parent/child relationships, and the client's `derive-graph`
+  // builds the app→feature edge from `Feature.applicationId` so every render
+  // is consistent regardless of how the feature arrived (initial SSR, SSE,
+  // optimistic creation).
+  appendFeatureNodes(appScopedFeatures, '', featuresWithRuns, nodes, edges, undefined, options);
 
   return { nodes, edges };
 }
@@ -208,6 +257,7 @@ function appendFeatureNodes(
       createdAt:
         feature.createdAt instanceof Date ? feature.createdAt.getTime() : feature.createdAt,
       ...(feature.fast && { fastMode: true }),
+      ...(feature.applicationId && { applicationId: feature.applicationId }),
       approvalGates: feature.approvalGates,
       push: feature.push,
       openPr: feature.openPr,
@@ -242,6 +292,13 @@ function appendFeatureNodes(
       position: { x: 0, y: 0 },
       data: nodeData,
     });
+
+    // App-scoped features (called with an empty repoNodeId sentinel) get no
+    // server-side edge — the client's `derive-graph` wires them to their
+    // application from `Feature.applicationId`.
+    if (!repoNodeId) {
+      return;
+    }
 
     // Child features connect via parent→child dependency edge, not directly to repo
     if (!feature.parentId) {

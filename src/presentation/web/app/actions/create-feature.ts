@@ -52,6 +52,10 @@ interface CreateFeatureInput {
   rebaseBeforeBranch?: boolean;
   /** Inject curated skills into the feature worktree. */
   injectSkills?: boolean;
+  /** When the drawer was launched scoped to an Application, the
+   *  application's domain UUID. Persisted on the Feature so the canvas can
+   *  render an app→feature parent edge. */
+  applicationId?: string;
 }
 
 export async function createFeature(
@@ -77,6 +81,7 @@ export async function createFeature(
     model,
     rebaseBeforeBranch,
     injectSkills,
+    applicationId,
   } = input;
 
   if (!description?.trim()) {
@@ -117,6 +122,7 @@ export async function createFeature(
       ...(model ? { model } : {}),
       ...(rebaseBeforeBranch != null ? { rebaseBeforeBranch } : {}),
       ...(injectSkills != null ? { injectSkills } : {}),
+      ...(applicationId ? { applicationId } : {}),
     });
 
     // Phase 2 (background): metadata generation, worktree, spec, agent spawn
@@ -143,6 +149,7 @@ export async function createFeature(
           ...(sessionId ? { sessionId } : {}),
           ...(rebaseBeforeBranch != null ? { rebaseBeforeBranch } : {}),
           ...(injectSkills != null ? { injectSkills } : {}),
+          ...(applicationId ? { applicationId } : {}),
         },
         shouldSpawn
       )

@@ -387,6 +387,9 @@
     "showLess": "Показати менше",
     "showMore": "Показати ще {{count}}"
   },
+  "applicationNode": {
+    "newFeature": "Нова функція"
+  },
   "repositoryNode": {
     "removeRepository": "Видалити репозиторій",
     "removeConfirmTitle": "Видалити репозиторій?",

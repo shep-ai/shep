@@ -7,10 +7,10 @@ import {
   LayoutGrid,
   Loader2,
   Play,
-  Sparkles,
+  Plus,
+  RotateCcw,
   Square,
   Trash2,
-  TriangleAlert,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
@@ -32,8 +32,9 @@ import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 import { deriveAppLiveStatus } from '@/lib/derive-app-status';
 import type { ApplicationNodeData } from './application-node-config';
 
-/** Preview slot height. Roomier than the old 120px to give the live
- *  iframe / start-preview CTA more presence on the canvas. */
+/** Preview slot height. Used only when a deployment is actually Live —
+ *  when the app is idle, we collapse to a single Run row so the card
+ *  matches the repository node's vertical rhythm on the canvas. */
 const PREVIEW_HEIGHT_PX = 180;
 
 export function ApplicationNode({
@@ -107,7 +108,10 @@ export function ApplicationNode({
   );
 
   return (
-    <div className="group relative" style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
+    <div
+      className={cn('group relative', data.onDelete && data.id && 'ps-10')}
+      style={{ direction: isRtl ? 'rtl' : 'ltr' }}
+    >
       {/* Target handle (left in LTR) — always rendered for edge connections */}
       <Handle
         type="target"
@@ -117,11 +121,13 @@ export function ApplicationNode({
         style={{ top: 70 }}
       />
 
-      {/* Delete button — visible on hover, positioned outside the card on the left */}
+      {/* Delete button — visible on hover, positioned just outside the card
+          on the left. Uses the same inset offset as the repository node so
+          the two card types align horizontally on the canvas. */}
       {data.onDelete && data.id ? (
         <>
           <div
-            className="absolute -start-14 top-0 bottom-0 flex items-center justify-center ps-4 pe-3 opacity-0 transition-opacity group-hover:opacity-100"
+            className="absolute -start-3 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100"
             onPointerDown={(e) => e.stopPropagation()}
           >
             <TooltipProvider>
@@ -193,11 +199,13 @@ export function ApplicationNode({
           !selected && live.borderClass
         )}
       >
-        {/* Row 1: Header — icon, name, status.
-            Padding matches the preview slot below so the card has
-            consistent vertical rhythm now that the preview is
-            taller. */}
-        <div className="flex items-center gap-3 px-4 py-4">
+        {/* Row 1: Header — icon, name, status, "+ New" action.
+            Layout mirrors the repository node so apps and repos read
+            as visual peers on the canvas. The "+ New" button is the
+            primary entry point for creating a feature scoped to this
+            application; it opens the same drawer the repo node opens
+            (mode editable, repo locked to the app's repo). */}
+        <div className="flex items-center gap-3 px-4 py-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500">
             <LayoutGrid className="h-4 w-4 text-white" />
           </div>
@@ -207,125 +215,89 @@ export function ApplicationNode({
           >
             {data.name}
           </span>
-          <span className="ms-auto flex shrink-0 items-center gap-1.5">
-            <span
-              data-testid="application-node-status-dot"
-              className={cn(
-                'relative flex h-2 w-2 items-center justify-center rounded-full',
-                live.dotClass
-              )}
-            >
-              {live.pulse ? (
-                <span
-                  className={cn(
-                    'absolute inline-flex h-full w-full animate-ping rounded-full opacity-60',
-                    live.dotClass
-                  )}
-                />
-              ) : null}
+          <span className="ms-auto flex shrink-0 items-center gap-2">
+            <span className="flex items-center gap-1.5">
+              <span
+                data-testid="application-node-status-dot"
+                className={cn(
+                  'relative flex h-2 w-2 items-center justify-center rounded-full',
+                  live.dotClass
+                )}
+              >
+                {live.pulse ? (
+                  <span
+                    className={cn(
+                      'absolute inline-flex h-full w-full animate-ping rounded-full opacity-60',
+                      live.dotClass
+                    )}
+                  />
+                ) : null}
+              </span>
+              <span
+                data-testid="application-node-status-text"
+                className="text-muted-foreground text-xs"
+              >
+                {live.label}
+              </span>
             </span>
-            <span
-              data-testid="application-node-status-text"
-              className="text-muted-foreground text-xs"
-            >
-              {live.label}
-            </span>
+            {data.onCreateSddFeature && data.id ? (
+              <span onClick={(e) => e.stopPropagation()}>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label={t('applicationNode.newFeature')}
+                        data-testid="application-node-new-sdd-feature-button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          data.onCreateSddFeature?.(data.id);
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className="nodrag flex h-6 shrink-0 cursor-pointer items-center gap-0.5 rounded bg-blue-500 px-1.5 text-[11px] font-bold text-white transition-colors hover:bg-blue-600 dark:bg-amber-500 dark:hover:bg-amber-400"
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span className="translate-y-px">{t('repositoryNode.new')}</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">{t('applicationNode.newFeature')}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </span>
+            ) : null}
           </span>
         </div>
 
-        {/* Row 2: Preview slot — the control hub for the dev server.
-            One rectangle carries every state:
-              - Live:    iframe + [stop][open-in-new-tab] pinned top-right
-              - Booting: centered spinner + "Starting…"
-              - Stopping: centered spinner + "Stopping…"
-              - Error:   centered triangle + error label
-              - Idle:    grayed wireframe (future: last screenshot),
-                         hover overlay with a big "Start Preview" CTA
-            `pointer-events-none` on the iframe keeps the card
-            draggable — the iframe swallows no clicks. */}
-        <div className="px-4 pb-4">
-          <div
-            className="bg-muted group/preview relative overflow-hidden rounded-lg"
-            style={{ height: PREVIEW_HEIGHT_PX }}
-          >
-            {/* ── Underlay: iframe when Live, else wireframe ───── */}
-            {effectiveDeploymentUrl ? (
+        {/* Row 2: Live preview iframe — only mounted when a deployment
+            is actually Ready. When the app is idle / booting / errored
+            we collapse this slot so the card matches the repository
+            node's vertical rhythm; the dev-server status is surfaced
+            on the Run row below instead of an oversized placeholder. */}
+        {effectiveDeploymentUrl && deploy.status === DeploymentState.Ready ? (
+          <div className="px-4 pb-2" onClick={stopCardClick}>
+            <div
+              className="bg-muted group/preview relative overflow-hidden rounded-lg"
+              style={{ height: PREVIEW_HEIGHT_PX }}
+            >
               <iframe
                 src={effectiveDeploymentUrl}
                 title={`${data.name} live preview`}
-                // 2.5× inner size scaled to 0.4 = exactly 1.0
-                // effective size. The iframe renders at a real
-                // browser viewport (good enough for responsive
-                // landing pages) and gets scaled into our slot.
                 className="pointer-events-none absolute top-0 left-0 origin-top-left border-0 bg-white"
                 style={{
                   width: '250%',
                   height: '250%',
                   transform: 'scale(0.4)',
                 }}
-                // Run the app in a sandbox with only what a static
-                // Vite dev bundle needs: same-origin (for HMR
-                // websockets on localhost) + script execution. No
-                // form submission, no top-level navigation, no
-                // modal dialogs.
                 sandbox="allow-same-origin allow-scripts"
                 loading="lazy"
               />
-            ) : (
-              // Offline underlay — grayed wireframe (placeholder for
-              // a real captured screenshot, see TODO in the
-              // components/config comment). Grayscale + low opacity
-              // signals "this is not a live image".
-              <div className="pointer-events-none absolute inset-0 opacity-50 grayscale">
-                <div
-                  className="flex h-6 items-center gap-2 px-2"
-                  style={{ background: 'var(--muted)' }}
-                >
-                  <div className="bg-muted-foreground/10 h-2 w-2 rounded-full" />
-                  <div className="bg-muted-foreground/10 h-2 w-2 rounded-full" />
-                  <div className="bg-muted-foreground/10 h-2 w-2 rounded-full" />
-                  <div className="bg-muted-foreground/10 ms-2 h-2 w-16 rounded" />
-                </div>
-                <div className="flex h-[calc(100%-1.5rem)]">
-                  {/* Sidebar */}
-                  <div className="border-muted-foreground/5 flex w-[50px] flex-col gap-2 border-e p-2">
-                    <div className="bg-muted-foreground/10 h-2 w-full rounded" />
-                    <div className="bg-muted-foreground/10 h-2 w-3/4 rounded" />
-                    <div className="bg-muted-foreground/10 h-2 w-full rounded" />
-                  </div>
-                  {/* Main content */}
-                  <div className="flex flex-1 flex-col gap-2 p-3">
-                    <div className="bg-muted-foreground/10 h-2.5 w-2/3 rounded" />
-                    <div className="bg-muted-foreground/10 h-2 w-full rounded" />
-                    <div className="bg-muted-foreground/10 h-2 w-5/6 rounded" />
-                    <div className="bg-muted-foreground/10 h-2 w-3/4 rounded" />
-                    <div className="bg-muted-foreground/10 h-2 w-2/3 rounded" />
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {/* ── Overlays, pinned by deploy state ─────────────── */}
-
-            {/* Live — centered Stop + Open-in-new-tab cluster,
-                revealed on hover with an opaque dark surface.
-                NOTE: we deliberately do NOT use `backdrop-blur` on
-                top of the iframe — the iframe is rendered with
-                `transform: scale(0.4)` which rasterizes its edges
-                at subpixel boundaries, and CSS backdrop-filter
-                picks those up and produces ugly banding / bleed
-                (e.g. a stray green smudge from the real page
-                behind it). A plain opaque fill is cleaner. */}
-            {deploy.status === DeploymentState.Ready && effectiveDeploymentUrl ? (
+              {/* Hover overlay — Stop + Open-in-new-tab cluster */}
               <div
                 className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-neutral-900/75 opacity-0 transition-opacity duration-150 group-hover/preview:pointer-events-auto group-hover/preview:opacity-100 dark:bg-neutral-950/80"
                 onPointerDown={stopCardClick}
                 onClick={stopCardClick}
               >
-                {/* Solid backgrounds (no /90) — sitting on top of a
-                    transform-scaled iframe, any alpha-transparent
-                    surface rasterizes with fuzzy edges. Fully
-                    opaque white/neutral fills render cleanly. */}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -355,88 +327,108 @@ export function ApplicationNode({
                   <span>Open</span>
                 </button>
               </div>
-            ) : null}
+            </div>
+          </div>
+        ) : null}
 
-            {/* Booting — centered spinner, always visible (no hover
-                gate). Amber matches the "transient waiting" palette
-                used by the top-bar Preview button. Solid surface
-                (no backdrop-blur) to avoid rasterization artifacts. */}
-            {deploy.status === DeploymentState.Booting || deploy.deployLoading ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-100 dark:bg-neutral-900">
-                <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
-                <span className="text-foreground text-xs font-medium">Starting…</span>
-              </div>
-            ) : null}
-
-            {/* Stopping — centered spinner while the Stop request
-                resolves. Separate from Booting so the label can be
-                different; visually similar otherwise. */}
-            {deploy.stopLoading && deploy.status === DeploymentState.Ready ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-900/75 dark:bg-neutral-950/80">
-                <Loader2 className="h-8 w-8 animate-spin text-neutral-100" />
-                <span className="text-xs font-medium text-neutral-100">Stopping…</span>
-              </div>
-            ) : null}
-
-            {/* Error — centered triangle + clickable retry hint.
-                Stays visible until the user retries, so a failed
-                boot doesn't silently disappear. */}
-            {!deploy.deployLoading &&
-            !deploy.stopLoading &&
-            deploy.status !== DeploymentState.Booting &&
-            deploy.status !== DeploymentState.Ready &&
-            deploy.deployError ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void deploy.deploy();
-                }}
-                onPointerDown={stopCardClick}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-100 transition-colors hover:bg-neutral-200 dark:bg-neutral-900 dark:hover:bg-neutral-800"
+        {/* Row 3: Run / dev-server status — mirrors the repository
+            node's "Run | start local environment | ▶" line so apps
+            and repos read as visual peers. Carries every transient
+            state (Booting / Stopping / Error) inline instead of
+            inflating the card with a placeholder slot. */}
+        <div
+          data-testid="application-node-dev-preview"
+          className="border-border/50 flex items-center gap-2 border-t px-4 py-2 text-xs"
+          onClick={stopCardClick}
+        >
+          {deploy.deployError ? (
+            <span className="truncate text-xs text-red-500">{deploy.deployError}</span>
+          ) : deploy.status === DeploymentState.Booting || deploy.deployLoading ? (
+            <span className="text-muted-foreground inline-flex items-center gap-1.5">
+              <Loader2 className="h-3 w-3 shrink-0 animate-spin text-amber-500" />
+              <span>Starting…</span>
+            </span>
+          ) : deploy.stopLoading ? (
+            <span className="text-muted-foreground inline-flex items-center gap-1.5">
+              <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
+              <span>Stopping…</span>
+            </span>
+          ) : effectiveDeploymentUrl ? (
+            <>
+              <span className="me-0.5 inline-block h-2 w-2 shrink-0 rounded-full bg-green-500" />
+              <a
+                href={effectiveDeploymentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="truncate text-green-700 hover:underline dark:text-green-400"
+                onClick={openPreviewInNewTab}
               >
-                <TriangleAlert className="h-8 w-8 text-red-500" />
-                <span className="text-xs font-medium text-red-600 dark:text-red-400">
-                  Failed — click to retry
-                </span>
-              </button>
-            ) : null}
-
-            {/* Idle — hover overlay with a big "Start Preview" CTA.
-                Appears only on hover of the preview slot (not the
-                whole card) so just hovering the card title doesn't
-                flash it. Uses the Shep AI purple palette to match
-                the page top-bar Preview button. Solid overlay so
-                edges stay crisp against the wireframe underneath. */}
-            {!effectiveDeploymentUrl &&
-              !deploy.deployLoading &&
-              deploy.status !== DeploymentState.Booting &&
-              !deploy.deployError && (
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-neutral-900/75 opacity-0 transition-opacity duration-150 group-hover/preview:pointer-events-auto group-hover/preview:opacity-100 dark:bg-neutral-950/80">
+                {effectiveDeploymentUrl}
+              </a>
+            </>
+          ) : (
+            <span className="text-muted-foreground inline-flex items-baseline gap-2">
+              <span>Run</span>
+              <span className="text-muted-foreground/50 text-[10px]">start local environment</span>
+            </span>
+          )}
+          <span className="ms-auto flex items-center gap-1">
+            <span data-testid="application-node-repo-count" className="text-muted-foreground/70">
+              {repoCountLabel}
+            </span>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (deploy.deployError) {
+                        void deploy.deploy();
+                        return;
+                      }
+                      if (effectiveDeploymentUrl) {
+                        void deploy.stop();
+                        return;
+                      }
                       void deploy.deploy();
                     }}
                     onPointerDown={stopCardClick}
-                    className="inline-flex h-9 items-center gap-2 rounded-md border border-violet-400 bg-gradient-to-br from-indigo-500 to-violet-600 px-4 text-xs font-semibold text-white shadow-md transition-[filter] hover:brightness-110"
-                    aria-label="Start dev server preview"
+                    disabled={deploy.deployLoading || deploy.stopLoading}
+                    aria-label={
+                      deploy.deployError
+                        ? 'Retry'
+                        : effectiveDeploymentUrl
+                          ? 'Stop dev server'
+                          : 'Start dev server'
+                    }
+                    className={cn(
+                      'text-muted-foreground hover:bg-muted flex h-6 w-6 items-center justify-center rounded transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                      !effectiveDeploymentUrl &&
+                        !deploy.deployError &&
+                        'text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300'
+                    )}
                   >
-                    <Play className="h-3.5 w-3.5 fill-current" />
-                    <span>Start Preview</span>
+                    {deploy.deployLoading || deploy.stopLoading ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : deploy.deployError ? (
+                      <RotateCcw className="h-3 w-3" />
+                    ) : effectiveDeploymentUrl ? (
+                      <Square className="h-3 w-3 fill-current" />
+                    ) : (
+                      <Play className="h-3 w-3 fill-current" />
+                    )}
                   </button>
-                </div>
-              )}
-          </div>
-        </div>
-
-        {/* Row 3: Bottom — just the repository count. All deploy
-            controls (Start / Stop / Open) now live on the preview
-            slot above so the footer stays quiet. */}
-        <div className="px-4 pb-4">
-          <span data-testid="application-node-repo-count" className="text-muted-foreground text-xs">
-            {repoCountLabel}
+                </TooltipTrigger>
+                <TooltipContent>
+                  {deploy.deployError
+                    ? 'Failed — click to retry'
+                    : effectiveDeploymentUrl
+                      ? 'Stop dev server'
+                      : 'Start dev server'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </span>
         </div>
       </div>
@@ -445,43 +437,16 @@ export function ApplicationNode({
           button when a callback is wired, mirroring the feature-node pattern.
           Falls back to a hidden handle when no callback is provided so edge
           connections still attach to the same coordinate. */}
-      {data.onCreateSddFeature && data.id ? (
-        <Handle
-          type="source"
-          position={sourceHandlePos}
-          className="h-0! w-0! border-0! bg-transparent!"
-          style={{ top: 70 }}
-        >
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  aria-label={t('fab.newSddFeature')}
-                  data-testid="application-node-new-sdd-feature-button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    data.onCreateSddFeature?.(data.id);
-                  }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  className="nodrag absolute start-1/2 top-1/2 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-violet-500 text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 hover:bg-violet-600 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:outline-none"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">{t('fab.newSddFeature')}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </Handle>
-      ) : (
-        <Handle
-          type="source"
-          position={sourceHandlePos}
-          isConnectable={false}
-          className="opacity-0!"
-          style={{ top: 70 }}
-        />
-      )}
+      {/* Source handle — invisible edge anchor for child feature edges.
+          The user-facing "+ New" affordance is in the header (matching
+          the repository node), not on this handle. */}
+      <Handle
+        type="source"
+        position={sourceHandlePos}
+        isConnectable={false}
+        className="opacity-0!"
+        style={{ top: 70 }}
+      />
     </div>
   );
 }

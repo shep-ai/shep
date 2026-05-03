@@ -124,22 +124,26 @@ test.describe('Control Center — SDD mode entry point', () => {
 
     // The repository section is rendered as a locked read-only label —
     // the data attribute lets us assert the lock without depending on
-    // localized tooltip text.
+    // localized tooltip text. The application determines the repo, so the
+    // user cannot pick a different one.
     const repoSection = page.getByTestId('repo-readonly-section');
     await expect(repoSection).toBeVisible();
     await expect(repoSection).toHaveAttribute('data-locked-by-application', 'true');
 
-    // The Spec build-mode segment is pinned (aria-pressed=true) and
-    // disabled regardless of any other input. The Application and Fast
-    // segments are also disabled because the entry-point owns the mode.
+    // The Spec mode is seeded as the default (matching the entry-point's
+    // SDD intent), but the picker remains editable so launching a feature
+    // against an application feels like launching one against a regular
+    // repository — the user can switch to Fast in one click.
     const specButton = page.getByTestId('build-mode-spec');
     await expect(specButton).toHaveAttribute('aria-pressed', 'true');
-    await expect(specButton).toBeDisabled();
+    await expect(specButton).toBeEnabled();
 
-    const applicationButton = page.getByTestId('build-mode-application');
-    await expect(applicationButton).toBeDisabled();
     const fastButton = page.getByTestId('build-mode-fast');
-    await expect(fastButton).toBeDisabled();
+    await expect(fastButton).toBeEnabled();
+
+    // The legacy "Application" mode is no longer offered — the picker is
+    // simplified to Fast and Spec only.
+    await expect(page.getByTestId('build-mode-application')).toHaveCount(0);
   });
 
   test('navigating to /create without applicationId leaves repo selector unlocked', async ({

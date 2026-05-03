@@ -94,6 +94,7 @@ export function CreateDrawerClient(props: CreateDrawerClientProps) {
                 description: result.feature!.description,
                 repositoryPath: result.feature!.repositoryPath,
                 parentId: data.parentId,
+                applicationId: result.feature!.applicationId ?? data.applicationId,
               },
             })
           );

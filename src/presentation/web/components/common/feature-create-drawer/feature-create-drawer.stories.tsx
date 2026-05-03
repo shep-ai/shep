@@ -284,23 +284,6 @@ export const PrChecked: Story = {
  * ------------------------------------------------------------------------- */
 
 /**
- * Application mode — the "Application" segment is selected. The full SDLC
- * pipeline (analyze, requirements, research, plan, implement) runs and
- * `fast: false` is sent on submit.
- */
-export const ApplicationMode: Story = {
-  render: () => <CreateDrawerTrigger label="Open (Application Mode)" />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('button', { name: 'Open (Application Mode)' }));
-
-    const body = within(canvasElement.ownerDocument.body);
-    const applicationButton = await body.findByTestId('build-mode-application');
-    await userEvent.click(applicationButton);
-  },
-};
-
-/**
  * Fast mode — the "Fast" segment is selected (default). When submitted,
  * `fast: true` is included in the payload, skipping SDLC phases and
  * implementing directly from the user's prompt.

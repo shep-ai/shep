@@ -82,11 +82,12 @@ export const WithDeleteButton: Story = {
 };
 
 /**
- * **WithCreateSddFeature** — application node with the "New SDD feature"
- * action handle wired. Hover the right edge of the card to reveal the
- * violet (+) sparkle button; click invokes the `onCreateSddFeature`
- * callback with this app's id, which the canvas owner uses to push to
- * `/create?applicationId=<id>&mode=spec`.
+ * **WithCreateSddFeature** — application node with the "+ New" action
+ * wired. The button sits in the card header (mirroring the repository
+ * node's "+ New" affordance); clicking it invokes `onCreateSddFeature`
+ * with this app's id, which the canvas owner uses to push to
+ * `/create?applicationId=<id>` and open the create drawer scoped to
+ * this application.
  */
 export const WithCreateSddFeature: Story = {
   args: {

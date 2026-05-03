@@ -283,7 +283,7 @@ describe('ApplicationNode', () => {
       renderNode({ ...defaultData, onCreateSddFeature: vi.fn() });
 
       const button = screen.getByTestId('application-node-new-sdd-feature-button');
-      expect(button).toHaveAttribute('aria-label', 'New SDD feature');
+      expect(button).toHaveAttribute('aria-label', 'New feature');
     });
   });
 });

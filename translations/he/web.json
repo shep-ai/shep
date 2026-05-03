@@ -387,6 +387,9 @@
     "showLess": "הצג פחות",
     "showMore": "הצג עוד {{count}}"
   },
+  "applicationNode": {
+    "newFeature": "תכונה חדשה"
+  },
   "repositoryNode": {
     "removeRepository": "הסרת מאגר",
     "removeConfirmTitle": "להסיר מאגר?",

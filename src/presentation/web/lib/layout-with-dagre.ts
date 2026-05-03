@@ -36,24 +36,22 @@ export function getCanvasLayoutDefaults(dir: 'ltr' | 'rtl' = 'ltr'): LayoutOptio
 /**
  * Known node-type dimensions for the canvas node types.
  *
- * `applicationNode` dimensions MUST track the real rendered card
- * height — dagre uses them to compute rank/node spacing, and if
- * they're understated the cards overlap on screen. Current card:
- *   - header        py-4 (16+16) + 32px content           ≈ 64px
- *   - preview       py-4 top + 180px slot + pb-4 bottom   ≈ 196px
- *   - footer        pb-4 + 16px text                      ≈ 32px
- *   - border                                                 2px
- *   ─────────────────────────────────────────────────────────────
- *   Total                                                  ≈ 294px
+ * Width MUST match the wrapper width on screen, not just the inner
+ * card. Both `repositoryNode` and `applicationNode` use a wrapper
+ * with `ps-10` (40px) when `onDelete` is wired, so the visible card
+ * lives at wrapper-x + 40. Setting both to the same width keeps the
+ * cards visually flush in the same column on the canvas.
  *
- * Rounded up to 300 with a bit of headroom for shadow and selected
- * border animation. Bump this alongside PREVIEW_HEIGHT_PX in
- * `application-node.tsx` whenever the card changes size.
+ * Height for the `applicationNode` tracks the idle layout — header
+ * (~52px) + Run row (~38px) ≈ 90px + a bit of padding. When the
+ * dev-server iframe is mounted the card grows by `PREVIEW_HEIGHT_PX`
+ * (180px); dagre still gives it enough breathing room because of
+ * `nodesep`, but bump this number if the card changes size.
  */
 const NODE_DIMENSIONS: Record<string, { width: number; height: number }> = {
   featureNode: { width: 388, height: 140 },
-  repositoryNode: { width: 400, height: 140 },
-  applicationNode: { width: 416, height: 300 },
+  repositoryNode: { width: 416, height: 140 },
+  applicationNode: { width: 416, height: 110 },
 };
 
 function getNodeSize(

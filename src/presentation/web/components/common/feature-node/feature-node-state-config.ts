@@ -216,6 +216,11 @@ export interface FeatureNodeData {
   createdAt?: string | number;
   /** Repository display name (e.g. "my-repo") */
   repositoryName?: string;
+  /** Domain UUID of the parent Application when this feature was launched
+   *  scoped to an Application (SDD mode). Carried through the server→client
+   *  boundary so derive-graph can render an app→feature parent edge instead
+   *  of the default repo→feature edge. */
+  applicationId?: string;
   /** Remote URL for the repository (HTTPS, suitable for browser linking) */
   remoteUrl?: string;
   /** Base branch the feature was branched from (e.g. "main") */

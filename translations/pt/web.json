@@ -387,6 +387,9 @@
     "showLess": "Mostrar menos",
     "showMore": "Mostrar mais {{count}}"
   },
+  "applicationNode": {
+    "newFeature": "Nova funcionalidade"
+  },
   "repositoryNode": {
     "removeRepository": "Remover repositório",
     "removeConfirmTitle": "Remover repositório?",
