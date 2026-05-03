@@ -35,6 +35,7 @@ import { registerServices } from '@/infrastructure/di/modules/register-services.
 import { registerTools } from '@/infrastructure/di/modules/register-tools.js';
 import { registerAgents } from '@/infrastructure/di/modules/register-agents.js';
 import { registerCloudDeploy } from '@/infrastructure/di/modules/register-cloud-deploy.js';
+import { registerIntegrations } from '@/infrastructure/di/modules/register-integrations.js';
 import { registerDeployment } from '@/infrastructure/di/modules/register-deployment.js';
 import { registerUseCases } from '@/infrastructure/di/modules/register-use-cases.js';
 import { registerInteractive } from '@/infrastructure/di/modules/register-interactive.js';
@@ -184,6 +185,7 @@ describe('DI container bootstrap (integration)', () => {
     registerTools(scopedContainer);
     registerAgents(scopedContainer);
     registerCloudDeploy(scopedContainer);
+    registerIntegrations(scopedContainer);
     registerDeployment(scopedContainer);
     registerUseCases(scopedContainer);
     registerInteractive(scopedContainer);
