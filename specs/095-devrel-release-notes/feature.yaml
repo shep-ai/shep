@@ -1,0 +1,36 @@
+feature:
+  id: '095-devrel-release-notes'
+  name: 'devrel-release-notes'
+  number: 95
+  branch: 'feat/095-devrel-release-notes'
+  lifecycle: 'research'
+  createdAt: '2026-05-03T15:34:54Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-05-03T15:34:54Z'
+  lastUpdatedBy: 'feature-agent'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-05-03T15:34:54Z'
+    completedBy: 'feature-agent'
+
+errors:
+  current: null
+  history: []

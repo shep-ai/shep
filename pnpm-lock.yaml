@@ -255,6 +255,12 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      conventional-changelog-angular:
+        specifier: ^8.1.0
+        version: 8.1.0
+      conventional-changelog-writer:
+        specifier: ^8.2.0
+        version: 8.2.0
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0

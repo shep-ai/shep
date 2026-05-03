@@ -7,6 +7,8 @@
  * @see https://semantic-release.gitbook.io/
  * @type {import('semantic-release').GlobalConfig}
  */
+import { writerOpts as releaseNotesWriterOpts } from './scripts/release-notes-template.mjs';
+
 export default {
   branches: ['main'],
   tagFormat: 'v${version}',
@@ -36,14 +38,14 @@ export default {
       },
     ],
 
-    // 2. Generate release notes from commits
+    // 2. Generate release notes from commits — dev-rel friendly format
+    //    (hero banner, emoji-grouped sections, install commands, community CTAs)
+    //    See scripts/release-notes-template.mjs.
     [
       '@semantic-release/release-notes-generator',
       {
         preset: 'angular',
-        writerOpts: {
-          commitsSort: ['subject', 'scope'],
-        },
+        writerOpts: releaseNotesWriterOpts,
       },
     ],
 

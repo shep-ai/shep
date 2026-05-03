@@ -137,6 +137,8 @@
     "autoprefixer": "^10.4.24",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "conventional-changelog-angular": "^8.1.0",
+    "conventional-changelog-writer": "^8.2.0",
     "cross-env": "^10.1.0",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.0.0",
