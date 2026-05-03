@@ -552,6 +552,163 @@ describe('FeatureDrawerTabs', () => {
     });
   });
 
+  describe('spec visualization tabs during implementation phase', () => {
+    const sampleTechData = {
+      name: 'Test Feature',
+      summary: 'Tech summary for the feature',
+      decisions: [
+        {
+          title: 'Use Vite',
+          chosen: 'Vite',
+          rationale: 'Fast dev server',
+          rejected: ['Webpack'],
+        },
+      ],
+      technologies: ['Vite'],
+    };
+
+    const sampleProductData = {
+      question: 'Goal',
+      context: 'A test feature',
+      questions: [
+        {
+          question: 'Authentication strategy?',
+          selectedOption: 'OAuth',
+          rationale: 'Industry standard',
+          wasRecommended: true,
+        },
+      ],
+    };
+
+    it('shows tech-decisions and product-decisions tabs during implementation+running', () => {
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'running',
+        },
+        techData: sampleTechData,
+        productData: sampleProductData,
+      });
+      expect(screen.getByRole('tab', { name: 'Tech Decisions' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Product' })).toBeInTheDocument();
+    });
+
+    it('shows tech-decisions and product-decisions tabs during implementation+action-required', () => {
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'action-required',
+        },
+        techData: sampleTechData,
+        productData: sampleProductData,
+      });
+      expect(screen.getByRole('tab', { name: 'Tech Decisions' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Product' })).toBeInTheDocument();
+    });
+
+    it('shows tech-decisions and product-decisions tabs during implementation+error', () => {
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'error',
+        },
+        techData: sampleTechData,
+        productData: sampleProductData,
+      });
+      expect(screen.getByRole('tab', { name: 'Tech Decisions' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Product' })).toBeInTheDocument();
+    });
+
+    it('hides tech-decisions and product-decisions tabs outside implementation phase', () => {
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'requirements',
+          state: 'running',
+        },
+      });
+      expect(screen.queryByRole('tab', { name: 'Tech Decisions' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('tab', { name: 'Product' })).not.toBeInTheDocument();
+    });
+
+    it('renders tech decisions content without action bar when state is not action-required', async () => {
+      const user = userEvent.setup();
+      const onApprove = vi.fn();
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'running',
+        },
+        techData: sampleTechData,
+        onTechApprove: onApprove,
+      });
+
+      await user.click(screen.getByRole('tab', { name: 'Tech Decisions' }));
+
+      expect(screen.getByText('Technical Implementation Plan Review')).toBeInTheDocument();
+      // Action bar (approve button) must NOT be rendered for running state
+      expect(screen.queryByRole('button', { name: /approve/i })).not.toBeInTheDocument();
+    });
+
+    it('renders tech decisions content with action bar when state is action-required', async () => {
+      const user = userEvent.setup();
+      const onApprove = vi.fn();
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'action-required',
+        },
+        techData: sampleTechData,
+        onTechApprove: onApprove,
+      });
+
+      await user.click(screen.getByRole('tab', { name: 'Tech Decisions' }));
+
+      expect(screen.getByText('Technical Implementation Plan Review')).toBeInTheDocument();
+      // Approve button should be present in action-required state
+      expect(screen.getByRole('button', { name: /approve/i })).toBeInTheDocument();
+    });
+
+    it('renders product decisions content for any implementation state', async () => {
+      const user = userEvent.setup();
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'running',
+        },
+        productData: sampleProductData,
+      });
+
+      await user.click(screen.getByRole('tab', { name: 'Product' }));
+
+      expect(screen.getByText('Product Decisions')).toBeInTheDocument();
+      expect(screen.getByText('Authentication strategy?')).toBeInTheDocument();
+    });
+
+    it('shows empty-state message when tech data is unavailable and not loading', async () => {
+      const user = userEvent.setup();
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'running',
+        },
+        techData: null,
+        isTechLoading: false,
+      });
+
+      await user.click(screen.getByRole('tab', { name: 'Tech Decisions' }));
+
+      expect(screen.getByText(/no technical decisions available/i)).toBeInTheDocument();
+    });
+  });
+
   describe('URL tab routing', () => {
     it('activates the tab specified in urlTab prop', () => {
       renderTabs({ urlTab: 'activity' });

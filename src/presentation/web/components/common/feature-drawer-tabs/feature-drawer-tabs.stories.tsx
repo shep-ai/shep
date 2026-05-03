@@ -367,6 +367,34 @@ export const TechReviewActive: Story = {
   },
 };
 
+/**
+ * Tech Decisions tab visible while implementation is in `running` state —
+ * users can review the locked-in technical specs without an action bar.
+ */
+export const TechSpecsDuringImplementation: Story = {
+  args: {
+    featureNode: runningFeature,
+    featureId: runningFeature.featureId,
+    initialTab: 'tech-decisions',
+    techData: techFixture,
+    productData: productFixture,
+  },
+};
+
+/**
+ * Product Decisions tab visible while implementation is in `running` state —
+ * users can review the locked-in product decisions without an action bar.
+ */
+export const ProductSpecsDuringImplementation: Story = {
+  args: {
+    featureNode: runningFeature,
+    featureId: runningFeature.featureId,
+    initialTab: 'product-decisions',
+    techData: techFixture,
+    productData: productFixture,
+  },
+};
+
 /** Merge Review tab active — review lifecycle, action-required state. */
 export const MergeReviewActive: Story = {
   args: {

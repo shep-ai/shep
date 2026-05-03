@@ -1,0 +1,36 @@
+feature:
+  id: '095-spec-visualization-tabs'
+  name: 'spec-visualization-tabs'
+  number: 95
+  branch: 'feat/095-spec-visualization-tabs'
+  lifecycle: 'research'
+  createdAt: '2026-05-03T08:43:40Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-05-03T08:43:40Z'
+  lastUpdatedBy: 'feature-agent'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-05-03T08:43:40Z'
+    completedBy: 'feature-agent'
+
+errors:
+  current: null
+  history: []

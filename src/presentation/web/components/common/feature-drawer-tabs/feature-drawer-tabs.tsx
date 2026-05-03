@@ -97,7 +97,10 @@ function computeVisibleTabs(
   if (node.lifecycle === 'requirements' && node.state === 'action-required') {
     tabs.push('prd-review');
   }
-  if (node.lifecycle === 'implementation' && node.state === 'action-required') {
+  // Tech / Product spec tabs are visible for the entire implementation phase
+  // so users can review the locked-in technical and product decisions while
+  // the agent is running, on error, or paused for approval.
+  if (node.lifecycle === 'implementation') {
     tabs.push('tech-decisions', 'product-decisions');
   }
   if (node.lifecycle === 'review' && (node.state === 'action-required' || node.state === 'error')) {
@@ -650,7 +653,7 @@ export function FeatureDrawerTabs({
           </TabsContent>
         ) : null}
 
-        {/* Tech Decisions tab */}
+        {/* Tech Decisions tab — action bar appears only when approval is pending */}
         {visibleTabs.includes('tech-decisions') ? (
           <TabsContent value="tech-decisions" className="mt-0 flex min-h-0 flex-1 flex-col">
             {techData ? (
@@ -658,19 +661,25 @@ export function FeatureDrawerTabs({
                 <div className="flex-1 overflow-y-auto">
                   <TechDecisionsContent data={techData} />
                 </div>
-                <DrawerActionBarForTech
-                  onApprove={onTechApprove ?? (() => undefined)}
-                  onReject={onTechReject}
-                  isProcessing={Boolean((isTechLoading ?? false) || continuationActionsDisabled)}
-                  isRejecting={isRejecting}
-                  chatInput={chatInput}
-                  onChatInputChange={onChatInputChange}
-                />
+                {featureNode.state === 'action-required' ? (
+                  <DrawerActionBarForTech
+                    onApprove={onTechApprove ?? (() => undefined)}
+                    onReject={onTechReject}
+                    isProcessing={Boolean((isTechLoading ?? false) || continuationActionsDisabled)}
+                    isRejecting={isRejecting}
+                    chatInput={chatInput}
+                    onChatInputChange={onChatInputChange}
+                  />
+                ) : null}
               </div>
-            ) : (
+            ) : isTechLoading ? (
               <div className="flex items-center justify-center p-8">
                 <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
               </div>
+            ) : (
+              <p className="text-muted-foreground p-4 text-center text-sm">
+                No technical decisions available.
+              </p>
             )}
           </TabsContent>
         ) : null}
