@@ -650,12 +650,23 @@ describe('Upgrade Command', () => {
       expect(stopDaemon).not.toHaveBeenCalled();
     });
 
-    it('should NOT call startDaemon() after upgrade when daemon was not running', async () => {
+    it('should call startDaemon() after a successful upgrade when daemon was not running', async () => {
       const { spawnFn, processes } = createMockSpawn();
       const cmd = createUpgradeCommand(spawnFn as any);
 
       const parsePromise = cmd.parseAsync(['node', 'test']);
       await runFullFlow(processes);
+      await parsePromise;
+
+      expect(startDaemon).toHaveBeenCalledTimes(1);
+    });
+
+    it('should NOT call startDaemon() when upgrade fails and daemon was not running', async () => {
+      const { spawnFn, processes } = createMockSpawn();
+      const cmd = createUpgradeCommand(spawnFn as any);
+
+      const parsePromise = cmd.parseAsync(['node', 'test']);
+      await runFullFlow(processes, 1);
       await parsePromise;
 
       expect(startDaemon).not.toHaveBeenCalled();

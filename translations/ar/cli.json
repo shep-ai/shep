@@ -647,6 +647,7 @@
       "stoppingDaemon": "جارٍ إيقاف الخدمة الخلفية قبل الترقية...",
       "restartingDaemon": "جارٍ إعادة تشغيل الخدمة الخلفية...",
       "daemonRestarted": "تمت إعادة تشغيل الخدمة الخلفية بنجاح.",
+      "startingDaemon": "جارٍ تشغيل خدمة Shep الخلفية...",
       "upgradeSuccess": "تمت ترقية Shep CLI بنجاح",
       "upgradeFailed": "فشلت الترقية",
       "upgradeFailedDaemonRestored": "فشلت الترقية — تمت استعادة الخدمة الخلفية على الإصدار السابق."

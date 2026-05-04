@@ -228,6 +228,14 @@ export function createUpgradeCommand(spawnFn: SpawnFn = defaultSpawn): Command {
 
         if (installExitCode === 0) {
           messages.success(t('cli:commands.upgrade.upgradeSuccess'));
+          // After a successful upgrade, ensure shep is running. The
+          // daemon-was-running branch has already restarted via the finally
+          // above; if it was not running, start it now so `shep upgrade`
+          // always leaves the user with a live daemon.
+          if (!daemonWasRunning) {
+            messages.info(t('cli:commands.upgrade.startingDaemon'));
+            await startDaemon();
+          }
         } else {
           if (daemonWasRunning) {
             messages.error(t('cli:commands.upgrade.upgradeFailedDaemonRestored'));

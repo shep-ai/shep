@@ -647,6 +647,7 @@
       "stoppingDaemon": "Dienst wird vor Aktualisierung gestoppt...",
       "restartingDaemon": "Dienst wird neu gestartet...",
       "daemonRestarted": "Dienst erfolgreich neu gestartet.",
+      "startingDaemon": "Shep-Dienst wird gestartet...",
       "upgradeSuccess": "Shep CLI erfolgreich aktualisiert",
       "upgradeFailed": "Aktualisierung fehlgeschlagen",
       "upgradeFailedDaemonRestored": "Aktualisierung fehlgeschlagen — Dienst mit vorheriger Version wiederhergestellt."

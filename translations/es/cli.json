@@ -647,6 +647,7 @@
       "stoppingDaemon": "Deteniendo el demonio antes de actualizar...",
       "restartingDaemon": "Reiniciando el demonio...",
       "daemonRestarted": "Demonio reiniciado exitosamente.",
+      "startingDaemon": "Iniciando demonio Shep...",
       "upgradeSuccess": "Shep CLI actualizado exitosamente",
       "upgradeFailed": "Error en la actualización",
       "upgradeFailedDaemonRestored": "Error en la actualización — demonio restaurado en la versión anterior."

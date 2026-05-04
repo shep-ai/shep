@@ -647,6 +647,7 @@
       "stoppingDaemon": "Parando daemon antes da atualização...",
       "restartingDaemon": "Reiniciando daemon...",
       "daemonRestarted": "Daemon reiniciado com sucesso.",
+      "startingDaemon": "Iniciando daemon do Shep...",
       "upgradeSuccess": "Shep CLI atualizado com sucesso",
       "upgradeFailed": "Atualização falhou",
       "upgradeFailedDaemonRestored": "Atualização falhou — daemon restaurado na versão anterior."

@@ -647,6 +647,7 @@
       "stoppingDaemon": "עוצר תהליך לפני שדרוג...",
       "restartingDaemon": "מפעיל מחדש תהליך...",
       "daemonRestarted": "התהליך הופעל מחדש בהצלחה.",
+      "startingDaemon": "מפעיל את התהליך של Shep...",
       "upgradeSuccess": "Shep CLI שודרג בהצלחה",
       "upgradeFailed": "השדרוג נכשל",
       "upgradeFailedDaemonRestored": "השדרוג נכשל — התהליך שוחזר על הגרסה הקודמת."

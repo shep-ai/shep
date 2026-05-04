@@ -647,6 +647,7 @@
       "stoppingDaemon": "Зупинка демона перед оновленням...",
       "restartingDaemon": "Перезапуск демона...",
       "daemonRestarted": "Демон успішно перезапущено.",
+      "startingDaemon": "Запуск демона Shep...",
       "upgradeSuccess": "Shep CLI успішно оновлено",
       "upgradeFailed": "Помилка оновлення",
       "upgradeFailedDaemonRestored": "Помилка оновлення — демон відновлено на попередній версії."

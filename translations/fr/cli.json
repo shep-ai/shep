@@ -647,6 +647,7 @@
       "stoppingDaemon": "Arrêt du démon avant la mise à jour...",
       "restartingDaemon": "Redémarrage du démon...",
       "daemonRestarted": "Démon redémarré avec succès.",
+      "startingDaemon": "Démarrage du démon Shep...",
       "upgradeSuccess": "Shep CLI mis à jour avec succès",
       "upgradeFailed": "Échec de la mise à jour",
       "upgradeFailedDaemonRestored": "Échec de la mise à jour — démon restauré sur la version précédente."
