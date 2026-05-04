@@ -1,0 +1,47 @@
+[release-notes] Generated tagline via Claude: Real-time evidence in your release notes — proof of work, not promises.
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
+# 🚀 Shep [v1.201.0](/compare/v1.200.0...v1.201.0) · _2026-05-04_
+
+> Real-time evidence in your release notes — proof of work, not promises.
+
+
+
+### ✨ Features
+
+* **web:** add dashboard toggle ([#600](https://github.com/shep-ai/shep/issues/600)) ([abcdef1](https://github.com/shep-ai/shep/commit/abcdef1234567890))
+
+  ![dashboard toggle](https://user-images.githubusercontent.com/1/abc.png)
+  [📹 walkthrough](https://user-images.githubusercontent.com/1/walkthrough.mp4)
+
+
+### 🐛 Bug Fixes
+
+* **cli:** resolve dropdown overflow ([#601](https://github.com/shep-ai/shep/issues/601)) ([fedcba0](https://github.com/shep-ai/shep/commit/fedcba0987654321))
+
+  ![before after](https://raw.githubusercontent.com/shep-ai/shep/main/specs/095-fix-dropdown/evidence/before-after.png)
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.201.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+
+
