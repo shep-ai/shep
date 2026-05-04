@@ -6,13 +6,18 @@
  *   - emoji-grouped commit sections (✨ Features, 🐛 Bug Fixes, ⚡ Performance, …)
  *   - install / update commands keyed to the published version
  *   - community CTAs (Discord, docs, stars, issues)
+ *   - inline evidence images/videos under each commit when the PR body has them
  *
  * Used by release.config.mjs and tested in
  * tests/unit/scripts/release-notes-template.test.ts.
  *
  * The exported writerOpts is merged on top of conventional-changelog-angular's
- * writerOpts by @semantic-release/release-notes-generator, so we only override
- * the keys we care about (transform, headerPartial, footerPartial).
+ * writerOpts by @semantic-release/release-notes-generator. We override the
+ * keys we care about (transform, commitPartial, headerPartial, footerPartial).
+ *
+ * The static tagline (STATIC_TAGLINE) is rendered into the header by default
+ * but is dynamically rewritten by `release-notes-plugin.mjs` using Claude so
+ * each release gets a tagline grounded in its actual commits.
  */
 
 const COMMIT_HASH_LENGTH = 7;
@@ -92,6 +97,9 @@ export function transform(commit, context) {
   return { notes, type, scope, shortHash, subject, references };
 }
 
+export const STATIC_TAGLINE =
+  'Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._';
+
 export const headerPartial = `<p align="center">
   <a href="https://github.com/shep-ai/shep">
     <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
@@ -100,8 +108,42 @@ export const headerPartial = `<p align="center">
 
 # 🚀 Shep {{#if @root.linkCompare~}}[v{{version}}]({{~@root.repoUrl}}/compare/{{previousTag}}...{{currentTag}}){{~else}}v{{version}}{{~/if}}{{~#if title}} · {{title}}{{~/if}}{{~#if date}} · _{{date}}_{{~/if}}
 
-> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
+> ${STATIC_TAGLINE}
 
+`;
+
+// Custom commit partial: same shape as conventional-changelog-angular's
+// default, but with an extra block at the bottom that renders any evidence
+// images/videos attached to the commit by release-notes-plugin.mjs as
+// indented sub-bullets so they appear directly under the commit line.
+export const commitPartial = `* {{#if scope}}**{{scope}}:** {{/if~}}
+{{#if subject}}{{subject}}{{else}}{{header}}{{/if~}}
+{{#if @root.linkReferences}} ([{{shortHash}}](
+{{~#if @root.repository}}
+  {{~#if @root.host}}{{@root.host}}/{{/if~}}
+  {{~#if @root.owner}}{{@root.owner}}/{{/if~}}
+  {{~@root.repository}}
+{{~else}}{{@root.repoUrl}}{{/if~}}
+/{{@root.commit}}/{{hash}})){{/if~}}
+{{#if references}}, closes
+{{~#each references}} {{#if @root.linkReferences~}}
+  [{{#if this.owner}}{{this.owner}}/{{/if}}{{this.repository}}#{{this.issue}}](
+  {{~#if @root.repository}}
+    {{~#if @root.host}}{{@root.host}}/{{/if~}}
+    {{~#if this.repository}}
+      {{~#if this.owner}}{{this.owner}}/{{/if~}}
+      {{~this.repository}}
+    {{~else}}
+      {{~#if @root.owner}}{{@root.owner}}/{{/if~}}
+      {{~@root.repository}}
+    {{~/if}}
+  {{~else}}{{@root.repoUrl}}{{/if~}}
+  /{{@root.issue}}/{{this.issue}})
+{{~else~}}
+  {{#if this.owner}}{{this.owner}}/{{/if}}{{this.repository}}#{{this.issue}}
+{{~/if}}{{/each}}{{/if}}
+{{#if evidenceMarkdown}}{{#each evidenceMarkdown}}
+  {{{this}}}{{/each}}{{/if}}
 `;
 
 export const footerPartial = `{{#if noteGroups}}
@@ -140,6 +182,7 @@ export const writerOpts = {
   commitGroupsSort,
   commitsSort: ['subject', 'scope'],
   noteGroupsSort: 'title',
+  commitPartial,
   headerPartial,
   footerPartial,
 };

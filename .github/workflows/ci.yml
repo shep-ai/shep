@@ -400,6 +400,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          # Used by the custom release-notes plugin to generate a per-release
+          # tagline via Claude (scripts/release-notes-plugin.mjs). Plugin
+          # gracefully falls back to a static tagline if this is unset.
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: npx semantic-release
 
   # ===========================================================================

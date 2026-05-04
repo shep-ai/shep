@@ -38,11 +38,15 @@ export default {
       },
     ],
 
-    // 2. Generate release notes from commits — dev-rel friendly format
-    //    (hero banner, emoji-grouped sections, install commands, community CTAs)
-    //    See scripts/release-notes-template.mjs.
+    // 2. Generate release notes from commits — dev-rel friendly format.
+    //    Wraps @semantic-release/release-notes-generator to add:
+    //      - a Claude-generated tagline grounded in the actual commits
+    //      - inline evidence images/videos extracted from referenced PR bodies
+    //    Falls back to the static tagline + evidence-free output if Claude
+    //    or the GitHub API are unavailable.
+    //    See scripts/release-notes-plugin.mjs and release-notes-template.mjs.
     [
-      '@semantic-release/release-notes-generator',
+      './scripts/release-notes-plugin.mjs',
       {
         preset: 'angular',
         writerOpts: releaseNotesWriterOpts,

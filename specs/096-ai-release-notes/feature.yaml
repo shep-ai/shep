@@ -1,0 +1,36 @@
+feature:
+  id: '096-ai-release-notes'
+  name: 'ai-release-notes'
+  number: 96
+  branch: 'feat/096-ai-release-notes'
+  lifecycle: 'research'
+  createdAt: '2026-05-04T13:16:56Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-05-04T13:16:56Z'
+  lastUpdatedBy: 'feature-agent'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-05-04T13:16:56Z'
+    completedBy: 'feature-agent'
+
+errors:
+  current: null
+  history: []
