@@ -607,10 +607,11 @@ describe('CLI: daemon lifecycle', { timeout: TEST_TIMEOUT }, () => {
         expect(output).toMatch(/upgraded successfully/i);
       });
 
-      it('does not create daemon.json when none existed before upgrade', async () => {
-        // No daemon was running, so no daemon should have been started
+      it('starts daemon after successful upgrade even when none existed before', async () => {
+        // After a successful upgrade, shep auto-starts the daemon so the user
+        // is left with a live daemon regardless of prior state.
         const exists = await daemonJsonExists(shepHome);
-        expect(exists).toBe(false);
+        expect(exists).toBe(true);
       });
     });
   });
