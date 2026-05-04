@@ -1,18 +1,69 @@
 
-[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-ai-release-notes[39m
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-ai-release-notes
 
-[90mstdout[2m | tests/unit/scripts/release-notes-claude.test.ts[2m > [22m[2mgenerateTagline[2m > [22m[2mfalls back to assistant text when there is no result message
-[22m[39m[release-notes] Generated tagline via Claude: A new tagline
+stdout | tests/unit/scripts/release-notes-claude.test.ts > generateTagline > falls back to assistant text when there is no result message
+[release-notes] Generated tagline via Claude: A new tagline
 
-[90mstdout[2m | tests/unit/scripts/release-notes-claude.test.ts[2m > [22m[2mgenerateTagline[2m > [22m[2mreturns null when no auth credentials are present
-[22m[39m[release-notes] Claude credentials not present; using static tagline.
+stdout | tests/unit/scripts/release-notes-claude.test.ts > generateTagline > returns null when no auth credentials are present
+[release-notes] Claude credentials not present; using static tagline.
 
- [32m✓[39m [30m[43m node [49m[39m tests/unit/scripts/release-notes-claude.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/scripts/release-notes-evidence.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m [30m[43m node [49m[39m tests/unit/scripts/release-notes-plugin.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > postProcessTagline > trims, strips wrapping quotes, and removes leading > 1ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > postProcessTagline > keeps only the first non-empty line 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > postProcessTagline > returns null for empty / whitespace input 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > postProcessTagline > truncates with an ellipsis above the char ceiling 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > summarizeCommits > only includes feat/fix/perf with a subject 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > summarizeCommits > strips markdown links from subjects 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > hasAuthCredentials > returns true when CLAUDE_CODE_OAUTH_TOKEN is set 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > hasAuthCredentials > returns true when ANTHROPIC_API_KEY is set 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > hasAuthCredentials > returns true when CLAUDE_API_KEY is set 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > hasAuthCredentials > returns true when ANTHROPIC_AUTH_TOKEN is set 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > hasAuthCredentials > returns false when no recognized variable is set 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > generateTagline > returns the Claude result string on success 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > generateTagline > falls back to assistant text when there is no result message 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > generateTagline > returns null when no auth credentials are present 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > generateTagline > returns null when Claude throws 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > generateTagline > returns null when version is missing 0ms
+ ✓ |node| tests/unit/scripts/release-notes-claude.test.ts > STATIC_TAGLINE > is the canonical fallback string the plugin substitutes against 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > extractEvidenceFromBody > returns an empty array for empty / non-string input 1ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > extractEvidenceFromBody > extracts markdown image links 1ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > extractEvidenceFromBody > extracts HTML <img> and <video> tags 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > extractEvidenceFromBody > extracts GitHub user-attachments URLs 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > extractEvidenceFromBody > converts repo-relative evidence paths into raw.githubusercontent.com URLs 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > extractEvidenceFromBody > honours the defaultBranch override for repo-relative paths 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > extractEvidenceFromBody > deduplicates URLs that appear multiple times 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > extractEvidenceFromBody > caps evidence at 4 items per body to avoid blowing up notes 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > extractEvidenceFromBody > does not emit repo paths when owner/repo are missing 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > formatEvidenceMarkdown > renders images as standard markdown 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > formatEvidenceMarkdown > renders videos as a film-emoji link, not a markdown image 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > formatEvidenceMarkdown > returns an empty string for malformed input 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > getPrNumbersFromCommit > reads PR numbers from conventional-commits-parser references 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > getPrNumbersFromCommit > reads squash-merge PR numbers from the commit subject 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > getPrNumbersFromCommit > unions references and inline references without duplicates 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > getPrNumbersFromCommit > returns an empty array when no PRs are referenced 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > fetchPrBody > returns null when args are missing 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > fetchPrBody > returns null on non-2xx responses 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > fetchPrBody > returns the PR body string on success 1ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > fetchPrBody > returns null when fetch throws (network error, etc.) 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > attachEvidenceToCommits > attaches evidence pulled from referenced PR bodies 0ms
+ ✓ |node| tests/unit/scripts/release-notes-evidence.test.ts > attachEvidenceToCommits > is a no-op when token / repo are missing (graceful degrade) 0ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > parseRepoFromUrl > parses https://github.com/shep-ai/shep.git 1ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > parseRepoFromUrl > parses https://github.com/shep-ai/shep 0ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > parseRepoFromUrl > parses git@github.com:shep-ai/shep.git 0ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > parseRepoFromUrl > returns null for malformed urls 0ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > replaceTagline > replaces the static tagline with the provided one 0ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > replaceTagline > is a no-op when tagline is null / matches the static one 0ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > getGitHubToken > reads GITHUB_TOKEN 0ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > getGitHubToken > reads GH_TOKEN 0ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > getGitHubToken > reads RELEASE_TOKEN 0ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > getGitHubToken > reads GITHUB_PAT 0ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > getGitHubToken > returns null when nothing is set 0ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > generateNotes (plugin) > substitutes the Claude-generated tagline into the rendered notes 16ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > generateNotes (plugin) > embeds inline evidence images from the linked PR body 6ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > generateNotes (plugin) > falls back to the static tagline when Claude returns nothing 5ms
+ ✓ |node| tests/unit/scripts/release-notes-plugin.test.ts > generateNotes (plugin) > does not call Claude or the GitHub API when no tokens are set 3ms
 
-[2m Test Files [22m [1m[32m3 passed[39m[22m[90m (3)[39m
-[2m      Tests [22m [1m[32m54 passed[39m[22m[90m (54)[39m
-[2m   Start at [22m 16:42:17
-[2m   Duration [22m 387ms[2m (transform 116ms, setup 82ms, import 309ms, tests 42ms, environment 0ms)[22m
+ Test Files  3 passed (3)
+      Tests  54 passed (54)
+   Start at  16:46:02
+   Duration  244ms (transform 105ms, setup 70ms, import 178ms, tests 41ms, environment 0ms)
 
