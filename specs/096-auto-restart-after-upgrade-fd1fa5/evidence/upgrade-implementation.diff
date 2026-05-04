@@ -1,0 +1,62 @@
+diff --git a/src/presentation/cli/commands/upgrade.command.ts b/src/presentation/cli/commands/upgrade.command.ts
+index 5dca4782..457e960c 100644
+--- a/src/presentation/cli/commands/upgrade.command.ts
++++ b/src/presentation/cli/commands/upgrade.command.ts
+@@ -228,6 +228,14 @@ export function createUpgradeCommand(spawnFn: SpawnFn = defaultSpawn): Command {
+ 
+         if (installExitCode === 0) {
+           messages.success(t('cli:commands.upgrade.upgradeSuccess'));
++          // After a successful upgrade, ensure shep is running. The
++          // daemon-was-running branch has already restarted via the finally
++          // above; if it was not running, start it now so `shep upgrade`
++          // always leaves the user with a live daemon.
++          if (!daemonWasRunning) {
++            messages.info(t('cli:commands.upgrade.startingDaemon'));
++            await startDaemon();
++          }
+         } else {
+           if (daemonWasRunning) {
+             messages.error(t('cli:commands.upgrade.upgradeFailedDaemonRestored'));
+diff --git a/tests/unit/presentation/cli/commands/upgrade.command.test.ts b/tests/unit/presentation/cli/commands/upgrade.command.test.ts
+index b815741f..0e82377b 100644
+--- a/tests/unit/presentation/cli/commands/upgrade.command.test.ts
++++ b/tests/unit/presentation/cli/commands/upgrade.command.test.ts
+@@ -650,7 +650,7 @@ describe('Upgrade Command', () => {
+       expect(stopDaemon).not.toHaveBeenCalled();
+     });
+ 
+-    it('should NOT call startDaemon() after upgrade when daemon was not running', async () => {
++    it('should call startDaemon() after a successful upgrade when daemon was not running', async () => {
+       const { spawnFn, processes } = createMockSpawn();
+       const cmd = createUpgradeCommand(spawnFn as any);
+ 
+@@ -658,6 +658,17 @@ describe('Upgrade Command', () => {
+       await runFullFlow(processes);
+       await parsePromise;
+ 
++      expect(startDaemon).toHaveBeenCalledTimes(1);
++    });
++
++    it('should NOT call startDaemon() when upgrade fails and daemon was not running', async () => {
++      const { spawnFn, processes } = createMockSpawn();
++      const cmd = createUpgradeCommand(spawnFn as any);
++
++      const parsePromise = cmd.parseAsync(['node', 'test']);
++      await runFullFlow(processes, 1);
++      await parsePromise;
++
+       expect(startDaemon).not.toHaveBeenCalled();
+     });
+ 
+diff --git a/translations/en/cli.json b/translations/en/cli.json
+index 90824789..d017adc9 100644
+--- a/translations/en/cli.json
++++ b/translations/en/cli.json
+@@ -647,6 +647,7 @@
+       "stoppingDaemon": "Stopping daemon before upgrade...",
+       "restartingDaemon": "Restarting daemon...",
+       "daemonRestarted": "Daemon restarted successfully.",
++      "startingDaemon": "Starting Shep daemon...",
+       "upgradeSuccess": "Shep CLI upgraded successfully",
+       "upgradeFailed": "Upgrade failed",
+       "upgradeFailedDaemonRestored": "Upgrade failed — daemon restored on previous version."
