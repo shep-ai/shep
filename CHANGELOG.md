@@ -4,6 +4,41 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.204.0](/compare/v1.203.1...v1.204.0) · _2026-05-06_
+
+> _Keeping the lights on_ — housekeeping and internal upkeep to keep Shep running smooth.
+
+
+
+### ✨ Features
+
+* **web:** inline applications as inventory table rows ([#607](https://github.com/shep-ai/shep/issues/607)) ([7e343f1](https://github.com/shep-ai/shep/commit/7e343f112b480f858c9cead4d49ddaa5f1879837))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.204.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.203.1](/compare/v1.203.0...v1.203.1) · _2026-05-06_
 
 > _No user-facing changes_ — just internal housekeeping to keep the codebase tidy under the hood.
