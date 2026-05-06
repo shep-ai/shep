@@ -75,6 +75,10 @@ import { StreamAgentEventsUseCase } from '../../../application/use-cases/agents/
 // Doctor (feature 097) use case
 import { RunDoctorUseCase } from '../../../application/use-cases/doctor/run-doctor.use-case.js';
 
+// Contributor onboarding (feature 097) read use cases — wired for the web view
+import { GetContributorLeaderboardUseCase } from '../../../application/use-cases/contributors/get-contributor-leaderboard.use-case.js';
+import { GetCuratedIssuesByLaneUseCase } from '../../../application/use-cases/contributors/get-curated-issues-by-lane.use-case.js';
+
 // Code review (feature 090) use cases
 import { RunCodeReviewUseCase } from '../../../application/use-cases/code-review/run-code-review.use-case.js';
 import { GetCodeReviewUseCase } from '../../../application/use-cases/code-review/get-code-review.use-case.js';
@@ -194,6 +198,10 @@ export function registerUseCases(container: DependencyContainer): void {
 
   // ─── Doctor (feature 097) use case ──────────────────────────────────────
   container.registerSingleton(RunDoctorUseCase);
+
+  // ─── Contributor onboarding (feature 097) read use cases ───────────────
+  container.registerSingleton(GetContributorLeaderboardUseCase);
+  container.registerSingleton(GetCuratedIssuesByLaneUseCase);
 
   // ─── Code review (feature 090) use cases ────────────────────────────────
   container.registerSingleton(RunCodeReviewUseCase);
@@ -480,5 +488,16 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('DeleteCustomAgentUseCase', {
     useFactory: (c) => c.resolve(DeleteCustomAgentUseCase),
+  });
+
+  // ─── Doctor + Contributor (feature 097) string aliases ─────────────────
+  container.register('RunDoctorUseCase', {
+    useFactory: (c) => c.resolve(RunDoctorUseCase),
+  });
+  container.register('GetContributorLeaderboardUseCase', {
+    useFactory: (c) => c.resolve(GetContributorLeaderboardUseCase),
+  });
+  container.register('GetCuratedIssuesByLaneUseCase', {
+    useFactory: (c) => c.resolve(GetCuratedIssuesByLaneUseCase),
   });
 }
