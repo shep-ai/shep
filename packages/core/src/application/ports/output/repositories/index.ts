@@ -23,3 +23,12 @@ export type {
   ISupervisorDecisionRepository,
   SupervisorDecisionListFilters,
 } from './supervisor-decision-repository.interface.js';
+export type {
+  IContributorRepository,
+  ContributorLeaderboardScope,
+  FindTopByPrCountOptions,
+} from './contributor-repository.interface.js';
+export type {
+  IRecognitionEventRepository,
+  RecognitionInsertResult,
+} from './recognition-event-repository.interface.js';

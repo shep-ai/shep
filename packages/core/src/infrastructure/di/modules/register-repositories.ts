@@ -91,6 +91,12 @@ import { SQLiteAgentGraphOverrideRepository } from '../../repositories/sqlite-ag
 import type { ICustomAgentRepository } from '../../../application/ports/output/repositories/custom-agent-repository.interface.js';
 import { SQLiteCustomAgentRepository } from '../../repositories/sqlite-custom-agent.repository.js';
 
+// Contributor onboarding (feature 097) repositories
+import type { IContributorRepository } from '../../../application/ports/output/repositories/contributor-repository.interface.js';
+import { SQLiteContributorRepository } from '../../repositories/sqlite-contributor.repository.js';
+import type { IRecognitionEventRepository } from '../../../application/ports/output/repositories/recognition-event-repository.interface.js';
+import { SQLiteRecognitionEventRepository } from '../../repositories/sqlite-recognition-event.repository.js';
+
 /**
  * Register all SQLite-backed repositories.
  *
@@ -274,5 +280,14 @@ export function registerRepositories(container: DependencyContainer): void {
   });
   container.register<ICustomAgentRepository>('ICustomAgentRepository', {
     useFactory: (c) => new SQLiteCustomAgentRepository(c.resolve<Database.Database>('Database')),
+  });
+
+  // ─── Contributor onboarding (feature 097) repositories ────────────────
+  container.register<IContributorRepository>('IContributorRepository', {
+    useFactory: (c) => new SQLiteContributorRepository(c.resolve<Database.Database>('Database')),
+  });
+  container.register<IRecognitionEventRepository>('IRecognitionEventRepository', {
+    useFactory: (c) =>
+      new SQLiteRecognitionEventRepository(c.resolve<Database.Database>('Database')),
   });
 }
