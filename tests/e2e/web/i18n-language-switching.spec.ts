@@ -9,9 +9,10 @@ import { test, expect } from '@playwright/test';
 
 test.describe('i18n: language switching', () => {
   test('switching to Russian updates UI text immediately', async ({ page }) => {
-    // Navigate to settings page
+    // Navigate to settings page. Don't wait for `networkidle` — the app shell
+    // opens a long-lived SSE stream to /api/agent-events that keeps the
+    // network busy indefinitely, so `networkidle` never fires.
     await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
 
     // Verify English text is shown initially
     const languageTitle = page.getByTestId('language-settings-section');
@@ -44,9 +45,9 @@ test.describe('i18n: language switching', () => {
 
   test('switching to Arabic sets RTL direction', async ({ page }) => {
     await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
 
     const languageSelect = page.getByTestId('language-select');
+    await expect(languageSelect).toBeVisible();
     await languageSelect.click();
 
     await page.getByRole('option', { name: 'العربية' }).click();
@@ -62,9 +63,9 @@ test.describe('i18n: language switching', () => {
 
   test('switching to Spanish updates navigation text', async ({ page }) => {
     await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
 
     const languageSelect = page.getByTestId('language-select');
+    await expect(languageSelect).toBeVisible();
     await languageSelect.click();
 
     await page.getByRole('option', { name: 'Español' }).click();

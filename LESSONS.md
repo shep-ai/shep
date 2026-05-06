@@ -1,5 +1,18 @@
 # Lessons Learned
 
+## Playwright E2E — never use `waitForLoadState('networkidle')` in this app
+
+Symptom: random timeouts on `await page.waitForLoadState('networkidle')` after `page.goto(...)` — usually the first test in a suite, sometimes flaky-passing on retry.
+
+Root cause: every page in the web UI mounts inside `AppShell`, which wraps the tree in `AgentEventsProvider` (`src/presentation/web/components/layouts/app-shell/app-shell.tsx`). That provider opens a long-lived SSE connection to `/api/agent-events`, which polls SQLite every 500ms and emits a heartbeat / delta. `networkidle` requires zero network activity for 500ms — with a 500ms-cadence stream open, that condition is a coin flip and frequently never fires within the 30s test timeout.
+
+Rules:
+
+1. **Never call `page.waitForLoadState('networkidle')` in this codebase.** It will eventually break.
+2. Wait for an actual element instead: `await expect(page.getByTestId('foo')).toBeVisible()`. Playwright's `expect`/`click` already auto-waits for actionability, so a separate load-state wait is rarely needed at all.
+3. If you must gate on the page being "ready", pick a deterministic UI signal — a heading, a known testid, a data-loaded attribute — never the network.
+4. The same trap applies to any future test that hits `/api/agent-events`, `/api/interactive/chat/.../stream`, or `/api/terminal/.../stream` either directly or transitively through the shell.
+
 ## tsyringe `@injectable()` — every constructor param must be resolvable
 
 Symptom: worker boots crash with `Cannot inject the dependency at position #N of "X" constructor. Reason: TypeInfo not known for "Object"`.
