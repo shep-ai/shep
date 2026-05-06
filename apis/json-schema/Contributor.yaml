@@ -1,0 +1,47 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Contributor.yaml
+type: object
+properties:
+  githubLogin:
+    type: string
+    description: GitHub login (e.g., 'octocat') — unique across contributors
+  displayName:
+    type: string
+    description: Display name — public profile name on GitHub if available
+  avatarUrl:
+    type: string
+    description: Avatar URL from GitHub's public profile
+  lane:
+    $ref: ContributorLane.yaml
+    description: Primary lane the contributor works in (set by classify-into-lane or manually)
+  level:
+    $ref: ContributorLevel.yaml
+    description: Position on the contributor ladder
+  firstContributionAt:
+    type: string
+    format: date-time
+    description: ISO timestamp of the contributor's first interaction (first PR or issue)
+  lastContributionAt:
+    type: string
+    format: date-time
+    description: ISO timestamp of the contributor's most recent interaction
+  prCount:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Number of merged PRs authored by this contributor in this repository
+  issueCount:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Number of accepted issues opened by this contributor in this repository
+required:
+  - githubLogin
+  - level
+  - firstContributionAt
+  - lastContributionAt
+  - prCount
+  - issueCount
+allOf:
+  - $ref: BaseEntity.yaml
+description: External OSS contributor to a repository Shep is helping run

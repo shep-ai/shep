@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ContributionDifficulty.yaml
+type: string
+enum:
+  - goodFirst
+  - easy
+  - medium
+  - hard
+description: Contribution difficulty — how much project context the contributor needs

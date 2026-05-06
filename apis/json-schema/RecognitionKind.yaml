@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RecognitionKind.yaml
+type: string
+enum:
+  - firstPR
+  - nthPR
+  - firstIssue
+  - monthlyShoutout
+description: Kind of contributor recognition event

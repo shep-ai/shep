@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ContributorLane.yaml
+type: string
+enum:
+  - docs
+  - agents
+  - ui
+  - cli
+  - infra
+description: Contributor lane — area of the codebase a contribution belongs to

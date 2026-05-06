@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ContributorLevel.yaml
+type: string
+enum:
+  - user
+  - contributor
+  - core
+  - maintainer
+description: Contributor level — position on the User → Maintainer ladder
