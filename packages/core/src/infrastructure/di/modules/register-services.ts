@@ -80,6 +80,21 @@ import { SQLiteAgentMessageBus } from '../../services/agents/agent-message-bus/s
 import type { IDeferredQuestionRegistry } from '../../../application/ports/output/agents/agent-question-service.interface.js';
 import { DeferredQuestionRegistry } from '../../services/agents/agent-question-service/deferred-question-registry.js';
 
+// Contributor onboarding (feature 097) — output ports + adapters
+import type { IGitHubIssueWriter } from '../../../application/ports/output/services/github-issue-writer.interface.js';
+import { GitHubIssueWriter } from '../../services/external/github-issue-writer.service.js';
+import type { IAllContributorsWriter } from '../../../application/ports/output/services/all-contributors-writer.interface.js';
+import { AllContributorsWriter } from '../../services/contributors/all-contributors-writer.service.js';
+import type { IOutreachPublisher } from '../../../application/ports/output/services/outreach-publisher.interface.js';
+import { DiscordOutreachPublisher } from '../../services/outreach/discord-outreach-publisher.service.js';
+import type { IRecapPublisher } from '../../../application/ports/output/services/recap-publisher.interface.js';
+import { FileRecapPublisher } from '../../services/recap/file-recap-publisher.service.js';
+import { DiscordRecapPublisher } from '../../services/recap/discord-recap-publisher.service.js';
+import { GithubDiscussionRecapPublisher } from '../../services/recap/github-discussion-recap-publisher.service.js';
+import type { IDiagnosticRunner } from '../../../application/ports/output/services/diagnostic.interface.js';
+import { DiagnosticRunner } from '../../services/doctor/diagnostic-runner.service.js';
+import { RecapChannel } from '../../../domain/generated/output.js';
+
 /**
  * Register core infrastructure services: validators, filesystem, git, notifications,
  * logger, tool installer, attachment storage, shep-instance, browser opener, etc.
@@ -272,4 +287,32 @@ export function registerServices(container: DependencyContainer): void {
     'IDeferredQuestionRegistry',
     DeferredQuestionRegistry
   );
+
+  // ─── Contributor onboarding (feature 097) — writers & publishers ────
+  // Workspace root resolution mirrors `ShepInstanceService` so the file-based
+  // adapters (all-contributors, file recap) write into the correct repo when
+  // Shep runs against a checked-out target instance.
+  const workspaceRoot =
+    process.env.SHEP_INSTANCE_PATH ?? process.env.NEXT_PUBLIC_SHEP_INSTANCE_PATH ?? process.cwd();
+
+  container.registerSingleton<IGitHubIssueWriter>('IGitHubIssueWriter', GitHubIssueWriter);
+  container.register<IAllContributorsWriter>('IAllContributorsWriter', {
+    useFactory: () => new AllContributorsWriter(workspaceRoot),
+  });
+  container.registerSingleton<IOutreachPublisher>('IOutreachPublisher', DiscordOutreachPublisher);
+
+  // Recap publishers are registered per-channel so the publish use case can
+  // resolve the right adapter for a given target.
+  container.register<IRecapPublisher>(`IRecapPublisher:${RecapChannel.File}`, {
+    useFactory: () => new FileRecapPublisher(workspaceRoot),
+  });
+  container.register<IRecapPublisher>(`IRecapPublisher:${RecapChannel.Discord}`, {
+    useFactory: (c) =>
+      new DiscordRecapPublisher(c.resolve<IOutreachPublisher>('IOutreachPublisher')),
+  });
+  container.register<IRecapPublisher>(`IRecapPublisher:${RecapChannel.GithubDiscussion}`, {
+    useClass: GithubDiscussionRecapPublisher,
+  });
+
+  container.registerSingleton<IDiagnosticRunner>('IDiagnosticRunner', DiagnosticRunner);
 }
