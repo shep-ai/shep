@@ -2,12 +2,16 @@
  * stopDaemon() Helper Unit Tests
  *
  * Tests for the shared daemon-stop helper.
- * Covers: SIGTERM path, SIGKILL fallback, not-running path, invalid PID path.
- * Uses tree-kill for cross-platform process tree termination.
+ * Covers: SIGTERM path, SIGKILL fallback (Unix only), not-running path,
+ * invalid PID path. Uses tree-kill for cross-platform process tree
+ * termination — the Windows path awaits the kill subprocess via callback,
+ * so the mock invokes the callback if one is supplied.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { IDaemonService } from '@/application/ports/output/services/daemon-service.interface.js';
+
+const isWindows = process.platform === 'win32';
 
 // Mock tree-kill wrapper (must use vi.hoisted for factory reference)
 const { mockTreeKill } = vi.hoisted(() => ({ mockTreeKill: vi.fn() }));
@@ -42,6 +46,11 @@ describe('stopDaemon()', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    // The Windows code path awaits a callback-style treeKill. Default mock
+    // invokes the callback synchronously so promises resolve in tests.
+    mockTreeKill.mockImplementation((_pid: number, _sig: string, cb?: () => void) => {
+      if (typeof cb === 'function') cb();
+    });
   });
 
   afterEach(() => {
@@ -162,7 +171,11 @@ describe('stopDaemon()', () => {
       await vi.runAllTimersAsync();
       await p;
 
-      expect(mockTreeKill).toHaveBeenCalledWith(pid, 'SIGTERM');
+      // Windows path passes a third callback arg; Unix path is fire-and-forget.
+      // Check arg-by-arg so the test passes on both.
+      expect(mockTreeKill).toHaveBeenCalled();
+      expect(mockTreeKill.mock.calls[0]?.[0]).toBe(pid);
+      expect(mockTreeKill.mock.calls[0]?.[1]).toBe('SIGTERM');
     });
 
     it('does NOT send SIGKILL when process dies before grace window expires', async () => {
@@ -201,7 +214,10 @@ describe('stopDaemon()', () => {
     });
   });
 
-  describe('SIGKILL fallback path (grace window expires)', () => {
+  // Windows uses an always-forceful taskkill /T /F and skips the
+  // graceful-then-escalate dance entirely — the SIGKILL fallback path only
+  // exists on Unix.
+  describe.skipIf(isWindows)('SIGKILL fallback path (grace window expires)', () => {
     it('sends SIGKILL via tree-kill after 5s when process does not respond to SIGTERM', async () => {
       const pid = 12345;
       // Always alive — never responds to SIGTERM

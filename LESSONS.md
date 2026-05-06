@@ -1,5 +1,18 @@
 # Lessons Learned
 
+## Windows has no graceful kill — don't simulate one
+
+On Windows the `tree-kill` package always shells out to `taskkill /T /F`, regardless of which signal name you pass. There is no SIGTERM equivalent in the Windows kernel. So a "send SIGTERM, poll for graceful exit, then escalate to SIGKILL" pattern is theatrical on Windows: the very first call already force-killed the tree, and the polling loop is 5s of wasted budget waiting for a "graceful" exit that already happened forcefully.
+
+Concrete instance: `stopDaemon()` was paying up to 5s of poll budget on every Windows `shep restart`, which collided with a thin 20s e2e timeout on slow CI runners and broke main.
+
+Rules:
+
+1. Branch the kill flow on `process.platform === 'win32'`. On Windows do a single awaited `treeKill(pid, sig, cb)` call (the callback fires when `taskkill` actually returns), then one `isAlive` check. No poll loop, no escalation.
+2. Keep the SIGTERM-then-poll-then-SIGKILL flow on Unix — it's a real semantic, not theatre. Daemons may genuinely need time to flush state before exiting.
+3. `treeKill(pid, signal)` is fire-and-forget. If you care that the kill has actually been issued before you check liveness, pass a callback (or wrap it in a Promise). Otherwise you're polling against a kill that hasn't dispatched yet.
+4. Always check liveness *before* the first sleep in any poll-until-dead loop. Sleeping 200ms before the first check costs 200ms on every fast-exit path for no reason.
+
 ## tsyringe `@injectable()` — every constructor param must be resolvable
 
 Symptom: worker boots crash with `Cannot inject the dependency at position #N of "X" constructor. Reason: TypeInfo not known for "Object"`.
