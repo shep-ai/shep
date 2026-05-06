@@ -91,8 +91,21 @@ import type { IRecapPublisher } from '../../../application/ports/output/services
 import { FileRecapPublisher } from '../../services/recap/file-recap-publisher.service.js';
 import { DiscordRecapPublisher } from '../../services/recap/discord-recap-publisher.service.js';
 import { GithubDiscussionRecapPublisher } from '../../services/recap/github-discussion-recap-publisher.service.js';
-import type { IDiagnosticRunner } from '../../../application/ports/output/services/diagnostic.interface.js';
+import type {
+  IDiagnostic,
+  IDiagnosticRunner,
+} from '../../../application/ports/output/services/diagnostic.interface.js';
 import { DiagnosticRunner } from '../../services/doctor/diagnostic-runner.service.js';
+import { NodeVersionDiagnostic } from '../../../application/use-cases/doctor/diagnostics/node-version.diagnostic.js';
+import { PnpmInstalledDiagnostic } from '../../../application/use-cases/doctor/diagnostics/pnpm-installed.diagnostic.js';
+import { GitInstalledDiagnostic } from '../../../application/use-cases/doctor/diagnostics/git-installed.diagnostic.js';
+import { GhCliAuthDiagnostic } from '../../../application/use-cases/doctor/diagnostics/gh-cli-auth.diagnostic.js';
+import { AgentCliAvailabilityDiagnostic } from '../../../application/use-cases/doctor/diagnostics/agent-cli-availability.diagnostic.js';
+import { DotenvPresenceDiagnostic } from '../../../application/use-cases/doctor/diagnostics/dotenv-presence.diagnostic.js';
+import { WorkingTreeCleanDiagnostic } from '../../../application/use-cases/doctor/diagnostics/working-tree-clean.diagnostic.js';
+import { MigrationStatusDiagnostic } from '../../../application/use-cases/doctor/diagnostics/migration-status.diagnostic.js';
+import { TypespecFreshnessDiagnostic } from '../../../application/use-cases/doctor/diagnostics/typespec-freshness.diagnostic.js';
+import { DiGraphValidationDiagnostic } from '../../../application/use-cases/doctor/diagnostics/di-graph-validation.diagnostic.js';
 import { RecapChannel } from '../../../domain/generated/output.js';
 
 /**
@@ -315,4 +328,36 @@ export function registerServices(container: DependencyContainer): void {
   });
 
   container.registerSingleton<IDiagnosticRunner>('IDiagnosticRunner', DiagnosticRunner);
+
+  // ─── Doctor diagnostics (feature 097, phase 3) ──────────────────────
+  // Each diagnostic is a strategy resolved by string token. The use case
+  // injects the array via `resolveAll('IDiagnostic')`. Order is the
+  // declaration order below — that's the order they are reported in.
+  const registerDiagnostic = (factory: (c: DependencyContainer) => IDiagnostic) =>
+    container.register<IDiagnostic>('IDiagnostic', { useFactory: factory });
+
+  registerDiagnostic(() => new NodeVersionDiagnostic());
+  registerDiagnostic(() => new PnpmInstalledDiagnostic());
+  registerDiagnostic(() => new GitInstalledDiagnostic());
+  registerDiagnostic((c) => c.resolve(GhCliAuthDiagnostic));
+  registerDiagnostic((c) => c.resolve(AgentCliAvailabilityDiagnostic));
+  registerDiagnostic(
+    (c) =>
+      new DotenvPresenceDiagnostic(
+        c.resolve<IFileSystemService>('IFileSystemService'),
+        workspaceRoot
+      )
+  );
+  registerDiagnostic(
+    (c) => new WorkingTreeCleanDiagnostic(c.resolve<IGitPrService>('IGitPrService'), workspaceRoot)
+  );
+  registerDiagnostic((c) => c.resolve(MigrationStatusDiagnostic));
+  registerDiagnostic(
+    (c) =>
+      new TypespecFreshnessDiagnostic(
+        c.resolve<IFileSystemService>('IFileSystemService'),
+        workspaceRoot
+      )
+  );
+  registerDiagnostic((c) => new DiGraphValidationDiagnostic((token) => c.isRegistered(token)));
 }

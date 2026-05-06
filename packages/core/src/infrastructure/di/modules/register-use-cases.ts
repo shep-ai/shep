@@ -72,6 +72,9 @@ import { ListAgentSessionsUseCase } from '../../../application/use-cases/agents/
 import { GetAgentSessionUseCase } from '../../../application/use-cases/agents/get-agent-session.use-case.js';
 import { StreamAgentEventsUseCase } from '../../../application/use-cases/agents/stream-agent-events.use-case.js';
 
+// Doctor (feature 097) use case
+import { RunDoctorUseCase } from '../../../application/use-cases/doctor/run-doctor.use-case.js';
+
 // Code review (feature 090) use cases
 import { RunCodeReviewUseCase } from '../../../application/use-cases/code-review/run-code-review.use-case.js';
 import { GetCodeReviewUseCase } from '../../../application/use-cases/code-review/get-code-review.use-case.js';
@@ -188,6 +191,9 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(ListAgentSessionsUseCase);
   container.registerSingleton(GetAgentSessionUseCase);
   container.registerSingleton(StreamAgentEventsUseCase);
+
+  // ─── Doctor (feature 097) use case ──────────────────────────────────────
+  container.registerSingleton(RunDoctorUseCase);
 
   // ─── Code review (feature 090) use cases ────────────────────────────────
   container.registerSingleton(RunCodeReviewUseCase);

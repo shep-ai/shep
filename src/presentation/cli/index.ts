@@ -54,6 +54,7 @@ import { createCycleCommand } from './commands/cycle/index.js';
 import { createIntakeCommand } from './commands/intake/index.js';
 import { createNotificationsCommand } from './commands/notifications/index.js';
 import { createReviewCommand } from './commands/review.command.js';
+import { createDoctorCommand } from './commands/doctor.command.js';
 import { createSupervisorCommand } from './commands/supervisor/index.js';
 import { messages } from './ui/index.js';
 
@@ -146,6 +147,7 @@ async function bootstrap() {
     program.addCommand(createIntakeCommand());
     program.addCommand(createNotificationsCommand());
     program.addCommand(createReviewCommand());
+    program.addCommand(createDoctorCommand());
     program.addCommand(createSupervisorCommand());
     program.addCommand(createUpgradeCommand());
 
