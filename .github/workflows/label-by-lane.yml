@@ -1,0 +1,50 @@
+# =============================================================================
+# Label by Lane
+# =============================================================================
+# Event-driven workflow (spec 097, FR-41). On every newly opened issue,
+# invoke `shep contributors groom-issue` which delegates to
+# `GroomIssueUseCase`. The use case classifies the issue into a lane,
+# proposes acceptance criteria, and surfaces suggested labels. Per the
+# auto-approval policy, labels are applied via `IGitHubIssueWriter` only
+# when `IContributorActionGate` approves; otherwise the action is
+# surfaced for manual review.
+
+name: Label by lane
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: label-by-lane-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  groom:
+    name: Groom new issue
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run groom-issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm dev:cli contributors groom-issue

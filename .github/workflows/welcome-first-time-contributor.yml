@@ -1,0 +1,52 @@
+# =============================================================================
+# Welcome First-Time Contributor
+# =============================================================================
+# Event-driven workflow (spec 097, FR-40). On every newly opened pull
+# request, invoke `shep contributors welcome-pr` which delegates to
+# `WelcomeFirstTimeContributorUseCase`. The use case is a no-op for
+# returning contributors and gates the welcome comment through the
+# supervisor approval flow.
+#
+# The workflow reads the event payload from `$GITHUB_EVENT_PATH`
+# (provided by Actions) — no extra parsing in shell here.
+
+name: Welcome first-time contributor
+
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: welcome-first-time-contributor-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  welcome:
+    name: Welcome PR opener
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run welcome-pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm dev:cli contributors welcome-pr
