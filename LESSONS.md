@@ -546,3 +546,19 @@ The user ran `pnpm dev` and got an infinite Tailwind/Webpack rebuild loop spammi
 2. **Same rule applies to any `@import 'pkg'` in `app/globals.css`, `*.module.css`, or any CSS pulled into the Next.js graph.** It is NOT enough that the package is reachable from the importing CSS file's filesystem location — Tailwind v4's PostCSS plugin uses the Node process CWD-anchored resolver, not a CSS-file-anchored one, when run via the root `pnpm dev` script.
 3. **Sanity check after adding a CSS import:** `ls node_modules/<pkg>` must succeed at the repo root. If the symlink is missing, hoist by adding the dep to root `package.json` and running `pnpm install`.
 4. **Symptom to recognize fast:** repeating `Error: Can't resolve '<pkg>' in '/.../src/presentation'` (note the path stops at `src/presentation`, not `src/presentation/web/app`) interleaved with Tailwind rebuild timing logs. That path mismatch is the tell — it means the resolver is using the wrong base directory.
+
+## Every New Output-Port Token MUST Be Registered AND Listed in the Bootstrap Test
+
+Tsyringe walks every `@inject(token)` decorator on a class and resolves the **entire** constructor tree before any method on the resolved instance runs. That means:
+
+- A feature-flag short-circuit inside a use case (e.g. `if (!collaborationEnabled) return`) does NOT save you from a missing DI registration. The flag check runs in `execute()`, but the missing token blows up at `container.resolve(...)` — strictly before that.
+- An "optional, only-used-in-some-modes" port is still mandatory at construction time the moment any registered singleton transitively `@inject`s it.
+
+**How this failed in production (spec 093):** `ISupervisorAgent` was added as a port and wired through `EvaluateSupervisorDecisionUseCase` → `AgentQuestionSupervisorRouter` → `AskAgentQuestionUseCase` → `FeatureAgentGateQuestionPublisher` (registerSingleton in `register-agents.ts`). The token was never registered in any production DI module. Every feature-agent worker crashed at boot with `Attempted to resolve unregistered dependency token: "ISupervisorAgent"`, regardless of whether the user had ever enabled the supervisor.
+
+**Why CI didn't catch it:** `tests/integration/infrastructure/di/container-bootstrap.test.ts` only resolves tokens listed explicitly in `WEB_ROUTE_TOKENS` and `CRITICAL_INFRA_TOKENS`. A new port token that is only resolved transitively from a worker (not from a web route) will pass CI even when its registration is missing.
+
+**Rule:**
+1. When adding a new output port `IFoo` under `application/ports/output/`, register a concrete adapter under that string token in the appropriate `register-*.ts` module **in the same commit** as the first use case that injects it.
+2. Add the new token to `CRITICAL_INFRA_TOKENS` in `container-bootstrap.test.ts`. If the token is consumed only by background workers (feature-agent, supervisor, deployment), it MUST appear there — web routes alone do not exercise worker constructor trees.
+3. When adding any `registerSingleton(SomeWorkerHelper)` in `register-agents.ts`, mentally trace its full `@inject` graph and confirm every leaf token is registered. The tsyringe error message *names* the missing token, but the full chain only shows up at runtime, never at build time.

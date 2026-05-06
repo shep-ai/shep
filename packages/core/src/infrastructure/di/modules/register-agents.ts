@@ -13,6 +13,7 @@ import type { ISpecInitializerService } from '../../../application/ports/output/
 import type { ISpecArtifactParser } from '../../../application/ports/output/services/spec-artifact-parser.interface.js';
 import type { ISettingsRepository } from '../../../application/ports/output/repositories/settings.repository.interface.js';
 import type { IAgentSessionRepositoryRegistry } from '../../../application/ports/output/agents/agent-session-repository-registry.interface.js';
+import type { ISupervisorAgent } from '../../../application/ports/output/agents/supervisor-agent.interface.js';
 
 import { AgentExecutorFactory } from '../../services/agents/common/agent-executor-factory.service.js';
 import { AgentExecutorProvider } from '../../services/agents/common/agent-executor-provider.service.js';
@@ -32,6 +33,7 @@ import { AgentType } from '../../../domain/generated/output.js';
 import { FeatureAgentLifecyclePublisher } from '../../services/agents/feature-agent/feature-agent-lifecycle-publisher.js';
 import { FeatureAgentGateQuestionPublisher } from '../../services/agents/feature-agent/feature-agent-gate-question-publisher.js';
 import { FeatureAgentSupervisorGateEvaluator } from '../../services/agents/feature-agent/feature-agent-supervisor-gate-evaluator.js';
+import { LangGraphSupervisorAgent } from '../../services/agents/supervisor-agent/langgraph-supervisor-agent.js';
 
 /**
  * Register agent-execution infrastructure: executor factory/provider, runner,
@@ -147,4 +149,12 @@ export function registerAgents(container: DependencyContainer): void {
   // advisory / co-sign modes the decision is recorded but the gate
   // stays in waiting_approval for the user.
   container.registerSingleton(FeatureAgentSupervisorGateEvaluator);
+
+  // ISupervisorAgent — production adapter behind the supervisor port (spec 093).
+  // Tsyringe eagerly resolves the entire constructor tree of every singleton
+  // it builds, so AskAgentQuestionUseCase → AgentQuestionSupervisorRouter →
+  // EvaluateSupervisorDecisionUseCase needs this token to exist *before* any
+  // feature-flag short-circuit can run. Forgetting this registration crashes
+  // every feature-agent worker on boot, even when the collaboration flag is off.
+  container.registerSingleton<ISupervisorAgent>('ISupervisorAgent', LangGraphSupervisorAgent);
 }

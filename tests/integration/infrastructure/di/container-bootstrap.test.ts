@@ -149,6 +149,16 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'IAgentExecutorProvider',
   'IOperationLogRepository',
   'IOperationLogService',
+  // Supervisor pipeline (spec 093). The feature-agent worker eagerly
+  // constructs FeatureAgentGateQuestionPublisher → AskAgentQuestionUseCase →
+  // AgentQuestionSupervisorRouter → EvaluateSupervisorDecisionUseCase, which
+  // injects 'ISupervisorAgent'. A missing registration here crashes the worker
+  // at boot — list the token explicitly so any future deletion fails this test
+  // instead of feature runs.
+  'ISupervisorAgent',
+  'IAgentPromptResolver',
+  'ISupervisorPolicyRepository',
+  'ISupervisorDecisionRepository',
 ] as const;
 
 describe('DI container bootstrap (integration)', () => {
