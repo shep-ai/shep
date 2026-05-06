@@ -1,0 +1,68 @@
+================================================================
+Spec 097 — ai-native-contributor-onboarding
+Unit-test results (filtered to contributor-onboarding scope)
+Captured: 2026-05-07 from `pnpm test:unit`
+Full suite result: 618 test files, 7494 tests, 0 failures, 47.32s
+================================================================
+
+Phase 1 — Domain & Persistence
+ ✓ tests/unit/infrastructure/di/contributor-onboarding-registrations.test.ts (5 tests)
+
+Phase 2 — Output Ports & Adapters
+ ✓ tests/unit/infrastructure/services/contributors/all-contributors-writer.service.test.ts (7 tests)
+ ✓ tests/unit/infrastructure/services/external/github-issue-writer.service.test.ts (10 tests)
+ ✓ tests/unit/infrastructure/services/outreach/discord-outreach-publisher.service.test.ts (4 tests)
+ ✓ tests/unit/infrastructure/services/recap/file-recap-publisher.service.test.ts (4 tests)
+ ✓ tests/unit/infrastructure/services/recap/discord-recap-publisher.service.test.ts (3 tests)
+ ✓ tests/unit/infrastructure/services/recap/github-discussion-recap-publisher.service.test.ts (3 tests)
+ ✓ tests/unit/infrastructure/services/doctor/diagnostic-runner.service.test.ts (6 tests)
+
+Phase 3 — shep doctor
+ ✓ tests/unit/application/use-cases/doctor/run-doctor.use-case.test.ts (3 tests)
+ ✓ tests/unit/application/use-cases/doctor/diagnostics/node-version.diagnostic.test.ts (4 tests)
+ ✓ tests/unit/application/use-cases/doctor/diagnostics/pnpm-installed.diagnostic.test.ts (3 tests)
+ ✓ tests/unit/application/use-cases/doctor/diagnostics/git-installed.diagnostic.test.ts (3 tests)
+ ✓ tests/unit/application/use-cases/doctor/diagnostics/gh-cli-auth.diagnostic.test.ts (3 tests)
+ ✓ tests/unit/application/use-cases/doctor/diagnostics/agent-cli-availability.diagnostic.test.ts (3 tests)
+ ✓ tests/unit/application/use-cases/doctor/diagnostics/dotenv-presence.diagnostic.test.ts (2 tests)
+ ✓ tests/unit/application/use-cases/doctor/diagnostics/working-tree-clean.diagnostic.test.ts (3 tests)
+ ✓ tests/unit/application/use-cases/doctor/diagnostics/migration-status.diagnostic.test.ts (3 tests)
+ ✓ tests/unit/application/use-cases/doctor/diagnostics/typespec-freshness.diagnostic.test.ts (3 tests)
+ ✓ tests/unit/application/use-cases/doctor/diagnostics/di-graph-validation.diagnostic.test.ts (3 tests)
+ ✓ tests/unit/presentation/cli/commands/doctor.command.test.ts (4 tests)
+
+Phase 4 — Contributor Use Cases
+ ✓ tests/unit/application/use-cases/contributors/classify-into-lane.use-case.test.ts (5 tests)
+ ✓ tests/unit/application/use-cases/contributors/propose-acceptance-criteria.use-case.test.ts (4 tests)
+ ✓ tests/unit/application/use-cases/contributors/groom-issue.use-case.test.ts (3 tests)
+ ✓ tests/unit/application/use-cases/contributors/welcome-first-time-contributor.use-case.test.ts (4 tests)
+ ✓ tests/unit/application/use-cases/contributors/detect-stale-good-first-issue.use-case.test.ts (4 tests)
+ ✓ tests/unit/application/use-cases/contributors/award-recognition.use-case.test.ts (9 tests)
+ ✓ tests/unit/application/use-cases/contributors/generate-monthly-recap.use-case.test.ts (3 tests)
+ ✓ tests/unit/application/use-cases/contributors/publish-monthly-recap.use-case.test.ts (4 tests)
+ ✓ tests/unit/application/use-cases/contributors/draft-outreach-post.use-case.test.ts (3 tests)
+ ✓ tests/unit/application/use-cases/contributors/get-contributor-leaderboard.use-case.test.ts (4 tests)
+ ✓ tests/unit/application/use-cases/contributors/get-curated-issues-by-lane.use-case.test.ts (3 tests)
+
+Phase 5 — Custom-Agent Registration
+ ✓ tests/unit/application/use-cases/contributors/register-contributor-onboarding-agent.use-case.test.ts (4 tests)
+
+Phase 6 — GitHub Actions + In-Shep Scheduling
+ ✓ tests/unit/commands/contributors/welcome-pr.command.test.ts (5 tests)
+ ✓ tests/unit/commands/contributors/groom-issue.command.test.ts (4 tests)
+ ✓ tests/unit/commands/contributors/load-github-event.test.ts (8 tests)
+ ✓ tests/unit/infrastructure/services/contributors/monthly-recap-watcher.service.test.ts (8 tests)
+ ✓ tests/unit/infrastructure/services/contributors/stale-good-first-issue-watcher.service.test.ts (7 tests)
+
+Phase 7 — Web Onboarding Contributor View
+ ✓ tests/unit/presentation/web/components/contributors/contributor-leaderboard.test.tsx (4 tests)
+ ✓ tests/unit/presentation/web/components/contributors/curated-issues-list.test.tsx (4 tests)
+ ✓ tests/unit/presentation/web/components/contributors/lane-chooser.test.tsx (3 tests)
+ ✓ tests/unit/presentation/web/components/contributors/doctor-summary.test.tsx (4 tests)
+ ✓ tests/unit/presentation/web/components/onboarding/welcome-banner.test.tsx (4 tests)
+
+================================================================
+Summary: 41 contributor-onboarding test files passing
+         covering every implemented task across all 8 phases.
+Whole project test suite: 7494 / 7494 passing.
+================================================================
