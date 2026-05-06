@@ -56,6 +56,7 @@ import { createNotificationsCommand } from './commands/notifications/index.js';
 import { createReviewCommand } from './commands/review.command.js';
 import { createDoctorCommand } from './commands/doctor.command.js';
 import { createSupervisorCommand } from './commands/supervisor/index.js';
+import { createContributorsCommand } from './commands/contributors/index.js';
 import { messages } from './ui/index.js';
 
 // Daemon lifecycle commands
@@ -149,6 +150,7 @@ async function bootstrap() {
     program.addCommand(createReviewCommand());
     program.addCommand(createDoctorCommand());
     program.addCommand(createSupervisorCommand());
+    program.addCommand(createContributorsCommand());
     program.addCommand(createUpgradeCommand());
 
     // Daemon lifecycle commands (task-9)
