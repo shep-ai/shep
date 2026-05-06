@@ -1,0 +1,15 @@
+{
+  "projectName": "shep",
+  "projectOwner": "shep-ai",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": ["README.md"],
+  "imageSize": 100,
+  "commit": false,
+  "commitConvention": "angular",
+  "contributorsPerLine": 7,
+  "contributorsSortAlphabetically": false,
+  "linkToUsage": true,
+  "skipCi": true,
+  "contributors": []
+}

@@ -30,6 +30,14 @@ _Manage 10 features at once — isolated branches, automatic commits, CI watchin
 
 ---
 
+## 🤝 Contribute to Shep
+
+Shep is open source and AI-native — one of its native abilities is helping itself onboard contributors. Clone, run `pnpm dev:cli doctor`, pick a [good first issue](./GOOD_FIRST_ISSUES.md), and ship a PR in under 30 minutes. The contributor-onboarding agent grooms your issue, drafts acceptance criteria, and welcomes you on first merge.
+
+[📝 Contributing guide](./CONTRIBUTING.md) · [🗺️ Roadmap](./ROADMAP.md) · [🧱 Architecture](./ARCHITECTURE.md) · [🌱 Good First Issues](./GOOD_FIRST_ISSUES.md) · [💬 Discord](https://discord.gg/ES6tdVFfur)
+
+---
+
 ## Why Shep?
 
 You're already using AI coding agents. The problem isn't the coding — it's everything around it.
@@ -363,13 +371,13 @@ Shep follows Clean Architecture with four layers. For contributors and the curio
 | **Infrastructure** | SQLite, LangGraph agents, DI |
 | **Presentation** | CLI, Web UI |
 
-> **[Full architecture docs →](./docs/architecture/overview.md)**
+> **[10-minute architecture tour →](./ARCHITECTURE.md)** · **[Full architecture docs →](./docs/architecture/overview.md)**
 
 ---
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for humans and [CONTRIBUTING-AGENTS.md](./CONTRIBUTING-AGENTS.md) for AI agents.
+Start with [CONTRIBUTING.md](./CONTRIBUTING.md) (humans) or [CONTRIBUTING-AGENTS.md](./CONTRIBUTING-AGENTS.md) (AI agents). Browse the [roadmap](./ROADMAP.md), pick a [good first issue](./GOOD_FIRST_ISSUES.md), and run `pnpm dev:cli doctor` to verify your environment.
 
 ---
 

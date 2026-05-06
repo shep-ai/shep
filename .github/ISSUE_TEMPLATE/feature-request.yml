@@ -18,17 +18,41 @@ body:
       required: true
 
   - type: dropdown
-    id: category
+    id: lane
     attributes:
-      label: Area
-      description: Which part of Shep would this affect?
+      label: Lane
+      description: Which part of Shep would this affect? Drives grooming and reviewer routing.
       options:
-        - CLI
-        - Web UI
-        - Agent integration
-        - Feature lifecycle
-        - Configuration / Settings
-        - Other
+        - docs
+        - agents
+        - ui
+        - cli
+        - infra
+    validations:
+      required: true
+
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Difficulty
+      description: How hard would building this be for a new contributor?
+      options:
+        - goodFirst
+        - easy
+        - medium
+        - hard
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: A markdown checklist describing what "done" looks like. The contributor-onboarding agent will refine this if needed.
+      placeholder: |
+        - [ ] New `shep ...` command exists and is documented
+        - [ ] Use case has RED-first test coverage
+        - [ ] Settings entry exposed via `shep settings`
     validations:
       required: false
 

@@ -1,312 +1,234 @@
 # Contributing to Shep
 
-Thank you for your interest in contributing to Shep! This document provides guidelines and instructions for contributing.
+Thanks for being here. Shep is an AI-native SDLC platform — and one of its native abilities is helping itself. This guide gets you from a fresh clone to a merged PR, optionally using Shep's own agents along the way.
 
-## Code of Conduct
+If you only have a few minutes, skim **30-Second Setup** and **Lanes**, then pick something from [GOOD_FIRST_ISSUES.md](./GOOD_FIRST_ISSUES.md).
 
-This project follows the [Contributor Covenant Code of Conduct](./CODE_OF_CONDUCT.md). By participating, you are expected to uphold respectful and inclusive behavior. Please report unacceptable behavior to **conduct@shep.bot**.
+- 📜 [Code of Conduct](./CODE_OF_CONDUCT.md) — be kind. Reports → **conduct@shep.bot**
+- 🗺️ [Roadmap](./ROADMAP.md) — what we're building now / next / later
+- 🧱 [Architecture](./ARCHITECTURE.md) — 10-minute tour of the codebase
+- 🌱 [Good First Issues](./GOOD_FIRST_ISSUES.md) — curated by lane and difficulty
+- 💬 [Discord](https://discord.gg/ES6tdVFfur) — say hi, ask questions, share what you're shipping
 
-## Getting Started
+---
 
-### Prerequisites
-
-- Node.js 18+
-- pnpm 8+ (`npm install -g pnpm`)
-- Git
-
-### Development Setup
+## 30-Second Setup
 
 ```bash
-# Clone the repository
-git clone https://github.com/shep-ai/shep.git
-cd cli
+# 1. Clone
+git clone https://github.com/shep-ai/shep.git && cd shep
 
-# Install dependencies
+# 2. Install
 pnpm install
 
-# Build the project
-pnpm build
-
-# Run tests to verify setup (TDD infrastructure)
-pnpm test
+# 3. Verify your environment is contributor-ready
+pnpm dev:cli doctor
 ```
 
-### Running Locally
+`shep doctor` checks Node/pnpm/git/gh versions, available agent CLIs (Claude/Cursor/Gemini), `.env` presence, working-tree state, migration status, TypeSpec freshness, and DI graph health. It exits non-zero on any blocker and prints a `fixHint` for everything it can suggest.
+
+If `shep doctor` is green, you're ready to ship.
 
 ```bash
-# Development mode with hot reload
-pnpm dev
-
-# Test CLI commands directly
-pnpm cli -- --help
-
-# Link globally for testing
-pnpm link --global
-shep --help
+# 4. (optional) build + run tests
+pnpm build
+pnpm test:unit
 ```
 
-## Quick Contributions
+---
 
-Not every contribution needs the full feature workflow. If your change is small and focused, use this streamlined path.
+## Lanes
 
-### What qualifies as a quick contribution?
+Every issue, PR, and contributor in Shep belongs to a **lane** — the part of the system you're touching. Lanes are real TypeSpec enum values (`ContributorLane`), not just labels: they drive issue grooming, PR routing, and the contributor leaderboard.
 
-- Fixing typos or grammar in documentation
-- Improving or clarifying existing docs
-- Small bug fixes (1-3 files)
-- Dependency version bumps
-- Configuration tweaks
-- Adding or improving code comments
+| Lane | What lives here | Good if you like… |
+| ---- | --------------- | ----------------- |
+| **docs** | `README.md`, `CONTRIBUTING.md`, `docs/`, JSDoc, `LESSONS.md` | Writing for humans; clarifying non-obvious behavior |
+| **agents** | `tsp/agents/`, `application/use-cases/agents/`, `infrastructure/agents/`, prompts | LLMs, prompts, supervisor flow, agent-agnostic plumbing |
+| **ui** | `src/presentation/web/`, Storybook stories, Playwright e2e | React, Next.js, dashboards, visual polish |
+| **cli** | `src/presentation/cli/`, Commander commands, terminal UX | Commander, terminal UX, structured output |
+| **infra** | `infrastructure/`, migrations, DI, persistence, GitHub plumbing | SQLite, ports/adapters, queues, schedulers |
 
-### Steps
+Issue templates ask you to pick a lane and a difficulty (`goodFirst | easy | medium | hard`). The contributor-onboarding agent uses both to suggest reviewers and group monthly recaps.
 
-1. **Fork** the repository and clone your fork
-2. **Create a branch** from `main`: `git checkout -b fix/your-fix-name`
-3. **Make your change**
-4. **Run tests** to verify nothing is broken: `pnpm test`
-5. **Commit** using conventional commit format: `type(scope): description` (e.g., `fix(docs): correct typo in readme`)
-6. **Push** to your fork and **open a Pull Request** against `main`
+---
 
-> **Note:** The spec-driven workflow (`/shep-kit:new-feature`) and TDD (test-driven development) are **not required** for quick contributions. Just make your fix, verify tests pass, and submit your PR.
+## Contributor Ladder
 
-See the [Conventional Commits](https://www.conventionalcommits.org/) spec for the full format, but for quick fixes the one-liner above is all you need.
+Shep recognises four levels. Movement is tracked automatically by `award-recognition` on every merged PR.
+
+| Level | How to get here | What it unlocks |
+| ----- | --------------- | --------------- |
+| **User** | Run `npx @shepai/cli` once | The product. Filing issues. Discord access. |
+| **Contributor** | One merged PR | A row in `.all-contributorsrc`, the README contributors block, and the monthly recap. |
+| **Core** | Five merged PRs across at least two lanes, plus three reviews of others' PRs | Triage rights on labels, PR review assignment, vote on roadmap entries. |
+| **Maintainer** | Sustained Core activity (≥ 3 months), demonstrated judgment on architectural calls, invitation by current maintainers | Merge rights, release ownership, supervisor-policy authority. |
+
+Levels are public-by-construction: only data already on your GitHub profile (login, avatar, public PR/issue history) is used.
+
+---
+
+## Contributing to Shep with Shep
+
+This is the dogfooding loop. Use Shep's own agents to land your PR.
+
+### 1. Pick an issue, or have Shep groom one
+
+Browse [GOOD_FIRST_ISSUES.md](./GOOD_FIRST_ISSUES.md), or take any open issue and run:
+
+```bash
+pnpm dev:cli contributors groom-issue --number 1234
+```
+
+The contributor-onboarding agent fetches the issue, classifies its lane (rules-first, agent fallback when ambiguous), proposes acceptance criteria as a markdown checklist, and suggests labels. Nothing is applied until the supervisor approval gate clears.
+
+### 2. Spin up a worktree and start work
+
+```bash
+shep feat new "fix: <description from the groomed issue>"
+```
+
+Shep creates an isolated git worktree, branches from `main`, and hands the prompt to your agent of choice (Claude / Cursor / Gemini). You stay in your editor; Shep handles the boring parts.
+
+### 3. Let Shep commit, push, and open the PR
+
+```bash
+shep feat new "..." --push --pr
+```
+
+The agent commits in conventional-commit format, pushes the branch, and opens a draft PR. CI runs your tests and security scans; if anything fails, Shep retries up to three times before pausing for human input.
+
+### 4. First merge → automatic recognition
+
+When your PR merges, `welcome-first-time-contributor` posts a welcome comment (gated on supervisor approval), `award-recognition` adds you to `.all-contributorsrc` and the README contributors block, and your name appears in the next monthly recap published to `recaps/YYYY-MM.md`, GitHub Discussions, and Discord.
+
+You graduated from User to Contributor. No bot install required — Shep did it.
+
+---
+
+## Quick Contributions (no spec workflow needed)
+
+For typo fixes, doc clarifications, single-file bug fixes, or dependency bumps, skip the spec workflow:
+
+1. Fork → branch from `main` (`git checkout -b fix/your-fix-name`)
+2. Make the change
+3. `pnpm dev:cli doctor` (still green?)
+4. `pnpm test:unit && pnpm lint`
+5. Commit using [Conventional Commits](https://www.conventionalcommits.org/) — type and scope are enforced (`fix(docs): ...`, `feat(cli): ...`)
+6. Open a PR against `main` using the [PR template](./.github/PULL_REQUEST_TEMPLATE.md)
 
 ---
 
 ## Full Feature Development
 
-For new features, architectural changes, and significant enhancements, we use a structured workflow to ensure quality and consistency.
-
-### Starting a Feature (MANDATORY)
-
-**All feature work MUST begin with `/shep-kit:new-feature`.** This ensures consistent specifications across all contributions.
-
-See [Spec-Driven Workflow](./docs/development/spec-driven-workflow.md) for complete details.
+For new features, architectural changes, and significant enhancements we use the spec-driven workflow.
 
 ```
-/shep-kit:new-feature → /shep-kit:research → /shep-kit:plan → implement
+/shep-kit:new-feature → /shep-kit:research → /shep-kit:plan → /shep-kit:implement → /shep-kit:commit-pr
 ```
 
-The workflow creates:
+This produces a versioned spec under `specs/NNN-feature-name/` with five YAML artifacts (`spec`, `research`, `plan`, `tasks`, `feature`). Edit the YAML — markdown is auto-generated. See [docs/development/spec-driven-workflow.md](./docs/development/spec-driven-workflow.md) for the full flow.
 
-- A feature branch `feat/NNN-feature-name`
-- A spec directory `specs/NNN-feature-name/` with:
-  - `spec.md` - Requirements and scope
-  - `research.md` - Technical decisions
-  - `plan.md` - Implementation strategy
-  - `tasks.md` - Task breakdown
-
-### Reporting Issues
-
-Before creating an issue:
-
-1. Search existing issues to avoid duplicates
-2. Use the issue templates when available
-3. Include reproduction steps for bugs
-4. Provide system information (OS, Node version, npm version)
-
-### Submitting Changes
-
-1. **Fork** the repository
-2. **Create a branch** from `main`:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. **Make your changes** following our coding standards
-4. **Write tests FIRST** (TDD - Red-Green-Refactor)
-5. **Run the test suite**:
-   ```bash
-   pnpm test
-   pnpm lint
-   pnpm typecheck
-   ```
-6. **Commit** with clear messages (see commit guidelines below)
-7. **Push** to your fork
-8. **Open a Pull Request** against `main`
-
-### Commit Guidelines
-
-We follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-<type>(<scope>): <description>
-
-[optional body]
-
-[optional footer]
-```
-
-**Important:** The description must be ALL lowercase, including acronyms (`pr` not `PR`, `api` not `API`).
-
-**Types:**
-
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation only
-- `style`: Formatting, no code change
-- `refactor`: Code restructuring
-- `test`: Adding or updating tests
-- `chore`: Maintenance tasks
-
-**Examples:**
-
-```
-feat(agents): add repository analysis caching
-fix(cli): resolve config path resolution on Windows
-docs(readme): update installation instructions
-```
+---
 
 ## Coding Standards
 
-### TypeScript
+Before opening a PR, verify locally:
 
-- Strict mode enabled
-- Explicit return types on public methods
-- Interfaces over type aliases for object shapes
-- Use `readonly` where applicable
+```bash
+pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:int && pnpm build
+```
+
+CI mirrors this sequence; passing locally means CI passes.
 
 ### Architecture
 
-Follow Clean Architecture principles:
+Shep follows Clean Architecture with four layers. Dependencies point inward.
 
-- Domain layer has no external dependencies
-- Use interfaces for external concerns
-- One use case per file
-- Repository pattern for all data access
+- `domain/` — TypeSpec-generated types and pure business logic. No external deps.
+- `application/` — Use cases and output port interfaces. No infrastructure imports.
+- `infrastructure/` — Adapters: SQLite, agents, GitHub, file system, Discord. Behind ports.
+- `presentation/` — CLI, TUI, web. Calls only use cases.
 
-### Testing (TDD Required)
+If you find yourself importing from `infrastructure/` outside `infrastructure/`, define a port in `application/ports/output/` instead. See [docs/architecture/clean-architecture.md](./docs/architecture/clean-architecture.md).
 
-We follow Test-Driven Development:
+### TDD is mandatory
 
-1. **Write failing test first** (RED)
-2. **Write minimal code to pass** (GREEN)
-3. **Refactor while keeping tests green** (REFACTOR)
+Every use case lands RED-first: a failing test that describes intent, then the smallest code that turns it green, then refactor. See [docs/development/tdd-guide.md](./docs/development/tdd-guide.md).
 
-Test layers:
+### TypeSpec-first
 
-- **Unit tests**: Domain logic (Vitest)
-- **Integration tests**: Repositories with SQLite (Vitest)
-- **E2E tests**: CLI and Web UI (Playwright)
+Domain models live in `tsp/`. Run `pnpm tsp:compile` to regenerate `packages/core/src/domain/generated/output.ts`. Never edit the generated file. See [docs/development/typespec-guide.md](./docs/development/typespec-guide.md).
 
-See [docs/development/tdd-guide.md](./docs/development/tdd-guide.md) for detailed TDD workflow.
+### File length
 
-### File Organization
+No new file over ~300 lines of focused code. If you need to add to a long file, refactor it first.
+
+### Storybook is mandatory for web components
+
+Every component under `src/presentation/web/components/` ships with a colocated `.stories.tsx` covering Default, Loading, Empty, and Error states. PRs without stories are rejected.
+
+---
+
+## Commit Format
+
+[Conventional Commits](https://www.conventionalcommits.org/) — strict.
 
 ```
-src/
-├── domain/           # Pure business logic
-├── application/      # Use cases and ports
-├── infrastructure/   # External implementations
-└── presentation/     # CLI, TUI, Web
+<type>(<scope>): <subject>
 ```
 
-## Pull Request Process
+- **types**: `feat | fix | docs | style | refactor | perf | test | build | ci | chore | revert`
+- **scopes**: `specs | shep-kit | cli | tui | web | api | domain | agents | deployment | tsp | deps | config | dx | release | ci`
+- **subject**: lowercase, ≤ 72 chars, imperative ("add", "fix", "remove")
 
-1. **Title**: Use conventional commit format
-2. **Description**: Explain what and why
-3. **Link issues**: Reference related issues
-4. **Screenshots**: Include for UI changes
-5. **Tests**: Ensure all tests pass
-6. **Documentation**: Update relevant docs
+Use `feat` or `fix` for anything users will see — those trigger releases. `style`, `refactor`, `chore`, `test`, `ci`, `build`, `docs` do not.
 
-### Review Criteria
+---
 
-PRs are reviewed for:
+## PR Process
 
-- Correctness and completeness
-- Architecture alignment
-- Test coverage
-- Code quality and readability
-- Documentation updates
+1. Open against `main` using the [PR template](./.github/PULL_REQUEST_TEMPLATE.md)
+2. Fill in **What**, **Why**, **Screenshots / Recording** (UI changes), **Testing**, **Checklist**
+3. CI must be green (lint, typecheck, unit, integration, build, Storybook)
+4. A maintainer reviews; small PRs get reviewed faster
+5. Squash merge; semantic-release publishes on `feat`/`fix` to `main`
 
-## Development Workflow
+---
 
-### Branch Naming
+## Reporting Issues
 
-- `feature/*` - New features
-- `fix/*` - Bug fixes
-- `docs/*` - Documentation
-- `refactor/*` - Code restructuring
+Use the issue templates — they collect lane, difficulty, and acceptance criteria so the grooming agent can pick up where you left off.
 
-### Local Testing (TDD Workflow)
+- 🐛 [Bug Report](./.github/ISSUE_TEMPLATE/bug-report.yml)
+- 💡 [Feature Request](./.github/ISSUE_TEMPLATE/feature-request.yml)
+- 📚 [Docs Improvement](./.github/ISSUE_TEMPLATE/docs-improvement.yml)
+- 🌱 [Good First Issue](./.github/ISSUE_TEMPLATE/good-first-issue.yml)
 
-```bash
-# Start TDD watch mode
-pnpm test:watch
+Search existing issues first. Include `shep doctor` output for environment bugs.
 
-# Type checking
-pnpm typecheck
-
-# Linting
-pnpm lint
-
-# All tests
-pnpm test
-
-# Single test file
-pnpm test:single tests/unit/domain/entities/feature.test.ts
-
-# E2E tests (Playwright)
-pnpm test:e2e
-
-# Build verification
-pnpm build
-```
-
-## Documentation
-
-When contributing:
-
-- Update relevant docs in `docs/`
-- Keep CLAUDE.md current for AI tooling
-- Add JSDoc comments for public APIs
-- Update README.md for user-facing changes
-
-## Release Process
-
-Releases are fully automated using [semantic-release](https://semantic-release.gitbook.io/).
-
-### How It Works
-
-1. **Commit to main** - When PRs are merged to `main`, semantic-release analyzes commits
-2. **Version bump** - Based on commit types (`feat` → minor, `fix` → patch, `BREAKING CHANGE` → major)
-3. **Publish** - Package is published to npm registry (`npm install @shepai/cli`)
-4. **Release** - GitHub Release is created with auto-generated changelog
-5. **Changelog** - `CHANGELOG.md` is updated and committed
-
-### What Triggers a Release
-
-| Commit Type       | Version Bump  | Example                            |
-| ----------------- | ------------- | ---------------------------------- |
-| `feat`            | Minor (0.x.0) | `feat(cli): add new command`       |
-| `fix`             | Patch (0.0.x) | `fix(agents): resolve memory leak` |
-| `perf`            | Patch         | `perf(cli): improve startup time`  |
-| `BREAKING CHANGE` | Major (x.0.0) | Footer with `BREAKING CHANGE:`     |
-
-Commits with types `docs`, `style`, `refactor`, `test`, `build`, `ci`, `chore` do **not** trigger releases.
-
-### For Maintainers
-
-- Ensure `NPM_TOKEN` secret is configured in repository settings
-- The `@shepai` npm organization must exist and have publish permissions
+---
 
 ## Questions?
 
-- Open a [Discussion](https://github.com/shep-ai/shep/discussions) for questions — this is our primary community channel
-- Additional community channels (Discord, Slack, etc.) may be added as the project grows — watch the README for updates
+- 💬 [Discord](https://discord.gg/ES6tdVFfur) — fastest path to a human
+- 💭 [GitHub Discussions](https://github.com/shep-ai/shep/discussions) — searchable archive
+- 📧 conduct@shep.bot — Code of Conduct concerns
 
 ---
 
 ## Maintaining This Document
 
-**Update when:**
+Update CONTRIBUTING.md when:
 
-- Contribution process changes
-- New tooling is adopted
-- Repository structure changes
-- Community channels are established
+- The contribution flow changes (new commands, new gates, new lanes)
+- A lane is added, renamed, or removed
+- The contributor ladder criteria change
+- A new top-level doc joins the navigation block
 
 **Related docs:**
 
-- [docs/development/setup.md](./docs/development/setup.md) - Detailed dev environment setup
-- [docs/development/testing.md](./docs/development/testing.md) - Testing guidelines
+- [docs/development/spec-driven-workflow.md](./docs/development/spec-driven-workflow.md) — full spec workflow
+- [docs/development/tdd-guide.md](./docs/development/tdd-guide.md) — TDD rhythm
+- [docs/development/contributing-with-shep.md](./docs/development/contributing-with-shep.md) — extended walk-through of the dogfooding loop
+- [docs/development/setup.md](./docs/development/setup.md) — detailed dev environment setup
