@@ -1,0 +1,34 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: ai-native-contributor-onboarding
+summary: Task breakdown for 097-ai-native-contributor-onboarding
+
+# Relationships
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+
+# Structured task list
+tasks: []
+
+# Total effort estimate
+totalEstimate: TBD
+
+# Open questions
+openQuestions: []
+
+# Markdown content (the full tasks document)
+content: |
+  ## Status
+
+  - **Phase:** Implementation
+  - **Updated:** 2026-05-06
+
+  ## Task List
+
+  TBD
+
+  ---
+
+  _Task breakdown for implementation tracking_
