@@ -14,7 +14,7 @@ summary: >
   (issue grooming, PR welcome, lane classification, recognition), and use cases that
   expose this as core capability so Shep can dogfood its own automation to grow itself.
 
-phase: "Analysis"
+phase: "Requirements"
 sizeEstimate: "L"
 
 relatedFeatures:
@@ -60,15 +60,173 @@ relatedLinks:
     url: "https://discord.gg/ES6tdVFfur"
 
 openQuestions:
-  - "Scope split: is this ONE epic (analysis only) or do we ship in slices — `M1: static repo files`, `M2: shep doctor`, `M3: contributor-onboarding agent`, `M4: lane/campaign automation`?"
-  - "Where does contributor-onboarding state live? Reuse the existing `intake` pipeline (auto-triage / accept / decline) for inbound contributor issues, or model a new `Contributor` / `ContributorLane` / `Campaign` entity in `tsp/domain/entities/`?"
-  - "GitHub integration depth: today we have `connect-github`, `external-issue-fetcher`, `send-webhook` — do we need new ports for issue-write operations (label, comment, assign), or wrap the existing `gh` CLI?"
-  - "Agent identity: does the contributor-onboarding agent register as a built-in custom agent (via `create-custom-agent.use-case.ts`) and resolve through `IAgentExecutorProvider`, or is it a new dedicated agent type alongside `feature-agent` / `supervisor-agent`?"
-  - "`shep doctor` — already an open community feature request; do we ship the skeleton in this spec or split into its own spec (`feat: shep doctor command`) and reference it?"
-  - "Recognition surface: integrate `all-contributors` bot (markdown-driven) or build native recognition into the web dashboard (`src/presentation/web/app/`) backed by a `Contributor` aggregate?"
-  - "Outreach automation boundary: should Shep auto-post to Reddit/X/Discord, or only generate drafts and require human approval through the existing supervisor approval-gate flow?"
-  - "Lane labels: do we hard-code the five lanes (A–E) from the brief, or make them configurable via `Settings` so each adopting OSS project can define its own?"
-  - "Spec 088 (`import-repo-upstream`) overlaps with `gh` issue ingestion — do we extend its primitives rather than introduce new ones?"
+  - question: "Should `Contributor` be a brand-new domain entity, or should we extend the existing `PmUser` entity?"
+    resolved: true
+    options:
+      - option: "New Contributor entity"
+        description: "Add a dedicated `tsp/domain/entities/contributor.tsp` with fields like githubLogin, lane, level, firstContributionAt, lastContributionAt, prCount. Keeps OSS-contributor concerns isolated from internal PM users; lets recognition/lane logic evolve without polluting the PmUser model. Cost: new repository, migration, DI wiring."
+        selected: true
+      - option: "Extend PmUser entity"
+        description: "Add contributor-specific fields (lane, level, contributorSince) to `tsp/domain/entities/pm-user.tsp`. Less code, but mixes two distinct concepts (project-management identity vs OSS-contributor identity) and makes future per-OSS-project contributor scoping awkward."
+        selected: false
+      - option: "Keep ephemeral / no entity"
+        description: "Compute contributor state on the fly from GitHub PR/issue history. No DB tables. Simple, but every recap/leaderboard query becomes an expensive round-trip and we can't store internal lane assignments or recognition state."
+        selected: false
+    selectionRationale: "A dedicated Contributor entity is the cleanest fit for Clean Architecture and TypeSpec-first modeling. PmUser models internal stakeholders, not external OSS contributors; conflating them invites coupling we'll regret. The entity also gives the recognition/leaderboard surface a stable foundation and lets us scope contributors per-repo cleanly."
+    answer: "New Contributor entity"
+
+  - question: "How should the contributor-onboarding agent be implemented — via the existing custom-agent rail or as a new built-in agent kind?"
+    resolved: true
+    options:
+      - option: "Ride the custom-agent rail"
+        description: "Register the contributor-onboarding agent through `create-custom-agent.use-case.ts` + `tsp/agents/custom-agent.tsp`. Reuses prompt-resolver, streaming, sessions, supervisor evaluation, and approval gates already wired in spec 093. Users can fork/customize it like any custom agent."
+        selected: true
+      - option: "New built-in agent kind"
+        description: "Introduce a dedicated `ContributorAgent` alongside FeatureAgent and SupervisorAgent. More ceremony but slightly more direct typing. Requires new TypeSpec, new wiring, new tests, and forks the agent taxonomy without clear payoff."
+        selected: false
+    selectionRationale: "The custom-agent rail was built precisely so we don't grow the built-in agent taxonomy for every new specialty. It already gives us prompts, sessions, streaming, and supervisor gating for free. Riding it also lets adopting OSS projects clone/customize the agent for their own contribution playbook — which is the dogfooding story."
+    answer: "Ride the custom-agent rail"
+
+  - question: "Should GitHub write operations (label, comment, assign) be a new dedicated port `IGitHubIssueWriter`, or extended onto the existing `IGitHubRepositoryService`?"
+    resolved: true
+    options:
+      - option: "New IGitHubIssueWriter port"
+        description: "Define a focused write-only port for issue-level mutations. Keeps the write surface auditable (one place to gate behind approval), keeps reads/writes split (interface-segregation), and makes mocking in tests trivial."
+        selected: true
+      - option: "Extend IGitHubRepositoryService"
+        description: "Add label/comment/assign methods to the existing service interface. Fewer ports, but mixes read and write surfaces, makes the interface fatter, and complicates the supervisor approval-gate boundary because writes now live next to harmless reads."
+        selected: false
+    selectionRationale: "Interface-segregation matters more than port count here. Every write is a side-effect that must flow through supervisor/approval gates (per spec 093). A dedicated writer port gives us one chokepoint to enforce that, keeps the existing read service unchanged, and aligns with how we already split git-pr-service from external-issue-fetcher."
+    answer: "New IGitHubIssueWriter port"
+
+  - question: "Is outreach automation (Reddit, HN, X/LinkedIn drafting) in scope for this feature, or deferred to a follow-up?"
+    resolved: true
+    options:
+      - option: "In scope — Discord only"
+        description: "Ship outreach drafting + posting only for Discord (existing server, already integrated via `discord-admin`). Defer Reddit/HN/X drafting to a separate spec. Keeps surface area sane, lets us validate the approval-gate UX on a low-stakes channel first."
+        selected: true
+      - option: "In scope — all channels"
+        description: "Include Reddit, HN, X/LinkedIn, and Discord drafting. Maximizes the playbook from the brief but adds platform-specific posting adapters, rate-limit logic, and policy concerns (HN flags self-promotion). Risks ballooning the feature past L into XL."
+        selected: false
+      - option: "Out of scope"
+        description: "Cut all outreach automation; do only inbound (issue grooming, PR welcome, recap, recognition). Smallest blast radius but loses half the brief's value — the funnel doesn't fill itself."
+        selected: false
+    selectionRationale: "Discord-only outreach validates the approval-gate flow on a channel we already manage end-to-end, with zero new platform adapters. It keeps the feature L instead of XL while still delivering a working outreach surface. Reddit/HN/X are straightforward to add later once the gate UX is proven and policy nuances per channel are scoped properly."
+    answer: "In scope — Discord only"
+
+  - question: "Should v1 include a web dashboard surface for contributor onboarding, or stay CLI/agent-only?"
+    resolved: true
+    options:
+      - option: "Light web surface"
+        description: "Extend existing `src/presentation/web/app/onboarding/` with a contributor view: lane chooser, 'pick your first issue' CTA, doctor-results readout. Small component count, all backed by existing use cases. Plus a read-only contributor leaderboard component."
+        selected: true
+      - option: "Full web surface"
+        description: "Add lane chooser, leaderboard, monthly recap viewer, issue groomer dashboard, supervisor approval queue for outreach. Comprehensive but multiplies Storybook stories, e2e tests, and review surface. Pushes scope to XL."
+        selected: false
+      - option: "CLI/agent-only"
+        description: "No web changes in v1. CLI (`shep doctor`, `shep contribute`) + GitHub-side automation only. Smallest scope. Misses the dogfooding angle since the dashboard is one of Shep's most polished surfaces."
+        selected: false
+    selectionRationale: "A light web surface piggybacks on the existing `onboarding/` route and delivers the visible 'this is built with Shep' moment without exploding scope. The full surface can land in a follow-up spec once the underlying use cases prove themselves; CLI-only would underuse the dashboard we already have."
+    answer: "Light web surface"
+
+  - question: "How should all-contributors recognition be wired — via the upstream bot, or as a Shep use case that mutates `.all-contributorsrc`?"
+    resolved: true
+    options:
+      - option: "Shep use case writes the file"
+        description: "An `award-recognition` use case appends to `.all-contributorsrc` and regenerates the README block on PR merge. Keeps the contributor pipeline self-contained inside Shep — no external bot dependency, the dogfooding story is intact, and the same code path works for any adopting repo."
+        selected: true
+      - option: "Upstream all-contributors bot"
+        description: "Install the public `@all-contributors` GitHub App and let it handle additions via PR comments. Zero code, well-known UX. But it's an external dependency, contradicts the 'Shep helps itself' framing, and adopting projects must install yet another bot."
+        selected: false
+      - option: "Hybrid"
+        description: "Use the public bot for manual mentions; Shep use case for automated mentions on first PR merge. Two code paths to maintain, fuzzy ownership, and confusing for contributors who get added via either."
+        selected: false
+    selectionRationale: "The whole pitch is 'Shep dogfoods its own agents to grow itself.' Outsourcing recognition to a third-party bot is the exact opposite. A use case keeps the loop self-contained, gives adopting projects parity for free, and lets us extend the recognition criteria (first PR vs Nth PR vs review-heavy) without negotiating with an upstream maintainer."
+    answer: "Shep use case writes the file"
+
+  - question: "Should `shep contribute` (the optional CLI that drives a contribution end-to-end) ship in v1?"
+    resolved: true
+    options:
+      - option: "Defer to v2"
+        description: "Ship v1 with `shep doctor`, the contributor-onboarding agent, issue grooming, recognition, and the web surface. Hold `shep contribute` for a follow-up once we've validated the agent's grooming output is high-quality enough to autonomously drive a PR."
+        selected: true
+      - option: "Ship in v1"
+        description: "Include `shep contribute new \"fix install docs\"` that invokes the agent end-to-end (groom → propose → open PR). Maximal demo value but adds a multi-step orchestration surface that depends on every other piece working perfectly first."
+        selected: false
+    selectionRationale: "`shep contribute` is the highest-value showcase but only works if grooming, supervisor gates, and PR automation are all rock-solid. Shipping it in v1 risks a flagship command that fails 30% of the time and damages trust. Better to land the foundations in v1, dogfood them on real contributors, then add `shep contribute` in v2 when the underlying pipeline is proven."
+    answer: "Defer to v2"
+
+  - question: "Where should the monthly contributor recap be published?"
+    resolved: true
+    options:
+      - option: "Multi-channel via approval gate"
+        description: "Generate one recap artifact per month; post (after human approval) to GitHub Discussions/Releases AND Discord AND a `RECAP-YYYY-MM.md` in the repo. One source of truth, multiple channels via the supervisor approval flow. Reuses spec 095/096 patterns."
+        selected: true
+      - option: "GitHub Releases only"
+        description: "Append the recap to the next semantic-release notes. Zero new infrastructure but couples release cadence to recap cadence (monthly vs every PR), and recap content gets lost in changelog noise."
+        selected: false
+      - option: "Discord-only"
+        description: "Post to Discord, no repo artifact. Easiest to ship but ephemeral — no SEO, no archive, no proof to future contributors that the project recognizes work."
+        selected: false
+    selectionRationale: "A single canonical artifact (the markdown file in `recaps/` or similar) gives us a durable record; the supervisor-gated multicast to GitHub + Discord delivers reach without duplicating content. This mirrors the AI release-notes pattern from spec 096 (one source, multi-channel publish) and the human approval keeps tone/accuracy under control."
+    answer: "Multi-channel via approval gate"
+
+  - question: "What slicing strategy should drive implementation — one bundled PR, or progressive milestones?"
+    resolved: true
+    options:
+      - option: "Progressive M1→M4"
+        description: "M1: static repo files (CONTRIBUTING/ROADMAP/ARCHITECTURE/GOOD_FIRST_ISSUES, README block, PR template, issue template enhancements). M2: `shep doctor`. M3: Contributor TypeSpec + use cases + IGitHubIssueWriter port. M4: contributor-onboarding agent + monthly recap + recognition + web surface. Each slice independently shippable and reviewable."
+        selected: true
+      - option: "Single bundled PR"
+        description: "Ship everything together. Faster end-to-end but a 30+-file review surface, harder rollback, and any one piece blocking the merge blocks all of them."
+        selected: false
+    selectionRationale: "M1 is pure markdown and ships value to real contributors immediately — no reason to gate it behind the agent work. Each subsequent milestone has a clean dependency line and is independently testable. This also matches the user's preference for incremental shippable slices and gives review attention proportional to risk (M1 is trivial; M3/M4 deserve focus)."
+    answer: "Progressive M1→M4"
+
+  - question: "Should contributor pipeline workflows run as GitHub Actions, in-Shep cron, or both?"
+    resolved: true
+    options:
+      - option: "GitHub Actions for event-driven, in-Shep cron for time-driven"
+        description: "Event-driven actions (welcome-first-time-contributor on PR open, label-by-lane on issue open) run as `.github/workflows/` calling Shep CLI. Time-driven actions (monthly recap, stale-issue detection) run via Shep's existing scheduling. Each lives where it's natural; both share the same use cases."
+        selected: true
+      - option: "GitHub Actions only"
+        description: "Everything in `.github/workflows/`. Simple deployment story, but time-driven workflows on Actions cron are flaky (5-15 min drift), and adopting projects without Actions minutes lose the feature."
+        selected: false
+      - option: "In-Shep only"
+        description: "Shep daemon runs everything. Decoupled from GitHub Actions but requires Shep to be continuously running for any adopting project, defeating the 'works on day one' onboarding promise."
+        selected: false
+    selectionRationale: "Webhook-driven events are what GitHub Actions is best at — instant response on `issues.opened` / `pull_request.opened`. Time-driven recaps and stale detection don't need that immediacy and benefit from running where Shep already coordinates state. Splitting on the natural boundary keeps each system doing what it does well, and adopting projects without an always-on Shep instance still get the inbound automation."
+    answer: "GitHub Actions for event-driven, in-Shep cron for time-driven"
+
+  - question: "What lane scheme should we adopt — A–E from the brainstorm, or domain-specific Shep names?"
+    resolved: true
+    options:
+      - option: "Shep-named lanes"
+        description: "Replace generic A–E with named lanes that map to Shep's domain: `docs`, `agents`, `ui`, `cli`, `infra`. Same five buckets, but contributors immediately understand them; pickable from a dropdown without reading a glossary."
+        selected: true
+      - option: "Brainstorm A–E"
+        description: "Keep the brainstorm's letter labels. Easy to copy verbatim from the brief but opaque (`Lane B` means nothing to a newcomer) and forces a docs lookup every time."
+        selected: false
+      - option: "Hybrid"
+        description: "Letters with names: `A: Docs`, `B: Agents`, etc. Verbose, awkward in URLs and labels, no real benefit over the named-only scheme."
+        selected: false
+    selectionRationale: "Letter labels are an internal artifact of the brainstorm, not a contributor-facing concept. Newcomers shouldn't have to learn a coordinate system. Naming the lanes after the actual code areas (docs/agents/ui/cli/infra) means a contributor reading a label or a URL knows exactly where they're going. This is a TypeSpec enum, so we get type safety either way."
+    answer: "Shep-named lanes"
+
+  - question: "What should `shep doctor` cover — environment-only, or full repo health?"
+    resolved: true
+    options:
+      - option: "Environment + repo basics"
+        description: "Check Node/pnpm/git/gh versions, available agent CLIs (Claude/Cursor/Gemini via existing agent-auth-detector), `.env` presence, repo cleanliness, current branch, build artifacts present. Reuses tool-installer + agent-auth-detector services. Single command, < 5s, structured output, exit code reflects health."
+        selected: true
+      - option: "Environment only"
+        description: "Just versions and CLI availability. Fast, narrow, but misses the 'why doesn't my fresh clone build?' class of issues that drive most real contributor frustration."
+        selected: false
+      - option: "Deep repo audit"
+        description: "Add migration status, DI graph validation, TypeSpec freshness, test-suite health, security-scan status. Comprehensive but slow (>30s), conflates contributor diagnostics with maintainer auditing, and risks scaring newcomers with red flags they shouldn't care about."
+        selected: false
+    selectionRationale: "The job of `shep doctor` is 'why won't my fresh clone work?' — the friction the existing community-requested issue is about. Environment + basic repo state covers that. Deep audits are a different command (`shep audit`?) for maintainers, and bundling them dilutes the 30-second-setup promise. We can extend later if real contributor pain points emerge."
+    answer: "Environment + repo basics"
 
 content: |
   ## Problem Statement
@@ -76,7 +234,7 @@ content: |
   Shep has the right ingredients to attract contributors — parallel AI agents, isolated
   worktrees, CI/PR automation, a polished dashboard — but the **contribution funnel itself
   is unfinished**. The original ChatGPT brainstorm in this spec lays out a sound
-  contributor playbook (lanes A–E, onboarding files, contribution quests, outreach,
+  contributor playbook (lanes, onboarding files, contribution quests, outreach,
   recognition, contributor ladder, 30-day plan, 15 highest-leverage issues).
 
   The user explicitly raised the bar:
@@ -93,170 +251,357 @@ content: |
 
   - `CONTRIBUTING.md` exists but is generic; no `ROADMAP.md`, `ARCHITECTURE.md`, or
     `GOOD_FIRST_ISSUES.md`. README has no "Contribute to Shep" block above the fold.
-  - Issue templates exist (`bug-report`, `feature-request`, `docs-improvement`,
-    `good-first-issue`, `agent-request`) but there is no automation that turns a raw
-    issue into a PR-ready contributor task with context / acceptance criteria / lane.
+  - Issue templates exist but there is no automation that turns a raw issue into a
+    PR-ready contributor task with context / acceptance criteria / lane.
   - No `shep doctor` command — new contributors hit setup failures with no guided
     diagnostics. (This is already a community-requested issue.)
   - No `Contributor`, `ContributorLane`, or `Campaign` concept in the domain — so the
     automation has nothing structured to operate on.
   - No agent dedicated to grooming inbound issues, welcoming first-time PRs, mapping
     contributors to lanes, or generating monthly contributor shoutouts.
-  - Outreach (Reddit, HN, Discord, X/LinkedIn) and recognition (all-contributors,
-    monthly recap) are entirely manual.
+  - Outreach (Discord) and recognition (all-contributors, monthly recap) are entirely
+    manual.
 
   The feature: combine the static repo-polish work from the brief WITH new core
-  platform capability (CLI, use cases, agents, optional dashboard surface) so Shep's
-  own SDLC machinery runs the contributor pipeline end-to-end.
+  platform capability (CLI, use cases, agents, web surface) so Shep's own SDLC machinery
+  runs the contributor pipeline end-to-end.
 
-  ## Codebase Analysis
+  ## Success Criteria
 
-  ### Project Structure
+  - [ ] A first-time contributor can clone the repo, run `shep doctor`, and reach a
+    green-status environment (or a clear, actionable diagnostic) in under 60 seconds
+    on a supported platform (macOS / Linux with Node 22+, pnpm, git, gh installed).
+  - [ ] A first-time contributor can find a labeled good-first-issue, read its
+    acceptance criteria + lane, and ship a PR within 30 minutes — measured against
+    a real onboarding session, not synthetic.
+  - [ ] `README.md` carries a "Contribute to Shep" block above-the-fold, linking to
+    `CONTRIBUTING.md`, `ROADMAP.md`, `ARCHITECTURE.md`, and `GOOD_FIRST_ISSUES.md`.
+  - [ ] All four documents (`CONTRIBUTING.md` updated, `ROADMAP.md`, `ARCHITECTURE.md`,
+    `GOOD_FIRST_ISSUES.md`) exist and are linked from each other and the README.
+  - [ ] Every existing GitHub issue template includes structured fields for `lane`
+    (Shep-named: docs/agents/ui/cli/infra), `difficulty`, and `acceptance criteria`,
+    parseable by the issue-grooming agent.
+  - [ ] A `Contributor` TypeSpec entity (and migration + repository) exists and is
+    populated by the welcome-first-time-contributor use case on first PR merge.
+  - [ ] `ContributorLane` and `ContributorLevel` enums are defined in TypeSpec; no
+    raw strings used for lane/level comparisons anywhere in core.
+  - [ ] An `IGitHubIssueWriter` port exists, has at least one infrastructure adapter
+    (Octokit-backed), and is the ONLY path through which Shep mutates GitHub issues.
+  - [ ] Every external side-effect (label, comment, assign, Discord post, recap
+    publish) flows through the spec-093 supervisor approval gate before execution.
+  - [ ] A contributor-onboarding custom agent is registered via the existing
+    custom-agent rail (`create-custom-agent.use-case.ts`), with a documented prompt
+    and a deterministic golden-path test.
+  - [ ] Use cases exist (and have RED→GREEN tests) for: `groom-issue`,
+    `classify-into-lane`, `welcome-first-time-contributor`, `propose-acceptance-criteria`,
+    `detect-stale-good-first-issue`, `award-recognition`, `generate-monthly-recap`,
+    `draft-outreach-post` (Discord channel only).
+  - [ ] `shep doctor` command exists, executes in under 5 seconds on a healthy clone,
+    returns exit code 0 on green and non-zero on any red diagnostic, and is referenced
+    by name from the new `CONTRIBUTING.md`.
+  - [ ] `.github/workflows/` includes event-driven workflows for
+    `welcome-first-time-contributor` (on `pull_request.opened`) and `label-by-lane`
+    (on `issues.opened`); each workflow invokes a Shep use case via the CLI.
+  - [ ] In-Shep scheduling drives the monthly recap and stale-issue detection (no
+    GitHub Actions cron for these).
+  - [ ] `award-recognition` writes/updates `.all-contributorsrc` and the README
+    contributors section without depending on the upstream all-contributors bot.
+  - [ ] The web `onboarding/` route includes a contributor lane chooser and a
+    "pick your first issue" CTA driven by a use case, with colocated `.stories.tsx`
+    for every new component.
+  - [ ] A read-only contributor leaderboard surface exists in the web dashboard with
+    Storybook coverage for default / loading / empty / error states.
+  - [ ] All new code passes `pnpm lint`, `pnpm typecheck`, `pnpm test:unit`,
+    `pnpm test:int`, and `pnpm build` locally before any push (per `.claude/rules/cicd.md`).
+  - [ ] No application or presentation file imports anything under `infrastructure/`
+    (per `.claude/rules/code-quality.md`); all infra is reached through DI ports.
+  - [ ] No file added or modified by this feature exceeds ~300 lines of focused code.
+  - [ ] `shep contribute` (the end-to-end CLI) is intentionally NOT shipped in v1 and
+    is documented as a v2 follow-up in the research doc.
 
-  Monorepo with pnpm workspaces. Core lives in `packages/core/src/` (Clean Architecture
-  layers — `domain/`, `application/`, `infrastructure/`); presentation lives in
-  `src/presentation/{cli,tui,web}`. Specs live in `specs/NNN-feature-name/`.
+  ## Functional Requirements
 
-  - `packages/core/src/domain/` — domain types; generated TypeSpec output in
-    `domain/generated/output.ts` (never edited by hand).
-  - `packages/core/src/application/use-cases/` — feature-grouped use case classes
-    (existing groups include `agents/`, `features/`, `intake/`, `integrations/`,
-    `notifications/`, `code-review/`, `comments/`, `labels/`, `supervisor`-adjacent
-    flows under `agents/`).
-  - `packages/core/src/application/ports/output/{agents,services,repositories}/` —
-    interfaces injected by string token. Notable existing ports relevant here:
-    `git-pr-service.interface.ts`, `external-issue-fetcher.interface.ts`,
-    `github-repository-service.interface.ts`, `webhook.interface.ts`,
-    `tool-installer.service.ts`, `agent-executor-provider.interface.ts`.
-  - `packages/core/src/infrastructure/services/` — concrete adapters; relevant ones:
-    `agents/` (feature-agent, supervisor-agent, agent-question-service, prompt-resolver,
-    streaming, sessions), `tool-installer/`, `pr-sync/`, `notifications/`, `git/`,
-    `code-review/`, `external/`, `agent-auth-detector/`.
-  - `src/presentation/cli/commands/` — Commander commands. Existing folders include
-    `feat/`, `agent/`, `intake/`, `supervisor/`, `notifications/`, `settings/`,
-    `session/`, `app/`, `cycle/`, `repo/`, `tools.command.ts`, `install.command.ts`,
-    `upgrade.command.ts`. **No `doctor` command yet.**
-  - `src/presentation/web/app/` — Next.js app router; pages already include
-    `agents/`, `agent-questions/`, `applications/`, `features/`, `onboarding/`,
-    `projects/`, `settings/`, `skills/`. Components must have colocated `.stories.tsx`.
-  - `tsp/domain/entities/` — TypeSpec entity definitions (`feature.tsp`,
-    `intake-item.tsp`, `comment.tsp`, `label.tsp`, `pm-user.tsp`, etc.). New entities
-    are added here, NOT in generated TS.
-  - `tsp/agents/` — agent-related TypeSpec (`custom-agent.tsp`, `feature-agent.tsp`,
-    `supervisor-policy.tsp`, `agent-question.tsp`, `approval-gates.tsp`).
-  - `.github/ISSUE_TEMPLATE/` — existing v2 issue forms (`bug-report.yml`,
-    `feature-request.yml`, `docs-improvement.yml`, `good-first-issue.yml`,
-    `agent-request.yml`).
-  - Repo root contributor surface: `CONTRIBUTING.md`, `CONTRIBUTING-AGENTS.md`,
-    `CODE_OF_CONDUCT.md`, `SECURITY.md`, `README.md`, `LESSONS.md`. **Missing**:
-    `ROADMAP.md`, `ARCHITECTURE.md`, `GOOD_FIRST_ISSUES.md`, README contributor
-    block above-the-fold.
+  ### Repo polish (Milestone M1)
 
-  ### Architecture Patterns
+  - **FR-1**: Add a "Contribute to Shep" block to `README.md` above the fold, with
+    one-sentence positioning, links to `CONTRIBUTING.md`, `ROADMAP.md`,
+    `ARCHITECTURE.md`, `GOOD_FIRST_ISSUES.md`, and the Discord invite.
+  - **FR-2**: Update `CONTRIBUTING.md` to include: 30-second setup (clone + install +
+    `shep doctor`), the lane catalogue (docs/agents/ui/cli/infra) with one-line
+    descriptions, the contributor ladder (User → Contributor → Core → Maintainer)
+    and the criteria for each, and a "Contributing to Shep with Shep" section that
+    walks through using Shep's own agents to land a PR.
+  - **FR-3**: Create `ROADMAP.md` with `Now / Next / Later` sections, each pointing
+    to specs in `specs/` so the document stays self-updating.
+  - **FR-4**: Create `ARCHITECTURE.md` as a top-level 10-minute tour that links
+    deeper into `docs/architecture/` rather than duplicating content.
+  - **FR-5**: Create `GOOD_FIRST_ISSUES.md` listing curated good-first-issues grouped
+    by lane and difficulty, with each row pointing to a live GitHub issue.
+  - **FR-6**: Add a `.github/PULL_REQUEST_TEMPLATE.md` with sections: What, Why,
+    Screenshots/Recording, Testing, Checklist (lint/test/build/Storybook).
+  - **FR-7**: Extend each existing `.github/ISSUE_TEMPLATE/*.yml` form with required
+    structured fields for `lane` (dropdown: docs/agents/ui/cli/infra), `difficulty`
+    (good-first / easy / medium / hard), and `acceptance criteria` (textarea).
 
-  - **Clean Architecture** — strict inward dependency rule. Presentation calls only
-    use cases; use cases depend only on domain + ports; infrastructure implements
-    ports. Application/presentation must NOT import from `infrastructure/` directly.
-  - **TypeSpec-first domain modeling** — every new entity (e.g. `Contributor`,
-    `ContributorLane`, `Campaign`) is defined in `tsp/`, then `pnpm tsp:compile`
-    regenerates `domain/generated/output.ts`. Magic strings for status/lane MUST be
-    TypeSpec enums, never raw strings (per `.claude/rules/code-quality.md`).
-  - **Use cases as the only entry point** — CLI/web/TUI all call the same use case;
-    no business logic in presentation, no infrastructure imports in presentation.
-  - **Agent-agnostic** — every LLM call goes through `IAgentExecutorProvider`. New
-    agents (e.g. contributor-onboarding agent) MUST register through this; no
-    hardcoded provider SDK outside `infrastructure/`.
-  - **Custom agent extensibility** — `create-custom-agent.use-case.ts` already exists,
-    backed by `tsp/agents/custom-agent.tsp`. The contributor-onboarding agent can
-    plausibly ride this rail rather than introduce a new agent kind.
-  - **Intake pipeline** — `intake/` use cases (`auto-triage`, `accept`, `decline`,
-    `detect-duplicates`, `create-intake-item`, `list-intake-items`) already model an
-    inbound queue. Inbound GitHub issues from new contributors are a natural fit —
-    likely reuse rather than recreate.
-  - **Supervisor + approval gates** — spec 093 introduced supervisor agents with
-    `evaluate-supervisor-decision`, `escalate-to-user`, approval gates (`tsp/agents/
-    approval-gates.tsp`). Outreach posts and label/comment writes should flow through
-    the same gate so a human approves before any external side effect.
-  - **GitHub integration** — `connect-github`, `disconnect-github`,
-    `get-github-integration-status`, `send-webhook` use cases plus
-    `external-issue-fetcher` port; `pr-sync` infra service exists. This is the
-    foundation we extend rather than rebuild.
-  - **Storybook mandate** — every new web component needs a colocated `.stories.tsx`.
+  ### `shep doctor` (Milestone M2)
 
-  ### Relevant Technologies
+  - **FR-8**: Add a `shep doctor` Commander command at
+    `src/presentation/cli/commands/doctor.command.ts` that executes a use case and
+    prints a structured diagnostic table.
+  - **FR-9**: The doctor use case must check, at minimum: Node version (>= 22),
+    pnpm presence + version, git presence + version, gh CLI presence + auth status,
+    available agent CLIs (Claude/Cursor/Gemini via existing
+    `IAgentAuthDetector`-equivalent service), `.env` file presence at workspace root,
+    current git branch, and whether the working tree is clean.
+  - **FR-10**: Each diagnostic returns a typed result `{ name, status: 'ok' | 'warn' | 'fail', detail, fixHint? }`;
+    the use case aggregates into a report and exits the CLI with a non-zero code if
+    any check is `fail`.
+  - **FR-11**: All doctor logic lives in the application layer; the CLI command does
+    only formatting and exit-code mapping.
 
-  - **TypeScript + tsyringe DI** — string-token registration; new ports live in
-    `application/ports/output/...`, concrete adapters in `infrastructure/services/...`,
-    wired in `infrastructure/di/`.
-  - **Commander.js** for CLI — pattern: `*.command.ts` modules registered in a parent
-    `index.ts` (`feat/`, `agent/`, `intake/` are templates).
-  - **Next.js (web)** — server components + actions; existing `onboarding/` route
-    suggests a place for a contributor onboarding surface if we go that far.
-  - **SQLite + better-sqlite3** with migrations under
-    `infrastructure/persistence/migrations/`. New tables for `contributors`,
-    `contributor_lanes`, `campaigns`, `recognition_events` would land here.
-  - **GitHub CLI / Octokit** — already used; the gap is *write* operations on issues
-    (label, comment, assign) that contributor-onboarding agents would invoke.
-  - **all-contributors** — markdown + JSON convention; can be implemented by writing
-    `.all-contributorsrc` and a README block, optionally augmented by a use case that
-    appends entries on PR merge.
+  ### Domain (Milestone M3)
+
+  - **FR-12**: Define `tsp/domain/entities/contributor.tsp` with fields:
+    `id`, `githubLogin`, `displayName?`, `avatarUrl?`, `lane?` (ContributorLane),
+    `level` (ContributorLevel), `firstContributionAt`, `lastContributionAt`,
+    `prCount`, `issueCount`, `recognitionEvents` (link).
+  - **FR-13**: Define `tsp/domain/entities/recognition-event.tsp` with fields:
+    `id`, `contributorId`, `kind` (RecognitionKind enum: firstPR / nthPR / firstIssue /
+    monthlyShoutout), `occurredAt`, `prNumber?`, `monthRecapId?`.
+  - **FR-14**: Define `tsp/domain/value-objects/contributor-lane.tsp` as an enum:
+    `docs | agents | ui | cli | infra`.
+  - **FR-15**: Define `tsp/domain/value-objects/contributor-level.tsp` as an enum:
+    `user | contributor | core | maintainer`.
+  - **FR-16**: Define `tsp/domain/value-objects/contribution-difficulty.tsp` as an
+    enum: `goodFirst | easy | medium | hard`.
+  - **FR-17**: Run `pnpm tsp:compile` to regenerate `domain/generated/output.ts`;
+    the generated file is committed but never hand-edited.
+  - **FR-18**: Add SQLite migrations under
+    `packages/core/src/infrastructure/persistence/migrations/` for `contributors` and
+    `recognition_events` tables. Idempotent up() function only.
+
+  ### Ports & adapters (Milestone M3)
+
+  - **FR-19**: Define `IGitHubIssueWriter` in
+    `application/ports/output/services/github-issue-writer.interface.ts` with
+    methods: `addLabels(issueRef, labels[])`, `removeLabels(issueRef, labels[])`,
+    `addComment(issueRef, body)`, `assignUsers(issueRef, logins[])`. Inject by string
+    token.
+  - **FR-20**: Implement an Octokit-backed adapter in
+    `infrastructure/services/external/github-issue-writer.service.ts`. All requests
+    must reuse credentials from the existing GitHub-integration code path; no new
+    auth flows.
+  - **FR-21**: Define `IContributorRepository` in
+    `application/ports/output/repositories/contributor-repository.interface.ts` with
+    standard CRUD + `findByGitHubLogin`. Implement against SQLite.
+  - **FR-22**: Define `IRecognitionEventRepository` similarly.
+  - **FR-23**: Define `IAllContributorsWriter` in
+    `application/ports/output/services/all-contributors-writer.interface.ts` with
+    method `appendContributor({ login, contributions[] })`. Adapter mutates
+    `.all-contributorsrc` and the README contributors block.
+  - **FR-24**: Wire all new ports → adapters in `infrastructure/di/`.
+
+  ### Use cases (Milestone M3 + M4)
+
+  - **FR-25**: `groom-issue.use-case.ts` — given an issue ref, fetch via
+    `IExternalIssueFetcher`, run the contributor-onboarding agent to produce
+    structured `{ lane, difficulty, acceptanceCriteria, suggestedLabels[],
+    welcomeComment? }`, return result without side-effects. Caller decides whether
+    to apply via `IGitHubIssueWriter` (gated by supervisor).
+  - **FR-26**: `classify-into-lane.use-case.ts` — pure-function lane classifier
+    (rule-based first, agent-fallback) usable independently of `groom-issue`.
+  - **FR-27**: `propose-acceptance-criteria.use-case.ts` — given an issue body,
+    return a markdown checklist; reusable from grooming and from manual CLI calls.
+  - **FR-28**: `welcome-first-time-contributor.use-case.ts` — given a PR ref, detect
+    if the author is a first-time contributor (zero prior merged PRs to this repo),
+    upsert a `Contributor` record, generate a welcome comment, and emit a
+    `RecognitionEvent`. Posting the comment is gated through supervisor/approval.
+  - **FR-29**: `detect-stale-good-first-issue.use-case.ts` — find issues labeled
+    good-first-issue with no activity in N days (configurable, default 30), return
+    a structured list. Caller schedules and decides on action.
+  - **FR-30**: `award-recognition.use-case.ts` — on PR merge, create the appropriate
+    `RecognitionEvent`, call `IAllContributorsWriter.appendContributor(...)`, and
+    bump the contributor's `prCount`/`level` if thresholds are crossed.
+  - **FR-31**: `generate-monthly-recap.use-case.ts` — for a given month, gather merged
+    PRs, new contributors, top lanes, and produce a markdown recap artifact. Returns
+    the artifact; does not publish.
+  - **FR-32**: `publish-monthly-recap.use-case.ts` — given a recap artifact, write
+    it to `recaps/YYYY-MM.md`, post to Discord, and create a GitHub Discussion/Release
+    note — each side-effect gated through supervisor/approval.
+  - **FR-33**: `draft-outreach-post.use-case.ts` — Discord-only in v1; produces a
+    draft message about a release/recap, returns text without sending.
+
+  ### Agent (Milestone M4)
+
+  - **FR-34**: Register a contributor-onboarding agent through the existing
+    `create-custom-agent.use-case.ts` with a documented system prompt covering: lane
+    classification rules, acceptance-criteria style, welcoming tone for first-time
+    contributors, and refusal to invent details not present in the issue.
+  - **FR-35**: The agent's tool surface is read-only by default (issue body + repo
+    metadata); writes happen only via use cases gated by supervisor/approval.
+  - **FR-36**: Provide at least one golden-path integration test that runs the agent
+    against a fixture issue and asserts the structured output schema.
+
+  ### Web surface (Milestone M4)
+
+  - **FR-37**: Extend `src/presentation/web/app/onboarding/` with a contributor view:
+    lane chooser dropdown, "pick your first issue" CTA backed by a use case that
+    returns curated issues filtered by chosen lane, and an inline doctor-results
+    summary if the local CLI has been run.
+  - **FR-38**: Add a `ContributorLeaderboard` component (read-only) displaying top
+    contributors by PR count for the current month and all-time. Backed by a use
+    case that aggregates from `IContributorRepository`.
+  - **FR-39**: Every new component MUST have a colocated `.stories.tsx` covering
+    Default, Loading, Empty, and Error states (per CLAUDE.md mandate).
+
+  ### Workflows (Milestone M4)
+
+  - **FR-40**: Add `.github/workflows/welcome-first-time-contributor.yml` triggered
+    on `pull_request.opened` that calls a Shep CLI subcommand which invokes
+    `welcome-first-time-contributor` use case.
+  - **FR-41**: Add `.github/workflows/label-by-lane.yml` triggered on
+    `issues.opened` that calls a Shep CLI subcommand which invokes `groom-issue`
+    and (after auto-approval policy or human approval) applies labels via
+    `IGitHubIssueWriter`.
+  - **FR-42**: Monthly recap and stale-issue detection are NOT GitHub Actions cron
+    jobs; they run via Shep's existing in-process scheduling against a connected
+    repo.
+
+  ## Non-Functional Requirements
+
+  - **NFR-1 (Architecture)**: Strict Clean Architecture compliance — application
+    code may not import from `infrastructure/` (per `.claude/rules/code-quality.md`);
+    presentation code calls only use cases. CI must reject any violation.
+  - **NFR-2 (Agent-agnostic)**: All LLM calls in this feature flow through
+    `IAgentExecutorProvider`. No direct provider SDK imports outside `infrastructure/`.
+  - **NFR-3 (TypeSpec-first)**: Every new domain concept is defined in `tsp/` and
+    consumed via `domain/generated/output.ts`. No raw string comparisons for lane,
+    level, difficulty, or recognition kind.
+  - **NFR-4 (TDD)**: Every use case lands with a RED test first (per CLAUDE.md /
+    `docs/development/tdd-guide.md`). Every PR includes the test commit + the
+    implementation commit, in that order, when feasible.
+  - **NFR-5 (Approval gates)**: Every external side-effect (GitHub label/comment/
+    assign, Discord post, recap publish) flows through the spec-093 supervisor
+    approval gate. Auto-approval is configurable but never the default.
+  - **NFR-6 (Storybook)**: Every new web component has a colocated `.stories.tsx`
+    with Default + Loading + Error states minimum (per CLAUDE.md mandate).
+    `pnpm build:storybook` passes locally before push.
+  - **NFR-7 (Performance — doctor)**: `shep doctor` completes in under 5 seconds on
+    a healthy clone. Each individual diagnostic times out at 3 seconds and reports
+    `warn` rather than blocking.
+  - **NFR-8 (Performance — grooming)**: `groom-issue` returns within 30 seconds for
+    a typical issue (< 5KB body). Longer runs surface progress via the existing
+    streaming infrastructure.
+  - **NFR-9 (Privacy)**: The contributor agent must not include PII beyond public
+    GitHub data (login, avatar, public profile) in any artifact (recap, leaderboard,
+    welcome comment).
+  - **NFR-10 (Security — GitHub writes)**: `IGitHubIssueWriter` adapter must reuse
+    existing GitHub credentials (no new token storage); writes are scoped to the
+    minimum required permissions; rate-limit handling matches the existing `pr-sync`
+    service patterns.
+  - **NFR-11 (Idempotency)**: `award-recognition` is idempotent for a given
+    `(contributorId, kind, prNumber)` triple — reprocessing a PR merge event does
+    not double-count or duplicate `.all-contributorsrc` entries.
+  - **NFR-12 (Observability)**: Every use case in this feature emits a structured
+    log line (`{ useCase, durationMs, outcome }`) consistent with existing logging
+    conventions; failures include the cause without leaking secrets.
+  - **NFR-13 (File length)**: No new file exceeds ~300 lines (per
+    `.claude/rules/code-quality.md`). Refactor before adding to a long file.
+  - **NFR-14 (No singletons)**: No module-scoped state outside infrastructure
+    bootstrapping; all services injected via tsyringe by string token.
+  - **NFR-15 (Conventional commits)**: Every commit follows the strict
+    `<type>(<scope>): <subject>` format; user-visible changes use `feat`/`fix` so
+    semantic-release publishes them.
+  - **NFR-16 (Adoptability)**: The contributor pipeline must work for any OSS
+    project that adopts Shep — no Shep-repo-specific hardcoding (lane names being
+    a TypeSpec enum is acceptable; project-specific labels/configuration must be
+    configurable).
+  - **NFR-17 (Local CI parity)**: All checks runnable locally
+    (`pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:int && pnpm build`)
+    pass before any push (per `.claude/rules/cicd.md`).
+  - **NFR-18 (Documentation)**: Every new use case has a JSDoc one-liner stating
+    intent; every new port has a JSDoc contract; the "Contributing to Shep with Shep"
+    doc walks a real contributor through their first PR using the new pipeline.
+
+  ## Product Questions & AI Recommendations
+
+  | # | Question | AI Recommendation | Rationale |
+  | - | -------- | ----------------- | --------- |
+  | 1 | New `Contributor` entity vs extend `PmUser` vs ephemeral | New Contributor entity | OSS contributor identity is a distinct concern from internal PmUser; isolating it keeps the model clean and makes per-repo scoping straightforward. |
+  | 2 | Custom-agent rail vs new built-in agent kind | Ride the custom-agent rail | Reuses prompts/sessions/streaming/supervisor gates; avoids forking the agent taxonomy; lets adopting OSS projects fork the agent like any custom agent. |
+  | 3 | New `IGitHubIssueWriter` port vs extend `IGitHubRepositoryService` | New IGitHubIssueWriter port | Interface-segregation; gives one auditable chokepoint for supervisor/approval gating; keeps reads and writes split. |
+  | 4 | Outreach automation scope | In scope — Discord only | Validates the approval-gate UX on a managed channel; defers Reddit/HN/X to a follow-up to keep this L (not XL). |
+  | 5 | Web dashboard surface in v1 | Light web surface | Extends existing `onboarding/` route + leaderboard; visible dogfooding without exploding scope. |
+  | 6 | all-contributors via Shep use case vs upstream bot | Shep use case writes the file | Self-contained dogfooding; adopting projects get parity for free; we control the recognition criteria. |
+  | 7 | Ship `shep contribute` end-to-end CLI in v1 | Defer to v2 | High-value showcase but depends on every other piece being rock-solid; better to land foundations first. |
+  | 8 | Where to publish monthly recap | Multi-channel via approval gate | One canonical artifact + supervisor-gated multicast (GitHub + Discord + repo file); mirrors spec 096. |
+  | 9 | Slicing strategy | Progressive M1→M4 | Each milestone ships independent value; M1 (markdown) ships in days; M3/M4 get review focus proportional to risk. |
+  | 10 | GitHub Actions vs in-Shep cron for workflows | GitHub Actions for event-driven, in-Shep for time-driven | Each system used for what it does best; adopting projects without Shep daemon still get inbound automation. |
+  | 11 | Lane naming scheme | Shep-named lanes (docs/agents/ui/cli/infra) | Self-documenting; no glossary lookup; still a TypeSpec enum so type-safe. |
+  | 12 | Scope of `shep doctor` | Environment + repo basics | Targets the actual contributor pain (fresh-clone won't build); deep audit is a different command for maintainers. |
 
   ## Affected Areas
 
   | Area | Impact | Reasoning |
   | ---- | ------ | --------- |
   | `README.md` | High | Add "Contribute to Shep" block above-the-fold; positioning sentence; lane links. |
-  | `CONTRIBUTING.md` | High | Add 30-second setup, lanes, contributor ladder (Lvl 1–4), "Contributing to Shep with Shep" demo loop. |
+  | `CONTRIBUTING.md` | High | Add 30-second setup, lanes, contributor ladder (User → Contributor → Core → Maintainer), "Contributing to Shep with Shep" demo loop. |
   | `ROADMAP.md` (new) | High | Now/Next/Later sections so contributors feel they're joining a movement. |
   | `ARCHITECTURE.md` (new) | High | Top-level 10-minute tour pointing into `docs/architecture/`. |
-  | `GOOD_FIRST_ISSUES.md` (new) | Medium | Curated, grouped-by-difficulty list mapped to live GitHub issues. |
-  | `.github/ISSUE_TEMPLATE/` | Medium | Add structured fields (lane, difficulty, acceptance criteria) to existing forms; add `provider-request` if missing. |
+  | `GOOD_FIRST_ISSUES.md` (new) | Medium | Curated, grouped-by-lane-and-difficulty list mapped to live GitHub issues. |
+  | `.github/ISSUE_TEMPLATE/` | Medium | Add structured fields (lane, difficulty, acceptance criteria) to existing forms. |
   | `.github/PULL_REQUEST_TEMPLATE.md` | Medium | Add/normalize PR template (what/why/screenshots/checklist). |
-  | `.github/workflows/` | Medium | New workflow(s): label-by-lane, welcome first-time contributors, monthly recap, all-contributors sync. |
-  | `tsp/domain/entities/` | High | New `contributor.tsp`, `contributor-lane.tsp`, `campaign.tsp`, `recognition-event.tsp` (or extension to `pm-user.tsp` / `intake-item.tsp` — TBD in research). |
-  | `tsp/domain/value-objects/` | Medium | Lane enum (A–E), difficulty enum, contributor-level enum (User/Contributor/Core/Maintainer). |
-  | `packages/core/src/application/use-cases/` (new group `contributors/`) | High | Use cases: `groom-issue`, `classify-into-lane`, `welcome-first-time-contributor`, `generate-monthly-recap`, `propose-acceptance-criteria`, `detect-stale-good-first-issue`, `award-recognition`. |
-  | `packages/core/src/application/use-cases/intake/` | Medium | Extend or reuse for inbound GitHub-issue triage by the contributor agent. |
-  | `packages/core/src/application/use-cases/agents/` | Medium | Possibly register a new built-in custom agent ("contributor-onboarding-agent") via existing custom-agent rail. |
-  | `packages/core/src/application/ports/output/services/` | High | New ports: `IGitHubIssueWriter` (label/comment/assign), `IEnvironmentDoctor` (for `shep doctor`), `IContributorRecognitionService`, `IOutreachDraftService`. |
-  | `packages/core/src/application/ports/output/repositories/` | Medium | `IContributorRepository`, `ICampaignRepository`. |
-  | `packages/core/src/infrastructure/services/` | High | Adapters for the new ports — likely under `services/contributors/`, `services/doctor/`, plus extending `services/external/` for GitHub issue writes. |
-  | `packages/core/src/infrastructure/persistence/migrations/` | Medium | Migrations for `contributors`, `contributor_lanes`, `campaigns`, `recognition_events`. |
-  | `packages/core/src/infrastructure/di/` | Medium | Wire new ports → adapters by string token. |
-  | `src/presentation/cli/commands/doctor.command.ts` (new) | High | New `shep doctor` — env diagnostics (Node, pnpm, git, gh, Claude/Cursor/Gemini, repo state, env files); referenced in CONTRIBUTING. |
-  | `src/presentation/cli/commands/contribute/` (new, optional) | Medium | Optional `shep contribute new "fix install docs"` command that invokes the contributor-onboarding agent end-to-end. |
-  | `src/presentation/web/app/onboarding/` | Medium | Existing route — extend with a contributor-focused onboarding screen (lane chooser, "your first issue" CTA). |
-  | `src/presentation/web/app/(dashboard)/` | Low/Medium | Optional contributor leaderboard / monthly recap surface. |
-  | `docs/development/` | Medium | New doc: "Contributing to Shep with Shep" (the self-reinforcing demo). |
-  | `LESSONS.md` | Low | Update on session learnings as the feature is built. |
+  | `.github/workflows/` | Medium | New event-driven workflows: `welcome-first-time-contributor`, `label-by-lane`. (Cron workflows live in Shep, not Actions.) |
+  | `tsp/domain/entities/` | High | New `contributor.tsp`, `recognition-event.tsp`. |
+  | `tsp/domain/value-objects/` | Medium | New `contributor-lane.tsp`, `contributor-level.tsp`, `contribution-difficulty.tsp`, `recognition-kind.tsp` enums. |
+  | `packages/core/src/application/use-cases/contributors/` (new) | High | `groom-issue`, `classify-into-lane`, `propose-acceptance-criteria`, `welcome-first-time-contributor`, `detect-stale-good-first-issue`, `award-recognition`, `generate-monthly-recap`, `publish-monthly-recap`, `draft-outreach-post`. |
+  | `packages/core/src/application/use-cases/doctor/` (new) | High | `run-doctor.use-case.ts`. |
+  | `packages/core/src/application/use-cases/agents/` | Medium | Register the contributor-onboarding agent via existing custom-agent rail. |
+  | `packages/core/src/application/ports/output/services/` | High | New ports: `IGitHubIssueWriter`, `IAllContributorsWriter`, `IDoctorDiagnosticRunner`. |
+  | `packages/core/src/application/ports/output/repositories/` | Medium | `IContributorRepository`, `IRecognitionEventRepository`. |
+  | `packages/core/src/infrastructure/services/` | High | Adapters: `external/github-issue-writer.service.ts`, `contributors/all-contributors-writer.service.ts`, `doctor/diagnostic-runner.service.ts`. |
+  | `packages/core/src/infrastructure/persistence/migrations/` | Medium | Migrations for `contributors` and `recognition_events`. |
+  | `packages/core/src/infrastructure/persistence/repositories/` | Medium | SQLite-backed repository implementations. |
+  | `packages/core/src/infrastructure/di/` | Medium | Wire all new ports → adapters by string token. |
+  | `src/presentation/cli/commands/doctor.command.ts` (new) | High | New `shep doctor` command. |
+  | `src/presentation/cli/commands/contribute/` | None v1 | Deferred to v2. |
+  | `src/presentation/web/app/onboarding/` | Medium | Lane chooser, "pick your first issue" CTA, doctor summary. |
+  | `src/presentation/web/components/` | Medium | `ContributorLeaderboard` + supporting components, each with `.stories.tsx`. |
+  | `docs/development/contributing-with-shep.md` (new) | Medium | The self-reinforcing "use Shep to contribute to Shep" walk-through. |
+  | `recaps/` (new directory) | Low | Monthly recap artifacts written by `publish-monthly-recap`. |
+  | `.all-contributorsrc` (new) | Low | Source of truth for the README contributors block; mutated by `IAllContributorsWriter`. |
+  | `LESSONS.md` | Low | Updated as the feature is built (per CLAUDE.md self-improvement loop). |
 
   ## Dependencies
 
   - **Existing Shep building blocks (reuse, don't rebuild):**
     - `IAgentExecutorProvider` — for any LLM call the new agents make.
-    - Custom-agent rail (`create-custom-agent`, `tsp/agents/custom-agent.tsp`) —
-      probably the right home for the contributor-onboarding agent.
+    - Custom-agent rail (`create-custom-agent`, `tsp/agents/custom-agent.tsp`) — home
+      for the contributor-onboarding agent.
     - Intake pipeline (`auto-triage-intake-item`, `detect-duplicates`,
       `accept-intake-item`, `decline-intake-item`) — natural surface for inbound
-      GitHub issues.
-    - Supervisor + approval gates (spec 093) — gate any external side effect
-      (label, comment, post) behind human approval until the policy says otherwise.
+      GitHub issues; grooming feeds into it.
+    - Supervisor + approval gates (spec 093) — gate every external side-effect
+      (label, comment, post) behind human approval until policy says otherwise.
     - GitHub integration (`connect-github`, `external-issue-fetcher`, `send-webhook`,
-      `pr-sync`) — already wired auth/credentials; extend with write ops.
+      `pr-sync`) — already wired auth/credentials; extended with `IGitHubIssueWriter`
+      for write ops.
     - Notifications (`notifications/`, `i-desktop-notifier`) — for "first-time
       contributor opened a PR" alerts.
-    - Settings service — to expose contributor-onboarding config (lanes, campaigns,
-      auto-post toggle).
+    - Settings service — to expose contributor-onboarding config (lane mappings,
+      auto-approval policy, recap cadence).
     - Tool installer / agent-auth-detector — already detect Claude/Cursor/Gemini
       availability; `shep doctor` reuses these instead of duplicating.
+    - Existing Discord integration (skill `discord-admin`, server
+      `1473730318576914617`) — outreach channel.
   - **External dependencies:**
     - GitHub REST/GraphQL via `gh` CLI or Octokit — already a runtime dep.
-    - all-contributors spec/bot — opt-in markdown convention, optionally automated.
-    - Discord (existing server `1473730318576914617`, managed via `discord-admin`
-      skill) — for outreach automation if scoped in.
+    - all-contributors spec (markdown convention) — adopted directly; no upstream
+      bot installed.
+    - Discord (existing) — for outreach drafting + posting.
   - **Cross-spec relationships:**
     - **Spec 088 (`import-repo-upstream`)** — overlapping primitives for ingesting
-      existing GitHub issues; coordinate rather than duplicate.
+      existing GitHub issues; coordinate to share fetcher abstractions.
     - **Spec 089 (`branding-onboarding-overhaul`)** — touches user-facing onboarding
       copy; align tone/lane names so we don't ship contradictory positioning.
     - **Spec 093 (`agent-collaboration-supervision`)** — the supervisor + approval
@@ -272,26 +617,26 @@ content: |
 
   Reasoning:
 
-  - **Cross-cutting**: spans repo-root files, `.github/`, TypeSpec entities, a new
-    `contributors/` use-case group, multiple new ports + adapters, a new CLI command
-    (`shep doctor`), optional CLI command (`shep contribute`), optional web
-    onboarding/recognition surface, and migrations.
-  - **Multiple new domain concepts**: `Contributor`, `ContributorLane`, `Campaign`,
-    `RecognitionEvent` — each requires `tsp/`, repository, migration, use cases, DI
-    wiring, tests (TDD per `CLAUDE.md`).
-  - **External-side-effect surface area**: any GitHub write (label/comment/assign)
+  - **Cross-cutting**: spans repo-root files, `.github/`, TypeSpec entities, two new
+    use-case groups (`contributors/`, `doctor/`), multiple new ports + adapters, a
+    new CLI command (`shep doctor`), a light web surface, and migrations.
+  - **Multiple new domain concepts**: `Contributor`, `RecognitionEvent`, plus four
+    enums — each requires `tsp/`, repository, migration, use cases, DI wiring, tests
+    (TDD per `CLAUDE.md`).
+  - **External-side-effect surface area**: every GitHub write (label/comment/assign)
     must be gated through supervisor/approval flow → meaningful integration design,
     not just code volume.
-  - **Net-new agent**: even if it rides the custom-agent rail, defining its prompt,
-    tools, output schema, and golden-path tests is non-trivial.
-  - **Mitigators**: most of the static repo work (CONTRIBUTING/ROADMAP/ARCHITECTURE/
-    GOOD_FIRST_ISSUES, README block, issue templates) is fast and could land as a
-    first slice (`M`). The agent + use cases + `shep doctor` is what pushes the
-    overall estimate to **L**.
-  - **Recommended slicing** (to validate during research): `M1: static repo files
-    + README block + PR template`, `M2: shep doctor`, `M3: contributor TypeSpec +
-    use cases + GitHub-issue-writer port`, `M4: contributor-onboarding agent +
-    monthly recap + recognition`. Each slice is independently shippable.
+  - **Net-new agent**: even riding the custom-agent rail, defining its prompt, tool
+    surface, output schema, and golden-path tests is non-trivial.
+  - **Decisions resolved this phase reduce risk**: `shep contribute` deferred,
+    outreach scoped to Discord-only, web kept light, all-contributors as a use case
+    (no third-party bot dependency). Without these, scope would be XL.
+  - **Recommended slicing**: `M1: static repo files + README block + PR template +
+    issue-template enhancements`, `M2: shep doctor`, `M3: contributor TypeSpec +
+    repositories + IGitHubIssueWriter port + foundational use cases`, `M4:
+    contributor-onboarding agent + monthly recap + recognition + web surface +
+    GitHub Actions workflows`. Each slice is independently shippable and the M1
+    slice ships in days.
 
   ---
 
