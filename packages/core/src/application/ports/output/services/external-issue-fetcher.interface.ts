@@ -21,6 +21,28 @@ export interface ExternalIssue {
 }
 
 /**
+ * Lightweight summary of a GitHub issue used by listing endpoints (stale
+ * detection, curated issue queries). Avoids returning full body text when
+ * the caller only needs metadata.
+ */
+export interface ExternalIssueSummary {
+  /** Repository owner login. */
+  owner: string;
+  /** Repository name. */
+  repo: string;
+  /** Issue number. */
+  issueNumber: number;
+  /** Issue title. */
+  title: string;
+  /** All labels currently applied to the issue. */
+  labels: readonly string[];
+  /** ISO 8601 timestamp of the last activity (comment or update) on the issue. */
+  lastActivityAt: string;
+  /** Public URL to the issue. */
+  url: string;
+}
+
+/**
  * Service interface for fetching issues from external systems.
  */
 export interface IExternalIssueFetcher {
@@ -44,6 +66,33 @@ export interface IExternalIssueFetcher {
    * @throws IssueAuthenticationError if credentials are invalid
    */
   fetchJiraTicket(key: string): Promise<ExternalIssue>;
+
+  /**
+   * Count the number of merged pull requests authored by the given login
+   * in the given repository. Used by `welcome-first-time-contributor` to
+   * decide whether the PR opener is a first-time contributor.
+   *
+   * @param owner - Repository owner login
+   * @param repo - Repository name
+   * @param login - GitHub login of the PR author
+   */
+  getMergedPrCount(owner: string, repo: string, login: string): Promise<number>;
+
+  /**
+   * List GitHub issues in a repository that carry the given label. Closed
+   * issues are excluded by default.
+   */
+  listIssuesByLabel(owner: string, repo: string, label: string): Promise<ExternalIssueSummary[]>;
+
+  /**
+   * List GitHub issues in a repository that carry ALL of the given labels
+   * (intersection). Closed issues are excluded by default.
+   */
+  listIssuesByLabels(
+    owner: string,
+    repo: string,
+    labels: readonly string[]
+  ): Promise<ExternalIssueSummary[]>;
 }
 
 /**
