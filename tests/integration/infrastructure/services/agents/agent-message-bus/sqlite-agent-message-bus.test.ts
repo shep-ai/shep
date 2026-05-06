@@ -11,7 +11,7 @@
  */
 
 import 'reflect-metadata';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import Database from 'better-sqlite3';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -51,22 +51,33 @@ describe('SQLiteAgentMessageBus', () => {
   let writerBus: SQLiteAgentMessageBus;
   let readerBus: SQLiteAgentMessageBus;
 
-  beforeEach(async () => {
+  // Run migrations once per file. The shep schema is now ~80 migrations,
+  // and re-running them in beforeEach pushed the Windows CI runner past
+  // the 20s hookTimeout. Each test gets fresh connections + a clean
+  // agent_message table instead.
+  beforeAll(async () => {
     dbDir = mkdtempSync(join(tmpdir(), 'shep-bus-it-'));
     dbPath = join(dbDir, 'shep.db');
 
-    // Configure WAL mode on the file-backed DB so multiple connections work.
     const setupDb = new Database(dbPath);
     setupDb.pragma('journal_mode = WAL');
     setupDb.pragma('foreign_keys = ON');
     await runSQLiteMigrations(setupDb);
     setupDb.close();
+  });
 
+  afterAll(() => {
+    rmSync(dbDir, { recursive: true, force: true });
+  });
+
+  beforeEach(() => {
     writerDb = new Database(dbPath);
     writerDb.pragma('foreign_keys = ON');
 
     readerDb = new Database(dbPath);
     readerDb.pragma('foreign_keys = ON');
+
+    writerDb.exec('DELETE FROM agent_messages');
 
     const writerRepo = new SQLiteAgentMessageRepository(writerDb);
     const readerRepo = new SQLiteAgentMessageRepository(readerDb);
@@ -81,7 +92,6 @@ describe('SQLiteAgentMessageBus', () => {
     writerBus.shutdown();
     writerDb.close();
     readerDb.close();
-    rmSync(dbDir, { recursive: true, force: true });
   });
 
   it('publish + listFor across two connections (cross-process round-trip)', async () => {
