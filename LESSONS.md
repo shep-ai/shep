@@ -576,3 +576,20 @@ Tsyringe walks every `@inject(token)` decorator on a class and resolves the **en
 1. When adding a new output port `IFoo` under `application/ports/output/`, register a concrete adapter under that string token in the appropriate `register-*.ts` module **in the same commit** as the first use case that injects it.
 2. Add the new token to `CRITICAL_INFRA_TOKENS` in `container-bootstrap.test.ts`. If the token is consumed only by background workers (feature-agent, supervisor, deployment), it MUST appear there — web routes alone do not exercise worker constructor trees.
 3. When adding any `registerSingleton(SomeWorkerHelper)` in `register-agents.ts`, mentally trace its full `@inject` graph and confirm every leaf token is registered. The tsyringe error message _names_ the missing token, but the full chain only shows up at runtime, never at build time.
+
+## Auto-Deploy Must Trigger on Agent-Finishes Transition, Not on `setupComplete` SSE Race
+
+The user reported that the web preview did not start automatically after the initial build finished, and did not restart after a chat iteration.
+
+**Two compounding bugs:**
+
+1. `useDevServerCoordinator` only restarted the dev server after the agent finished IF it was running BEFORE the agent started (`wasRunningBeforeAgentRef`). On the very first build, the server was never running → ref stayed `false` → no auto-start. On any subsequent iteration where the user hadn't manually started the preview, same story.
+2. The fallback in `ApplicationPage.onAllStepsComplete` was gated on `application.setupComplete === false` (the SSR prop). But `setupComplete` is flipped to `true` by an SSE-driven `useApplicationUpdate` cache patch. The "workflow done" SSE event and the "setupComplete=true" SSE event arrive close together — when the latter races ahead, the gate blocks the auto-deploy.
+
+**Rules for any "auto-start the dev server when X completes" logic:**
+
+1. **Drive auto-deploy off the `agentRunning` transition (`true → false`), not off a derived/SSR'd "completed" flag.** The agent transition is observable directly from the chat-state cache and doesn't depend on which SSE event arrived first.
+2. **Never gate auto-deploy on "was the server running BEFORE the agent started?"** — that's a presence test for an irrelevant prior state. The user wants to see the result of the iteration regardless of whether they had manually clicked "Run" earlier.
+3. **Single source of truth.** If you have two effects firing `deploy.deploy()` on the same event (e.g. `useDevServerCoordinator` AND a `onAllStepsComplete` callback), kill one — `deploymentService.start()` is NOT idempotent (see `deployment.service.ts` line 231-238: it kills any existing deployment and starts a new one), so two parallel calls can race and tear down the in-flight spawn.
+4. **Always status-guard before calling `deploy.deploy()`:** skip when `deploy.status === Ready || Booting || deploy.deployLoading`. This is the only protection against a stray double-fire that would kill an in-progress spawn.
+5. **Do NOT add "respect explicit user stop" complexity unless the user asks for it.** The simpler invariant — "after the agent finishes, the preview is up" — matches what users want 99% of the time. Manual stop is a transient user action; it does not need to persist across iterations.
