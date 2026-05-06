@@ -72,7 +72,8 @@ describe('SQLiteAgentMessageBus', () => {
     const readerRepo = new SQLiteAgentMessageRepository(readerDb);
 
     writerBus = new SQLiteAgentMessageBus(writerRepo);
-    readerBus = new SQLiteAgentMessageBus(readerRepo, { pollIntervalMs: 50 });
+    readerBus = new SQLiteAgentMessageBus(readerRepo);
+    readerBus.setPollIntervalMs(50);
   });
 
   afterEach(() => {

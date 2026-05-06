@@ -1,5 +1,20 @@
 # Lessons Learned
 
+## tsyringe `@injectable()` — every constructor param must be resolvable
+
+Symptom: worker boots crash with `Cannot inject the dependency at position #N of "X" constructor. Reason: TypeInfo not known for "Object"`.
+
+Root cause: tsyringe walks every constructor param via `reflect-metadata`. TS interfaces and inline object types erase to `Object` at runtime, so any param typed `MyOptions` (an interface) — even with a default value `= {}` — makes tsyringe try to resolve `Object` from the container and fail.
+
+Concrete instance: `SQLiteAgentMessageBus(repo, options: SQLiteAgentMessageBusOptions = {})`. Direct `new` from tests worked, but DI resolution from the worker container blew up the entire `IAgentMessageBus → SendAgentMessageUseCase → FeatureAgentLifecyclePublisher` chain.
+
+Rules for any class with `@injectable()`:
+
+1. Every constructor param must either have an `@inject(token)` decorator OR be a class type that tsyringe can introspect. No interface params, no inline `{}` types, no primitives without `@inject`.
+2. Default values do NOT save you — tsyringe still tries to resolve the param before the default kicks in.
+3. For test-only knobs (poll intervals, etc.), drop them from the constructor and expose a `setX(...)` method or a class-typed config object registered with `useValue`.
+4. Before adding a new `@injectable()` class, scan its constructor: any non-class type without `@inject` is a boot-time bomb that won't surface until something actually resolves the chain.
+
 ## Settings Is the Single Source of Truth for Agent + Model — Never Hardcode UI Defaults
 
 A user reported their newly-created application got stuck on bootstrap with `Agent type 'dev' does not support interactive sessions. Only 'claude-code' supports interactive mode.` They were certain they had selected "Claude Code · Sonnet 4.6" — and the picker DID show that as the default. The bug: the picker's displayed default was a hardcoded literal that lied about what the system would actually use.
