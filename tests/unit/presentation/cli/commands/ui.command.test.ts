@@ -47,11 +47,18 @@ vi.mock('@/infrastructure/di/container.js', () => ({
         token === 'INotificationService' ||
         token === 'IFeatureRepository' ||
         token === 'IGitPrService' ||
-        token === 'IGitForkService'
+        token === 'IGitForkService' ||
+        token === 'IRepositoryRepository' ||
+        token === 'IGitHubRepositoryService' ||
+        token === 'IDesktopNotifier'
       ) {
         return {};
       }
-      throw new Error(`Unknown token: ${token}`);
+      // Class-token resolution (container.resolve(SomeClass))
+      if (typeof token === 'function') {
+        return { execute: vi.fn().mockResolvedValue({}) };
+      }
+      throw new Error(`Unknown token: ${String(token)}`);
     }),
   },
 }));
@@ -94,6 +101,31 @@ vi.mock('@/infrastructure/services/auto-archive/auto-archive-watcher.service.js'
     start: vi.fn(),
     stop: vi.fn(),
   }),
+}));
+
+// Mock contributor pipeline watchers (spec 097, FR-42)
+vi.mock('@/infrastructure/services/contributors/stale-good-first-issue-watcher.service.js', () => ({
+  initializeStaleGoodFirstIssueWatcher: vi.fn(),
+  getStaleGoodFirstIssueWatcher: vi.fn().mockReturnValue({
+    start: vi.fn(),
+    stop: vi.fn(),
+  }),
+}));
+vi.mock('@/infrastructure/services/contributors/monthly-recap-watcher.service.js', () => ({
+  initializeMonthlyRecapWatcher: vi.fn(),
+  getMonthlyRecapWatcher: vi.fn().mockReturnValue({
+    start: vi.fn(),
+    stop: vi.fn(),
+  }),
+}));
+vi.mock('@/application/use-cases/contributors/detect-stale-good-first-issue.use-case.js', () => ({
+  DetectStaleGoodFirstIssueUseCase: vi.fn(),
+}));
+vi.mock('@/application/use-cases/contributors/generate-monthly-recap.use-case.js', () => ({
+  GenerateMonthlyRecapUseCase: vi.fn(),
+}));
+vi.mock('@/application/use-cases/contributors/publish-monthly-recap.use-case.js', () => ({
+  PublishMonthlyRecapUseCase: vi.fn(),
 }));
 
 // Mock IBrowserOpener — resolved from DI container
