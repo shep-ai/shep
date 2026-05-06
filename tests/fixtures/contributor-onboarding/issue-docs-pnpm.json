@@ -1,0 +1,7 @@
+{
+  "title": "docs: clarify pnpm install instructions",
+  "description": "The README is missing the step to run `corepack enable` before `pnpm install`. New contributors hit a confusing error.",
+  "labels": ["help-wanted", "good-first-issue"],
+  "url": "https://github.com/shep-ai/shep/issues/4242",
+  "source": "github"
+}
