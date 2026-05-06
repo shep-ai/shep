@@ -1,13 +1,19 @@
 /**
  * GitHub Issue Fetcher Service
  *
- * Fetches GitHub issues using the gh CLI subprocess.
+ * Adapter implementing `IExternalIssueFetcher` against the `gh` CLI.
+ * GitHub-specific methods shell out to `gh`; `fetchJiraTicket` is not
+ * supported by this adapter and throws `IssueServiceUnavailableError`.
+ *
  * Supports owner/repo#number and #number (current repo) formats.
  */
+
+import { inject, injectable } from 'tsyringe';
 
 import type {
   IExternalIssueFetcher,
   ExternalIssue,
+  ExternalIssueSummary,
 } from '@/application/ports/output/services/external-issue-fetcher.interface.js';
 import {
   IssueNotFoundError,
@@ -20,8 +26,11 @@ type ExecFileFn = (
   options?: object
 ) => Promise<{ stdout: string; stderr?: string }>;
 
-export class GitHubIssueFetcher implements Pick<IExternalIssueFetcher, 'fetchGitHubIssue'> {
-  constructor(private readonly execFile: ExecFileFn) {}
+const GH_TIMEOUT_MS = 30_000;
+
+@injectable()
+export class GitHubIssueFetcher implements IExternalIssueFetcher {
+  constructor(@inject('ExecFunction') private readonly execFile: ExecFileFn) {}
 
   async fetchGitHubIssue(ref: string): Promise<ExternalIssue> {
     const { issueNumber, repo } = this.parseRef(ref);
@@ -32,7 +41,7 @@ export class GitHubIssueFetcher implements Pick<IExternalIssueFetcher, 'fetchGit
     args.push('--json', 'title,body,labels,url');
 
     try {
-      const { stdout } = await this.execFile('gh', args, { timeout: 30_000 });
+      const { stdout } = await this.execFile('gh', args, { timeout: GH_TIMEOUT_MS });
       const data = JSON.parse(stdout) as {
         title: string;
         body: string | null;
@@ -48,40 +57,121 @@ export class GitHubIssueFetcher implements Pick<IExternalIssueFetcher, 'fetchGit
         source: 'github',
       };
     } catch (err: unknown) {
-      const error = err instanceof Error ? err : new Error(String(err));
+      throw this.translateError(err, `GitHub issue ${ref}`);
+    }
+  }
 
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        throw new IssueServiceUnavailableError(
-          'GitHub CLI (gh) is not installed. Install it from https://cli.github.com/'
-        );
-      }
+  async fetchJiraTicket(_key: string): Promise<ExternalIssue> {
+    throw new IssueServiceUnavailableError(
+      'Jira fetching is not configured for this Shep instance. Configure a Jira adapter to enable it.'
+    );
+  }
 
-      if (error.message.includes('Could not resolve')) {
-        throw new IssueNotFoundError(`GitHub issue ${ref} not found`);
-      }
+  async getMergedPrCount(owner: string, repo: string, login: string): Promise<number> {
+    const args = [
+      'pr',
+      'list',
+      '--repo',
+      `${owner}/${repo}`,
+      '--state',
+      'merged',
+      '--author',
+      login,
+      '--limit',
+      '1000',
+      '--json',
+      'number',
+    ];
 
-      throw new IssueNotFoundError(`Failed to fetch GitHub issue ${ref}: ${error.message}`);
+    try {
+      const { stdout } = await this.execFile('gh', args, { timeout: GH_TIMEOUT_MS });
+      const items = JSON.parse(stdout || '[]') as { number: number }[];
+      return items.length;
+    } catch (err: unknown) {
+      throw this.translateError(err, `merged PR count for ${login} in ${owner}/${repo}`);
+    }
+  }
+
+  async listIssuesByLabel(
+    owner: string,
+    repo: string,
+    label: string
+  ): Promise<ExternalIssueSummary[]> {
+    return this.listIssuesByLabels(owner, repo, [label]);
+  }
+
+  async listIssuesByLabels(
+    owner: string,
+    repo: string,
+    labels: readonly string[]
+  ): Promise<ExternalIssueSummary[]> {
+    if (labels.length === 0) return [];
+    const args = [
+      'issue',
+      'list',
+      '--repo',
+      `${owner}/${repo}`,
+      '--state',
+      'open',
+      '--label',
+      labels.join(','),
+      '--limit',
+      '200',
+      '--json',
+      'number,title,labels,updatedAt,url',
+    ];
+
+    try {
+      const { stdout } = await this.execFile('gh', args, { timeout: GH_TIMEOUT_MS });
+      const items = JSON.parse(stdout || '[]') as {
+        number: number;
+        title: string;
+        labels: { name: string }[];
+        updatedAt: string;
+        url: string;
+      }[];
+      return items.map((i) => ({
+        owner,
+        repo,
+        issueNumber: i.number,
+        title: i.title,
+        labels: i.labels.map((l) => l.name),
+        lastActivityAt: i.updatedAt,
+        url: i.url,
+      }));
+    } catch (err: unknown) {
+      throw this.translateError(
+        err,
+        `issues with labels [${labels.join(',')}] in ${owner}/${repo}`
+      );
     }
   }
 
   private parseRef(ref: string): { issueNumber: string; repo?: string } {
-    // Format: owner/repo#123
     const fullMatch = ref.match(/^([^#]+)#(\d+)$/);
     if (fullMatch) {
       return { issueNumber: fullMatch[2], repo: fullMatch[1] };
     }
-
-    // Format: #123
     const hashMatch = ref.match(/^#(\d+)$/);
     if (hashMatch) {
       return { issueNumber: hashMatch[1] };
     }
-
-    // Format: plain number
     if (/^\d+$/.test(ref)) {
       return { issueNumber: ref };
     }
-
     throw new IssueNotFoundError(`Invalid GitHub issue reference: ${ref}`);
+  }
+
+  private translateError(err: unknown, context: string): Error {
+    const error = err instanceof Error ? err : new Error(String(err));
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return new IssueServiceUnavailableError(
+        'GitHub CLI (gh) is not installed. Install it from https://cli.github.com/'
+      );
+    }
+    if (error.message.includes('Could not resolve')) {
+      return new IssueNotFoundError(`${context} not found`);
+    }
+    return new IssueNotFoundError(`Failed to fetch ${context}: ${error.message}`);
   }
 }

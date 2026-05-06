@@ -83,6 +83,8 @@ import { DeferredQuestionRegistry } from '../../services/agents/agent-question-s
 // Contributor onboarding (feature 097) — output ports + adapters
 import type { IGitHubIssueWriter } from '../../../application/ports/output/services/github-issue-writer.interface.js';
 import { GitHubIssueWriter } from '../../services/external/github-issue-writer.service.js';
+import type { IExternalIssueFetcher } from '../../../application/ports/output/services/external-issue-fetcher.interface.js';
+import { GitHubIssueFetcher } from '../../services/external/github-issue.service.js';
 import type { IAllContributorsWriter } from '../../../application/ports/output/services/all-contributors-writer.interface.js';
 import { AllContributorsWriter } from '../../services/contributors/all-contributors-writer.service.js';
 import type { IOutreachPublisher } from '../../../application/ports/output/services/outreach-publisher.interface.js';
@@ -309,6 +311,7 @@ export function registerServices(container: DependencyContainer): void {
     process.env.SHEP_INSTANCE_PATH ?? process.env.NEXT_PUBLIC_SHEP_INSTANCE_PATH ?? process.cwd();
 
   container.registerSingleton<IGitHubIssueWriter>('IGitHubIssueWriter', GitHubIssueWriter);
+  container.registerSingleton<IExternalIssueFetcher>('IExternalIssueFetcher', GitHubIssueFetcher);
   container.register<IAllContributorsWriter>('IAllContributorsWriter', {
     useFactory: () => new AllContributorsWriter(workspaceRoot),
   });
