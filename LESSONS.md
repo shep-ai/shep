@@ -533,3 +533,16 @@ The user ran `pnpm dev` and got an infinite Tailwind/Webpack rebuild loop spammi
 2. **Same rule applies to any `@import 'pkg'` in `app/globals.css`, `*.module.css`, or any CSS pulled into the Next.js graph.** It is NOT enough that the package is reachable from the importing CSS file's filesystem location — Tailwind v4's PostCSS plugin uses the Node process CWD-anchored resolver, not a CSS-file-anchored one, when run via the root `pnpm dev` script.
 3. **Sanity check after adding a CSS import:** `ls node_modules/<pkg>` must succeed at the repo root. If the symlink is missing, hoist by adding the dep to root `package.json` and running `pnpm install`.
 4. **Symptom to recognize fast:** repeating `Error: Can't resolve '<pkg>' in '/.../src/presentation'` (note the path stops at `src/presentation`, not `src/presentation/web/app`) interleaved with Tailwind rebuild timing logs. That path mismatch is the tell — it means the resolver is using the wrong base directory.
+
+## Per-Page DeploymentStatusProvider Mounts MUST Seed Real Data, Never `[]`
+
+The user reported that the live web preview status of an application was lost on refresh, and disappeared when navigating from `/application/[id]` back to `/applications`.
+
+**Root cause:** Each route mounts its own `<DeploymentStatusProvider>` (separate React contexts). The `/applications` page seeded the provider with `initialDeployments={[]}`. After hydrate, the store sets `fullyHydrated = true`. Then every `<ApplicationCard>` calls `useDeployAction(...)` → `ensureHydrated(appId)`, which short-circuits when `store.isFullyHydrated()` is true (intentional: it kills the burst of N server-action POSTs on canvas mount). With an empty seed, that short-circuit means NO card ever fetches its deployment status — so even running dev servers render with no preview iframe.
+
+**Rules for any route that mounts `<DeploymentStatusProvider>`:**
+
+1. **`initialDeployments={[]}` is a footgun.** The provider treats "first hydrate ran" as "I now know the full universe of deployments". An empty seed locks in "there are none" until the next prop change. Always seed with the actual list (from `ListDeploymentsUseCase` server-side, or via `listDeployments` server action in a `useQuery`).
+2. **Per-page providers do not share state across navigations.** A deployment started on `/application/[id]` does NOT carry over to `/applications`. Each route's provider is independent and MUST do its own hydration. The `(dashboard)/layout.tsx` flow seeds via `getGraphData()`; `application-page-loader.tsx` seeds via `/api/applications/[id]`; `/applications` was the missing case.
+3. **If you need polling for cross-tab/cross-page changes, drive it from the page's `useQuery` (`refetchInterval`) and pass the result as `initialDeployments` — the provider's `useEffect([initialDeployments])` re-runs `hydrate()`, which nulls out entries that disappeared and updates ones that changed.** Do NOT try to expand `ensureHydrated` to bypass the `fullyHydrated` flag — that re-introduces the per-node POST burst the flag exists to prevent.
+4. **Symptom to recognise fast:** "preview shows on app page but is gone on apps list / after refresh" → check the page's provider mount and look for `initialDeployments={[]}`.

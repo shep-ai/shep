@@ -8,7 +8,9 @@ import { cn } from '@/lib/utils';
 import { DeploymentStatusProvider } from '@/hooks/deployment-status-provider';
 import { ControlCenterEmptyState } from '@/components/features/control-center/control-center-empty-state';
 import { ApplicationCard } from './application-card';
+import { listDeployments } from '@/app/actions/list-deployments';
 import type { ApplicationWithStatus } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
+import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
 
 export interface ApplicationsPageClientProps {
   className?: string;
@@ -34,6 +36,18 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
     staleTime: 30_000,
   });
 
+  // Live dev-server deployments — seeds the DeploymentStatusProvider so the
+  // app cards reflect previews started on /application/[id] (or another tab)
+  // instead of resetting every time this page mounts. Without this seed the
+  // provider's `fullyHydrated` flag (set by the empty SSR hydrate) blocks
+  // each card's `ensureHydrated` from fetching, leaving previews invisible.
+  const { data: deployments = [] } = useQuery<DeploymentStatusEntry[]>({
+    queryKey: ['deployments', 'all'],
+    queryFn: () => listDeployments(),
+    staleTime: 0,
+    refetchInterval: 3_000,
+  });
+
   const sorted = useMemo(
     () =>
       [...applications].sort(
@@ -43,7 +57,7 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
   );
 
   return (
-    <DeploymentStatusProvider initialDeployments={[]}>
+    <DeploymentStatusProvider initialDeployments={deployments}>
       <div
         data-testid="applications-page-client"
         className={cn('relative flex min-h-full flex-col', className)}
