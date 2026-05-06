@@ -5,6 +5,7 @@ import type { ListAgentRunsUseCase } from '@shepai/core/application/use-cases/ag
 import type {
   ListApplicationsUseCase,
   ApplicationWithStatus,
+  ApplicationEffectiveStatus,
 } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 import type { ListDeploymentsUseCase } from '@shepai/core/application/use-cases/deployments/list-deployments.use-case';
 import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
@@ -55,6 +56,42 @@ function lifecycleToStatus(lifecycle: SdlcLifecycle): FeatureStatus {
   return LIFECYCLE_TO_STATUS[lifecycle] ?? 'pending';
 }
 
+const APP_STATUS_TO_FEATURE_STATUS: Record<ApplicationEffectiveStatus, FeatureStatus> = {
+  ready: 'done',
+  building: 'in-progress',
+  interrupted: 'action-needed',
+  failed: 'error',
+};
+
+const APP_STATUS_LIFECYCLE_LABEL: Record<ApplicationEffectiveStatus, string> = {
+  ready: 'Application',
+  building: 'Application · Building',
+  interrupted: 'Application · Interrupted',
+  failed: 'Application · Failed',
+};
+
+function applicationToTreeRow(
+  app: ApplicationWithStatus,
+  repoByPath: Map<string, { id: string; name: string; remoteUrl?: string }>
+): FeatureTreeRow {
+  const repo = repoByPath.get(app.repositoryPath);
+  const repoName = repo?.name ?? app.repositoryPath.split(/[/\\]/).pop() ?? app.repositoryPath;
+  return {
+    id: `app-${app.id}`,
+    name: app.name,
+    status: APP_STATUS_TO_FEATURE_STATUS[app.effectiveStatus],
+    lifecycle: APP_STATUS_LIFECYCLE_LABEL[app.effectiveStatus],
+    branch: '',
+    repositoryName: repoName,
+    remoteUrl: repo?.remoteUrl,
+    _repositoryPath: app.repositoryPath,
+    _repositoryId: repo?.id,
+    _isApplication: true,
+    _applicationId: app.id,
+    _applicationCloudUrl: app.cloudDeploymentUrl ?? undefined,
+  };
+}
+
 /**
  * Build a lookup of the latest agent run per feature ID.
  * ListAgentRunsUseCase returns runs sorted by createdAt desc,
@@ -72,6 +109,8 @@ function buildLatestAgentRunMap(agentRuns: AgentRun[]): Map<string, AgentRun> {
 
 export async function getFeatureTreeData(): Promise<{
   features: FeatureTreeRow[];
+  /** Combined feature + application rows for the inventory table. */
+  inventoryRows: FeatureTreeRow[];
   repos: InventoryRepo[];
   createData: InventoryCreateData;
   applications: ApplicationWithStatus[];
@@ -127,6 +166,12 @@ export async function getFeatureTreeData(): Promise<{
     };
   });
 
+  const applicationRows: FeatureTreeRow[] = applications.map((app) =>
+    applicationToTreeRow(app, repoByPath)
+  );
+
+  const inventoryRows: FeatureTreeRow[] = [...applicationRows, ...featureRows];
+
   const repos = repositories.map((repo) => ({
     name: repo.name,
     remoteUrl: repo.remoteUrl,
@@ -152,7 +197,14 @@ export async function getFeatureTreeData(): Promise<{
     currentModel: settings.models.default,
   };
 
-  return { features: featureRows, repos, createData, applications, initialDeployments };
+  return {
+    features: featureRows,
+    inventoryRows,
+    repos,
+    createData,
+    applications,
+    initialDeployments,
+  };
 }
 
 /**

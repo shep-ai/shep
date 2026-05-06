@@ -29,6 +29,7 @@ import type {
 import { FeatureRowActionsManager } from '@/components/features/feature-tree-table/feature-row-actions-manager';
 import { RepositoryGroupActionsManager } from '@/components/features/feature-tree-table/repository-group-actions';
 import type { RepoActionCallbacks } from '@/components/features/feature-tree-table/repository-group-actions';
+import { ApplicationRowActionsManager } from '@/components/features/feature-tree-table/application-row-actions-manager';
 import { DeleteFeatureDialog } from '@/components/common/delete-feature-dialog/delete-feature-dialog';
 import { PageHeader } from '@/components/common/page-header';
 import { EmptyState } from '@/components/common/empty-state';
@@ -60,9 +61,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ApplicationCard } from '@/components/features/applications/application-card';
 import { DeploymentStatusProvider } from '@/hooks/deployment-status-provider';
-import type { ApplicationWithStatus } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
 import { archiveFeature } from '@/app/actions/archive-feature';
 import { unarchiveFeature } from '@/app/actions/unarchive-feature';
@@ -83,10 +82,10 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { useFabLayout } from '@/hooks/fab-layout-context';
 
 export interface FeatureTreePageClientProps {
-  features: FeatureTreeRow[];
+  /** Combined feature + application rows shown in the inventory table. */
+  rows: FeatureTreeRow[];
   repos: InventoryRepo[];
   createData: InventoryCreateData;
-  applications?: ApplicationWithStatus[];
   initialDeployments?: DeploymentStatusEntry[];
 }
 
@@ -153,12 +152,14 @@ interface ArchiveTarget {
 }
 
 export function FeatureTreePageClient({
-  features,
+  rows,
   repos,
   createData,
-  applications = [],
   initialDeployments = [],
 }: FeatureTreePageClientProps) {
+  // Features-only view (excludes application rows) — used by status pill counts,
+  // repo filter, and the row-actions portal manager which only knows about features.
+  const features = useMemo(() => rows.filter((r) => !r._isApplication), [rows]);
   const router = useRouter();
   const { t } = useTranslation('web');
 
@@ -200,9 +201,13 @@ export function FeatureTreePageClient({
     });
   }, []);
 
-  const handleFeatureClick = useCallback(
-    (featureId: string) => {
-      router.push(`/feature/${featureId}/overview`);
+  const handleRowClick = useCallback(
+    (row: FeatureTreeRow) => {
+      if (row._isApplication && row._applicationId) {
+        router.push(`/application/${row._applicationId}`);
+        return;
+      }
+      router.push(`/feature/${row.id}/overview`);
     },
     [router]
   );
@@ -602,42 +607,39 @@ export function FeatureTreePageClient({
 
   const itemSortOptions = useMemo(() => getItemSortOptions(groupBy), [groupBy]);
 
-  const sortedApplications = useMemo(
-    () =>
-      [...applications].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ),
-    [applications]
+  // Combined inventory rows (features + applications) passed through the same
+  // filters as features. Apps don't have an SDLC lifecycle, so the "active"
+  // archive filter keeps them visible (no archive concept yet for apps).
+  const filteredRows = useMemo(() => {
+    const featureIdsAfterFilter = new Set(filteredFeatures.map((f) => f.id));
+    const query = searchQuery.toLowerCase();
+    const filteredApps = rows.filter((row) => {
+      if (!row._isApplication) return false;
+      if (archiveFilter === 'archived') return false;
+      if (statusFilter && row.status !== statusFilter) return false;
+      if (repoFilter && row.repositoryName !== repoFilter) return false;
+      if (query) {
+        const matchesName = row.name.toLowerCase().includes(query);
+        const matchesRepo = row.repositoryName.toLowerCase().includes(query);
+        if (!matchesName && !matchesRepo) return false;
+      }
+      return true;
+    });
+    const filteredFeatureRows = rows.filter(
+      (r) => !r._isApplication && featureIdsAfterFilter.has(r.id)
+    );
+    return [...filteredApps, ...filteredFeatureRows];
+  }, [rows, filteredFeatures, archiveFilter, statusFilter, repoFilter, searchQuery]);
+
+  const applicationCount = useMemo(
+    () => filteredRows.filter((r) => r._isApplication).length,
+    [filteredRows]
   );
 
   return (
     <DeploymentStatusProvider initialDeployments={initialDeployments}>
       <div data-testid="feature-tree-page" className="flex h-full flex-col gap-4">
         <PageHeader title="Inventory" description="All applications, repositories and features" />
-
-        {/* Applications section — visible at the top of the inventory so apps
-          read as first-class citizens alongside features. Each card carries
-          the same controls available in the control center: navigate, deploy
-          start/stop, open live preview, and delete. */}
-        {sortedApplications.length > 0 ? (
-          <section data-testid="inventory-applications-section" className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <LayoutGrid className="text-muted-foreground h-4 w-4" />
-              <h2 className="text-sm font-bold tracking-tight">Applications</h2>
-              <span className="text-muted-foreground text-[10px]">
-                {sortedApplications.length} {sortedApplications.length === 1 ? 'app' : 'apps'}
-              </span>
-            </div>
-            <div
-              data-testid="inventory-applications-grid"
-              className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-            >
-              {sortedApplications.map((app) => (
-                <ApplicationCard key={app.id} application={app} />
-              ))}
-            </div>
-          </section>
-        ) : null}
 
         {/* Toolbar */}
         <div className="flex flex-col gap-3">
@@ -861,7 +863,8 @@ export function FeatureTreePageClient({
         <div className="flex items-center justify-between">
           <div className="text-muted-foreground flex items-center gap-2 text-xs">
             <span>
-              {filteredFeatures.length} feature{filteredFeatures.length !== 1 ? 's' : ''}
+              {applicationCount} app{applicationCount !== 1 ? 's' : ''} · {filteredFeatures.length}{' '}
+              feature{filteredFeatures.length !== 1 ? 's' : ''}
             </span>
             {hasActiveFilters ? (
               <Badge variant="secondary" className="text-xs">
@@ -925,11 +928,11 @@ export function FeatureTreePageClient({
 
         {/* Table or Empty State */}
         <div className="min-h-0 flex-1">
-          {filteredFeatures.length > 0 ? (
+          {filteredRows.length > 0 ? (
             <FeatureTreeTable
-              data={filteredFeatures}
+              data={filteredRows}
               repos={repos}
-              onFeatureClick={handleFeatureClick}
+              onRowClick={handleRowClick}
               groupBy={groupBy}
               groupSortDir={groupSortDir}
               itemSortField={itemSortField}
@@ -940,11 +943,11 @@ export function FeatureTreePageClient({
           ) : (
             <EmptyState
               icon={<Search className="size-10" />}
-              title="No matching features"
+              title="Nothing to show"
               description={
                 hasActiveFilters
-                  ? 'No features match your current filters. Try adjusting your search or filters.'
-                  : 'No features found in any repository.'
+                  ? 'No applications or features match your current filters. Try adjusting your search or filters.'
+                  : 'No applications or features found in any repository.'
               }
               action={
                 hasActiveFilters ? (
@@ -970,6 +973,13 @@ export function FeatureTreePageClient({
           onArchive={handleArchiveRequest}
           onUnarchive={handleUnarchive}
           onDelete={handleDeleteRequest}
+        />
+
+        {/* Portal manager for application row action dropdowns */}
+        <ApplicationRowActionsManager
+          tableContainer={tableContainer}
+          renderTick={renderTick}
+          rows={filteredRows}
         />
 
         {/* Portal manager for repository group action buttons */}
