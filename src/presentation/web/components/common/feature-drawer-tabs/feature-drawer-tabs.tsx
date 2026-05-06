@@ -100,10 +100,13 @@ function computeVisibleTabs(
   // Tech / Product spec tabs stay visible from implementation onwards so
   // users can review the locked-in decisions while the agent works, while
   // a PR is open in review, and after the feature is merged in maintain.
+  // Fast-mode features skip the spec phases entirely, so these tabs would
+  // always be empty — hide them.
   if (
-    node.lifecycle === 'implementation' ||
-    node.lifecycle === 'review' ||
-    node.lifecycle === 'maintain'
+    !node.fastMode &&
+    (node.lifecycle === 'implementation' ||
+      node.lifecycle === 'review' ||
+      node.lifecycle === 'maintain')
   ) {
     tabs.push('tech-decisions', 'product-decisions');
   }

@@ -328,7 +328,11 @@ const fastModeFeature: FeatureNodeData = {
   baseBranch: 'main',
 };
 
-/** Fast mode feature — shows lightning icon in overview details. */
+/**
+ * Fast mode feature — shows lightning icon in overview details.
+ * Tech Decisions and Product tabs are hidden because fast-mode features
+ * skip the spec phases entirely.
+ */
 export const FastModeFeature: Story = {
   args: {
     featureNode: fastModeFeature,
