@@ -5,11 +5,16 @@ import { getFeatureTreeData } from './get-feature-tree-data';
 export const dynamic = 'force-dynamic';
 
 export default async function FeaturesPage() {
-  const { features, repos, createData } = await getFeatureTreeData();
+  const { inventoryRows, repos, createData, initialDeployments } = await getFeatureTreeData();
 
   return (
     <div className="features-page-dotted-bg flex h-full flex-col p-6">
-      <FeatureTreePageClient features={features} repos={repos} createData={createData} />
+      <FeatureTreePageClient
+        rows={inventoryRows}
+        repos={repos}
+        createData={createData}
+        initialDeployments={initialDeployments}
+      />
     </div>
   );
 }

@@ -25,3 +25,7 @@ export type {
   RepositoryGroupActionsManagerProps,
   RepoActionCallbacks,
 } from './repository-group-actions';
+export { ApplicationRowActions } from './application-row-actions';
+export type { ApplicationRowActionsProps } from './application-row-actions';
+export { ApplicationRowActionsManager } from './application-row-actions-manager';
+export type { ApplicationRowActionsManagerProps } from './application-row-actions-manager';

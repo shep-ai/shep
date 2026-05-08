@@ -8,9 +8,15 @@
  *
  *   - Stop the dev server when the agent starts a turn (because the code
  *     it's about to change is exactly what the dev server is running).
- *   - Remember whether the dev server was running before the agent
- *     started so we can RESTART it (not cold-start it) when the turn
- *     finishes.
+ *   - When the agent finishes a turn, ensure the dev server is up so the
+ *     user immediately sees the result of the iteration. This covers the
+ *     initial build (agent ran during scaffolding/codegen, finishes →
+ *     auto-start) AND every subsequent edit iteration. We deliberately
+ *     do NOT gate this on "was the dev server running BEFORE the agent
+ *     started?" — that gate (the old `wasRunningBeforeAgentRef`) left
+ *     the user with no preview after the very first build (server was
+ *     never running) and after any iteration where the user had not yet
+ *     started the preview.
  *   - Auto-switch the right pane to the Web tab the first time the dev
  *     server reaches Ready after a cold start, so the user lands on
  *     their running app with zero clicks.
@@ -56,19 +62,14 @@ export function useDevServerCoordinator({
   // detect the start/end transitions.
   const prevAgentRunningRef = useRef(false);
 
-  // Track whether the dev server was running before the agent started,
-  // so we only restart it (not cold-start) after the agent finishes.
-  const wasRunningBeforeAgentRef = useRef(false);
-
   useEffect(() => {
     const wasRunning = prevAgentRunningRef.current;
     prevAgentRunningRef.current = agentRunning;
 
     if (agentRunning && !wasRunning) {
-      // Agent just started — stop the dev server if running, remember
-      // that it was running so we can restart after.
+      // Agent just started — stop the dev server if running so the
+      // code it's about to change isn't being served stale.
       if (deploy.status === DeploymentState.Ready || deploy.status === DeploymentState.Booting) {
-        wasRunningBeforeAgentRef.current = true;
         void deploy.stop();
       }
       // Intentionally no longer auto-switch away from the Web tab —
@@ -77,10 +78,18 @@ export function useDevServerCoordinator({
     }
 
     if (!agentRunning && wasRunning) {
-      // Agent just finished — restart the dev server if it was
-      // previously running.
-      if (wasRunningBeforeAgentRef.current) {
-        wasRunningBeforeAgentRef.current = false;
+      // Agent just finished — ensure the dev server is up so the user
+      // immediately sees the result. We always try to start it (no
+      // "was it running before?" gate), and rely on the status guard
+      // below to avoid double-firing when the server is already
+      // coming up. This is the single source of truth for auto-deploy
+      // on agent transitions; it covers the initial build AND every
+      // iteration, both of which end with this transition.
+      if (
+        deploy.status !== DeploymentState.Ready &&
+        deploy.status !== DeploymentState.Booting &&
+        !deploy.deployLoading
+      ) {
         void deploy.deploy();
       }
     }

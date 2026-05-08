@@ -2,6 +2,13 @@ import { resolve } from '@/lib/server-container';
 import type { ListFeaturesUseCase } from '@shepai/core/application/use-cases/features/list-features.use-case';
 import type { ListRepositoriesUseCase } from '@shepai/core/application/use-cases/repositories/list-repositories.use-case';
 import type { ListAgentRunsUseCase } from '@shepai/core/application/use-cases/agents/list-agent-runs.use-case';
+import type {
+  ListApplicationsUseCase,
+  ApplicationWithStatus,
+  ApplicationEffectiveStatus,
+} from '@shepai/core/application/use-cases/applications/list-applications.use-case';
+import type { ListDeploymentsUseCase } from '@shepai/core/application/use-cases/deployments/list-deployments.use-case';
+import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
 import type { AgentRun } from '@shepai/core/domain/generated/output';
 import type { FeatureTreeRow } from '@/components/features/feature-tree-table';
 import type { FeatureStatus } from '@/components/common/feature-status-config';
@@ -49,6 +56,42 @@ function lifecycleToStatus(lifecycle: SdlcLifecycle): FeatureStatus {
   return LIFECYCLE_TO_STATUS[lifecycle] ?? 'pending';
 }
 
+const APP_STATUS_TO_FEATURE_STATUS: Record<ApplicationEffectiveStatus, FeatureStatus> = {
+  ready: 'done',
+  building: 'in-progress',
+  interrupted: 'action-needed',
+  failed: 'error',
+};
+
+const APP_STATUS_LIFECYCLE_LABEL: Record<ApplicationEffectiveStatus, string> = {
+  ready: 'Application',
+  building: 'Application · Building',
+  interrupted: 'Application · Interrupted',
+  failed: 'Application · Failed',
+};
+
+function applicationToTreeRow(
+  app: ApplicationWithStatus,
+  repoByPath: Map<string, { id: string; name: string; remoteUrl?: string }>
+): FeatureTreeRow {
+  const repo = repoByPath.get(app.repositoryPath);
+  const repoName = repo?.name ?? app.repositoryPath.split(/[/\\]/).pop() ?? app.repositoryPath;
+  return {
+    id: `app-${app.id}`,
+    name: app.name,
+    status: APP_STATUS_TO_FEATURE_STATUS[app.effectiveStatus],
+    lifecycle: APP_STATUS_LIFECYCLE_LABEL[app.effectiveStatus],
+    branch: '',
+    repositoryName: repoName,
+    remoteUrl: repo?.remoteUrl,
+    _repositoryPath: app.repositoryPath,
+    _repositoryId: repo?.id,
+    _isApplication: true,
+    _applicationId: app.id,
+    _applicationCloudUrl: app.cloudDeploymentUrl ?? undefined,
+  };
+}
+
 /**
  * Build a lookup of the latest agent run per feature ID.
  * ListAgentRunsUseCase returns runs sorted by createdAt desc,
@@ -66,19 +109,26 @@ function buildLatestAgentRunMap(agentRuns: AgentRun[]): Map<string, AgentRun> {
 
 export async function getFeatureTreeData(): Promise<{
   features: FeatureTreeRow[];
+  /** Combined feature + application rows for the inventory table. */
+  inventoryRows: FeatureTreeRow[];
   repos: InventoryRepo[];
   createData: InventoryCreateData;
+  applications: ApplicationWithStatus[];
+  initialDeployments: DeploymentStatusEntry[];
 }> {
   const listFeatures = resolve<ListFeaturesUseCase>('ListFeaturesUseCase');
   const listRepos = resolve<ListRepositoriesUseCase>('ListRepositoriesUseCase');
   const listAgentRuns = resolve<ListAgentRunsUseCase>('ListAgentRunsUseCase');
 
-  const [features, repositories, agentRuns, workflowDefaults] = await Promise.all([
-    listFeatures.execute({ includeArchived: true }),
-    listRepos.execute(),
-    listAgentRuns.execute(),
-    getWorkflowDefaults().catch(() => undefined),
-  ]);
+  const [features, repositories, agentRuns, workflowDefaults, applications, initialDeployments] =
+    await Promise.all([
+      listFeatures.execute({ includeArchived: true }),
+      listRepos.execute(),
+      listAgentRuns.execute(),
+      getWorkflowDefaults().catch(() => undefined),
+      resolveListApplications().catch((): ApplicationWithStatus[] => []),
+      resolveListDeployments().catch((): DeploymentStatusEntry[] => []),
+    ]);
 
   const repoByPath = new Map<string, { id: string; name: string; remoteUrl?: string }>();
   for (const repo of repositories) {
@@ -116,6 +166,12 @@ export async function getFeatureTreeData(): Promise<{
     };
   });
 
+  const applicationRows: FeatureTreeRow[] = applications.map((app) =>
+    applicationToTreeRow(app, repoByPath)
+  );
+
+  const inventoryRows: FeatureTreeRow[] = [...applicationRows, ...featureRows];
+
   const repos = repositories.map((repo) => ({
     name: repo.name,
     remoteUrl: repo.remoteUrl,
@@ -141,5 +197,27 @@ export async function getFeatureTreeData(): Promise<{
     currentModel: settings.models.default,
   };
 
-  return { features: featureRows, repos, createData };
+  return {
+    features: featureRows,
+    inventoryRows,
+    repos,
+    createData,
+    applications,
+    initialDeployments,
+  };
+}
+
+/**
+ * Resolve and execute ListApplicationsUseCase. Wrapped so the call site
+ * can swallow registration errors (e.g. when the use case isn't bound
+ * in tests) without losing the rest of the data.
+ */
+async function resolveListApplications(): Promise<ApplicationWithStatus[]> {
+  const useCase = resolve<ListApplicationsUseCase>('ListApplicationsUseCase');
+  return useCase.execute();
+}
+
+async function resolveListDeployments(): Promise<DeploymentStatusEntry[]> {
+  const useCase = resolve<ListDeploymentsUseCase>('ListDeploymentsUseCase');
+  return useCase.execute();
 }

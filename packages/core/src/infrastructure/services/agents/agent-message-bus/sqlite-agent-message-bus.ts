@@ -36,11 +36,6 @@ interface Subscription {
   delivered: Set<string>;
 }
 
-export interface SQLiteAgentMessageBusOptions {
-  /** Override the default 2_000ms poll interval (e.g. 500ms for tests). */
-  pollIntervalMs?: number;
-}
-
 function toMillis(value: AgentMessage['createdAt']): number {
   if (value instanceof Date) return value.getTime();
   if (typeof value === 'number') return value;
@@ -59,16 +54,22 @@ function matchesAgentRun(filter: AgentMessageBusFilter, message: AgentMessage): 
 @injectable()
 export class SQLiteAgentMessageBus implements IAgentMessageBus {
   private readonly subscriptions = new Set<Subscription>();
-  private readonly pollIntervalMs: number;
+  private pollIntervalMs: number = DEFAULT_POLL_INTERVAL_MS;
   private timer: NodeJS.Timeout | null = null;
   private polling = false;
 
   constructor(
     @inject('IAgentMessageRepository')
-    private readonly repository: IAgentMessageRepository,
-    options: SQLiteAgentMessageBusOptions = {}
-  ) {
-    this.pollIntervalMs = options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
+    private readonly repository: IAgentMessageRepository
+  ) {}
+
+  /** Test-only override; production code relies on {@link DEFAULT_POLL_INTERVAL_MS}. */
+  setPollIntervalMs(ms: number): void {
+    this.pollIntervalMs = ms;
+    if (this.timer !== null) {
+      this.stopPolling();
+      this.ensurePolling();
+    }
   }
 
   async publish(message: AgentMessage): Promise<void> {

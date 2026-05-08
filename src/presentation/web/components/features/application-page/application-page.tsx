@@ -1,7 +1,7 @@
 'use client';
 
-import type { Application } from '@shepai/core/domain/generated/output';
-import { ApplicationStatus, DeploymentState } from '@shepai/core/domain/generated/output';
+import type { Application, DeploymentState } from '@shepai/core/domain/generated/output';
+import { ApplicationStatus } from '@shepai/core/domain/generated/output';
 import type { ChatState } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
 import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 
@@ -152,38 +152,6 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
               void fetch(`/api/applications/${application.id}/resume`, { method: 'POST' });
             }}
             applicationError={applicationError}
-            onAllStepsComplete={() => {
-              // CRITICAL: only auto-deploy on the VERY FIRST completion
-              // of the setup workflow. `application.setupComplete` is
-              // set to `true` by the use case right after the workflow
-              // finishes, and persists on the Application row forever.
-              //
-              //   - Fresh app: SSR prop is `false` (workflow hasn't
-              //     completed yet) → we auto-fire → dev server starts →
-              //     use case later sets setupComplete = true.
-              //   - Revisit: SSR prop is `true` → we skip. If the user
-              //     explicitly stopped the dev server before leaving,
-              //     they stay stopped. Respect the explicit state — do
-              //     NOT silently re-start the preview on every return
-              //     to the app page.
-              //
-              // This gate replaces an earlier "once per mount" ref
-              // guard that reset on every remount (React remounts the
-              // ChatTab when the user navigates back), which caused
-              // the auto-deploy to fire on every revisit.
-              if (application.setupComplete) return;
-
-              // First-ever completion path. Guard against double-fires
-              // mid-transition (Ready/Booting/in-flight deployLoading)
-              // just in case something else kicks the deploy before us.
-              if (
-                deploy.status !== DeploymentState.Ready &&
-                deploy.status !== DeploymentState.Booting &&
-                !deploy.deployLoading
-              ) {
-                void deploy.deploy();
-              }
-            }}
           />
         }
         right={

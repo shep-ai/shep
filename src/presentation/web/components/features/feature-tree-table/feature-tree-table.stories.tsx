@@ -114,7 +114,7 @@ export const Empty: Story = {
 export const WithClickHandler: Story = {
   args: {
     data: multiRepoFeatures,
-    onFeatureClick: (id: string) => alert(`Clicked feature: ${id}`),
+    onRowClick: (row: FeatureTreeRow) => alert(`Clicked: ${row.id}`),
   },
 };
 

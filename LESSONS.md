@@ -1,5 +1,33 @@
 # Lessons Learned
 
+## Windows has no graceful kill — don't simulate one
+
+On Windows the `tree-kill` package always shells out to `taskkill /T /F`, regardless of which signal name you pass. There is no SIGTERM equivalent in the Windows kernel. So a "send SIGTERM, poll for graceful exit, then escalate to SIGKILL" pattern is theatrical on Windows: the very first call already force-killed the tree, and the polling loop is 5s of wasted budget waiting for a "graceful" exit that already happened forcefully.
+
+Concrete instance: `stopDaemon()` was paying up to 5s of poll budget on every Windows `shep restart`, which collided with a thin 20s e2e timeout on slow CI runners and broke main.
+
+Rules:
+
+1. Branch the kill flow on `process.platform === 'win32'`. On Windows do a single awaited `treeKill(pid, sig, cb)` call (the callback fires when `taskkill` actually returns), then one `isAlive` check. No poll loop, no escalation.
+2. Keep the SIGTERM-then-poll-then-SIGKILL flow on Unix — it's a real semantic, not theatre. Daemons may genuinely need time to flush state before exiting.
+3. `treeKill(pid, signal)` is fire-and-forget. If you care that the kill has actually been issued before you check liveness, pass a callback (or wrap it in a Promise). Otherwise you're polling against a kill that hasn't dispatched yet.
+4. Always check liveness *before* the first sleep in any poll-until-dead loop. Sleeping 200ms before the first check costs 200ms on every fast-exit path for no reason.
+
+## tsyringe `@injectable()` — every constructor param must be resolvable
+
+Symptom: worker boots crash with `Cannot inject the dependency at position #N of "X" constructor. Reason: TypeInfo not known for "Object"`.
+
+Root cause: tsyringe walks every constructor param via `reflect-metadata`. TS interfaces and inline object types erase to `Object` at runtime, so any param typed `MyOptions` (an interface) — even with a default value `= {}` — makes tsyringe try to resolve `Object` from the container and fail.
+
+Concrete instance: `SQLiteAgentMessageBus(repo, options: SQLiteAgentMessageBusOptions = {})`. Direct `new` from tests worked, but DI resolution from the worker container blew up the entire `IAgentMessageBus → SendAgentMessageUseCase → FeatureAgentLifecyclePublisher` chain.
+
+Rules for any class with `@injectable()`:
+
+1. Every constructor param must either have an `@inject(token)` decorator OR be a class type that tsyringe can introspect. No interface params, no inline `{}` types, no primitives without `@inject`.
+2. Default values do NOT save you — tsyringe still tries to resolve the param before the default kicks in.
+3. For test-only knobs (poll intervals, etc.), drop them from the constructor and expose a `setX(...)` method or a class-typed config object registered with `useValue`.
+4. Before adding a new `@injectable()` class, scan its constructor: any non-class type without `@inject` is a boot-time bomb that won't surface until something actually resolves the chain.
+
 ## Settings Is the Single Source of Truth for Agent + Model — Never Hardcode UI Defaults
 
 A user reported their newly-created application got stuck on bootstrap with `Agent type 'dev' does not support interactive sessions. Only 'claude-code' supports interactive mode.` They were certain they had selected "Claude Code · Sonnet 4.6" — and the picker DID show that as the default. The bug: the picker's displayed default was a hardcoded literal that lied about what the system would actually use.
@@ -519,3 +547,63 @@ Spec 097 (ai-native-contributor-onboarding) was tempting to slice "M1: static re
 4. **`.all-contributorsrc` ships empty + valid.** An empty `contributors: []` array with the right `projectName` / `projectOwner` / `files` block lets the in-house `IAllContributorsWriter` start appending on the first merge without a special "initialize" path. Don't ship pre-seeded fake contributors; don't ship without the file.
 5. **PR template includes architecture self-checks, not just CI checkboxes.** "No `application/` or `presentation/` file imports anything from `infrastructure/`" catches the violation that lint won't catch on a fresh module. "TDD landed RED-first" reminds reviewers to ask for the test commit. These are the rules CI doesn't enforce — the template is where they live.
 4. **Always check failures across ALL OS targets before claiming a fix.** `gh run view <id> --json jobs` lists every job; a green Ubuntu does not mean a green PR. Required check is `Unit Tests (windows-latest)` AND `Unit Tests (ubuntu-latest)`.
+
+## CSS @import in a pnpm Workspace Subpackage Must Be Hoisted to Root
+
+The user ran `pnpm dev` and got an infinite Tailwind/Webpack rebuild loop spamming `Error: Can't resolve 'tw-animate-css' in '/Users/.../src/presentation'` over and over. The package was correctly declared in `src/presentation/web/package.json` and pnpm had symlinked it at `src/presentation/web/node_modules/tw-animate-css`. But Tailwind v4's `@tailwindcss/postcss` resolver, when invoked from the root `pnpm dev` script (which calls `tsx src/presentation/web/dev-server.ts`), uses the dev-server's CWD-derived context (`src/presentation/`) — NOT the actual CSS file's directory (`src/presentation/web/app/`) — to walk up looking for `node_modules`. So it searches `src/presentation/node_modules`, `src/node_modules`, then root `node_modules` — and never sees the web subpackage's `node_modules`.
+
+**Why `tailwindcss` worked but `tw-animate-css` didn't:** `tailwindcss` is also declared in the root `package.json` `devDependencies`, so pnpm hoists a symlink to root `node_modules/tailwindcss`. The resolver finds it at root and is happy. `tw-animate-css` was only in the web package, so root `node_modules/tw-animate-css` didn't exist → resolution fails on every CSS rebuild → infinite loop.
+
+**Rules for any new CSS-imported package in a workspace subpackage:**
+
+1. **If a CSS file under `src/presentation/web/` does `@import 'X'`, package `X` MUST be declared in the ROOT `package.json` (devDependencies is fine), not just in the web subpackage's `package.json`.** This guarantees pnpm hoists a symlink to root `node_modules/X` where the dev-server-context CSS resolver can find it.
+2. **Same rule applies to any `@import 'pkg'` in `app/globals.css`, `*.module.css`, or any CSS pulled into the Next.js graph.** It is NOT enough that the package is reachable from the importing CSS file's filesystem location — Tailwind v4's PostCSS plugin uses the Node process CWD-anchored resolver, not a CSS-file-anchored one, when run via the root `pnpm dev` script.
+3. **Sanity check after adding a CSS import:** `ls node_modules/<pkg>` must succeed at the repo root. If the symlink is missing, hoist by adding the dep to root `package.json` and running `pnpm install`.
+4. **Symptom to recognize fast:** repeating `Error: Can't resolve '<pkg>' in '/.../src/presentation'` (note the path stops at `src/presentation`, not `src/presentation/web/app`) interleaved with Tailwind rebuild timing logs. That path mismatch is the tell — it means the resolver is using the wrong base directory.
+
+## Per-Page DeploymentStatusProvider Mounts MUST Seed Real Data, Never `[]`
+
+The user reported that the live web preview status of an application was lost on refresh, and disappeared when navigating from `/application/[id]` back to `/applications`.
+
+**Root cause:** Each route mounts its own `<DeploymentStatusProvider>` (separate React contexts). The `/applications` page seeded the provider with `initialDeployments={[]}`. After hydrate, the store sets `fullyHydrated = true`. Then every `<ApplicationCard>` calls `useDeployAction(...)` → `ensureHydrated(appId)`, which short-circuits when `store.isFullyHydrated()` is true (intentional: it kills the burst of N server-action POSTs on canvas mount). With an empty seed, that short-circuit means NO card ever fetches its deployment status — so even running dev servers render with no preview iframe.
+
+**Rules for any route that mounts `<DeploymentStatusProvider>`:**
+
+1. **`initialDeployments={[]}` is a footgun.** The provider treats "first hydrate ran" as "I now know the full universe of deployments". An empty seed locks in "there are none" until the next prop change. Always seed with the actual list (from `ListDeploymentsUseCase` server-side, or via `listDeployments` server action in a `useQuery`).
+2. **Per-page providers do not share state across navigations.** A deployment started on `/application/[id]` does NOT carry over to `/applications`. Each route's provider is independent and MUST do its own hydration. The `(dashboard)/layout.tsx` flow seeds via `getGraphData()`; `application-page-loader.tsx` seeds via `/api/applications/[id]`; `/applications` was the missing case.
+3. **If you need polling for cross-tab/cross-page changes, drive it from the page's `useQuery` (`refetchInterval`) and pass the result as `initialDeployments` — the provider's `useEffect([initialDeployments])` re-runs `hydrate()`, which nulls out entries that disappeared and updates ones that changed.** Do NOT try to expand `ensureHydrated` to bypass the `fullyHydrated` flag — that re-introduces the per-node POST burst the flag exists to prevent.
+4. **Symptom to recognise fast:** "preview shows on app page but is gone on apps list / after refresh" → check the page's provider mount and look for `initialDeployments={[]}`.
+
+## Every New Output-Port Token MUST Be Registered AND Listed in the Bootstrap Test
+
+Tsyringe walks every `@inject(token)` decorator on a class and resolves the **entire** constructor tree before any method on the resolved instance runs. That means:
+
+- A feature-flag short-circuit inside a use case (e.g. `if (!collaborationEnabled) return`) does NOT save you from a missing DI registration. The flag check runs in `execute()`, but the missing token blows up at `container.resolve(...)` — strictly before that.
+- An "optional, only-used-in-some-modes" port is still mandatory at construction time the moment any registered singleton transitively `@inject`s it.
+
+**How this failed in production (spec 093):** `ISupervisorAgent` was added as a port and wired through `EvaluateSupervisorDecisionUseCase` → `AgentQuestionSupervisorRouter` → `AskAgentQuestionUseCase` → `FeatureAgentGateQuestionPublisher` (registerSingleton in `register-agents.ts`). The token was never registered in any production DI module. Every feature-agent worker crashed at boot with `Attempted to resolve unregistered dependency token: "ISupervisorAgent"`, regardless of whether the user had ever enabled the supervisor.
+
+**Why CI didn't catch it:** `tests/integration/infrastructure/di/container-bootstrap.test.ts` only resolves tokens listed explicitly in `WEB_ROUTE_TOKENS` and `CRITICAL_INFRA_TOKENS`. A new port token that is only resolved transitively from a worker (not from a web route) will pass CI even when its registration is missing.
+
+**Rule:**
+
+1. When adding a new output port `IFoo` under `application/ports/output/`, register a concrete adapter under that string token in the appropriate `register-*.ts` module **in the same commit** as the first use case that injects it.
+2. Add the new token to `CRITICAL_INFRA_TOKENS` in `container-bootstrap.test.ts`. If the token is consumed only by background workers (feature-agent, supervisor, deployment), it MUST appear there — web routes alone do not exercise worker constructor trees.
+3. When adding any `registerSingleton(SomeWorkerHelper)` in `register-agents.ts`, mentally trace its full `@inject` graph and confirm every leaf token is registered. The tsyringe error message _names_ the missing token, but the full chain only shows up at runtime, never at build time.
+
+## Auto-Deploy Must Trigger on Agent-Finishes Transition, Not on `setupComplete` SSE Race
+
+The user reported that the web preview did not start automatically after the initial build finished, and did not restart after a chat iteration.
+
+**Two compounding bugs:**
+
+1. `useDevServerCoordinator` only restarted the dev server after the agent finished IF it was running BEFORE the agent started (`wasRunningBeforeAgentRef`). On the very first build, the server was never running → ref stayed `false` → no auto-start. On any subsequent iteration where the user hadn't manually started the preview, same story.
+2. The fallback in `ApplicationPage.onAllStepsComplete` was gated on `application.setupComplete === false` (the SSR prop). But `setupComplete` is flipped to `true` by an SSE-driven `useApplicationUpdate` cache patch. The "workflow done" SSE event and the "setupComplete=true" SSE event arrive close together — when the latter races ahead, the gate blocks the auto-deploy.
+
+**Rules for any "auto-start the dev server when X completes" logic:**
+
+1. **Drive auto-deploy off the `agentRunning` transition (`true → false`), not off a derived/SSR'd "completed" flag.** The agent transition is observable directly from the chat-state cache and doesn't depend on which SSE event arrived first.
+2. **Never gate auto-deploy on "was the server running BEFORE the agent started?"** — that's a presence test for an irrelevant prior state. The user wants to see the result of the iteration regardless of whether they had manually clicked "Run" earlier.
+3. **Single source of truth.** If you have two effects firing `deploy.deploy()` on the same event (e.g. `useDevServerCoordinator` AND a `onAllStepsComplete` callback), kill one — `deploymentService.start()` is NOT idempotent (see `deployment.service.ts` line 231-238: it kills any existing deployment and starts a new one), so two parallel calls can race and tear down the in-flight spawn.
+4. **Always status-guard before calling `deploy.deploy()`:** skip when `deploy.status === Ready || Booting || deploy.deployLoading`. This is the only protection against a stray double-fire that would kill an in-progress spawn.
+5. **Do NOT add "respect explicit user stop" complexity unless the user asks for it.** The simpler invariant — "after the agent finishes, the preview is up" — matches what users want 99% of the time. Manual stop is a transient user action; it does not need to persist across iterations.

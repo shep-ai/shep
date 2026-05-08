@@ -37,6 +37,12 @@ export interface FeatureTreeRow {
   hasChildren?: boolean;
   /** Whether this feature has an open pull request (for delete dialog close-PR option) */
   hasOpenPr?: boolean;
+  /** Whether this row represents an application instead of a feature */
+  _isApplication?: boolean;
+  /** Real application id (without the `app-` prefix used for table row id) */
+  _applicationId?: string;
+  /** Optional cloud preview URL for application rows */
+  _applicationCloudUrl?: string;
 }
 
 export interface InventoryRepo {
@@ -51,7 +57,8 @@ export interface FeatureTreeTableProps {
   data: FeatureTreeRow[];
   repos?: InventoryRepo[];
   className?: string;
-  onFeatureClick?: (featureId: string) => void;
+  /** Called when a clickable row (feature or application) is clicked. */
+  onRowClick?: (row: FeatureTreeRow) => void;
   /** When set, features are grouped into a tree by this field. */
   groupBy?: GroupByField | null;
   /** Sort direction for group headers. */
@@ -82,6 +89,9 @@ const REPO_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height
 
 /** SVG group icon — lucide Layers (16px) */
 const GROUP_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22.54 12.43-1.42-.65-8.28 3.78a2 2 0 0 1-1.66 0l-8.28-3.78-1.42.65a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/></svg>`;
+
+/** SVG app icon — lucide LayoutGrid (14px) */
+const APP_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>`;
 
 // ── Formatters ───────────────────────────────────────────────
 
@@ -116,6 +126,14 @@ function lifecycleFormatter(cell: CellComponent): string {
   return escapeHtml(cell.getValue() as string);
 }
 
+/** Name formatter for non-grouped (flat) rows. Adds an "App" badge when the row is an application. */
+function flatNameFormatter(cell: CellComponent): string {
+  const row = cell.getRow().getData() as FeatureTreeRow;
+  const name = escapeHtml(cell.getValue() as string);
+  if (!row._isApplication) return name;
+  return `<span style="display:inline-flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;gap:4px;padding:1px 6px;border-radius:9999px;background-color:color-mix(in srgb,currentColor 8%,transparent);color:var(--color-muted-foreground,#64748b);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">${APP_ICON_SVG}<span>App</span></span><span>${name}</span></span>`;
+}
+
 function repoFormatter(cell: CellComponent): string {
   const row = cell.getRow().getData() as FeatureTreeRow;
   if (row._isGroupHeader) return '';
@@ -131,11 +149,11 @@ function groupHeaderNameFormatter(
 ): (cell: CellComponent) => string | HTMLElement {
   return (cell: CellComponent) => {
     const row = cell.getRow().getData() as FeatureTreeRow;
-    if (!row._isGroupHeader) return escapeHtml(cell.getValue() as string);
+    if (!row._isGroupHeader) return flatNameFormatter(cell);
 
     const icon = groupBy === 'repositoryName' ? REPO_ICON_SVG : GROUP_ICON_SVG;
     const count = row._groupCount ?? 0;
-    const countLabel = count === 1 ? '1 feature' : `${count} features`;
+    const countLabel = count === 1 ? '1 item' : `${count} items`;
 
     const container = document.createElement('span');
     container.style.display = 'inline-flex';
@@ -216,7 +234,11 @@ export function actionsColumnFormatter(cell: CellComponent): string | HTMLElemen
   if (row._isGroupHeader || row._isRepoGroup) return '';
 
   const container = document.createElement('div');
-  container.setAttribute('data-feature-id', row.id);
+  if (row._isApplication && row._applicationId) {
+    container.setAttribute('data-application-id', row._applicationId);
+  } else {
+    container.setAttribute('data-feature-id', row.id);
+  }
   container.style.display = 'flex';
   container.style.alignItems = 'center';
   container.style.justifyContent = 'center';
@@ -228,18 +250,18 @@ export function actionsColumnFormatter(cell: CellComponent): string | HTMLElemen
 // ── Column builders ──────────────────────────────────────────
 
 interface ColumnConfig {
-  onFeatureClick?: (featureId: string) => void;
+  onRowClick?: (row: FeatureTreeRow) => void;
   groupBy?: GroupByField | null;
 }
 
 /** All possible columns. We'll filter out the grouped-by column in tree mode. */
-export function buildColumns({ onFeatureClick, groupBy }: ColumnConfig): ColumnDefinition[] {
-  const clickProps = onFeatureClick
+export function buildColumns({ onRowClick, groupBy }: ColumnConfig): ColumnDefinition[] {
+  const clickProps = onRowClick
     ? {
         cellClick: (_e: UIEvent, cell: CellComponent) => {
           const data = cell.getRow().getData() as FeatureTreeRow;
           if (data._isGroupHeader) return;
-          onFeatureClick(data.id);
+          onRowClick(data);
         },
         cssClass: 'cursor-pointer',
       }
@@ -253,9 +275,7 @@ export function buildColumns({ onFeatureClick, groupBy }: ColumnConfig): ColumnD
       field: 'name',
       widthGrow: 3,
       headerSort: !isGrouped,
-      formatter: isGrouped
-        ? groupHeaderNameFormatter(groupBy!)
-        : (cell: CellComponent) => escapeHtml(cell.getValue() as string),
+      formatter: isGrouped ? groupHeaderNameFormatter(groupBy!) : flatNameFormatter,
       ...clickProps,
     },
     groupBy !== 'repositoryName'
@@ -439,7 +459,7 @@ export function buildGroupedTree(
 export function FeatureTreeTable({
   data,
   className,
-  onFeatureClick,
+  onRowClick,
   groupBy = null,
   groupSortDir = 'asc',
   itemSortField = 'name',
@@ -449,22 +469,22 @@ export function FeatureTreeTable({
 }: FeatureTreeTableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const tabulatorRef = useRef<Tabulator | null>(null);
-  const onFeatureClickRef = useRef(onFeatureClick);
-  onFeatureClickRef.current = onFeatureClick;
+  const onRowClickRef = useRef(onRowClick);
+  onRowClickRef.current = onRowClick;
   const onTableRenderRef = useRef(onTableRender);
   onTableRenderRef.current = onTableRender;
   const onCreateFeatureForRepoRef = useRef(onCreateFeatureForRepo);
   onCreateFeatureForRepoRef.current = onCreateFeatureForRepo;
 
-  const stableOnFeatureClick = useCallback((featureId: string) => {
-    onFeatureClickRef.current?.(featureId);
+  const stableOnRowClick = useCallback((row: FeatureTreeRow) => {
+    onRowClickRef.current?.(row);
   }, []);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     const isGrouped = !!groupBy;
-    const columns = buildColumns({ onFeatureClick: stableOnFeatureClick, groupBy });
+    const columns = buildColumns({ onRowClick: stableOnRowClick, groupBy });
 
     const tableData = isGrouped
       ? buildGroupedTree(data, groupBy!, groupSortDir, itemSortField, itemSortDir)
@@ -521,7 +541,7 @@ export function FeatureTreeTable({
       table.destroy();
       tabulatorRef.current = null;
     };
-  }, [data, stableOnFeatureClick, groupBy, groupSortDir, itemSortField, itemSortDir]);
+  }, [data, stableOnRowClick, groupBy, groupSortDir, itemSortField, itemSortDir]);
 
   return (
     <div

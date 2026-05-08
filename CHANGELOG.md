@@ -4,6 +4,222 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.204.0](/compare/v1.203.1...v1.204.0) · _2026-05-06_
+
+> _Keeping the lights on_ — housekeeping and internal upkeep to keep Shep running smooth.
+
+
+
+### ✨ Features
+
+* **web:** inline applications as inventory table rows ([#607](https://github.com/shep-ai/shep/issues/607)) ([7e343f1](https://github.com/shep-ai/shep/commit/7e343f112b480f858c9cead4d49ddaa5f1879837))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.204.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
+# 🚀 Shep [v1.203.1](/compare/v1.203.0...v1.203.1) · _2026-05-06_
+
+> _No user-facing changes_ — just internal housekeeping to keep the codebase tidy under the hood.
+
+
+
+### 🐛 Bug Fixes
+
+* **web:** auto-start dev server after every agent turn ([#610](https://github.com/shep-ai/shep/issues/610)) ([41303a6](https://github.com/shep-ai/shep/commit/41303a63620cb515b6b3df3dd601d123e2630b0a))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.203.1
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
+# 🚀 Shep [v1.203.0](/compare/v1.202.3...v1.203.0) · _2026-05-06_
+
+> _No user-facing changes_ — just housekeeping under the hood to keep the codebase clean.
+
+
+
+### ✨ Features
+
+* **web:** hide tech and product spec tabs for fast-mode features ([#609](https://github.com/shep-ai/shep/issues/609)) ([44042d1](https://github.com/shep-ai/shep/commit/44042d104495b70c475229d60e4b6467d522fb92))
+
+  ![App: feature drawer in actual running web app for the 'Hide Empty Spec Tabs in Fast Mode' fast-mode feature — shows the Fast mode badge and only Overview/Activity/Log/Chat tabs (Tech Decisions and Product tabs correctly hidden)](https://raw.githubusercontent.com/shep-ai/shep/feat/hide-fast-mode-spec-tabs/specs/097-hide-fast-mode-spec-tabs/evidence/app-fast-mode-feature-drawer.png)
+  ![App: feature drawer in actual running web app for a non-fast-mode (spec) feature — shows full tab set including Tech Decisions and Product, confirming the change is scoped only to fast-mode features](https://raw.githubusercontent.com/shep-ai/shep/feat/hide-fast-mode-spec-tabs/specs/097-hide-fast-mode-spec-tabs/evidence/app-spec-mode-feature-drawer.png)
+  ![App: control-center page from running dev server showing real features including the fast-mode 'Hide Empty Spec Tabs in Fast Mode' card](https://raw.githubusercontent.com/shep-ai/shep/feat/hide-fast-mode-spec-tabs/specs/097-hide-fast-mode-spec-tabs/evidence/app-control-center.png)
+  ![Storybook (supplementary): FeatureDrawerTabs Default story (non-fast-mode) showing all six tabs visible: Overview, Activity, Plan, Tech Decisions, Product, Chat](https://raw.githubusercontent.com/shep-ai/shep/feat/hide-fast-mode-spec-tabs/specs/097-hide-fast-mode-spec-tabs/evidence/storybook-default-with-tech-product-tabs.png)
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.203.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
+# 🚀 Shep [v1.202.3](/compare/v1.202.2...v1.202.3) · _2026-05-06_
+
+> _Nothing user-facing_ — just the housekeeping that keeps the gears turning smoothly under the hood.
+
+
+
+### 🐛 Bug Fixes
+
+* **agents:** register isupervisoragent token so worker boots ([#608](https://github.com/shep-ai/shep/issues/608)) ([fb32c75](https://github.com/shep-ai/shep/commit/fb32c758ccd179de8b2da26985dfee346a4cb5d8))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.202.3
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
+# 🚀 Shep [v1.202.2](/compare/v1.202.1...v1.202.2) · _2026-05-06_
+
+> _Keeping the engine humming_ — housekeeping and maintenance work under the hood, no user-facing changes.
+
+
+
+### 🐛 Bug Fixes
+
+* **web:** seed applications page deployment provider with live data ([#606](https://github.com/shep-ai/shep/issues/606)) ([3b4c560](https://github.com/shep-ai/shep/commit/3b4c5607002d7ed98cc395fa739c315677b11924))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.202.2
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
+# 🚀 Shep [v1.202.1](/compare/v1.202.0...v1.202.1) · _2026-05-06_
+
+> _Pure maintenance:_ no user-facing changes, just keeping the internals tidy.
+
+
+
+### 🐛 Bug Fixes
+
+* **cli:** drop fake graceful kill on windows in shep restart ([#605](https://github.com/shep-ai/shep/issues/605)) ([73b0269](https://github.com/shep-ai/shep/commit/73b02692edf62a9e59eddd2d90d3faa8c580393f)), closes [post-#603](https://github.com/post-/issues/603)
+
+* **agents:** drop interface options param that broke tsyringe resolution ([#602](https://github.com/shep-ai/shep/issues/602)) ([feef682](https://github.com/shep-ai/shep/commit/feef6825deb6d18f6b274ab53316aa5e42919a38)), closes [#0](https://github.com/shep-ai/shep/issues/0) [#0](https://github.com/shep-ai/shep/issues/0) [#1](https://github.com/shep-ai/shep/issues/1)
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.202.1
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.202.0](/compare/v1.201.0...v1.202.0) · _2026-05-04_
 
 > _No user-facing changes_ — just internal housekeeping to keep the codebase clean under the hood.

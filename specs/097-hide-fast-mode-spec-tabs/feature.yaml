@@ -1,0 +1,34 @@
+feature:
+  id: "097-hide-fast-mode-spec-tabs"
+  name: "hide-fast-mode-spec-tabs"
+  number: 97
+  branch: "feat/097-hide-fast-mode-spec-tabs"
+  lifecycle: "research"
+  createdAt: "2026-05-06T14:43:30Z"
+status:
+  phase: "research"
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: "2026-05-06T14:43:30Z"
+  lastUpdatedBy: "feature-agent"
+  completedPhases:
+    - "evidence"
+    - "fast-implement"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-05-06T14:43:30Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []

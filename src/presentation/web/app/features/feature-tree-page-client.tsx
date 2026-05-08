@@ -29,6 +29,7 @@ import type {
 import { FeatureRowActionsManager } from '@/components/features/feature-tree-table/feature-row-actions-manager';
 import { RepositoryGroupActionsManager } from '@/components/features/feature-tree-table/repository-group-actions';
 import type { RepoActionCallbacks } from '@/components/features/feature-tree-table/repository-group-actions';
+import { ApplicationRowActionsManager } from '@/components/features/feature-tree-table/application-row-actions-manager';
 import { DeleteFeatureDialog } from '@/components/common/delete-feature-dialog/delete-feature-dialog';
 import { PageHeader } from '@/components/common/page-header';
 import { EmptyState } from '@/components/common/empty-state';
@@ -60,6 +61,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DeploymentStatusProvider } from '@/hooks/deployment-status-provider';
+import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
 import { archiveFeature } from '@/app/actions/archive-feature';
 import { unarchiveFeature } from '@/app/actions/unarchive-feature';
 import { deleteFeature } from '@/app/actions/delete-feature';
@@ -79,9 +82,11 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { useFabLayout } from '@/hooks/fab-layout-context';
 
 export interface FeatureTreePageClientProps {
-  features: FeatureTreeRow[];
+  /** Combined feature + application rows shown in the inventory table. */
+  rows: FeatureTreeRow[];
   repos: InventoryRepo[];
   createData: InventoryCreateData;
+  initialDeployments?: DeploymentStatusEntry[];
 }
 
 const STATUS_LABELS: Record<FeatureStatus, string> = {
@@ -146,7 +151,15 @@ interface ArchiveTarget {
   featureName: string;
 }
 
-export function FeatureTreePageClient({ features, repos, createData }: FeatureTreePageClientProps) {
+export function FeatureTreePageClient({
+  rows,
+  repos,
+  createData,
+  initialDeployments = [],
+}: FeatureTreePageClientProps) {
+  // Features-only view (excludes application rows) — used by status pill counts,
+  // repo filter, and the row-actions portal manager which only knows about features.
+  const features = useMemo(() => rows.filter((r) => !r._isApplication), [rows]);
   const router = useRouter();
   const { t } = useTranslation('web');
 
@@ -188,9 +201,13 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
     });
   }, []);
 
-  const handleFeatureClick = useCallback(
-    (featureId: string) => {
-      router.push(`/feature/${featureId}/overview`);
+  const handleRowClick = useCallback(
+    (row: FeatureTreeRow) => {
+      if (row._isApplication && row._applicationId) {
+        router.push(`/application/${row._applicationId}`);
+        return;
+      }
+      router.push(`/feature/${row.id}/overview`);
     },
     [router]
   );
@@ -590,447 +607,488 @@ export function FeatureTreePageClient({ features, repos, createData }: FeatureTr
 
   const itemSortOptions = useMemo(() => getItemSortOptions(groupBy), [groupBy]);
 
+  // Combined inventory rows (features + applications) passed through the same
+  // filters as features. Apps don't have an SDLC lifecycle, so the "active"
+  // archive filter keeps them visible (no archive concept yet for apps).
+  const filteredRows = useMemo(() => {
+    const featureIdsAfterFilter = new Set(filteredFeatures.map((f) => f.id));
+    const query = searchQuery.toLowerCase();
+    const filteredApps = rows.filter((row) => {
+      if (!row._isApplication) return false;
+      if (archiveFilter === 'archived') return false;
+      if (statusFilter && row.status !== statusFilter) return false;
+      if (repoFilter && row.repositoryName !== repoFilter) return false;
+      if (query) {
+        const matchesName = row.name.toLowerCase().includes(query);
+        const matchesRepo = row.repositoryName.toLowerCase().includes(query);
+        if (!matchesName && !matchesRepo) return false;
+      }
+      return true;
+    });
+    const filteredFeatureRows = rows.filter(
+      (r) => !r._isApplication && featureIdsAfterFilter.has(r.id)
+    );
+    return [...filteredApps, ...filteredFeatureRows];
+  }, [rows, filteredFeatures, archiveFilter, statusFilter, repoFilter, searchQuery]);
+
+  const applicationCount = useMemo(
+    () => filteredRows.filter((r) => r._isApplication).length,
+    [filteredRows]
+  );
+
   return (
-    <div data-testid="feature-tree-page" className="flex h-full flex-col gap-4">
-      <PageHeader title="Inventory" description="All repositories and features" />
+    <DeploymentStatusProvider initialDeployments={initialDeployments}>
+      <div data-testid="feature-tree-page" className="flex h-full flex-col gap-4">
+        <PageHeader title="Inventory" description="All applications, repositories and features" />
 
-      {/* Toolbar */}
-      <div className="flex flex-col gap-3">
-        {/* Row 1: Search + Group By + Filters toggle */}
-        <div className="flex items-center gap-2">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-            <Input
-              placeholder="Search by name, branch, or repository..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="ps-9"
-            />
-            {searchQuery ? (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
-              >
-                <X className="size-4" />
-              </button>
-            ) : null}
-          </div>
-
-          {/* Group By */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-muted-foreground text-xs font-medium whitespace-nowrap">
-              Group by:
-            </span>
-            <Select value={groupBy ?? '__none__'} onValueChange={handleGroupByChange}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {GROUP_BY_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Filters toggle */}
-          <Button
-            variant={showAdvanced ? 'secondary' : 'outline'}
-            size="sm"
-            onClick={() => setShowAdvanced((v) => !v)}
-            className="shrink-0"
-          >
-            <SlidersHorizontal className="mr-1.5 size-3.5" />
-            Filters
-          </Button>
-        </div>
-
-        {/* Row 2: Archive toggle + Status pills */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Archive toggle */}
-          <div className="border-input flex items-center rounded-md border">
-            <button
-              onClick={() => setArchiveFilter('active')}
-              className={`flex items-center gap-1.5 rounded-l-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                archiveFilter === 'active' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
-              }`}
-            >
-              <Inbox className="size-3.5" />
-              Active
-              <span className="opacity-70">({activeCount})</span>
-            </button>
-            <button
-              onClick={() => setArchiveFilter('archived')}
-              className={`flex items-center gap-1.5 border-x px-3 py-1.5 text-xs font-medium transition-colors ${
-                archiveFilter === 'archived'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-muted'
-              }`}
-            >
-              <Archive className="size-3.5" />
-              Archived
-              <span className="opacity-70">({archivedCount})</span>
-            </button>
-            <button
-              onClick={() => setArchiveFilter('all')}
-              className={`rounded-r-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                archiveFilter === 'all' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
-              }`}
-            >
-              All
-            </button>
-          </div>
-
-          <div className="bg-border h-6 w-px" />
-
-          {/* Status filter pills */}
-          <button
-            onClick={() => setStatusFilter(null)}
-            className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-              statusFilter === null
-                ? 'bg-foreground text-background'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            }`}
-          >
-            All Status
-          </button>
-          {(Object.entries(STATUS_LABELS) as [FeatureStatus, string][]).map(([status, label]) => {
-            const count = statusCounts[status];
-            if (count === 0) return null;
-            return (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(statusFilter === status ? null : status)}
-                className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                  statusFilter === status
-                    ? STATUS_COLORS[status]
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
-              >
-                {label}
-                <span className="ml-1 opacity-70">{count}</span>
-              </button>
-            );
-          })}
-
-          {hasActiveFilters ? (
-            <>
-              <div className="bg-border h-6 w-px" />
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs">
-                <X className="mr-1 size-3" />
-                Clear
-              </Button>
-            </>
-          ) : null}
-        </div>
-
-        {/* Row 3: Sort controls (when grouped) */}
-        {groupBy ? (
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Group sort */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground text-xs font-medium">
-                {GROUP_BY_LABELS[groupBy!]}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 gap-1 text-xs"
-                onClick={() => setGroupSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
-              >
-                {groupSortDir === 'asc' ? (
-                  <ArrowDownAZ className="size-3.5" />
-                ) : (
-                  <ArrowUpAZ className="size-3.5" />
-                )}
-                {groupSortDir === 'asc' ? 'A-Z' : 'Z-A'}
-              </Button>
+        {/* Toolbar */}
+        <div className="flex flex-col gap-3">
+          {/* Row 1: Search + Group By + Filters toggle */}
+          <div className="flex items-center gap-2">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+              <Input
+                placeholder="Search by name, branch, or repository..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="ps-9"
+              />
+              {searchQuery ? (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
+                >
+                  <X className="size-4" />
+                </button>
+              ) : null}
             </div>
 
-            <div className="bg-border h-5 w-px" />
-
-            {/* Item sort */}
+            {/* Group By */}
             <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground text-xs font-medium">Sort by</span>
-              <Select value={itemSortField} onValueChange={setItemSortField}>
-                <SelectTrigger className="h-7 w-[120px] text-xs">
+              <span className="text-muted-foreground text-xs font-medium whitespace-nowrap">
+                Group by:
+              </span>
+              <Select value={groupBy ?? '__none__'} onValueChange={handleGroupByChange}>
+                <SelectTrigger className="w-[150px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {itemSortOptions.map((opt) => (
+                  {GROUP_BY_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
                       {opt.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 gap-1 text-xs"
-                onClick={() => setItemSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
-              >
-                {itemSortDir === 'asc' ? (
-                  <ArrowDownAZ className="size-3.5" />
-                ) : (
-                  <ArrowUpAZ className="size-3.5" />
-                )}
-                {itemSortDir === 'asc' ? 'A-Z' : 'Z-A'}
-              </Button>
             </div>
-          </div>
-        ) : null}
 
-        {/* Row 4: Advanced filters (collapsible) */}
-        {showAdvanced ? (
-          <div className="bg-muted/50 flex flex-wrap items-center gap-3 rounded-lg border p-3">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-xs font-medium">Repository</span>
-              <Select
-                value={repoFilter ?? '__all__'}
-                onValueChange={(v) => setRepoFilter(v === '__all__' ? null : v)}
+            {/* Filters toggle */}
+            <Button
+              variant={showAdvanced ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={() => setShowAdvanced((v) => !v)}
+              className="shrink-0"
+            >
+              <SlidersHorizontal className="mr-1.5 size-3.5" />
+              Filters
+            </Button>
+          </div>
+
+          {/* Row 2: Archive toggle + Status pills */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Archive toggle */}
+            <div className="border-input flex items-center rounded-md border">
+              <button
+                onClick={() => setArchiveFilter('active')}
+                className={`flex items-center gap-1.5 rounded-l-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  archiveFilter === 'active'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-muted'
+                }`}
               >
-                <SelectTrigger className="h-8 w-[200px] text-xs">
-                  <SelectValue placeholder="All repositories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All repositories</SelectItem>
-                  {repoNames.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Inbox className="size-3.5" />
+                Active
+                <span className="opacity-70">({activeCount})</span>
+              </button>
+              <button
+                onClick={() => setArchiveFilter('archived')}
+                className={`flex items-center gap-1.5 border-x px-3 py-1.5 text-xs font-medium transition-colors ${
+                  archiveFilter === 'archived'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-muted'
+                }`}
+              >
+                <Archive className="size-3.5" />
+                Archived
+                <span className="opacity-70">({archivedCount})</span>
+              </button>
+              <button
+                onClick={() => setArchiveFilter('all')}
+                className={`rounded-r-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  archiveFilter === 'all' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                }`}
+              >
+                All
+              </button>
             </div>
-          </div>
-        ) : null}
-      </div>
 
-      {/* Quick actions toolbar + results count */}
-      <div className="flex items-center justify-between">
-        <div className="text-muted-foreground flex items-center gap-2 text-xs">
-          <span>
-            {filteredFeatures.length} feature{filteredFeatures.length !== 1 ? 's' : ''}
-          </span>
-          {hasActiveFilters ? (
-            <Badge variant="secondary" className="text-xs">
-              filtered
-            </Badge>
+            <div className="bg-border h-6 w-px" />
+
+            {/* Status filter pills */}
+            <button
+              onClick={() => setStatusFilter(null)}
+              className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                statusFilter === null
+                  ? 'bg-foreground text-background'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              All Status
+            </button>
+            {(Object.entries(STATUS_LABELS) as [FeatureStatus, string][]).map(([status, label]) => {
+              const count = statusCounts[status];
+              if (count === 0) return null;
+              return (
+                <button
+                  key={status}
+                  onClick={() => setStatusFilter(statusFilter === status ? null : status)}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                    statusFilter === status
+                      ? STATUS_COLORS[status]
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  {label}
+                  <span className="ml-1 opacity-70">{count}</span>
+                </button>
+              );
+            })}
+
+            {hasActiveFilters ? (
+              <>
+                <div className="bg-border h-6 w-px" />
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs">
+                  <X className="mr-1 size-3" />
+                  Clear
+                </Button>
+              </>
+            ) : null}
+          </div>
+
+          {/* Row 3: Sort controls (when grouped) */}
+          {groupBy ? (
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Group sort */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground text-xs font-medium">
+                  {GROUP_BY_LABELS[groupBy!]}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1 text-xs"
+                  onClick={() => setGroupSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
+                >
+                  {groupSortDir === 'asc' ? (
+                    <ArrowDownAZ className="size-3.5" />
+                  ) : (
+                    <ArrowUpAZ className="size-3.5" />
+                  )}
+                  {groupSortDir === 'asc' ? 'A-Z' : 'Z-A'}
+                </Button>
+              </div>
+
+              <div className="bg-border h-5 w-px" />
+
+              {/* Item sort */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground text-xs font-medium">Sort by</span>
+                <Select value={itemSortField} onValueChange={setItemSortField}>
+                  <SelectTrigger className="h-7 w-[120px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {itemSortOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1 text-xs"
+                  onClick={() => setItemSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
+                >
+                  {itemSortDir === 'asc' ? (
+                    <ArrowDownAZ className="size-3.5" />
+                  ) : (
+                    <ArrowUpAZ className="size-3.5" />
+                  )}
+                  {itemSortDir === 'asc' ? 'A-Z' : 'Z-A'}
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Row 4: Advanced filters (collapsible) */}
+          {showAdvanced ? (
+            <div className="bg-muted/50 flex flex-wrap items-center gap-3 rounded-lg border p-3">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-xs font-medium">Repository</span>
+                <Select
+                  value={repoFilter ?? '__all__'}
+                  onValueChange={(v) => setRepoFilter(v === '__all__' ? null : v)}
+                >
+                  <SelectTrigger className="h-8 w-[200px] text-xs">
+                    <SelectValue placeholder="All repositories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All repositories</SelectItem>
+                    {repoNames.map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           ) : null}
         </div>
-        <div className="flex items-center gap-1.5">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 gap-1.5 text-xs"
-            onClick={() => setNewProjectOpen(true)}
-          >
-            <FolderPlus className="size-3.5" />
-            New project
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 gap-1.5 text-xs"
-            onClick={() => {
-              setCreateForRepoPath('');
-              setCreateDrawerOpen(true);
-            }}
-          >
-            <Sparkles className="size-3.5" />
-            New feature
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 gap-1.5 text-xs"
-            onClick={handlePickFolder}
-          >
-            <FolderOpen className="size-3.5" />
-            Add local repo
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 gap-1.5 text-xs"
-            onClick={() => setShowCreatePrompt(true)}
-          >
-            <LayoutGrid className="size-3.5" />
-            New application
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 gap-1.5 text-xs"
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent('shep:open-github-import'));
-            }}
-          >
-            <Github className="size-3.5" />
-            {t('fab.fromGithub')}
-          </Button>
+
+        {/* Quick actions toolbar + results count */}
+        <div className="flex items-center justify-between">
+          <div className="text-muted-foreground flex items-center gap-2 text-xs">
+            <span>
+              {applicationCount} app{applicationCount !== 1 ? 's' : ''} · {filteredFeatures.length}{' '}
+              feature{filteredFeatures.length !== 1 ? 's' : ''}
+            </span>
+            {hasActiveFilters ? (
+              <Badge variant="secondary" className="text-xs">
+                filtered
+              </Badge>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 text-xs"
+              onClick={() => setNewProjectOpen(true)}
+            >
+              <FolderPlus className="size-3.5" />
+              New project
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 text-xs"
+              onClick={() => {
+                setCreateForRepoPath('');
+                setCreateDrawerOpen(true);
+              }}
+            >
+              <Sparkles className="size-3.5" />
+              New feature
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 text-xs"
+              onClick={handlePickFolder}
+            >
+              <FolderOpen className="size-3.5" />
+              Add local repo
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 text-xs"
+              onClick={() => setShowCreatePrompt(true)}
+            >
+              <LayoutGrid className="size-3.5" />
+              New application
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 text-xs"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('shep:open-github-import'));
+              }}
+            >
+              <Github className="size-3.5" />
+              {t('fab.fromGithub')}
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Table or Empty State */}
-      <div className="min-h-0 flex-1">
-        {filteredFeatures.length > 0 ? (
-          <FeatureTreeTable
-            data={filteredFeatures}
-            repos={repos}
-            onFeatureClick={handleFeatureClick}
-            groupBy={groupBy}
-            groupSortDir={groupSortDir}
-            itemSortField={itemSortField}
-            itemSortDir={itemSortDir}
-            onTableRender={handleTableRender}
-            onCreateFeatureForRepo={handleCreateFeatureForRepo}
-          />
-        ) : (
-          <EmptyState
-            icon={<Search className="size-10" />}
-            title="No matching features"
-            description={
-              hasActiveFilters
-                ? 'No features match your current filters. Try adjusting your search or filters.'
-                : 'No features found in any repository.'
-            }
-            action={
-              hasActiveFilters ? (
-                <Button variant="outline" onClick={clearFilters}>
-                  Clear all filters
-                </Button>
-              ) : undefined
-            }
-          />
-        )}
-      </div>
-
-      {/* Portal manager for row action dropdowns */}
-      <FeatureRowActionsManager
-        tableContainer={tableContainer}
-        renderTick={renderTick}
-        features={filteredFeatures}
-        inFlightIds={inFlightIds}
-        onStart={handleStart}
-        onStop={handleStop}
-        onRetry={handleRetry}
-        onReview={handleReview}
-        onArchive={handleArchiveRequest}
-        onUnarchive={handleUnarchive}
-        onDelete={handleDeleteRequest}
-      />
-
-      {/* Portal manager for repository group action buttons */}
-      <RepositoryGroupActionsManager
-        tableContainer={tableContainer}
-        renderTick={renderTick}
-        callbacks={repoActionCallbacks}
-      />
-
-      {/* Archive confirmation dialog */}
-      <AlertDialog
-        open={archiveTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setArchiveTarget(null);
-        }}
-      >
-        <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('featureNode.archiveConfirmTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              <Trans
-                t={t}
-                i18nKey="featureNode.archiveConfirmDescription"
-                values={{ name: archiveTarget?.featureName }}
-                components={{ strong: <strong /> }}
-              />
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setArchiveTarget(null)}>
-              {t('featureNode.cancel')}
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleArchiveConfirm}>
-              {t('featureNode.archive')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete confirmation dialog */}
-      <DeleteFeatureDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-        onConfirm={handleDeleteConfirm}
-        isDeleting={deleteTarget !== null && inFlightIds.has(deleteTarget.featureId)}
-        featureName={deleteTarget?.featureName ?? ''}
-        featureId={deleteTarget?.featureId ?? ''}
-        hasChildren={deleteTarget?.hasChildren}
-        hasOpenPr={deleteTarget?.hasOpenPr}
-      />
-
-      {/* (+) FAB — bottom-right, fixed position */}
-      <InventoryFab actions={fabActions} />
-
-      {/* Create feature drawer */}
-      <FeatureCreateDrawer
-        open={createDrawerOpen}
-        onClose={() => {
-          setCreateDrawerOpen(false);
-          setCreateForRepoPath('');
-        }}
-        onSubmit={handleCreateFeatureSubmit}
-        repositoryPath={createForRepoPath}
-        features={createData.featureOptions}
-        repositories={createData.repositoryOptions}
-        workflowDefaults={createData.workflowDefaults}
-        currentAgentType={createData.currentAgentType}
-        currentModel={createData.currentModel}
-        isSubmitting={isCreatingFeature}
-      />
-
-      {/* New project dialog */}
-      <NewProjectDialog
-        open={newProjectOpen}
-        onOpenChange={setNewProjectOpen}
-        onCreated={handleNewProjectCreated}
-      />
-
-      {/* Full-screen create application overlay */}
-      {showCreatePrompt ? (
-        <div className="fixed inset-0 z-50">
-          <ControlCenterEmptyState
-            onRepositorySelect={(path) => {
-              setShowCreatePrompt(false);
-              addRepository({ path })
-                .then((result) => {
-                  if (result.error) {
-                    toast.error(result.error);
-                  } else {
-                    router.refresh();
-                  }
-                })
-                .catch(() => {
-                  toast.error('Failed to add repository');
-                });
-            }}
-            onApplicationCreated={(appId) => {
-              setShowCreatePrompt(false);
-              router.push(`/application/${appId}`);
-            }}
-            onClose={() => setShowCreatePrompt(false)}
-            className="bg-background"
-          />
+        {/* Table or Empty State */}
+        <div className="min-h-0 flex-1">
+          {filteredRows.length > 0 ? (
+            <FeatureTreeTable
+              data={filteredRows}
+              repos={repos}
+              onRowClick={handleRowClick}
+              groupBy={groupBy}
+              groupSortDir={groupSortDir}
+              itemSortField={itemSortField}
+              itemSortDir={itemSortDir}
+              onTableRender={handleTableRender}
+              onCreateFeatureForRepo={handleCreateFeatureForRepo}
+            />
+          ) : (
+            <EmptyState
+              icon={<Search className="size-10" />}
+              title="Nothing to show"
+              description={
+                hasActiveFilters
+                  ? 'No applications or features match your current filters. Try adjusting your search or filters.'
+                  : 'No applications or features found in any repository.'
+              }
+              action={
+                hasActiveFilters ? (
+                  <Button variant="outline" onClick={clearFilters}>
+                    Clear all filters
+                  </Button>
+                ) : undefined
+              }
+            />
+          )}
         </div>
-      ) : null}
-    </div>
+
+        {/* Portal manager for row action dropdowns */}
+        <FeatureRowActionsManager
+          tableContainer={tableContainer}
+          renderTick={renderTick}
+          features={filteredFeatures}
+          inFlightIds={inFlightIds}
+          onStart={handleStart}
+          onStop={handleStop}
+          onRetry={handleRetry}
+          onReview={handleReview}
+          onArchive={handleArchiveRequest}
+          onUnarchive={handleUnarchive}
+          onDelete={handleDeleteRequest}
+        />
+
+        {/* Portal manager for application row action dropdowns */}
+        <ApplicationRowActionsManager
+          tableContainer={tableContainer}
+          renderTick={renderTick}
+          rows={filteredRows}
+        />
+
+        {/* Portal manager for repository group action buttons */}
+        <RepositoryGroupActionsManager
+          tableContainer={tableContainer}
+          renderTick={renderTick}
+          callbacks={repoActionCallbacks}
+        />
+
+        {/* Archive confirmation dialog */}
+        <AlertDialog
+          open={archiveTarget !== null}
+          onOpenChange={(open) => {
+            if (!open) setArchiveTarget(null);
+          }}
+        >
+          <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t('featureNode.archiveConfirmTitle')}</AlertDialogTitle>
+              <AlertDialogDescription>
+                <Trans
+                  t={t}
+                  i18nKey="featureNode.archiveConfirmDescription"
+                  values={{ name: archiveTarget?.featureName }}
+                  components={{ strong: <strong /> }}
+                />
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setArchiveTarget(null)}>
+                {t('featureNode.cancel')}
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleArchiveConfirm}>
+                {t('featureNode.archive')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete confirmation dialog */}
+        <DeleteFeatureDialog
+          open={deleteTarget !== null}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+          onConfirm={handleDeleteConfirm}
+          isDeleting={deleteTarget !== null && inFlightIds.has(deleteTarget.featureId)}
+          featureName={deleteTarget?.featureName ?? ''}
+          featureId={deleteTarget?.featureId ?? ''}
+          hasChildren={deleteTarget?.hasChildren}
+          hasOpenPr={deleteTarget?.hasOpenPr}
+        />
+
+        {/* (+) FAB — bottom-right, fixed position */}
+        <InventoryFab actions={fabActions} />
+
+        {/* Create feature drawer */}
+        <FeatureCreateDrawer
+          open={createDrawerOpen}
+          onClose={() => {
+            setCreateDrawerOpen(false);
+            setCreateForRepoPath('');
+          }}
+          onSubmit={handleCreateFeatureSubmit}
+          repositoryPath={createForRepoPath}
+          features={createData.featureOptions}
+          repositories={createData.repositoryOptions}
+          workflowDefaults={createData.workflowDefaults}
+          currentAgentType={createData.currentAgentType}
+          currentModel={createData.currentModel}
+          isSubmitting={isCreatingFeature}
+        />
+
+        {/* New project dialog */}
+        <NewProjectDialog
+          open={newProjectOpen}
+          onOpenChange={setNewProjectOpen}
+          onCreated={handleNewProjectCreated}
+        />
+
+        {/* Full-screen create application overlay */}
+        {showCreatePrompt ? (
+          <div className="fixed inset-0 z-50">
+            <ControlCenterEmptyState
+              onRepositorySelect={(path) => {
+                setShowCreatePrompt(false);
+                addRepository({ path })
+                  .then((result) => {
+                    if (result.error) {
+                      toast.error(result.error);
+                    } else {
+                      router.refresh();
+                    }
+                  })
+                  .catch(() => {
+                    toast.error('Failed to add repository');
+                  });
+              }}
+              onApplicationCreated={(appId) => {
+                setShowCreatePrompt(false);
+                router.push(`/application/${appId}`);
+              }}
+              onClose={() => setShowCreatePrompt(false)}
+              className="bg-background"
+            />
+          </div>
+        ) : null}
+      </div>
+    </DeploymentStatusProvider>
   );
 }
 

@@ -182,7 +182,7 @@ describe('FeatureTreePageClient — Action Wiring', () => {
 
   it('renders the page with feature data', () => {
     render(
-      <FeatureTreePageClient features={defaultFeatures} repos={[]} createData={defaultCreateData} />
+      <FeatureTreePageClient rows={defaultFeatures} repos={[]} createData={defaultCreateData} />
     );
     expect(screen.getByTestId('feature-tree-page')).toBeInTheDocument();
   });
@@ -193,14 +193,14 @@ describe('FeatureTreePageClient — Action Wiring', () => {
     // The real integration test would require a DOM with portal targets.
     // Here we verify that the component renders without error with all action wiring in place.
     render(
-      <FeatureTreePageClient features={defaultFeatures} repos={[]} createData={defaultCreateData} />
+      <FeatureTreePageClient rows={defaultFeatures} repos={[]} createData={defaultCreateData} />
     );
     expect(screen.getByTestId('feature-tree-page')).toBeInTheDocument();
   });
 
   it('handleReview navigates to feature overview page', () => {
     render(
-      <FeatureTreePageClient features={defaultFeatures} repos={[]} createData={defaultCreateData} />
+      <FeatureTreePageClient rows={defaultFeatures} repos={[]} createData={defaultCreateData} />
     );
     // The review handler calls router.push — verified through the handleFeatureClick pattern
     // which is the same navigation target
@@ -216,7 +216,7 @@ describe('FeatureTreePageClient — Delete Dialog Integration', () => {
 
   it('renders DeleteFeatureDialog in closed state initially', () => {
     render(
-      <FeatureTreePageClient features={defaultFeatures} repos={[]} createData={defaultCreateData} />
+      <FeatureTreePageClient rows={defaultFeatures} repos={[]} createData={defaultCreateData} />
     );
     // The dialog should not be visible initially
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
@@ -231,7 +231,7 @@ describe('FeatureTreePageClient — Archive Dialog Integration', () => {
 
   it('renders archive AlertDialog in closed state initially', () => {
     render(
-      <FeatureTreePageClient features={defaultFeatures} repos={[]} createData={defaultCreateData} />
+      <FeatureTreePageClient rows={defaultFeatures} repos={[]} createData={defaultCreateData} />
     );
     // The archive dialog should not be visible initially
     expect(screen.queryByText('Archive feature?')).not.toBeInTheDocument();

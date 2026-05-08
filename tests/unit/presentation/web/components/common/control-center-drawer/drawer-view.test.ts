@@ -77,6 +77,17 @@ describe('deriveInitialTab', () => {
     ).toBe('tech-decisions');
   });
 
+  it('returns overview for fast-mode features in implementation + action-required', () => {
+    expect(
+      deriveInitialTab({
+        ...baseNode,
+        lifecycle: 'implementation',
+        state: 'action-required',
+        fastMode: true,
+      })
+    ).toBe('overview');
+  });
+
   it('returns merge-review for review + action-required', () => {
     expect(deriveInitialTab({ ...baseNode, lifecycle: 'review', state: 'action-required' })).toBe(
       'merge-review'

@@ -7,12 +7,16 @@ import { SdlcLifecycle, AgentRunStatus, PrStatus } from '@shepai/core/domain/gen
 const mockListFeaturesExecute = vi.fn();
 const mockListReposExecute = vi.fn();
 const mockListAgentRunsExecute = vi.fn();
+const mockListApplicationsExecute = vi.fn();
+const mockListDeploymentsExecute = vi.fn();
 
 vi.mock('@/lib/server-container', () => ({
   resolve: (token: string) => {
     if (token === 'ListFeaturesUseCase') return { execute: mockListFeaturesExecute };
     if (token === 'ListRepositoriesUseCase') return { execute: mockListReposExecute };
     if (token === 'ListAgentRunsUseCase') return { execute: mockListAgentRunsExecute };
+    if (token === 'ListApplicationsUseCase') return { execute: mockListApplicationsExecute };
+    if (token === 'ListDeploymentsUseCase') return { execute: mockListDeploymentsExecute };
     throw new Error(`Unknown token: ${token}`);
   },
 }));
@@ -87,6 +91,8 @@ describe('getFeatureTreeData', () => {
       { name: 'my-repo', path: '/home/user/repo', remoteUrl: 'https://github.com/user/repo' },
     ]);
     mockListAgentRunsExecute.mockResolvedValue([]);
+    mockListApplicationsExecute.mockResolvedValue([]);
+    mockListDeploymentsExecute.mockResolvedValue([]);
   });
 
   it('returns nodeState derived from lifecycle and agent run', async () => {

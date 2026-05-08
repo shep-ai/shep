@@ -665,6 +665,24 @@ describe('FeatureDrawerTabs', () => {
       expect(screen.getByRole('tab', { name: 'Product' })).toBeInTheDocument();
     });
 
+    it('hides tech-decisions and product-decisions tabs for fast-mode features', () => {
+      for (const lifecycle of ['implementation', 'review', 'maintain'] as const) {
+        const { unmount } = renderTabs({
+          featureNode: {
+            ...defaultFeatureNode,
+            lifecycle,
+            state: lifecycle === 'maintain' ? 'done' : 'running',
+            fastMode: true,
+          },
+          techData: sampleTechData,
+          productData: sampleProductData,
+        });
+        expect(screen.queryByRole('tab', { name: 'Tech Decisions' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('tab', { name: 'Product' })).not.toBeInTheDocument();
+        unmount();
+      }
+    });
+
     it('does not render the action bar in review/maintain even when tech data is present', async () => {
       const user = userEvent.setup();
       renderTabs({

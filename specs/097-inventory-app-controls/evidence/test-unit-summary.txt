@@ -1,0 +1,30 @@
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-repository.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-feature-drawer-data.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/features/create-feature.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/update-model.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/url-params.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-deployment-status.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/feature-flags.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/language.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/control-center-drawer/drawer-view.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/load-settings.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-review-config.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-deployment-logs.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/features/delete-feature.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/pick-folder.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-workflow-defaults.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/chat/tool-bubble-detect.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/reject-feature.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/compose-user-input.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/features/control-center/derive-state.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/list-github-organizations.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/compare-versions.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/features/chat/is-workflow-in-flight.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m577 passed[39m[22m[90m (577)[39m
+[2m      Tests [22m [1m[32m7318 passed[39m[22m[90m (7318)[39m
+[2m   Start at [22m 17:34:55
+[2m   Duration [22m 37.34s[2m (transform 15.18s, setup 44.41s, import 62.64s, tests 91.01s, environment 72.53s)[22m
+
