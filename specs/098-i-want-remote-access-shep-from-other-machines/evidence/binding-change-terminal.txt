@@ -15,7 +15,8 @@ Date:   Mon May 11 17:17:16 2026 +0700
  2 files changed, 22 insertions(+), 6 deletions(-)
 
 
-$ git show 0c6d1f6f00ff -- packages/core/src/infrastructure/services/web-server.service.ts
+$ git diff 0c6d1f6f00ff~1 0c6d1f6f00ff -- packages/core/src/infrastructure/services/web-server.service.ts tests/unit/infrastructure/services/web-server.service.test.ts
+
 diff --git a/packages/core/src/infrastructure/services/web-server.service.ts b/packages/core/src/infrastructure/services/web-server.service.ts
 index 7b2b634f538a..bbf2ba528989 100644
 --- a/packages/core/src/infrastructure/services/web-server.service.ts
@@ -23,7 +24,7 @@ index 7b2b634f538a..bbf2ba528989 100644
 @@ -135,10 +135,10 @@ export class WebServerService implements IWebServerService {
        }
      }
- 
+
 -    // Bind to SHEP_BIND_HOST (default: localhost). Next's own hostname is
 -    // always 'localhost' so it generates correct relative URLs regardless of
 -    // which interface the HTTP server actually listens on.
@@ -32,13 +33,44 @@ index 7b2b634f538a..bbf2ba528989 100644
 +    // hostname is always 'localhost' so it generates correct relative URLs
 +    // regardless of which interface the HTTP server actually listens on.
 +    const bindHost = process.env.SHEP_BIND_HOST ?? '0.0.0.0';
- 
+
      const app = this.deps.createNextApp({
        dev,
+diff --git a/tests/unit/infrastructure/services/web-server.service.test.ts b/tests/unit/infrastructure/services/web-server.service.test.ts
+index 4fdd87d465c4..d6257414e71f 100644
+--- a/tests/unit/infrastructure/services/web-server.service.test.ts
++++ b/tests/unit/infrastructure/services/web-server.service.test.ts
+@@ -102,10 +102,26 @@ describe('WebServerService', () => {
+       expect(mocks.deps.createHttpServer).toHaveBeenCalledWith(expect.any(Function));
+     });
+
+-    it('should listen on the specified port', async () => {
++    it('should listen on the specified port bound to 0.0.0.0 by default', async () => {
+       await service.start(4050, '/path/to/web');
+
+-      expect(mocks.mockServer.listen).toHaveBeenCalledWith(4050, 'localhost', expect.any(Function));
++      expect(mocks.mockServer.listen).toHaveBeenCalledWith(4050, '0.0.0.0', expect.any(Function));
++    });
++
++    it('should listen on SHEP_BIND_HOST when set', async () => {
++      const original = process.env.SHEP_BIND_HOST;
++      process.env.SHEP_BIND_HOST = '127.0.0.1';
++      try {
++        await service.start(4050, '/path/to/web');
++        expect(mocks.mockServer.listen).toHaveBeenCalledWith(
++          4050,
++          '127.0.0.1',
++          expect.any(Function)
++        );
++      } finally {
++        if (original === undefined) delete process.env.SHEP_BIND_HOST;
++        else process.env.SHEP_BIND_HOST = original;
++      }
++    });
+   });
 
 
 Impact:
-- Before: daemon only accessible from localhost (same machine)
-- After: daemon accessible from any network interface (allows remote access from other machines)
-- Override: set SHEP_BIND_HOST=127.0.0.1 to restrict to local-only if needed
-
+- Before: daemon only accessible from localhost (same machine only)
+- After:  daemon binds to 0.0.0.0 (all network interfaces — allows remote access from other machines)
+- Override: set SHEP_BIND_HOST=127.0.0.1 to restrict back to local-only if needed

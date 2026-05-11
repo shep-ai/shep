@@ -4,29 +4,35 @@ Feature: Bind daemon to 0.0.0.0 for remote access from other machines
 Change: Default bind host changed from 'localhost' to '0.0.0.0' in web-server.service.ts
         SHEP_BIND_HOST env var can override the bind host (e.g., set to '127.0.0.1' for local-only)
 
-Test File: tests/unit/infrastructure/services/web-server.service.test.ts
+Command: pnpm test:unit -- --reporter=verbose tests/unit/infrastructure/services/web-server.service.test.ts
+Date: 2026-05-11
 
-Test Results:
- ✓  node  tests/unit/infrastructure/services/web-server.service.test.ts  (13 tests)  11ms
+--- Targeted Test File Results ---
 
-New tests added:
-  - should listen on the specified port bound to 0.0.0.0 by default
-    → Verifies server.listen() is called with '0.0.0.0' when SHEP_BIND_HOST is unset
-  - should listen on SHEP_BIND_HOST when set
-    → Verifies server.listen() respects SHEP_BIND_HOST env var (tested with '127.0.0.1')
+ ✓  node  tests/unit/infrastructure/services/web-server.service.test.ts  (13 tests)  12ms
 
-Full Suite Results:
+Test descriptions:
+  WebServerService > start()
+    ✓ should call createNextApp with correct options
+    ✓ should pass dev flag to Next.js
+    ✓ should call app.prepare()
+    ✓ should create an HTTP server with the request handler
+    ✓ should listen on the specified port bound to 0.0.0.0 by default   [NEW — verifies 0.0.0.0 binding]
+    ✓ should listen on SHEP_BIND_HOST when set                          [NEW — verifies env var override]
+  WebServerService > stop()
+    ✓ should close the HTTP server
+    ✓ should close the Next.js app
+    ✓ should be safe to call stop() without start()
+  WebServerService > error handling
+    ✓ should propagate error when app.prepare() rejects
+  WebServerService > Windows cross-drive path fix
+    ✓ should chdir to web dir on Windows when drives differ
+    ✓ should NOT chdir on Windows when same drive
+    ✓ should NOT chdir on non-Windows platforms
+
+--- Full Suite Results ---
+
   Test Files  577 passed (577)
         Tests  7321 passed (7321)
-    Start at  17:26:00
-    Duration  100.15s
-
-Code Change Summary:
-  packages/core/src/infrastructure/services/web-server.service.ts
-    - const bindHost = process.env.SHEP_BIND_HOST ?? 'localhost';  (before)
-    + const bindHost = process.env.SHEP_BIND_HOST ?? '0.0.0.0';   (after)
-
-  tests/unit/infrastructure/services/web-server.service.test.ts
-    - Updated existing test: 'should listen on the specified port' → 'should listen on the specified port bound to 0.0.0.0 by default'
-    + Added new test: 'should listen on SHEP_BIND_HOST when set' with proper env var cleanup in finally block
-
+    Start at  17:37:20
+    Duration  99.02s (transform 16.61s, setup 53.88s, import 80.69s, tests 115.92s, environment 105.26s)
