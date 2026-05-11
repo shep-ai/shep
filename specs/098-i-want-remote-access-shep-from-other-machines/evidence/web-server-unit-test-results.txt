@@ -1,0 +1,32 @@
+=== WebServerService Unit Tests: Remote Access Feature (0.0.0.0 Binding) ===
+
+Feature: Bind daemon to 0.0.0.0 for remote access from other machines
+Change: Default bind host changed from 'localhost' to '0.0.0.0' in web-server.service.ts
+        SHEP_BIND_HOST env var can override the bind host (e.g., set to '127.0.0.1' for local-only)
+
+Test File: tests/unit/infrastructure/services/web-server.service.test.ts
+
+Test Results:
+ ✓  node  tests/unit/infrastructure/services/web-server.service.test.ts  (13 tests)  11ms
+
+New tests added:
+  - should listen on the specified port bound to 0.0.0.0 by default
+    → Verifies server.listen() is called with '0.0.0.0' when SHEP_BIND_HOST is unset
+  - should listen on SHEP_BIND_HOST when set
+    → Verifies server.listen() respects SHEP_BIND_HOST env var (tested with '127.0.0.1')
+
+Full Suite Results:
+  Test Files  577 passed (577)
+        Tests  7321 passed (7321)
+    Start at  17:26:00
+    Duration  100.15s
+
+Code Change Summary:
+  packages/core/src/infrastructure/services/web-server.service.ts
+    - const bindHost = process.env.SHEP_BIND_HOST ?? 'localhost';  (before)
+    + const bindHost = process.env.SHEP_BIND_HOST ?? '0.0.0.0';   (after)
+
+  tests/unit/infrastructure/services/web-server.service.test.ts
+    - Updated existing test: 'should listen on the specified port' → 'should listen on the specified port bound to 0.0.0.0 by default'
+    + Added new test: 'should listen on SHEP_BIND_HOST when set' with proper env var cleanup in finally block
+

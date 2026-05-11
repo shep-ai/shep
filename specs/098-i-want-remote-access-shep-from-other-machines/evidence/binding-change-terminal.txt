@@ -1,0 +1,44 @@
+=== Terminal Recording: Daemon Bind Host Change ===
+Date: 2026-05-11
+
+$ git show 0c6d1f6f00ff --stat
+commit 0c6d1f6f00ff039f9c1cb103ed94bbc40ca8bd36
+Author: kevinnguyenhoang91 <kevin.nguyenhoang91@gmail.com>
+Date:   Mon May 11 17:17:16 2026 +0700
+
+    feat(cli): bind daemon to 0.0.0.0 for remote access from other machines
+
+    Co-Authored-By: Shep Bot <shep-agent@users.noreply.github.com>
+
+ packages/core/src/infrastructure/services/web-server.service.ts    |  8 ++++----
+ tests/unit/infrastructure/services/web-server.service.test.ts       | 20 ++++++++++++++++++--
+ 2 files changed, 22 insertions(+), 6 deletions(-)
+
+
+$ git show 0c6d1f6f00ff -- packages/core/src/infrastructure/services/web-server.service.ts
+diff --git a/packages/core/src/infrastructure/services/web-server.service.ts b/packages/core/src/infrastructure/services/web-server.service.ts
+index 7b2b634f538a..bbf2ba528989 100644
+--- a/packages/core/src/infrastructure/services/web-server.service.ts
++++ b/packages/core/src/infrastructure/services/web-server.service.ts
+@@ -135,10 +135,10 @@ export class WebServerService implements IWebServerService {
+       }
+     }
+ 
+-    // Bind to SHEP_BIND_HOST (default: localhost). Next's own hostname is
+-    // always 'localhost' so it generates correct relative URLs regardless of
+-    // which interface the HTTP server actually listens on.
+-    const bindHost = process.env.SHEP_BIND_HOST ?? 'localhost';
++    // Bind to SHEP_BIND_HOST (default: 0.0.0.0 for remote access). Next's own
++    // hostname is always 'localhost' so it generates correct relative URLs
++    // regardless of which interface the HTTP server actually listens on.
++    const bindHost = process.env.SHEP_BIND_HOST ?? '0.0.0.0';
+ 
+     const app = this.deps.createNextApp({
+       dev,
+
+
+Impact:
+- Before: daemon only accessible from localhost (same machine)
+- After: daemon accessible from any network interface (allows remote access from other machines)
+- Override: set SHEP_BIND_HOST=127.0.0.1 to restrict to local-only if needed
+
