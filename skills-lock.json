@@ -12,9 +12,10 @@
       "computedHash": "1e6fdd46125290fa228cb0d49e49e18ec568860f4b696eacf86c6ee75c3f8341"
     },
     "frontend-design": {
-      "source": "anthropics/skills",
+      "source": "anthropics/claude-code",
       "sourceType": "github",
-      "computedHash": "063a0e6448123cd359ad0044cc46b0e490cc7964d45ef4bb9fd842bd2ffbca67"
+      "skillPath": "plugins/frontend-design/skills/frontend-design/SKILL.md",
+      "computedHash": "e8118284a6365753790d44bb2758a6032b3af27fa84696428d9233f2be0f4e78"
     },
     "next-best-practices": {
       "source": "vercel-labs/next-skills",
