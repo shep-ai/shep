@@ -102,10 +102,26 @@ describe('WebServerService', () => {
       expect(mocks.deps.createHttpServer).toHaveBeenCalledWith(expect.any(Function));
     });
 
-    it('should listen on the specified port', async () => {
+    it('should listen on the specified port bound to 0.0.0.0 by default', async () => {
       await service.start(4050, '/path/to/web');
 
-      expect(mocks.mockServer.listen).toHaveBeenCalledWith(4050, 'localhost', expect.any(Function));
+      expect(mocks.mockServer.listen).toHaveBeenCalledWith(4050, '0.0.0.0', expect.any(Function));
+    });
+
+    it('should listen on SHEP_BIND_HOST when set', async () => {
+      const original = process.env.SHEP_BIND_HOST;
+      process.env.SHEP_BIND_HOST = '127.0.0.1';
+      try {
+        await service.start(4050, '/path/to/web');
+        expect(mocks.mockServer.listen).toHaveBeenCalledWith(
+          4050,
+          '127.0.0.1',
+          expect.any(Function)
+        );
+      } finally {
+        if (original === undefined) delete process.env.SHEP_BIND_HOST;
+        else process.env.SHEP_BIND_HOST = original;
+      }
     });
   });
 
