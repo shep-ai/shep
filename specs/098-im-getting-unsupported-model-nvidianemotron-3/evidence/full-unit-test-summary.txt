@@ -1,15 +1,20 @@
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-deployment-status.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/features/control-center/derive-state.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/list-github-organizations.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/features/inventory-filters.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 10[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/reject-feature.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/url-params.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/compose-user-input.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/compare-versions.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/features/chat/is-workflow-in-flight.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ ✓ |web| tests/unit/presentation/web/lib/feature-flags.test.ts (16 tests) 10ms
+ ✓ |web| tests/unit/presentation/web/actions/reject-feature.test.ts (12 tests) 8ms
+ ✓ |web| tests/unit/presentation/web/actions/get-workflow-defaults.test.ts (4 tests) 5ms
+ ✓ |web| tests/unit/presentation/web/actions/get-deployment-status.test.ts (2 tests) 2ms
+ ✓ |web| tests/unit/presentation/web/actions/features/delete-feature.test.ts (8 tests) 8ms
+ ✓ |web| tests/unit/presentation/web/lib/parse-log-line.test.ts (25 tests) 6ms
+ ✓ |web| tests/unit/presentation/web/actions/pick-folder.test.ts (4 tests) 4ms
+ ✓ |web| tests/unit/presentation/web/components/common/merge-review/merge-review-config.test.ts (11 tests) 3ms
+ ✓ |web| tests/unit/presentation/web/lib/format-duration.test.ts (9 tests) 2ms
+ ✓ |web| tests/unit/presentation/web/lib/url-params.test.ts (7 tests) 3ms
+ ✓ |web| tests/unit/presentation/web/app/actions/list-github-organizations.test.ts (4 tests) 3ms
+ ✓ |web| tests/unit/presentation/web/actions/compose-user-input.test.ts (7 tests) 2ms
+ ✓ |web| tests/unit/presentation/web/lib/compare-versions.test.ts (7 tests) 2ms
+ ✓ |web| tests/unit/presentation/web/components/features/chat/is-workflow-in-flight.test.ts (6 tests) 2ms
 
-[2m Test Files [22m [1m[32m577 passed[39m[22m[90m (577)[39m
-[2m      Tests [22m [1m[32m7321 passed[39m[22m[90m (7321)[39m
-[2m   Start at [22m 13:26:54
-[2m   Duration [22m 53.62s[2m (transform 19.31s, setup 64.55s, import 90.24s, tests 123.88s, environment 113.43s)[22m
+ Test Files  577 passed (577)
+      Tests  7321 passed (7321)
+   Start at  13:30:30
+   Duration  46.27s (transform 17.79s, setup 53.61s, import 79.02s, tests 116.37s, environment 90.74s)
 
