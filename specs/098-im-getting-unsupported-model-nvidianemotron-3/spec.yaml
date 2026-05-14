@@ -4,23 +4,21 @@
 name: im-getting-unsupported-model-nvidianemotron-3
 number: 098
 branch: feat/098-im-getting-unsupported-model-nvidianemotron-3
-oneLiner: Im getting
-"Unsupported model "nvidia/nemotron-3-super-120b-a12b:free" for agent "openrouter""
-when selecting this model of openrouter in a new feature..
-
-if there is  hardcoded list of allowed models for openrouter its a bug because its an updating list from remote
-userQuery: >
+oneLiner: >
+  Selecting a dynamically-listed openrouter model (e.g. nvidia/nemotron-3-super-120b-a12b:free)
+  fails with "Unsupported model" because validation uses a hardcoded list instead of the live catalog.
+userQuery: |
   Im getting
-"Unsupported model "nvidia/nemotron-3-super-120b-a12b:free" for agent "openrouter""
-when selecting this model of openrouter in a new feature..
+  "Unsupported model "nvidia/nemotron-3-super-120b-a12b:free" for agent "openrouter""
+  when selecting this model of openrouter in a new feature..
 
-if there is  hardcoded list of allowed models for openrouter its a bug because its an updating list from remote
-summary: >
+  if there is  hardcoded list of allowed models for openrouter its a bug because its an updating list from remote
+summary: |
   Im getting
-"Unsupported model "nvidia/nemotron-3-super-120b-a12b:free" for agent "openrouter""
-when selecting this model of openrouter in a new feature..
+  "Unsupported model "nvidia/nemotron-3-super-120b-a12b:free" for agent "openrouter""
+  when selecting this model of openrouter in a new feature..
 
-if there is  hardcoded list of allowed models for openrouter its a bug because its an updating list from remote
+  if there is  hardcoded list of allowed models for openrouter its a bug because its an updating list from remote
 phase: Analysis
 sizeEstimate: M
 
@@ -42,21 +40,29 @@ openQuestions:
 content: |
   ## Problem Statement
 
-  Im getting
-"Unsupported model "nvidia/nemotron-3-super-120b-a12b:free" for agent "openrouter""
-when selecting this model of openrouter in a new feature..
+  Selecting an openrouter model that exists in the live remote catalog
+  (e.g. `nvidia/nemotron-3-super-120b-a12b:free`) fails with
+  `Unsupported model "<id>" for agent "openrouter"`.
 
-if there is  hardcoded list of allowed models for openrouter its a bug because its an updating list from remote
+  The root cause: `UpdateFeaturePinnedConfigUseCase` validated the chosen
+  model against `IAgentExecutorFactory.getSupportedModels(agentType)`,
+  which returns a synchronous, hardcoded list. The web picker, however,
+  shows the live remote catalog via `IAgentExecutorFactory.listAvailableModels(agentType)`.
+  Any new openrouter model surfaced by the picker would be rejected on save.
 
   ## Success Criteria
 
-  - [ ] TBD
+  - [x] Validation uses `listAvailableModels` (same source as the picker)
+  - [x] Dynamically-listed openrouter models are accepted on save
+  - [x] Static fallback / hardcoded model lists are no longer authoritative
+  - [x] Unit tests cover the dynamic-catalog acceptance path
 
   ## Affected Areas
 
-  | Area | Impact | Reasoning |
-  | ---- | ------ | --------- |
-  | TBD  | TBD    | TBD       |
+  | Area                                                     | Impact | Reasoning                                |
+  | -------------------------------------------------------- | ------ | ---------------------------------------- |
+  | `packages/core/src/application/use-cases/features/`      | Fix    | Use case validation switched to dynamic  |
+  | `tests/unit/application/use-cases/features/`             | Test   | Added dynamic catalog acceptance test    |
 
   ## Dependencies
 
@@ -64,7 +70,7 @@ if there is  hardcoded list of allowed models for openrouter its a bug because i
 
   ## Size Estimate
 
-  **M** - To be refined during research
+  **S** - Single-line behavior change in one use case plus tests
 
   ---
 
