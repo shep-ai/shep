@@ -1,0 +1,29 @@
+commit a284d1ddc2f0bba25b9073d1bfd285b1d4f3093f
+Author: Ariel Shadkhan <shad.ariel@gmail.com>
+Date:   Thu May 14 13:23:23 2026 +0300
+
+    fix(api): validate openrouter models against dynamic catalog
+    
+    UpdateFeaturePinnedConfigUseCase rejected any openrouter model not in the
+    static OPENROUTER_MODELS list, even though the web picker shows the live
+    remote catalog via listAvailableModels. Validation now uses the same async
+    catalog path so dynamic models like nvidia/nemotron-3-super-120b-a12b:free
+    are accepted.
+    
+    Co-Authored-By: Shep Bot <shep-agent@users.noreply.github.com>
+
+diff --git a/packages/core/src/application/use-cases/features/update-feature-pinned-config.use-case.ts b/packages/core/src/application/use-cases/features/update-feature-pinned-config.use-case.ts
+index e08f0b102..a22b8e69a 100644
+--- a/packages/core/src/application/use-cases/features/update-feature-pinned-config.use-case.ts
++++ b/packages/core/src/application/use-cases/features/update-feature-pinned-config.use-case.ts
+@@ -107,8 +107,8 @@ export class UpdateFeaturePinnedConfigUseCase {
+       throw new Error(`Unsupported agent type: ${agentType}`);
+     }
+ 
+-    const supportedModels = this.agentExecutorFactory.getSupportedModels(agentType);
+-    if (!supportedModels.includes(modelId)) {
++    const availableModels = await this.agentExecutorFactory.listAvailableModels(agentType);
++    if (!availableModels.some((m) => m.id === modelId)) {
+       throw new Error(`Unsupported model "${modelId}" for agent "${agentType}"`);
+     }
+ 
