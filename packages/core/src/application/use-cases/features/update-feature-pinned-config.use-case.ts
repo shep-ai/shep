@@ -107,8 +107,8 @@ export class UpdateFeaturePinnedConfigUseCase {
       throw new Error(`Unsupported agent type: ${agentType}`);
     }
 
-    const supportedModels = this.agentExecutorFactory.getSupportedModels(agentType);
-    if (!supportedModels.includes(modelId)) {
+    const availableModels = await this.agentExecutorFactory.listAvailableModels(agentType);
+    if (!availableModels.some((m) => m.id === modelId)) {
       throw new Error(`Unsupported model "${modelId}" for agent "${agentType}"`);
     }
 

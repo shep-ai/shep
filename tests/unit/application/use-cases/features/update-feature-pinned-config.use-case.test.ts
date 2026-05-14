@@ -36,13 +36,27 @@ function createMockRunRepo() {
 function createMockAgentExecutorFactory() {
   return {
     createExecutor: vi.fn(),
-    getSupportedAgents: vi.fn().mockReturnValue([AgentType.ClaudeCode, AgentType.CodexCli]),
+    getSupportedAgents: vi
+      .fn()
+      .mockReturnValue([AgentType.ClaudeCode, AgentType.CodexCli, AgentType.OpenRouter]),
     getCliInfo: vi.fn(),
     getSupportedModels: vi
       .fn()
       .mockImplementation((agentType: AgentType) =>
         agentType === AgentType.CodexCli ? ['gpt-5.4', 'gpt-5.4-mini'] : ['claude-sonnet-4-6']
       ),
+    listAvailableModels: vi.fn().mockImplementation(async (agentType: AgentType) => {
+      if (agentType === AgentType.CodexCli) {
+        return [{ id: 'gpt-5.4' }, { id: 'gpt-5.4-mini' }];
+      }
+      if (agentType === AgentType.OpenRouter) {
+        return [
+          { id: 'anthropic/claude-sonnet-4.5' },
+          { id: 'nvidia/nemotron-3-super-120b-a12b:free' },
+        ];
+      }
+      return [{ id: 'claude-sonnet-4-6' }];
+    }),
     createInteractiveExecutor: vi.fn(),
     supportsInteractive: vi.fn(),
   };
@@ -190,7 +204,7 @@ describe('UpdateFeaturePinnedConfigUseCase', () => {
     ).rejects.toThrow('Unsupported agent type: codex-cli');
 
     expect(agentExecutorFactory.getSupportedAgents).toHaveBeenCalledOnce();
-    expect(agentExecutorFactory.getSupportedModels).not.toHaveBeenCalled();
+    expect(agentExecutorFactory.listAvailableModels).not.toHaveBeenCalled();
     expect(runRepo.updatePinnedConfig).not.toHaveBeenCalled();
   });
 
@@ -207,8 +221,29 @@ describe('UpdateFeaturePinnedConfigUseCase', () => {
     ).rejects.toThrow('Unsupported model "claude-sonnet-4-6" for agent "codex-cli"');
 
     expect(agentExecutorFactory.getSupportedAgents).toHaveBeenCalledOnce();
-    expect(agentExecutorFactory.getSupportedModels).toHaveBeenCalledWith(AgentType.CodexCli);
+    expect(agentExecutorFactory.listAvailableModels).toHaveBeenCalledWith(AgentType.CodexCli);
     expect(runRepo.updatePinnedConfig).not.toHaveBeenCalled();
+  });
+
+  it('accepts a dynamically-listed openrouter model that is not in any static list', async () => {
+    featureRepo.findById.mockResolvedValue(createTestFeature());
+    runRepo.findById.mockResolvedValue(createTestRun());
+
+    const result = await useCase.execute({
+      featureId: 'feat-001',
+      agentType: AgentType.OpenRouter,
+      modelId: 'nvidia/nemotron-3-super-120b-a12b:free',
+    });
+
+    expect(agentExecutorFactory.listAvailableModels).toHaveBeenCalledWith(AgentType.OpenRouter);
+    expect(runRepo.updatePinnedConfig).toHaveBeenCalledWith(
+      'run-001',
+      expect.objectContaining({
+        agentType: AgentType.OpenRouter,
+        modelId: 'nvidia/nemotron-3-super-120b-a12b:free',
+      })
+    );
+    expect(result.modelId).toBe('nvidia/nemotron-3-super-120b-a12b:free');
   });
 
   it.each([
@@ -259,7 +294,7 @@ describe('UpdateFeaturePinnedConfigUseCase', () => {
 
     expect(featureRepo.findById).toHaveBeenCalledWith('feat-001');
     expect(agentExecutorFactory.getSupportedAgents).toHaveBeenCalledOnce();
-    expect(agentExecutorFactory.getSupportedModels).toHaveBeenCalledWith(AgentType.CodexCli);
+    expect(agentExecutorFactory.listAvailableModels).toHaveBeenCalledWith(AgentType.CodexCli);
     expect(runRepo.updatePinnedConfig).toHaveBeenCalledWith(
       'run-001',
       expect.objectContaining({
