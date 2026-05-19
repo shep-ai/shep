@@ -13,6 +13,9 @@ import type {
   Application,
   CloudDeploymentProvider,
   CloudDeploymentStatus,
+  Criticality,
+  DataClassification,
+  Exposure,
 } from '../../../../domain/generated/output.js';
 
 /**
@@ -38,6 +41,10 @@ export interface ApplicationRow {
   cloud_deployment_error: string | null;
   last_deployed_at: number | null;
   bedrock_enabled: number;
+  criticality: string | null;
+  exposure: string | null;
+  data_classification: string | null;
+  business_unit: string | null;
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
@@ -74,6 +81,10 @@ export function toDatabase(app: Application): ApplicationRow {
         ? dateOrNumberToMs(app.lastDeployedAt)
         : null,
     bedrock_enabled: app.bedrockEnabled ? 1 : 0,
+    criticality: app.criticality ?? null,
+    exposure: app.exposure ?? null,
+    data_classification: app.dataClassification ?? null,
+    business_unit: app.businessUnit ?? null,
     created_at: dateOrNumberToMs(app.createdAt),
     updated_at: dateOrNumberToMs(app.updatedAt),
     deleted_at: app.deletedAt ? dateOrNumberToMs(app.deletedAt) : null,
@@ -109,6 +120,10 @@ export function fromDatabase(row: ApplicationRow): Application {
         ? new Date(row.last_deployed_at)
         : undefined,
     bedrockEnabled: row.bedrock_enabled === 1,
+    criticality: (row.criticality as Criticality | null) ?? undefined,
+    exposure: (row.exposure as Exposure | null) ?? undefined,
+    dataClassification: (row.data_classification as DataClassification | null) ?? undefined,
+    businessUnit: row.business_unit ?? undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     deletedAt: row.deleted_at ? new Date(row.deleted_at) : undefined,
