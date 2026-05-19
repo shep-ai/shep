@@ -33,6 +33,8 @@ const PHASE_2_TOKENS = [
   ASPM_TOKENS.IOwnershipYamlReader,
 ] as const;
 
+const PHASE_3_TOKENS = [ASPM_TOKENS.IFindingRepository] as const;
+
 describe('registerAspm — phase 2 wiring', () => {
   let container: DependencyContainer;
   let db: Database.Database;
@@ -52,6 +54,10 @@ describe('registerAspm — phase 2 wiring', () => {
   });
 
   it.each(PHASE_2_TOKENS)('resolves the %s token', (token) => {
+    expect(container.resolve(token)).not.toBeNull();
+  });
+
+  it.each(PHASE_3_TOKENS)('resolves the %s token', (token) => {
     expect(container.resolve(token)).not.toBeNull();
   });
 

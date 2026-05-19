@@ -25,6 +25,7 @@ import { ASPM_TOKENS } from './aspm-tokens.js';
 import type { IApiAssetRepository } from '../../../application/ports/output/repositories/api-asset-repository.interface.js';
 import type { IBusinessUnitRepository } from '../../../application/ports/output/repositories/business-unit-repository.interface.js';
 import type { ICloudEnvironmentRepository } from '../../../application/ports/output/repositories/cloud-environment-repository.interface.js';
+import type { IFindingRepository } from '../../../application/ports/output/repositories/finding-repository.interface.js';
 import type { IOwnerRepository } from '../../../application/ports/output/repositories/owner-repository.interface.js';
 import type { IServiceRepository } from '../../../application/ports/output/repositories/service-repository.interface.js';
 import type { ITeamRepository } from '../../../application/ports/output/repositories/team-repository.interface.js';
@@ -36,6 +37,7 @@ import type { IOwnershipYamlReader } from '../../../application/ports/output/ser
 import { SQLiteApiAssetRepository } from '../../repositories/aspm/sqlite-api-asset-repository.js';
 import { SQLiteBusinessUnitRepository } from '../../repositories/aspm/sqlite-business-unit-repository.js';
 import { SQLiteCloudEnvironmentRepository } from '../../repositories/aspm/sqlite-cloud-environment-repository.js';
+import { SQLiteFindingRepository } from '../../repositories/aspm/sqlite-finding-repository.js';
 import { SQLiteOwnerRepository } from '../../repositories/aspm/sqlite-owner-repository.js';
 import { SQLiteServiceRepository } from '../../repositories/aspm/sqlite-service-repository.js';
 import { SQLiteTeamRepository } from '../../repositories/aspm/sqlite-team-repository.js';
@@ -60,7 +62,10 @@ export function registerAspm(container: DependencyContainer): void {
   registerPhase2Services(container);
   registerPhase2UseCases(container);
 
-  // Phases 3-10 attach below as they land:
+  // Phase 3 — SecurityFinding Entity + SARIF Ingestion
+  registerPhase3Repositories(container);
+
+  // Phases 4-10 attach below as they land:
   //
   //   - Phase 3: SecurityFinding repository + IFindingIngestPort (SARIF).
   //   - Phase 4: ISbomPort (CycloneDX) + IExploitIntelPort (KEV+EPSS).
@@ -113,5 +118,11 @@ function registerPhase2UseCases(container: DependencyContainer): void {
   container.register(ImportOwnershipYamlUseCase, { useClass: ImportOwnershipYamlUseCase });
   container.register(ResolveOwnershipForFindingUseCase, {
     useClass: ResolveOwnershipForFindingUseCase,
+  });
+}
+
+function registerPhase3Repositories(container: DependencyContainer): void {
+  container.register<IFindingRepository>(ASPM_TOKENS.IFindingRepository, {
+    useFactory: (c) => new SQLiteFindingRepository(c.resolve<Database.Database>('Database')),
   });
 }
