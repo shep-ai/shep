@@ -27,6 +27,7 @@ status:
     - "phase-6"
     - "phase-7"
     - "phase-8"
+    - "evidence"
 validation:
   lastRun: null
   gatesPassed: []
