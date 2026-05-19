@@ -607,3 +607,19 @@ The user reported that the web preview did not start automatically after the ini
 3. **Single source of truth.** If you have two effects firing `deploy.deploy()` on the same event (e.g. `useDevServerCoordinator` AND a `onAllStepsComplete` callback), kill one — `deploymentService.start()` is NOT idempotent (see `deployment.service.ts` line 231-238: it kills any existing deployment and starts a new one), so two parallel calls can race and tear down the in-flight spawn.
 4. **Always status-guard before calling `deploy.deploy()`:** skip when `deploy.status === Ready || Booting || deploy.deployLoading`. This is the only protection against a stray double-fire that would kill an in-progress spawn.
 5. **Do NOT add "respect explicit user stop" complexity unless the user asks for it.** The simpler invariant — "after the agent finishes, the preview is up" — matches what users want 99% of the time. Manual stop is a transient user action; it does not need to persist across iterations.
+
+## DI Tokens: Register Under the Exact String the Consumer Resolves
+
+Spec 097 shipped these failure modes — all caught only by E2E `shep ui` boot, not by unit tests:
+
+1. **Concrete-name vs port-interface token mismatch.** `DesktopNotifier` was registered as `'DesktopNotifier'` but every consumer resolved `'IDesktopNotifier'`. Unit tests pass (they mock `container.resolve` and intercept by string), but production boot dies with `Attempted to resolve unregistered dependency token: "IDesktopNotifier"`.
+2. **`@injectAll('Token')` requires bare-token registrations.** Channel-suffixed tokens like `'IRecapPublisher:file'`, `'IRecapPublisher:discord'` do NOT satisfy `@injectAll('IRecapPublisher')` — tsyringe matches the EXACT token string. If you want multi-injection, register each adapter under both the suffixed AND the bare token.
+3. **Defining a port without an adapter is a boot bomb.** `IContributorActionGate` was defined in `application/ports/output/services/` but no `register-*.ts` ever wired a concrete. The use cases that `@inject` it crash at boot the first time anything resolves them.
+4. **Production deps in `devDependencies` are invisible to local dev but break `npm pack` consumers.** `@octokit/rest`, `@octokit/plugin-retry`, `@octokit/plugin-throttling` were declared as devDependencies. Local `pnpm install` saw them because pnpm installs devDeps in workspaces, but `script-runner.test.ts` (which does `npm pack` → `npm install -g` in a clean Docker container) crashed with `ERR_MODULE_NOT_FOUND: '@octokit/rest'`. **Rule:** every package imported anywhere under `packages/core/src/` or `src/presentation/` MUST be in `dependencies`, never `devDependencies`. devDependencies are only for build tooling, linters, and test-only packages.
+
+**Mandatory checks when adding any new port/adapter or library:**
+
+1. The string in `container.register(...)` must EXACTLY match the string in every `@inject(...)` and `container.resolve(...)`. Grep both sides before pushing.
+2. If any consumer uses `@injectAll('Token')`, register each adapter under the bare `'Token'` — not just under suffixed discriminator tokens.
+3. Add the new I-prefixed token to `CRITICAL_INFRA_TOKENS` in `tests/integration/infrastructure/di/container-bootstrap.test.ts` so boot is verified in unit-level CI.
+4. Any `import` from a third-party package in `packages/core/src/` or `src/` must have a matching entry in `dependencies` (not `devDependencies`). Use `grep '"<pkg>"' package.json` to confirm.

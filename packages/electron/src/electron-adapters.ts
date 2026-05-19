@@ -34,6 +34,7 @@ export interface ElectronAdapterResult {
  *
  * Override tokens:
  * - 'DesktopNotifier' → ElectronDesktopNotifier
+ * - 'IDesktopNotifier' → ElectronDesktopNotifier
  * - 'IBrowserOpener' → ElectronBrowserOpener
  *
  * Returns a cleanup function for graceful shutdown.
@@ -45,6 +46,7 @@ export function registerElectronAdapters(deps: ElectronAdapterDeps): ElectronAda
 
   // Override DI tokens with Electron adapters
   deps.container.register('DesktopNotifier', { useFactory: () => notifier });
+  deps.container.register('IDesktopNotifier', { useFactory: () => notifier });
   deps.container.register('IBrowserOpener', { useFactory: () => opener });
 
   // Start listening to notification bus for native OS notifications

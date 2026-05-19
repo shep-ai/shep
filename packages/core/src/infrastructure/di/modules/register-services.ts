@@ -87,6 +87,8 @@ import type { IExternalIssueFetcher } from '../../../application/ports/output/se
 import { GitHubIssueFetcher } from '../../services/external/github-issue.service.js';
 import type { IAllContributorsWriter } from '../../../application/ports/output/services/all-contributors-writer.interface.js';
 import { AllContributorsWriter } from '../../services/contributors/all-contributors-writer.service.js';
+import type { IContributorActionGate } from '../../../application/ports/output/services/contributor-action-gate.interface.js';
+import { SupervisorContributorActionGate } from '../../services/contributors/supervisor-contributor-action-gate.js';
 import type { IOutreachPublisher } from '../../../application/ports/output/services/outreach-publisher.interface.js';
 import { DiscordOutreachPublisher } from '../../services/outreach/discord-outreach-publisher.service.js';
 import type { IRecapPublisher } from '../../../application/ports/output/services/recap-publisher.interface.js';
@@ -230,6 +232,9 @@ export function registerServices(container: DependencyContainer): void {
   container.register('DesktopNotifier', {
     useFactory: () => new DesktopNotifier(),
   });
+  container.register('IDesktopNotifier', {
+    useFactory: (c) => c.resolve('DesktopNotifier') as DesktopNotifier,
+  });
 
   container.register<INotificationService>('INotificationService', {
     useFactory: (c) => {
@@ -317,18 +322,32 @@ export function registerServices(container: DependencyContainer): void {
   });
   container.registerSingleton<IOutreachPublisher>('IOutreachPublisher', DiscordOutreachPublisher);
 
+  // Contributor action gate (NFR-5) — every contributor side-effect flows
+  // through the supervisor before execution.
+  container.registerSingleton<IContributorActionGate>(
+    'IContributorActionGate',
+    SupervisorContributorActionGate
+  );
+
   // Recap publishers are registered per-channel so the publish use case can
-  // resolve the right adapter for a given target.
-  container.register<IRecapPublisher>(`IRecapPublisher:${RecapChannel.File}`, {
-    useFactory: () => new FileRecapPublisher(workspaceRoot),
-  });
-  container.register<IRecapPublisher>(`IRecapPublisher:${RecapChannel.Discord}`, {
-    useFactory: (c) =>
-      new DiscordRecapPublisher(c.resolve<IOutreachPublisher>('IOutreachPublisher')),
-  });
-  container.register<IRecapPublisher>(`IRecapPublisher:${RecapChannel.GithubDiscussion}`, {
-    useClass: GithubDiscussionRecapPublisher,
-  });
+  // resolve the right adapter for a given target. Each publisher is ALSO
+  // registered under the bare `IRecapPublisher` token so `@injectAll(...)`
+  // in `PublishMonthlyRecapUseCase` picks up the full set.
+  const registerRecapPublisher = (
+    channel: RecapChannel,
+    factory: (c: DependencyContainer) => IRecapPublisher
+  ): void => {
+    container.register<IRecapPublisher>(`IRecapPublisher:${channel}`, { useFactory: factory });
+    container.register<IRecapPublisher>('IRecapPublisher', { useFactory: factory });
+  };
+  registerRecapPublisher(RecapChannel.File, () => new FileRecapPublisher(workspaceRoot));
+  registerRecapPublisher(
+    RecapChannel.Discord,
+    (c) => new DiscordRecapPublisher(c.resolve<IOutreachPublisher>('IOutreachPublisher'))
+  );
+  registerRecapPublisher(RecapChannel.GithubDiscussion, (c) =>
+    c.resolve(GithubDiscussionRecapPublisher)
+  );
 
   container.registerSingleton<IDiagnosticRunner>('IDiagnosticRunner', DiagnosticRunner);
 
