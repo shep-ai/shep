@@ -1,0 +1,219 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "aspm-platform"
+number: 98
+branch: "feat/098-aspm-platform"
+oneLiner: "Add an Application Security Posture Management (ASPM) module to Shep that unifies application risk across code, cloud, APIs, dependencies, secrets, and AI-generated changes with ownership, prioritization, and remediation workflows."
+summary: >
+  Introduce ASPM as a first-class capability inside Shep. The MVP adds a new
+  domain area covering security assets (applications/services/repositories/APIs/cloud
+  environments), unified findings, an exposure/criticality-aware risk score, owner
+  mapping, remediation campaigns, executive dashboards, developer task routing, and
+  basic AI-generated code risk signals — wired through Shep's TypeSpec-first /
+  Clean Architecture stack and exposed via the Next.js web UI and CLI.
+phase: "Analysis"
+sizeEstimate: "XL"
+
+relatedFeatures: []
+
+technologies:
+  - "TypeSpec (tsp/) — domain model authoring; generates packages/core/src/domain/generated/output.ts"
+  - "TypeScript (strict) across packages/core and src/presentation"
+  - "Clean Architecture (domain / application / infrastructure / presentation)"
+  - "tsyringe — dependency injection via @injectable / @inject string tokens"
+  - "better-sqlite3 — embedded persistence with numbered migrations under packages/core/src/infrastructure/persistence/sqlite/migrations/"
+  - "Next.js (App Router) — src/presentation/web with server + client components"
+  - "React + Tailwind + shadcn/ui — web UI primitives"
+  - "Storybook — mandatory colocated .stories.tsx for every web component"
+  - "Commander — CLI under src/presentation/cli/commands"
+  - "Vitest — unit + integration tests under tests/"
+  - "Playwright — e2e tests"
+  - "OWASP / CWE / CVE / EPSS / KEV / SARIF / CycloneDX / SPDX — industry vocabularies the risk + ingestion model must align with"
+
+relatedLinks:
+  - title: "Clean Architecture overview (project doc)"
+    url: "./docs/architecture/clean-architecture.md"
+  - title: "Repository pattern + DI (project doc)"
+    url: "./docs/architecture/repository-pattern.md"
+  - title: "TypeSpec authoring guide (project doc)"
+    url: "./docs/development/typespec-guide.md"
+  - title: "TDD guide (project doc)"
+    url: "./docs/development/tdd-guide.md"
+  - title: "Web UI architecture (project doc)"
+    url: "./docs/ui/architecture.md"
+  - title: "OWASP ASVS — application security verification standard"
+    url: "https://owasp.org/www-project-application-security-verification-standard/"
+  - title: "OASIS SARIF v2.1.0 — static analysis results interchange format"
+    url: "https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html"
+  - title: "CISA Known Exploited Vulnerabilities (KEV) catalog"
+    url: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+  - title: "FIRST EPSS — Exploit Prediction Scoring System"
+    url: "https://www.first.org/epss/"
+  - title: "OWASP CycloneDX SBOM spec"
+    url: "https://cyclonedx.org/specification/overview/"
+
+openQuestions: []
+
+content: |
+  ## Problem Statement
+
+  Shep today is an AI-native SDLC platform built around the Application entity
+  (`tsp/domain/entities/application.tsp`) — a workspace with a repository, an
+  agent session, deployment status, and feature/cycle/task tracking. There is
+  **no security posture model**: no findings, no owners, no risk scoring, no
+  remediation campaigns, no compliance/governance surface, and no signal about
+  AI-generated changes that introduce risk.
+
+  Engineering, AppSec, and security leadership have to leave Shep to answer
+  "which application risks matter most, who owns them, and what should be fixed
+  first?" — exactly the question this feature is meant to answer in-product.
+
+  The ASPM module needs to plug into Shep's existing Application/Repository
+  inventory and Clean Architecture stack without bypassing the TypeSpec-first,
+  use-case-only, agent-agnostic conventions enforced by `CLAUDE.md` and
+  `.claude/rules/*`.
+
+  ## Codebase Analysis
+
+  ### Project Structure
+
+  - `tsp/` — TypeSpec sources. Domain entities live in `tsp/domain/entities/`
+    (e.g. `application.tsp`, `repository.tsp`, `feature.tsp`, `work-item.tsp`).
+    Common scalars, enums, and base mixins (`SoftDeletableEntity`) sit in
+    `tsp/common/`. Compiled output lands at
+    `packages/core/src/domain/generated/output.ts` and must never be hand-edited.
+  - `packages/core/src/` — the four Clean Architecture layers:
+    - `domain/` — generated types, value objects, factories, errors, shared utils.
+    - `application/use-cases/<area>/<verb>-<noun>.use-case.ts` — orchestration
+      entry points (~40 areas today: applications, features, cycles, audit,
+      analytics, integrations, cloud-deploy, …).
+    - `application/ports/output/` — `repositories/`, `services/`, `agents/`
+      interfaces consumed by use cases via string-token injection.
+    - `infrastructure/` — `repositories/` (SQLite implementations + mappers),
+      `services/`, `adapters/`, `persistence/sqlite/migrations/` (numbered
+      timestamped files), and `di/` (tsyringe container + topic-grouped
+      `register-*` modules).
+  - `src/presentation/` — thin presentation surfaces:
+    - `web/` — Next.js App Router. Pages mirror domain areas (`app/applications/`,
+      `app/projects/[slug]/`, `app/agents/`, …). Components live in
+      `components/features/<area>/` with mandatory colocated `*.stories.tsx`.
+      Server actions in `app/actions/` and SSE/REST routes in `app/api/`.
+    - `cli/commands/` — Commander wiring around DI-resolved use cases.
+    - `tui/` — terminal UI surface.
+  - `tests/unit/use-cases/<area>/` and `tests/integration/infrastructure/persistence/sqlite/`
+    mirror the source tree; e2e specs live under `tests/e2e/` driven by Playwright.
+
+  ### Architecture Patterns
+
+  - **Dependency rule** points inward: presentation → application → domain;
+    infrastructure only implements outward ports. Application + presentation
+    may not import from `infrastructure/` (enforced by `.claude/rules/code-quality.md`).
+  - **TypeSpec-first** modeling: every new entity, enum, or field is authored in
+    `tsp/` and surfaced through generated types — no ad-hoc TS interfaces for
+    domain concepts.
+  - **Repository pattern**: `I<Entity>Repository` port in
+    `application/ports/output/repositories/`, SQLite implementation in
+    `infrastructure/repositories/sqlite-<entity>.repository.ts` with a colocated
+    mapper and a migration. Cross-platform path normalization is mandatory.
+  - **Use cases as the only entry point**: presentation never touches a
+    repository, service, or SDK directly. CLI/web/TUI all share the same
+    presentation-agnostic use-case API.
+  - **DI via tsyringe** with string tokens (`'I<Name>'`). Wiring lives in
+    `infrastructure/di/container.ts` and topic-grouped `register-*.ts` modules.
+  - **Agent-agnostic**: any LLM use must route through `IAgentExecutorProvider`;
+    provider SDKs are confined to `infrastructure/`.
+  - **TDD mandatory**: failing test first under `tests/unit/...`, then minimal
+    implementation, then refactor.
+  - **Storybook mandatory** for every web component (Default + Loading + Error,
+    plus variants); commits without stories are rejected.
+
+  ### Relevant Technologies
+
+  - TypeSpec → generated TS domain types.
+  - tsyringe DI with topic-grouped registration modules.
+  - better-sqlite3 with numbered, idempotent migrations and soft-delete columns
+    on most entities (`SoftDeletableEntity` base in `tsp/common/base.tsp`).
+  - Next.js App Router with server components, server actions, and SSE routes
+    for live updates (used today by Control Center / agent sessions).
+  - shadcn/ui + Tailwind for UI primitives; React Flow already in tree for graph
+    visualizations and could be reused for an ASPM "asset / risk relationship"
+    view if needed.
+  - Vitest (unit + integration) and Playwright (e2e).
+  - Shep already has an Applications inventory page
+    (`src/presentation/web/app/applications/` + `components/features/applications/`)
+    — the natural anchor for ASPM context tabs (risk, findings, owners).
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `tsp/domain/entities/` | High | New entities: `SecurityFinding`, `RiskScore`, `Owner`/`Team`/`BusinessUnit`, `Service`, `ApiAsset`, `CloudEnvironment`, `RemediationCampaign`, `SecurityPolicy`, `ComplianceControl`, `RiskException`, `AiChangeRiskSignal`. Plus enums for severity, finding domain (code/dependency/secret/container/cloud/api/identity/runtime/compliance/ai), exposure, exploitability tier, SLA state. |
+  | `tsp/domain/value-objects/` | Medium | Value objects for `Severity`, `RiskScoreBreakdown`, `SLAWindow`, `CVEReference`, `OwnershipPath`. |
+  | `packages/core/src/domain/` | High | Factories, errors (`FindingNotFound`, `CampaignClosed`, `OwnerOrphanedFinding`), risk-scoring domain logic (pure, deterministic; no infra deps). |
+  | `packages/core/src/application/use-cases/aspm/` | High | New area covering ingestion (`ingest-findings`), CRUD on findings/campaigns/owners, prioritization (`rank-findings`, `compute-risk-score`), campaign lifecycle, SLA tracking, exception workflow, executive aggregations (`get-posture-summary`, `get-risk-trend`), developer task routing, and AI-change review queue. |
+  | `packages/core/src/application/ports/output/repositories/` | High | New repository interfaces per entity (`IFindingRepository`, `IRemediationCampaignRepository`, `IOwnerRepository`, `IRiskScoreRepository`, `IComplianceControlRepository`, `IAiChangeRiskSignalRepository`). |
+  | `packages/core/src/application/ports/output/services/` | High | New ports: `IFindingIngestPort` (abstract scanner adapter), `IExploitIntelPort` (KEV/EPSS lookups), `ISbomPort` (CycloneDX/SPDX parsing), `ISlaClockPort`. |
+  | `packages/core/src/infrastructure/persistence/sqlite/migrations/` | High | New numbered migrations creating tables and indexes for each ASPM entity; backfill safe defaults; idempotent ALTER patterns per `LESSONS.md`. |
+  | `packages/core/src/infrastructure/repositories/` | High | SQLite repositories + mappers for each new entity (cross-platform-safe queries). |
+  | `packages/core/src/infrastructure/services/` | Medium | Concrete adapters for finding ingestion (initial stubs for SARIF and CycloneDX), exploit intel (KEV/EPSS feed loader), SLA clock service. |
+  | `packages/core/src/infrastructure/di/` | Medium | New `register-aspm.ts` module wiring repositories, ports, services, and use cases; called from `container.ts`. |
+  | `src/presentation/web/app/` | High | New routes: `/aspm` (dashboard), `/aspm/findings`, `/aspm/findings/[id]`, `/aspm/campaigns`, `/aspm/campaigns/[id]`, `/aspm/inventory`, `/aspm/owners`, `/aspm/compliance`, `/aspm/ai-review`. Plus API routes under `app/api/aspm/*` for SSE-driven posture updates. |
+  | `src/presentation/web/components/features/aspm/` | High | New feature folder: posture cards, findings table + filters, finding detail panel, campaign board, owner map, risk trend charts, AI-change review queue. Every component requires a colocated `.stories.tsx` with Default/Loading/Error variants. |
+  | `src/presentation/web/components/features/applications/` | Medium | Augment existing Application surface with ASPM context (risk score badge, top findings, owners). |
+  | `src/presentation/cli/commands/` | Medium | New subcommands: `shep aspm ingest`, `shep aspm findings list`, `shep aspm campaigns ...`, `shep aspm posture` — all routed through use cases. |
+  | `tests/unit/use-cases/aspm/` | High | RED-first tests for each use case (risk scoring, ranking, campaign lifecycle, SLA logic, AI-change risk classification). |
+  | `tests/integration/infrastructure/persistence/sqlite/` | High | Migration + repository round-trip tests. |
+  | `tests/e2e/` | Medium | Playwright flows for the ASPM dashboard, findings list, and a campaign happy path. |
+  | `docs/` | Medium | New architecture/usage docs (`docs/architecture/aspm.md`, `docs/api/domain-models.md` updates). |
+
+  ## Dependencies
+
+  - **Existing Application + Repository entities** — ASPM findings attach to
+    these as their primary "asset" anchor; no schema changes required to attach,
+    but `Application` will gain optional ASPM-relevant context (criticality,
+    business unit, exposure) via a follow-up TSP extension.
+  - **TypeSpec compile pipeline** (`pnpm tsp:compile`) — required to regenerate
+    `domain/generated/output.ts` after each new entity/enum.
+  - **SQLite migration runner** — every new table needs a numbered migration
+    with idempotent DDL and safe defaults.
+  - **DI container bootstrap** (`infrastructure/di/container.ts`) — must invoke
+    a new `register-aspm` module after migrations run.
+  - **Existing `IAgentExecutorProvider`** — needed for any optional AI-assisted
+    triage or AI-change risk classification; provider-specific code must stay
+    inside infrastructure adapters.
+  - **External data sources (external to this feature, brought in via ports)** —
+    CISA KEV catalog, FIRST EPSS scores, optional CVE metadata; ingestion of
+    SARIF and CycloneDX documents from CI scanners. Concrete adapters can land
+    incrementally; the use-case layer must work against the ports from day one.
+  - **Web UI primitives** — shadcn/ui Table, Card, Tabs, Badge, Dialog; React
+    Flow if an asset-risk graph view ships; existing SSE pattern for live
+    posture updates.
+
+  ## Size Estimate
+
+  **XL** — This is a new vertical slice on the scale of Shep's existing Features,
+  Cycles, or Cloud-Deploy modules, *combined*. Concretely:
+
+  - ~10–14 new TypeSpec entities + supporting enums/value objects.
+  - ~10+ new SQLite migrations and matching repositories with mappers and
+    cross-platform path/identifier handling.
+  - 30+ use cases across ingestion, prioritization, ownership, campaigns, SLA,
+    compliance, AI-change review, and executive aggregation — every one of them
+    TDD-first.
+  - ~15–25 new web routes/pages and a feature folder of components, each with
+    Storybook stories (Default/Loading/Error + variants).
+  - New CLI command surface.
+  - New integration ports + at least stub adapters (SARIF, CycloneDX, KEV, EPSS).
+  - Documentation updates and e2e coverage.
+
+  Even with the explicit MVP carve-outs in the PRD (no scanning engine, no GRC
+  replacement, no runtime protection, no auto-fix, no pentest automation), the
+  in-scope MVP — inventory, unified findings, risk prioritization, owner mapping,
+  campaigns, executive reporting, developer task routing, and basic AI-generated
+  code risk visibility — is multi-week. Recommend splitting the implementation
+  plan into staged epics: (1) Asset + ownership model, (2) Findings ingestion +
+  unified view, (3) Risk scoring + prioritization, (4) Campaigns + SLA, (5)
+  Executive dashboards + developer routing, (6) AI-change review queue, (7)
+  Compliance/governance surface. Each epic should be independently shippable
+  behind the same ASPM area.
