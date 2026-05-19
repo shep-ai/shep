@@ -35,6 +35,7 @@ import type { IServiceRepository } from '../../../application/ports/output/repos
 import type { ITeamRepository } from '../../../application/ports/output/repositories/team-repository.interface.js';
 
 import type { IAiChangeRiskSignalRepository } from '../../../application/ports/output/repositories/ai-change-risk-signal-repository.interface.js';
+import type { IComplianceControlRepository } from '../../../application/ports/output/repositories/compliance-control-repository.interface.js';
 
 // Service ports
 import type { IExploitIntelPort } from '../../../application/ports/output/services/exploit-intel-port.interface.js';
@@ -56,6 +57,7 @@ import { SQLiteSecurityPolicyRepository } from '../../repositories/aspm/sqlite-s
 import { SQLiteServiceRepository } from '../../repositories/aspm/sqlite-service-repository.js';
 import { SQLiteTeamRepository } from '../../repositories/aspm/sqlite-team-repository.js';
 import { SQLiteAiChangeRiskSignalRepository } from '../../repositories/aspm/sqlite-ai-change-risk-signal-repository.js';
+import { SQLiteComplianceControlRepository } from '../../repositories/aspm/sqlite-compliance-control-repository.js';
 
 // Concrete services
 import { CycloneDxSbomAdapter } from '../../services/aspm/cyclonedx-sbom-adapter.js';
@@ -95,6 +97,7 @@ import { DismissAiSignalUseCase } from '../../../application/use-cases/aspm/ai-r
 import { GraduateAiSignalToFindingUseCase } from '../../../application/use-cases/aspm/ai-review/graduate-ai-signal-to-finding.js';
 import { ListAiSignalsUseCase } from '../../../application/use-cases/aspm/ai-review/list-ai-signals.js';
 import { RecordAiChangeRiskSignalUseCase } from '../../../application/use-cases/aspm/ai-review/record-ai-change-risk-signal.js';
+import { GetComplianceCoverageUseCase } from '../../../application/use-cases/aspm/compliance/get-compliance-coverage.js';
 
 /**
  * Register ASPM repositories, ports, services, and use cases on the
@@ -133,7 +136,11 @@ export function registerAspm(container: DependencyContainer): void {
   registerPhase8Repositories(container);
   registerPhase8UseCases(container);
 
-  // Phases 8-10 attach below as they land:
+  // Phase 9 — Compliance Surface
+  registerPhase9Repositories(container);
+  registerPhase9UseCases(container);
+
+  // Phases 9-10 attach below as they land:
   //
   //   - Phase 3: SecurityFinding repository + IFindingIngestPort (SARIF).
   //   - Phase 4: ISbomPort (CycloneDX) + IExploitIntelPort (KEV+EPSS).
@@ -313,4 +320,17 @@ function registerPhase8UseCases(container: DependencyContainer): void {
   });
   container.register(DismissAiSignalUseCase, { useClass: DismissAiSignalUseCase });
   container.register(ListAiSignalsUseCase, { useClass: ListAiSignalsUseCase });
+}
+
+function registerPhase9Repositories(container: DependencyContainer): void {
+  container.register<IComplianceControlRepository>(ASPM_TOKENS.IComplianceControlRepository, {
+    useFactory: (c) =>
+      new SQLiteComplianceControlRepository(c.resolve<Database.Database>('Database')),
+  });
+}
+
+function registerPhase9UseCases(container: DependencyContainer): void {
+  container.register(GetComplianceCoverageUseCase, {
+    useClass: GetComplianceCoverageUseCase,
+  });
 }

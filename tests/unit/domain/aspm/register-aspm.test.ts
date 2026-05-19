@@ -16,7 +16,9 @@
 import 'reflect-metadata';
 import { describe, it, expect } from 'vitest';
 import { container as rootContainer } from 'tsyringe';
+import Database from 'better-sqlite3';
 import { registerAspm } from '@/infrastructure/di/modules/register-aspm.js';
+import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
 import {
   ASPM_REPOSITORY_TOKENS,
   ASPM_SERVICE_TOKENS,
@@ -35,25 +37,36 @@ describe('registerAspm', () => {
     expect(() => registerAspm(c)).not.toThrow();
   });
 
-  it('leaves unimplemented phase tokens unresolved (covers phases 8+)', () => {
+  it('phase 8 overrides the phase-7 NoOp with a real SQLite repo', async () => {
     const c = rootContainer.createChildContainer();
+    const db = new Database(':memory:');
+    await runSQLiteMigrations(db);
+    c.registerInstance('Database', db);
     registerAspm(c);
-    // Phases 2-7 wire the ownership / finding / SBOM / exploit-intel /
-    // risk-score / security-policy / SLA-clock / risk-exception /
-    // remediation-campaign / AI-signal-NoOp tokens. Tokens belonging
-    // to later phases (compliance) must still fail so a missing
-    // wiring is observable.
-    expect(() => c.resolve(ASPM_REPOSITORY_TOKENS.IComplianceControlRepository)).toThrow();
+    try {
+      const repo = c.resolve<{ countOpen: () => Promise<number> }>(
+        ASPM_REPOSITORY_TOKENS.IAiChangeRiskSignalRepository
+      );
+      expect(repo).toBeDefined();
+      // Empty DB → no open signals.
+      expect(await repo.countOpen()).toBe(0);
+    } finally {
+      db.close();
+    }
   });
 
-  it('phase 7 wires a NoOp IAiChangeRiskSignalRepository (real impl lands in phase 8)', async () => {
+  it('phase 9 wires the IComplianceControlRepository token', async () => {
     const c = rootContainer.createChildContainer();
+    const db = new Database(':memory:');
+    await runSQLiteMigrations(db);
+    c.registerInstance('Database', db);
     registerAspm(c);
-    const repo = c.resolve<{ countOpen: () => Promise<number> }>(
-      ASPM_REPOSITORY_TOKENS.IAiChangeRiskSignalRepository
-    );
-    expect(repo).toBeDefined();
-    expect(await repo.countOpen()).toBe(0);
+    try {
+      const repo = c.resolve(ASPM_REPOSITORY_TOKENS.IComplianceControlRepository);
+      expect(repo).toBeDefined();
+    } finally {
+      db.close();
+    }
   });
 
   it('wires the phase-4 exploit-intel + SBOM ports', () => {
