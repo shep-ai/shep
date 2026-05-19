@@ -35,7 +35,11 @@ const PHASE_2_TOKENS = [
 
 const PHASE_3_TOKENS = [ASPM_TOKENS.IFindingRepository] as const;
 
-const PHASE_6_TOKENS = [ASPM_TOKENS.ISecurityPolicyRepository, ASPM_TOKENS.ISlaClockPort] as const;
+const PHASE_6_TOKENS = [
+  ASPM_TOKENS.ISecurityPolicyRepository,
+  ASPM_TOKENS.ISlaClockPort,
+  ASPM_TOKENS.IRiskExceptionRepository,
+] as const;
 
 describe('registerAspm — phase 2 wiring', () => {
   let container: DependencyContainer;

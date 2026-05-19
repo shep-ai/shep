@@ -27,6 +27,7 @@ import type { IBusinessUnitRepository } from '../../../application/ports/output/
 import type { ICloudEnvironmentRepository } from '../../../application/ports/output/repositories/cloud-environment-repository.interface.js';
 import type { IFindingRepository } from '../../../application/ports/output/repositories/finding-repository.interface.js';
 import type { IOwnerRepository } from '../../../application/ports/output/repositories/owner-repository.interface.js';
+import type { IRiskExceptionRepository } from '../../../application/ports/output/repositories/risk-exception-repository.interface.js';
 import type { IRiskScoreRepository } from '../../../application/ports/output/repositories/risk-score-repository.interface.js';
 import type { ISecurityPolicyRepository } from '../../../application/ports/output/repositories/security-policy-repository.interface.js';
 import type { IServiceRepository } from '../../../application/ports/output/repositories/service-repository.interface.js';
@@ -45,6 +46,7 @@ import { SQLiteBusinessUnitRepository } from '../../repositories/aspm/sqlite-bus
 import { SQLiteCloudEnvironmentRepository } from '../../repositories/aspm/sqlite-cloud-environment-repository.js';
 import { SQLiteFindingRepository } from '../../repositories/aspm/sqlite-finding-repository.js';
 import { SQLiteOwnerRepository } from '../../repositories/aspm/sqlite-owner-repository.js';
+import { SQLiteRiskExceptionRepository } from '../../repositories/aspm/sqlite-risk-exception-repository.js';
 import { SQLiteRiskScoreRepository } from '../../repositories/aspm/sqlite-risk-score-repository.js';
 import { SQLiteSecurityPolicyRepository } from '../../repositories/aspm/sqlite-security-policy-repository.js';
 import { SQLiteServiceRepository } from '../../repositories/aspm/sqlite-service-repository.js';
@@ -207,6 +209,9 @@ function registerPhase5UseCases(container: DependencyContainer): void {
 function registerPhase6Repositories(container: DependencyContainer): void {
   container.register<ISecurityPolicyRepository>(ASPM_TOKENS.ISecurityPolicyRepository, {
     useFactory: (c) => new SQLiteSecurityPolicyRepository(c.resolve<Database.Database>('Database')),
+  });
+  container.register<IRiskExceptionRepository>(ASPM_TOKENS.IRiskExceptionRepository, {
+    useFactory: (c) => new SQLiteRiskExceptionRepository(c.resolve<Database.Database>('Database')),
   });
 }
 
