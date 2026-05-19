@@ -108,7 +108,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full flow.
 
 ### medium
 
-- _No curated issues right now._
+- [#625 — auto-regenerate GOOD_FIRST_ISSUES.md from live GitHub labels](https://github.com/shep-ai/shep/issues/625)
 
 ---
 
