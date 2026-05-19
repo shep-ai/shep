@@ -6,9 +6,9 @@
  * via ListOwnerRollupsUseCase and hands them to OwnerMap.
  */
 
-import {
+import type {
   ListOwnerRollupsUseCase,
-  type OwnerRollup,
+  OwnerRollup,
 } from '@shepai/core/application/use-cases/aspm/ownership/list-owner-rollups';
 import { resolve } from '@/lib/server-container';
 
@@ -20,7 +20,7 @@ export default async function AspmOwnersPage() {
   let owners: OwnerRollup[] = [];
   let error: string | null = null;
   try {
-    owners = await resolve(ListOwnerRollupsUseCase).execute();
+    owners = await resolve<ListOwnerRollupsUseCase>('ListOwnerRollupsUseCase').execute();
   } catch (err) {
     error = err instanceof Error ? err.message : String(err);
   }

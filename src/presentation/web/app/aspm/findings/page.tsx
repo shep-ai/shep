@@ -11,9 +11,9 @@
  * bar emitting a navigation, not a client-side fetch.
  */
 
-import {
+import type {
   RankFindingsUseCase,
-  type RankFindingsResult,
+  RankFindingsResult,
 } from '@shepai/core/application/use-cases/aspm/findings/rank-findings';
 import {
   CanonicalSeverity,
@@ -37,7 +37,7 @@ export default async function FindingsRoute({ searchParams }: RouteProps) {
   let result: RankFindingsResult | null = null;
   let error: string | null = null;
   try {
-    result = await resolve(RankFindingsUseCase).execute({ filter });
+    result = await resolve<RankFindingsUseCase>('RankFindingsUseCase').execute({ filter });
   } catch (err) {
     error = err instanceof Error ? err.message : String(err);
   }

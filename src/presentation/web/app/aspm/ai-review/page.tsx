@@ -7,7 +7,7 @@
  * graduate / dismiss buttons to the HTTP endpoints landing in phase 10.
  */
 
-import { ListAiSignalsUseCase } from '@shepai/core/application/use-cases/aspm/ai-review/list-ai-signals';
+import type { ListAiSignalsUseCase } from '@shepai/core/application/use-cases/aspm/ai-review/list-ai-signals';
 import type { AiChangeRiskSignal } from '@shepai/core/domain/generated/output';
 
 import { resolve } from '@/lib/server-container';
@@ -19,7 +19,7 @@ export default async function AiReviewPage() {
   let signals: AiChangeRiskSignal[] = [];
   let error: string | null = null;
   try {
-    signals = await resolve(ListAiSignalsUseCase).execute();
+    signals = await resolve<ListAiSignalsUseCase>('ListAiSignalsUseCase').execute();
   } catch (err) {
     error = err instanceof Error ? err.message : String(err);
   }

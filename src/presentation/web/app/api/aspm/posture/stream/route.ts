@@ -21,9 +21,9 @@
  */
 
 import { resolve } from '@/lib/server-container';
-import {
+import type {
   GetPostureSummaryUseCase,
-  type PostureSummary,
+  PostureSummary,
 } from '@shepai/core/application/use-cases/aspm/posture/get-posture-summary';
 
 // Force dynamic — SSE streams must never be statically optimized or cached.
@@ -73,7 +73,9 @@ export function GET(request: Request): Response {
 
       const emitPosture = async (force = false): Promise<void> => {
         try {
-          const summary = await resolve(GetPostureSummaryUseCase).execute();
+          const summary = await resolve<GetPostureSummaryUseCase>(
+            'GetPostureSummaryUseCase'
+          ).execute();
           const payload = toPayload(summary);
           const signature = JSON.stringify(payload);
           if (!force && signature === lastSignature) return;

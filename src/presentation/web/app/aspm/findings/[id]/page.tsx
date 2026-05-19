@@ -7,7 +7,7 @@
  * revoke exception + convert-to-work-item actions.
  */
 
-import { GetFindingUseCase } from '@shepai/core/application/use-cases/aspm/findings/get-finding';
+import type { GetFindingUseCase } from '@shepai/core/application/use-cases/aspm/findings/get-finding';
 import type { RiskScore } from '@shepai/core/domain/generated/output';
 import { FindingNotFoundError } from '@shepai/core/domain/aspm/errors/finding-not-found.error';
 import { notFound } from 'next/navigation';
@@ -27,7 +27,7 @@ export default async function FindingDetailRoute({ params }: RouteProps) {
   const { id } = await params;
   let finding;
   try {
-    finding = await resolve(GetFindingUseCase).execute({ id });
+    finding = await resolve<GetFindingUseCase>('GetFindingUseCase').execute({ id });
   } catch (err) {
     if (err instanceof FindingNotFoundError) {
       notFound();

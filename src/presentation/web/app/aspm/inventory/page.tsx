@@ -7,11 +7,11 @@
  * the feature-flag-defined cap (research decision 12 / plan risk row).
  */
 
-import {
+import type {
   GetPostureSummaryUseCase,
-  type PostureSummary,
+  PostureSummary,
 } from '@shepai/core/application/use-cases/aspm/posture/get-posture-summary';
-import { ListApplicationsUseCase } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
+import type { ListApplicationsUseCase } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 import { resolve } from '@/lib/server-container';
 
 import { AssetRiskGraph } from '@/components/features/aspm/asset-risk-graph/asset-risk-graph';
@@ -26,14 +26,16 @@ export default async function AspmInventoryPage() {
   let error: string | null = null;
 
   try {
-    const apps = await resolve(ListApplicationsUseCase).execute();
+    const apps = await resolve<ListApplicationsUseCase>('ListApplicationsUseCase').execute();
     applications = apps.map((a) => ({ id: a.id, name: a.name, ownerId: undefined }));
   } catch (err) {
     error = err instanceof Error ? err.message : String(err);
   }
 
   try {
-    posture = await resolve(GetPostureSummaryUseCase).execute({ topAtRiskLimit: 50 });
+    posture = await resolve<GetPostureSummaryUseCase>('GetPostureSummaryUseCase').execute({
+      topAtRiskLimit: 50,
+    });
   } catch (err) {
     error ??= err instanceof Error ? err.message : String(err);
   }

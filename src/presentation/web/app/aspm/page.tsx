@@ -9,13 +9,13 @@
  * subscriber in PostureCardsLive.
  */
 
-import {
+import type {
   GetPostureSummaryUseCase,
-  type PostureSummary,
+  PostureSummary,
 } from '@shepai/core/application/use-cases/aspm/posture/get-posture-summary';
-import {
+import type {
   GetRiskTrendUseCase,
-  type GetRiskTrendResult,
+  GetRiskTrendResult,
 } from '@shepai/core/application/use-cases/aspm/posture/get-risk-trend';
 import { resolve } from '@/lib/server-container';
 import { PostureCardsLive } from '@/components/features/aspm/posture-cards-live';
@@ -31,12 +31,12 @@ export default async function AspmDashboardPage() {
   let trendError: string | null = null;
 
   try {
-    summary = await resolve(GetPostureSummaryUseCase).execute();
+    summary = await resolve<GetPostureSummaryUseCase>('GetPostureSummaryUseCase').execute();
   } catch (err) {
     summaryError = err instanceof Error ? err.message : String(err);
   }
   try {
-    trend = await resolve(GetRiskTrendUseCase).execute();
+    trend = await resolve<GetRiskTrendUseCase>('GetRiskTrendUseCase').execute();
   } catch (err) {
     trendError = err instanceof Error ? err.message : String(err);
   }

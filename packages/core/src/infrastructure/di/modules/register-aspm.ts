@@ -140,6 +140,11 @@ export function registerAspm(container: DependencyContainer): void {
   registerPhase9Repositories(container);
   registerPhase9UseCases(container);
 
+  // String-token aliases so web pages can resolve via type-only imports
+  // (matches the project convention used by register-use-cases.ts and avoids
+  // pulling use-case source through Next.js webpack/turbopack bundling).
+  registerStringTokenAliases(container);
+
   // Phases 9-10 attach below as they land:
   //
   //   - Phase 3: SecurityFinding repository + IFindingIngestPort (SARIF).
@@ -332,5 +337,50 @@ function registerPhase9Repositories(container: DependencyContainer): void {
 function registerPhase9UseCases(container: DependencyContainer): void {
   container.register(GetComplianceCoverageUseCase, {
     useClass: GetComplianceCoverageUseCase,
+  });
+}
+
+function registerStringTokenAliases(container: DependencyContainer): void {
+  container.register('GetPostureSummaryUseCase', {
+    useFactory: (c) => c.resolve(GetPostureSummaryUseCase),
+  });
+  container.register('GetRiskTrendUseCase', {
+    useFactory: (c) => c.resolve(GetRiskTrendUseCase),
+  });
+  container.register('GetApplicationPostureUseCase', {
+    useFactory: (c) => c.resolve(GetApplicationPostureUseCase),
+  });
+  container.register('RankFindingsUseCase', {
+    useFactory: (c) => c.resolve(RankFindingsUseCase),
+  });
+  container.register('GetFindingUseCase', {
+    useFactory: (c) => c.resolve(GetFindingUseCase),
+  });
+  container.register('ListFindingsUseCase', {
+    useFactory: (c) => c.resolve(ListFindingsUseCase),
+  });
+  container.register('ListOwnerRollupsUseCase', {
+    useFactory: (c) => c.resolve(ListOwnerRollupsUseCase),
+  });
+  container.register('ListAiSignalsUseCase', {
+    useFactory: (c) => c.resolve(ListAiSignalsUseCase),
+  });
+  container.register('GetComplianceCoverageUseCase', {
+    useFactory: (c) => c.resolve(GetComplianceCoverageUseCase),
+  });
+  container.register('DeclareExceptionUseCase', {
+    useFactory: (c) => c.resolve(DeclareExceptionUseCase),
+  });
+  container.register('RevokeExceptionUseCase', {
+    useFactory: (c) => c.resolve(RevokeExceptionUseCase),
+  });
+  container.register('ConvertFindingToWorkItemUseCase', {
+    useFactory: (c) => c.resolve(ConvertFindingToWorkItemUseCase),
+  });
+  container.register('GraduateAiSignalToFindingUseCase', {
+    useFactory: (c) => c.resolve(GraduateAiSignalToFindingUseCase),
+  });
+  container.register('DismissAiSignalUseCase', {
+    useFactory: (c) => c.resolve(DismissAiSignalUseCase),
   });
 }

@@ -8,9 +8,9 @@
  * compliance_controls table — no presentation change required.
  */
 
-import {
+import type {
   GetComplianceCoverageUseCase,
-  type ComplianceCoverageResult,
+  ComplianceCoverageResult,
 } from '@shepai/core/application/use-cases/aspm/compliance/get-compliance-coverage';
 import { resolve } from '@/lib/server-container';
 import {
@@ -25,7 +25,9 @@ export default async function AspmCompliancePage() {
   let coverageError: string | null = null;
 
   try {
-    coverage = await resolve(GetComplianceCoverageUseCase).execute();
+    coverage = await resolve<GetComplianceCoverageUseCase>(
+      'GetComplianceCoverageUseCase'
+    ).execute();
   } catch (err) {
     coverageError = err instanceof Error ? err.message : String(err);
   }
