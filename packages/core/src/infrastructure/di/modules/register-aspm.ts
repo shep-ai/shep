@@ -31,6 +31,7 @@ import type { IServiceRepository } from '../../../application/ports/output/repos
 import type { ITeamRepository } from '../../../application/ports/output/repositories/team-repository.interface.js';
 
 // Service ports
+import type { IFindingIngestPort } from '../../../application/ports/output/services/finding-ingest-port.interface.js';
 import type { IOwnershipYamlReader } from '../../../application/ports/output/services/ownership-yaml-reader.interface.js';
 
 // Concrete repositories
@@ -44,12 +45,16 @@ import { SQLiteTeamRepository } from '../../repositories/aspm/sqlite-team-reposi
 
 // Concrete services
 import { OwnershipYamlReader } from '../../services/aspm/ownership-yaml-reader.js';
+import { SarifIngestAdapter } from '../../services/aspm/sarif-ingest-adapter.js';
 
 // Use cases
 import { AssignOwnerUseCase } from '../../../application/use-cases/aspm/ownership/assign-owner.js';
 import { ImportOwnershipYamlUseCase } from '../../../application/use-cases/aspm/ownership/import-ownership-yaml.js';
 import { ListOwnersUseCase } from '../../../application/use-cases/aspm/ownership/list-owners.js';
 import { ResolveOwnershipForFindingUseCase } from '../../../application/use-cases/aspm/ownership/resolve-ownership-for-finding.js';
+import { GetFindingUseCase } from '../../../application/use-cases/aspm/findings/get-finding.js';
+import { IngestFindingsUseCase } from '../../../application/use-cases/aspm/findings/ingest-findings.js';
+import { ListFindingsUseCase } from '../../../application/use-cases/aspm/findings/list-findings.js';
 
 /**
  * Register ASPM repositories, ports, services, and use cases on the
@@ -64,6 +69,8 @@ export function registerAspm(container: DependencyContainer): void {
 
   // Phase 3 — SecurityFinding Entity + SARIF Ingestion
   registerPhase3Repositories(container);
+  registerPhase3Services(container);
+  registerPhase3UseCases(container);
 
   // Phases 4-10 attach below as they land:
   //
@@ -125,4 +132,16 @@ function registerPhase3Repositories(container: DependencyContainer): void {
   container.register<IFindingRepository>(ASPM_TOKENS.IFindingRepository, {
     useFactory: (c) => new SQLiteFindingRepository(c.resolve<Database.Database>('Database')),
   });
+}
+
+function registerPhase3Services(container: DependencyContainer): void {
+  container.register<IFindingIngestPort>(ASPM_TOKENS.IFindingIngestPort, {
+    useClass: SarifIngestAdapter,
+  });
+}
+
+function registerPhase3UseCases(container: DependencyContainer): void {
+  container.register(IngestFindingsUseCase, { useClass: IngestFindingsUseCase });
+  container.register(ListFindingsUseCase, { useClass: ListFindingsUseCase });
+  container.register(GetFindingUseCase, { useClass: GetFindingUseCase });
 }
