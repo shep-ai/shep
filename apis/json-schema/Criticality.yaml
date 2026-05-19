@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Criticality.yaml
+type: string
+enum:
+  - Tier1
+  - Tier2
+  - Tier3
+description: Business criticality tier for an ASPM asset

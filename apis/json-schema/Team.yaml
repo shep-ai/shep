@@ -1,0 +1,18 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Team.yaml
+type: object
+properties:
+  name:
+    type: string
+    description: Human-readable team name
+  slug:
+    type: string
+    description: Optional short identifier for URL slugs and CLI usage
+  businessUnitId:
+    $ref: UUID.yaml
+    description: Business unit this team rolls up into
+required:
+  - name
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: Team groups owners and rolls up ASPM posture

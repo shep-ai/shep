@@ -1,0 +1,24 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: OwnershipPath.yaml
+type: object
+properties:
+  pathGlob:
+    type: string
+    description: Path glob this mapping applies to (POSIX separators, repo-relative)
+  ownerId:
+    $ref: UUID.yaml
+    description: Owner UUID assigned to this path
+  teamId:
+    $ref: UUID.yaml
+    description: Team UUID assigned to this path
+  businessUnitId:
+    $ref: UUID.yaml
+    description: BusinessUnit UUID assigned to this path
+  source:
+    type: string
+    description: Source of the mapping (yaml | ui)
+required:
+  - pathGlob
+  - ownerId
+  - source
+description: A single ownership mapping (path glob -> owner/team/business unit)

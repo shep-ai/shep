@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SlaState.yaml
+type: string
+enum:
+  - Healthy
+  - AtRisk
+  - Breached
+description: Computed SLA state of a security finding

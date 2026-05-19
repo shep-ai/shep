@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: AiSignalState.yaml
+type: string
+enum:
+  - Open
+  - Acknowledged
+  - GraduatedToFinding
+  - Dismissed
+  - Resolved
+description: Lifecycle state of an AI-change risk signal

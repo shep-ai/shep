@@ -1,0 +1,15 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: BusinessUnit.yaml
+type: object
+properties:
+  name:
+    type: string
+    description: Human-readable business unit name
+  slug:
+    type: string
+    description: Optional short identifier for URL slugs and CLI usage
+required:
+  - name
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: Top-level rollup grouping for ASPM (e.g. division, product line)

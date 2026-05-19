@@ -1,0 +1,15 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FindingDomain.yaml
+type: string
+enum:
+  - Code
+  - Dependency
+  - Secret
+  - Container
+  - Cloud
+  - Api
+  - Identity
+  - Runtime
+  - Compliance
+  - Ai
+description: Category of security finding (source/kind)

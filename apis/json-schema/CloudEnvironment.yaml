@@ -1,0 +1,29 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CloudEnvironment.yaml
+type: object
+properties:
+  name:
+    type: string
+    description: Human-readable environment name (e.g. payments-prod, web-staging)
+  provider:
+    type: string
+    description: Cloud provider identifier (free-form; e.g. aws, gcp, azure, cloudflare)
+  accountId:
+    type: string
+    description: Provider-specific account / project / subscription id
+  applicationId:
+    $ref: UUID.yaml
+    description: Application this cloud environment belongs to
+  ownerId:
+    $ref: UUID.yaml
+    description: Optional owner override (otherwise inherits from Application)
+  region:
+    type: string
+    description: Optional region identifier
+required:
+  - name
+  - provider
+  - applicationId
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: Cloud environment — deployment target / account / project

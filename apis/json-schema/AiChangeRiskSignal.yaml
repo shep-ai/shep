@@ -1,0 +1,49 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: AiChangeRiskSignal.yaml
+type: object
+properties:
+  applicationId:
+    $ref: UUID.yaml
+    description: Application this signal attaches to
+  agentSessionId:
+    type: string
+    description: Originating Shep agent session id (so reviewers can navigate to the run)
+  signalType:
+    $ref: AiSignalType.yaml
+    description: Type of AI-change risk signal
+  severity:
+    $ref: CanonicalSeverity.yaml
+    description: Canonical severity for posture rollups when graduated
+  summary:
+    type: string
+    description: Short human-readable summary of the signal
+  evidence:
+    type: string
+    description: Free-form evidence payload (JSON-serialized — diff snippets, dep name, etc.)
+  state:
+    $ref: AiSignalState.yaml
+    description: Lifecycle state in the AI-review queue
+  ownerId:
+    $ref: UUID.yaml
+    description: Optional owner of the signal (otherwise inherits from Application)
+  graduatedFindingId:
+    $ref: UUID.yaml
+    description: If graduated, the resulting SecurityFinding id
+  discoveredAt:
+    type: string
+    format: date-time
+    description: When the signal was first recorded
+  resolvedAt:
+    type: string
+    format: date-time
+    description: When the signal was resolved, dismissed, or graduated
+required:
+  - applicationId
+  - signalType
+  - severity
+  - summary
+  - state
+  - discoveredAt
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: AI-generated change risk signal — Shep's differentiating triage record

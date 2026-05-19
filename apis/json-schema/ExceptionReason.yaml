@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ExceptionReason.yaml
+type: string
+enum:
+  - FalsePositive
+  - AcceptedRisk
+  - CompensatingControl
+  - NotApplicable
+  - Other
+description: Reason taxonomy for a declared risk exception

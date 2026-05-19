@@ -1,0 +1,35 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RemediationCampaign.yaml
+type: object
+properties:
+  name:
+    type: string
+    description: Human-readable campaign name
+  description:
+    type: string
+    description: Long-form description / sprint goal
+  targetQuery:
+    $ref: FindingFilter.yaml
+    description: Serialized target query — same shape as list-findings filter
+  status:
+    $ref: CampaignStatus.yaml
+    description: Lifecycle state of the campaign
+  ownerId:
+    $ref: UUID.yaml
+    description: Owner accountable for the campaign
+  dueDate:
+    type: string
+    format: date-time
+    description: Target completion date
+  closedAt:
+    type: string
+    format: date-time
+    description: When the campaign transitioned to Completed or Cancelled
+required:
+  - name
+  - description
+  - targetQuery
+  - status
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: Remediation campaign with a query-shaped target and read-time progress

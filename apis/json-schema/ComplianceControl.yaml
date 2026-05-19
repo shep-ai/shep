@@ -1,0 +1,24 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ComplianceControl.yaml
+type: object
+properties:
+  frameworkId:
+    $ref: ComplianceFramework.yaml
+    description: Compliance framework this control belongs to
+  controlId:
+    type: string
+    description: Framework-specific control identifier (e.g. V2.1.1, CWE-79)
+  title:
+    type: string
+    description: Short human-readable title
+  description:
+    type: string
+    description: Long-form description of what the control covers
+required:
+  - frameworkId
+  - controlId
+  - title
+  - description
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: Single control within a compliance framework (OWASP ASVS / CWE Top 25 / ...)

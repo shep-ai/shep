@@ -10,6 +10,9 @@
 import "../../common/base.tsp";
 import "../../common/scalars.tsp";
 import "../../common/enums/cloud-deployment.tsp";
+import "../value-objects/aspm/criticality.tsp";
+import "../value-objects/aspm/exposure.tsp";
+import "../value-objects/aspm/data-classification.tsp";
 
 /**
  * Application Status
@@ -90,4 +93,21 @@ model Application extends SoftDeletableEntity {
 
   @doc("Whether project-bedrock memory integration is enabled for this application")
   bedrockEnabled: boolean = false;
+
+  // ─── ASPM context (feature 098) ─────────────────────────────────────────
+  // Optional ASPM-relevant metadata. All fields default to "absent" on
+  // existing rows; the ASPM module treats absent values as Unknown and
+  // weights them accordingly in the risk-score composite.
+
+  @doc("ASPM: business criticality tier of this application")
+  criticality?: Criticality;
+
+  @doc("ASPM: network exposure classification of this application")
+  exposure?: Exposure;
+
+  @doc("ASPM: data sensitivity classification of this application")
+  dataClassification?: DataClassification;
+
+  @doc("ASPM: business unit grouping (free-form string, used for posture rollups)")
+  businessUnit?: string;
 }

@@ -106,21 +106,21 @@ export type ActionItem = BaseEntity & {
   acceptanceCriteria: AcceptanceCriteria[];
 };
 export enum ArtifactCategory {
-  PRD = 'PRD',
-  API = 'API',
-  Design = 'Design',
-  Other = 'Other',
+  PRD = "PRD",
+  API = "API",
+  Design = "Design",
+  Other = "Other",
 }
 export enum ArtifactFormat {
-  Markdown = 'md',
-  Text = 'txt',
-  Yaml = 'yaml',
-  Other = 'Other',
+  Markdown = "md",
+  Text = "txt",
+  Yaml = "yaml",
+  Other = "Other",
 }
 export enum ArtifactState {
-  Todo = 'Todo',
-  Elaborating = 'Elaborating',
-  Done = 'Done',
+  Todo = "Todo",
+  Elaborating = "Elaborating",
+  Done = "Done",
 }
 
 /**
@@ -157,8 +157,8 @@ export type Artifact = BaseEntity & {
   state: ArtifactState;
 };
 export enum MessageRole {
-  Assistant = 'assistant',
-  User = 'user',
+  Assistant = "assistant",
+  User = "user",
 }
 
 /**
@@ -187,13 +187,13 @@ export type Message = BaseEntity & {
   selectedOption?: number;
 };
 export enum RequirementType {
-  Functional = 'Functional',
-  NonFunctional = 'NonFunctional',
+  Functional = "Functional",
+  NonFunctional = "NonFunctional",
 }
 export enum ResearchState {
-  NotStarted = 'NotStarted',
-  Running = 'Running',
-  Finished = 'Finished',
+  NotStarted = "NotStarted",
+  Running = "Running",
+  Finished = "Finished",
 }
 
 /**
@@ -250,15 +250,15 @@ export type ModelConfiguration = {
   default: string;
 };
 export enum Language {
-  English = 'en',
-  Ukrainian = 'uk',
-  Russian = 'ru',
-  Portuguese = 'pt',
-  Spanish = 'es',
-  Arabic = 'ar',
-  Hebrew = 'he',
-  French = 'fr',
-  German = 'de',
+  English = "en",
+  Ukrainian = "uk",
+  Russian = "ru",
+  Portuguese = "pt",
+  Spanish = "es",
+  Arabic = "ar",
+  Hebrew = "he",
+  French = "fr",
+  German = "de",
 }
 
 /**
@@ -283,18 +283,18 @@ export type UserProfile = {
   preferredLanguage?: Language;
 };
 export enum EditorType {
-  VsCode = 'vscode',
-  Cursor = 'cursor',
-  Windsurf = 'windsurf',
-  Zed = 'zed',
-  Antigravity = 'antigravity',
+  VsCode = "vscode",
+  Cursor = "cursor",
+  Windsurf = "windsurf",
+  Zed = "zed",
+  Antigravity = "antigravity",
 }
 export enum TerminalType {
-  System = 'system',
-  Warp = 'warp',
-  ITerm2 = 'iterm2',
-  Alacritty = 'alacritty',
-  Kitty = 'kitty',
+  System = "system",
+  Warp = "warp",
+  ITerm2 = "iterm2",
+  Alacritty = "alacritty",
+  Kitty = "kitty",
 }
 
 /**
@@ -399,8 +399,8 @@ export type AnalyzeRepoTimeouts = {
   analyzeMs?: number;
 };
 export enum SkillSourceType {
-  Local = 'local',
-  Remote = 'remote',
+  Local = "local",
+  Remote = "remote",
 }
 
 /**
@@ -509,22 +509,22 @@ export type WorkflowConfig = {
   skillInjection?: SkillInjectionConfig;
 };
 export enum AgentType {
-  ClaudeCode = 'claude-code',
-  CodexCli = 'codex-cli',
-  CopilotCli = 'copilot-cli',
-  GeminiCli = 'gemini-cli',
-  Aider = 'aider',
-  Continue = 'continue',
-  Cursor = 'cursor',
-  Cline = 'cline',
-  OpenRouter = 'openrouter',
-  TogetherAi = 'together-ai',
-  Ollama = 'ollama',
-  Dev = 'dev',
+  ClaudeCode = "claude-code",
+  CodexCli = "codex-cli",
+  CopilotCli = "copilot-cli",
+  GeminiCli = "gemini-cli",
+  Aider = "aider",
+  Continue = "continue",
+  Cursor = "cursor",
+  Cline = "cline",
+  OpenRouter = "openrouter",
+  TogetherAi = "together-ai",
+  Ollama = "ollama",
+  Dev = "dev",
 }
 export enum AgentAuthMethod {
-  Session = 'session',
-  Token = 'token',
+  Session = "session",
+  Token = "token",
 }
 
 /**
@@ -697,15 +697,15 @@ export type FeatureFlags = {
   whatsappDispatch: boolean;
 };
 export enum WhatsAppAdapterKind {
-  Baileys = 'baileys',
-  CloudApi = 'cloud-api',
+  Baileys = "baileys",
+  CloudApi = "cloud-api",
 }
 export enum WhatsAppConnectionStatus {
-  Disconnected = 'disconnected',
-  Connecting = 'connecting',
-  AwaitingScan = 'awaiting-scan',
-  Connected = 'connected',
-  Error = 'error',
+  Disconnected = "disconnected",
+  Connecting = "connecting",
+  AwaitingScan = "awaiting-scan",
+  Connected = "connected",
+  Error = "error",
 }
 
 /**
@@ -768,9 +768,9 @@ export type InteractiveAgentConfig = {
   maxConcurrentSessions: number;
 };
 export enum SupervisorAutonomy {
-  advisory = 'advisory',
-  cosign = 'cosign',
-  autonomous = 'autonomous',
+  advisory = "advisory",
+  cosign = "cosign",
+  autonomous = "autonomous",
 }
 
 /**
@@ -805,9 +805,9 @@ export type FabLayoutConfig = {
   swapPosition: boolean;
 };
 export enum DefaultHomePage {
-  ControlCenter = 'control-center',
-  Applications = 'applications',
-  Features = 'features',
+  ControlCenter = "control-center",
+  Applications = "applications",
+  Features = "features",
 }
 
 /**
@@ -872,9 +872,9 @@ export type Settings = BaseEntity & {
   whatsapp?: WhatsAppConfig;
 };
 export enum SupervisorScopeType {
-  global = 'global',
-  repo = 'repo',
-  app = 'app',
+  global = "global",
+  repo = "repo",
+  app = "app",
 }
 
 /**
@@ -923,10 +923,10 @@ export type SupervisorPolicy = BaseEntity & {
   notificationOverridesJson?: string;
 };
 export enum TaskState {
-  Todo = 'Todo',
-  WIP = 'Work in Progress',
-  Done = 'Done',
-  Review = 'Review',
+  Todo = "Todo",
+  WIP = "Work in Progress",
+  Done = "Done",
+  Review = "Review",
 }
 
 /**
@@ -977,9 +977,9 @@ export type TimelineEvent = BaseEntity & {
   timestamp: any;
 };
 export enum PlanState {
-  Requirements = 'Requirements',
-  ClarificationRequired = 'ClarificationRequired',
-  Ready = 'Ready',
+  Requirements = "Requirements",
+  ClarificationRequired = "ClarificationRequired",
+  Ready = "Ready",
 }
 
 /**
@@ -1060,24 +1060,24 @@ export type Plan = BaseEntity & {
   workPlan?: GanttViewData;
 };
 export enum SdlcLifecycle {
-  Started = 'Started',
-  Analyze = 'Analyze',
-  Requirements = 'Requirements',
-  Research = 'Research',
-  Planning = 'Planning',
-  Implementation = 'Implementation',
-  Review = 'Review',
-  Maintain = 'Maintain',
-  Blocked = 'Blocked',
-  Pending = 'Pending',
-  Deleting = 'Deleting',
-  AwaitingUpstream = 'AwaitingUpstream',
-  Archived = 'Archived',
+  Started = "Started",
+  Analyze = "Analyze",
+  Requirements = "Requirements",
+  Research = "Research",
+  Planning = "Planning",
+  Implementation = "Implementation",
+  Review = "Review",
+  Maintain = "Maintain",
+  Blocked = "Blocked",
+  Pending = "Pending",
+  Deleting = "Deleting",
+  AwaitingUpstream = "AwaitingUpstream",
+  Archived = "Archived",
 }
 export enum BuildMode {
-  Application = 'application',
-  Fast = 'fast',
-  Spec = 'spec',
+  Application = "application",
+  Fast = "fast",
+  Spec = "spec",
 }
 
 /**
@@ -1098,14 +1098,14 @@ export type ApprovalGates = {
   allowMerge: boolean;
 };
 export enum PrStatus {
-  Open = 'Open',
-  Merged = 'Merged',
-  Closed = 'Closed',
+  Open = "Open",
+  Merged = "Merged",
+  Closed = "Closed",
 }
 export enum CiStatus {
-  Pending = 'Pending',
-  Success = 'Success',
-  Failure = 'Failure',
+  Pending = "Pending",
+  Success = "Success",
+  Failure = "Failure",
 }
 
 /**
@@ -1830,13 +1830,13 @@ export type FeatureStatus = BaseEntity & {
   errors: FeatureErrors;
 };
 export enum ToolType {
-  VsCode = 'vscode',
-  Cursor = 'cursor',
-  Windsurf = 'windsurf',
-  Zed = 'zed',
-  Antigravity = 'antigravity',
-  CursorCli = 'cursor-cli',
-  ClaudeCode = 'claude-code',
+  VsCode = "vscode",
+  Cursor = "cursor",
+  Windsurf = "windsurf",
+  Zed = "zed",
+  Antigravity = "antigravity",
+  CursorCli = "cursor-cli",
+  ClaudeCode = "claude-code",
 }
 
 /**
@@ -1861,16 +1861,16 @@ export type Tool = BaseEntity & {
   installedAt?: any;
 };
 export enum ApplicationStatus {
-  Idle = 'Idle',
-  Active = 'Active',
-  Error = 'Error',
+  Idle = "Idle",
+  Active = "Active",
+  Error = "Error",
 }
 export enum CloudDeploymentProvider {
-  CloudflarePages = 'CloudflarePages',
-  Vercel = 'Vercel',
-  Netlify = 'Netlify',
-  AwsAmplify = 'AwsAmplify',
-  GcpCloudRun = 'GcpCloudRun',
+  CloudflarePages = "CloudflarePages",
+  Vercel = "Vercel",
+  Netlify = "Netlify",
+  AwsAmplify = "AwsAmplify",
+  GcpCloudRun = "GcpCloudRun",
 }
 
 /**
@@ -1899,16 +1899,16 @@ export type ApplicationUpdatePayload = {
   cloudDeploymentProvider?: CloudDeploymentProvider;
 };
 export enum OperationLogKind {
-  CloudDeploy = 'CloudDeploy',
-  GitRemoteCreate = 'GitRemoteCreate',
-  RepoSync = 'RepoSync',
-  ApplicationSetup = 'ApplicationSetup',
+  CloudDeploy = "CloudDeploy",
+  GitRemoteCreate = "GitRemoteCreate",
+  RepoSync = "RepoSync",
+  ApplicationSetup = "ApplicationSetup",
 }
 export enum OperationLogLevel {
-  Debug = 'Debug',
-  Info = 'Info',
-  Warn = 'Warn',
-  Error = 'Error',
+  Debug = "Debug",
+  Info = "Info",
+  Warn = "Warn",
+  Error = "Error",
 }
 
 /**
@@ -1947,31 +1947,31 @@ export type OperationLogAppendPayload = {
   entry: OperationLogEntry;
 };
 export enum NotificationEventType {
-  AgentStarted = 'agent_started',
-  PhaseCompleted = 'phase_completed',
-  WaitingApproval = 'waiting_approval',
-  AgentCompleted = 'agent_completed',
-  AgentFailed = 'agent_failed',
-  PrMerged = 'pr_merged',
-  PrClosed = 'pr_closed',
-  PrChecksPassed = 'pr_checks_passed',
-  PrChecksFailed = 'pr_checks_failed',
-  PrBlocked = 'pr_blocked',
-  MergeReviewReady = 'merge_review_ready',
-  CloudDeploymentUpdated = 'cloud_deployment_updated',
-  ApplicationUpdated = 'application_updated',
-  OperationLogAppended = 'operation_log_appended',
-  AgentQuestionPending = 'agent_question_pending',
-  AgentQuestionBlocking = 'agent_question_blocking',
-  AgentMessageBlocked = 'agent_message_blocked',
-  SupervisorEscalated = 'supervisor_escalated',
-  SupervisorFailed = 'supervisor_failed',
+  AgentStarted = "agent_started",
+  PhaseCompleted = "phase_completed",
+  WaitingApproval = "waiting_approval",
+  AgentCompleted = "agent_completed",
+  AgentFailed = "agent_failed",
+  PrMerged = "pr_merged",
+  PrClosed = "pr_closed",
+  PrChecksPassed = "pr_checks_passed",
+  PrChecksFailed = "pr_checks_failed",
+  PrBlocked = "pr_blocked",
+  MergeReviewReady = "merge_review_ready",
+  CloudDeploymentUpdated = "cloud_deployment_updated",
+  ApplicationUpdated = "application_updated",
+  OperationLogAppended = "operation_log_appended",
+  AgentQuestionPending = "agent_question_pending",
+  AgentQuestionBlocking = "agent_question_blocking",
+  AgentMessageBlocked = "agent_message_blocked",
+  SupervisorEscalated = "supervisor_escalated",
+  SupervisorFailed = "supervisor_failed",
 }
 export enum NotificationSeverity {
-  Info = 'info',
-  Warning = 'warning',
-  Success = 'success',
-  Error = 'error',
+  Info = "info",
+  Warning = "warning",
+  Success = "success",
+  Error = "error",
 }
 
 /**
@@ -2020,12 +2020,29 @@ export type NotificationEvent = {
   operationLogAppend?: OperationLogAppendPayload;
 };
 export enum CloudDeploymentStatus {
-  NotDeployed = 'NotDeployed',
-  Building = 'Building',
-  Uploading = 'Uploading',
-  Deploying = 'Deploying',
-  Deployed = 'Deployed',
-  Failed = 'Failed',
+  NotDeployed = "NotDeployed",
+  Building = "Building",
+  Uploading = "Uploading",
+  Deploying = "Deploying",
+  Deployed = "Deployed",
+  Failed = "Failed",
+}
+export enum Criticality {
+  Tier1 = "Tier1",
+  Tier2 = "Tier2",
+  Tier3 = "Tier3",
+}
+export enum Exposure {
+  Internet = "Internet",
+  Internal = "Internal",
+  Airgapped = "Airgapped",
+  Unknown = "Unknown",
+}
+export enum DataClassification {
+  Public = "Public",
+  Internal = "Internal",
+  Confidential = "Confidential",
+  Restricted = "Restricted",
 }
 
 /**
@@ -2104,6 +2121,22 @@ export type Application = SoftDeletableEntity & {
    * Whether project-bedrock memory integration is enabled for this application
    */
   bedrockEnabled: boolean;
+  /**
+   * ASPM: business criticality tier of this application
+   */
+  criticality?: Criticality;
+  /**
+   * ASPM: network exposure classification of this application
+   */
+  exposure?: Exposure;
+  /**
+   * ASPM: data sensitivity classification of this application
+   */
+  dataClassification?: DataClassification;
+  /**
+   * ASPM: business unit grouping (free-form string, used for posture rollups)
+   */
+  businessUnit?: string;
 };
 
 /**
@@ -2136,9 +2169,9 @@ export type Repository = SoftDeletableEntity & {
   bedrockEnabled?: boolean;
 };
 export enum EstimateType {
-  None = 'None',
-  Category = 'Category',
-  Points = 'Points',
+  None = "None",
+  Category = "Category",
+  Points = "Points",
 }
 
 /**
@@ -2187,11 +2220,11 @@ export type PmProject = SoftDeletableEntity & {
   featureToggles?: string;
 };
 export enum Priority {
-  Urgent = 'Urgent',
-  High = 'High',
-  Medium = 'Medium',
-  Low = 'Low',
-  None = 'None',
+  Urgent = "Urgent",
+  High = "High",
+  Medium = "Medium",
+  Low = "Low",
+  None = "None",
 }
 export type float = any;
 export type float64 = float;
@@ -2254,11 +2287,11 @@ export type WorkItem = SoftDeletableEntity & {
   customPropertyValues?: string;
 };
 export enum StateGroup {
-  Backlog = 'Backlog',
-  Unstarted = 'Unstarted',
-  Started = 'Started',
-  Completed = 'Completed',
-  Cancelled = 'Cancelled',
+  Backlog = "Backlog",
+  Unstarted = "Unstarted",
+  Started = "Started",
+  Completed = "Completed",
+  Cancelled = "Cancelled",
 }
 
 /**
@@ -2291,10 +2324,10 @@ export type WorkItemState = SoftDeletableEntity & {
   isDefault: boolean;
 };
 export enum WorkItemTypeName {
-  Task = 'Task',
-  Bug = 'Bug',
-  Story = 'Story',
-  Feature = 'Feature',
+  Task = "Task",
+  Bug = "Bug",
+  Story = "Story",
+  Feature = "Feature",
 }
 
 /**
@@ -2367,11 +2400,11 @@ export type Comment = SoftDeletableEntity & {
   authorId: string;
 };
 export enum ViewLayout {
-  List = 'List',
-  Board = 'Board',
-  Table = 'Table',
-  Calendar = 'Calendar',
-  Timeline = 'Timeline',
+  List = "List",
+  Board = "Board",
+  Table = "Table",
+  Calendar = "Calendar",
+  Timeline = "Timeline",
 }
 
 /**
@@ -2408,9 +2441,9 @@ export type SavedView = SoftDeletableEntity & {
   createdBy?: string;
 };
 export enum CycleStatus {
-  Upcoming = 'Upcoming',
-  Active = 'Active',
-  Completed = 'Completed',
+  Upcoming = "Upcoming",
+  Active = "Active",
+  Completed = "Completed",
 }
 
 /**
@@ -2443,12 +2476,12 @@ export type Cycle = SoftDeletableEntity & {
   endDate?: any;
 };
 export enum ModuleStatus {
-  Backlog = 'Backlog',
-  Planned = 'Planned',
-  InProgress = 'InProgress',
-  Paused = 'Paused',
-  Completed = 'Completed',
-  Cancelled = 'Cancelled',
+  Backlog = "Backlog",
+  Planned = "Planned",
+  InProgress = "InProgress",
+  Paused = "Paused",
+  Completed = "Completed",
+  Cancelled = "Cancelled",
 }
 
 /**
@@ -2537,11 +2570,11 @@ export type PageVersion = BaseEntity & {
   content?: string;
 };
 export enum EpicStatus {
-  Backlog = 'Backlog',
-  Planned = 'Planned',
-  InProgress = 'InProgress',
-  Completed = 'Completed',
-  Cancelled = 'Cancelled',
+  Backlog = "Backlog",
+  Planned = "Planned",
+  InProgress = "InProgress",
+  Completed = "Completed",
+  Cancelled = "Cancelled",
 }
 
 /**
@@ -2600,10 +2633,10 @@ export type PmAttachment = SoftDeletableEntity & {
   storagePath: string;
 };
 export enum IntakeStatus {
-  Pending = 'Pending',
-  Accepted = 'Accepted',
-  Declined = 'Declined',
-  Duplicate = 'Duplicate',
+  Pending = "Pending",
+  Accepted = "Accepted",
+  Declined = "Declined",
+  Duplicate = "Duplicate",
 }
 
 /**
@@ -2664,11 +2697,11 @@ export type IntakeItem = SoftDeletableEntity & {
   duplicateOfWorkItemId?: UUID;
 };
 export enum PmNotificationType {
-  Assignment = 'Assignment',
-  Mention = 'Mention',
-  StateChange = 'StateChange',
-  Comment = 'Comment',
-  DueDateApproaching = 'DueDateApproaching',
+  Assignment = "Assignment",
+  Mention = "Mention",
+  StateChange = "StateChange",
+  Comment = "Comment",
+  DueDateApproaching = "DueDateApproaching",
 }
 
 /**
@@ -2753,9 +2786,9 @@ export type PmSession = SoftDeletableEntity & {
   expiresAt: any;
 };
 export enum ProjectRole {
-  Admin = 'Admin',
-  Member = 'Member',
-  Guest = 'Guest',
+  Admin = "Admin",
+  Member = "Member",
+  Guest = "Guest",
 }
 
 /**
@@ -2776,16 +2809,16 @@ export type PmProjectMember = SoftDeletableEntity & {
   role: ProjectRole;
 };
 export enum AuditAction {
-  UserRegistered = 'UserRegistered',
-  UserLoggedIn = 'UserLoggedIn',
-  UserLoggedOut = 'UserLoggedOut',
-  SessionInvalidated = 'SessionInvalidated',
-  MemberAdded = 'MemberAdded',
-  MemberRemoved = 'MemberRemoved',
-  RoleChanged = 'RoleChanged',
-  ProjectSettingsChanged = 'ProjectSettingsChanged',
-  ProjectDeleted = 'ProjectDeleted',
-  BulkOperation = 'BulkOperation',
+  UserRegistered = "UserRegistered",
+  UserLoggedIn = "UserLoggedIn",
+  UserLoggedOut = "UserLoggedOut",
+  SessionInvalidated = "SessionInvalidated",
+  MemberAdded = "MemberAdded",
+  MemberRemoved = "MemberRemoved",
+  RoleChanged = "RoleChanged",
+  ProjectSettingsChanged = "ProjectSettingsChanged",
+  ProjectDeleted = "ProjectDeleted",
+  BulkOperation = "BulkOperation",
 }
 
 /**
@@ -2832,8 +2865,8 @@ export type TokenUsage = {
   outputTokens: number;
 };
 export enum CommentSide {
-  Left = 'LEFT',
-  Right = 'RIGHT',
+  Left = "LEFT",
+  Right = "RIGHT",
 }
 
 /**
@@ -2870,11 +2903,11 @@ export type ReviewComment = {
   inDiffRange: boolean;
 };
 export enum CodeReviewStatus {
-  Pending = 'Pending',
-  InProgress = 'InProgress',
-  Completed = 'Completed',
-  Posted = 'Posted',
-  Failed = 'Failed',
+  Pending = "Pending",
+  InProgress = "InProgress",
+  Completed = "Completed",
+  Posted = "Posted",
+  Failed = "Failed",
 }
 
 /**
@@ -2927,17 +2960,17 @@ export type CodeReview = BaseEntity & {
   errorMessage?: string;
 };
 export enum ContributorLane {
-  Docs = 'docs',
-  Agents = 'agents',
-  Ui = 'ui',
-  Cli = 'cli',
-  Infra = 'infra',
+  Docs = "docs",
+  Agents = "agents",
+  Ui = "ui",
+  Cli = "cli",
+  Infra = "infra",
 }
 export enum ContributorLevel {
-  User = 'user',
-  Contributor = 'contributor',
-  Core = 'core',
-  Maintainer = 'maintainer',
+  User = "user",
+  Contributor = "contributor",
+  Core = "core",
+  Maintainer = "maintainer",
 }
 
 /**
@@ -2982,10 +3015,10 @@ export type Contributor = BaseEntity & {
   issueCount: number;
 };
 export enum RecognitionKind {
-  FirstPR = 'firstPR',
-  NthPR = 'nthPR',
-  FirstIssue = 'firstIssue',
-  MonthlyShoutout = 'monthlyShoutout',
+  FirstPR = "firstPR",
+  NthPR = "nthPR",
+  FirstIssue = "firstIssue",
+  MonthlyShoutout = "monthlyShoutout",
 }
 
 /**
@@ -3091,6 +3124,591 @@ export type SdlcSubTask = BaseEntity & {
 };
 
 /**
+ * Top-level rollup grouping for ASPM (e.g. division, product line)
+ */
+export type BusinessUnit = SoftDeletableEntity & {
+  /**
+   * Human-readable business unit name
+   */
+  name: string;
+  /**
+   * Optional short identifier for URL slugs and CLI usage
+   */
+  slug?: string;
+};
+
+/**
+ * Team groups owners and rolls up ASPM posture
+ */
+export type Team = SoftDeletableEntity & {
+  /**
+   * Human-readable team name
+   */
+  name: string;
+  /**
+   * Optional short identifier for URL slugs and CLI usage
+   */
+  slug?: string;
+  /**
+   * Business unit this team rolls up into
+   */
+  businessUnitId?: UUID;
+};
+
+/**
+ * Owner of ASPM assets and findings (person or team identifier)
+ */
+export type Owner = SoftDeletableEntity & {
+  /**
+   * Human-readable owner name
+   */
+  name: string;
+  /**
+   * Optional contact handle (e.g. email, Slack handle, GitHub login)
+   */
+  handle?: string;
+  /**
+   * Team this owner belongs to
+   */
+  teamId?: UUID;
+  /**
+   * Free-form notes about this owner (e.g. on-call rotation, escalation)
+   */
+  notes?: string;
+};
+
+/**
+ * Service — adjacent asset attached to an Application
+ */
+export type Service = SoftDeletableEntity & {
+  /**
+   * Human-readable service name
+   */
+  name: string;
+  /**
+   * Optional short identifier for URL slugs and CLI usage
+   */
+  slug?: string;
+  /**
+   * Application this service belongs to
+   */
+  applicationId: UUID;
+  /**
+   * Optional owner override (otherwise inherits from Application)
+   */
+  ownerId?: UUID;
+  /**
+   * Optional exposure override (otherwise inherits from Application)
+   */
+  exposure?: Exposure;
+};
+
+/**
+ * API asset — external or internal API surface attached to an Application
+ */
+export type ApiAsset = SoftDeletableEntity & {
+  /**
+   * Human-readable API asset name
+   */
+  name: string;
+  /**
+   * Base URL of the API (e.g. https://api.example.com/v1)
+   */
+  baseUrl?: string;
+  /**
+   * Application this API asset belongs to
+   */
+  applicationId: UUID;
+  /**
+   * Optional owner override (otherwise inherits from Application)
+   */
+  ownerId?: UUID;
+  /**
+   * Optional exposure override (otherwise inherits from Application)
+   */
+  exposure?: Exposure;
+  /**
+   * Optional path to the API schema file (POSIX separators, repo-relative)
+   */
+  schemaPath?: string;
+};
+
+/**
+ * Cloud environment — deployment target / account / project
+ */
+export type CloudEnvironment = SoftDeletableEntity & {
+  /**
+   * Human-readable environment name (e.g. payments-prod, web-staging)
+   */
+  name: string;
+  /**
+   * Cloud provider identifier (free-form; e.g. aws, gcp, azure, cloudflare)
+   */
+  provider: string;
+  /**
+   * Provider-specific account / project / subscription id
+   */
+  accountId?: string;
+  /**
+   * Application this cloud environment belongs to
+   */
+  applicationId: UUID;
+  /**
+   * Optional owner override (otherwise inherits from Application)
+   */
+  ownerId?: UUID;
+  /**
+   * Optional region identifier
+   */
+  region?: string;
+};
+export enum ComplianceFramework {
+  OwaspAsvs = "OwaspAsvs",
+  CweTop25 = "CweTop25",
+}
+
+/**
+ * Single control within a compliance framework (OWASP ASVS / CWE Top 25 / ...)
+ */
+export type ComplianceControl = SoftDeletableEntity & {
+  /**
+   * Compliance framework this control belongs to
+   */
+  frameworkId: ComplianceFramework;
+  /**
+   * Framework-specific control identifier (e.g. V2.1.1, CWE-79)
+   */
+  controlId: string;
+  /**
+   * Short human-readable title
+   */
+  title: string;
+  /**
+   * Long-form description of what the control covers
+   */
+  description: string;
+};
+export enum CanonicalSeverity {
+  Critical = "Critical",
+  High = "High",
+  Medium = "Medium",
+  Low = "Low",
+  Info = "Info",
+}
+
+/**
+ * SLA window (calendar days) for a single canonical severity
+ */
+export type SLAWindow = {
+  /**
+   * Canonical severity this window applies to
+   */
+  severity: CanonicalSeverity;
+  /**
+   * SLA window in calendar days from discoveredAt
+   */
+  windowDays: number;
+};
+
+/**
+ * Workspace-wide ASPM security policy (SLA windows + ingestion limits)
+ */
+export type SecurityPolicy = SoftDeletableEntity & {
+  /**
+   * Human-readable policy name
+   */
+  name: string;
+  /**
+   * Whether this is the active policy for the workspace (only one active)
+   */
+  active: boolean;
+  /**
+   * SLA windows per canonical severity (calendar days)
+   */
+  slaWindows: SLAWindow[];
+  /**
+   * Maximum ingestion document size in bytes (default 100MB)
+   */
+  maxIngestBytes: bigint;
+};
+export enum FindingDomain {
+  Code = "Code",
+  Dependency = "Dependency",
+  Secret = "Secret",
+  Container = "Container",
+  Cloud = "Cloud",
+  Api = "Api",
+  Identity = "Identity",
+  Runtime = "Runtime",
+  Compliance = "Compliance",
+  Ai = "Ai",
+}
+export enum FindingState {
+  Open = "Open",
+  Triaged = "Triaged",
+  InProgress = "InProgress",
+  Resolved = "Resolved",
+  Closed = "Closed",
+  Exception = "Exception",
+}
+
+/**
+ * Unified security finding produced by ingestion adapters across every ASPM domain
+ */
+export type SecurityFinding = SoftDeletableEntity & {
+  /**
+   * Primary asset anchor — the Application this finding attaches to
+   */
+  applicationId: UUID;
+  /**
+   * Optional Service this finding attaches to (sub-asset of Application)
+   */
+  serviceId?: UUID;
+  /**
+   * Optional ApiAsset this finding attaches to
+   */
+  apiAssetId?: UUID;
+  /**
+   * Optional CloudEnvironment this finding attaches to
+   */
+  cloudEnvironmentId?: UUID;
+  /**
+   * Finding domain (Code/Dependency/Secret/Container/Cloud/Api/Identity/Runtime/Compliance/Ai)
+   */
+  findingDomain: FindingDomain;
+  /**
+   * Scanner rule identifier (e.g. semgrep.rule.id, codeql.query.id, trivy CVE id)
+   */
+  ruleId: string;
+  /**
+   * Short human-readable title
+   */
+  title: string;
+  /**
+   * Long-form description (post-redaction)
+   */
+  description: string;
+  /**
+   * Repo-relative path of the finding location (POSIX separators)
+   */
+  locationPath?: string;
+  /**
+   * 1-based line number of the finding location
+   */
+  locationLine?: number;
+  /**
+   * Raw scanner output (JSON-serialized, post-redaction)
+   */
+  scannerRaw?: string;
+  /**
+   * SHA-256 hash of the original scanner-supplied raw document (audit-only)
+   */
+  scannerRawHash?: string;
+  /**
+   * Raw scanner severity string as emitted (e.g. HIGH, error, 8.1) — preserved for audit
+   */
+  rawSeverity: string;
+  /**
+   * Canonical severity used for filtering, SLAs, and posture rollups
+   */
+  canonicalSeverity: CanonicalSeverity;
+  /**
+   * CVE identifier when applicable (e.g. CVE-2024-12345)
+   */
+  cveId?: string;
+  /**
+   * CWE identifier when applicable (e.g. CWE-79)
+   */
+  cweId?: string;
+  /**
+   * OWASP ASVS control id when the scanner emitted a taxa reference
+   */
+  owaspAsvsControlId?: string;
+  /**
+   * Resolved owner of the finding
+   */
+  ownerId?: UUID;
+  /**
+   * Lifecycle state of the finding (see also: read-time effective state w/ exceptions)
+   */
+  state: FindingState;
+  /**
+   * Foreign key to the latest RiskScore for this finding (O(1) dashboard reads)
+   */
+  currentRiskScoreId?: UUID;
+  /**
+   * Optional link to a Shep WorkItem this finding has been routed into
+   */
+  workItemId?: UUID;
+  /**
+   * Source of ingestion (e.g. sarif:semgrep, sarif:codeql, cyclonedx:1.5)
+   */
+  source: string;
+  /**
+   * When the finding was first discovered (used for SLA math)
+   */
+  discoveredAt: any;
+  /**
+   * When the finding was most recently re-observed by a scanner
+   */
+  lastSeenAt: any;
+  /**
+   * When the finding was first observed as fixed
+   */
+  firstFixedAt?: any;
+};
+
+/**
+ * Per-dimension breakdown of a composite RiskScore total
+ */
+export type RiskScoreBreakdown = {
+  /**
+   * Total composite score, 0-100 inclusive
+   */
+  total: number;
+  /**
+   * Contribution from CVSS base severity
+   */
+  cvssContribution: float64;
+  /**
+   * Contribution from EPSS exploitability percentile
+   */
+  epssContribution: float64;
+  /**
+   * Contribution from CISA KEV membership
+   */
+  kevContribution: float64;
+  /**
+   * Contribution from asset exposure
+   */
+  exposureContribution: float64;
+  /**
+   * Contribution from asset criticality tier
+   */
+  criticalityContribution: float64;
+  /**
+   * Contribution from data classification
+   */
+  dataClassificationContribution: float64;
+};
+
+/**
+ * Append-only composite risk-score row for a SecurityFinding
+ */
+export type RiskScore = BaseEntity & {
+  /**
+   * SecurityFinding this score row belongs to
+   */
+  findingId: UUID;
+  /**
+   * Total composite score (0-100)
+   */
+  total: number;
+  /**
+   * Per-dimension breakdown — sum equals total (modulo rounding)
+   */
+  breakdown: RiskScoreBreakdown;
+  /**
+   * When the score was computed
+   */
+  computedAt: any;
+  /**
+   * Stable hash of the scoring inputs (used to dedupe identical recomputes)
+   */
+  inputsHash: string;
+};
+export enum ExceptionReason {
+  FalsePositive = "FalsePositive",
+  AcceptedRisk = "AcceptedRisk",
+  CompensatingControl = "CompensatingControl",
+  NotApplicable = "NotApplicable",
+  Other = "Other",
+}
+export enum RiskExceptionStatus {
+  Active = "Active",
+  Expired = "Expired",
+  Revoked = "Revoked",
+}
+
+/**
+ * Self-declared risk exception masking a finding from posture and SLA math
+ */
+export type RiskException = SoftDeletableEntity & {
+  /**
+   * Finding this exception applies to
+   */
+  findingId: UUID;
+  /**
+   * Typed reason from the exception taxonomy
+   */
+  reason: ExceptionReason;
+  /**
+   * Human-readable justification (free-form)
+   */
+  justification: string;
+  /**
+   * Who declared the exception (owner id)
+   */
+  declaredBy: UUID;
+  /**
+   * When the exception was declared
+   */
+  declaredAt: any;
+  /**
+   * Expiry date — once passed the finding re-enters posture rollups
+   */
+  expiresAt: any;
+  /**
+   * Current lifecycle status
+   */
+  status: RiskExceptionStatus;
+};
+
+/**
+ * Reusable filter shape for findings list / ranking / campaign queries
+ */
+export type FindingFilter = {
+  /**
+   * Restrict to these canonical severities
+   */
+  severities?: CanonicalSeverity[];
+  /**
+   * Restrict to these finding domains
+   */
+  findingDomains?: FindingDomain[];
+  /**
+   * Restrict to findings on these applications
+   */
+  applicationIds?: UUID[];
+  /**
+   * Restrict to findings owned by these owners
+   */
+  ownerIds?: UUID[];
+  /**
+   * Restrict to findings with KEV-listed CVEs (true) or non-KEV (false)
+   */
+  kev?: boolean;
+  /**
+   * Restrict to these finding states
+   */
+  states?: FindingState[];
+  /**
+   * Restrict to these scanner rule identifiers
+   */
+  ruleIds?: string[];
+  /**
+   * Restrict to these CVE identifiers
+   */
+  cveIds?: string[];
+};
+export enum CampaignStatus {
+  Draft = "Draft",
+  Active = "Active",
+  Paused = "Paused",
+  Completed = "Completed",
+  Cancelled = "Cancelled",
+}
+
+/**
+ * Remediation campaign with a query-shaped target and read-time progress
+ */
+export type RemediationCampaign = SoftDeletableEntity & {
+  /**
+   * Human-readable campaign name
+   */
+  name: string;
+  /**
+   * Long-form description / sprint goal
+   */
+  description: string;
+  /**
+   * Serialized target query — same shape as list-findings filter
+   */
+  targetQuery: FindingFilter;
+  /**
+   * Lifecycle state of the campaign
+   */
+  status: CampaignStatus;
+  /**
+   * Owner accountable for the campaign
+   */
+  ownerId?: UUID;
+  /**
+   * Target completion date
+   */
+  dueDate?: any;
+  /**
+   * When the campaign transitioned to Completed or Cancelled
+   */
+  closedAt?: any;
+};
+export enum AiSignalType {
+  SecretInDiff = "SecretInDiff",
+  HighRiskDependencyAdded = "HighRiskDependencyAdded",
+  LargeUnreviewedDiff = "LargeUnreviewedDiff",
+  LicenseViolation = "LicenseViolation",
+  PromptInjectionShape = "PromptInjectionShape",
+  Other = "Other",
+}
+export enum AiSignalState {
+  Open = "Open",
+  Acknowledged = "Acknowledged",
+  GraduatedToFinding = "GraduatedToFinding",
+  Dismissed = "Dismissed",
+  Resolved = "Resolved",
+}
+
+/**
+ * AI-generated change risk signal — Shep's differentiating triage record
+ */
+export type AiChangeRiskSignal = SoftDeletableEntity & {
+  /**
+   * Application this signal attaches to
+   */
+  applicationId: UUID;
+  /**
+   * Originating Shep agent session id (so reviewers can navigate to the run)
+   */
+  agentSessionId?: string;
+  /**
+   * Type of AI-change risk signal
+   */
+  signalType: AiSignalType;
+  /**
+   * Canonical severity for posture rollups when graduated
+   */
+  severity: CanonicalSeverity;
+  /**
+   * Short human-readable summary of the signal
+   */
+  summary: string;
+  /**
+   * Free-form evidence payload (JSON-serialized — diff snippets, dep name, etc.)
+   */
+  evidence?: string;
+  /**
+   * Lifecycle state in the AI-review queue
+   */
+  state: AiSignalState;
+  /**
+   * Optional owner of the signal (otherwise inherits from Application)
+   */
+  ownerId?: UUID;
+  /**
+   * If graduated, the resulting SecurityFinding id
+   */
+  graduatedFindingId?: UUID;
+  /**
+   * When the signal was first recorded
+   */
+  discoveredAt: any;
+  /**
+   * When the signal was resolved, dismissed, or graduated
+   */
+  resolvedAt?: any;
+};
+
+/**
  * Single installation suggestion for a tool
  */
 export type InstallationSuggestion = {
@@ -3119,7 +3737,7 @@ export type ToolInstallationStatus = {
   /**
    * Current installation status
    */
-  status: 'available' | 'missing' | 'error';
+  status: "available" | "missing" | "error";
   /**
    * Tool name
    */
@@ -3160,10 +3778,10 @@ export type ToolInstallCommand = {
   packageManager: string;
 };
 export enum EvidenceType {
-  Screenshot = 'Screenshot',
-  Video = 'Video',
-  TestOutput = 'TestOutput',
-  TerminalRecording = 'TerminalRecording',
+  Screenshot = "Screenshot",
+  Video = "Video",
+  TestOutput = "TestOutput",
+  TerminalRecording = "TerminalRecording",
 }
 
 /**
@@ -3218,12 +3836,12 @@ export type ActivityEntry = BaseEntity & {
   actorId: string;
 };
 export enum CustomPropertyType {
-  Text = 'Text',
-  Number = 'Number',
-  Dropdown = 'Dropdown',
-  Boolean = 'Boolean',
-  Date = 'Date',
-  MemberPicker = 'MemberPicker',
+  Text = "Text",
+  Number = "Number",
+  Dropdown = "Dropdown",
+  Boolean = "Boolean",
+  Date = "Date",
+  MemberPicker = "MemberPicker",
 }
 
 /**
@@ -3256,11 +3874,11 @@ export type CustomProperty = SoftDeletableEntity & {
   displayOrder: number;
 };
 export enum RelationType {
-  Blocking = 'Blocking',
-  RelatesTo = 'RelatesTo',
-  Duplicate = 'Duplicate',
-  StartsBefore = 'StartsBefore',
-  FinishesBefore = 'FinishesBefore',
+  Blocking = "Blocking",
+  RelatesTo = "RelatesTo",
+  Duplicate = "Duplicate",
+  StartsBefore = "StartsBefore",
+  FinishesBefore = "FinishesBefore",
 }
 
 /**
@@ -3314,7 +3932,7 @@ export type BedrockTierStatus = {
   /**
    * Status of this tier: ok, missing, or error
    */
-  status: 'ok' | 'missing' | 'error';
+  status: "ok" | "missing" | "error";
   /**
    * Optional human-readable detail (e.g. detected version)
    */
@@ -3344,12 +3962,12 @@ export type BedrockHealth = {
   /**
    * Rolled-up overall status across all three tiers
    */
-  overall: 'ok' | 'missing' | 'error';
+  overall: "ok" | "missing" | "error";
 };
 export enum BedrockTargetKind {
-  Application = 'application',
-  Repository = 'repository',
-  Feature = 'feature',
+  Application = "application",
+  Repository = "repository",
+  Feature = "feature",
 }
 
 /**
@@ -3413,11 +4031,63 @@ export type BedrockMemorySnapshot = {
    */
   mostRecentlyModifiedAt?: any;
 };
+
+/**
+ * Reference to a CVE record with optional CVSS / EPSS / KEV enrichment
+ */
+export type CVEReference = {
+  /**
+   * CVE identifier (e.g. CVE-2024-12345)
+   */
+  cveId: string;
+  /**
+   * CVSS v3.x base score (0.0-10.0)
+   */
+  cvssScore?: float64;
+  /**
+   * CVSS vector string (e.g. CVSS:3.1/AV:N/AC:L/...)
+   */
+  cvssVector?: string;
+  /**
+   * EPSS percentile (0.0-1.0)
+   */
+  epssPercentile?: float64;
+  /**
+   * Whether the CVE appears in the CISA KEV catalog
+   */
+  kev?: boolean;
+};
+
+/**
+ * A single ownership mapping (path glob -> owner/team/business unit)
+ */
+export type OwnershipPath = {
+  /**
+   * Path glob this mapping applies to (POSIX separators, repo-relative)
+   */
+  pathGlob: string;
+  /**
+   * Owner UUID assigned to this path
+   */
+  ownerId: UUID;
+  /**
+   * Team UUID assigned to this path
+   */
+  teamId?: UUID;
+  /**
+   * BusinessUnit UUID assigned to this path
+   */
+  businessUnitId?: UUID;
+  /**
+   * Source of the mapping (yaml | ui)
+   */
+  source: string;
+};
 export enum AgentStatus {
-  Idle = 'Idle',
-  Running = 'Running',
-  Paused = 'Paused',
-  Stopped = 'Stopped',
+  Idle = "Idle",
+  Running = "Running",
+  Paused = "Paused",
+  Stopped = "Stopped",
 }
 
 /**
@@ -3449,7 +4119,7 @@ export type DeployTargetActionItem = {
   /**
    * Discriminator indicating this is an action item target
    */
-  kind: 'actionItem';
+  kind: "actionItem";
   /**
    * The action item to deploy - represents an atomic unit of work
    */
@@ -3463,7 +4133,7 @@ export type DeployTargetTask = {
   /**
    * Discriminator indicating this is a task target
    */
-  kind: 'task';
+  kind: "task";
   /**
    * The task to deploy - includes all action items within the task
    */
@@ -3477,19 +4147,19 @@ export type DeployTargetTasks = {
   /**
    * Discriminator indicating this is a multi-task target
    */
-  kind: 'tasks';
+  kind: "tasks";
   /**
    * The tasks to deploy - enables batch deployment of related work
    */
   tasks: Task[];
 };
 export enum FeatureAgentState {
-  GatheringRequirements = 'GatheringRequirements',
-  ClarificationsRequired = 'ClarificationsRequired',
-  DoingResearch = 'DoingResearch',
-  AwaitingReview = 'AwaitingReview',
-  ExecutingWorkPlan = 'ExecutingWorkPlan',
-  Ready = 'Ready',
+  GatheringRequirements = "GatheringRequirements",
+  ClarificationsRequired = "ClarificationsRequired",
+  DoingResearch = "DoingResearch",
+  AwaitingReview = "AwaitingReview",
+  ExecutingWorkPlan = "ExecutingWorkPlan",
+  Ready = "Ready",
 }
 
 /**
@@ -3536,8 +4206,8 @@ export type LocalDeployAgent = {
   createdAt: any;
 };
 export enum PortProtocol {
-  TCP = 'TCP',
-  UDP = 'UDP',
+  TCP = "TCP",
+  UDP = "UDP",
 }
 
 /**
@@ -3558,11 +4228,11 @@ export type PortMap = {
   protocol?: PortProtocol;
 };
 export enum DeployMethod {
-  DockerCompose = 'DockerCompose',
-  Docker = 'Docker',
-  Kubernetes = 'Kubernetes',
-  Script = 'Script',
-  Manual = 'Manual',
+  DockerCompose = "DockerCompose",
+  Docker = "Docker",
+  Kubernetes = "Kubernetes",
+  Script = "Script",
+  Manual = "Manual",
 }
 
 /**
@@ -3591,9 +4261,9 @@ export type DeploySkill = {
   createdAt: any;
 };
 export enum DeploymentState {
-  Booting = 'Booting',
-  Ready = 'Ready',
-  Stopped = 'Stopped',
+  Booting = "Booting",
+  Ready = "Ready",
+  Stopped = "Stopped",
 }
 
 /**
@@ -3626,13 +4296,13 @@ export type Deployment = {
   stoppedAt?: any;
 };
 export enum AgentRunStatus {
-  pending = 'pending',
-  running = 'running',
-  completed = 'completed',
-  failed = 'failed',
-  interrupted = 'interrupted',
-  cancelled = 'cancelled',
-  waitingApproval = 'waiting_approval',
+  pending = "pending",
+  running = "running",
+  completed = "completed",
+  failed = "failed",
+  interrupted = "interrupted",
+  cancelled = "cancelled",
+  waitingApproval = "waiting_approval",
 }
 
 /**
@@ -3712,7 +4382,7 @@ export type AgentRunEvent = {
   /**
    * Event type: progress, result, or error
    */
-  type: 'progress' | 'result' | 'error';
+  type: "progress" | "result" | "error";
   /**
    * Event content
    */
@@ -3920,7 +4590,7 @@ export type AgentSessionMessage = {
   /**
    * Message role — user turn or assistant turn
    */
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   /**
    * Normalized message content as plain text (tool calls and thinking blocks excluded)
    */
@@ -3965,10 +4635,10 @@ export type AgentSession = BaseEntity & {
   lastMessageAt?: any;
 };
 export enum InteractiveSessionStatus {
-  booting = 'booting',
-  ready = 'ready',
-  stopped = 'stopped',
-  error = 'error',
+  booting = "booting",
+  ready = "ready",
+  stopped = "stopped",
+  error = "error",
 }
 
 /**
@@ -3997,8 +4667,8 @@ export type InteractiveSession = BaseEntity & {
   lastActivityAt: any;
 };
 export enum InteractiveMessageRole {
-  user = 'user',
-  assistant = 'assistant',
+  user = "user",
+  assistant = "assistant",
 }
 
 /**
@@ -4027,11 +4697,11 @@ export type InteractiveMessage = BaseEntity & {
   stepId?: string;
 };
 export enum WorkflowStepStatus {
-  pending = 'pending',
-  running = 'running',
-  done = 'done',
-  failed = 'failed',
-  interrupted = 'interrupted',
+  pending = "pending",
+  running = "running",
+  done = "done",
+  failed = "failed",
+  interrupted = "interrupted",
 }
 
 /**
@@ -4084,11 +4754,11 @@ export type WorkflowStep = BaseEntity & {
   metadata?: string;
 };
 export enum AgentMessageKind {
-  status = 'status',
-  request = 'request',
-  reply = 'reply',
-  blocked = 'blocked',
-  info = 'info',
+  status = "status",
+  request = "request",
+  reply = "reply",
+  blocked = "blocked",
+  info = "info",
 }
 
 /**
@@ -4141,20 +4811,20 @@ export type AgentMessage = BaseEntity & {
   deliveredAt?: any;
 };
 export enum AgentQuestionKind {
-  info = 'info',
-  question = 'question',
-  blocking = 'blocking',
+  info = "info",
+  question = "question",
+  blocking = "blocking",
 }
 export enum AgentQuestionAnswerer {
-  user = 'user',
-  supervisor = 'supervisor',
-  either = 'either',
+  user = "user",
+  supervisor = "supervisor",
+  either = "either",
 }
 export enum AgentQuestionStatus {
-  pending = 'pending',
-  answered = 'answered',
-  expired = 'expired',
-  cancelled = 'cancelled',
+  pending = "pending",
+  answered = "answered",
+  expired = "expired",
+  cancelled = "cancelled",
 }
 
 /**
@@ -4219,10 +4889,10 @@ export type AgentQuestion = BaseEntity & {
   expiresAt?: any;
 };
 export enum SupervisorVerdict {
-  approve = 'approve',
-  reject = 'reject',
-  escalate = 'escalate',
-  advise = 'advise',
+  approve = "approve",
+  reject = "reject",
+  escalate = "escalate",
+  advise = "advise",
 }
 
 /**
@@ -4353,10 +5023,10 @@ export type CustomAgent = BaseEntity & {
   createdBy: string;
 };
 export enum ContributionDifficulty {
-  GoodFirst = 'goodFirst',
-  Easy = 'easy',
-  Medium = 'medium',
-  Hard = 'hard',
+  GoodFirst = "goodFirst",
+  Easy = "easy",
+  Medium = "medium",
+  Hard = "hard",
 }
 
 /**
@@ -4426,7 +5096,7 @@ export type PrdQuestion = {
   /**
    * Question interaction type (currently only single-select)
    */
-  type: 'select';
+  type: "select";
   /**
    * Available options for this question
    */
@@ -4473,39 +5143,53 @@ export type PrdQuestionnaireData = {
   finalAction: PrdFinalAction;
 };
 export enum InteractiveSessionEventType {
-  Booting = 'interactive_session_booting',
-  Ready = 'interactive_session_ready',
-  Stopped = 'interactive_session_stopped',
-  Error = 'interactive_session_error',
+  Booting = "interactive_session_booting",
+  Ready = "interactive_session_ready",
+  Stopped = "interactive_session_stopped",
+  Error = "interactive_session_error",
 }
 export enum WhatsAppThreadTargetKind {
-  Feature = 'feature',
-  Application = 'application',
+  Feature = "feature",
+  Application = "application",
 }
 export enum BedrockLifecycleAction {
-  Init = 'init',
-  Sync = 'sync',
-  Ship = 'ship',
+  Init = "init",
+  Sync = "sync",
+  Ship = "ship",
 }
 export enum RecapChannel {
-  File = 'file',
-  Discord = 'discord',
-  GithubDiscussion = 'githubDiscussion',
+  File = "file",
+  Discord = "discord",
+  GithubDiscussion = "githubDiscussion",
 }
 export enum DiagnosticStatus {
-  Ok = 'ok',
-  Warn = 'warn',
-  Fail = 'fail',
+  Ok = "ok",
+  Warn = "warn",
+  Fail = "fail",
+}
+export enum SlaState {
+  Healthy = "Healthy",
+  AtRisk = "AtRisk",
+  Breached = "Breached",
+}
+export enum AssetType {
+  Application = "Application",
+  Service = "Service",
+  ApiAsset = "ApiAsset",
+  CloudEnvironment = "CloudEnvironment",
 }
 export enum AgentFeature {
-  sessionResume = 'session-resume',
-  streaming = 'streaming',
-  toolScoping = 'tool-scoping',
-  structuredOutput = 'structured-output',
-  systemPrompt = 'system-prompt',
-  sessionListing = 'session-listing',
+  sessionResume = "session-resume",
+  streaming = "streaming",
+  toolScoping = "tool-scoping",
+  structuredOutput = "structured-output",
+  systemPrompt = "system-prompt",
+  sessionListing = "session-listing",
 }
-export type DeployTarget = DeployTargetActionItem | DeployTargetTask | DeployTargetTasks;
+export type DeployTarget =
+  | DeployTargetActionItem
+  | DeployTargetTask
+  | DeployTargetTasks;
 
 export type Askable = {
   Ask(request: AskRequest): AskResponse;

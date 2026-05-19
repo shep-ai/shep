@@ -1,0 +1,26 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SecurityPolicy.yaml
+type: object
+properties:
+  name:
+    type: string
+    description: Human-readable policy name
+  active:
+    type: boolean
+    description: Whether this is the active policy for the workspace (only one active)
+  slaWindows:
+    type: array
+    items:
+      $ref: SLAWindow.yaml
+    description: SLA windows per canonical severity (calendar days)
+  maxIngestBytes:
+    type: string
+    description: Maximum ingestion document size in bytes (default 100MB)
+required:
+  - name
+  - active
+  - slaWindows
+  - maxIngestBytes
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: Workspace-wide ASPM security policy (SLA windows + ingestion limits)

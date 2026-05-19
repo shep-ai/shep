@@ -52,3 +52,4 @@ import "./contributor.tsp";
 import "./recognition-event.tsp";
 import "./sdlc-task.tsp";
 import "./sdlc-subtask.tsp";
+import "./aspm/index.tsp";

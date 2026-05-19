@@ -1,0 +1,31 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RiskScore.yaml
+type: object
+properties:
+  findingId:
+    $ref: UUID.yaml
+    description: SecurityFinding this score row belongs to
+  total:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Total composite score (0-100)
+  breakdown:
+    $ref: RiskScoreBreakdown.yaml
+    description: Per-dimension breakdown — sum equals total (modulo rounding)
+  computedAt:
+    type: string
+    format: date-time
+    description: When the score was computed
+  inputsHash:
+    type: string
+    description: Stable hash of the scoring inputs (used to dedupe identical recomputes)
+required:
+  - findingId
+  - total
+  - breakdown
+  - computedAt
+  - inputsHash
+allOf:
+  - $ref: BaseEntity.yaml
+description: Append-only composite risk-score row for a SecurityFinding

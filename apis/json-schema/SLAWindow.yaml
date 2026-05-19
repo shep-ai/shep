@@ -1,0 +1,16 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SLAWindow.yaml
+type: object
+properties:
+  severity:
+    $ref: CanonicalSeverity.yaml
+    description: Canonical severity this window applies to
+  windowDays:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: SLA window in calendar days from discoveredAt
+required:
+  - severity
+  - windowDays
+description: SLA window (calendar days) for a single canonical severity
