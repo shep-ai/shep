@@ -55,6 +55,7 @@ import { SQLiteRiskScoreRepository } from '../../repositories/aspm/sqlite-risk-s
 import { SQLiteSecurityPolicyRepository } from '../../repositories/aspm/sqlite-security-policy-repository.js';
 import { SQLiteServiceRepository } from '../../repositories/aspm/sqlite-service-repository.js';
 import { SQLiteTeamRepository } from '../../repositories/aspm/sqlite-team-repository.js';
+import { SQLiteAiChangeRiskSignalRepository } from '../../repositories/aspm/sqlite-ai-change-risk-signal-repository.js';
 
 // Concrete services
 import { CycloneDxSbomAdapter } from '../../services/aspm/cyclonedx-sbom-adapter.js';
@@ -90,6 +91,10 @@ import { ConvertFindingToWorkItemUseCase } from '../../../application/use-cases/
 import { GetApplicationPostureUseCase } from '../../../application/use-cases/aspm/posture/get-application-posture.js';
 import { GetPostureSummaryUseCase } from '../../../application/use-cases/aspm/posture/get-posture-summary.js';
 import { GetRiskTrendUseCase } from '../../../application/use-cases/aspm/posture/get-risk-trend.js';
+import { DismissAiSignalUseCase } from '../../../application/use-cases/aspm/ai-review/dismiss-ai-signal.js';
+import { GraduateAiSignalToFindingUseCase } from '../../../application/use-cases/aspm/ai-review/graduate-ai-signal-to-finding.js';
+import { ListAiSignalsUseCase } from '../../../application/use-cases/aspm/ai-review/list-ai-signals.js';
+import { RecordAiChangeRiskSignalUseCase } from '../../../application/use-cases/aspm/ai-review/record-ai-change-risk-signal.js';
 
 /**
  * Register ASPM repositories, ports, services, and use cases on the
@@ -123,6 +128,10 @@ export function registerAspm(container: DependencyContainer): void {
   // Phase 7 — Executive Dashboards & Developer Task Routing
   registerPhase7Repositories(container);
   registerPhase7UseCases(container);
+
+  // Phase 8 — AI-Change Review Queue (overrides the phase-7 NoOp binding)
+  registerPhase8Repositories(container);
+  registerPhase8UseCases(container);
 
   // Phases 8-10 attach below as they land:
   //
@@ -283,4 +292,25 @@ function registerPhase7UseCases(container: DependencyContainer): void {
   });
   container.register(BulkConvertFindingsUseCase, { useClass: BulkConvertFindingsUseCase });
   container.register(ListOwnerRollupsUseCase, { useClass: ListOwnerRollupsUseCase });
+}
+
+function registerPhase8Repositories(container: DependencyContainer): void {
+  // Override the phase-7 NoOp default with the real SQLite implementation
+  // backed by migration 114. tsyringe's `register` honors the most recent
+  // call for a given token.
+  container.register<IAiChangeRiskSignalRepository>(ASPM_TOKENS.IAiChangeRiskSignalRepository, {
+    useFactory: (c) =>
+      new SQLiteAiChangeRiskSignalRepository(c.resolve<Database.Database>('Database')),
+  });
+}
+
+function registerPhase8UseCases(container: DependencyContainer): void {
+  container.register(RecordAiChangeRiskSignalUseCase, {
+    useClass: RecordAiChangeRiskSignalUseCase,
+  });
+  container.register(GraduateAiSignalToFindingUseCase, {
+    useClass: GraduateAiSignalToFindingUseCase,
+  });
+  container.register(DismissAiSignalUseCase, { useClass: DismissAiSignalUseCase });
+  container.register(ListAiSignalsUseCase, { useClass: ListAiSignalsUseCase });
 }

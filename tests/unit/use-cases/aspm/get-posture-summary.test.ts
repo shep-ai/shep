@@ -119,7 +119,16 @@ function fakePolicyRepo(policy: SecurityPolicy | null): ISecurityPolicyRepositor
 }
 
 function fakeAiRepo(count = 0): IAiChangeRiskSignalRepository {
-  return { countOpen: async () => count };
+  return {
+    countOpen: async () => count,
+    create: async () => undefined,
+    findById: async () => null,
+    list: async () => [],
+    markGraduated: async () => undefined,
+    markDismissed: async () => undefined,
+    updateState: async () => undefined,
+    softDelete: async () => undefined,
+  };
 }
 
 describe('GetPostureSummaryUseCase', () => {
