@@ -315,12 +315,23 @@ export function registerServices(container: DependencyContainer): void {
   const workspaceRoot =
     process.env.SHEP_INSTANCE_PATH ?? process.env.NEXT_PUBLIC_SHEP_INSTANCE_PATH ?? process.cwd();
 
-  container.registerSingleton<IGitHubIssueWriter>('IGitHubIssueWriter', GitHubIssueWriter);
+  // GitHubIssueWriter takes two function-typed constructor params with
+  // sensible defaults (see DiscordOutreachPublisher note below) — register
+  // an instance so tsyringe never tries to reflect on `Function`.
+  container.registerInstance<IGitHubIssueWriter>('IGitHubIssueWriter', new GitHubIssueWriter());
   container.registerSingleton<IExternalIssueFetcher>('IExternalIssueFetcher', GitHubIssueFetcher);
   container.register<IAllContributorsWriter>('IAllContributorsWriter', {
     useFactory: () => new AllContributorsWriter(workspaceRoot),
   });
-  container.registerSingleton<IOutreachPublisher>('IOutreachPublisher', DiscordOutreachPublisher);
+  // DiscordOutreachPublisher's constructor takes two function-typed
+  // parameters with sensible defaults. tsyringe cannot reflect on function
+  // types (reflect-metadata emits `Function`), so `registerSingleton(...)`
+  // crashes with "TypeInfo not known for Function". Register the concrete
+  // instance directly so the default args are used.
+  container.registerInstance<IOutreachPublisher>(
+    'IOutreachPublisher',
+    new DiscordOutreachPublisher()
+  );
 
   // Contributor action gate (NFR-5) — every contributor side-effect flows
   // through the supervisor before execution.
@@ -345,9 +356,9 @@ export function registerServices(container: DependencyContainer): void {
     RecapChannel.Discord,
     (c) => new DiscordRecapPublisher(c.resolve<IOutreachPublisher>('IOutreachPublisher'))
   );
-  registerRecapPublisher(RecapChannel.GithubDiscussion, (c) =>
-    c.resolve(GithubDiscussionRecapPublisher)
-  );
+  // GithubDiscussionRecapPublisher also has a function-typed default-arg
+  // constructor; instantiate it directly to bypass tsyringe reflection.
+  registerRecapPublisher(RecapChannel.GithubDiscussion, () => new GithubDiscussionRecapPublisher());
 
   container.registerSingleton<IDiagnosticRunner>('IDiagnosticRunner', DiagnosticRunner);
 
