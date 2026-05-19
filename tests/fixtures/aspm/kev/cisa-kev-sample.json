@@ -1,0 +1,610 @@
+{
+  "title": "CISA KEV (test fixture)",
+  "vulnerabilities": [
+    {
+      "cveID": "CVE-2023-10001",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10002",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10003",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10004",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10005",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10006",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10007",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10008",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10009",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10010",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10011",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10012",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10013",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10014",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10015",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10016",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10017",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10018",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10019",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10020",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10021",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10022",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10023",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10024",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10025",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10026",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10027",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10028",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10029",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10030",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10031",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10032",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10033",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10034",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10035",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10036",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10037",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10038",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10039",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10040",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10041",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10042",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10043",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10044",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10045",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10046",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10047",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10048",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10049",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10050",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10051",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10052",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10053",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10054",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10055",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10056",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10057",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10058",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10059",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10060",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10061",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10062",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10063",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10064",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10065",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10066",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10067",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10068",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10069",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10070",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10071",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10072",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10073",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10074",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10075",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10076",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10077",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10078",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10079",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10080",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10081",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10082",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10083",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10084",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10085",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10086",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10087",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10088",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10089",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10090",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10091",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10092",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10093",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10094",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10095",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10096",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10097",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10098",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10099",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10100",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10101",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10102",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10103",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10104",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10105",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10106",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10107",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10108",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10109",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10110",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10111",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10112",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10113",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10114",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10115",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10116",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10117",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10118",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10119",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2023-10120",
+      "vendorProject": "Test",
+      "product": "Stub"
+    },
+    {
+      "cveID": "CVE-2021-44228",
+      "vendorProject": "Apache",
+      "product": "Log4j2"
+    }
+  ]
+}

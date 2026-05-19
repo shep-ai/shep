@@ -31,6 +31,7 @@ import type { IServiceRepository } from '../../../application/ports/output/repos
 import type { ITeamRepository } from '../../../application/ports/output/repositories/team-repository.interface.js';
 
 // Service ports
+import type { IExploitIntelPort } from '../../../application/ports/output/services/exploit-intel-port.interface.js';
 import type { IFindingIngestPort } from '../../../application/ports/output/services/finding-ingest-port.interface.js';
 import type { IOwnershipYamlReader } from '../../../application/ports/output/services/ownership-yaml-reader.interface.js';
 import type { ISbomPort } from '../../../application/ports/output/services/sbom-port.interface.js';
@@ -46,6 +47,7 @@ import { SQLiteTeamRepository } from '../../repositories/aspm/sqlite-team-reposi
 
 // Concrete services
 import { CycloneDxSbomAdapter } from '../../services/aspm/cyclonedx-sbom-adapter.js';
+import { ExploitIntelAdapter } from '../../services/aspm/exploit-intel-adapter.js';
 import { OwnershipYamlReader } from '../../services/aspm/ownership-yaml-reader.js';
 import { SarifIngestAdapter } from '../../services/aspm/sarif-ingest-adapter.js';
 
@@ -156,6 +158,12 @@ function registerPhase3UseCases(container: DependencyContainer): void {
 function registerPhase4Services(container: DependencyContainer): void {
   container.register<ISbomPort>(ASPM_TOKENS.ISbomPort, {
     useClass: CycloneDxSbomAdapter,
+  });
+  // ExploitIntelAdapter is intentionally not @injectable() — see the class
+  // docstring. Register via factory so the production default cache dir and
+  // live `fetch` are bound at resolve-time.
+  container.register<IExploitIntelPort>(ASPM_TOKENS.IExploitIntelPort, {
+    useFactory: () => new ExploitIntelAdapter(),
   });
 }
 
