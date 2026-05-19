@@ -36,6 +36,8 @@ export interface SecurityFindingRow {
   cve_id: string | null;
   cwe_id: string | null;
   owasp_asvs_control_id: string | null;
+  kev: number | null;
+  epss_percentile: number | null;
   owner_id: string | null;
   state: string;
   current_risk_score_id: string | null;
@@ -84,6 +86,8 @@ export function toDatabase(finding: SecurityFinding): SecurityFindingRow {
     cve_id: finding.cveId ?? null,
     cwe_id: finding.cweId ?? null,
     owasp_asvs_control_id: finding.owaspAsvsControlId ?? null,
+    kev: finding.kev === undefined ? null : finding.kev ? 1 : 0,
+    epss_percentile: finding.epssPercentile ?? null,
     owner_id: finding.ownerId ?? null,
     state: finding.state,
     current_risk_score_id: finding.currentRiskScoreId ?? null,
@@ -118,6 +122,8 @@ export function fromDatabase(row: SecurityFindingRow): SecurityFinding {
     cveId: row.cve_id ?? undefined,
     cweId: row.cwe_id ?? undefined,
     owaspAsvsControlId: row.owasp_asvs_control_id ?? undefined,
+    kev: row.kev === null ? undefined : row.kev === 1,
+    epssPercentile: row.epss_percentile ?? undefined,
     ownerId: row.owner_id ?? undefined,
     state: row.state as FindingState,
     currentRiskScoreId: row.current_risk_score_id ?? undefined,

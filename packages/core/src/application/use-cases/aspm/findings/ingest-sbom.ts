@@ -27,12 +27,19 @@ import { inject, injectable } from 'tsyringe';
 
 import type { IApplicationRepository } from '../../../ports/output/repositories/application-repository.interface.js';
 import type { IFindingRepository } from '../../../ports/output/repositories/finding-repository.interface.js';
+import type { IExploitIntelPort } from '../../../ports/output/services/exploit-intel-port.interface.js';
 import type { IOwnershipYamlReader } from '../../../ports/output/services/ownership-yaml-reader.interface.js';
 import type {
   ISbomPort,
   SbomComponentDraft,
   SbomVulnerabilityDraft,
 } from '../../../ports/output/services/sbom-port.interface.js';
+import {
+  enrichWithExploitIntel,
+  lookupEpss,
+  lookupKev,
+  type ExploitIntelLookup,
+} from './enrich-with-exploit-intel.js';
 import { ApplicationNotFoundError } from '../../../../domain/errors/application-not-found.error.js';
 import { findingDedupKey } from '../../../../domain/aspm/dedup/finding-dedup-key.js';
 import { computeRawHash, redactSecrets } from '../../../../domain/aspm/redactor/redact-secrets.js';
@@ -71,7 +78,8 @@ export class IngestSbomUseCase {
     @inject('IApplicationRepository') private readonly appRepo: IApplicationRepository,
     @inject('IFindingRepository') private readonly findingRepo: IFindingRepository,
     @inject('ISbomPort') private readonly sbomPort: ISbomPort,
-    @inject('IOwnershipYamlReader') private readonly ownershipReader: IOwnershipYamlReader
+    @inject('IOwnershipYamlReader') private readonly ownershipReader: IOwnershipYamlReader,
+    @inject('IExploitIntelPort') private readonly exploitIntel: IExploitIntelPort
   ) {}
 
   async execute(input: IngestSbomInput): Promise<IngestSbomResult> {
@@ -88,6 +96,12 @@ export class IngestSbomUseCase {
     const ownershipYaml = await this.ownershipReader.read(app.repositoryPath);
     const documentHash = computeRawHash(input.document, SHA256_HEX);
     const now = new Date(startedAt);
+
+    // Batch KEV/EPSS enrichment once per ingestion run.
+    const cveIds = sbom.vulnerabilities
+      .map((v) => v.cveId)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+    const exploitLookup = await enrichWithExploitIntel(this.exploitIntel, cveIds);
 
     const componentByRef = new Map<string, SbomComponentDraft>();
     for (const component of sbom.components) {
@@ -135,6 +149,7 @@ export class IngestSbomUseCase {
             locationPath,
             ownerId: ownerResolution?.ownerId,
             now,
+            exploitLookup,
           })
         );
       }
@@ -163,10 +178,12 @@ interface BuildSbomFindingInput {
   locationPath: string | undefined;
   ownerId: string | undefined;
   now: Date;
+  exploitLookup: ExploitIntelLookup;
 }
 
 function buildSbomFinding(input: BuildSbomFindingInput): SecurityFinding {
-  const { vuln, component, locationPath, ownerId, applicationId, sourceLabel, now } = input;
+  const { vuln, component, locationPath, ownerId, applicationId, sourceLabel, now, exploitLookup } =
+    input;
   const componentLabel = component
     ? `${component.name}${component.version ? `@${component.version}` : ''}`
     : (locationPath ?? 'unknown');
@@ -179,6 +196,9 @@ function buildSbomFinding(input: BuildSbomFindingInput): SecurityFinding {
   });
   const redactedRaw = redactSecrets(rawJson);
   const rawHash = computeRawHash(rawJson, SHA256_HEX);
+
+  const kev = lookupKev(exploitLookup, vuln.cveId);
+  const epssPercentile = lookupEpss(exploitLookup, vuln.cveId);
 
   return {
     id: randomUUID(),
@@ -194,6 +214,8 @@ function buildSbomFinding(input: BuildSbomFindingInput): SecurityFinding {
     canonicalSeverity: vuln.canonicalSeverity,
     cveId: vuln.cveId,
     cweId: vuln.cweIds?.[0],
+    kev,
+    epssPercentile,
     ownerId,
     state: FindingState.Open,
     source: sourceLabel,

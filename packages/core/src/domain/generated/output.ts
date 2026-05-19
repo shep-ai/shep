@@ -3425,6 +3425,14 @@ export type SecurityFinding = SoftDeletableEntity & {
    */
   owaspAsvsControlId?: string;
   /**
+   * True iff the finding's CVE is present in CISA's Known Exploited Vulnerabilities catalog
+   */
+  kev?: boolean;
+  /**
+   * FIRST EPSS exploit-probability percentile (0..1) when known; null when EPSS lookup is unavailable
+   */
+  epssPercentile?: float64;
+  /**
    * Resolved owner of the finding
    */
   ownerId?: UUID;

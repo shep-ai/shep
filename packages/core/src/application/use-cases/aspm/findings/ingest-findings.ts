@@ -34,7 +34,14 @@ import type {
 } from '../../../ports/output/services/finding-ingest-port.interface.js';
 import type { IFindingRepository } from '../../../ports/output/repositories/finding-repository.interface.js';
 import type { IApplicationRepository } from '../../../ports/output/repositories/application-repository.interface.js';
+import type { IExploitIntelPort } from '../../../ports/output/services/exploit-intel-port.interface.js';
 import type { IOwnershipYamlReader } from '../../../ports/output/services/ownership-yaml-reader.interface.js';
+import {
+  enrichWithExploitIntel,
+  lookupEpss,
+  lookupKev,
+  type ExploitIntelLookup,
+} from './enrich-with-exploit-intel.js';
 
 export interface IngestFindingsInput {
   applicationId: string;
@@ -72,7 +79,8 @@ export class IngestFindingsUseCase {
     @inject('IApplicationRepository') private readonly appRepo: IApplicationRepository,
     @inject('IFindingRepository') private readonly findingRepo: IFindingRepository,
     @inject('IFindingIngestPort') private readonly ingestPort: IFindingIngestPort,
-    @inject('IOwnershipYamlReader') private readonly ownershipReader: IOwnershipYamlReader
+    @inject('IOwnershipYamlReader') private readonly ownershipReader: IOwnershipYamlReader,
+    @inject('IExploitIntelPort') private readonly exploitIntel: IExploitIntelPort
   ) {}
 
   async execute(input: IngestFindingsInput): Promise<IngestFindingsResult> {
@@ -89,6 +97,14 @@ export class IngestFindingsUseCase {
     const ownershipYaml = await this.ownershipReader.read(app.repositoryPath);
     const documentHash = computeRawHash(input.document, SHA256_HEX);
     const now = new Date(startedAt);
+
+    // Batch the KEV/EPSS lookups once per ingestion run (one call per distinct
+    // CVE, regardless of how many findings reference it). Findings without a
+    // cveId skip enrichment entirely.
+    const cveIds = parsed.drafts
+      .map((d) => d.cveId)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+    const exploitLookup = await enrichWithExploitIntel(this.exploitIntel, cveIds);
 
     const seenDedupKeys = new Set<string>();
     const findings: SecurityFinding[] = [];
@@ -114,7 +130,9 @@ export class IngestFindingsUseCase {
         ownershipYaml,
       });
 
-      findings.push(buildFinding(draft, input.applicationId, ownerResolution?.ownerId, now));
+      findings.push(
+        buildFinding(draft, input.applicationId, ownerResolution?.ownerId, now, exploitLookup)
+      );
     }
 
     const { inserted, duplicates } = await this.findingRepo.bulkInsertOrIgnore(findings);
@@ -135,13 +153,16 @@ function buildFinding(
   draft: FindingDraft,
   applicationId: string,
   ownerId: string | undefined,
-  now: Date
+  now: Date,
+  exploitLookup: ExploitIntelLookup
 ): SecurityFinding {
   const redactedDesc = redactSecrets(draft.description);
   const redactedRaw =
     draft.scannerRaw !== undefined ? redactSecrets(draft.scannerRaw) : { redacted: undefined };
   const rawHash =
     draft.scannerRaw !== undefined ? computeRawHash(draft.scannerRaw, SHA256_HEX) : undefined;
+  const kev = lookupKev(exploitLookup, draft.cveId);
+  const epssPercentile = lookupEpss(exploitLookup, draft.cveId);
 
   return {
     id: randomUUID(),
@@ -159,6 +180,8 @@ function buildFinding(
     cveId: draft.cveId,
     cweId: draft.cweId,
     owaspAsvsControlId: draft.owaspAsvsControlId,
+    kev,
+    epssPercentile,
     ownerId,
     state: FindingState.Open,
     source: draft.source,

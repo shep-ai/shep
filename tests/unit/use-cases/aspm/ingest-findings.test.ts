@@ -27,7 +27,20 @@ import type {
 } from '@/application/ports/output/services/finding-ingest-port.interface.js';
 import type { IFindingRepository } from '@/application/ports/output/repositories/finding-repository.interface.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
+import type { IExploitIntelPort } from '@/application/ports/output/services/exploit-intel-port.interface.js';
 import type { IOwnershipYamlReader } from '@/application/ports/output/services/ownership-yaml-reader.interface.js';
+
+function fakeExploitIntel(
+  kevSet = new Set<string>(),
+  epssMap = new Map<string, number>()
+): IExploitIntelPort {
+  return {
+    isKev: vi.fn().mockImplementation(async (cveId: string) => kevSet.has(cveId.toUpperCase())),
+    getEpssPercentile: vi
+      .fn()
+      .mockImplementation(async (cveId: string) => epssMap.get(cveId.toUpperCase()) ?? null),
+  };
+}
 
 function fakeAppRepo(app: Partial<Application> | null): IApplicationRepository {
   const value =
@@ -111,7 +124,8 @@ describe('IngestFindingsUseCase', () => {
       fakeAppRepo(null),
       fakeFindingRepo().port,
       fakeIngestPort([]),
-      emptyYamlReader
+      emptyYamlReader,
+      fakeExploitIntel()
     );
     await expect(
       uc.execute({ applicationId: 'app-1', sourceType: 'sarif', document: '{}' })
@@ -125,7 +139,8 @@ describe('IngestFindingsUseCase', () => {
       fakeAppRepo({}),
       repo.port,
       fakeIngestPort(drafts),
-      emptyYamlReader
+      emptyYamlReader,
+      fakeExploitIntel()
     );
 
     const result = await uc.execute({
@@ -148,7 +163,8 @@ describe('IngestFindingsUseCase', () => {
       fakeAppRepo({}),
       repo.port,
       fakeIngestPort(drafts),
-      emptyYamlReader
+      emptyYamlReader,
+      fakeExploitIntel()
     );
     const args = { applicationId: 'app-1', sourceType: 'sarif' as const, document: '{}' };
     const first = await uc.execute(args);
@@ -170,7 +186,8 @@ describe('IngestFindingsUseCase', () => {
       fakeAppRepo({}),
       repo.port,
       fakeIngestPort(drafts),
-      emptyYamlReader
+      emptyYamlReader,
+      fakeExploitIntel()
     );
     const result = await uc.execute({
       applicationId: 'app-1',
@@ -195,7 +212,8 @@ describe('IngestFindingsUseCase', () => {
       fakeAppRepo({}),
       repo.port,
       fakeIngestPort(drafts),
-      emptyYamlReader
+      emptyYamlReader,
+      fakeExploitIntel()
     );
     await uc.execute({ applicationId: 'app-1', sourceType: 'sarif', document: '{}' });
     const persisted = repo.inserted[0]!;
@@ -220,11 +238,58 @@ describe('IngestFindingsUseCase', () => {
       fakeAppRepo({ repositoryPath: '/repo' }),
       repo.port,
       fakeIngestPort(drafts),
-      yamlReader
+      yamlReader,
+      fakeExploitIntel()
     );
     await uc.execute({ applicationId: 'app-1', sourceType: 'sarif', document: '{}' });
     expect(repo.inserted[0]!.ownerId).toBe('owner-api');
     expect(repo.inserted[1]!.ownerId).toBeUndefined();
+  });
+
+  it('enriches CVE-bearing findings with KEV flag + EPSS percentile', async () => {
+    const repo = fakeFindingRepo();
+    const kev = new Set(['CVE-2021-44228']);
+    const epss = new Map([['CVE-2021-44228', 0.99]]);
+    const drafts = [
+      draft({ ruleId: 'r-log4j', cveId: 'CVE-2021-44228' }),
+      draft({ ruleId: 'r-nocve' }), // no cveId — enrichment skipped
+    ];
+    const uc = new IngestFindingsUseCase(
+      fakeAppRepo({}),
+      repo.port,
+      fakeIngestPort(drafts),
+      emptyYamlReader,
+      fakeExploitIntel(kev, epss)
+    );
+    await uc.execute({ applicationId: 'app-1', sourceType: 'sarif', document: '{}' });
+
+    const log4j = repo.inserted.find((f) => f.cveId === 'CVE-2021-44228')!;
+    expect(log4j.kev).toBe(true);
+    expect(log4j.epssPercentile).toBe(0.99);
+
+    const noCve = repo.inserted.find((f) => f.ruleId === 'r-nocve')!;
+    expect(noCve.kev).toBeUndefined();
+    expect(noCve.epssPercentile).toBeUndefined();
+  });
+
+  it('batches the exploit-intel port to one call per distinct CVE', async () => {
+    const repo = fakeFindingRepo();
+    const intel = fakeExploitIntel(new Set(['CVE-2021-44228']));
+    const drafts = [
+      draft({ ruleId: 'r1', cveId: 'CVE-2021-44228', locationPath: 'a.ts', locationLine: 1 }),
+      draft({ ruleId: 'r2', cveId: 'CVE-2021-44228', locationPath: 'b.ts', locationLine: 2 }),
+      draft({ ruleId: 'r3', cveId: 'CVE-2020-8203' }),
+    ];
+    const uc = new IngestFindingsUseCase(
+      fakeAppRepo({}),
+      repo.port,
+      fakeIngestPort(drafts),
+      emptyYamlReader,
+      intel
+    );
+    await uc.execute({ applicationId: 'app-1', sourceType: 'sarif', document: '{}' });
+    expect(intel.isKev).toHaveBeenCalledTimes(2);
+    expect(intel.getEpssPercentile).toHaveBeenCalledTimes(2);
   });
 
   it('returns the ingestion-run summary with documentHash + duration + toolName', async () => {
@@ -234,7 +299,8 @@ describe('IngestFindingsUseCase', () => {
       fakeAppRepo({}),
       repo.port,
       fakeIngestPort(drafts, 'codeql'),
-      emptyYamlReader
+      emptyYamlReader,
+      fakeExploitIntel()
     );
     const result = await uc.execute({
       applicationId: 'app-1',

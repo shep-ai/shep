@@ -35,14 +35,22 @@ describe('registerAspm', () => {
     expect(() => registerAspm(c)).not.toThrow();
   });
 
-  it('leaves unimplemented phase tokens unresolved (covers phases 4+)', () => {
+  it('leaves unimplemented phase tokens unresolved (covers phases 5+)', () => {
     const c = rootContainer.createChildContainer();
     registerAspm(c);
-    // Phase 3 wires IFindingRepository + IFindingIngestPort; later phases
-    // attach the rest. Tokens still unbound (e.g. risk score, exploit intel)
-    // should fail to resolve so a missing wiring is observable.
+    // Phases 2-4 wire the ownership / finding / SBOM / exploit-intel ports.
+    // Tokens belonging to later phases (risk-score, security-policy, ...)
+    // must still fail to resolve so a missing wiring is observable.
     expect(() => c.resolve(ASPM_REPOSITORY_TOKENS.IRiskScoreRepository)).toThrow();
-    expect(() => c.resolve(ASPM_SERVICE_TOKENS.IExploitIntelPort)).toThrow();
+    expect(() => c.resolve(ASPM_REPOSITORY_TOKENS.ISecurityPolicyRepository)).toThrow();
+    expect(() => c.resolve(ASPM_SERVICE_TOKENS.ISlaClockPort)).toThrow();
+  });
+
+  it('wires the phase-4 exploit-intel + SBOM ports', () => {
+    const c = rootContainer.createChildContainer();
+    registerAspm(c);
+    expect(c.resolve(ASPM_SERVICE_TOKENS.ISbomPort)).toBeDefined();
+    expect(c.resolve(ASPM_SERVICE_TOKENS.IExploitIntelPort)).toBeDefined();
   });
 });
 

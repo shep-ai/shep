@@ -28,14 +28,14 @@ const INSERT_SQL = `INSERT INTO security_findings (
   id, workspace_id, application_id, service_id, api_asset_id, cloud_environment_id,
   finding_domain, rule_id, title, description, location_path, location_line,
   scanner_raw, scanner_raw_hash, raw_severity, canonical_severity,
-  cve_id, cwe_id, owasp_asvs_control_id, owner_id, state,
+  cve_id, cwe_id, owasp_asvs_control_id, kev, epss_percentile, owner_id, state,
   current_risk_score_id, work_item_id, source,
   discovered_at, last_seen_at, first_fixed_at, created_at, updated_at, deleted_at
 ) VALUES (
   @id, @workspace_id, @application_id, @service_id, @api_asset_id, @cloud_environment_id,
   @finding_domain, @rule_id, @title, @description, @location_path, @location_line,
   @scanner_raw, @scanner_raw_hash, @raw_severity, @canonical_severity,
-  @cve_id, @cwe_id, @owasp_asvs_control_id, @owner_id, @state,
+  @cve_id, @cwe_id, @owasp_asvs_control_id, @kev, @epss_percentile, @owner_id, @state,
   @current_risk_score_id, @work_item_id, @source,
   @discovered_at, @last_seen_at, @first_fixed_at, @created_at, @updated_at, @deleted_at
 )`;

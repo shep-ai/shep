@@ -77,6 +77,12 @@ model SecurityFinding extends SoftDeletableEntity {
   @doc("OWASP ASVS control id when the scanner emitted a taxa reference")
   owaspAsvsControlId?: string;
 
+  @doc("True iff the finding's CVE is present in CISA's Known Exploited Vulnerabilities catalog")
+  kev?: boolean;
+
+  @doc("FIRST EPSS exploit-probability percentile (0..1) when known; null when EPSS lookup is unavailable")
+  epssPercentile?: float64;
+
   @doc("Resolved owner of the finding")
   ownerId?: UUID;
 

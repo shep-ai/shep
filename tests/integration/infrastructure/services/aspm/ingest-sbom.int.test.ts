@@ -20,8 +20,22 @@ import { SQLiteFindingRepository } from '@/infrastructure/repositories/aspm/sqli
 import { CycloneDxSbomAdapter } from '@/infrastructure/services/aspm/cyclonedx-sbom-adapter.js';
 import { IngestSbomUseCase } from '@/application/use-cases/aspm/findings/ingest-sbom.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
+import type { IExploitIntelPort } from '@/application/ports/output/services/exploit-intel-port.interface.js';
 import type { IOwnershipYamlReader } from '@/application/ports/output/services/ownership-yaml-reader.interface.js';
 import { CanonicalSeverity, FindingDomain } from '@/domain/generated/output.js';
+
+const kevSet = new Set<string>(['CVE-2021-44228']);
+const epssMap = new Map<string, number>([
+  ['CVE-2021-44228', 0.9995],
+  ['CVE-2020-8203', 0.85501],
+]);
+
+const fixtureExploitIntel: IExploitIntelPort = {
+  isKev: vi.fn().mockImplementation(async (cveId: string) => kevSet.has(cveId.toUpperCase())),
+  getEpssPercentile: vi
+    .fn()
+    .mockImplementation(async (cveId: string) => epssMap.get(cveId.toUpperCase()) ?? null),
+};
 
 const fixturesDir = join(
   fileURLToPath(new URL('.', import.meta.url)),
@@ -45,7 +59,13 @@ describe('IngestSbomUseCase + CycloneDxSbomAdapter (integration)', () => {
     db = createInMemoryDatabase();
     await runSQLiteMigrations(db);
     repo = new SQLiteFindingRepository(db);
-    uc = new IngestSbomUseCase(fakeAppRepo, repo, new CycloneDxSbomAdapter(), emptyYamlReader);
+    uc = new IngestSbomUseCase(
+      fakeAppRepo,
+      repo,
+      new CycloneDxSbomAdapter(),
+      emptyYamlReader,
+      fixtureExploitIntel
+    );
   });
 
   afterEach(() => {
@@ -69,6 +89,17 @@ describe('IngestSbomUseCase + CycloneDxSbomAdapter (integration)', () => {
     expect(log4shell).toBeDefined();
     expect(log4shell.canonicalSeverity).toBe(CanonicalSeverity.Critical);
     expect(log4shell.locationPath).toBe('pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1');
+
+    // KEV/EPSS enrichment (task-23): the KEV-listed CVE-2021-44228 carries kev=true,
+    // and the EPSS lookup populates a percentile. Non-CVE rows are not enriched.
+    expect(log4shell.kev).toBe(true);
+    expect(log4shell.epssPercentile).toBe(0.9995);
+    const lodash = stored.items.find((f) => f.cveId === 'CVE-2020-8203')!;
+    expect(lodash.kev).toBe(false);
+    expect(lodash.epssPercentile).toBe(0.85501);
+    const ghsa = stored.items.find((f) => f.ruleId === 'GHSA-3xpr-x77f-jh43')!;
+    expect(ghsa.kev).toBeUndefined();
+    expect(ghsa.epssPercentile).toBeUndefined();
   });
 
   it('re-ingesting the same SBOM is a no-op (NFR-10)', async () => {

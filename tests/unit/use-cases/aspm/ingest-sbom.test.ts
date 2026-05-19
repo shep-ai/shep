@@ -21,6 +21,7 @@ import {
 } from '@/domain/generated/output.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
 import type { IFindingRepository } from '@/application/ports/output/repositories/finding-repository.interface.js';
+import type { IExploitIntelPort } from '@/application/ports/output/services/exploit-intel-port.interface.js';
 import type { IOwnershipYamlReader } from '@/application/ports/output/services/ownership-yaml-reader.interface.js';
 import type {
   ISbomPort,
@@ -28,6 +29,18 @@ import type {
   SbomDraft,
   SbomVulnerabilityDraft,
 } from '@/application/ports/output/services/sbom-port.interface.js';
+
+function fakeExploitIntel(
+  kevSet = new Set<string>(),
+  epssMap = new Map<string, number>()
+): IExploitIntelPort {
+  return {
+    isKev: vi.fn().mockImplementation(async (cveId: string) => kevSet.has(cveId.toUpperCase())),
+    getEpssPercentile: vi
+      .fn()
+      .mockImplementation(async (cveId: string) => epssMap.get(cveId.toUpperCase()) ?? null),
+  };
+}
 
 function fakeAppRepo(app: Partial<Application> | null): IApplicationRepository {
   const value =
@@ -122,7 +135,8 @@ describe('IngestSbomUseCase', () => {
       fakeAppRepo(null),
       fakeFindingRepo().port,
       fakeSbomPort(sbom()),
-      emptyYamlReader
+      emptyYamlReader,
+      fakeExploitIntel()
     );
     await expect(uc.execute({ applicationId: 'app-1', document: '{}' })).rejects.toBeInstanceOf(
       ApplicationNotFoundError
@@ -135,7 +149,8 @@ describe('IngestSbomUseCase', () => {
       fakeAppRepo({}),
       repo.port,
       fakeSbomPort(sbom()),
-      emptyYamlReader
+      emptyYamlReader,
+      fakeExploitIntel()
     );
 
     const result = await uc.execute({ applicationId: 'app-1', document: '{}' });
@@ -169,7 +184,8 @@ describe('IngestSbomUseCase', () => {
       fakeAppRepo({}),
       repo.port,
       fakeSbomPort(multi),
-      emptyYamlReader
+      emptyYamlReader,
+      fakeExploitIntel()
     );
 
     const result = await uc.execute({ applicationId: 'app-1', document: '{}' });
@@ -188,7 +204,8 @@ describe('IngestSbomUseCase', () => {
       fakeAppRepo({}),
       repo.port,
       fakeSbomPort(orphan),
-      emptyYamlReader
+      emptyYamlReader,
+      fakeExploitIntel()
     );
 
     const result = await uc.execute({ applicationId: 'app-1', document: '{}' });
@@ -202,7 +219,8 @@ describe('IngestSbomUseCase', () => {
       fakeAppRepo({}),
       repo.port,
       fakeSbomPort(sbom()),
-      emptyYamlReader
+      emptyYamlReader,
+      fakeExploitIntel()
     );
     const first = await uc.execute({ applicationId: 'app-1', document: '{}' });
     const second = await uc.execute({ applicationId: 'app-1', document: '{}' });
@@ -223,12 +241,44 @@ describe('IngestSbomUseCase', () => {
       fakeAppRepo({}),
       repo.port,
       fakeSbomPort(dup),
-      emptyYamlReader
+      emptyYamlReader,
+      fakeExploitIntel()
     );
     const result = await uc.execute({ applicationId: 'app-1', document: '{}' });
     expect(result.inserted).toBe(1);
     expect(result.duplicates).toBe(1);
     expect(result.total).toBe(2);
+  });
+
+  it('enriches CVE-bearing vulnerabilities with KEV flag + EPSS percentile', async () => {
+    const repo = fakeFindingRepo();
+    const kev = new Set(['CVE-2021-44228']);
+    const epss = new Map([['CVE-2021-44228', 0.99]]);
+    const log4shellSbom = sbom({
+      components: [
+        component({ bomRef: 'pkg:maven/log4j-core@2.14.1', name: 'log4j-core', version: '2.14.1' }),
+      ],
+      vulnerabilities: [
+        vuln({
+          id: 'CVE-2021-44228',
+          cveId: 'CVE-2021-44228',
+          canonicalSeverity: CanonicalSeverity.Critical,
+          rawSeverity: 'critical',
+          affectedComponentRefs: ['pkg:maven/log4j-core@2.14.1'],
+        }),
+      ],
+    });
+    const uc = new IngestSbomUseCase(
+      fakeAppRepo({}),
+      repo.port,
+      fakeSbomPort(log4shellSbom),
+      emptyYamlReader,
+      fakeExploitIntel(kev, epss)
+    );
+    await uc.execute({ applicationId: 'app-1', document: '{}' });
+    const f = repo.inserted[0]!;
+    expect(f.kev).toBe(true);
+    expect(f.epssPercentile).toBe(0.99);
   });
 
   it('returns the ingestion-run summary with documentHash + duration + toolName', async () => {
@@ -237,7 +287,8 @@ describe('IngestSbomUseCase', () => {
       fakeAppRepo({}),
       repo.port,
       fakeSbomPort(sbom({ toolName: 'cdxgen' })),
-      emptyYamlReader
+      emptyYamlReader,
+      fakeExploitIntel()
     );
     const result = await uc.execute({ applicationId: 'app-1', document: 'doc-body' });
     expect(result.toolName).toBe('cdxgen');

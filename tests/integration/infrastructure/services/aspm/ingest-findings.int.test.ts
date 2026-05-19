@@ -21,8 +21,14 @@ import { SQLiteFindingRepository } from '@/infrastructure/repositories/aspm/sqli
 import { SarifIngestAdapter } from '@/infrastructure/services/aspm/sarif-ingest-adapter.js';
 import { IngestFindingsUseCase } from '@/application/use-cases/aspm/findings/ingest-findings.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
+import type { IExploitIntelPort } from '@/application/ports/output/services/exploit-intel-port.interface.js';
 import type { IOwnershipYamlReader } from '@/application/ports/output/services/ownership-yaml-reader.interface.js';
 import { CanonicalSeverity, FindingDomain } from '@/domain/generated/output.js';
+
+const offlineExploitIntel: IExploitIntelPort = {
+  isKev: vi.fn().mockResolvedValue(false),
+  getEpssPercentile: vi.fn().mockResolvedValue(null),
+};
 
 const fixturesDir = join(
   fileURLToPath(new URL('.', import.meta.url)),
@@ -46,7 +52,13 @@ describe('IngestFindingsUseCase + SarifIngestAdapter (integration)', () => {
     db = createInMemoryDatabase();
     await runSQLiteMigrations(db);
     repo = new SQLiteFindingRepository(db);
-    uc = new IngestFindingsUseCase(fakeAppRepo, repo, new SarifIngestAdapter(), emptyYamlReader);
+    uc = new IngestFindingsUseCase(
+      fakeAppRepo,
+      repo,
+      new SarifIngestAdapter(),
+      emptyYamlReader,
+      offlineExploitIntel
+    );
   });
 
   afterEach(() => {
