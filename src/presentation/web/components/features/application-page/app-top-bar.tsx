@@ -20,13 +20,14 @@ import type { ChatState } from '@shepai/core/application/ports/output/services/i
 import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 
 import { cn } from '@/lib/utils';
+import { BedrockMemoryToggle } from '@/components/bedrock-memory-toggle';
 import { SmartDeployCluster } from '@/components/features/application-page/smart-deploy-cluster';
 import type { CloudDeployActionApi } from '@/hooks/use-cloud-deploy-action';
 import type { DeployActionState } from '@/hooks/use-deploy-action';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { AppOverflowMenu } from './app-overflow-menu';
 import { AppViewTabs, type AppView } from './app-view-tabs';
@@ -155,6 +156,14 @@ export function AppTopBar({
         <div className="px-2 pb-2">
           <CopyPromptButton applicationId={application.id} />
         </div>
+        <DropdownMenuSeparator />
+        <div className="px-2 py-1.5">
+          <BedrockMemoryToggle
+            applicationId={application.id}
+            initialEnabled={application.bedrockEnabled}
+          />
+        </div>
+        <DropdownMenuSeparator />
         {collaboration ? (
           <DropdownMenuItem asChild>
             <Link
