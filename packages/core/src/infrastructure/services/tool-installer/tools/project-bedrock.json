@@ -1,0 +1,21 @@
+{
+  "name": "Project Bedrock",
+  "summary": "Git-tracked markdown memory store for AI coding agents",
+  "description": "Project Bedrock is a Python CLI that gives AI coding agents persistent, git-tracked markdown 'project memory' via session-start and session-stop hooks. It installs into the project's .claude/, .cursor/, and .codex/ directories.",
+  "tags": ["memory"],
+  "author": "robotaitai",
+  "website": "https://github.com/robotaitai/project-bedrock",
+  "platforms": ["linux", "darwin", "win32"],
+  "iconUrl": "https://cdn.simpleicons.org/python",
+  "binary": "bedrock",
+  "packageManager": "pipx",
+  "commands": {
+    "linux": "pipx install project-bedrock",
+    "darwin": "pipx install project-bedrock",
+    "win32": "pipx install project-bedrock"
+  },
+  "timeout": 300000,
+  "documentationUrl": "https://github.com/robotaitai/project-bedrock",
+  "verifyCommand": "bedrock --version",
+  "autoInstall": true
+}

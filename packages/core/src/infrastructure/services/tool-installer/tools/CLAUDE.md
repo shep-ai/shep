@@ -10,7 +10,7 @@ Files are loaded dynamically by `tool-metadata.ts` — the filename (minus `.jso
 | `name`             | `string`                                    | Yes      | Human-readable display name                                              |
 | `summary`          | `string`                                    | Yes      | One-line description                                                     |
 | `description`      | `string`                                    | Yes      | Detailed description                                                     |
-| `tags`             | `("ide"\|"cli-agent"\|"vcs"\|"terminal")[]` | Yes      | Categories for filtering in UI and CLI                                   |
+| `tags`             | `("ide"\|"cli-agent"\|"vcs"\|"terminal"\|"memory")[]` | Yes      | Categories for filtering in UI and CLI                                   |
 | `iconUrl`          | `string`                                    | No       | URL to SVG/PNG icon (use cdn.simpleicons.org when possible)              |
 | `binary`           | `string \| Record<string,string>`           | Yes      | Binary name for `which` check. Per-platform map if differs               |
 | `packageManager`   | `string`                                    | Yes      | Install method label (apt, brew, curl, manual, download)                 |
@@ -60,6 +60,7 @@ The launcher auto-detects TTY: CLI launch uses `openDirectory`, web launch uses 
 | `cli-agent` | Terminal-based AI coding agent | Claude Code, Cursor CLI |
 | `vcs`       | Version control tool           | Git, GitHub CLI         |
 | `terminal`  | Terminal emulator/multiplexer  | tmux, Kitty, Alacritty  |
+| `memory`    | Project memory / AI context store | Project Bedrock      |
 
 Tools can have multiple tags. A tool appears in all matching filter tabs in the UI.
 

@@ -66,6 +66,24 @@ describe('ToolMetadata', () => {
     });
   });
 
+  describe('tags union', () => {
+    it("accepts a descriptor tagged ['memory']", () => {
+      const meta: ToolMetadata = {
+        name: 'Memory Tool',
+        summary: 'test',
+        description: 'test',
+        tags: ['memory'],
+        binary: 'memory-tool',
+        packageManager: 'pipx',
+        commands: { linux: 'pipx install memory-tool' },
+        timeout: 300000,
+        documentationUrl: 'https://example.com',
+        verifyCommand: 'memory-tool --version',
+      };
+      expect(meta.tags).toEqual(['memory']);
+    });
+  });
+
   describe('openDirectory type support', () => {
     it('accepts string format for openDirectory', () => {
       const meta: ToolMetadata = {
