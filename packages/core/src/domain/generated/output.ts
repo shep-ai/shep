@@ -2031,6 +2031,10 @@ export type Application = SoftDeletableEntity & {
    * Timestamp of the last deployment attempt (success or failure)
    */
   lastDeployedAt?: any;
+  /**
+   * Whether project-bedrock memory integration is enabled for this application
+   */
+  bedrockEnabled: boolean;
 };
 
 /**
@@ -3061,6 +3065,50 @@ export type TimeEntry = BaseEntity & {
    * When the work was performed
    */
   loggedAt: any;
+};
+
+/**
+ * Health status for a single bedrock prerequisite tier
+ */
+export type BedrockTierStatus = {
+  /**
+   * Name of the tier being checked (e.g. python, pipx, bedrock)
+   */
+  tier: string;
+  /**
+   * Status of this tier: ok, missing, or error
+   */
+  status: 'ok' | 'missing' | 'error';
+  /**
+   * Optional human-readable detail (e.g. detected version)
+   */
+  detail?: string;
+  /**
+   * Optional remediation hint shown to the user when status is missing or error
+   */
+  remediation?: string;
+};
+
+/**
+ * Aggregate health report for the bedrock prerequisite chain
+ */
+export type BedrockHealth = {
+  /**
+   * Health of the Python interpreter prerequisite
+   */
+  python: BedrockTierStatus;
+  /**
+   * Health of the pipx package manager prerequisite
+   */
+  pipx: BedrockTierStatus;
+  /**
+   * Health of the bedrock binary prerequisite
+   */
+  bedrock: BedrockTierStatus;
+  /**
+   * Rolled-up overall status across all three tiers
+   */
+  overall: 'ok' | 'missing' | 'error';
 };
 export enum AgentStatus {
   Idle = 'Idle',
@@ -4094,6 +4142,11 @@ export enum InteractiveSessionEventType {
   Ready = 'interactive_session_ready',
   Stopped = 'interactive_session_stopped',
   Error = 'interactive_session_error',
+}
+export enum BedrockLifecycleAction {
+  Init = 'init',
+  Sync = 'sync',
+  Ship = 'ship',
 }
 export enum AgentFeature {
   sessionResume = 'session-resume',

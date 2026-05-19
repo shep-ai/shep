@@ -56,6 +56,10 @@ properties:
     type: string
     format: date-time
     description: Timestamp of the last deployment attempt (success or failure)
+  bedrockEnabled:
+    type: boolean
+    default: false
+    description: Whether project-bedrock memory integration is enabled for this application
 required:
   - name
   - slug
@@ -64,6 +68,7 @@ required:
   - additionalPaths
   - status
   - setupComplete
+  - bedrockEnabled
 allOf:
   - $ref: SoftDeletableEntity.yaml
 description: A persistent AI-powered application workspace

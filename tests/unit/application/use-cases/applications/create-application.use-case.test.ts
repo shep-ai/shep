@@ -324,6 +324,7 @@ describe('CreateApplicationUseCase', () => {
         additionalPaths: [],
         status: ApplicationStatus.Idle,
         setupComplete: false,
+        bedrockEnabled: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       })

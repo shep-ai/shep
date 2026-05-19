@@ -269,6 +269,7 @@ export class CreateApplicationUseCase {
       setupComplete: false,
       agentType: resolved.agentType,
       modelOverride: resolved.modelOverride,
+      bedrockEnabled: false,
       createdAt: now,
       updatedAt: now,
     };

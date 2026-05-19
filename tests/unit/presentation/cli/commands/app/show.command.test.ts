@@ -38,6 +38,7 @@ function makeApplication(overrides?: Partial<Application>): Application {
     additionalPaths: [],
     status: ApplicationStatus.Idle,
     setupComplete: false,
+    bedrockEnabled: false,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-15'),
     ...overrides,

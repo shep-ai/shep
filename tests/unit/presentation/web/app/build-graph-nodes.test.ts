@@ -359,6 +359,7 @@ describe('buildGraphNodes', () => {
         additionalPaths: [],
         status: 'Idle',
         setupComplete: true,
+        bedrockEnabled: false,
         agentRunId: null,
         agentSessionId: null,
         createdAt: new Date(),

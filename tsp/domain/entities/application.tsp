@@ -87,4 +87,7 @@ model Application extends SoftDeletableEntity {
 
   @doc("Timestamp of the last deployment attempt (success or failure)")
   lastDeployedAt?: utcDateTime;
+
+  @doc("Whether project-bedrock memory integration is enabled for this application")
+  bedrockEnabled: boolean = false;
 }

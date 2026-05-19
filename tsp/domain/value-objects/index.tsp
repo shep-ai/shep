@@ -49,3 +49,4 @@ import "./activity-entry.tsp";
 import "./custom-property.tsp";
 import "./work-item-relation.tsp";
 import "./time-entry.tsp";
+import "./bedrock.tsp";

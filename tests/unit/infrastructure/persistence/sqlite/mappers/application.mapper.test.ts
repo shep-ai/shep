@@ -16,6 +16,7 @@ function createTestApplication(overrides: Partial<Application> = {}): Applicatio
     additionalPaths: [],
     status: ApplicationStatus.Idle,
     setupComplete: false,
+    bedrockEnabled: false,
     createdAt: new Date('2025-06-01T10:00:00Z'),
     updatedAt: new Date('2025-06-01T12:00:00Z'),
     ...overrides,
@@ -42,6 +43,7 @@ function createTestRow(overrides: Partial<ApplicationRow> = {}): ApplicationRow 
     cloud_deployment_url: null,
     cloud_deployment_error: null,
     last_deployed_at: null,
+    bedrock_enabled: 0,
     created_at: new Date('2025-06-01T10:00:00Z').getTime(),
     updated_at: new Date('2025-06-01T12:00:00Z').getTime(),
     deleted_at: null,
@@ -188,6 +190,43 @@ describe('Application Mapper', () => {
       const app = fromDatabase(row);
 
       expect(app.modelOverride).toBe('claude-opus-4');
+    });
+  });
+
+  describe('bedrockEnabled (project-bedrock integration)', () => {
+    it('toDatabase maps bedrockEnabled=false to bedrock_enabled=0', () => {
+      const app = createTestApplication({ bedrockEnabled: false });
+      const row = toDatabase(app);
+
+      expect(row.bedrock_enabled).toBe(0);
+    });
+
+    it('toDatabase maps bedrockEnabled=true to bedrock_enabled=1', () => {
+      const app = createTestApplication({ bedrockEnabled: true });
+      const row = toDatabase(app);
+
+      expect(row.bedrock_enabled).toBe(1);
+    });
+
+    it('fromDatabase maps bedrock_enabled=0 to bedrockEnabled=false', () => {
+      const row = createTestRow({ bedrock_enabled: 0 });
+      const app = fromDatabase(row);
+
+      expect(app.bedrockEnabled).toBe(false);
+    });
+
+    it('fromDatabase maps bedrock_enabled=1 to bedrockEnabled=true', () => {
+      const row = createTestRow({ bedrock_enabled: 1 });
+      const app = fromDatabase(row);
+
+      expect(app.bedrockEnabled).toBe(true);
+    });
+
+    it('round-trips bedrockEnabled=true through toDatabase -> fromDatabase', () => {
+      const original = createTestApplication({ bedrockEnabled: true });
+      const restored = fromDatabase(toDatabase(original));
+
+      expect(restored.bedrockEnabled).toBe(true);
     });
   });
 

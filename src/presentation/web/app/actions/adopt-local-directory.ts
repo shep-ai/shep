@@ -42,6 +42,7 @@ export async function adoptLocalDirectory(input: {
       additionalPaths: [],
       status: ApplicationStatus.Idle,
       setupComplete: true,
+      bedrockEnabled: false,
       createdAt: now,
       updatedAt: now,
     });

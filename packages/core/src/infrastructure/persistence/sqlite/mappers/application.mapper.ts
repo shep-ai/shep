@@ -37,6 +37,7 @@ export interface ApplicationRow {
   cloud_deployment_url: string | null;
   cloud_deployment_error: string | null;
   last_deployed_at: number | null;
+  bedrock_enabled: number;
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
@@ -72,6 +73,7 @@ export function toDatabase(app: Application): ApplicationRow {
       app.lastDeployedAt !== undefined && app.lastDeployedAt !== null
         ? dateOrNumberToMs(app.lastDeployedAt)
         : null,
+    bedrock_enabled: app.bedrockEnabled ? 1 : 0,
     created_at: dateOrNumberToMs(app.createdAt),
     updated_at: dateOrNumberToMs(app.updatedAt),
     deleted_at: app.deletedAt ? dateOrNumberToMs(app.deletedAt) : null,
@@ -106,6 +108,7 @@ export function fromDatabase(row: ApplicationRow): Application {
       row.last_deployed_at !== null && row.last_deployed_at !== undefined
         ? new Date(row.last_deployed_at)
         : undefined,
+    bedrockEnabled: row.bedrock_enabled === 1,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     deletedAt: row.deleted_at ? new Date(row.deleted_at) : undefined,

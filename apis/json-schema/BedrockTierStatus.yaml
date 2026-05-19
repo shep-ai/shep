@@ -1,0 +1,26 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: BedrockTierStatus.yaml
+type: object
+properties:
+  tier:
+    type: string
+    description: Name of the tier being checked (e.g. python, pipx, bedrock)
+  status:
+    anyOf:
+      - type: string
+        const: ok
+      - type: string
+        const: missing
+      - type: string
+        const: error
+    description: "Status of this tier: ok, missing, or error"
+  detail:
+    type: string
+    description: Optional human-readable detail (e.g. detected version)
+  remediation:
+    type: string
+    description: Optional remediation hint shown to the user when status is missing or error
+required:
+  - tier
+  - status
+description: Health status for a single bedrock prerequisite tier

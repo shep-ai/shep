@@ -21,6 +21,7 @@ function buildApplication(overrides: Partial<Application> = {}): Application {
     slug: 'acme',
     repositoryPath: REPO_PATH,
     setupComplete: true,
+    bedrockEnabled: false,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

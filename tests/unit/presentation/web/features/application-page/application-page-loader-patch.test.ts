@@ -42,6 +42,7 @@ const baseApp: Application = {
   additionalPaths: [],
   status: ApplicationStatus.Idle,
   setupComplete: false,
+  bedrockEnabled: false,
   createdAt: new Date('2026-01-01').toISOString(),
   updatedAt: new Date('2026-01-01').toISOString(),
 };

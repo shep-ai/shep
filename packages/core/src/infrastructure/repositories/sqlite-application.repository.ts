@@ -26,14 +26,14 @@ export class SQLiteApplicationRepository implements IApplicationRepository {
         agent_type, model_override, status, setup_complete, agent_session_id,
         git_remote_url, cloud_deployment_provider, cloud_deployment_status,
         cloud_deployment_id, cloud_deployment_url, cloud_deployment_error,
-        last_deployed_at,
+        last_deployed_at, bedrock_enabled,
         created_at, updated_at, deleted_at
       ) VALUES (
         @id, @name, @slug, @description, @repository_path, @additional_paths,
         @agent_type, @model_override, @status, @setup_complete, @agent_session_id,
         @git_remote_url, @cloud_deployment_provider, @cloud_deployment_status,
         @cloud_deployment_id, @cloud_deployment_url, @cloud_deployment_error,
-        @last_deployed_at,
+        @last_deployed_at, @bedrock_enabled,
         @created_at, @updated_at, @deleted_at
       )
     `);
@@ -89,6 +89,7 @@ export class SQLiteApplicationRepository implements IApplicationRepository {
         | 'cloudDeploymentUrl'
         | 'cloudDeploymentError'
         | 'lastDeployedAt'
+        | 'bedrockEnabled'
       >
     >
   ): Promise<void> {
@@ -155,6 +156,10 @@ export class SQLiteApplicationRepository implements IApplicationRepository {
           ? fields.lastDeployedAt.getTime()
           : fields.lastDeployedAt
       );
+    }
+    if (fields.bedrockEnabled !== undefined) {
+      setClauses.push('bedrock_enabled = ?');
+      values.push(fields.bedrockEnabled ? 1 : 0);
     }
 
     values.push(id);

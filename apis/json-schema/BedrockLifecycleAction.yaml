@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: BedrockLifecycleAction.yaml
+type: string
+enum:
+  - init
+  - sync
+  - ship
+description: Lifecycle action dispatched to the project-bedrock CLI

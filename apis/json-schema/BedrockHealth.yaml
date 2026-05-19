@@ -1,0 +1,28 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: BedrockHealth.yaml
+type: object
+properties:
+  python:
+    $ref: BedrockTierStatus.yaml
+    description: Health of the Python interpreter prerequisite
+  pipx:
+    $ref: BedrockTierStatus.yaml
+    description: Health of the pipx package manager prerequisite
+  bedrock:
+    $ref: BedrockTierStatus.yaml
+    description: Health of the bedrock binary prerequisite
+  overall:
+    anyOf:
+      - type: string
+        const: ok
+      - type: string
+        const: missing
+      - type: string
+        const: error
+    description: Rolled-up overall status across all three tiers
+required:
+  - python
+  - pipx
+  - bedrock
+  - overall
+description: Aggregate health report for the bedrock prerequisite chain

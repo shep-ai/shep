@@ -34,6 +34,7 @@ describe('SQLiteApplicationRepository', () => {
       additionalPaths: [],
       status: ApplicationStatus.Idle,
       setupComplete: false,
+      bedrockEnabled: false,
       createdAt: NOW,
       updatedAt: NOW,
       ...overrides,
@@ -270,6 +271,38 @@ describe('SQLiteApplicationRepository', () => {
       const result = await repository.list();
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('app-001');
+    });
+  });
+
+  describe('bedrockEnabled (project-bedrock integration)', () => {
+    it('defaults bedrockEnabled to false when created without an override', async () => {
+      await repository.create(createTestApplication());
+
+      const found = await repository.findById('app-001');
+      expect(found!.bedrockEnabled).toBe(false);
+    });
+
+    it('persists bedrockEnabled=true via create() and round-trips through findById()', async () => {
+      await repository.create(createTestApplication({ bedrockEnabled: true }));
+
+      const found = await repository.findById('app-001');
+      expect(found!.bedrockEnabled).toBe(true);
+    });
+
+    it('updates bedrockEnabled from false to true', async () => {
+      await repository.create(createTestApplication());
+      await repository.update('app-001', { bedrockEnabled: true });
+
+      const found = await repository.findById('app-001');
+      expect(found!.bedrockEnabled).toBe(true);
+    });
+
+    it('updates bedrockEnabled from true to false', async () => {
+      await repository.create(createTestApplication({ bedrockEnabled: true }));
+      await repository.update('app-001', { bedrockEnabled: false });
+
+      const found = await repository.findById('app-001');
+      expect(found!.bedrockEnabled).toBe(false);
     });
   });
 
