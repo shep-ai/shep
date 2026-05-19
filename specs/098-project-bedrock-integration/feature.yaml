@@ -1,0 +1,36 @@
+feature:
+  id: '098-project-bedrock-integration'
+  name: 'project-bedrock-integration'
+  number: 98
+  branch: 'feat/098-project-bedrock-integration'
+  lifecycle: 'research'
+  createdAt: '2026-05-06T19:30:45Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-05-06T19:30:45Z'
+  lastUpdatedBy: 'feature-agent'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-05-06T19:30:45Z'
+    completedBy: 'feature-agent'
+
+errors:
+  current: null
+  history: []
