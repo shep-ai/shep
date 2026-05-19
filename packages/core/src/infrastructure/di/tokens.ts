@@ -28,3 +28,12 @@ export const RunBedrockLifecycleUseCaseToken = 'RunBedrockLifecycleUseCase' as c
 
 /** Resolves to `CheckBedrockHealthUseCase`. */
 export const CheckBedrockHealthUseCaseToken = 'CheckBedrockHealthUseCase' as const;
+
+/** Resolves to `FileSystemBedrockMemoryReader`. */
+export const IBedrockMemoryReaderToken = 'IBedrockMemoryReader' as const;
+
+/** Resolves to `EnableBedrockForTargetUseCase`. */
+export const EnableBedrockForTargetUseCaseToken = 'EnableBedrockForTargetUseCase' as const;
+
+/** Resolves to `GetBedrockMemorySnapshotUseCase`. */
+export const GetBedrockMemorySnapshotUseCaseToken = 'GetBedrockMemorySnapshotUseCase' as const;

@@ -20,6 +20,7 @@ export interface RepositoryRow {
   remote_url: string | null;
   is_fork: number;
   upstream_url: string | null;
+  bedrock_enabled: number;
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
@@ -36,6 +37,7 @@ export function toDatabase(repo: Repository): RepositoryRow {
     remote_url: repo.remoteUrl ?? null,
     is_fork: repo.isFork ? 1 : 0,
     upstream_url: repo.upstreamUrl ?? null,
+    bedrock_enabled: repo.bedrockEnabled ? 1 : 0,
     created_at: repo.createdAt instanceof Date ? repo.createdAt.getTime() : repo.createdAt,
     updated_at: repo.updatedAt instanceof Date ? repo.updatedAt.getTime() : repo.updatedAt,
     deleted_at: repo.deletedAt
@@ -57,6 +59,7 @@ export function fromDatabase(row: RepositoryRow): Repository {
     remoteUrl: row.remote_url ?? undefined,
     isFork: row.is_fork === 1,
     upstreamUrl: row.upstream_url ?? undefined,
+    bedrockEnabled: row.bedrock_enabled === 1,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     deletedAt: row.deleted_at ? new Date(row.deleted_at) : undefined,

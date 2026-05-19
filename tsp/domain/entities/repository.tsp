@@ -33,4 +33,7 @@ model Repository extends SoftDeletableEntity {
 
   @doc("Original upstream URL when isFork is true (normalized: lowercase, no .git suffix)")
   upstreamUrl?: string;
+
+  @doc("Whether project-bedrock memory integration is enabled for this repository (defaults to false in persistence)")
+  bedrockEnabled?: boolean;
 }

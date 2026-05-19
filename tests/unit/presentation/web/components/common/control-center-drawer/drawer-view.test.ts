@@ -31,8 +31,8 @@ describe('parseTabKey', () => {
 });
 
 describe('VALID_TAB_KEYS', () => {
-  it('contains all 9 tab keys', () => {
-    expect(VALID_TAB_KEYS.size).toBe(9);
+  it('contains all 10 tab keys', () => {
+    expect(VALID_TAB_KEYS.size).toBe(10);
   });
 
   it('matches the FeatureTabKey type values', () => {
@@ -46,6 +46,7 @@ describe('VALID_TAB_KEYS', () => {
       'product-decisions',
       'merge-review',
       'chat',
+      'bedrock',
     ];
     for (const key of expected) {
       expect(VALID_TAB_KEYS.has(key)).toBe(true);

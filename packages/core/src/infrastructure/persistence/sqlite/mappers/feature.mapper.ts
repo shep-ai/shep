@@ -91,6 +91,8 @@ export interface FeatureRow {
   // Skill injection
   inject_skills: number;
   injected_skills: string | null;
+  // Bedrock memory opt-in
+  bedrock_enabled: number;
   // Soft delete
   deleted_at: number | null;
   created_at: number;
@@ -162,6 +164,8 @@ export function toDatabase(feature: Feature): FeatureRow {
     // Skill injection
     inject_skills: feature.injectSkills ? 1 : 0,
     injected_skills: feature.injectedSkills?.length ? JSON.stringify(feature.injectedSkills) : null,
+    // Bedrock memory opt-in
+    bedrock_enabled: feature.bedrockEnabled ? 1 : 0,
     // Soft delete
     deleted_at:
       feature.deletedAt instanceof Date ? feature.deletedAt.getTime() : (feature.deletedAt ?? null),
@@ -245,6 +249,8 @@ export function fromDatabase(row: FeatureRow): Feature {
     // Skill injection
     injectSkills: row.inject_skills === 1,
     ...(row.injected_skills != null && { injectedSkills: JSON.parse(row.injected_skills) }),
+    // Bedrock memory opt-in
+    bedrockEnabled: row.bedrock_enabled === 1,
     // Soft delete
     ...(row.deleted_at != null && { deletedAt: new Date(row.deleted_at) }),
   };

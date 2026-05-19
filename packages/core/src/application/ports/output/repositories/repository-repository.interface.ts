@@ -24,6 +24,8 @@ export interface IRepositoryRepository {
   /** Update specific fields on an existing repository. */
   update(
     id: string,
-    fields: Partial<Pick<Repository, 'name' | 'path' | 'remoteUrl' | 'isFork' | 'upstreamUrl'>>
+    fields: Partial<
+      Pick<Repository, 'name' | 'path' | 'remoteUrl' | 'isFork' | 'upstreamUrl' | 'bedrockEnabled'>
+    >
   ): Promise<Repository>;
 }

@@ -41,9 +41,15 @@ import type { ISkillInjectorService } from '../../../application/ports/output/se
 import { SkillInjectorService } from '../../services/skill-injector.service.js';
 import type { IBedrockIntegrationService } from '../../../application/ports/output/services/bedrock-integration.service.js';
 import { BedrockIntegrationService } from '../../services/integrations/bedrock-integration.service.js';
+import type { IBedrockMemoryReader } from '../../../application/ports/output/services/bedrock-memory-reader.interface.js';
+import { FileSystemBedrockMemoryReader } from '../../services/integrations/file-system-bedrock-memory-reader.service.js';
 import type { IClaudeSettingsReconciler } from '../../../application/ports/output/services/claude-settings-reconciler.service.js';
 import { ClaudeSettingsReconciler } from '../../services/filesystem/claude-settings-reconciler.service.js';
-import { IBedrockIntegrationServiceToken, IClaudeSettingsReconcilerToken } from '../tokens.js';
+import {
+  IBedrockIntegrationServiceToken,
+  IBedrockMemoryReaderToken,
+  IClaudeSettingsReconcilerToken,
+} from '../tokens.js';
 import type { IGitHubRepositoryService } from '../../../application/ports/output/services/github-repository-service.interface.js';
 import { GitHubRepositoryService } from '../../services/external/github-repository.service.js';
 import type { IBrowserOpener } from '../../../application/ports/output/services/i-browser-opener.js';
@@ -187,6 +193,10 @@ export function registerServices(container: DependencyContainer): void {
   container.registerSingleton<IBedrockIntegrationService>(
     IBedrockIntegrationServiceToken,
     BedrockIntegrationService
+  );
+  container.registerSingleton<IBedrockMemoryReader>(
+    IBedrockMemoryReaderToken,
+    FileSystemBedrockMemoryReader
   );
   container.registerSingleton<IToolInstallerService>(
     'IToolInstallerService',

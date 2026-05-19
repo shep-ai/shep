@@ -97,6 +97,7 @@ function createTestRow(overrides: Partial<FeatureRow> = {}): FeatureRow {
     attachments: '[]',
     injected_skills: null,
     inject_skills: 0,
+    bedrock_enabled: 0,
     deleted_at: null,
     created_at: new Date('2026-03-08T10:00:00Z').getTime(),
     updated_at: new Date('2026-03-08T10:00:00Z').getTime(),

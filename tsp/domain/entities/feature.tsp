@@ -466,4 +466,9 @@ model Feature extends SoftDeletableEntity {
 
   @doc("Files attached by the user when creating or messaging this feature")
   attachments?: Attachment[];
+
+  // ── Bedrock Memory Integration ────────────────────────────
+
+  @doc("Whether project-bedrock memory integration is enabled for this feature worktree (defaults to false in persistence)")
+  bedrockEnabled?: boolean;
 }

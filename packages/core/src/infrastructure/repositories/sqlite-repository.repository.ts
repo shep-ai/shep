@@ -21,8 +21,8 @@ export class SQLiteRepositoryRepository implements IRepositoryRepository {
   async create(repository: Repository): Promise<Repository> {
     const row = toDatabase(repository);
     const insertStmt = this.db.prepare(`
-      INSERT OR IGNORE INTO repositories (id, name, path, created_at, updated_at)
-      VALUES (@id, @name, @path, @created_at, @updated_at)
+      INSERT OR IGNORE INTO repositories (id, name, path, bedrock_enabled, created_at, updated_at)
+      VALUES (@id, @name, @path, @bedrock_enabled, @created_at, @updated_at)
     `);
     insertStmt.run(row);
     const selectStmt = this.db.prepare('SELECT * FROM repositories WHERE path = ?');
@@ -83,7 +83,9 @@ export class SQLiteRepositoryRepository implements IRepositoryRepository {
 
   async update(
     id: string,
-    fields: Partial<Pick<Repository, 'name' | 'path' | 'remoteUrl' | 'isFork' | 'upstreamUrl'>>
+    fields: Partial<
+      Pick<Repository, 'name' | 'path' | 'remoteUrl' | 'isFork' | 'upstreamUrl' | 'bedrockEnabled'>
+    >
   ): Promise<Repository> {
     const now = Date.now();
     const setClauses: string[] = ['updated_at = ?'];
@@ -108,6 +110,10 @@ export class SQLiteRepositoryRepository implements IRepositoryRepository {
     if (fields.upstreamUrl !== undefined) {
       setClauses.push('upstream_url = ?');
       values.push(fields.upstreamUrl);
+    }
+    if (fields.bedrockEnabled !== undefined) {
+      setClauses.push('bedrock_enabled = ?');
+      values.push(fields.bedrockEnabled ? 1 : 0);
     }
 
     values.push(id);

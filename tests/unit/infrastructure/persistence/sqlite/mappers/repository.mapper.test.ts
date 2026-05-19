@@ -25,6 +25,7 @@ function createTestRow(overrides: Partial<RepositoryRow> = {}): RepositoryRow {
     remote_url: null,
     is_fork: 0,
     upstream_url: null,
+    bedrock_enabled: 0,
     created_at: new Date('2025-06-01T10:00:00Z').getTime(),
     updated_at: new Date('2025-06-01T12:00:00Z').getTime(),
     deleted_at: null,

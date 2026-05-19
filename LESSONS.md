@@ -1,5 +1,19 @@
 # Lessons Learned
 
+## Required TypeSpec fields propagate to every entity fixture
+
+Adding `bedrockEnabled: boolean` to `Repository` and `Feature` in tsp/ broke ~30 unit/integration tests that construct fixtures via `Partial<Feature>` / `Partial<Repository>`. The TS error was `Property 'bedrockEnabled' is missing in type '{ ... }' but required in type 'Feature'` — even though the helper accepted Partial overrides, the literal it spread into still had to satisfy the full required type.
+
+Rules:
+
+1. New tsp fields default to **required** in the generated TS. If you add a required field to a widely-used entity (Feature, Repository, Application), expect O(20+) test fixture updates.
+2. For backwards-compat-friendly fields whose default value is the same on every existing row (e.g. `false` for a feature flag), declare them **optional** in tsp (`field?: boolean`). The mapper compares `=== 1` which already collapses `undefined` and `null` to `false`, so persistence stays deterministic.
+3. Reserve required tsp fields for invariants the domain genuinely requires (id, slug, name, etc.). Per-feature toggles are not invariants — make them optional.
+
+## Storybook needs mocks for every new `'use server'` action
+
+When a client component imports a server action, Storybook (which bundles only the client side) needs a parallel mock at `.storybook/mocks/app/actions/<filename>.ts` exporting the same symbols. Forgetting it gives a `Could not load ./.storybook/mocks/app/actions/<name>` ENOENT during `pnpm build:storybook`. Always pair every new `app/actions/<x>.action.ts` with its mock.
+
 ## Windows has no graceful kill — don't simulate one
 
 On Windows the `tree-kill` package always shells out to `taskkill /T /F`, regardless of which signal name you pass. There is no SIGTERM equivalent in the Windows kernel. So a "send SIGTERM, poll for graceful exit, then escalate to SIGKILL" pattern is theatrical on Windows: the very first call already force-killed the tree, and the polling loop is 5s of wasted budget waiting for a "graceful" exit that already happened forcefully.

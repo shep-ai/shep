@@ -181,6 +181,7 @@ export class CreateFeatureUseCase {
         id: randomUUID(),
         name: repoName,
         path: normalizedPath,
+        bedrockEnabled: false,
         createdAt: now,
         updatedAt: now,
       };
@@ -229,6 +230,7 @@ export class CreateFeatureUseCase {
       specPath: '',
       repositoryId: repository.id,
       ...(input.parentId ? { parentId: input.parentId } : {}),
+      bedrockEnabled: false,
       createdAt: now,
       updatedAt: now,
     };

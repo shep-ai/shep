@@ -132,6 +132,7 @@ export class AdoptBranchUseCase {
       worktreePath,
       repositoryId: repository.id,
       pr: prData,
+      bedrockEnabled: false,
       createdAt: now,
       updatedAt: now,
     };
@@ -211,6 +212,7 @@ export class AdoptBranchUseCase {
         id: randomUUID(),
         name: repoName,
         path: normalizedPath,
+        bedrockEnabled: false,
         createdAt: now,
         updatedAt: now,
       });

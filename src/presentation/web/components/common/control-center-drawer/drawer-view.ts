@@ -13,7 +13,8 @@ export type FeatureTabKey =
   | 'tech-decisions'
   | 'product-decisions'
   | 'merge-review'
-  | 'chat';
+  | 'chat'
+  | 'bedrock';
 
 /** All valid tab key values — used for URL param validation. */
 export const VALID_TAB_KEYS: ReadonlySet<string> = new Set<FeatureTabKey>([
@@ -26,6 +27,7 @@ export const VALID_TAB_KEYS: ReadonlySet<string> = new Set<FeatureTabKey>([
   'product-decisions',
   'merge-review',
   'chat',
+  'bedrock',
 ]);
 
 /** Type-guard: returns the value as FeatureTabKey if valid, otherwise undefined. */

@@ -75,3 +75,92 @@ model BedrockHealth {
   @doc("Rolled-up overall status across all three tiers")
   overall: "ok" | "missing" | "error";
 }
+
+/**
+ * Kind of shep entity that can opt in to project-bedrock memory.
+ *
+ * Used by EnableBedrockForTargetUseCase and the web visualization
+ * to identify which entity owns a bedrock memory store. Each kind
+ * resolves to a different repository port and persistence column:
+ *
+ *  - Application -> IApplicationRepository.bedrockEnabled
+ *  - Repository  -> IRepositoryRepository.bedrockEnabled
+ *  - Feature     -> IFeatureRepository.bedrockEnabled
+ */
+@doc("Kind of shep entity owning a bedrock memory store")
+enum BedrockTargetKind {
+  @doc("A Lovable-style persistent Application workspace")
+  Application: "application",
+
+  @doc("A tracked code Repository")
+  Repository: "repository",
+
+  @doc("A Feature run executing inside a worktree")
+  Feature: "feature",
+}
+
+/**
+ * Reference to a bedrock-capable target.
+ *
+ * Resolved by a use case into a concrete absolute filesystem path
+ * (the cwd passed to IBedrockIntegrationService) and a persistence
+ * write of the bedrockEnabled flag on the owning entity.
+ */
+@doc("Typed reference to a bedrock-capable entity (kind + id)")
+model BedrockTargetRef {
+  @doc("Which kind of entity owns the bedrock memory")
+  kind: BedrockTargetKind;
+
+  @doc("Identifier of the owning entity (Application.id, Repository.id, or Feature.id)")
+  id: string;
+}
+
+/**
+ * Metadata describing a single markdown file inside the bedrock
+ * memory store at the target's worktree.
+ *
+ * Captured by IBedrockMemoryReader for the visualization panel —
+ * sizes and mtimes power the freshness indicators; preview is the
+ * first ~200 characters of the file (UTF-8) for tooltip rendering.
+ */
+@doc("One file in the bedrock memory store")
+model BedrockMemoryFile {
+  @doc("Path of the file relative to the target's worktree (forward slashes)")
+  path: string;
+
+  @doc("File size in bytes")
+  sizeBytes: int64;
+
+  @doc("UTC timestamp of the most recent on-disk modification")
+  modifiedAt: utcDateTime;
+
+  @doc("Optional short UTF-8 preview of the file contents (truncated)")
+  preview?: string;
+}
+
+/**
+ * Snapshot of the bedrock memory store at a single worktree.
+ *
+ * Returned by GetBedrockMemorySnapshotUseCase and rendered by the
+ * BedrockMemoryPanel web component so users can SEE what bedrock
+ * is tracking — not just whether it is enabled. When `.bedrock/`
+ * is absent on disk, `present` is false and `files` is empty even
+ * if the owning entity's bedrockEnabled flag is true (drift).
+ */
+@doc("Snapshot of the on-disk bedrock memory store at a target worktree")
+model BedrockMemorySnapshot {
+  @doc("Absolute path to the worktree that was probed")
+  cwd: string;
+
+  @doc("Whether a `.bedrock/` directory exists at cwd")
+  present: boolean;
+
+  @doc("All bedrock memory files discovered at cwd")
+  files: BedrockMemoryFile[];
+
+  @doc("Total size in bytes of all bedrock memory files combined")
+  totalBytes: int64;
+
+  @doc("UTC timestamp of the most recently modified bedrock memory file (if any)")
+  mostRecentlyModifiedAt?: utcDateTime;
+}

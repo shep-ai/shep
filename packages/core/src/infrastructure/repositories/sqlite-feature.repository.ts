@@ -44,7 +44,7 @@ export class SQLiteFeatureRepository implements IFeatureRepository {
         ci_fix_attempts, ci_fix_history, pr_mergeable,
         upstream_pr_url, upstream_pr_number, upstream_pr_status,
         parent_id, previous_lifecycle, attachments,
-        inject_skills, injected_skills,
+        inject_skills, injected_skills, bedrock_enabled,
         deleted_at, created_at, updated_at
       ) VALUES (
         @id, @name, @slug, @description, @user_query, @repository_path, @branch,
@@ -59,7 +59,7 @@ export class SQLiteFeatureRepository implements IFeatureRepository {
         @ci_fix_attempts, @ci_fix_history, @pr_mergeable,
         @upstream_pr_url, @upstream_pr_number, @upstream_pr_status,
         @parent_id, @previous_lifecycle, @attachments,
-        @inject_skills, @injected_skills,
+        @inject_skills, @injected_skills, @bedrock_enabled,
         @deleted_at, @created_at, @updated_at
       )
     `);
@@ -205,6 +205,7 @@ export class SQLiteFeatureRepository implements IFeatureRepository {
         attachments = @attachments,
         inject_skills = @inject_skills,
         injected_skills = @injected_skills,
+        bedrock_enabled = @bedrock_enabled,
         deleted_at = @deleted_at,
         updated_at = @updated_at
       WHERE id = @id

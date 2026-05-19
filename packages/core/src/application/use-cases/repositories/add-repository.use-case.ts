@@ -49,6 +49,7 @@ export class AddRepositoryUseCase {
       id: randomUUID(),
       name,
       path: normalizedPath,
+      bedrockEnabled: false,
       createdAt: now,
       updatedAt: now,
     };

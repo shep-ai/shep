@@ -1277,6 +1277,10 @@ export type Feature = SoftDeletableEntity & {
    * Files attached by the user when creating or messaging this feature
    */
   attachments?: Attachment[];
+  /**
+   * Whether project-bedrock memory integration is enabled for this feature worktree (defaults to false in persistence)
+   */
+  bedrockEnabled?: boolean;
 };
 
 /**
@@ -2061,6 +2065,10 @@ export type Repository = SoftDeletableEntity & {
    * Original upstream URL when isFork is true (normalized: lowercase, no .git suffix)
    */
   upstreamUrl?: string;
+  /**
+   * Whether project-bedrock memory integration is enabled for this repository (defaults to false in persistence)
+   */
+  bedrockEnabled?: boolean;
 };
 export enum EstimateType {
   None = 'None',
@@ -3109,6 +3117,73 @@ export type BedrockHealth = {
    * Rolled-up overall status across all three tiers
    */
   overall: 'ok' | 'missing' | 'error';
+};
+export enum BedrockTargetKind {
+  Application = 'application',
+  Repository = 'repository',
+  Feature = 'feature',
+}
+
+/**
+ * Typed reference to a bedrock-capable entity (kind + id)
+ */
+export type BedrockTargetRef = {
+  /**
+   * Which kind of entity owns the bedrock memory
+   */
+  kind: BedrockTargetKind;
+  /**
+   * Identifier of the owning entity (Application.id, Repository.id, or Feature.id)
+   */
+  id: string;
+};
+
+/**
+ * One file in the bedrock memory store
+ */
+export type BedrockMemoryFile = {
+  /**
+   * Path of the file relative to the target's worktree (forward slashes)
+   */
+  path: string;
+  /**
+   * File size in bytes
+   */
+  sizeBytes: bigint;
+  /**
+   * UTC timestamp of the most recent on-disk modification
+   */
+  modifiedAt: any;
+  /**
+   * Optional short UTF-8 preview of the file contents (truncated)
+   */
+  preview?: string;
+};
+
+/**
+ * Snapshot of the on-disk bedrock memory store at a target worktree
+ */
+export type BedrockMemorySnapshot = {
+  /**
+   * Absolute path to the worktree that was probed
+   */
+  cwd: string;
+  /**
+   * Whether a `.bedrock/` directory exists at cwd
+   */
+  present: boolean;
+  /**
+   * All bedrock memory files discovered at cwd
+   */
+  files: BedrockMemoryFile[];
+  /**
+   * Total size in bytes of all bedrock memory files combined
+   */
+  totalBytes: bigint;
+  /**
+   * UTC timestamp of the most recently modified bedrock memory file (if any)
+   */
+  mostRecentlyModifiedAt?: any;
 };
 export enum AgentStatus {
   Idle = 'Idle',

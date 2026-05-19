@@ -13,14 +13,24 @@
  *    └── identity ──────┘     └── context ┘            └─── primary ───┘    └ local ┘    └── view ─┘   └ overflow ┘
  */
 
-import { LayoutGrid, ShieldCheck } from 'lucide-react';
+import { Database, LayoutGrid, ShieldCheck } from 'lucide-react';
 import type { Application } from '@shepai/core/domain/generated/output';
-import { DeploymentState } from '@shepai/core/domain/generated/output';
+import { BedrockTargetKind, DeploymentState } from '@shepai/core/domain/generated/output';
 import type { ChatState } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
 import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 
 import { cn } from '@/lib/utils';
 import { BedrockMemoryToggle } from '@/components/bedrock-memory-toggle';
+import { BedrockMemorySection } from '@/components/bedrock-memory-section';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { useState } from 'react';
 import { SmartDeployCluster } from '@/components/features/application-page/smart-deploy-cluster';
 import type { CloudDeployActionApi } from '@/hooks/use-cloud-deploy-action';
 import type { DeployActionState } from '@/hooks/use-deploy-action';
@@ -70,6 +80,7 @@ export function AppTopBar({
   cloudDeploy,
 }: AppTopBarProps) {
   const { collaboration } = useFeatureFlags();
+  const [bedrockSheetOpen, setBedrockSheetOpen] = useState(false);
 
   return (
     <header
@@ -124,6 +135,41 @@ export function AppTopBar({
         // building stub instead of the old iframe.
         isBuilding={!application.setupComplete || agentRunning}
       />
+
+      <Divider />
+      <Sheet open={bedrockSheetOpen} onOpenChange={setBedrockSheetOpen}>
+        <SheetTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1.5 px-2"
+            data-testid="top-bar-bedrock"
+            title="Bedrock memory"
+          >
+            <Database className="size-3.5" />
+            <span className="hidden text-xs lg:inline">Bedrock</span>
+            {application.bedrockEnabled ? (
+              <span className="ml-0.5 size-1.5 rounded-full bg-emerald-500" />
+            ) : null}
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="right" className="w-[560px] sm:max-w-[560px]">
+          <SheetHeader>
+            <SheetTitle>Bedrock memory</SheetTitle>
+            <SheetDescription>
+              Persistent markdown project memory for AI coding agents in {application.name}.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-4">
+            <BedrockMemorySection
+              targetKind={BedrockTargetKind.Application}
+              targetId={application.id}
+              targetLabel={application.name}
+              initialEnabled={application.bedrockEnabled === true}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {collaboration ? (
         <>
