@@ -26,7 +26,8 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full flow.
 
 ### goodFirst
 
-- _No curated issues right now_ — search [docs + good first issue](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22documentation%22+label%3A%22good+first+issue%22) directly.
+- [#615 — fix 5 broken docs links from docs/README.md and ARCHITECTURE.md](https://github.com/shep-ai/shep/issues/615)
+- [#616 — add JSDoc to spec-097 contributor use-case public interfaces](https://github.com/shep-ai/shep/issues/616)
 
 ### easy
 
@@ -44,11 +45,11 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full flow.
 
 ### goodFirst
 
-- _No curated issues right now_ — search [agents + good first issue](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22agents%22+label%3A%22good+first+issue%22) directly.
+- [#618 — resolve Coming Soon agent placeholders in TUI docs](https://github.com/shep-ai/shep/issues/618)
 
 ### easy
 
-- _No curated issues right now._
+- [#617 — document the contributor-onboarding agent in docs/agents/](https://github.com/shep-ai/shep/issues/617)
 
 ### medium
 
@@ -62,11 +63,12 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full flow.
 
 ### goodFirst
 
-- _No curated issues right now_ — search [ui + good first issue](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22ui%22+label%3A%22good+first+issue%22) directly.
+- [#619 — add Storybook stories for 5 shadcn UI primitives](https://github.com/shep-ai/shep/issues/619)
+- [#620 — add interaction-state stories for DoctorSummary](https://github.com/shep-ai/shep/issues/620)
 
 ### easy
 
-- _No curated issues right now._
+- [#621 — internationalize spec-097 contributor web components](https://github.com/shep-ai/shep/issues/621)
 
 ### medium
 
@@ -80,11 +82,11 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full flow.
 
 ### goodFirst
 
-- _No curated issues right now_ — search [cli + good first issue](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22cli%22+label%3A%22good+first+issue%22) directly.
+- [#622 — add --help example blocks to 6 user-facing CLI commands](https://github.com/shep-ai/shep/issues/622)
 
 ### easy
 
-- _No curated issues right now._
+- [#623 — add unit tests for shep contributors groom-issue and welcome-pr](https://github.com/shep-ai/shep/issues/623)
 
 ### medium
 
@@ -102,7 +104,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full flow.
 
 ### easy
 
-- _No curated issues right now._
+- [#624 — seed deterministic fixtures for optimistic-node-clickability e2e](https://github.com/shep-ai/shep/issues/624)
 
 ### medium
 
