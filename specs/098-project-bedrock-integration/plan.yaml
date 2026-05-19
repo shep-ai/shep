@@ -1,35 +1,360 @@
 # Implementation Plan (YAML)
 # This is the source of truth. Markdown is auto-generated from this file.
 
-name: project-bedrock-integration
-summary: Implementation plan for 098-project-bedrock-integration
+name: "project-bedrock-integration"
+summary: >
+  Implement project-bedrock as a first-class shep integration in eight phases.
+  Start by extending the domain (TypeSpec field on Application plus a
+  BedrockLifecycleAction enum and BedrockHealth value object) and adding the
+  forward-only SQLite migration. Then introduce two application-layer ports
+  (IBedrockIntegrationService and IClaudeSettingsReconciler) before standing up
+  their infrastructure adapters with child_process.spawn / ExecFunction. Wire
+  three use cases (EnableBedrockForApplication, RunBedrockLifecycle,
+  CheckBedrockHealth) under TDD, register everything in tsyringe, then expose
+  the feature through the existing tool descriptor loader, a shep bedrock CLI
+  command group, and a single web toggle on the Application detail page.
+  Finish with fixture-based integration tests for the descriptor loader and
+  the .claude/settings.json merge before running pnpm validate end to end.
 
-# Relationships
 relatedFeatures: []
-technologies: []
-relatedLinks: []
 
-# Structured implementation phases
-phases: []
+technologies:
+  - "Node.js / TypeScript (shep core)"
+  - "tsyringe (DI container)"
+  - "TypeSpec (tsp/) for domain models"
+  - "Python 3.9+ / pipx (project-bedrock runtime)"
+  - "Commander.js (CLI surface)"
+  - "Next.js 15 (web UI surface)"
+  - "Vitest (unit + integration tests)"
+  - "better-sqlite3 + umzug (SQLite migrations)"
+  - "Node child_process.spawn / execFile (subprocess invocation)"
+  - "Storybook 9 (web component stories)"
 
-# File change tracking
-filesToCreate: []
-filesToModify: []
+relatedLinks:
+  - title: "project-bedrock GitHub repo"
+    url: "https://github.com/robotaitai/project-bedrock"
+  - title: "shep tool descriptor schema (CLAUDE.md)"
+    url: "packages/core/src/infrastructure/services/tool-installer/tools/CLAUDE.md"
+  - title: "ToolMetadataProvider loader"
+    url: "packages/core/src/infrastructure/services/tool-installer/tool-metadata.ts"
+  - title: "SkillInjectorService (existing .claude/ writer)"
+    url: "packages/core/src/infrastructure/services/skill-injector.service.ts"
+  - title: "registerServices DI module"
+    url: "packages/core/src/infrastructure/di/modules/register-services.ts"
+  - title: "Migration pattern (094-add-feature-application-id-and-build-mode)"
+    url: "packages/core/src/infrastructure/persistence/sqlite/migrations/094-add-feature-application-id-and-build-mode.ts"
+  - title: "Application TypeSpec entity"
+    url: "tsp/domain/entities/application.tsp"
+  - title: "Clean architecture overview"
+    url: "docs/architecture/clean-architecture.md"
+  - title: "TDD guide"
+    url: "docs/development/tdd-guide.md"
+  - title: "TypeSpec guide"
+    url: "docs/development/typespec-guide.md"
 
-# Open questions (should all be resolved before implementation)
+phases:
+  - id: "phase-1"
+    name: "Domain & Persistence Foundation"
+    description: >
+      Extend the domain model with the new bedrock-specific types and persist
+      the enable flag. Adds the BedrockLifecycleAction enum and BedrockHealth /
+      BedrockTierStatus value objects in TypeSpec, adds bedrockEnabled: boolean
+      to Application, regenerates output.ts via pnpm tsp:compile, then lands a
+      forward-only SQLite migration adding bedrock_enabled INTEGER NOT NULL
+      DEFAULT 0 to the applications table. The persistence layer (repository
+      mapper) is updated so callers can read/write the new field. This phase
+      must come first because every later phase consumes the generated types.
+    parallel: false
+
+  - id: "phase-2"
+    name: "Application Ports & Domain Errors"
+    description: >
+      Define the two new output-port interfaces before any infrastructure code
+      is touched. IBedrockIntegrationService exposes init/sync/doctor/ship
+      with explicit cwd parameters and an optional typed onProgress callback.
+      IClaudeSettingsReconciler exposes a pure-functional mergeSettings
+      contract. Typed domain errors (BedrockNotEnabledError,
+      PipxNotInstalledError, BedrockBinaryMissingError,
+      ClaudeSettingsMergeFailedError) are added alongside the ports. Locking
+      the contracts here lets phases 3 and 4 progress against the same
+      interfaces.
+    parallel: false
+
+  - id: "phase-3"
+    name: "Infrastructure Adapters & DI"
+    description: >
+      Implement the two adapters behind the ports. ClaudeSettingsReconciler
+      lives in infrastructure/services/filesystem/ and is pure-functional
+      over parsed JSON. BedrockIntegrationService lives in
+      infrastructure/services/integrations/ and consumes the injected
+      ExecFunction token for short commands (doctor, --version), and falls
+      through to child_process.spawn with windowsHide: true / args-as-array /
+      no shell: true for streaming commands (init, sync). The reconciler is
+      injected into the bedrock adapter. Both adapters are registered in the
+      tsyringe container at the end of this phase.
+    parallel: false
+
+  - id: "phase-4"
+    name: "Use Cases (TDD)"
+    description: >
+      Build EnableBedrockForApplication, RunBedrockLifecycle, and
+      CheckBedrockHealth strictly RED-first. Each use case is a small
+      tsyringe class consuming ports by string token
+      (IApplicationRepository, IBedrockIntegrationService,
+      IClaudeSettingsReconciler) and a domain error type.
+      RunBedrockLifecycle dispatches on BedrockLifecycleAction and guards on
+      bedrockEnabled = true. Unit tests use mocked ports from phase 2; no
+      infrastructure imports anywhere in the application layer. All three
+      use cases are registered in tsyringe with string-token aliases.
+    parallel: false
+
+  - id: "phase-5"
+    name: "Tool Descriptor & Registry"
+    description: >
+      Widen the tool-metadata.ts tags union to include "memory", add the
+      project-bedrock.json descriptor (per-OS pipx install command,
+      bedrock --version verify, docs URL, tags: ["memory"]), and confirm the
+      tool installer surfaces PipxNotInstalledError with per-platform
+      remediation. No loader code changes — the existing dynamic loader
+      picks up the new JSON automatically.
+    parallel: false
+
+  - id: "phase-6"
+    name: "CLI Surface"
+    description: >
+      Create src/presentation/cli/commands/bedrock/ with thin Commander
+      subcommands (init.command.ts, sync.command.ts, doctor.command.ts,
+      ship.command.ts) and a top-level bedrock.command.ts that registers
+      them with the parent program. Each subcommand resolves its use case
+      from the tsyringe container and renders via the shared ui module.
+      init / sync stream output by passing an onProgress callback that
+      writes to process.stdout.
+    parallel: false
+
+  - id: "phase-7"
+    name: "Web UI Toggle"
+    description: >
+      Add BedrockMemoryToggle React component under
+      src/presentation/web/components/, wire it to a Server Action that
+      resolves EnableBedrockForApplication via resolve(token), and place
+      the toggle on the Application detail page. Ship the mandatory
+      colocated .stories.tsx covering Default / Loading / Error states
+      using decorators that mock the Server Action response.
+    parallel: false
+
+  - id: "phase-8"
+    name: "Integration Tests & Verification"
+    description: >
+      Add the fixture-based integration tests required by the spec:
+      (a) tool-installer descriptor loader picks up project-bedrock.json
+      with the expected metadata; (b) ClaudeSettingsReconciler produces the
+      union of shep+bedrock hook entries with no duplicates and no loss
+      (multiple fixture scenarios — empty, shep-only, bedrock-only, both
+      present, malformed bedrock payload triggers typed error). Then run
+      pnpm validate, pnpm test:unit, pnpm test:int locally and confirm zero
+      failures or warnings before pushing.
+    parallel: false
+
+filesToCreate:
+  - "tsp/domain/value-objects/bedrock.tsp"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/101-add-bedrock-enabled-to-applications.ts"
+  - "packages/core/src/application/ports/output/services/bedrock-integration.service.ts"
+  - "packages/core/src/application/ports/output/services/claude-settings-reconciler.service.ts"
+  - "packages/core/src/domain/errors/bedrock-not-enabled.error.ts"
+  - "packages/core/src/domain/errors/pipx-not-installed.error.ts"
+  - "packages/core/src/domain/errors/bedrock-binary-missing.error.ts"
+  - "packages/core/src/domain/errors/claude-settings-merge-failed.error.ts"
+  - "packages/core/src/infrastructure/services/integrations/bedrock-integration.service.ts"
+  - "packages/core/src/infrastructure/services/filesystem/claude-settings-reconciler.service.ts"
+  - "packages/core/src/application/use-cases/enable-bedrock-for-application.use-case.ts"
+  - "packages/core/src/application/use-cases/run-bedrock-lifecycle.use-case.ts"
+  - "packages/core/src/application/use-cases/check-bedrock-health.use-case.ts"
+  - "packages/core/tests/unit/use-cases/enable-bedrock-for-application.use-case.test.ts"
+  - "packages/core/tests/unit/use-cases/run-bedrock-lifecycle.use-case.test.ts"
+  - "packages/core/tests/unit/use-cases/check-bedrock-health.use-case.test.ts"
+  - "packages/core/tests/unit/services/bedrock-integration.service.test.ts"
+  - "packages/core/tests/unit/services/claude-settings-reconciler.service.test.ts"
+  - "packages/core/tests/integration/tool-descriptor.project-bedrock.test.ts"
+  - "packages/core/tests/integration/claude-settings-reconciler.fixtures.test.ts"
+  - "packages/core/tests/fixtures/claude-settings/shep-only.json"
+  - "packages/core/tests/fixtures/claude-settings/bedrock-only.json"
+  - "packages/core/tests/fixtures/claude-settings/shep-and-bedrock.json"
+  - "packages/core/tests/fixtures/claude-settings/malformed-bedrock.json"
+  - "packages/core/src/infrastructure/services/tool-installer/tools/project-bedrock.json"
+  - "src/presentation/cli/commands/bedrock/bedrock.command.ts"
+  - "src/presentation/cli/commands/bedrock/init.command.ts"
+  - "src/presentation/cli/commands/bedrock/sync.command.ts"
+  - "src/presentation/cli/commands/bedrock/doctor.command.ts"
+  - "src/presentation/cli/commands/bedrock/ship.command.ts"
+  - "src/presentation/web/components/bedrock-memory-toggle.tsx"
+  - "src/presentation/web/components/bedrock-memory-toggle.stories.tsx"
+  - "src/presentation/web/app/actions/enable-bedrock.action.ts"
+
+filesToModify:
+  - "tsp/domain/entities/application.tsp"
+  - "packages/core/src/domain/generated/output.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/repositories/application.repository.ts"
+  - "packages/core/src/infrastructure/services/tool-installer/tool-metadata.ts"
+  - "packages/core/src/infrastructure/di/modules/register-services.ts"
+  - "packages/core/src/infrastructure/di/modules/register-use-cases.ts"
+  - "packages/core/src/infrastructure/di/tokens.ts"
+  - "src/presentation/cli/program.ts"
+  - "src/presentation/web/app/applications/[id]/page.tsx"
+
 openQuestions: []
 
-# Markdown content (the full plan document)
 content: |
   ## Status
 
   - **Phase:** Planning
-  - **Updated:** 2026-05-06
+  - **Updated:** 2026-05-19
+  - **Size:** M
+
+  ## Architecture Overview
+
+  The integration fits cleanly into shep's existing layered structure without
+  inventing a new pattern. Each concern lands in the layer that already owns
+  it:
+
+  - **Domain (`packages/core/src/domain/`)** — TypeSpec-generated value
+    objects (`BedrockLifecycleAction`, `BedrockHealth`, `BedrockTierStatus`),
+    the `bedrockEnabled` field on `Application`, and a small number of typed
+    domain errors. No external deps, no Node APIs.
+  - **Application (`packages/core/src/application/`)** — Two new output
+    ports (`IBedrockIntegrationService`, `IClaudeSettingsReconciler`) and
+    three use cases that orchestrate them. Use cases inject ports by string
+    token and remain presentation-agnostic — the same API drives CLI and
+    web.
+  - **Infrastructure (`packages/core/src/infrastructure/`)** — Two concrete
+    adapters (one wrapping `child_process.spawn` + the injected
+    `'ExecFunction'`, one reading/writing `.claude/settings.json`), the
+    forward-only SQLite migration, the tool descriptor JSON, and the DI
+    registration. The only files allowed to import `node:child_process` and
+    `node:fs/promises` live here.
+  - **Presentation (`src/presentation/`)** — A `shep bedrock` CLI command
+    group and a single web toggle, both thin wrappers that resolve the same
+    use cases from the container.
+
+  Reuse is intentional throughout: the tool descriptor loader already walks
+  `tool-installer/tools/`, the `ExecFunction` token already wraps `execFile`
+  with the Windows `.cmd` quirks, the migration runner already accepts a
+  forward-only ALTER TABLE with an idempotency guard, and the
+  `cli/commands/<group>/` convention is shared with `app/`, `cycle/`,
+  `feat/`, and others.
+
+  ## Key Design Decisions
+
+  **1. Two ports, not one.** The research considered folding `.claude/`
+  reconciliation into a private helper inside `BedrockIntegrationService`.
+  Promoting `IClaudeSettingsReconciler` to its own port keeps the bedrock
+  adapter focused on subprocess orchestration and lets the merge logic be
+  fixture-tested without spawning anything. It also future-proofs against a
+  third `.claude/` writer (e.g. a future MCP installer) reusing the merge.
+
+  **2. ExecFunction for short calls, spawn for streaming.** The injected
+  `'ExecFunction'` token already handles Windows `.cmd` quoting and is
+  trivially mockable in unit tests; using it for `doctor` and `bedrock
+  --version` calls keeps the adapter consistent with `SkillInjectorService`.
+  Streaming commands (`init`, `sync`) drop down to `child_process.spawn`
+  with `windowsHide: true`, args-as-array, and no `shell: true` — required
+  for long-running output where buffering would block the user. Both
+  pathways hide behind the port method signatures, so the application layer
+  is unaware.
+
+  **3. TypeSpec-defined enum for lifecycle actions.**
+  `BedrockLifecycleAction` (Init / Sync / Ship) is defined in TypeSpec and
+  consumed across the use case, CLI argv parsing, and web action
+  validation. Magic strings would violate the code-quality rule banning
+  literals used in branching; per-action use-case classes would triple the
+  wiring for identical orchestration. `doctor` stays separate because its
+  return shape (per-tier health) differs structurally.
+
+  **4. Persisted enable state on Application.** A single boolean column
+  (`bedrock_enabled INTEGER NOT NULL DEFAULT 0`) mirrors how `setupComplete`
+  and `cloudDeploymentProvider` are already modelled. The
+  `pragma table_info(applications)` idempotency guard pattern from
+  migrations 044, 049, 054, and 094 is reused verbatim. `down()` is a
+  no-op per project convention.
+
+  **5. Tool descriptor + tag union widening.** Adding `project-bedrock.json`
+  is the smallest possible registration surface — the existing dynamic
+  loader in `tool-metadata.ts` picks it up at module load with no code
+  change. The `tags` string-literal union is widened to include `"memory"`
+  (one-line change in the loader file) so the registry can filter the
+  bedrock entry under its actual semantic category rather than the
+  misleading `cli-agent`.
+
+  **6. CLI command group convention reused exactly.** The shape
+  `src/presentation/cli/commands/bedrock/<sub>.command.ts` matches `app/`,
+  `cycle/`, `feat/`, `intake/`, etc. Each subcommand is the canonical thin
+  wrapper: parse args, resolve use case, format output via the shared `ui`
+  module. The `shep-cli-command-creator` agent is designed to scaffold this
+  exact layout.
+
+  **7. Web toggle via Server Action, not client fetch.** Server Actions are
+  already used for the cloud-deploy toggle; the bedrock toggle follows the
+  same pattern (`resolve(token)` inside the action, return new state,
+  optimistic UI on the client). This keeps the client bundle slim and the
+  wiring colocated with the component, and matches the rest of the
+  Application detail page.
+
+  **8. Streaming via typed onProgress callback.** `init` and `sync` take an
+  optional `onProgress: (chunk: { stream: 'stdout' | 'stderr', data: string
+  }) => void`. Plain TypeScript — no Node streams cross the port boundary.
+  CLI pipes to `process.stdout`; web logs into `OperationLog`; tests pass a
+  vitest spy. Mirrors `InstallToolUseCase.execute(tool, onData)` exactly.
 
   ## Implementation Strategy
 
-  TBD
+  Phases are ordered to keep each step independently verifiable and to
+  satisfy the TDD discipline:
 
-  ---
+  1. **Domain & Persistence first** so every later phase consumes the
+     generated `BedrockLifecycleAction`, `BedrockHealth`, and `Application`
+     types from a single source. The migration lands in this phase too so
+     repository mappers can read/write `bedrockEnabled` end-to-end.
+  2. **Application Ports** define the contract before any adapter exists —
+     this is the boundary that all infrastructure must satisfy and all use
+     cases must consume. Locking it early means phases 3 and 4 progress
+     against the same interfaces.
+  3. **Infrastructure Adapters** implement the ports. The reconciler is
+     written before the bedrock adapter because the bedrock adapter injects
+     it. DI registration closes this phase so the next phase can resolve
+     real instances in tests.
+  4. **Use Cases (TDD)** strictly RED-first. Each use case has its failing
+     unit test committed before its implementation per the mandatory TDD
+     rule. Ports are mocked; no infrastructure imports leak in.
+  5. **Tool Descriptor & Registry** lands after the adapter exists so the
+     CLI/web install flow can verify-then-invoke the real adapter when the
+     user installs bedrock. This is a near-pure config change.
+  6. **CLI Surface** wraps the use cases — thin, mechanical, one
+     subcommand-per-file. Cannot precede use cases because Commander files
+     import them.
+  7. **Web UI Toggle** wraps the same `EnableBedrockForApplication` use
+     case via Server Action. Mandatory `.stories.tsx` covers Default /
+     Loading / Error.
+  8. **Integration Tests & Verification** close the loop: fixture-based
+     tests for the descriptor loader and for the `.claude/` merge,
+     followed by `pnpm validate` end-to-end.
 
-  _To be updated during planning phase_
+  Within each phase, every code task is RED-first per CLAUDE.md. Test files
+  are committed before implementation files where ordering allows;
+  otherwise they are committed together (single task, RED step authored
+  first).
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | `.claude/settings.json` merge clobbers user content | Isolate logic in `ClaudeSettingsReconciler` port; pure-functional over parsed JSON; fixture-driven tests for empty / shep-only / bedrock-only / both / malformed cases; size guard (>1MB rejects); abort with typed error on parse failure rather than best-effort rewriting. |
+  | Bedrock upstream changes its hook payload shape | Never parse bedrock's hook entries — only preserve shep's known entries by stable signature; bedrock entries pass through opaque. Reconciler is the single chokepoint to update if upstream contract shifts. |
+  | Cross-platform subprocess quirks (Windows .cmd, paths) | Use the injected `'ExecFunction'` token (already Windows-aware) for short commands; spawn with `windowsHide: true` and args-as-array for streaming; `path.join` everywhere; integration tests run on the host OS in CI. |
+  | pipx missing on user host | `doctor()` and the tool-installer verify path emit a typed `PipxNotInstalledError` with per-OS remediation strings (`brew install pipx`, `pip install --user pipx`); never silently fail. |
+  | Subprocess argument injection / shell exposure | Forbidden by code-quality.md — `shell: true` is never set; all args passed as arrays; user-supplied `cwd` validated with `fs.access` before spawn (same precondition `SkillInjectorService` uses). |
+  | Long bedrock init blocks UI | Streaming `onProgress` callback emits chunks as they arrive; CLI pipes to stdout in real time; web accumulates into OperationLog; no buffering. |
+  | Migration breaks on existing installs | `pragma table_info(applications)` idempotency guard; `DEFAULT 0` covers existing rows atomically; no-op `down()` matches every other migration in tree; tested against a sample SQLite file before push. |
+  | Bootstrap-ordering bugs in DI graph | Register adapter in `registerServices` (early stage) next to existing infrastructure services like `ISkillInjectorService`; use cases registered in `registerUseCases`; string tokens exported in `tokens.ts` so callers can never typo. |
+  | Bedrock CLI not found after install | Verify via `bedrock --version` immediately after the install command in the tool-installer flow; surface typed `BedrockBinaryMissingError` if absent (PATH issue) with remediation pointing to `pipx ensurepath`. |
+  | Web toggle desyncs after page reload | Server Action returns persisted state from `IApplicationRepository`; client renders from server-fetched `bedrockEnabled`; no client-only store. |
+  | Storybook story drift breaking CI | Run `pnpm build:storybook` locally before push (mandated by `.claude/rules/cicd.md`); each story renders without Server Action calls via decorators that stub the action. |
+  | Tag union widening breaks existing tools loader strictness | One-line change adding `"memory"` to the union in `tool-metadata.ts`; existing descriptors continue to validate; CLAUDE.md note added so future contributors know the union exists. |

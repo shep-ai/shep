@@ -1,34 +1,794 @@
 # Task Breakdown (YAML)
 # This is the source of truth. Markdown is auto-generated from this file.
 
-name: project-bedrock-integration
-summary: Task breakdown for 098-project-bedrock-integration
+name: "project-bedrock-integration"
+summary: >
+  24 tasks across 8 phases delivering the project-bedrock integration end to
+  end. Phase 1 lands the TypeSpec changes and SQLite migration; Phase 2
+  defines the application ports and domain errors; Phase 3 implements the
+  reconciler and the bedrock adapter and registers them in DI; Phase 4
+  authors the three use cases strictly RED-first; Phase 5 widens the tag
+  union and adds the project-bedrock.json descriptor; Phase 6 ships the
+  shep bedrock CLI command group; Phase 7 ships the web toggle plus the
+  mandatory Storybook story; Phase 8 closes the loop with fixture-based
+  integration tests and a full pnpm validate run.
 
-# Relationships
 relatedFeatures: []
-technologies: []
-relatedLinks: []
 
-# Structured task list
-tasks: []
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "tsyringe"
+  - "Vitest"
+  - "Commander.js"
+  - "Next.js 15"
+  - "Storybook 9"
+  - "better-sqlite3 + umzug"
 
-# Total effort estimate
-totalEstimate: TBD
+relatedLinks:
+  - title: "TDD guide"
+    url: "docs/development/tdd-guide.md"
+  - title: "TypeSpec guide"
+    url: "docs/development/typespec-guide.md"
+  - title: "Migration pattern (094)"
+    url: "packages/core/src/infrastructure/persistence/sqlite/migrations/094-add-feature-application-id-and-build-mode.ts"
+  - title: "Clean architecture overview"
+    url: "docs/architecture/clean-architecture.md"
 
-# Open questions
+tasks:
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Define BedrockLifecycleAction enum and BedrockHealth value objects in TypeSpec"
+    description: >
+      Create tsp/domain/value-objects/bedrock.tsp with the
+      BedrockLifecycleAction enum (Init, Sync, Ship), BedrockTierStatus
+      (tier, status: 'ok'|'missing'|'error', detail?, remediation?), and
+      BedrockHealth (python, pipx, bedrock, overall). These are the
+      typed-end-to-end value objects consumed by the use cases, the CLI,
+      and the web action.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "tsp/domain/value-objects/bedrock.tsp exists with BedrockLifecycleAction, BedrockTierStatus, and BedrockHealth"
+      - "Enum values are literal strings: init, sync, ship"
+      - "BedrockTierStatus status field is a string-literal union of 'ok' | 'missing' | 'error'"
+      - "pnpm tsp:compile succeeds and the new types appear in packages/core/src/domain/generated/output.ts"
+    tdd:
+      red: |
+        Add a vitest test in packages/core/tests/unit/domain/bedrock-types.test.ts
+        that imports BedrockLifecycleAction and BedrockHealth from the generated
+        output.ts and asserts their shapes/values. Test fails because the types
+        do not exist yet.
+      green: |
+        Author tsp/domain/value-objects/bedrock.tsp; run pnpm tsp:compile; the
+        regenerated output.ts now contains the types and the test passes.
+      refactor: |
+        Verify no magic strings remain in the test; reuse the generated enum
+        rather than literal 'init'/'sync'/'ship' in assertions.
+    estimatedEffort: "45min"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Add bedrockEnabled field to Application TypeSpec entity"
+    description: >
+      Edit tsp/domain/entities/application.tsp adding bedrockEnabled: boolean
+      with a default of false. Regenerate output.ts via pnpm tsp:compile.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "tsp/domain/entities/application.tsp declares bedrockEnabled: boolean (default false)"
+      - "Generated output.ts Application interface includes bedrockEnabled: boolean"
+      - "pnpm validate passes with the regenerated types"
+    tdd:
+      red: |
+        Extend the existing application-entity unit test (or create one) asserting
+        that an Application object can be constructed with bedrockEnabled and that
+        the default is false. Fails before the field is added.
+      green: |
+        Add the field to application.tsp; run pnpm tsp:compile; test passes.
+      refactor: |
+        Confirm no other Application consumers regressed; rename field references
+        consistently throughout the diff if needed.
+    estimatedEffort: "30min"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Write SQLite migration 101 adding bedrock_enabled column"
+    description: >
+      Create
+      packages/core/src/infrastructure/persistence/sqlite/migrations/101-add-bedrock-enabled-to-applications.ts
+      following the convention from migration 094: pragma table_info guard,
+      ALTER TABLE applications ADD COLUMN bedrock_enabled INTEGER NOT NULL
+      DEFAULT 0, no-op down().
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "Migration file exists with up() and no-op down()"
+      - "up() guards against re-application via pragma table_info"
+      - "Column is INTEGER NOT NULL DEFAULT 0"
+      - "Migration runs successfully against a fresh and an existing sample DB"
+    tdd:
+      red: |
+        Add an integration test in
+        packages/core/tests/integration/migrations/101-add-bedrock-enabled.test.ts
+        that opens an in-memory SQLite DB, runs the migration runner up to 100,
+        seeds an applications row, runs migration 101, and asserts that the new
+        column exists and the seeded row has bedrock_enabled = 0. Fails because
+        the migration does not exist.
+      green: |
+        Author the migration file mirroring migration 094's structure; test
+        passes.
+      refactor: |
+        Confirm idempotency by running the migration twice in the same test —
+        the second invocation must be a no-op (pragma guard).
+    estimatedEffort: "1h"
+
+  - id: "task-4"
+    phaseId: "phase-1"
+    title: "Update application repository mapper to read/write bedrockEnabled"
+    description: >
+      Edit
+      packages/core/src/infrastructure/persistence/sqlite/repositories/application.repository.ts
+      so toRow / toDomain map bedrock_enabled <-> bedrockEnabled. Update any
+      INSERT and UPDATE SQL strings to include the new column. SQLite has no
+      boolean — store 1/0.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "ApplicationRepository.create persists bedrockEnabled"
+      - "ApplicationRepository.update can flip bedrockEnabled true<->false"
+      - "ApplicationRepository.findById returns bedrockEnabled in the domain object"
+    tdd:
+      red: |
+        Add a unit test in
+        packages/core/tests/unit/repositories/application.repository.test.ts
+        creating an application with bedrockEnabled=true, persisting via the
+        repository, re-reading, and asserting the value round-trips. Fails
+        because the mapper doesn't know about the new column.
+      green: |
+        Extend toRow / toDomain and the SQL strings to include bedrock_enabled;
+        test passes.
+      refactor: |
+        Confirm no duplicated column lists; extract a shared column-name
+        constant only if the file already has one.
+    estimatedEffort: "45min"
+
+  - id: "task-5"
+    phaseId: "phase-2"
+    title: "Define IBedrockIntegrationService output port"
+    description: >
+      Create
+      packages/core/src/application/ports/output/services/bedrock-integration.service.ts
+      with the IBedrockIntegrationService interface exposing init(opts),
+      sync(opts), doctor(), ship(opts). Methods accept { cwd: string } and an
+      optional onProgress callback typed as
+      (chunk: { stream: 'stdout' | 'stderr', data: string }) => void. Return
+      types: structured results, never Node streams.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Port file exports IBedrockIntegrationService interface"
+      - "No imports from infrastructure/, no imports of node:* APIs"
+      - "Method signatures use BedrockLifecycleAction (where relevant) and BedrockHealth from generated types"
+      - "onProgress is a plain TypeScript function type, not a Node EventEmitter"
+    tdd: null
+    estimatedEffort: "30min"
+
+  - id: "task-6"
+    phaseId: "phase-2"
+    title: "Define IClaudeSettingsReconciler output port"
+    description: >
+      Create
+      packages/core/src/application/ports/output/services/claude-settings-reconciler.service.ts
+      with the IClaudeSettingsReconciler interface exposing mergeSettings(
+      before: unknown, after: unknown ): unknown (or precise typed shape).
+      Pure-functional contract — no fs, no process.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "Port file exports IClaudeSettingsReconciler"
+      - "No infrastructure or Node API imports"
+      - "JSDoc clearly states 'shep entries take precedence on conflict; arrays are deduped by stable hook signature'"
+    tdd: null
+    estimatedEffort: "20min"
+
+  - id: "task-7"
+    phaseId: "phase-2"
+    title: "Add typed domain errors for bedrock"
+    description: >
+      Create four domain error classes in packages/core/src/domain/errors/:
+      BedrockNotEnabledError (thrown by RunBedrockLifecycle when
+      bedrockEnabled=false), PipxNotInstalledError (verify path),
+      BedrockBinaryMissingError (after install if PATH wrong),
+      ClaudeSettingsMergeFailedError (reconciler parse failure). Each extends
+      the existing base DomainError pattern and carries a remediation string.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "Four error classes exist, each extending the project's DomainError base"
+      - "Each error carries a remediation string in its constructor"
+      - "No infrastructure imports"
+    tdd:
+      red: |
+        Add a unit test asserting that each error class instantiates with a
+        message and a remediation string, that the prototype chain is correct
+        (instanceof DomainError), and that they can be JSON-serialized. Fails
+        because the classes do not exist.
+      green: |
+        Author the four error classes following the existing domain-error
+        conventions in packages/core/src/domain/errors/.
+      refactor: |
+        If duplication appears across the four classes, extract a small base
+        helper only if 3+ identical patterns exist — otherwise leave inline.
+    estimatedEffort: "45min"
+
+  - id: "task-8"
+    phaseId: "phase-3"
+    title: "Implement ClaudeSettingsReconciler (pure-functional merge)"
+    description: >
+      Create
+      packages/core/src/infrastructure/services/filesystem/claude-settings-reconciler.service.ts
+      implementing IClaudeSettingsReconciler. Pure-functional over parsed
+      JSON. Strategy: deep-merge top-level keys; for known hook array keys
+      (sessionStart, sessionStop, etc.) compute the union deduped by a
+      stable signature derived from the hook entry's command + args; abort
+      with ClaudeSettingsMergeFailedError on malformed input (non-array
+      where array expected, missing required keys, size > 1MB).
+    state: "Todo"
+    dependencies:
+      - "task-6"
+      - "task-7"
+    acceptanceCriteria:
+      - "Adapter implements IClaudeSettingsReconciler with no fs calls (pure-functional)"
+      - "Union of shep+bedrock hook arrays contains no duplicates by signature"
+      - "Malformed input throws ClaudeSettingsMergeFailedError with parse details"
+      - "Adapter registered in tsyringe by string token in registerServices"
+      - "File stays under 200 lines (single responsibility)"
+    tdd:
+      red: |
+        Author packages/core/tests/unit/services/claude-settings-reconciler.service.test.ts
+        with cases: empty+empty, shep-only+bedrock-only, both-present-no-overlap,
+        both-present-with-overlap (assert dedup by signature), malformed input
+        throws ClaudeSettingsMergeFailedError, oversized input throws. Tests
+        fail because the adapter does not exist.
+      green: |
+        Implement the merge logic, the signature derivation, and the size guard;
+        all unit tests pass.
+      refactor: |
+        Extract the signature-derivation helper if it grows beyond ~10 lines;
+        ensure no magic numbers (1MB threshold becomes a named constant).
+    estimatedEffort: "2h"
+
+  - id: "task-9"
+    phaseId: "phase-3"
+    title: "Implement BedrockIntegrationService adapter"
+    description: >
+      Create
+      packages/core/src/infrastructure/services/integrations/bedrock-integration.service.ts
+      implementing IBedrockIntegrationService. Inject the existing
+      'ExecFunction' token for doctor / --version short calls. For init and
+      sync, use child_process.spawn directly with windowsHide: true,
+      args-as-array, stdio: ['ignore','pipe','pipe'], no shell: true. Pipe
+      stdout/stderr through the typed onProgress callback. doctor() runs
+      python3 --version, then pipx --version, then bedrock --version and
+      aggregates into a BedrockHealth result, parsing Python version with a
+      single regex.
+    state: "Todo"
+    dependencies:
+      - "task-5"
+      - "task-7"
+      - "task-8"
+    acceptanceCriteria:
+      - "Adapter implements all four port methods"
+      - "Short commands go through injected ExecFunction; streaming uses spawn"
+      - "spawn calls set windowsHide: true, args-as-array, never shell: true"
+      - "doctor() emits a BedrockHealth with per-tier ok|missing|error and remediation"
+      - "PipxNotInstalledError and BedrockBinaryMissingError are surfaced (not generic Error)"
+      - "File stays under ~300 lines; if longer, split process-invocation helper into a separate file"
+    tdd:
+      red: |
+        Author packages/core/tests/unit/services/bedrock-integration.service.test.ts
+        with a mocked ExecFunction asserting: doctor returns BedrockHealth with
+        all ok on healthy stubs; doctor returns missing for python when stub
+        rejects with ENOENT; pipx missing surfaces PipxNotInstalledError; bedrock
+        binary missing surfaces BedrockBinaryMissingError; init/sync invoke spawn
+        with the right argv shape (no shell: true, windowsHide: true) and pipe
+        chunks to the onProgress callback. Tests fail because the adapter does
+        not exist.
+      green: |
+        Implement the adapter using ExecFunction for short calls and a small
+        spawn helper for streaming; tests pass.
+      refactor: |
+        Extract spawn-with-progress into a private helper if used twice;
+        ensure the Python version regex is a named constant; verify file length
+        is under 300 lines.
+    estimatedEffort: "3h"
+
+  - id: "task-10"
+    phaseId: "phase-3"
+    title: "Register adapters in tsyringe DI container"
+    description: >
+      Edit packages/core/src/infrastructure/di/modules/register-services.ts to
+      register IBedrockIntegrationService -> BedrockIntegrationService and
+      IClaudeSettingsReconciler -> ClaudeSettingsReconciler as singletons.
+      Add string-token constants to
+      packages/core/src/infrastructure/di/tokens.ts.
+    state: "Todo"
+    dependencies:
+      - "task-8"
+      - "task-9"
+    acceptanceCriteria:
+      - "tokens.ts exports IBedrockIntegrationServiceToken and IClaudeSettingsReconcilerToken"
+      - "register-services.ts registers both as singletons by string token"
+      - "container.resolve('IBedrockIntegrationService') returns a BedrockIntegrationService instance"
+    tdd:
+      red: |
+        Add a DI smoke test
+        packages/core/tests/integration/di/bedrock-services.test.ts asserting
+        that resolving the two tokens returns instances of the right concrete
+        classes. Fails because tokens are missing.
+      green: |
+        Add the tokens; add the container.register calls; test passes.
+      refactor: |
+        Confirm registration ordering matches surrounding services; no global
+        side effects added.
+    estimatedEffort: "30min"
+
+  - id: "task-11"
+    phaseId: "phase-4"
+    title: "Author EnableBedrockForApplication use case (RED-first)"
+    description: >
+      Create
+      packages/core/src/application/use-cases/enable-bedrock-for-application.use-case.ts.
+      Behaviour: resolve Application by id; if bedrockEnabled already true,
+      skip persist but still re-run init (idempotent); otherwise persist
+      bedrockEnabled=true and call IBedrockIntegrationService.init({ cwd:
+      application.repositoryPath, onProgress }); after init returns, run the
+      reconciler if a .claude/settings.json sentinel was captured.
+    state: "Todo"
+    dependencies:
+      - "task-5"
+      - "task-7"
+      - "task-10"
+    acceptanceCriteria:
+      - "Use case file imports only from domain/, application/, and tsyringe"
+      - "Use case is decorated for tsyringe (@injectable) and registered with string token"
+      - "Idempotent: second call on enabled app re-runs init without re-persisting"
+    tdd:
+      red: |
+        Author packages/core/tests/unit/use-cases/enable-bedrock-for-application.use-case.test.ts
+        with three cases: first-enable persists+inits; second-enable skips
+        persist+inits; init failure bubbles a typed error. All ports mocked.
+        Tests fail because the use case does not exist.
+      green: |
+        Implement the minimal logic that passes the three test cases.
+      refactor: |
+        Confirm no infrastructure imports leaked in; rename any magic strings
+        (use the enum from task-1).
+    estimatedEffort: "1h 30min"
+
+  - id: "task-12"
+    phaseId: "phase-4"
+    title: "Author RunBedrockLifecycle use case (RED-first)"
+    description: >
+      Create
+      packages/core/src/application/use-cases/run-bedrock-lifecycle.use-case.ts
+      dispatching on BedrockLifecycleAction (Init / Sync / Ship). Guards on
+      bedrockEnabled = true; throws BedrockNotEnabledError otherwise. Calls
+      the matching port method with cwd derived from
+      Application.repositoryPath. Streams progress through onProgress when
+      provided.
+    state: "Todo"
+    dependencies:
+      - "task-5"
+      - "task-7"
+      - "task-10"
+    acceptanceCriteria:
+      - "Use case dispatches via enum, no string switch"
+      - "Throws BedrockNotEnabledError when application.bedrockEnabled = false"
+      - "Calls init/sync/ship on the port with the resolved cwd"
+      - "Registered with string token in registerUseCases"
+    tdd:
+      red: |
+        Author packages/core/tests/unit/use-cases/run-bedrock-lifecycle.use-case.test.ts
+        with cases for each enum value, plus a guard test asserting
+        BedrockNotEnabledError on disabled application. All ports mocked.
+        Tests fail because the use case does not exist.
+      green: |
+        Implement enum dispatch and the guard check; tests pass.
+      refactor: |
+        Ensure dispatch table is type-exhaustive (TypeScript never check) so
+        future enum additions force compile-time updates.
+    estimatedEffort: "1h"
+
+  - id: "task-13"
+    phaseId: "phase-4"
+    title: "Author CheckBedrockHealth use case (RED-first)"
+    description: >
+      Create
+      packages/core/src/application/use-cases/check-bedrock-health.use-case.ts
+      as a thin wrapper around IBedrockIntegrationService.doctor() returning
+      the BedrockHealth value object verbatim. No data mutation in the use
+      case.
+    state: "Todo"
+    dependencies:
+      - "task-5"
+      - "task-10"
+    acceptanceCriteria:
+      - "Use case calls port.doctor() and returns the result"
+      - "Registered with string token in registerUseCases"
+      - "Adds no transformation logic (presentation owns rendering)"
+    tdd:
+      red: |
+        Author packages/core/tests/unit/use-cases/check-bedrock-health.use-case.test.ts
+        asserting the use case returns whatever doctor() returns and propagates
+        thrown errors. Fails because the use case does not exist.
+      green: |
+        Implement the one-method passthrough; test passes.
+      refactor: |
+        Confirm the use case is < 30 lines; no defensive logic added.
+    estimatedEffort: "30min"
+
+  - id: "task-14"
+    phaseId: "phase-4"
+    title: "Register the three use cases in tsyringe"
+    description: >
+      Edit
+      packages/core/src/infrastructure/di/modules/register-use-cases.ts to
+      register EnableBedrockForApplicationUseCase,
+      RunBedrockLifecycleUseCase, CheckBedrockHealthUseCase. Add the three
+      string tokens to tokens.ts.
+    state: "Todo"
+    dependencies:
+      - "task-11"
+      - "task-12"
+      - "task-13"
+    acceptanceCriteria:
+      - "All three use cases resolvable by string token from the container"
+      - "tokens.ts exports the three new token constants"
+    tdd:
+      red: |
+        Add resolution assertions to the DI smoke test from task-10 covering
+        the three use cases.
+      green: |
+        Add the registrations + token exports; test passes.
+      refactor: |
+        Confirm registration block matches surrounding use-case registrations
+        (same options where applicable, e.g. singleton vs transient).
+    estimatedEffort: "30min"
+
+  - id: "task-15"
+    phaseId: "phase-5"
+    title: "Widen tool-metadata.ts tags union to include 'memory'"
+    description: >
+      Edit
+      packages/core/src/infrastructure/services/tool-installer/tool-metadata.ts
+      adding "memory" to the tags string-literal union. Update the matching
+      CLAUDE.md schema doc with a note that "memory" is allowed.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "Tags union includes 'memory'"
+      - "Loader continues to accept all existing descriptors without modification"
+      - "CLAUDE.md schema doc reflects the new tag"
+    tdd:
+      red: |
+        Add a unit test in
+        packages/core/tests/unit/services/tool-metadata.test.ts asserting that
+        a descriptor with tags ["memory"] loads without validation error.
+        Fails before the union is widened.
+      green: |
+        Add "memory" to the union; test passes.
+      refactor: |
+        Confirm no other tag-consumers (UI filters) explicitly enumerate the
+        union and break.
+    estimatedEffort: "20min"
+
+  - id: "task-16"
+    phaseId: "phase-5"
+    title: "Add project-bedrock.json tool descriptor"
+    description: >
+      Create
+      packages/core/src/infrastructure/services/tool-installer/tools/project-bedrock.json
+      with id "project-bedrock", name "Project Bedrock", description, docs URL,
+      tags ["memory"], packageManager "pipx", per-OS install commands
+      ("pipx install project-bedrock"), verify command "bedrock --version".
+    state: "Todo"
+    dependencies:
+      - "task-15"
+    acceptanceCriteria:
+      - "JSON file lints against the descriptor schema"
+      - "ToolMetadataProvider exposes 'project-bedrock' after module load"
+      - "Web tools registry shows the entry automatically"
+    tdd:
+      red: |
+        Add an integration test in
+        packages/core/tests/integration/tool-descriptor.project-bedrock.test.ts
+        asserting ToolMetadataProvider.getAll() includes a 'project-bedrock'
+        entry with the right tags and verify command. Fails before the JSON
+        is added.
+      green: |
+        Author the JSON file; integration test passes.
+      refactor: |
+        Verify cross-OS commands; ensure the verify command is identical across
+        platforms; confirm the docs URL is the GitHub repo URL.
+    estimatedEffort: "30min"
+
+  - id: "task-17"
+    phaseId: "phase-6"
+    title: "Scaffold shep bedrock CLI command group"
+    description: >
+      Create src/presentation/cli/commands/bedrock/bedrock.command.ts as the
+      top-level command that registers init, sync, doctor, ship subcommands.
+      Wire bedrock.command into src/presentation/cli/program.ts.
+    state: "Todo"
+    dependencies:
+      - "task-14"
+    acceptanceCriteria:
+      - "shep bedrock --help lists init, sync, doctor, ship"
+      - "Top-level command file stays under 50 lines"
+      - "program.ts imports and registers the bedrock group"
+    tdd:
+      red: |
+        Add a unit/integration test in
+        packages/core/tests/integration/cli/bedrock.command.test.ts that
+        constructs the program, runs `shep bedrock --help`, and asserts the
+        four subcommands are listed. Fails before the command group is added.
+      green: |
+        Author bedrock.command.ts and wire it into program.ts; test passes.
+      refactor: |
+        Confirm the registration pattern matches existing command groups
+        (app/, cycle/, feat/).
+    estimatedEffort: "45min"
+
+  - id: "task-18"
+    phaseId: "phase-6"
+    title: "Implement shep bedrock init / sync / doctor / ship subcommands"
+    description: >
+      Create init.command.ts, sync.command.ts, doctor.command.ts,
+      ship.command.ts under src/presentation/cli/commands/bedrock/. Each
+      resolves the relevant use case from container, parses common flags
+      (e.g. --app <id>), passes an onProgress callback for init/sync that
+      writes to process.stdout, and renders results via ui/index.ts.
+    state: "Todo"
+    dependencies:
+      - "task-17"
+    acceptanceCriteria:
+      - "Each subcommand file < 100 lines"
+      - "init/sync stream stdout in real time via onProgress"
+      - "doctor renders a table via ui module showing per-tier status + remediation"
+      - "ship reports the bedrock exit code"
+      - "All four commands fail-fast and pretty-print typed domain errors"
+    tdd:
+      red: |
+        Add an integration test stubbing the use cases via the DI container and
+        running each subcommand once, asserting expected ui calls and exit
+        codes. Fails before the subcommands exist.
+      green: |
+        Author the four files using the shep-cli-command-creator conventions;
+        tests pass.
+      refactor: |
+        Extract any duplication (e.g. --app flag parsing) into a single helper
+        used by all four commands.
+    estimatedEffort: "1h 30min"
+
+  - id: "task-19"
+    phaseId: "phase-7"
+    title: "Create EnableBedrock Server Action"
+    description: >
+      Create src/presentation/web/app/actions/enable-bedrock.action.ts as a
+      "use server" function that resolves EnableBedrockForApplicationUseCase
+      via resolve(token), invokes it with the app id, and returns the new
+      Application.bedrockEnabled state. Maps typed domain errors to a
+      structured { ok: false, code, remediation } shape.
+    state: "Todo"
+    dependencies:
+      - "task-14"
+    acceptanceCriteria:
+      - "Server Action returns { ok: true, bedrockEnabled } on success"
+      - "Domain errors mapped to { ok: false, code, remediation }"
+      - "Resolves use case via container.resolve(string token) — no direct import of the class"
+    tdd:
+      red: |
+        Add a unit test
+        src/presentation/web/app/actions/enable-bedrock.action.test.ts
+        invoking the action with a stubbed container, asserting the success
+        and the error shapes. Fails before the action exists.
+      green: |
+        Author the action; test passes.
+      refactor: |
+        Confirm the action stays under 50 lines and contains no business
+        logic (delegate to use case).
+    estimatedEffort: "45min"
+
+  - id: "task-20"
+    phaseId: "phase-7"
+    title: "Build BedrockMemoryToggle component + Storybook story"
+    description: >
+      Create src/presentation/web/components/bedrock-memory-toggle.tsx — a
+      small client component rendering a switch + label + remediation text
+      area. Use React useTransition for the Loading state. Create the
+      mandatory colocated bedrock-memory-toggle.stories.tsx covering
+      Default / Loading / Error states using decorators that stub the
+      Server Action.
+    state: "Todo"
+    dependencies:
+      - "task-19"
+    acceptanceCriteria:
+      - "Toggle renders correctly in all three Storybook states"
+      - "Optimistic UI: switch flips immediately, reverts on action error"
+      - "data-testid attributes added for E2E hooks"
+      - "Component file stays under 150 lines"
+      - "pnpm build:storybook succeeds locally"
+    tdd:
+      red: |
+        Add a Vitest + React Testing Library test asserting that clicking
+        the toggle calls the (stubbed) Server Action and reflects the
+        returned state. Add story snapshots for the three states. Fails
+        before the component exists.
+      green: |
+        Implement the component using useTransition; author the three
+        stories with decorators that stub the action. Tests pass.
+      refactor: |
+        Extract the remediation rendering if reused elsewhere; confirm no
+        client-side business logic leaked in.
+    estimatedEffort: "1h 30min"
+
+  - id: "task-21"
+    phaseId: "phase-7"
+    title: "Wire BedrockMemoryToggle into Application detail page"
+    description: >
+      Edit src/presentation/web/app/applications/[id]/page.tsx to render
+      <BedrockMemoryToggle applicationId={id} initialEnabled={app.bedrockEnabled}
+      /> alongside the existing per-app toggles.
+    state: "Todo"
+    dependencies:
+      - "task-20"
+    acceptanceCriteria:
+      - "Toggle appears on the Application detail page"
+      - "Initial state reflects persisted Application.bedrockEnabled"
+      - "Page renders without hydration mismatch errors"
+    tdd:
+      red: |
+        Add a Playwright e2e (or component test) navigating to the detail
+        page and asserting the toggle is present and reflects the seeded
+        Application's bedrockEnabled state.
+      green: |
+        Render the component in the page; test passes.
+      refactor: |
+        Confirm the page file did not exceed the 300-line guideline as a
+        result of this change.
+    estimatedEffort: "30min"
+
+  - id: "task-22"
+    phaseId: "phase-8"
+    title: "Add fixture-based integration tests for ClaudeSettingsReconciler"
+    description: >
+      Create
+      packages/core/tests/fixtures/claude-settings/{shep-only,bedrock-only,shep-and-bedrock,malformed-bedrock}.json
+      and
+      packages/core/tests/integration/claude-settings-reconciler.fixtures.test.ts
+      driving the reconciler through the four scenarios and asserting union
+      semantics + typed error on malformed input.
+    state: "Todo"
+    dependencies:
+      - "task-8"
+    acceptanceCriteria:
+      - "Four fixture files exist representing the four scenarios"
+      - "Integration test passes for all four scenarios"
+      - "Malformed scenario asserts ClaudeSettingsMergeFailedError with parse details"
+    tdd:
+      red: |
+        Author the test referencing the (not-yet-created) fixture files;
+        run the test — it fails (fixtures missing).
+      green: |
+        Author the fixture files; test passes.
+      refactor: |
+        Document fixture conventions in a short README in the
+        fixtures/claude-settings/ directory.
+    estimatedEffort: "1h"
+
+  - id: "task-23"
+    phaseId: "phase-8"
+    title: "Run pnpm validate + pnpm test:unit + pnpm test:int end-to-end"
+    description: >
+      From the worktree root run pnpm validate (lint + format + typecheck +
+      tsp), then pnpm test:unit, then pnpm test:int. Capture full output to
+      /tmp/bedrock-ci.txt per operational-discipline.md and fix any failures
+      before proceeding.
+    state: "Todo"
+    dependencies:
+      - "task-22"
+    acceptanceCriteria:
+      - "pnpm validate exits 0 with no warnings"
+      - "pnpm test:unit exits 0 with no skipped tests"
+      - "pnpm test:int exits 0 with no skipped tests"
+    tdd: null
+    estimatedEffort: "30min"
+
+  - id: "task-24"
+    phaseId: "phase-8"
+    title: "Run pnpm build:storybook locally before push"
+    description: >
+      Verify Storybook builds cleanly (mandatory per .claude/rules/cicd.md).
+      Capture full output; fix any story errors before commit.
+    state: "Todo"
+    dependencies:
+      - "task-20"
+      - "task-23"
+    acceptanceCriteria:
+      - "pnpm build:storybook exits 0"
+      - "No console errors during the build"
+      - "BedrockMemoryToggle.stories.tsx renders all three states without runtime errors"
+    tdd: null
+    estimatedEffort: "15min"
+
+totalEstimate: "~20h"
+
 openQuestions: []
 
-# Markdown content (the full tasks document)
 content: |
   ## Status
 
   - **Phase:** Implementation
-  - **Updated:** 2026-05-06
+  - **Updated:** 2026-05-19
 
-  ## Task List
+  ## Summary
 
-  TBD
+  The work is delivered in eight phases, ordered so each phase produces an
+  artefact the next phase needs.
 
-  ---
+  **Phase 1 — Domain & Persistence Foundation.** Land the TypeSpec types
+  (`BedrockLifecycleAction`, `BedrockHealth`, `BedrockTierStatus`), add
+  `bedrockEnabled` to `Application`, regenerate `output.ts`, write the
+  forward-only SQLite migration (101) with the standard `pragma table_info`
+  guard, and update the application repository mapper so the new field
+  round-trips. Tasks 1–4.
 
-  _Task breakdown for implementation tracking_
+  **Phase 2 — Application Ports & Domain Errors.** Define
+  `IBedrockIntegrationService`, `IClaudeSettingsReconciler`, and the four
+  typed domain errors. Pure interfaces, zero infrastructure imports —
+  locking the contract before any adapter exists. Tasks 5–7.
+
+  **Phase 3 — Infrastructure Adapters & DI.** Implement
+  `ClaudeSettingsReconciler` first (pure-functional, fixture-friendly),
+  then `BedrockIntegrationService` (ExecFunction for short calls, spawn for
+  streaming with `windowsHide: true` + args-as-array), then wire both into
+  the tsyringe container via `registerServices` and `tokens.ts`. Tasks 8–10.
+
+  **Phase 4 — Use Cases (TDD).** Author the three use cases strictly
+  RED-first: `EnableBedrockForApplication` (idempotent persist + init),
+  `RunBedrockLifecycle` (enum-dispatch + bedrockEnabled guard),
+  `CheckBedrockHealth` (passthrough). Register all three in
+  `registerUseCases`. Tasks 11–14.
+
+  **Phase 5 — Tool Descriptor & Registry.** Widen the `tags` union to
+  accept `"memory"` (one-line type change), then drop in
+  `project-bedrock.json`. The existing dynamic loader picks it up — the
+  web tools registry shows the entry automatically. Tasks 15–16.
+
+  **Phase 6 — CLI Surface.** Scaffold `shep bedrock` as a command group
+  under `src/presentation/cli/commands/bedrock/`, then implement four thin
+  subcommand files (`init`, `sync`, `doctor`, `ship`). Each resolves its
+  use case from the container, streams output through `onProgress` where
+  applicable, and renders via `ui/index.ts`. Tasks 17–18.
+
+  **Phase 7 — Web UI Toggle.** Add the Server Action wrapping
+  `EnableBedrockForApplication`, build `BedrockMemoryToggle` with the
+  mandatory colocated `.stories.tsx` covering Default / Loading / Error
+  states, and place the toggle on the Application detail page. Tasks 19–21.
+
+  **Phase 8 — Integration Tests & Verification.** Land the fixture-based
+  integration tests for the `.claude/` merge (four scenarios incl.
+  malformed-input typed error), then run `pnpm validate`, `pnpm test:unit`,
+  `pnpm test:int`, and `pnpm build:storybook` locally before pushing.
+  Tasks 22–24.
+
+  Every code task in phases 1–7 follows RED-GREEN-REFACTOR. Non-code tasks
+  (DI plumbing additions, validation runs, Storybook build) carry
+  `tdd: null`. The overall budget — ~20 hours of focused work — sits
+  comfortably inside the M sizing established in the spec.
