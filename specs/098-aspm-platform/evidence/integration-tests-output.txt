@@ -1,0 +1,169 @@
+
+> @shepai/cli@1.204.0 test:int /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform
+> vitest run tests/integration -- --reporter=verbose tests/integration/infrastructure/persistence/sqlite/aspm tests/integration/infrastructure/services/aspm
+
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform
+
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migration-108-aspm-findings.test.ts (37 tests) 2231ms
+     ✓ creates the table  352ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-feature.repository.test.ts (44 tests) 2522ms
+       ✓ should create a feature record  323ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-settings.repository.test.ts (47 tests) 2678ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migration-102-104-aspm-ownership.test.ts (31 tests) 2137ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migrations.test.ts (65 tests) 4489ms
+       ✓ should create settings table  325ms
+ ✓  node  tests/integration/infrastructure/repositories/agent-run.repository.test.ts (31 tests) 2169ms
+ ✓  node  tests/integration/infrastructure/services/git/merge-step-real-git/push-merge.test.ts (1 test) 2342ms
+     ✓ push-no-pr-merge: feature branch should be merged into main after push+merge  2337ms
+ ✓  node  tests/integration/infrastructure/services/git/merge-step-real-git/smoke.test.ts (7 tests) 5636ms
+       ✓ should create a bare repo and clone with main + feature branch  3944ms
+       ✓ createLocalOnlyHarness: should create a local repo with no remote  1652ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-agent-prompt-override.repository.test.ts (8 tests) 526ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-agent-question.repository.test.ts (7 tests) 473ms
+ ✓  node  tests/integration/infrastructure/services/git/merge-step-real-git/gate-tests.test.ts (2 tests) 5815ms
+     ✓ commit-only-with-gate: should interrupt at merge gate when allowMerge=false  3703ms
+     ✓ push-pr-with-gate: should interrupt at merge gate when allowMerge=false (PR path)  2110ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/posture-aggregates.int.test.ts (7 tests) 621ms
+ ✓  node  tests/integration/infrastructure/services/git/worktree-git-init.test.ts (8 tests) 1825ms
+     ✓ should not re-initialize an existing git repository  722ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-application.repository.test.ts (25 tests) 1754ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/security-policy-repository.int.test.ts (7 tests) 677ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/owner-repository.int.test.ts (8 tests) 783ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-cloud-provider-tokens.repository.test.ts (8 tests) 694ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-repository.repository.test.ts (20 tests) 1686ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-agent-message.repository.test.ts (8 tests) 653ms
+ ✓  node  tests/integration/infrastructure/services/git/merge-step-real-git/skip-merge.test.ts (1 test) 1387ms
+     ✓ undefined-gates-silent-skip: should skip merge silently when approvalGates is undefined  1383ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migration-049.test.ts (5 tests) 527ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migration-110-aspm-risk-scores.test.ts (17 tests) 1447ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-cycle.repository.test.ts (15 tests) 1188ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/team-repository.int.test.ts (7 tests) 621ms
+ ✓  node  tests/integration/infrastructure/services/git/merge-step-real-git/verify-merge.test.ts (6 tests) 8921ms
+     ✓ should return true after a true merge (git merge)  1283ms
+     ✓ should return true after a squash merge (git merge --squash)  660ms
+     ✓ should return false when branch has not been merged  1072ms
+     ✓ should return false when main has extra commits after squash but feature has diverged  1973ms
+     ✓ should return true after squash merge with modified tree when premergeBaseSha provided  1944ms
+     ✓ should return true after squash merge even when local branch is deleted (remote fallback)  1990ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/api-asset-repository.int.test.ts (7 tests) 618ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/remediation-campaign-repository.int.test.ts (7 tests) 546ms
+ ✓  node  tests/integration/infrastructure/services/git/merge-step-real-git/local-merge.test.ts (3 tests) 8938ms
+     ✓ local-merge-no-push: feature branch should be merged into main after node completes  4579ms
+     ✓ no-remote-override-merge: should merge locally when remote unavailable (push+openPr overridden)  2171ms
+     ✓ no-remote-local-merge: should merge locally without any remote  2186ms
+ ✓  node  tests/integration/infrastructure/services/git/merge-step-real-git/pr-merge.test.ts (1 test) 1328ms
+     ✓ push=true, openPr=true, allowMerge=true → BUG: verifyMerge skipped after gh pr merge  1325ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/service-repository.int.test.ts (7 tests) 711ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migration-113-aspm-remediation-campaigns.test.ts (15 tests) 1335ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/finding-repository.int.test.ts (17 tests) 1472ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-supervisor-policy.repository.test.ts (9 tests) 889ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migration-111-aspm-security-policies.test.ts (16 tests) 1574ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-code-review.repository.test.ts (14 tests) 1343ms
+ ✓  node  tests/integration/infrastructure/repositories/feature-parent.repository.test.ts (14 tests) 1374ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-phase-timing.repository.test.ts (14 tests) 1256ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migration-112-aspm-risk-exceptions.test.ts (15 tests) 1426ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-notification.repository.test.ts (15 tests) 1438ms
+ ✓  node  tests/integration/infrastructure/di/register-aspm.int.test.ts (17 tests) 1608ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-interactive-session.repository.test.ts (13 tests) 1214ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/rank-findings-repository.int.test.ts (6 tests) 610ms
+ ✓  node  tests/integration/application/use-cases/settings/onboarding-to-feature-flow.test.ts (12 tests) 1171ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migration-093-collaboration.test.ts (14 tests) 1384ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/risk-exception-repository.int.test.ts (9 tests) 911ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-feature-repository.find-by-branch.test.ts (6 tests) 562ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-pm-module.repository.test.ts (12 tests) 1154ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migration-101-aspm-applications.test.ts (9 tests) 1161ms
+ ✓  node  tests/integration/application/use-cases/settings/workflow-command-flow.test.ts (11 tests) 1067ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/compliance-control-repository.int.test.ts (11 tests) 1123ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/ai-change-risk-signal-repository.int.test.ts (11 tests) 1079ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-intake-item.repository.test.ts (10 tests) 1010ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/risk-score-repository.int.test.ts (6 tests) 627ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-phase-timing.repository.find-by-run-ids.test.ts (5 tests) 459ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/cloud-environment-repository.int.test.ts (5 tests) 504ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-supervisor-decision.repository.test.ts (6 tests) 561ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migration-094-feature-application-id-and-build-mode.test.ts (7 tests) 1021ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-interactive-message.repository.test.ts (10 tests) 988ms
+ ✓  node  tests/integration/application/use-cases/features/start-feature.use-case.test.ts (10 tests) 1088ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/aspm/business-unit-repository.int.test.ts (5 tests) 630ms
+ ✓  node  tests/integration/infrastructure/repositories/agent-run.repository.find-by-ids.test.ts (4 tests) 451ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migration-015.test.ts (4 tests) 467ms
+ ✓  node  tests/integration/application/use-cases/agents/configure-agent-dev.test.ts (5 tests) 663ms
+ ✓  node  tests/integration/infrastructure/services/agents/agent-message-bus/sqlite-agent-message-bus.test.ts (4 tests) 576ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-operation-log.repository.test.ts (5 tests) 696ms
+ ✓  node  tests/integration/infrastructure/services/aspm/ingest-findings.int.test.ts (5 tests) 774ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/reject-feedback-propagation.test.ts (4 tests) 450ms
+ ✓  node  tests/integration/infrastructure/services/agents/agent-infrastructure.test.ts (13 tests) 533ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/merge-flow.test.ts (9 tests) 275ms
+ ✓  node  tests/integration/services/tool-installer.service.test.ts (32 tests) 270ms
+ ✓  node  tests/integration/infrastructure/services/aspm/ingest-sbom.int.test.ts (2 tests) 352ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/evidence-flow.test.ts (13 tests) 335ms
+ ✓  node  tests/integration/application/use-cases/settings/onboarding-flow.test.ts (4 tests) 788ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/legacy-migrations.test.ts (18 tests) 314ms
+ ✓  node  tests/integration/infrastructure/services/agents/merge-flow.test.ts (11 tests) 398ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/reject-flow.test.ts (6 tests) 209ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/resume-after-error-merge.test.ts (6 tests) 273ms
+ ✓  node  tests/integration/application/use-cases/features/list-features.use-case.test.ts (2 tests) 182ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/resume-after-error.test.ts (5 tests) 224ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/resume-feedback-propagation.test.ts (7 tests) 338ms
+ ✓  node  tests/integration/infrastructure/services/agents/hitl-approval-flow.test.ts (7 tests) 178ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/sqlite-migration-storage.test.ts (22 tests) 13ms
+ ✓  node  tests/integration/infrastructure/services/agents/sessions/claude-code-session.repository.test.ts (23 tests) 52ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/feedback-and-timing.test.ts (2 tests) 123ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/gate-configuration.test.ts (5 tests) 202ms
+ ✓  node  tests/integration/infrastructure/services/aspm/exploit-intel-adapter.int.test.ts (6 tests) 27ms
+ ✓  node  tests/integration/infrastructure/services/aspm/ownership-yaml-reader.int.test.ts (6 tests) 10ms
+ ✓  node  tests/integration/services/git/git-pr.service.getFailureLogs.test.ts (11 tests) 5ms
+ ✓  node  tests/integration/infrastructure/services/aspm/cyclonedx-sbom-adapter.int.test.ts (6 tests) 8ms
+ ✓  node  tests/integration/infrastructure/services/git/git-pr-ci-watch.test.ts (5 tests) 3ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/approve-flow.test.ts (3 tests) 202ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/approve-after-failed-rejection.test.ts (3 tests) 226ms
+ ✓  node  tests/integration/infrastructure/services/aspm/sarif-ingest-adapter.int.test.ts (6 tests) 7ms
+[2026-05-19T19:04:35.091Z] [repair:spec.yaml] Repairing spec.yaml (attempt 1)
+[2026-05-19T19:04:35.093Z] [repair:spec.yaml] Repair complete (5 chars)
+[2026-05-19T19:04:35.093Z] [validate:spec.yaml] Validating spec.yaml
+[2026-05-19T19:04:35.096Z] [validate:spec.yaml] ERROR: YAML parse error in spec.yaml: unexpected end of the stream within a flow collection (15:1)
+
+ 12 |   - React
+ 13 |   - broken item with : colon ca ...
+ 14 | openQuestions: [
+ 15 | 
+------^
+[2026-05-19T19:04:35.096Z] [validate:spec.yaml] Validating spec.yaml
+[2026-05-19T19:04:35.096Z] [validate:spec.yaml] Validation passed
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/yaml-repair-cycle.test.ts (3 tests) 10ms
+ ✓  node  tests/integration/infrastructure/services/agents/factory-sdk-executors.test.ts (19 tests) 7ms
+ ✓  node  tests/integration/prd-approval-iterations.test.ts (7 tests) 27ms
+ ✓  node  tests/integration/infrastructure/di/container-bootstrap.test.ts (75 tests) 128ms
+ ✓  node  tests/integration/services/git/git-pr.service.rebase-sync.test.ts (26 tests) 33326ms
+     ✓ should fetch latest main when upstream has new commits (from feature branch)  4370ms
+     ✓ should fast-forward main when on the main branch (uses pull)  2526ms
+     ✓ should succeed silently when main is already up-to-date  1291ms
+     ✓ should throw SYNC_FAILED when on main and local main has diverged from remote  2009ms
+     ✓ should succeed from feature branch even when local main has diverged (fetches origin/main only)  1632ms
+     ✓ should be idempotent — calling sync twice succeeds  1501ms
+     ✓ should successfully rebase feature branch onto main with no conflicts  1912ms
+     ✓ should throw REBASE_CONFLICT when rebase encounters conflicting changes  2040ms
+     ✓ should throw GIT_ERROR when worktree has uncommitted changes  658ms
+     ✓ should throw BRANCH_NOT_FOUND when feature branch does not exist  595ms
+     ✓ should leave worktree clean after aborting a conflicted rebase  1021ms
+     ✓ should produce linear history after successful rebase  1154ms
+     ✓ should succeed when feature branch is already up-to-date with main (no-op rebase)  615ms
+     ✓ getConflictedFiles should return conflicted file paths during a rebase conflict  971ms
+     ✓ stageFiles + rebaseContinue should complete rebase after manual conflict resolution  1158ms
+     ✓ rebaseAbort should restore branch to pre-rebase state  1005ms
+     ✓ should stash uncommitted changes and return true  654ms
+     ✓ should return false when working directory is clean  579ms
+     ✓ should include the stash message in git stash list output  616ms
+     ✓ should stash pop and restore uncommitted changes  630ms
+     ✓ should stash drop and discard the stash entry  651ms
+     ✓ should preserve uncommitted changes across a clean rebase (stash → sync → rebase → pop)  1228ms
+     ✓ should skip stash when working directory is clean and rebase normally  1119ms
+     ✓ should preserve uncommitted changes even when rebase has conflicts that are manually resolved  1203ms
+     ✓ should restore uncommitted changes even after a failed rebase that is aborted  1000ms
+     ✓ should handle unstaged modifications in stash-rebase-pop flow  1178ms
+
+ Test Files  98 passed (98)
+      Tests  1165 passed (1165)
+   Start at  22:04:17
+   Duration  33.67s (transform 11.16s, setup 1.46s, import 22.08s, tests 141.11s, environment 8ms)
+

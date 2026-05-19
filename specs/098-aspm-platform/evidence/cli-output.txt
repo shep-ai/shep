@@ -1,0 +1,75 @@
+=== shep aspm --help ===
+
+
+> @shepai/cli@1.204.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform
+> tsx src/presentation/cli/index.ts aspm --help
+
+Usage: shep aspm [options] [command]
+
+Application Security Posture Management — findings, campaigns, posture,
+exceptions, AI-review
+
+Options:
+  -h, --help         display help for command
+
+Commands:
+  ingest [options]   Ingest SARIF or CycloneDX findings for an application
+  findings           List and inspect ASPM security findings
+  campaigns          Manage ASPM remediation campaigns
+  posture [options]  Show ASPM posture summary (workspace or per-application)
+  exceptions         Manage ASPM risk exceptions
+  ai-review          Triage AI-change risk signals
+  help [command]     display help for command
+
+=== shep aspm posture ===
+
+
+> @shepai/cli@1.204.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform
+> tsx src/presentation/cli/index.ts aspm posture
+
+
+  ASPM Posture
+
+  Open by severity:
+    Critical   0
+    High       0
+    Medium     0
+    Low        0
+    Info       0
+
+  KEV-listed open    0
+  SLA breached       0
+  Active exceptions  0
+  AI-review queue    0
+  Last ingested      —
+
+
+=== shep aspm findings list ===
+
+
+> @shepai/cli@1.204.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform
+> tsx src/presentation/cli/index.ts aspm findings list
+
+
+ℹ No findings match the filter.
+
+
+=== shep aspm campaigns list ===
+
+
+> @shepai/cli@1.204.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform
+> tsx src/presentation/cli/index.ts aspm campaigns list
+
+
+ℹ No campaigns yet.
+
+
+=== shep aspm ai-review list ===
+
+
+> @shepai/cli@1.204.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform
+> tsx src/presentation/cli/index.ts aspm ai-review list
+
+
+ℹ No AI-change risk signals in this view.
+
