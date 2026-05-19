@@ -39,6 +39,11 @@ import type { IGitForkService } from '../../../application/ports/output/services
 import { GitForkService } from '../../services/git/git-fork.service.js';
 import type { ISkillInjectorService } from '../../../application/ports/output/services/skill-injector.interface.js';
 import { SkillInjectorService } from '../../services/skill-injector.service.js';
+import type { IBedrockIntegrationService } from '../../../application/ports/output/services/bedrock-integration.service.js';
+import { BedrockIntegrationService } from '../../services/integrations/bedrock-integration.service.js';
+import type { IClaudeSettingsReconciler } from '../../../application/ports/output/services/claude-settings-reconciler.service.js';
+import { ClaudeSettingsReconciler } from '../../services/filesystem/claude-settings-reconciler.service.js';
+import { IBedrockIntegrationServiceToken, IClaudeSettingsReconcilerToken } from '../tokens.js';
 import type { IGitHubRepositoryService } from '../../../application/ports/output/services/github-repository-service.interface.js';
 import { GitHubRepositoryService } from '../../services/external/github-repository.service.js';
 import type { IBrowserOpener } from '../../../application/ports/output/services/i-browser-opener.js';
@@ -170,6 +175,19 @@ export function registerServices(container: DependencyContainer): void {
     PlatformAgentAuthDetectorService
   );
   container.registerSingleton<ISkillInjectorService>('ISkillInjectorService', SkillInjectorService);
+
+  // ─── Bedrock integration (feature 098) ──────────────────────────────
+  // Reconciler is registered first so the bedrock adapter (or any future
+  // consumer) can resolve it without a forward-reference. Both are infra
+  // services — singletons, string-token aliased through tokens.ts.
+  container.registerSingleton<IClaudeSettingsReconciler>(
+    IClaudeSettingsReconcilerToken,
+    ClaudeSettingsReconciler
+  );
+  container.registerSingleton<IBedrockIntegrationService>(
+    IBedrockIntegrationServiceToken,
+    BedrockIntegrationService
+  );
   container.registerSingleton<IToolInstallerService>(
     'IToolInstallerService',
     ToolInstallerServiceImpl
