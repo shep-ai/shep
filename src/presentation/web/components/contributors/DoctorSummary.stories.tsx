@@ -77,16 +77,33 @@ const hasFail: DoctorSummaryReport = {
   ],
 };
 
+const doctorError: DoctorSummaryReport = {
+  overallStatus: DiagnosticStatus.Fail,
+  summary: { ok: 0, warn: 0, fail: 1 },
+  results: [
+    {
+      name: 'doctor-runner',
+      status: DiagnosticStatus.Fail,
+      detail: 'Doctor diagnostics failed before all checks completed',
+      fixHint: 'Run `shep doctor --verbose` and retry after resolving the reported error',
+    },
+  ],
+};
+
 export const AllOk: Story = {
   args: { report: allOk },
 };
 
-export const MixedWarn: Story = {
+export const WithWarnings: Story = {
   args: { report: mixedWarn },
 };
 
-export const HasFail: Story = {
+export const WithFailures: Story = {
   args: { report: hasFail },
+};
+
+export const ErrorState: Story = {
+  args: { report: doctorError },
 };
 
 export const Loading: Story = {
