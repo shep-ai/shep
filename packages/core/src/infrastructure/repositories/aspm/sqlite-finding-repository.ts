@@ -20,6 +20,7 @@ import type {
   IFindingRepository,
   ListFindingsCursor,
   ListFindingsResult,
+  ListRankedFindingsResult,
 } from '../../../application/ports/output/repositories/finding-repository.interface.js';
 import { buildFindingWhereClause } from './finding-filter-sql.js';
 import { fromDatabase, toDatabase, type SecurityFindingRow } from './mappers/finding-mapper.js';
@@ -97,6 +98,44 @@ export class SQLiteFindingRepository implements IFindingRepository {
       .get(...where.params) as { c: number };
 
     return { items: rows.map(fromDatabase), total: totalRow.c };
+  }
+
+  async listRanked(
+    filter: FindingFilter,
+    cursor: ListFindingsCursor
+  ): Promise<ListRankedFindingsResult> {
+    const where = buildFindingWhereClause(filter);
+    // Qualify each filter condition against the `f.` alias so the WHERE
+    // builder remains alias-agnostic (it emits bare column names).
+    const aliasedSql = where.sql.replace(
+      /\b(deleted_at|canonical_severity|finding_domain|application_id|owner_id|state|rule_id|cve_id|kev)\b/g,
+      'f.$1'
+    );
+
+    const rows = this.db
+      .prepare(
+        `SELECT f.*, rs.total AS risk_score_total
+         FROM security_findings f
+         LEFT JOIN risk_scores rs ON rs.id = f.current_risk_score_id
+         WHERE ${aliasedSql}
+         ORDER BY rs.total DESC NULLS LAST, f.discovered_at DESC, f.id ASC
+         LIMIT ? OFFSET ?`
+      )
+      .all(...where.params, cursor.limit, cursor.offset) as (SecurityFindingRow & {
+      risk_score_total: number | null;
+    })[];
+
+    const totalRow = this.db
+      .prepare(`SELECT COUNT(*) as c FROM security_findings f WHERE ${aliasedSql}`)
+      .get(...where.params) as { c: number };
+
+    return {
+      items: rows.map((row) => ({
+        finding: fromDatabase(row),
+        riskScoreTotal: row.risk_score_total,
+      })),
+      total: totalRow.c,
+    };
   }
 
   async count(filter: FindingFilter): Promise<number> {

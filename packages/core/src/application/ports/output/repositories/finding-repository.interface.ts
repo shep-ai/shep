@@ -31,6 +31,21 @@ export interface ListFindingsResult {
   total: number;
 }
 
+/**
+ * A finding alongside its current risk-score total. `riskScoreTotal` is
+ * `null` when no RiskScore row has been computed yet — used by
+ * `rank-findings` to order findings by composite risk (NFR-8).
+ */
+export interface RankedFinding {
+  finding: SecurityFinding;
+  riskScoreTotal: number | null;
+}
+
+export interface ListRankedFindingsResult {
+  items: RankedFinding[];
+  total: number;
+}
+
 export interface FindingUpdateInput {
   state?: FindingState;
   ownerId?: string;
@@ -58,6 +73,16 @@ export interface IFindingRepository {
 
   /** Paged + filterable list with total count. */
   list(filter: FindingFilter, cursor: ListFindingsCursor): Promise<ListFindingsResult>;
+
+  /**
+   * Paged + filterable list joined with the latest risk_scores row, ordered
+   * by `risk_scores.total` descending. Findings without a current risk
+   * score sort last and report `riskScoreTotal: null`.
+   *
+   * NFR-8: must return in <300ms on a 50k-finding dataset by joining via
+   * the `current_risk_score_id` pointer rather than a window function.
+   */
+  listRanked(filter: FindingFilter, cursor: ListFindingsCursor): Promise<ListRankedFindingsResult>;
 
   /** Count rows matching a filter (without paging). */
   count(filter: FindingFilter): Promise<number>;

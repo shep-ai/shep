@@ -49,10 +49,11 @@ export function buildFindingWhereClause(filter: FindingFilter): SqlClause {
   if (filter.cveIds && filter.cveIds.length > 0) {
     conditions.push(inClause('cve_id', filter.cveIds, params));
   }
-  // `kev` is intentionally NOT translated here — KEV membership is enriched
-  // by IExploitIntelPort at rank time (phase 4), not stored on the finding
-  // row. The filter field stays in the type so the same primitive carries
-  // forward; the repository ignores it.
+  if (filter.kev === true) {
+    conditions.push('kev = 1');
+  } else if (filter.kev === false) {
+    conditions.push('(kev = 0 OR kev IS NULL)');
+  }
 
   return { sql: conditions.join(' AND '), params };
 }

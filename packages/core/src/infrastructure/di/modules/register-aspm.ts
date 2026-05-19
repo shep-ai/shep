@@ -27,6 +27,7 @@ import type { IBusinessUnitRepository } from '../../../application/ports/output/
 import type { ICloudEnvironmentRepository } from '../../../application/ports/output/repositories/cloud-environment-repository.interface.js';
 import type { IFindingRepository } from '../../../application/ports/output/repositories/finding-repository.interface.js';
 import type { IOwnerRepository } from '../../../application/ports/output/repositories/owner-repository.interface.js';
+import type { IRiskScoreRepository } from '../../../application/ports/output/repositories/risk-score-repository.interface.js';
 import type { IServiceRepository } from '../../../application/ports/output/repositories/service-repository.interface.js';
 import type { ITeamRepository } from '../../../application/ports/output/repositories/team-repository.interface.js';
 
@@ -42,6 +43,7 @@ import { SQLiteBusinessUnitRepository } from '../../repositories/aspm/sqlite-bus
 import { SQLiteCloudEnvironmentRepository } from '../../repositories/aspm/sqlite-cloud-environment-repository.js';
 import { SQLiteFindingRepository } from '../../repositories/aspm/sqlite-finding-repository.js';
 import { SQLiteOwnerRepository } from '../../repositories/aspm/sqlite-owner-repository.js';
+import { SQLiteRiskScoreRepository } from '../../repositories/aspm/sqlite-risk-score-repository.js';
 import { SQLiteServiceRepository } from '../../repositories/aspm/sqlite-service-repository.js';
 import { SQLiteTeamRepository } from '../../repositories/aspm/sqlite-team-repository.js';
 
@@ -56,10 +58,13 @@ import { AssignOwnerUseCase } from '../../../application/use-cases/aspm/ownershi
 import { ImportOwnershipYamlUseCase } from '../../../application/use-cases/aspm/ownership/import-ownership-yaml.js';
 import { ListOwnersUseCase } from '../../../application/use-cases/aspm/ownership/list-owners.js';
 import { ResolveOwnershipForFindingUseCase } from '../../../application/use-cases/aspm/ownership/resolve-ownership-for-finding.js';
+import { ComputeRiskScoreForFindingUseCase } from '../../../application/use-cases/aspm/findings/compute-risk-score-for-finding.js';
 import { GetFindingUseCase } from '../../../application/use-cases/aspm/findings/get-finding.js';
 import { IngestFindingsUseCase } from '../../../application/use-cases/aspm/findings/ingest-findings.js';
 import { IngestSbomUseCase } from '../../../application/use-cases/aspm/findings/ingest-sbom.js';
 import { ListFindingsUseCase } from '../../../application/use-cases/aspm/findings/list-findings.js';
+import { RankFindingsUseCase } from '../../../application/use-cases/aspm/findings/rank-findings.js';
+import { RecomputeAllRiskScoresUseCase } from '../../../application/use-cases/aspm/findings/recompute-all-risk-scores.js';
 
 /**
  * Register ASPM repositories, ports, services, and use cases on the
@@ -81,7 +86,11 @@ export function registerAspm(container: DependencyContainer): void {
   registerPhase4Services(container);
   registerPhase4UseCases(container);
 
-  // Phases 5-10 attach below as they land:
+  // Phase 5 — Risk Scoring & Prioritization
+  registerPhase5Repositories(container);
+  registerPhase5UseCases(container);
+
+  // Phases 6-10 attach below as they land:
   //
   //   - Phase 3: SecurityFinding repository + IFindingIngestPort (SARIF).
   //   - Phase 4: ISbomPort (CycloneDX) + IExploitIntelPort (KEV+EPSS).
@@ -169,4 +178,20 @@ function registerPhase4Services(container: DependencyContainer): void {
 
 function registerPhase4UseCases(container: DependencyContainer): void {
   container.register(IngestSbomUseCase, { useClass: IngestSbomUseCase });
+}
+
+function registerPhase5Repositories(container: DependencyContainer): void {
+  container.register<IRiskScoreRepository>(ASPM_TOKENS.IRiskScoreRepository, {
+    useFactory: (c) => new SQLiteRiskScoreRepository(c.resolve<Database.Database>('Database')),
+  });
+}
+
+function registerPhase5UseCases(container: DependencyContainer): void {
+  container.register(ComputeRiskScoreForFindingUseCase, {
+    useClass: ComputeRiskScoreForFindingUseCase,
+  });
+  container.register(RecomputeAllRiskScoresUseCase, {
+    useClass: RecomputeAllRiskScoresUseCase,
+  });
+  container.register(RankFindingsUseCase, { useClass: RankFindingsUseCase });
 }
