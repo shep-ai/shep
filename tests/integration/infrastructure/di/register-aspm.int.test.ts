@@ -39,6 +39,7 @@ const PHASE_6_TOKENS = [
   ASPM_TOKENS.ISecurityPolicyRepository,
   ASPM_TOKENS.ISlaClockPort,
   ASPM_TOKENS.IRiskExceptionRepository,
+  ASPM_TOKENS.IRemediationCampaignRepository,
 ] as const;
 
 describe('registerAspm — phase 2 wiring', () => {

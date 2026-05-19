@@ -27,6 +27,7 @@ import type { IBusinessUnitRepository } from '../../../application/ports/output/
 import type { ICloudEnvironmentRepository } from '../../../application/ports/output/repositories/cloud-environment-repository.interface.js';
 import type { IFindingRepository } from '../../../application/ports/output/repositories/finding-repository.interface.js';
 import type { IOwnerRepository } from '../../../application/ports/output/repositories/owner-repository.interface.js';
+import type { IRemediationCampaignRepository } from '../../../application/ports/output/repositories/remediation-campaign-repository.interface.js';
 import type { IRiskExceptionRepository } from '../../../application/ports/output/repositories/risk-exception-repository.interface.js';
 import type { IRiskScoreRepository } from '../../../application/ports/output/repositories/risk-score-repository.interface.js';
 import type { ISecurityPolicyRepository } from '../../../application/ports/output/repositories/security-policy-repository.interface.js';
@@ -46,6 +47,7 @@ import { SQLiteBusinessUnitRepository } from '../../repositories/aspm/sqlite-bus
 import { SQLiteCloudEnvironmentRepository } from '../../repositories/aspm/sqlite-cloud-environment-repository.js';
 import { SQLiteFindingRepository } from '../../repositories/aspm/sqlite-finding-repository.js';
 import { SQLiteOwnerRepository } from '../../repositories/aspm/sqlite-owner-repository.js';
+import { SQLiteRemediationCampaignRepository } from '../../repositories/aspm/sqlite-remediation-campaign-repository.js';
 import { SQLiteRiskExceptionRepository } from '../../repositories/aspm/sqlite-risk-exception-repository.js';
 import { SQLiteRiskScoreRepository } from '../../repositories/aspm/sqlite-risk-score-repository.js';
 import { SQLiteSecurityPolicyRepository } from '../../repositories/aspm/sqlite-security-policy-repository.js';
@@ -64,6 +66,9 @@ import { AssignOwnerUseCase } from '../../../application/use-cases/aspm/ownershi
 import { ImportOwnershipYamlUseCase } from '../../../application/use-cases/aspm/ownership/import-ownership-yaml.js';
 import { ListOwnersUseCase } from '../../../application/use-cases/aspm/ownership/list-owners.js';
 import { ResolveOwnershipForFindingUseCase } from '../../../application/use-cases/aspm/ownership/resolve-ownership-for-finding.js';
+import { DeclareExceptionUseCase } from '../../../application/use-cases/aspm/exceptions/declare-exception.js';
+import { ListExpiringExceptionsUseCase } from '../../../application/use-cases/aspm/exceptions/list-expiring-exceptions.js';
+import { RevokeExceptionUseCase } from '../../../application/use-cases/aspm/exceptions/revoke-exception.js';
 import { ComputeRiskScoreForFindingUseCase } from '../../../application/use-cases/aspm/findings/compute-risk-score-for-finding.js';
 import { GetFindingUseCase } from '../../../application/use-cases/aspm/findings/get-finding.js';
 import { IngestFindingsUseCase } from '../../../application/use-cases/aspm/findings/ingest-findings.js';
@@ -99,6 +104,7 @@ export function registerAspm(container: DependencyContainer): void {
   // Phase 6 — SLA, Remediation Campaigns & Risk Exceptions
   registerPhase6Repositories(container);
   registerPhase6Services(container);
+  registerPhase6UseCases(container);
 
   // Phases 7-10 attach below as they land:
   //
@@ -213,6 +219,10 @@ function registerPhase6Repositories(container: DependencyContainer): void {
   container.register<IRiskExceptionRepository>(ASPM_TOKENS.IRiskExceptionRepository, {
     useFactory: (c) => new SQLiteRiskExceptionRepository(c.resolve<Database.Database>('Database')),
   });
+  container.register<IRemediationCampaignRepository>(ASPM_TOKENS.IRemediationCampaignRepository, {
+    useFactory: (c) =>
+      new SQLiteRemediationCampaignRepository(c.resolve<Database.Database>('Database')),
+  });
 }
 
 function registerPhase6Services(container: DependencyContainer): void {
@@ -222,4 +232,10 @@ function registerPhase6Services(container: DependencyContainer): void {
   container.register<ISlaClockPort>(ASPM_TOKENS.ISlaClockPort, {
     useFactory: () => new SystemSlaClock(),
   });
+}
+
+function registerPhase6UseCases(container: DependencyContainer): void {
+  container.register(DeclareExceptionUseCase, { useClass: DeclareExceptionUseCase });
+  container.register(RevokeExceptionUseCase, { useClass: RevokeExceptionUseCase });
+  container.register(ListExpiringExceptionsUseCase, { useClass: ListExpiringExceptionsUseCase });
 }
