@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": "shep skill inject --session-start" }]
+      }
+    ],
+    "SessionStop": [
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": "shep skill inject --session-stop" }]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": ["Bash(shep:*)"]
+  }
+}

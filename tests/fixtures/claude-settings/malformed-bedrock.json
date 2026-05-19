@@ -1,0 +1,3 @@
+{
+  "hooks": [{ "matcher": "", "command": "bedrock hook malformed" }]
+}

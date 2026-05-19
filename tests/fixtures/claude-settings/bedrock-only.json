@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": "bedrock hook session-start" }]
+      }
+    ],
+    "SessionStop": [
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": "bedrock hook session-stop" }]
+      }
+    ]
+  }
+}

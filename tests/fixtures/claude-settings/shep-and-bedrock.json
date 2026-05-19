@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": "shep skill inject --session-start" }]
+      },
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": "bedrock hook session-start" }]
+      }
+    ],
+    "SessionStop": [
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": "shep skill inject --session-stop" }]
+      },
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": "bedrock hook session-stop" }]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": ["Bash(shep:*)", "Bash(bedrock:*)"]
+  }
+}
