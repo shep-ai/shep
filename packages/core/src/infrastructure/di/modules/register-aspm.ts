@@ -67,6 +67,7 @@ import { NoOpAiChangeRiskSignalRepository } from '../../services/aspm/noop-ai-ch
 // Use cases
 import { AssignOwnerUseCase } from '../../../application/use-cases/aspm/ownership/assign-owner.js';
 import { ImportOwnershipYamlUseCase } from '../../../application/use-cases/aspm/ownership/import-ownership-yaml.js';
+import { ListOwnerRollupsUseCase } from '../../../application/use-cases/aspm/ownership/list-owner-rollups.js';
 import { ListOwnersUseCase } from '../../../application/use-cases/aspm/ownership/list-owners.js';
 import { ResolveOwnershipForFindingUseCase } from '../../../application/use-cases/aspm/ownership/resolve-ownership-for-finding.js';
 import { CloseCampaignUseCase } from '../../../application/use-cases/aspm/campaigns/close-campaign.js';
@@ -281,4 +282,5 @@ function registerPhase7UseCases(container: DependencyContainer): void {
     useClass: ConvertFindingToWorkItemUseCase,
   });
   container.register(BulkConvertFindingsUseCase, { useClass: BulkConvertFindingsUseCase });
+  container.register(ListOwnerRollupsUseCase, { useClass: ListOwnerRollupsUseCase });
 }
