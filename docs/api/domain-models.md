@@ -502,6 +502,217 @@ enum NotificationEventType {
 
 ---
 
+## ASPM (Feature 098)
+
+The Application Security Posture Management module adds a unified
+security domain anchored on `Application`. See
+[../architecture/aspm.md](../architecture/aspm.md) for the module
+overview, ports, and ingestion flow.
+
+### Application (extended)
+
+The existing `Application` entity gains four optional ASPM context
+fields. The previous fields are unchanged.
+
+```typescript
+export type Application = SoftDeletableEntity & {
+  // …existing fields…
+  criticality?: Criticality;
+  exposure?: Exposure;
+  dataClassification?: DataClassification;
+  businessUnit?: string;
+};
+```
+
+### SecurityFinding
+
+Unified finding row produced by every ingestion adapter (SARIF v2.1.0,
+CycloneDX 1.5+, AI-change graduation). Soft-deletable for audit; dedup
+key is `(applicationId, findingDomain, ruleId, locationPath, locationLine, cveId)`.
+
+```typescript
+export type SecurityFinding = SoftDeletableEntity & {
+  applicationId: UUID;
+  serviceId?: UUID;
+  apiAssetId?: UUID;
+  cloudEnvironmentId?: UUID;
+  findingDomain: FindingDomain;
+  ruleId: string;
+  title: string;
+  description: string;
+  locationPath?: string;
+  locationLine?: number;
+  scannerRaw?: string;
+  scannerRawHash?: string;
+  rawSeverity: string;
+  canonicalSeverity: CanonicalSeverity;
+  cveId?: string;
+  cweId?: string;
+  owaspAsvsControlId?: string;
+  ownerId?: UUID;
+  state: FindingState;
+  currentRiskScoreId?: UUID;
+  workItemId?: UUID;
+  source: string;
+  discoveredAt: any;
+  lastSeenAt: any;
+  firstFixedAt?: any;
+};
+```
+
+### RiskScore
+
+Append-only history of composite scores. `SecurityFinding.currentRiskScoreId`
+points at the latest row.
+
+```typescript
+export type RiskScore = BaseEntity & {
+  findingId: UUID;
+  total: number; // 0-100
+  breakdown: RiskScoreBreakdown;
+  computedAt: any;
+  inputsHash: string;
+};
+```
+
+### Owner / Team / BusinessUnit
+
+```typescript
+export type Owner = SoftDeletableEntity & {
+  name: string;
+  handle?: string;
+  email?: string;
+  teamId?: UUID;
+};
+export type Team = SoftDeletableEntity & { name: string; businessUnitId?: UUID };
+export type BusinessUnit = SoftDeletableEntity & { name: string };
+```
+
+### Service / ApiAsset / CloudEnvironment
+
+Adjacent asset entities covering non-application risk surfaces. Each
+links back to an `Application`.
+
+```typescript
+export type Service = SoftDeletableEntity & { applicationId: UUID; name: string };
+export type ApiAsset = SoftDeletableEntity & {
+  applicationId: UUID;
+  name: string;
+  baseUrl?: string;
+};
+export type CloudEnvironment = SoftDeletableEntity & {
+  applicationId: UUID;
+  provider: string;
+  name: string;
+};
+```
+
+### RemediationCampaign
+
+Query-shaped campaigns; progress is computed at read time.
+
+```typescript
+export type RemediationCampaign = SoftDeletableEntity & {
+  name: string;
+  description: string;
+  targetQuery: FindingFilter;
+  status: CampaignStatus;
+  ownerId?: UUID;
+  dueDate?: any;
+  closedAt?: any;
+};
+```
+
+### SecurityPolicy
+
+Calendar-day SLA windows per canonical severity.
+
+```typescript
+export type SecurityPolicy = SoftDeletableEntity & {
+  name: string;
+  active: boolean;
+  slaCriticalDays: number;
+  slaHighDays: number;
+  slaMediumDays: number;
+  slaLowDays: number;
+};
+```
+
+### RiskException
+
+Self-declared with expiry + immutable audit log.
+
+```typescript
+export type RiskException = SoftDeletableEntity & {
+  findingId: UUID;
+  reason: ExceptionReason;
+  justification: string;
+  declaredBy: string;
+  declaredAt: any;
+  expiresAt: any;
+  status: RiskExceptionStatus;
+};
+```
+
+### ComplianceControl
+
+Per-framework rows linkable to findings.
+
+```typescript
+export type ComplianceControl = SoftDeletableEntity & {
+  frameworkId: ComplianceFramework;
+  controlId: string;
+  title: string;
+  description: string;
+};
+```
+
+### AiChangeRiskSignal
+
+Dedicated review queue entry for risk introduced by AI-generated
+changes. Graduates into a `SecurityFinding` when confirmed.
+
+```typescript
+export type AiChangeRiskSignal = SoftDeletableEntity & {
+  applicationId: UUID;
+  agentSessionId?: string;
+  signalType: AiSignalType;
+  severity: CanonicalSeverity;
+  summary: string;
+  evidence?: string;
+  state: AiSignalState;
+  ownerId?: UUID;
+  graduatedFindingId?: UUID;
+  discoveredAt: any;
+  resolvedAt?: any;
+};
+```
+
+### ASPM Value Objects
+
+- `FindingFilter` — typed filter reused by list / rank / campaign target.
+- `RiskScoreBreakdown` — per-contribution risk score components.
+- `SLAWindow` — calendar-day window per canonical severity.
+- `CVEReference`, `OwnershipPath` — descriptive value objects.
+
+### ASPM Enums
+
+- `CanonicalSeverity` — `Critical | High | Medium | Low | Info`.
+- `FindingDomain` — `Code | Dependency | Secret | Container | Cloud | Api | Identity | Runtime | Compliance | Ai`.
+- `FindingState` — `Open | Triaged | InProgress | Resolved | Closed | Exception`.
+- `Exposure` — `Internet | Internal | Airgapped | Unknown`.
+- `Criticality` — `Tier1 | Tier2 | Tier3`.
+- `DataClassification` — `Public | Internal | Confidential | Restricted`.
+- `ExceptionReason` — `FalsePositive | AcceptedRisk | CompensatingControl | NotApplicable | Other`.
+- `RiskExceptionStatus` — `Active | Expired | Revoked`.
+- `CampaignStatus` — `Draft | Active | Paused | Completed | Cancelled`.
+- `SlaState` — `Healthy | AtRisk | Breached`.
+- `AiSignalType` — `SecretInDiff | HighRiskDependencyAdded | LargeUnreviewedDiff | LicenseViolation | PromptInjectionShape | Other`.
+- `AiSignalState` — `Open | Acknowledged | GraduatedToFinding | Dismissed | Resolved`.
+- `ComplianceFramework` — `OwaspAsvs | CweTop25`.
+
+---
+
 ## Maintaining This Document
 
 **Update when:**
