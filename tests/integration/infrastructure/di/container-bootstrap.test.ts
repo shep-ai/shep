@@ -111,6 +111,10 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'UpgradeCliUseCase',
   'WatchApplicationFilesUseCase',
   'WriteApplicationFileUseCase',
+  // Bedrock integration (feature 098)
+  'EnableBedrockForApplicationUseCase',
+  'RunBedrockLifecycleUseCase',
+  'CheckBedrockHealthUseCase',
 ] as const;
 
 /**

@@ -18,3 +18,13 @@ export const IBedrockIntegrationServiceToken = 'IBedrockIntegrationService' as c
 
 /** Resolves to `ClaudeSettingsReconciler`. */
 export const IClaudeSettingsReconcilerToken = 'IClaudeSettingsReconciler' as const;
+
+/** Resolves to `EnableBedrockForApplicationUseCase`. */
+export const EnableBedrockForApplicationUseCaseToken =
+  'EnableBedrockForApplicationUseCase' as const;
+
+/** Resolves to `RunBedrockLifecycleUseCase`. */
+export const RunBedrockLifecycleUseCaseToken = 'RunBedrockLifecycleUseCase' as const;
+
+/** Resolves to `CheckBedrockHealthUseCase`. */
+export const CheckBedrockHealthUseCaseToken = 'CheckBedrockHealthUseCase' as const;

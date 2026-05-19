@@ -31,6 +31,7 @@ export interface IApplicationRepository {
         | 'cloudDeploymentUrl'
         | 'cloudDeploymentError'
         | 'lastDeployedAt'
+        | 'bedrockEnabled'
       >
     >
   ): Promise<void>;
