@@ -28,6 +28,7 @@ import type { ICloudEnvironmentRepository } from '../../../application/ports/out
 import type { IFindingRepository } from '../../../application/ports/output/repositories/finding-repository.interface.js';
 import type { IOwnerRepository } from '../../../application/ports/output/repositories/owner-repository.interface.js';
 import type { IRiskScoreRepository } from '../../../application/ports/output/repositories/risk-score-repository.interface.js';
+import type { ISecurityPolicyRepository } from '../../../application/ports/output/repositories/security-policy-repository.interface.js';
 import type { IServiceRepository } from '../../../application/ports/output/repositories/service-repository.interface.js';
 import type { ITeamRepository } from '../../../application/ports/output/repositories/team-repository.interface.js';
 
@@ -36,6 +37,7 @@ import type { IExploitIntelPort } from '../../../application/ports/output/servic
 import type { IFindingIngestPort } from '../../../application/ports/output/services/finding-ingest-port.interface.js';
 import type { IOwnershipYamlReader } from '../../../application/ports/output/services/ownership-yaml-reader.interface.js';
 import type { ISbomPort } from '../../../application/ports/output/services/sbom-port.interface.js';
+import type { ISlaClockPort } from '../../../application/ports/output/services/sla-clock-port.interface.js';
 
 // Concrete repositories
 import { SQLiteApiAssetRepository } from '../../repositories/aspm/sqlite-api-asset-repository.js';
@@ -44,6 +46,7 @@ import { SQLiteCloudEnvironmentRepository } from '../../repositories/aspm/sqlite
 import { SQLiteFindingRepository } from '../../repositories/aspm/sqlite-finding-repository.js';
 import { SQLiteOwnerRepository } from '../../repositories/aspm/sqlite-owner-repository.js';
 import { SQLiteRiskScoreRepository } from '../../repositories/aspm/sqlite-risk-score-repository.js';
+import { SQLiteSecurityPolicyRepository } from '../../repositories/aspm/sqlite-security-policy-repository.js';
 import { SQLiteServiceRepository } from '../../repositories/aspm/sqlite-service-repository.js';
 import { SQLiteTeamRepository } from '../../repositories/aspm/sqlite-team-repository.js';
 
@@ -52,6 +55,7 @@ import { CycloneDxSbomAdapter } from '../../services/aspm/cyclonedx-sbom-adapter
 import { ExploitIntelAdapter } from '../../services/aspm/exploit-intel-adapter.js';
 import { OwnershipYamlReader } from '../../services/aspm/ownership-yaml-reader.js';
 import { SarifIngestAdapter } from '../../services/aspm/sarif-ingest-adapter.js';
+import { SystemSlaClock } from '../../services/aspm/system-sla-clock.js';
 
 // Use cases
 import { AssignOwnerUseCase } from '../../../application/use-cases/aspm/ownership/assign-owner.js';
@@ -90,7 +94,11 @@ export function registerAspm(container: DependencyContainer): void {
   registerPhase5Repositories(container);
   registerPhase5UseCases(container);
 
-  // Phases 6-10 attach below as they land:
+  // Phase 6 — SLA, Remediation Campaigns & Risk Exceptions
+  registerPhase6Repositories(container);
+  registerPhase6Services(container);
+
+  // Phases 7-10 attach below as they land:
   //
   //   - Phase 3: SecurityFinding repository + IFindingIngestPort (SARIF).
   //   - Phase 4: ISbomPort (CycloneDX) + IExploitIntelPort (KEV+EPSS).
@@ -194,4 +202,19 @@ function registerPhase5UseCases(container: DependencyContainer): void {
     useClass: RecomputeAllRiskScoresUseCase,
   });
   container.register(RankFindingsUseCase, { useClass: RankFindingsUseCase });
+}
+
+function registerPhase6Repositories(container: DependencyContainer): void {
+  container.register<ISecurityPolicyRepository>(ASPM_TOKENS.ISecurityPolicyRepository, {
+    useFactory: (c) => new SQLiteSecurityPolicyRepository(c.resolve<Database.Database>('Database')),
+  });
+}
+
+function registerPhase6Services(container: DependencyContainer): void {
+  // SystemSlaClock has no constructor params and is intentionally not
+  // decorated — register via factory so tests can `container.registerInstance`
+  // a fake clock without fighting tsyringe metadata.
+  container.register<ISlaClockPort>(ASPM_TOKENS.ISlaClockPort, {
+    useFactory: () => new SystemSlaClock(),
+  });
 }

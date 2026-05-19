@@ -35,6 +35,8 @@ const PHASE_2_TOKENS = [
 
 const PHASE_3_TOKENS = [ASPM_TOKENS.IFindingRepository] as const;
 
+const PHASE_6_TOKENS = [ASPM_TOKENS.ISecurityPolicyRepository, ASPM_TOKENS.ISlaClockPort] as const;
+
 describe('registerAspm — phase 2 wiring', () => {
   let container: DependencyContainer;
   let db: Database.Database;
@@ -58,6 +60,10 @@ describe('registerAspm — phase 2 wiring', () => {
   });
 
   it.each(PHASE_3_TOKENS)('resolves the %s token', (token) => {
+    expect(container.resolve(token)).not.toBeNull();
+  });
+
+  it.each(PHASE_6_TOKENS)('resolves the %s token', (token) => {
     expect(container.resolve(token)).not.toBeNull();
   });
 
