@@ -1,31 +1,607 @@
 # Research Artifact (YAML)
 # This is the source of truth. Markdown is auto-generated from this file.
 
-name: project-bedrock-integration
-summary: Technical analysis for 098-project-bedrock-integration
+name: "project-bedrock-integration"
+summary: >
+  project-bedrock plugs into shep as a first-class tool through three layered surfaces:
+  a JSON tool descriptor (loaded automatically by tool-metadata.ts), an output port
+  IBedrockIntegrationService backed by a child_process.spawn-based adapter, and three
+  small use cases (EnableBedrockForApplication, RunBedrockLifecycle, CheckBedrockHealth)
+  wired into the existing tsyringe DI container. The .claude/ collision is resolved by a
+  diff-aware merge helper that runs SkillInjectorService first, runs `bedrock init`
+  second, then reconciles the resulting settings.json arrays, keeping bedrock as an
+  opaque upstream dependency.
 
-# Relationships
 relatedFeatures: []
-technologies: []
-relatedLinks: []
 
-# Structured technology decisions
-decisions: []
+technologies:
+  - "Node.js / TypeScript (shep core)"
+  - "tsyringe (DI container)"
+  - "TypeSpec (tsp/) for domain models"
+  - "Python 3.9+ / pipx (project-bedrock runtime)"
+  - "Commander.js (CLI surface)"
+  - "Next.js 15 (web UI surface)"
+  - "Vitest (unit/integration tests)"
+  - "better-sqlite3 + umzug (SQLite migrations)"
+  - "Node child_process.spawn (subprocess invocation)"
+  - "Storybook 9 (web component stories)"
 
-# Open questions (should be resolved by end of research)
-openQuestions: []
+relatedLinks:
+  - title: "project-bedrock GitHub repo"
+    url: "https://github.com/robotaitai/project-bedrock"
+  - title: "project-bedrock on PyPI"
+    url: "https://pypi.org/project/project-bedrock/"
+  - title: "shep tool descriptor schema (CLAUDE.md)"
+    url: "packages/core/src/infrastructure/services/tool-installer/tools/CLAUDE.md"
+  - title: "ToolMetadataProvider loader"
+    url: "packages/core/src/infrastructure/services/tool-installer/tool-metadata.ts"
+  - title: "SkillInjectorService (existing .claude/ writer)"
+    url: "packages/core/src/infrastructure/services/skill-injector.service.ts"
+  - title: "registerServices DI module"
+    url: "packages/core/src/infrastructure/di/modules/register-services.ts"
+  - title: "Migration pattern (094-add-feature-application-id-and-build-mode)"
+    url: "packages/core/src/infrastructure/persistence/sqlite/migrations/094-add-feature-application-id-and-build-mode.ts"
+  - title: "Application TypeSpec entity"
+    url: "tsp/domain/entities/application.tsp"
+  - title: "Clean architecture overview"
+    url: "docs/architecture/clean-architecture.md"
+  - title: "TypeSpec guide"
+    url: "docs/development/typespec-guide.md"
+  - title: "TDD guide"
+    url: "docs/development/tdd-guide.md"
 
-# Markdown content (the full research document)
+decisions:
+  - title: "Tool descriptor — register bedrock via JSON, no loader changes"
+    chosen: "Add `project-bedrock.json` to tool-installer/tools/; rely on existing dynamic loader; use `cli-agent` tag (closest existing match) plus a new `memory` tag if the union is widened in this feature."
+    rejected:
+      - "Bespoke registration code path inside ToolMetadataProvider — duplicates work the JSON loader already does and breaks the open/closed pattern every other tool follows."
+      - "Embed bedrock metadata inside the new BedrockIntegrationService — couples discoverability (web tools registry) to a service that may not be resolved on cold start; tools registry today reads from TOOL_METADATA only."
+    rationale: >
+      `tool-metadata.ts` already walks the tools/ directory at module load and validates
+      required fields. A single JSON file is the minimum-change registration surface and
+      automatically appears in the web tools registry view, satisfying FR-14 with zero
+      code in the loader. The descriptor's `tags` union (`'ide'|'cli-agent'|'vcs'|'terminal'`)
+      does not currently include `memory`/`ai-context`/`python`, so the descriptor will
+      use `cli-agent` for an out-of-the-box fit; we will widen the union in a single
+      typed location (tool-metadata.ts) only if product wants the `memory` tag to filter
+      the registry view separately. `packageManager: "pipx"` is a free-form label —
+      requires no schema change.
+
+  - title: "Install command shape — pipx per OS with a typed pipx-missing error"
+    chosen: "`commands.linux/darwin/win32 = \"pipx install project-bedrock\"`; tool-installer surfaces a typed PipxNotInstalledError when the pipx binary is missing, with remediation strings per platform."
+    rejected:
+      - "`python3 -m pip install --user project-bedrock` — installs into the global user site-packages where `bedrock` may not appear on PATH; pipx is the upstream-recommended install path."
+      - "Wrapping pipx in a shell script (e.g. `if ! which pipx; then ...; fi`) — violates the `shell: true` ban and the cross-platform rule; cannot work uniformly on Windows."
+    rationale: >
+      pipx is the upstream-recommended install method (PyPI page links to it) and produces
+      isolated venvs with binaries on PATH on every supported OS. Surfacing PipxNotInstalledError
+      from the verify-then-install path matches NFR-6 (failure surfacing) and lets the
+      CLI/web present platform-specific remediation (`brew install pipx`,
+      `python3 -m pip install --user pipx`, `pip install --user pipx`). pipx itself is
+      out of scope to install automatically — adding a second installer cascade would
+      double the failure surface for unclear benefit.
+
+  - title: "Output port surface — IBedrockIntegrationService with four lifecycle methods"
+    chosen: "`init(opts) | sync(opts) | doctor() | ship(opts)` returning typed result objects. No infrastructure types, no Node-specific signatures."
+    rejected:
+      - "Generic `run(action, opts)` method that takes a string subcommand — pushes magic-string handling into the adapter and use cases (violates `No Magic Values` rule in code-quality.md)."
+      - "Split into four micro-ports (IBedrockInit, IBedrockSync, ...) — every port has the same dependencies (process runner, .claude/ merge helper) so splitting just inflates the DI graph and use-case constructor lists with no isolation benefit."
+    rationale: >
+      A single port with four typed methods matches the way `ISkillInjectorService` and
+      `IWebhookService` model their domain — small, focused, presentation-agnostic. Each
+      method returns a structured result (stdout/stderr/exitCode/parsed health for
+      doctor) so presentation layers render uniformly. The methods correspond 1:1 to
+      bedrock's public CLI; if upstream adds a subcommand we can add a port method
+      without breaking existing callers.
+
+  - title: "Process invocation — inject the existing 'ExecFunction' token, not spawn directly"
+    chosen: "Constructor-inject the `'ExecFunction'` token already registered in register-services.ts; use spawn directly only for long-running lifecycle commands whose stdout/stderr must stream to the user (init, sync). For doctor + verify, ExecFunction is sufficient."
+    rejected:
+      - "Direct `import { spawn } from 'node:child_process'` inside the adapter — bypasses the per-platform `ExecFunction` (which already handles the Windows .cmd quoting quirk) and is harder to unit-test because spawn isn't mockable through DI."
+      - "Define a brand-new `IProcessRunner` port — adds an abstraction with one consumer (this adapter); SkillInjectorService already proves ExecFunction is sufficient for typical subprocess work; new port would also need to model streaming + interruption."
+    rationale: >
+      Register-services.ts wraps execFile in a Windows-aware shim that quotes args and
+      sets `windowsHide: true`; SkillInjectorService consumes it via constructor
+      injection. We adopt the same pattern: `@inject('ExecFunction') execFile` covers
+      doctor/verify/short commands. For `init` and `sync`, which can be long-running
+      and emit progress, we fall through to `child_process.spawn` with `windowsHide: true`,
+      args as an array, never `shell: true`, and pass `stdio: ['ignore','pipe','pipe']`
+      so the parent can be a daemon without blocking. Both pathways live behind the same
+      port method signatures, so use cases are unaware.
+
+  - title: ".claude/ reconciliation — run-after with array-merge helper"
+    chosen: "SkillInjectorService runs first (existing behaviour). EnableBedrockForApplication then snapshots `.claude/settings.json` (if present), runs `bedrock init`, and a `ClaudeSettingsMerger` helper reconciles the post-state by re-injecting any shep entries that were displaced, deduping by stable hook signature."
+    rejected:
+      - "Mirror bedrock's hook payload from a template inside shep and disable `bedrock init`'s hook write — couples shep to bedrock's internal hook format; breaks whenever bedrock changes its payload upstream."
+      - "Run `bedrock init` first, then teach SkillInjectorService to merge on top — inverts current ordering and turns a focused service (SkillInjectorService) into a merge-aware writer for every code path it touches; far larger blast radius than a contained helper."
+    rationale: >
+      Selected resolution from the spec's open-question table. Bedrock stays an opaque
+      upstream — we never parse or regenerate its hook payload, only protect shep's
+      own contributions. The merger is bounded (one JSON file, two known hook array
+      keys), pure-functional over the parsed JSON, and is exercised by fixture-based
+      integration tests. If bedrock ever changes its hook semantics, the merger still
+      protects shep's entries while passing bedrock's through unchanged.
+
+  - title: "Persisted state — bedrockEnabled on Application entity"
+    chosen: "Add `bedrockEnabled: boolean` (default false) to `tsp/domain/entities/application.tsp`; regenerate via `pnpm tsp:compile`; migration adds `bedrock_enabled INTEGER NOT NULL DEFAULT 0` to the applications table."
+    rejected:
+      - "Filesystem-only inference (probe for `.bedrock/` and hook entries) — every read is a fs call, indistinguishable 'never enabled' vs 'enabled then files deleted', and the web UI cannot show an authoritative toggle state."
+      - "Separate `bedrock_state` sidecar table — over-modelled for a single boolean; every other per-app toggle (cloudDeploymentProvider, setupComplete) lives on Application."
+    rationale: >
+      Selected resolution from the spec. The schema change is one nullable boolean
+      column with a `DEFAULT 0`, mirroring the convention in migration 094 (which adds
+      `application_id` + `build_mode` to features). Idempotency is enforced via the
+      `pragma table_info(applications)` guard already used across all shep migrations.
+      `down()` stays a no-op per project convention. This is also the cheapest path to
+      a deterministic web toggle and an idempotent EnableBedrockForApplication use case.
+
+  - title: "Lifecycle enum — TypeSpec-defined BedrockLifecycleAction"
+    chosen: "Define `enum BedrockLifecycleAction { Init: \"init\", Sync: \"sync\", Ship: \"ship\" }` in `tsp/domain/value-objects/` (or a new `bedrock.tsp`); regenerate to `domain/generated/output.ts`; consume the enum across the use case, CLI, and web layers."
+    rejected:
+      - "Plain TS union type `type BedrockAction = 'init' | 'sync' | 'ship'` — bypasses the TypeSpec-first rule and the code-quality.md ban on magic strings used in branching."
+      - "Three separate use cases (`InitBedrockUseCase`, `SyncBedrockUseCase`, `ShipBedrockUseCase`) — triples the wiring + tests for actions that share the exact same orchestration (resolve port → call method → format result)."
+    rationale: >
+      The MANDATORY TypeSpec-first rule (CLAUDE.md) says every fixed set of domain
+      values is a TypeSpec enum. The four bedrock subcommands satisfy that definition
+      and are referenced from multiple layers (CLI argv parsing, use-case dispatch,
+      web action validation). One enum + one dispatching use case (`RunBedrockLifecycle`)
+      keeps the surface area minimal while still being typed end-to-end. `doctor`
+      stays separate because its return shape (per-tier health result) differs
+      structurally from init/sync/ship's stdout-based shape.
+
+  - title: "Health check — three subprocess calls with typed BedrockHealth result"
+    chosen: "`doctor()` runs `python3 --version`, then `pipx --version`, then `bedrock --version`. Each emits a `BedrockTierStatus { tier, status: 'ok'|'missing'|'error', detail?, remediation? }`. Aggregated into `BedrockHealth { python, pipx, bedrock, overall }`."
+    rejected:
+      - "Verify only `bedrock --version` and infer the rest — masks root cause; user sees `command not found: bedrock` instead of `Python 3.9+ not installed`."
+      - "Skip verification entirely; let runtime fail — violates the never-silently-fail rule in CLAUDE.md and produces opaque downstream errors."
+    rationale: >
+      Selected resolution from the spec. The three subprocess calls each complete in
+      well under 500ms on a healthy machine (NFR-5: total <2s budget). Parsing Python
+      version uses a single regex `/^Python (\d+)\.(\d+)/` over the captured stdout;
+      `pipx --version` and `bedrock --version` are presence-only checks. Returning a
+      typed BedrockHealth lets presentation layers render structured output (CLI
+      table, web banner) without re-parsing.
+
+  - title: "Use case decomposition — three use cases, one orchestrating"
+    chosen: "`EnableBedrockForApplication` (persist + init + reconcile), `RunBedrockLifecycle` (dispatch Init|Sync|Ship after guard-checking bedrockEnabled), `CheckBedrockHealth` (wrap doctor())."
+    rejected:
+      - "Single fat `BedrockOrchestratorUseCase` handling enable/disable/init/sync/ship/doctor — far exceeds the 300-line per-file guideline and mixes idempotent state mutation with stateless lifecycle calls."
+      - "One use case per CLI subcommand (init/sync/ship/doctor each its own class) — duplicates the resolve-port-call-method-format pattern five times; a typed enum + dispatch is the smaller cohesive surface."
+    rationale: >
+      Three use cases align with the three distinct responsibilities: (1) toggle state +
+      initial bootstrap with side effects, (2) stateless lifecycle dispatch gated by
+      state, (3) read-only health probe. Each is independently testable with mocked
+      ports per TDD discipline (NFR-3). RunBedrockLifecycle's enum-dispatch keeps the
+      CLI wrapper thin: every subcommand is a one-line `useCase.execute({action, appId})`.
+
+  - title: "DI registration — one container.register block, string-token + concrete pairs"
+    chosen: "Register `IBedrockIntegrationService` to `BedrockIntegrationService` as a singleton in registerServices (next to ISkillInjectorService). Register each use case as singleton + string-token alias, matching the GitHub-integration pattern in registerIntegrations."
+    rejected:
+      - "Register the adapter inside registerIntegrations (the third-party-tool module) — that module is currently scoped to issue-tracker/webhook style integrations and is wired after registerServices; the bedrock adapter is consumed by use cases that may be created during application bootstrap, before registerIntegrations fires."
+      - "Module-level singleton in the adapter file — banned by the No Singletons rule in code-quality.md."
+    rationale: >
+      register-services.ts is the existing home for cross-cutting infrastructure
+      services (skill injector, tool installer, git, scaffolding). The bedrock adapter
+      fits this profile: it executes processes, touches the filesystem, has no
+      per-request state, and is consumed by use cases that may resolve at any
+      bootstrap stage. Adopting the existing pattern keeps DI ordering deterministic.
+
+  - title: "Migration filename — 101-add-bedrock-enabled-to-applications.ts"
+    chosen: "Forward-only migration with `pragma table_info(applications)` idempotency guard, `ALTER TABLE applications ADD COLUMN bedrock_enabled INTEGER NOT NULL DEFAULT 0`, no-op down()."
+    rejected:
+      - "Two migrations (add column + backfill) — backfill is unnecessary; DEFAULT 0 covers all existing rows in the same atomic statement."
+      - "Rollback-aware down() that drops the column — project convention (migrations 044, 049, 054, 094) is no-op down(); reversibility is provided by forward fixup migrations, not down()."
+    rationale: >
+      The latest migration in tree is 100-create-custom-agents.ts. The next sequential
+      number is 101. The pattern is well-established: read columns, guard, ALTER TABLE
+      with DEFAULT, no-op down. Storing as INTEGER 0/1 matches every other boolean
+      column in the SQLite schema (better-sqlite3 has no native boolean).
+
+  - title: "CLI surface — `shep bedrock <subcommand>` Commander subcommands"
+    chosen: "Create `src/presentation/cli/commands/bedrock/` containing `init.command.ts`, `sync.command.ts`, `doctor.command.ts`, `ship.command.ts`, plus a top-level `bedrock.command.ts` that registers the subcommands. Each subcommand resolves its use case from `container` and renders via `ui/index.ts`."
+    rejected:
+      - "Add the subcommand fan-out inline inside one file — violates the file-length and single-responsibility guidance; existing commands like `app`, `cycle`, `feat` already use a directory-per-command-group convention."
+      - "Wire `shep bedrock` as a single command with a `<action>` argument — collides with Commander's help generation; loses subcommand-specific flag descriptions; `shep bedrock --help` becomes uninformative."
+    rationale: >
+      Directory-per-command-group matches the existing `app/`, `cycle/`, `feat/`,
+      `intake/`, `item/`, `project/`, `repo/`, `session/`, `settings/` structure
+      under cli/commands/. The shep-cli-command-creator agent is built to scaffold
+      this exact shape: thin Commander wrapper, DI resolve, ui module for output.
+      Each subcommand will stay well under 100 LOC.
+
+  - title: "Web toggle — single Server Action posting to EnableBedrockForApplication"
+    chosen: "Add `BedrockMemoryToggle` component in `src/presentation/web/components/`. A Next.js Server Action wraps a route handler that resolves `EnableBedrockForApplicationUseCase` via `resolve()` and posts back the new state. Storybook story covers Default / Loading / Error states."
+    rejected:
+      - "Direct client-side fetch to a REST endpoint — duplicates the action wiring already in use elsewhere (cloud deploy toggle uses the action pattern); harder to type end-to-end."
+      - "Persist toggle state via a Zustand-style client store — bypasses Application entity persistence (the source of truth) and creates UI-only state that desyncs on reload."
+    rationale: >
+      Server Actions colocate the wiring with the component, keep the client bundle
+      slim, and reuse the resolve(token) container access pattern that the web
+      already uses for cloud-deploy actions. The Storybook story is mandatory (CLAUDE.md
+      rule); decorators provide mocked use-case responses for the three states.
+
+  - title: "Subprocess streaming — pipe stdout/stderr through a typed callback"
+    chosen: "`init()` and `sync()` accept an optional `onProgress: (chunk: {stream: 'stdout'|'stderr', data: string}) => void` parameter; use cases pass a callback that pipes to ILogger; the CLI passes a callback that writes to process.stdout; the web logs accumulate into the OperationLog."
+    rejected:
+      - "Buffer entire output and return as a single string — `bedrock init` may take seconds; users get no feedback; OOM risk on extreme outputs."
+      - "Force every caller to consume Node streams — leaks Node abstractions across the port boundary, violating the dependency rule (NFR-1)."
+    rationale: >
+      A typed callback is presentation-agnostic, testable (pass a jest/vitest spy in
+      unit tests), and matches how `InstallToolUseCase.execute(tool, onData)` already
+      works in `install.command.ts`. The callback shape is plain TypeScript (no Node
+      types), so the application layer stays clean.
+
+openQuestions:
+  - question: "Should the tool-descriptor `tags` union be widened to include `memory` (and optionally `ai-context`) for bedrock?"
+    resolved: true
+    options:
+      - option: "Use existing `cli-agent` tag only"
+        description: |
+          Tag bedrock as `cli-agent` (it is a CLI; it acts in service of AI agents).
+          Zero schema change; descriptor lands today; the registry filter is unchanged.
+          Trade-off: bedrock visually groups with claude-code, cursor-cli, etc., which
+          slightly stretches the tag semantics — bedrock is a memory store, not an
+          agent runtime.
+        selected: false
+      - option: "Widen tag union to include `memory`"
+        description: |
+          Add `"memory"` to the tags string-literal union in tool-metadata.ts and
+          tag bedrock with `["memory", "cli-agent"]`. Tools registry can then filter
+          on a dedicated facet. One-line type change plus a docs note in CLAUDE.md.
+        selected: true
+      - option: "Introduce a separate `category` field"
+        description: |
+          Add `category: 'tool' | 'agent' | 'memory' | …` alongside `tags`. Cleanest
+          long-term taxonomy but doubles the metadata surface for one new entry —
+          over-engineered for M.
+        selected: false
+    selectionRationale: >
+      Widening the union is a one-line TS change and a docs update, and correctly
+      conveys what bedrock is to the user browsing the registry. `cli-agent` is
+      misleading (bedrock is not an agent runtime); a new `category` axis is over-engineered
+      for a single new tool. Selecting "memory" also unblocks future related tools
+      (mem0, etc.) without further schema churn.
+
+  - question: "How should the BedrockIntegrationService discover the project root / worktree path that `bedrock` must operate inside?"
+    resolved: true
+    options:
+      - option: "Pass cwd explicitly through every port method"
+        description: |
+          `init({ cwd })`, `sync({ cwd })`, etc. Use cases resolve the worktree path
+          from the Application repository (existing repositoryPath/additionalPaths
+          fields) and pass it down. Pure, no hidden state, easy to test.
+        selected: true
+      - option: "Resolve cwd via injected IWorktreePathProvider inside the adapter"
+        description: |
+          Adapter calls a provider to compute the right path. Looks tidy but hides
+          a dependency that varies per call (apps have multiple worktrees), and
+          forces the adapter to know domain concepts (Application ids) it shouldn't.
+        selected: false
+      - option: "Run bedrock at process.cwd() implicitly"
+        description: |
+          Whatever directory the parent process is in. Trivial today but breaks in
+          daemon mode and the web server (cwd is the shep home, not the user repo).
+        selected: false
+    selectionRationale: >
+      Passing cwd as an explicit method parameter keeps the adapter stateless and the
+      port purely behavioural — exactly the shape SkillInjectorService uses for
+      worktreePath. Resolution of the right path is a use-case concern (it knows about
+      Application and IApplicationRepository); the adapter just executes.
+
+  - question: "Should the `.claude/settings.json` merge helper live inside the adapter, beside SkillInjectorService, or in its own service?"
+    resolved: true
+    options:
+      - option: "Co-locate in the adapter as a private helper"
+        description: |
+          `BedrockIntegrationService` owns a private `mergeClaudeSettings()` helper.
+          Smallest blast radius; nobody else needs it today. Risk: if a third writer
+          to `.claude/settings.json` appears (e.g. a future MCP installer), the
+          logic must be re-extracted.
+        selected: false
+      - option: "Extract a standalone ClaudeSettingsReconciler service injected into the adapter"
+        description: |
+          New `IClaudeSettingsReconciler` port in `application/ports/output/services/`
+          + concrete `ClaudeSettingsReconciler` in `infrastructure/services/filesystem/`.
+          Independently testable with fixtures; reusable by SkillInjectorService later
+          if it needs merge semantics; one extra class to register in DI.
+        selected: true
+      - option: "Add the merge logic to SkillInjectorService"
+        description: |
+          SkillInjectorService grows a `mergeWith(other: ClaudeSettings)` API. Inverts
+          the run-after-with-merge resolution chosen in the spec; expands a focused
+          service into a settings-aware writer; couples skills and bedrock concerns.
+        selected: false
+    selectionRationale: >
+      A standalone reconciler keeps `BedrockIntegrationService` focused on subprocess
+      orchestration and isolates the only piece of logic where a bug could clobber
+      user content. The port boundary makes fixture-based integration tests trivial
+      (load before-state, load expected after-state, assert equality) and lets a
+      future caller (a hypothetical MCP installer) reuse the merge without copying
+      code. The cost is one tiny port file and one DI line — within M sizing.
+
 content: |
   ## Status
 
   - **Phase:** Research
-  - **Updated:** 2026-05-06
+  - **Updated:** 2026-05-19
+  - **Size:** M
+
+  ## Summary
+
+  project-bedrock is a Python CLI (`bedrock`) installed via pipx that writes
+  session-start / session-stop hooks into `.claude/settings.json` and maintains a
+  git-tracked `.bedrock/` directory of markdown "project memory". shep integrates it
+  through three independent surfaces:
+
+  1. **Discovery + install**: a single JSON descriptor (`project-bedrock.json`) read
+     by the existing dynamic loader in `tool-metadata.ts`, automatically appearing in
+     the web tools registry view.
+  2. **Programmatic lifecycle**: an application-layer port
+     `IBedrockIntegrationService` with four methods (`init`, `sync`, `doctor`, `ship`)
+     implemented by a `child_process.spawn` adapter under
+     `infrastructure/services/integrations/`.
+  3. **State + UX**: a `bedrockEnabled` boolean persisted on the `Application` entity
+     (TypeSpec + SQLite migration), exposed through three use cases
+     (`EnableBedrockForApplication`, `RunBedrockLifecycle`, `CheckBedrockHealth`),
+     wired into a `shep bedrock <action>` CLI command group and a single web toggle
+     on the Application detail page.
+
+  The `.claude/` collision with `SkillInjectorService` is the only non-trivial design
+  point: shep skills are written first, `bedrock init` runs second, and a small
+  `ClaudeSettingsReconciler` merges hook arrays back together with no data loss.
 
   ## Technology Decisions
 
-  TBD
+  ### 1. Tool descriptor — JSON, no loader changes
 
-  ---
+  **Chosen:** Add `project-bedrock.json` to
+  `packages/core/src/infrastructure/services/tool-installer/tools/`; the existing
+  dynamic loader picks it up automatically. Widen the `tags` union to include
+  `"memory"` so the tool registers as `["memory"]` (and `"cli-agent"` if we want
+  filtering parity with claude-code).
 
-  _To be updated during research phase_
+  **Rejected:**
+  - Bespoke registration code path — duplicates the dynamic loader, breaks open/closed.
+  - Embed metadata inside the new service — couples discoverability to a service that
+    isn't always resolved (tools registry today only reads `TOOL_METADATA`).
+
+  **Rationale:** `tool-metadata.ts` already walks the directory and validates fields.
+  This is the minimum surface needed for FR-1, FR-2, FR-14.
+
+  ### 2. Install command — pipx with typed PipxNotInstalledError
+
+  **Chosen:** `pipx install project-bedrock` on linux/darwin/win32; verify command
+  `bedrock --version`. The tool-installer's pre-install verify path emits a typed
+  domain error (with per-OS remediation) when pipx is missing.
+
+  **Rejected:**
+  - `python3 -m pip install --user` — does not guarantee PATH placement.
+  - Auto-install pipx as a cascade — doubles failure surface for unclear benefit.
+
+  **Rationale:** pipx is the upstream-recommended installer and gives the user a
+  predictable on-PATH binary on every supported OS.
+
+  ### 3. Output port — IBedrockIntegrationService with four typed methods
+
+  **Chosen:** `init(opts)`, `sync(opts)`, `doctor()`, `ship(opts)` returning typed
+  result objects. No Node-specific types in the port signature.
+
+  **Rejected:**
+  - Generic `run(action, opts)` — pushes magic strings to callers.
+  - Per-method micro-ports — same dependencies, no isolation gain.
+
+  ### 4. Process invocation — ExecFunction (DI) + spawn for streaming
+
+  **Chosen:** Inject the existing `'ExecFunction'` token for short commands
+  (`doctor`, `--version`, `ship` if non-streaming). Use `child_process.spawn` with
+  `windowsHide: true`, args-as-array, never `shell: true`, for long-running
+  streaming commands (`init`, `sync`).
+
+  **Rejected:**
+  - Direct spawn import everywhere — bypasses the Windows quoting shim.
+  - New `IProcessRunner` port — one consumer; ExecFunction already proves itself.
+
+  ### 5. `.claude/` reconciliation — run-after with array-merge helper
+
+  **Chosen:** Order is (a) SkillInjectorService writes its hooks, (b) `bedrock init`
+  runs and writes its hooks, (c) the new `IClaudeSettingsReconciler` re-applies any
+  shep entries that were displaced. Merge dedupes by stable hook signature.
+
+  **Rejected:**
+  - Mirror bedrock's payload from a shep template — couples shep to bedrock internals.
+  - Run bedrock first, then merge skills on top — inverts current ordering and
+    broadens SkillInjectorService's responsibilities.
+
+  ### 6. State — `bedrockEnabled` on Application entity
+
+  **Chosen:** TypeSpec field `bedrockEnabled: boolean` (default false) on
+  `Application`; SQLite migration 101 adds `bedrock_enabled INTEGER NOT NULL DEFAULT 0`
+  to `applications` with `pragma table_info` idempotency guard; no-op `down()`.
+
+  **Rejected:**
+  - Filesystem inference — non-authoritative; cannot distinguish never-enabled from
+    enabled-then-files-deleted.
+  - Sidecar `bedrock_state` table — over-modelled for a single boolean.
+
+  ### 7. Lifecycle enum — `BedrockLifecycleAction` in TypeSpec
+
+  **Chosen:** TypeSpec `enum BedrockLifecycleAction { Init: "init", Sync: "sync", Ship: "ship" }`
+  generated to `domain/generated/output.ts`; consumed everywhere.
+
+  **Rejected:**
+  - Plain TS union — violates the TypeSpec-first rule.
+  - Three separate use cases — triples wiring for identical orchestration shape.
+
+  ### 8. Health check — three subprocess calls, typed BedrockHealth
+
+  **Chosen:** `python3 --version` → `pipx --version` → `bedrock --version`. Each
+  returns a per-tier status (`ok | missing | error`) with remediation hint. Total
+  budget < 2 s on a healthy machine.
+
+  **Rejected:**
+  - bedrock-only check — masks root cause.
+  - No verification — violates never-silently-fail.
+
+  ### 9. Use case decomposition — three use cases
+
+  **Chosen:** `EnableBedrockForApplication`, `RunBedrockLifecycle`,
+  `CheckBedrockHealth`. RunBedrockLifecycle dispatches on the
+  `BedrockLifecycleAction` enum after guarding on `bedrockEnabled = true`.
+
+  **Rejected:**
+  - One fat orchestrator — exceeds file-length guidance, mixes concerns.
+  - One use case per action — duplicates the same orchestration shape five times.
+
+  ### 10. DI wiring — registerServices.ts
+
+  **Chosen:** Register `IBedrockIntegrationService → BedrockIntegrationService` as
+  singleton in registerServices.ts (next to ISkillInjectorService). Use cases:
+  singleton + string-token alias, mirroring the github-integration pattern in
+  registerIntegrations.ts.
+
+  **Rejected:**
+  - registerIntegrations module — wired after registerServices; risks
+    bootstrap-ordering bugs.
+  - Module-level singleton — banned by code-quality rule on global state.
+
+  ### 11. Migration — 101-add-bedrock-enabled-to-applications.ts
+
+  **Chosen:** Forward-only ALTER TABLE with idempotency guard and DEFAULT 0.
+
+  **Rejected:**
+  - Two migrations — backfill is unnecessary.
+  - Reversible down() — project convention is no-op.
+
+  ### 12. CLI surface — `src/presentation/cli/commands/bedrock/`
+
+  **Chosen:** Directory with four thin command files (`init.command.ts`,
+  `sync.command.ts`, `doctor.command.ts`, `ship.command.ts`) plus a top-level
+  `bedrock.command.ts` registering them. Each resolves its use case from
+  `container` and renders via `ui/index.ts`.
+
+  **Rejected:**
+  - Inline all subcommands in one file — violates file-length and matches no
+    existing command group.
+  - Single command with `<action>` argument — degrades `--help`.
+
+  ### 13. Web toggle — Server Action + EnableBedrockForApplicationUseCase
+
+  **Chosen:** `BedrockMemoryToggle` component on the Application detail page; Server
+  Action wraps a route handler that resolves the use case via `resolve(token)`.
+  Colocated `.stories.tsx` covers Default / Loading / Error.
+
+  **Rejected:**
+  - Client-side fetch — duplicates the action pattern used by cloud-deploy.
+  - Client-only store — desyncs on reload; bypasses the persisted source of truth.
+
+  ### 14. Streaming output — typed onProgress callback
+
+  **Chosen:** `init(opts)` / `sync(opts)` accept an optional
+  `onProgress: (chunk: { stream, data }) => void`. CLI pipes to `process.stdout`,
+  web logs to OperationLog, tests pass a vitest spy. Mirrors `InstallToolUseCase`.
+
+  **Rejected:**
+  - Buffer entire output — risks long blank periods on slow runs.
+  - Return Node streams — leaks infrastructure into the port boundary.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | `node:child_process` (built-in) | spawn/execFile bedrock | Use | Already pattern-of-record across shep services; no new dep. |
+  | `node:fs/promises` (built-in) | Read/write `.claude/settings.json` | Use | Same pattern as SkillInjectorService. |
+  | `node:path` (built-in) | Cross-platform path join | Use | Required by cross-platform rules. |
+  | `tsyringe` (existing) | DI registration | Use | Existing container; one new singleton + use-case factories. |
+  | `commander` (existing) | CLI subcommand wiring | Use | Existing CLI surface; one new command group. |
+  | `umzug` + `better-sqlite3` (existing) | Migration runner | Use | One new migration file matches the existing pattern. |
+  | `vitest` (existing) | Unit + integration tests | Use | TDD requirement. |
+  | `execa` | Subprocess wrapper | Reject | The injected ExecFunction already exists and handles the Windows quoting quirk; adding a new dep duplicates work. |
+  | `zod` for input validation | Validate port inputs | Reject | Inputs are typed via TypeSpec-generated interfaces; runtime validation at the use-case boundary is unnecessary. |
+  | `dotenv` for bedrock config | Detect bedrock config files | Reject | bedrock owns its own config; shep should not parse it. |
+
+  ## Security Considerations
+
+  - **Subprocess argument injection.** All `bedrock`/`pipx`/`python3` calls MUST pass
+    arguments as arrays, never via string concatenation. `shell: true` is forbidden
+    (banned by packages/CLAUDE.md). User-supplied paths (cwd) are validated for
+    existence via `fs.access` before being passed to spawn — same precondition the
+    SkillInjectorService applies.
+  - **`.claude/settings.json` parsing.** The reconciler reads JSON with
+    `JSON.parse` only after a size guard (reject > 1 MB; settings files are typically
+    < 10 KB) and treats unknown shapes as opaque (we only modify known hook arrays).
+    Any parse failure aborts the merge and surfaces a typed error — never best-effort
+    rewriting on malformed input.
+  - **Path traversal.** The adapter never accepts skill-name-style identifiers from
+    the user; cwd is derived from the Application's persisted repositoryPath, which
+    is already validated upstream in `repositoryPath` write paths.
+  - **pipx supply chain.** project-bedrock is installed from PyPI by pipx; pipx
+    pins its own resolution. shep does not pin the bedrock version explicitly —
+    the user controls upgrade cadence. If we ever ship a known-good version pin,
+    it goes in the JSON descriptor's `commands.*` strings.
+  - **No secrets touched.** bedrock memory files are markdown that the user
+    explicitly commits. shep never reads or transmits their contents.
+  - **Windows console window leak.** Every subprocess spawn sets `windowsHide: true`
+    to prevent flashing cmd windows on Windows (NFR-2).
+
+  ## Performance Implications
+
+  - **doctor() budget (NFR-5):** three subprocess invocations, each `--version` or
+    equivalent. On macOS dev box benchmark, each completes in 60–250 ms; total well
+    under the 2 s budget.
+  - **init / sync streaming:** stdout/stderr are piped through the `onProgress`
+    callback as they arrive; no in-memory accumulation past the chunk size. Memory
+    footprint is constant regardless of bedrock's output volume.
+  - **`.claude/settings.json` merge:** files are tiny (< 10 KB typical); parse +
+    merge + serialize is sub-millisecond. The reconciler is called at most once per
+    `EnableBedrockForApplication` invocation, which is itself rare (one-shot per app).
+  - **DI cold-start cost:** one new singleton + three use-case registrations adds
+    ~100 µs to bootstrap; negligible against existing graph.
+  - **Web tools registry render:** unaffected — the descriptor is parsed at module
+    load alongside existing entries.
+
+  ## Architecture Notes
+
+  - **Dependency rule (NFR-1).** The port `IBedrockIntegrationService` lives in
+    `application/ports/output/services/`; it references only generated domain types
+    (`BedrockLifecycleAction`, `BedrockHealth`) plus pure-TS option records. The
+    adapter `BedrockIntegrationService` is the only file allowed to import
+    `node:child_process`. Use cases inject the port by string token (`'IBedrockIntegrationService'`)
+    — never the concrete class.
+  - **Pluggable-tool pattern reuse.** The JSON descriptor approach reuses the open/closed
+    behaviour of `tool-metadata.ts` exactly the way every other tool already does.
+    No code modification is required in the loader; the descriptor file IS the
+    extension point.
+  - **Persisted state alignment.** Adding `bedrockEnabled` to Application mirrors
+    the way `cloudDeploymentProvider` and `setupComplete` already model
+    per-application toggles. The web toggle, CLI flags, and use cases all read /
+    write through `IApplicationRepository`, never through filesystem probing.
+  - **CLI command group convention.** `cli/commands/bedrock/` is the same shape
+    used for `app/`, `cycle/`, `feat/`, `intake/`, etc. The shep-cli-command-creator
+    agent is designed to scaffold this exact layout.
+  - **Storybook discipline.** The mandatory `.stories.tsx` for `BedrockMemoryToggle`
+    covers Default / Loading / Error states using decorators that mock the Server
+    Action response. No new mock infrastructure required — `.storybook/mocks/`
+    already supports this pattern.
+  - **Future-proofing.** The reconciler being its own port means a future MCP
+    installer (or any third writer to `.claude/settings.json`) can reuse the merge
+    semantics without copying logic. The `BedrockLifecycleAction` enum can grow
+    additional actions (e.g. `prune`, `export`) without changing the dispatch use
+    case's signature.
+
+  ## Open Questions (Resolved)
+
+  1. **Tag union extension** — Selected: widen `tags` union to include `"memory"`.
+     Bedrock tags as `["memory"]`. One-line type change.
+  2. **CWD discovery** — Selected: explicit `cwd` parameter on every port method,
+     resolved by use cases from `Application.repositoryPath`.
+  3. **Reconciler placement** — Selected: standalone `IClaudeSettingsReconciler`
+     port + adapter, injected into `BedrockIntegrationService`.
+
+  ## Out of Scope
+
+  - Bedrock memory browser UI (deferred to a future L feature).
+  - Bidirectional sync of bedrock memory into shep's own context store.
+  - Auto-detection of bedrock-managed projects without explicit enable.
+  - Version-pinning bedrock from shep.
+  - Disable/uninstall flow beyond setting `bedrockEnabled = false` (the descriptor's
+    uninstall path is the user's responsibility via pipx).
