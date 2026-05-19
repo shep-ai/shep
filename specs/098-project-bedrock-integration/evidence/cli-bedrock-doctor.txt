@@ -1,0 +1,15 @@
+
+> @shepai/cli@1.204.1 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-project-bedrock-integration
+> tsx src/presentation/cli/index.ts bedrock doctor
+
+
+  Bedrock prerequisites (3)
+
+  Tier        Status      Detail                                  
+  python3     ok          3.11.14
+  pipx        missing     —
+  bedrock     missing     —
+
+ℹ pipx: Install pipx with `brew install pipx && pipx ensurepath`, then reopen your terminal.
+ℹ bedrock: Run `pipx ensurepath` and reopen your terminal. If pipx is missing entirely, install it first and then run `pipx install project-bedrock`.
+ ELIFECYCLE  Command failed with exit code 1.

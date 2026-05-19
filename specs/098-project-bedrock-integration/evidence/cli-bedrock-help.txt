@@ -1,0 +1,19 @@
+
+> @shepai/cli@1.204.1 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-project-bedrock-integration
+> tsx src/presentation/cli/index.ts bedrock --help
+
+Usage: shep bedrock [options] [command]
+
+Manage project-bedrock memory for an application
+
+Options:
+  -h, --help      display help for command
+
+Commands:
+  init [options]  Enable bedrock memory for an application and run `bedrock
+                  init`
+  sync [options]  Reconcile bedrock memory with git state inside the application
+                  worktree
+  doctor          Verify bedrock prerequisites (Python, pipx, bedrock binary)
+  ship [options]  Commit bedrock memory updates inside the application worktree
+  help [command]  display help for command

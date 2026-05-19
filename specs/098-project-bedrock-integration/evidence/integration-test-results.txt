@@ -1,0 +1,28 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-project-bedrock-integration[39m
+
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/tool-installer/project-bedrock-descriptor.test.ts[2m > [22mproject-bedrock tool descriptor[2m > [22mis exposed by ToolMetadataProvider after module load[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/tool-installer/project-bedrock-descriptor.test.ts[2m > [22mproject-bedrock tool descriptor[2m > [22mhas the expected core metadata[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/tool-installer/project-bedrock-descriptor.test.ts[2m > [22mproject-bedrock tool descriptor[2m > [22mis tagged ['memory'][32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/tool-installer/project-bedrock-descriptor.test.ts[2m > [22mproject-bedrock tool descriptor[2m > [22mships a pipx install command for every supported platform[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/tool-installer/project-bedrock-descriptor.test.ts[2m > [22mproject-bedrock tool descriptor[2m > [22mappears in the full entry list returned by the provider[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/services/claude-settings-reconciler.fixtures.test.ts[2m > [22mClaudeSettingsReconciler — fixture scenarios[2m > [22mshep-only: merging shep snapshot with an empty bedrock-side preserves shep entries[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/services/claude-settings-reconciler.fixtures.test.ts[2m > [22mClaudeSettingsReconciler — fixture scenarios[2m > [22mbedrock-only: merging an empty shep snapshot with bedrock-only output preserves bedrock entries[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/services/claude-settings-reconciler.fixtures.test.ts[2m > [22mClaudeSettingsReconciler — fixture scenarios[2m > [22mshep + bedrock: union of hook arrays, deduped, no data loss, shep entries appear first[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/services/claude-settings-reconciler.fixtures.test.ts[2m > [22mClaudeSettingsReconciler — fixture scenarios[2m > [22mmalformed bedrock payload raises ClaudeSettingsMergeFailedError with parse details[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/di/bedrock-services.test.ts[2m > [22mbedrock services DI registration[2m > [22mexports IBedrockIntegrationServiceToken matching the registered string token[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/di/bedrock-services.test.ts[2m > [22mbedrock services DI registration[2m > [22mexports IClaudeSettingsReconcilerToken matching the registered string token[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/di/bedrock-services.test.ts[2m > [22mbedrock services DI registration[2m > [22mresolves IBedrockIntegrationService to a BedrockIntegrationService instance[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/di/bedrock-services.test.ts[2m > [22mbedrock services DI registration[2m > [22mresolves IClaudeSettingsReconciler to a ClaudeSettingsReconciler instance[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/di/bedrock-services.test.ts[2m > [22mbedrock services DI registration[2m > [22mreturns the same singleton instance across multiple resolutions[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-101-bedrock-enabled.test.ts[2m > [22mMigration 101 — applications.bedrock_enabled column[2m > [22madds bedrock_enabled column to applications table[32m 166[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-101-bedrock-enabled.test.ts[2m > [22mMigration 101 — applications.bedrock_enabled column[2m > [22mdefaults bedrock_enabled to 0 for new rows[32m 40[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-101-bedrock-enabled.test.ts[2m > [22mMigration 101 — applications.bedrock_enabled column[2m > [22maccepts storing bedrock_enabled = 1[32m 38[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-101-bedrock-enabled.test.ts[2m > [22mMigration 101 — applications.bedrock_enabled column[2m > [22mis idempotent (running migrations twice does not throw)[32m 51[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-101-bedrock-enabled.test.ts[2m > [22mMigration 101 — applications.bedrock_enabled column[2m > [22mre-applies cleanly when migration tracking is reset to before 101[32m 85[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[32m19 passed[39m[22m[90m (19)[39m
+[2m   Start at [22m 17:13:20
+[2m   Duration [22m 631ms[2m (transform 480ms, setup 107ms, import 514ms, tests 395ms, environment 0ms)[22m
+
