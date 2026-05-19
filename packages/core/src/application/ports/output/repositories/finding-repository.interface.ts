@@ -106,6 +106,26 @@ export interface IFindingRepository {
   /** Find a finding by id (excludes soft-deleted). */
   findById(id: string): Promise<SecurityFinding | null>;
 
+  /**
+   * Resolve the canonical finding id for a dedup tuple. Used after
+   * {@link bulkInsertOrIgnore} so callers can attach side-effects
+   * (compliance control links, AI signal graduations) to whichever id
+   * survived deduplication — the one we just inserted, OR the prior row
+   * if it was a duplicate. Returns null when the tuple has never been
+   * observed.
+   *
+   * The query rides the `idx_security_findings_dedup_unique` partial
+   * unique index (migration 108).
+   */
+  findIdByDedupTuple(input: {
+    applicationId: string;
+    findingDomain: string;
+    ruleId: string;
+    locationPath?: string;
+    locationLine?: number;
+    cveId?: string;
+  }): Promise<string | null>;
+
   /** Paged + filterable list with total count. */
   list(filter: FindingFilter, cursor: ListFindingsCursor): Promise<ListFindingsResult>;
 

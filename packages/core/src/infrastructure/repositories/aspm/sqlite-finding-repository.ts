@@ -92,6 +92,38 @@ export class SQLiteFindingRepository implements IFindingRepository {
     return row ? fromDatabase(row) : null;
   }
 
+  async findIdByDedupTuple(input: {
+    applicationId: string;
+    findingDomain: string;
+    ruleId: string;
+    locationPath?: string;
+    locationLine?: number;
+    cveId?: string;
+  }): Promise<string | null> {
+    const path = (input.locationPath ?? '').replace(/\\/g, '/');
+    const row = this.db
+      .prepare(
+        `SELECT id FROM security_findings
+         WHERE application_id = ?
+           AND finding_domain = ?
+           AND rule_id = ?
+           AND COALESCE(location_path, '') = ?
+           AND COALESCE(location_line, -1) = ?
+           AND COALESCE(cve_id, '') = ?
+           AND deleted_at IS NULL
+         LIMIT 1`
+      )
+      .get(
+        input.applicationId,
+        input.findingDomain,
+        input.ruleId,
+        path,
+        input.locationLine ?? -1,
+        input.cveId ?? ''
+      ) as { id: string } | undefined;
+    return row ? row.id : null;
+  }
+
   async list(filter: FindingFilter, cursor: ListFindingsCursor): Promise<ListFindingsResult> {
     const where = buildFindingWhereClause(filter);
     const rows = this.db

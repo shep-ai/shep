@@ -18,12 +18,17 @@ import type Database from 'better-sqlite3';
 import { createInMemoryDatabase } from '../../../../helpers/database.helper.js';
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
 import { SQLiteFindingRepository } from '@/infrastructure/repositories/aspm/sqlite-finding-repository.js';
+import { SQLiteComplianceControlRepository } from '@/infrastructure/repositories/aspm/sqlite-compliance-control-repository.js';
 import { SarifIngestAdapter } from '@/infrastructure/services/aspm/sarif-ingest-adapter.js';
 import { IngestFindingsUseCase } from '@/application/use-cases/aspm/findings/ingest-findings.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
 import type { IExploitIntelPort } from '@/application/ports/output/services/exploit-intel-port.interface.js';
 import type { IOwnershipYamlReader } from '@/application/ports/output/services/ownership-yaml-reader.interface.js';
-import { CanonicalSeverity, FindingDomain } from '@/domain/generated/output.js';
+import {
+  CanonicalSeverity,
+  ComplianceFramework,
+  FindingDomain,
+} from '@/domain/generated/output.js';
 
 const offlineExploitIntel: IExploitIntelPort = {
   isKev: vi.fn().mockResolvedValue(false),
@@ -46,18 +51,21 @@ const emptyYamlReader: IOwnershipYamlReader = {
 describe('IngestFindingsUseCase + SarifIngestAdapter (integration)', () => {
   let db: Database.Database;
   let repo: SQLiteFindingRepository;
+  let complianceRepo: SQLiteComplianceControlRepository;
   let uc: IngestFindingsUseCase;
 
   beforeEach(async () => {
     db = createInMemoryDatabase();
     await runSQLiteMigrations(db);
     repo = new SQLiteFindingRepository(db);
+    complianceRepo = new SQLiteComplianceControlRepository(db);
     uc = new IngestFindingsUseCase(
       fakeAppRepo,
       repo,
       new SarifIngestAdapter(),
       emptyYamlReader,
-      offlineExploitIntel
+      offlineExploitIntel,
+      complianceRepo
     );
   });
 
@@ -80,8 +88,49 @@ describe('IngestFindingsUseCase + SarifIngestAdapter (integration)', () => {
     const sqli = stored.items.find((f) => f.ruleId.includes('sql-injection'))!;
     expect(sqli.canonicalSeverity).toBe(CanonicalSeverity.Critical);
     expect(sqli.findingDomain).toBe(FindingDomain.Code);
-    expect(sqli.cweId).toBe('89');
+    // Normalized to the canonical CWE-NNN form so compliance-control
+    // lookups against the seed table match exactly (task-53).
+    expect(sqli.cweId).toBe('CWE-89');
     expect(sqli.owaspAsvsControlId).toBe('V5.3.4');
+  });
+
+  it('writes finding ↔ compliance-control join rows from SARIF taxa references (task-53)', async () => {
+    const doc = readFileSync(join(fixturesDir, 'semgrep-sample.sarif.json'), 'utf-8');
+    const result = await uc.execute({
+      applicationId: 'app-1',
+      sourceType: 'sarif',
+      document: doc,
+    });
+    // Semgrep fixture has three findings:
+    //  - sql-injection (CWE-89 + ASVS V5.3.4) → 2 links
+    //  - reflected-xss × 2 (CWE-79 from props, no ASVS) → 1 link each
+    expect(result.complianceLinksWritten).toBe(2 + 1 + 1);
+
+    const stored = await repo.list({}, { offset: 0, limit: 25 });
+    const sqli = stored.items.find((f) => f.ruleId.includes('sql-injection'))!;
+    const links = await complianceRepo.findControlsForFinding(sqli.id);
+    const identifiers = links.map((c) => `${c.frameworkId}:${c.controlId}`).sort();
+    expect(identifiers).toEqual([
+      `${ComplianceFramework.CweTop25}:CWE-89`,
+      `${ComplianceFramework.OwaspAsvs}:V5.3.4`,
+    ]);
+
+    const xss = stored.items.find((f) => f.ruleId.includes('xss'))!;
+    const xssLinks = await complianceRepo.findControlsForFinding(xss.id);
+    expect(xssLinks.map((c) => c.controlId)).toEqual(['CWE-79']);
+  });
+
+  it('re-ingesting the same fixture does not double-write compliance links', async () => {
+    const doc = readFileSync(join(fixturesDir, 'semgrep-sample.sarif.json'), 'utf-8');
+    await uc.execute({ applicationId: 'app-1', sourceType: 'sarif', document: doc });
+    const before = (
+      db.prepare('SELECT COUNT(*) AS c FROM finding_compliance_controls').get() as { c: number }
+    ).c;
+    await uc.execute({ applicationId: 'app-1', sourceType: 'sarif', document: doc });
+    const after = (
+      db.prepare('SELECT COUNT(*) AS c FROM finding_compliance_controls').get() as { c: number }
+    ).c;
+    expect(after).toBe(before);
   });
 
   it('re-ingesting the same fixture is a no-op (NFR-10)', async () => {

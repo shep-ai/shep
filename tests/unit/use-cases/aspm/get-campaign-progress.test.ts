@@ -115,6 +115,9 @@ class FakeFindingRepo implements IFindingRepository {
   async findById(): Promise<SecurityFinding | null> {
     return null;
   }
+  async findIdByDedupTuple(): Promise<string | null> {
+    return null;
+  }
   async list(filter: FindingFilter, cursor: ListFindingsCursor): Promise<ListFindingsResult> {
     this.observedFilter = filter;
     this.observedCursors.push(cursor);

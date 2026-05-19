@@ -38,7 +38,10 @@ describe('SarifIngestAdapter', () => {
     expect(sqli.canonicalSeverity).toBe(CanonicalSeverity.Critical);
     expect(sqli.locationPath).toBe('src/api/users.ts');
     expect(sqli.locationLine).toBe(42);
-    expect(sqli.cweId).toBe('89');
+    // Walker normalizes bare CWE ids to the canonical "CWE-NNN" form so
+    // compliance-control lookups against the seed table match exactly
+    // (feature 098, task-53).
+    expect(sqli.cweId).toBe('CWE-89');
     expect(sqli.owaspAsvsControlId).toBe('V5.3.4');
     expect(sqli.findingDomain).toBe(FindingDomain.Code);
 

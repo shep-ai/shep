@@ -124,6 +124,19 @@ interface TaxaReferences {
   owaspAsvsControlId?: string;
 }
 
+/**
+ * Normalize a CWE identifier so downstream lookups have a stable shape.
+ * SARIF emitters disagree on whether to use "89" or "CWE-89" as the
+ * taxa target id; the ComplianceControl seed uses "CWE-N" (and
+ * ingestion ↔ finding_compliance_controls joins require an exact
+ * match), so we coerce here.
+ */
+export function normalizeCweIdentifier(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return trimmed;
+  return /^cwe-/i.test(trimmed) ? trimmed.toUpperCase() : `CWE-${trimmed}`;
+}
+
 function extractTaxaFromRule(rule: Record<string, unknown> | undefined): TaxaReferences {
   if (rule === undefined) return {};
   const taxa = (rule.relationships as unknown[] | undefined) ?? [];
@@ -138,7 +151,9 @@ function extractTaxaFromRule(rule: Record<string, unknown> | undefined): TaxaRef
     const toolName = typeof toolComponent?.name === 'string' ? toolComponent.name : undefined;
     if (id === undefined || toolName === undefined) continue;
     const lowerTool = toolName.toLowerCase();
-    if (lowerTool.includes('cwe') && refs.cweId === undefined) refs.cweId = id;
+    if (lowerTool.includes('cwe') && refs.cweId === undefined) {
+      refs.cweId = normalizeCweIdentifier(id);
+    }
     if (lowerTool.includes('asvs') && refs.owaspAsvsControlId === undefined) {
       refs.owaspAsvsControlId = id;
     }
@@ -189,7 +204,8 @@ export function walkSarif(
 
       const ruleProps = (rule?.properties as Record<string, unknown> | undefined) ?? {};
       const cveFromProps = typeof ruleProps.cve === 'string' ? ruleProps.cve : undefined;
-      const cweFromProps = typeof ruleProps.cwe === 'string' ? ruleProps.cwe : undefined;
+      const cweFromProps =
+        typeof ruleProps.cwe === 'string' ? normalizeCweIdentifier(ruleProps.cwe) : undefined;
 
       const explicitSeverity = (result.properties as Record<string, unknown> | undefined)?.[
         'security-severity'

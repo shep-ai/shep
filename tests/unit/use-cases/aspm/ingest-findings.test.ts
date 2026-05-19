@@ -29,6 +29,7 @@ import type { IFindingRepository } from '@/application/ports/output/repositories
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
 import type { IExploitIntelPort } from '@/application/ports/output/services/exploit-intel-port.interface.js';
 import type { IOwnershipYamlReader } from '@/application/ports/output/services/ownership-yaml-reader.interface.js';
+import type { IComplianceControlRepository } from '@/application/ports/output/repositories/compliance-control-repository.interface.js';
 
 function fakeExploitIntel(
   kevSet = new Set<string>(),
@@ -60,33 +61,74 @@ function fakeFindingRepo(): {
   port: IFindingRepository;
   inserted: SecurityFinding[];
 } {
-  const persisted = new Set<string>();
+  const persisted = new Map<string, string>(); // dedupKey → canonical id
   const inserted: SecurityFinding[] = [];
+  const dedupKeyOf = (row: {
+    applicationId: string;
+    findingDomain: string;
+    ruleId: string;
+    locationPath?: string;
+    locationLine?: number;
+    cveId?: string;
+  }): string =>
+    [
+      row.applicationId,
+      row.findingDomain,
+      row.ruleId,
+      row.locationPath ?? '',
+      row.locationLine ?? -1,
+      row.cveId ?? '',
+    ].join(' ');
   const port: Partial<IFindingRepository> = {
     bulkInsertOrIgnore: vi.fn().mockImplementation(async (rows: SecurityFinding[]) => {
       let insCount = 0;
       let dupCount = 0;
       for (const row of rows) {
-        const key = [
-          row.applicationId,
-          row.findingDomain,
-          row.ruleId,
-          row.locationPath ?? '',
-          row.locationLine ?? -1,
-          row.cveId ?? '',
-        ].join(' ');
+        const key = dedupKeyOf(row);
         if (persisted.has(key)) {
           dupCount += 1;
         } else {
-          persisted.add(key);
+          persisted.set(key, row.id);
           inserted.push(row);
           insCount += 1;
         }
       }
       return { inserted: insCount, duplicates: dupCount };
     }),
+    findIdByDedupTuple: vi
+      .fn()
+      .mockImplementation(
+        async (input: Parameters<IFindingRepository['findIdByDedupTuple']>[0]) => {
+          return persisted.get(dedupKeyOf(input)) ?? null;
+        }
+      ),
   };
   return { port: port as IFindingRepository, inserted };
+}
+
+function fakeComplianceRepo(identifiers: Record<string, string> = {}): {
+  port: IComplianceControlRepository;
+  links: { findingId: string; controlIds: string[] }[];
+} {
+  const links: { findingId: string; controlIds: string[] }[] = [];
+  const port: Partial<IComplianceControlRepository> = {
+    findIdByControlIdentifier: vi
+      .fn()
+      .mockImplementation(async (framework: string, identifier: string) => {
+        return identifiers[`${framework}|${identifier}`] ?? null;
+      }),
+    linkManyToFinding: vi
+      .fn()
+      .mockImplementation(async (findingId: string, controlIds: readonly string[]) => {
+        links.push({ findingId, controlIds: [...controlIds] });
+      }),
+    linkToFinding: vi.fn(),
+    findById: vi.fn(),
+    findByFramework: vi.fn(),
+    findControlsForFinding: vi.fn(),
+    getCoverageForFramework: vi.fn(),
+  };
+  return { port: port as IComplianceControlRepository, links };
 }
 
 function fakeIngestPort(drafts: FindingDraft[], toolName = 'semgrep'): IFindingIngestPort {
@@ -125,7 +167,8 @@ describe('IngestFindingsUseCase', () => {
       fakeFindingRepo().port,
       fakeIngestPort([]),
       emptyYamlReader,
-      fakeExploitIntel()
+      fakeExploitIntel(),
+      fakeComplianceRepo().port
     );
     await expect(
       uc.execute({ applicationId: 'app-1', sourceType: 'sarif', document: '{}' })
@@ -140,7 +183,8 @@ describe('IngestFindingsUseCase', () => {
       repo.port,
       fakeIngestPort(drafts),
       emptyYamlReader,
-      fakeExploitIntel()
+      fakeExploitIntel(),
+      fakeComplianceRepo().port
     );
 
     const result = await uc.execute({
@@ -164,7 +208,8 @@ describe('IngestFindingsUseCase', () => {
       repo.port,
       fakeIngestPort(drafts),
       emptyYamlReader,
-      fakeExploitIntel()
+      fakeExploitIntel(),
+      fakeComplianceRepo().port
     );
     const args = { applicationId: 'app-1', sourceType: 'sarif' as const, document: '{}' };
     const first = await uc.execute(args);
@@ -187,7 +232,8 @@ describe('IngestFindingsUseCase', () => {
       repo.port,
       fakeIngestPort(drafts),
       emptyYamlReader,
-      fakeExploitIntel()
+      fakeExploitIntel(),
+      fakeComplianceRepo().port
     );
     const result = await uc.execute({
       applicationId: 'app-1',
@@ -213,7 +259,8 @@ describe('IngestFindingsUseCase', () => {
       repo.port,
       fakeIngestPort(drafts),
       emptyYamlReader,
-      fakeExploitIntel()
+      fakeExploitIntel(),
+      fakeComplianceRepo().port
     );
     await uc.execute({ applicationId: 'app-1', sourceType: 'sarif', document: '{}' });
     const persisted = repo.inserted[0]!;
@@ -239,7 +286,8 @@ describe('IngestFindingsUseCase', () => {
       repo.port,
       fakeIngestPort(drafts),
       yamlReader,
-      fakeExploitIntel()
+      fakeExploitIntel(),
+      fakeComplianceRepo().port
     );
     await uc.execute({ applicationId: 'app-1', sourceType: 'sarif', document: '{}' });
     expect(repo.inserted[0]!.ownerId).toBe('owner-api');
@@ -259,7 +307,8 @@ describe('IngestFindingsUseCase', () => {
       repo.port,
       fakeIngestPort(drafts),
       emptyYamlReader,
-      fakeExploitIntel(kev, epss)
+      fakeExploitIntel(kev, epss),
+      fakeComplianceRepo().port
     );
     await uc.execute({ applicationId: 'app-1', sourceType: 'sarif', document: '{}' });
 
@@ -285,11 +334,65 @@ describe('IngestFindingsUseCase', () => {
       repo.port,
       fakeIngestPort(drafts),
       emptyYamlReader,
-      intel
+      intel,
+      fakeComplianceRepo().port
     );
     await uc.execute({ applicationId: 'app-1', sourceType: 'sarif', document: '{}' });
     expect(intel.isKev).toHaveBeenCalledTimes(2);
     expect(intel.getEpssPercentile).toHaveBeenCalledTimes(2);
+  });
+
+  it('writes compliance-control links for findings with CWE / ASVS taxa (task-53)', async () => {
+    const repo = fakeFindingRepo();
+    const compliance = fakeComplianceRepo({
+      'CweTop25|CWE-89': 'cc-cwe-89',
+      'OwaspAsvs|V5.3.4': 'cc-asvs-v5-3-4',
+    });
+    const drafts = [
+      draft({ ruleId: 'r-sqli', cweId: 'CWE-89', owaspAsvsControlId: 'V5.3.4' }),
+      draft({ ruleId: 'r-xss', locationLine: 2, cweId: 'CWE-79' }), // unknown control
+      draft({ ruleId: 'r-no-taxa', locationLine: 3 }),
+    ];
+    const uc = new IngestFindingsUseCase(
+      fakeAppRepo({}),
+      repo.port,
+      fakeIngestPort(drafts),
+      emptyYamlReader,
+      fakeExploitIntel(),
+      compliance.port
+    );
+
+    const result = await uc.execute({
+      applicationId: 'app-1',
+      sourceType: 'sarif',
+      document: '{}',
+    });
+
+    expect(result.complianceLinksWritten).toBe(2);
+    expect(compliance.links).toHaveLength(1);
+    expect(compliance.links[0]!.controlIds.sort()).toEqual(['cc-asvs-v5-3-4', 'cc-cwe-89'].sort());
+  });
+
+  it('skips compliance link writes when no draft carries taxa (task-53)', async () => {
+    const repo = fakeFindingRepo();
+    const compliance = fakeComplianceRepo();
+    const drafts = [draft({ ruleId: 'r-no-taxa' })];
+    const uc = new IngestFindingsUseCase(
+      fakeAppRepo({}),
+      repo.port,
+      fakeIngestPort(drafts),
+      emptyYamlReader,
+      fakeExploitIntel(),
+      compliance.port
+    );
+
+    const result = await uc.execute({
+      applicationId: 'app-1',
+      sourceType: 'sarif',
+      document: '{}',
+    });
+    expect(result.complianceLinksWritten).toBe(0);
+    expect(compliance.links).toHaveLength(0);
   });
 
   it('returns the ingestion-run summary with documentHash + duration + toolName', async () => {
@@ -300,7 +403,8 @@ describe('IngestFindingsUseCase', () => {
       repo.port,
       fakeIngestPort(drafts, 'codeql'),
       emptyYamlReader,
-      fakeExploitIntel()
+      fakeExploitIntel(),
+      fakeComplianceRepo().port
     );
     const result = await uc.execute({
       applicationId: 'app-1',

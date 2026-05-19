@@ -27,13 +27,18 @@ import { ApplicationNotFoundError } from '../../../../domain/errors/application-
 import { findingDedupKey } from '../../../../domain/aspm/dedup/finding-dedup-key.js';
 import { redactSecrets, computeRawHash } from '../../../../domain/aspm/redactor/redact-secrets.js';
 import { resolveOwnership } from '../../../../domain/aspm/ownership/resolve-ownership.js';
-import { FindingState, type SecurityFinding } from '../../../../domain/generated/output.js';
+import {
+  ComplianceFramework,
+  FindingState,
+  type SecurityFinding,
+} from '../../../../domain/generated/output.js';
 import type {
   FindingDraft,
   IFindingIngestPort,
 } from '../../../ports/output/services/finding-ingest-port.interface.js';
 import type { IFindingRepository } from '../../../ports/output/repositories/finding-repository.interface.js';
 import type { IApplicationRepository } from '../../../ports/output/repositories/application-repository.interface.js';
+import type { IComplianceControlRepository } from '../../../ports/output/repositories/compliance-control-repository.interface.js';
 import type { IExploitIntelPort } from '../../../ports/output/services/exploit-intel-port.interface.js';
 import type { IOwnershipYamlReader } from '../../../ports/output/services/ownership-yaml-reader.interface.js';
 import {
@@ -68,6 +73,11 @@ export interface IngestFindingsResult {
   documentHash: string;
   /** Duration in milliseconds (NFR-6 observability). */
   durationMs: number;
+  /**
+   * Number of (finding ↔ compliance control) links written on this run
+   * (FR-34). Idempotent: re-running ingestion never adds duplicates.
+   */
+  complianceLinksWritten: number;
 }
 
 const SHA256_HEX = (input: string): string =>
@@ -80,7 +90,9 @@ export class IngestFindingsUseCase {
     @inject('IFindingRepository') private readonly findingRepo: IFindingRepository,
     @inject('IFindingIngestPort') private readonly ingestPort: IFindingIngestPort,
     @inject('IOwnershipYamlReader') private readonly ownershipReader: IOwnershipYamlReader,
-    @inject('IExploitIntelPort') private readonly exploitIntel: IExploitIntelPort
+    @inject('IExploitIntelPort') private readonly exploitIntel: IExploitIntelPort,
+    @inject('IComplianceControlRepository')
+    private readonly complianceRepo: IComplianceControlRepository
   ) {}
 
   async execute(input: IngestFindingsInput): Promise<IngestFindingsResult> {
@@ -108,6 +120,11 @@ export class IngestFindingsUseCase {
 
     const seenDedupKeys = new Set<string>();
     const findings: SecurityFinding[] = [];
+    // Findings whose dedup tuple needs a compliance-link resolution pass.
+    // Keyed by the locally generated finding id (note: the canonical id in
+    // the DB may differ after INSERT OR IGNORE collapses duplicates — we
+    // look up the canonical id post-insert via findIdByDedupTuple).
+    const taxaByDedupKey = new Map<string, { draft: FindingDraft; tuple: TaxaResolutionTuple }>();
     let intraBatchDuplicates = 0;
 
     for (const draft of parsed.drafts) {
@@ -133,9 +150,25 @@ export class IngestFindingsUseCase {
       findings.push(
         buildFinding(draft, input.applicationId, ownerResolution?.ownerId, now, exploitLookup)
       );
+
+      if (hasComplianceTaxa(draft)) {
+        taxaByDedupKey.set(dedupKey, {
+          draft,
+          tuple: {
+            applicationId: input.applicationId,
+            findingDomain: draft.findingDomain,
+            ruleId: draft.ruleId,
+            locationPath: draft.locationPath,
+            locationLine: draft.locationLine,
+            cveId: draft.cveId,
+          },
+        });
+      }
     }
 
     const { inserted, duplicates } = await this.findingRepo.bulkInsertOrIgnore(findings);
+
+    const complianceLinksWritten = await this.attachComplianceLinks(taxaByDedupKey);
 
     return {
       inserted,
@@ -145,8 +178,76 @@ export class IngestFindingsUseCase {
       sourceLabel: parsed.sourceLabel,
       documentHash,
       durationMs: Date.now() - startedAt,
+      complianceLinksWritten,
     };
   }
+
+  /**
+   * Resolve canonical control ids for each draft's taxa references and
+   * write `finding_compliance_controls` join rows against the canonical
+   * finding id (FR-34). Idempotent — the join table's unique index makes
+   * re-running ingestion a no-op.
+   */
+  private async attachComplianceLinks(
+    taxaByDedupKey: ReadonlyMap<string, { draft: FindingDraft; tuple: TaxaResolutionTuple }>
+  ): Promise<number> {
+    if (taxaByDedupKey.size === 0) return 0;
+
+    // Per-run cache so we look up each (framework, identifier) once even
+    // when the same rule produces many findings.
+    const controlIdCache = new Map<string, string | null>();
+    const resolveControl = async (
+      framework: ComplianceFramework,
+      identifier: string
+    ): Promise<string | null> => {
+      const cacheKey = `${framework}|${identifier}`;
+      const cached = controlIdCache.get(cacheKey);
+      if (cached !== undefined) return cached;
+      const id = await this.complianceRepo.findIdByControlIdentifier(framework, identifier);
+      controlIdCache.set(cacheKey, id);
+      return id;
+    };
+
+    let linksWritten = 0;
+
+    for (const { draft, tuple } of taxaByDedupKey.values()) {
+      const canonicalId = await this.findingRepo.findIdByDedupTuple(tuple);
+      if (canonicalId === null) continue;
+
+      const controlIds: string[] = [];
+      if (draft.cweId !== undefined && draft.cweId.length > 0) {
+        const id = await resolveControl(ComplianceFramework.CweTop25, draft.cweId);
+        if (id !== null) controlIds.push(id);
+      }
+      if (draft.owaspAsvsControlId !== undefined && draft.owaspAsvsControlId.length > 0) {
+        const id = await resolveControl(ComplianceFramework.OwaspAsvs, draft.owaspAsvsControlId);
+        if (id !== null) controlIds.push(id);
+      }
+
+      if (controlIds.length > 0) {
+        await this.complianceRepo.linkManyToFinding(canonicalId, controlIds);
+        linksWritten += controlIds.length;
+      }
+    }
+
+    return linksWritten;
+  }
+}
+
+interface TaxaResolutionTuple {
+  applicationId: string;
+  findingDomain: string;
+  ruleId: string;
+  locationPath?: string;
+  locationLine?: number;
+  cveId?: string;
+}
+
+function hasComplianceTaxa(draft: FindingDraft): boolean {
+  return (
+    (typeof draft.cweId === 'string' && draft.cweId.length > 0) ||
+    (typeof draft.owaspAsvsControlId === 'string' && draft.owaspAsvsControlId.length > 0)
+  );
 }
 
 function buildFinding(
