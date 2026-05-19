@@ -14,6 +14,7 @@
  */
 
 import type {
+  CanonicalSeverity,
   FindingFilter,
   FindingState,
   SecurityFinding,
@@ -29,6 +30,40 @@ export interface ListFindingsCursor {
 export interface ListFindingsResult {
   items: SecurityFinding[];
   total: number;
+}
+
+/**
+ * Aggregate row used by posture summary / application-posture / risk trend.
+ * The repository computes these in SQL so dashboards meet NFR-7 (<1s on 50k).
+ */
+export interface SeverityCount {
+  severity: CanonicalSeverity;
+  count: number;
+}
+
+/** Top at-risk applications, ordered by descending current-risk-score sum. */
+export interface AtRiskApplication {
+  applicationId: string;
+  openFindingCount: number;
+  riskScoreSum: number;
+}
+
+/**
+ * SLA-breach threshold per severity supplied by the caller (derived from
+ * the active SecurityPolicy). Findings with discoveredAt ≤ `now -
+ * windowDays days` are considered Breached for the count.
+ */
+export interface SlaBreachThreshold {
+  severity: CanonicalSeverity;
+  windowDays: number;
+}
+
+/** A single time-bucketed posture sample for the risk-trend chart. */
+export interface PostureTrendBucket {
+  /** Inclusive start of the bucket. */
+  bucketStart: Date;
+  /** Open finding counts per canonical severity within the bucket. */
+  countsBySeverity: SeverityCount[];
 }
 
 /**
@@ -92,4 +127,56 @@ export interface IFindingRepository {
 
   /** Soft-delete the finding. */
   softDelete(id: string): Promise<void>;
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Aggregate / posture helpers (feature 098, phase 7, task-40 / task-41)
+  // ──────────────────────────────────────────────────────────────────────
+
+  /**
+   * Count open findings grouped by canonical severity. Open is the union
+   * of {@link FindingState.Open} / Triaged / InProgress. Optional filter
+   * narrows by application or other axes.
+   */
+  countOpenBySeverity(filter?: FindingFilter): Promise<SeverityCount[]>;
+
+  /**
+   * Top-N applications ordered by descending sum of `risk_scores.total`
+   * over their open findings. Used by the dashboard's at-risk apps tile.
+   */
+  topAtRiskApplications(limit: number): Promise<AtRiskApplication[]>;
+
+  /**
+   * Count open findings whose CVE is KEV-listed (NFR-7 budget).
+   */
+  countOpenKev(): Promise<number>;
+
+  /**
+   * Count open findings whose `discoveredAt` is more than the policy
+   * window for their severity ago (i.e. SLA-Breached). Findings with an
+   * active exception are excluded by passing their ids in
+   * `excludeFindingIds`.
+   */
+  countSlaBreached(
+    thresholds: SlaBreachThreshold[],
+    now: Date,
+    excludeFindingIds?: readonly string[]
+  ): Promise<number>;
+
+  /** Most-recent `lastSeenAt` across all findings, or null when empty. */
+  latestLastSeenAt(): Promise<Date | null>;
+
+  /**
+   * Per-application open-finding counts grouped by canonical severity.
+   * Used by {@link GetApplicationPostureUseCase} to render top-N
+   * application cards.
+   */
+  countOpenBySeverityForApplication(applicationId: string): Promise<SeverityCount[]>;
+
+  /**
+   * Time-bucketed open-finding counts derived from `discovered_at`. Each
+   * sample is the count of findings whose `discovered_at < bucketStart`
+   * and whose `first_fixed_at` is null or `>= bucketStart` (i.e. open at
+   * that instant). Buckets are daily-aligned UTC starts.
+   */
+  postureTrend(buckets: readonly Date[]): Promise<PostureTrendBucket[]>;
 }

@@ -34,6 +34,8 @@ import type { ISecurityPolicyRepository } from '../../../application/ports/outpu
 import type { IServiceRepository } from '../../../application/ports/output/repositories/service-repository.interface.js';
 import type { ITeamRepository } from '../../../application/ports/output/repositories/team-repository.interface.js';
 
+import type { IAiChangeRiskSignalRepository } from '../../../application/ports/output/repositories/ai-change-risk-signal-repository.interface.js';
+
 // Service ports
 import type { IExploitIntelPort } from '../../../application/ports/output/services/exploit-intel-port.interface.js';
 import type { IFindingIngestPort } from '../../../application/ports/output/services/finding-ingest-port.interface.js';
@@ -60,6 +62,7 @@ import { ExploitIntelAdapter } from '../../services/aspm/exploit-intel-adapter.j
 import { OwnershipYamlReader } from '../../services/aspm/ownership-yaml-reader.js';
 import { SarifIngestAdapter } from '../../services/aspm/sarif-ingest-adapter.js';
 import { SystemSlaClock } from '../../services/aspm/system-sla-clock.js';
+import { NoOpAiChangeRiskSignalRepository } from '../../services/aspm/noop-ai-change-risk-signal-repository.js';
 
 // Use cases
 import { AssignOwnerUseCase } from '../../../application/use-cases/aspm/ownership/assign-owner.js';
@@ -81,6 +84,11 @@ import { IngestSbomUseCase } from '../../../application/use-cases/aspm/findings/
 import { ListFindingsUseCase } from '../../../application/use-cases/aspm/findings/list-findings.js';
 import { RankFindingsUseCase } from '../../../application/use-cases/aspm/findings/rank-findings.js';
 import { RecomputeAllRiskScoresUseCase } from '../../../application/use-cases/aspm/findings/recompute-all-risk-scores.js';
+import { BulkConvertFindingsUseCase } from '../../../application/use-cases/aspm/findings/bulk-convert-findings.js';
+import { ConvertFindingToWorkItemUseCase } from '../../../application/use-cases/aspm/findings/convert-finding-to-work-item.js';
+import { GetApplicationPostureUseCase } from '../../../application/use-cases/aspm/posture/get-application-posture.js';
+import { GetPostureSummaryUseCase } from '../../../application/use-cases/aspm/posture/get-posture-summary.js';
+import { GetRiskTrendUseCase } from '../../../application/use-cases/aspm/posture/get-risk-trend.js';
 
 /**
  * Register ASPM repositories, ports, services, and use cases on the
@@ -111,7 +119,11 @@ export function registerAspm(container: DependencyContainer): void {
   registerPhase6Services(container);
   registerPhase6UseCases(container);
 
-  // Phases 7-10 attach below as they land:
+  // Phase 7 — Executive Dashboards & Developer Task Routing
+  registerPhase7Repositories(container);
+  registerPhase7UseCases(container);
+
+  // Phases 8-10 attach below as they land:
   //
   //   - Phase 3: SecurityFinding repository + IFindingIngestPort (SARIF).
   //   - Phase 4: ISbomPort (CycloneDX) + IExploitIntelPort (KEV+EPSS).
@@ -249,4 +261,24 @@ function registerPhase6UseCases(container: DependencyContainer): void {
   container.register(CloseCampaignUseCase, { useClass: CloseCampaignUseCase });
   container.register(ListCampaignsUseCase, { useClass: ListCampaignsUseCase });
   container.register(GetCampaignProgressUseCase, { useClass: GetCampaignProgressUseCase });
+}
+
+function registerPhase7Repositories(container: DependencyContainer): void {
+  // Default to a NoOp AI-signal repo so the dashboard tile renders before
+  // phase 8 wires the real SQLite implementation. tsyringe's
+  // `register` overrides on subsequent calls — phase 8 simply re-registers
+  // this token with the real repo class.
+  container.register<IAiChangeRiskSignalRepository>(ASPM_TOKENS.IAiChangeRiskSignalRepository, {
+    useClass: NoOpAiChangeRiskSignalRepository,
+  });
+}
+
+function registerPhase7UseCases(container: DependencyContainer): void {
+  container.register(GetPostureSummaryUseCase, { useClass: GetPostureSummaryUseCase });
+  container.register(GetRiskTrendUseCase, { useClass: GetRiskTrendUseCase });
+  container.register(GetApplicationPostureUseCase, { useClass: GetApplicationPostureUseCase });
+  container.register(ConvertFindingToWorkItemUseCase, {
+    useClass: ConvertFindingToWorkItemUseCase,
+  });
+  container.register(BulkConvertFindingsUseCase, { useClass: BulkConvertFindingsUseCase });
 }

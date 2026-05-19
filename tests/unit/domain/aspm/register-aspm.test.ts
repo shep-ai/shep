@@ -35,16 +35,25 @@ describe('registerAspm', () => {
     expect(() => registerAspm(c)).not.toThrow();
   });
 
-  it('leaves unimplemented phase tokens unresolved (covers phases 7+)', () => {
+  it('leaves unimplemented phase tokens unresolved (covers phases 8+)', () => {
     const c = rootContainer.createChildContainer();
     registerAspm(c);
-    // Phases 2-6 wire the ownership / finding / SBOM / exploit-intel /
+    // Phases 2-7 wire the ownership / finding / SBOM / exploit-intel /
     // risk-score / security-policy / SLA-clock / risk-exception /
-    // remediation-campaign tokens. Tokens belonging to later phases
-    // (compliance, AI-change review) must still fail so a missing
+    // remediation-campaign / AI-signal-NoOp tokens. Tokens belonging
+    // to later phases (compliance) must still fail so a missing
     // wiring is observable.
-    expect(() => c.resolve(ASPM_REPOSITORY_TOKENS.IAiChangeRiskSignalRepository)).toThrow();
     expect(() => c.resolve(ASPM_REPOSITORY_TOKENS.IComplianceControlRepository)).toThrow();
+  });
+
+  it('phase 7 wires a NoOp IAiChangeRiskSignalRepository (real impl lands in phase 8)', async () => {
+    const c = rootContainer.createChildContainer();
+    registerAspm(c);
+    const repo = c.resolve<{ countOpen: () => Promise<number> }>(
+      ASPM_REPOSITORY_TOKENS.IAiChangeRiskSignalRepository
+    );
+    expect(repo).toBeDefined();
+    expect(await repo.countOpen()).toBe(0);
   });
 
   it('wires the phase-4 exploit-intel + SBOM ports', () => {

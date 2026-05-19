@@ -133,6 +133,29 @@ class FakeFindingRepo implements IFindingRepository {
   async softDelete(): Promise<void> {
     return undefined;
   }
+  // Phase 7 aggregate helpers — unused by campaign-progress tests but
+  // satisfy the IFindingRepository contract.
+  async countOpenBySeverity() {
+    return [];
+  }
+  async topAtRiskApplications() {
+    return [];
+  }
+  async countOpenKev() {
+    return 0;
+  }
+  async countSlaBreached() {
+    return 0;
+  }
+  async latestLastSeenAt() {
+    return null;
+  }
+  async countOpenBySeverityForApplication() {
+    return [];
+  }
+  async postureTrend() {
+    return [];
+  }
 }
 
 class FakePolicyRepo implements ISecurityPolicyRepository {

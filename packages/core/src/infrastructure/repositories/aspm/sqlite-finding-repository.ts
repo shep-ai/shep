@@ -14,13 +14,22 @@
 import type Database from 'better-sqlite3';
 import { inject, injectable } from 'tsyringe';
 
-import type { FindingFilter, SecurityFinding } from '../../../domain/generated/output.js';
+import {
+  CanonicalSeverity,
+  FindingState,
+  type FindingFilter,
+  type SecurityFinding,
+} from '../../../domain/generated/output.js';
 import type {
+  AtRiskApplication,
   FindingUpdateInput,
   IFindingRepository,
   ListFindingsCursor,
   ListFindingsResult,
   ListRankedFindingsResult,
+  PostureTrendBucket,
+  SeverityCount,
+  SlaBreachThreshold,
 } from '../../../application/ports/output/repositories/finding-repository.interface.js';
 import { buildFindingWhereClause } from './finding-filter-sql.js';
 import { fromDatabase, toDatabase, type SecurityFindingRow } from './mappers/finding-mapper.js';
@@ -189,4 +198,141 @@ export class SQLiteFindingRepository implements IFindingRepository {
       .prepare('UPDATE security_findings SET deleted_at = ?, updated_at = ? WHERE id = ?')
       .run(now, now, id);
   }
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Aggregate / posture helpers (task-40 / task-41)
+  // ──────────────────────────────────────────────────────────────────────
+
+  async countOpenBySeverity(filter?: FindingFilter): Promise<SeverityCount[]> {
+    const where = buildFindingWhereClause(filter ?? {});
+    const rows = this.db
+      .prepare(
+        `SELECT canonical_severity AS severity, COUNT(*) AS c
+         FROM security_findings
+         WHERE ${where.sql} AND state IN (?, ?, ?)
+         GROUP BY canonical_severity`
+      )
+      .all(...where.params, FindingState.Open, FindingState.Triaged, FindingState.InProgress) as {
+      severity: string;
+      c: number;
+    }[];
+    return zeroFillSeverity(
+      rows.map((r) => ({ severity: r.severity as CanonicalSeverity, count: r.c }))
+    );
+  }
+
+  async topAtRiskApplications(limit: number): Promise<AtRiskApplication[]> {
+    const rows = this.db
+      .prepare(
+        `SELECT f.application_id AS application_id,
+                COUNT(*) AS open_count,
+                COALESCE(SUM(rs.total), 0) AS score_sum
+         FROM security_findings f
+         LEFT JOIN risk_scores rs ON rs.id = f.current_risk_score_id
+         WHERE f.deleted_at IS NULL AND f.state IN (?, ?, ?)
+         GROUP BY f.application_id
+         ORDER BY score_sum DESC, open_count DESC
+         LIMIT ?`
+      )
+      .all(FindingState.Open, FindingState.Triaged, FindingState.InProgress, limit) as {
+      application_id: string;
+      open_count: number;
+      score_sum: number;
+    }[];
+    return rows.map((r) => ({
+      applicationId: r.application_id,
+      openFindingCount: r.open_count,
+      riskScoreSum: r.score_sum,
+    }));
+  }
+
+  async countOpenKev(): Promise<number> {
+    const row = this.db
+      .prepare(
+        `SELECT COUNT(*) AS c
+         FROM security_findings
+         WHERE deleted_at IS NULL AND kev = 1 AND state IN (?, ?, ?)`
+      )
+      .get(FindingState.Open, FindingState.Triaged, FindingState.InProgress) as { c: number };
+    return row.c;
+  }
+
+  async countSlaBreached(
+    thresholds: SlaBreachThreshold[],
+    now: Date,
+    excludeFindingIds: readonly string[] = []
+  ): Promise<number> {
+    if (thresholds.length === 0) return 0;
+    const params: unknown[] = [];
+    const branches: string[] = [];
+    const MS_PER_DAY = 24 * 60 * 60 * 1000;
+    for (const t of thresholds) {
+      branches.push(`(canonical_severity = ? AND discovered_at <= ?)`);
+      params.push(t.severity, now.getTime() - t.windowDays * MS_PER_DAY);
+    }
+    let sql = `SELECT COUNT(*) AS c
+               FROM security_findings
+               WHERE deleted_at IS NULL AND state IN (?, ?, ?)
+                 AND (${branches.join(' OR ')})`;
+    const finalParams: unknown[] = [
+      FindingState.Open,
+      FindingState.Triaged,
+      FindingState.InProgress,
+      ...params,
+    ];
+    if (excludeFindingIds.length > 0) {
+      sql += ` AND id NOT IN (${excludeFindingIds.map(() => '?').join(', ')})`;
+      finalParams.push(...excludeFindingIds);
+    }
+    const row = this.db.prepare(sql).get(...finalParams) as { c: number };
+    return row.c;
+  }
+
+  async latestLastSeenAt(): Promise<Date | null> {
+    const row = this.db
+      .prepare(`SELECT MAX(last_seen_at) AS m FROM security_findings WHERE deleted_at IS NULL`)
+      .get() as { m: number | null };
+    return row.m === null ? null : new Date(row.m);
+  }
+
+  async countOpenBySeverityForApplication(applicationId: string): Promise<SeverityCount[]> {
+    return this.countOpenBySeverity({ applicationIds: [applicationId] });
+  }
+
+  async postureTrend(buckets: readonly Date[]): Promise<PostureTrendBucket[]> {
+    if (buckets.length === 0) return [];
+    const result: PostureTrendBucket[] = [];
+    const stmt = this.db.prepare(
+      `SELECT canonical_severity AS severity, COUNT(*) AS c
+       FROM security_findings
+       WHERE deleted_at IS NULL
+         AND discovered_at < ?
+         AND (first_fixed_at IS NULL OR first_fixed_at >= ?)
+       GROUP BY canonical_severity`
+    );
+    for (const bucketStart of buckets) {
+      const ms = bucketStart.getTime();
+      const rows = stmt.all(ms, ms) as { severity: string; c: number }[];
+      result.push({
+        bucketStart,
+        countsBySeverity: zeroFillSeverity(
+          rows.map((r) => ({ severity: r.severity as CanonicalSeverity, count: r.c }))
+        ),
+      });
+    }
+    return result;
+  }
+}
+
+const ALL_SEVERITIES: CanonicalSeverity[] = [
+  CanonicalSeverity.Critical,
+  CanonicalSeverity.High,
+  CanonicalSeverity.Medium,
+  CanonicalSeverity.Low,
+  CanonicalSeverity.Info,
+];
+
+function zeroFillSeverity(rows: SeverityCount[]): SeverityCount[] {
+  const byKey = new Map(rows.map((r) => [r.severity, r.count]));
+  return ALL_SEVERITIES.map((s) => ({ severity: s, count: byKey.get(s) ?? 0 }));
 }
