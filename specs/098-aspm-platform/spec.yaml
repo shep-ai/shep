@@ -12,7 +12,7 @@ summary: >
   mapping, remediation campaigns, executive dashboards, developer task routing, and
   basic AI-generated code risk signals — wired through Shep's TypeSpec-first /
   Clean Architecture stack and exposed via the Next.js web UI and CLI.
-phase: "Analysis"
+phase: "Requirements"
 sizeEstimate: "XL"
 
 relatedFeatures: []
@@ -30,6 +30,8 @@ technologies:
   - "Vitest — unit + integration tests under tests/"
   - "Playwright — e2e tests"
   - "OWASP / CWE / CVE / EPSS / KEV / SARIF / CycloneDX / SPDX — industry vocabularies the risk + ingestion model must align with"
+  - "Server-Sent Events (SSE) — Shep's existing pattern for live posture/finding updates"
+  - "React Flow (@xyflow/react) — already in tree; candidate for an asset-risk relationship graph view"
 
 relatedLinks:
   - title: "Clean Architecture overview (project doc)"
@@ -53,7 +55,201 @@ relatedLinks:
   - title: "OWASP CycloneDX SBOM spec"
     url: "https://cyclonedx.org/specification/overview/"
 
-openQuestions: []
+openQuestions:
+  - question: "Should the ASPM asset model extend the existing Application entity or introduce a separate SecurityAsset entity?"
+    resolved: true
+    options:
+      - option: "Extend Application via TSP"
+        description: "Add optional ASPM-relevant fields (criticality, businessUnit, exposure, dataClassification) to the existing Application entity in tsp/. ASPM uses Application as the canonical asset anchor. Pros: zero duplication, deep linking with existing inventory/feature/cycle work, simpler ownership story. Cons: Application gains responsibilities it didn't have before; non-application assets (e.g. standalone APIs, cloud envs) need adjacent entities."
+        selected: true
+      - option: "Introduce SecurityAsset as a new entity"
+        description: "Create a polymorphic SecurityAsset entity with a typed reference to Application | Repository | Service | ApiAsset | CloudEnvironment. Pros: clean separation of security concerns; flexible for non-application assets. Cons: duplicated ownership/exposure metadata; double lookups for every finding; harder to keep in sync with Application changes."
+        selected: false
+      - option: "Hybrid: extend Application + adjacent asset entities"
+        description: "Keep Application as the primary asset anchor (extended via TSP) and add narrow adjacent entities (Service, ApiAsset, CloudEnvironment) for assets that don't fit. Pros: avoids polymorphism while still covering non-application assets. Cons: requires careful boundary rules so the same physical asset isn't represented twice."
+        selected: false
+    selectionRationale: "Shep's Application entity is already the operational anchor for repo + agent + deployment + features + cycles. ASPM-extending Application keeps risk on the same object engineers and AppSec already work with, makes ownership and feature/cycle linkage free, and matches the codebase's TypeSpec-first conventions. Non-application assets (Service/ApiAsset/CloudEnvironment) still exist as adjacent entities for completeness, but the primary anchor stays Application."
+    answer: "Extend Application via TSP"
+
+  - question: "What risk-scoring approach should the MVP use?"
+    resolved: true
+    options:
+      - option: "Transparent composite (CVSS + EPSS + KEV + exposure + criticality)"
+        description: "Deterministic pure-domain function combining: CVSS base severity, EPSS exploitability percentile, KEV membership boost, asset exposure (internet/internal/airgapped), asset criticality, data classification, reachability hint. Every score has a breakdown the UI can show. Pros: explainable, auditable, easy to test, aligned with industry signals. Cons: requires KEV/EPSS feed adapters from day one to be meaningful (stub-friendly though)."
+        selected: true
+      - option: "Proprietary opaque score"
+        description: "A Shep-specific scoring function with tuned weights, presented as a single 0-100 number. Pros: differentiated. Cons: not explainable to AppSec/auditors, hard to defend in postmortems, harder to test."
+        selected: false
+      - option: "Pass-through scanner severity"
+        description: "Just normalize whatever severity a scanner reports (Critical/High/Medium/Low/Info). Pros: trivial to build. Cons: not actually prioritization — defeats the entire point of ASPM."
+        selected: false
+    selectionRationale: "Transparent composite is the only option that delivers on ASPM's core promise (prioritize what matters) while remaining defensible. The breakdown is shown in the UI and stored on RiskScore so audits and postmortems can reconstruct the decision. KEV/EPSS adapters can ship as stubs initially — the scoring use case is testable against fixtures regardless."
+    answer: "Transparent composite (CVSS + EPSS + KEV + exposure + criticality)"
+
+  - question: "Which finding ingestion formats should the MVP support?"
+    resolved: true
+    options:
+      - option: "SARIF + CycloneDX SBOM"
+        description: "Two ingestion ports/adapters: IFindingIngestPort (SARIF v2.1.0) covers SAST/IaC/secret/container findings from most modern scanners; ISbomPort (CycloneDX 1.5+) covers dependency inventories with embedded vulnerabilities. Pros: covers ~80% of real-world ingestion in two formats; both are OASIS/OWASP standards. Cons: SPDX, vendor-native APIs, runtime telemetry deferred."
+        selected: true
+      - option: "SARIF only"
+        description: "Single SARIF ingestion port. Pros: simplest scope. Cons: misses SBOM/dependency context that is critical for prioritization with EPSS/KEV (the very signals the scoring model wants)."
+        selected: false
+      - option: "SARIF + CycloneDX + SPDX + vendor-native (Snyk/Dependabot/GHAS)"
+        description: "Broad coverage day one. Pros: maximum scanner support. Cons: XL scope; vendor-native means provider lock-in inside infrastructure and many adapter stubs that won't ship in MVP."
+        selected: false
+    selectionRationale: "SARIF + CycloneDX hit the sweet spot: two open standards covering code/IaC/secret findings AND dependency context (the dependency context is what makes EPSS/KEV scoring useful). Vendor-native adapters are deferred to follow-up epics; the IFindingIngestPort and ISbomPort interfaces are designed so they can be added without rewriting the use cases."
+    answer: "SARIF + CycloneDX SBOM"
+
+  - question: "How should ownership of assets/findings be determined in the MVP?"
+    resolved: true
+    options:
+      - option: "Declared via .shep/ownership.yaml + UI override"
+        description: "Each repo can ship a checked-in .shep/ownership.yaml mapping paths/services to Owner/Team/BusinessUnit. UI can override per asset. Pros: source-of-truth lives with the code; works for monorepos; engineer-friendly; auditable in git. Cons: requires teams to write the file (one-time cost)."
+        selected: true
+      - option: "Inferred from git history (CODEOWNERS / blame)"
+        description: "Parse CODEOWNERS or top committers per path. Pros: zero config. Cons: noisy; doesn't capture team/BU; breaks when authors leave; CODEOWNERS isn't universal."
+        selected: false
+      - option: "UI-assigned only"
+        description: "All ownership is set in the Shep UI. Pros: simple. Cons: drifts from code reality; not auditable; doesn't scale to large repos."
+        selected: false
+    selectionRationale: "Declared YAML with UI override gives the best of both worlds: source-of-truth in code (engineering culture) with the ability to refine in the UI when reality changes. CODEOWNERS support can be layered in later as a fallback ingester behind the same Owner repository — the use case doesn't care where the data came from."
+    answer: "Declared via .shep/ownership.yaml + UI override"
+
+  - question: "Should SLA windows be measured in calendar days or business days?"
+    resolved: true
+    options:
+      - option: "Calendar days (configurable per severity)"
+        description: "SLA per severity (e.g. Critical=7d, High=30d, Medium=90d, Low=180d) measured in calendar days from finding discovery. Pros: simple, deterministic, matches CISA BOD 22-01 style requirements. Cons: doesn't account for weekends/holidays."
+        selected: true
+      - option: "Business days with holiday calendar"
+        description: "SLA in business days with a configurable holiday calendar per workspace. Pros: more realistic for engineering teams. Cons: significantly more state (holiday calendars), harder to test, less aligned with regulatory frameworks."
+        selected: false
+      - option: "Configurable per-policy unit"
+        description: "Each SecurityPolicy declares its own unit (calendar/business). Pros: flexible. Cons: confusing in mixed environments; harder to roll up posture."
+        selected: false
+    selectionRationale: "Calendar days match CISA/regulatory norms, simplify the ISlaClockPort, make all SLA assertions deterministic and testable, and avoid building a holiday-calendar subsystem in MVP. Business-day mode can be added as a follow-up policy without breaking the existing model."
+    answer: "Calendar days (configurable per severity)"
+
+  - question: "Should AI-generated code risk signals be a separate review queue or merged into the unified findings stream?"
+    resolved: true
+    options:
+      - option: "Separate AiChangeRiskSignal entity + dedicated review queue"
+        description: "Distinct entity tracking AI-generated change risk (suspicious dependency add, secret introduced, large unreviewed diff, license violation, prompt-injection-shaped patterns) with its own queue at /aspm/ai-review. Can graduate to a SecurityFinding when confirmed. Pros: differentiating; reviewers can triage AI changes as a workflow without diluting the main findings backlog; aligns with Shep being AI-native. Cons: small extra entity + UI surface."
+        selected: true
+      - option: "Just emit normal SecurityFindings with source=ai"
+        description: "Tag findings with origin=ai-change-review. Pros: one stream to triage. Cons: AI-change risk often isn't yet a confirmed vulnerability — forcing it through Finding lifecycle muddies severity stats and SLA math."
+        selected: false
+      - option: "Defer to a later epic"
+        description: "Ship ASPM without AI-change risk; add later. Pros: smaller MVP. Cons: misses the only ASPM differentiator unique to Shep — being AI-native."
+        selected: false
+    selectionRationale: "AI-change risk is Shep's unique angle on ASPM and must ship in MVP. Modeling it as a distinct entity (with a clear graduation path to SecurityFinding) keeps the Findings backlog and SLA stats clean while giving reviewers a purpose-built queue. The two entities can share owner/asset/risk-score plumbing."
+    answer: "Separate AiChangeRiskSignal entity + dedicated review queue"
+
+  - question: "Should the MVP normalize severity to a canonical scale or preserve scanner-native values?"
+    resolved: true
+    options:
+      - option: "Canonical 5-level (Critical / High / Medium / Low / Info) + preserved raw"
+        description: "Store the scanner's raw severity AND a normalized canonical level on every finding. UI/filters/SLAs operate on the canonical level. Pros: cross-scanner comparability, deterministic SLA math, auditable trail back to scanner intent. Cons: requires mapping rules per scanner."
+        selected: true
+      - option: "Scanner-native only"
+        description: "Keep whatever the scanner produced. Pros: zero mapping work. Cons: 'High' from Snyk ≠ 'High' from Semgrep ≠ 'High' from Trivy — makes posture aggregation impossible."
+        selected: false
+      - option: "CVSS-only"
+        description: "Force every finding through a CVSS-derived score. Pros: industry standard. Cons: many SAST/secret findings have no CVSS; mapping is lossy and forced."
+        selected: false
+    selectionRationale: "A canonical level is non-negotiable for unified posture (the whole point of ASPM). Preserving the raw scanner value alongside keeps the audit trail and lets the UI show 'Semgrep called this MEDIUM' for context. The canonical scale aligns with CVSS v3.1 severity bands (Critical 9.0-10, High 7.0-8.9, Medium 4.0-6.9, Low 0.1-3.9, Info)."
+    answer: "Canonical 5-level (Critical / High / Medium / Low / Info) + preserved raw"
+
+  - question: "What workflow should risk exceptions (false-positives, accepted-risk, won't-fix) follow?"
+    resolved: true
+    options:
+      - option: "Self-declared with expiry + audit trail"
+        description: "Any owner can declare an exception (reason, expires_at, justification), tracked in RiskException with a full audit log. Excluded findings drop out of posture rollups until expiry. Pros: unblocks engineers; auditable; matches reality of small teams; pairs with a 'review expired exceptions' campaign type. Cons: no human-in-the-loop approval gate."
+        selected: true
+      - option: "Approval chain (security manager must sign off)"
+        description: "Exception requires sign-off by a designated approver. Pros: governance. Cons: requires a roles/permissions subsystem that doesn't exist in Shep yet; bottleneck."
+        selected: false
+      - option: "No exceptions in MVP"
+        description: "Findings can only be Open / In Progress / Resolved / Closed. Pros: simplest model. Cons: every team needs false-positive and won't-fix; without it the backlog drowns engineering."
+        selected: false
+    selectionRationale: "Self-declared exceptions with expiry + audit trail unblock engineers without introducing a permissions subsystem Shep doesn't yet have. Auditability is preserved via the immutable audit log; expiry forces re-review (the 'review expired exceptions' campaign type is one of the staged epics). Approval gates can be added later behind the same RiskException entity."
+    answer: "Self-declared with expiry + audit trail"
+
+  - question: "Should remediation campaigns be per-application or cross-application themes?"
+    resolved: true
+    options:
+      - option: "Both — campaigns scope to a query (cross-cutting) and can be filtered to one application"
+        description: "Campaign carries a target query (severity≥High AND finding.type=secret) plus optional application filter. Same primitive serves 'fix all critical log4j across the fleet' and 'fix all findings on payments-service'. Pros: one entity, two workflows; aligns with how AppSec actually runs sprints. Cons: query model needs careful design."
+        selected: true
+      - option: "Per-application only"
+        description: "Each campaign targets exactly one application. Pros: simplest. Cons: misses the cross-cutting 'fix all log4j' workflow that is the bread-and-butter of ASPM."
+        selected: false
+      - option: "Cross-application themes only"
+        description: "Campaigns are global by query. Per-application views are filters. Pros: powerful. Cons: less intuitive for engineers who think per-service."
+        selected: false
+    selectionRationale: "A query-shaped campaign covers both use cases with one entity. Engineers see 'campaigns affecting payments-service' as a filter; AppSec sees 'fix all KEV-listed across the fleet' as a query. The query primitive reuses the same filter shape the Findings list already needs — no duplicate work."
+    answer: "Both — campaigns scope to a query (cross-cutting) and can be filtered to one application"
+
+  - question: "Which compliance framework(s) should MVP cover?"
+    resolved: true
+    options:
+      - option: "OWASP ASVS + CWE Top 25 mapping"
+        description: "Findings map to OWASP ASVS controls and CWE categories. ComplianceControl entity stores the framework + control identifier. Pros: open standards, no licensing issues, directly applicable to AppSec audiences, foundation for adding regulated frameworks later. Cons: doesn't satisfy SOC2/PCI/HIPAA audit needs out of the box."
+        selected: true
+      - option: "SOC 2 + PCI DSS + OWASP ASVS"
+        description: "Ship with mappings to SOC 2 CC controls, PCI DSS 4.0 requirements, and OWASP ASVS. Pros: covers most enterprise audit needs. Cons: SOC2/PCI mapping is opinionated and quickly stale; risk of misleading auditors; significant content authoring."
+        selected: false
+      - option: "No compliance framework in MVP"
+        description: "Ship findings + risk only; framework mapping later. Pros: tightest MVP. Cons: misses a major ASPM use case; harder to retrofit if compliance is added later."
+        selected: false
+    selectionRationale: "OWASP ASVS + CWE Top 25 is the open-standards foundation every other framework can be mapped against later. It's also the framework most aligned with code-level findings (which is what scanners produce). Regulated frameworks (SOC2/PCI/HIPAA) can be added as ComplianceControl rows in follow-up epics without changing the data model."
+    answer: "OWASP ASVS + CWE Top 25 mapping"
+
+  - question: "Should ASPM findings auto-create developer tasks (Shep work items) or route via a separate notification?"
+    resolved: true
+    options:
+      - option: "Use case to convert finding(s) to Shep work-item(s) on demand"
+        description: "Provide a use case (e.g. assign-finding-to-work-item) that creates or links a Shep WorkItem to one or more findings. Engineers see security work in the same backlog as features. Pros: reuses existing WorkItem entity, deep integration with cycles/sprints, one place to triage. Cons: needs WorkItem ↔ Finding linkage in TSP."
+        selected: true
+      - option: "Auto-create a work item for every High/Critical finding"
+        description: "Trigger work-item creation on ingestion. Pros: zero clicks. Cons: floods backlogs on first ingestion; can't catch deduplication first; engineers lose triage control."
+        selected: false
+      - option: "Findings stay separate; engineers see them in /aspm only"
+        description: "Findings don't connect to work items. Pros: simplest. Cons: defeats developer task routing — the security backlog becomes a parallel system engineers ignore."
+        selected: false
+    selectionRationale: "On-demand conversion via a use case is the right granularity: AppSec/owners triage in /aspm, then explicitly route the ones that matter into the engineering backlog. Auto-creation can be layered on later as a policy-driven action. The Finding ↔ WorkItem link is a single optional reference in TSP."
+    answer: "Use case to convert finding(s) to Shep work-item(s) on demand"
+
+  - question: "Should the MVP include a graph-based asset/risk relationship view (React Flow)?"
+    resolved: true
+    options:
+      - option: "Tabular MVP, defer graph view to follow-up"
+        description: "Ship Findings table, Posture cards, Campaign board, Owner map (table), Risk trend chart. No React Flow graph in MVP. Pros: tighter scope; tables are how engineers actually triage; faster to ship and test. Cons: less visually distinctive."
+        selected: true
+      - option: "Ship a React Flow asset-risk graph in MVP"
+        description: "Asset nodes with finding-density edges, owner overlays. Pros: differentiating; nice demo. Cons: React Flow ASPM graphs are notoriously hard to make useful at scale; risks delaying the MVP."
+        selected: false
+      - option: "Skip graph entirely, ever"
+        description: "Permanently tabular. Pros: focus. Cons: closes the door on a powerful visualization later."
+        selected: false
+    selectionRationale: "Tables, posture cards, and the campaign board are what actual ASPM users live in day-to-day. A graph view is high-effort-low-utility for MVP and can be added later as a presentation-only enhancement (the use case layer already returns the right data shape). Keeping it out of MVP also avoids React Flow performance work."
+    answer: "Tabular MVP, defer graph view to follow-up"
+
+  - question: "Should the MVP scope findings/posture by business unit / multi-workspace, or stay single-scope?"
+    resolved: true
+    options:
+      - option: "Single workspace; BusinessUnit is a field, not a scope"
+        description: "All findings live in one workspace. BusinessUnit is a string tag on Application for grouping in dashboards. Pros: matches Shep's current single-workspace model; no auth/scoping subsystem needed; faster MVP. Cons: enterprises with strict BU isolation need follow-up work."
+        selected: true
+      - option: "BusinessUnit as a hard scope (per-BU views/permissions)"
+        description: "Each BU sees only its own findings. Pros: enterprise-ready. Cons: requires a permissions/scoping subsystem Shep doesn't have; major scope creep."
+        selected: false
+      - option: "Multi-workspace (per-tenant DBs)"
+        description: "Hard tenant isolation. Pros: cleanest. Cons: Shep is single-tenant by design today; this would be a separate architectural feature."
+        selected: false
+    selectionRationale: "Shep is single-tenant today. Treating BusinessUnit as a grouping field (not a scope) lets posture dashboards roll up by BU without building a permissions subsystem. Hard scoping can be added later once Shep has a workspace/permissions model — the data shape (BU on Application) doesn't change."
+    answer: "Single workspace; BusinessUnit is a field, not a scope"
 
 content: |
   ## Problem Statement
@@ -68,152 +264,416 @@ content: |
   Engineering, AppSec, and security leadership have to leave Shep to answer
   "which application risks matter most, who owns them, and what should be fixed
   first?" — exactly the question this feature is meant to answer in-product.
+  Shep is also uniquely positioned to surface a class of risk that classical
+  ASPM tools miss: risk introduced by AI-generated changes (suspicious deps,
+  secret leakage, large unreviewed diffs, license drift, prompt-injection
+  shapes).
 
-  The ASPM module needs to plug into Shep's existing Application/Repository
+  The ASPM module must plug into Shep's existing Application/Repository
   inventory and Clean Architecture stack without bypassing the TypeSpec-first,
   use-case-only, agent-agnostic conventions enforced by `CLAUDE.md` and
   `.claude/rules/*`.
 
-  ## Codebase Analysis
+  ## Success Criteria
 
-  ### Project Structure
+  - [ ] A user can navigate to `/aspm` in the web UI and see a posture summary
+    (total findings by canonical severity, top 5 at-risk applications, KEV-listed
+    finding count, SLA-breach count, AI-change review queue depth, trend over 30 days).
+  - [ ] Ingesting a SARIF v2.1.0 file via `shep aspm ingest --sarif <file> --application <slug>`
+    creates SecurityFinding records linked to the Application, with raw and
+    canonical severity stored, no duplicates on re-ingestion of the same scanner run.
+  - [ ] Ingesting a CycloneDX 1.5 SBOM creates dependency findings keyed by
+    CVE identifier with KEV/EPSS enrichment when the adapters return data
+    (stub-friendly: missing data degrades gracefully to CVSS-only scoring).
+  - [ ] Every finding has a deterministic RiskScore (0-100) with a breakdown
+    showing the contributions of CVSS, EPSS, KEV, exposure, criticality, and
+    data classification. Re-computing the same input produces the same score.
+  - [ ] Findings inherit ownership from `.shep/ownership.yaml` declared in the
+    Application's repository; UI overrides persist to the Owner repository and
+    survive re-ingestion.
+  - [ ] A remediation campaign can be created with a query (severity, finding
+    type, KEV flag, application, owner) and the campaign view lists all matching
+    findings with live progress (% closed, SLA-at-risk count, blocked count).
+  - [ ] Each finding has an SLA window derived from its canonical severity and
+    the active SecurityPolicy; SLA state (Healthy / At-Risk / Breached) is
+    computed deterministically from `now` and `discoveredAt`.
+  - [ ] A user can declare a RiskException on a finding with a reason and an
+    expiry date; expired exceptions automatically re-include the finding in
+    posture rollups and surface in a "review expired exceptions" campaign.
+  - [ ] An AiChangeRiskSignal is created for every AI-driven change Shep
+    produces that matches an MVP rule (secret in diff, new high-risk dep, large
+    unreviewed diff, license violation). The `/aspm/ai-review` queue lists open
+    signals with the originating agent session and a one-click graduate-to-Finding action.
+  - [ ] A finding can be converted to a Shep WorkItem in a single use-case call;
+    the WorkItem references back to the finding and the link is visible in both
+    the WorkItem view and the Finding detail.
+  - [ ] All ASPM use cases are covered by RED-first unit tests; risk scoring is
+    covered by a fixture-driven golden-file test asserting deterministic output.
+  - [ ] All ASPM SQLite repositories have round-trip integration tests under
+    `tests/integration/infrastructure/persistence/sqlite/`.
+  - [ ] At least one Playwright e2e covers: open /aspm dashboard → drill into
+    findings list → open a finding → declare an exception → see posture update.
+  - [ ] Every new web component under `components/features/aspm/` has a
+    colocated `*.stories.tsx` with Default, Loading, and Error states (commits
+    without stories will be rejected per project rules).
+  - [ ] `pnpm validate` (lint + format + typecheck + tsp compile) is green;
+    `pnpm test:unit && pnpm test:int` is green; new ASPM e2e suite is green.
+  - [ ] Domain types are TypeSpec-authored — no hand-edited
+    `domain/generated/output.ts`; running `pnpm tsp:compile` is idempotent.
+  - [ ] No application or presentation file imports from `infrastructure/`;
+    all infra access goes through ports injected by tsyringe string tokens.
 
-  - `tsp/` — TypeSpec sources. Domain entities live in `tsp/domain/entities/`
-    (e.g. `application.tsp`, `repository.tsp`, `feature.tsp`, `work-item.tsp`).
-    Common scalars, enums, and base mixins (`SoftDeletableEntity`) sit in
-    `tsp/common/`. Compiled output lands at
-    `packages/core/src/domain/generated/output.ts` and must never be hand-edited.
-  - `packages/core/src/` — the four Clean Architecture layers:
-    - `domain/` — generated types, value objects, factories, errors, shared utils.
-    - `application/use-cases/<area>/<verb>-<noun>.use-case.ts` — orchestration
-      entry points (~40 areas today: applications, features, cycles, audit,
-      analytics, integrations, cloud-deploy, …).
-    - `application/ports/output/` — `repositories/`, `services/`, `agents/`
-      interfaces consumed by use cases via string-token injection.
-    - `infrastructure/` — `repositories/` (SQLite implementations + mappers),
-      `services/`, `adapters/`, `persistence/sqlite/migrations/` (numbered
-      timestamped files), and `di/` (tsyringe container + topic-grouped
-      `register-*` modules).
-  - `src/presentation/` — thin presentation surfaces:
-    - `web/` — Next.js App Router. Pages mirror domain areas (`app/applications/`,
-      `app/projects/[slug]/`, `app/agents/`, …). Components live in
-      `components/features/<area>/` with mandatory colocated `*.stories.tsx`.
-      Server actions in `app/actions/` and SSE/REST routes in `app/api/`.
-    - `cli/commands/` — Commander wiring around DI-resolved use cases.
-    - `tui/` — terminal UI surface.
-  - `tests/unit/use-cases/<area>/` and `tests/integration/infrastructure/persistence/sqlite/`
-    mirror the source tree; e2e specs live under `tests/e2e/` driven by Playwright.
+  ## Functional Requirements
 
-  ### Architecture Patterns
+  ### Asset & Ownership Model
 
-  - **Dependency rule** points inward: presentation → application → domain;
-    infrastructure only implements outward ports. Application + presentation
-    may not import from `infrastructure/` (enforced by `.claude/rules/code-quality.md`).
-  - **TypeSpec-first** modeling: every new entity, enum, or field is authored in
-    `tsp/` and surfaced through generated types — no ad-hoc TS interfaces for
-    domain concepts.
-  - **Repository pattern**: `I<Entity>Repository` port in
-    `application/ports/output/repositories/`, SQLite implementation in
-    `infrastructure/repositories/sqlite-<entity>.repository.ts` with a colocated
-    mapper and a migration. Cross-platform path normalization is mandatory.
-  - **Use cases as the only entry point**: presentation never touches a
-    repository, service, or SDK directly. CLI/web/TUI all share the same
-    presentation-agnostic use-case API.
-  - **DI via tsyringe** with string tokens (`'I<Name>'`). Wiring lives in
-    `infrastructure/di/container.ts` and topic-grouped `register-*.ts` modules.
-  - **Agent-agnostic**: any LLM use must route through `IAgentExecutorProvider`;
-    provider SDKs are confined to `infrastructure/`.
-  - **TDD mandatory**: failing test first under `tests/unit/...`, then minimal
-    implementation, then refactor.
-  - **Storybook mandatory** for every web component (Default + Loading + Error,
-    plus variants); commits without stories are rejected.
+  - **FR-1**: Extend the existing `Application` TypeSpec entity with optional
+    ASPM-relevant fields: `criticality` (enum: Tier1/Tier2/Tier3), `exposure`
+    (enum: Internet/Internal/Airgapped/Unknown), `dataClassification` (enum:
+    Public/Internal/Confidential/Restricted), `businessUnit` (string).
+  - **FR-2**: Introduce adjacent asset entities for completeness: `Service`,
+    `ApiAsset`, `CloudEnvironment` — each linked to an `Application`.
+  - **FR-3**: Introduce `Owner`, `Team`, `BusinessUnit` entities. An `Owner` is
+    a person or team identifier; `Team` groups owners; `BusinessUnit` groups
+    teams. Findings always resolve to an `Owner` (with team/BU rollup).
+  - **FR-4**: Resolve ownership in priority order: (1) UI-declared override on
+    the Application/Service/ApiAsset, (2) `.shep/ownership.yaml` declared in
+    the Application's repository, (3) fallback to the Application's listed
+    owner. Resolution is deterministic and pure.
+  - **FR-5**: Provide use cases `assign-owner`, `import-ownership-yaml`,
+    `resolve-ownership-for-finding`, `list-owners`.
 
-  ### Relevant Technologies
+  ### Findings Ingestion
 
-  - TypeSpec → generated TS domain types.
-  - tsyringe DI with topic-grouped registration modules.
-  - better-sqlite3 with numbered, idempotent migrations and soft-delete columns
-    on most entities (`SoftDeletableEntity` base in `tsp/common/base.tsp`).
-  - Next.js App Router with server components, server actions, and SSE routes
-    for live updates (used today by Control Center / agent sessions).
-  - shadcn/ui + Tailwind for UI primitives; React Flow already in tree for graph
-    visualizations and could be reused for an ASPM "asset / risk relationship"
-    view if needed.
-  - Vitest (unit + integration) and Playwright (e2e).
-  - Shep already has an Applications inventory page
-    (`src/presentation/web/app/applications/` + `components/features/applications/`)
-    — the natural anchor for ASPM context tabs (risk, findings, owners).
+  - **FR-6**: Define `IFindingIngestPort` (SARIF v2.1.0 parser) and `ISbomPort`
+    (CycloneDX 1.5+ parser) in `application/ports/output/services/`.
+  - **FR-7**: Concrete SARIF and CycloneDX adapters live in `infrastructure/services/`
+    and are wired via `register-aspm.ts`. Both adapters tolerate missing optional
+    fields and never throw on unknown extensions.
+  - **FR-8**: Use case `ingest-findings` accepts (Application reference, source
+    type, raw document) and creates `SecurityFinding` records. Deduplication
+    key = (applicationId, findingDomain, ruleId, location.path, location.line,
+    cveId). Re-ingestion of the same scanner run is a no-op on the dedup key.
+  - **FR-9**: `SecurityFinding` carries: id, applicationId, optional
+    serviceId/apiAssetId, findingDomain (enum: Code/Dependency/Secret/Container/
+    Cloud/Api/Identity/Runtime/Compliance/Ai), ruleId, title, description,
+    locationPath, locationLine, scannerRaw (jsonb), rawSeverity, canonicalSeverity,
+    cveId?, cweId?, owaspAsvsControlId?, ownerId, state (Open/Triaged/InProgress/
+    Resolved/Closed/Exception), discoveredAt, lastSeenAt, firstFixedAt?.
+  - **FR-10**: `SecurityFinding` is a `SoftDeletableEntity`. Resolutions never
+    hard-delete; closure with reason is preserved for audit.
+
+  ### Risk Scoring & Prioritization
+
+  - **FR-11**: Introduce `RiskScore` value object with fields:
+    `total` (0-100), `cvssContribution`, `epssContribution`, `kevContribution`,
+    `exposureContribution`, `criticalityContribution`, `dataClassificationContribution`,
+    `computedAt`, `inputsHash`. Stored alongside the finding for audit.
+  - **FR-12**: Pure-domain function `computeRiskScore(inputs)` is deterministic:
+    same inputs ⇒ same score; documented weights in code with a fixture-driven
+    golden test.
+  - **FR-13**: `IExploitIntelPort` exposes `getEpssPercentile(cveId)` and
+    `isKev(cveId)`. The MVP adapter loads KEV from the public CISA JSON feed and
+    EPSS from the FIRST CSV; both cache results locally and gracefully return
+    `null`/`false` when the network is unavailable.
+  - **FR-14**: Use case `rank-findings` accepts a filter (severity range, owner,
+    application, KEV flag, finding domain, state) and returns findings sorted
+    by `RiskScore.total` desc with pagination.
+  - **FR-15**: Use case `compute-risk-score-for-finding` re-computes the score
+    on demand and updates the stored breakdown.
+
+  ### Remediation Campaigns
+
+  - **FR-16**: `RemediationCampaign` entity carries: id, name, description,
+    targetQuery (serialized filter — severity, findingDomain, application,
+    owner, kev, ruleId), status (Draft/Active/Paused/Completed/Cancelled),
+    ownerId, dueDate, createdAt, closedAt?, audit log.
+  - **FR-17**: Use cases: `create-campaign`, `update-campaign`, `close-campaign`,
+    `list-campaigns`, `get-campaign-progress` (returns total/closed/at-risk/
+    blocked counts derived from the query at read time).
+  - **FR-18**: A finding can belong to multiple campaigns (via the query — no
+    explicit join). Campaign progress is computed at read time.
+
+  ### SLA Tracking
+
+  - **FR-19**: `SecurityPolicy` entity carries SLA windows in calendar days per
+    canonical severity (default: Critical=7, High=30, Medium=90, Low=180).
+    One active policy per workspace in MVP.
+  - **FR-20**: `ISlaClockPort` exposes `now(): Date` (testable). SLA state is
+    a pure function of (discoveredAt, severity, policy, now): `Healthy` when
+    elapsed < 50% of window; `AtRisk` when 50–100%; `Breached` when ≥100%.
+  - **FR-21**: Findings with active exceptions are excluded from SLA breach
+    counts until the exception expires.
+
+  ### Risk Exceptions
+
+  - **FR-22**: `RiskException` entity: id, findingId, reason (enum:
+    FalsePositive/AcceptedRisk/CompensatingControl/NotApplicable/Other),
+    justification (text), declaredBy, declaredAt, expiresAt, status
+    (Active/Expired/Revoked). Audit log of all state changes.
+  - **FR-23**: Use cases: `declare-exception`, `revoke-exception`,
+    `list-expiring-exceptions`. Expired exceptions automatically transition
+    the finding's effective state back to its prior state on next read.
+
+  ### Executive Dashboard & Reporting
+
+  - **FR-24**: Use case `get-posture-summary` returns: total open findings by
+    canonical severity, top-N at-risk applications, KEV-listed open count,
+    SLA-breach count, exception count, AI-change queue depth, last-ingested-at.
+  - **FR-25**: Use case `get-risk-trend` returns time-bucketed posture metrics
+    (default daily buckets, 30-day window) derived from finding state changes.
+  - **FR-26**: Use case `get-application-posture` returns per-Application
+    posture: open findings by severity, top 10 by risk score, owner, last
+    scan, trend sparkline data.
+
+  ### Developer Task Routing
+
+  - **FR-27**: Optional `workItemId` linkage on `SecurityFinding`. Use case
+    `convert-finding-to-work-item` creates a new Shep WorkItem with title,
+    description, ownerId, and a back-reference to the finding.
+  - **FR-28**: Use case `bulk-convert-findings` accepts a query (same shape
+    as campaign target) and creates one WorkItem per finding, idempotent on
+    the existing linkage.
+
+  ### AI Change Risk Review
+
+  - **FR-29**: `AiChangeRiskSignal` entity: id, applicationId, agentSessionId,
+    signalType (enum: SecretInDiff/HighRiskDependencyAdded/LargeUnreviewedDiff/
+    LicenseViolation/PromptInjectionShape/Other), severity (canonical),
+    summary, evidence (jsonb — diff snippets, dep name, license id, etc.),
+    state (Open/Acknowledged/GraduatedToFinding/Dismissed/Resolved),
+    discoveredAt, resolvedAt?.
+  - **FR-30**: Use case `record-ai-change-risk-signal` is callable by Shep
+    agent infrastructure (post-change hooks); it must not depend on a specific
+    AI provider.
+  - **FR-31**: Use case `graduate-ai-signal-to-finding` converts a signal into
+    a `SecurityFinding` preserving evidence and creating the linkage; the
+    signal transitions to `GraduatedToFinding`.
+  - **FR-32**: Use case `dismiss-ai-signal` marks a signal as a false positive
+    with a justification audit entry.
+
+  ### Compliance Surface
+
+  - **FR-33**: `ComplianceControl` entity: id, frameworkId (enum: OwaspAsvs/
+    CweTop25), controlId (string), title, description.
+  - **FR-34**: Findings can map to zero-or-more `ComplianceControl` entries.
+    Ingestion adapters populate these when scanner output includes the
+    mapping (SARIF supports CWE and ASVS taxa references).
+  - **FR-35**: Use case `get-compliance-coverage` returns per-framework
+    coverage: controls covered, controls with open findings, controls without
+    any finding evidence.
+
+  ### CLI Surface
+
+  - **FR-36**: New Commander subcommands routed through use cases:
+    `shep aspm ingest --sarif <file> --application <slug>`,
+    `shep aspm ingest --sbom <file> --application <slug>`,
+    `shep aspm findings list [--app] [--severity] [--owner] [--kev] [--state]`,
+    `shep aspm campaigns list|create|close`,
+    `shep aspm posture [--app <slug>]`,
+    `shep aspm exceptions list-expiring`,
+    `shep aspm ai-review list|dismiss|graduate`.
+
+  ### Web Surface
+
+  - **FR-37**: New routes under `src/presentation/web/app/aspm/`:
+    `/aspm` (dashboard), `/aspm/findings`, `/aspm/findings/[id]`,
+    `/aspm/campaigns`, `/aspm/campaigns/[id]`, `/aspm/inventory`,
+    `/aspm/owners`, `/aspm/compliance`, `/aspm/ai-review`.
+  - **FR-38**: Augment existing Application surface with an "ASPM" tab/section
+    showing risk score, top findings, owners, exception count.
+  - **FR-39**: SSE route under `app/api/aspm/posture/stream` pushes posture
+    deltas on finding state changes (reuses existing SSE pattern).
+  - **FR-40**: Every new web component has a colocated `*.stories.tsx` with
+    Default, Loading, and Error states plus relevant variants.
+
+  ### Persistence & DI
+
+  - **FR-41**: Each new entity has a numbered, idempotent SQLite migration
+    under `packages/core/src/infrastructure/persistence/sqlite/migrations/`.
+  - **FR-42**: Each new entity has an `I<Entity>Repository` port and a SQLite
+    implementation with a mapper, registered via `register-aspm.ts`.
+  - **FR-43**: `register-aspm.ts` is added to `infrastructure/di/container.ts`
+    bootstrap; ordering preserved so migrations run before resolution.
+
+  ## Non-Functional Requirements
+
+  - **NFR-1 (Architecture)**: Strict Clean Architecture compliance —
+    application and presentation layers never import from `infrastructure/`.
+    All ASPM dependencies are accessed via tsyringe-injected ports identified
+    by string tokens (`'IFindingRepository'`, `'IExploitIntelPort'`, etc.).
+    Architecture rule enforced by code review and (where possible) linter.
+  - **NFR-2 (TypeSpec-first)**: All ASPM domain types are authored in `tsp/`.
+    The generated `packages/core/src/domain/generated/output.ts` is never
+    hand-edited. `pnpm tsp:compile` is idempotent.
+  - **NFR-3 (TDD)**: Every use case has at least one failing test written
+    before implementation. Risk-score computation has a golden-file test
+    asserting determinism across multiple fixture inputs.
+  - **NFR-4 (Agent-agnostic)**: No ASPM module imports a provider SDK
+    (Anthropic, OpenAI, etc.) outside of `infrastructure/`. Any LLM-assisted
+    feature routes through `IAgentExecutorProvider`.
+  - **NFR-5 (Storybook)**: Every web component under
+    `components/features/aspm/` has a colocated `*.stories.tsx` with Default,
+    Loading, and Error states. CI rejects PRs missing stories.
+  - **NFR-6 (Performance — Ingestion)**: A 10,000-finding SARIF file ingests
+    in under 30 seconds on a developer laptop; ingestion runs in a transaction
+    and rolls back on failure.
+  - **NFR-7 (Performance — Dashboards)**: `/aspm` dashboard initial paint
+    completes in under 1 second with up to 50,000 findings in the database.
+    Achieved via indexed columns (applicationId, canonicalSeverity, state,
+    discoveredAt, ownerId, cveId) and aggregate caching where needed.
+  - **NFR-8 (Performance — Findings table)**: Paginated findings list (25 per
+    page, sorted by risk score desc) returns in under 300 ms on a 50k-finding
+    dataset.
+  - **NFR-9 (Determinism)**: Risk scoring, SLA state, and ownership resolution
+    are pure functions. No `Date.now()`, no random, no environment access in
+    the domain layer. Time is supplied via `ISlaClockPort`.
+  - **NFR-10 (Determinism — Ingestion)**: Re-ingesting an identical scanner
+    document is a no-op (zero new rows). The dedup key is stable across runs.
+  - **NFR-11 (Cross-platform paths)**: All location paths are normalized to
+    POSIX-style separators before persisting (per existing repository
+    convention; ensures Windows/Linux/macOS portability).
+  - **NFR-12 (Soft-delete + audit)**: Findings, campaigns, exceptions, and
+    owners all extend `SoftDeletableEntity`. State changes append to an
+    immutable audit log; nothing is destructively lost.
+  - **NFR-13 (Security — Data handling)**: Scanner-supplied raw documents may
+    contain secrets (e.g., a SAST finding that includes a key snippet). MVP
+    must redact obvious secret patterns (high-entropy strings, AWS/GCP key
+    shapes, common API token prefixes) in `description` and `scannerRaw`
+    before persisting. Full raw is hashed and stored as a reference only.
+  - **NFR-14 (Security — Adapter robustness)**: SARIF/CycloneDX parsers must
+    not crash on malformed input, must enforce a max-size guard (default
+    100 MB), and must reject documents that exceed it with a clean error.
+  - **NFR-15 (Observability)**: Every ingestion run emits a structured audit
+    record (source, file hash, counts: new/updated/duplicate, duration).
+    Surfaced in the dashboard's "last ingested" tile and via
+    `shep aspm ingest --json` output.
+  - **NFR-16 (Accessibility)**: All new web components meet WCAG 2.1 AA:
+    keyboard navigation, focus order, colour-contrast ratios, screen-reader
+    labels on icon-only buttons (severity badges, KEV flag).
+  - **NFR-17 (Storybook coverage)**: Findings table, finding detail panel,
+    campaign board, posture cards, owner map, AI-review queue each have
+    Storybook stories that include realistic mock data covering at least
+    Critical / High / Medium / Low + KEV + exception + AI-graduated cases.
+  - **NFR-18 (Migration safety)**: All ASPM migrations use idempotent
+    DDL patterns from `LESSONS.md` (CREATE TABLE IF NOT EXISTS, safe
+    defaults on ALTER, no destructive ops). Re-running the migration runner
+    is a no-op.
+  - **NFR-19 (File length)**: No new file exceeds ~300 lines (per
+    `.claude/rules/code-quality.md`). Use cases stay single-purpose; large
+    domain logic decomposes into named helpers.
+  - **NFR-20 (Test coverage gate)**: Unit-test coverage for the new
+    `application/use-cases/aspm/` directory must meet or exceed the
+    repository's current average for `application/use-cases/`.
+
+  ## Product Questions & AI Recommendations
+
+  | # | Question | AI Recommendation | Rationale |
+  | - | -------- | ----------------- | --------- |
+  | 1 | Asset model: extend Application vs. new SecurityAsset? | Extend Application via TSP | Application is already the operational anchor; extending it keeps risk on the same object engineers and AppSec already work with and avoids duplicate ownership/exposure plumbing. |
+  | 2 | Risk-scoring approach? | Transparent composite (CVSS + EPSS + KEV + exposure + criticality) | Explainable, auditable, testable, and the only option that delivers ASPM's core promise of prioritizing what matters. |
+  | 3 | Ingestion formats for MVP? | SARIF + CycloneDX SBOM | Two open standards cover ~80% of real-world findings + the dependency context that makes EPSS/KEV scoring meaningful. |
+  | 4 | Ownership source? | Declared via `.shep/ownership.yaml` + UI override | Source-of-truth in code with the ability to refine in the UI; matches engineering culture and survives author churn. |
+  | 5 | SLA unit? | Calendar days (configurable per severity) | Matches CISA/regulatory norms, deterministic, avoids building a holiday-calendar subsystem. |
+  | 6 | AI-change risk — separate or merged? | Separate `AiChangeRiskSignal` + dedicated review queue | Shep's differentiating angle; keeps Finding stats clean; clear graduation path to a confirmed Finding. |
+  | 7 | Severity normalization? | Canonical 5-level + preserved raw | Cross-scanner comparability with full audit trail back to scanner intent. |
+  | 8 | Risk exceptions workflow? | Self-declared with expiry + audit trail | Unblocks engineers without a permissions subsystem; expiry forces re-review. |
+  | 9 | Campaign granularity? | Both — query-shaped campaigns filterable per application | One entity covers per-service sprints and fleet-wide themes. |
+  | 10 | Compliance framework(s) for MVP? | OWASP ASVS + CWE Top 25 mapping | Open standards, directly applicable to AppSec audiences, foundation for regulated frameworks later. |
+  | 11 | Findings → developer tasks? | On-demand `convert-finding-to-work-item` use case | Reuses Shep's existing WorkItem entity; engineers triage in `/aspm`, route the ones that matter into the backlog. |
+  | 12 | Graph view in MVP? | Tabular MVP; defer React Flow graph view | Tables are where ASPM users actually work; graph view is high-effort-low-utility for MVP. |
+  | 13 | Scoping by BusinessUnit? | Single workspace; BusinessUnit as field, not scope | Matches Shep's current single-tenant model; no permissions subsystem needed; data shape doesn't change when scoping is added later. |
 
   ## Affected Areas
 
   | Area | Impact | Reasoning |
   | ---- | ------ | --------- |
-  | `tsp/domain/entities/` | High | New entities: `SecurityFinding`, `RiskScore`, `Owner`/`Team`/`BusinessUnit`, `Service`, `ApiAsset`, `CloudEnvironment`, `RemediationCampaign`, `SecurityPolicy`, `ComplianceControl`, `RiskException`, `AiChangeRiskSignal`. Plus enums for severity, finding domain (code/dependency/secret/container/cloud/api/identity/runtime/compliance/ai), exposure, exploitability tier, SLA state. |
+  | `tsp/domain/entities/` | High | New entities: `SecurityFinding`, `RiskScore`, `Owner`/`Team`/`BusinessUnit`, `Service`, `ApiAsset`, `CloudEnvironment`, `RemediationCampaign`, `SecurityPolicy`, `ComplianceControl`, `RiskException`, `AiChangeRiskSignal`. Plus enums for severity, finding domain (code/dependency/secret/container/cloud/api/identity/runtime/compliance/ai), exposure, exploitability tier, SLA state. Existing `Application` entity extended with `criticality`, `exposure`, `dataClassification`, `businessUnit`. |
   | `tsp/domain/value-objects/` | Medium | Value objects for `Severity`, `RiskScoreBreakdown`, `SLAWindow`, `CVEReference`, `OwnershipPath`. |
-  | `packages/core/src/domain/` | High | Factories, errors (`FindingNotFound`, `CampaignClosed`, `OwnerOrphanedFinding`), risk-scoring domain logic (pure, deterministic; no infra deps). |
-  | `packages/core/src/application/use-cases/aspm/` | High | New area covering ingestion (`ingest-findings`), CRUD on findings/campaigns/owners, prioritization (`rank-findings`, `compute-risk-score`), campaign lifecycle, SLA tracking, exception workflow, executive aggregations (`get-posture-summary`, `get-risk-trend`), developer task routing, and AI-change review queue. |
-  | `packages/core/src/application/ports/output/repositories/` | High | New repository interfaces per entity (`IFindingRepository`, `IRemediationCampaignRepository`, `IOwnerRepository`, `IRiskScoreRepository`, `IComplianceControlRepository`, `IAiChangeRiskSignalRepository`). |
-  | `packages/core/src/application/ports/output/services/` | High | New ports: `IFindingIngestPort` (abstract scanner adapter), `IExploitIntelPort` (KEV/EPSS lookups), `ISbomPort` (CycloneDX/SPDX parsing), `ISlaClockPort`. |
-  | `packages/core/src/infrastructure/persistence/sqlite/migrations/` | High | New numbered migrations creating tables and indexes for each ASPM entity; backfill safe defaults; idempotent ALTER patterns per `LESSONS.md`. |
-  | `packages/core/src/infrastructure/repositories/` | High | SQLite repositories + mappers for each new entity (cross-platform-safe queries). |
-  | `packages/core/src/infrastructure/services/` | Medium | Concrete adapters for finding ingestion (initial stubs for SARIF and CycloneDX), exploit intel (KEV/EPSS feed loader), SLA clock service. |
+  | `packages/core/src/domain/` | High | Factories, errors (`FindingNotFound`, `CampaignClosed`, `OwnerOrphanedFinding`, `ExceptionExpired`, `AiSignalAlreadyGraduated`), risk-scoring domain logic (pure, deterministic; no infra deps), SLA computation, ownership resolution. |
+  | `packages/core/src/application/use-cases/aspm/` | High | New area covering ingestion (`ingest-findings`), CRUD on findings/campaigns/owners/exceptions, prioritization (`rank-findings`, `compute-risk-score-for-finding`), campaign lifecycle, SLA tracking, exception workflow, executive aggregations (`get-posture-summary`, `get-risk-trend`, `get-application-posture`, `get-compliance-coverage`), developer task routing (`convert-finding-to-work-item`, `bulk-convert-findings`), and AI-change review queue (`record-ai-change-risk-signal`, `graduate-ai-signal-to-finding`, `dismiss-ai-signal`). |
+  | `packages/core/src/application/ports/output/repositories/` | High | New repository interfaces per entity (`IFindingRepository`, `IRemediationCampaignRepository`, `IOwnerRepository`, `ITeamRepository`, `IBusinessUnitRepository`, `IServiceRepository`, `IApiAssetRepository`, `ICloudEnvironmentRepository`, `IRiskScoreRepository`, `IComplianceControlRepository`, `IRiskExceptionRepository`, `IAiChangeRiskSignalRepository`, `ISecurityPolicyRepository`). |
+  | `packages/core/src/application/ports/output/services/` | High | New ports: `IFindingIngestPort` (SARIF parser), `ISbomPort` (CycloneDX parser), `IExploitIntelPort` (KEV/EPSS lookups), `ISlaClockPort` (testable now), `IOwnershipYamlReader` (parses `.shep/ownership.yaml` from the Application's repository). |
+  | `packages/core/src/infrastructure/persistence/sqlite/migrations/` | High | New numbered migrations creating tables and indexes for each ASPM entity; backfill safe defaults on extending `Application`; idempotent ALTER patterns per `LESSONS.md`. |
+  | `packages/core/src/infrastructure/repositories/` | High | SQLite repositories + mappers for each new entity (cross-platform path normalization for any path-bearing field). |
+  | `packages/core/src/infrastructure/services/` | Medium | Concrete adapters: SARIF parser, CycloneDX parser, KEV feed loader, EPSS feed loader, ownership-yaml reader, system clock implementation of `ISlaClockPort`. |
   | `packages/core/src/infrastructure/di/` | Medium | New `register-aspm.ts` module wiring repositories, ports, services, and use cases; called from `container.ts`. |
   | `src/presentation/web/app/` | High | New routes: `/aspm` (dashboard), `/aspm/findings`, `/aspm/findings/[id]`, `/aspm/campaigns`, `/aspm/campaigns/[id]`, `/aspm/inventory`, `/aspm/owners`, `/aspm/compliance`, `/aspm/ai-review`. Plus API routes under `app/api/aspm/*` for SSE-driven posture updates. |
-  | `src/presentation/web/components/features/aspm/` | High | New feature folder: posture cards, findings table + filters, finding detail panel, campaign board, owner map, risk trend charts, AI-change review queue. Every component requires a colocated `.stories.tsx` with Default/Loading/Error variants. |
-  | `src/presentation/web/components/features/applications/` | Medium | Augment existing Application surface with ASPM context (risk score badge, top findings, owners). |
-  | `src/presentation/cli/commands/` | Medium | New subcommands: `shep aspm ingest`, `shep aspm findings list`, `shep aspm campaigns ...`, `shep aspm posture` — all routed through use cases. |
-  | `tests/unit/use-cases/aspm/` | High | RED-first tests for each use case (risk scoring, ranking, campaign lifecycle, SLA logic, AI-change risk classification). |
-  | `tests/integration/infrastructure/persistence/sqlite/` | High | Migration + repository round-trip tests. |
-  | `tests/e2e/` | Medium | Playwright flows for the ASPM dashboard, findings list, and a campaign happy path. |
+  | `src/presentation/web/components/features/aspm/` | High | New feature folder: posture cards, findings table + filters, finding detail panel, campaign board, owner map, risk trend charts, AI-change review queue, compliance coverage view. Every component requires a colocated `.stories.tsx` with Default/Loading/Error variants. |
+  | `src/presentation/web/components/features/applications/` | Medium | Augment existing Application surface with ASPM context (risk score badge, top findings, owners, exception count). |
+  | `src/presentation/cli/commands/` | Medium | New subcommands: `shep aspm ingest`, `shep aspm findings`, `shep aspm campaigns`, `shep aspm posture`, `shep aspm exceptions`, `shep aspm ai-review` — all routed through use cases. |
+  | `tests/unit/use-cases/aspm/` | High | RED-first tests for each use case (risk scoring, ranking, campaign lifecycle, SLA logic, exception expiry, AI-change risk classification, ownership resolution, finding-to-work-item conversion). |
+  | `tests/integration/infrastructure/persistence/sqlite/` | High | Migration + repository round-trip tests for every new entity. |
+  | `tests/e2e/` | Medium | Playwright flows for the ASPM dashboard happy path, finding-to-exception flow, and campaign progress view. |
   | `docs/` | Medium | New architecture/usage docs (`docs/architecture/aspm.md`, `docs/api/domain-models.md` updates). |
 
   ## Dependencies
 
   - **Existing Application + Repository entities** — ASPM findings attach to
-    these as their primary "asset" anchor; no schema changes required to attach,
-    but `Application` will gain optional ASPM-relevant context (criticality,
-    business unit, exposure) via a follow-up TSP extension.
+    these as their primary "asset" anchor. `Application` will be extended via
+    TypeSpec with optional ASPM-relevant context (criticality, businessUnit,
+    exposure, dataClassification) using an idempotent ALTER migration with
+    safe defaults.
+  - **Existing WorkItem entity** — `SecurityFinding` carries an optional
+    `workItemId` so findings can route into the engineering backlog via the
+    `convert-finding-to-work-item` use case.
   - **TypeSpec compile pipeline** (`pnpm tsp:compile`) — required to regenerate
     `domain/generated/output.ts` after each new entity/enum.
-  - **SQLite migration runner** — every new table needs a numbered migration
-    with idempotent DDL and safe defaults.
+  - **SQLite migration runner** — every new table needs a numbered, idempotent
+    migration with safe defaults.
   - **DI container bootstrap** (`infrastructure/di/container.ts`) — must invoke
     a new `register-aspm` module after migrations run.
   - **Existing `IAgentExecutorProvider`** — needed for any optional AI-assisted
     triage or AI-change risk classification; provider-specific code must stay
     inside infrastructure adapters.
-  - **External data sources (external to this feature, brought in via ports)** —
-    CISA KEV catalog, FIRST EPSS scores, optional CVE metadata; ingestion of
-    SARIF and CycloneDX documents from CI scanners. Concrete adapters can land
-    incrementally; the use-case layer must work against the ports from day one.
-  - **Web UI primitives** — shadcn/ui Table, Card, Tabs, Badge, Dialog; React
-    Flow if an asset-risk graph view ships; existing SSE pattern for live
-    posture updates.
+  - **External data sources (consumed via ports)** — CISA KEV catalog, FIRST
+    EPSS scores, optional CVE metadata; SARIF and CycloneDX documents from CI
+    scanners. Concrete adapters can land incrementally (stub-friendly via the
+    port interfaces); use-case layer must work against the ports from day one.
+  - **Web UI primitives** — shadcn/ui Table, Card, Tabs, Badge, Dialog,
+    Sheet, Progress; existing SSE pattern for live posture updates.
 
   ## Size Estimate
 
   **XL** — This is a new vertical slice on the scale of Shep's existing Features,
-  Cycles, or Cloud-Deploy modules, *combined*. Concretely:
+  Cycles, or Cloud-Deploy modules, *combined*. With requirements pinned, the
+  scope concretely involves:
 
-  - ~10–14 new TypeSpec entities + supporting enums/value objects.
-  - ~10+ new SQLite migrations and matching repositories with mappers and
+  - ~12–14 new TypeSpec entities + supporting enums/value objects + extending
+    `Application` with four optional fields.
+  - ~12 new SQLite migrations and matching repositories with mappers and
     cross-platform path/identifier handling.
-  - 30+ use cases across ingestion, prioritization, ownership, campaigns, SLA,
-    compliance, AI-change review, and executive aggregation — every one of them
-    TDD-first.
-  - ~15–25 new web routes/pages and a feature folder of components, each with
+  - 35+ use cases across ingestion, prioritization, ownership, campaigns, SLA,
+    compliance, exceptions, AI-change review, and executive aggregation —
+    every one of them TDD-first.
+  - ~9 new web routes/pages and a feature folder of components, each with
     Storybook stories (Default/Loading/Error + variants).
-  - New CLI command surface.
-  - New integration ports + at least stub adapters (SARIF, CycloneDX, KEV, EPSS).
+  - New CLI command surface (6 subcommands × multiple verbs).
+  - New integration ports + at least stub adapters (SARIF, CycloneDX, KEV,
+    EPSS, ownership-yaml reader).
   - Documentation updates and e2e coverage.
 
-  Even with the explicit MVP carve-outs in the PRD (no scanning engine, no GRC
-  replacement, no runtime protection, no auto-fix, no pentest automation), the
-  in-scope MVP — inventory, unified findings, risk prioritization, owner mapping,
-  campaigns, executive reporting, developer task routing, and basic AI-generated
-  code risk visibility — is multi-week. Recommend splitting the implementation
-  plan into staged epics: (1) Asset + ownership model, (2) Findings ingestion +
-  unified view, (3) Risk scoring + prioritization, (4) Campaigns + SLA, (5)
-  Executive dashboards + developer routing, (6) AI-change review queue, (7)
-  Compliance/governance surface. Each epic should be independently shippable
-  behind the same ASPM area.
+  Even with the explicit MVP carve-outs (no scanning engine, no GRC replacement,
+  no runtime protection, no auto-fix, no pentest automation, no graph view,
+  no per-BU permissions), the in-scope MVP — extended asset/ownership model,
+  unified findings ingestion, transparent risk scoring, campaigns, SLA, risk
+  exceptions, executive reporting, developer task routing, AI-change review
+  queue, and OWASP ASVS/CWE compliance surface — is multi-week. Recommend
+  splitting the implementation plan into staged epics:
+
+  1. Asset + ownership model (extend Application + Owner/Team/BU + ownership
+     resolution use cases).
+  2. Findings ingestion + unified view (IFindingIngestPort + SARIF + Finding
+     entity + list use case + findings table).
+  3. SBOM + exploit intel (ISbomPort + IExploitIntelPort + KEV/EPSS adapters).
+  4. Risk scoring + prioritization (RiskScore + compute/rank use cases +
+     finding detail panel).
+  5. Campaigns + SLA + exceptions (Campaign/SecurityPolicy/RiskException +
+     campaign board + dashboard tiles).
+  6. Executive dashboards + developer routing (posture summary + risk trend +
+     convert-finding-to-work-item).
+  7. AI-change review queue (AiChangeRiskSignal + record/graduate/dismiss +
+     /aspm/ai-review).
+  8. Compliance/governance surface (ComplianceControl + coverage view).
+
+  Each epic is independently shippable behind the same `/aspm` area.
