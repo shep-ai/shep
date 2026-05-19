@@ -46,6 +46,7 @@ export default async function FindingDetailRoute({ params }: RouteProps) {
 
   return (
     <div className="flex h-full flex-col gap-3 overflow-y-auto p-6">
+      <h1 className="sr-only">Finding {finding.title ?? finding.ruleId}</h1>
       <FindingDetailPanel finding={finding} riskScoreBreakdown={breakdown} />
       <FindingActions findingId={finding.id} workItemId={finding.workItemId ?? null} />
     </div>
