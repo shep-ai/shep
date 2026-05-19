@@ -1,55 +1,154 @@
 # Feature Specification (YAML)
 # This is the source of truth. Markdown is auto-generated from this file.
 
-name: project-bedrock-integration
-number: 098
-branch: feat/098-project-bedrock-integration
-oneLiner: integrate shep with https://github.com/robotaitai/project-bedrock
+name: "project-bedrock-integration"
+number: 98
+branch: "feat/098-project-bedrock-integration"
+oneLiner: "register project-bedrock as a first-class shep tool integration with install and project-init wiring"
 userQuery: >
   integrate shep with https://github.com/robotaitai/project-bedrock
-summary: >
-  integrate shep with https://github.com/robotaitai/project-bedrock
-phase: Analysis
-sizeEstimate: M
+summary: |
+  Integrate project-bedrock (a Python CLI that maintains git-tracked, markdown-based
+  "project memory" for AI coding agents) with shep so it can be discovered, installed,
+  verified, and optionally bootstrapped inside shep-managed worktrees. The integration
+  follows shep's existing pluggable tool patterns (tool-installer JSON descriptors plus
+  an infrastructure-layer service) and exposes bedrock's lifecycle (init, sync, ship,
+  doctor) to the application layer through a new output port.
+phase: "Analysis"
+sizeEstimate: "M"
 
 # Relationships
-relatedFeatures:
-  []
+relatedFeatures: []
 
 technologies:
-  []
+  - "Node.js / TypeScript (shep core)"
+  - "tsyringe (DI container)"
+  - "TypeSpec (tsp/) for domain models"
+  - "Python 3.9+ / pipx (project-bedrock runtime)"
+  - "Commander.js (CLI surface)"
+  - "Next.js (web UI surface)"
+  - "Vitest (unit/integration tests)"
 
 relatedLinks:
-  []
+  - title: "project-bedrock GitHub repo"
+    url: "https://github.com/robotaitai/project-bedrock"
+  - title: "project-bedrock on PyPI"
+    url: "https://pypi.org/project/project-bedrock/"
+  - title: "shep tool installer schema (CLAUDE.md)"
+    url: "packages/core/src/infrastructure/services/tool-installer/tools/CLAUDE.md"
+  - title: "shep clean architecture overview"
+    url: "docs/architecture/clean-architecture.md"
+  - title: "shep skill injector (.claude/ writer)"
+    url: "packages/core/src/infrastructure/services/skill-injector.service.ts"
 
 # Open questions (must be resolved before implementation)
 openQuestions:
-  []
+  - "Should project-bedrock be auto-installed on shep setup, or opt-in per project (Tool.autoInstall=true vs false)?"
+  - "Should shep automatically run `bedrock init` inside new worktrees, or expose it as an optional CLI/web action?"
+  - "How do bedrock's `.claude/` hook installs interact with shep's own SkillInjectorService? (collision / merge strategy)"
+  - "Do we need a persisted per-project flag (e.g. Application.bedrockEnabled) or is install-state inferred from filesystem (`.bedrock/` presence)?"
+  - "Is bedrock activity (session start/stop, ship events) something shep should observe/log, or do we treat it as a black box?"
 
 # Markdown content (the actual spec)
 content: |
   ## Problem Statement
 
-  integrate shep with https://github.com/robotaitai/project-bedrock
+  shep currently has no awareness of project-bedrock — a Python CLI that gives AI
+  coding agents persistent, git-tracked markdown "project memory" via session-start
+  and session-stop hooks installed into `.claude/`, `.cursor/`, and `.codex/`. Today
+  a shep user who wants this capability must:
 
-  ## Success Criteria
+  1. Discover project-bedrock themselves
+  2. Install it manually (`pipx install project-bedrock`)
+  3. Run `bedrock init` inside every shep worktree by hand
+  4. Manually reconcile bedrock's `.claude/` hook writes with shep's own
+     `SkillInjectorService` outputs
 
-  - [ ] TBD
+  This integration removes that friction by registering bedrock as a known shep
+  tool (installable, verifiable, launchable) and exposing its lifecycle through a
+  proper application-layer port, so any presentation surface (CLI / TUI / Web) can
+  drive it the same way.
+
+  ## Codebase Analysis
+
+  ### Project Structure
+
+  shep is a pnpm-workspace monorepo enforcing Clean Architecture across four layers
+  inside `packages/core/src/`:
+
+  - `domain/` — pure business entities (no external deps)
+  - `application/` — use cases and output port interfaces (no infra imports)
+  - `infrastructure/` — adapters: DB, agents, external services, CLI tools
+  - `presentation/` — CLI (Commander), TUI, and Web (Next.js) surfaces
+
+  TypeSpec lives in `tsp/` and compiles to `packages/core/src/domain/generated/`.
+  Dependency rule: outer layers depend on inner; inner layers never reference outer.
+
+  ### Architecture Patterns
+
+  - **Output ports (DI)**: every external concern is reached via a port interface in
+    `application/ports/output/` and injected by string token through tsyringe.
+  - **Pluggable adapters**: `cloud-deployment-provider.registry.ts` and the
+    `tool-installer/tools/*.json` descriptor pattern are the canonical extension
+    points for "third-party integration" features.
+  - **Tool-installer JSON descriptors**: each external CLI (claude-code, gh, cursor,
+    codex, gemini-cli, …) ships as a single JSON file in
+    `packages/core/src/infrastructure/services/tool-installer/tools/`; the loader
+    (`tool-metadata.ts`) picks them up dynamically. Schema is documented in the
+    sibling `CLAUDE.md`.
+  - **`.claude/` writers**: `SkillInjectorService` already writes per-project
+    `.claude/` config — this is the collision zone with bedrock's hook installer
+    and is the closest existing analog.
+
+  ### Relevant Technologies
+
+  - shep core: TypeScript, tsyringe DI, TypeSpec, Vitest
+  - project-bedrock: Python 3.9+, distributed via PyPI/pipx, CLI-only (`bedrock`
+    command), no HTTP API or library surface
+  - Shared touch points: `.claude/` hook files, git-tracked markdown, per-project
+    worktree state
 
   ## Affected Areas
 
   | Area | Impact | Reasoning |
   | ---- | ------ | --------- |
-  | TBD  | TBD    | TBD       |
+  | `packages/core/src/infrastructure/services/tool-installer/tools/` | High | Add `project-bedrock.json` descriptor (pipx install, `bedrock --version` verify, docs URL, tags). Primary registration surface. |
+  | `packages/core/src/infrastructure/services/tool-installer/` | Low | May need to confirm `pipx` as a recognised `packageManager` value; schema already supports per-OS commands. |
+  | `packages/core/src/application/ports/output/services/` | Medium | New port (e.g. `bedrock-integration.interface.ts`) wrapping `init`, `sync`, `ship`, `doctor` lifecycle for application-layer callers. |
+  | `packages/core/src/infrastructure/services/integrations/` | Medium | New `BedrockIntegrationService` implementing the port — spawns `bedrock` subprocess with `windowsHide` + no `shell:true` per cross-platform rules. |
+  | `packages/core/src/application/use-cases/` | Medium | New use cases: `EnableBedrockForApplication`, `RunBedrockInit`, `CheckBedrockHealth` — keeps presentation thin. |
+  | `packages/core/src/infrastructure/di/` | Low | Wire the new port + adapter into the tsyringe container. |
+  | `packages/core/src/infrastructure/services/skill-injector.service.ts` | Low–Medium | Coordinate with bedrock's own `.claude/` hook installs to avoid stomping each other (open question). |
+  | `tsp/domain/entities/` | Low | Possibly extend `tool.tsp` or `application.tsp` with a `bedrockEnabled` flag if persisted state is needed (depends on open question). |
+  | `src/presentation/cli/commands/` | Low | Optional thin command (`shep bedrock init|sync|doctor`) delegating to the use case. |
+  | `src/presentation/web/` | Low | Tool appears automatically in the tools UI via the registry; deeper UI is out of scope for M. |
+  | Tests: `packages/core/tests/unit` + `tests/integration` | Medium | RED-first: unit tests for the new use case + adapter (with a mocked process runner); integration test for the JSON descriptor loader. |
 
   ## Dependencies
 
-  None identified.
+  - **Existing shep infrastructure**: `ToolInstallerService`, `ToolMetadataProvider`,
+    `SkillInjectorService`, `ProjectScaffoldService`, tsyringe DI container.
+  - **Existing patterns to follow**: `cloud-deployment-provider.registry.ts` (registry
+    of adapters), other JSON descriptors in `tool-installer/tools/`, the integrations
+    folder (`noop-webhook.service.ts`).
+  - **External runtime**: project-bedrock published on PyPI; requires Python 3.9+ and
+    pipx on the host. shep must surface a clear error when those prerequisites are
+    missing (cross-platform rule: never silently fail).
+  - **No new npm dependencies** anticipated — subprocess invocation uses Node's
+    built-in `child_process`, consistent with other tool integrations.
 
   ## Size Estimate
 
-  **M** - To be refined during research
+  **M** — A few days of focused work. Justification:
 
-  ---
-
-  _Generated by feature agent — proceed with research_
+  - Tool descriptor is a single JSON file (hours).
+  - New port + adapter + use case + DI wiring follows a well-established pattern
+    in the codebase; mostly mechanical with TDD (1–2 days).
+  - The non-trivial piece is reconciling bedrock's `.claude/` hook installs with
+    shep's existing `SkillInjectorService` — this needs design work and tests
+    (~1 day, captured in open questions).
+  - No TypeSpec schema changes are required unless we decide to persist a
+    `bedrockEnabled` flag — which would add a migration step but keep the size at M.
+  - Out of scope for M: bespoke web UI, deep observability of bedrock events,
+    bidirectional sync of bedrock memory into shep's own context store. Any of
+    those would push this to L.
