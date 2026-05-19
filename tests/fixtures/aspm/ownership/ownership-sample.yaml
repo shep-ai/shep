@@ -1,0 +1,10 @@
+entries:
+  - pathGlob: 'src/api/**'
+    ownerId: 'owner-api'
+    teamId: 'team-platform'
+    businessUnitId: 'bu-engineering'
+  - pathGlob: 'src/web/**'
+    ownerId: 'owner-web'
+    teamId: 'team-product'
+  - pathGlob: 'infra/**'
+    ownerId: 'owner-platform'
