@@ -55,6 +55,7 @@ import { createIntakeCommand } from './commands/intake/index.js';
 import { createNotificationsCommand } from './commands/notifications/index.js';
 import { createReviewCommand } from './commands/review.command.js';
 import { createSupervisorCommand } from './commands/supervisor/index.js';
+import { createBedrockCommand } from './commands/bedrock/bedrock.command.js';
 import { messages } from './ui/index.js';
 
 // Daemon lifecycle commands
@@ -147,6 +148,7 @@ async function bootstrap() {
     program.addCommand(createNotificationsCommand());
     program.addCommand(createReviewCommand());
     program.addCommand(createSupervisorCommand());
+    program.addCommand(createBedrockCommand());
     program.addCommand(createUpgradeCommand());
 
     // Daemon lifecycle commands (task-9)
