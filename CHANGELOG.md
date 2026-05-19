@@ -4,6 +4,41 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.204.1](/compare/v1.204.0...v1.204.1) · _2026-05-19_
+
+> _Under the hood_ housekeeping keeps the gears turning — no new features, just a cleaner foundation for what's next.
+
+
+
+### 🐛 Bug Fixes
+
+* **api:** validate openrouter models against dynamic catalog ([#613](https://github.com/shep-ai/shep/issues/613)) ([cc9dce7](https://github.com/shep-ai/shep/commit/cc9dce7d65d1eb16b31c2586bc023b58a1d5442f))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.204.1
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.204.0](/compare/v1.203.1...v1.204.0) · _2026-05-06_
 
 > _Keeping the lights on_ — housekeeping and internal upkeep to keep Shep running smooth.
