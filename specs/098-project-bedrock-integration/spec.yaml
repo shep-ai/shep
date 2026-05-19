@@ -14,7 +14,7 @@ summary: |
   follows shep's existing pluggable tool patterns (tool-installer JSON descriptors plus
   an infrastructure-layer service) and exposes bedrock's lifecycle (init, sync, ship,
   doctor) to the application layer through a new output port.
-phase: "Analysis"
+phase: "Requirements"
 sizeEstimate: "M"
 
 # Relationships
@@ -28,6 +28,7 @@ technologies:
   - "Commander.js (CLI surface)"
   - "Next.js (web UI surface)"
   - "Vitest (unit/integration tests)"
+  - "Node child_process (subprocess invocation)"
 
 relatedLinks:
   - title: "project-bedrock GitHub repo"
@@ -43,11 +44,195 @@ relatedLinks:
 
 # Open questions (must be resolved before implementation)
 openQuestions:
-  - "Should project-bedrock be auto-installed on shep setup, or opt-in per project (Tool.autoInstall=true vs false)?"
-  - "Should shep automatically run `bedrock init` inside new worktrees, or expose it as an optional CLI/web action?"
-  - "How do bedrock's `.claude/` hook installs interact with shep's own SkillInjectorService? (collision / merge strategy)"
-  - "Do we need a persisted per-project flag (e.g. Application.bedrockEnabled) or is install-state inferred from filesystem (`.bedrock/` presence)?"
-  - "Is bedrock activity (session start/stop, ship events) something shep should observe/log, or do we treat it as a black box?"
+  - question: "How should bedrock's .claude/ hook installer coexist with shep's SkillInjectorService?"
+    resolved: true
+    options:
+      - option: "Run-after with diff-aware merge"
+        description: |
+          shep writes its skills first, then invokes `bedrock init` which appends its hooks.
+          A small reconciliation step parses `.claude/settings.json` (or equivalent) and
+          merges hook arrays rather than overwriting. Preserves both systems' contracts,
+          fails loud if a conflict is detected, and keeps bedrock's upstream contract intact.
+        selected: true
+      - option: "shep owns .claude/, bedrock disabled"
+        description: |
+          Disable bedrock's hook installation entirely; have shep mirror bedrock's hook
+          payload from a known template. Simplest collision story, but couples shep to
+          bedrock's internal hook format and breaks if bedrock changes upstream.
+      - option: "bedrock-first, shep merges on top"
+        description: |
+          Run `bedrock init` first, then SkillInjectorService merges its skills in.
+          Inverts current ordering, requires SkillInjectorService to become merge-aware
+          everywhere — larger blast radius than option 1.
+    selectionRationale: |
+      Option 1 keeps bedrock as a black-box upstream dependency (we never parse or
+      regenerate its hook payload), keeps shep's existing SkillInjectorService ordering,
+      and contains the merge logic to a single new helper used by the integration
+      service. The diff-aware merge is bounded (hooks arrays in a known JSON file) and
+      testable with fixtures. This is the smallest reversible commitment.
+    answer: "Run-after with diff-aware merge"
+
+  - question: "Should bedrock-enabled state be persisted in the domain model (Application entity)?"
+    resolved: true
+    options:
+      - option: "Persist bedrockEnabled flag"
+        description: |
+          Add `bedrockEnabled: boolean` to the Application TypeSpec entity and migrate
+          the SQLite schema. Enables the web UI to render an explicit toggle, lets
+          worktree-init use cases query state, and survives across shep restarts.
+        selected: true
+      - option: "Infer from on-disk presence"
+        description: |
+          Detect bedrock by probing for `.bedrock/` or its hook entries in `.claude/`.
+          Zero schema change, but every read is a filesystem call and there is no
+          authoritative "user intent" record (impossible to distinguish "never enabled"
+          from "enabled then files deleted").
+      - option: "In-memory only"
+        description: |
+          Keep bedrock state per-session, no persistence. Cheapest now, but every
+          shep restart re-asks the user / re-runs detection — poor UX for a
+          long-lived per-project setting.
+    selectionRationale: |
+      Persisting an explicit `bedrockEnabled` flag on Application matches how other
+      per-application toggles (cloudDeploymentProvider, etc.) are modelled, gives the
+      web UI a clean toggle, and makes use cases (`EnableBedrockForApplication`,
+      `CheckBedrockHealth`) deterministic. The migration is a single nullable boolean
+      column — well within M sizing.
+    answer: "Persist bedrockEnabled flag"
+
+  - question: "Should bedrock be auto-bootstrapped during shep project-init, or strictly opt-in?"
+    resolved: true
+    options:
+      - option: "Opt-in via explicit enable"
+        description: |
+          shep registers bedrock as installable and discoverable, but `bedrock init`
+          only runs when the user explicitly enables it on an Application (CLI flag,
+          web toggle, or use case call). Default is OFF. Respects user autonomy and
+          avoids surprising .claude/ writes in existing repos.
+        selected: true
+      - option: "Auto-enable on new projects"
+        description: |
+          Run `bedrock init` automatically during `shep project-init` for new
+          applications. Lower friction for greenfield, but writes `.claude/` hooks
+          that a user may not want; harder to reverse.
+      - option: "Prompt on first init"
+        description: |
+          Interactive prompt during project-init asking yes/no. Better than silent
+          auto-enable but breaks non-interactive flows (CI, scripted setup) unless
+          we add a `--no-prompt` flag.
+    selectionRationale: |
+      Default-OFF is consistent with shep's posture for every other optional
+      integration (cloud deploy providers, webhooks). It avoids surprise filesystem
+      writes, keeps the project-init use case non-interactive, and lets the user
+      enable bedrock from any presentation surface using the same use case.
+    answer: "Opt-in via explicit enable"
+
+  - question: "Which bedrock subcommands should be exposed through the application port?"
+    resolved: true
+    options:
+      - option: "init, sync, doctor, ship"
+        description: |
+          Full lifecycle. `init` bootstraps, `sync` reconciles memory with git, `doctor`
+          diagnoses, `ship` commits memory updates. Matches bedrock's public CLI surface
+          and lets any presentation drive the entire flow.
+        selected: true
+      - option: "init and doctor only"
+        description: |
+          Minimal surface — bootstrap and health check. Smallest API but forces users
+          back to the bedrock CLI for any actual memory work, defeating the integration's
+          point.
+      - option: "init, sync, doctor (no ship)"
+        description: |
+          Drop `ship` because it commits to git and overlaps with shep's own commit
+          flow. Avoids potential confusion about who owns commits, but leaves users
+          without a programmatic way to checkpoint bedrock memory.
+    selectionRationale: |
+      Exposing the full lifecycle keeps shep authoritative as the orchestration layer
+      and matches the user's mental model ("everything I can do with bedrock, I can
+      do through shep"). `ship` is namespaced behind a use case (`ShipBedrockMemory`)
+      so its git-commit semantics are explicit at the call site — no confusion with
+      shep's own commit flows.
+    answer: "init, sync, doctor, ship"
+
+  - question: "How strict should prerequisite verification be (Python, pipx, bedrock binary)?"
+    resolved: true
+    options:
+      - option: "Three-tier verify with actionable errors"
+        description: |
+          Check (1) `python3 --version` >= 3.9, (2) `pipx --version`, (3)
+          `bedrock --version`. Each failure surfaces a typed domain error with a
+          remediation hint (e.g. "install Python 3.9+ from python.org"). Fails loud
+          per shep's cross-platform rule, never silently.
+        selected: true
+      - option: "bedrock --version only"
+        description: |
+          Trust that if `bedrock` resolves, Python and pipx are fine. Simpler, but
+          masks the root cause when bedrock is missing (user sees "command not
+          found" instead of "Python not installed").
+      - option: "No verification, fail at runtime"
+        description: |
+          Skip prereq checks; let the subprocess invocation fail naturally. Cheapest
+          but violates shep's "never silently fail" rule and produces opaque errors.
+    selectionRationale: |
+      Three-tier verify follows the pattern in other infrastructure adapters
+      (cross-platform checks, typed errors) and gives the user a specific, fixable
+      message. The cost is three short subprocess calls in `doctor` and during
+      install, which is acceptable.
+    answer: "Three-tier verify with actionable errors"
+
+  - question: "What CLI surface should this feature ship for M?"
+    resolved: true
+    options:
+      - option: "Dedicated shep bedrock subcommand"
+        description: |
+          Add `shep bedrock init|sync|ship|doctor` commands under
+          `src/presentation/cli/commands/`. Each is a thin wrapper that resolves the
+          relevant use case from DI and prints results via the shared ui module.
+          Matches shep's CLI conventions for first-class integrations.
+        selected: true
+      - option: "Only generic tool-installer flow"
+        description: |
+          Rely solely on `shep tool install project-bedrock`. No dedicated subcommand.
+          Smaller scope but forces users back to the raw `bedrock` CLI for lifecycle
+          operations, undermining the integration value proposition.
+      - option: "Flags on existing project-init"
+        description: |
+          Add `--bedrock` flag to existing `shep project-init`. Discoverable through
+          existing command but cannot express the full lifecycle (sync/doctor/ship)
+          and overloads project-init's responsibilities.
+    selectionRationale: |
+      A dedicated `shep bedrock` subcommand is the smallest cohesive surface that
+      exposes the full use-case API consistently, matches how other integrations
+      will be added, and is what the shep-cli-command-creator agent is designed to
+      scaffold. The thin-command rule keeps it cheap (~50 LOC per subcommand).
+    answer: "Dedicated shep bedrock subcommand"
+
+  - question: "What web UI exposure should this feature ship for M?"
+    resolved: true
+    options:
+      - option: "Toggle on Application detail + tool registry entry"
+        description: |
+          Bedrock appears automatically in the existing tools registry view (free
+          from the JSON descriptor). On the Application detail page, add a single
+          "Bedrock memory" toggle that calls `EnableBedrockForApplication`. No
+          dedicated dashboard or memory browser. Minimum viable surface.
+        selected: true
+      - option: "Full bedrock dashboard"
+        description: |
+          Dedicated UI for browsing bedrock memory, running sync/ship, viewing
+          doctor output. High value but pushes the feature to size L and duplicates
+          bedrock's own surfacing.
+      - option: "No web UI changes"
+        description: |
+          Tool registry inherits the entry from the JSON descriptor; no extra UI.
+          Lowest cost, but the web user cannot enable bedrock without dropping to
+          the CLI.
+    selectionRationale: |
+      Option 1 keeps M-sized scope while making the feature usable from web (parity
+      with CLI for enable/disable). It re-uses the existing tools registry rendering
+      and adds exactly one toggle + Storybook story — well within the mandatory web
+      patterns. Deeper bedrock UI is correctly deferred to a future L feature.
+    answer: "Toggle on Application detail + tool registry entry"
 
 # Markdown content (the actual spec)
 content: |
@@ -69,71 +254,182 @@ content: |
   proper application-layer port, so any presentation surface (CLI / TUI / Web) can
   drive it the same way.
 
-  ## Codebase Analysis
+  ## Success Criteria
 
-  ### Project Structure
+  - [ ] `project-bedrock.json` descriptor exists in
+        `packages/core/src/infrastructure/services/tool-installer/tools/` and is
+        loaded by the existing `ToolMetadataProvider` without code changes to the
+        loader.
+  - [ ] Running the existing tool-installer flow installs project-bedrock via pipx
+        on macOS, Linux, and Windows (or surfaces a typed, actionable error when
+        the package manager is missing).
+  - [ ] A new output port `IBedrockIntegrationService` is defined in
+        `packages/core/src/application/ports/output/services/` exposing `init`,
+        `sync`, `doctor`, and `ship` lifecycle methods, with zero infrastructure
+        imports.
+  - [ ] The concrete adapter `BedrockIntegrationService` lives under
+        `packages/core/src/infrastructure/services/integrations/`, spawns the
+        `bedrock` binary using `child_process.spawn` with `windowsHide: true` and
+        no `shell: true`, and is wired into the tsyringe container by string token.
+  - [ ] Three use cases exist and have RED-first unit tests with mocked ports:
+        `EnableBedrockForApplication`, `RunBedrockLifecycle` (handling init / sync
+        / ship via a typed `BedrockLifecycleAction` enum), `CheckBedrockHealth`.
+  - [ ] The `Application` TypeSpec entity gains a `bedrockEnabled` boolean field,
+        regenerates cleanly via `pnpm tsp:compile`, and is backed by a forward-only
+        SQLite migration that defaults existing rows to `false`.
+  - [ ] A `shep bedrock <init|sync|doctor|ship>` CLI command set exists under
+        `src/presentation/cli/commands/`, each delegating to its use case and
+        rendering via the shared ui module.
+  - [ ] The Application detail page in the web UI renders a "Bedrock memory"
+        toggle calling `EnableBedrockForApplication`, with a colocated
+        `.stories.tsx` covering Default, Loading, and Error states.
+  - [ ] `CheckBedrockHealth` performs the three-tier prereq check (Python 3.9+,
+        pipx, bedrock binary) and returns a typed result with per-tier status.
+  - [ ] `.claude/` reconciliation: when both SkillInjectorService and bedrock
+        write hooks, the resulting `.claude/settings.json` (or equivalent) contains
+        the union of both hook entries with no duplicates and no data loss; this is
+        covered by a fixture-based integration test.
+  - [ ] All new code passes `pnpm validate` (lint + format + typecheck + tsp) and
+        the new unit + integration tests pass with zero warnings.
+  - [ ] `LESSONS.md` has not regressed; no `.claude/` writes from this feature
+        clobber existing user content.
 
-  shep is a pnpm-workspace monorepo enforcing Clean Architecture across four layers
-  inside `packages/core/src/`:
+  ## Functional Requirements
 
-  - `domain/` — pure business entities (no external deps)
-  - `application/` — use cases and output port interfaces (no infra imports)
-  - `infrastructure/` — adapters: DB, agents, external services, CLI tools
-  - `presentation/` — CLI (Commander), TUI, and Web (Next.js) surfaces
+  - **FR-1 — Tool descriptor**: shep MUST register project-bedrock through a
+    single JSON descriptor (`project-bedrock.json`) at
+    `packages/core/src/infrastructure/services/tool-installer/tools/`. The
+    descriptor MUST declare the pipx install command per OS, a verify command
+    (`bedrock --version`), a docs URL, and tags (`memory`, `ai-context`, `python`).
+  - **FR-2 — Install via tool-installer**: Users MUST be able to install
+    project-bedrock through the existing tool-installer flow without code changes
+    to the loader. If pipx is not installed, the install flow MUST emit a typed,
+    actionable error referencing the remediation step.
+  - **FR-3 — Application output port**: A new port
+    `IBedrockIntegrationService` MUST live in
+    `application/ports/output/services/` and expose:
+    `init(opts)`, `sync(opts)`, `doctor()`, `ship(opts)`. The port MUST NOT
+    reference any infrastructure type, Node API, or process abstraction.
+  - **FR-4 — Infrastructure adapter**: The concrete `BedrockIntegrationService`
+    MUST implement the port using `child_process.spawn`, set
+    `windowsHide: true`, omit `shell: true`, and pass arguments as an array. It
+    MUST be registered in the tsyringe DI container under a string token.
+  - **FR-5 — Three-tier prereq verification**: `doctor()` MUST verify, in order,
+    (a) Python ≥ 3.9, (b) pipx availability, (c) `bedrock --version` success, and
+    return a typed `BedrockHealth` result with per-tier `ok | missing | error`
+    status plus a human-readable remediation hint.
+  - **FR-6 — Persisted enable state**: The `Application` TypeSpec entity MUST gain
+    a `bedrockEnabled: boolean` field defaulting to `false`. A forward-only SQLite
+    migration MUST add the column with `DEFAULT 0` for existing rows.
+  - **FR-7 — Enable use case**: `EnableBedrockForApplication` MUST persist
+    `bedrockEnabled = true` on the target Application via the existing repository
+    port, then invoke `IBedrockIntegrationService.init()` for the application's
+    worktree. The use case MUST be idempotent (re-running on an enabled
+    application is a no-op for state but re-runs `init` safely).
+  - **FR-8 — Lifecycle use case**: `RunBedrockLifecycle` MUST accept a typed
+    `BedrockLifecycleAction` enum (`Init | Sync | Ship`) and an application id,
+    refuse to run when `bedrockEnabled = false`, and emit structured results
+    consumable by all presentation layers.
+  - **FR-9 — Health use case**: `CheckBedrockHealth` MUST wrap `doctor()` and
+    return its typed result without leaking process internals.
+  - **FR-10 — `.claude/` reconciliation**: When both SkillInjectorService and
+    `bedrock init` write hooks for the same project, the integration MUST produce
+    the union of both hook payloads in `.claude/settings.json` (or the
+    bedrock-targeted equivalent) with no duplicates and no overwritten user
+    content. SkillInjectorService MUST run first; bedrock MUST run second; a
+    merge helper MUST reconcile arrays.
+  - **FR-11 — CLI surface**: `shep bedrock init|sync|doctor|ship` MUST exist as
+    thin Commander subcommands under `src/presentation/cli/commands/`, each
+    resolving its use case from DI and rendering output via the shared ui module.
+  - **FR-12 — Web toggle**: The Application detail page MUST render a "Bedrock
+    memory" toggle that calls `EnableBedrockForApplication`, with a colocated
+    `.stories.tsx` covering Default, Loading, and Error states (mandatory rule).
+  - **FR-13 — Default OFF**: Bedrock MUST be OFF for all existing and new
+    applications until explicitly enabled. `shep project-init` MUST NOT call
+    `bedrock init` automatically.
+  - **FR-14 — Discoverable via tools registry**: project-bedrock MUST appear in
+    the existing tools registry view in the web UI automatically, via the
+    descriptor — no bespoke registration code.
 
-  TypeSpec lives in `tsp/` and compiles to `packages/core/src/domain/generated/`.
-  Dependency rule: outer layers depend on inner; inner layers never reference outer.
+  ## Non-Functional Requirements
 
-  ### Architecture Patterns
+  - **NFR-1 — Clean architecture**: No infrastructure imports in
+    `application/` or `domain/`. All bedrock interaction in use cases MUST flow
+    through `IBedrockIntegrationService`. The dependency rule MUST hold.
+  - **NFR-2 — Cross-platform**: All subprocess invocations MUST work on macOS,
+    Linux, and Windows. `shell: true` is forbidden; `windowsHide: true` is
+    required; paths MUST go through `path.join` not string concatenation.
+  - **NFR-3 — TDD discipline**: Every new use case and the adapter MUST be
+    delivered RED-first (failing test committed before implementation) per
+    `tdd-guide.md`. Unit tests MUST use a mocked process runner; integration
+    tests MUST use real fixtures for the descriptor loader and `.claude/` merge.
+  - **NFR-4 — No magic literals**: Subcommand names (`init`, `sync`, `doctor`,
+    `ship`) MUST be a TypeSpec-defined enum (`BedrockLifecycleAction`), not raw
+    string comparisons. DI tokens MUST be exported constants.
+  - **NFR-5 — Performance**: `doctor()` MUST complete in under 2 seconds on a
+    healthy machine (three short subprocess calls). It MUST be safe to run
+    repeatedly (no caching pitfalls; no side effects on disk).
+  - **NFR-6 — Failure surfacing**: Prereq failures MUST be typed domain errors
+    with remediation strings. No swallowed exceptions; no `console.error` —
+    presentation layers do the rendering.
+  - **NFR-7 — Storybook coverage**: The new web toggle component MUST ship with
+    a colocated `.stories.tsx` covering Default, Loading, and Error states
+    (mandatory rule — commits without stories rejected).
+  - **NFR-8 — File length**: No new file exceeds ~300 lines; the adapter splits
+    process invocation, parsing, and reconciliation into separate small modules
+    if needed.
+  - **NFR-9 — No singletons leaked**: The adapter MUST be registered in tsyringe;
+    no module-level instance, no global accessor. Use cases inject by string
+    token only.
+  - **NFR-10 — Migration safety**: The SQLite migration adding `bedrockEnabled`
+    MUST be idempotent (guard with `IF NOT EXISTS` or equivalent shep migration
+    convention) and forward-only.
 
-  - **Output ports (DI)**: every external concern is reached via a port interface in
-    `application/ports/output/` and injected by string token through tsyringe.
-  - **Pluggable adapters**: `cloud-deployment-provider.registry.ts` and the
-    `tool-installer/tools/*.json` descriptor pattern are the canonical extension
-    points for "third-party integration" features.
-  - **Tool-installer JSON descriptors**: each external CLI (claude-code, gh, cursor,
-    codex, gemini-cli, …) ships as a single JSON file in
-    `packages/core/src/infrastructure/services/tool-installer/tools/`; the loader
-    (`tool-metadata.ts`) picks them up dynamically. Schema is documented in the
-    sibling `CLAUDE.md`.
-  - **`.claude/` writers**: `SkillInjectorService` already writes per-project
-    `.claude/` config — this is the collision zone with bedrock's hook installer
-    and is the closest existing analog.
+  ## Product Questions & AI Recommendations
 
-  ### Relevant Technologies
-
-  - shep core: TypeScript, tsyringe DI, TypeSpec, Vitest
-  - project-bedrock: Python 3.9+, distributed via PyPI/pipx, CLI-only (`bedrock`
-    command), no HTTP API or library surface
-  - Shared touch points: `.claude/` hook files, git-tracked markdown, per-project
-    worktree state
+  | # | Question | AI Recommendation | Rationale |
+  | - | -------- | ----------------- | --------- |
+  | 1 | How should bedrock's .claude/ hooks coexist with SkillInjectorService? | Run-after with diff-aware merge | Keeps bedrock as opaque upstream; merge logic isolated to one helper; testable with fixtures. |
+  | 2 | Persist bedrock-enabled state in the domain model? | Persist `bedrockEnabled` on Application | Matches existing per-app toggle pattern; enables deterministic use cases and a clean web toggle. |
+  | 3 | Auto-bootstrap bedrock during project-init? | Opt-in via explicit enable | Default-OFF avoids surprising .claude/ writes; consistent with every other integration. |
+  | 4 | Which bedrock subcommands does the port expose? | init, sync, doctor, ship | Full lifecycle keeps shep authoritative; `ship` namespaced via use case so commit semantics are explicit. |
+  | 5 | How strict is prereq verification? | Three-tier verify with actionable errors | Specific remediation messages; follows shep cross-platform rule; cheap to run. |
+  | 6 | What CLI surface ships for M? | Dedicated `shep bedrock` subcommands | Smallest cohesive surface exposing the full use-case API; matches existing CLI conventions. |
+  | 7 | What web UI exposure ships for M? | Toggle + tool registry entry | Parity with CLI for enable/disable; defers deep dashboard to a future L feature. |
 
   ## Affected Areas
 
   | Area | Impact | Reasoning |
   | ---- | ------ | --------- |
   | `packages/core/src/infrastructure/services/tool-installer/tools/` | High | Add `project-bedrock.json` descriptor (pipx install, `bedrock --version` verify, docs URL, tags). Primary registration surface. |
-  | `packages/core/src/infrastructure/services/tool-installer/` | Low | May need to confirm `pipx` as a recognised `packageManager` value; schema already supports per-OS commands. |
-  | `packages/core/src/application/ports/output/services/` | Medium | New port (e.g. `bedrock-integration.interface.ts`) wrapping `init`, `sync`, `ship`, `doctor` lifecycle for application-layer callers. |
-  | `packages/core/src/infrastructure/services/integrations/` | Medium | New `BedrockIntegrationService` implementing the port — spawns `bedrock` subprocess with `windowsHide` + no `shell:true` per cross-platform rules. |
-  | `packages/core/src/application/use-cases/` | Medium | New use cases: `EnableBedrockForApplication`, `RunBedrockInit`, `CheckBedrockHealth` — keeps presentation thin. |
-  | `packages/core/src/infrastructure/di/` | Low | Wire the new port + adapter into the tsyringe container. |
-  | `packages/core/src/infrastructure/services/skill-injector.service.ts` | Low–Medium | Coordinate with bedrock's own `.claude/` hook installs to avoid stomping each other (open question). |
-  | `tsp/domain/entities/` | Low | Possibly extend `tool.tsp` or `application.tsp` with a `bedrockEnabled` flag if persisted state is needed (depends on open question). |
-  | `src/presentation/cli/commands/` | Low | Optional thin command (`shep bedrock init|sync|doctor`) delegating to the use case. |
-  | `src/presentation/web/` | Low | Tool appears automatically in the tools UI via the registry; deeper UI is out of scope for M. |
-  | Tests: `packages/core/tests/unit` + `tests/integration` | Medium | RED-first: unit tests for the new use case + adapter (with a mocked process runner); integration test for the JSON descriptor loader. |
+  | `packages/core/src/infrastructure/services/tool-installer/` | Low | Confirm `pipx` is a recognised `packageManager` value; add support if missing. Schema already supports per-OS commands. |
+  | `packages/core/src/application/ports/output/services/` | Medium | New port `IBedrockIntegrationService` wrapping `init`, `sync`, `doctor`, `ship`. |
+  | `packages/core/src/infrastructure/services/integrations/` | Medium | New `BedrockIntegrationService` implementing the port — spawns `bedrock` subprocess with `windowsHide` + no `shell:true`. Includes `.claude/` merge helper. |
+  | `packages/core/src/application/use-cases/` | Medium | New use cases: `EnableBedrockForApplication`, `RunBedrockLifecycle`, `CheckBedrockHealth`. RED-first TDD. |
+  | `packages/core/src/infrastructure/di/` | Low | Register port + adapter under a string token in the tsyringe container. |
+  | `packages/core/src/infrastructure/services/skill-injector.service.ts` | Low | Ensure ordering contract (skill injector runs before bedrock init); contributes its hook payload to the merge helper. |
+  | `tsp/domain/entities/application.tsp` | Low | Add `bedrockEnabled: boolean` (default false). |
+  | `packages/core/src/infrastructure/persistence/migrations/` | Low | New forward-only migration adding `bedrock_enabled INTEGER NOT NULL DEFAULT 0` to `applications`. |
+  | `src/presentation/cli/commands/` | Medium | Four thin commands: `shep bedrock init|sync|doctor|ship`. |
+  | `src/presentation/web/app/(application detail)/` | Low | Add "Bedrock memory" toggle wired to `EnableBedrockForApplication`. |
+  | `src/presentation/web/components/` | Low | Toggle component with mandatory colocated `.stories.tsx`. |
+  | Tests: `packages/core/tests/unit` + `tests/integration` | Medium | RED-first: unit tests for each use case + adapter (mocked process runner); integration tests for descriptor loader and `.claude/` merge fixtures. |
 
   ## Dependencies
 
   - **Existing shep infrastructure**: `ToolInstallerService`, `ToolMetadataProvider`,
-    `SkillInjectorService`, `ProjectScaffoldService`, tsyringe DI container.
-  - **Existing patterns to follow**: `cloud-deployment-provider.registry.ts` (registry
-    of adapters), other JSON descriptors in `tool-installer/tools/`, the integrations
-    folder (`noop-webhook.service.ts`).
-  - **External runtime**: project-bedrock published on PyPI; requires Python 3.9+ and
-    pipx on the host. shep must surface a clear error when those prerequisites are
-    missing (cross-platform rule: never silently fail).
+    `SkillInjectorService`, `ProjectScaffoldService`, tsyringe DI container,
+    SQLite migration runner.
+  - **Existing patterns to follow**: `cloud-deployment-provider.registry.ts`
+    (registry of adapters), other JSON descriptors in `tool-installer/tools/`,
+    the integrations folder (`noop-webhook.service.ts`), existing migration
+    files for the schema change.
+  - **External runtime**: project-bedrock published on PyPI; requires Python 3.9+
+    and pipx on the host. shep MUST surface a clear typed error when those
+    prerequisites are missing (cross-platform rule: never silently fail).
+  - **TypeSpec generation**: `pnpm tsp:compile` regenerates
+    `packages/core/src/domain/generated/output.ts` after the
+    `Application.bedrockEnabled` field is added.
   - **No new npm dependencies** anticipated — subprocess invocation uses Node's
     built-in `child_process`, consistent with other tool integrations.
 
@@ -142,13 +438,13 @@ content: |
   **M** — A few days of focused work. Justification:
 
   - Tool descriptor is a single JSON file (hours).
-  - New port + adapter + use case + DI wiring follows a well-established pattern
-    in the codebase; mostly mechanical with TDD (1–2 days).
-  - The non-trivial piece is reconciling bedrock's `.claude/` hook installs with
-    shep's existing `SkillInjectorService` — this needs design work and tests
-    (~1 day, captured in open questions).
-  - No TypeSpec schema changes are required unless we decide to persist a
-    `bedrockEnabled` flag — which would add a migration step but keep the size at M.
-  - Out of scope for M: bespoke web UI, deep observability of bedrock events,
-    bidirectional sync of bedrock memory into shep's own context store. Any of
-    those would push this to L.
+  - New port + adapter + three use cases + DI wiring follows a well-established
+    pattern in the codebase; mostly mechanical with TDD (~1.5 days).
+  - TypeSpec field + SQLite migration is a small, isolated change (~2 hours).
+  - `.claude/` reconciliation needs design work, a small merge helper, and
+    fixture-based integration tests (~1 day).
+  - CLI subcommands × 4 are thin (~3–4 hours total).
+  - Web toggle + Storybook stories (~3 hours).
+  - Total stays comfortably within M. Pushing to L would require a bespoke
+    bedrock dashboard, bidirectional sync of bedrock memory into shep's context
+    store, or deep event observability — all explicitly out of scope here.
