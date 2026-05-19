@@ -15,7 +15,7 @@
  * `Date.now()`, no `crypto` (callers pass `computeRawHash` a hasher).
  */
 
-import { SECRET_PATTERNS } from './secret-patterns.js';
+import { SECRET_PATTERNS } from './secret-patterns';
 
 export interface RedactionResult {
   /** Text with every matched span replaced by `[REDACTED:<pattern>]`. */
