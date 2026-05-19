@@ -33,6 +33,7 @@ import type { ITeamRepository } from '../../../application/ports/output/reposito
 // Service ports
 import type { IFindingIngestPort } from '../../../application/ports/output/services/finding-ingest-port.interface.js';
 import type { IOwnershipYamlReader } from '../../../application/ports/output/services/ownership-yaml-reader.interface.js';
+import type { ISbomPort } from '../../../application/ports/output/services/sbom-port.interface.js';
 
 // Concrete repositories
 import { SQLiteApiAssetRepository } from '../../repositories/aspm/sqlite-api-asset-repository.js';
@@ -44,6 +45,7 @@ import { SQLiteServiceRepository } from '../../repositories/aspm/sqlite-service-
 import { SQLiteTeamRepository } from '../../repositories/aspm/sqlite-team-repository.js';
 
 // Concrete services
+import { CycloneDxSbomAdapter } from '../../services/aspm/cyclonedx-sbom-adapter.js';
 import { OwnershipYamlReader } from '../../services/aspm/ownership-yaml-reader.js';
 import { SarifIngestAdapter } from '../../services/aspm/sarif-ingest-adapter.js';
 
@@ -72,7 +74,11 @@ export function registerAspm(container: DependencyContainer): void {
   registerPhase3Services(container);
   registerPhase3UseCases(container);
 
-  // Phases 4-10 attach below as they land:
+  // Phase 4 — SBOM Ingestion + Exploit Intelligence
+  registerPhase4Services(container);
+  registerPhase4UseCases(container);
+
+  // Phases 5-10 attach below as they land:
   //
   //   - Phase 3: SecurityFinding repository + IFindingIngestPort (SARIF).
   //   - Phase 4: ISbomPort (CycloneDX) + IExploitIntelPort (KEV+EPSS).
@@ -144,4 +150,14 @@ function registerPhase3UseCases(container: DependencyContainer): void {
   container.register(IngestFindingsUseCase, { useClass: IngestFindingsUseCase });
   container.register(ListFindingsUseCase, { useClass: ListFindingsUseCase });
   container.register(GetFindingUseCase, { useClass: GetFindingUseCase });
+}
+
+function registerPhase4Services(container: DependencyContainer): void {
+  container.register<ISbomPort>(ASPM_TOKENS.ISbomPort, {
+    useClass: CycloneDxSbomAdapter,
+  });
+}
+
+function registerPhase4UseCases(_container: DependencyContainer): void {
+  // Phase 4 use cases (ingest-sbom) land in subsequent commits within this phase.
 }

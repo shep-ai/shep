@@ -1,0 +1,72 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-05-19T12:00:00Z",
+    "tools": {
+      "components": [{ "type": "application", "name": "cdxgen", "version": "10.0.0" }]
+    },
+    "component": {
+      "type": "application",
+      "name": "payments-service",
+      "version": "1.2.3"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/express@4.17.1",
+      "name": "express",
+      "version": "4.17.1",
+      "purl": "pkg:npm/express@4.17.1",
+      "licenses": [{ "license": { "id": "MIT" } }]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/lodash@4.17.20",
+      "name": "lodash",
+      "version": "4.17.20",
+      "purl": "pkg:npm/lodash@4.17.20",
+      "licenses": [{ "license": { "id": "MIT" } }]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+      "name": "log4j-core",
+      "version": "2.14.1",
+      "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+      "licenses": [{ "expression": "Apache-2.0" }]
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "id": "CVE-2021-44228",
+      "source": { "name": "NVD" },
+      "ratings": [
+        { "source": { "name": "NVD" }, "score": 10.0, "severity": "critical", "method": "CVSSv31" }
+      ],
+      "cwes": [502, 917],
+      "description": "Apache Log4j2 JNDI features used in configuration, log messages, and parameters do not protect against attacker controlled LDAP and other JNDI related endpoints.",
+      "affects": [{ "ref": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1" }]
+    },
+    {
+      "id": "CVE-2020-8203",
+      "source": { "name": "NVD" },
+      "ratings": [
+        { "source": { "name": "NVD" }, "score": 7.4, "severity": "high", "method": "CVSSv31" }
+      ],
+      "cwes": [1321],
+      "description": "Prototype pollution in lodash before 4.17.20",
+      "affects": [{ "ref": "pkg:npm/lodash@4.17.20" }]
+    },
+    {
+      "id": "GHSA-3xpr-x77f-jh43",
+      "source": { "name": "GitHub Advisory Database" },
+      "ratings": [{ "severity": "medium" }],
+      "description": "Advisory for express",
+      "affects": [{ "ref": "pkg:npm/express@4.17.1" }]
+    }
+  ]
+}
