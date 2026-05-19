@@ -56,6 +56,7 @@ import { ListOwnersUseCase } from '../../../application/use-cases/aspm/ownership
 import { ResolveOwnershipForFindingUseCase } from '../../../application/use-cases/aspm/ownership/resolve-ownership-for-finding.js';
 import { GetFindingUseCase } from '../../../application/use-cases/aspm/findings/get-finding.js';
 import { IngestFindingsUseCase } from '../../../application/use-cases/aspm/findings/ingest-findings.js';
+import { IngestSbomUseCase } from '../../../application/use-cases/aspm/findings/ingest-sbom.js';
 import { ListFindingsUseCase } from '../../../application/use-cases/aspm/findings/list-findings.js';
 
 /**
@@ -158,6 +159,6 @@ function registerPhase4Services(container: DependencyContainer): void {
   });
 }
 
-function registerPhase4UseCases(_container: DependencyContainer): void {
-  // Phase 4 use cases (ingest-sbom) land in subsequent commits within this phase.
+function registerPhase4UseCases(container: DependencyContainer): void {
+  container.register(IngestSbomUseCase, { useClass: IngestSbomUseCase });
 }
