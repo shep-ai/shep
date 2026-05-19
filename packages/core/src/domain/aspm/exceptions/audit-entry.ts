@@ -15,6 +15,12 @@ export const AUDIT_ACTIONS = {
   Declared: 'declared',
   Revoked: 'revoked',
   ExpiredBySystem: 'expired-by-system',
+  Created: 'created',
+  Updated: 'updated',
+  Closed: 'closed',
+  Cancelled: 'cancelled',
+  Paused: 'paused',
+  Activated: 'activated',
 } as const;
 
 export interface AuditEntryInputs {

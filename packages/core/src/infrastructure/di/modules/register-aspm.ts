@@ -66,6 +66,11 @@ import { AssignOwnerUseCase } from '../../../application/use-cases/aspm/ownershi
 import { ImportOwnershipYamlUseCase } from '../../../application/use-cases/aspm/ownership/import-ownership-yaml.js';
 import { ListOwnersUseCase } from '../../../application/use-cases/aspm/ownership/list-owners.js';
 import { ResolveOwnershipForFindingUseCase } from '../../../application/use-cases/aspm/ownership/resolve-ownership-for-finding.js';
+import { CloseCampaignUseCase } from '../../../application/use-cases/aspm/campaigns/close-campaign.js';
+import { CreateCampaignUseCase } from '../../../application/use-cases/aspm/campaigns/create-campaign.js';
+import { GetCampaignProgressUseCase } from '../../../application/use-cases/aspm/campaigns/get-campaign-progress.js';
+import { ListCampaignsUseCase } from '../../../application/use-cases/aspm/campaigns/list-campaigns.js';
+import { UpdateCampaignUseCase } from '../../../application/use-cases/aspm/campaigns/update-campaign.js';
 import { DeclareExceptionUseCase } from '../../../application/use-cases/aspm/exceptions/declare-exception.js';
 import { ListExpiringExceptionsUseCase } from '../../../application/use-cases/aspm/exceptions/list-expiring-exceptions.js';
 import { RevokeExceptionUseCase } from '../../../application/use-cases/aspm/exceptions/revoke-exception.js';
@@ -238,4 +243,10 @@ function registerPhase6UseCases(container: DependencyContainer): void {
   container.register(DeclareExceptionUseCase, { useClass: DeclareExceptionUseCase });
   container.register(RevokeExceptionUseCase, { useClass: RevokeExceptionUseCase });
   container.register(ListExpiringExceptionsUseCase, { useClass: ListExpiringExceptionsUseCase });
+
+  container.register(CreateCampaignUseCase, { useClass: CreateCampaignUseCase });
+  container.register(UpdateCampaignUseCase, { useClass: UpdateCampaignUseCase });
+  container.register(CloseCampaignUseCase, { useClass: CloseCampaignUseCase });
+  container.register(ListCampaignsUseCase, { useClass: ListCampaignsUseCase });
+  container.register(GetCampaignProgressUseCase, { useClass: GetCampaignProgressUseCase });
 }
