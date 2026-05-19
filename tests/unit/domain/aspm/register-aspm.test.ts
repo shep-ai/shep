@@ -35,13 +35,14 @@ describe('registerAspm', () => {
     expect(() => registerAspm(c)).not.toThrow();
   });
 
-  it('does NOT pre-register any ASPM tokens in phase 1 (resolution still fails)', () => {
+  it('leaves unimplemented phase tokens unresolved (covers phases 4+)', () => {
     const c = rootContainer.createChildContainer();
     registerAspm(c);
-    // Phase 1 is a skeleton — subsequent phases attach registrations.
-    // Until they land, resolving a token should fail.
-    expect(() => c.resolve(ASPM_REPOSITORY_TOKENS.IFindingRepository)).toThrow();
-    expect(() => c.resolve(ASPM_SERVICE_TOKENS.IFindingIngestPort)).toThrow();
+    // Phase 3 wires IFindingRepository + IFindingIngestPort; later phases
+    // attach the rest. Tokens still unbound (e.g. risk score, exploit intel)
+    // should fail to resolve so a missing wiring is observable.
+    expect(() => c.resolve(ASPM_REPOSITORY_TOKENS.IRiskScoreRepository)).toThrow();
+    expect(() => c.resolve(ASPM_SERVICE_TOKENS.IExploitIntelPort)).toThrow();
   });
 });
 
