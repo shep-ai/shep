@@ -402,7 +402,7 @@ export function SettingsPageClient({
     projects: false,
     codeReview: false,
     collaboration: false,
-    bedrockIntegration: false,
+    bedrockIntegration: true,
   };
 
   // Language state

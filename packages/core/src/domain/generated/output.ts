@@ -688,7 +688,7 @@ export type FeatureFlags = {
    */
   collaboration: boolean;
   /**
-   * Enable project-bedrock memory integration UI and server actions (spec 098, default OFF)
+   * Enable project-bedrock memory integration UI and server actions (spec 098)
    */
   bedrockIntegration: boolean;
 };

@@ -28,8 +28,8 @@ properties:
     description: Enable agent collaboration, supervisor agent, and unified question pipeline (spec 093)
   bedrockIntegration:
     type: boolean
-    default: false
-    description: Enable project-bedrock memory integration UI and server actions (spec 098, default OFF)
+    default: true
+    description: Enable project-bedrock memory integration UI and server actions (spec 098)
 required:
   - envDeploy
   - debug

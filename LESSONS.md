@@ -1,5 +1,15 @@
 # Lessons Learned
 
+## When you add a settings column, the repository SQL must read AND write it
+
+Migration 104 added `feature_flag_bedrock_integration` (DEFAULT 0). The mapper (`settings.mapper.ts`) handled both directions correctly. But `sqlite-settings.repository.ts` INSERT/UPDATE statements were never updated to include the new column. Result: writes silently dropped the field, the DEFAULT-0 backfill always supplied the read value, and `bedrockIntegration: false` was *coincidentally* always correct — so tests passed. The bug only surfaced when the migration default was flipped to 1 to enable-by-default: now the column read back `true` even when the caller had explicitly passed `false`.
+
+Rules:
+
+1. Adding a settings field is a four-touch change, not three: tsp/, factory, mapper, **and the INSERT + UPDATE column lists in `sqlite-settings.repository.ts`**. If any of the four is missing, persistence silently lies.
+2. Never rely on a column DEFAULT to make a feature behave correctly. Defaults are migration-fill values for existing rows, not the production write path. If the write path omits the column, the bug is masked exactly until someone changes the default — which they will, eventually.
+3. Roundtrip tests must use at least one non-default value per field (`true` AND `false`, both halves of every enum). A test that only ever asserts the DEFAULT for a field doesn't exercise the write path at all.
+
 ## Required TypeSpec fields propagate to every entity fixture
 
 Adding `bedrockEnabled: boolean` to `Repository` and `Feature` in tsp/ broke ~30 unit/integration tests that construct fixtures via `Partial<Feature>` / `Partial<Repository>`. The TS error was `Property 'bedrockEnabled' is missing in type '{ ... }' but required in type 'Feature'` — even though the helper accepted Partial overrides, the literal it spread into still had to satisfy the full required type.

@@ -2,9 +2,9 @@
  * Migration 104: Add feature_flag_bedrock_integration column to settings table.
  *
  * Adds a boolean (INTEGER 0/1) column gating the project-bedrock memory
- * integration UI and server actions (spec 098). Defaults to 0 so every
- * existing installation hides the feature until the user opts in from
- * Settings → Feature Flags.
+ * integration UI and server actions (spec 098). Defaults to 1 so the
+ * feature is enabled by default for every installation; users can opt out
+ * from Settings → Feature Flags.
  *
  * Idempotency: the ALTER TABLE is guarded by `pragma table_info` so the
  * migration is safe to re-run.
@@ -22,7 +22,7 @@ export async function up({ context: db }: MigrationParams<Database.Database>): P
 
   if (!existing.has('feature_flag_bedrock_integration')) {
     db.exec(
-      'ALTER TABLE settings ADD COLUMN feature_flag_bedrock_integration INTEGER NOT NULL DEFAULT 0'
+      'ALTER TABLE settings ADD COLUMN feature_flag_bedrock_integration INTEGER NOT NULL DEFAULT 1'
     );
   }
 }

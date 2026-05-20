@@ -318,7 +318,7 @@ describe('createDefaultSettings', () => {
         projects: false,
         codeReview: false,
         collaboration: false,
-        bedrockIntegration: false,
+        bedrockIntegration: true,
       });
     });
   });
