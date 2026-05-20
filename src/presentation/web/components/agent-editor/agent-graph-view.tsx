@@ -86,6 +86,7 @@ function AgentGraphInner({
   onResetOverride,
   initialEditing,
 }: AgentGraphViewProps & { graph: AgentGraphDescriptor }) {
+  const { t } = useTranslation('web');
   const [editing, setEditing] = useState(Boolean(initialEditing));
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
