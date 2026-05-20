@@ -15,6 +15,7 @@
 
 import { cn } from '@/lib/utils';
 import { CanonicalSeverity } from '@shepai/core/domain/generated/output';
+import { AspmIngestDialog } from '@/components/features/aspm/aspm-ingest-dialog/aspm-ingest-dialog';
 
 export interface PostureSummaryView {
   openBySeverity: { severity: CanonicalSeverity; count: number }[];
@@ -88,14 +89,15 @@ export function PostureCards({ summary, loading, error, className }: PostureCard
       <div
         data-testid="posture-cards-empty"
         className={cn(
-          'flex h-32 flex-col items-center justify-center gap-1 rounded-md border',
+          'flex h-32 flex-col items-center justify-center gap-2 rounded-md border',
           className
         )}
       >
         <span className="text-sm font-medium">No posture data yet</span>
         <span className="text-muted-foreground text-xs">
-          Run <code>shep aspm ingest --sarif</code> to populate the dashboard
+          Upload a SARIF or SBOM document to populate the dashboard
         </span>
+        <AspmIngestDialog />
       </div>
     );
   }

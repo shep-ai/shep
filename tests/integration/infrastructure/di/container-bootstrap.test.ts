@@ -82,6 +82,8 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'GetCloudDeploymentStatusUseCase',
   'GetGitStatusUseCase',
   'GetInteractiveChatStateUseCase',
+  'IngestFindingsUseCase',
+  'IngestSbomUseCase',
   'IAgentRunRepository',
   'IDeploymentService',
   'IFeatureRepository',

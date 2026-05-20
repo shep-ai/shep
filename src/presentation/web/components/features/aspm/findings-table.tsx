@@ -16,6 +16,7 @@
 
 import { cn } from '@/lib/utils';
 import { SeverityBadge } from './severity-badge';
+import { AspmIngestDialog } from './aspm-ingest-dialog/aspm-ingest-dialog';
 import type { SecurityFinding } from '@shepai/core/domain/generated/output';
 
 export interface FindingsTableProps {
@@ -66,14 +67,15 @@ export function FindingsTable({
       <div
         data-testid="findings-table-empty"
         className={cn(
-          'flex h-32 flex-col items-center justify-center gap-1 rounded-md border',
+          'flex h-32 flex-col items-center justify-center gap-2 rounded-md border',
           className
         )}
       >
         <span className="text-sm font-medium">No findings</span>
         <span className="text-muted-foreground text-xs">
-          Run <code>shep aspm ingest --sarif</code> to populate this view
+          Upload a SARIF or SBOM document to populate this view
         </span>
+        <AspmIngestDialog />
       </div>
     );
   }

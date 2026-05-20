@@ -21,6 +21,7 @@ import { type CanonicalSeverity, type SecurityFinding } from '@shepai/core/domai
 
 import { FindingsTable } from './findings-table';
 import { SeverityBadge } from './severity-badge';
+import { AspmIngestDialog } from './aspm-ingest-dialog/aspm-ingest-dialog';
 
 export interface AspmApplicationSectionProps {
   applicationId: string;
@@ -79,14 +80,15 @@ export function AspmApplicationSection({
       <section
         data-testid={`aspm-app-section-empty-${applicationId}`}
         className={cn(
-          'flex h-32 flex-col items-center justify-center gap-1 rounded-md border',
+          'flex h-32 flex-col items-center justify-center gap-2 rounded-md border',
           className
         )}
       >
         <span className="text-sm font-medium">No ASPM data for this application</span>
         <span className="text-muted-foreground text-xs">
-          Run <code>shep aspm ingest</code> for this app to populate posture.
+          Upload a SARIF or SBOM document to populate posture.
         </span>
+        <AspmIngestDialog defaultApplicationId={applicationId} />
       </section>
     );
   }

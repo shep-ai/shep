@@ -383,4 +383,10 @@ function registerStringTokenAliases(container: DependencyContainer): void {
   container.register('DismissAiSignalUseCase', {
     useFactory: (c) => c.resolve(DismissAiSignalUseCase),
   });
+  container.register('IngestFindingsUseCase', {
+    useFactory: (c) => c.resolve(IngestFindingsUseCase),
+  });
+  container.register('IngestSbomUseCase', {
+    useFactory: (c) => c.resolve(IngestSbomUseCase),
+  });
 }
