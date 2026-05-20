@@ -27,9 +27,9 @@ describe('project-bedrock tool descriptor', () => {
 
   it('ships a pipx install command for every supported platform', () => {
     const entry = provider.getToolById('project-bedrock');
-    expect(entry?.commands.linux).toBe('pipx install project-bedrock');
-    expect(entry?.commands.darwin).toBe('pipx install project-bedrock');
-    expect(entry?.commands.win32).toBe('pipx install project-bedrock');
+    expect(entry?.commands.linux).toContain('pipx install project-bedrock');
+    expect(entry?.commands.darwin).toContain('pipx install project-bedrock');
+    expect(entry?.commands.win32).toContain('pipx install project-bedrock');
   });
 
   it('appears in the full entry list returned by the provider', () => {

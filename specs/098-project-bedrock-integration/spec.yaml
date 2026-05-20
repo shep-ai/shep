@@ -122,3 +122,7 @@ rejectionFeedback:
     message: "hide this feature behind feature flag"
     phase: "merge"
     timestamp: "2026-05-20T11:12:30.432Z"
+  - iteration: 3
+    message: "ci/cd is failling please fix\nhttps://github.com/shep-ai/shep/actions/runs/26176416739/job/77007571492?pr=626"
+    phase: "merge"
+    timestamp: "2026-05-20T17:51:38.848Z"
