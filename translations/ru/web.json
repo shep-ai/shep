@@ -202,11 +202,15 @@
       "codeReviewDescription": "Enable AI-powered code review that analyzes PR diffs and posts inline comments to GitHub",
       "collaboration": "Agent Collaboration & Supervision",
       "collaborationDescription": "Enable agent-to-agent messaging, supervisor delegation, and the unified agent questions inbox",
+      "aspm": "Application Security Posture Management",
+      "aspmDescription": "Enable the ASPM module — findings ingestion, posture dashboard, remediation campaigns, exceptions, and AI-change review queue",
       "bedrockIntegration": "Project Bedrock Memory",
       "bedrockIntegrationDescription": "Enable project-bedrock memory integration (markdown project memory for AI coding agents) — surfaces toggles, drawers, and tabs across applications, repositories, and features. Requires Python 3.9+ and pipx.",
-      "hint": "Экспериментальные функции, которые ещё находятся в разработке. Включайте на свой страх и риск — они могут измениться или быть удалены в будущих версиях. Режим отладки добавляет подробное логирование, полезное для устранения неполадок.",
+
       "whatsappDispatch": "Отправка задач через WhatsApp",
-      "whatsappDispatchDescription": "Запускайте агентов shep и управляйте ими из WhatsApp — создавайте функции, получайте обновления и подтверждайте этапы, отвечая в чате."
+      "whatsappDispatchDescription": "Запускайте агентов shep и управляйте ими из WhatsApp — создавайте функции, получайте обновления и подтверждайте этапы, отвечая в чате.",
+
+      "hint": "Экспериментальные функции, которые ещё находятся в разработке. Включайте на свой страх и риск — они могут измениться или быть удалены в будущих версиях. Режим отладки добавляет подробное логирование, полезное для устранения неполадок."
     },
     "interactiveAgent": {
       "title": "Интерактивный агент",
@@ -289,7 +293,15 @@
     "tools": "Инструменты",
     "skills": "Навыки",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "aspm": "Security",
+    "aspmDashboard": "Dashboard",
+    "aspmFindings": "Findings",
+    "aspmInventory": "Inventory",
+    "aspmOwners": "Owners",
+    "aspmAiReview": "AI Review",
+    "aspmCompliance": "Compliance",
+    "collaboration": "Collaboration"
   },
   "sidebar": {
     "features": "Функции",

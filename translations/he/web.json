@@ -202,11 +202,15 @@
       "codeReviewDescription": "Enable AI-powered code review that analyzes PR diffs and posts inline comments to GitHub",
       "collaboration": "Agent Collaboration & Supervision",
       "collaborationDescription": "Enable agent-to-agent messaging, supervisor delegation, and the unified agent questions inbox",
+      "aspm": "Application Security Posture Management",
+      "aspmDescription": "Enable the ASPM module — findings ingestion, posture dashboard, remediation campaigns, exceptions, and AI-change review queue",
       "bedrockIntegration": "Project Bedrock Memory",
       "bedrockIntegrationDescription": "Enable project-bedrock memory integration (markdown project memory for AI coding agents) — surfaces toggles, drawers, and tabs across applications, repositories, and features. Requires Python 3.9+ and pipx.",
-      "hint": "תכונות ניסיוניות שעדיין בפיתוח. הפעל על אחריותך — הן עשויות להשתנות או להיות מוסרות בגרסאות עתידיות. מצב ניפוי שגיאות מוסיף רישום מפורט שימושי לפתרון בעיות.",
+
       "whatsappDispatch": "שיגור משימות ב-WhatsApp",
-      "whatsappDispatchDescription": "שגרו והנחו את סוכני shep מתוך WhatsApp — צרו פיצ׳רים, קבלו עדכוני סוכן ואשרו שערים על ידי מענה בשרשור צ׳אט."
+      "whatsappDispatchDescription": "שגרו והנחו את סוכני shep מתוך WhatsApp — צרו פיצ׳רים, קבלו עדכוני סוכן ואשרו שערים על ידי מענה בשרשור צ׳אט.",
+
+      "hint": "תכונות ניסיוניות שעדיין בפיתוח. הפעל על אחריותך — הן עשויות להשתנות או להיות מוסרות בגרסאות עתידיות. מצב ניפוי שגיאות מוסיף רישום מפורט שימושי לפתרון בעיות."
     },
     "interactiveAgent": {
       "title": "סוכן אינטראקטיבי",
@@ -289,7 +293,15 @@
     "tools": "כלים",
     "skills": "כישורים",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "aspm": "Security",
+    "aspmDashboard": "Dashboard",
+    "aspmFindings": "Findings",
+    "aspmInventory": "Inventory",
+    "aspmOwners": "Owners",
+    "aspmAiReview": "AI Review",
+    "aspmCompliance": "Compliance",
+    "collaboration": "Collaboration"
   },
   "sidebar": {
     "features": "פיצ'רים",

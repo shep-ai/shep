@@ -202,11 +202,15 @@
       "codeReviewDescription": "Enable AI-powered code review that analyzes PR diffs and posts inline comments to GitHub",
       "collaboration": "Agent Collaboration & Supervision",
       "collaborationDescription": "Enable agent-to-agent messaging, supervisor delegation, and the unified agent questions inbox",
+      "aspm": "Application Security Posture Management",
+      "aspmDescription": "Enable the ASPM module — findings ingestion, posture dashboard, remediation campaigns, exceptions, and AI-change review queue",
       "bedrockIntegration": "Project Bedrock Memory",
       "bedrockIntegrationDescription": "Enable project-bedrock memory integration (markdown project memory for AI coding agents) — surfaces toggles, drawers, and tabs across applications, repositories, and features. Requires Python 3.9+ and pipx.",
-      "hint": "Fonctionnalités expérimentales encore en cours de développement. Activez à vos risques et périls — elles peuvent changer ou être supprimées dans les versions futures. Le mode débogage ajoute une journalisation détaillée utile pour le dépannage.",
+
       "whatsappDispatch": "Répartition des tâches via WhatsApp",
-      "whatsappDispatchDescription": "Lancez et pilotez les agents shep depuis WhatsApp : créez des fonctionnalités, recevez les mises à jour de l'agent et approuvez les étapes en répondant dans une discussion."
+      "whatsappDispatchDescription": "Lancez et pilotez les agents shep depuis WhatsApp : créez des fonctionnalités, recevez les mises à jour de l'agent et approuvez les étapes en répondant dans une discussion.",
+
+      "hint": "Fonctionnalités expérimentales encore en cours de développement. Activez à vos risques et périls — elles peuvent changer ou être supprimées dans les versions futures. Le mode débogage ajoute une journalisation détaillée utile pour le dépannage."
     },
     "interactiveAgent": {
       "title": "Agent interactif",
@@ -289,7 +293,15 @@
     "tools": "Outils",
     "skills": "Compétences",
     "applications": "Applications",
-    "agentQuestions": "Agent Questions"
+    "agentQuestions": "Agent Questions",
+    "aspm": "Security",
+    "aspmDashboard": "Dashboard",
+    "aspmFindings": "Findings",
+    "aspmInventory": "Inventory",
+    "aspmOwners": "Owners",
+    "aspmAiReview": "AI Review",
+    "aspmCompliance": "Compliance",
+    "collaboration": "Collaboration"
   },
   "sidebar": {
     "features": "Fonctionnalités",

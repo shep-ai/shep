@@ -19,8 +19,15 @@ import {
   KanbanSquare,
   MessageCircleQuestion,
   ShieldCheck,
+  ShieldAlert,
   Bot,
   GraduationCap,
+  Users,
+  Bug,
+  Package,
+  Sparkles,
+  ClipboardCheck,
+  Gauge,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -37,6 +44,7 @@ import {
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SidebarNavItem } from '@/components/common/sidebar-nav-item';
+import { SidebarNavGroup } from '@/components/common/sidebar-nav-group/sidebar-nav-group';
 import { SidebarCollapseToggle } from '@/components/common/sidebar-collapse-toggle';
 import { ShepLogo } from '@/components/common/shep-logo';
 import { VersionBadge } from '@/components/common/version-badge';
@@ -221,33 +229,82 @@ export function AppSidebar({
             active={pathname === '/skills'}
           />
           {featureFlags.collaboration ? (
-            <>
-              <SidebarNavItem
-                icon={MessageCircleQuestion}
-                label={t('navigation.agentQuestions')}
-                href="/agent-questions"
-                active={pathname === '/agent-questions'}
-                badge={pendingQuestionCount}
-              />
-              <SidebarNavItem
-                icon={ShieldCheck}
-                label="Supervisor"
-                href="/supervisor"
-                active={pathname?.startsWith('/supervisor') ?? false}
-              />
-              <SidebarNavItem
-                icon={Bot}
-                label="Agents"
-                href="/agents"
-                active={pathname?.startsWith('/agents') ?? false}
-              />
-              <SidebarNavItem
-                icon={GraduationCap}
-                label="Get started"
-                href="/onboarding"
-                active={pathname?.startsWith('/onboarding') ?? false}
-              />
-            </>
+            <SidebarNavGroup
+              icon={Users}
+              label={t('navigation.collaboration')}
+              badge={pendingQuestionCount}
+              items={[
+                {
+                  icon: MessageCircleQuestion,
+                  label: t('navigation.agentQuestions'),
+                  href: '/agent-questions',
+                  active: pathname === '/agent-questions',
+                  badge: pendingQuestionCount,
+                },
+                {
+                  icon: ShieldCheck,
+                  label: 'Supervisor',
+                  href: '/supervisor',
+                  active: pathname?.startsWith('/supervisor') ?? false,
+                },
+                {
+                  icon: Bot,
+                  label: 'Agents',
+                  href: '/agents',
+                  active: pathname?.startsWith('/agents') ?? false,
+                },
+                {
+                  icon: GraduationCap,
+                  label: 'Get started',
+                  href: '/onboarding',
+                  active: pathname?.startsWith('/onboarding') ?? false,
+                },
+              ]}
+            />
+          ) : null}
+          {featureFlags.aspm ? (
+            <SidebarNavGroup
+              icon={ShieldAlert}
+              label={t('navigation.aspm')}
+              items={[
+                {
+                  icon: Gauge,
+                  label: t('navigation.aspmDashboard'),
+                  href: '/aspm',
+                  active: pathname === '/aspm',
+                },
+                {
+                  icon: Bug,
+                  label: t('navigation.aspmFindings'),
+                  href: '/aspm/findings',
+                  active: pathname?.startsWith('/aspm/findings') ?? false,
+                },
+                {
+                  icon: Package,
+                  label: t('navigation.aspmInventory'),
+                  href: '/aspm/inventory',
+                  active: pathname?.startsWith('/aspm/inventory') ?? false,
+                },
+                {
+                  icon: Users,
+                  label: t('navigation.aspmOwners'),
+                  href: '/aspm/owners',
+                  active: pathname?.startsWith('/aspm/owners') ?? false,
+                },
+                {
+                  icon: Sparkles,
+                  label: t('navigation.aspmAiReview'),
+                  href: '/aspm/ai-review',
+                  active: pathname?.startsWith('/aspm/ai-review') ?? false,
+                },
+                {
+                  icon: ClipboardCheck,
+                  label: t('navigation.aspmCompliance'),
+                  href: '/aspm/compliance',
+                  active: pathname?.startsWith('/aspm/compliance') ?? false,
+                },
+              ]}
+            />
           ) : null}
           <SidebarNavItem
             icon={Settings}
