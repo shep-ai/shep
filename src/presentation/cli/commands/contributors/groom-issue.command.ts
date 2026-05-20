@@ -40,6 +40,14 @@ function parseIssuesEvent(raw: unknown): IssuesEventPayload {
 export function createGroomIssueCommand(): Command {
   return new Command('groom-issue')
     .description('Groom a newly opened GitHub issue (GitHub Actions entry).')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep contributors groom-issue                                                   Run from GitHub Actions event context
+  $ GITHUB_EVENT_PATH=event.json shep contributors groom-issue                       Read a local issue event payload
+  $ GITHUB_EVENT_PATH=event.json GITHUB_REPOSITORY=shep-ai/shep shep contributors groom-issue`
+    )
     .action(async () => {
       try {
         const payload = parseIssuesEvent(loadGitHubEvent());

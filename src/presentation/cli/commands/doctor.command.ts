@@ -32,6 +32,14 @@ const NAME_WIDTH = 24;
 export function createDoctorCommand(options: DoctorOptions = {}): Command {
   return new Command('doctor')
     .description('Diagnose the local Shep contributor environment')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep doctor                         Check local contributor setup
+  $ SHEP_HOME=/tmp/shep-home shep doctor Check an isolated Shep home
+  $ shep doctor && pnpm test            Run tests only when diagnostics pass`
+    )
     .action(async () => {
       try {
         const useCase = options.resolveUseCase

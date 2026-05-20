@@ -192,6 +192,15 @@ export function createStatusCommand(): Command {
     .description(t('cli:commands.status.description'))
     .option('--logs [lines]', t('cli:commands.status.logsOption'))
     .option('-f, --follow', t('cli:commands.status.followOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep status                 Show daemon status and resource usage
+  $ shep status --logs          Print the last 50 daemon log lines
+  $ shep status --logs 100      Print the last 100 daemon log lines
+  $ shep status --logs --follow Follow daemon logs in real time`
+    )
     .action(async (options: { logs?: string | true; follow?: boolean }) => {
       const logPath = getDaemonLogPath();
 

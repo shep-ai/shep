@@ -45,6 +45,14 @@ function parsePullRequestEvent(raw: unknown): PullRequestEventPayload {
 export function createWelcomePrCommand(): Command {
   return new Command('welcome-pr')
     .description('Welcome a first-time contributor on pull_request.opened (GitHub Actions entry).')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep contributors welcome-pr                                                   Run from GitHub Actions event context
+  $ GITHUB_EVENT_PATH=event.json shep contributors welcome-pr                       Read a local pull_request event payload
+  $ GITHUB_EVENT_PATH=event.json GITHUB_REPOSITORY=shep-ai/shep shep contributors welcome-pr`
+    )
     .action(async () => {
       try {
         const payload = parsePullRequestEvent(loadGitHubEvent());
