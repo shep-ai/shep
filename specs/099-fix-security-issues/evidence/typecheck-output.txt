@@ -1,0 +1,9 @@
+$ pnpm typecheck
+
+> @shepai/cli@1.205.0 typecheck /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-security-issues
+> tsc --noEmit
+
+(no output — tsc --noEmit emits nothing when there are zero type errors)
+
+EXIT: 0
+STATUS: PASS — typecheck completed cleanly against the upgraded dependency tree

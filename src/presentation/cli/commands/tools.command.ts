@@ -17,7 +17,14 @@ import { getCliI18n } from '../i18n.js';
  */
 export function createToolsCommand(): Command {
   const t = getCliI18n().t;
-  const tools = new Command('tools').description(t('cli:commands.tools.description'));
+  const tools = new Command('tools').description(t('cli:commands.tools.description')).addHelpText(
+    'after',
+    `
+Examples:
+  $ shep tools                 Show available tools subcommands
+  $ shep tools list            List tools and installation status
+  $ shep tools list | grep missing`
+  );
 
   tools
     .command('list')

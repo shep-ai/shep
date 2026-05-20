@@ -1,0 +1,7 @@
+{
+  "lane": "docs",
+  "difficulty": "goodFirst",
+  "acceptanceCriteria": "- [ ] `README.md` shows the `corepack enable` step before `pnpm install`\n- [ ] The new instructions are linked from `CONTRIBUTING.md`'s 30-second setup section\n- [ ] `pnpm lint && pnpm typecheck` passes locally\n- [ ] `pnpm test:unit` passes locally",
+  "suggestedLabels": ["lane:docs", "difficulty:goodFirst", "good-first-issue"],
+  "welcomeComment": "Hey 👋 — this is a good first issue in the **docs** lane.\n\nNext steps:\n- Skim `CONTRIBUTING.md` for the 30-second setup.\n- Run `shep doctor` to confirm your local environment is green.\n- Drop a comment when you're ready to claim it and a maintainer will assign you."
+}

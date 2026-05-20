@@ -37,9 +37,15 @@ describe('IExternalIssueFetcher type contracts', () => {
         url: 'https://jira.example.com/browse/PROJ-123',
         source: 'jira' as const,
       }),
+      getMergedPrCount: async () => 0,
+      listIssuesByLabel: async () => [],
+      listIssuesByLabels: async () => [],
     };
     expect(mockFetcher.fetchGitHubIssue).toBeDefined();
     expect(mockFetcher.fetchJiraTicket).toBeDefined();
+    expect(mockFetcher.getMergedPrCount).toBeDefined();
+    expect(mockFetcher.listIssuesByLabel).toBeDefined();
+    expect(mockFetcher.listIssuesByLabels).toBeDefined();
   });
 
   it('should define ExternalIssue with required fields', () => {

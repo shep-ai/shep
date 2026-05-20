@@ -1,0 +1,27 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ContributorOnboardingAgentOutput.yaml
+type: object
+properties:
+  lane:
+    $ref: ContributorLane.yaml
+    description: Lane assignment — must match ContributorLane enum verbatim
+  difficulty:
+    $ref: ContributionDifficulty.yaml
+    description: Difficulty rating — must match ContributionDifficulty enum verbatim
+  acceptanceCriteria:
+    type: string
+    description: Markdown checklist of acceptance criteria; each line begins with '- [ ] '
+  suggestedLabels:
+    type: array
+    items:
+      type: string
+    description: Suggested labels to apply; MUST include lane:<lane> and difficulty:<difficulty>
+  welcomeComment:
+    type: string
+    description: Optional welcome comment body — present only when difficulty === goodFirst
+required:
+  - lane
+  - difficulty
+  - acceptanceCriteria
+  - suggestedLabels
+description: Structured output produced by the contributor-onboarding custom agent

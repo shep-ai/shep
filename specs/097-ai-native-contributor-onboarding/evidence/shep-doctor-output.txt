@@ -1,0 +1,22 @@
+
+> @shepai/cli@1.202.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-ai-native-contributor-onboarding
+> tsx src/presentation/cli/index.ts doctor
+
+
+  shep doctor
+
+  STATUS  NAME                      DETAIL
+  ✓ ok    node-version              Node v22.18.0 (>= v22)
+  ✓ ok    pnpm-installed            pnpm 10.33.0
+  ✓ ok    git-installed             git version 2.50.1 (Apple Git-155)
+  ✓ ok    gh-cli-auth               gh CLI is authenticated
+  ✓ ok    agent-cli-availability    Authenticated agents: Claude Code, Gemini CLI, Codex CLI, Copilot CLI
+  ⚠ warn  dotenv-presence           No .env file at the workspace root
+                                    ↳ Copy `.env.example` to `.env` if your setup needs Discord / GitHub tokens or local overrides
+  ✓ ok    working-tree-clean        Working tree is clean
+  ✓ ok    migration-status          148 migration(s) applied
+  ✓ ok    typespec-freshness        Generated TypeSpec output is up to date
+  ✓ ok    di-graph-validation       All 7 critical DI tokens are registered
+
+  Summary: 9 ok  1 warn  0 fail  (341ms)
+

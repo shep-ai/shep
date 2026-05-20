@@ -19,17 +19,27 @@ import { getCliI18n } from '../i18n.js';
  */
 export function createStopCommand(): Command {
   const t = getCliI18n().t;
-  return new Command('stop').description(t('cli:commands.stop.description')).action(async () => {
-    const daemonService = container.resolve<IDaemonService>('IDaemonService');
+  return new Command('stop')
+    .description(t('cli:commands.stop.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep stop          Stop the running Shep daemon
+  $ shep status        Check daemon state before stopping
+  $ shep restart       Restart the daemon after stopping`
+    )
+    .action(async () => {
+      const daemonService = container.resolve<IDaemonService>('IDaemonService');
 
-    const state = await daemonService.read();
+      const state = await daemonService.read();
 
-    // Print a user-facing message when no daemon state is recorded at all.
-    // The alive-but-stale case (state exists, PID dead) is handled silently by stopDaemon.
-    if (!state) {
-      messages.info(t('cli:commands.stop.noDaemonRunning'));
-    }
+      // Print a user-facing message when no daemon state is recorded at all.
+      // The alive-but-stale case (state exists, PID dead) is handled silently by stopDaemon.
+      if (!state) {
+        messages.info(t('cli:commands.stop.noDaemonRunning'));
+      }
 
-    await stopDaemon(daemonService);
-  });
+      await stopDaemon(daemonService);
+    });
 }

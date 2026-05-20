@@ -48,3 +48,5 @@ import "./pm-project-member.tsp";
 import "./pm-audit-log.tsp";
 import "./operation-log-entry.tsp";
 import "./code-review.tsp";
+import "./contributor.tsp";
+import "./recognition-event.tsp";

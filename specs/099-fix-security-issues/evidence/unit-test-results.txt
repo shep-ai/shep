@@ -1,0 +1,303 @@
+
+> @shepai/cli@1.205.0 test:unit /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-security-issues
+> vitest run tests/unit
+
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-security-issues[39m
+
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2malready-running path (idempotent)[2m > [22m[2mdoes NOT spawn a new process when daemon is already alive
+[22m[39m
+ℹ Shep is already running at http://localhost:4050
+
+
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2malready-running path (idempotent)[2m > [22m[2mdoes NOT write daemon.json when daemon is already alive
+[22m[39m
+ℹ Shep is already running at http://localhost:4050
+
+
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2mfresh-start path (no existing daemon)[2m > [22m[2mcalls findAvailablePort with DEFAULT_PORT when no port option given
+[22m[39m
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/upgrade/upgrade-cli.use-case.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 780[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/feature-agent/nodes/node-helpers.test.ts [2m([22m[2m49 tests[22m[2m)[22m[33m 872[2mms[22m[39m
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2mfresh-start path (no existing daemon)[2m > [22m[2mcalls findAvailablePort with the provided port override
+[22m[39m
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:8080
+
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-reject-token.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1451[2mms[22m[39m
+     [33m[2m✓[22m[39m resolves RejectAgentRunUseCase via string token after initialization [33m 1450[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-idempotency.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1495[2mms[22m[39m
+     [33m[2m✓[22m[39m isContainerInitialized() returns false before init [33m 1448[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/contributor-onboarding-registrations.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1531[2mms[22m[39m
+     [33m[2m✓[22m[39m resolves IGitHubIssueWriter as GitHubIssueWriter [33m 1443[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/di/container-session-registrations.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1569[2mms[22m[39m
+     [33m[2m✓[22m[39m resolves ListAgentSessionsUseCase after initialization [33m 1451[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/repositories/sqlite-operation-log-repository-publish.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 368[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/agents/stream-agent-events.use-case.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 756[2mms[22m[39m
+[90mstdout[2m | tests/unit/commands/daemon/start-daemon.test.ts[2m > [22m[2mstartDaemon()[2m > [22m[2mfresh-start path (no existing daemon)[2m > [22m[2mspawns the daemon process using process.execPath and _serve args
+[22m[39m
+Shep Web UI
+
+✓ Daemon spawned at http://localhost:4050
+
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/recap/file-recap-publisher.service.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+[2026-05-20T12:48:52.729Z] Spawning: cursor-agent --yolo -p Implement feature --output-format stream-json
+[2026-05-20T12:48:52.730Z] Spawn cwd: (inherited)
+[2026-05-20T12:48:52.730Z] Subprocess PID: 12345
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/codex-cli-executor.test.ts [2m([22m[2m49 tests[22m[2m)[22m[33m 311[2mms[22m[39m
+[2026-05-20T12:48:52.763Z] Spawning: cursor-agent --yolo -p Bad prompt --output-format stream-json
+[2026-05-20T12:48:52.763Z] Spawn cwd: (inherited)
+[2026-05-20T12:48:52.763Z] Subprocess PID: 12345
+[2026-05-20T12:48:52.774Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-05-20T12:48:52.774Z] Spawn cwd: (inherited)
+[2026-05-20T12:48:52.774Z] Subprocess PID: 12345
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/agents/executors/gemini-cli-executor.test.ts [2m([22m[2m43 tests[22m[2m)[22m[33m 310[2mms[22m[39m
+[2026-05-20T12:48:52.783Z] [analyze] Starting...
+[2026-05-20T12:48:52.785Z] [analyze] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.785Z] [analyze] Prompt length: 4303 chars
+[2026-05-20T12:48:52.785Z] [analyze] Complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.788Z] [validate:spec.yaml] Validating spec.yaml
+[2026-05-20T12:48:52.788Z] [validate:spec.yaml] Validation passed
+[2026-05-20T12:48:52.789Z] [requirements] Starting...
+[2026-05-20T12:48:52.790Z] [requirements] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.790Z] [requirements] Prompt length: 5551 chars
+[2026-05-20T12:48:52.790Z] [requirements] Complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.790Z] [requirements] Interrupting for human approval
+[2026-05-20T12:48:52.794Z] [analyze] Starting...
+[2026-05-20T12:48:52.795Z] [analyze] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.795Z] [analyze] Prompt length: 4303 chars
+[2026-05-20T12:48:52.795Z] [analyze] Complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.796Z] [validate:spec.yaml] Validating spec.yaml
+[2026-05-20T12:48:52.796Z] [validate:spec.yaml] Validation passed
+[2026-05-20T12:48:52.798Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-05-20T12:48:52.798Z] Spawn cwd: (inherited)
+[2026-05-20T12:48:52.798Z] Subprocess PID: 12345
+[2026-05-20T12:48:52.799Z] [requirements] Starting...
+[2026-05-20T12:48:52.799Z] [requirements] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.799Z] [requirements] Prompt length: 5551 chars
+[2026-05-20T12:48:52.799Z] [requirements] Complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.800Z] [validate:spec.yaml] Validating spec.yaml
+[2026-05-20T12:48:52.800Z] [validate:spec.yaml] Validation passed
+[2026-05-20T12:48:52.801Z] [research] Starting...
+[2026-05-20T12:48:52.801Z] [research] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.801Z] [research] Prompt length: 5508 chars
+[2026-05-20T12:48:52.801Z] [research] Complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.802Z] [validate:research.yaml] Validating research.yaml
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/agents/stream-agent-events-application.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 302[2mms[22m[39m
+[2026-05-20T12:48:52.802Z] [validate:research.yaml] Validation passed
+[2026-05-20T12:48:52.803Z] [plan] Starting...
+[2026-05-20T12:48:52.803Z] [plan] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.803Z] [plan] Prompt length: 6560 chars
+[2026-05-20T12:48:52.803Z] [plan] Complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.804Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-05-20T12:48:52.804Z] [validate:plan+tasks] Validation passed
+[2026-05-20T12:48:52.805Z] [implement] Starting implementation phase orchestration
+[2026-05-20T12:48:52.805Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-05-20T12:48:52.805Z] [implement] Executing phase prompt — 2605 chars
+[2026-05-20T12:48:52.805Z] [implement] Phase complete (20 chars)
+[2026-05-20T12:48:52.806Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-05-20T12:48:52.806Z] [evidence] Starting evidence collection
+[2026-05-20T12:48:52.806Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.806Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.806Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-05-20T12:48:52.806Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-05-20T12:48:52.806Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.806Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.806Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-05-20T12:48:52.807Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-05-20T12:48:52.807Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.807Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.807Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-05-20T12:48:52.807Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+[2026-05-20T12:48:52.813Z] [analyze] Starting...
+[2026-05-20T12:48:52.813Z] [analyze] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.813Z] [analyze] Prompt length: 4342 chars
+[2026-05-20T12:48:52.813Z] [analyze] Complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.813Z] [validate:spec.yaml] Validating spec.yaml
+[2026-05-20T12:48:52.813Z] [validate:spec.yaml] Validation passed
+[2026-05-20T12:48:52.814Z] [requirements] Starting...
+[2026-05-20T12:48:52.814Z] [requirements] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.814Z] [requirements] Prompt length: 5590 chars
+[2026-05-20T12:48:52.814Z] [requirements] Complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.815Z] [validate:spec.yaml] Validating spec.yaml
+[2026-05-20T12:48:52.815Z] [validate:spec.yaml] Validation passed
+[2026-05-20T12:48:52.816Z] [research] Starting...
+[2026-05-20T12:48:52.816Z] [research] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.816Z] [research] Prompt length: 5547 chars
+[2026-05-20T12:48:52.816Z] [research] Complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.816Z] [validate:research.yaml] Validating research.yaml
+[2026-05-20T12:48:52.816Z] [validate:research.yaml] Validation passed
+[2026-05-20T12:48:52.817Z] [plan] Starting...
+[2026-05-20T12:48:52.817Z] [plan] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.817Z] [plan] Prompt length: 6638 chars
+[2026-05-20T12:48:52.817Z] [plan] Complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.818Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-05-20T12:48:52.818Z] [validate:plan+tasks] Validation passed
+[2026-05-20T12:48:52.818Z] [implement] Starting implementation phase orchestration
+[2026-05-20T12:48:52.818Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-05-20T12:48:52.819Z] [implement] Executing phase prompt — 2605 chars
+[2026-05-20T12:48:52.819Z] [implement] Phase complete (20 chars)
+[2026-05-20T12:48:52.819Z] Spawning: cursor-agent --yolo -p Test --output-format stream-json
+[2026-05-20T12:48:52.819Z] Spawn cwd: (inherited)
+[2026-05-20T12:48:52.819Z] Subprocess PID: 12345
+[2026-05-20T12:48:52.819Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-05-20T12:48:52.819Z] [evidence] Starting evidence collection
+[2026-05-20T12:48:52.819Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.819Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.819Z] [evidence] Attempt 1: parsed 0 evidence record(s)
+[2026-05-20T12:48:52.819Z] [evidence] ERROR: Attempt 1: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-05-20T12:48:52.819Z] [evidence] ERROR: Attempt 2: validation failed (1 errors), retrying — No TestOutput evidence for task-1 (test task 'Test Task'). Test results are required.
+[2026-05-20T12:48:52.819Z] [evidence] Attempt 2/3: executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.819Z] [evidence] Attempt 2: agent complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.819Z] [evidence] Attempt 2: parsed 0 evidence record(s)
+[2026-05-20T12:48:52.819Z] [evidence] Attempt 3/3: executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.819Z] [evidence] Attempt 3: agent complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.819Z] [evidence] Attempt 3: parsed 0 evidence record(s)
+[2026-05-20T12:48:52.819Z] [evidence] ERROR: Attempt 3: validation failed after 3 attempts — proceeding with partial evidence
+[2026-05-20T12:48:52.821Z] [analyze] Starting...
+[2026-05-20T12:48:52.821Z] [analyze] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.821Z] [analyze] Prompt length: 4303 chars
+[2026-05-20T12:48:52.821Z] [analyze] ERROR: Executor failed (after 0.0s)
+[2026-05-20T12:48:52.826Z] [analyze] Starting...
+[2026-05-20T12:48:52.826Z] [analyze] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.826Z] [analyze] Prompt length: 4303 chars
+[2026-05-20T12:48:52.826Z] [analyze] Complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.827Z] [validate:spec.yaml] Validating spec.yaml
+[2026-05-20T12:48:52.828Z] [validate:spec.yaml] Validation passed
+[2026-05-20T12:48:52.828Z] [requirements] Starting...
+[2026-05-20T12:48:52.828Z] [requirements] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.828Z] [requirements] Prompt length: 5551 chars
+[2026-05-20T12:48:52.828Z] [requirements] Complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.829Z] [validate:spec.yaml] Validating spec.yaml
+[2026-05-20T12:48:52.829Z] [validate:spec.yaml] Validation passed
+[2026-05-20T12:48:52.829Z] [research] Starting...
+[2026-05-20T12:48:52.829Z] [research] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.829Z] [research] Prompt length: 5508 chars
+[2026-05-20T12:48:52.829Z] [research] Complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.830Z] [validate:research.yaml] Validating research.yaml
+[2026-05-20T12:48:52.830Z] [validate:research.yaml] Validation passed
+[2026-05-20T12:48:52.831Z] [plan] Starting...
+[2026-05-20T12:48:52.831Z] [plan] Executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.831Z] [plan] Prompt length: 6560 chars
+[2026-05-20T12:48:52.831Z] [plan] Complete (20 chars, 0.0s)
+[2026-05-20T12:48:52.831Z] [validate:plan+tasks] Validating plan.yaml and tasks.yaml
+[2026-05-20T12:48:52.831Z] [validate:plan+tasks] Validation passed
+[2026-05-20T12:48:52.832Z] [implement] Starting implementation phase orchestration
+[2026-05-20T12:48:52.832Z] [implement] Phase phase-1 "Test Phase" — 1 task(s), parallel: false
+[2026-05-20T12:48:52.832Z] [implement] Executing phase prompt — 2605 chars
+[2026-05-20T12:48:52.832Z] [implement] Phase complete (20 chars)
+[2026-05-20T12:48:52.832Z] [implement] All phases complete — 1/1 tasks (0.0s)
+[2026-05-20T12:48:52.832Z] [evidence] Starting evidence collection
+[2026-05-20T12:48:52.832Z] [evidence] Attempt 1/3: executing agent at cwd=/test/repo
+[2026-05-20T12:48:52.832Z] [evidence] Attempt 1: agent complete (20 chars, 0.0s)
+
+[... output truncated for brevity ...]
+
+
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-repository.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/api/version.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/merge-review/get-merge-review-data.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/reject-feature.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/features/inventory-filters.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/derive-graph.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/open-folder.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/feature-create-drawer/feature-create-drawer.test.tsx [2m([22m[2m100 tests[22m[2m)[22m[33m 27409[2mms[22m[39m
+       [33m[2m✓[22m[39m renders the drawer header when open [33m 410[2mms[22m[39m
+       [33m[2m✓[22m[39m does not render a feature name input [33m 308[2mms[22m[39m
+       [33m[2m✓[22m[39m accepts text in the description field [33m 646[2mms[22m[39m
+       [33m[2m✓[22m[39m enables submit button when description has content [33m 569[2mms[22m[39m
+       [33m[2m✓[22m[39m calls onSubmit with payload containing description (no name field) [33m 540[2mms[22m[39m
+       [33m[2m✓[22m[39m includes attachments array with file objects [33m 650[2mms[22m[39m
+       [33m[2m✓[22m[39m sends approvalGates with only PRD checked [33m 542[2mms[22m[39m
+       [33m[2m✓[22m[39m sends all-true approvalGates when all checkboxes are checked [33m 607[2mms[22m[39m
+       [33m[2m✓[22m[39m sends all-false approvalGates when no checkboxes are checked [33m 535[2mms[22m[39m
+       [33m[2m✓[22m[39m submits correct approvalGates after All toggle [33m 642[2mms[22m[39m
+       [33m[2m✓[22m[39m clears all form fields after submit without unmounting [33m 1583[2mms[22m[39m
+       [33m[2m✓[22m[39m clears form data on submit so next open starts fresh [33m 522[2mms[22m[39m
+       [33m[2m✓[22m[39m supports multiple file selections across multiple picks [33m 527[2mms[22m[39m
+       [33m[2m✓[22m[39m removes attachment when remove button is clicked [33m 396[2mms[22m[39m
+       [33m[2m✓[22m[39m shows multiple attachment chips [33m 329[2mms[22m[39m
+       [33m[2m✓[22m[39m plays create sound on form submit [33m 570[2mms[22m[39m
+       [33m[2m✓[22m[39m mode=fast submits with fast: true [33m 542[2mms[22m[39m
+       [33m[2m✓[22m[39m mode=spec submits with fast: false [33m 562[2mms[22m[39m
+       [33m[2m✓[22m[39m mode resets to default after submit [33m 385[2mms[22m[39m
+       [33m[2m✓[22m[39m submits the form when Ctrl+Enter is pressed in the textarea [33m 326[2mms[22m[39m
+       [33m[2m✓[22m[39m submits the form when Meta+Enter is pressed in the textarea [33m 352[2mms[22m[39m
+       [33m[2m✓[22m[39m includes sessionId in submitted payload [33m 355[2mms[22m[39m
+       [33m[2m✓[22m[39m submit button is disabled when no repo selected and repositoryPath is empty [33m 361[2mms[22m[39m
+       [33m[2m✓[22m[39m submit button is enabled when repo is selected via combobox [33m 530[2mms[22m[39m
+       [33m[2m✓[22m[39m submit button is enabled when repositoryPath is provided (canvas flow) [33m 588[2mms[22m[39m
+       [33m[2m✓[22m[39m handleSubmit includes selectedRepoPath in payload [33m 807[2mms[22m[39m
+       [33m[2m✓[22m[39m shows empty state message when no repos match search [33m 333[2mms[22m[39m
+       [33m[2m✓[22m[39m shows check icon for selected repository [33m 430[2mms[22m[39m
+       [33m[2m✓[22m[39m can submit feature after adding new repo via combobox [33m 787[2mms[22m[39m
+       [33m[2m✓[22m[39m resets forkAndPr state to false when canPushDirectly changes from false to true [33m 859[2mms[22m[39m
+       [33m[2m✓[22m[39m calls getViewerPermission on repo change and updates toggle visibility [33m 436[2mms[22m[39m
+       [33m[2m✓[22m[39m excludes forkAndPr from submission payload when canPush is true [33m 457[2mms[22m[39m
+       [33m[2m✓[22m[39m leaves description editable when initialApplicationId is set [33m 494[2mms[22m[39m
+       [33m[2m✓[22m[39m submit payload uses fast=false (spec mode) when initialApplicationId is set [33m 649[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/pick-files.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22m[2mdeployFeature server action[2m > [22m[2mreturns {success:false, error} when the use case throws
+[22m[39m[deployFeature] error: Feature not found: nonexistent-id Error: Feature not found: nonexistent-id
+    at [90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-security-issues/[39mtests/unit/presentation/web/actions/deploy-feature.test.ts:37:35
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-security-issues/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-security-issues/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-security-issues/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-security-issues/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1209:10[90m)[39m
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-security-issues/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1653:37
+    at Traces.$ [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-security-issues/[39mnode_modules/[4m.pnpm[24m/vitest@4.0.18_@opentelemetry+api@1.9.0_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_light_8f3982b4fe9dcf3a5594ea1a223af5d0/node_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[39m
+    at trace [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-security-issues/[39mnode_modules/[4m.pnpm[24m/vitest@4.0.18_@opentelemetry+api@1.9.0_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_light_8f3982b4fe9dcf3a5594ea1a223af5d0/node_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-security-issues/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1653:12[90m)[39m
+
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22m[2mdeployFeature server action[2m > [22m[2mreturns a generic error for non-Error throws
+[22m[39m[deployFeature] error: Failed to deploy feature unexpected
+
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-feature.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/open-ide.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/update-model.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/update-settings.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/load-settings.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/feature-flags.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/parse-log-line.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-feature-drawer-data.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-viewer-permission.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/chat/tool-bubble-detect.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/features/control-center/derive-state.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/features/delete-feature.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/merge-review/merge-review-config.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/approve-feature.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/get-feature-phase-timings.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/url-params.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/language.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/list-github-repositories.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/features/feature-tree-table/build-tree-data.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-deployment-logs.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/stop-deployment.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/get-feature-plan.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/hooks/deployment-status-store.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-workflow-defaults.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/get-deployment-status.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/common/control-center-drawer/drawer-view.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/compose-user-input.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/format-duration.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/pick-folder.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/app/actions/list-github-organizations.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/lib/compare-versions.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/components/features/chat/is-workflow-in-flight.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m618 passed[39m[22m[90m (618)[39m
+[2m      Tests [22m [1m[32m7497 passed[39m[22m[90m (7497)[39m
+[2m   Start at [22m 15:48:50
+[2m   Duration [22m 45.88s[2m (transform 18.04s, setup 55.16s, import 75.92s, tests 114.80s, environment 94.30s)[22m
+

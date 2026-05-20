@@ -31,3 +31,42 @@ body:
       description: Why you needed this info, what you were trying to accomplish, examples from other projects, etc.
     validations:
       required: false
+
+  - type: dropdown
+    id: lane
+    attributes:
+      label: Lane
+      description: Defaults to `docs`; pick another lane if the change spans multiple areas.
+      options:
+        - docs
+        - agents
+        - ui
+        - cli
+        - infra
+      default: 0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Difficulty
+      description: How hard is this for someone new to the project?
+      options:
+        - goodFirst
+        - easy
+        - medium
+        - hard
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: A markdown checklist describing what "done" looks like.
+      placeholder: |
+        - [ ] Section X in `docs/...` updated
+        - [ ] Cross-links added from CONTRIBUTING.md
+    validations:
+      required: false

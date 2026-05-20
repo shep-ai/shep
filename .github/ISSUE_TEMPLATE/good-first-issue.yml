@@ -62,13 +62,39 @@ body:
       required: false
 
   - type: dropdown
+    id: lane
+    attributes:
+      label: Lane
+      description: Which part of Shep does this touch?
+      options:
+        - docs
+        - agents
+        - ui
+        - cli
+        - infra
+    validations:
+      required: true
+
+  - type: dropdown
     id: difficulty
     attributes:
       label: Difficulty
       description: How hard is this for someone new to the project?
       options:
-        - Trivial (typo, string change, config tweak)
-        - Easy (small logic change, one or two files)
-        - Moderate (multiple files, some domain knowledge needed)
+        - goodFirst
+        - easy
+        - medium
+        - hard
     validations:
       required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Restate the Expected Outcome as a markdown checklist so the contributor can self-verify.
+      placeholder: |
+        - [ ] Running `shep` outside a git repo prints the friendly message
+        - [ ] Unit test added in `tests/unit/...`
+    validations:
+      required: false

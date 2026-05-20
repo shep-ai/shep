@@ -1,0 +1,742 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "ai-native-contributor-onboarding"
+summary: |
+  Technical research for feature 097 (ai-native-contributor-onboarding). Confirms the
+  spec maps cleanly onto existing Shep building blocks: the custom-agent rail
+  (CreateCustomAgentUseCase), ISupervisorAgent (the canonical human-approval gate
+  from spec 093), IExternalIssueFetcher / IGitHubRepositoryService for reads,
+  IAgentExecutorProvider for LLM calls, and the umzug + better-sqlite3 migration
+  framework. Documents nine technology decisions, the resolved transport choice for
+  GitHub writes (Octokit REST), the lane-classification strategy (rules-first with
+  agent fallback), the all-contributors implementation (in-house markdown writer, no
+  third-party bot), the diagnostic strategy pattern for `shep doctor`, and the
+  unified publish pipeline reused from spec 095/096. Also corrects two paths
+  referenced by the spec: migrations live at `packages/core/src/infrastructure/persistence/sqlite/migrations/`
+  (not `/persistence/migrations/`), and the notifier port is `IDesktopNotifier` at
+  `packages/core/src/application/ports/output/services/i-desktop-notifier.ts`.
+
+relatedFeatures:
+  - "001-shep-kit"
+  - "008-agent-configuration"
+  - "013-feature-agent"
+  - "088-import-repo-upstream"
+  - "089-discord-readme-badge"
+  - "093-agent-collaboration-supervision"
+  - "095-devrel-release-notes"
+  - "096-ai-release-notes"
+
+technologies:
+  - "TypeScript 5.x / Node.js 22+"
+  - "Clean Architecture (domain / application / infrastructure / presentation)"
+  - "TypeSpec (`tsp/`) — domain modeling; generates `domain/generated/output.ts`"
+  - "tsyringe — dependency injection (string-token ports)"
+  - "Commander.js — CLI command framework"
+  - "Next.js (App Router) + React — web dashboard"
+  - "Storybook — colocated `.stories.tsx` for every web component"
+  - "better-sqlite3 + umzug — persistence and migrations"
+  - "Octokit REST (@octokit/rest) — GitHub write API for IGitHubIssueWriter"
+  - "GitHub CLI (`gh`) — already a runtime dep; reused for auth state"
+  - "GitHub Actions — `.github/workflows/` for event-driven workflows"
+  - "Vitest — unit and integration tests"
+  - "Playwright — e2e tests"
+  - "node-notifier — IDesktopNotifier adapter for first-time-PR alerts"
+  - "Discord (existing skill `discord-admin`, server `1473730318576914617`) — outreach channel"
+  - "all-contributors specification — markdown convention; no upstream bot"
+  - "IAgentExecutorProvider — agent-agnostic LLM execution"
+  - "ISupervisorAgent — canonical human-approval gate (spec 093)"
+
+relatedLinks:
+  - title: "Octokit REST.js documentation"
+    url: "https://octokit.github.io/rest.js/"
+  - title: "Octokit Issues API — labels / comments / assignees"
+    url: "https://octokit.github.io/rest.js/v20#issues"
+  - title: "GitHub REST primary rate limits (5000/hr authenticated)"
+    url: "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api"
+  - title: "GitHub Issue Forms schema (lane / difficulty / acceptance criteria fields)"
+    url: "https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms"
+  - title: "all-contributors specification"
+    url: "https://allcontributors.org/docs/en/specification"
+  - title: "all-contributors-cli source (used as reference, not as dependency)"
+    url: "https://github.com/all-contributors/all-contributors-cli"
+  - title: "Conventional Commits (enforced in this repo)"
+    url: "https://www.conventionalcommits.org/"
+  - title: "umzug migrations framework"
+    url: "https://github.com/sequelize/umzug"
+
+decisions:
+  - title: "GitHub write transport for IGitHubIssueWriter — Octokit REST"
+    chosen: |
+      Implement the `IGitHubIssueWriter` infrastructure adapter against the Octokit REST
+      SDK (`@octokit/rest`), authenticating with the same token already discovered by
+      the existing `gh` CLI integration via `IGitHubRepositoryService.getAuthToken()`
+      (or equivalent). All four mutations (`addLabels`, `removeLabels`, `addComment`,
+      `assignUsers`) map to first-class Octokit Issues endpoints.
+    rejected:
+      - "Shell out to `gh issue edit / gh issue comment` — works but turns every write into a subprocess spawn (~150 ms overhead each), gives stringly-typed error handling, and conflicts with our rate-limit retry strategy. Acceptable for one-shot reads; not for an automation pipeline that may issue dozens of writes per recap or grooming pass."
+      - "Use the GitHub GraphQL v4 client — more flexible for batched mutations but the issue write surface needs no batching, GraphQL adds schema-stitching complexity, and our existing read services already use REST. Stays an option only if we discover bulk operations later."
+      - "Write a thin fetch-based client — gives full control but reinvents auth, pagination, retry, abuse-rate-limit, and ETag handling that Octokit already does correctly. Pure not-invented-here."
+    rationale: |
+      Octokit is the GitHub-blessed TypeScript client, already widely used in the
+      Node/TS ecosystem, and ships first-class typings. Reusing the existing `gh` CLI
+      auth (token resolution) means we add zero new auth flows (per spec NFR-10:
+      reuse existing GitHub credentials). Octokit's built-in plugin system covers
+      retry-on-secondary-rate-limit and abuse-rate-limit out of the box, which the
+      spec calls out (NFR-10: "rate-limit handling matches existing pr-sync
+      patterns"). The adapter stays under 200 LOC; the port surface is four methods,
+      keeping interface-segregation from spec product-question 3.
+
+  - title: "Doctor diagnostics — strategy pattern, one class per check"
+    chosen: |
+      Define an internal `IDiagnostic` abstraction in the application layer with the
+      contract `{ name: string; run(): Promise<DiagnosticResult> }` where
+      `DiagnosticResult = { name, status: 'ok' | 'warn' | 'fail', detail, fixHint? }`.
+      The `RunDoctorUseCase` injects an array of diagnostics by token, runs them
+      with `Promise.allSettled`, applies the per-diagnostic 3 s timeout (spec
+      NFR-7), and aggregates into a `DoctorReport`. Each diagnostic class lives in
+      `application/use-cases/doctor/diagnostics/` and reuses existing services
+      (`IAgentAuthDetectorService`, `IGitHubRepositoryService`, file-system port,
+      etc.) — no diagnostic talks to infrastructure directly.
+    rejected:
+      - "Single mega use-case with sequential if/else checks — fastest to write, but every new check forces editing one file, adds magic strings for outcomes, and breaks the <300-line rule almost immediately."
+      - "External tooling (`doctor.sh` shell script) — quick prototype but bypasses our DI, can't be invoked from web, defeats the dogfooding angle, and forfeits the use-case-as-only-entry-point rule (`.claude/rules/code-quality.md`)."
+      - "Domain-services-only doctor with no separate use case — domain layer would need access to runtime concerns (process env, child processes) which violates the dependency rule."
+    rationale: |
+      The strategy pattern matches how Shep already organizes pluggable behavior
+      (e.g. `IAgentAuthDetectorService` tier-1/tier-2 strategies, supervisor-policy
+      evaluators). It naturally satisfies the open / closed principle for the
+      `shep doctor` command, lets each diagnostic be unit-tested in isolation
+      against mocked ports, and keeps any individual file under 100 LOC. Parallel
+      execution via `Promise.allSettled` is what makes the <5 s NFR achievable:
+      worst-case latency is the slowest single check, not the sum.
+
+  - title: "all-contributors writer — in-house markdown rewriter, no third-party bot"
+    chosen: |
+      Implement `IAllContributorsWriter` in `infrastructure/services/contributors/`
+      as a small adapter that reads `.all-contributorsrc` (JSON), upserts a
+      contributor entry (login, contributions[]), writes the file back, and
+      regenerates the `<!-- ALL-CONTRIBUTORS-LIST:START -->` block in `README.md`
+      using the published HTML/markdown grid format from the all-contributors
+      specification. Idempotent: same `(login, contributions[])` triple is a no-op
+      after the first call. No dependency on `all-contributors-cli` or the upstream
+      GitHub App.
+    rejected:
+      - "Install the `@all-contributors` GitHub App — zero code but contradicts the dogfooding pitch (Shep helps itself), forces every adopting OSS project to install yet another bot, and removes our ability to auto-recognize on Nth-PR or review-heavy contributions because the bot's surface is comment-driven mention-only."
+      - "Embed `all-contributors-cli` as a runtime dependency and call its programmatic API — saves us from re-implementing the markdown grid but pulls in a heavy CLI surface (Inquirer prompts, file generators) we don't need, ties us to its release cadence, and the package has a history of npm advisories."
+      - "Shell out to `npx all-contributors-cli add` — slowest path; still a runtime dep, still pulls down the package on first run, and the subprocess output is unstructured."
+    rationale: |
+      Per resolved spec product-question 6, the dogfooding story requires the
+      pipeline be self-contained. Re-implementing the markdown writer is small
+      (<150 LOC, well-specified, golden-file-testable) and gives us full control
+      over recognition criteria (firstPR vs nthPR vs review-heavy — see TypeSpec
+      enum `RecognitionKind`). Idempotency is enforced at two layers: the
+      use-case-level unique check on (`contributorId`, `kind`, `prNumber`) and the
+      writer's own dedup before mutating `.all-contributorsrc` (NFR-11).
+
+  - title: "Lane classification — hybrid (rules-first, agent fallback)"
+    chosen: |
+      `ClassifyIntoLaneUseCase` runs a deterministic rule set over the issue title,
+      body, and any pre-existing labels first (e.g. `docs:` / `web:` / `cli:`
+      prefixes, regex on file paths if mentioned, label heuristics). If the rules
+      return `unknown` or low-confidence (multi-lane match), the use case falls
+      back to the contributor-onboarding agent via `IAgentExecutorProvider` to
+      produce a single lane decision plus a one-line rationale. The
+      `ContributorLane` TypeSpec enum is the only return type — no raw strings.
+    rejected:
+      - "Pure deterministic rules — fastest and cheapest but brittle on natural-language issue bodies and forces us to hand-curate keyword lists. Misses ~30% of real-world issues that don't conform to label conventions."
+      - "Pure LLM classification — handles ambiguity beautifully but burns model tokens on every issue (including the 70% that are obvious from the title), introduces nondeterminism into a label that downstream automation depends on, and bleeds latency into the GitHub Action invocation."
+      - "Two-tier with both running and a tiebreaker — over-engineered; we'd need a confidence model nobody maintains. The rules-first / agent-fallback split is a known pattern (used in `auto-triage-intake-item`)."
+    rationale: |
+      This mirrors the existing intake auto-triage pattern: cheap deterministic
+      heuristics for the easy cases, agent escalation only when ambiguous. Keeps
+      most invocations sub-100 ms and zero-cost; the agent is invoked only when
+      its judgment is actually needed. The output type (TypeSpec enum) makes the
+      decision a typed value end-to-end, satisfying NFR-3 (no raw string
+      comparisons) regardless of which path produced it.
+
+  - title: "Recap publishing — reuse spec 095/096 multi-channel pattern"
+    chosen: |
+      `GenerateMonthlyRecapUseCase` produces a markdown artifact (one source of
+      truth). `PublishMonthlyRecapUseCase` accepts that artifact and dispatches
+      through three independent publish targets — `recaps/YYYY-MM.md` write,
+      Discord post, GitHub Discussion/Release note — each gated through
+      `ISupervisorAgent` evaluation before execution (per spec NFR-5). The
+      dispatcher is a small `IRecapPublisher` interface with one adapter per
+      channel; the use case fans out via `Promise.allSettled` and reports
+      per-channel success/failure.
+    rejected:
+      - "Couple to the existing semantic-release notes pipeline (release.yml) — easy to wire but ties recap cadence to release cadence (per-PR vs monthly), buries recap content in changelog noise, and is invisible to anyone who doesn't read GitHub Releases."
+      - "Discord-only publish — fastest to ship; loses durable archive, hurts SEO, and gives no proof to future contributors that the project recognizes work over time (spec product-question 8 already rejected this)."
+      - "Single channel chosen at runtime via config — no value over the multi-channel approach since each channel is roughly the same code path; punts the decision to runtime instead of declaring it in the spec."
+    rationale: |
+      Spec 096 (ai-release-notes) already established the canonical pattern of
+      "one generated artifact, supervisor-gated multi-channel publish." Reusing
+      that contract avoids two parallel publishing systems and gives the
+      contributor recap free polish (tone gating, evidence inclusion, edit
+      window). Each channel adapter stays small (<100 LOC) and isolated, and
+      failure in one channel does not block the others — exactly what
+      `Promise.allSettled` provides.
+
+  - title: "Migration numbering and path — `sqlite/migrations/` at next free number"
+    chosen: |
+      Place the two new migrations at
+      `packages/core/src/infrastructure/persistence/sqlite/migrations/101-create-contributors.ts`
+      and `102-create-recognition-events.ts`. Each exports `up({ context: db })` and
+      a no-op `down(...)` per the umzug + better-sqlite3 conventions already in use
+      (e.g. `100-create-custom-agents.ts`). Idempotent `CREATE TABLE IF NOT EXISTS`
+      / `CREATE INDEX IF NOT EXISTS`. Foreign key
+      `recognition_events.contributor_id REFERENCES contributors(id)` with
+      ON DELETE CASCADE, plus a UNIQUE (`contributor_id`, `kind`, `pr_number`) for
+      idempotency (NFR-11).
+    rejected:
+      - "Single migration creating both tables — saves one file but breaks the existing convention where each migration owns one table; complicates partial rollbacks."
+      - "Embed both tables in the existing `100-create-custom-agents.ts` migration — would force an edit to a previously-applied migration, which umzug treats as identity-changing and refuses to re-run cleanly."
+      - "Use raw SQL files instead of TS migrations — abandons the typed `MigrationParams<Database.Database>` contract every other migration uses."
+    rationale: |
+      Verified the migrations directory is `packages/core/src/infrastructure/persistence/sqlite/migrations/`
+      (the spec said `/persistence/migrations/` — corrected here). The next free
+      number is 101 (`100-create-custom-agents.ts` is the latest). Splitting into
+      two files matches the directory's one-table-per-migration norm visible across
+      `094-…`, `095-…`, `096-…`, etc. The unique constraint on
+      (`contributor_id`, `kind`, `pr_number`) is the schema-level guarantee for
+      idempotent recognition awarding (NFR-11), not just a service-level check.
+
+  - title: "Recognition idempotency — schema unique + service-level upsert"
+    chosen: |
+      Two-layer idempotency. (1) Schema: UNIQUE(`contributor_id`, `kind`,
+      `pr_number`) on `recognition_events`. (2) Service: `AwardRecognitionUseCase`
+      uses `INSERT … ON CONFLICT DO NOTHING` (better-sqlite3 supports this
+      natively) and short-circuits the `IAllContributorsWriter` call when no row
+      was inserted. PR-merge-event reprocessing is therefore a no-op end-to-end.
+    rejected:
+      - "Service-level check only — race condition between read-then-write across two concurrent webhook deliveries; the unique constraint is the only place that's actually safe."
+      - "Schema check only — works but means the use case has to swallow the unique-violation error, conflating expected duplicates with real failures and losing the early-exit on the writer call."
+    rationale: |
+      Webhook deliveries can duplicate (GitHub explicitly retries on 5xx). The
+      database is the single source of truth that withstands concurrent writes.
+      Pairing the schema constraint with the service-level upsert keeps the call
+      site readable while making double-counting impossible. This also satisfies
+      NFR-11 verbatim: "reprocessing a PR merge event does not double-count or
+      duplicate `.all-contributorsrc` entries."
+
+  - title: "Discord outreach — wrap the existing skill behind IOutreachPublisher"
+    chosen: |
+      Define a narrow `IOutreachPublisher` port in
+      `application/ports/output/services/` with one method:
+      `publishToDiscord(channelId, body): Promise<OutreachResult>`. The
+      infrastructure adapter calls into the same Discord REST surface the
+      `discord-admin` skill uses (bot token from `.env`), but goes through the
+      port, not the skill, since skills are a Claude Code primitive and not
+      callable from runtime code. Posting is gated through `ISupervisorAgent`.
+    rejected:
+      - "Invoke the `discord-admin` skill at runtime — skills are not part of the application runtime; they only exist inside the agent harness. Coupling production code to a skill is a layering error."
+      - "Add Discord-posting helpers directly inside `DraftOutreachPostUseCase` — bypasses DI, makes testing painful, and embeds infrastructure concerns in the application layer."
+      - "Punt Discord posting to GitHub Actions — possible but every channel adapter needs the same bot token; centralizing via a port keeps the auth boundary in one place."
+    rationale: |
+      The skill is a useful interactive harness for me, not a runtime service.
+      Production code calls the Discord REST API directly through a port; the
+      bot token is read from the same `.env` the skill uses, but the wiring goes
+      through tsyringe DI. Keeping the port narrow (`publishToDiscord` only)
+      preserves interface-segregation and matches the v1 scope (Discord-only
+      outreach). Reddit/HN/X adapters can be added later behind the same port
+      by extending the discriminated union of channel kinds.
+
+  - title: "Stale-issue detection scheduling — Shep daemon job runner"
+    chosen: |
+      `DetectStaleGoodFirstIssueUseCase` runs once daily via Shep's existing
+      in-process job-scheduling primitive (the same one used for pr-sync polling
+      and other periodic work). Runs against the connected repo through
+      `IExternalIssueFetcher`. Output is a structured list returned to a
+      caller-decided action (notify maintainers via `IDesktopNotifier`, or
+      surface in the web dashboard). No GitHub Actions cron involvement.
+    rejected:
+      - "GitHub Actions cron schedule — Actions cron has 5–15 min jitter, charges Actions minutes, and adopting projects without Actions don't get the feature; spec product-question 10 already routed time-driven workflows away from Actions."
+      - "Manual CLI invocation only — defeats the automation goal; means stale issues only surface when a maintainer remembers to check."
+    rationale: |
+      Per resolved spec product-question 10, time-driven workflows run inside the
+      Shep daemon. The scheduling primitive already exists for pr-sync; reusing
+      it costs us a single registration and inherits the daemon's restart
+      semantics. The use case stays pure — it returns the stale list — so it's
+      equally callable from a CLI command (`shep contributors stale`) or the
+      scheduler.
+
+openQuestions:
+  - question: "How should rate-limit and retry behavior be handled for GitHub writes?"
+    resolved: true
+    options:
+      - option: "Octokit `@octokit/plugin-retry` + `@octokit/plugin-throttling`"
+        description: |
+          Compose the Octokit client with both the retry and throttling plugins.
+          Retry handles transient 5xx and abuse-rate-limit (Retry-After) headers;
+          throttling proactively pauses requests when primary or secondary rate
+          limits are near exhaustion. Standard, well-supported pattern; ~30 LOC of
+          composition; behavior matches the existing pr-sync service's manual
+          retry logic but in plugin form rather than hand-rolled.
+        selected: true
+      - option: "Hand-rolled exponential backoff in the adapter"
+        description: |
+          Implement retry/backoff manually inside the IGitHubIssueWriter adapter.
+          Maximum control, no plugin dependency, but every edge case
+          (secondary-rate-limit body fields, abuse Retry-After format, paginated
+          retries) becomes our problem to maintain. Increases adapter LOC past the
+          ~200 budget and duplicates the careful work the Octokit team already
+          shipped.
+        selected: false
+      - option: "No retry — fail fast and surface to supervisor"
+        description: |
+          Fail on first error and let the supervisor approval flow decide
+          whether to retry. Simplest code, but means a single transient 502 from
+          GitHub fails an entire grooming or recap publish, frustrating the human
+          approver. Defeats the point of having an automated pipeline.
+        selected: false
+    selectionRationale: |
+      The Octokit retry + throttling plugins are the path of least resistance for
+      "production-grade GitHub writes": battle-tested, ~30 LOC of composition,
+      behavior matches what we already do manually in pr-sync (so no behavioral
+      regression), and they handle the secondary-rate-limit subtleties we'd
+      otherwise have to chase down ourselves. Spec NFR-10 explicitly asks for
+      "rate-limit handling matches existing pr-sync patterns" — the plugins give
+      us better-than-parity for free.
+
+  - question: "Where should the contributor-onboarding agent's system prompt live?"
+    resolved: true
+    options:
+      - option: "Markdown file in `prompts/contributor-onboarding/system.md`, loaded at registration"
+        description: |
+          Store the prompt as a human-editable markdown file under a `prompts/`
+          tree co-located with other agent prompts. The CreateCustomAgentUseCase
+          reads it on registration. Easy to edit, easy to review in PRs, easy to
+          version-control. Adopting projects can fork and customize per-repo.
+        selected: true
+      - option: "Inline as a TypeScript template-literal constant"
+        description: |
+          Embed the system prompt directly in a `.ts` constant. Compiles cleanly,
+          single source file, but multi-line prompts in TypeScript are awkward
+          to edit, encourage embedded JS expressions, and make non-engineer
+          contributions to the prompt (a known maintainability pain) painful.
+        selected: false
+      - option: "Database row created on first run"
+        description: |
+          Insert the prompt into the existing `agent_prompt_overrides` table on
+          first run; pull from there at registration. Maximally dynamic but adds
+          an opaque source of truth that doesn't show up in `git diff`, which
+          hurts review and reproducibility. Configuration over code.
+        selected: false
+    selectionRationale: |
+      Markdown files in a `prompts/` directory match the convention already used
+      for built-in agent prompts (per the agent system in
+      `docs/architecture/agent-system.md`). They show up in PR diffs (so prompt
+      changes get review), are trivially editable by non-engineer contributors
+      (DevRel, docs maintainers), and adopting projects can fork the prompt with
+      `git` rather than touching code. The TypeSpec contract for the agent's
+      structured output schema lives separately in `tsp/`, which keeps prompt and
+      contract independently versioned.
+
+  - question: "How should the contributor leaderboard data be loaded for the web dashboard?"
+    resolved: true
+    options:
+      - option: "Use case aggregates at request time via repository query"
+        description: |
+          `GetContributorLeaderboardUseCase` calls
+          `IContributorRepository.findTopByPrCount({ scope: 'month' | 'allTime', limit })`,
+          which executes a SQL aggregate over the `contributors` and
+          `recognition_events` tables. Re-runs on every request. Simple, no
+          materialization, fresh-by-design.
+        selected: true
+      - option: "Materialized view refreshed on PR-merge events"
+        description: |
+          Maintain a `contributor_leaderboard_monthly` table updated by the
+          `award-recognition` use case. O(1) read, but adds a write path, a
+          consistency invariant to preserve under concurrent merges, and a
+          migration. Premature for v1 leaderboard sizes (< 1000 contributors).
+        selected: false
+      - option: "In-memory cache with TTL"
+        description: |
+          Cache the leaderboard in-process for N minutes; recompute on miss.
+          Cheap, but stale data is exactly the wrong UX for a recognition
+          surface, and Shep is multi-process (CLI + web + daemon) so the cache
+          would need invalidation across processes.
+        selected: false
+    selectionRationale: |
+      Repository aggregation at request time keeps the data path single-sourced
+      (no view to invalidate), fits the contributor-count scale we expect for at
+      least the next year (low thousands), and lets us add a materialized view
+      later if a profiling pass actually shows it's needed. SQLite's aggregate
+      query plan over `(contributor_id, occurred_at, kind)` indexed columns is
+      sub-10 ms at this scale — well inside the leaderboard component's loading
+      budget.
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-05-06
+
+  ## Codebase Reference (verified, used to ground decisions)
+
+  | Concern | Existing path / port |
+  | ------- | -------------------- |
+  | Custom-agent rail | `packages/core/src/application/use-cases/agents/create-custom-agent.use-case.ts` (`CreateCustomAgentUseCase`); TypeSpec at `tsp/agents/custom-agent.tsp`; repository port `ICustomAgentRepository` |
+  | Supervisor / human-approval gate (spec 093) | `packages/core/src/application/ports/output/agents/supervisor-agent.interface.ts` (`ISupervisorAgent.evaluate`); decision repo `supervisor-decision-repository.interface.ts`; use case `evaluate-supervisor-decision.use-case.ts` |
+  | GitHub reads — issue fetch | `packages/core/src/application/ports/output/services/external-issue-fetcher.interface.ts` (`IExternalIssueFetcher`) |
+  | GitHub reads — repo / auth | `packages/core/src/application/ports/output/services/github-repository-service.interface.ts` (`IGitHubRepositoryService`) |
+  | GitHub writes (TO BE CREATED) | NOT YET PRESENT — this feature introduces `IGitHubIssueWriter` |
+  | Intake pipeline | `packages/core/src/application/use-cases/intake/{auto-triage-intake-item,detect-duplicates,accept-intake-item,decline-intake-item}.use-case.ts` |
+  | Agent execution | `packages/core/src/application/ports/output/agents/agent-executor-provider.interface.ts` (`IAgentExecutorProvider.getExecutor()`) |
+  | Agent auth detection | `packages/core/src/application/ports/output/services/agent-auth-detector.interface.ts` (`IAgentAuthDetectorService.isAuthenticated`) |
+  | Notifier | `packages/core/src/application/ports/output/services/i-desktop-notifier.ts` (`IDesktopNotifier.send`) — note: spec called this `i-desktop-notifier` but the type name is `IDesktopNotifier` |
+  | CLI command pattern | `src/presentation/cli/commands/review.command.ts` (Commander `new Command(...).description(...).action(async () => { container.resolve(...) })`) |
+  | Migrations directory | `packages/core/src/infrastructure/persistence/sqlite/migrations/` (NOT `/persistence/migrations/` — spec correction). Latest is `100-create-custom-agents.ts`; this feature uses `101-` and `102-`. |
+  | Web onboarding route | `src/presentation/web/app/onboarding/page.tsx` (single Next.js App Router file; this feature extends it with a contributor view) |
+
+  ## Technology Decisions
+
+  ### 1. GitHub write transport — Octokit REST
+
+  **Chosen:** `@octokit/rest` SDK in the `IGitHubIssueWriter` adapter.
+
+  **Rejected:**
+  - Shell out to `gh issue edit / gh issue comment` — ~150 ms per call, stringly-typed errors.
+  - GitHub GraphQL v4 — adds schema-stitching for no payoff at our write scale.
+  - Hand-rolled fetch client — reinvents auth, retry, ETag, pagination.
+
+  **Rationale:** Octokit is the canonical TS client. Reuses the token already
+  resolved by the existing `gh`-based integration (no new auth flow per NFR-10).
+  Built-in plugin support handles rate-limit / abuse-rate-limit retry. Adapter
+  stays under 200 LOC.
+
+  ### 2. Doctor diagnostics — strategy pattern
+
+  **Chosen:** `IDiagnostic.run(): Promise<DiagnosticResult>`. `RunDoctorUseCase`
+  injects an array, runs in parallel via `Promise.allSettled` with a 3 s
+  per-diagnostic timeout (NFR-7), aggregates a `DoctorReport`. Each diagnostic
+  reuses existing services (`IAgentAuthDetectorService`,
+  `IGitHubRepositoryService`, file-system port).
+
+  **Rejected:**
+  - Single mega use-case — busts the <300-line rule fast, magic-string outcomes.
+  - External `doctor.sh` script — bypasses DI, can't be reused from web.
+  - Domain-services-only — domain layer can't access process env / child processes
+    without violating dependency rules.
+
+  **Rationale:** Strategy mirrors how Shep already pluggably composes behavior
+  (`IAgentAuthDetectorService` tier-1/tier-2). Parallel execution is the only way
+  to hit the <5 s NFR for ~10 checks.
+
+  ### 3. all-contributors writer — in-house markdown rewriter
+
+  **Chosen:** `IAllContributorsWriter` adapter that mutates `.all-contributorsrc`
+  (JSON) and regenerates the README's `<!-- ALL-CONTRIBUTORS-LIST:START -->`
+  block. No third-party bot; no `all-contributors-cli` dependency. Idempotent.
+
+  **Rejected:**
+  - `@all-contributors` GitHub App — contradicts the dogfooding pitch (resolved
+    in spec product-question 6); forces adopters to install another bot; comment-
+    driven mention-only surface can't auto-recognize on Nth-PR or review-heavy.
+  - `all-contributors-cli` as a runtime dep — pulls in Inquirer prompts and file
+    generators we don't need; ties us to its release cadence; advisory history.
+  - `npx all-contributors-cli add` subprocess — slowest path; unstructured output.
+
+  **Rationale:** Markdown writer is small and well-specified (golden-file
+  testable). Lets us extend criteria (`firstPR / nthPR / firstIssue /
+  monthlyShoutout` — TypeSpec `RecognitionKind`) without negotiating with an
+  upstream maintainer.
+
+  ### 4. Lane classification — hybrid (rules-first, agent fallback)
+
+  **Chosen:** Deterministic rules (title prefixes like `docs:` / `web:`,
+  body-keyword heuristics, label hints) first; if `unknown` or low-confidence,
+  fall back to the contributor-onboarding agent via `IAgentExecutorProvider`.
+  Returns the TypeSpec `ContributorLane` enum (no raw strings, NFR-3).
+
+  **Rejected:**
+  - Pure deterministic — brittle on natural-language issue bodies (~30% miss).
+  - Pure LLM — wastes tokens on obvious cases; nondeterminism on a label
+    downstream automation reads; latency in the GitHub Action invocation.
+  - Two-tier with confidence model — over-engineered; nobody maintains it.
+
+  **Rationale:** Mirrors the existing `auto-triage-intake-item` pattern. Most
+  invocations are sub-100 ms zero-cost; agent escalates only when ambiguous.
+
+  ### 5. Recap publishing — reuse spec 095/096 multi-channel pattern
+
+  **Chosen:** `GenerateMonthlyRecapUseCase` produces a markdown artifact;
+  `PublishMonthlyRecapUseCase` fans out to three channels via an
+  `IRecapPublisher` interface (one adapter per channel: file, Discord, GitHub
+  Discussion / Release). Each channel call is gated through `ISupervisorAgent`
+  (NFR-5). `Promise.allSettled` so a single channel failure does not block
+  others.
+
+  **Rejected:**
+  - Couple to semantic-release notes — recap cadence ≠ release cadence; recap
+    drowns in changelog noise.
+  - Discord-only — no durable archive (resolved in spec product-question 8).
+  - Single channel chosen via runtime config — no value over multi-channel; both
+    are nearly the same code.
+
+  **Rationale:** Spec 096 already canonicalized "one artifact, supervisor-gated
+  multi-channel publish." Reusing the contract avoids two parallel publishing
+  systems and inherits the polish (tone gating, edit window, evidence inclusion).
+
+  ### 6. Migrations — `sqlite/migrations/101-` and `102-`
+
+  **Chosen:** `101-create-contributors.ts` and `102-create-recognition-events.ts`.
+  Each `up({ context: db })` with idempotent `CREATE TABLE IF NOT EXISTS` /
+  `CREATE INDEX IF NOT EXISTS`. Foreign key `recognition_events.contributor_id
+  REFERENCES contributors(id) ON DELETE CASCADE`. Unique constraint
+  `(contributor_id, kind, pr_number)` for idempotency (NFR-11).
+
+  **Rejected:**
+  - Single migration creating both tables — breaks one-table-per-migration norm.
+  - Edit `100-create-custom-agents.ts` to add tables — umzug treats this as
+    identity-changing; refuses to re-run cleanly.
+  - Raw SQL files — abandons the typed `MigrationParams<Database.Database>`
+    contract every other migration uses.
+
+  **Rationale:** Path corrected to `sqlite/migrations/` (the spec said
+  `migrations/` — the `sqlite/` segment is required). `100-` is the latest, so
+  `101-` and `102-` are next. Splitting matches the directory's existing norm.
+
+  ### 7. Recognition idempotency — schema unique + service upsert
+
+  **Chosen:** UNIQUE(`contributor_id`, `kind`, `pr_number`) plus
+  `INSERT … ON CONFLICT DO NOTHING` in the use case; short-circuits the
+  `IAllContributorsWriter` call when no row was inserted.
+
+  **Rejected:**
+  - Service-level check only — race condition between concurrent webhook
+    deliveries.
+  - Schema check only — call site has to swallow unique-violation errors,
+    conflating duplicates with real failures.
+
+  **Rationale:** GitHub webhook deliveries can duplicate (5xx retries). Schema
+  is the only safe place; pairing with a service-level upsert keeps the call
+  site readable and gives the early-exit behavior NFR-11 requires.
+
+  ### 8. Outreach — `IOutreachPublisher` port wrapping Discord REST
+
+  **Chosen:** `IOutreachPublisher.publishToDiscord(channelId, body)` port. The
+  infrastructure adapter calls Discord REST directly using the bot token from
+  `.env`. Posting is gated through `ISupervisorAgent`. The Claude Code
+  `discord-admin` skill is NOT invoked at runtime (skills are an agent-harness
+  primitive, not a runtime service).
+
+  **Rejected:**
+  - Invoke the `discord-admin` skill from runtime — skills aren't part of
+    application runtime; coupling there is a layering error.
+  - Discord helpers inside `DraftOutreachPostUseCase` — bypasses DI; tests painful;
+    embeds infrastructure in application layer.
+  - Punt to GitHub Actions — every channel needs the bot token; centralizing
+    behind a port keeps the auth boundary in one place.
+
+  **Rationale:** Narrow port (one method) preserves interface-segregation and
+  matches v1 scope. Reddit/HN/X can land later as additional methods on the
+  same port (or sibling ports) without breaking the supervisor gate model.
+
+  ### 9. Stale-issue detection — Shep daemon scheduler
+
+  **Chosen:** `DetectStaleGoodFirstIssueUseCase` runs daily via Shep's
+  in-process job-scheduling primitive (the same one driving pr-sync). Pure use
+  case: returns the structured stale list; caller decides on action (notify,
+  surface in dashboard).
+
+  **Rejected:**
+  - GitHub Actions cron — 5–15 min jitter; charges Actions minutes; adopting
+    projects without Actions miss the feature (resolved in spec product-question
+    10).
+  - Manual CLI invocation only — defeats the automation goal.
+
+  **Rationale:** Time-driven workflows live in the Shep daemon (per resolved
+  product-question 10). Reusing the existing scheduler costs a single
+  registration; the use case stays pure and CLI-callable.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | `@octokit/rest` | GitHub write API for `IGitHubIssueWriter` | **Use** | Canonical typed client; reuses `gh`-resolved token; first-class types for issues / labels / comments / assignees. |
+  | `@octokit/plugin-retry` | Retry on 5xx and abuse-rate-limit | **Use** | ~30 LOC composition; matches NFR-10 (parity with pr-sync retry behavior) without hand-rolling. |
+  | `@octokit/plugin-throttling` | Proactive primary/secondary rate-limit pause | **Use** | Pairs with retry plugin; protects against bursts during recap publish or grooming runs. |
+  | `gh` (GitHub CLI) | Existing read paths, auth resolution | **Reuse** | Already a runtime dep; provides token to Octokit; not used for writes (per Decision 1). |
+  | `@all-contributors/cli` | Generate the README contributors block | **Reject** | Pulls in Inquirer / file-generator surface we don't need; tied to its release cadence; advisory history; in-house writer is ~150 LOC. |
+  | `@all-contributors` GitHub App | Manage recognition via mention comments | **Reject** | External dependency contradicting the dogfooding pitch; comment-driven only; resolved in spec product-question 6. |
+  | `umzug` + `better-sqlite3` | Migrations runtime | **Reuse** | Already in use across all 100 existing migrations; no change. |
+  | `commander` | CLI parsing | **Reuse** | Already in use; new `shep doctor` command follows the existing `review.command.ts` pattern. |
+  | `tsyringe` | DI | **Reuse** | All new ports registered by string token; matches NFR-14. |
+  | `node-notifier` (via `IDesktopNotifier`) | First-time-PR alerts | **Reuse** | Existing port; this feature only consumes it. |
+  | TypeSpec (`tsp/`) | Domain model authoring | **Reuse** | Three new entity files + four new enums; regenerate `domain/generated/output.ts`. |
+  | Storybook | Web component coverage | **Reuse** | Mandatory; every new component ships with `.stories.tsx` (Default / Loading / Empty / Error). |
+  | Vitest | Unit + integration tests | **Reuse** | All new use cases land RED-first per CLAUDE.md TDD mandate. |
+  | Playwright | E2E for the new web onboarding contributor view | **Reuse** | Smoke coverage of lane chooser → "pick first issue" flow. |
+  | Discord REST API directly | Outreach posting | **Use (no SDK)** | The bot token is in `.env`; one POST endpoint per message; SDK would be overkill. |
+
+  ## Security Considerations
+
+  - **GitHub credential reuse (NFR-10).** The Octokit-backed `IGitHubIssueWriter`
+    must take its token from the existing GitHub-integration code path
+    (resolved via `gh auth token` or stored credential, the same path used by
+    `IGitHubRepositoryService`). No new token storage, no new env vars.
+  - **Minimum-scope principle.** The token in use already has issue-write scope
+    for any user with a normal personal access token configured for `gh`. No
+    elevation needed; document in the adapter's JSDoc that the token must carry
+    `repo` (or `public_repo`) and `write:discussion` if the discussion publisher
+    is configured.
+  - **Webhook authenticity for first-time-PR welcome.** The
+    `welcome-first-time-contributor.yml` GitHub Action runs in the trusted
+    repo context, so no extra signature verification is needed beyond what
+    GitHub Actions already provides; CLI invocation is over the local DI graph.
+  - **Discord bot token handling.** The bot token lives in `.env` and is loaded
+    by the existing config loader; the new outreach adapter must NEVER log the
+    token, even at debug level. The supervisor gate sees only the message body,
+    not credentials.
+  - **PII guardrails (NFR-9).** The agent prompt must explicitly forbid emitting
+    anything beyond public GitHub data (login, avatar URL, public profile
+    fields). Recap and leaderboard surfaces use only `Contributor` fields, all
+    of which are public-by-construction. Welcome comments are templated and
+    structurally cannot include unfetched data.
+  - **Approval-gate as security control.** Every external side-effect (label,
+    comment, assign, Discord post, recap publish) flows through
+    `ISupervisorAgent.evaluate(...)` per NFR-5. The gate is the project's
+    authorization boundary; auto-approval policy is configurable but never
+    default.
+  - **Idempotency as defense against replay.** UNIQUE constraints on
+    `recognition_events` (NFR-11) prevent attacker-controlled webhook replay
+    (or our own double-delivery) from awarding duplicate recognition or
+    spamming `.all-contributorsrc`.
+  - **No new attack surface from `shep doctor`.** Diagnostics are read-only;
+    they do not write to the repo, do not POST anywhere, and do not phone home.
+    Each diagnostic reports redacted versions of any path containing the
+    user's home directory in `fixHint` strings.
+
+  ## Performance Implications
+
+  - **`shep doctor` < 5 s (NFR-7).** Achieved via parallel `Promise.allSettled`
+    of all diagnostics with a 3 s per-diagnostic timeout. Worst case latency =
+    slowest single check, not the sum. Auth-detector tier-1 checks (env var,
+    file presence, Keychain) are well under 100 ms; tier-2 subprocess auth-
+    status checks dominate but are bounded.
+  - **`groom-issue` < 30 s (NFR-8).** Issue body fetched once; rules-first lane
+    classification runs in <100 ms; agent fallback (when invoked) is the
+    dominant cost — 5–25 s typical via `IAgentExecutorProvider`. Streams
+    progress through existing streaming infra so the user sees activity.
+  - **Recognition awarding ~50 ms.** Single-row INSERT plus a markdown rewrite
+    of `.all-contributorsrc` and the README list block. Both are local file
+    ops; the bottleneck would be the supervisor gate, which is not on this use
+    case's path (the use case writes its own state and lets the
+    GitHub-comment side-effect take the gate).
+  - **Leaderboard < 100 ms at expected scale.** Aggregate query over indexed
+    `(contributor_id, kind, occurred_at)` columns in SQLite with a few
+    thousand rows. No materialized view in v1; revisit if profiling indicates.
+  - **GitHub rate-limit budget.** 5000 requests/hour per authenticated token.
+    Worst case for a 200-contributor monthly recap: ~200 metadata reads + ~3
+    writes per channel = well under 1% of budget. Octokit throttling plugin
+    pauses proactively before either limit is hit.
+  - **Stale-issue scan.** Daily run; one paginated GitHub list-issues call per
+    label of interest. ~1 request per page per repo; trivially within budget.
+  - **`Promise.allSettled` over `Promise.all` everywhere** — required so a
+    single channel failure or a single diagnostic timeout doesn't poison the
+    whole result.
+
+  ## Architecture Notes
+
+  This feature plugs into existing layers cleanly without bending the dependency
+  rule:
+
+  - **Domain (`tsp/` → `domain/generated/output.ts`)** gains two entities
+    (`Contributor`, `RecognitionEvent`) and four enums (`ContributorLane`,
+    `ContributorLevel`, `ContributionDifficulty`, `RecognitionKind`). Pure
+    additive; nothing existing changes.
+  - **Application** gains:
+    - Use case groups: `application/use-cases/contributors/` (groom-issue,
+      classify-into-lane, propose-acceptance-criteria,
+      welcome-first-time-contributor, detect-stale-good-first-issue,
+      award-recognition, generate-monthly-recap, publish-monthly-recap,
+      draft-outreach-post) and `application/use-cases/doctor/` (run-doctor +
+      `diagnostics/` strategy classes).
+    - Output ports: `IGitHubIssueWriter`, `IAllContributorsWriter`,
+      `IOutreachPublisher`, `IContributorRepository`,
+      `IRecognitionEventRepository`, `IRecapPublisher`, `IDiagnostic`. All by
+      string token.
+    - The contributor-onboarding agent is registered through
+      `CreateCustomAgentUseCase` (no new built-in agent kind).
+  - **Infrastructure** gains:
+    - `services/external/github-issue-writer.service.ts` (Octokit-backed).
+    - `services/contributors/all-contributors-writer.service.ts` (in-house
+      markdown writer).
+    - `services/outreach/discord-outreach-publisher.service.ts`.
+    - `services/recap/{file,discord,github-discussion}-recap-publisher.service.ts`.
+    - `services/doctor/diagnostic-runner.service.ts` (registers the
+      `IDiagnostic` array used by the use case).
+    - SQLite migrations `101-create-contributors.ts` and
+      `102-create-recognition-events.ts` at
+      `packages/core/src/infrastructure/persistence/sqlite/migrations/`.
+    - SQLite repository implementations.
+    - DI wiring in `infrastructure/di/`.
+  - **Presentation** gains:
+    - `src/presentation/cli/commands/doctor.command.ts` (Commander, follows the
+      `review.command.ts` template).
+    - Two `.github/workflows/*.yml` event-driven workflows that invoke Shep
+      CLI subcommands (welcome-first-time-contributor, label-by-lane).
+    - Web onboarding contributor view (extends existing
+      `src/presentation/web/app/onboarding/page.tsx`) and a
+      `ContributorLeaderboard` component, each with colocated `.stories.tsx`.
+  - **Cross-spec relationships** verified during research:
+    - Spec 088 (`import-repo-upstream`) shares the issue-fetcher abstraction;
+      no conflict.
+    - Spec 089 (`branding-onboarding-overhaul`) lives on the same onboarding
+      route — coordinate copy/lane names with that spec's PR.
+    - Spec 093 (`agent-collaboration-supervision`) is a hard dependency for
+      `ISupervisorAgent` (already merged).
+    - Specs 095 / 096 (release notes) are the canonical pattern for the
+      multi-channel recap publish.
+
+  ## Slicing for Implementation
+
+  Spec product-question 9 already resolved this: the user explicitly preferred
+  one bundled PR. Within that PR, the implementation order follows the
+  dependency graph:
+
+  1. **TypeSpec entities + enums** (Contributor, RecognitionEvent, four enums) —
+     regenerate `domain/generated/output.ts`.
+  2. **Migrations 101 / 102** + repository ports + adapters.
+  3. **Foundational ports** — `IGitHubIssueWriter`, `IAllContributorsWriter`,
+     `IOutreachPublisher`, `IDiagnostic`. Adapters and DI wiring.
+  4. **Doctor use case** + CLI command — independent of the agent surface;
+     ships value to existing maintainers immediately.
+  5. **Contributor use cases** — groom-issue, classify-into-lane,
+     propose-acceptance-criteria, welcome-first-time-contributor,
+     detect-stale-good-first-issue, award-recognition,
+     generate-monthly-recap, publish-monthly-recap, draft-outreach-post. RED
+     test first per CLAUDE.md TDD mandate.
+  6. **Custom-agent registration** — system prompt at
+     `prompts/contributor-onboarding/system.md`; registered via
+     `CreateCustomAgentUseCase`; golden-path integration test.
+  7. **GitHub Actions workflows** — `welcome-first-time-contributor.yml`
+     and `label-by-lane.yml`.
+  8. **Web surface** — extend `onboarding/page.tsx` with the contributor view;
+     `ContributorLeaderboard` component; `.stories.tsx` (Default / Loading /
+     Empty / Error) for each new component; Playwright smoke for the lane
+     chooser flow.
+  9. **Static repo files** — `CONTRIBUTING.md` updates, new `ROADMAP.md`,
+     `ARCHITECTURE.md`, `GOOD_FIRST_ISSUES.md`, README "Contribute to Shep"
+     block, PR template, issue-template enhancements. Last in commit order
+     so the docs reference real, shipped capabilities.
+
+  ## Out of Scope (Explicit)
+
+  - **`shep contribute` end-to-end CLI** — deferred to a v2 spec
+    (product-question 7). The flagship demo only works once grooming,
+    supervisor gates, and PR automation are all rock-solid; landing it in v1
+    risks a high-visibility command that fails ~30% of the time.
+  - **Reddit / HN / X / LinkedIn outreach drafting** — deferred (product-
+    question 4). Discord-only validates the approval-gate UX on a managed
+    channel.
+  - **Materialized leaderboard views** — request-time aggregation is fast
+    enough at v1 scale; revisit only if profiling shows otherwise.
+  - **Deep repo audit beyond `shep doctor` basics** — covered by a separate
+    `shep audit` command for maintainers (out of this feature).
+
+  ---
+
+  _Research complete; ready for `/shep-kit:plan`._

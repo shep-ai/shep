@@ -1,0 +1,523 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "ai-native-contributor-onboarding"
+summary: |
+  Implementation plan for feature 097. Builds the contributor-onboarding pipeline
+  end-to-end: TypeSpec domain entities (Contributor, RecognitionEvent) and four
+  enums; two SQLite migrations (101, 102); seven new output ports
+  (IGitHubIssueWriter, IAllContributorsWriter, IOutreachPublisher, IRecapPublisher,
+  IDiagnostic, IContributorRepository, IRecognitionEventRepository); a strategy-
+  pattern shep doctor command; nine new use cases under
+  application/use-cases/contributors/ and one under application/use-cases/doctor/;
+  contributor-onboarding agent registered via the existing custom-agent rail; two
+  GitHub Actions event-driven workflows; a web onboarding contributor view +
+  ContributorLeaderboard component with full Storybook coverage; and the static
+  repo polish (CONTRIBUTING/ROADMAP/ARCHITECTURE/GOOD_FIRST_ISSUES, README
+  contributor block, PR template, issue-template enhancements). Slicing follows
+  the dependency graph: domain → ports/adapters → doctor → contributor use cases
+  → agent → workflows → web → static docs (last so docs reference shipped
+  capability). User confirmed single-bundled-PR delivery in product-question 9.
+
+relatedFeatures:
+  - "001-shep-kit"
+  - "008-agent-configuration"
+  - "013-feature-agent"
+  - "088-import-repo-upstream"
+  - "089-discord-readme-badge"
+  - "093-agent-collaboration-supervision"
+  - "095-devrel-release-notes"
+  - "096-ai-release-notes"
+
+technologies:
+  - "TypeScript 5.x / Node.js 22+"
+  - "Clean Architecture (domain / application / infrastructure / presentation)"
+  - "TypeSpec (`tsp/`) — domain modeling; generates `domain/generated/output.ts`"
+  - "tsyringe — dependency injection (string-token ports)"
+  - "Commander.js — CLI command framework"
+  - "Next.js (App Router) + React — web dashboard"
+  - "Storybook — colocated `.stories.tsx` for every web component"
+  - "better-sqlite3 + umzug — persistence and migrations"
+  - "Octokit REST (@octokit/rest) + retry/throttling plugins"
+  - "GitHub Actions — `.github/workflows/` for event-driven workflows"
+  - "Vitest — unit and integration tests"
+  - "Playwright — e2e tests"
+  - "IAgentExecutorProvider — agent-agnostic LLM execution"
+  - "ISupervisorAgent — canonical human-approval gate (spec 093)"
+  - "all-contributors specification (markdown convention only; no upstream bot)"
+  - "Discord REST API (existing bot token from `.env`)"
+
+relatedLinks:
+  - title: "Octokit REST.js documentation"
+    url: "https://octokit.github.io/rest.js/"
+  - title: "Octokit retry plugin"
+    url: "https://github.com/octokit/plugin-retry.js"
+  - title: "Octokit throttling plugin"
+    url: "https://github.com/octokit/plugin-throttling.js"
+  - title: "all-contributors specification"
+    url: "https://allcontributors.org/docs/en/specification"
+  - title: "GitHub Issue Forms schema"
+    url: "https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms"
+  - title: "Conventional Commits (enforced in this repo)"
+    url: "https://www.conventionalcommits.org/"
+  - title: "Spec 093 — agent-collaboration-supervision (supervisor approval gate)"
+    url: "https://github.com/shep-ai/shep"
+  - title: "Spec 096 — ai-release-notes (multi-channel publish pattern)"
+    url: "https://github.com/shep-ai/shep"
+
+phases:
+  - id: "phase-1"
+    name: "Domain & Persistence Foundation"
+    description: |
+      Define TypeSpec entities (Contributor, RecognitionEvent) and enums
+      (ContributorLane, ContributorLevel, ContributionDifficulty,
+      RecognitionKind); regenerate domain/generated/output.ts; create migrations
+      101/102 with idempotent up() and the UNIQUE(contributor_id, kind,
+      pr_number) constraint that backs NFR-11; build IContributorRepository
+      and IRecognitionEventRepository (ports + SQLite adapters) wired through
+      tsyringe by string token. Foundation everything else depends on.
+    parallel: false
+
+  - id: "phase-2"
+    name: "Output Ports & Infrastructure Adapters"
+    description: |
+      Create the seven new output ports needed by the rest of the feature:
+      IGitHubIssueWriter (Octokit REST + retry/throttling plugins, reusing
+      existing gh-resolved token), IAllContributorsWriter (in-house markdown
+      rewriter — no upstream bot), IOutreachPublisher (Discord-only in v1),
+      IRecapPublisher (one adapter per channel: file, Discord, GitHub
+      Discussion), and IDiagnostic (strategy abstraction for shep doctor).
+      All adapters wired through tsyringe DI. No port file exceeds the
+      ~300-line code-quality cap.
+    parallel: false
+
+  - id: "phase-3"
+    name: "shep doctor — Use Case + CLI Command"
+    description: |
+      Build the strategy-pattern doctor: one IDiagnostic class per check
+      (Node, pnpm, git, gh, agent CLIs via IAgentAuthDetectorService, .env,
+      branch, working-tree, migration status, DI graph validation, TypeSpec
+      freshness, test-suite health, security-scan status) under
+      application/use-cases/doctor/diagnostics/. RunDoctorUseCase fans out
+      via Promise.allSettled with a 3 s per-diagnostic timeout (NFR-7). New
+      Commander command at presentation/cli/commands/doctor.command.ts that
+      calls the use case and maps results to a structured table + non-zero
+      exit code on any fail. Independent of the agent surface — ships value
+      to existing maintainers immediately.
+    parallel: false
+
+  - id: "phase-4"
+    name: "Contributor Use Cases (TDD-first)"
+    description: |
+      Land the nine application/use-cases/contributors/ use cases in
+      dependency order: classify-into-lane (rules-first / agent-fallback) →
+      propose-acceptance-criteria → groom-issue (composes the previous two) →
+      welcome-first-time-contributor → detect-stale-good-first-issue →
+      award-recognition (idempotent via schema UNIQUE + INSERT ON CONFLICT
+      DO NOTHING) → generate-monthly-recap → publish-monthly-recap (fan-out
+      via IRecapPublisher with ISupervisorAgent gate per channel) →
+      draft-outreach-post (Discord-only). Every use case lands RED-first per
+      CLAUDE.md TDD mandate. Every external side-effect runs through the
+      spec-093 supervisor approval gate (NFR-5).
+    parallel: false
+
+  - id: "phase-5"
+    name: "Contributor-Onboarding Agent (Custom-Agent Rail)"
+    description: |
+      Author the system prompt at prompts/contributor-onboarding/system.md
+      (markdown so prompt diffs show up in PRs and adopting projects can
+      fork). Register the agent via the existing CreateCustomAgentUseCase —
+      no new built-in agent kind. Define the structured-output TypeSpec
+      contract for the agent's grooming output. Provide one golden-path
+      integration test that runs the agent against a fixture issue and
+      asserts the output schema. Tool surface stays read-only by default;
+      writes flow only through use cases that gate on the supervisor.
+    parallel: false
+
+  - id: "phase-6"
+    name: "GitHub Actions Workflows + In-Shep Scheduling"
+    description: |
+      Add two event-driven workflows under .github/workflows/:
+      welcome-first-time-contributor.yml on pull_request.opened and
+      label-by-lane.yml on issues.opened. Each workflow invokes a Shep CLI
+      subcommand that resolves and runs the corresponding use case. Register
+      detect-stale-good-first-issue and the monthly recap on Shep's existing
+      in-process scheduler (NOT GitHub Actions cron, per resolved
+      product-question 10). Time-driven workflows run inside the Shep
+      daemon; event-driven run in Actions where webhook latency is best.
+    parallel: false
+
+  - id: "phase-7"
+    name: "Web Onboarding Contributor View + Leaderboard"
+    description: |
+      Extend src/presentation/web/app/onboarding/page.tsx with a contributor
+      view (lane chooser dropdown, "pick your first issue" CTA backed by a
+      use case, doctor-results summary if available). Add a
+      ContributorLeaderboard component (read-only, top contributors by PR
+      count for current month + all-time) backed by
+      GetContributorLeaderboardUseCase which aggregates at request time
+      via the repository (no materialized view in v1). Every new component
+      ships with a colocated `.stories.tsx` covering Default / Loading /
+      Empty / Error (per CLAUDE.md mandate). Playwright smoke covers the
+      lane-chooser → first-issue flow.
+    parallel: false
+
+  - id: "phase-8"
+    name: "Static Repo Files (Shipped Last)"
+    description: |
+      Last in commit order so docs reference real, shipped capability.
+      Update CONTRIBUTING.md (30-second setup with `shep doctor`, lane
+      catalogue, contributor ladder, "Contributing to Shep with Shep"
+      walk-through). Create ROADMAP.md (Now/Next/Later → linking to
+      specs/), ARCHITECTURE.md (10-minute tour → linking into
+      docs/architecture/), and GOOD_FIRST_ISSUES.md (curated list grouped
+      by lane and difficulty). Add the README "Contribute to Shep" block
+      above-the-fold. Add .github/PULL_REQUEST_TEMPLATE.md
+      (what/why/screenshots/checklist). Extend each existing
+      .github/ISSUE_TEMPLATE/*.yml with structured `lane`, `difficulty`,
+      and `acceptance criteria` fields parseable by the grooming agent.
+    parallel: false
+
+filesToCreate:
+  # TypeSpec — domain entities and enums
+  - "tsp/domain/entities/contributor.tsp"
+  - "tsp/domain/entities/recognition-event.tsp"
+  - "tsp/domain/value-objects/contributor-lane.tsp"
+  - "tsp/domain/value-objects/contributor-level.tsp"
+  - "tsp/domain/value-objects/contribution-difficulty.tsp"
+  - "tsp/domain/value-objects/recognition-kind.tsp"
+
+  # Migrations
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/101-create-contributors.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/102-create-recognition-events.ts"
+
+  # Application — output ports
+  - "packages/core/src/application/ports/output/repositories/contributor-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/recognition-event-repository.interface.ts"
+  - "packages/core/src/application/ports/output/services/github-issue-writer.interface.ts"
+  - "packages/core/src/application/ports/output/services/all-contributors-writer.interface.ts"
+  - "packages/core/src/application/ports/output/services/outreach-publisher.interface.ts"
+  - "packages/core/src/application/ports/output/services/recap-publisher.interface.ts"
+  - "packages/core/src/application/ports/output/services/diagnostic.interface.ts"
+
+  # Application — doctor use case + diagnostics
+  - "packages/core/src/application/use-cases/doctor/run-doctor.use-case.ts"
+  - "packages/core/src/application/use-cases/doctor/diagnostics/node-version.diagnostic.ts"
+  - "packages/core/src/application/use-cases/doctor/diagnostics/pnpm-installed.diagnostic.ts"
+  - "packages/core/src/application/use-cases/doctor/diagnostics/git-installed.diagnostic.ts"
+  - "packages/core/src/application/use-cases/doctor/diagnostics/gh-cli-auth.diagnostic.ts"
+  - "packages/core/src/application/use-cases/doctor/diagnostics/agent-cli-availability.diagnostic.ts"
+  - "packages/core/src/application/use-cases/doctor/diagnostics/dotenv-presence.diagnostic.ts"
+  - "packages/core/src/application/use-cases/doctor/diagnostics/working-tree-clean.diagnostic.ts"
+  - "packages/core/src/application/use-cases/doctor/diagnostics/migration-status.diagnostic.ts"
+  - "packages/core/src/application/use-cases/doctor/diagnostics/typespec-freshness.diagnostic.ts"
+  - "packages/core/src/application/use-cases/doctor/diagnostics/di-graph-validation.diagnostic.ts"
+
+  # Application — contributor use cases
+  - "packages/core/src/application/use-cases/contributors/classify-into-lane.use-case.ts"
+  - "packages/core/src/application/use-cases/contributors/propose-acceptance-criteria.use-case.ts"
+  - "packages/core/src/application/use-cases/contributors/groom-issue.use-case.ts"
+  - "packages/core/src/application/use-cases/contributors/welcome-first-time-contributor.use-case.ts"
+  - "packages/core/src/application/use-cases/contributors/detect-stale-good-first-issue.use-case.ts"
+  - "packages/core/src/application/use-cases/contributors/award-recognition.use-case.ts"
+  - "packages/core/src/application/use-cases/contributors/generate-monthly-recap.use-case.ts"
+  - "packages/core/src/application/use-cases/contributors/publish-monthly-recap.use-case.ts"
+  - "packages/core/src/application/use-cases/contributors/draft-outreach-post.use-case.ts"
+  - "packages/core/src/application/use-cases/contributors/get-contributor-leaderboard.use-case.ts"
+  - "packages/core/src/application/use-cases/contributors/get-curated-issues-by-lane.use-case.ts"
+  - "packages/core/src/application/use-cases/contributors/register-contributor-onboarding-agent.use-case.ts"
+
+  # Infrastructure — adapters
+  - "packages/core/src/infrastructure/persistence/sqlite/repositories/sqlite-contributor.repository.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/repositories/sqlite-recognition-event.repository.ts"
+  - "packages/core/src/infrastructure/services/external/github-issue-writer.service.ts"
+  - "packages/core/src/infrastructure/services/contributors/all-contributors-writer.service.ts"
+  - "packages/core/src/infrastructure/services/outreach/discord-outreach-publisher.service.ts"
+  - "packages/core/src/infrastructure/services/recap/file-recap-publisher.service.ts"
+  - "packages/core/src/infrastructure/services/recap/discord-recap-publisher.service.ts"
+  - "packages/core/src/infrastructure/services/recap/github-discussion-recap-publisher.service.ts"
+  - "packages/core/src/infrastructure/services/doctor/diagnostic-runner.service.ts"
+
+  # Presentation — CLI
+  - "src/presentation/cli/commands/doctor.command.ts"
+  - "src/presentation/cli/commands/contributors/welcome-pr.command.ts"
+  - "src/presentation/cli/commands/contributors/groom-issue.command.ts"
+
+  # Presentation — Web
+  - "src/presentation/web/components/contributors/ContributorLeaderboard.tsx"
+  - "src/presentation/web/components/contributors/ContributorLeaderboard.stories.tsx"
+  - "src/presentation/web/components/contributors/LaneChooser.tsx"
+  - "src/presentation/web/components/contributors/LaneChooser.stories.tsx"
+  - "src/presentation/web/components/contributors/CuratedIssuesList.tsx"
+  - "src/presentation/web/components/contributors/CuratedIssuesList.stories.tsx"
+  - "src/presentation/web/components/contributors/DoctorSummary.tsx"
+  - "src/presentation/web/components/contributors/DoctorSummary.stories.tsx"
+
+  # Agent prompt
+  - "prompts/contributor-onboarding/system.md"
+  - "prompts/contributor-onboarding/output-schema.md"
+
+  # GitHub Actions workflows
+  - ".github/workflows/welcome-first-time-contributor.yml"
+  - ".github/workflows/label-by-lane.yml"
+
+  # PR template
+  - ".github/PULL_REQUEST_TEMPLATE.md"
+
+  # Top-level repo polish
+  - "ROADMAP.md"
+  - "ARCHITECTURE.md"
+  - "GOOD_FIRST_ISSUES.md"
+  - ".all-contributorsrc"
+  - "docs/development/contributing-with-shep.md"
+
+  # Recaps directory placeholder
+  - "recaps/.gitkeep"
+
+  # Tests (RED-first per CLAUDE.md TDD mandate)
+  - "packages/core/src/application/use-cases/doctor/run-doctor.use-case.test.ts"
+  - "packages/core/src/application/use-cases/contributors/classify-into-lane.use-case.test.ts"
+  - "packages/core/src/application/use-cases/contributors/propose-acceptance-criteria.use-case.test.ts"
+  - "packages/core/src/application/use-cases/contributors/groom-issue.use-case.test.ts"
+  - "packages/core/src/application/use-cases/contributors/welcome-first-time-contributor.use-case.test.ts"
+  - "packages/core/src/application/use-cases/contributors/detect-stale-good-first-issue.use-case.test.ts"
+  - "packages/core/src/application/use-cases/contributors/award-recognition.use-case.test.ts"
+  - "packages/core/src/application/use-cases/contributors/generate-monthly-recap.use-case.test.ts"
+  - "packages/core/src/application/use-cases/contributors/publish-monthly-recap.use-case.test.ts"
+  - "packages/core/src/application/use-cases/contributors/draft-outreach-post.use-case.test.ts"
+  - "packages/core/src/application/use-cases/contributors/get-contributor-leaderboard.use-case.test.ts"
+  - "packages/core/src/infrastructure/services/contributors/all-contributors-writer.service.test.ts"
+  - "packages/core/src/infrastructure/services/external/github-issue-writer.service.test.ts"
+  - "tests/e2e/contributor-onboarding.spec.ts"
+
+filesToModify:
+  # Generated TypeSpec output (regenerated, not hand-edited)
+  - "packages/core/src/domain/generated/output.ts"
+
+  # DI wiring
+  - "packages/core/src/infrastructure/di/container.ts"
+
+  # CLI registration
+  - "src/presentation/cli/program.ts"
+
+  # Existing onboarding page (extended with contributor view)
+  - "src/presentation/web/app/onboarding/page.tsx"
+
+  # Static repo polish
+  - "README.md"
+  - "CONTRIBUTING.md"
+  - ".github/ISSUE_TEMPLATE/bug.yml"
+  - ".github/ISSUE_TEMPLATE/feature.yml"
+
+  # Self-improvement loop
+  - "LESSONS.md"
+
+openQuestions: []
+
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-05-06
+
+  ## Architecture Overview
+
+  This feature is **purely additive at the architectural layer**: it adds two
+  domain entities, six output ports, ~10 infrastructure adapters, ~13 application
+  use cases, one custom-agent registration, one CLI command, two GitHub Actions
+  workflows, and a small web surface. Nothing existing is rearchitected.
+
+  Every new component plugs into established Shep building blocks (verified
+  during research):
+
+  - **Domain** is authored in `tsp/` and consumed via `domain/generated/output.ts`.
+    Two new entities (`Contributor`, `RecognitionEvent`) and four new enums
+    (`ContributorLane`, `ContributorLevel`, `ContributionDifficulty`,
+    `RecognitionKind`) are added without touching existing models.
+
+  - **Application** gains two new use-case groups:
+    `application/use-cases/contributors/` (nine use cases) and
+    `application/use-cases/doctor/` (one use case + a `diagnostics/`
+    sub-directory of strategy classes). All output ports live in
+    `application/ports/output/`. No application file imports anything from
+    `infrastructure/` (per `.claude/rules/code-quality.md`); all infra is
+    reached through DI by string token. The contributor-onboarding agent rides
+    the existing `CreateCustomAgentUseCase` rail — no new built-in agent kind.
+
+  - **Infrastructure** gains adapters one-to-one per port: an Octokit-backed
+    `GitHubIssueWriter` (with `@octokit/plugin-retry` + `@octokit/plugin-
+    throttling` for NFR-10), an in-house `AllContributorsWriter` (no upstream
+    bot, per resolved product-question 6), a `DiscordOutreachPublisher`, three
+    `IRecapPublisher` adapters (file, Discord, GitHub Discussion), a
+    `DiagnosticRunner`, and SQLite repositories for the two new entities.
+    Migrations live at `packages/core/src/infrastructure/persistence/sqlite/migrations/`
+    (research corrected the spec's `/persistence/migrations/` path) and use the
+    typed `MigrationParams<Database.Database>` contract every other migration
+    uses.
+
+  - **Presentation** gains: `src/presentation/cli/commands/doctor.command.ts`
+    (Commander, follows the `review.command.ts` template); two CLI subcommands
+    invoked by GitHub Actions; a contributor view extending the existing
+    `src/presentation/web/app/onboarding/page.tsx`; and four new web components,
+    each with a colocated `.stories.tsx` covering Default / Loading / Empty /
+    Error (CLAUDE.md mandate).
+
+  - **Workflows** are split per resolved product-question 10: event-driven
+    (welcome-first-time-contributor on `pull_request.opened`, label-by-lane on
+    `issues.opened`) run in `.github/workflows/`; time-driven (stale-issue
+    detection, monthly recap) run on Shep's existing in-process scheduler so
+    adopting projects without an always-on Shep instance still get the inbound
+    automation.
+
+  ## Key Design Decisions
+
+  ### 1. GitHub writes via Octokit REST behind a dedicated `IGitHubIssueWriter` port
+
+  Research decision 1 + spec product-question 3 both landed here.
+  Interface-segregation matters more than port count: every write is a side-
+  effect that must flow through `ISupervisorAgent.evaluate(...)` (NFR-5), and a
+  dedicated writer port gives one chokepoint to enforce that. Octokit was
+  chosen over `gh issue edit` subprocesses (~150 ms each, stringly-typed
+  errors), GraphQL (no payoff at our write scale), and a hand-rolled fetch
+  client (reinvents auth/retry/ETag). The Octokit `@octokit/plugin-retry` +
+  `@octokit/plugin-throttling` pair gives us better-than-parity with the
+  existing `pr-sync` retry behavior in ~30 LOC of plugin composition.
+
+  ### 2. all-contributors as a Shep use case, not the upstream bot
+
+  Resolved product-question 6 + research decision 3. The whole pitch is "Shep
+  dogfoods its own agents to grow itself." Outsourcing recognition to a third-
+  party GitHub App contradicts that. The in-house `AllContributorsWriter`
+  rewrites `.all-contributorsrc` and the README's
+  `<!-- ALL-CONTRIBUTORS-LIST:START -->` block (~150 LOC, golden-file testable)
+  and gives us full control over recognition criteria — `firstPR / nthPR /
+  firstIssue / monthlyShoutout` — without negotiating with an upstream
+  maintainer. Adopting projects get parity for free.
+
+  ### 3. Lane classification — rules-first, agent-fallback (mirrors auto-triage)
+
+  Research decision 4. Pure deterministic rules miss ~30% of natural-language
+  issues; pure LLM wastes tokens on the 70% that are obvious from the title
+  and introduces nondeterminism into a label downstream automation reads. The
+  hybrid keeps most invocations sub-100 ms and zero-cost; the agent escalates
+  only when the rules report `unknown` or low-confidence multi-lane match.
+  Output is the TypeSpec `ContributorLane` enum end-to-end (NFR-3).
+
+  ### 4. Doctor diagnostics — strategy pattern, parallel execution
+
+  Research decision 2. One `IDiagnostic.run()` class per check, injected as an
+  array, fanned out via `Promise.allSettled` with a 3 s per-diagnostic timeout
+  (NFR-7). Worst-case latency = slowest single check, not the sum. Each
+  diagnostic stays under 100 LOC, is independently unit-testable against
+  mocked ports, and reuses existing services (`IAgentAuthDetectorService`,
+  `IGitHubRepositoryService`, file-system port) — no diagnostic talks to
+  infrastructure directly.
+
+  ### 5. Recognition idempotency — schema UNIQUE + service-level upsert
+
+  Research decision 7 + NFR-11. Two-layer guarantee: SQLite UNIQUE
+  (`contributor_id`, `kind`, `pr_number`) plus
+  `INSERT … ON CONFLICT DO NOTHING` in the use case, with the writer call
+  short-circuited when no row was inserted. Webhook deliveries can duplicate
+  (GitHub retries on 5xx); the database is the only place safe under
+  concurrent writes.
+
+  ### 6. Recap publish — reuse spec 095/096 multi-channel pattern
+
+  Research decision 5. `GenerateMonthlyRecapUseCase` produces one markdown
+  artifact (single source of truth). `PublishMonthlyRecapUseCase` fans out to
+  three `IRecapPublisher` adapters (file, Discord, GitHub Discussion), each
+  call gated through `ISupervisorAgent` per channel, and uses
+  `Promise.allSettled` so a single channel failure does not poison the others.
+  Reuses the canonical pattern from spec 096 (one source, supervisor-gated
+  multi-channel publish) instead of building a parallel system.
+
+  ### 7. Workflow split — Actions for events, Shep daemon for cron
+
+  Resolved product-question 10. Webhook-driven events
+  (`pull_request.opened` → welcome, `issues.opened` → groom + label) live in
+  `.github/workflows/` where webhook latency is best. Time-driven workloads
+  (stale-issue scan daily, monthly recap monthly) run on Shep's existing
+  in-process scheduler — Actions cron has 5–15 min jitter and adopting
+  projects without Actions minutes lose the feature.
+
+  ### 8. Custom-agent rail (not new built-in kind)
+
+  Resolved product-question 2 + research alignment. The contributor-onboarding
+  agent registers through the existing `CreateCustomAgentUseCase` with a
+  prompt at `prompts/contributor-onboarding/system.md`. Reuses prompt-resolver,
+  streaming, sessions, and supervisor-gating already wired in spec 093.
+  Adopting OSS projects can fork the agent like any custom agent.
+
+  ### 9. Web surface — light extension of existing onboarding route
+
+  Resolved product-question 5. Extend `src/presentation/web/app/onboarding/page.tsx`
+  with a contributor view (lane chooser + "pick your first issue" CTA + doctor
+  summary) and a `ContributorLeaderboard` component backed by a request-time
+  repository aggregate (no materialized view in v1; revisit only if profiling
+  indicates). Every new component ships with `.stories.tsx` covering Default /
+  Loading / Empty / Error (CLAUDE.md mandate). Playwright smoke covers the
+  lane-chooser → first-issue flow.
+
+  ### 10. Static docs ship LAST
+
+  Slicing decision: even though the user chose a single-bundled-PR delivery
+  (product-question 9), within that PR the implementation order matters.
+  Domain → ports → doctor → use cases → agent → workflows → web → static docs.
+  Static docs land last so `CONTRIBUTING.md` references real, shipped capability
+  (`shep doctor`, the agent, the lane chooser) and never advertises vapor.
+
+  ## Implementation Strategy
+
+  Eight phases delivered in dependency order inside one PR (per
+  product-question 9):
+
+  1. **Phase 1 — Domain & Persistence Foundation.** TypeSpec entities + enums,
+     migrations 101/102, repositories. Everything below depends on this.
+  2. **Phase 2 — Output Ports & Adapters.** All seven new ports + their
+     adapters + DI wiring. No use case can land before its ports exist.
+  3. **Phase 3 — `shep doctor`.** Strategy-pattern doctor + CLI command.
+     Independently shippable; ships value to existing maintainers.
+  4. **Phase 4 — Contributor Use Cases.** Nine use cases in dependency order
+     (classify → criteria → groom → welcome → stale → award → generate-recap
+     → publish-recap → outreach). Every one RED-first per CLAUDE.md TDD.
+  5. **Phase 5 — Custom-Agent Registration.** Markdown prompt +
+     `CreateCustomAgentUseCase` registration + golden-path integration test.
+  6. **Phase 6 — GitHub Actions + In-Shep Scheduling.** Two event-driven
+     workflows that invoke CLI subcommands; in-process scheduler registration
+     for stale-detect and recap.
+  7. **Phase 7 — Web Onboarding Contributor View + Leaderboard.** Four new
+     components (each with `.stories.tsx`), extension of `onboarding/page.tsx`,
+     Playwright smoke.
+  8. **Phase 8 — Static Repo Files.** README block, CONTRIBUTING update, three
+     new top-level docs, PR template, issue-template enhancements. Last so
+     docs reference shipped capability.
+
+  TDD rhythm inside each task: write a failing test that describes intent
+  (RED), implement the smallest code that turns it green (GREEN), then
+  refactor (extract helpers, fix names, satisfy file-length / no-magic-values
+  rules) without breaking tests.
+
+  Local verification before any push: `pnpm lint && pnpm typecheck &&
+  pnpm test:unit && pnpm test:int && pnpm build` (per `.claude/rules/cicd.md`).
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Octokit version drift breaks `IGitHubIssueWriter` | Pin major version; integration test exercises every method against an HTTP-mocked GitHub; CI catches breaking-change updates before merge. |
+  | `.all-contributorsrc` rewrite produces malformed README block | Golden-file fixture tests for the markdown writer; idempotent reapply test; explicit `<!-- ALL-CONTRIBUTORS-LIST:START -->` boundary detection so unrelated README content is never touched. |
+  | Lane classifier returns ambiguous / multi-lane on edge cases | Hybrid resolution (rules-first, agent-fallback); the agent must return a single `ContributorLane` enum value (no array); structured-output test asserts schema. |
+  | `shep doctor` exceeds 5 s NFR on a slow machine | Parallel `Promise.allSettled` + 3 s per-diagnostic timeout; slow checks degrade to `warn` rather than blocking; total wall-clock = max single check, not sum. |
+  | Webhook duplicate delivery double-awards recognition | Schema-level UNIQUE(`contributor_id`, `kind`, `pr_number`); use case uses `INSERT ON CONFLICT DO NOTHING`; writer short-circuits on no insert. |
+  | Supervisor approval gate becomes a UX bottleneck | Auto-approval policy is configurable per side-effect kind; default is human-approval (per NFR-5) but can be relaxed once trust is established; surfaced in settings. |
+  | Discord bot token leakage in logs | Adapter never logs the token even at debug level; supervisor gate sees only message body, not credentials; lint rule (forbid `console.*` on imports of the discord adapter) covered by existing `code-quality.md` `no-console` rule. |
+  | Migrations 101/102 fail on existing databases | Each `up()` is idempotent (`IF NOT EXISTS`); migrations exercise an integration test that runs them on an in-memory SQLite then re-runs them (no-op assertion). |
+  | TypeSpec regenerated output drifts from hand edits | `pnpm tsp:compile` is part of `pnpm validate`; pre-push verification will catch drift; CLAUDE.md explicitly forbids editing generated files. |
+  | GitHub Actions workflow cannot reach `shep` CLI | The workflows install Node + pnpm + run `pnpm install --frozen-lockfile` then `pnpm dev:cli <subcommand>` (or built CLI from `dist/`); we use the same setup as existing CI. |
+  | Recap publishing partially succeeds (one channel up, one down) | `Promise.allSettled` over channel adapters; per-channel result reported back to the supervisor flow; failed channels can be retried independently without re-posting succeeded ones. |
+  | Contributor leaderboard query gets slow at scale | Repository aggregate over indexed `(contributor_id, occurred_at, kind)` columns is sub-10 ms at expected scale; if profiling later shows trouble, materialized view migration can land in a follow-up without changing the use-case API. |
+  | Web surface ships before backing use cases | Phase ordering enforces use cases first; Storybook covers Loading/Empty/Error states explicitly so the component doesn't depend on a happy-path-only test. |
+  | Adopting projects break Shep-specific assumptions | Lane names are TypeSpec enums (Shep-named: `docs/agents/ui/cli/infra`); all other contributor settings (auto-approval policy, recap cadence) are configurable via the settings service per NFR-16. |
+  | File length explosion in long use cases | Strategy pattern in doctor splits work into <100-LOC classes; contributor use cases that grow beyond 300 lines are refactored into helper modules before merge (per `code-quality.md` 300-line rule). |
+  | Skipping LESSONS.md update on bugs | Mandate at top of CLAUDE.md self-improvement loop; planning task explicitly schedules the LESSONS.md touch as part of the closing milestone of every phase. |

@@ -1,0 +1,30 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RecognitionEvent.yaml
+type: object
+properties:
+  contributorId:
+    $ref: UUID.yaml
+    description: Contributor this recognition event belongs to
+  kind:
+    $ref: RecognitionKind.yaml
+    description: Kind of recognition
+  occurredAt:
+    type: string
+    format: date-time
+    description: ISO timestamp when the recognition was awarded
+  prNumber:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: PR number for PR-bound kinds (FirstPR, NthPR); 0 for non-PR kinds
+  monthRecapId:
+    type: string
+    description: Identifier of the monthly recap artifact when kind = MonthlyShoutout
+required:
+  - contributorId
+  - kind
+  - occurredAt
+  - prNumber
+allOf:
+  - $ref: BaseEntity.yaml
+description: Durable record that a contributor was recognized for a specific contribution

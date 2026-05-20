@@ -149,11 +149,12 @@ shep settings agent --agent claude-code
 | Agent       | Binary   | Status      |
 | ----------- | -------- | ----------- |
 | Claude Code | `claude` | Available   |
-| Cursor      | `agent`  | Available   |
+| Cursor      | `cursor-agent` | Available   |
+| Codex CLI   | `codex`  | Available   |
 | Copilot CLI | `copilot` | Available  |
-| Gemini CLI  | —        | Coming Soon |
-| Aider       | —        | Coming Soon |
-| Continue    | —        | Coming Soon |
+| Gemini CLI  | `gemini` | Available   |
+| Aider       | —        | Tracked in [shep-ai/shep#618](https://github.com/shep-ai/shep/issues/618) |
+| Continue    | —        | Tracked in [shep-ai/shep#618](https://github.com/shep-ai/shep/issues/618) |
 
 The selected agent type is persisted in `~/.shep/data` (SQLite) and used by all subsequent commands. When you run `shep feat new`, the configured agent is resolved via `AgentExecutorFactory` — no command or component guesses or defaults the agent type.
 

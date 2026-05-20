@@ -1,0 +1,1533 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "ai-native-contributor-onboarding"
+summary: |
+  53 tasks across 8 phases delivering the full contributor-onboarding pipeline.
+  Phase 1 lands the domain (TypeSpec entities + four enums) and persistence
+  (two migrations + two SQLite repositories). Phase 2 builds the seven new
+  output ports and their adapters. Phase 3 ships `shep doctor` (strategy
+  pattern + CLI). Phase 4 delivers the nine contributor use cases TDD-first.
+  Phase 5 registers the contributor-onboarding agent on the existing
+  custom-agent rail. Phase 6 wires GitHub Actions event-driven workflows and
+  in-Shep scheduling for time-driven jobs. Phase 7 extends the web onboarding
+  route and adds the ContributorLeaderboard. Phase 8 finishes with the static
+  repo polish (README block, CONTRIBUTING / ROADMAP / ARCHITECTURE /
+  GOOD_FIRST_ISSUES, PR template, issue-template enhancements). Total
+  effort estimate: 60h-72h focused work.
+
+relatedFeatures:
+  - "001-shep-kit"
+  - "008-agent-configuration"
+  - "013-feature-agent"
+  - "088-import-repo-upstream"
+  - "089-discord-readme-badge"
+  - "093-agent-collaboration-supervision"
+  - "095-devrel-release-notes"
+  - "096-ai-release-notes"
+
+technologies:
+  - "TypeScript 5.x / Node.js 22+"
+  - "TypeSpec (`tsp/`) — domain modeling"
+  - "tsyringe — DI by string token"
+  - "Commander.js — CLI"
+  - "Next.js + React + Storybook — web UI"
+  - "better-sqlite3 + umzug — persistence"
+  - "Octokit REST + retry/throttling plugins"
+  - "Vitest + Playwright — testing"
+  - "ISupervisorAgent (spec 093) — approval gate"
+  - "IAgentExecutorProvider — agent-agnostic LLM"
+
+relatedLinks:
+  - title: "TDD guide"
+    url: "https://github.com/shep-ai/shep/blob/main/docs/development/tdd-guide.md"
+  - title: "TypeSpec guide"
+    url: "https://github.com/shep-ai/shep/blob/main/docs/development/typespec-guide.md"
+  - title: "Clean architecture rules"
+    url: "https://github.com/shep-ai/shep/blob/main/.claude/rules/code-quality.md"
+  - title: "Octokit REST.js"
+    url: "https://octokit.github.io/rest.js/"
+  - title: "all-contributors specification"
+    url: "https://allcontributors.org/docs/en/specification"
+
+tasks:
+  # ─────────────────────────────────────────────────────────────────
+  # Phase 1 — Domain & Persistence Foundation
+  # ─────────────────────────────────────────────────────────────────
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Define ContributorLane enum in TypeSpec"
+    description: |
+      Add `tsp/domain/value-objects/contributor-lane.tsp` with five values:
+      `docs | agents | ui | cli | infra`. Shep-named (resolved
+      product-question 11) — no letter labels, no glossary.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "File exists at `tsp/domain/value-objects/contributor-lane.tsp` with all five values"
+      - "Enum is exported and referenced by sibling .tsp files via standard import"
+      - "`pnpm tsp:compile` succeeds and emits the enum into `domain/generated/output.ts`"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "20min"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Define ContributorLevel enum in TypeSpec"
+    description: |
+      Add `tsp/domain/value-objects/contributor-level.tsp` with values:
+      `user | contributor | core | maintainer`. Drives the contributor-ladder
+      logic in CONTRIBUTING.md and the leaderboard rendering.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "File exists with all four values in correct order"
+      - "`pnpm tsp:compile` succeeds and emits the enum into `domain/generated/output.ts`"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "15min"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Define ContributionDifficulty enum in TypeSpec"
+    description: |
+      Add `tsp/domain/value-objects/contribution-difficulty.tsp` with values:
+      `goodFirst | easy | medium | hard`. Used in issue templates and curated
+      good-first-issue selection.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "File exists with all four values"
+      - "`pnpm tsp:compile` succeeds"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "15min"
+
+  - id: "task-4"
+    phaseId: "phase-1"
+    title: "Define RecognitionKind enum in TypeSpec"
+    description: |
+      Add `tsp/domain/value-objects/recognition-kind.tsp` with values:
+      `firstPR | nthPR | firstIssue | monthlyShoutout`. Drives the
+      `recognition_events.kind` column and the `IAllContributorsWriter`
+      decisions.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "File exists with all four values"
+      - "`pnpm tsp:compile` succeeds"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "15min"
+
+  - id: "task-5"
+    phaseId: "phase-1"
+    title: "Define Contributor entity in TypeSpec"
+    description: |
+      Add `tsp/domain/entities/contributor.tsp` with fields per FR-12: `id`,
+      `githubLogin`, `displayName?`, `avatarUrl?`, `lane?` (ContributorLane),
+      `level` (ContributorLevel), `firstContributionAt`,
+      `lastContributionAt`, `prCount`, `issueCount`, plus a navigation hint to
+      `recognitionEvents`.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+      - "task-2"
+    acceptanceCriteria:
+      - "Entity references `ContributorLane` and `ContributorLevel` enums"
+      - "All FR-12 fields present with correct optionality"
+      - "`pnpm tsp:compile` regenerates `domain/generated/output.ts` cleanly"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "30min"
+
+  - id: "task-6"
+    phaseId: "phase-1"
+    title: "Define RecognitionEvent entity in TypeSpec"
+    description: |
+      Add `tsp/domain/entities/recognition-event.tsp` per FR-13: `id`,
+      `contributorId`, `kind` (RecognitionKind), `occurredAt`, `prNumber?`,
+      `monthRecapId?`.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+      - "task-5"
+    acceptanceCriteria:
+      - "Entity references `RecognitionKind` enum"
+      - "All FR-13 fields present"
+      - "`pnpm tsp:compile` succeeds; generated file contains the new type"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "20min"
+
+  - id: "task-7"
+    phaseId: "phase-1"
+    title: "Run pnpm tsp:compile and commit regenerated output"
+    description: |
+      Single regeneration step after all entities/enums are authored. The
+      generated `packages/core/src/domain/generated/output.ts` is committed
+      but never hand-edited.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+      - "task-2"
+      - "task-3"
+      - "task-4"
+      - "task-5"
+      - "task-6"
+    acceptanceCriteria:
+      - "`pnpm tsp:compile` exits 0"
+      - "`packages/core/src/domain/generated/output.ts` contains all four enums and both entities"
+      - "No TypeScript errors when consuming any of the new types"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "10min"
+
+  - id: "task-8"
+    phaseId: "phase-1"
+    title: "Migration 101 — create contributors table"
+    description: |
+      Add `packages/core/src/infrastructure/persistence/sqlite/migrations/101-create-contributors.ts`
+      following the existing umzug + better-sqlite3 conventions. Idempotent
+      `CREATE TABLE IF NOT EXISTS contributors (...)` with columns matching
+      the Contributor entity. Includes index on `github_login` (for
+      `findByGitHubLogin`).
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "File exists at the corrected path (sqlite/migrations/, NOT migrations/)"
+      - "`up()` is idempotent (runs cleanly on a fresh DB and re-running is a no-op)"
+      - "Index on `github_login` for the `findByGitHubLogin` query"
+      - "Integration test runs migration twice on in-memory SQLite without error"
+    tdd:
+      red: |
+        Write integration test in
+        `packages/core/src/infrastructure/persistence/sqlite/migrations/101-create-contributors.test.ts`
+        that runs the migration on an in-memory SQLite DB twice and asserts
+        the `contributors` table exists with the expected schema both times.
+      green: |
+        Implement the migration with `CREATE TABLE IF NOT EXISTS contributors`
+        and `CREATE INDEX IF NOT EXISTS idx_contributors_login`.
+      refactor: |
+        Extract any shared schema patterns; ensure the migration matches
+        100-create-custom-agents.ts conventions verbatim.
+    estimatedEffort: "45min"
+
+  - id: "task-9"
+    phaseId: "phase-1"
+    title: "Migration 102 — create recognition_events table"
+    description: |
+      Add `102-create-recognition-events.ts`. Foreign key
+      `contributor_id REFERENCES contributors(id) ON DELETE CASCADE`.
+      UNIQUE(`contributor_id`, `kind`, `pr_number`) for NFR-11 idempotency.
+      Indexes on `contributor_id` and `occurred_at` for the leaderboard query.
+    state: "Todo"
+    dependencies:
+      - "task-8"
+    acceptanceCriteria:
+      - "File exists; uses umzug typed contract"
+      - "FK with ON DELETE CASCADE"
+      - "UNIQUE constraint on (contributor_id, kind, pr_number)"
+      - "Indexes on contributor_id and occurred_at"
+      - "Idempotent re-run test passes"
+    tdd:
+      red: |
+        Write integration test that asserts: (a) FK enforcement, (b) UNIQUE
+        constraint rejects duplicate (contributor_id, kind, pr_number), (c)
+        CASCADE delete removes recognition events when contributor is deleted.
+      green: |
+        Implement the migration with FK + UNIQUE + indexes; idempotent
+        CREATE TABLE IF NOT EXISTS.
+      refactor: |
+        Match conventions of migrations 094-100; extract any shared helpers.
+    estimatedEffort: "1h"
+
+  - id: "task-10"
+    phaseId: "phase-1"
+    title: "IContributorRepository port + SQLite adapter"
+    description: |
+      Define `application/ports/output/repositories/contributor-repository.interface.ts`
+      with CRUD + `findByGitHubLogin(login)` + `findTopByPrCount({ scope, limit })`.
+      Implement SQLite adapter at
+      `infrastructure/persistence/sqlite/repositories/sqlite-contributor.repository.ts`.
+    state: "Todo"
+    dependencies:
+      - "task-8"
+    acceptanceCriteria:
+      - "Port file ≤ 100 LOC, JSDoc on every method"
+      - "Adapter implements all methods with parameterized queries (no string concat)"
+      - "Aggregate query for `findTopByPrCount` uses indexed columns; sub-10 ms at 1000 rows"
+      - "Adapter registered in DI by string token"
+    tdd:
+      red: |
+        Write integration test in
+        `packages/core/src/infrastructure/persistence/sqlite/repositories/sqlite-contributor.repository.test.ts`
+        that exercises insert, findByGitHubLogin, update prCount, and
+        findTopByPrCount across a real in-memory DB with seeded data.
+      green: |
+        Implement the port interface and the SQLite adapter; map columns to
+        the Contributor entity from generated/output.ts.
+      refactor: |
+        Extract any common query patterns; verify file ≤ 300 LOC.
+    estimatedEffort: "1.5h"
+
+  - id: "task-11"
+    phaseId: "phase-1"
+    title: "IRecognitionEventRepository port + SQLite adapter"
+    description: |
+      Port at
+      `application/ports/output/repositories/recognition-event-repository.interface.ts`
+      with `insert(event)` (using `INSERT ... ON CONFLICT DO NOTHING` to
+      satisfy NFR-11), `findByContributorId(id)`, `findByMonth(yearMonth)`.
+      SQLite adapter under
+      `infrastructure/persistence/sqlite/repositories/`.
+    state: "Todo"
+    dependencies:
+      - "task-9"
+    acceptanceCriteria:
+      - "Insert returns whether a row was actually inserted (true) or skipped (false)"
+      - "Concurrent insert test (two goroutines on the same triple) results in exactly one row"
+      - "Adapter registered in DI"
+    tdd:
+      red: |
+        Integration test asserts the upsert semantics: two sequential calls
+        with the same (contributor_id, kind, pr_number) yield exactly one row
+        and the second call's return value indicates no-op.
+      green: |
+        Implement port + adapter using better-sqlite3 `INSERT ... ON CONFLICT
+        DO NOTHING` and `Statement.run().changes` to detect insertion.
+      refactor: |
+        Ensure file length ≤ 200 LOC; verify no magic strings (use
+        RecognitionKind enum end-to-end).
+    estimatedEffort: "1.5h"
+
+  - id: "task-12"
+    phaseId: "phase-1"
+    title: "Wire repositories in DI container"
+    description: |
+      Register `IContributorRepository` and `IRecognitionEventRepository`
+      against their adapters in `infrastructure/di/container.ts` using string
+      tokens.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+      - "task-11"
+    acceptanceCriteria:
+      - "`container.resolve<IContributorRepository>(...)` returns the SQLite adapter"
+      - "Same for IRecognitionEventRepository"
+      - "DI graph passes type checks"
+    tdd:
+      red: |
+        Write a DI graph integration test that resolves both repositories and
+        asserts they are non-null instances of their concrete adapters.
+      green: |
+        Add `container.register(...)` calls in the appropriate registration
+        section.
+      refactor: |
+        Group registrations near related repository registrations; add
+        comment-free, typed token constants if not already present.
+    estimatedEffort: "30min"
+
+  # ─────────────────────────────────────────────────────────────────
+  # Phase 2 — Output Ports & Adapters
+  # ─────────────────────────────────────────────────────────────────
+  - id: "task-13"
+    phaseId: "phase-2"
+    title: "IGitHubIssueWriter port (interface only)"
+    description: |
+      Define
+      `application/ports/output/services/github-issue-writer.interface.ts`
+      with: `addLabels(issueRef, labels[])`, `removeLabels(issueRef,
+      labels[])`, `addComment(issueRef, body)`, `assignUsers(issueRef,
+      logins[])`. JSDoc states intent + that every implementation must reuse
+      existing GitHub auth (NFR-10).
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "Port file ≤ 80 LOC"
+      - "JSDoc one-liner on every method"
+      - "Type-safe input shapes (issueRef is a typed object, not a string)"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "30min"
+
+  - id: "task-14"
+    phaseId: "phase-2"
+    title: "GitHubIssueWriter Octokit adapter"
+    description: |
+      Implement
+      `infrastructure/services/external/github-issue-writer.service.ts`
+      using `@octokit/rest` composed with `@octokit/plugin-retry` and
+      `@octokit/plugin-throttling`. Reuse the existing token resolution from
+      `IGitHubRepositoryService`. Adapter ≤ 200 LOC.
+    state: "Todo"
+    dependencies:
+      - "task-13"
+    acceptanceCriteria:
+      - "All four port methods implemented with correct Octokit endpoints"
+      - "Retry + throttling plugins composed at construction time"
+      - "Token reused from existing GitHub integration code path (no new auth flow)"
+      - "Registered in DI"
+    tdd:
+      red: |
+        Unit test in
+        `github-issue-writer.service.test.ts` mocks `@octokit/rest` and
+        asserts: addLabels POSTs to /repos/{o}/{r}/issues/{n}/labels,
+        addComment POSTs to /repos/{o}/{r}/issues/{n}/comments, etc.
+      green: |
+        Implement the adapter; wire retry + throttling plugins; resolve token
+        from injected GitHub service.
+      refactor: |
+        Extract endpoint URL builders; ensure no magic strings; verify
+        file length ≤ 200 LOC.
+    estimatedEffort: "2h"
+
+  - id: "task-15"
+    phaseId: "phase-2"
+    title: "IAllContributorsWriter port + in-house adapter"
+    description: |
+      Port at
+      `application/ports/output/services/all-contributors-writer.interface.ts`
+      with `appendContributor({ login, contributions[] })`. Adapter at
+      `infrastructure/services/contributors/all-contributors-writer.service.ts`
+      reads/mutates `.all-contributorsrc` (JSON) and the README's
+      `<!-- ALL-CONTRIBUTORS-LIST:START -->...:END -->` block. Idempotent.
+      No `all-contributors-cli` runtime dep.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "Port + adapter exist"
+      - "Adapter is idempotent: reapplying the same (login, contributions) yields no diff"
+      - "Adapter only mutates content between the START/END markers — surrounding README untouched"
+      - "Golden-file test fixture covers first-add, n-th-add, and idempotent re-add"
+      - "Registered in DI"
+    tdd:
+      red: |
+        Golden-file unit test in `all-contributors-writer.service.test.ts`:
+        seeds a fixture `.all-contributorsrc` and `README.fixture.md`, calls
+        appendContributor twice with the same input, asserts only one entry
+        appears and the README block is well-formed.
+      green: |
+        Implement the writer: read JSON, upsert, write JSON back; render the
+        markdown grid per the all-contributors specification; replace the
+        README block by START/END markers.
+      refactor: |
+        Extract the markdown-rendering helper; ensure file ≤ 200 LOC.
+    estimatedEffort: "2.5h"
+
+  - id: "task-16"
+    phaseId: "phase-2"
+    title: "IOutreachPublisher port + Discord adapter"
+    description: |
+      Port at
+      `application/ports/output/services/outreach-publisher.interface.ts`
+      with one method in v1: `publishToDiscord(channelId, body):
+      Promise<OutreachResult>`. Adapter at
+      `infrastructure/services/outreach/discord-outreach-publisher.service.ts`
+      reads bot token from existing config loader; calls Discord REST POST
+      `/channels/{id}/messages` directly (no SDK). NEVER logs the token.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "Port + adapter exist; Discord-only (Reddit/HN/X deferred per product-question 4)"
+      - "Token sourced from existing `.env` config loader"
+      - "Adapter never logs token at any level"
+      - "Registered in DI"
+    tdd:
+      red: |
+        Unit test in `discord-outreach-publisher.service.test.ts` mocks the
+        HTTP transport, asserts a POST to /channels/{id}/messages with the
+        expected body, and asserts the bot token is in the Authorization
+        header but NEVER in any log line (capture stdout/stderr).
+      green: |
+        Implement using node fetch; pull token from injected config service.
+      refactor: |
+        Extract the HTTP-transport wrapper for testability; verify ≤ 150 LOC.
+    estimatedEffort: "1.5h"
+
+  - id: "task-17"
+    phaseId: "phase-2"
+    title: "IRecapPublisher port + three channel adapters"
+    description: |
+      Port at
+      `application/ports/output/services/recap-publisher.interface.ts` with
+      `publish(artifact, target)` where target is a discriminated union (file
+      / discord / githubDiscussion). Three adapters: file
+      (`recaps/YYYY-MM.md`), discord (reuses `IOutreachPublisher`), and
+      github-discussion (reuses `IGitHubRepositoryService`). Each ≤ 100 LOC.
+    state: "Todo"
+    dependencies:
+      - "task-13"
+      - "task-16"
+    acceptanceCriteria:
+      - "Port + three adapters exist"
+      - "Each adapter handles one channel; no adapter knows about the others"
+      - "Discriminated-union target type uses TypeSpec enum, not raw strings"
+      - "Registered in DI"
+    tdd:
+      red: |
+        Unit test for each adapter mocks the underlying service/filesystem
+        and asserts the artifact lands in the right place with the right
+        content.
+      green: |
+        Implement adapters one at a time, each exercising the underlying
+        port (filesystem port, IOutreachPublisher, IGitHubRepositoryService).
+      refactor: |
+        Confirm each adapter file ≤ 100 LOC; extract any shared error
+        translation.
+    estimatedEffort: "2h"
+
+  - id: "task-18"
+    phaseId: "phase-2"
+    title: "IDiagnostic port + DiagnosticRunner service"
+    description: |
+      Port at `application/ports/output/services/diagnostic.interface.ts`
+      with `{ name: string; run(): Promise<DiagnosticResult> }` where
+      `DiagnosticResult = { name, status: 'ok' | 'warn' | 'fail', detail,
+      fixHint? }`. Status type backed by a TypeSpec enum (no raw strings).
+      `DiagnosticRunner` service in
+      `infrastructure/services/doctor/diagnostic-runner.service.ts` accepts
+      an array of IDiagnostic instances and runs them via `Promise.allSettled`
+      with a 3 s per-diagnostic timeout.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "Port file defines IDiagnostic + DiagnosticResult"
+      - "Status uses a TypeSpec enum"
+      - "Runner enforces 3 s per-diagnostic timeout"
+      - "Registered in DI"
+    tdd:
+      red: |
+        Unit test in `diagnostic-runner.service.test.ts` injects three
+        fake diagnostics (one fast/ok, one slow/timeout, one throwing),
+        asserts all three return a DiagnosticResult, the timeout one
+        reports `warn`, and the throwing one reports `fail` with the
+        error captured in `detail`.
+      green: |
+        Implement the runner using `Promise.allSettled` with `Promise.race`
+        against a 3 s timer for each diagnostic.
+      refactor: |
+        Extract the timeout helper; verify ≤ 100 LOC.
+    estimatedEffort: "1.5h"
+
+  - id: "task-19"
+    phaseId: "phase-2"
+    title: "Wire all new ports → adapters in DI container"
+    description: |
+      Single registration sweep adding all the Phase-2 services to
+      `infrastructure/di/container.ts`. Ensures Phase-3 use cases can resolve
+      their dependencies without re-touching DI.
+    state: "Todo"
+    dependencies:
+      - "task-14"
+      - "task-15"
+      - "task-16"
+      - "task-17"
+      - "task-18"
+    acceptanceCriteria:
+      - "All seven new ports resolvable via container"
+      - "DI graph integration test passes for each binding"
+    tdd:
+      red: |
+        Extend the DI graph integration test to resolve every new port and
+        assert non-null instance of the expected adapter class.
+      green: |
+        Add registrations.
+      refactor: |
+        Group registrations by concern (writers, publishers, diagnostics);
+        add typed token constants if any are missing.
+    estimatedEffort: "30min"
+
+  # ─────────────────────────────────────────────────────────────────
+  # Phase 3 — shep doctor
+  # ─────────────────────────────────────────────────────────────────
+  - id: "task-20"
+    phaseId: "phase-3"
+    title: "Implement individual diagnostic strategy classes"
+    description: |
+      Create `application/use-cases/doctor/diagnostics/*.ts` files — one
+      class per check. Each implements IDiagnostic, ≤ 100 LOC, and reuses
+      existing services (IAgentAuthDetectorService, IGitHubRepositoryService,
+      filesystem port, etc.) — never imports from `infrastructure/`.
+      Diagnostics: node-version, pnpm-installed, git-installed, gh-cli-auth,
+      agent-cli-availability, dotenv-presence, working-tree-clean,
+      migration-status, typespec-freshness, di-graph-validation.
+    state: "Todo"
+    dependencies:
+      - "task-18"
+    acceptanceCriteria:
+      - "Ten diagnostic classes exist, each ≤ 100 LOC"
+      - "None imports anything from `infrastructure/`"
+      - "Each has a unit test that mocks injected ports and asserts ok/warn/fail outcomes"
+      - "fixHint provided when status != ok"
+    tdd:
+      red: |
+        For each diagnostic, write a unit test asserting the three outcome
+        paths (ok, warn, fail) by varying the mocked port responses.
+      green: |
+        Implement each strategy class minimally to satisfy its test.
+      refactor: |
+        Extract any common subprocess-call helpers; ensure consistent
+        fixHint formatting; verify file size cap.
+    estimatedEffort: "5h"
+
+  - id: "task-21"
+    phaseId: "phase-3"
+    title: "RunDoctorUseCase aggregator"
+    description: |
+      `application/use-cases/doctor/run-doctor.use-case.ts` — injects the
+      array of IDiagnostic strategies and the DiagnosticRunner service,
+      returns a `DoctorReport` summarising counts per status. Use case has
+      NO presentation concerns (no formatting, no exit codes).
+    state: "Todo"
+    dependencies:
+      - "task-20"
+    acceptanceCriteria:
+      - "Use case ≤ 100 LOC"
+      - "Returns a DoctorReport, NOT a string"
+      - "Aggregates ok / warn / fail counts"
+      - "Doesn't import infrastructure"
+    tdd:
+      red: |
+        Test in `run-doctor.use-case.test.ts` injects three fake diagnostics
+        with mixed statuses; asserts the use case returns a DoctorReport
+        with correct counts and array of results.
+      green: |
+        Implement minimal aggregation over runner.runAll().
+      refactor: |
+        Extract DoctorReport summarisation helper if needed; verify file
+        cap.
+    estimatedEffort: "1h"
+
+  - id: "task-22"
+    phaseId: "phase-3"
+    title: "shep doctor CLI command"
+    description: |
+      `src/presentation/cli/commands/doctor.command.ts` follows the
+      `review.command.ts` pattern: Commander definition, resolves
+      RunDoctorUseCase, formats DoctorReport into a structured table (use
+      shared `ui` module for color), exits with non-zero code if any
+      diagnostic is `fail`. CLI does ONLY formatting + exit-code mapping
+      (NFR per code-quality.md).
+    state: "Todo"
+    dependencies:
+      - "task-21"
+    acceptanceCriteria:
+      - "Command registered with Commander program"
+      - "Outputs a table with columns: name, status, detail, fixHint"
+      - "Exit code 0 on all-ok or warn-only; non-zero on any fail"
+      - "Integration test invokes the command and asserts exit code"
+    tdd:
+      red: |
+        Integration test in `doctor.command.test.ts` invokes the command
+        with a stubbed use-case providing one fail; asserts the process
+        exits non-zero and the output contains the expected formatted row.
+      green: |
+        Implement the Commander action handler.
+      refactor: |
+        Extract table-formatting helper to `presentation/cli/utils/` if
+        reused; verify file ≤ 100 LOC.
+    estimatedEffort: "1h"
+
+  - id: "task-23"
+    phaseId: "phase-3"
+    title: "Wire doctor diagnostics + use case + command in DI/program"
+    description: |
+      Register the array of IDiagnostic strategies in
+      `infrastructure/di/container.ts`. Register the doctor command in
+      `src/presentation/cli/program.ts`.
+    state: "Todo"
+    dependencies:
+      - "task-22"
+    acceptanceCriteria:
+      - "`shep doctor` resolves all diagnostics via DI"
+      - "`shep --help` lists `doctor` as a top-level command"
+      - "Smoke test: `pnpm dev:cli doctor` runs against the local repo and exits 0 on a healthy clone"
+    tdd:
+      red: |
+        E2E smoke test invoking `shep doctor` against a fixture repo with
+        all green diagnostics; asserts exit 0.
+      green: |
+        Add the registrations.
+      refactor: |
+        Ensure no duplicate registrations; group with related commands.
+    estimatedEffort: "30min"
+
+  # ─────────────────────────────────────────────────────────────────
+  # Phase 4 — Contributor Use Cases (TDD-first)
+  # ─────────────────────────────────────────────────────────────────
+  - id: "task-24"
+    phaseId: "phase-4"
+    title: "ClassifyIntoLaneUseCase (rules-first, agent-fallback)"
+    description: |
+      `application/use-cases/contributors/classify-into-lane.use-case.ts`.
+      Implements the hybrid pattern from research decision 4. Rules
+      (title-prefix, body-keyword, label-hint heuristics) run first;
+      `unknown` or low-confidence escalates to the contributor-onboarding
+      agent via `IAgentExecutorProvider`. Returns `ContributorLane` enum
+      (no raw strings).
+    state: "Todo"
+    dependencies:
+      - "task-19"
+    acceptanceCriteria:
+      - "Use case returns ContributorLane enum end-to-end"
+      - "Sub-100 ms when rules match"
+      - "Falls back to agent only when rules return unknown"
+      - "Test coverage for: clear-prefix match, body-keyword match, label-hint match, ambiguous → agent fallback"
+    tdd:
+      red: |
+        `classify-into-lane.use-case.test.ts` covers four cases: docs prefix
+        title, agent-keyword body, label-hint with mixed signals → unknown
+        rules → agent fallback (mock returns 'agents'). Each asserts the
+        returned ContributorLane value.
+      green: |
+        Implement the rule cascade as a series of pure functions; agent
+        fallback uses injected IAgentExecutorProvider.
+      refactor: |
+        Extract rule predicates to small helper module; ensure file
+        ≤ 200 LOC; no magic strings (use enum end-to-end).
+    estimatedEffort: "2h"
+
+  - id: "task-25"
+    phaseId: "phase-4"
+    title: "ProposeAcceptanceCriteriaUseCase"
+    description: |
+      `propose-acceptance-criteria.use-case.ts`. Given an issue body,
+      returns a markdown checklist. Standalone; reusable from grooming and
+      from manual CLI calls. Uses agent for generation but caches by
+      issue-body hash.
+    state: "Todo"
+    dependencies:
+      - "task-19"
+    acceptanceCriteria:
+      - "Returns markdown checklist with `- [ ] ` prefix per criterion"
+      - "Idempotent: same input body returns the same output"
+      - "≤ 150 LOC"
+    tdd:
+      red: |
+        Test asserts: (a) given a fixture issue body, returns a non-empty
+        markdown checklist; (b) repeat call with same body returns
+        identical output (idempotency).
+      green: |
+        Implement using IAgentExecutorProvider with a stable temperature
+        and a one-shot prompt template.
+      refactor: |
+        Extract prompt template to a string constant near the use case;
+        verify file size cap.
+    estimatedEffort: "1.5h"
+
+  - id: "task-26"
+    phaseId: "phase-4"
+    title: "GroomIssueUseCase (composes classify + criteria)"
+    description: |
+      `groom-issue.use-case.ts` — given an issue ref, fetches via
+      IExternalIssueFetcher, calls ClassifyIntoLaneUseCase and
+      ProposeAcceptanceCriteriaUseCase, returns
+      `{ lane, difficulty, acceptanceCriteria, suggestedLabels[],
+      welcomeComment? }` — without side-effects. Caller decides whether
+      to apply via IGitHubIssueWriter (gated by ISupervisorAgent).
+    state: "Todo"
+    dependencies:
+      - "task-24"
+      - "task-25"
+    acceptanceCriteria:
+      - "Use case has NO side-effects (no writes, no comments)"
+      - "Result includes all five fields"
+      - "Difficulty inferred from a small heuristic (LOC affected, label hints)"
+      - "≤ 200 LOC"
+    tdd:
+      red: |
+        Test injects fake fetcher + classify + criteria use cases; asserts
+        the returned grooming object matches the expected shape and
+        contains values from all sub-use-cases.
+      green: |
+        Implement composition; difficulty inference is a pure function
+        based on label hints.
+      refactor: |
+        Extract difficulty heuristic; verify file size; ensure no infra
+        imports.
+    estimatedEffort: "2h"
+
+  - id: "task-27"
+    phaseId: "phase-4"
+    title: "WelcomeFirstTimeContributorUseCase"
+    description: |
+      `welcome-first-time-contributor.use-case.ts` — given a PR ref,
+      detects first-time contributor (zero prior merged PRs), upserts a
+      Contributor record, generates a welcome comment, emits a
+      RecognitionEvent. Posting the comment goes through ISupervisorAgent
+      → IGitHubIssueWriter (NFR-5).
+    state: "Todo"
+    dependencies:
+      - "task-19"
+    acceptanceCriteria:
+      - "Detects first-timer correctly via fetcher.getMergedPrCount(login)"
+      - "Upserts a Contributor row idempotently"
+      - "Emits a RecognitionEvent of kind firstPR"
+      - "Comment posting is gated through ISupervisorAgent"
+      - "Triggers IDesktopNotifier on first-timer detection"
+    tdd:
+      red: |
+        Test covers: (a) first-time path → contributor upsert + event +
+        gated comment; (b) non-first-time path → no welcome comment, no
+        recognition event; (c) supervisor denial → no comment posted.
+      green: |
+        Implement; reuse repositories, IGitHubIssueWriter,
+        ISupervisorAgent, IDesktopNotifier.
+      refactor: |
+        Extract welcome-comment template; verify ≤ 200 LOC.
+    estimatedEffort: "2h"
+
+  - id: "task-28"
+    phaseId: "phase-4"
+    title: "DetectStaleGoodFirstIssueUseCase"
+    description: |
+      `detect-stale-good-first-issue.use-case.ts` — finds issues labeled
+      `good-first-issue` with no activity in N days (default 30,
+      configurable via settings). Returns structured list. Caller
+      schedules + decides on action.
+    state: "Todo"
+    dependencies:
+      - "task-19"
+    acceptanceCriteria:
+      - "Returns list of stale issues (issueRef + lastActivityAt)"
+      - "N days configurable via settings service"
+      - "Pure function — no side-effects"
+    tdd:
+      red: |
+        Test injects fake fetcher with a mix of stale and fresh issues;
+        asserts only the stale ones are returned and the threshold is
+        applied correctly with a configurable cutoff.
+      green: |
+        Implement using IExternalIssueFetcher.listIssuesByLabel and a
+        date diff against the configured cutoff.
+      refactor: |
+        Extract date-cutoff helper; verify ≤ 100 LOC.
+    estimatedEffort: "1h"
+
+  - id: "task-29"
+    phaseId: "phase-4"
+    title: "AwardRecognitionUseCase (idempotent)"
+    description: |
+      `award-recognition.use-case.ts` — on PR merge, creates a
+      RecognitionEvent and calls IAllContributorsWriter.appendContributor,
+      bumps Contributor.prCount and level if thresholds crossed. Two-layer
+      idempotency: schema UNIQUE + service-level upsert (NFR-11). Skips
+      writer call when no insert happened.
+    state: "Todo"
+    dependencies:
+      - "task-15"
+      - "task-19"
+    acceptanceCriteria:
+      - "Calling twice with same (contributorId, kind, prNumber) yields exactly one event and one writer call"
+      - "Level bumps on threshold crossing (e.g., user → contributor at 1 PR; contributor → core at 5)"
+      - "≤ 200 LOC"
+    tdd:
+      red: |
+        Test covers: (a) first call → event inserted + writer called; (b)
+        second call same triple → no event + no writer call; (c) level
+        threshold crossed → level field updated; (d) writer failure does
+        not leave state corrupted (transaction-like contract).
+      green: |
+        Implement using INSERT ON CONFLICT DO NOTHING; check
+        Statement.run().changes; only call writer when changes > 0.
+      refactor: |
+        Extract level-threshold helper to a pure function; verify size cap.
+    estimatedEffort: "2h"
+
+  - id: "task-30"
+    phaseId: "phase-4"
+    title: "GenerateMonthlyRecapUseCase"
+    description: |
+      `generate-monthly-recap.use-case.ts` — for a given YYYY-MM, gathers
+      merged PRs, new contributors, top lanes; produces a markdown recap
+      artifact. Returns the artifact; does NOT publish.
+    state: "Todo"
+    dependencies:
+      - "task-19"
+    acceptanceCriteria:
+      - "Returns a structured RecapArtifact { yearMonth, markdownBody, statsSummary }"
+      - "No side-effects"
+      - "Uses repositories — no direct GitHub fetches needed for stats already in DB"
+    tdd:
+      red: |
+        Test seeds repos with fixture data for a given month, asserts the
+        returned markdown contains: contributor count, top lanes,
+        recognition highlights, and follows a stable template.
+      green: |
+        Implement queries via repositories; render markdown via a small
+        template helper.
+      refactor: |
+        Extract markdown-template helper; verify ≤ 200 LOC.
+    estimatedEffort: "2h"
+
+  - id: "task-31"
+    phaseId: "phase-4"
+    title: "PublishMonthlyRecapUseCase (multi-channel via supervisor)"
+    description: |
+      `publish-monthly-recap.use-case.ts` — accepts a RecapArtifact, fans
+      out to three IRecapPublisher targets via Promise.allSettled, gates
+      each call through ISupervisorAgent.evaluate(...). Returns
+      per-channel result map.
+    state: "Todo"
+    dependencies:
+      - "task-17"
+      - "task-30"
+    acceptanceCriteria:
+      - "Each channel call gated through ISupervisorAgent independently"
+      - "Failed channels reported but do not block other channels"
+      - "Returns per-channel { status, error? } map"
+    tdd:
+      red: |
+        Test injects three fake publishers (one ok, one supervisor-denied,
+        one throwing); asserts all three return per-channel statuses
+        without one failure poisoning another.
+      green: |
+        Implement with Promise.allSettled and per-target supervisor
+        evaluation.
+      refactor: |
+        Extract per-channel runner; verify ≤ 200 LOC.
+    estimatedEffort: "2h"
+
+  - id: "task-32"
+    phaseId: "phase-4"
+    title: "DraftOutreachPostUseCase (Discord-only v1)"
+    description: |
+      `draft-outreach-post.use-case.ts` — produces a draft Discord
+      message about a release/recap. Returns text without sending. v2
+      adds Reddit/HN/X.
+    state: "Todo"
+    dependencies:
+      - "task-19"
+    acceptanceCriteria:
+      - "Returns DraftOutreachPost { channel: 'discord', body }"
+      - "No side-effects (no posting)"
+      - "Body fits Discord 2000-character limit"
+    tdd:
+      red: |
+        Test asserts: (a) body is non-empty; (b) body ≤ 2000 chars; (c)
+        body contains the input release/recap title.
+      green: |
+        Implement using IAgentExecutorProvider with a Discord-tone prompt
+        template.
+      refactor: |
+        Extract template; verify size cap.
+    estimatedEffort: "1.5h"
+
+  - id: "task-33"
+    phaseId: "phase-4"
+    title: "GetContributorLeaderboardUseCase"
+    description: |
+      `get-contributor-leaderboard.use-case.ts` — returns top contributors
+      by PR count for a given scope (`month` | `allTime`) and limit. Backs
+      the web ContributorLeaderboard component.
+    state: "Todo"
+    dependencies:
+      - "task-19"
+    acceptanceCriteria:
+      - "Returns a typed `ContributorLeaderboardEntry[]` (login, displayName, avatarUrl, prCount, level, lane)"
+      - "Aggregates via IContributorRepository.findTopByPrCount"
+      - "Limit defaults to 10; max 100"
+    tdd:
+      red: |
+        Test seeds repository with 15 contributors; asserts limit=10
+        returns top 10, scope='month' filters by month, scope='allTime'
+        returns global ranking.
+      green: |
+        Implement minimal mapping over the repository result.
+      refactor: |
+        Verify ≤ 100 LOC.
+    estimatedEffort: "1h"
+
+  - id: "task-34"
+    phaseId: "phase-4"
+    title: "GetCuratedIssuesByLaneUseCase"
+    description: |
+      `get-curated-issues-by-lane.use-case.ts` — returns curated
+      good-first-issues filtered by chosen lane. Used by the web "pick
+      your first issue" CTA.
+    state: "Todo"
+    dependencies:
+      - "task-19"
+    acceptanceCriteria:
+      - "Returns CuratedIssue[] (issueRef, title, lane, difficulty, acceptanceCriteria)"
+      - "Filters by ContributorLane input"
+      - "Excludes issues marked stale by detect-stale use case"
+    tdd:
+      red: |
+        Test injects fake fetcher with mixed-lane / mixed-difficulty
+        issues; asserts only matching-lane goodFirst issues come back.
+      green: |
+        Implement using IExternalIssueFetcher.listIssuesByLabels combining
+        lane label + difficulty label.
+      refactor: |
+        Verify size cap and no magic strings.
+    estimatedEffort: "1h"
+
+  # ─────────────────────────────────────────────────────────────────
+  # Phase 5 — Custom-Agent Registration
+  # ─────────────────────────────────────────────────────────────────
+  - id: "task-35"
+    phaseId: "phase-5"
+    title: "Author contributor-onboarding system prompt"
+    description: |
+      Write `prompts/contributor-onboarding/system.md` covering: lane
+      classification rules, acceptance-criteria style, welcoming tone for
+      first-time contributors, refusal to invent details not in the
+      issue, structured-output schema reference. Markdown so it shows up
+      in PR diffs and adopting projects can fork.
+    state: "Todo"
+    dependencies:
+      - "task-26"
+    acceptanceCriteria:
+      - "Prompt file ≤ 300 lines"
+      - "Each section has a heading"
+      - "References the structured-output schema by name"
+      - "Explicit PII guardrail (NFR-9): only public GitHub data permitted"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "1.5h"
+
+  - id: "task-36"
+    phaseId: "phase-5"
+    title: "Define contributor-onboarding agent output schema in TypeSpec"
+    description: |
+      Add the agent's structured output schema to TypeSpec (e.g.,
+      `tsp/agents/contributor-onboarding-output.tsp`) so the agent's
+      contract is independently versioned from its prompt. Re-run
+      `pnpm tsp:compile`.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "Schema covers { lane, difficulty, acceptanceCriteria, suggestedLabels[], welcomeComment? }"
+      - "Uses ContributorLane and ContributionDifficulty enums (no raw strings)"
+      - "`pnpm tsp:compile` regenerates output.ts"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "30min"
+
+  - id: "task-37"
+    phaseId: "phase-5"
+    title: "Register contributor-onboarding agent via CreateCustomAgentUseCase"
+    description: |
+      `application/use-cases/contributors/register-contributor-onboarding-agent.use-case.ts`
+      — calls the existing CreateCustomAgentUseCase with the system prompt
+      file path, the output schema, and read-only tool surface (FR-35).
+    state: "Todo"
+    dependencies:
+      - "task-35"
+      - "task-36"
+    acceptanceCriteria:
+      - "Agent registered in the custom-agent table"
+      - "Re-running registration is idempotent (same name → updates prompt revision, not duplicate)"
+      - "Tool surface contains only read-only tools (no IGitHubIssueWriter, no IOutreachPublisher)"
+    tdd:
+      red: |
+        Test asserts: (a) registration creates a custom-agent row; (b)
+        re-registration updates the prompt revision instead of inserting a
+        duplicate; (c) the registered tool surface excludes any write ports.
+      green: |
+        Implement; reuse CreateCustomAgentUseCase.
+      refactor: |
+        Verify ≤ 100 LOC.
+    estimatedEffort: "1h"
+
+  - id: "task-38"
+    phaseId: "phase-5"
+    title: "Golden-path integration test for the agent"
+    description: |
+      End-to-end integration test that invokes the registered agent
+      against a fixture issue and asserts the structured output schema is
+      respected (FR-36). Uses an injectable mock for IAgentExecutorProvider
+      that returns a recorded fixture response so the test is
+      deterministic.
+    state: "Todo"
+    dependencies:
+      - "task-37"
+    acceptanceCriteria:
+      - "Test fixture: one issue body → expected grooming output"
+      - "Asserts every output field matches the TypeSpec schema (typed validation, not stringly-typed)"
+      - "Test runs in CI under integration suite"
+    tdd:
+      red: |
+        Write the integration test first using a fixture; expect the
+        agent invocation to fail until prompt + schema are wired through.
+      green: |
+        Wire the registration so the agent invocation succeeds.
+      refactor: |
+        Move fixture to `__fixtures__/contributor-onboarding/`.
+    estimatedEffort: "1h"
+
+  # ─────────────────────────────────────────────────────────────────
+  # Phase 6 — GitHub Actions + In-Shep Scheduling
+  # ─────────────────────────────────────────────────────────────────
+  - id: "task-39"
+    phaseId: "phase-6"
+    title: "CLI subcommands invoked by GitHub Actions"
+    description: |
+      Add `src/presentation/cli/commands/contributors/welcome-pr.command.ts`
+      (invoked on pull_request.opened) and `groom-issue.command.ts` (on
+      issues.opened). Each is a thin Commander wrapper that reads input
+      from env vars (GITHUB_REPOSITORY, GITHUB_EVENT_PATH) and resolves
+      the corresponding use case via DI.
+    state: "Todo"
+    dependencies:
+      - "task-26"
+      - "task-27"
+    acceptanceCriteria:
+      - "Both commands registered in `src/presentation/cli/program.ts`"
+      - "Each command ≤ 100 LOC; pure presentation (formatting + exit code)"
+      - "Reads payload from GITHUB_EVENT_PATH (the Actions-provided JSON file)"
+    tdd:
+      red: |
+        Integration test simulates an Actions event by writing a fixture
+        JSON to a temp path, sets GITHUB_EVENT_PATH, invokes the command,
+        asserts the use case was called with the parsed payload.
+      green: |
+        Implement the commands.
+      refactor: |
+        Extract a shared `loadGitHubEvent(): unknown` helper.
+    estimatedEffort: "1.5h"
+
+  - id: "task-40"
+    phaseId: "phase-6"
+    title: "welcome-first-time-contributor.yml workflow"
+    description: |
+      `.github/workflows/welcome-first-time-contributor.yml`: triggers on
+      `pull_request.opened`, sets up Node + pnpm, runs
+      `pnpm install --frozen-lockfile` and `pnpm dev:cli contributors
+      welcome-pr`. Uses the same setup actions as existing CI.
+    state: "Todo"
+    dependencies:
+      - "task-39"
+    acceptanceCriteria:
+      - "Workflow file passes `actionlint` if available"
+      - "Uses Node 22+ via `actions/setup-node`"
+      - "Pinned action versions (no @latest)"
+      - "Has explicit GITHUB_TOKEN permission scope (issues: write, pull-requests: write)"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "45min"
+
+  - id: "task-41"
+    phaseId: "phase-6"
+    title: "label-by-lane.yml workflow"
+    description: |
+      `.github/workflows/label-by-lane.yml`: triggers on `issues.opened`,
+      same setup, runs `pnpm dev:cli contributors groom-issue`. Per
+      auto-approval policy, may apply labels via IGitHubIssueWriter or
+      surface for manual approval.
+    state: "Todo"
+    dependencies:
+      - "task-39"
+    acceptanceCriteria:
+      - "Workflow file lints clean"
+      - "Pinned action versions"
+      - "Token scope: issues: write"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "30min"
+
+  - id: "task-42"
+    phaseId: "phase-6"
+    title: "Register stale-detect + monthly-recap on Shep daemon scheduler"
+    description: |
+      Wire DetectStaleGoodFirstIssueUseCase to run daily and
+      GenerateMonthlyRecapUseCase + PublishMonthlyRecapUseCase to run
+      monthly via Shep's existing in-process scheduler (the same
+      primitive driving pr-sync). NOT GitHub Actions cron (per
+      product-question 10).
+    state: "Todo"
+    dependencies:
+      - "task-28"
+      - "task-31"
+    acceptanceCriteria:
+      - "Both jobs registered in the existing scheduler bootstrap"
+      - "Cadence configurable via settings service"
+      - "Integration test asserts the scheduler invokes both use cases at the configured cadence (using fake clock)"
+    tdd:
+      red: |
+        Integration test with a fake clock advances time and asserts the
+        scheduler dispatches the use cases at the right intervals.
+      green: |
+        Add registrations to the scheduler bootstrap.
+      refactor: |
+        Extract registration helper if pattern repeats; verify no infra
+        leakage into application code.
+    estimatedEffort: "1.5h"
+
+  # ─────────────────────────────────────────────────────────────────
+  # Phase 7 — Web Onboarding Contributor View
+  # ─────────────────────────────────────────────────────────────────
+  - id: "task-43"
+    phaseId: "phase-7"
+    title: "ContributorLeaderboard component + Storybook"
+    description: |
+      `src/presentation/web/components/contributors/ContributorLeaderboard.tsx`
+      renders the top contributors list. Colocated stories
+      `.stories.tsx` cover Default / Loading / Empty / Error states (per
+      CLAUDE.md mandate).
+    state: "Todo"
+    dependencies:
+      - "task-33"
+    acceptanceCriteria:
+      - "Component renders rank, avatar, login, prCount, level, lane"
+      - "Stories cover four states minimum"
+      - "Component accepts data via props (no inline fetching)"
+      - "Component file ≤ 200 LOC"
+    tdd:
+      red: |
+        Vitest + React Testing Library test asserts rendering for default
+        seven-contributor data and the empty state.
+      green: |
+        Implement the component; minimal styling using existing design
+        tokens.
+      refactor: |
+        Extract row component if needed; verify Storybook builds.
+    estimatedEffort: "2h"
+
+  - id: "task-44"
+    phaseId: "phase-7"
+    title: "LaneChooser component + Storybook"
+    description: |
+      `LaneChooser.tsx` — dropdown over the five lane values from the
+      ContributorLane enum. Colocated stories.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Dropdown options sourced from generated/output.ts ContributorLane (no raw strings in component)"
+      - "Stories cover Default / Selected"
+      - "Emits onLaneChange(lane: ContributorLane) callback"
+    tdd:
+      red: |
+        Test asserts: (a) renders five lane options; (b) selecting one
+        invokes onLaneChange with the correct enum value.
+      green: |
+        Implement the dropdown.
+      refactor: |
+        Verify ≤ 100 LOC.
+    estimatedEffort: "1h"
+
+  - id: "task-45"
+    phaseId: "phase-7"
+    title: "CuratedIssuesList component + Storybook"
+    description: |
+      `CuratedIssuesList.tsx` — renders the result of
+      GetCuratedIssuesByLaneUseCase as a list of issue cards. Stories
+      cover Default / Loading / Empty / Error.
+    state: "Todo"
+    dependencies:
+      - "task-34"
+    acceptanceCriteria:
+      - "Renders title, difficulty badge, acceptance-criteria preview, and link to the GitHub issue"
+      - "All four story states present"
+      - "≤ 200 LOC"
+    tdd:
+      red: |
+        Test asserts the rendering of three fixture issues + the empty
+        state.
+      green: |
+        Implement the component.
+      refactor: |
+        Extract issue-card sub-component if reused.
+    estimatedEffort: "1.5h"
+
+  - id: "task-46"
+    phaseId: "phase-7"
+    title: "DoctorSummary component + Storybook"
+    description: |
+      `DoctorSummary.tsx` — renders an inline DoctorReport summary on the
+      contributor view. Stories cover All-OK / Mixed-Warn / Has-Fail / Loading.
+    state: "Todo"
+    dependencies:
+      - "task-21"
+    acceptanceCriteria:
+      - "Renders ok / warn / fail counts and per-diagnostic detail"
+      - "Four story states present"
+      - "≤ 150 LOC"
+    tdd:
+      red: |
+        Test asserts rendering of all-ok, mixed, and has-fail fixture
+        DoctorReports.
+      green: |
+        Implement the component.
+      refactor: |
+        Extract status-badge component if reused with leaderboard.
+    estimatedEffort: "1h"
+
+  - id: "task-47"
+    phaseId: "phase-7"
+    title: "Extend onboarding/page.tsx with contributor view"
+    description: |
+      Modify `src/presentation/web/app/onboarding/page.tsx` to add a
+      contributor view: LaneChooser + CuratedIssuesList + DoctorSummary +
+      ContributorLeaderboard. Server component fetches via the use cases
+      directly (no extra API route in v1).
+    state: "Todo"
+    dependencies:
+      - "task-43"
+      - "task-44"
+      - "task-45"
+      - "task-46"
+    acceptanceCriteria:
+      - "Page renders all four components"
+      - "Lane selection updates curated issues"
+      - "Page ≤ 200 LOC; logic delegated to components and use cases"
+    tdd:
+      red: |
+        E2E Playwright smoke test loads the page, picks a lane, asserts
+        curated issues update.
+      green: |
+        Implement the page composition.
+      refactor: |
+        Extract layout primitives if reused with other onboarding views.
+    estimatedEffort: "1.5h"
+
+  - id: "task-48"
+    phaseId: "phase-7"
+    title: "Playwright smoke test for the contributor view"
+    description: |
+      `tests/e2e/contributor-onboarding.spec.ts` covers: load onboarding
+      page, see leaderboard render, change lane, see curated issues
+      update, see doctor summary if available.
+    state: "Todo"
+    dependencies:
+      - "task-47"
+    acceptanceCriteria:
+      - "Test passes against a seeded test database"
+      - "Test follows existing e2e conventions in tests/e2e/"
+      - "Test ≤ 100 LOC"
+    tdd:
+      red: |
+        Write the e2e test first; expect failure until page + components
+        are wired.
+      green: |
+        Verify all flows pass after task-47 lands.
+      refactor: |
+        Extract page-object helpers if reused.
+    estimatedEffort: "1h"
+
+  # ─────────────────────────────────────────────────────────────────
+  # Phase 8 — Static Repo Files (LAST)
+  # ─────────────────────────────────────────────────────────────────
+  - id: "task-49"
+    phaseId: "phase-8"
+    title: "Update CONTRIBUTING.md"
+    description: |
+      Update CONTRIBUTING.md with: 30-second setup (clone + install +
+      `shep doctor`), lane catalogue (docs/agents/ui/cli/infra) with
+      one-line descriptions, contributor ladder (User → Contributor → Core
+      → Maintainer) with criteria, and "Contributing to Shep with Shep"
+      section walking through using Shep's own agents to land a PR.
+    state: "Todo"
+    dependencies:
+      - "task-22"
+      - "task-37"
+    acceptanceCriteria:
+      - "References `shep doctor` by name"
+      - "Lane catalogue matches the ContributorLane enum"
+      - "Ladder section names all four levels"
+      - "≤ 400 lines (legacy doc, not a code file)"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "1.5h"
+
+  - id: "task-50"
+    phaseId: "phase-8"
+    title: "Create ROADMAP.md"
+    description: |
+      Top-level ROADMAP.md with Now / Next / Later sections, each
+      pointing to specs in `specs/` so the document stays self-updating.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "Three sections: Now, Next, Later"
+      - "Every line in each section links to a real `specs/NNN-…/` directory"
+      - "Linked from CONTRIBUTING.md and README.md"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "1h"
+
+  - id: "task-51"
+    phaseId: "phase-8"
+    title: "Create ARCHITECTURE.md"
+    description: |
+      Top-level ARCHITECTURE.md as a 10-minute tour linking deeper into
+      `docs/architecture/`. Does not duplicate content; orients newcomers.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "Mentions all four Clean Architecture layers"
+      - "Each layer links to its dedicated `docs/architecture/` doc"
+      - "≤ 200 lines"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "1h"
+
+  - id: "task-52"
+    phaseId: "phase-8"
+    title: "Create GOOD_FIRST_ISSUES.md"
+    description: |
+      Curated good-first-issue list grouped by lane and difficulty. Each
+      row links to a live GitHub issue. Updated monthly via the recap
+      pipeline (manual curation in v1).
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "Grouped by ContributorLane"
+      - "Within each lane, grouped by difficulty (goodFirst first)"
+      - "Each row links to a live GitHub issue"
+      - "Linked from CONTRIBUTING.md and README.md"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "1h"
+
+  - id: "task-53"
+    phaseId: "phase-8"
+    title: "README \"Contribute to Shep\" block + PR template + issue templates"
+    description: |
+      Three small static-content edits: (1) add "Contribute to Shep"
+      block to README.md above the fold linking to CONTRIBUTING / ROADMAP
+      / ARCHITECTURE / GOOD_FIRST_ISSUES + Discord; (2) add
+      `.github/PULL_REQUEST_TEMPLATE.md` (What/Why/Screenshots/Testing/
+      Checklist); (3) extend each existing
+      `.github/ISSUE_TEMPLATE/*.yml` with structured `lane` (dropdown),
+      `difficulty` (dropdown), `acceptance criteria` (textarea) fields.
+      Also: add `.all-contributorsrc` initial file + `recaps/.gitkeep` +
+      `docs/development/contributing-with-shep.md`. Update LESSONS.md
+      with any patterns learned during this feature.
+    state: "Todo"
+    dependencies:
+      - "task-49"
+      - "task-50"
+      - "task-51"
+      - "task-52"
+    acceptanceCriteria:
+      - "README block above the fold"
+      - "PR template covers all five sections"
+      - "Both issue templates have lane / difficulty / acceptance-criteria fields"
+      - "`.all-contributorsrc` initialised with the project key fields"
+      - "`recaps/.gitkeep` exists"
+      - "LESSONS.md touched"
+    tdd:
+      red: null
+      green: null
+      refactor: null
+    estimatedEffort: "1.5h"
+
+totalEstimate: "60h-72h focused work (single bundled PR per product-question 9)"
+
+openQuestions: []
+
+content: |
+  ## Status
+
+  - **Phase:** Implementation
+  - **Updated:** 2026-05-06
+
+  ## Summary
+
+  53 tasks across 8 phases form one bundled PR (per resolved
+  product-question 9). The structured `tasks` array above is the source of
+  truth — this section narrates the overall flow.
+
+  **Phase 1 (Foundation)** lands the domain model: four enums and two
+  entities in TypeSpec, regenerated `domain/generated/output.ts`, two
+  migrations (101 + 102) with the UNIQUE constraint that backs NFR-11
+  recognition idempotency, and SQLite-backed `IContributorRepository` +
+  `IRecognitionEventRepository` wired through DI.
+
+  **Phase 2 (Ports & Adapters)** introduces the seven new output ports —
+  `IGitHubIssueWriter` (Octokit + retry/throttling), `IAllContributorsWriter`
+  (in-house markdown, no upstream bot), `IOutreachPublisher` (Discord-only
+  v1), `IRecapPublisher` (three channel adapters), `IDiagnostic` (strategy
+  abstraction for shep doctor) — and their adapters. Single DI sweep at the
+  end ensures Phase 3 use cases can resolve their dependencies without
+  re-touching DI.
+
+  **Phase 3 (`shep doctor`)** delivers ten strategy-pattern diagnostic
+  classes, the aggregating `RunDoctorUseCase`, and the Commander CLI command.
+  Independently shippable; ships value to existing maintainers immediately
+  even if no one ever uses the contributor surface.
+
+  **Phase 4 (Contributor Use Cases)** lands the nine application use cases
+  in dependency order — classify-into-lane → propose-acceptance-criteria →
+  groom-issue (composes the previous two) → welcome-first-time-contributor
+  → detect-stale-good-first-issue → award-recognition (idempotent) →
+  generate-monthly-recap → publish-monthly-recap (multi-channel via
+  supervisor) → draft-outreach-post — plus the two read use cases the web
+  surface needs (get-contributor-leaderboard, get-curated-issues-by-lane).
+  Every use case lands RED-first per CLAUDE.md TDD mandate.
+
+  **Phase 5 (Custom Agent)** authors the system prompt at
+  `prompts/contributor-onboarding/system.md`, defines the structured-output
+  schema in TypeSpec for independent versioning, registers the agent via
+  the existing `CreateCustomAgentUseCase` (no new built-in agent kind),
+  and adds a deterministic golden-path integration test against a fixture
+  issue.
+
+  **Phase 6 (Workflows + Scheduling)** wires two CLI subcommands invoked by
+  GitHub Actions, two event-driven `.github/workflows/` files
+  (welcome-first-time-contributor on `pull_request.opened`, label-by-lane on
+  `issues.opened`), and registers the time-driven jobs (stale detection,
+  monthly recap) on Shep's existing in-process scheduler. The split
+  follows resolved product-question 10: Actions for events, Shep daemon
+  for cron.
+
+  **Phase 7 (Web Surface)** adds four colocated components — Lane chooser,
+  Curated issues list, Doctor summary, Contributor leaderboard — each with
+  Storybook stories covering Default / Loading / Empty / Error per CLAUDE.md
+  mandate, extends `src/presentation/web/app/onboarding/page.tsx` to
+  compose them, and lands a Playwright smoke test for the lane-chooser →
+  first-issue flow.
+
+  **Phase 8 (Static Repo Files)** ships LAST so docs reference real,
+  shipped capability: CONTRIBUTING.md update with `shep doctor` callout,
+  three new top-level docs (ROADMAP, ARCHITECTURE, GOOD_FIRST_ISSUES),
+  README "Contribute to Shep" block, PR template, and structured-field
+  enhancements to existing issue templates. Plus the `.all-contributorsrc`
+  initial file, the `recaps/.gitkeep` placeholder, and a LESSONS.md
+  update capturing any patterns learned during the feature.
+
+  Local verification before any push: `pnpm lint && pnpm typecheck &&
+  pnpm test:unit && pnpm test:int && pnpm build` (per
+  `.claude/rules/cicd.md`).

@@ -1,0 +1,22 @@
+================================================================
+Spec 097 — ai-native-contributor-onboarding
+Integration-test results (filtered to contributor scope)
+Captured: 2026-05-07 from `pnpm test:int`
+Full integration suite: 74 test files, 895 tests, 0 failures, 33.92s
+================================================================
+
+Phase 1 — Domain & Persistence (migrations + SQLite repositories)
+ ✓ tests/integration/infrastructure/persistence/sqlite/migration-101-create-contributors.test.ts (6 tests)   961ms
+ ✓ tests/integration/infrastructure/persistence/sqlite/migration-102-create-recognition-events.test.ts (8 tests)   973ms
+ ✓ tests/integration/infrastructure/repositories/sqlite-contributor.repository.test.ts (14 tests)  1237ms
+ ✓ tests/integration/infrastructure/repositories/sqlite-recognition-event.repository.test.ts (9 tests)   930ms
+
+Phase 5 — Custom-Agent Registration
+ ✓ tests/integration/application/use-cases/contributors/contributor-onboarding-agent.test.ts (3 tests)    24ms
+
+================================================================
+Summary: 5 contributor-onboarding integration test files passing,
+         covering both migrations + both repositories +
+         the contributor-onboarding agent golden-path test.
+Whole integration suite: 895 / 895 passing.
+================================================================

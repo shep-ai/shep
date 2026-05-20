@@ -163,6 +163,9 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'IAgentPromptResolver',
   'ISupervisorPolicyRepository',
   'ISupervisorDecisionRepository',
+  // Contributor onboarding (feature 097)
+  'IContributorRepository',
+  'IRecognitionEventRepository',
 ] as const;
 
 describe('DI container bootstrap (integration)', () => {

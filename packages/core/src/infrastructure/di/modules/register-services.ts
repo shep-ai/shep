@@ -91,6 +91,38 @@ import { SQLiteAgentMessageBus } from '../../services/agents/agent-message-bus/s
 import type { IDeferredQuestionRegistry } from '../../../application/ports/output/agents/agent-question-service.interface.js';
 import { DeferredQuestionRegistry } from '../../services/agents/agent-question-service/deferred-question-registry.js';
 
+// Contributor onboarding (feature 097) — output ports + adapters
+import type { IGitHubIssueWriter } from '../../../application/ports/output/services/github-issue-writer.interface.js';
+import { GitHubIssueWriter } from '../../services/external/github-issue-writer.service.js';
+import type { IExternalIssueFetcher } from '../../../application/ports/output/services/external-issue-fetcher.interface.js';
+import { GitHubIssueFetcher } from '../../services/external/github-issue.service.js';
+import type { IAllContributorsWriter } from '../../../application/ports/output/services/all-contributors-writer.interface.js';
+import { AllContributorsWriter } from '../../services/contributors/all-contributors-writer.service.js';
+import type { IContributorActionGate } from '../../../application/ports/output/services/contributor-action-gate.interface.js';
+import { SupervisorContributorActionGate } from '../../services/contributors/supervisor-contributor-action-gate.js';
+import type { IOutreachPublisher } from '../../../application/ports/output/services/outreach-publisher.interface.js';
+import { DiscordOutreachPublisher } from '../../services/outreach/discord-outreach-publisher.service.js';
+import type { IRecapPublisher } from '../../../application/ports/output/services/recap-publisher.interface.js';
+import { FileRecapPublisher } from '../../services/recap/file-recap-publisher.service.js';
+import { DiscordRecapPublisher } from '../../services/recap/discord-recap-publisher.service.js';
+import { GithubDiscussionRecapPublisher } from '../../services/recap/github-discussion-recap-publisher.service.js';
+import type {
+  IDiagnostic,
+  IDiagnosticRunner,
+} from '../../../application/ports/output/services/diagnostic.interface.js';
+import { DiagnosticRunner } from '../../services/doctor/diagnostic-runner.service.js';
+import { NodeVersionDiagnostic } from '../../../application/use-cases/doctor/diagnostics/node-version.diagnostic.js';
+import { PnpmInstalledDiagnostic } from '../../../application/use-cases/doctor/diagnostics/pnpm-installed.diagnostic.js';
+import { GitInstalledDiagnostic } from '../../../application/use-cases/doctor/diagnostics/git-installed.diagnostic.js';
+import { GhCliAuthDiagnostic } from '../../../application/use-cases/doctor/diagnostics/gh-cli-auth.diagnostic.js';
+import { AgentCliAvailabilityDiagnostic } from '../../../application/use-cases/doctor/diagnostics/agent-cli-availability.diagnostic.js';
+import { DotenvPresenceDiagnostic } from '../../../application/use-cases/doctor/diagnostics/dotenv-presence.diagnostic.js';
+import { WorkingTreeCleanDiagnostic } from '../../../application/use-cases/doctor/diagnostics/working-tree-clean.diagnostic.js';
+import { MigrationStatusDiagnostic } from '../../../application/use-cases/doctor/diagnostics/migration-status.diagnostic.js';
+import { TypespecFreshnessDiagnostic } from '../../../application/use-cases/doctor/diagnostics/typespec-freshness.diagnostic.js';
+import { DiGraphValidationDiagnostic } from '../../../application/use-cases/doctor/diagnostics/di-graph-validation.diagnostic.js';
+import { RecapChannel } from '../../../domain/generated/output.js';
+
 /**
  * Register core infrastructure services: validators, filesystem, git, notifications,
  * logger, tool installer, attachment storage, shep-instance, browser opener, etc.
@@ -228,6 +260,9 @@ export function registerServices(container: DependencyContainer): void {
   container.register('DesktopNotifier', {
     useFactory: () => new DesktopNotifier(),
   });
+  container.register('IDesktopNotifier', {
+    useFactory: (c) => c.resolve('DesktopNotifier') as DesktopNotifier,
+  });
 
   container.register<INotificationService>('INotificationService', {
     useFactory: (c) => {
@@ -300,4 +335,90 @@ export function registerServices(container: DependencyContainer): void {
     'IDeferredQuestionRegistry',
     DeferredQuestionRegistry
   );
+
+  // ─── Contributor onboarding (feature 097) — writers & publishers ────
+  // Workspace root resolution mirrors `ShepInstanceService` so the file-based
+  // adapters (all-contributors, file recap) write into the correct repo when
+  // Shep runs against a checked-out target instance.
+  const workspaceRoot =
+    process.env.SHEP_INSTANCE_PATH ?? process.env.NEXT_PUBLIC_SHEP_INSTANCE_PATH ?? process.cwd();
+
+  // GitHubIssueWriter takes two function-typed constructor params with
+  // sensible defaults (see DiscordOutreachPublisher note below) — register
+  // an instance so tsyringe never tries to reflect on `Function`.
+  container.registerInstance<IGitHubIssueWriter>('IGitHubIssueWriter', new GitHubIssueWriter());
+  container.registerSingleton<IExternalIssueFetcher>('IExternalIssueFetcher', GitHubIssueFetcher);
+  container.register<IAllContributorsWriter>('IAllContributorsWriter', {
+    useFactory: () => new AllContributorsWriter(workspaceRoot),
+  });
+  // DiscordOutreachPublisher's constructor takes two function-typed
+  // parameters with sensible defaults. tsyringe cannot reflect on function
+  // types (reflect-metadata emits `Function`), so `registerSingleton(...)`
+  // crashes with "TypeInfo not known for Function". Register the concrete
+  // instance directly so the default args are used.
+  container.registerInstance<IOutreachPublisher>(
+    'IOutreachPublisher',
+    new DiscordOutreachPublisher()
+  );
+
+  // Contributor action gate (NFR-5) — every contributor side-effect flows
+  // through the supervisor before execution.
+  container.registerSingleton<IContributorActionGate>(
+    'IContributorActionGate',
+    SupervisorContributorActionGate
+  );
+
+  // Recap publishers are registered per-channel so the publish use case can
+  // resolve the right adapter for a given target. Each publisher is ALSO
+  // registered under the bare `IRecapPublisher` token so `@injectAll(...)`
+  // in `PublishMonthlyRecapUseCase` picks up the full set.
+  const registerRecapPublisher = (
+    channel: RecapChannel,
+    factory: (c: DependencyContainer) => IRecapPublisher
+  ): void => {
+    container.register<IRecapPublisher>(`IRecapPublisher:${channel}`, { useFactory: factory });
+    container.register<IRecapPublisher>('IRecapPublisher', { useFactory: factory });
+  };
+  registerRecapPublisher(RecapChannel.File, () => new FileRecapPublisher(workspaceRoot));
+  registerRecapPublisher(
+    RecapChannel.Discord,
+    (c) => new DiscordRecapPublisher(c.resolve<IOutreachPublisher>('IOutreachPublisher'))
+  );
+  // GithubDiscussionRecapPublisher also has a function-typed default-arg
+  // constructor; instantiate it directly to bypass tsyringe reflection.
+  registerRecapPublisher(RecapChannel.GithubDiscussion, () => new GithubDiscussionRecapPublisher());
+
+  container.registerSingleton<IDiagnosticRunner>('IDiagnosticRunner', DiagnosticRunner);
+
+  // ─── Doctor diagnostics (feature 097, phase 3) ──────────────────────
+  // Each diagnostic is a strategy resolved by string token. The use case
+  // injects the array via `resolveAll('IDiagnostic')`. Order is the
+  // declaration order below — that's the order they are reported in.
+  const registerDiagnostic = (factory: (c: DependencyContainer) => IDiagnostic) =>
+    container.register<IDiagnostic>('IDiagnostic', { useFactory: factory });
+
+  registerDiagnostic(() => new NodeVersionDiagnostic());
+  registerDiagnostic(() => new PnpmInstalledDiagnostic());
+  registerDiagnostic(() => new GitInstalledDiagnostic());
+  registerDiagnostic((c) => c.resolve(GhCliAuthDiagnostic));
+  registerDiagnostic((c) => c.resolve(AgentCliAvailabilityDiagnostic));
+  registerDiagnostic(
+    (c) =>
+      new DotenvPresenceDiagnostic(
+        c.resolve<IFileSystemService>('IFileSystemService'),
+        workspaceRoot
+      )
+  );
+  registerDiagnostic(
+    (c) => new WorkingTreeCleanDiagnostic(c.resolve<IGitPrService>('IGitPrService'), workspaceRoot)
+  );
+  registerDiagnostic((c) => c.resolve(MigrationStatusDiagnostic));
+  registerDiagnostic(
+    (c) =>
+      new TypespecFreshnessDiagnostic(
+        c.resolve<IFileSystemService>('IFileSystemService'),
+        workspaceRoot
+      )
+  );
+  registerDiagnostic((c) => new DiGraphValidationDiagnostic((token) => c.isRegistered(token)));
 }

@@ -1,0 +1,8 @@
+$ pnpm audit --prod
+No known vulnerabilities found
+
+$ pnpm audit
+No known vulnerabilities found
+
+EXIT: 0
+STATUS: PASS — zero known vulnerabilities across prod + dev dependencies after applying overrides for ws, undici 6.x, picomatch, ajv, yaml

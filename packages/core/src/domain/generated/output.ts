@@ -2865,6 +2865,93 @@ export type CodeReview = BaseEntity & {
    */
   errorMessage?: string;
 };
+export enum ContributorLane {
+  Docs = 'docs',
+  Agents = 'agents',
+  Ui = 'ui',
+  Cli = 'cli',
+  Infra = 'infra',
+}
+export enum ContributorLevel {
+  User = 'user',
+  Contributor = 'contributor',
+  Core = 'core',
+  Maintainer = 'maintainer',
+}
+
+/**
+ * External OSS contributor to a repository Shep is helping run
+ */
+export type Contributor = BaseEntity & {
+  /**
+   * GitHub login (e.g., 'octocat') — unique across contributors
+   */
+  githubLogin: string;
+  /**
+   * Display name — public profile name on GitHub if available
+   */
+  displayName?: string;
+  /**
+   * Avatar URL from GitHub's public profile
+   */
+  avatarUrl?: string;
+  /**
+   * Primary lane the contributor works in (set by classify-into-lane or manually)
+   */
+  lane?: ContributorLane;
+  /**
+   * Position on the contributor ladder
+   */
+  level: ContributorLevel;
+  /**
+   * ISO timestamp of the contributor's first interaction (first PR or issue)
+   */
+  firstContributionAt: any;
+  /**
+   * ISO timestamp of the contributor's most recent interaction
+   */
+  lastContributionAt: any;
+  /**
+   * Number of merged PRs authored by this contributor in this repository
+   */
+  prCount: number;
+  /**
+   * Number of accepted issues opened by this contributor in this repository
+   */
+  issueCount: number;
+};
+export enum RecognitionKind {
+  FirstPR = 'firstPR',
+  NthPR = 'nthPR',
+  FirstIssue = 'firstIssue',
+  MonthlyShoutout = 'monthlyShoutout',
+}
+
+/**
+ * Durable record that a contributor was recognized for a specific contribution
+ */
+export type RecognitionEvent = BaseEntity & {
+  /**
+   * Contributor this recognition event belongs to
+   */
+  contributorId: UUID;
+  /**
+   * Kind of recognition
+   */
+  kind: RecognitionKind;
+  /**
+   * ISO timestamp when the recognition was awarded
+   */
+  occurredAt: any;
+  /**
+   * PR number for PR-bound kinds (FirstPR, NthPR); 0 for non-PR kinds
+   */
+  prNumber: number;
+  /**
+   * Identifier of the monthly recap artifact when kind = MonthlyShoutout
+   */
+  monthRecapId?: string;
+};
 
 /**
  * Single installation suggestion for a tool
@@ -4128,6 +4215,38 @@ export type CustomAgent = BaseEntity & {
    */
   createdBy: string;
 };
+export enum ContributionDifficulty {
+  GoodFirst = 'goodFirst',
+  Easy = 'easy',
+  Medium = 'medium',
+  Hard = 'hard',
+}
+
+/**
+ * Structured output produced by the contributor-onboarding custom agent
+ */
+export type ContributorOnboardingAgentOutput = {
+  /**
+   * Lane assignment — must match ContributorLane enum verbatim
+   */
+  lane: ContributorLane;
+  /**
+   * Difficulty rating — must match ContributionDifficulty enum verbatim
+   */
+  difficulty: ContributionDifficulty;
+  /**
+   * Markdown checklist of acceptance criteria; each line begins with '- [ ] '
+   */
+  acceptanceCriteria: string;
+  /**
+   * Suggested labels to apply; MUST include lane:<lane> and difficulty:<difficulty>
+   */
+  suggestedLabels: string[];
+  /**
+   * Optional welcome comment body — present only when difficulty === goodFirst
+   */
+  welcomeComment?: string;
+};
 
 /**
  * A selectable option within a PRD questionnaire question
@@ -4226,6 +4345,16 @@ export enum BedrockLifecycleAction {
   Init = 'init',
   Sync = 'sync',
   Ship = 'ship',
+}
+export enum RecapChannel {
+  File = 'file',
+  Discord = 'discord',
+  GithubDiscussion = 'githubDiscussion',
+}
+export enum DiagnosticStatus {
+  Ok = 'ok',
+  Warn = 'warn',
+  Fail = 'fail',
 }
 export enum AgentFeature {
   sessionResume = 'session-resume',

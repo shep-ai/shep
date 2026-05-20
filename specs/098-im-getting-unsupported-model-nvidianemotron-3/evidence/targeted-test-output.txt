@@ -1,0 +1,21 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-im-getting-unsupported-model-nvidianemotron-3
+
+ ✓ |node| tests/unit/application/use-cases/features/update-feature-pinned-config.use-case.test.ts > UpdateFeaturePinnedConfigUseCase > throws when the feature is not found 2ms
+ ✓ |node| tests/unit/application/use-cases/features/update-feature-pinned-config.use-case.test.ts > UpdateFeaturePinnedConfigUseCase > throws when the feature has no current agent run reference 0ms
+ ✓ |node| tests/unit/application/use-cases/features/update-feature-pinned-config.use-case.test.ts > UpdateFeaturePinnedConfigUseCase > throws when the current agent run row does not exist 0ms
+ ✓ |node| tests/unit/application/use-cases/features/update-feature-pinned-config.use-case.test.ts > UpdateFeaturePinnedConfigUseCase > throws when the feature lifecycle and run status are not eligible for switching 0ms
+ ✓ |node| tests/unit/application/use-cases/features/update-feature-pinned-config.use-case.test.ts > UpdateFeaturePinnedConfigUseCase > throws when the agent type is unsupported 0ms
+ ✓ |node| tests/unit/application/use-cases/features/update-feature-pinned-config.use-case.test.ts > UpdateFeaturePinnedConfigUseCase > throws when the model is unsupported for the requested agent 1ms
+ ✓ |node| tests/unit/application/use-cases/features/update-feature-pinned-config.use-case.test.ts > UpdateFeaturePinnedConfigUseCase > accepts a dynamically-listed openrouter model that is not in any static list 1ms
+ ✓ |node| tests/unit/application/use-cases/features/update-feature-pinned-config.use-case.test.ts > UpdateFeaturePinnedConfigUseCase > accepts 'pending feature with pending run' as an eligible continuation state 0ms
+ ✓ |node| tests/unit/application/use-cases/features/update-feature-pinned-config.use-case.test.ts > UpdateFeaturePinnedConfigUseCase > accepts 'waiting approval run' as an eligible continuation state 0ms
+ ✓ |node| tests/unit/application/use-cases/features/update-feature-pinned-config.use-case.test.ts > UpdateFeaturePinnedConfigUseCase > accepts 'failed run' as an eligible continuation state 0ms
+ ✓ |node| tests/unit/application/use-cases/features/update-feature-pinned-config.use-case.test.ts > UpdateFeaturePinnedConfigUseCase > accepts 'interrupted run' as an eligible continuation state 0ms
+ ✓ |node| tests/unit/application/use-cases/features/update-feature-pinned-config.use-case.test.ts > UpdateFeaturePinnedConfigUseCase > updates only the current run, validates through the factory, and returns the saved config 1ms
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  13:30:07
+   Duration  128ms (transform 41ms, setup 21ms, import 42ms, tests 7ms, environment 0ms)
+

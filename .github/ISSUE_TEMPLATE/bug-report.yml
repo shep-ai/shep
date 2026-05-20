@@ -57,3 +57,42 @@ body:
       description: Screenshots, repo type, config, Node.js version, AI agent used, etc.
     validations:
       required: false
+
+  - type: dropdown
+    id: lane
+    attributes:
+      label: Lane
+      description: Which part of Shep does this affect? Drives grooming and reviewer routing.
+      options:
+        - docs
+        - agents
+        - ui
+        - cli
+        - infra
+    validations:
+      required: true
+
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Difficulty
+      description: How hard is this for someone new to the project to fix?
+      options:
+        - goodFirst
+        - easy
+        - medium
+        - hard
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: A markdown checklist describing how we know this is fixed. The contributor-onboarding agent will refine this if needed.
+      placeholder: |
+        - [ ] `shep feat new` no longer crashes with the empty-repo error
+        - [ ] Regression test added in `tests/unit/...`
+        - [ ] CHANGELOG entry under `Fixed`
+    validations:
+      required: false

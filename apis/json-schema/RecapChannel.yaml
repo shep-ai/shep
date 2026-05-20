@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RecapChannel.yaml
+type: string
+enum:
+  - file
+  - discord
+  - githubDiscussion
+description: Channel a contributor recap can be published to

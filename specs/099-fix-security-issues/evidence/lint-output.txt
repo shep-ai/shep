@@ -1,0 +1,9 @@
+$ pnpm lint
+
+> @shepai/cli@1.205.0 lint /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-security-issues
+> eslint . --max-warnings 0 --cache
+
+(no output — ESLint emits nothing with --max-warnings 0 when there are zero warnings/errors)
+
+EXIT: 0
+STATUS: PASS — lint clean with --max-warnings 0 after dep upgrades
