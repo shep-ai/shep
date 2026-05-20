@@ -1,5 +1,19 @@
 # Lessons Learned
 
+## Tool install commands must bootstrap their own package manager
+
+The `project-bedrock.json` tool definition shipped with `pipx install project-bedrock` on every platform, assuming pipx was already present. It often isn't (fresh macOS, fresh Linux dev box), and the install failed silently from the user's perspective — they saw `command not found: pipx` and reported "the tools install is broken." Two follow-on traps appeared while fixing it:
+
+1. **`python3 -m pipx` does NOT work after `brew install pipx`.** Homebrew installs pipx as a standalone binary, not as a module of the user's `python3`. Verified locally: `brew install pipx` succeeded, then `python3 -m pipx ensurepath` failed with `No module named pipx`. Always invoke the `pipx` binary directly when it's available; only fall back to `python3 -m pipx` when pipx was installed via `pip --user`.
+
+2. **Modern Linux + macOS (Sequoia + Homebrew Python) ship PEP-668 protected Python.** A plain `python3 -m pip install --user pipx` errors with `externally-managed-environment`. Always have a fallback to `--break-system-packages` for the bootstrap path, gated behind a try-without-it-first.
+
+Rules:
+
+1. Every `tools/*.json` `commands` field must bootstrap its own package manager when feasible. `pipx install X` is fine for end users with pipx; it is **not** fine inside an automated installer.
+2. After bootstrapping a tool into `~/.local/bin`, prepend that to `PATH` in the same command so the next step finds the new binary. The current shell doesn't pick up `pipx ensurepath` until next login.
+3. Test new install commands on a machine **without** the package manager preinstalled. If you only test on your dev box where the tool already exists, you'll ship the same "works on my machine" failure mode.
+
 ## When you add a settings column, the repository SQL must read AND write it
 
 Migration 104 added `feature_flag_bedrock_integration` (DEFAULT 0). The mapper (`settings.mapper.ts`) handled both directions correctly. But `sqlite-settings.repository.ts` INSERT/UPDATE statements were never updated to include the new column. Result: writes silently dropped the field, the DEFAULT-0 backfill always supplied the read value, and `bedrockIntegration: false` was *coincidentally* always correct — so tests passed. The bug only surfaced when the migration default was flipped to 1 to enable-by-default: now the column read back `true` even when the caller had explicitly passed `false`.

@@ -10,9 +10,9 @@
   "binary": "bedrock",
   "packageManager": "pipx",
   "commands": {
-    "linux": "pipx install project-bedrock",
-    "darwin": "pipx install project-bedrock",
-    "win32": "pipx install project-bedrock"
+    "linux": "(command -v pipx >/dev/null 2>&1) || python3 -m pip install --user pipx 2>/dev/null || python3 -m pip install --user --break-system-packages pipx; export PATH=\"$HOME/.local/bin:$PATH\"; pipx ensurepath; pipx install project-bedrock",
+    "darwin": "(command -v pipx >/dev/null 2>&1) || (command -v brew >/dev/null 2>&1 && brew install pipx) || python3 -m pip install --user --break-system-packages pipx; export PATH=\"$HOME/.local/bin:$PATH\"; pipx ensurepath; pipx install project-bedrock",
+    "win32": "(where pipx >NUL 2>&1 || python -m pip install --user pipx) && python -m pipx install project-bedrock"
   },
   "timeout": 300000,
   "documentationUrl": "https://github.com/robotaitai/project-bedrock",
