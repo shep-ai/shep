@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -59,13 +60,14 @@ interface NodeData extends Record<string, unknown> {
 const NODE_TYPES = { editable: EditableNode };
 
 export function AgentGraphView(props: AgentGraphViewProps) {
+  const { t } = useTranslation('web');
   if (!props.graph) {
     return (
       <p
         className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm"
         data-testid="agent-graph-empty"
       >
-        No graph descriptor registered for this agent yet.
+        {t('agentEditor.noGraphDescriptor')}
       </p>
     );
   }
@@ -225,10 +227,10 @@ function AgentGraphInner({
           <p className="text-sm font-medium">{graph.agentType}</p>
           {hasOverride ? (
             <Badge variant="default" data-testid="graph-badge-overridden">
-              Overridden
+              {t('agentEditor.overridden')}
             </Badge>
           ) : (
-            <Badge variant="secondary">Bundled</Badge>
+            <Badge variant="secondary">{t('agentEditor.bundled')}</Badge>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -243,7 +245,7 @@ function AgentGraphInner({
                 data-testid="graph-add-node"
               >
                 <Plus className="size-3" />
-                Add node
+                {t('agentEditor.addNode')}
               </Button>
               {hasOverride ? (
                 <Button
@@ -255,7 +257,7 @@ function AgentGraphInner({
                   data-testid="graph-reset"
                 >
                   <RotateCcw className="size-3" />
-                  Reset to bundled
+                  {t('agentEditor.resetToBundled')}
                 </Button>
               ) : null}
               <Button
@@ -267,7 +269,7 @@ function AgentGraphInner({
                 data-testid="graph-cancel"
               >
                 <X className="size-3" />
-                Cancel
+                {t('agentEditor.cancel')}
               </Button>
               <Button
                 type="button"
@@ -277,7 +279,7 @@ function AgentGraphInner({
                 data-testid="graph-save"
               >
                 <Save className="size-3" />
-                {isPending ? 'Saving…' : 'Save graph'}
+                {isPending ? t('agentEditor.saving') : t('agentEditor.saveGraph')}
               </Button>
             </>
           ) : (
@@ -289,7 +291,7 @@ function AgentGraphInner({
               data-testid="graph-edit"
             >
               <Pencil className="size-3" />
-              Edit
+              {t('agentEditor.edit')}
             </Button>
           )}
         </div>
@@ -302,7 +304,7 @@ function AgentGraphInner({
       ) : null}
       {savedAt && !editing ? (
         <p className="text-muted-foreground text-xs" data-testid="graph-saved">
-          Saved at {savedAt.toLocaleTimeString()}
+          {t('agentEditor.savedAt', { time: savedAt.toLocaleTimeString() })}
         </p>
       ) : null}
 

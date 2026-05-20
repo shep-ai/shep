@@ -11,6 +11,7 @@
  */
 
 import { useState, useTransition } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import type { Route } from 'next';
@@ -46,6 +47,7 @@ export function CreateAgentDialog({
   initialOpen,
   onNavigateOverride,
 }: CreateAgentDialogProps) {
+  const { t } = useTranslation('web');
   const router = useRouter();
   const [open, setOpen] = useState(Boolean(initialOpen));
   const [agentType, setAgentType] = useState('');
@@ -114,20 +116,19 @@ export function CreateAgentDialog({
       </DialogTrigger>
       <DialogContent className="max-w-xl" data-testid="create-agent-dialog">
         <DialogHeader>
-          <DialogTitle>Create custom agent</DialogTitle>
+          <DialogTitle>{t('agentEditor.createCustomAgent')}</DialogTitle>
           <DialogDescription>
-            Stand up a new agent type with its own prompt slots and editable graph. Built-in agents
-            stay untouched.
+            {t('agentEditor.createCustomAgentDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="create-agent-type">Stable type id</Label>
+            <Label htmlFor="create-agent-type">{t('agentEditor.stableTypeId')}</Label>
             <Input
               id="create-agent-type"
               data-testid="create-agent-type"
-              placeholder="e.g. code-review"
+              placeholder={t('agentEditor.stableTypeIdPlaceholder')}
               value={agentType}
               onChange={(e) => setAgentType(e.target.value.toLowerCase())}
               disabled={isPending}
@@ -141,11 +142,11 @@ export function CreateAgentDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="create-agent-name">Display name</Label>
+            <Label htmlFor="create-agent-name">{t('agentEditor.displayName')}</Label>
             <Input
               id="create-agent-name"
               data-testid="create-agent-name"
-              placeholder="e.g. Code Review Agent"
+              placeholder={t('agentEditor.displayNamePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isPending}
@@ -153,11 +154,11 @@ export function CreateAgentDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="create-agent-description">Description</Label>
+            <Label htmlFor="create-agent-description">{t('agentEditor.description')}</Label>
             <Input
               id="create-agent-description"
               data-testid="create-agent-description"
-              placeholder="What does this agent do?"
+              placeholder={t('agentEditor.descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={isPending}
@@ -165,17 +166,17 @@ export function CreateAgentDialog({
           </div>
 
           <div className="flex flex-col gap-2 rounded-md border border-dashed p-3">
-            <p className="text-sm font-medium">Seed first prompt (optional)</p>
-            <Label htmlFor="create-agent-prompt-id">Prompt slot id</Label>
+            <p className="text-sm font-medium">{t('agentEditor.seedFirstPrompt')}</p>
+            <Label htmlFor="create-agent-prompt-id">{t('agentEditor.promptSlotId')}</Label>
             <Input
               id="create-agent-prompt-id"
               data-testid="create-agent-prompt-id"
               value={promptId}
               onChange={(e) => setPromptId(e.target.value)}
               disabled={isPending}
-              placeholder="e.g. system, plan.system"
+              placeholder={t('agentEditor.promptSlotIdPlaceholder')}
             />
-            <Label htmlFor="create-agent-prompt-body">Prompt body</Label>
+            <Label htmlFor="create-agent-prompt-body">{t('agentEditor.promptBody')}</Label>
             <Textarea
               id="create-agent-prompt-body"
               data-testid="create-agent-prompt-body"
@@ -184,7 +185,7 @@ export function CreateAgentDialog({
               rows={5}
               className="font-mono text-xs"
               disabled={isPending}
-              placeholder="System prompt the agent will run with…"
+              placeholder={t('agentEditor.promptBodyPlaceholder')}
             />
           </div>
 
@@ -196,7 +197,7 @@ export function CreateAgentDialog({
 
           <DialogFooter>
             <Button type="submit" disabled={!ready} data-testid="create-agent-submit">
-              {isPending ? 'Creating…' : 'Create agent'}
+              {isPending ? t('agentEditor.creating') : t('agentEditor.createAgent')}
             </Button>
           </DialogFooter>
         </form>

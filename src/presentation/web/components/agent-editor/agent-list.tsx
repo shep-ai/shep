@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import type { Route } from 'next';
 import { Bot, ArrowRight, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -20,10 +21,11 @@ export interface AgentListProps {
 }
 
 export function AgentList({ agents }: AgentListProps) {
+  const { t } = useTranslation('web');
   if (agents.length === 0) {
     return (
       <div className="bg-muted/30 rounded-lg border border-dashed p-6">
-        <p className="text-sm font-medium">No agents registered</p>
+        <p className="text-sm font-medium">{t('agentEditor.noAgentsRegistered')}</p>
         <p className="text-muted-foreground text-sm">
           The built-in prompt registry is empty — register slots in
           <code className="bg-muted mx-1 rounded px-1 py-0.5 text-xs">
