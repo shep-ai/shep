@@ -20,6 +20,13 @@ export function createDeleteCommand(): Command {
     .description(t('cli:commands.agent.delete.description'))
     .argument('<id>', t('cli:commands.agent.delete.idArgument'))
     .option('--force', t('cli:commands.agent.delete.forceOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep agent delete a1b2c3d4 Delete run record
+  $ shep agent delete --force abc123 Force-delete a running agent`
+    )
     .action(async (id: string, opts: { force?: boolean }) => {
       try {
         const resolved = await resolveAgentRun(id);

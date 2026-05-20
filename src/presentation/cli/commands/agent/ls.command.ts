@@ -26,7 +26,13 @@ function isProcessAlive(pid: number): boolean {
 
 export function createLsCommand(): Command {
   const t = getCliI18n().t;
-  return new Command('ls').description(t('cli:commands.agent.ls.description')).action(async () => {
+  return new Command('ls').description(t('cli:commands.agent.ls.description')).addHelpText(
+    'after',
+    `
+Examples:
+  $ shep agent ls              List all agent runs
+  $ shep agent ls              Inspect output, find stuck runs`
+  ).action(async () => {
     try {
       const useCase = container.resolve(ListAgentRunsUseCase);
       const agentRuns = await useCase.execute();
