@@ -23,6 +23,14 @@ export function createStatusCommand(): Command {
     .requiredOption('--scope <type>', 'Scope type: global, repo, or app')
     .option('--scope-id <id>', 'Scope identifier (app or repo UUID; omit for global)')
     .option('--feature <id>', 'Feature id for a per-feature override')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep supervisor status --scope global
+  $ shep supervisor status --scope app --scope-id <app-id>
+  $ shep supervisor status --scope repo --scope-id <repo-id> --feature <feature-id>`
+    )
     .action(async (options: StatusOptions) => {
       try {
         const useCase = container.resolve(GetSupervisorPolicyUseCase);

@@ -23,6 +23,13 @@ export function createRejectCommand(): Command {
     .requiredOption('--run <id>', 'Agent run id to reject')
     .requiredOption('--reason <text>', 'Reason for rejection')
     .option('--supervisor-id <id>', 'Supervisor identity for the audit trail', 'cli')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep supervisor reject --run <run-id> --reason "Unsafe tool call"
+  $ shep supervisor reject --run <run-id> --reason "Missing test coverage" --supervisor-id cli`
+    )
     .action(async (options: RejectOptions) => {
       try {
         const actor = supervisorActor(options.supervisorId ?? 'cli');

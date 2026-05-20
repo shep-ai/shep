@@ -24,6 +24,13 @@ export function createApproveCommand(): Command {
     .description('Approve a waiting agent run as the supervisor')
     .requiredOption('--run <id>', 'Agent run id to approve')
     .option('--supervisor-id <id>', 'Supervisor identity for the audit trail', 'cli')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep supervisor approve --run <run-id>
+  $ shep supervisor approve --run <run-id> --supervisor-id cli`
+    )
     .action(async (options: ApproveOptions) => {
       try {
         const actor = supervisorActor(options.supervisorId ?? 'cli');

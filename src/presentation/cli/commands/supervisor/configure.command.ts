@@ -31,6 +31,14 @@ export function createConfigureCommand(): Command {
     .requiredOption('--scope <type>', 'Scope type: global, repo, or app')
     .option('--scope-id <id>', 'Scope identifier (app or repo UUID; omit for global)')
     .option('--feature <id>', 'Feature id for a per-feature override')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep supervisor configure --scope global --autonomy advisory
+  $ shep supervisor configure --scope app --scope-id <app-id> --autonomy delegated
+  $ shep supervisor configure --scope repo --scope-id <repo-id> --model gpt-4o`
+    )
     .addOption(
       new Option('--autonomy <level>', 'Default autonomy level')
         .choices(AUTONOMY_VALUES)
