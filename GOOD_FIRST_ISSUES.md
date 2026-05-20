@@ -20,6 +20,8 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full flow.
 
 ---
 
+<!-- good-first-issues:start -->
+
 ## docs lane
 
 *Documentation, READMEs, JSDoc, contributor docs, lessons.*
@@ -109,6 +111,8 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full flow.
 ### medium
 
 - [#625 — auto-regenerate GOOD_FIRST_ISSUES.md from live GitHub labels](https://github.com/shep-ai/shep/issues/625)
+
+<!-- good-first-issues:end -->
 
 ---
 

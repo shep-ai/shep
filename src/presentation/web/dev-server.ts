@@ -49,7 +49,12 @@ import {
   initializeMonthlyRecapWatcher,
   getMonthlyRecapWatcher,
 } from '@/infrastructure/services/contributors/monthly-recap-watcher.service.js';
+import {
+  initializeGoodFirstIssuesDocWatcher,
+  getGoodFirstIssuesDocWatcher,
+} from '@/infrastructure/services/contributors/good-first-issues-doc-watcher.service.js';
 import { DetectStaleGoodFirstIssueUseCase } from '@/application/use-cases/contributors/detect-stale-good-first-issue.use-case.js';
+import { RegenerateGoodFirstIssuesDocUseCase } from '@/application/use-cases/contributors/regenerate-good-first-issues-doc.use-case.js';
 import { GenerateMonthlyRecapUseCase } from '@/application/use-cases/contributors/generate-monthly-recap.use-case.js';
 import { PublishMonthlyRecapUseCase } from '@/application/use-cases/contributors/publish-monthly-recap.use-case.js';
 import type { IRepositoryRepository } from '@/application/ports/output/repositories/repository-repository.interface.js';
@@ -175,6 +180,8 @@ async function main() {
       'IGitHubRepositoryService'
     );
     const desktopNotifier = container.resolve<IDesktopNotifier>('IDesktopNotifier');
+    const workspaceRoot =
+      process.env.SHEP_INSTANCE_PATH ?? process.env.NEXT_PUBLIC_SHEP_INSTANCE_PATH ?? process.cwd();
     initializeStaleGoodFirstIssueWatcher(
       container.resolve(DetectStaleGoodFirstIssueUseCase),
       repositoryRepo,
@@ -187,6 +194,13 @@ async function main() {
       publish: container.resolve(PublishMonthlyRecapUseCase),
     });
     getMonthlyRecapWatcher().start();
+    initializeGoodFirstIssuesDocWatcher(
+      container.resolve(RegenerateGoodFirstIssuesDocUseCase),
+      repositoryRepo,
+      githubRepoService,
+      workspaceRoot
+    );
+    getGoodFirstIssuesDocWatcher().start();
   } catch (error) {
     console.warn('[dev-server] DI initialization failed — features will be empty:', error);
   }
@@ -264,6 +278,11 @@ async function main() {
       }
       try {
         getMonthlyRecapWatcher().stop();
+      } catch {
+        /* not initialized */
+      }
+      try {
+        getGoodFirstIssuesDocWatcher().stop();
       } catch {
         /* not initialized */
       }

@@ -45,7 +45,12 @@ import {
   initializeMonthlyRecapWatcher,
   getMonthlyRecapWatcher,
 } from '@/infrastructure/services/contributors/monthly-recap-watcher.service.js';
+import {
+  initializeGoodFirstIssuesDocWatcher,
+  getGoodFirstIssuesDocWatcher,
+} from '@/infrastructure/services/contributors/good-first-issues-doc-watcher.service.js';
 import { DetectStaleGoodFirstIssueUseCase } from '@/application/use-cases/contributors/detect-stale-good-first-issue.use-case.js';
+import { RegenerateGoodFirstIssuesDocUseCase } from '@/application/use-cases/contributors/regenerate-good-first-issues-doc.use-case.js';
 import { GenerateMonthlyRecapUseCase } from '@/application/use-cases/contributors/generate-monthly-recap.use-case.js';
 import { PublishMonthlyRecapUseCase } from '@/application/use-cases/contributors/publish-monthly-recap.use-case.js';
 import type { IVersionService } from '@/application/ports/output/services/version-service.interface.js';
@@ -109,6 +114,10 @@ export function createServeCommand(): Command {
           'IGitHubRepositoryService'
         );
         const desktopNotifier = container.resolve<IDesktopNotifier>('IDesktopNotifier');
+        const workspaceRoot =
+          process.env.SHEP_INSTANCE_PATH ??
+          process.env.NEXT_PUBLIC_SHEP_INSTANCE_PATH ??
+          process.cwd();
         initializeStaleGoodFirstIssueWatcher(
           container.resolve(DetectStaleGoodFirstIssueUseCase),
           repositoryRepo,
@@ -121,6 +130,13 @@ export function createServeCommand(): Command {
           publish: container.resolve(PublishMonthlyRecapUseCase),
         });
         getMonthlyRecapWatcher().start();
+        initializeGoodFirstIssuesDocWatcher(
+          container.resolve(RegenerateGoodFirstIssuesDocUseCase),
+          repositoryRepo,
+          githubRepoService,
+          workspaceRoot
+        );
+        getGoodFirstIssuesDocWatcher().start();
 
         // Graceful shutdown handler — identical pattern to ui.command.ts
         let isShuttingDown = false;
@@ -136,6 +152,7 @@ export function createServeCommand(): Command {
           getAutoArchiveWatcher().stop();
           getStaleGoodFirstIssueWatcher().stop();
           getMonthlyRecapWatcher().stop();
+          getGoodFirstIssuesDocWatcher().stop();
           const deploymentService = container.resolve<IDeploymentService>('IDeploymentService');
           deploymentService.stopAll();
           await service.stop();

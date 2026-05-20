@@ -17,6 +17,7 @@ function fetcherReturning(issue: ExternalIssue): IExternalIssueFetcher {
     getMergedPrCount: vi.fn(),
     listIssuesByLabel: vi.fn(),
     listIssuesByLabels: vi.fn(),
+    listOpenByLabels: vi.fn(),
   };
 }
 

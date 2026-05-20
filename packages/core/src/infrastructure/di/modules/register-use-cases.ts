@@ -78,6 +78,7 @@ import { RunDoctorUseCase } from '../../../application/use-cases/doctor/run-doct
 // Contributor onboarding (feature 097) read use cases — wired for the web view
 import { GetContributorLeaderboardUseCase } from '../../../application/use-cases/contributors/get-contributor-leaderboard.use-case.js';
 import { GetCuratedIssuesByLaneUseCase } from '../../../application/use-cases/contributors/get-curated-issues-by-lane.use-case.js';
+import { RegenerateGoodFirstIssuesDocUseCase } from '../../../application/use-cases/contributors/regenerate-good-first-issues-doc.use-case.js';
 
 // Code review (feature 090) use cases
 import { RunCodeReviewUseCase } from '../../../application/use-cases/code-review/run-code-review.use-case.js';
@@ -202,6 +203,7 @@ export function registerUseCases(container: DependencyContainer): void {
   // ─── Contributor onboarding (feature 097) read use cases ───────────────
   container.registerSingleton(GetContributorLeaderboardUseCase);
   container.registerSingleton(GetCuratedIssuesByLaneUseCase);
+  container.registerSingleton(RegenerateGoodFirstIssuesDocUseCase);
 
   // ─── Code review (feature 090) use cases ────────────────────────────────
   container.registerSingleton(RunCodeReviewUseCase);
@@ -499,5 +501,8 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('GetCuratedIssuesByLaneUseCase', {
     useFactory: (c) => c.resolve(GetCuratedIssuesByLaneUseCase),
+  });
+  container.register('RegenerateGoodFirstIssuesDocUseCase', {
+    useFactory: (c) => c.resolve(RegenerateGoodFirstIssuesDocUseCase),
   });
 }

@@ -7,6 +7,21 @@
 
 export interface IFileSystemService {
   /**
+   * Read a UTF-8 text file.
+   *
+   * @param filePath - Absolute path to the file to read
+   */
+  readTextFile(filePath: string): Promise<string>;
+
+  /**
+   * Write a UTF-8 text file, replacing its previous contents.
+   *
+   * @param filePath - Absolute path to the file to write
+   * @param contents - UTF-8 text contents
+   */
+  writeTextFile(filePath: string, contents: string): Promise<void>;
+
+  /**
    * Recursively remove a directory and all its contents.
    *
    * Idempotent: succeeds silently if the path does not exist.

@@ -82,9 +82,19 @@ vi.mock('@/infrastructure/services/contributors/monthly-recap-watcher.service.js
   initializeMonthlyRecapWatcher: vi.fn(),
   getMonthlyRecapWatcher: vi.fn().mockReturnValue({ start: vi.fn(), stop: vi.fn() }),
 }));
+vi.mock('@/infrastructure/services/contributors/good-first-issues-doc-watcher.service.js', () => ({
+  initializeGoodFirstIssuesDocWatcher: vi.fn(),
+  getGoodFirstIssuesDocWatcher: vi.fn().mockReturnValue({ start: vi.fn(), stop: vi.fn() }),
+}));
 vi.mock('@/application/use-cases/contributors/detect-stale-good-first-issue.use-case.js', () => ({
   DetectStaleGoodFirstIssueUseCase: vi.fn(),
 }));
+vi.mock(
+  '@/application/use-cases/contributors/regenerate-good-first-issues-doc.use-case.js',
+  () => ({
+    RegenerateGoodFirstIssuesDocUseCase: vi.fn(),
+  })
+);
 vi.mock('@/application/use-cases/contributors/generate-monthly-recap.use-case.js', () => ({
   GenerateMonthlyRecapUseCase: vi.fn(),
 }));

@@ -147,6 +147,14 @@ export class GitHubIssueFetcher implements IExternalIssueFetcher {
     }
   }
 
+  async listOpenByLabels(
+    owner: string,
+    repo: string,
+    labels: readonly string[]
+  ): Promise<ExternalIssueSummary[]> {
+    return this.listIssuesByLabels(owner, repo, labels);
+  }
+
   private parseRef(ref: string): { issueNumber: string; repo?: string } {
     const fullMatch = ref.match(/^([^#]+)#(\d+)$/);
     if (fullMatch) {

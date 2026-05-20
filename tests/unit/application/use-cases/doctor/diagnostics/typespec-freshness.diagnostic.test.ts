@@ -11,6 +11,10 @@ import { existsSync } from 'node:fs';
 
 function makeFs(): IFileSystemService {
   return {
+    readTextFile: async () => '',
+    writeTextFile: async () => {
+      /* unused */
+    },
     pathExists: (p: string) => existsSync(p),
     removeDirectory: async () => {
       /* unused */

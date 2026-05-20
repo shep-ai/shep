@@ -33,6 +33,7 @@ function fakeFetcher(items: ExternalIssueSummary[]): IExternalIssueFetcher {
     getMergedPrCount: vi.fn(),
     listIssuesByLabel: vi.fn(),
     listIssuesByLabels: vi.fn().mockResolvedValue(items),
+    listOpenByLabels: vi.fn(),
   };
 }
 

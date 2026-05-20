@@ -48,7 +48,12 @@ import {
   initializeMonthlyRecapWatcher,
   getMonthlyRecapWatcher,
 } from '@/infrastructure/services/contributors/monthly-recap-watcher.service.js';
+import {
+  initializeGoodFirstIssuesDocWatcher,
+  getGoodFirstIssuesDocWatcher,
+} from '@/infrastructure/services/contributors/good-first-issues-doc-watcher.service.js';
 import { DetectStaleGoodFirstIssueUseCase } from '@/application/use-cases/contributors/detect-stale-good-first-issue.use-case.js';
+import { RegenerateGoodFirstIssuesDocUseCase } from '@/application/use-cases/contributors/regenerate-good-first-issues-doc.use-case.js';
 import { GenerateMonthlyRecapUseCase } from '@/application/use-cases/contributors/generate-monthly-recap.use-case.js';
 import { PublishMonthlyRecapUseCase } from '@/application/use-cases/contributors/publish-monthly-recap.use-case.js';
 import { getExistingConnection } from '@/infrastructure/persistence/sqlite/connection.js';
@@ -137,6 +142,10 @@ Examples:
           'IGitHubRepositoryService'
         );
         const desktopNotifier = container.resolve<IDesktopNotifier>('IDesktopNotifier');
+        const workspaceRoot =
+          process.env.SHEP_INSTANCE_PATH ??
+          process.env.NEXT_PUBLIC_SHEP_INSTANCE_PATH ??
+          process.cwd();
         initializeStaleGoodFirstIssueWatcher(
           container.resolve(DetectStaleGoodFirstIssueUseCase),
           repositoryRepo,
@@ -149,6 +158,13 @@ Examples:
           publish: container.resolve(PublishMonthlyRecapUseCase),
         });
         getMonthlyRecapWatcher().start();
+        initializeGoodFirstIssuesDocWatcher(
+          container.resolve(RegenerateGoodFirstIssuesDocUseCase),
+          repositoryRepo,
+          githubRepoService,
+          workspaceRoot
+        );
+        getGoodFirstIssuesDocWatcher().start();
 
         const baseUrl = `http://localhost:${port}`;
         messages.success(t('cli:commands.ui.serverReady', { url: fmt.code(baseUrl) }));
@@ -179,6 +195,7 @@ Examples:
           getAutoArchiveWatcher().stop();
           getStaleGoodFirstIssueWatcher().stop();
           getMonthlyRecapWatcher().stop();
+          getGoodFirstIssuesDocWatcher().stop();
           await service.stop();
           process.exit(0);
         };

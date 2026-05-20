@@ -29,7 +29,8 @@ export type ContributorActionKind =
   | 'discord-post'
   | 'recap-publish-file'
   | 'recap-publish-discord'
-  | 'recap-publish-github-discussion';
+  | 'recap-publish-github-discussion'
+  | 'good-first-issues-doc-write';
 
 export interface ContributorGateInput {
   /** Kind of action being gated. */

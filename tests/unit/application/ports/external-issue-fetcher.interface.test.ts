@@ -40,6 +40,7 @@ describe('IExternalIssueFetcher type contracts', () => {
       getMergedPrCount: async () => 0,
       listIssuesByLabel: async () => [],
       listIssuesByLabels: async () => [],
+      listOpenByLabels: async () => [],
     };
     expect(mockFetcher.fetchGitHubIssue).toBeDefined();
     expect(mockFetcher.fetchJiraTicket).toBeDefined();

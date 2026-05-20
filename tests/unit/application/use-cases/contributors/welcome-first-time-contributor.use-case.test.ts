@@ -19,6 +19,7 @@ function makeFetcher(mergedCount: number): IExternalIssueFetcher {
     getMergedPrCount: vi.fn().mockResolvedValue(mergedCount),
     listIssuesByLabel: vi.fn(),
     listIssuesByLabels: vi.fn(),
+    listOpenByLabels: vi.fn(),
   };
 }
 

@@ -71,6 +71,8 @@ function createDeps() {
   };
 
   const fileSystem: IFileSystemService = {
+    readTextFile: vi.fn().mockResolvedValue(''),
+    writeTextFile: vi.fn().mockResolvedValue(undefined),
     removeDirectory: vi.fn().mockResolvedValue(undefined),
     pathExists: vi.fn().mockReturnValue(true),
   };

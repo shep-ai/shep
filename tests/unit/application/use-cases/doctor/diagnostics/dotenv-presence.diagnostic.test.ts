@@ -8,6 +8,8 @@ import { DiagnosticStatus } from '@/domain/generated/output.js';
 
 function makeFs(exists: boolean): IFileSystemService {
   return {
+    readTextFile: vi.fn().mockResolvedValue(''),
+    writeTextFile: vi.fn().mockResolvedValue(undefined),
     pathExists: vi.fn().mockReturnValue(exists),
     removeDirectory: vi.fn(),
   };

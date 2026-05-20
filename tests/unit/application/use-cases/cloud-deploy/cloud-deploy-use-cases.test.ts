@@ -104,6 +104,12 @@ class FakeRegistry implements ICloudDeploymentProviderRegistry {
 
 class FakeFs implements IFileSystemService {
   constructor(public existingPaths = new Set<string>()) {}
+  async readTextFile(): Promise<string> {
+    return '';
+  }
+  async writeTextFile(): Promise<void> {
+    /* no-op for tests */
+  }
   async removeDirectory(): Promise<void> {
     /* no-op for tests */
   }

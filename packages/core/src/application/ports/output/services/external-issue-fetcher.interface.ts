@@ -93,6 +93,16 @@ export interface IExternalIssueFetcher {
     repo: string,
     labels: readonly string[]
   ): Promise<ExternalIssueSummary[]>;
+
+  /**
+   * Alias for listing open GitHub issues carrying ALL labels. Named for
+   * cadence-driven document regeneration callers.
+   */
+  listOpenByLabels(
+    owner: string,
+    repo: string,
+    labels: readonly string[]
+  ): Promise<ExternalIssueSummary[]>;
 }
 
 /**
