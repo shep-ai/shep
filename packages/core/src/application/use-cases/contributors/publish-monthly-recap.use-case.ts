@@ -23,19 +23,58 @@ import type {
   RecapTarget,
 } from '../../ports/output/services/recap-publisher.interface.js';
 
+/**
+ * Recap artifact and per-channel destinations requested for publication.
+ */
 export interface PublishMonthlyRecapInput {
+  /** Rendered monthly recap to publish. */
   artifact: RecapArtifact;
   /** Per-channel target descriptors. Channels missing here are skipped. */
   targets: readonly RecapTarget[];
 }
 
+/**
+ * Per-channel publication outcome returned after gating and publisher execution.
+ */
 export type ChannelOutcome =
-  | { channel: RecapChannel; status: 'published'; reference: string }
-  | { channel: RecapChannel; status: 'denied'; rationale: string }
-  | { channel: RecapChannel; status: 'failed'; error: string }
-  | { channel: RecapChannel; status: 'skipped'; reason: string };
+  | {
+      /** Channel whose publisher completed successfully. */
+      channel: RecapChannel;
+      /** Terminal status indicating the publisher returned a reference. */
+      status: 'published';
+      /** Channel-specific identifier or URL returned by the publisher. */
+      reference: string;
+    }
+  | {
+      /** Channel blocked by `IContributorActionGate`. */
+      channel: RecapChannel;
+      /** Terminal status indicating supervisor gating denied publication. */
+      status: 'denied';
+      /** Human-readable reason returned by the gate. */
+      rationale: string;
+    }
+  | {
+      /** Channel whose publisher or gate threw unexpectedly. */
+      channel: RecapChannel;
+      /** Terminal status indicating publication failed after being attempted. */
+      status: 'failed';
+      /** Error message normalized from the thrown reason. */
+      error: string;
+    }
+  | {
+      /** Channel with no registered publisher implementation. */
+      channel: RecapChannel;
+      /** Terminal status indicating no publication attempt was made. */
+      status: 'skipped';
+      /** Human-readable reason the target was skipped. */
+      reason: string;
+    };
 
+/**
+ * Aggregate publication result preserving one outcome per requested target.
+ */
 export interface PublishMonthlyRecapResult {
+  /** Outcomes ordered to match the requested targets. */
   outcomes: readonly ChannelOutcome[];
 }
 

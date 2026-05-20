@@ -21,6 +21,9 @@ import type { RecapArtifact } from '../../ports/output/services/recap-publisher.
 
 const YEAR_MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
+/**
+ * Query parameters for building a contributor recap for one UTC month.
+ */
 export interface GenerateMonthlyRecapInput {
   /** UTC year-month bucket (e.g. `2026-04`). */
   yearMonth: string;
@@ -28,16 +31,29 @@ export interface GenerateMonthlyRecapInput {
   projectName?: string;
 }
 
+/**
+ * Aggregate counters and highlights computed for a monthly contributor recap.
+ */
 export interface RecapStats {
+  /** Count of recognition events included in the month. */
   totalEvents: number;
+  /** Count of first-PR or first-issue recognitions in the month. */
   newContributors: number;
+  /** Count of PR-based recognitions in the month. */
   prsRecognized: number;
+  /** Lane with the most recognized contributors, when contributors have lane data. */
   topLane?: ContributorLane;
+  /** GitHub login with the most recognition events in the month. */
   topContributorLogin?: string;
 }
 
+/**
+ * Rendered recap artifact plus the stats used to produce and summarize it.
+ */
 export interface GenerateMonthlyRecapResult {
+  /** Markdown recap artifact ready for downstream publishers. */
   artifact: RecapArtifact;
+  /** Aggregate statistics for dashboard display and recap metadata. */
   stats: RecapStats;
 }
 

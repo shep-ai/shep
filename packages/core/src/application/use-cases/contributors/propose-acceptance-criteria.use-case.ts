@@ -25,6 +25,9 @@ const SYSTEM_PROMPT = [
 
 const MIN_CRITERIA = 2;
 
+/**
+ * Issue text used by the agent to generate acceptance criteria.
+ */
 export interface ProposeAcceptanceCriteriaInput {
   /** Issue body — natural language; agent grounds criteria on this only. */
   body: string;
@@ -32,6 +35,9 @@ export interface ProposeAcceptanceCriteriaInput {
   title?: string;
 }
 
+/**
+ * Normalized acceptance criteria returned as both a list and markdown block.
+ */
 export interface ProposeAcceptanceCriteriaResult {
   /** Markdown checklist (joined with newlines) ready to paste into an issue. */
   markdown: string;

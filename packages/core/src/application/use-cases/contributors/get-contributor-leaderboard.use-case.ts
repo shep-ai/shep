@@ -22,23 +22,43 @@ import type {
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
 
+/**
+ * Leaderboard query scope and optional row limit.
+ */
 export interface GetContributorLeaderboardInput {
+  /** Time window for repository aggregation, for example month or all-time. */
   scope: ContributorLeaderboardScope;
+  /** Maximum number of rows to return; defaults to 10 and is capped at 100. */
   limit?: number;
 }
 
+/**
+ * Display-ready contributor row for leaderboard UI and API consumers.
+ */
 export interface ContributorLeaderboardEntry {
+  /** GitHub login for the contributor. */
   login: string;
+  /** Optional display name from the contributor profile. */
   displayName?: string;
+  /** Optional avatar URL suitable for browser display. */
   avatarUrl?: string;
+  /** Number of merged pull requests counted for the selected scope. */
   prCount: number;
+  /** Current contributor ladder level. */
   level: ContributorLevel;
+  /** Primary contributor lane, when known. */
   lane?: ContributorLane;
 }
 
+/**
+ * Leaderboard result with the effective scope, limit, and ordered entries.
+ */
 export interface GetContributorLeaderboardResult {
+  /** Scope used for repository aggregation. */
   scope: ContributorLeaderboardScope;
+  /** Effective row limit after defaulting and clamping. */
   limit: number;
+  /** Ordered leaderboard entries, highest PR count first. */
   entries: readonly ContributorLeaderboardEntry[];
 }
 

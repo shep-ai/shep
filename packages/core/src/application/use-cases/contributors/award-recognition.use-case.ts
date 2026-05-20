@@ -33,9 +33,15 @@ const CONTRIBUTOR_THRESHOLD_PRS = 1;
 const CORE_THRESHOLD_PRS = 5;
 const MAINTAINER_THRESHOLD_PRS = 25;
 
+/**
+ * Command input for recording a recognition event for one contributor.
+ */
 export interface AwardRecognitionInput {
+  /** Stable contributor UUID that must already exist in the contributor repository. */
   contributorId: string;
+  /** Recognition category that drives idempotency and all-contributors contribution type. */
   kind: RecognitionKind;
+  /** GitHub pull request number associated with PR-based recognition; repository-local count. */
   prNumber: number;
   /** ISO 8601 timestamp the recognition occurred at. Defaults to "now". */
   occurredAt?: string;
@@ -43,7 +49,11 @@ export interface AwardRecognitionInput {
   monthRecapId?: string;
 }
 
+/**
+ * Outcome of an attempted recognition insert and any resulting contributor mutation.
+ */
 export interface AwardRecognitionResult {
+  /** True only when the recognition row was newly inserted, not replayed. */
   awarded: boolean;
   /** Recognition event row — only meaningful when `awarded` is true. */
   event?: RecognitionEvent;
@@ -122,6 +132,9 @@ function isPrKind(kind: RecognitionKind): boolean {
   return kind === RecognitionKind.FirstPR || kind === RecognitionKind.NthPR;
 }
 
+/**
+ * Returns the highest contributor ladder level reached by the current level and PR count.
+ */
 export function nextLevel(current: ContributorLevel, prCount: number): ContributorLevel {
   if (prCount >= MAINTAINER_THRESHOLD_PRS)
     return highestLevel(current, ContributorLevel.Maintainer);

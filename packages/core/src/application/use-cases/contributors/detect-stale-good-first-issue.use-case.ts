@@ -16,10 +16,19 @@ import type {
 
 const DEFAULT_STALE_DAYS = 30;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Canonical label queried when looking for stale newcomer-friendly issues.
+ */
 export const GOOD_FIRST_ISSUE_LABEL = 'good-first-issue';
 
+/**
+ * Repository and threshold parameters for stale good-first-issue detection.
+ */
 export interface DetectStaleGoodFirstIssueInput {
+  /** GitHub repository owner or organization login. */
   owner: string;
+  /** GitHub repository name within `owner`. */
   repo: string;
   /** Stale threshold in days. Defaults to 30. Must be > 0. */
   staleDays?: number;
@@ -27,11 +36,19 @@ export interface DetectStaleGoodFirstIssueInput {
   now?: Date;
 }
 
+/**
+ * Good-first issue whose last activity is at or older than the stale cutoff.
+ */
 export interface StaleIssue {
+  /** GitHub repository owner or organization login. */
   owner: string;
+  /** GitHub repository name within `owner`. */
   repo: string;
+  /** GitHub issue number scoped to the repository. */
   issueNumber: number;
+  /** Current issue title returned by the external issue fetcher. */
   title: string;
+  /** Browser URL for the issue. */
   url: string;
   /** ISO 8601 timestamp the fetcher reported as the last activity. */
   lastActivityAt: string;
@@ -39,8 +56,13 @@ export interface StaleIssue {
   staleForDays: number;
 }
 
+/**
+ * Stale issue query result with the effective threshold used for the run.
+ */
 export interface DetectStaleGoodFirstIssueResult {
+  /** Effective stale threshold in days after defaults and validation. */
   thresholdDays: number;
+  /** Issues whose last activity is outside the effective threshold. */
   stale: readonly StaleIssue[];
 }
 

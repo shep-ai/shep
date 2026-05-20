@@ -26,13 +26,21 @@ const DIFFICULTY_LABEL_HINTS: readonly (readonly [string, ContributionDifficulty
   ['hard', ContributionDifficulty.Hard],
 ];
 
+/**
+ * GitHub issue reference to fetch and groom for newcomer readiness.
+ */
 export interface GroomIssueInput {
   /** GitHub issue reference accepted by `IExternalIssueFetcher.fetchGitHubIssue`. */
   ref: string;
 }
 
+/**
+ * Pure grooming recommendation for labels, criteria, and optional welcome copy.
+ */
 export interface GroomIssueResult {
+  /** Recommended contributor lane for the issue. */
   lane: ContributorLane;
+  /** Recommended issue difficulty based on labels and body heuristics. */
   difficulty: ContributionDifficulty;
   /** Markdown checklist (joined with newlines). */
   acceptanceCriteria: string;

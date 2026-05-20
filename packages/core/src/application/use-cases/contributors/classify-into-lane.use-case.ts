@@ -17,6 +17,9 @@ import { inject, injectable } from 'tsyringe';
 import { ContributorLane } from '../../../domain/generated/output.js';
 import type { IAgentExecutorProvider } from '../../ports/output/agents/agent-executor-provider.interface.js';
 
+/**
+ * Issue content and label context used to route a contributor task to one lane.
+ */
 export interface ClassifyIntoLaneInput {
   /** Issue title — usually the strongest signal via prefix conventions. */
   title: string;
@@ -26,7 +29,11 @@ export interface ClassifyIntoLaneInput {
   existingLabels?: readonly string[];
 }
 
+/**
+ * Lane classification result, including how the decision was made.
+ */
 export interface ClassifyIntoLaneResult {
+  /** Single TypeSpec-defined lane selected for the issue. */
   lane: ContributorLane;
   /** Source of the decision — useful for audit, opt-out, and tests. */
   source: 'rules' | 'agent';

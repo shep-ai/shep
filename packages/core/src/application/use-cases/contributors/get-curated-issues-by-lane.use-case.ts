@@ -19,9 +19,15 @@ const GOOD_FIRST_ISSUE_LABEL = 'good-first-issue';
 const DEFAULT_STALE_DAYS = 30;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+/**
+ * Repository, lane, and freshness filters for curated newcomer issues.
+ */
 export interface GetCuratedIssuesByLaneInput {
+  /** GitHub repository owner or organization login. */
   owner: string;
+  /** GitHub repository name within `owner`. */
   repo: string;
+  /** Contributor lane that must be represented by issue labels. */
   lane: ContributorLane;
   /** Threshold past which an issue is considered stale and excluded. */
   staleDays?: number;
@@ -29,20 +35,35 @@ export interface GetCuratedIssuesByLaneInput {
   now?: Date;
 }
 
+/**
+ * Good-first issue prepared for the lane-specific contributor picker.
+ */
 export interface CuratedIssue {
+  /** GitHub repository owner or organization login. */
   owner: string;
+  /** GitHub repository name within `owner`. */
   repo: string;
+  /** GitHub issue number scoped to the repository. */
   issueNumber: number;
+  /** Current issue title returned by the external issue fetcher. */
   title: string;
+  /** Browser URL for the issue. */
   url: string;
+  /** Lane used to curate this issue. */
   lane: ContributorLane;
+  /** Difficulty inferred from issue labels. */
   difficulty: ContributionDifficulty;
   /** Markdown-style acceptance criteria carried verbatim if present in labels. */
   acceptanceCriteria?: string;
 }
 
+/**
+ * Curated issue result for one requested contributor lane.
+ */
 export interface GetCuratedIssuesByLaneResult {
+  /** Requested lane represented by every issue in `issues`. */
   lane: ContributorLane;
+  /** Fresh, good-first issues matching the requested lane. */
   issues: readonly CuratedIssue[];
 }
 

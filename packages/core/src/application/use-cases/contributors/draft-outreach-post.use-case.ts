@@ -24,8 +24,14 @@ const SYSTEM_PROMPT = [
   `Hard limit: ${DRAFT_TARGET_LENGTH} characters; the channel rejects anything past 2000.`,
 ].join(' ');
 
+/**
+ * Outreach prompt category used to frame the generated Discord draft.
+ */
 export type OutreachDraftKind = 'release' | 'recap' | 'milestone';
 
+/**
+ * Input facts used to draft one outbound community announcement.
+ */
 export interface DraftOutreachPostInput {
   /** Drives prompt framing — release vs recap vs milestone. */
   kind: OutreachDraftKind;
@@ -37,8 +43,13 @@ export interface DraftOutreachPostInput {
   link?: string;
 }
 
+/**
+ * Pure draft payload for the supported outreach channel.
+ */
 export interface DraftOutreachPost {
+  /** Delivery channel for v1 outreach drafts; currently Discord only. */
   channel: 'discord';
+  /** Discord-flavored markdown body capped below Discord's 2000-character hard limit. */
   body: string;
 }
 
