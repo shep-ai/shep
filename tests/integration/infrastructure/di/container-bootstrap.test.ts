@@ -84,6 +84,7 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'GetInteractiveChatStateUseCase',
   'IngestFindingsUseCase',
   'IngestSbomUseCase',
+  'IScanRunRepository',
   'IAgentRunRepository',
   'IDeploymentService',
   'IFeatureRepository',

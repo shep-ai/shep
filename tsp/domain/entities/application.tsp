@@ -13,6 +13,7 @@ import "../../common/enums/cloud-deployment.tsp";
 import "../value-objects/aspm/criticality.tsp";
 import "../value-objects/aspm/exposure.tsp";
 import "../value-objects/aspm/data-classification.tsp";
+import "../value-objects/aspm/scanner-profile.tsp";
 
 /**
  * Application Status
@@ -110,4 +111,14 @@ model Application extends SoftDeletableEntity {
 
   @doc("ASPM: business unit grouping (free-form string, used for posture rollups)")
   businessUnit?: string;
+
+  // ─── ASPM scanner (Phase 11) ────────────────────────────────────────────
+  // Per-application scanner configuration + last-scan timestamp. Defaults
+  // when absent: every stage enabled, no excludes, autoRescan on.
+
+  @doc("ASPM: per-application scanner configuration (stage toggles, excludes, schedule)")
+  scannerProfile?: ScannerProfile;
+
+  @doc("ASPM: timestamp of the last completed scan run (any status) for this application")
+  lastScannedAt?: utcDateTime;
 }

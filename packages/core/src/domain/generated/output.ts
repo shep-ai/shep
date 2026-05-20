@@ -2048,6 +2048,32 @@ export enum DataClassification {
   Confidential = "Confidential",
   Restricted = "Restricted",
 }
+export enum ScanStageName {
+  Sbom = 'sbom',
+  Sca = 'sca',
+  Secrets = 'secrets',
+  Sast = 'sast',
+  Container = 'container',
+  Iac = 'iac',
+}
+
+/**
+ * Per-application scanner configuration (stage toggles, excludes, schedule)
+ */
+export type ScannerProfile = {
+  /**
+   * Stages that should run during a scan. Empty array = scan nothing.
+   */
+  enabledStages: ScanStageName[];
+  /**
+   * Glob patterns to exclude from every stage (node_modules, dist, build artifacts)
+   */
+  pathExcludes: string[];
+  /**
+   * Whether the nightly auto-rescan scheduler should include this application
+   */
+  autoRescan: boolean;
+};
 
 /**
  * A persistent AI-powered application workspace
@@ -2141,6 +2167,14 @@ export type Application = SoftDeletableEntity & {
    * ASPM: business unit grouping (free-form string, used for posture rollups)
    */
   businessUnit?: string;
+  /**
+   * ASPM: per-application scanner configuration (stage toggles, excludes, schedule)
+   */
+  scannerProfile?: ScannerProfile;
+  /**
+   * ASPM: timestamp of the last completed scan run (any status) for this application
+   */
+  lastScannedAt?: any;
 };
 
 /**
@@ -3718,6 +3752,93 @@ export type AiChangeRiskSignal = SoftDeletableEntity & {
    * When the signal was resolved, dismissed, or graduated
    */
   resolvedAt?: any;
+};
+export enum ScanTrigger {
+  User = 'User',
+  Schedule = 'Schedule',
+  Event = 'Event',
+}
+export enum ScanStatus {
+  Pending = 'Pending',
+  Running = 'Running',
+  Succeeded = 'Succeeded',
+  Failed = 'Failed',
+  Partial = 'Partial',
+}
+export enum ScanStageStatus {
+  Pending = 'Pending',
+  Running = 'Running',
+  Succeeded = 'Succeeded',
+  Failed = 'Failed',
+  Skipped = 'Skipped',
+}
+
+/**
+ * One stage of a ScanRun, with timing + outcome metadata
+ */
+export type ScanStage = {
+  /**
+   * Which stage this is (sbom/sca/secrets/sast/container/iac)
+   */
+  name: ScanStageName;
+  /**
+   * Lifecycle state of this stage
+   */
+  status: ScanStageStatus;
+  /**
+   * When this stage transitioned to Running
+   */
+  startedAt?: any;
+  /**
+   * When this stage transitioned to a terminal state
+   */
+  finishedAt?: any;
+  /**
+   * Number of findings this stage produced (after dedup)
+   */
+  findingsCount?: number;
+  /**
+   * Number of components this stage produced (only meaningful for sbom)
+   */
+  componentsCount?: number;
+  /**
+   * Short human-readable error summary when status=Failed
+   */
+  errorMessage?: string;
+};
+
+/**
+ * A single execution of the ASPM scanner over one application
+ */
+export type ScanRun = BaseEntity & {
+  /**
+   * Application this scan targeted
+   */
+  applicationId: UUID;
+  /**
+   * Origin of this scan invocation
+   */
+  triggeredBy: ScanTrigger;
+  /**
+   * Lifecycle state of the run
+   */
+  status: ScanStatus;
+  /**
+   * When the run transitioned to Running
+   */
+  startedAt: any;
+  /**
+   * When the run transitioned to a terminal state (Succeeded/Failed/Partial)
+   */
+  finishedAt?: any;
+  /**
+   * Per-stage progress. Order matches ScannerProfile.enabledStages.
+   */
+  stages: ScanStage[];
+  /**
+   * Total findings produced across all stages of this run (after dedup)
+   */
+  findingsCount: number;
 };
 
 /**

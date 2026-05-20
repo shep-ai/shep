@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ScanStageStatus.yaml
+type: string
+enum:
+  - Pending
+  - Running
+  - Succeeded
+  - Failed
+  - Skipped
+description: Lifecycle state of a single scan stage within a ScanRun

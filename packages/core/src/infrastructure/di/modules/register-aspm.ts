@@ -36,6 +36,7 @@ import type { ITeamRepository } from '../../../application/ports/output/reposito
 
 import type { IAiChangeRiskSignalRepository } from '../../../application/ports/output/repositories/ai-change-risk-signal-repository.interface.js';
 import type { IComplianceControlRepository } from '../../../application/ports/output/repositories/compliance-control-repository.interface.js';
+import type { IScanRunRepository } from '../../../application/ports/output/repositories/scan-run-repository.interface.js';
 
 // Service ports
 import type { IExploitIntelPort } from '../../../application/ports/output/services/exploit-intel-port.interface.js';
@@ -43,6 +44,8 @@ import type { IFindingIngestPort } from '../../../application/ports/output/servi
 import type { IOwnershipYamlReader } from '../../../application/ports/output/services/ownership-yaml-reader.interface.js';
 import type { ISbomPort } from '../../../application/ports/output/services/sbom-port.interface.js';
 import type { ISlaClockPort } from '../../../application/ports/output/services/sla-clock-port.interface.js';
+import type { IOsvVulnerabilityPort } from '../../../application/ports/output/services/osv-vulnerability-port.interface.js';
+import type { IGitOwnershipPort } from '../../../application/ports/output/services/git-ownership-port.interface.js';
 
 // Concrete repositories
 import { SQLiteApiAssetRepository } from '../../repositories/aspm/sqlite-api-asset-repository.js';
@@ -58,6 +61,7 @@ import { SQLiteServiceRepository } from '../../repositories/aspm/sqlite-service-
 import { SQLiteTeamRepository } from '../../repositories/aspm/sqlite-team-repository.js';
 import { SQLiteAiChangeRiskSignalRepository } from '../../repositories/aspm/sqlite-ai-change-risk-signal-repository.js';
 import { SQLiteComplianceControlRepository } from '../../repositories/aspm/sqlite-compliance-control-repository.js';
+import { SQLiteScanRunRepository } from '../../repositories/aspm/sqlite-scan-run-repository.js';
 
 // Concrete services
 import { CycloneDxSbomAdapter } from '../../services/aspm/cyclonedx-sbom-adapter.js';
@@ -66,6 +70,9 @@ import { OwnershipYamlReader } from '../../services/aspm/ownership-yaml-reader.j
 import { SarifIngestAdapter } from '../../services/aspm/sarif-ingest-adapter.js';
 import { SystemSlaClock } from '../../services/aspm/system-sla-clock.js';
 import { NoOpAiChangeRiskSignalRepository } from '../../services/aspm/noop-ai-change-risk-signal-repository.js';
+import { OsvVulnerabilityAdapter } from '../../services/aspm/osv-vulnerability-adapter.js';
+import { GitOwnershipAdapter } from '../../services/aspm/git-ownership-adapter.js';
+import { join } from 'node:path';
 
 // Use cases
 import { AssignOwnerUseCase } from '../../../application/use-cases/aspm/ownership/assign-owner.js';
@@ -139,6 +146,10 @@ export function registerAspm(container: DependencyContainer): void {
   // Phase 9 — Compliance Surface
   registerPhase9Repositories(container);
   registerPhase9UseCases(container);
+
+  // Phase 11 — Native Scanning (replaces upload-driven ingest)
+  registerPhase11Repositories(container);
+  registerPhase11Services(container);
 
   // String-token aliases so web pages can resolve via type-only imports
   // (matches the project convention used by register-use-cases.ts and avoids
@@ -340,6 +351,30 @@ function registerPhase9UseCases(container: DependencyContainer): void {
   });
 }
 
+function registerPhase11Repositories(container: DependencyContainer): void {
+  container.register<IScanRunRepository>(ASPM_TOKENS.IScanRunRepository, {
+    useFactory: (c) => new SQLiteScanRunRepository(c.resolve<Database.Database>('Database')),
+  });
+}
+
+function defaultOsvCacheDir(): string {
+  const home = process.env.SHEP_HOME ?? join(process.env.HOME ?? '.', '.shep');
+  return join(home, 'cache', 'osv');
+}
+
+function registerPhase11Services(container: DependencyContainer): void {
+  container.register<IOsvVulnerabilityPort>(ASPM_TOKENS.IOsvVulnerabilityPort, {
+    useFactory: () =>
+      new OsvVulnerabilityAdapter({
+        fetch: globalThis.fetch.bind(globalThis),
+        cacheDir: defaultOsvCacheDir(),
+      }),
+  });
+  container.register<IGitOwnershipPort>(ASPM_TOKENS.IGitOwnershipPort, {
+    useFactory: () => new GitOwnershipAdapter(),
+  });
+}
+
 function registerStringTokenAliases(container: DependencyContainer): void {
   container.register('GetPostureSummaryUseCase', {
     useFactory: (c) => c.resolve(GetPostureSummaryUseCase),
@@ -389,4 +424,6 @@ function registerStringTokenAliases(container: DependencyContainer): void {
   container.register('IngestSbomUseCase', {
     useFactory: (c) => c.resolve(IngestSbomUseCase),
   });
+  // IScanRunRepository is already bound to the same string token in
+  // registerPhase11Repositories — no alias needed.
 }

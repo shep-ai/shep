@@ -18,3 +18,4 @@ import "./risk-score.tsp";
 import "./risk-exception.tsp";
 import "./remediation-campaign.tsp";
 import "./ai-change-risk-signal.tsp";
+import "./scan-run.tsp";

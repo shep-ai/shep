@@ -1,0 +1,35 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ScanStage.yaml
+type: object
+properties:
+  name:
+    $ref: ScanStageName.yaml
+    description: Which stage this is (sbom/sca/secrets/sast/container/iac)
+  status:
+    $ref: ScanStageStatus.yaml
+    description: Lifecycle state of this stage
+  startedAt:
+    type: string
+    format: date-time
+    description: When this stage transitioned to Running
+  finishedAt:
+    type: string
+    format: date-time
+    description: When this stage transitioned to a terminal state
+  findingsCount:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Number of findings this stage produced (after dedup)
+  componentsCount:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Number of components this stage produced (only meaningful for sbom)
+  errorMessage:
+    type: string
+    description: Short human-readable error summary when status=Failed
+required:
+  - name
+  - status
+description: One stage of a ScanRun, with timing + outcome metadata

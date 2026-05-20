@@ -26,6 +26,7 @@ export const ASPM_REPOSITORY_TOKENS = {
   IRiskExceptionRepository: 'IRiskExceptionRepository',
   IComplianceControlRepository: 'IComplianceControlRepository',
   IAiChangeRiskSignalRepository: 'IAiChangeRiskSignalRepository',
+  IScanRunRepository: 'IScanRunRepository',
 } as const;
 
 // ─── Output service ports ───────────────────────────────────────────────────
@@ -35,6 +36,8 @@ export const ASPM_SERVICE_TOKENS = {
   IExploitIntelPort: 'IExploitIntelPort',
   ISlaClockPort: 'ISlaClockPort',
   IOwnershipYamlReader: 'IOwnershipYamlReader',
+  IOsvVulnerabilityPort: 'IOsvVulnerabilityPort',
+  IGitOwnershipPort: 'IGitOwnershipPort',
 } as const;
 
 // ─── Union of every ASPM string token (handy for tests / diagnostics) ───────

@@ -1,0 +1,22 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ScannerProfile.yaml
+type: object
+properties:
+  enabledStages:
+    type: array
+    items:
+      $ref: ScanStageName.yaml
+    description: Stages that should run during a scan. Empty array = scan nothing.
+  pathExcludes:
+    type: array
+    items:
+      type: string
+    description: Glob patterns to exclude from every stage (node_modules, dist, build artifacts)
+  autoRescan:
+    type: boolean
+    description: Whether the nightly auto-rescan scheduler should include this application
+required:
+  - enabledStages
+  - pathExcludes
+  - autoRescan
+description: Per-application scanner configuration (stage toggles, excludes, schedule)

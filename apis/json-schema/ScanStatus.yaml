@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ScanStatus.yaml
+type: string
+enum:
+  - Pending
+  - Running
+  - Succeeded
+  - Failed
+  - Partial
+description: Lifecycle state of a ScanRun

@@ -28,6 +28,7 @@ export class SQLiteApplicationRepository implements IApplicationRepository {
         cloud_deployment_id, cloud_deployment_url, cloud_deployment_error,
         last_deployed_at, bedrock_enabled,
         criticality, exposure, data_classification, business_unit,
+        scanner_profile_json, last_scanned_at,
         created_at, updated_at, deleted_at
       ) VALUES (
         @id, @name, @slug, @description, @repository_path, @additional_paths,
@@ -36,6 +37,7 @@ export class SQLiteApplicationRepository implements IApplicationRepository {
         @cloud_deployment_id, @cloud_deployment_url, @cloud_deployment_error,
         @last_deployed_at, @bedrock_enabled,
         @criticality, @exposure, @data_classification, @business_unit,
+        @scanner_profile_json, @last_scanned_at,
         @created_at, @updated_at, @deleted_at
       )
     `);
@@ -96,6 +98,8 @@ export class SQLiteApplicationRepository implements IApplicationRepository {
         | 'exposure'
         | 'dataClassification'
         | 'businessUnit'
+        | 'scannerProfile'
+        | 'lastScannedAt'
       >
     >
   ): Promise<void> {
@@ -182,6 +186,16 @@ export class SQLiteApplicationRepository implements IApplicationRepository {
     if (fields.businessUnit !== undefined) {
       setClauses.push('business_unit = ?');
       values.push(fields.businessUnit);
+    }
+    if (fields.scannerProfile !== undefined) {
+      setClauses.push('scanner_profile_json = ?');
+      values.push(fields.scannerProfile ? JSON.stringify(fields.scannerProfile) : '{}');
+    }
+    if (fields.lastScannedAt !== undefined) {
+      setClauses.push('last_scanned_at = ?');
+      values.push(
+        fields.lastScannedAt instanceof Date ? fields.lastScannedAt.getTime() : fields.lastScannedAt
+      );
     }
 
     values.push(id);
