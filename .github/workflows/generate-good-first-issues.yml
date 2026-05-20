@@ -1,0 +1,158 @@
+name: Generate good-first-issues (daily)
+
+# Runs an agent that scans the codebase + current AI trends and opens
+# up to 10 NEW good-first-issues per day in shep-ai/shep.
+#
+# What it does:
+#   1. Checks out the repo (shallow — agent only needs to read)
+#   2. Ensures the `ai-generated` label exists (idempotent)
+#   3. Runs Claude Code with a thin delegation prompt that reads
+#      prompts/generate-good-first-issues.md and follows it
+#      (web-fetch ai-tldr trends, grep the codebase, gh issue create
+#      with dedup against existing labeled issues)
+#   4. Writes a markdown summary of opened issues to the run's
+#      Step Summary
+#
+# The agent does NOT commit or push — its only side effect is opening
+# GitHub issues via `gh issue create`.
+#
+# Required secrets:
+#   CLAUDE_CODE_OAUTH_TOKEN — generate locally with `claude setup-token`
+#                              then `gh secret set CLAUDE_CODE_OAUTH_TOKEN`
+#   GITHUB_TOKEN            — auto-provided by Actions; `issues: write`
+#                              permission below grants issue-create rights
+
+on:
+  schedule:
+    # Daily at 13:05 UTC (09:05 ET / 14:05 CET / 15:05 IST).
+    # Picked to run AFTER ai-tldr's 12:00 UTC sweep so the trends
+    # file we curl is fresh (ai-tldr runs every 2h at minute 0).
+    - cron: '5 13 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  # Required to open issues via `gh issue create`.
+  issues: write
+  # Required by anthropics/claude-code-action@v1 — it fetches an
+  # OIDC token from GitHub during setup. Without it the action fails
+  # before Claude even starts: "Could not fetch an OIDC token."
+  id-token: write
+
+concurrency:
+  group: generate-good-first-issues
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # Sized for one ~25m agent run + a few minutes of setup. No
+    # retry pattern here — if the agent fails, the daily cron just
+    # tries again tomorrow. (Unlike ai-tldr's release sweep, missing
+    # a day of issue generation is not a data-loss event.)
+    timeout-minutes: 35
+
+    env:
+      # gh CLI picks up GH_TOKEN automatically. The job-level
+      # permissions block above grants issues:write to this token.
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Shallow is fine — the agent only needs to Read / Grep
+          # source files at HEAD. No git history required.
+          fetch-depth: 1
+
+      - name: Capture current date
+        id: now
+        run: echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure ai-generated label exists
+        # Idempotent: `gh label create` errors if the label already
+        # exists, so we swallow the error. The `good first issue`
+        # label is repo-default; the other labels (`lane:*`,
+        # `difficulty:*`, `area:*`) already exist in this repo.
+        run: |
+          gh label create "ai-generated" \
+            --description "Opened by an automated agent — review before assigning" \
+            --color "ededed" \
+            --repo "${GITHUB_REPOSITORY}" 2>/dev/null || true
+          gh label list --repo "${GITHUB_REPOSITORY}" --limit 200 \
+            | grep -E "^(ai-generated|good first issue|lane:|difficulty:)" || true
+
+      - name: Run good-first-issue generator with Claude Code
+        id: generate
+        uses: anthropics/claude-code-action@v1
+        # Step-level timeout: if the action hangs silently we want
+        # to fail THIS step cleanly. 30m gives healthy runs plenty
+        # of headroom (target p100 ~20m for a 10-issue batch).
+        timeout-minutes: 30
+        env:
+          # Pass the token explicitly to the action's shell so the
+          # `gh` calls the agent makes can authenticate. The
+          # permissions block grants issues:write to this token.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Stream Claude's progress into the GH Actions log instead
+          # of buffering until the run ends. display_report posts a
+          # Step Summary at the end.
+          show_full_output: 'true'
+          display_report: 'true'
+          # The real prompt is `prompts/generate-good-first-issues.md`
+          # — Claude reads it via its Read tool. Keep this shim
+          # minimal: anything added here drifts from the canonical
+          # prompt and creates a second source of truth.
+          prompt: |
+            You are the shep good-first-issue generator running in
+            GitHub Actions. Working dir is the repo root. The repo
+            is `shep-ai/shep`.
+
+            TODAY'S DATE IS ${{ steps.now.outputs.date }} (real UTC,
+            not a fixture). Trust the system clock and what
+            WebFetch / curl return even if releases look unfamiliar
+            — your training data predates today.
+
+            Read `prompts/generate-good-first-issues.md` and follow
+            it exactly. Open issues via `gh issue create`. Do NOT
+            commit or push — this workflow does not commit anything.
+
+            Before opening each issue, you MUST have:
+              1. Read the cited file paths (no hallucinated paths).
+              2. Compared the candidate against both dedup lists
+                 (/tmp/existing-gfi.json and /tmp/existing-ai-generated.json).
+              3. Verified the trend hook is real (sourced from
+                 /tmp/ai-trends.json or an external page you fetched
+                 in this run).
+
+            ZERO ISSUES IS A SUCCESSFUL RUN. If no candidates clear
+            the inclusion bar, write a one-line "no candidates today"
+            note to $GITHUB_STEP_SUMMARY and exit cleanly. Padding
+            to hit 10 is the bug.
+
+            On success, append a markdown table to
+            $GITHUB_STEP_SUMMARY with one row per opened issue:
+            number, title, lane, difficulty, trend hook.
+          claude_args: |
+            --model claude-opus-4-7
+            --verbose
+            --max-turns 6000
+            --permission-mode acceptEdits
+            --allowedTools "WebSearch,WebFetch,Read,Glob,Grep,Bash(gh issue:*),Bash(gh label list:*),Bash(gh search:*),Bash(curl:*),Bash(jq:*),Bash(ls:*),Bash(cat:*),Bash(grep:*),Bash(rm:*)"
+
+      - name: Final summary
+        # Always runs (success or fail) so the run page surfaces
+        # what happened even if the agent step errored.
+        if: always()
+        run: |
+          {
+            echo ""
+            echo "---"
+            echo ""
+            echo "_Run date: ${{ steps.now.outputs.date }}_"
+            echo "_Workflow: \`.github/workflows/generate-good-first-issues.yml\`_"
+            echo "_Canonical prompt: \`prompts/generate-good-first-issues.md\`_"
+          } >> "$GITHUB_STEP_SUMMARY"
