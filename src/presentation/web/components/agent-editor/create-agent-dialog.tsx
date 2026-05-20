@@ -117,7 +117,6 @@ export function CreateAgentDialog({
       <DialogContent className="max-w-xl" data-testid="create-agent-dialog">
         <DialogHeader>
           <DialogTitle>{t('agentEditor.createCustomAgent')}</DialogTitle>
-          <DialogDescription>{t('agentEditor.createCustomAgentDescription')}</DialogDescription>
         </DialogHeader>
 
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
