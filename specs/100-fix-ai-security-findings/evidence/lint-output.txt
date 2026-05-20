@@ -1,0 +1,4 @@
+
+> @shepai/cli@1.205.0 lint /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-fix-ai-security-findings
+> eslint . --max-warnings 0 --cache
+

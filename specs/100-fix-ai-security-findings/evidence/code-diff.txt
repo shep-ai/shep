@@ -1,0 +1,154 @@
+diff --git a/docs/poc/js/app.js b/docs/poc/js/app.js
+index 628f7ccca..a722f7555 100644
+--- a/docs/poc/js/app.js
++++ b/docs/poc/js/app.js
+@@ -112,7 +112,6 @@ class App {
+                         </div>
+                         ${actionDetails.questions
+                           .map((q, idx) => {
+-                            const recommended = q.options.find((o) => o.recommended);
+                             return `
+                             <div class="space-y-2">
+                                 <label class="text-[10px] font-bold text-slate-600 block">${idx + 1}. ${q.question}</label>
+@@ -1666,7 +1665,7 @@ class App {
+     // Sort items: repos first
+     Object.entries(items)
+       .sort(([, a], [, b]) => (a.type === 'repo' ? 0 : 1) - (b.type === 'repo' ? 0 : 1))
+-      .forEach(([name, item]) => {
++      .forEach(([, item]) => {
+         if (item.type === 'repo') {
+           const itemEl = document.createElement('div');
+           itemEl.className =
+diff --git a/docs/poc/js/renderer.js b/docs/poc/js/renderer.js
+index 44710bd45..0a78b8840 100644
+--- a/docs/poc/js/renderer.js
++++ b/docs/poc/js/renderer.js
+@@ -147,7 +147,7 @@ export class Renderer {
+     this.renderNewFeatureButton(container, fallbackResult.totalHeight, fallbackOffsetY, onAddChild);
+   }
+ 
+-  renderWelcomeView(container, svgLayer, onAddChild) {
++  renderWelcomeView(container, svgLayer, _onAddChild) {
+     // Reset container and canvas sizes
+     container.style.height = 'auto';
+     const svgLayerElement = svgLayer || document.getElementById('connector-layer');
+@@ -340,7 +340,7 @@ export class Renderer {
+   /**
+    * Mind-map ideas disabled - keeping simple welcome view without suggestions
+    */
+-  renderMindMapIdeas(repoId) {
++  renderMindMapIdeas(_repoId) {
+     // Ideas preview removed - user can add features directly
+   }
+ 
+@@ -398,7 +398,7 @@ export class Renderer {
+   /**
+    * Render repo pills on the features canvas (positioned absolutely)
+    */
+-  renderRepoPills(repos, repoPositions, container, onAddChild) {
++  renderRepoPills(repos, repoPositions, container, _onAddChild) {
+     repos.forEach((repo) => {
+       const pos = repoPositions.get(repo.id);
+       if (!pos) return;
+@@ -609,7 +609,6 @@ export class Renderer {
+       const pos = positions.get(node.id);
+       const phase = PHASES.find((p) => p.id === node.phaseId) || PHASES[0];
+       const isSelected = this.state.selectedNodeId === node.id;
+-      const isActionNeeded = phase.actionRequired;
+ 
+       // Determine feature status (for color scheme)
+       const status = this.getFeatureStatus(node);
+@@ -620,23 +619,14 @@ export class Renderer {
+       const displayPercent = Math.max(5, rawPercent);
+ 
+       let animationClass = '';
+-      let glowClass = '';
+-      let borderColor = '';
++      const glowClass = '';
+ 
+       if (status === 'awaiting-action') {
+         // Yellow heartbeat glow for action required
+         animationClass = 'heartbeat-glow';
+-        borderColor = 'border-amber-400/70';
+-      } else if (status === 'blocked') {
+-        // Muted gray for blocked features
+-        borderColor = 'border-slate-300';
+       } else if (status === 'running') {
+         // Blue construction jigsaw for in-progress features
+         animationClass = 'construction-progress';
+-        borderColor = 'border-blue-500/70';
+-      } else {
+-        // Completed features - grayed out
+-        borderColor = 'border-slate-300';
+       }
+ 
+       // Check if this card already exists in the DOM
+@@ -671,8 +661,7 @@ export class Renderer {
+         rawPercent,
+         displayPercent,
+         status,
+-        glowClass,
+-        borderColor
++        glowClass
+       );
+       el.appendChild(nodeHTML);
+ 
+@@ -731,8 +720,7 @@ export class Renderer {
+     rawPercent,
+     displayPercent,
+     status,
+-    glowClass = '',
+-    borderColor = ''
++    glowClass = ''
+   ) {
+     const nodeHTML = document.createElement('div');
+     // Always use gray border - status shown via left border only
+@@ -1268,7 +1256,7 @@ export class Renderer {
+   /**
+    * Render phases view (for Implementation phase features)
+    */
+-  renderPhasesView(container, svgLayer) {
++  renderPhasesView(container, _svgLayer) {
+     const phases = this.state.getCanvasPhases();
+ 
+     if (phases.length === 0) {
+@@ -1584,7 +1572,7 @@ export class Renderer {
+     const graph = document.createElement('div');
+     graph.className = 'space-y-1 max-h-[120px] overflow-y-auto font-mono text-[8px]';
+ 
+-    commits.forEach((commit, idx) => {
++    commits.forEach((commit) => {
+       const commitLine = document.createElement('div');
+       commitLine.className = 'flex items-start gap-1.5 text-slate-600';
+ 
+diff --git a/docs/poc/js/state.js b/docs/poc/js/state.js
+index cd94f4af2..d1b0e0633 100644
+--- a/docs/poc/js/state.js
++++ b/docs/poc/js/state.js
+@@ -141,7 +141,7 @@ export class AppState {
+     this.repositories = [...MOCK_REPOS];
+ 
+     // Create root feature with tasks showing different states
+-    const root = this.createFeature({
++    this.createFeature({
+       title: 'SSO Integration',
+       description: 'Implement single sign-on authentication system.',
+       repositoryId: 'repo_1',
+@@ -1441,7 +1441,7 @@ export class AppState {
+    * @param {number} milestone - Milestone percentage (25, 50, 75, 100)
+    * @returns {Object} Commit object
+    */
+-  generatePhaseCommit(phase, tddPhase, milestone) {
++  generatePhaseCommit(_phase, tddPhase, milestone) {
+     const messages = {
+       RED: {
+         25: 'test(cli): add failing tests for show command',
+@@ -1510,7 +1510,7 @@ export class AppState {
+     this.selectedFeatureId = value;
+   }
+ 
+-  createNode(parentId, title, phaseId, shouldSave = true, desc = '') {
++  createNode(parentId, title, phaseId, _shouldSave = true, desc = '') {
+     return this.createFeature({
+       parentId,
+       title,
