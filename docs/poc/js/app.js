@@ -112,7 +112,6 @@ class App {
                         </div>
                         ${actionDetails.questions
                           .map((q, idx) => {
-                            const recommended = q.options.find((o) => o.recommended);
                             return `
                             <div class="space-y-2">
                                 <label class="text-[10px] font-bold text-slate-600 block">${idx + 1}. ${q.question}</label>
@@ -1666,7 +1665,7 @@ class App {
     // Sort items: repos first
     Object.entries(items)
       .sort(([, a], [, b]) => (a.type === 'repo' ? 0 : 1) - (b.type === 'repo' ? 0 : 1))
-      .forEach(([name, item]) => {
+      .forEach(([, item]) => {
         if (item.type === 'repo') {
           const itemEl = document.createElement('div');
           itemEl.className =

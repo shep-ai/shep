@@ -147,7 +147,7 @@ export class Renderer {
     this.renderNewFeatureButton(container, fallbackResult.totalHeight, fallbackOffsetY, onAddChild);
   }
 
-  renderWelcomeView(container, svgLayer, onAddChild) {
+  renderWelcomeView(container, svgLayer, _onAddChild) {
     // Reset container and canvas sizes
     container.style.height = 'auto';
     const svgLayerElement = svgLayer || document.getElementById('connector-layer');
@@ -340,7 +340,7 @@ export class Renderer {
   /**
    * Mind-map ideas disabled - keeping simple welcome view without suggestions
    */
-  renderMindMapIdeas(repoId) {
+  renderMindMapIdeas(_repoId) {
     // Ideas preview removed - user can add features directly
   }
 
@@ -398,7 +398,7 @@ export class Renderer {
   /**
    * Render repo pills on the features canvas (positioned absolutely)
    */
-  renderRepoPills(repos, repoPositions, container, onAddChild) {
+  renderRepoPills(repos, repoPositions, container, _onAddChild) {
     repos.forEach((repo) => {
       const pos = repoPositions.get(repo.id);
       if (!pos) return;
@@ -609,7 +609,6 @@ export class Renderer {
       const pos = positions.get(node.id);
       const phase = PHASES.find((p) => p.id === node.phaseId) || PHASES[0];
       const isSelected = this.state.selectedNodeId === node.id;
-      const isActionNeeded = phase.actionRequired;
 
       // Determine feature status (for color scheme)
       const status = this.getFeatureStatus(node);
@@ -620,23 +619,14 @@ export class Renderer {
       const displayPercent = Math.max(5, rawPercent);
 
       let animationClass = '';
-      let glowClass = '';
-      let borderColor = '';
+      const glowClass = '';
 
       if (status === 'awaiting-action') {
         // Yellow heartbeat glow for action required
         animationClass = 'heartbeat-glow';
-        borderColor = 'border-amber-400/70';
-      } else if (status === 'blocked') {
-        // Muted gray for blocked features
-        borderColor = 'border-slate-300';
       } else if (status === 'running') {
         // Blue construction jigsaw for in-progress features
         animationClass = 'construction-progress';
-        borderColor = 'border-blue-500/70';
-      } else {
-        // Completed features - grayed out
-        borderColor = 'border-slate-300';
       }
 
       // Check if this card already exists in the DOM
@@ -671,8 +661,7 @@ export class Renderer {
         rawPercent,
         displayPercent,
         status,
-        glowClass,
-        borderColor
+        glowClass
       );
       el.appendChild(nodeHTML);
 
@@ -731,8 +720,7 @@ export class Renderer {
     rawPercent,
     displayPercent,
     status,
-    glowClass = '',
-    borderColor = ''
+    glowClass = ''
   ) {
     const nodeHTML = document.createElement('div');
     // Always use gray border - status shown via left border only
@@ -1268,7 +1256,7 @@ export class Renderer {
   /**
    * Render phases view (for Implementation phase features)
    */
-  renderPhasesView(container, svgLayer) {
+  renderPhasesView(container, _svgLayer) {
     const phases = this.state.getCanvasPhases();
 
     if (phases.length === 0) {
@@ -1584,7 +1572,7 @@ export class Renderer {
     const graph = document.createElement('div');
     graph.className = 'space-y-1 max-h-[120px] overflow-y-auto font-mono text-[8px]';
 
-    commits.forEach((commit, idx) => {
+    commits.forEach((commit) => {
       const commitLine = document.createElement('div');
       commitLine.className = 'flex items-start gap-1.5 text-slate-600';
 

@@ -141,7 +141,7 @@ export class AppState {
     this.repositories = [...MOCK_REPOS];
 
     // Create root feature with tasks showing different states
-    const root = this.createFeature({
+    this.createFeature({
       title: 'SSO Integration',
       description: 'Implement single sign-on authentication system.',
       repositoryId: 'repo_1',
@@ -1441,7 +1441,7 @@ export class AppState {
    * @param {number} milestone - Milestone percentage (25, 50, 75, 100)
    * @returns {Object} Commit object
    */
-  generatePhaseCommit(phase, tddPhase, milestone) {
+  generatePhaseCommit(_phase, tddPhase, milestone) {
     const messages = {
       RED: {
         25: 'test(cli): add failing tests for show command',
@@ -1510,7 +1510,7 @@ export class AppState {
     this.selectedFeatureId = value;
   }
 
-  createNode(parentId, title, phaseId, shouldSave = true, desc = '') {
+  createNode(parentId, title, phaseId, _shouldSave = true, desc = '') {
     return this.createFeature({
       parentId,
       title,
