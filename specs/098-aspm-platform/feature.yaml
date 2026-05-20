@@ -8,12 +8,12 @@ feature:
 status:
   phase: "phase-11"
   progress:
-    completed: 62
+    completed: 82
     total: 84
-    percentage: 73
+    percentage: 98
   currentTask: null
-  lastUpdated: "2026-05-20T17:55:00.000Z"
-  lastUpdatedBy: "user-planning:phase-11"
+  lastUpdated: "2026-05-20T22:00:00.000Z"
+  lastUpdatedBy: "user-implement:phase-11"
   completedPhases:
     - "analyze"
     - "requirements"
@@ -30,20 +30,12 @@ status:
     - "phase-9"
     - "phase-10"
     - "evidence"
-  upcomingPhases:
-    - id: "phase-11"
-      name: "Native Scanning (replaces upload-driven ingest)"
-      taskRange: "task-63 .. task-84"
-      taskCount: 22
-      summary: |
-        Replace the upload-driven ASPM ingest UX with native scan/rescan that
-        runs entirely inside Shep. In-house: SBOM builder (9 ecosystems),
-        secret scanner (regex + entropy), OSV.dev SCA adapter, git-derived
-        ownership. Agent-driven: SAST, container hardening, IaC misconfig — all
-        via IAgentExecutorProvider (no hardcoded provider). Scope is local
-        working tree only. Upload remains as an additive 'Upload existing
-        report' tab inside the new Scan dialog so CI pipelines stay supported.
-      sourceDirective: "User, 2026-05-20: 'the system must utilize open source / or build from scratch a solution for all the security needs so its not ingest data its scan/rescan' + 'minimize third party, getting BOM ... can be using the agents (langgraph etc like we have agents in the system), owner should be from commits so git cli can cover that, secrets we can write something simple as well, and cover only local branches'"
+  upcomingPhases: []
+  deferredTasks:
+    - id: "task-76"
+      reason: "SSE /api/aspm/scan/stream — not blocking since the orchestrator returns the full ScanApplicationResult synchronously. Tracked as follow-up."
+    - id: "task-83"
+      reason: "Playwright E2E happy path — requires a live Shep daemon + fixture repo with seeded vulnerabilities. Tracked as follow-up; the orchestration use case has unit coverage and the CLI/server actions are end-to-end testable manually."
 validation:
   lastRun: null
   gatesPassed: []
