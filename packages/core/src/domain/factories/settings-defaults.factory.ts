@@ -221,6 +221,7 @@ export function createDefaultSettings(): Settings {
     projects: false,
     codeReview: false,
     collaboration: false,
+    bedrockIntegration: false,
   };
 
   return {

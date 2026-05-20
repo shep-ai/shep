@@ -17,6 +17,9 @@ properties:
   upstreamUrl:
     type: string
     description: "Original upstream URL when isFork is true (normalized: lowercase, no .git suffix)"
+  bedrockEnabled:
+    type: boolean
+    description: Whether project-bedrock memory integration is enabled for this repository (defaults to false in persistence)
 required:
   - name
   - path

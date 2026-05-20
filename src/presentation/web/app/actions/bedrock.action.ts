@@ -11,6 +11,7 @@
  */
 
 import { resolve } from '@/lib/server-container';
+import { FeatureFlagDisabledError, requireFeatureFlag } from '@/lib/feature-flags';
 import type { EnableBedrockForTargetUseCase } from '@shepai/core/application/use-cases/bedrock/enable-bedrock-for-target.use-case';
 import type { RunBedrockLifecycleUseCase } from '@shepai/core/application/use-cases/applications/run-bedrock-lifecycle.use-case';
 import type { GetBedrockMemorySnapshotUseCase } from '@shepai/core/application/use-cases/bedrock/get-bedrock-memory-snapshot.use-case';
@@ -34,6 +35,12 @@ function describeError(
   error: unknown,
   fallbackMessage: string
 ): { code: string; remediation: string } {
+  if (error instanceof FeatureFlagDisabledError) {
+    return {
+      code: 'FEATURE_FLAG_DISABLED',
+      remediation: 'Enable the "Bedrock memory" feature flag in Settings → Feature Flags.',
+    };
+  }
   if (
     error instanceof PipxNotInstalledError ||
     error instanceof BedrockBinaryMissingError ||
@@ -60,6 +67,7 @@ export async function enableBedrockForTarget(
   }
 
   try {
+    requireFeatureFlag('bedrockIntegration');
     const useCase = resolve<EnableBedrockForTargetUseCase>('EnableBedrockForTargetUseCase');
     await useCase.execute({ kind, id });
     return { ok: true };
@@ -97,6 +105,11 @@ async function runBedrockLifecycleForTarget(
   id: string,
   action: BedrockLifecycleAction
 ): Promise<BedrockLifecycleResult> {
+  try {
+    requireFeatureFlag('bedrockIntegration');
+  } catch (error: unknown) {
+    return { ok: false, ...describeError(error, `Failed to run bedrock ${action}`) };
+  }
   if (kind !== 'application') {
     return {
       ok: false,
@@ -119,6 +132,7 @@ export async function getBedrockMemorySnapshot(
 ): Promise<BedrockMemorySnapshot | null> {
   if (!id?.trim()) return null;
   try {
+    requireFeatureFlag('bedrockIntegration');
     const useCase = resolve<GetBedrockMemorySnapshotUseCase>('GetBedrockMemorySnapshotUseCase');
     return await useCase.execute({ kind, id });
   } catch {

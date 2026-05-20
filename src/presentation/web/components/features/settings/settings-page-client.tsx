@@ -402,6 +402,7 @@ export function SettingsPageClient({
     projects: false,
     codeReview: false,
     collaboration: false,
+    bedrockIntegration: false,
   };
 
   // Language state
@@ -1770,6 +1771,18 @@ export function SettingsPageClient({
               checked={flags.collaboration}
               onChange={(v) => {
                 const newFlags = { ...flags, collaboration: v };
+                setFlags(newFlags);
+                save({ featureFlags: newFlags });
+              }}
+            />
+            <SwitchRow
+              label={t('settings.featureFlags.bedrockIntegration')}
+              description={t('settings.featureFlags.bedrockIntegrationDescription')}
+              id="flag-bedrock-integration"
+              testId="switch-flag-bedrock-integration"
+              checked={flags.bedrockIntegration}
+              onChange={(v) => {
+                const newFlags = { ...flags, bedrockIntegration: v };
                 setFlags(newFlags);
                 save({ featureFlags: newFlags });
               }}

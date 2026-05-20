@@ -123,6 +123,7 @@ export interface SettingsRow {
   feature_flag_projects: number;
   feature_flag_code_review: number;
   feature_flag_collaboration: number;
+  feature_flag_bedrock_integration: number;
   // Interactive agent config (added in migration 046)
   interactive_agent_enabled: number;
   interactive_agent_auto_timeout_minutes: number;
@@ -247,6 +248,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     feature_flag_projects: settings.featureFlags?.projects ? 1 : 0,
     feature_flag_code_review: settings.featureFlags?.codeReview ? 1 : 0,
     feature_flag_collaboration: settings.featureFlags?.collaboration ? 1 : 0,
+    feature_flag_bedrock_integration: settings.featureFlags?.bedrockIntegration ? 1 : 0,
 
     // InteractiveAgentConfig (boolean → 0/1, integer fields; defaults applied here)
     interactive_agent_enabled: (settings.interactiveAgent?.enabled ?? true) ? 1 : 0,
@@ -432,6 +434,7 @@ export function fromDatabase(row: SettingsRow): Settings {
       projects: row.feature_flag_projects === 1,
       codeReview: row.feature_flag_code_review === 1,
       collaboration: row.feature_flag_collaboration === 1,
+      bedrockIntegration: row.feature_flag_bedrock_integration === 1,
     },
 
     // InteractiveAgentConfig (INTEGER 0/1 → boolean, integer → number)

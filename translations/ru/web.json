@@ -202,6 +202,8 @@
       "codeReviewDescription": "Enable AI-powered code review that analyzes PR diffs and posts inline comments to GitHub",
       "collaboration": "Agent Collaboration & Supervision",
       "collaborationDescription": "Enable agent-to-agent messaging, supervisor delegation, and the unified agent questions inbox",
+      "bedrockIntegration": "Project Bedrock Memory",
+      "bedrockIntegrationDescription": "Enable project-bedrock memory integration (markdown project memory for AI coding agents) — surfaces toggles, drawers, and tabs across applications, repositories, and features. Requires Python 3.9+ and pipx.",
       "hint": "Экспериментальные функции, которые ещё находятся в разработке. Включайте на свой страх и риск — они могут измениться или быть удалены в будущих версиях. Режим отладки добавляет подробное логирование, полезное для устранения неполадок."
     },
     "interactiveAgent": {

@@ -26,6 +26,7 @@ const defaultFlags = {
   projects: false,
   codeReview: false,
   collaboration: false,
+  bedrockIntegration: false,
 };
 
 /**

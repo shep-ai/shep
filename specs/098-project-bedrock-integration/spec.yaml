@@ -118,3 +118,7 @@ rejectionFeedback:
     message: "The current implementation is just for applications, it should be for repos/features as well and should have relevant UI for that not just enable but actually some level of visualization to see what we are doing there Etc."
     phase: "merge"
     timestamp: "2026-05-19T15:51:59.500Z"
+  - iteration: 2
+    message: "hide this feature behind feature flag"
+    phase: "merge"
+    timestamp: "2026-05-20T11:12:30.432Z"

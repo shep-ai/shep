@@ -16,6 +16,19 @@ vi.mock('@/lib/server-container', () => ({
   },
 }));
 
+// Bedrock server actions are gated behind the bedrockIntegration feature flag.
+// Force it ON for every test in this file so we exercise the actual error paths
+// (e.g. UseCase rejection) rather than tripping the feature-flag guard.
+vi.mock('@/lib/feature-flags', () => ({
+  requireFeatureFlag: vi.fn(),
+  FeatureFlagDisabledError: class FeatureFlagDisabledError extends Error {
+    constructor(public readonly flag: string) {
+      super(`Feature flag "${flag}" is disabled`);
+      this.name = 'FeatureFlagDisabledError';
+    }
+  },
+}));
+
 const { enableBedrock } = await import(
   '../../../../../src/presentation/web/app/actions/enable-bedrock.action.js'
 );

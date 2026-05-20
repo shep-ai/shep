@@ -26,6 +26,7 @@ import type { NotificationEvent } from '@shepai/core/domain/generated/output';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BedrockMemorySection } from '@/components/bedrock-memory-section';
 import { BedrockTargetKind } from '@shepai/core/domain/generated/output';
+import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getFeaturePhaseTimings } from '@/app/actions/get-feature-phase-timings';
 import type {
@@ -87,7 +88,8 @@ const ALL_TABS: TabDef[] = [
 /** Compute which tabs are visible based on feature lifecycle + state. */
 function computeVisibleTabs(
   node: FeatureNodeData,
-  interactiveAgentEnabled = true
+  interactiveAgentEnabled = true,
+  bedrockIntegrationEnabled = false
 ): FeatureTabKey[] {
   const tabs: FeatureTabKey[] = ['overview', 'activity'];
 
@@ -126,8 +128,10 @@ function computeVisibleTabs(
     tabs.push('chat');
   }
 
-  // Bedrock memory tab is always visible — surfaces the per-feature memory store
-  tabs.push('bedrock');
+  // Bedrock memory tab is gated behind the bedrockIntegration feature flag.
+  if (bedrockIntegrationEnabled) {
+    tabs.push('bedrock');
+  }
 
   return tabs;
 }
@@ -258,10 +262,11 @@ export function FeatureDrawerTabs({
   onStart,
 }: FeatureDrawerTabsProps) {
   const pathname = usePathname();
+  const { bedrockIntegration } = useFeatureFlags();
 
   const visibleTabs = useMemo(
-    () => computeVisibleTabs(featureNode, interactiveAgentEnabled),
-    [featureNode, interactiveAgentEnabled]
+    () => computeVisibleTabs(featureNode, interactiveAgentEnabled, bedrockIntegration),
+    [featureNode, interactiveAgentEnabled, bedrockIntegration]
   );
   const visibleTabDefs = useMemo(
     () =>

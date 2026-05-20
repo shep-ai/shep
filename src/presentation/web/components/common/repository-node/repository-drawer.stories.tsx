@@ -97,6 +97,7 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
     projects: false,
     codeReview: false,
     collaboration: false,
+    bedrockIntegration: false,
   };
 
   return (

@@ -19,6 +19,7 @@ export interface FeatureFlagsState {
   projects: boolean;
   codeReview: boolean;
   collaboration: boolean;
+  bedrockIntegration: boolean;
 }
 
 export function getFeatureFlags(): FeatureFlagsState {
@@ -33,6 +34,7 @@ export function getFeatureFlags(): FeatureFlagsState {
           projects: flags.projects,
           codeReview: flags.codeReview,
           collaboration: flags.collaboration,
+          bedrockIntegration: flags.bedrockIntegration,
         };
       }
     }
@@ -50,6 +52,7 @@ export function getFeatureFlags(): FeatureFlagsState {
     projects: false,
     codeReview: false,
     collaboration: isEnabled(process.env.NEXT_PUBLIC_FLAG_COLLABORATION),
+    bedrockIntegration: isEnabled(process.env.NEXT_PUBLIC_FLAG_BEDROCK_INTEGRATION),
   };
 }
 
@@ -99,5 +102,8 @@ export const featureFlags = {
   },
   get collaboration() {
     return getFeatureFlags().collaboration;
+  },
+  get bedrockIntegration() {
+    return getFeatureFlags().bedrockIntegration;
   },
 } as const;

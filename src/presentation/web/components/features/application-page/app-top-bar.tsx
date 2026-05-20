@@ -79,7 +79,7 @@ export function AppTopBar({
   deploy,
   cloudDeploy,
 }: AppTopBarProps) {
-  const { collaboration } = useFeatureFlags();
+  const { collaboration, bedrockIntegration } = useFeatureFlags();
   const [bedrockSheetOpen, setBedrockSheetOpen] = useState(false);
 
   return (
@@ -136,40 +136,44 @@ export function AppTopBar({
         isBuilding={!application.setupComplete || agentRunning}
       />
 
-      <Divider />
-      <Sheet open={bedrockSheetOpen} onOpenChange={setBedrockSheetOpen}>
-        <SheetTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 gap-1.5 px-2"
-            data-testid="top-bar-bedrock"
-            title="Bedrock memory"
-          >
-            <Database className="size-3.5" />
-            <span className="hidden text-xs lg:inline">Bedrock</span>
-            {application.bedrockEnabled ? (
-              <span className="ml-0.5 size-1.5 rounded-full bg-emerald-500" />
-            ) : null}
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="right" className="w-[560px] sm:max-w-[560px]">
-          <SheetHeader>
-            <SheetTitle>Bedrock memory</SheetTitle>
-            <SheetDescription>
-              Persistent markdown project memory for AI coding agents in {application.name}.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="mt-4">
-            <BedrockMemorySection
-              targetKind={BedrockTargetKind.Application}
-              targetId={application.id}
-              targetLabel={application.name}
-              initialEnabled={application.bedrockEnabled === true}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
+      {bedrockIntegration ? (
+        <>
+          <Divider />
+          <Sheet open={bedrockSheetOpen} onOpenChange={setBedrockSheetOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 px-2"
+                data-testid="top-bar-bedrock"
+                title="Bedrock memory"
+              >
+                <Database className="size-3.5" />
+                <span className="hidden text-xs lg:inline">Bedrock</span>
+                {application.bedrockEnabled ? (
+                  <span className="ml-0.5 size-1.5 rounded-full bg-emerald-500" />
+                ) : null}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[560px] sm:max-w-[560px]">
+              <SheetHeader>
+                <SheetTitle>Bedrock memory</SheetTitle>
+                <SheetDescription>
+                  Persistent markdown project memory for AI coding agents in {application.name}.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-4">
+                <BedrockMemorySection
+                  targetKind={BedrockTargetKind.Application}
+                  targetId={application.id}
+                  targetLabel={application.name}
+                  initialEnabled={application.bedrockEnabled === true}
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </>
+      ) : null}
 
       {collaboration ? (
         <>
@@ -202,13 +206,17 @@ export function AppTopBar({
         <div className="px-2 pb-2">
           <CopyPromptButton applicationId={application.id} />
         </div>
-        <DropdownMenuSeparator />
-        <div className="px-2 py-1.5">
-          <BedrockMemoryToggle
-            applicationId={application.id}
-            initialEnabled={application.bedrockEnabled}
-          />
-        </div>
+        {bedrockIntegration ? (
+          <>
+            <DropdownMenuSeparator />
+            <div className="px-2 py-1.5">
+              <BedrockMemoryToggle
+                applicationId={application.id}
+                initialEnabled={application.bedrockEnabled}
+              />
+            </div>
+          </>
+        ) : null}
         <DropdownMenuSeparator />
         {collaboration ? (
           <DropdownMenuItem asChild>

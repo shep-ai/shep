@@ -1,0 +1,28 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: BedrockMemorySnapshot.yaml
+type: object
+properties:
+  cwd:
+    type: string
+    description: Absolute path to the worktree that was probed
+  present:
+    type: boolean
+    description: Whether a `.bedrock/` directory exists at cwd
+  files:
+    type: array
+    items:
+      $ref: BedrockMemoryFile.yaml
+    description: All bedrock memory files discovered at cwd
+  totalBytes:
+    type: string
+    description: Total size in bytes of all bedrock memory files combined
+  mostRecentlyModifiedAt:
+    type: string
+    format: date-time
+    description: UTC timestamp of the most recently modified bedrock memory file (if any)
+required:
+  - cwd
+  - present
+  - files
+  - totalBytes
+description: Snapshot of the on-disk bedrock memory store at a target worktree

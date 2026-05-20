@@ -1,0 +1,22 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: BedrockMemoryFile.yaml
+type: object
+properties:
+  path:
+    type: string
+    description: Path of the file relative to the target's worktree (forward slashes)
+  sizeBytes:
+    type: string
+    description: File size in bytes
+  modifiedAt:
+    type: string
+    format: date-time
+    description: UTC timestamp of the most recent on-disk modification
+  preview:
+    type: string
+    description: Optional short UTF-8 preview of the file contents (truncated)
+required:
+  - path
+  - sizeBytes
+  - modifiedAt
+description: One file in the bedrock memory store

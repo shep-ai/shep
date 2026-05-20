@@ -191,6 +191,7 @@ describe('requireFeatureFlag', () => {
         projects: false,
         codeReview: false,
         collaboration: true,
+        bedrockIntegration: false,
       },
     });
 
@@ -207,6 +208,7 @@ describe('requireFeatureFlag', () => {
         projects: false,
         codeReview: false,
         collaboration: false,
+        bedrockIntegration: false,
       },
     });
 

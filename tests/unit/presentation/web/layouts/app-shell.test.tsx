@@ -56,6 +56,7 @@ const defaultFlags = {
   projects: false,
   codeReview: false,
   collaboration: false,
+  bedrockIntegration: false,
 };
 
 function renderShell(children: React.ReactNode) {

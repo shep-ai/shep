@@ -112,6 +112,9 @@ properties:
     items:
       $ref: Attachment.yaml
     description: Files attached by the user when creating or messaging this feature
+  bedrockEnabled:
+    type: boolean
+    description: Whether project-bedrock memory integration is enabled for this feature worktree (defaults to false in persistence)
 required:
   - name
   - userQuery

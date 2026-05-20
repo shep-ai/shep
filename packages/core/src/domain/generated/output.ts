@@ -687,6 +687,10 @@ export type FeatureFlags = {
    * Enable agent collaboration, supervisor agent, and unified question pipeline (spec 093)
    */
   collaboration: boolean;
+  /**
+   * Enable project-bedrock memory integration UI and server actions (spec 098, default OFF)
+   */
+  bedrockIntegration: boolean;
 };
 
 /**

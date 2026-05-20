@@ -610,6 +610,9 @@ model FeatureFlags {
 
   @doc("Enable agent collaboration, supervisor agent, and unified question pipeline (spec 093)")
   collaboration: boolean = false;
+
+  @doc("Enable project-bedrock memory integration UI and server actions (spec 098, default OFF)")
+  bedrockIntegration: boolean = false;
 }
 
 /**

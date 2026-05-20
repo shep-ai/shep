@@ -113,14 +113,16 @@ export function RepositoryDrawerClient({ data, initialTab }: RepositoryDrawerCli
             <MessageSquare className="mr-1.5 size-4" />
             Chat
           </TabsTrigger>
-          <TabsTrigger
-            value="bedrock"
-            data-testid="repository-drawer-bedrock-tab"
-            className="text-muted-foreground hover:bg-muted hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-t-primary [&:not([data-state=active])]:border-r-border relative h-auto rounded-none border-t-2 border-r border-t-transparent border-r-transparent bg-transparent px-3.5 py-2.5 text-[13px] font-normal shadow-none transition-none last:border-r-transparent data-[state=active]:shadow-none"
-          >
-            <Database className="mr-1.5 size-4" />
-            Bedrock
-          </TabsTrigger>
+          {featureFlags.bedrockIntegration ? (
+            <TabsTrigger
+              value="bedrock"
+              data-testid="repository-drawer-bedrock-tab"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-t-primary [&:not([data-state=active])]:border-r-border relative h-auto rounded-none border-t-2 border-r border-t-transparent border-r-transparent bg-transparent px-3.5 py-2.5 text-[13px] font-normal shadow-none transition-none last:border-r-transparent data-[state=active]:shadow-none"
+            >
+              <Database className="mr-1.5 size-4" />
+              Bedrock
+            </TabsTrigger>
+          ) : null}
         </TabsList>
 
         {/* Persistent header — contrasting background */}
@@ -320,23 +322,25 @@ export function RepositoryDrawerClient({ data, initialTab }: RepositoryDrawerCli
         </TabsContent>
 
         {/* Bedrock memory tab — visualization for the repo-level memory store */}
-        <TabsContent
-          value="bedrock"
-          className="mt-0 flex min-h-0 flex-1 flex-col overflow-y-auto p-4"
-        >
-          {data.id ? (
-            <BedrockMemorySection
-              targetKind={BedrockTargetKind.Repository}
-              targetId={data.id}
-              targetLabel={data.name}
-              initialEnabled={false}
-            />
-          ) : (
-            <p className="text-muted-foreground text-xs">
-              Bedrock memory is unavailable for repositories not yet tracked by Shep.
-            </p>
-          )}
-        </TabsContent>
+        {featureFlags.bedrockIntegration ? (
+          <TabsContent
+            value="bedrock"
+            className="mt-0 flex min-h-0 flex-1 flex-col overflow-y-auto p-4"
+          >
+            {data.id ? (
+              <BedrockMemorySection
+                targetKind={BedrockTargetKind.Repository}
+                targetId={data.id}
+                targetLabel={data.name}
+                initialEnabled={false}
+              />
+            ) : (
+              <p className="text-muted-foreground text-xs">
+                Bedrock memory is unavailable for repositories not yet tracked by Shep.
+              </p>
+            )}
+          </TabsContent>
+        ) : null}
       </Tabs>
     </BaseDrawer>
   );

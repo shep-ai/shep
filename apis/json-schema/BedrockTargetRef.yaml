@@ -1,0 +1,14 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: BedrockTargetRef.yaml
+type: object
+properties:
+  kind:
+    $ref: BedrockTargetKind.yaml
+    description: Which kind of entity owns the bedrock memory
+  id:
+    type: string
+    description: Identifier of the owning entity (Application.id, Repository.id, or Feature.id)
+required:
+  - kind
+  - id
+description: Typed reference to a bedrock-capable entity (kind + id)

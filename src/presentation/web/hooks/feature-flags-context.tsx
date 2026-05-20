@@ -10,6 +10,7 @@ const defaultFlags: FeatureFlagsState = {
   projects: false,
   codeReview: false,
   collaboration: false,
+  bedrockIntegration: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsState>(defaultFlags);

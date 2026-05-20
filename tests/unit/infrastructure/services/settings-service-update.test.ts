@@ -75,6 +75,7 @@ describe('updateSettings', () => {
         projects: false,
         codeReview: false,
         collaboration: false,
+        bedrockIntegration: false,
       },
     };
     updateSettings(updated);

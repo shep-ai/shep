@@ -1,6 +1,7 @@
 'use server';
 
 import { resolve } from '@/lib/server-container';
+import { FeatureFlagDisabledError, requireFeatureFlag } from '@/lib/feature-flags';
 import type { EnableBedrockForApplicationUseCase } from '@shepai/core/application/use-cases/applications/enable-bedrock-for-application.use-case';
 import { ApplicationNotFoundError } from '@shepai/core/domain/errors/application-not-found.error';
 import { BedrockBinaryMissingError } from '@shepai/core/domain/errors/bedrock-binary-missing.error';
@@ -17,12 +18,20 @@ export async function enableBedrock(applicationId: string): Promise<EnableBedroc
   }
 
   try {
+    requireFeatureFlag('bedrockIntegration');
     const useCase = resolve<EnableBedrockForApplicationUseCase>(
       'EnableBedrockForApplicationUseCase'
     );
     await useCase.execute({ applicationId });
     return { ok: true, bedrockEnabled: true };
   } catch (error: unknown) {
+    if (error instanceof FeatureFlagDisabledError) {
+      return {
+        ok: false,
+        code: 'FEATURE_FLAG_DISABLED',
+        remediation: 'Enable the "Bedrock memory" feature flag in Settings → Feature Flags.',
+      };
+    }
     if (
       error instanceof PipxNotInstalledError ||
       error instanceof BedrockBinaryMissingError ||

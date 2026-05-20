@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: BedrockTargetKind.yaml
+type: string
+enum:
+  - application
+  - repository
+  - feature
+description: Kind of shep entity owning a bedrock memory store
