@@ -55,8 +55,12 @@ vi.mock('@/hooks/feature-flags-context', () => ({
     projects: false,
     codeReview: false,
     collaboration: false,
+<<<<<<< HEAD
     bedrockIntegration: false,
     whatsappDispatch: false,
+=======
+    aspm: false,
+>>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
   })),
 }));
 
@@ -77,8 +81,12 @@ describe('AddRepositoryButton', () => {
       projects: false,
       codeReview: false,
       collaboration: false,
+<<<<<<< HEAD
       bedrockIntegration: false,
       whatsappDispatch: false,
+=======
+      aspm: false,
+>>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
     });
   });
 
@@ -174,8 +182,12 @@ describe('AddRepositoryButton', () => {
         projects: false,
         codeReview: false,
         collaboration: false,
+<<<<<<< HEAD
         bedrockIntegration: false,
         whatsappDispatch: false,
+=======
+        aspm: false,
+>>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
       });
     });
 
@@ -304,8 +316,12 @@ describe('AddRepositoryButton', () => {
         projects: false,
         codeReview: false,
         collaboration: false,
+<<<<<<< HEAD
         bedrockIntegration: false,
         whatsappDispatch: false,
+=======
+        aspm: false,
+>>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
       });
     });
 
@@ -376,8 +392,12 @@ describe('AddRepositoryButton', () => {
         projects: false,
         codeReview: false,
         collaboration: false,
+<<<<<<< HEAD
         bedrockIntegration: false,
         whatsappDispatch: false,
+=======
+        aspm: false,
+>>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
       });
       const user = userEvent.setup();
       render(<AddRepositoryButton />);

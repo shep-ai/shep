@@ -229,6 +229,7 @@ export function createDefaultSettings(): Settings {
     projects: false,
     codeReview: false,
     collaboration: false,
+<<<<<<< HEAD
     bedrockIntegration: true,
     whatsappDispatch: false,
   };
@@ -236,6 +237,9 @@ export function createDefaultSettings(): Settings {
   const whatsapp: WhatsAppConfig = {
     enabled: false,
     adapter: WhatsAppAdapterKind.Baileys,
+=======
+    aspm: false,
+>>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
   };
 
   return {

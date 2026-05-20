@@ -19,8 +19,12 @@ export interface FeatureFlagsState {
   projects: boolean;
   codeReview: boolean;
   collaboration: boolean;
+<<<<<<< HEAD
   bedrockIntegration: boolean;
   whatsappDispatch: boolean;
+=======
+  aspm: boolean;
+>>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
 }
 
 export function getFeatureFlags(): FeatureFlagsState {
@@ -35,8 +39,12 @@ export function getFeatureFlags(): FeatureFlagsState {
           projects: flags.projects,
           codeReview: flags.codeReview,
           collaboration: flags.collaboration,
+<<<<<<< HEAD
           bedrockIntegration: flags.bedrockIntegration,
           whatsappDispatch: flags.whatsappDispatch,
+=======
+          aspm: flags.aspm,
+>>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
         };
       }
     }
@@ -54,8 +62,12 @@ export function getFeatureFlags(): FeatureFlagsState {
     projects: false,
     codeReview: false,
     collaboration: isEnabled(process.env.NEXT_PUBLIC_FLAG_COLLABORATION),
+<<<<<<< HEAD
     bedrockIntegration: isEnabled(process.env.NEXT_PUBLIC_FLAG_BEDROCK_INTEGRATION),
     whatsappDispatch: isEnabled(process.env.NEXT_PUBLIC_FLAG_WHATSAPP_DISPATCH),
+=======
+    aspm: isEnabled(process.env.NEXT_PUBLIC_FLAG_ASPM),
+>>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
   };
 }
 
@@ -106,10 +118,15 @@ export const featureFlags = {
   get collaboration() {
     return getFeatureFlags().collaboration;
   },
+<<<<<<< HEAD
   get bedrockIntegration() {
     return getFeatureFlags().bedrockIntegration;
   },
   get whatsappDispatch() {
     return getFeatureFlags().whatsappDispatch;
+=======
+  get aspm() {
+    return getFeatureFlags().aspm;
+>>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
   },
 } as const;

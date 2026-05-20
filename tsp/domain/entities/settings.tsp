@@ -617,6 +617,9 @@ model FeatureFlags {
 
   @doc("Enable WhatsApp-native task dispatch and interactive control (spec 101)")
   whatsappDispatch: boolean = false;
+
+  @doc("Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098)")
+  aspm: boolean = false;
 }
 
 /**

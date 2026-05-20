@@ -318,6 +318,7 @@ describe('createDefaultSettings', () => {
         projects: false,
         codeReview: false,
         collaboration: false,
+<<<<<<< HEAD
         bedrockIntegration: true,
         whatsappDispatch: false,
       });
@@ -328,6 +329,9 @@ describe('createDefaultSettings', () => {
       expect(settings.whatsapp).toEqual({
         enabled: false,
         adapter: 'baileys',
+=======
+        aspm: false,
+>>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
       });
     });
   });

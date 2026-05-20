@@ -21,6 +21,7 @@
  */
 
 import { resolve } from '@/lib/server-container';
+import { getFeatureFlags } from '@/lib/feature-flags';
 import type {
   GetPostureSummaryUseCase,
   PostureSummary,
@@ -55,6 +56,13 @@ export interface PostureSummaryPayload {
 }
 
 export function GET(request: Request): Response {
+  // Gate the entire stream behind the `aspm` feature flag. Even with the
+  // /aspm UI hidden, the POST endpoint here is reachable by URL, so it
+  // must enforce the flag itself.
+  if (!getFeatureFlags().aspm) {
+    return new Response('Not Found', { status: 404 });
+  }
+
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       const encoder = new TextEncoder();
