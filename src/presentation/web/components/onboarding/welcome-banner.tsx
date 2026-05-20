@@ -17,6 +17,7 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { GraduationCap, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 const STORAGE_PREFIX = 'shep:onboarding:';
 
@@ -40,6 +41,7 @@ export function WelcomeBanner({
   ctaHref,
   forceVisible,
 }: WelcomeBannerProps) {
+  const { t } = useTranslation('web');
   const storageKey = `${STORAGE_PREFIX}${id}`;
   // Mounted gate avoids a server/client hydration mismatch: SSR returns null,
   // the effect resolves visibility from localStorage on the client.
@@ -100,7 +102,9 @@ export function WelcomeBanner({
         size="icon"
         className="size-7 shrink-0"
         onClick={dismiss}
-        aria-label="Dismiss this hint"
+        aria-label={t('onboarding.welcomeBanner.dismiss', {
+          defaultValue: 'Dismiss this hint',
+        })}
         data-testid={`welcome-banner-${id}-dismiss`}
       >
         <X className="size-4" />

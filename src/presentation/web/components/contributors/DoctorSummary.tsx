@@ -11,6 +11,7 @@
 import { CheckCircle2, AlertTriangle, XCircle, Stethoscope } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DiagnosticStatus } from '@shepai/core/domain/generated/output';
+import { useTranslation } from 'react-i18next';
 
 export interface DoctorSummaryResult {
   name: string;
@@ -31,15 +32,21 @@ export interface DoctorSummaryProps {
 }
 
 export function DoctorSummary({ report, loading }: DoctorSummaryProps) {
+  const { t } = useTranslation('web');
+
   return (
     <section
       className="flex flex-col gap-3"
       data-testid="doctor-summary"
-      aria-label="Environment diagnostic summary"
+      aria-label={t('contributors.doctorSummary.ariaLabel', {
+        defaultValue: 'Environment diagnostic summary',
+      })}
     >
       <header className="flex items-center gap-2">
         <Stethoscope className="text-primary size-5" aria-hidden />
-        <h2 className="text-lg font-semibold">Environment health</h2>
+        <h2 className="text-lg font-semibold">
+          {t('contributors.doctorSummary.title', { defaultValue: 'Environment health' })}
+        </h2>
       </header>
 
       {loading || !report ? (
@@ -62,28 +69,38 @@ export function DoctorSummary({ report, loading }: DoctorSummaryProps) {
 }
 
 function Counts({ summary }: { summary: DoctorSummaryReport['summary'] }) {
+  const { t } = useTranslation('web');
+
   return (
     <div className="flex flex-wrap gap-4 text-sm" data-testid="doctor-summary-counts">
       <span className="inline-flex items-center gap-1.5" data-testid="doctor-summary-ok">
         <CheckCircle2 className="size-4 text-emerald-600" aria-hidden />
         <span className="font-medium">{summary.ok}</span>
-        <span className="text-muted-foreground">ok</span>
+        <span className="text-muted-foreground">
+          {t('contributors.doctorSummary.counts.ok', { defaultValue: 'ok' })}
+        </span>
       </span>
       <span className="inline-flex items-center gap-1.5" data-testid="doctor-summary-warn">
         <AlertTriangle className="size-4 text-amber-600" aria-hidden />
         <span className="font-medium">{summary.warn}</span>
-        <span className="text-muted-foreground">warn</span>
+        <span className="text-muted-foreground">
+          {t('contributors.doctorSummary.counts.warn', { defaultValue: 'warn' })}
+        </span>
       </span>
       <span className="inline-flex items-center gap-1.5" data-testid="doctor-summary-fail">
         <XCircle className="size-4 text-red-600" aria-hidden />
         <span className="font-medium">{summary.fail}</span>
-        <span className="text-muted-foreground">fail</span>
+        <span className="text-muted-foreground">
+          {t('contributors.doctorSummary.counts.fail', { defaultValue: 'fail' })}
+        </span>
       </span>
     </div>
   );
 }
 
 function DiagnosticRow({ result }: { result: DoctorSummaryResult }) {
+  const { t } = useTranslation('web');
+
   return (
     <li className="flex items-start gap-3 px-3 py-2" data-testid={`doctor-row-${result.name}`}>
       <StatusIcon status={result.status} />
@@ -97,7 +114,10 @@ function DiagnosticRow({ result }: { result: DoctorSummaryResult }) {
             className="text-muted-foreground/80 text-xs italic"
             data-testid={`doctor-row-fix-${result.name}`}
           >
-            Hint: {result.fixHint}
+            {t('contributors.doctorSummary.hint', {
+              fixHint: result.fixHint,
+              defaultValue: 'Hint: {{fixHint}}',
+            })}
           </p>
         ) : null}
       </div>

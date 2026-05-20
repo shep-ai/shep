@@ -12,6 +12,7 @@ import { ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ContributionDifficulty, type ContributorLane } from '@shepai/core/domain/generated/output';
+import { useTranslation } from 'react-i18next';
 
 export interface CuratedIssueView {
   owner: string;
@@ -50,11 +51,15 @@ const DIFFICULTY_LABEL: Record<ContributionDifficulty, string> = {
 const PREVIEW_MAX_LEN = 160;
 
 export function CuratedIssuesList({ issues, loading, error }: CuratedIssuesListProps) {
+  const { t } = useTranslation('web');
+
   return (
     <section
       className="flex flex-col gap-3"
       data-testid="curated-issues-list"
-      aria-label="Curated good-first-issues"
+      aria-label={t('contributors.curatedIssues.ariaLabel', {
+        defaultValue: 'Curated good-first-issues',
+      })}
     >
       {loading ? (
         <LoadingState />
@@ -74,6 +79,7 @@ export function CuratedIssuesList({ issues, loading, error }: CuratedIssuesListP
 }
 
 function IssueCard({ issue }: { issue: CuratedIssueView }) {
+  const { t } = useTranslation('web');
   const slug = `${issue.owner}/${issue.repo}#${issue.issueNumber}`;
   const preview = previewCriteria(issue.acceptanceCriteria);
   return (
@@ -100,7 +106,9 @@ function IssueCard({ issue }: { issue: CuratedIssueView }) {
           className="shrink-0"
           data-testid={`curated-issue-difficulty-${issue.issueNumber}`}
         >
-          {DIFFICULTY_LABEL[issue.difficulty] ?? issue.difficulty}
+          {t(`contributors.curatedIssues.difficulty.${issue.difficulty}`, {
+            defaultValue: DIFFICULTY_LABEL[issue.difficulty] ?? issue.difficulty,
+          })}
         </Badge>
       </div>
       {preview ? (
@@ -136,24 +144,34 @@ function LoadingState() {
 }
 
 function EmptyState() {
+  const { t } = useTranslation('web');
+
   return (
     <p
       className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm"
       data-testid="curated-issues-empty"
     >
-      No good-first-issues open in this lane right now — check back soon, or pick a different lane.
+      {t('contributors.curatedIssues.empty', {
+        defaultValue:
+          'No good-first-issues open in this lane right now — check back soon, or pick a different lane.',
+      })}
     </p>
   );
 }
 
 function ErrorState({ message }: { message: string }) {
+  const { t } = useTranslation('web');
+
   return (
     <p
       className="text-destructive bg-destructive/5 border-destructive/40 rounded-lg border p-4 text-sm"
       data-testid="curated-issues-error"
       role="alert"
     >
-      Couldn&apos;t load curated issues: {message}
+      {t('contributors.curatedIssues.error', {
+        message,
+        defaultValue: "Couldn't load curated issues: {{message}}",
+      })}
     </p>
   );
 }

@@ -25,6 +25,7 @@ import type { Route } from 'next';
 import type { LucideIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface TutorialStep {
   title: string;
@@ -178,6 +179,7 @@ const SECTIONS: TutorialSection[] = [
 ];
 
 export function OnboardingTutorial() {
+  const { t } = useTranslation('web');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   function toggle(id: string) {
@@ -189,106 +191,134 @@ export function OnboardingTutorial() {
       <header className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <GraduationCap className="text-primary size-6" />
-          <h1 className="text-2xl font-semibold">Get started</h1>
+          <h1 className="text-2xl font-semibold">
+            {t('onboarding.tutorial.title', { defaultValue: 'Get started' })}
+          </h1>
         </div>
         <p className="text-muted-foreground max-w-2xl text-sm">
-          A short tour through the new agent collaboration & supervision features. Each section
-          links to the live surface — read for two minutes, then go try it.
+          {t('onboarding.tutorial.description', {
+            defaultValue:
+              'A short tour through the new agent collaboration & supervision features. Each section links to the live surface — read for two minutes, then go try it.',
+          })}
         </p>
       </header>
 
       <nav
         className="bg-muted/40 flex flex-wrap gap-2 rounded-lg border p-3"
-        aria-label="Tutorial sections"
+        aria-label={t('onboarding.tutorial.sectionsNavLabel', {
+          defaultValue: 'Tutorial sections',
+        })}
       >
-        {SECTIONS.map((section) => (
-          <a
-            key={section.id}
-            href={`#${section.id}`}
-            className="border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-md border bg-white/40 px-3 py-1.5 text-xs font-medium dark:bg-black/20"
-          >
-            <section.icon className="size-3" />
-            {section.title.split('—')[0]?.trim() ?? section.title}
-          </a>
-        ))}
+        {SECTIONS.map((section) => {
+          const title = t(`onboarding.tutorial.sections.${section.id}.title`, {
+            defaultValue: section.title,
+          });
+          return (
+            <a
+              key={section.id}
+              href={`#${section.id}`}
+              className="border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-md border bg-white/40 px-3 py-1.5 text-xs font-medium dark:bg-black/20"
+            >
+              <section.icon className="size-3" />
+              {title.split('—')[0]?.trim() ?? title}
+            </a>
+          );
+        })}
       </nav>
 
-      {SECTIONS.map((section) => (
-        <section
-          key={section.id}
-          id={section.id}
-          data-testid={`tutorial-section-${section.id}`}
-          className="flex scroll-mt-6 flex-col gap-4"
-        >
-          <header className="flex items-start justify-between gap-3">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <section.icon className="text-primary size-5" />
-                <h2 className="text-lg font-semibold">{section.title}</h2>
-                {section.badge ? (
-                  <Badge variant="secondary" className="shrink-0">
-                    {section.badge}
-                  </Badge>
-                ) : null}
+      {SECTIONS.map((section) => {
+        const sectionKey = `onboarding.tutorial.sections.${section.id}`;
+        return (
+          <section
+            key={section.id}
+            id={section.id}
+            data-testid={`tutorial-section-${section.id}`}
+            className="flex scroll-mt-6 flex-col gap-4"
+          >
+            <header className="flex items-start justify-between gap-3">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <section.icon className="text-primary size-5" />
+                  <h2 className="text-lg font-semibold">
+                    {t(`${sectionKey}.title`, { defaultValue: section.title })}
+                  </h2>
+                  {section.badge ? (
+                    <Badge variant="secondary" className="shrink-0">
+                      {t(`${sectionKey}.badge`, { defaultValue: section.badge })}
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="text-muted-foreground max-w-2xl text-sm">
+                  {t(`${sectionKey}.intro`, { defaultValue: section.intro })}
+                </p>
               </div>
-              <p className="text-muted-foreground max-w-2xl text-sm">{section.intro}</p>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => toggle(section.id)}
-              aria-expanded={!collapsed[section.id]}
-              aria-controls={`steps-${section.id}`}
-              data-testid={`tutorial-toggle-${section.id}`}
-            >
-              {collapsed[section.id] ? (
-                <ChevronDown className="size-4" />
-              ) : (
-                <ChevronUp className="size-4" />
-              )}
-            </Button>
-          </header>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => toggle(section.id)}
+                aria-expanded={!collapsed[section.id]}
+                aria-controls={`steps-${section.id}`}
+                data-testid={`tutorial-toggle-${section.id}`}
+              >
+                {collapsed[section.id] ? (
+                  <ChevronDown className="size-4" />
+                ) : (
+                  <ChevronUp className="size-4" />
+                )}
+              </Button>
+            </header>
 
-          {collapsed[section.id] ? null : (
-            <ol
-              id={`steps-${section.id}`}
-              className="flex flex-col gap-3 border-l-2 pl-5"
-              data-testid={`tutorial-steps-${section.id}`}
-            >
-              {section.steps.map((step, i) => (
-                <li key={step.title} className="flex flex-col gap-2">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-muted-foreground font-mono text-xs">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <h3 className="text-sm font-semibold">{step.title}</h3>
-                  </div>
-                  <p className="text-muted-foreground text-sm">{step.description}</p>
-                  {step.detail ? (
-                    <p className="text-muted-foreground/80 text-xs">{step.detail}</p>
-                  ) : null}
-                  {step.cta ? (
-                    <div>
-                      <Button asChild size="sm" variant="outline">
-                        <Link href={step.cta.href as Route}>
-                          {step.cta.label}
-                          <ArrowRight className="size-3" />
-                        </Link>
-                      </Button>
-                    </div>
-                  ) : null}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      ))}
+            {collapsed[section.id] ? null : (
+              <ol
+                id={`steps-${section.id}`}
+                className="flex flex-col gap-3 border-l-2 pl-5"
+                data-testid={`tutorial-steps-${section.id}`}
+              >
+                {section.steps.map((step, i) => {
+                  const stepKey = `${sectionKey}.steps.${i}`;
+                  return (
+                    <li key={step.title} className="flex flex-col gap-2">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-muted-foreground font-mono text-xs">
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        <h3 className="text-sm font-semibold">
+                          {t(`${stepKey}.title`, { defaultValue: step.title })}
+                        </h3>
+                      </div>
+                      <p className="text-muted-foreground text-sm">
+                        {t(`${stepKey}.description`, { defaultValue: step.description })}
+                      </p>
+                      {step.detail ? (
+                        <p className="text-muted-foreground/80 text-xs">
+                          {t(`${stepKey}.detail`, { defaultValue: step.detail })}
+                        </p>
+                      ) : null}
+                      {step.cta ? (
+                        <div>
+                          <Button asChild size="sm" variant="outline">
+                            <Link href={step.cta.href as Route}>
+                              {t(`${stepKey}.cta`, { defaultValue: step.cta.label })}
+                              <ArrowRight className="size-3" />
+                            </Link>
+                          </Button>
+                        </div>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </section>
+        );
+      })}
 
       <footer className="text-muted-foreground bg-muted/40 mt-4 rounded-lg border p-4 text-sm">
-        Stuck on something? The whole stack is editable — every prompt, every graph, every autonomy
-        level. Bumping a slot version is reversible: delete the override and the bundled default
-        returns byte-for-byte.
+        {t('onboarding.tutorial.footer', {
+          defaultValue:
+            'Stuck on something? The whole stack is editable — every prompt, every graph, every autonomy level. Bumping a slot version is reversible: delete the override and the bundled default returns byte-for-byte.',
+        })}
       </footer>
     </div>
   );

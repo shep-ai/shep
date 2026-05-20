@@ -641,5 +641,191 @@
     "imageNotes": "Notes de l'image",
     "viewServerLogs": "Voir les logs du serveur",
     "toggleSidebar": "Basculer la barre latérale"
+  },
+  "contributors": {
+    "lanes": {
+      "docs": {
+        "label": "Docs",
+        "description": "Guides, references, READMEs"
+      },
+      "agents": {
+        "label": "Agents",
+        "description": "Prompts, graphs, custom agents"
+      },
+      "ui": {
+        "label": "UI",
+        "description": "Web dashboard & components"
+      },
+      "cli": {
+        "label": "CLI",
+        "description": "CLI commands & TUI"
+      },
+      "infra": {
+        "label": "Infra",
+        "description": "Build, CI, deps, releases"
+      }
+    },
+    "laneChooser": {
+      "label": "Pick a lane",
+      "placeholder": "Choose a lane…"
+    },
+    "leaderboard": {
+      "ariaLabel": "Contributor leaderboard",
+      "title": "Top contributors",
+      "scopes": {
+        "month": "This month",
+        "allTime": "All time"
+      },
+      "levels": {
+        "user": "user",
+        "contributor": "contributor",
+        "core": "core",
+        "maintainer": "maintainer"
+      },
+      "prCount": "{{count}} PR",
+      "prCount_other": "{{count}} PRs",
+      "empty": "No contributors yet — be the first to merge a PR!",
+      "error": "Couldn't load the leaderboard: {{message}}"
+    },
+    "doctorSummary": {
+      "ariaLabel": "Environment diagnostic summary",
+      "title": "Environment health",
+      "counts": {
+        "ok": "ok",
+        "warn": "warn",
+        "fail": "fail"
+      },
+      "hint": "Hint: {{fixHint}}"
+    },
+    "curatedIssues": {
+      "ariaLabel": "Curated good-first-issues",
+      "difficulty": {
+        "goodFirst": "good first",
+        "easy": "easy",
+        "medium": "medium",
+        "hard": "hard"
+      },
+      "empty": "No good-first-issues open in this lane right now — check back soon, or pick a different lane.",
+      "error": "Couldn't load curated issues: {{message}}"
+    },
+    "onboarding": {
+      "title": "Contribute to Shep",
+      "description": "Pick a lane that matches what you want to work on. Shep will list curated good-first-issues you can ship in under 30 minutes — and run a quick environment check so your fresh clone actually builds.",
+      "pickLanePrompt": "Choose a lane to see curated issues.",
+      "doctorUnavailable": "Environment check unavailable: {{error}}"
+    }
+  },
+  "onboarding": {
+    "welcomeBanner": {
+      "dismiss": "Dismiss this hint"
+    },
+    "tutorial": {
+      "title": "Get started",
+      "description": "A short tour through the new agent collaboration & supervision features. Each section links to the live surface — read for two minutes, then go try it.",
+      "sectionsNavLabel": "Tutorial sections",
+      "footer": "Stuck on something? The whole stack is editable — every prompt, every graph, every autonomy level. Bumping a slot version is reversible: delete the override and the bundled default returns byte-for-byte.",
+      "sections": {
+        "supervisors": {
+          "badge": "Supervision",
+          "title": "Supervisors keep agents on the rails",
+          "intro": "A supervisor is a small agent that watches another agent and decides whether to approve, advise, escalate, or reject what it tries to do. Policies cascade — feature beats repo beats application beats global.",
+          "steps": {
+            "0": {
+              "title": "Open the supervisor dashboard",
+              "description": "Lists every configured policy grouped by scope and the most recent decisions across all of them.",
+              "detail": "You will land on an empty state the first time. The buttons there jump straight into pick-an-application or edit-agent-prompts so the page is never a dead end.",
+              "cta": "Open /supervisor"
+            },
+            "1": {
+              "title": "Create your first supervisor",
+              "description": "Click \"Create supervisor\" at the top right. Pick the scope you want to watch (global, application, repository, or per-feature override), then choose an autonomy level.",
+              "detail": "Advisory recommends only — safest default. Co-sign requires both supervisor and user to approve a gate. Autonomous lets the supervisor act on your behalf within the policy you configure."
+            },
+            "2": {
+              "title": "Tune per-gate authority",
+              "description": "For each gate (PRD, Plan, Merge) you can override the global autonomy level. A merge gate set to Co-sign while everything else is Advisory is a common starter setup."
+            },
+            "3": {
+              "title": "Inspect decisions",
+              "description": "Once your supervisor evaluates an event, the rationale + verdict shows up in the Recent decisions list. Click \"Why?\" on any row to see the full audit trail."
+            },
+            "4": {
+              "title": "Promoted on the application page",
+              "description": "Every application top-bar now has a Configure supervisor button that takes you straight to the per-app policy editor."
+            }
+          }
+        },
+        "agents": {
+          "badge": "Agents",
+          "title": "Edit prompts, graphs, and try them in the playground",
+          "intro": "The Agents page lists every built-in agent (feature-agent, supervisor-agent) plus any custom agents you create. Each one has three tabs: Prompts, Graph, and Playground.",
+          "steps": {
+            "0": {
+              "title": "Open the agent list",
+              "description": "You will see one row per registered agent with its prompt count and override count. Click any row to open the editor.",
+              "cta": "Open /agents"
+            },
+            "1": {
+              "title": "Edit a prompt slot",
+              "description": "Each agent has one or more system-prompt slots. Save an override and it replaces the bundled body at runtime; click \"Reset to bundled\" to restore the byte-identical default.",
+              "detail": "Overrides are versioned — every save bumps the version counter so the audit trail tells you exactly which prompt was in effect when an action ran."
+            },
+            "2": {
+              "title": "Edit the graph (write capability)",
+              "description": "Open the Graph tab and click Edit. Drag nodes to rearrange, drag from a node handle to connect, double-click a label to rename, and Backspace to delete. Save or Reset to bundled to roll back.",
+              "detail": "Nodes and edges are stored as a JSON descriptor — a structural override of the LangGraph topology shipped with the runtime."
+            },
+            "3": {
+              "title": "Try it in the playground",
+              "description": "The Playground tab streams a live chat against the configured executor with the current (possibly unsaved) prompt body so you can A/B before saving.",
+              "detail": "Playground runs are isolated — they never touch agent_runs, agent_messages, or supervisor_decisions tables."
+            }
+          }
+        },
+        "custom-agents": {
+          "badge": "Custom agents",
+          "title": "Stand up a brand-new agent type",
+          "intro": "Custom agents share the same prompt + graph + playground surfaces as built-ins. Use them when you want a new agent type the runtime does not ship with — code review, doc rewriting, whatever.",
+          "steps": {
+            "0": {
+              "title": "Click \"New agent\" on /agents",
+              "description": "Pick a stable kebab-case id (e.g. code-review), a display name, a description, and optionally seed the first prompt slot.",
+              "cta": "Open /agents"
+            },
+            "1": {
+              "title": "Author more prompt slots",
+              "description": "Once created, the agent opens in the editor. Add as many prompt slots as you need — custom agents accept any slot id you invent (built-ins are locked to the registry)."
+            },
+            "2": {
+              "title": "Design the graph from scratch",
+              "description": "A custom agent starts with a single \"Start\" node so the editor is immediately useful. Add nodes, connect them, save — your topology is now persisted as an override."
+            },
+            "3": {
+              "title": "Delete cleans up after itself",
+              "description": "Removing a custom agent cascades through prompt + graph overrides so nothing is left orphaned in the database. Built-ins cannot be deleted."
+            }
+          }
+        },
+        "where-to-find-things": {
+          "badge": "Discoverability",
+          "title": "Where everything lives",
+          "intro": "A quick map of the new surfaces and how to reach each.",
+          "steps": {
+            "0": {
+              "title": "Sidebar — Supervisor / Agents / Get started",
+              "description": "All three live under the collaboration feature flag. If they are missing, enable the flag in Settings."
+            },
+            "1": {
+              "title": "Application top-bar — Configure supervisor",
+              "description": "Lands you on /application/[id]/supervisor with the per-app policy form pre-loaded."
+            },
+            "2": {
+              "title": "Per-feature override",
+              "description": "On the supervisor dashboard, the \"Per-feature overrides\" group surfaces every policy that targets a single feature. Use the Create dialog and pick scope = feature to add one."
+            }
+          }
+        }
+      }
+    }
   }
 }

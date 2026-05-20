@@ -12,6 +12,7 @@ import { Trophy, Crown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ContributorLevel, type ContributorLane } from '@shepai/core/domain/generated/output';
+import { useTranslation } from 'react-i18next';
 
 export interface LeaderboardEntry {
   login: string;
@@ -49,17 +50,23 @@ export function ContributorLeaderboard({
   loading,
   error,
 }: ContributorLeaderboardProps) {
+  const { t } = useTranslation('web');
+
   return (
     <section
       className="flex flex-col gap-3"
       data-testid="contributor-leaderboard"
-      aria-label="Contributor leaderboard"
+      aria-label={t('contributors.leaderboard.ariaLabel', {
+        defaultValue: 'Contributor leaderboard',
+      })}
     >
       <header className="flex items-center gap-2">
         <Trophy className="text-primary size-5" aria-hidden />
-        <h2 className="text-lg font-semibold">Top contributors</h2>
+        <h2 className="text-lg font-semibold">
+          {t('contributors.leaderboard.title', { defaultValue: 'Top contributors' })}
+        </h2>
         <Badge variant="secondary" className="ml-1">
-          {SCOPE_LABEL[scope]}
+          {t(`contributors.leaderboard.scopes.${scope}`, { defaultValue: SCOPE_LABEL[scope] })}
         </Badge>
       </header>
 
@@ -86,6 +93,8 @@ interface RowProps {
 }
 
 function LeaderboardRow({ rank, entry }: RowProps) {
+  const { t } = useTranslation('web');
+
   return (
     <li
       className="flex items-center gap-3 px-3 py-2"
@@ -111,7 +120,11 @@ function LeaderboardRow({ rank, entry }: RowProps) {
         </p>
         <p className="text-muted-foreground text-xs">
           @{entry.login}
-          {entry.lane ? ` · ${entry.lane}` : ''}
+          {entry.lane
+            ? ` · ${t(`contributors.lanes.${entry.lane}.label`, {
+                defaultValue: entry.lane,
+              })}`
+            : ''}
         </p>
       </div>
       <Badge
@@ -119,13 +132,16 @@ function LeaderboardRow({ rank, entry }: RowProps) {
         className="shrink-0 capitalize"
         data-testid={`leaderboard-level-${entry.login}`}
       >
-        {entry.level}
+        {t(`contributors.leaderboard.levels.${entry.level}`, { defaultValue: entry.level })}
       </Badge>
       <span
         className="w-12 shrink-0 text-right text-sm tabular-nums"
         data-testid={`leaderboard-prs-${entry.login}`}
       >
-        {entry.prCount} PR{entry.prCount === 1 ? '' : 's'}
+        {t('contributors.leaderboard.prCount', {
+          count: entry.prCount,
+          defaultValue: `${entry.prCount} PR${entry.prCount === 1 ? '' : 's'}`,
+        })}
       </span>
     </li>
   );
@@ -174,24 +190,33 @@ function LoadingState() {
 }
 
 function EmptyState() {
+  const { t } = useTranslation('web');
+
   return (
     <p
       className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm"
       data-testid="leaderboard-empty"
     >
-      No contributors yet — be the first to merge a PR!
+      {t('contributors.leaderboard.empty', {
+        defaultValue: 'No contributors yet — be the first to merge a PR!',
+      })}
     </p>
   );
 }
 
 function ErrorState({ message }: { message: string }) {
+  const { t } = useTranslation('web');
+
   return (
     <p
       className="text-destructive bg-destructive/5 border-destructive/40 rounded-lg border p-4 text-sm"
       data-testid="leaderboard-error"
       role="alert"
     >
-      Couldn&apos;t load the leaderboard: {message}
+      {t('contributors.leaderboard.error', {
+        message,
+        defaultValue: "Couldn't load the leaderboard: {{message}}",
+      })}
     </p>
   );
 }

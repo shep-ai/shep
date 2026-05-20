@@ -15,6 +15,7 @@ import { DoctorSummary, type DoctorSummaryReport } from './DoctorSummary';
 import { ContributorLeaderboard } from './ContributorLeaderboard';
 import type { LeaderboardEntry, LeaderboardScope } from './ContributorLeaderboard';
 import { loadCuratedIssues } from '@/app/actions/load-curated-issues';
+import { useTranslation } from 'react-i18next';
 
 export interface ContributorOnboardingViewProps {
   initialLeaderboard: {
@@ -31,6 +32,7 @@ export function ContributorOnboardingView({
   initialDoctorReport,
   doctorError,
 }: ContributorOnboardingViewProps) {
+  const { t } = useTranslation('web');
   const [lane, setLane] = useState<ContributorLane | undefined>(undefined);
   const [issues, setIssues] = useState<readonly CuratedIssueView[]>([]);
   const [issuesError, setIssuesError] = useState<string | undefined>(undefined);
@@ -53,11 +55,14 @@ export function ContributorOnboardingView({
   return (
     <div className="flex flex-col gap-8" data-testid="contributor-onboarding-view">
       <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold">Contribute to Shep</h1>
+        <h1 className="text-2xl font-semibold">
+          {t('contributors.onboarding.title', { defaultValue: 'Contribute to Shep' })}
+        </h1>
         <p className="text-muted-foreground max-w-2xl text-sm">
-          Pick a lane that matches what you want to work on. Shep will list curated
-          good-first-issues you can ship in under 30 minutes — and run a quick environment check so
-          your fresh clone actually builds.
+          {t('contributors.onboarding.description', {
+            defaultValue:
+              'Pick a lane that matches what you want to work on. Shep will list curated good-first-issues you can ship in under 30 minutes — and run a quick environment check so your fresh clone actually builds.',
+          })}
         </p>
       </header>
 
@@ -70,7 +75,9 @@ export function ContributorOnboardingView({
             className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm"
             data-testid="contributor-pick-issue-prompt"
           >
-            Choose a lane to see curated issues.
+            {t('contributors.onboarding.pickLanePrompt', {
+              defaultValue: 'Choose a lane to see curated issues.',
+            })}
           </p>
         )}
       </section>
@@ -78,7 +85,10 @@ export function ContributorOnboardingView({
       <DoctorSummary report={initialDoctorReport} />
       {doctorError ? (
         <p className="text-muted-foreground text-xs" data-testid="doctor-summary-fallback">
-          Environment check unavailable: {doctorError}
+          {t('contributors.onboarding.doctorUnavailable', {
+            error: doctorError,
+            defaultValue: 'Environment check unavailable: {{error}}',
+          })}
         </p>
       ) : null}
 

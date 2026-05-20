@@ -10,6 +10,7 @@
  */
 
 import { ContributorLane } from '@shepai/core/domain/generated/output';
+import { useTranslation } from 'react-i18next';
 
 const LANE_LABEL: Record<ContributorLane, string> = {
   [ContributorLane.Docs]: 'Docs',
@@ -36,16 +37,15 @@ export interface LaneChooserProps {
   id?: string;
 }
 
-export function LaneChooser({
-  value,
-  onLaneChange,
-  label = 'Pick a lane',
-  id = 'lane-chooser',
-}: LaneChooserProps) {
+export function LaneChooser({ value, onLaneChange, label, id = 'lane-chooser' }: LaneChooserProps) {
+  const { t } = useTranslation('web');
+  const resolvedLabel =
+    label ?? t('contributors.laneChooser.label', { defaultValue: 'Pick a lane' });
+
   return (
     <div className="flex flex-col gap-1.5" data-testid="lane-chooser">
       <label htmlFor={id} className="text-sm font-medium">
-        {label}
+        {resolvedLabel}
       </label>
       <select
         id={id}
@@ -55,11 +55,14 @@ export function LaneChooser({
         data-testid="lane-chooser-select"
       >
         <option value="" disabled>
-          Choose a lane…
+          {t('contributors.laneChooser.placeholder', { defaultValue: 'Choose a lane…' })}
         </option>
         {LANE_OPTIONS.map((lane) => (
           <option key={lane} value={lane} data-testid={`lane-chooser-option-${lane}`}>
-            {LANE_LABEL[lane]} — {LANE_DESCRIPTION[lane]}
+            {t(`contributors.lanes.${lane}.label`, { defaultValue: LANE_LABEL[lane] })} —{' '}
+            {t(`contributors.lanes.${lane}.description`, {
+              defaultValue: LANE_DESCRIPTION[lane],
+            })}
           </option>
         ))}
       </select>
