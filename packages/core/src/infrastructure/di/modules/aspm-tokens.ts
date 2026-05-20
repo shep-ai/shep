@@ -38,6 +38,10 @@ export const ASPM_SERVICE_TOKENS = {
   IOwnershipYamlReader: 'IOwnershipYamlReader',
   IOsvVulnerabilityPort: 'IOsvVulnerabilityPort',
   IGitOwnershipPort: 'IGitOwnershipPort',
+  IFileTreeReaderPort: 'IFileTreeReaderPort',
+  ISastAnalyzer: 'ISastAnalyzer',
+  IContainerHardeningAnalyzer: 'IContainerHardeningAnalyzer',
+  IIacSecurityAnalyzer: 'IIacSecurityAnalyzer',
 } as const;
 
 // ─── Union of every ASPM string token (handy for tests / diagnostics) ───────

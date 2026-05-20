@@ -46,6 +46,9 @@ import type { ISbomPort } from '../../../application/ports/output/services/sbom-
 import type { ISlaClockPort } from '../../../application/ports/output/services/sla-clock-port.interface.js';
 import type { IOsvVulnerabilityPort } from '../../../application/ports/output/services/osv-vulnerability-port.interface.js';
 import type { IGitOwnershipPort } from '../../../application/ports/output/services/git-ownership-port.interface.js';
+import type { IFileTreeReaderPort } from '../../../application/ports/output/services/file-tree-reader-port.interface.js';
+import type { IAgentSecurityAnalyzer } from '../../../application/ports/output/services/agent-security-analyzer-port.interface.js';
+import type { IAgentExecutorProvider } from '../../../application/ports/output/agents/agent-executor-provider.interface.js';
 
 // Concrete repositories
 import { SQLiteApiAssetRepository } from '../../repositories/aspm/sqlite-api-asset-repository.js';
@@ -72,7 +75,17 @@ import { SystemSlaClock } from '../../services/aspm/system-sla-clock.js';
 import { NoOpAiChangeRiskSignalRepository } from '../../services/aspm/noop-ai-change-risk-signal-repository.js';
 import { OsvVulnerabilityAdapter } from '../../services/aspm/osv-vulnerability-adapter.js';
 import { GitOwnershipAdapter } from '../../services/aspm/git-ownership-adapter.js';
+import { FileTreeReader } from '../../services/aspm/file-tree-reader.js';
+import { SastAnalysisAgent } from '../../services/aspm/agents/sast-analysis-agent.js';
+import { ContainerHardeningAgent } from '../../services/aspm/agents/container-hardening-agent.js';
+import { IacSecurityAgent } from '../../services/aspm/agents/iac-security-agent.js';
 import { join } from 'node:path';
+
+// Phase 11 use cases
+import { ScanApplicationUseCase } from '../../../application/use-cases/aspm/scan/scan-application.js';
+import { RescanApplicationUseCase } from '../../../application/use-cases/aspm/scan/rescan-application.js';
+import { ListScanRunsUseCase } from '../../../application/use-cases/aspm/scan/list-scan-runs.js';
+import { GetScanRunUseCase } from '../../../application/use-cases/aspm/scan/get-scan-run.js';
 
 // Use cases
 import { AssignOwnerUseCase } from '../../../application/use-cases/aspm/ownership/assign-owner.js';
@@ -150,6 +163,7 @@ export function registerAspm(container: DependencyContainer): void {
   // Phase 11 — Native Scanning (replaces upload-driven ingest)
   registerPhase11Repositories(container);
   registerPhase11Services(container);
+  registerPhase11UseCases(container);
 
   // String-token aliases so web pages can resolve via type-only imports
   // (matches the project convention used by register-use-cases.ts and avoids
@@ -373,6 +387,28 @@ function registerPhase11Services(container: DependencyContainer): void {
   container.register<IGitOwnershipPort>(ASPM_TOKENS.IGitOwnershipPort, {
     useFactory: () => new GitOwnershipAdapter(),
   });
+  container.register<IFileTreeReaderPort>(ASPM_TOKENS.IFileTreeReaderPort, {
+    useFactory: () => new FileTreeReader(),
+  });
+  container.register<IAgentSecurityAnalyzer>(ASPM_TOKENS.ISastAnalyzer, {
+    useFactory: (c) =>
+      new SastAnalysisAgent(c.resolve<IAgentExecutorProvider>('IAgentExecutorProvider')),
+  });
+  container.register<IAgentSecurityAnalyzer>(ASPM_TOKENS.IContainerHardeningAnalyzer, {
+    useFactory: (c) =>
+      new ContainerHardeningAgent(c.resolve<IAgentExecutorProvider>('IAgentExecutorProvider')),
+  });
+  container.register<IAgentSecurityAnalyzer>(ASPM_TOKENS.IIacSecurityAnalyzer, {
+    useFactory: (c) =>
+      new IacSecurityAgent(c.resolve<IAgentExecutorProvider>('IAgentExecutorProvider')),
+  });
+}
+
+function registerPhase11UseCases(container: DependencyContainer): void {
+  container.register(ScanApplicationUseCase, { useClass: ScanApplicationUseCase });
+  container.register(RescanApplicationUseCase, { useClass: RescanApplicationUseCase });
+  container.register(ListScanRunsUseCase, { useClass: ListScanRunsUseCase });
+  container.register(GetScanRunUseCase, { useClass: GetScanRunUseCase });
 }
 
 function registerStringTokenAliases(container: DependencyContainer): void {
@@ -426,4 +462,16 @@ function registerStringTokenAliases(container: DependencyContainer): void {
   });
   // IScanRunRepository is already bound to the same string token in
   // registerPhase11Repositories — no alias needed.
+  container.register('ScanApplicationUseCase', {
+    useFactory: (c) => c.resolve(ScanApplicationUseCase),
+  });
+  container.register('RescanApplicationUseCase', {
+    useFactory: (c) => c.resolve(RescanApplicationUseCase),
+  });
+  container.register('ListScanRunsUseCase', {
+    useFactory: (c) => c.resolve(ListScanRunsUseCase),
+  });
+  container.register('GetScanRunUseCase', {
+    useFactory: (c) => c.resolve(GetScanRunUseCase),
+  });
 }
