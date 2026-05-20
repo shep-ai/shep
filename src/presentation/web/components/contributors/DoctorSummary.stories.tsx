@@ -77,18 +77,35 @@ const hasFail: DoctorSummaryReport = {
   ],
 };
 
-export const AllOk: Story = {
-  args: { report: allOk },
-};
-
-export const MixedWarn: Story = {
-  args: { report: mixedWarn },
-};
-
-export const HasFail: Story = {
-  args: { report: hasFail },
+const errorState: DoctorSummaryReport = {
+  overallStatus: DiagnosticStatus.Fail,
+  summary: { ok: 0, warn: 0, fail: 1 },
+  results: [
+    {
+      name: 'doctor-runner',
+      status: DiagnosticStatus.Fail,
+      detail: 'Unable to run diagnostics for this workspace',
+      fixHint: 'Retry after confirming the repository path is accessible',
+    },
+  ],
 };
 
 export const Loading: Story = {
   args: { loading: true },
+};
+
+export const AllOk: Story = {
+  args: { report: allOk },
+};
+
+export const WithWarnings: Story = {
+  args: { report: mixedWarn },
+};
+
+export const WithFailures: Story = {
+  args: { report: hasFail },
+};
+
+export const ErrorState: Story = {
+  args: { report: errorState },
 };
