@@ -54,48 +54,117 @@ trends, then open issues via `gh`. That's it.
    anything. **Every candidate you consider MUST be compared
    semantically against both lists.**
 
-3. **Abandoned-work briefing — load arielshad's unmerged PRs and
-   orphaned branches.** The maintainer (`arielshad`) often starts
-   exploratory work that never lands — closed-without-merge PRs,
-   stale open PRs, and dangling remote branches. These are
-   **first-class inspiration vectors**: an abandoned idea from the
-   project owner is usually a real gap worth surfacing as a
-   newcomer-sized scoped-down version. Run:
+3. **Abandoned-work briefing — load arielshad's unmerged PRs AND
+   stale orphan branches.** The maintainer (`arielshad`) often
+   starts exploratory work that never lands — closed-without-merge
+   PRs, stale open PRs, and dangling remote branches that never got
+   a PR at all. ALL THREE are **first-class inspiration vectors**:
+   an abandoned idea from the project owner is usually a real gap
+   worth surfacing as a newcomer-sized scoped-down version.
+
+   **3a. Unmerged PRs.** Run:
    ```bash
-   # Unmerged PRs by arielshad (closed-without-merge OR still-open).
+   # Closed-without-merge OR still-open PRs by arielshad.
    # mergedAt:null filters out PRs that did land.
    gh pr list --repo shep-ai/shep --state all --author arielshad \
      --limit 100 \
      --json number,title,state,headRefName,body,url,closedAt,mergedAt,updatedAt \
      | jq '[.[] | select(.mergedAt == null)]' \
      > /tmp/arielshad-unmerged-prs.json
+   ```
 
-   # Remote branches authored by arielshad that have no PR (true
-   # orphans). Filter to branches whose tip commit author is
-   # arielshad and that don't appear as a headRefName in the PR list.
+   **3b. Stale orphan branches (no PR ever opened).** Some
+   experiments never made it to a PR — the branch is the only
+   artifact. Find them:
+   ```bash
+   # All remote branches (paginate beyond GitHub's 30-per-page default).
    gh api "repos/shep-ai/shep/branches" --paginate \
      --jq '[.[] | {name: .name, sha: .commit.sha}]' \
      > /tmp/all-branches.json
-   ```
-   Read `/tmp/arielshad-unmerged-prs.json`. For each unmerged PR,
-   note: the title, the `headRefName`, the URL, why it stalled (skim
-   the body), and what files it touched (the PR body usually lists
-   them; if not, you can `gh pr diff <number> --repo shep-ai/shep
-   --name-only`).
 
-   Treat each unmerged PR as a **candidate seed** — not a candidate
-   itself. The PR's full scope is almost certainly too big for a
-   newcomer. Your job is to extract ONE small, self-contained slice
-   from it that:
-   - Stands on its own (lands cleanly without the rest of the PR).
+   # All PR headRefNames (ANY state — merged, closed, open) so we
+   # can subtract branches that already have a PR.
+   gh pr list --repo shep-ai/shep --state all --limit 500 \
+     --json headRefName \
+     --jq '[.[] | .headRefName]' \
+     > /tmp/all-pr-heads.json
+
+   # Build the orphan list: branches with no PR, excluding main and
+   # any obvious bot-owned prefixes.
+   jq --slurpfile heads /tmp/all-pr-heads.json '
+     [ .[]
+       | select(.name != "main")
+       | select(.name | startswith("dependabot/") | not)
+       | select(.name | startswith("renovate/") | not)
+       | select(.name | startswith("shep-ai/") | not)
+       | select(.name | startswith("semantic-release") | not)
+       | select(.name as $n | ($heads[0] | index($n)) | not)
+     ]
+   ' /tmp/all-branches.json > /tmp/orphan-branches.json
+
+   # For each orphan branch, fetch the tip commit so we can filter
+   # to arielshad-authored ones and grab the date for staleness.
+   # Cap to the first 50 orphans — anything older than that is
+   # noise and the API budget isn't worth it.
+   jq -r '.[:50][] | "\(.name)\t\(.sha)"' /tmp/orphan-branches.json \
+     | while IFS=$'\t' read -r name sha; do
+         gh api "repos/shep-ai/shep/commits/${sha}" \
+           --jq "{branch: \"${name}\", sha: \"${sha}\",
+                  author_login: (.author.login // \"\"),
+                  author_email: .commit.author.email,
+                  author_name: .commit.author.name,
+                  date: .commit.author.date,
+                  message: .commit.message}"
+       done | jq -s '
+         [ .[]
+           | select(
+               (.author_login == "arielshad")
+               or (.author_email == "shad.ariel@gmail.com")
+               or (.author_name == "Ariel Shadkhan")
+               or (.author_name == "arielshad")
+             )
+           # Stale = tip commit older than 30 days.
+           | select(
+               (.date | fromdateiso8601)
+               < (now - 30*24*60*60)
+             )
+         ]
+       ' > /tmp/arielshad-stale-orphan-branches.json
+   ```
+
+   Read `/tmp/arielshad-unmerged-prs.json` AND
+   `/tmp/arielshad-stale-orphan-branches.json`. Both are seed
+   wells.
+
+   For each **unmerged PR**, note: title, `headRefName`, URL, why
+   it stalled (skim the body), and files touched (`gh pr diff
+   <number> --repo shep-ai/shep --name-only` if the body doesn't
+   list them).
+
+   For each **stale orphan branch**, note: branch name, tip commit
+   date, commit message, and files changed. Diff the branch tip
+   against `main` to see scope:
+   ```bash
+   gh api "repos/shep-ai/shep/compare/main...<branch-name>" \
+     --jq '.files | map(.filename)'
+   ```
+   If the diff is huge (>30 files) the branch is too speculative —
+   skip it. If it's a focused 1–10 file experiment, it's a strong
+   seed.
+
+   Treat each unmerged PR or stale branch as a **candidate seed**
+   — not a candidate itself. The original scope is almost
+   certainly too big for a newcomer. Your job is to extract ONE
+   small, self-contained slice that:
+   - Stands on its own (lands cleanly without the rest).
    - Is small enough for `difficulty:goodFirst` or `difficulty:easy`.
    - Doesn't require resurrecting abandoned design decisions.
 
-   When an issue is seeded from a stalled PR/branch, you MUST
-   reference it in the issue body (see schema below). The reference
-   is what makes this valuable: it tells the contributor "this idea
-   was started here — feel free to read the branch for context, but
-   open a fresh PR with just this slice."
+   When an issue is seeded from a stalled PR or orphan branch, you
+   MUST reference it in the issue body (see schema below). The
+   reference is what makes this valuable: it tells the contributor
+   "this idea was started here — feel free to read it for context,
+   but open a fresh PR with just this slice."
 
 4. **Trend briefing — load what shipped this week in AI.** Fetch:
    ```bash
@@ -128,12 +197,13 @@ trends, then open issues via `gh`. That's it.
      file)
 
 6. **Synthesize candidates.** For each candidate (whether seeded
-   from an abandoned PR/branch in step 3 or from the codebase scan
-   in step 5), draft a `[Good First Issue]: <imperative phrase>`
-   title and a body following the schema below. Cite REAL file
-   paths with line numbers. If you cannot cite a real file, the
-   candidate is ungrounded — drop it. If the candidate is seeded
-   from an abandoned PR/branch, include the `## Prior art` block
+   from an unmerged PR in step 3a, a stale orphan branch in step
+   3b, or the codebase scan in step 5), draft a
+   `[Good First Issue]: <imperative phrase>` title and a body
+   following the schema below. Cite REAL file paths with line
+   numbers. If you cannot cite a real file, the candidate is
+   ungrounded — drop it. If the candidate is seeded from an
+   abandoned PR or stale branch, include the `## Prior art` block
    referencing it (see schema).
 
 7. **Apply the inclusion bar** (next section) to each candidate.
@@ -143,15 +213,16 @@ trends, then open issues via `gh`. That's it.
    `/tmp/existing-ai-generated.json`. Reject anything that overlaps
    with an existing issue's intent — even if the wording is
    different. Closed + reopened both count. **Note:** seeding from
-   an abandoned PR is NOT a dedup hit — the PR is not an issue. But
-   if you've already filed an issue covering the same slice of that
-   PR on a previous run, that IS a dedup hit; check the lists.
+   an abandoned PR or stale branch is NOT a dedup hit — neither is
+   an issue. But if you've already filed an issue covering the
+   same slice of that PR/branch on a previous run, that IS a dedup
+   hit; check the lists.
 
 9. **Cap at 10.** If more than 10 pass, keep the 10 strongest. If
    fewer than 10 pass, ship what you have. **Zero is fine.**
    When ranking, give a small boost to candidates seeded from
-   abandoned arielshad PRs — they have signal that a real
-   maintainer cared about the area.
+   arielshad's abandoned PRs or stale branches — they carry signal
+   that a real maintainer cared about the area.
 
 10. **Open issues.** For each surviving candidate, run:
    ```bash
@@ -236,13 +307,14 @@ Ship a candidate only if ALL are true:
 4. Is reachable in `difficulty:goodFirst` or `difficulty:easy`.
 5. Has a plausible motivator — EITHER an AI-ecosystem trend (from
    `/tmp/ai-trends.json` or external context) OR an abandoned-work
-   seed (a real arielshad PR/branch from
-   `/tmp/arielshad-unmerged-prs.json`). Both are valid. The
-   motivator must be real, not invented.
-6. If seeded from an abandoned PR: the slice you carved out is
-   genuinely smaller than the original PR (not a thin rename of
-   it) AND lands cleanly without depending on the rest of the
-   PR's design.
+   seed (a real arielshad unmerged PR from
+   `/tmp/arielshad-unmerged-prs.json` OR a real stale orphan
+   branch from `/tmp/arielshad-stale-orphan-branches.json`). All
+   are valid. The motivator must be real, not invented.
+6. If seeded from an abandoned PR or stale branch: the slice you
+   carved out is genuinely smaller than the original (not a thin
+   rename of it) AND lands cleanly without depending on the rest
+   of the original work's design.
 7. You would assign this to a first-time contributor and feel
    confident they could land it.
 
@@ -301,15 +373,22 @@ template, which `pnpm` command to run locally>
 > <one sentence quoting the AI-ecosystem trend that motivated this
 > issue, with a link to the source if you have one>
 
-## Prior art (include ONLY if seeded from an unmerged PR/branch)
+## Prior art (include ONLY if seeded from an unmerged PR or stale branch)
 
 The maintainer (@arielshad) started exploring this idea in:
 
+<!-- If seeded from an unmerged PR, use this form: -->
 - PR #<number>: <PR title> — <state, e.g. "closed without merge"
   or "still open, stale since YYYY-MM-DD"> · <PR url>
 - Branch: `<headRefName>`
 
-That PR's scope was larger than a good-first-issue. **You do NOT
+<!-- If seeded from a stale orphan branch (no PR was ever opened),
+     use this form instead: -->
+- Branch: `<branch-name>` (no PR opened) — last touched
+  <YYYY-MM-DD>, tip commit `<short-sha>`: <one-line commit message>
+- Compare view: https://github.com/shep-ai/shep/compare/main...<branch-name>
+
+That work's scope was larger than a good-first-issue. **You do NOT
 need to revive it.** Treat it as background context — open a fresh
 branch, implement only the slice described above, and link this
 issue from your PR. Cherry-pick from the original branch only if
@@ -363,9 +442,10 @@ Ask yourself, for each candidate, before running `gh issue create`:
 3. Could a first-time contributor land this in an afternoon? (If no → drop.)
 4. Is the trend hook (or abandoned-work seed) real, not invented?
    (If invented → drop.)
-5. If seeded from an abandoned PR: did I include the `## Prior art`
-   block with the real PR number, title, state, and URL pulled
-   from `/tmp/arielshad-unmerged-prs.json`? (If no → add it.)
+5. If seeded from an abandoned PR or stale branch: did I include
+   the `## Prior art` block with the real PR number / branch name
+   pulled directly from `/tmp/arielshad-unmerged-prs.json` or
+   `/tmp/arielshad-stale-orphan-branches.json`? (If no → add it.)
 6. Does the title match `[Good First Issue]: <lowercase imperative>`?
 7. Are the labels correct and within the allowed set?
 
