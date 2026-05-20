@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
 import { Gauge, Bug, Package, Users, Sparkles, ClipboardCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { AspmIngestDialog } from '../aspm-ingest-dialog/aspm-ingest-dialog';
+import { AspmScanDialog } from '../aspm-scan-dialog/aspm-scan-dialog';
 
 interface AspmSubNavItem {
   href: string;
@@ -63,7 +63,7 @@ export function AspmSubNav() {
         );
       })}
       <div className="ms-auto shrink-0">
-        <AspmIngestDialog />
+        <AspmScanDialog />
       </div>
     </nav>
   );

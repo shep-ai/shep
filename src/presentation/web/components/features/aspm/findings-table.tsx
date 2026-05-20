@@ -16,7 +16,7 @@
 
 import { cn } from '@/lib/utils';
 import { SeverityBadge } from './severity-badge';
-import { AspmIngestDialog } from './aspm-ingest-dialog/aspm-ingest-dialog';
+import { AspmScanDialog } from './aspm-scan-dialog/aspm-scan-dialog';
 import type { SecurityFinding } from '@shepai/core/domain/generated/output';
 
 export interface FindingsTableProps {
@@ -75,7 +75,7 @@ export function FindingsTable({
         <span className="text-muted-foreground text-xs">
           Upload a SARIF or SBOM document to populate this view
         </span>
-        <AspmIngestDialog />
+        <AspmScanDialog />
       </div>
     );
   }

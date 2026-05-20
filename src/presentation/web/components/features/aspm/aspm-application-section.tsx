@@ -21,7 +21,7 @@ import { type CanonicalSeverity, type SecurityFinding } from '@shepai/core/domai
 
 import { FindingsTable } from './findings-table';
 import { SeverityBadge } from './severity-badge';
-import { AspmIngestDialog } from './aspm-ingest-dialog/aspm-ingest-dialog';
+import { AspmScanDialog } from './aspm-scan-dialog/aspm-scan-dialog';
 
 export interface AspmApplicationSectionProps {
   applicationId: string;
@@ -88,7 +88,7 @@ export function AspmApplicationSection({
         <span className="text-muted-foreground text-xs">
           Upload a SARIF or SBOM document to populate posture.
         </span>
-        <AspmIngestDialog defaultApplicationId={applicationId} />
+        <AspmScanDialog defaultApplicationId={applicationId} />
       </section>
     );
   }

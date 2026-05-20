@@ -15,7 +15,7 @@
 
 import { cn } from '@/lib/utils';
 import { CanonicalSeverity } from '@shepai/core/domain/generated/output';
-import { AspmIngestDialog } from '@/components/features/aspm/aspm-ingest-dialog/aspm-ingest-dialog';
+import { AspmScanDialog } from '@/components/features/aspm/aspm-scan-dialog/aspm-scan-dialog';
 
 export interface PostureSummaryView {
   openBySeverity: { severity: CanonicalSeverity; count: number }[];
@@ -97,7 +97,7 @@ export function PostureCards({ summary, loading, error, className }: PostureCard
         <span className="text-muted-foreground text-xs">
           Upload a SARIF or SBOM document to populate the dashboard
         </span>
-        <AspmIngestDialog />
+        <AspmScanDialog />
       </div>
     );
   }
@@ -200,11 +200,11 @@ function LastIngestedTile({ lastIngestedAt }: { lastIngestedAt: string | null })
     <div
       data-testid="kpi-tile-last-ingested"
       role="region"
-      aria-label="Last ingested"
+      aria-label="Last scanned"
       className="bg-card flex flex-col gap-1 rounded-md border p-3"
     >
       <span className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
-        Last ingested
+        Last scanned
       </span>
       <span className="text-sm font-medium tabular-nums" aria-live="polite">
         {label}

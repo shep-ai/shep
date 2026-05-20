@@ -23,6 +23,7 @@ import { createAspmCampaignsCommand } from './aspm-campaigns-command.js';
 import { createAspmPostureCommand } from './aspm-posture-command.js';
 import { createAspmExceptionsCommand } from './aspm-exceptions-command.js';
 import { createAspmAiReviewCommand } from './aspm-ai-review-command.js';
+import { createAspmScanCommand, createAspmRescanCommand } from './aspm-scan-command.js';
 
 function isAspmEnabled(): boolean {
   if (!hasSettings()) return false;
@@ -34,6 +35,8 @@ export function createAspmCommand(): Command {
     'Application Security Posture Management — findings, campaigns, posture, exceptions, AI-review'
   );
 
+  cmd.addCommand(createAspmScanCommand());
+  cmd.addCommand(createAspmRescanCommand());
   cmd.addCommand(createAspmIngestCommand());
   cmd.addCommand(createAspmFindingsCommand());
   cmd.addCommand(createAspmCampaignsCommand());
