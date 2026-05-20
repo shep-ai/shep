@@ -67,8 +67,10 @@ export const agentSelectConfig = {
   message: 'Select your AI coding agent',
   choices: [
     { name: 'Claude Code', value: 'claude-code', description: '...' },
-    new Separator('--- Coming Soon ---'),
-    { name: 'Gemini CLI', value: 'gemini-cli', disabled: '(Coming Soon)' },
+    { name: 'Gemini CLI', value: 'gemini-cli', description: 'Google Gemini CLI agent' },
+    new Separator('--- Tracked in shep-ai/shep#618 ---'),
+    { name: 'Aider', value: 'aider', disabled: '(tracked in shep-ai/shep#618)' },
+    { name: 'Continue', value: 'continue', disabled: '(tracked in shep-ai/shep#618)' },
   ],
 };
 ```
