@@ -226,10 +226,10 @@ export function createDefaultSettings(): Settings {
     envDeploy: true,
     debug: false,
     reactFileManager: false,
-    projects: false,
-    codeReview: false,
-    collaboration: false,
-<<<<<<< HEAD
+    projects: true,
+    codeReview: true,
+    collaboration: true,
+    aspm: true,
     bedrockIntegration: true,
     whatsappDispatch: false,
   };
@@ -237,9 +237,6 @@ export function createDefaultSettings(): Settings {
   const whatsapp: WhatsAppConfig = {
     enabled: false,
     adapter: WhatsAppAdapterKind.Baileys,
-=======
-    aspm: false,
->>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
   };
 
   return {

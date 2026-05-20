@@ -19,12 +19,9 @@ export interface FeatureFlagsState {
   projects: boolean;
   codeReview: boolean;
   collaboration: boolean;
-<<<<<<< HEAD
+  aspm: boolean;
   bedrockIntegration: boolean;
   whatsappDispatch: boolean;
-=======
-  aspm: boolean;
->>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
 }
 
 export function getFeatureFlags(): FeatureFlagsState {
@@ -39,12 +36,9 @@ export function getFeatureFlags(): FeatureFlagsState {
           projects: flags.projects,
           codeReview: flags.codeReview,
           collaboration: flags.collaboration,
-<<<<<<< HEAD
+          aspm: flags.aspm,
           bedrockIntegration: flags.bedrockIntegration,
           whatsappDispatch: flags.whatsappDispatch,
-=======
-          aspm: flags.aspm,
->>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
         };
       }
     }
@@ -59,15 +53,24 @@ export function getFeatureFlags(): FeatureFlagsState {
         : true,
     debug: false,
     reactFileManager: isEnabled(process.env.NEXT_PUBLIC_FLAG_REACT_FILE_MANAGER),
-    projects: false,
-    codeReview: false,
-    collaboration: isEnabled(process.env.NEXT_PUBLIC_FLAG_COLLABORATION),
-<<<<<<< HEAD
+    projects:
+      process.env.NEXT_PUBLIC_FLAG_PROJECTS !== undefined
+        ? isEnabled(process.env.NEXT_PUBLIC_FLAG_PROJECTS)
+        : true,
+    codeReview:
+      process.env.NEXT_PUBLIC_FLAG_CODE_REVIEW !== undefined
+        ? isEnabled(process.env.NEXT_PUBLIC_FLAG_CODE_REVIEW)
+        : true,
+    collaboration:
+      process.env.NEXT_PUBLIC_FLAG_COLLABORATION !== undefined
+        ? isEnabled(process.env.NEXT_PUBLIC_FLAG_COLLABORATION)
+        : true,
+    aspm:
+      process.env.NEXT_PUBLIC_FLAG_ASPM !== undefined
+        ? isEnabled(process.env.NEXT_PUBLIC_FLAG_ASPM)
+        : true,
     bedrockIntegration: isEnabled(process.env.NEXT_PUBLIC_FLAG_BEDROCK_INTEGRATION),
     whatsappDispatch: isEnabled(process.env.NEXT_PUBLIC_FLAG_WHATSAPP_DISPATCH),
-=======
-    aspm: isEnabled(process.env.NEXT_PUBLIC_FLAG_ASPM),
->>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
   };
 }
 
@@ -118,15 +121,13 @@ export const featureFlags = {
   get collaboration() {
     return getFeatureFlags().collaboration;
   },
-<<<<<<< HEAD
+  get aspm() {
+    return getFeatureFlags().aspm;
+  },
   get bedrockIntegration() {
     return getFeatureFlags().bedrockIntegration;
   },
   get whatsappDispatch() {
     return getFeatureFlags().whatsappDispatch;
-=======
-  get aspm() {
-    return getFeatureFlags().aspm;
->>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
   },
 } as const;

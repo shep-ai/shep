@@ -18,6 +18,10 @@ describe('getFeatureFlags', () => {
     vi.clearAllMocks();
     delete process.env.NEXT_PUBLIC_FLAG_ENV_DEPLOY;
     delete process.env.NEXT_PUBLIC_FLAG_REACT_FILE_MANAGER;
+    delete process.env.NEXT_PUBLIC_FLAG_PROJECTS;
+    delete process.env.NEXT_PUBLIC_FLAG_CODE_REVIEW;
+    delete process.env.NEXT_PUBLIC_FLAG_COLLABORATION;
+    delete process.env.NEXT_PUBLIC_FLAG_ASPM;
   });
 
   it('returns DB values when settings has featureFlags', () => {
@@ -178,7 +182,10 @@ describe('featureFlags (backward-compatible const)', () => {
 describe('requireFeatureFlag', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env.NEXT_PUBLIC_FLAG_PROJECTS;
+    delete process.env.NEXT_PUBLIC_FLAG_CODE_REVIEW;
     delete process.env.NEXT_PUBLIC_FLAG_COLLABORATION;
+    delete process.env.NEXT_PUBLIC_FLAG_ASPM;
   });
 
   it('returns silently when the flag is enabled', () => {
@@ -223,8 +230,36 @@ describe('requireFeatureFlag', () => {
     expect((caught as Error).message).toContain('collaboration');
   });
 
-  it('throws when settings is not initialized and no env var is set', () => {
+  it('returns silently when settings is not initialized and the flag defaults to true', () => {
+    // collaboration / projects / codeReview / aspm all default to TRUE in the
+    // env-var fallback (see feature-flags.ts) — they're enabled by default so
+    // a fresh install without a DB-persisted settings row still shows them.
     mockHasSettings.mockReturnValue(false);
-    expect(() => requireFeatureFlag('collaboration')).toThrow(FeatureFlagDisabledError);
+    expect(() => requireFeatureFlag('collaboration')).not.toThrow();
+    expect(() => requireFeatureFlag('projects')).not.toThrow();
+    expect(() => requireFeatureFlag('codeReview')).not.toThrow();
+    expect(() => requireFeatureFlag('aspm')).not.toThrow();
+  });
+
+  it('throws when settings is not initialized and the flag defaults to false', () => {
+    mockHasSettings.mockReturnValue(false);
+    delete process.env.NEXT_PUBLIC_FLAG_REACT_FILE_MANAGER;
+    expect(() => requireFeatureFlag('reactFileManager')).toThrow(FeatureFlagDisabledError);
+  });
+
+  it('throws when the flag is explicitly disabled in settings', () => {
+    mockHasSettings.mockReturnValue(true);
+    mockGetSettings.mockReturnValue({
+      featureFlags: {
+        envDeploy: false,
+        debug: false,
+        reactFileManager: false,
+        projects: false,
+        codeReview: false,
+        collaboration: false,
+        aspm: false,
+      },
+    });
+    expect(() => requireFeatureFlag('aspm')).toThrow(FeatureFlagDisabledError);
   });
 });

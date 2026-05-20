@@ -309,16 +309,16 @@ describe('createDefaultSettings', () => {
       expect(settings.featureFlags).toBeDefined();
     });
 
-    it('should default feature flags with envDeploy enabled', () => {
+    it('should default feature flags with envDeploy / projects / codeReview / collaboration / aspm enabled', () => {
       const settings = createDefaultSettings();
       expect(settings.featureFlags).toEqual({
         envDeploy: true,
         debug: false,
         reactFileManager: false,
-        projects: false,
-        codeReview: false,
-        collaboration: false,
-<<<<<<< HEAD
+        projects: true,
+        codeReview: true,
+        collaboration: true,
+        aspm: true,
         bedrockIntegration: true,
         whatsappDispatch: false,
       });
@@ -329,9 +329,6 @@ describe('createDefaultSettings', () => {
       expect(settings.whatsapp).toEqual({
         enabled: false,
         adapter: 'baileys',
-=======
-        aspm: false,
->>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
       });
     });
   });
