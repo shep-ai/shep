@@ -54,7 +54,50 @@ trends, then open issues via `gh`. That's it.
    anything. **Every candidate you consider MUST be compared
    semantically against both lists.**
 
-3. **Trend briefing — load what shipped this week in AI.** Fetch:
+3. **Abandoned-work briefing — load arielshad's unmerged PRs and
+   orphaned branches.** The maintainer (`arielshad`) often starts
+   exploratory work that never lands — closed-without-merge PRs,
+   stale open PRs, and dangling remote branches. These are
+   **first-class inspiration vectors**: an abandoned idea from the
+   project owner is usually a real gap worth surfacing as a
+   newcomer-sized scoped-down version. Run:
+   ```bash
+   # Unmerged PRs by arielshad (closed-without-merge OR still-open).
+   # mergedAt:null filters out PRs that did land.
+   gh pr list --repo shep-ai/shep --state all --author arielshad \
+     --limit 100 \
+     --json number,title,state,headRefName,body,url,closedAt,mergedAt,updatedAt \
+     | jq '[.[] | select(.mergedAt == null)]' \
+     > /tmp/arielshad-unmerged-prs.json
+
+   # Remote branches authored by arielshad that have no PR (true
+   # orphans). Filter to branches whose tip commit author is
+   # arielshad and that don't appear as a headRefName in the PR list.
+   gh api "repos/shep-ai/shep/branches" --paginate \
+     --jq '[.[] | {name: .name, sha: .commit.sha}]' \
+     > /tmp/all-branches.json
+   ```
+   Read `/tmp/arielshad-unmerged-prs.json`. For each unmerged PR,
+   note: the title, the `headRefName`, the URL, why it stalled (skim
+   the body), and what files it touched (the PR body usually lists
+   them; if not, you can `gh pr diff <number> --repo shep-ai/shep
+   --name-only`).
+
+   Treat each unmerged PR as a **candidate seed** — not a candidate
+   itself. The PR's full scope is almost certainly too big for a
+   newcomer. Your job is to extract ONE small, self-contained slice
+   from it that:
+   - Stands on its own (lands cleanly without the rest of the PR).
+   - Is small enough for `difficulty:goodFirst` or `difficulty:easy`.
+   - Doesn't require resurrecting abandoned design decisions.
+
+   When an issue is seeded from a stalled PR/branch, you MUST
+   reference it in the issue body (see schema below). The reference
+   is what makes this valuable: it tells the contributor "this idea
+   was started here — feel free to read the branch for context, but
+   open a fresh PR with just this slice."
+
+4. **Trend briefing — load what shipped this week in AI.** Fetch:
    ```bash
    curl -fsSL \
      https://raw.githubusercontent.com/blackpc/ai-tldr/master/src/data/releases.json \
@@ -65,8 +108,10 @@ trends, then open issues via `gh`. That's it.
    **inspiration vectors**. For each notable item, ask: "Does this
    suggest a missing affordance, doc, story, or test in shep?"
 
-4. **Codebase scan — find real gaps.** Use Grep / Glob to find
-   concrete, addressable surface area. Examples of *grounded* signals:
+5. **Codebase scan — find real gaps.** Use Grep / Glob to find
+   concrete, addressable surface area. This is the *second* well of
+   candidates — alongside the abandoned-work seeds from step 3.
+   Examples of *grounded* signals:
    - `TODO` / `FIXME` / `XXX` comments older than 30 days
    - Web components in `src/presentation/web/components/` without a
      colocated `.stories.tsx` (mandatory rule — see CLAUDE.md)
@@ -82,24 +127,33 @@ trends, then open issues via `gh`. That's it.
      that are now superseded — cross-reference against the trends
      file)
 
-5. **Synthesize candidates.** For each candidate, draft a
-   `[Good First Issue]: <imperative phrase>` title and a body
-   following the schema below. Cite REAL file paths with line
-   numbers. If you cannot cite a real file, the candidate is
-   ungrounded — drop it.
+6. **Synthesize candidates.** For each candidate (whether seeded
+   from an abandoned PR/branch in step 3 or from the codebase scan
+   in step 5), draft a `[Good First Issue]: <imperative phrase>`
+   title and a body following the schema below. Cite REAL file
+   paths with line numbers. If you cannot cite a real file, the
+   candidate is ungrounded — drop it. If the candidate is seeded
+   from an abandoned PR/branch, include the `## Prior art` block
+   referencing it (see schema).
 
-6. **Apply the inclusion bar** (next section) to each candidate.
+7. **Apply the inclusion bar** (next section) to each candidate.
    Reject anything that does not pass.
 
-7. **Apply semantic dedup** against `/tmp/existing-gfi.json` and
+8. **Apply semantic dedup** against `/tmp/existing-gfi.json` and
    `/tmp/existing-ai-generated.json`. Reject anything that overlaps
    with an existing issue's intent — even if the wording is
-   different. Closed + reopened both count.
+   different. Closed + reopened both count. **Note:** seeding from
+   an abandoned PR is NOT a dedup hit — the PR is not an issue. But
+   if you've already filed an issue covering the same slice of that
+   PR on a previous run, that IS a dedup hit; check the lists.
 
-8. **Cap at 10.** If more than 10 pass, keep the 10 strongest. If
+9. **Cap at 10.** If more than 10 pass, keep the 10 strongest. If
    fewer than 10 pass, ship what you have. **Zero is fine.**
+   When ranking, give a small boost to candidates seeded from
+   abandoned arielshad PRs — they have signal that a real
+   maintainer cared about the area.
 
-9. **Open issues.** For each surviving candidate, run:
+10. **Open issues.** For each surviving candidate, run:
    ```bash
    gh issue create --repo shep-ai/shep \
      --title "[Good First Issue]: <phrase>" \
@@ -116,12 +170,12 @@ trends, then open issues via `gh`. That's it.
      or `hard` on this workflow
    - `<area>` ∈ { `cli`, `dashboard`, `agents`, `plugins`, `docs` }
 
-10. **Write a step summary.** Append a markdown table to
+11. **Write a step summary.** Append a markdown table to
     `$GITHUB_STEP_SUMMARY` listing the issues opened (number, title,
-    trend hook). On a zero-issue run, write a one-line "no
-    candidates cleared the bar today" note.
+    trend hook, prior-art PR if any). On a zero-issue run, write a
+    one-line "no candidates cleared the bar today" note.
 
-11. Stop. You do not commit, push, or modify files in the repo.
+12. Stop. You do not commit, push, or modify files in the repo.
 
 ## Hard rules (non-negotiable)
 
@@ -180,12 +234,16 @@ Ship a candidate only if ALL are true:
 2. Does not collide semantically with anything in the dedup lists.
 3. Has a clear acceptance checklist a newcomer can self-verify.
 4. Is reachable in `difficulty:goodFirst` or `difficulty:easy`.
-5. Has a plausible trend hook — you can name an AI-ecosystem trend
-   (from `/tmp/ai-trends.json` or external context) that motivates
-   the change. The hook can be subtle (e.g., "MCP adoption is
-   trending → shep's MCP-adjacent docs need an example") but it
-   must be real, not invented.
-6. You would assign this to a first-time contributor and feel
+5. Has a plausible motivator — EITHER an AI-ecosystem trend (from
+   `/tmp/ai-trends.json` or external context) OR an abandoned-work
+   seed (a real arielshad PR/branch from
+   `/tmp/arielshad-unmerged-prs.json`). Both are valid. The
+   motivator must be real, not invented.
+6. If seeded from an abandoned PR: the slice you carved out is
+   genuinely smaller than the original PR (not a thin rename of
+   it) AND lands cleanly without depending on the rest of the
+   PR's design.
+7. You would assign this to a first-time contributor and feel
    confident they could land it.
 
 ## Sources to scan for trends (in addition to ai-tldr/releases.json)
@@ -243,6 +301,20 @@ template, which `pnpm` command to run locally>
 > <one sentence quoting the AI-ecosystem trend that motivated this
 > issue, with a link to the source if you have one>
 
+## Prior art (include ONLY if seeded from an unmerged PR/branch)
+
+The maintainer (@arielshad) started exploring this idea in:
+
+- PR #<number>: <PR title> — <state, e.g. "closed without merge"
+  or "still open, stale since YYYY-MM-DD"> · <PR url>
+- Branch: `<headRefName>`
+
+That PR's scope was larger than a good-first-issue. **You do NOT
+need to revive it.** Treat it as background context — open a fresh
+branch, implement only the slice described above, and link this
+issue from your PR. Cherry-pick from the original branch only if
+it saves real time; otherwise just start clean.
+
 ---
 
 _Auto-generated by `.github/workflows/generate-good-first-issues.yml`
@@ -289,8 +361,12 @@ Ask yourself, for each candidate, before running `gh issue create`:
 1. Did I Read or Grep every file I cite? (If no → drop.)
 2. Did I check both dedup lists for semantic overlap? (If no → check now.)
 3. Could a first-time contributor land this in an afternoon? (If no → drop.)
-4. Is the trend hook real, not invented? (If invented → drop.)
-5. Does the title match `[Good First Issue]: <lowercase imperative>`?
-6. Are the labels correct and within the allowed set?
+4. Is the trend hook (or abandoned-work seed) real, not invented?
+   (If invented → drop.)
+5. If seeded from an abandoned PR: did I include the `## Prior art`
+   block with the real PR number, title, state, and URL pulled
+   from `/tmp/arielshad-unmerged-prs.json`? (If no → add it.)
+6. Does the title match `[Good First Issue]: <lowercase imperative>`?
+7. Are the labels correct and within the allowed set?
 
 If any answer is no, fix or drop before running the `gh` command.

@@ -124,9 +124,16 @@ jobs:
               1. Read the cited file paths (no hallucinated paths).
               2. Compared the candidate against both dedup lists
                  (/tmp/existing-gfi.json and /tmp/existing-ai-generated.json).
-              3. Verified the trend hook is real (sourced from
-                 /tmp/ai-trends.json or an external page you fetched
-                 in this run).
+              3. Verified the motivator is real — EITHER a trend
+                 sourced from /tmp/ai-trends.json (or an external
+                 page you fetched in this run) OR an abandoned-work
+                 seed from /tmp/arielshad-unmerged-prs.json (a real
+                 unmerged PR by @arielshad whose scope you carved
+                 down to a newcomer-sized slice).
+              4. If the issue is seeded from an abandoned PR: the
+                 body includes a `## Prior art` block with the PR
+                 number, title, state, and URL pulled directly from
+                 the JSON file (no invented PRs).
 
             ZERO ISSUES IS A SUCCESSFUL RUN. If no candidates clear
             the inclusion bar, write a one-line "no candidates today"
@@ -135,13 +142,15 @@ jobs:
 
             On success, append a markdown table to
             $GITHUB_STEP_SUMMARY with one row per opened issue:
-            number, title, lane, difficulty, trend hook.
+            number, title, lane, difficulty, trend hook, prior-art
+            PR (the @arielshad PR# this was seeded from, or `—` if
+            it was a pure trend/codebase find).
           claude_args: |
             --model claude-opus-4-7
             --verbose
             --max-turns 6000
             --permission-mode acceptEdits
-            --allowedTools "WebSearch,WebFetch,Read,Glob,Grep,Bash(gh issue:*),Bash(gh label list:*),Bash(gh search:*),Bash(curl:*),Bash(jq:*),Bash(ls:*),Bash(cat:*),Bash(grep:*),Bash(rm:*)"
+            --allowedTools "WebSearch,WebFetch,Read,Glob,Grep,Bash(gh issue:*),Bash(gh label list:*),Bash(gh search:*),Bash(gh pr list:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh api repos/shep-ai/shep/branches:*),Bash(gh api repos/shep-ai/shep/commits:*),Bash(curl:*),Bash(jq:*),Bash(ls:*),Bash(cat:*),Bash(grep:*),Bash(rm:*)"
 
       - name: Final summary
         # Always runs (success or fail) so the run page surfaces
