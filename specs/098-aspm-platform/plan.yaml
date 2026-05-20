@@ -165,6 +165,27 @@ phases:
       docs/architecture/aspm.md and update docs/api/domain-models.md. Run pnpm
       validate end-to-end.
     parallel: false
+  - id: "phase-11"
+    name: "Native Scanning — replace upload-driven ingest with in-house scan/rescan"
+    description: >
+      Build the in-house scanning stack so the user never has to upload a SARIF or
+      install a third-party scanner CLI. Stack: (1) pure-domain `SbomBuilder` that
+      parses package/container/IaC manifests across 9+ ecosystems into the
+      `SoftwareBillOfMaterials` shape the existing `IngestSbomUseCase` consumes;
+      (2) `IOsvVulnerabilityPort` adapter against the unauthenticated osv.dev
+      query-batch API for SCA; (3) pure-domain `SecretScanner` (regex + Shannon
+      entropy) emitting SARIF; (4) `IGitOwnershipPort` deriving ownership from
+      local `git` (blame/log/CODEOWNERS) — augments `.shep/ownership.yaml` without
+      overriding it; (5) three agent-driven analyzers — `SastAnalysisAgent`,
+      `ContainerHardeningAgent`, `IacSecurityAgent` — resolved via the existing
+      `IAgentExecutorProvider` per the agent-resolution rule; (6) orchestration use
+      cases `ScanApplicationUseCase` + `RescanApplicationUseCase` + the SSE stream
+      `/api/aspm/scan/stream`; (7) UX migration replacing every 'Ingest data'
+      trigger with 'Scan' / 'Rescan' and demoting the existing `AspmIngestDialog`
+      to a secondary 'Upload existing report' affordance; (8) nightly auto-rescan
+      daemon honoring per-app opt-out. Scope is the **local working tree only** —
+      no `git fetch`, no remote refs, no third-party scanner installs.
+    parallel: false
 
 # File change tracking
 filesToCreate:
@@ -420,6 +441,79 @@ filesToCreate:
   # Docs
   - "docs/architecture/aspm.md"
 
+  # Phase 11 — Native scanning (TSP)
+  - "tsp/domain/entities/aspm/scan-run.tsp"
+  - "tsp/domain/entities/aspm/scanner-profile.tsp"
+
+  # Phase 11 — Domain (pure)
+  - "packages/core/src/domain/aspm/scan/scan-stage.ts"
+  - "packages/core/src/domain/aspm/scan/secret-scanner.ts"
+  - "packages/core/src/domain/aspm/scan/secret-rule-pack.ts"
+  - "packages/core/src/domain/aspm/scan/sbom-builder.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/npm-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/python-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/go-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/rust-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/jvm-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/ruby-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/php-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/dotnet-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/container-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/iac-manifest-parser.ts"
+
+  # Phase 11 — Application ports
+  - "packages/core/src/application/ports/output/services/osv-vulnerability-port.interface.ts"
+  - "packages/core/src/application/ports/output/services/git-ownership-port.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/scan-run-repository.interface.ts"
+
+  # Phase 11 — Application use cases
+  - "packages/core/src/application/use-cases/aspm/scan/scan-application.ts"
+  - "packages/core/src/application/use-cases/aspm/scan/rescan-application.ts"
+  - "packages/core/src/application/use-cases/aspm/scan/list-scan-runs.ts"
+  - "packages/core/src/application/use-cases/aspm/scan/get-scan-run.ts"
+  - "packages/core/src/application/use-cases/aspm/scan/configure-scanner-profile.ts"
+
+  # Phase 11 — Infrastructure (adapters + agents)
+  - "packages/core/src/infrastructure/services/aspm/osv-vulnerability-adapter.ts"
+  - "packages/core/src/infrastructure/services/aspm/git-ownership-adapter.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-scan-run-repository.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/118-create-scan-runs.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/119-add-scanner-profile-to-applications.ts"
+  - "packages/core/src/infrastructure/services/aspm/agents/sast-analysis-agent.ts"
+  - "packages/core/src/infrastructure/services/aspm/agents/container-hardening-agent.ts"
+  - "packages/core/src/infrastructure/services/aspm/agents/iac-security-agent.ts"
+  - "packages/core/src/infrastructure/services/aspm/scan-scheduler.service.ts"
+
+  # Phase 11 — Web UI
+  - "src/presentation/web/app/api/aspm/scan/route.ts"
+  - "src/presentation/web/app/api/aspm/scan/stream/route.ts"
+  - "src/presentation/web/app/actions/aspm-scan.ts"
+  - "src/presentation/web/components/features/aspm/aspm-scan-dialog/aspm-scan-dialog.tsx"
+  - "src/presentation/web/components/features/aspm/aspm-scan-dialog/aspm-scan-dialog.stories.tsx"
+  - "src/presentation/web/components/features/aspm/scan-progress-panel/scan-progress-panel.tsx"
+  - "src/presentation/web/components/features/aspm/scan-progress-panel/scan-progress-panel.stories.tsx"
+  - "src/presentation/web/components/features/aspm/scanner-profile-section/scanner-profile-section.tsx"
+  - "src/presentation/web/components/features/aspm/scanner-profile-section/scanner-profile-section.stories.tsx"
+  - ".storybook/mocks/app/actions/aspm-scan.ts"
+
+  # Phase 11 — CLI
+  - "src/presentation/cli/commands/aspm/aspm-scan-command.ts"
+  - "src/presentation/cli/commands/aspm/aspm-rescan-command.ts"
+
+  # Phase 11 — Tests
+  - "tests/unit/domain/aspm/scan/secret-scanner.test.ts"
+  - "tests/unit/domain/aspm/scan/sbom-builder.test.ts"
+  - "tests/unit/application/use-cases/aspm/scan/scan-application.test.ts"
+  - "tests/unit/infrastructure/services/aspm/osv-vulnerability-adapter.test.ts"
+  - "tests/unit/infrastructure/services/aspm/git-ownership-adapter.test.ts"
+  - "tests/unit/infrastructure/services/aspm/scan-scheduler.test.ts"
+  - "tests/integration/infrastructure/repositories/sqlite-scan-run-repository.test.ts"
+  - "tests/fixtures/aspm/scan/sample-repos/README.md"
+  - "tests/e2e/aspm-scan-happy-path.spec.ts"
+
+  # Phase 11 — Docs
+  - "docs/architecture/aspm-scanning.md"
+
 filesToModify:
   - "tsp/domain/entities/application.tsp"
   - "tsp/main.tsp"
@@ -428,6 +522,16 @@ filesToModify:
   - "src/presentation/web/components/features/applications/application-detail.tsx"
   - "docs/api/domain-models.md"
   - "package.json"
+
+  # Phase 11 — Modifications
+  - "tsp/domain/entities/application.tsp"  # add ScannerProfile field + lastScannedAt
+  - "packages/core/src/infrastructure/di/modules/register-aspm.ts"  # register scan use cases + scanner port + scheduler
+  - "src/presentation/web/components/features/aspm/posture-cards.tsx"  # swap AspmIngestDialog → AspmScanDialog in empty state
+  - "src/presentation/web/components/features/aspm/findings-table.tsx"  # same swap
+  - "src/presentation/web/components/features/aspm/aspm-application-section.tsx"  # same swap
+  - "src/presentation/web/components/features/aspm/aspm-sub-nav/aspm-sub-nav.tsx"  # Scan/Rescan primary button replaces 'Ingest data'
+  - "src/presentation/web/components/features/aspm/aspm-ingest-dialog/aspm-ingest-dialog.tsx"  # demoted; mounted inside scan dialog as 'Upload existing report' tab
+  - "src/presentation/cli/commands/aspm/index.ts"  # register scan + rescan subcommands
 
 # Open questions (should all be resolved before implementation)
 openQuestions: []

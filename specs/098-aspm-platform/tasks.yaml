@@ -1510,8 +1510,430 @@ tasks:
     tdd: null
     estimatedEffort: "2h"
 
+  # ── Phase 11 — Native Scanning ─────────────────────────────────────────────
+
+  - id: "task-63"
+    phaseId: "phase-11"
+    title: "Add ScanRun + ScannerProfile TSP models and regenerate"
+    description: >
+      Author tsp/domain/entities/aspm/scan-run.tsp (id, applicationId, triggeredBy
+      enum [User|Schedule|Event], status enum [Pending|Running|Succeeded|Failed|
+      Partial], startedAt, finishedAt?, stages: ScanStage[]) and
+      tsp/domain/entities/aspm/scanner-profile.tsp (per-app config). Extend
+      Application with `lastScannedAt: utcDateTime?` and `scannerProfile?:
+      ScannerProfile`. Run `pnpm tsp:compile`; do not edit the generated file.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "ScanRun + ScannerProfile + ScanStage appear in domain/generated/output.ts"
+      - "Application carries lastScannedAt and scannerProfile fields"
+      - "pnpm validate green"
+    tdd: "Snapshot the generated output diff in tests/unit/domain/generated/scan-run.snapshot.ts to catch accidental schema drift."
+    estimatedEffort: "1.5h"
+
+  - id: "task-64"
+    phaseId: "phase-11"
+    title: "Migration 118 — create scan_runs table"
+    description: >
+      Add scan_runs columns: id PK, application_id FK, triggered_by TEXT,
+      status TEXT, started_at INTEGER, finished_at INTEGER NULLABLE,
+      stages_json TEXT NOT NULL. Idempotent ALTER guarded by pragma table_info
+      check, mirroring migration 116's pattern.
+    state: "Todo"
+    dependencies:
+      - "task-63"
+    acceptanceCriteria:
+      - "Running migration twice is a no-op"
+      - "down() leaves a TODO comment per project convention (SQLite drop-column unsupported)"
+    tdd: "tests/integration/infrastructure/persistence/sqlite/migrations/118-create-scan-runs.test.ts asserts table created with correct columns and idempotency."
+    estimatedEffort: "0.5h"
+
+  - id: "task-65"
+    phaseId: "phase-11"
+    title: "Migration 119 — add scanner_profile_json + last_scanned_at to applications"
+    description: >
+      ALTER TABLE applications ADD COLUMN scanner_profile_json TEXT NOT NULL DEFAULT '{}'
+      and last_scanned_at INTEGER NULLABLE. Idempotent.
+    state: "Todo"
+    dependencies:
+      - "task-63"
+    acceptanceCriteria:
+      - "Applications mapper round-trips scannerProfile and lastScannedAt"
+    tdd: "Extend the existing sqlite-application.repository test with a scanner-profile round-trip case."
+    estimatedEffort: "0.5h"
+
+  - id: "task-66"
+    phaseId: "phase-11"
+    title: "Build pure-domain SecretScanner with regex + Shannon-entropy rule pack"
+    description: >
+      domain/aspm/scan/secret-scanner.ts plus secret-rule-pack.ts. Rule pack covers
+      AWS (AKIA/ASIA), GitHub PATs (ghp_/gho_/ghs_/ghu_), Slack (xox[abp]-),
+      Stripe (sk_live_), Google OAuth (ya29.), RSA/EC/OpenSSH private-key headers,
+      generic 40+ char high-entropy tokens labeled API_KEY/SECRET/TOKEN, JWT-shaped
+      strings (decode header + filter test issuers). Output is SARIF v2.1.0 ready
+      for IngestFindingsUseCase. No third-party dependency.
+    state: "Todo"
+    dependencies:
+      - "task-63"
+    acceptanceCriteria:
+      - "Fixture repo with 12 seeded secrets is detected 100% (zero false negatives on the seed set)"
+      - "False-positive rate < 5% on a curated negative set (placeholder strings, base64-encoded images, test vectors)"
+      - "Re-running twice produces identical fingerprints (NFR-24)"
+    tdd: "tests/unit/domain/aspm/scan/secret-scanner.test.ts — RED test asserts each rule's positive + at least one negative case BEFORE implementation."
+    estimatedEffort: "5h"
+
+  - id: "task-67"
+    phaseId: "phase-11"
+    title: "Build pure-domain SbomBuilder + 9 manifest parsers"
+    description: >
+      domain/aspm/scan/sbom-builder.ts orchestrates per-ecosystem parsers under
+      domain/aspm/scan/manifest-parsers/: npm, python (pip/poetry/pipenv), go,
+      rust, jvm (maven + gradle), ruby, php, dotnet, container (Dockerfile +
+      compose), iac (terraform + kubernetes + github-actions). Each parser returns
+      SbomComponentDraft[]; the builder dedupes by purl-like identifier. Reuse the
+      existing SoftwareBillOfMaterials shape so IngestSbomUseCase consumes the
+      output unchanged.
+    state: "Todo"
+    dependencies:
+      - "task-63"
+    acceptanceCriteria:
+      - "Each parser has fixture-driven golden tests (input manifest → expected component list)"
+      - "Builder correctly merges multi-ecosystem repos (e.g. a Python+JS monorepo)"
+      - "Container parser extracts base-image purls from FROM lines with multi-stage builds"
+      - "IaC parser flags Terraform provider versions, K8s container images, and GHA workflow `uses:` lines"
+    tdd: "Per-parser test file under tests/unit/domain/aspm/scan/manifest-parsers/ with RED golden test before each parser is implemented."
+    estimatedEffort: "10h"
+
+  - id: "task-68"
+    phaseId: "phase-11"
+    title: "OSV.dev vulnerability adapter (IOsvVulnerabilityPort)"
+    description: >
+      application/ports/output/services/osv-vulnerability-port.interface.ts +
+      infrastructure/services/aspm/osv-vulnerability-adapter.ts. Uses fetch (no
+      external HTTP client dep). POSTs the SBOM in batches to
+      https://api.osv.dev/v1/querybatch, then follows up with /v1/vulns/{id} for
+      each hit. Caches responses on disk under .shep/cache/osv/ for deterministic
+      offline re-scans. Graceful degradation when offline: cache-only mode with
+      a `cacheOnly: true` flag on the result.
+    state: "Todo"
+    dependencies:
+      - "task-67"
+    acceptanceCriteria:
+      - "Live test uses MSW to stub osv.dev responses; no real network during CI"
+      - "Cache hit short-circuits the HTTP path"
+      - "Offline mode returns cached results without throwing"
+    tdd: "tests/unit/infrastructure/services/aspm/osv-vulnerability-adapter.test.ts asserts batch/individual/cache paths."
+    estimatedEffort: "4h"
+
+  - id: "task-69"
+    phaseId: "phase-11"
+    title: "Git ownership adapter (IGitOwnershipPort)"
+    description: >
+      application/ports/output/services/git-ownership-port.interface.ts +
+      infrastructure/services/aspm/git-ownership-adapter.ts. Uses the existing
+      `IProcessSpawnService` (NOT shell: true; see src/CLAUDE.md cross-platform
+      rules) to invoke `git log --pretty=format:%ae --follow <path>` and `git
+      blame --line-porcelain <path>`. Aggregates author emails + frequency,
+      falls back to CODEOWNERS when blame is insufficient. Output augments
+      .shep/ownership.yaml — explicit YAML beats inferred git.
+    state: "Todo"
+    dependencies:
+      - "task-63"
+    acceptanceCriteria:
+      - "Adapter works on Windows (path separator normalization; no shell: true)"
+      - "When both .shep/ownership.yaml AND git blame have a match, YAML wins"
+      - "CODEOWNERS fallback parsed correctly (glob syntax)"
+    tdd: "tests/unit/infrastructure/services/aspm/git-ownership-adapter.test.ts spawns a real temp git repo via the existing harness."
+    estimatedEffort: "4h"
+
+  - id: "task-70"
+    phaseId: "phase-11"
+    title: "SQLite ScanRun repository + DI wiring"
+    description: >
+      sqlite-scan-run-repository.ts implementing IScanRunRepository (save / find
+      by id / list latest per application). Wire into register-aspm.ts under both
+      the class token and the string-token alias 'IScanRunRepository' so web
+      routes can resolve it. Add the string token to
+      tests/integration/infrastructure/di/container-bootstrap.test.ts
+      CRITICAL_INFRA_TOKENS per the bootstrap-test lesson.
+    state: "Todo"
+    dependencies:
+      - "task-64"
+    acceptanceCriteria:
+      - "container-bootstrap test passes with the new token"
+      - "Repository round-trips a ScanRun with multi-stage progress"
+    tdd: "tests/integration/infrastructure/repositories/sqlite-scan-run-repository.test.ts."
+    estimatedEffort: "3h"
+
+  - id: "task-71"
+    phaseId: "phase-11"
+    title: "Agent-driven SAST analyzer (SastAnalysisAgent)"
+    description: >
+      Add a LangGraph node under infrastructure/services/aspm/agents/sast-analysis-agent.ts
+      that, given a chunk of source files (token-budget bounded), returns
+      SecurityFinding drafts with cwe + owasp taxa. MUST resolve its executor via
+      IAgentExecutorProvider — NO hardcoded provider/agent type. Reuse the
+      existing agent prompt patterns + JSON-schema-constrained output (same shape
+      the SARIF adapter emits) so the result flows through IngestFindingsUseCase
+      unchanged.
+    state: "Todo"
+    dependencies:
+      - "task-66"
+    acceptanceCriteria:
+      - "No infrastructure/agents/* provider class is imported by the analyzer"
+      - "Output passes the same SARIF normalization as third-party scanner output"
+      - "Failure mode (provider error / quota) sets ScanStage.status='failed' without throwing"
+    tdd: "tests/unit/infrastructure/services/aspm/agents/sast-analysis-agent.test.ts with a fake IAgentExecutorProvider returning canned JSON."
+    estimatedEffort: "6h"
+
+  - id: "task-72"
+    phaseId: "phase-11"
+    title: "Agent-driven container hardening analyzer (ContainerHardeningAgent)"
+    description: >
+      Same shape as task-71 but specialized for Dockerfiles + docker-compose +
+      k8s deployment manifests. Targets: running as root, latest-tag base,
+      unpinned digests, missing HEALTHCHECK, exposed sensitive ports, missing
+      USER, COPY of .git / .env, --privileged.
+    state: "Todo"
+    dependencies:
+      - "task-71"
+    acceptanceCriteria:
+      - "Detects the 7 listed anti-patterns on a fixture Dockerfile"
+      - "Returns SARIF-shaped output"
+    tdd: "Per-agent test with fake provider and golden fixtures."
+    estimatedEffort: "4h"
+
+  - id: "task-73"
+    phaseId: "phase-11"
+    title: "Agent-driven IaC misconfiguration analyzer (IacSecurityAgent)"
+    description: >
+      Same shape as task-71 but for Terraform / Kubernetes / CloudFormation /
+      GitHub Actions workflows. Targets: public buckets, open security groups,
+      missing encryption-at-rest, hard-coded credentials, GHA
+      pull_request_target + checkout-PR-head pattern.
+    state: "Todo"
+    dependencies:
+      - "task-71"
+    acceptanceCriteria:
+      - "Detects each of the 5 categories on fixture files"
+      - "Returns SARIF-shaped output"
+    tdd: "Per-agent test with fake provider and golden fixtures."
+    estimatedEffort: "5h"
+
+  - id: "task-74"
+    phaseId: "phase-11"
+    title: "ScanApplicationUseCase orchestration"
+    description: >
+      application/use-cases/aspm/scan/scan-application.ts. Inputs: applicationId,
+      stagesEnabled[], triggeredBy. Runs enabled stages with bounded concurrency
+      (default 3), creates a ScanRun, updates per-stage progress, pipes outputs
+      through IngestSbomUseCase (sbom stage) and IngestFindingsUseCase (sca /
+      secrets / sast / container / iac stages — each emits SARIF). Updates
+      applications.last_scanned_at on success. Idempotent re-scan (FR-8 / NFR-10).
+    state: "Todo"
+    dependencies:
+      - "task-66"
+      - "task-67"
+      - "task-68"
+      - "task-69"
+      - "task-70"
+      - "task-71"
+      - "task-72"
+      - "task-73"
+    acceptanceCriteria:
+      - "Re-running on an unchanged tree adds zero new findings (deterministic dedup)"
+      - "Stage failure marks ScanStage='failed' + ScanRun='partial' (NFR-25)"
+      - "Concurrency cap enforced; respects ScannerProfile excludes"
+    tdd: "tests/unit/application/use-cases/aspm/scan/scan-application.test.ts with fake adapters; RED before implementation."
+    estimatedEffort: "5h"
+
+  - id: "task-75"
+    phaseId: "phase-11"
+    title: "RescanApplicationUseCase + ListScanRunsUseCase + GetScanRunUseCase"
+    description: >
+      Thin wrappers over ScanApplicationUseCase / IScanRunRepository. Rescan
+      passes triggeredBy='user' (or 'event'/'schedule'); list returns the latest
+      N per application; get returns one with full stage detail.
+    state: "Todo"
+    dependencies:
+      - "task-74"
+    acceptanceCriteria:
+      - "Both have string-token aliases in register-aspm.ts"
+      - "Added to CRITICAL_INFRA_TOKENS in container-bootstrap.test.ts"
+    tdd: "Unit tests with mock ScanApplicationUseCase asserting triggeredBy propagation."
+    estimatedEffort: "2h"
+
+  - id: "task-76"
+    phaseId: "phase-11"
+    title: "Scan SSE endpoint /api/aspm/scan/stream"
+    description: >
+      Mirror /api/aspm/posture/stream pattern. Subscribes to ScanRun updates via
+      the existing IDomainEventBus, emits 'scan-stage' deltas + a terminal
+      'scan-completed' event. Gated on requireFeatureFlag('aspm').
+    state: "Todo"
+    dependencies:
+      - "task-74"
+    acceptanceCriteria:
+      - "Health check returns 200 when flag on, 404 when off"
+      - "Client reconnect with Last-Event-ID gets a fresh snapshot"
+    tdd: "tests/integration/presentation/web/api/aspm/scan-stream.test.ts."
+    estimatedEffort: "3h"
+
+  - id: "task-77"
+    phaseId: "phase-11"
+    title: "Server action aspm-scan.ts + Storybook mock"
+    description: >
+      src/presentation/web/app/actions/aspm-scan.ts exposes startScan(input) +
+      rescanApplication(input) + listScanRuns(applicationId). Pattern: same as
+      aspm-ingest.ts — requireFeatureFlag, FormData input, FeatureFlagDisabledError
+      → ok:false. Add matching .storybook/mocks/app/actions/aspm-scan.ts.
+    state: "Todo"
+    dependencies:
+      - "task-75"
+    acceptanceCriteria:
+      - "Server action returns { ok, summary, error } in all paths"
+      - "Storybook build succeeds with the new mock"
+    tdd: "tests/unit/presentation/web/actions/aspm-scan.test.ts."
+    estimatedEffort: "2h"
+
+  - id: "task-78"
+    phaseId: "phase-11"
+    title: "Web — AspmScanDialog + ScanProgressPanel components (+ stories)"
+    description: >
+      Two new colocated components. AspmScanDialog: application picker (reuses
+      listAspmIngestApplications), stage checklist (sbom/sca/secrets/sast/
+      container/iac), 'Scan now' submit, secondary tab 'Upload existing report'
+      embedding the existing AspmIngestDialog. ScanProgressPanel: subscribes to
+      /api/aspm/scan/stream, renders per-stage status + count + duration. Both
+      MUST have colocated .stories.tsx with at minimum Default / Loading / Error
+      / partial-failure states (mandatory rule).
+    state: "Todo"
+    dependencies:
+      - "task-76"
+      - "task-77"
+    acceptanceCriteria:
+      - "Both components have stories that pass the Storybook build"
+      - "Dialog passes a11y audit (no missing labels, no contrast violations)"
+      - "Progress panel updates without full re-mount on SSE event"
+    tdd: "Component tests under tests/unit/presentation/web/features/aspm/aspm-scan-dialog/."
+    estimatedEffort: "8h"
+
+  - id: "task-79"
+    phaseId: "phase-11"
+    title: "UX migration — replace every 'Ingest data' trigger with Scan/Rescan"
+    description: >
+      Swap the AspmIngestDialog usage in posture-cards.tsx, findings-table.tsx,
+      aspm-application-section.tsx, and aspm-sub-nav.tsx for AspmScanDialog.
+      Keep AspmIngestDialog mounted INSIDE the new dialog as the 'Upload existing
+      report' secondary tab (additive — CI pipelines still work). Rename the
+      dashboard 'Last ingested' tile to 'Last scanned'.
+    state: "Todo"
+    dependencies:
+      - "task-78"
+    acceptanceCriteria:
+      - "Grep for 'Ingest data' returns zero matches in src/presentation/web"
+      - "Dashboard tile reads 'Last scanned' and updates after a scan finishes"
+      - "All existing tests for the three component files still pass (updated for the new dialog testids)"
+    tdd: "Update the three existing component tests to assert presence of AspmScanDialog testid."
+    estimatedEffort: "2h"
+
+  - id: "task-80"
+    phaseId: "phase-11"
+    title: "CLI — shep aspm scan + shep aspm rescan"
+    description: >
+      Two new Commander subcommands under src/presentation/cli/commands/aspm/.
+      Same patterns as the existing aspm-ingest-command.ts. Resolve the
+      application via the existing resolveApplication helper, call
+      ScanApplicationUseCase / RescanApplicationUseCase, stream stage progress
+      to the terminal with the colored UI primitives.
+    state: "Todo"
+    dependencies:
+      - "task-75"
+    acceptanceCriteria:
+      - "shep aspm scan --app <slug> [--stages sbom,secrets] [--json] works end-to-end"
+      - "shep aspm rescan is a one-liner over the same use case"
+      - "Both hidden behind the aspm feature flag like the rest of the aspm command tree"
+    tdd: "tests/unit/presentation/cli/commands/aspm/aspm-scan-command.test.ts using the Commander test harness."
+    estimatedEffort: "3h"
+
+  - id: "task-81"
+    phaseId: "phase-11"
+    title: "Nightly auto-rescan scheduler"
+    description: >
+      infrastructure/services/aspm/scan-scheduler.service.ts. Daemon-side cron
+      loop (reuses the existing scheduler primitive if one exists; otherwise a
+      thin setInterval guarded by the daemon's lifecycle). Queries all
+      Applications where aspm.autoRescan !== false and lastScannedAt < now-24h,
+      enqueues RescanApplicationUseCase. Settings toggle: autoRescanEnabled
+      (default true). Per-app override on Application.scannerProfile.autoRescan.
+    state: "Todo"
+    dependencies:
+      - "task-75"
+    acceptanceCriteria:
+      - "Fake-clock test verifies the 24h gate"
+      - "Per-app opt-out honored"
+      - "Setting toggle disables scheduler entirely"
+    tdd: "tests/unit/infrastructure/services/aspm/scan-scheduler.test.ts with vi.useFakeTimers()."
+    estimatedEffort: "4h"
+
+  - id: "task-82"
+    phaseId: "phase-11"
+    title: "Scanner profile settings panel"
+    description: >
+      ScannerProfileSection component under components/features/aspm/. Mounted
+      inside the existing settings page (gated on featureFlags.aspm). Lets the
+      user toggle each stage, set path excludes (glob list), and view per-app
+      last-scan summary. Wired to a new server action saveScannerProfile.
+    state: "Todo"
+    dependencies:
+      - "task-65"
+      - "task-77"
+    acceptanceCriteria:
+      - "Save round-trips into applications.scanner_profile_json"
+      - "Path excludes are honored by SbomBuilder + SecretScanner (regression test)"
+    tdd: "Component test for the settings section + use-case test for the saver."
+    estimatedEffort: "4h"
+
+  - id: "task-83"
+    phaseId: "phase-11"
+    title: "E2E Playwright happy path — scan one repo end-to-end"
+    description: >
+      tests/e2e/aspm-scan-happy-path.spec.ts. Sets up a fixture repo with a
+      seeded secret + a known-vulnerable dependency, navigates to /aspm,
+      clicks Scan, waits for SSE 'scan-completed', asserts:
+      - findings count > 0 in the posture cards,
+      - the seeded secret appears in /aspm/findings,
+      - the OSV vulnerability appears in /aspm/findings,
+      - 'Last scanned' tile is recent.
+    state: "Todo"
+    dependencies:
+      - "task-79"
+      - "task-80"
+    acceptanceCriteria:
+      - "Test passes consistently on linux + macos + windows runners"
+      - "Mocked OSV.dev responses (MSW) so no live network during CI"
+    tdd: null
+    estimatedEffort: "4h"
+
+  - id: "task-84"
+    phaseId: "phase-11"
+    title: "Docs — docs/architecture/aspm-scanning.md + update aspm.md"
+    description: >
+      Architecture doc explaining the scan stages, the in-house vs agent-driven
+      split, the local-branch-only contract, the offline-degradation behavior,
+      and the upload escape-hatch. Update docs/architecture/aspm.md to link to it
+      and remove the 'requires upload' language from the dashboard tour.
+    state: "Todo"
+    dependencies:
+      - "task-83"
+    acceptanceCriteria:
+      - "Doc renders cleanly in the existing docs site"
+      - "Every Phase 11 FR cross-referenced"
+    tdd: null
+    estimatedEffort: "2h"
+
 # Total effort estimate
-totalEstimate: "138h (~3.5 dev-weeks at 40h/week)"
+totalEstimate: "200h (~5 dev-weeks at 40h/week, including Phase 11)"
 
 # Open questions
 openQuestions: []
