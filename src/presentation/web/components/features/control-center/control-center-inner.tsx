@@ -206,7 +206,12 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
         // Only navigate when the click lands on the card itself, not on
         // overlay buttons (delete, add) or pointer events leaking from dialogs.
         const target = event.target as HTMLElement;
-        if (!target.closest('[data-testid="feature-node-card"]')) return;
+        if (target.closest('button,a,input,textarea,select,[role="button"]')) return;
+        const currentTarget = event.currentTarget as HTMLElement;
+        const clickedCard =
+          target.closest('[data-testid="feature-node-card"]') ??
+          currentTarget.querySelector('[data-testid="feature-node-card"]');
+        if (!clickedCard) return;
         guardedNavigate(() => {
           clickSound.play();
           router.push(`/feature/${data.featureId}`);
