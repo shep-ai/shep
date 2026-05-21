@@ -12,6 +12,8 @@
 
 'use client';
 
+import { useState } from 'react';
+
 import { cn } from '@/lib/utils';
 import type { RiskScoreBreakdown as Breakdown } from '@shepai/core/domain/generated/output';
 
@@ -20,6 +22,14 @@ export interface RiskScoreBreakdownProps {
   loading?: boolean;
   error?: string | null;
   className?: string;
+  /**
+   * When provided, the empty state renders a "Compute now" button that
+   * invokes this handler. The handler is expected to trigger an
+   * on-demand recompute and refresh the parent's data. Omit it in
+   * read-only contexts (stories, snapshots) — the empty state will
+   * fall back to a static message.
+   */
+  onCompute?: () => Promise<void>;
 }
 
 interface Row {
@@ -51,7 +61,11 @@ export function RiskScoreBreakdown({
   loading,
   error,
   className,
+  onCompute,
 }: RiskScoreBreakdownProps) {
+  const [computing, setComputing] = useState(false);
+  const [computeError, setComputeError] = useState<string | null>(null);
+
   if (loading === true) {
     return (
       <div
@@ -81,18 +95,55 @@ export function RiskScoreBreakdown({
   }
 
   if (breakdown === null || breakdown === undefined) {
+    const handleCompute = onCompute
+      ? async () => {
+          if (computing) return;
+          setComputing(true);
+          setComputeError(null);
+          try {
+            await onCompute();
+          } catch (err) {
+            setComputeError(err instanceof Error ? err.message : String(err));
+          } finally {
+            setComputing(false);
+          }
+        }
+      : undefined;
+
     return (
       <div
         data-testid="risk-score-breakdown-empty"
         className={cn(
-          'flex h-24 flex-col items-center justify-center gap-1 rounded-md border',
+          'flex h-24 flex-col items-center justify-center gap-2 rounded-md border',
           className
         )}
       >
         <span className="text-sm font-medium">No risk score yet</span>
-        <span className="text-muted-foreground text-xs">
-          Run <code>shep aspm posture</code> or wait for the next compute pass
-        </span>
+        {handleCompute ? (
+          <>
+            <button
+              type="button"
+              data-testid="risk-score-compute-now"
+              onClick={() => {
+                void handleCompute();
+              }}
+              disabled={computing}
+              aria-busy={computing}
+              className="hover:bg-accent rounded-md border px-3 py-1 text-xs font-medium disabled:opacity-60"
+            >
+              {computing ? 'Computing…' : 'Compute now'}
+            </button>
+            {computeError !== null ? (
+              <span
+                data-testid="risk-score-compute-error"
+                className="text-xs text-red-600 dark:text-red-400"
+                role="alert"
+              >
+                {computeError}
+              </span>
+            ) : null}
+          </>
+        ) : null}
       </div>
     );
   }

@@ -6,8 +6,12 @@
  * RiskScoreBreakdown.
  */
 
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
+}));
 
 import { FindingDetailPanel } from '@/components/features/aspm/finding-detail-panel';
 import {
@@ -123,5 +127,17 @@ describe('FindingDetailPanel', () => {
     const finding = makeFinding({});
     render(<FindingDetailPanel finding={finding} />);
     expect(screen.getByTestId('risk-score-breakdown-empty')).toBeInTheDocument();
+  });
+
+  it('wires Compute now to the onComputeRiskScore override', async () => {
+    const finding = makeFinding({ id: 'finding-xyz' });
+    const compute = vi.fn(async () => undefined);
+    render(<FindingDetailPanel finding={finding} onComputeRiskScore={compute} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('risk-score-compute-now'));
+    });
+
+    expect(compute).toHaveBeenCalledWith('finding-xyz');
   });
 });

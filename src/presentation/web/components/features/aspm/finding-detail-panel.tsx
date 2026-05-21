@@ -14,6 +14,8 @@
 
 'use client';
 
+import { useRouter } from 'next/navigation';
+
 import { cn } from '@/lib/utils';
 import { RiskScoreBreakdown } from './risk-score-breakdown';
 import { SeverityBadge } from './severity-badge';
@@ -28,6 +30,15 @@ export interface FindingDetailPanelProps {
   loading?: boolean;
   error?: string | null;
   className?: string;
+  /**
+   * Optional override for the "Compute now" handler in the
+   * RiskScoreBreakdown empty state. When omitted, the panel uses the
+   * default {@link defaultComputeRiskScore} that POSTs to
+   * `/api/aspm/findings/[id]/risk-score` and triggers a router refresh.
+   * Storybook stories and RTL tests pass an override to exercise the
+   * UI without real HTTP.
+   */
+  onComputeRiskScore?: (findingId: string) => Promise<void>;
 }
 
 export function FindingDetailPanel({
@@ -36,7 +47,10 @@ export function FindingDetailPanel({
   loading,
   error,
   className,
+  onComputeRiskScore,
 }: FindingDetailPanelProps) {
+  const router = useRouter();
+
   if (loading === true) {
     return (
       <div
@@ -135,7 +149,14 @@ export function FindingDetailPanel({
       </section>
 
       <section data-testid="finding-detail-risk">
-        <RiskScoreBreakdown breakdown={riskScoreBreakdown ?? null} />
+        <RiskScoreBreakdown
+          breakdown={riskScoreBreakdown ?? null}
+          onCompute={async () => {
+            const compute = onComputeRiskScore ?? defaultComputeRiskScore;
+            await compute(finding.id);
+            router.refresh();
+          }}
+        />
       </section>
     </article>
   );
@@ -156,4 +177,18 @@ function MetaRow({ label, value, mono }: MetaRowProps) {
       </span>
     </div>
   );
+}
+
+async function defaultComputeRiskScore(findingId: string): Promise<void> {
+  const res = await fetch(`/api/aspm/findings/${findingId}/risk-score`, { method: 'POST' });
+  if (!res.ok) {
+    let message = `HTTP ${res.status}`;
+    try {
+      const body = (await res.json()) as { error?: string };
+      if (typeof body.error === 'string' && body.error.length > 0) message = body.error;
+    } catch {
+      // ignore parse failures — fall back to status code
+    }
+    throw new Error(message);
+  }
 }

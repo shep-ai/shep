@@ -48,6 +48,15 @@ export const Error: Story = {
 
 export const Empty: Story = { args: { breakdown: null } };
 
+export const EmptyWithComputeButton: Story = {
+  args: {
+    breakdown: null,
+    onCompute: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    },
+  },
+};
+
 export const CvssOnly: Story = {
   args: {
     breakdown: breakdown({

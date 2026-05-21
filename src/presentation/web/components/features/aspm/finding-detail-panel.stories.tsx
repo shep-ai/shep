@@ -85,6 +85,19 @@ export const Error: Story = {
 
 export const NotFound: Story = { args: { finding: null } };
 
+export const EmptyBreakdownWithComputeButton: Story = {
+  args: {
+    finding: makeFinding({
+      locationPath: 'src/api/users.ts',
+      locationLine: 42,
+    }),
+    riskScoreBreakdown: null,
+    onComputeRiskScore: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    },
+  },
+};
+
 export const CvssOnly: Story = {
   args: {
     finding: makeFinding({

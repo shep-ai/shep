@@ -5,8 +5,8 @@
  * that the bar rows reflect the breakdown contributions correctly.
  */
 
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 
 import { RiskScoreBreakdown } from '@/components/features/aspm/risk-score-breakdown';
 import type { RiskScoreBreakdown as Breakdown } from '@shepai/core/domain/generated/output';
@@ -40,6 +40,57 @@ describe('RiskScoreBreakdown', () => {
   it('renders empty state when breakdown is missing', () => {
     render(<RiskScoreBreakdown />);
     expect(screen.getByTestId('risk-score-breakdown-empty')).toBeInTheDocument();
+  });
+
+  it('hides the Compute now button when no onCompute handler is provided', () => {
+    render(<RiskScoreBreakdown />);
+    expect(screen.queryByTestId('risk-score-compute-now')).not.toBeInTheDocument();
+  });
+
+  it('renders a Compute now button when onCompute is provided', () => {
+    render(<RiskScoreBreakdown onCompute={vi.fn(async () => undefined)} />);
+    const button = screen.getByTestId('risk-score-compute-now');
+    expect(button).toBeInTheDocument();
+    expect(button).toHaveTextContent(/compute now/i);
+    expect(button).not.toBeDisabled();
+  });
+
+  it('shows a busy state and invokes onCompute on click', async () => {
+    let resolveCompute!: () => void;
+    const onCompute = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveCompute = resolve;
+        })
+    );
+    render(<RiskScoreBreakdown onCompute={onCompute} />);
+
+    fireEvent.click(screen.getByTestId('risk-score-compute-now'));
+
+    expect(onCompute).toHaveBeenCalledTimes(1);
+    const busyButton = screen.getByTestId('risk-score-compute-now');
+    expect(busyButton).toHaveTextContent(/computing/i);
+    expect(busyButton).toBeDisabled();
+    expect(busyButton).toHaveAttribute('aria-busy', 'true');
+
+    await act(async () => {
+      resolveCompute();
+    });
+    expect(screen.getByTestId('risk-score-compute-now')).not.toBeDisabled();
+  });
+
+  it('surfaces a compute error inline', async () => {
+    const onCompute = vi.fn(async () => {
+      throw new Error('boom');
+    });
+    render(<RiskScoreBreakdown onCompute={onCompute} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('risk-score-compute-now'));
+    });
+
+    expect(screen.getByTestId('risk-score-compute-error')).toHaveTextContent('boom');
+    expect(screen.getByTestId('risk-score-compute-now')).not.toBeDisabled();
   });
 
   it('renders the total prominently', () => {

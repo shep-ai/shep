@@ -111,6 +111,7 @@ import { RecomputeAllRiskScoresUseCase } from '../../../application/use-cases/as
 import { BulkConvertFindingsUseCase } from '../../../application/use-cases/aspm/findings/bulk-convert-findings.js';
 import { ConvertFindingToWorkItemUseCase } from '../../../application/use-cases/aspm/findings/convert-finding-to-work-item.js';
 import { GetApplicationPostureUseCase } from '../../../application/use-cases/aspm/posture/get-application-posture.js';
+import { ListInventoryPostureUseCase } from '../../../application/use-cases/aspm/posture/list-inventory-posture.js';
 import { GetPostureSummaryUseCase } from '../../../application/use-cases/aspm/posture/get-posture-summary.js';
 import { GetRiskTrendUseCase } from '../../../application/use-cases/aspm/posture/get-risk-trend.js';
 import { DismissAiSignalUseCase } from '../../../application/use-cases/aspm/ai-review/dismiss-ai-signal.js';
@@ -324,6 +325,7 @@ function registerPhase7UseCases(container: DependencyContainer): void {
   container.register(GetPostureSummaryUseCase, { useClass: GetPostureSummaryUseCase });
   container.register(GetRiskTrendUseCase, { useClass: GetRiskTrendUseCase });
   container.register(GetApplicationPostureUseCase, { useClass: GetApplicationPostureUseCase });
+  container.register(ListInventoryPostureUseCase, { useClass: ListInventoryPostureUseCase });
   container.register(ConvertFindingToWorkItemUseCase, {
     useClass: ConvertFindingToWorkItemUseCase,
   });
@@ -421,11 +423,17 @@ function registerStringTokenAliases(container: DependencyContainer): void {
   container.register('GetApplicationPostureUseCase', {
     useFactory: (c) => c.resolve(GetApplicationPostureUseCase),
   });
+  container.register('ListInventoryPostureUseCase', {
+    useFactory: (c) => c.resolve(ListInventoryPostureUseCase),
+  });
   container.register('RankFindingsUseCase', {
     useFactory: (c) => c.resolve(RankFindingsUseCase),
   });
   container.register('GetFindingUseCase', {
     useFactory: (c) => c.resolve(GetFindingUseCase),
+  });
+  container.register('ComputeRiskScoreForFindingUseCase', {
+    useFactory: (c) => c.resolve(ComputeRiskScoreForFindingUseCase),
   });
   container.register('ListFindingsUseCase', {
     useFactory: (c) => c.resolve(ListFindingsUseCase),
