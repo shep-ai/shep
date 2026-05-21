@@ -82,9 +82,12 @@ test.describe('Agent editor round-trip (spec 093)', () => {
     const row = page.getByTestId(`agent-row-${AGENT_TYPE}`);
     await expect(row).toBeVisible();
 
-    // Click into the editor.
+    // Click into the editor. Use waitForURL (30s navigation timeout) instead
+    // of toHaveURL (5s expect timeout) — Next.js dev mode compiles the
+    // /agents/[agentType] route on first hit, and the router holds the URL on
+    // /agents until the RSC payload returns, which can exceed 5s under load.
     await row.getByRole('link', { name: /edit/i }).click();
-    await expect(page).toHaveURL(`/agents/${AGENT_TYPE}`);
+    await page.waitForURL(`/agents/${AGENT_TYPE}`);
     await expect(page.getByTestId('agent-editor-tabs')).toBeVisible();
 
     // Prompts tab is the default — the implement.system slot must be visible
