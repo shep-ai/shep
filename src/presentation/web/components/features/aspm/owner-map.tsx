@@ -77,9 +77,10 @@ export function OwnerMap({ owners, loading, error, className }: OwnerMapProps) {
           className
         )}
       >
-        <span className="text-sm font-medium">No owners declared</span>
+        <span className="text-sm font-medium">No owners yet</span>
         <span className="text-muted-foreground text-xs">
-          Check in <code>.shep/ownership.yaml</code> or assign owners in the UI.
+          Run a scan to derive owners from <code>git</code> commit history, or check in{' '}
+          <code>.shep/ownership.yaml</code>.
         </span>
       </div>
     );

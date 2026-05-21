@@ -865,3 +865,29 @@ Rules for any new web page or server route:
 3. **Add the string-token alias next to the class registration** in the relevant `register-*.ts` module: `container.register('UseCase', { useFactory: (c) => c.resolve(UseCase) })`. This keeps existing class-token consumers (CLI, tests) working while letting type-only web imports resolve at runtime.
 4. **Domain error classes are safe to runtime-import** when the file has no transitive imports (e.g. `FindingNotFoundError`). Bundling those is harmless because there's no resolution chain to follow.
 5. **If `/aspm/*` (or any route) returns 500 and the log says "Module not found" inside `packages/core/src/`**, the fix is at the *web page*, not the package: swap runtime imports for type imports.
+
+## Owners surface must be populated, not just resolved (feat/aspm-platform, 2026-05-21)
+
+Bug: the ASPM `/aspm/owners` page sat on "No owners yet" forever even when the
+spec promised ownership derived from git committers.
+
+Cause: `ScanApplicationUseCase` resolved a git author email via
+`IGitOwnershipPort.lookup` and then stuffed that raw email straight into
+`SecurityFinding.ownerId`. It never wrote a row to the `owners` table, so
+`IOwnerRepository.listAll()` (which `ListOwnerRollupsUseCase` powers the
+Owners page with) returned empty.
+
+Rule: whenever an external signal (git, OIDC, SSO, agent output) maps to a
+domain entity that has its own rollup/list view, the use case orchestrating
+that signal MUST upsert the entity, not just stamp its identifier on the
+adjacent record. "Resolves to" and "creates the row for" are two separate
+contracts.
+
+How to apply:
+
+- Before reusing an "id" string returned by a port, ask: is there a table whose
+  rollup screen lists rows of that type? If yes, ensure your use case has
+  injected the matching repository and is doing a find-or-create.
+- Cache within a single run (Map<email, ownerId>) to avoid N round-trips when
+  many findings share a committer.
+- Guard the create call against the unique-handle race: on error, re-query.

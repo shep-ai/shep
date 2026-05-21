@@ -28,6 +28,7 @@ import { inject, injectable } from 'tsyringe';
 
 import type { IApplicationRepository } from '../../../ports/output/repositories/application-repository.interface.js';
 import type { IFindingRepository } from '../../../ports/output/repositories/finding-repository.interface.js';
+import type { IOwnerRepository } from '../../../ports/output/repositories/owner-repository.interface.js';
 import type { IScanRunRepository } from '../../../ports/output/repositories/scan-run-repository.interface.js';
 import type { IExploitIntelPort } from '../../../ports/output/services/exploit-intel-port.interface.js';
 import type { IOwnershipYamlReader } from '../../../ports/output/services/ownership-yaml-reader.interface.js';
@@ -53,6 +54,7 @@ import {
   ScanStageStatus,
   ScanStatus,
   ScanTrigger,
+  type Owner,
   type ScanRun,
   type ScanStage,
   type ScannerProfile,
@@ -102,6 +104,20 @@ interface OwnershipResolverDeps {
   ownershipYaml: Awaited<ReturnType<IOwnershipYamlReader['read']>>;
   gitOwnership: IGitOwnershipPort;
   repoRoot: string;
+  /** Cache from author email → Owner.id within a single scan to avoid repeated DB lookups. */
+  emailToOwnerId: Map<string, string>;
+  /** Persists git-derived owners. */
+  upsertOwner: (email: string) => Promise<string | undefined>;
+}
+
+function deriveOwnerNameFromEmail(email: string): string {
+  const local = email.split('@')[0] ?? email;
+  return (
+    local
+      .replace(/[._+-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim() || email
+  );
 }
 
 async function resolveOwnerEmail(
@@ -118,7 +134,13 @@ async function resolveOwnerEmail(
     repoRoot: deps.repoRoot,
     assetPath,
   });
-  return candidates[0]?.email;
+  const email = candidates[0]?.email;
+  if (!email) return undefined;
+  const cached = deps.emailToOwnerId.get(email);
+  if (cached !== undefined) return cached;
+  const ownerId = await deps.upsertOwner(email);
+  if (ownerId !== undefined) deps.emailToOwnerId.set(email, ownerId);
+  return ownerId;
 }
 
 @injectable()
@@ -126,6 +148,7 @@ export class ScanApplicationUseCase {
   constructor(
     @inject('IApplicationRepository') private readonly appRepo: IApplicationRepository,
     @inject('IFindingRepository') private readonly findingRepo: IFindingRepository,
+    @inject('IOwnerRepository') private readonly ownerRepo: IOwnerRepository,
     @inject('IScanRunRepository') private readonly scanRunRepo: IScanRunRepository,
     @inject('IExploitIntelPort') private readonly exploitIntel: IExploitIntelPort,
     @inject('IOwnershipYamlReader') private readonly ownershipReader: IOwnershipYamlReader,
@@ -137,6 +160,38 @@ export class ScanApplicationUseCase {
     private readonly containerAnalyzer: IAgentSecurityAnalyzer,
     @inject('IIacSecurityAnalyzer') private readonly iacAnalyzer: IAgentSecurityAnalyzer
   ) {}
+
+  /**
+   * Find-or-create an Owner from a git author email. Returns the owner id
+   * (UUID) or undefined when persistence fails so callers can fall through
+   * to "unowned" instead of failing the whole stage.
+   *
+   * If a concurrent scan inserts the same handle between findByHandle and
+   * create, the unique-index violation is caught and we re-query — so the
+   * second run still ends up pointing at the first run's row.
+   */
+  private async findOrCreateOwnerByEmail(email: string): Promise<string | undefined> {
+    const trimmed = email.trim();
+    if (trimmed.length === 0) return undefined;
+    const handle = trimmed.toLowerCase();
+    const existing = await this.ownerRepo.findByHandle(handle);
+    if (existing !== null) return existing.id;
+    const now = new Date();
+    const owner: Owner = {
+      id: randomUUID(),
+      name: deriveOwnerNameFromEmail(trimmed),
+      handle,
+      createdAt: now,
+      updatedAt: now,
+    };
+    try {
+      await this.ownerRepo.create(owner);
+      return owner.id;
+    } catch {
+      const racedIn = await this.ownerRepo.findByHandle(handle);
+      return racedIn?.id;
+    }
+  }
 
   async execute(input: ScanApplicationInput): Promise<ScanApplicationResult> {
     const app = await this.appRepo.findById(input.applicationId);
@@ -156,6 +211,8 @@ export class ScanApplicationUseCase {
       ownershipYaml,
       gitOwnership: this.gitOwnership,
       repoRoot: app.repositoryPath,
+      emailToOwnerId: new Map<string, string>(),
+      upsertOwner: (email) => this.findOrCreateOwnerByEmail(email),
     };
 
     const scanRunId = randomUUID();

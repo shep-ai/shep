@@ -13,7 +13,9 @@ import {
 } from '@/domain/generated/output';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface';
 import type { IFindingRepository } from '@/application/ports/output/repositories/finding-repository.interface';
+import type { IOwnerRepository } from '@/application/ports/output/repositories/owner-repository.interface';
 import type { IScanRunRepository } from '@/application/ports/output/repositories/scan-run-repository.interface';
+import type { Owner } from '@/domain/generated/output';
 import type { IExploitIntelPort } from '@/application/ports/output/services/exploit-intel-port.interface';
 import type { IOwnershipYamlReader } from '@/application/ports/output/services/ownership-yaml-reader.interface';
 import type { IGitOwnershipPort } from '@/application/ports/output/services/git-ownership-port.interface';
@@ -42,6 +44,7 @@ function makeDeps(
   overrides: Partial<{
     appRepo: IApplicationRepository;
     findingRepo: IFindingRepository;
+    ownerRepo: IOwnerRepository;
     scanRunRepo: IScanRunRepository;
     exploitIntel: IExploitIntelPort;
     ownershipReader: IOwnershipYamlReader;
@@ -57,12 +60,14 @@ function makeDeps(
   const savedRuns: Parameters<IScanRunRepository['save']>[0][] = [];
   const inserts: SecurityFinding[][] = [];
   const updates: { id: string; fields: Partial<Application> }[] = [];
+  const createdOwners: Owner[] = [];
 
   const deps = {
     app,
     savedRuns,
     inserts,
     updates,
+    createdOwners,
     appRepo:
       overrides.appRepo ??
       ({
@@ -85,6 +90,20 @@ function makeDeps(
           return { inserted: findings.length, duplicates: 0 };
         },
       } as unknown as IFindingRepository),
+    ownerRepo:
+      overrides.ownerRepo ??
+      ({
+        findByHandle: async (handle: string) =>
+          createdOwners.find((o) => o.handle?.toLowerCase() === handle.toLowerCase()) ?? null,
+        create: async (owner: Owner) => {
+          createdOwners.push(owner);
+        },
+        findById: async (id: string) => createdOwners.find((o) => o.id === id) ?? null,
+        listAll: async () => createdOwners,
+        listByTeam: async () => [],
+        update: async () => undefined,
+        softDelete: async () => undefined,
+      } as unknown as IOwnerRepository),
     scanRunRepo:
       overrides.scanRunRepo ??
       ({
@@ -134,6 +153,7 @@ function makeDeps(
   const usecase = new ScanApplicationUseCase(
     deps.appRepo,
     deps.findingRepo,
+    deps.ownerRepo,
     deps.scanRunRepo,
     deps.exploitIntel,
     deps.ownershipReader,
@@ -197,6 +217,64 @@ describe('ScanApplicationUseCase', () => {
     });
     expect(result.status).toBe(ScanStatus.Failed);
     expect(deps.updates.find((u) => u.fields.lastScannedAt !== undefined)).toBeUndefined();
+  });
+
+  it('persists a git-derived Owner row and stamps the finding with that owner id', async () => {
+    const insertedFindings: SecurityFinding[][] = [];
+    const findingRepo: IFindingRepository = {
+      bulkInsertOrIgnore: async (findings: SecurityFinding[]) => {
+        insertedFindings.push(findings);
+        return { inserted: findings.length, duplicates: 0 };
+      },
+    } as unknown as IFindingRepository;
+    const gitOwnership: IGitOwnershipPort = {
+      lookup: async () => [{ email: 'Alice@Example.com', commitCount: 17 }],
+    };
+    const { usecase, deps } = makeDeps({ findingRepo, gitOwnership });
+
+    await usecase.execute({
+      applicationId: deps.app.id,
+      stagesEnabled: [ScanStageName.Secrets],
+    });
+
+    expect(deps.createdOwners).toHaveLength(1);
+    const owner = deps.createdOwners[0]!;
+    expect(owner.handle).toBe('alice@example.com');
+    expect(owner.name).toBe('Alice');
+
+    const finding = insertedFindings[0]![0]!;
+    expect(finding.ownerId).toBe(owner.id);
+  });
+
+  it('reuses the same Owner row across multiple findings sharing a git author', async () => {
+    const inserts: SecurityFinding[][] = [];
+    const findingRepo: IFindingRepository = {
+      bulkInsertOrIgnore: async (findings: SecurityFinding[]) => {
+        inserts.push(findings);
+        return { inserted: findings.length, duplicates: 0 };
+      },
+    } as unknown as IFindingRepository;
+    const fileReader: IFileTreeReaderPort = {
+      read: async () => [
+        { path: 'src/a.ts', content: 'const k1 = "AKIAABCDEFGHIJKLMNOP";' },
+        { path: 'src/b.ts', content: 'const k2 = "AKIAZZZZZZZZZZZZZZZZ";' },
+      ],
+    } as IFileTreeReaderPort;
+    const gitOwnership: IGitOwnershipPort = {
+      lookup: async () => [{ email: 'bob@example.com', commitCount: 3 }],
+    };
+    const { usecase, deps } = makeDeps({ findingRepo, fileReader, gitOwnership });
+
+    await usecase.execute({
+      applicationId: deps.app.id,
+      stagesEnabled: [ScanStageName.Secrets],
+    });
+
+    expect(deps.createdOwners).toHaveLength(1);
+    const findings = inserts[0]!;
+    expect(findings).toHaveLength(2);
+    expect(findings[0]!.ownerId).toBe(deps.createdOwners[0]!.id);
+    expect(findings[1]!.ownerId).toBe(deps.createdOwners[0]!.id);
   });
 
   it('emits zero findings on a second run when the bulk insert reports duplicates', async () => {
