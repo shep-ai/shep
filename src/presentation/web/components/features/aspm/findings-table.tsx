@@ -19,8 +19,20 @@ import { SeverityBadge } from './severity-badge';
 import { AspmScanDialog } from './aspm-scan-dialog/aspm-scan-dialog';
 import type { SecurityFinding } from '@shepai/core/domain/generated/output';
 
+export interface ApplicationSummary {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface FindingsTableProps {
   findings: SecurityFinding[];
+  /**
+   * Applications indexed by id (or as an array). Used to resolve the
+   * Application column from the SecurityFinding.applicationId UUID.
+   * When omitted, the column falls back to a truncated UUID.
+   */
+  applications?: ApplicationSummary[];
   loading?: boolean;
   error?: string | null;
   onRowClick?: (finding: SecurityFinding) => void;
@@ -29,11 +41,15 @@ export interface FindingsTableProps {
 
 export function FindingsTable({
   findings,
+  applications,
   loading,
   error,
   onRowClick,
   className,
 }: FindingsTableProps) {
+  const applicationsById = new Map<string, ApplicationSummary>(
+    (applications ?? []).map((a) => [a.id, a])
+  );
   if (loading) {
     return (
       <div
@@ -93,6 +109,9 @@ export function FindingsTable({
               Severity
             </th>
             <th scope="col" className="px-3 py-2 font-semibold">
+              Application
+            </th>
+            <th scope="col" className="px-3 py-2 font-semibold">
               Title
             </th>
             <th scope="col" className="px-3 py-2 font-semibold">
@@ -111,7 +130,12 @@ export function FindingsTable({
         </thead>
         <tbody>
           {findings.map((finding) => (
-            <FindingsTableRow key={finding.id} finding={finding} onClick={onRowClick} />
+            <FindingsTableRow
+              key={finding.id}
+              finding={finding}
+              application={applicationsById.get(finding.applicationId)}
+              onClick={onRowClick}
+            />
           ))}
         </tbody>
       </table>
@@ -121,10 +145,11 @@ export function FindingsTable({
 
 interface RowProps {
   finding: SecurityFinding;
+  application?: ApplicationSummary;
   onClick?: (finding: SecurityFinding) => void;
 }
 
-function FindingsTableRow({ finding, onClick }: RowProps) {
+function FindingsTableRow({ finding, application, onClick }: RowProps) {
   const location =
     finding.locationPath !== undefined
       ? finding.locationLine !== undefined
@@ -156,6 +181,21 @@ function FindingsTableRow({ finding, onClick }: RowProps) {
     >
       <td className="px-3 py-2 align-top">
         <SeverityBadge severity={finding.canonicalSeverity} />
+      </td>
+      <td className="px-3 py-2 align-top">
+        {application ? (
+          <div className="flex flex-col">
+            <span className="font-medium">{application.name}</span>
+            <span className="text-muted-foreground text-[11px]">{application.slug}</span>
+          </div>
+        ) : (
+          <span
+            className="text-muted-foreground font-mono text-[11px]"
+            title={finding.applicationId}
+          >
+            {finding.applicationId.substring(0, 8)}…
+          </span>
+        )}
       </td>
       <td className="px-3 py-2 align-top">
         <div className="flex flex-col">

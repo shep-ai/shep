@@ -11,12 +11,13 @@ import { useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { FindingsFilterBar } from './findings-filter-bar';
-import { FindingsTable } from './findings-table';
+import { FindingsTable, type ApplicationSummary } from './findings-table';
 import type { FindingFilter, SecurityFinding } from '@shepai/core/domain/generated/output';
 
 export interface FindingsPageClientProps {
   initialFilter: FindingFilter;
   findings: SecurityFinding[];
+  applications?: ApplicationSummary[];
   total: number;
   error: string | null;
 }
@@ -24,6 +25,7 @@ export interface FindingsPageClientProps {
 export function FindingsPageClient({
   initialFilter,
   findings,
+  applications,
   total,
   error,
 }: FindingsPageClientProps) {
@@ -64,7 +66,12 @@ export function FindingsPageClient({
       <div className="text-muted-foreground text-xs">
         Showing {findings.length} of {total} matching finding{total === 1 ? '' : 's'}
       </div>
-      <FindingsTable findings={findings} error={error} onRowClick={onRowClick} />
+      <FindingsTable
+        findings={findings}
+        applications={applications}
+        error={error}
+        onRowClick={onRowClick}
+      />
     </div>
   );
 }

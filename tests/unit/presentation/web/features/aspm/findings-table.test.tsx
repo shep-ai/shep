@@ -96,6 +96,24 @@ describe('FindingsTable', () => {
     expect(screen.getByText('—')).toBeInTheDocument();
   });
 
+  it('renders the application name + slug when applications lookup is provided', () => {
+    render(
+      <FindingsTable
+        findings={[makeFinding({ id: 'a', applicationId: 'app-1' })]}
+        applications={[{ id: 'app-1', name: 'Payments API', slug: 'payments-api' }]}
+      />
+    );
+    expect(screen.getByText('Payments API')).toBeInTheDocument();
+    expect(screen.getByText('payments-api')).toBeInTheDocument();
+  });
+
+  it('falls back to a truncated applicationId when the lookup misses', () => {
+    render(
+      <FindingsTable findings={[makeFinding({ id: 'a', applicationId: 'abcdef0123456789' })]} />
+    );
+    expect(screen.getByText('abcdef01…')).toBeInTheDocument();
+  });
+
   it.each([
     CanonicalSeverity.Critical,
     CanonicalSeverity.High,

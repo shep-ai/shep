@@ -15,6 +15,7 @@ import type {
   RankFindingsUseCase,
   RankFindingsResult,
 } from '@shepai/core/application/use-cases/aspm/findings/rank-findings';
+import type { ListApplicationsUseCase } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 import {
   CanonicalSeverity,
   FindingDomain,
@@ -23,6 +24,7 @@ import {
 } from '@shepai/core/domain/generated/output';
 import { resolve } from '@/lib/server-container';
 import { FindingsPageClient } from '@/components/features/aspm/findings-page-client';
+import type { ApplicationSummary } from '@/components/features/aspm/findings-table';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,9 +37,13 @@ export default async function FindingsRoute({ searchParams }: RouteProps) {
   const filter = parseFilter(params);
 
   let result: RankFindingsResult | null = null;
+  let applications: ApplicationSummary[] = [];
   let error: string | null = null;
   try {
-    result = await resolve<RankFindingsUseCase>('RankFindingsUseCase').execute({ filter });
+    [result, applications] = await Promise.all([
+      resolve<RankFindingsUseCase>('RankFindingsUseCase').execute({ filter }),
+      loadApplications(),
+    ]);
   } catch (err) {
     error = err instanceof Error ? err.message : String(err);
   }
@@ -54,11 +60,22 @@ export default async function FindingsRoute({ searchParams }: RouteProps) {
       <FindingsPageClient
         initialFilter={filter}
         findings={result ? result.items.map((r) => r.finding) : []}
+        applications={applications}
         total={result ? result.total : 0}
         error={error}
       />
     </div>
   );
+}
+
+async function loadApplications(): Promise<ApplicationSummary[]> {
+  try {
+    const apps = await resolve<ListApplicationsUseCase>('ListApplicationsUseCase').execute();
+    return apps.map((a) => ({ id: a.id, name: a.name, slug: a.slug }));
+  } catch {
+    // Findings still render without app names; only the column degrades.
+    return [];
+  }
 }
 
 function parseFilter(params: Record<string, string | string[] | undefined>): FindingFilter {
