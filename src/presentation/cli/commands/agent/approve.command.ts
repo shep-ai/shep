@@ -19,6 +19,13 @@ export function createApproveCommand(): Command {
   return new Command('approve')
     .description(t('cli:commands.agent.approve.description'))
     .argument('<id>', t('cli:commands.agent.approve.idArgument'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep agent approve a1b2c3d4 Approve and resume paused run
+  $ shep agent approve abc123   Unblock an approval-gated agent`
+    )
     .action(async (id: string) => {
       try {
         const resolved = await resolveAgentRun(id);

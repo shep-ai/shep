@@ -31,6 +31,13 @@ export function createShowCommand(): Command {
   return new Command('show')
     .description(t('cli:commands.agent.show.description'))
     .argument('<id>', t('cli:commands.agent.show.idArgument'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep agent show a1b2c3d4   Show agent run details
+  $ shep agent show abc123      Inspect a specific run`
+    )
     .action(async (id: string) => {
       try {
         const resolved = await resolveAgentRun(id);
