@@ -386,6 +386,15 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
+
+      # @semantic-release/npm v13 uses npm's OIDC trusted publishing when
+      # `id-token: write` is granted. Node 22 ships npm 10.9.x, which predates
+      # trusted publishing — the plugin's verifyConditions OIDC exchange
+      # succeeds, but `npm publish` then fails with ENEEDAUTH because npm 10
+      # can't use the OIDC token. Trusted publishing requires npm >= 11.5.
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@^11.5
+
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build:release
 

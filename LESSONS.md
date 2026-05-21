@@ -1,5 +1,18 @@
 # Lessons Learned
 
+## npm trusted publishing requires npm >= 11.5 on the runner
+
+`@semantic-release/npm` v13 added OIDC trusted publishing. In `lib/verify-auth.js`, when the OIDC token exchange with npmjs.com succeeds, the plugin **early-returns and does NOT write `NPM_TOKEN` to the userconfig `.npmrc`**. It then runs plain `npm publish` and relies on the **npm CLI itself** to do trusted publishing — which needs **npm >= 11.5.0**.
+
+Node 22 ships npm 10.9.x, so the Release job logged "OIDC token exchange with the npm registry succeeded" in verifyConditions and then died at publish with `npm error code ENEEDAUTH`. Two versions (`v1.205.1`, `v1.206.0`) got tagged + the release commit got pushed to main but never made it to npm, because semantic-release succeeded with the tag/push plugins before failing on `@semantic-release/npm`.
+
+Rules:
+
+1. When using `@semantic-release/npm` v13+ with `permissions: id-token: write`, the Release job MUST install npm >= 11.5 before invoking semantic-release. Add `npm install -g npm@^11.5` between setup-node and `npx semantic-release`.
+2. Keep `NPM_TOKEN` in the env as a fallback — the plugin uses it only when OIDC isn't available, but you want belt-and-suspenders in case npmjs trusted-publisher config gets removed.
+3. After a Release job failure, ALWAYS verify with `npm view <pkg> dist-tags` that the version actually landed. A "successful" re-run of a failed release is usually a no-op ("local branch main is behind the remote") and silently leaves the version missing from npm — the tag exists, the chore(release) commit exists, but the package is gone.
+4. A passing OIDC token exchange in verifyConditions only proves the package is configured as a trusted publisher on npmjs.com — it does NOT prove the runner can actually publish. Treat the runner's npm version as a separate, mandatory check.
+
 ## Tool install commands must bootstrap their own package manager
 
 The `project-bedrock.json` tool definition shipped with `pipx install project-bedrock` on every platform, assuming pipx was already present. It often isn't (fresh macOS, fresh Linux dev box), and the install failed silently from the user's perspective — they saw `command not found: pipx` and reported "the tools install is broken." Two follow-on traps appeared while fixing it:
