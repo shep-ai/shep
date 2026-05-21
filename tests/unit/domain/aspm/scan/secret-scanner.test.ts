@@ -48,9 +48,9 @@ describe('scanForSecrets — per-rule positive coverage', () => {
   });
 
   it('detects Slack bot tokens (xoxb-)', () => {
-    const drafts = scanForSecrets([
-      file('bot.js', 'const slack = "xoxb-1234567890-abcdefghijklmnop";'),
-    ]);
+    // gitleaks:allow — fixture for the secret-scanner detector; not a real token.
+    const fixture = `const slack = "xoxb-${'1'.repeat(10)}-${'a'.repeat(16)}";`;
+    const drafts = scanForSecrets([file('bot.js', fixture)]);
     expect(drafts.find((d) => d.ruleId === 'secret.slack.token')).toBeDefined();
   });
 
