@@ -392,8 +392,28 @@ jobs:
       # trusted publishing — the plugin's verifyConditions OIDC exchange
       # succeeds, but `npm publish` then fails with ENEEDAUTH because npm 10
       # can't use the OIDC token. Trusted publishing requires npm >= 11.5.
-      - name: Upgrade npm for OIDC trusted publishing
-        run: npm install -g npm@^11.5
+      #
+      # We can't run `npm install -g npm@^11.5` to upgrade: some Node 22
+      # toolcache images (e.g. 22.22.2) ship a bundled npm whose @npmcli/arborist
+      # is missing transitive deps (`Cannot find module 'promise-retry'`), so
+      # the bundled npm crashes before it can self-replace. Instead, fetch the
+      # npm registry tarball directly and overwrite the bundled package in
+      # place — npm tarballs ship with bundleDependencies so they're
+      # self-contained.
+      - name: Install npm 11 for OIDC trusted publishing
+        run: |
+          set -euo pipefail
+          NPM_VERSION=11.5.2
+          NODE_BIN_DIR="$(dirname "$(readlink -f "$(command -v node)")")"
+          NPM_PKG_DIR="$(dirname "$NODE_BIN_DIR")/lib/node_modules/npm"
+          TMP="$(mktemp -d)"
+          curl -fsSL "https://registry.npmjs.org/npm/-/npm-${NPM_VERSION}.tgz" -o "$TMP/npm.tgz"
+          sudo rm -rf "$NPM_PKG_DIR"
+          sudo mkdir -p "$NPM_PKG_DIR"
+          sudo tar -xzf "$TMP/npm.tgz" -C "$NPM_PKG_DIR" --strip-components=1
+          INSTALLED="$(npm --version)"
+          echo "npm now at $INSTALLED"
+          test "$INSTALLED" = "$NPM_VERSION"
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build:release
