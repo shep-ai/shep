@@ -891,3 +891,19 @@ How to apply:
 - Cache within a single run (Map<email, ownerId>) to avoid N round-trips when
   many findings share a committer.
 - Guard the create call against the unique-handle race: on error, re-query.
+
+## In ASPM UI, "branch" = a Feature (worktree), not a git ref on a Repository
+
+The `Repository` domain entity does NOT track multiple branches — it is just `{id, name, path, remoteUrl?}`. The thing users call a "branch" when they ask to "scan this branch" is a **Feature** with a `worktreePath` (and `applicationId` linking back to the parent Application).
+
+When the user requested "scan a repository branch" for ASPM, the right wiring was:
+
+- pass the Feature’s `worktreePath` as a new `scanPath?: string` override on `ScanApplicationUseCase`
+- still attribute findings to `feature.applicationId` (the schema requires it)
+
+Rule: before designing a "scan a branch" / "build a branch" / "deploy a branch" feature, check the Feature entity — not the Repository entity — for `worktreePath` + `branch`. Repositories are just paths.
+
+How to apply:
+
+- If you catch yourself proposing a `branchName` field on Repository, stop — you almost certainly want a Feature reference instead.
+- When extending a use case to scan/build an alternate working tree, prefer an optional `scanPath?: string` (or equivalent) override on the existing use case over inventing a new one. Findings/results still attribute to the Application/Repository row the user cares about.

@@ -64,6 +64,14 @@ export interface ScanApplicationInput {
   applicationId: string;
   stagesEnabled?: ScanStageName[];
   triggeredBy?: ScanTrigger;
+  /**
+   * Optional override for the working-tree root to scan. When provided, the
+   * scanner walks this path (and resolves git ownership from it) instead of
+   * {@link Application.repositoryPath}. Use this to scan a Feature's git
+   * worktree without inserting findings against a different applicationId —
+   * the resulting findings still attribute to {@link applicationId}.
+   */
+  scanPath?: string;
 }
 
 export interface ScanApplicationResult {
@@ -200,17 +208,18 @@ export class ScanApplicationUseCase {
     const startedAt = new Date();
     const profile = resolveScannerProfile(app.scannerProfile);
     const stages = pickStages(profile, input.stagesEnabled);
+    const scanRoot = input.scanPath ?? app.repositoryPath;
 
     const files = await this.fileReader.read({
-      repoRoot: app.repositoryPath,
+      repoRoot: scanRoot,
       excludes: profile.pathExcludes,
     });
 
-    const ownershipYaml = await this.ownershipReader.read(app.repositoryPath);
+    const ownershipYaml = await this.ownershipReader.read(scanRoot);
     const ownershipDeps: OwnershipResolverDeps = {
       ownershipYaml,
       gitOwnership: this.gitOwnership,
-      repoRoot: app.repositoryPath,
+      repoRoot: scanRoot,
       emailToOwnerId: new Map<string, string>(),
       upsertOwner: (email) => this.findOrCreateOwnerByEmail(email),
     };

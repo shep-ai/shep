@@ -1,7 +1,18 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
-import { Bug, CheckCircle2, AlertTriangle, Loader2, ShieldCheck } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import {
+  Bug,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
+  ShieldCheck,
+  GitBranch,
+  FolderGit2,
+  LayoutGrid,
+} from 'lucide-react';
+import type { ScanTargetTree } from '@shepai/core/application/use-cases/aspm/scan/list-scan-targets';
+
 import {
   Dialog,
   DialogContent,
@@ -11,34 +22,41 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { startScan, type AspmScanActionResult } from '@/app/actions/aspm-scan';
 import {
-  listAspmIngestApplications,
-  type AspmIngestApplicationOption,
-} from '@/app/actions/aspm-ingest';
+  startBulkScan,
+  listAspmScanTargets,
+  type AspmBulkScanResult,
+} from '@/app/actions/aspm-scan';
 import { AspmIngestDialog } from '@/components/features/aspm/aspm-ingest-dialog/aspm-ingest-dialog';
+
+import {
+  APP_PREFIX,
+  FEAT_PREFIX,
+  appSelectionId,
+  computeBulkTargets,
+  featureSelectionId,
+  leafIdsForRepository,
+  selectionStateForApplication,
+  selectionStateForRepository,
+  toggleLeaves,
+  toggleSingle,
+} from './compute-bulk-targets';
 
 export interface AspmScanDialogProps {
   /** Pre-select this application when the dialog opens. */
   defaultApplicationId?: string;
+  /** Pre-select every leaf under this repository when the dialog opens. */
+  defaultRepositoryId?: string;
   /** Trigger node — when omitted, renders a default "Scan now" button. */
   trigger?: React.ReactNode;
   /** Called after a successful scan so callers can refresh local UI. */
-  onScanned?: (result: AspmScanActionResult) => void;
+  onScanned?: (result: AspmBulkScanResult) => void;
   /** Test/Storybook overrides. */
-  loadApplicationsOverride?: typeof listAspmIngestApplications;
-  startScanOverride?: typeof startScan;
+  loadTargetsOverride?: typeof listAspmScanTargets;
+  startBulkScanOverride?: typeof startBulkScan;
 }
 
 interface StageOption {
@@ -60,96 +78,165 @@ const STAGE_OPTIONS: readonly StageOption[] = [
   { id: 'iac', label: 'IaC', description: 'Agent-driven IaC misconfiguration checks.' },
 ];
 
+function applySelectionState(
+  el: HTMLButtonElement | null,
+  state: 'checked' | 'indeterminate' | 'unchecked'
+): void {
+  if (!el) return;
+  if (state === 'indeterminate') {
+    el.setAttribute('data-state', 'indeterminate');
+    el.setAttribute('aria-checked', 'mixed');
+  }
+}
+
+function TriStateCheckbox({
+  state,
+  onClick,
+  ariaLabel,
+  testId,
+}: {
+  state: 'checked' | 'indeterminate' | 'unchecked';
+  onClick: () => void;
+  ariaLabel: string;
+  testId?: string;
+}) {
+  return (
+    <Checkbox
+      ref={(el): void => applySelectionState(el as HTMLButtonElement | null, state)}
+      checked={state === 'checked' ? true : state === 'indeterminate' ? 'indeterminate' : false}
+      onCheckedChange={onClick}
+      aria-label={ariaLabel}
+      {...(testId ? { 'data-testid': testId } : {})}
+    />
+  );
+}
+
 export function AspmScanDialog({
   defaultApplicationId,
+  defaultRepositoryId,
   trigger,
   onScanned,
-  loadApplicationsOverride,
-  startScanOverride,
+  loadTargetsOverride,
+  startBulkScanOverride,
 }: AspmScanDialogProps) {
   const [open, setOpen] = useState(false);
-  const [applications, setApplications] = useState<AspmIngestApplicationOption[]>([]);
-  const [appsError, setAppsError] = useState<string | null>(null);
-  const [appsLoading, setAppsLoading] = useState(false);
-  const [applicationId, setApplicationId] = useState<string>(defaultApplicationId ?? '');
+  const [tree, setTree] = useState<ScanTargetTree | null>(null);
+  const [treeError, setTreeError] = useState<string | null>(null);
+  const [treeLoading, setTreeLoading] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [enabledStages, setEnabledStages] = useState<Set<StageOption['id']>>(
     () => new Set(STAGE_OPTIONS.map((s) => s.id))
   );
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitResult, setSubmitResult] = useState<AspmScanActionResult | null>(null);
+  const [submitResult, setSubmitResult] = useState<AspmBulkScanResult | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const loadApps = loadApplicationsOverride ?? listAspmIngestApplications;
-  const submit = startScanOverride ?? startScan;
+  const loadTargets = loadTargetsOverride ?? listAspmScanTargets;
+  const submit = startBulkScanOverride ?? startBulkScan;
 
   useEffect(() => {
     if (!open) return;
-    setAppsLoading(true);
-    setAppsError(null);
-    loadApps()
+    setTreeLoading(true);
+    setTreeError(null);
+    loadTargets()
       .then((res) => {
-        if (res.ok && res.applications) {
-          setApplications(res.applications);
-          if (!applicationId && res.applications.length > 0) {
-            setApplicationId(defaultApplicationId ?? res.applications[0]!.id);
-          }
+        if (res.ok && res.tree) {
+          setTree(res.tree);
         } else {
-          setAppsError(res.error ?? 'Failed to load applications');
+          setTreeError(res.error ?? 'Failed to load scan targets');
         }
       })
       .catch((err: unknown) => {
-        setAppsError(err instanceof Error ? err.message : String(err));
+        setTreeError(err instanceof Error ? err.message : String(err));
       })
-      .finally(() => setAppsLoading(false));
-  }, [open, loadApps, applicationId, defaultApplicationId]);
+      .finally(() => setTreeLoading(false));
+  }, [open, loadTargets]);
 
-  const reset = () => {
+  // Apply default selection once the tree has loaded.
+  useEffect(() => {
+    if (!tree) return;
+    if (selected.size > 0) return;
+    const next = new Set<string>();
+    if (defaultRepositoryId) {
+      const repo = tree.repositories.find((r) => r.repositoryId === defaultRepositoryId);
+      if (repo) for (const id of leafIdsForRepository(repo)) next.add(id);
+    }
+    if (defaultApplicationId) next.add(appSelectionId(defaultApplicationId));
+    if (next.size > 0) setSelected(next);
+  }, [tree, defaultApplicationId, defaultRepositoryId, selected.size]);
+
+  const reset = useCallback((): void => {
     setSubmitError(null);
     setSubmitResult(null);
-  };
+  }, []);
 
-  const handleOpenChange = (next: boolean) => {
-    setOpen(next);
-    if (!next) reset();
-  };
+  const handleOpenChange = useCallback(
+    (next: boolean): void => {
+      setOpen(next);
+      if (!next) {
+        reset();
+        setSelected(new Set());
+      }
+    },
+    [reset]
+  );
 
-  const toggleStage = (id: StageOption['id']) => {
+  const toggleStage = useCallback((id: StageOption['id']): void => {
     setEnabledStages((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setSubmitError(null);
-    setSubmitResult(null);
-    if (!applicationId) {
-      setSubmitError('Pick an application before scanning.');
-      return;
-    }
-    if (enabledStages.size === 0) {
-      setSubmitError('Enable at least one stage.');
-      return;
-    }
-    const formData = new FormData();
-    formData.set('applicationId', applicationId);
-    formData.set('triggeredBy', 'User');
-    for (const stage of enabledStages) {
-      formData.append('stages', stage);
-    }
-    startTransition(async () => {
-      const result = await submit(formData);
-      if (!result.ok) {
-        setSubmitError(result.error ?? 'Scan failed');
+  const bulkTargets = useMemo(
+    () => (tree ? computeBulkTargets(tree, selected) : []),
+    [tree, selected]
+  );
+
+  const allLeafIds = useMemo<string[]>(() => {
+    if (!tree) return [];
+    return tree.repositories.flatMap(leafIdsForRepository);
+  }, [tree]);
+
+  const masterState = useMemo<'checked' | 'indeterminate' | 'unchecked'>(() => {
+    if (allLeafIds.length === 0) return 'unchecked';
+    const on = allLeafIds.filter((id) => selected.has(id)).length;
+    if (on === 0) return 'unchecked';
+    if (on === allLeafIds.length) return 'checked';
+    return 'indeterminate';
+  }, [allLeafIds, selected]);
+
+  const handleSubmit = useCallback(
+    (event: React.FormEvent<HTMLFormElement>): void => {
+      event.preventDefault();
+      setSubmitError(null);
+      setSubmitResult(null);
+      if (bulkTargets.length === 0) {
+        setSubmitError('Pick at least one application, repository, or branch to scan.');
         return;
       }
-      setSubmitResult(result);
-      onScanned?.(result);
-    });
-  };
+      if (enabledStages.size === 0) {
+        setSubmitError('Enable at least one stage.');
+        return;
+      }
+      const formData = new FormData();
+      formData.set('targets', JSON.stringify(bulkTargets));
+      formData.set('triggeredBy', 'User');
+      for (const stage of enabledStages) formData.append('stages', stage);
+      startTransition(async () => {
+        const result = await submit(formData);
+        if (!result.ok && result.results.length === 0) {
+          setSubmitError(result.error ?? 'Scan failed');
+          return;
+        }
+        setSubmitResult(result);
+        onScanned?.(result);
+      });
+    },
+    [bulkTargets, enabledStages, submit, onScanned]
+  );
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -161,12 +248,12 @@ export function AspmScanDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-xl" data-testid="aspm-scan-dialog">
+      <DialogContent className="max-w-2xl" data-testid="aspm-scan-dialog">
         <DialogHeader>
-          <DialogTitle>Scan application</DialogTitle>
+          <DialogTitle>Scan</DialogTitle>
           <DialogDescription>
-            Shep walks the local working tree and runs each enabled stage. Re-running on an
-            unchanged tree adds zero new findings.
+            Pick any combination of repositories, applications, or feature worktrees. Scans run
+            sequentially.
           </DialogDescription>
         </DialogHeader>
 
@@ -178,33 +265,144 @@ export function AspmScanDialog({
 
           <TabsContent value="scan" className="space-y-4 pt-4">
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="aspm-scan-application">Application</Label>
-                <Select
-                  value={applicationId}
-                  onValueChange={setApplicationId}
-                  disabled={appsLoading || applications.length === 0}
-                >
-                  <SelectTrigger id="aspm-scan-application" data-testid="aspm-scan-app-select">
-                    <SelectValue
-                      placeholder={appsLoading ? 'Loading applications…' : 'Pick an application'}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {applications.map((app) => (
-                      <SelectItem key={app.id} value={app.id}>
-                        {app.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {appsError ? (
-                  <p className="text-destructive mt-1 flex items-center gap-1 text-sm">
+              <section
+                aria-label="Scan targets"
+                className="border-border/60 max-h-72 space-y-2 overflow-y-auto rounded border p-2"
+                data-testid="aspm-scan-target-tree"
+              >
+                {treeLoading ? (
+                  <div className="text-muted-foreground flex items-center gap-2 p-2 text-sm">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading scan targets…
+                  </div>
+                ) : null}
+                {treeError ? (
+                  <p className="text-destructive flex items-center gap-1 p-2 text-sm">
                     <AlertTriangle className="h-3.5 w-3.5" />
-                    {appsError}
+                    {treeError}
                   </p>
                 ) : null}
-              </div>
+                {!treeLoading && !treeError && tree?.repositories.length === 0 ? (
+                  <p className="text-muted-foreground p-2 text-sm">
+                    No applications inventoried yet — create one first.
+                  </p>
+                ) : null}
+
+                {!treeLoading && !treeError && tree && tree.repositories.length > 0 ? (
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-xs font-medium">
+                      <TriStateCheckbox
+                        state={masterState}
+                        onClick={(): void => setSelected(toggleLeaves(selected, allLeafIds))}
+                        ariaLabel="Select all"
+                        testId="aspm-scan-select-all"
+                      />
+                      <span>Select all ({allLeafIds.length})</span>
+                    </label>
+
+                    {tree.repositories.map((repo) => {
+                      const repoState = selectionStateForRepository(selected, repo);
+                      const repoLeafIds = leafIdsForRepository(repo);
+                      return (
+                        <div
+                          key={`${repo.repositoryId ?? repo.repositoryPath}`}
+                          className="space-y-1"
+                        >
+                          <label className="flex items-center gap-2 text-sm font-medium">
+                            <TriStateCheckbox
+                              state={repoState}
+                              onClick={(): void => setSelected(toggleLeaves(selected, repoLeafIds))}
+                              ariaLabel={`Select all in ${repo.repositoryName}`}
+                              testId={`aspm-scan-repo-${repo.repositoryId ?? repo.repositoryPath}`}
+                            />
+                            <FolderGit2 className="text-muted-foreground h-3.5 w-3.5" />
+                            <span>{repo.repositoryName}</span>
+                            <span className="text-muted-foreground text-xs">
+                              ({repo.applications.length} app
+                              {repo.applications.length === 1 ? '' : 's'})
+                            </span>
+                          </label>
+
+                          <div className="ml-6 space-y-1">
+                            {repo.applications.map((app) => {
+                              const appState = selectionStateForApplication(selected, app);
+                              const appSelfChecked = selected.has(
+                                appSelectionId(app.applicationId)
+                              );
+                              return (
+                                <div key={app.applicationId} className="space-y-1">
+                                  <label className="flex items-center gap-2 text-sm">
+                                    <TriStateCheckbox
+                                      state={
+                                        appSelfChecked && appState !== 'checked'
+                                          ? 'indeterminate'
+                                          : appState
+                                      }
+                                      onClick={(): void =>
+                                        setSelected(
+                                          toggleSingle(selected, appSelectionId(app.applicationId))
+                                        )
+                                      }
+                                      ariaLabel={`Toggle ${app.applicationName}`}
+                                      testId={`aspm-scan-app-${app.applicationId}`}
+                                    />
+                                    <LayoutGrid className="text-muted-foreground h-3.5 w-3.5" />
+                                    <span>{app.applicationName}</span>
+                                    {app.lastScannedAt ? (
+                                      <span className="text-muted-foreground text-xs">
+                                        last scanned {app.lastScannedAt.toString()}
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted-foreground text-xs italic">
+                                        never scanned
+                                      </span>
+                                    )}
+                                  </label>
+                                  {app.features.length > 0 ? (
+                                    <div className="ml-6 space-y-1">
+                                      {app.features.map((feature) => {
+                                        const featChecked = selected.has(
+                                          featureSelectionId(feature.featureId)
+                                        );
+                                        return (
+                                          <label
+                                            key={feature.featureId}
+                                            className="text-muted-foreground flex items-center gap-2 text-xs"
+                                          >
+                                            <TriStateCheckbox
+                                              state={featChecked ? 'checked' : 'unchecked'}
+                                              onClick={(): void =>
+                                                setSelected(
+                                                  toggleSingle(
+                                                    selected,
+                                                    featureSelectionId(feature.featureId)
+                                                  )
+                                                )
+                                              }
+                                              ariaLabel={`Toggle feature ${feature.featureName}`}
+                                              testId={`aspm-scan-feature-${feature.featureId}`}
+                                            />
+                                            <GitBranch className="h-3 w-3" />
+                                            <span>
+                                              {feature.featureName}{' '}
+                                              <span className="font-mono">
+                                                ({feature.featureBranch})
+                                              </span>
+                                            </span>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </section>
 
               <fieldset className="space-y-2" data-testid="aspm-scan-stage-list">
                 <legend className="text-sm font-medium">Stages</legend>
@@ -215,7 +413,7 @@ export function AspmScanDialog({
                   >
                     <Checkbox
                       checked={enabledStages.has(stage.id)}
-                      onCheckedChange={() => toggleStage(stage.id)}
+                      onCheckedChange={(): void => toggleStage(stage.id)}
                       aria-label={`Toggle ${stage.label}`}
                       data-testid={`aspm-scan-stage-${stage.id}`}
                     />
@@ -234,23 +432,42 @@ export function AspmScanDialog({
                 </div>
               ) : null}
 
-              {submitResult?.ok && submitResult.summary ? (
-                <div className="rounded border border-emerald-400/40 bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+              {submitResult ? (
+                <div
+                  className="rounded border border-emerald-400/40 bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200"
+                  data-testid="aspm-scan-result"
+                >
                   <div className="flex items-center gap-2 font-medium">
                     <CheckCircle2 className="h-4 w-4" />
-                    Scan {submitResult.summary.status}
+                    {submitResult.totals.succeeded}/{submitResult.totals.targets} scan
+                    {submitResult.totals.targets === 1 ? '' : 's'} succeeded
+                    {submitResult.totals.failed > 0
+                      ? ` · ${submitResult.totals.failed} failed`
+                      : ''}
                   </div>
                   <p className="mt-1 text-xs">
-                    Inserted {submitResult.summary.findingsInserted} new finding(s) across{' '}
-                    {submitResult.summary.stages.length} stage(s).
+                    Inserted {submitResult.totals.findingsInserted} new finding(s).
                   </p>
+                  {submitResult.totals.failed > 0 ? (
+                    <ul className="mt-2 list-inside list-disc space-y-0.5 text-xs">
+                      {submitResult.results
+                        .filter((r) => !r.ok)
+                        .map((r) => (
+                          <li key={`${r.applicationId}-${r.scanPath ?? ''}`}>
+                            {r.label ?? r.applicationId}: {r.error}
+                          </li>
+                        ))}
+                    </ul>
+                  ) : null}
                 </div>
               ) : null}
 
               <DialogFooter>
                 <Button
                   type="submit"
-                  disabled={isPending || appsLoading || enabledStages.size === 0}
+                  disabled={
+                    isPending || treeLoading || enabledStages.size === 0 || bulkTargets.length === 0
+                  }
                   data-testid="aspm-scan-submit"
                 >
                   {isPending ? (
@@ -261,7 +478,7 @@ export function AspmScanDialog({
                   ) : (
                     <>
                       <Bug className="mr-2 h-4 w-4" />
-                      Run scan
+                      Run scan ({bulkTargets.length})
                     </>
                   )}
                 </Button>
@@ -274,7 +491,7 @@ export function AspmScanDialog({
               Bring an existing SARIF or CycloneDX report from your CI pipeline.
             </p>
             <AspmIngestDialog
-              defaultApplicationId={applicationId}
+              defaultApplicationId={defaultApplicationId ?? ''}
               trigger={
                 <Button variant="outline" size="sm">
                   Open upload dialog
@@ -287,3 +504,7 @@ export function AspmScanDialog({
     </Dialog>
   );
 }
+
+// Re-export prefixes/types in case callers want them, but most consumers should
+// import from `compute-bulk-targets.ts` directly.
+export { APP_PREFIX, FEAT_PREFIX };

@@ -1,11 +1,14 @@
 /**
- * AspmRowActionsManager — discovers the [data-application-id] portal
- * targets FeatureTreeTable's `actionsColumnFormatter` injects into each
- * application row, then portals an AspmRowActions trigger into each one.
+ * AspmRowActionsManager — discovers two kinds of portal targets that
+ * FeatureTreeTable injects into the ASPM Inventory page:
  *
- * Mirrors the existing ApplicationRowActionsManager but scoped to the
- * ASPM Inventory page — the /features version renders delete / sync /
- * deploy actions; this one renders the Scan-now / Re-scan trigger.
+ *   - [data-application-id]   on each application row's actions cell
+ *   - [data-repo-actions] + [data-repo-id]   on each repository group header
+ *
+ * Portals an {@link AspmRowActions} trigger into every application cell
+ * and an {@link AspmRepoActions} "Scan all" trigger into every repository
+ * header so users can scan a single app, a feature worktree, or every app
+ * under a repo from the same inventory table.
  */
 
 'use client';
@@ -16,6 +19,7 @@ import { createPortal } from 'react-dom';
 
 import type { FeatureTreeRow } from '@/components/features/feature-tree-table';
 import { AspmRowActions } from './aspm-row-actions';
+import { AspmRepoActions } from './aspm-repo-actions';
 
 export interface AspmRowActionsManagerProps {
   tableContainer: HTMLDivElement | null;
@@ -23,35 +27,63 @@ export interface AspmRowActionsManagerProps {
   rows: FeatureTreeRow[];
 }
 
+interface RepoPortalEntry {
+  element: HTMLElement;
+  repositoryId: string;
+}
+
 export function AspmRowActionsManager({
   tableContainer,
   renderTick,
   rows,
 }: AspmRowActionsManagerProps) {
-  const [portalContainers, setPortalContainers] = useState<Map<string, HTMLElement>>(new Map());
+  const [appPortals, setAppPortals] = useState<Map<string, HTMLElement>>(new Map());
+  const [repoPortals, setRepoPortals] = useState<RepoPortalEntry[]>([]);
 
   useEffect(() => {
     if (!tableContainer) {
-      setPortalContainers(new Map());
+      setAppPortals(new Map());
+      setRepoPortals([]);
       return;
     }
-    const elements = tableContainer.querySelectorAll<HTMLElement>('[data-application-id]');
-    const nextMap = new Map<string, HTMLElement>();
-    elements.forEach((el) => {
+
+    const appElements = tableContainer.querySelectorAll<HTMLElement>('[data-application-id]');
+    const nextAppMap = new Map<string, HTMLElement>();
+    appElements.forEach((el) => {
       const id = el.getAttribute('data-application-id');
-      if (id) nextMap.set(id, el);
+      if (id) nextAppMap.set(id, el);
     });
-    setPortalContainers((prev) => {
-      if (prev.size !== nextMap.size) return nextMap;
-      for (const [id, el] of nextMap) {
-        if (prev.get(id) !== el) return nextMap;
+    setAppPortals((prev) => {
+      if (prev.size !== nextAppMap.size) return nextAppMap;
+      for (const [id, el] of nextAppMap) {
+        if (prev.get(id) !== el) return nextAppMap;
+      }
+      return prev;
+    });
+
+    const repoElements = tableContainer.querySelectorAll<HTMLElement>('[data-repo-actions]');
+    const nextRepos: RepoPortalEntry[] = [];
+    repoElements.forEach((el) => {
+      const repoId = el.getAttribute('data-repo-id');
+      if (!repoId) return;
+      nextRepos.push({ element: el, repositoryId: repoId });
+    });
+    setRepoPortals((prev) => {
+      if (prev.length !== nextRepos.length) return nextRepos;
+      for (let i = 0; i < nextRepos.length; i++) {
+        if (
+          prev[i]!.element !== nextRepos[i]!.element ||
+          prev[i]!.repositoryId !== nextRepos[i]!.repositoryId
+        ) {
+          return nextRepos;
+        }
       }
       return prev;
     });
   }, [tableContainer, renderTick]);
 
   const rowsByAppId = new Map<string, FeatureTreeRow>();
-  function collect(input: FeatureTreeRow[]) {
+  function collect(input: FeatureTreeRow[]): void {
     for (const row of input) {
       if (row._isApplication && row._applicationId) {
         rowsByAppId.set(row._applicationId, row);
@@ -62,7 +94,7 @@ export function AspmRowActionsManager({
   collect(rows);
 
   const portals: JSX.Element[] = [];
-  for (const [appId, container] of portalContainers) {
+  for (const [appId, container] of appPortals) {
     const row = rowsByAppId.get(appId);
     if (!row) continue;
     portals.push(
@@ -73,6 +105,15 @@ export function AspmRowActionsManager({
         />,
         container,
         appId
+      ) as unknown as JSX.Element
+    );
+  }
+  for (const entry of repoPortals) {
+    portals.push(
+      createPortal(
+        <AspmRepoActions repositoryId={entry.repositoryId} />,
+        entry.element,
+        `repo-${entry.repositoryId}`
       ) as unknown as JSX.Element
     );
   }

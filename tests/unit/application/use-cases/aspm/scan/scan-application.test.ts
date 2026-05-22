@@ -298,4 +298,46 @@ describe('ScanApplicationUseCase', () => {
 
     expect(second.findingsInserted).toBe(0);
   });
+
+  it('walks scanPath override instead of the application repository path', async () => {
+    const readCalls: { repoRoot: string; excludes?: readonly string[] }[] = [];
+    const fileReader: IFileTreeReaderPort = {
+      read: async (input: { repoRoot: string; excludes?: readonly string[] }) => {
+        readCalls.push(input);
+        return [];
+      },
+    } as IFileTreeReaderPort;
+    const { usecase, deps } = makeDeps({ fileReader });
+
+    const overridePath = '/tmp/worktrees/feature-foo';
+    await usecase.execute({
+      applicationId: deps.app.id,
+      stagesEnabled: [ScanStageName.Secrets],
+      scanPath: overridePath,
+    });
+
+    expect(readCalls).toHaveLength(1);
+    expect(readCalls[0]!.repoRoot).toBe(overridePath);
+  });
+
+  it('uses scanPath as the ownership repo root', async () => {
+    const lookupCalls: { repoRoot: string; assetPath: string }[] = [];
+    const gitOwnership: IGitOwnershipPort = {
+      lookup: async (input: { repoRoot: string; assetPath: string }) => {
+        lookupCalls.push(input);
+        return [{ email: 'dev@example.com', commitCount: 1 }];
+      },
+    };
+    const { usecase, deps } = makeDeps({ gitOwnership });
+
+    const overridePath = '/tmp/worktrees/feature-foo';
+    await usecase.execute({
+      applicationId: deps.app.id,
+      stagesEnabled: [ScanStageName.Secrets],
+      scanPath: overridePath,
+    });
+
+    expect(lookupCalls.length).toBeGreaterThan(0);
+    expect(lookupCalls.every((c) => c.repoRoot === overridePath)).toBe(true);
+  });
 });

@@ -86,6 +86,7 @@ import { ScanApplicationUseCase } from '../../../application/use-cases/aspm/scan
 import { RescanApplicationUseCase } from '../../../application/use-cases/aspm/scan/rescan-application.js';
 import { ListScanRunsUseCase } from '../../../application/use-cases/aspm/scan/list-scan-runs.js';
 import { GetScanRunUseCase } from '../../../application/use-cases/aspm/scan/get-scan-run.js';
+import { ListScanTargetsUseCase } from '../../../application/use-cases/aspm/scan/list-scan-targets.js';
 
 // Use cases
 import { AssignOwnerUseCase } from '../../../application/use-cases/aspm/ownership/assign-owner.js';
@@ -411,6 +412,7 @@ function registerPhase11UseCases(container: DependencyContainer): void {
   container.register(RescanApplicationUseCase, { useClass: RescanApplicationUseCase });
   container.register(ListScanRunsUseCase, { useClass: ListScanRunsUseCase });
   container.register(GetScanRunUseCase, { useClass: GetScanRunUseCase });
+  container.register(ListScanTargetsUseCase, { useClass: ListScanTargetsUseCase });
 }
 
 function registerStringTokenAliases(container: DependencyContainer): void {
@@ -481,5 +483,8 @@ function registerStringTokenAliases(container: DependencyContainer): void {
   });
   container.register('GetScanRunUseCase', {
     useFactory: (c) => c.resolve(GetScanRunUseCase),
+  });
+  container.register('ListScanTargetsUseCase', {
+    useFactory: (c) => c.resolve(ListScanTargetsUseCase),
   });
 }
