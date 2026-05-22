@@ -2,6 +2,12 @@
  * Tabulator column formatters specific to the ASPM Inventory tree-table.
  * Kept as pure HTML strings so Tabulator owns rendering — React portals
  * are reserved for the actions column (see {@link AspmRowActionsManager}).
+ *
+ * On repository group-header rows the Security + Last-scan columns render
+ * an aggregate across the group's children so reviewers can scan a repo's
+ * total posture without expanding every app. The aggregation helpers
+ * ({@link aggregateOpenBySeverity}, {@link mostRecentScan}) are exported
+ * for direct unit testing without a Tabulator instance.
  */
 
 import type { CellComponent, ColumnDefinition } from 'tabulator-tables';
@@ -33,9 +39,85 @@ function badge(severity: SeverityKey, count: number): string {
   return `<span title="${severity}: ${count}" style="display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:9999px;font-size:11px;font-weight:600;${style}${dim}"><span>${SEVERITY_INITIAL[severity]}</span><span style="font-variant-numeric:tabular-nums">${count}</span></span>`;
 }
 
+/**
+ * Sums every child's `_aspmOpenBySeverity` into a single severity → count
+ * map. Skips placeholder rows so an empty repository reads "0 across the
+ * board" instead of double-counting an unscanned synthetic row.
+ */
+export function aggregateOpenBySeverity(children: readonly FeatureTreeRow[]): Map<string, number> {
+  const totals = new Map<string, number>();
+  for (const child of children) {
+    if (child._isRepoPlaceholder) continue;
+    const counts = child._aspmOpenBySeverity ?? [];
+    for (const c of counts) {
+      totals.set(c.severity, (totals.get(c.severity) ?? 0) + c.count);
+    }
+  }
+  return totals;
+}
+
+export function sumTotalOpen(children: readonly FeatureTreeRow[]): number {
+  let total = 0;
+  for (const child of children) {
+    if (child._isRepoPlaceholder) continue;
+    total += child._aspmTotalOpen ?? 0;
+  }
+  return total;
+}
+
+export function mostRecentScan(children: readonly FeatureTreeRow[]): Date | null {
+  let best: Date | null = null;
+  for (const child of children) {
+    if (child._isRepoPlaceholder) continue;
+    const ts = child._aspmLastScannedAt;
+    if (ts === null || ts === undefined) continue;
+    const d = ts instanceof Date ? ts : new Date(ts);
+    if (best === null || d.getTime() > best.getTime()) best = d;
+  }
+  return best;
+}
+
+/**
+ * True when every child under a repo group is either a placeholder or has
+ * been scanned at least once. Used to distinguish "this whole repo is
+ * un-scanned" from "this repo has been scanned and has zero findings".
+ */
+export function hasScannedChild(children: readonly FeatureTreeRow[]): boolean {
+  for (const child of children) {
+    if (child._isRepoPlaceholder) continue;
+    if (child._aspmLastScannedAt !== null && child._aspmLastScannedAt !== undefined) return true;
+  }
+  return false;
+}
+
+function renderSeverityRow(totals: Map<string, number>): string {
+  const visible: SeverityKey[] = ['Critical', 'High', 'Medium', 'Low'];
+  return `<span style="display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap">${visible
+    .map((s) => badge(s, totals.get(s) ?? 0))
+    .join('')}</span>`;
+}
+
 function aspmSecurityFormatter(cell: CellComponent): string {
   const row = cell.getRow().getData() as FeatureTreeRow;
-  if (row._isGroupHeader || row._isRepoGroup) return '';
+
+  if (row._isGroupHeader) {
+    const children = row._children ?? [];
+    const total = sumTotalOpen(children);
+    if (!hasScannedChild(children)) {
+      return `<span style="color:var(--color-muted-foreground,#64748b);font-size:12px">Repository never scanned</span>`;
+    }
+    if (total === 0) {
+      return `<span style="color:#047857;font-size:12px;font-weight:500">All clear</span>`;
+    }
+    const aggregate = aggregateOpenBySeverity(children);
+    return renderSeverityRow(aggregate);
+  }
+
+  if (row._isRepoPlaceholder) {
+    return `<span style="color:var(--color-muted-foreground,#64748b);font-size:12px;font-style:italic">No applications yet</span>`;
+  }
+
+  if (row._isRepoGroup) return '';
   if (!row._isApplication) return '';
   const counts = row._aspmOpenBySeverity ?? [];
   const byKey = new Map<SeverityKey, number>();
@@ -50,10 +132,7 @@ function aspmSecurityFormatter(cell: CellComponent): string {
   if (total === 0) {
     return `<span style="color:var(--color-muted-foreground,#64748b);font-size:12px">No open findings</span>`;
   }
-  const visible: SeverityKey[] = ['Critical', 'High', 'Medium', 'Low'];
-  return `<span style="display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap">${visible
-    .map((s) => badge(s, byKey.get(s) ?? 0))
-    .join('')}</span>`;
+  return renderSeverityRow(byKey as Map<string, number>);
 }
 
 function relativeTime(date: Date | null | undefined): string {
@@ -74,7 +153,20 @@ function relativeTime(date: Date | null | undefined): string {
 
 function aspmLastScannedFormatter(cell: CellComponent): string {
   const row = cell.getRow().getData() as FeatureTreeRow;
-  if (row._isGroupHeader || row._isRepoGroup) return '';
+
+  if (row._isGroupHeader) {
+    const best = mostRecentScan(row._children ?? []);
+    if (best === null) {
+      return `<span style="color:#b91c1c;font-size:12px;font-weight:500">Never</span>`;
+    }
+    return `<span style="font-size:12px;color:var(--color-muted-foreground,#64748b)" title="Latest across apps: ${best.toLocaleString()}">${relativeTime(best)}</span>`;
+  }
+
+  if (row._isRepoPlaceholder) {
+    return `<span style="color:var(--color-muted-foreground,#64748b);font-size:12px">—</span>`;
+  }
+
+  if (row._isRepoGroup) return '';
   if (!row._isApplication) return '';
   const date = row._aspmLastScannedAt;
   if (date === null || date === undefined) {

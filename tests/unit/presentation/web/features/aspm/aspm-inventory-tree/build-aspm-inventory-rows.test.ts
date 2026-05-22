@@ -96,4 +96,34 @@ describe('buildAspmInventoryRows', () => {
     const rows = buildAspmInventoryRows({ postureRows: [], repoByPath: new Map() });
     expect(rows).toEqual([]);
   });
+
+  it('emits a placeholder row for repositories that have no applications yet', () => {
+    const rows = buildAspmInventoryRows({
+      postureRows: [
+        makePostureRow({
+          applicationId: 'app-1',
+          name: 'cli',
+          repositoryPath: '/repos/cli-platform',
+        }),
+      ],
+      repoByPath: new Map([
+        ['/repos/cli-platform', { id: 'r-1', name: 'cli-platform' }],
+        ['/repos/empty-repo', { id: 'r-2', name: 'empty-repo', remoteUrl: 'git@x:y/empty' }],
+      ]),
+    });
+
+    expect(rows).toHaveLength(2);
+    const placeholder = rows.find((r) => r._isRepoPlaceholder === true);
+    expect(placeholder).toMatchObject({
+      _isRepoPlaceholder: true,
+      _isApplication: false,
+      _repositoryId: 'r-2',
+      _repositoryPath: '/repos/empty-repo',
+      repositoryName: 'empty-repo',
+      remoteUrl: 'git@x:y/empty',
+      _aspmTotalOpen: 0,
+      _aspmLastScannedAt: null,
+    });
+    expect(placeholder?._aspmOpenBySeverity).toEqual([]);
+  });
 });

@@ -51,6 +51,13 @@ export interface FeatureTreeRow {
   _aspmTotalOpen?: number;
   /** Timestamp the application was last scanned by the native scanner. */
   _aspmLastScannedAt?: Date | null;
+  /**
+   * Marks a synthetic placeholder row emitted by the ASPM inventory builder
+   * for a Repository that has no Application attached yet. The repo still
+   * shows in the tree (so users can trigger Scan-all or add an app), but no
+   * actions portal or posture badges are rendered for the row itself.
+   */
+  _isRepoPlaceholder?: boolean;
 }
 
 export interface InventoryRepo {
