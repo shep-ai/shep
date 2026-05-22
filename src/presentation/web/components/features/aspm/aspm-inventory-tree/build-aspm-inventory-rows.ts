@@ -15,13 +15,17 @@
  *
  * Visibility rules:
  *
- * - Repositories with no applications AND no features get a single
+ * - Repositories with no applications AND no live features get a single
  *   `_isRepoPlaceholder` row so the group header still renders (and the
  *   Scan-all portal trigger still appears) but the reviewer sees "no
  *   applications yet" instead of an invisible repo.
- * - Features without a `worktreePath` are dropped — they have nothing
- *   on disk for the scanner to walk, so surfacing them on the security
- *   inventory just creates clutter and dead actions.
+ * - Features with lifecycle `Archived` are dropped — the work is finished
+ *   so they only add noise to the security inventory.
+ * - Features without a `worktreePath` are still surfaced. The DB only
+ *   populates `worktree_path` for some flows, so filtering on it would
+ *   hide active branches the user can see in their repo. Whether or not
+ *   a feature is scannable is a downstream concern — the inventory's job
+ *   is just to show what exists.
  */
 
 import type { InventoryPostureRow } from '@shepai/core/application/use-cases/aspm/posture/list-inventory-posture';
@@ -56,12 +60,14 @@ export interface AspmInventoryRowsInput {
   features?: readonly AspmInventoryFeature[];
 }
 
+const ARCHIVED_LIFECYCLE = 'Archived';
+
 function buildFeatureRow(
   feature: AspmInventoryFeature,
   repoName: string,
   repoMeta: AspmInventoryRepoMeta | undefined
 ): FeatureTreeRow {
-  return {
+  const row: FeatureTreeRow = {
     id: `feat-${feature.id}`,
     name: feature.name,
     status: 'in-progress',
@@ -74,8 +80,6 @@ function buildFeatureRow(
     _isApplication: false,
     _isAspmFeature: true,
     _featureId: feature.id,
-    _featureWorktreePath: feature.worktreePath,
-    ...(feature.applicationId !== undefined ? { _applicationId: feature.applicationId } : {}),
     // Feature rows have no scan history of their own — the scan attribution
     // lives on the parent application. Leaving these undefined makes the
     // Security/Last-scan formatters render an em-dash on feature rows.
@@ -83,6 +87,13 @@ function buildFeatureRow(
     _aspmTotalOpen: 0,
     _aspmLastScannedAt: null,
   };
+  if (feature.worktreePath !== undefined && feature.worktreePath.length > 0) {
+    row._featureWorktreePath = feature.worktreePath;
+  }
+  if (feature.applicationId !== undefined && feature.applicationId.length > 0) {
+    row._applicationId = feature.applicationId;
+  }
+  return row;
 }
 
 export function buildAspmInventoryRows({
@@ -90,14 +101,11 @@ export function buildAspmInventoryRows({
   repoByPath,
   features = [],
 }: AspmInventoryRowsInput): FeatureTreeRow[] {
-  const scannableFeatures = features.filter(
-    (f): f is AspmInventoryFeature & { worktreePath: string } =>
-      typeof f.worktreePath === 'string' && f.worktreePath.length > 0
-  );
+  const liveFeatures = features.filter((f) => f.lifecycle !== ARCHIVED_LIFECYCLE);
 
   const featuresByApp = new Map<string, AspmInventoryFeature[]>();
   const featuresByRepoPath = new Map<string, AspmInventoryFeature[]>();
-  for (const feature of scannableFeatures) {
+  for (const feature of liveFeatures) {
     if (feature.applicationId !== undefined && feature.applicationId.length > 0) {
       const existing = featuresByApp.get(feature.applicationId) ?? [];
       existing.push(feature);

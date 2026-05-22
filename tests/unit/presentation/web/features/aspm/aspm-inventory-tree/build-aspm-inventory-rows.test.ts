@@ -207,7 +207,7 @@ describe('buildAspmInventoryRows', () => {
     expect(featRow?._applicationId).toBeUndefined();
   });
 
-  it('drops features without a worktree path since they have nothing to scan', () => {
+  it('keeps features without a worktree path so the inventory still surfaces them', () => {
     const rows = buildAspmInventoryRows({
       postureRows: [
         makePostureRow({
@@ -220,6 +220,8 @@ describe('buildAspmInventoryRows', () => {
       features: [
         makeFeature({
           id: 'feat-no-wt',
+          name: 'no-wt-yet',
+          branch: 'feat/no-wt-yet',
           applicationId: 'app-1',
           repositoryPath: '/repos/cli-platform',
           worktreePath: undefined,
@@ -227,6 +229,45 @@ describe('buildAspmInventoryRows', () => {
       ],
     });
 
-    expect(rows[0]?._children ?? []).toHaveLength(0);
+    expect(rows[0]?._children).toHaveLength(1);
+    expect(rows[0]?._children?.[0]).toMatchObject({
+      _isAspmFeature: true,
+      _featureId: 'feat-no-wt',
+      branch: 'feat/no-wt-yet',
+    });
+    expect(rows[0]?._children?.[0]?._featureWorktreePath).toBeUndefined();
+  });
+
+  it('drops Archived features so the security inventory stays focused on live work', () => {
+    const rows = buildAspmInventoryRows({
+      postureRows: [
+        makePostureRow({
+          applicationId: 'app-1',
+          name: 'cli',
+          repositoryPath: '/repos/cli-platform',
+        }),
+      ],
+      repoByPath: new Map([['/repos/cli-platform', { id: 'r-1', name: 'cli-platform' }]]),
+      features: [
+        makeFeature({
+          id: 'feat-archived',
+          applicationId: 'app-1',
+          repositoryPath: '/repos/cli-platform',
+          worktreePath: '/wt/archived',
+          lifecycle: 'Archived',
+        }),
+        makeFeature({
+          id: 'feat-live',
+          applicationId: 'app-1',
+          repositoryPath: '/repos/cli-platform',
+          worktreePath: '/wt/live',
+          lifecycle: 'Review',
+        }),
+      ],
+    });
+
+    const children = rows[0]?._children ?? [];
+    expect(children).toHaveLength(1);
+    expect(children[0]?._featureId).toBe('feat-live');
   });
 });
