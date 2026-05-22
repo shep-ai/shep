@@ -907,3 +907,17 @@ How to apply:
 
 - If you catch yourself proposing a `branchName` field on Repository, stop — you almost certainly want a Feature reference instead.
 - When extending a use case to scan/build an alternate working tree, prefer an optional `scanPath?: string` (or equivalent) override on the existing use case over inventing a new one. Findings/results still attribute to the Application/Repository row the user cares about.
+
+## Feature.worktreePath is rarely populated — never filter on it
+
+In the live DB virtually every Feature row has `worktree_path = NULL`, even for features in active lifecycle states (Review, Implementation, Maintain). The field only gets set by a few specific flows. Treating it as the source of truth for "is this feature a real branch?" hides almost every feature from any UI that filters on it.
+
+Concrete instance: the ASPM /aspm/inventory page filtered features by `worktreePath !== undefined` so it would only show "scannable" branches. The user expected to see their `feat/aspm-platform` feature under the `cli` repo and instead saw "no applications or branches yet" — because the feature had a null worktree_path even though it had been worked on for weeks.
+
+Rule: never filter feature rows on `worktreePath` for *display* purposes. Use `branch` and `repositoryPath` as the identity of a feature on disk. `worktreePath` is only meaningful when you are about to scan/checkout/spawn against it, and even then you should fall back to `git worktree list` or `<repositoryPath>` instead of hiding the row.
+
+How to apply:
+
+- Inventory / list / explorer views: include every non-Archived, non-deleted Feature. Render `branch` as the secondary identifier.
+- Scan / build / deploy actions: when the action requires an on-disk path, check `worktreePath` per row at action time and disable the action (or fall back) when it is missing — do not pre-filter the row out of the list.
+- Tests: pin down the "row with null worktreePath still appears" case explicitly. It is the more common shape in real data.
