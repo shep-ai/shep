@@ -58,6 +58,19 @@ export interface FeatureTreeRow {
    * actions portal or posture badges are rendered for the row itself.
    */
   _isRepoPlaceholder?: boolean;
+  /**
+   * Marks a row that represents a Feature (git worktree) on the ASPM
+   * inventory tree. Feature rows can live either as `_children` of an
+   * application row (when the feature has `applicationId` set) or as
+   * top-level rows under a repository group (when the feature is not
+   * scoped to any application). Carries `_featureId` + `_featureWorktreePath`
+   * so the row-actions manager can portal a "Scan this branch" trigger.
+   */
+  _isAspmFeature?: boolean;
+  /** Domain Feature.id when this row represents a feature/worktree. */
+  _featureId?: string;
+  /** Absolute path to the feature's git worktree — what the scanner walks. */
+  _featureWorktreePath?: string;
 }
 
 export interface InventoryRepo {

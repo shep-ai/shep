@@ -1,19 +1,27 @@
 /**
  * Build the FeatureTreeRow[] the ASPM Inventory page hands to
- * FeatureTreeTable. One row per application, decorated with ASPM-specific
- * fields (`_aspmOpenBySeverity`, `_aspmTotalOpen`, `_aspmLastScannedAt`)
- * so the table's extra columns and the row-actions portal manager can
- * render severity badges and the Scan-now control without re-querying.
+ * FeatureTreeTable. The row tree mirrors the security-relevant domain
+ * hierarchy:
  *
- * Repositories that have no applications attached yet still appear on the
- * inventory as `_isRepoPlaceholder` rows so the security reviewer can see
- * every tracked repo and trigger Scan-all from the group header. The
- * placeholder rows do not get an actions portal or severity badges — they
- * exist only to keep the repo's group header visible after Tabulator
- * groups by `repositoryName`.
+ *   Repository (group header, materialised by Tabulator)
+ *     ├─ Application                              ← `_isApplication`
+ *     │    └─ Feature worktree (child branch)     ← `_isAspmFeature`
+ *     └─ Feature worktree (loose, no application) ← `_isAspmFeature`
  *
- * Pure — kept in a colocated module for direct testing without React /
- * Tabulator overhead.
+ * Pure — kept colocated for direct testing without React / Tabulator
+ * overhead. The page passes the raw posture rows + the full repository
+ * list + every Feature row; the builder fans them out into the tree
+ * shape Tabulator expects (`_children`).
+ *
+ * Visibility rules:
+ *
+ * - Repositories with no applications AND no features get a single
+ *   `_isRepoPlaceholder` row so the group header still renders (and the
+ *   Scan-all portal trigger still appears) but the reviewer sees "no
+ *   applications yet" instead of an invisible repo.
+ * - Features without a `worktreePath` are dropped — they have nothing
+ *   on disk for the scanner to walk, so surfacing them on the security
+ *   inventory just creates clutter and dead actions.
  */
 
 import type { InventoryPostureRow } from '@shepai/core/application/use-cases/aspm/posture/list-inventory-posture';
@@ -25,24 +33,92 @@ export interface AspmInventoryRepoMeta {
   remoteUrl?: string;
 }
 
+/**
+ * Lightweight projection of a domain Feature the inventory cares about.
+ * Server code maps `Feature` → `AspmInventoryFeature` before handing it
+ * in so the builder stays decoupled from the generated domain types.
+ */
+export interface AspmInventoryFeature {
+  id: string;
+  name: string;
+  branch: string;
+  repositoryPath: string;
+  worktreePath?: string;
+  applicationId?: string;
+  lifecycle?: string;
+}
+
 export interface AspmInventoryRowsInput {
   postureRows: InventoryPostureRow[];
   /** Maps repositoryPath → { id, name, remoteUrl } for the standard table column. */
   repoByPath: Map<string, AspmInventoryRepoMeta>;
+  /** Every Feature in the workspace — partitioned into per-app and per-repo children. */
+  features?: readonly AspmInventoryFeature[];
+}
+
+function buildFeatureRow(
+  feature: AspmInventoryFeature,
+  repoName: string,
+  repoMeta: AspmInventoryRepoMeta | undefined
+): FeatureTreeRow {
+  return {
+    id: `feat-${feature.id}`,
+    name: feature.name,
+    status: 'in-progress',
+    lifecycle: feature.lifecycle ?? 'Feature',
+    branch: feature.branch,
+    repositoryName: repoName,
+    remoteUrl: repoMeta?.remoteUrl,
+    _repositoryPath: feature.repositoryPath,
+    _repositoryId: repoMeta?.id,
+    _isApplication: false,
+    _isAspmFeature: true,
+    _featureId: feature.id,
+    _featureWorktreePath: feature.worktreePath,
+    ...(feature.applicationId !== undefined ? { _applicationId: feature.applicationId } : {}),
+    // Feature rows have no scan history of their own — the scan attribution
+    // lives on the parent application. Leaving these undefined makes the
+    // Security/Last-scan formatters render an em-dash on feature rows.
+    _aspmOpenBySeverity: [],
+    _aspmTotalOpen: 0,
+    _aspmLastScannedAt: null,
+  };
 }
 
 export function buildAspmInventoryRows({
   postureRows,
   repoByPath,
+  features = [],
 }: AspmInventoryRowsInput): FeatureTreeRow[] {
+  const scannableFeatures = features.filter(
+    (f): f is AspmInventoryFeature & { worktreePath: string } =>
+      typeof f.worktreePath === 'string' && f.worktreePath.length > 0
+  );
+
+  const featuresByApp = new Map<string, AspmInventoryFeature[]>();
+  const featuresByRepoPath = new Map<string, AspmInventoryFeature[]>();
+  for (const feature of scannableFeatures) {
+    if (feature.applicationId !== undefined && feature.applicationId.length > 0) {
+      const existing = featuresByApp.get(feature.applicationId) ?? [];
+      existing.push(feature);
+      featuresByApp.set(feature.applicationId, existing);
+    } else {
+      const existing = featuresByRepoPath.get(feature.repositoryPath) ?? [];
+      existing.push(feature);
+      featuresByRepoPath.set(feature.repositoryPath, existing);
+    }
+  }
+
   const rows: FeatureTreeRow[] = [];
-  const reposWithApps = new Set<string>();
+  const reposWithRows = new Set<string>();
 
   for (const row of postureRows) {
     const repo = repoByPath.get(row.repositoryPath);
     const repoName = repo?.name ?? row.repositoryPath.split(/[/\\]/).pop() ?? row.repositoryPath;
-    if (repo) reposWithApps.add(row.repositoryPath);
-    rows.push({
+    reposWithRows.add(row.repositoryPath);
+
+    const childFeatures = featuresByApp.get(row.applicationId) ?? [];
+    const appRow: FeatureTreeRow = {
       id: `app-${row.applicationId}`,
       name: row.name,
       status: 'done',
@@ -60,16 +136,27 @@ export function buildAspmInventoryRows({
       })),
       _aspmTotalOpen: row.totalOpen,
       _aspmLastScannedAt: row.lastScannedAt,
-    });
+    };
+    if (childFeatures.length > 0) {
+      appRow._children = childFeatures.map((f) => buildFeatureRow(f, repoName, repo));
+    }
+    rows.push(appRow);
   }
 
-  // Surface every tracked repository even when it has no applications yet
-  // so security reviewers can see it on the inventory and start a scan.
+  for (const [path, looseFeatures] of featuresByRepoPath) {
+    const repo = repoByPath.get(path);
+    const repoName = repo?.name ?? path.split(/[/\\]/).pop() ?? path;
+    for (const feature of looseFeatures) {
+      rows.push(buildFeatureRow(feature, repoName, repo));
+    }
+    reposWithRows.add(path);
+  }
+
   for (const [path, repo] of repoByPath) {
-    if (reposWithApps.has(path)) continue;
+    if (reposWithRows.has(path)) continue;
     rows.push({
       id: `repo-placeholder-${repo.id}`,
-      name: '— no applications —',
+      name: '— no applications or branches —',
       status: 'pending',
       lifecycle: '',
       branch: '',

@@ -114,7 +114,11 @@ function aspmSecurityFormatter(cell: CellComponent): string {
   }
 
   if (row._isRepoPlaceholder) {
-    return `<span style="color:var(--color-muted-foreground,#64748b);font-size:12px;font-style:italic">No applications yet</span>`;
+    return `<span style="color:var(--color-muted-foreground,#64748b);font-size:12px;font-style:italic">No applications or branches yet</span>`;
+  }
+
+  if (row._isAspmFeature) {
+    return `<span style="color:var(--color-muted-foreground,#64748b);font-size:12px">Scan to populate</span>`;
   }
 
   if (row._isRepoGroup) return '';
@@ -163,6 +167,10 @@ function aspmLastScannedFormatter(cell: CellComponent): string {
   }
 
   if (row._isRepoPlaceholder) {
+    return `<span style="color:var(--color-muted-foreground,#64748b);font-size:12px">—</span>`;
+  }
+
+  if (row._isAspmFeature) {
     return `<span style="color:var(--color-muted-foreground,#64748b);font-size:12px">—</span>`;
   }
 

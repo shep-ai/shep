@@ -13,11 +13,13 @@
 
 import type { ListInventoryPostureUseCase } from '@shepai/core/application/use-cases/aspm/posture/list-inventory-posture';
 import type { ListRepositoriesUseCase } from '@shepai/core/application/use-cases/repositories/list-repositories.use-case';
+import type { ListFeaturesUseCase } from '@shepai/core/application/use-cases/features/list-features.use-case';
 
 import { resolve } from '@/lib/server-container';
 import {
   AspmInventoryTree,
   buildAspmInventoryRows,
+  type AspmInventoryFeature,
 } from '@/components/features/aspm/aspm-inventory-tree';
 
 export const dynamic = 'force-dynamic';
@@ -27,14 +29,24 @@ export default async function AspmInventoryPage() {
   let rows: ReturnType<typeof buildAspmInventoryRows> = [];
 
   try {
-    const [postureRows, repositories] = await Promise.all([
+    const [postureRows, repositories, allFeatures] = await Promise.all([
       resolve<ListInventoryPostureUseCase>('ListInventoryPostureUseCase').execute(),
       resolve<ListRepositoriesUseCase>('ListRepositoriesUseCase').execute(),
+      resolve<ListFeaturesUseCase>('ListFeaturesUseCase').execute(),
     ]);
     const repoByPath = new Map(
       repositories.map((r) => [r.path, { id: r.id, name: r.name, remoteUrl: r.remoteUrl }])
     );
-    rows = buildAspmInventoryRows({ postureRows, repoByPath });
+    const features: AspmInventoryFeature[] = allFeatures.map((f) => ({
+      id: f.id,
+      name: f.name,
+      branch: f.branch,
+      repositoryPath: f.repositoryPath,
+      worktreePath: f.worktreePath,
+      applicationId: f.applicationId,
+      lifecycle: f.lifecycle,
+    }));
+    rows = buildAspmInventoryRows({ postureRows, repoByPath, features });
   } catch (err) {
     error = err instanceof Error ? err.message : String(err);
   }
