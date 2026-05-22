@@ -42,6 +42,15 @@ export function leafIdsForRepository(repo: ScanRepositoryTarget): string[] {
   return repo.applications.flatMap(leafIdsForApplication);
 }
 
+/**
+ * Only the application leaves under a repository — used when the caller
+ * wants to scan the repo's "main" working tree (every app at its
+ * `repositoryPath`) without also walking every feature worktree.
+ */
+export function applicationLeafIdsForRepository(repo: ScanRepositoryTarget): string[] {
+  return repo.applications.map((app) => appSelectionId(app.applicationId));
+}
+
 export type SelectionState = 'checked' | 'indeterminate' | 'unchecked';
 
 export function selectionStateForLeaves(

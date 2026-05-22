@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  applicationLeafIdsForRepository,
   appSelectionId,
   featureSelectionId,
   selectionStateForApplication,
@@ -104,5 +105,13 @@ describe('compute-bulk-targets', () => {
   it('ignores selection ids the index does not recognise', () => {
     const selected = new Set(['app:does-not-exist', 'feat:also-missing']);
     expect(computeBulkTargets(FIXTURE, selected)).toEqual([]);
+  });
+
+  it('applicationLeafIdsForRepository returns only the app leaves for the main-branch shortcut', () => {
+    const repo = FIXTURE.repositories[0]!;
+    expect(applicationLeafIdsForRepository(repo)).toEqual([
+      appSelectionId('app-web'),
+      appSelectionId('app-api'),
+    ]);
   });
 });

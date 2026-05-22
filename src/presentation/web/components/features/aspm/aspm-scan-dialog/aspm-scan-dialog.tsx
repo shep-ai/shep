@@ -35,6 +35,7 @@ import { AspmIngestDialog } from '@/components/features/aspm/aspm-ingest-dialog/
 import {
   APP_PREFIX,
   FEAT_PREFIX,
+  applicationLeafIdsForRepository,
   appSelectionId,
   computeBulkTargets,
   featureSelectionId,
@@ -45,15 +46,36 @@ import {
   toggleSingle,
 } from './compute-bulk-targets';
 
+/**
+ * Controls how `defaultRepositoryId` seeds the initial selection.
+ *
+ *  - `all-branches` (default) checks every leaf under the repo —
+ *    applications + feature worktrees.
+ *  - `main-only` checks just the applications, so the scan runs against
+ *    each app's `repositoryPath` (the main working tree) and skips the
+ *    feature worktrees.
+ */
+export type AspmScanDialogRepoScope = 'all-branches' | 'main-only';
+
 export interface AspmScanDialogProps {
   /** Pre-select this application when the dialog opens. */
   defaultApplicationId?: string;
-  /** Pre-select every leaf under this repository when the dialog opens. */
+  /** Pre-select leaves under this repository when the dialog opens. */
   defaultRepositoryId?: string;
+  /** Scope used when `defaultRepositoryId` is set. Defaults to `all-branches`. */
+  defaultRepositoryScope?: AspmScanDialogRepoScope;
   /** Trigger node — when omitted, renders a default "Scan now" button. */
   trigger?: React.ReactNode;
   /** Called after a successful scan so callers can refresh local UI. */
   onScanned?: (result: AspmBulkScanResult) => void;
+  /**
+   * Controlled open state. When provided, the parent owns whether the
+   * dialog is visible and the internal trigger is bypassed (`trigger` is
+   * still rendered for accessibility but the open state ignores it).
+   */
+  open?: boolean;
+  /** Called whenever the dialog wants to open or close (controlled mode). */
+  onOpenChange?: (open: boolean) => void;
   /** Test/Storybook overrides. */
   loadTargetsOverride?: typeof listAspmScanTargets;
   startBulkScanOverride?: typeof startBulkScan;
@@ -114,12 +136,17 @@ function TriStateCheckbox({
 export function AspmScanDialog({
   defaultApplicationId,
   defaultRepositoryId,
+  defaultRepositoryScope = 'all-branches',
   trigger,
   onScanned,
+  open: openProp,
+  onOpenChange,
   loadTargetsOverride,
   startBulkScanOverride,
 }: AspmScanDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : uncontrolledOpen;
   const [tree, setTree] = useState<ScanTargetTree | null>(null);
   const [treeError, setTreeError] = useState<string | null>(null);
   const [treeLoading, setTreeLoading] = useState(false);
@@ -159,11 +186,17 @@ export function AspmScanDialog({
     const next = new Set<string>();
     if (defaultRepositoryId) {
       const repo = tree.repositories.find((r) => r.repositoryId === defaultRepositoryId);
-      if (repo) for (const id of leafIdsForRepository(repo)) next.add(id);
+      if (repo) {
+        const ids =
+          defaultRepositoryScope === 'main-only'
+            ? applicationLeafIdsForRepository(repo)
+            : leafIdsForRepository(repo);
+        for (const id of ids) next.add(id);
+      }
     }
     if (defaultApplicationId) next.add(appSelectionId(defaultApplicationId));
     if (next.size > 0) setSelected(next);
-  }, [tree, defaultApplicationId, defaultRepositoryId, selected.size]);
+  }, [tree, defaultApplicationId, defaultRepositoryId, defaultRepositoryScope, selected.size]);
 
   const reset = useCallback((): void => {
     setSubmitError(null);
@@ -172,13 +205,14 @@ export function AspmScanDialog({
 
   const handleOpenChange = useCallback(
     (next: boolean): void => {
-      setOpen(next);
+      if (!isControlled) setUncontrolledOpen(next);
+      onOpenChange?.(next);
       if (!next) {
         reset();
         setSelected(new Set());
       }
     },
-    [reset]
+    [isControlled, onOpenChange, reset]
   );
 
   const toggleStage = useCallback((id: StageOption['id']): void => {
@@ -238,16 +272,22 @@ export function AspmScanDialog({
     [bulkTargets, enabledStages, submit, onScanned]
   );
 
+  // In controlled mode the parent decides whether the dialog is open; the
+  // trigger is optional (the parent may not need any UI to open the dialog).
+  const renderTrigger = !isControlled || trigger !== undefined;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger ?? (
-          <Button variant="default" size="sm" data-testid="aspm-scan-trigger">
-            <ShieldCheck className="mr-2 h-4 w-4" />
-            Scan now
-          </Button>
-        )}
-      </DialogTrigger>
+      {renderTrigger ? (
+        <DialogTrigger asChild>
+          {trigger ?? (
+            <Button variant="default" size="sm" data-testid="aspm-scan-trigger">
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              Scan now
+            </Button>
+          )}
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="max-w-2xl" data-testid="aspm-scan-dialog">
         <DialogHeader>
           <DialogTitle>Scan</DialogTitle>
