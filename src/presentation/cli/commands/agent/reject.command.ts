@@ -20,6 +20,13 @@ export function createRejectCommand(): Command {
     .description(t('cli:commands.agent.reject.description'))
     .argument('<id>', t('cli:commands.agent.reject.idArgument'))
     .option('-r, --reason <text>', t('cli:commands.agent.reject.reasonOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep agent reject <id>                 Reject a paused agent run
+  $ shep agent reject <id> -r "Needs fix"  Reject with a short reason`
+    )
     .action(async (id: string, opts: { reason?: string }) => {
       try {
         const resolved = await resolveAgentRun(id);

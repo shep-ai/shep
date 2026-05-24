@@ -26,42 +26,51 @@ function isProcessAlive(pid: number): boolean {
 
 export function createLsCommand(): Command {
   const t = getCliI18n().t;
-  return new Command('ls').description(t('cli:commands.agent.ls.description')).action(async () => {
-    try {
-      const useCase = container.resolve(ListAgentRunsUseCase);
-      const agentRuns = await useCase.execute();
+  return new Command('ls')
+    .description(t('cli:commands.agent.ls.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep agent ls              List all agent runs
+  $ shep agent show a1b2c3d4   Use a listed run ID to inspect details`
+    )
+    .action(async () => {
+      try {
+        const useCase = container.resolve(ListAgentRunsUseCase);
+        const agentRuns = await useCase.execute();
 
-      const rows = agentRuns.map((run) => {
-        const liveness = getLiveness(run);
-        return [
-          run.id.substring(0, 8),
-          run.agentName,
-          liveness.displayStatus,
-          getDuration(run),
-          run.pid ? String(run.pid) : colors.muted('-'),
-          liveness.warning || '',
-        ];
-      });
+        const rows = agentRuns.map((run) => {
+          const liveness = getLiveness(run);
+          return [
+            run.id.substring(0, 8),
+            run.agentName,
+            liveness.displayStatus,
+            getDuration(run),
+            run.pid ? String(run.pid) : colors.muted('-'),
+            liveness.warning || '',
+          ];
+        });
 
-      renderListView({
-        title: t('cli:commands.agent.ls.title'),
-        columns: [
-          { label: t('cli:commands.agent.ls.idColumn'), width: 10 },
-          { label: t('cli:commands.agent.ls.agentColumn'), width: 18 },
-          { label: t('cli:commands.agent.ls.statusColumn'), width: 16 },
-          { label: t('cli:commands.agent.ls.durationColumn'), width: 10 },
-          { label: t('cli:commands.agent.ls.pidColumn'), width: 8 },
-          { label: t('cli:commands.agent.ls.warningColumn'), width: 20 },
-        ],
-        rows,
-        emptyMessage: t('cli:commands.agent.ls.noRuns'),
-      });
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      messages.error(t('cli:commands.agent.ls.failedToList'), err);
-      process.exitCode = 1;
-    }
-  });
+        renderListView({
+          title: t('cli:commands.agent.ls.title'),
+          columns: [
+            { label: t('cli:commands.agent.ls.idColumn'), width: 10 },
+            { label: t('cli:commands.agent.ls.agentColumn'), width: 18 },
+            { label: t('cli:commands.agent.ls.statusColumn'), width: 16 },
+            { label: t('cli:commands.agent.ls.durationColumn'), width: 10 },
+            { label: t('cli:commands.agent.ls.pidColumn'), width: 8 },
+            { label: t('cli:commands.agent.ls.warningColumn'), width: 20 },
+          ],
+          rows,
+          emptyMessage: t('cli:commands.agent.ls.noRuns'),
+        });
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        messages.error(t('cli:commands.agent.ls.failedToList'), err);
+        process.exitCode = 1;
+      }
+    });
 }
 
 function getLiveness(run: AgentRun): { displayStatus: string; warning: string } {
