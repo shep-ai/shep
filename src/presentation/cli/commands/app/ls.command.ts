@@ -50,35 +50,35 @@ Examples:
   $ shep app ls`
     )
     .action(async () => {
-    try {
-      const useCase = container.resolve(ListApplicationsUseCase);
-      const applications = await useCase.execute();
+      try {
+        const useCase = container.resolve(ListApplicationsUseCase);
+        const applications = await useCase.execute();
 
-      const now = Date.now();
-      const rows = applications.map((app) => [
-        app.id.substring(0, 8),
-        app.name,
-        colorStatus(app.status),
-        app.repositoryPath,
-        colors.muted(`${formatDuration(now - new Date(app.createdAt).getTime())} ago`),
-      ]);
+        const now = Date.now();
+        const rows = applications.map((app) => [
+          app.id.substring(0, 8),
+          app.name,
+          colorStatus(app.status),
+          app.repositoryPath,
+          colors.muted(`${formatDuration(now - new Date(app.createdAt).getTime())} ago`),
+        ]);
 
-      renderListView({
-        title: t('cli:commands.app.ls.title'),
-        columns: [
-          { label: t('cli:commands.app.ls.idColumn'), width: 10 },
-          { label: t('cli:commands.app.ls.nameColumn'), width: 28 },
-          { label: t('cli:commands.app.ls.statusColumn'), width: 10 },
-          { label: t('cli:commands.app.ls.pathColumn'), width: 36 },
-          { label: t('cli:commands.app.ls.createdColumn'), width: 12 },
-        ],
-        rows,
-        emptyMessage: t('cli:commands.app.ls.noApps'),
-      });
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      messages.error(t('cli:commands.app.ls.failedToList'), err);
-      process.exitCode = 1;
-    }
-  });
+        renderListView({
+          title: t('cli:commands.app.ls.title'),
+          columns: [
+            { label: t('cli:commands.app.ls.idColumn'), width: 10 },
+            { label: t('cli:commands.app.ls.nameColumn'), width: 28 },
+            { label: t('cli:commands.app.ls.statusColumn'), width: 10 },
+            { label: t('cli:commands.app.ls.pathColumn'), width: 36 },
+            { label: t('cli:commands.app.ls.createdColumn'), width: 12 },
+          ],
+          rows,
+          emptyMessage: t('cli:commands.app.ls.noApps'),
+        });
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        messages.error(t('cli:commands.app.ls.failedToList'), err);
+        process.exitCode = 1;
+      }
+    });
 }
