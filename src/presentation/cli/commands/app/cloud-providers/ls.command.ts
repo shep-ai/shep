@@ -13,6 +13,13 @@ export function createCloudProvidersLsCommand(): Command {
   return new Command('ls')
     .description('List cloud deployment providers and their connection state')
     .option('--json', 'Output as JSON')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep app cloud-providers ls
+  $ shep app cloud-providers ls --json`
+    )
     .action(async (options: { json?: boolean }) => {
       try {
         const useCase = container.resolve(ListCloudProvidersUseCase);

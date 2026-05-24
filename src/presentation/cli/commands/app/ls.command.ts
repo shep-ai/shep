@@ -41,7 +41,15 @@ function colorStatus(status: string): string {
 
 export function createLsCommand(): Command {
   const t = getCliI18n().t;
-  return new Command('ls').description(t('cli:commands.app.ls.description')).action(async () => {
+  return new Command('ls')
+    .description(t('cli:commands.app.ls.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep app ls`
+    )
+    .action(async () => {
     try {
       const useCase = container.resolve(ListApplicationsUseCase);
       const applications = await useCase.execute();

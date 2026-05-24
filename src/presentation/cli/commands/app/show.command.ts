@@ -26,6 +26,12 @@ export function createShowCommand(): Command {
   return new Command('show')
     .description(t('cli:commands.app.show.description'))
     .argument('<id>', t('cli:commands.app.show.idArgument'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep app show a1b2c3d4`
+    )
     .action(async (id: string) => {
       try {
         const resolved = await resolveApplication(id);

@@ -47,6 +47,13 @@ export function createDeployInitiateCommand(): Command {
     .description('Start a cloud deployment for the application (streams progress)')
     .argument('<id>', 'Application id or slug')
     .option('--provider <provider>', 'Override the selected provider')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep app deploy start a1b2c3d4
+  $ shep app deploy start my-app --provider CloudflarePages`
+    )
     .action(async (id: string, options: { provider?: string }) => {
       try {
         const resolved = await resolveApplication(id);
