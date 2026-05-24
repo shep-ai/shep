@@ -24,6 +24,14 @@ export function createLogsCommand(): Command {
     .argument('<id>', t('cli:commands.agent.logs.idArgument'))
     .option('-f, --follow', t('cli:commands.agent.logs.followOption'))
     .option('-n, --lines <count>', t('cli:commands.agent.logs.linesOption'), '0')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep agent logs <id>       Print the full log for a run
+  $ shep agent logs -f <id>    Follow log output as it is written
+  $ shep agent logs -n 50 <id> Show the last 50 log lines`
+    )
     .action(async (id: string, opts: { follow?: boolean; lines: string }) => {
       try {
         const resolved = await resolveAgentRun(id);

@@ -19,6 +19,13 @@ export function createStopCommand(): Command {
   return new Command('stop')
     .description(t('cli:commands.agent.stop.description'))
     .argument('<id>', t('cli:commands.agent.stop.idArgument'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep agent stop <id>       Stop a running agent
+  $ shep agent stop a1b2c3d4   Interrupt a run by short ID`
+    )
     .action(async (id: string) => {
       try {
         const resolved = await resolveAgentRun(id);
