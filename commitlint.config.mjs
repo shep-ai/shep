@@ -80,8 +80,8 @@ export default {
       ],
     ],
 
-    // Subject rules - ALL lowercase including acronyms (pr not PR, api not API)
-    'subject-case': [2, 'always', 'lower-case'],
+    // Subject case is not enforced — sentence-case, lowercase, or mixed are all accepted
+    'subject-case': [0],
     'subject-empty': [2, 'never'],
     'subject-full-stop': [2, 'never', '.'],
     'subject-max-length': [2, 'always', 72],

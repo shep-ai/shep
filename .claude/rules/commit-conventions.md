@@ -36,18 +36,18 @@ specs | shep-kit | cli | tui | web | api | domain | agents | deployment | tsp | 
 
 ## <subject> rules
 
-- MUST be lowercase only (a–z, 0–9, spaces, and hyphens only)
+- Case is flexible — sentence-case, lowercase, or mixed are all accepted (e.g. "Add new command" or "add new command")
 - MUST NOT be empty
 - MUST NOT end with a period `.`
 - MUST be <= 72 characters (subject only, not including `<type>(<scope>): `)
-- SHOULD be an imperative phrase (e.g., "add", "fix", "remove", "refactor")
+- SHOULD be an imperative phrase (e.g., "Add", "Fix", "Remove", "Refactor")
 
 ## Header rules (entire first line)
 
 - MUST be <= 100 characters total
-- MUST match this regex exactly:
+- MUST match this regex:
 
-^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)\((specs|shep-kit|cli|tui|web|api|domain|agents|deployment|tsp|deps|config|dx|release|ci)\): [a-z0-9][a-z0-9\- ]{0,71}$
+^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)\((specs|shep-kit|cli|tui|web|api|domain|agents|deployment|tsp|deps|config|dx|release|ci)\): .{1,72}$
 
 ## Body / Footer (optional)
 

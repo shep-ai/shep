@@ -83,7 +83,7 @@ jobs:
             release
             ci
           requireScope: false
-          subjectPattern: ^[a-z].+$
+          subjectPattern: ^.+$
           subjectPatternError: |
-            PR title subject must start with lowercase letter.
-            Example: "feat(cli): add new command"
+            PR title subject must not be empty.
+            Example: "feat(cli): Add new command"
