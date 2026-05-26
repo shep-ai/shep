@@ -1,12 +1,14 @@
+<p align="center"><strong><a href="https://app.shep.bot">→ Try Shep Cloud Free</a></strong> — no install, no setup, just start in your browser.</p>
+
 ![Shep](docs/screenshots/shep-card.jpg)
 
 <div align="center">
 
 <h1>
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="src/presentation/web/public/favicon-light.svg">
-    <source media="(prefers-color-scheme: light)" srcset="src/presentation/web/public/favicon-dark.svg">
-    <img src="src/presentation/web/public/favicon-light.svg" alt="Shep logo" width="28" valign="middle" />
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/shep-logo-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/shep-logo-light.png">
+    <img src="docs/screenshots/shep-logo-light.png" alt="Shep logo" width="28" valign="middle" />
   </picture>
   Shep
 </h1>
@@ -57,7 +59,19 @@ shep feat new "fix login redirect bug" --push --pr
 
 ## Quick Start
 
-### Prerequisites
+Shep is **local-first, cloud-optional, free to start**. Pick the path that fits.
+
+### Option 1: Use Shep Cloud (zero setup)
+
+Try Shep from your browser — free, no install required:
+
+**→ [app.shep.bot](https://app.shep.bot)**
+
+Connect your repo, configure your agent, and start a feature in minutes.
+
+### Option 2: Run locally
+
+#### Prerequisites
 
 - **Node.js 22+** and **npm** (or install via `nvm`)
 - **Git** and **GitHub CLI** (`gh`) — [install guide](https://cli.github.com/)
@@ -67,7 +81,7 @@ shep feat new "fix login redirect bug" --push --pr
 
 > **Sandbox mode note:** Some agents restrict network access by default. If operations like `npm install` fail, configure allowed hosts in your agent's settings or disable sandbox for Shep features. See [Agent Permissions](#agent-permissions).
 
-### Install and run
+#### Install and run
 
 ```bash
 # Try it instantly — no install needed
@@ -203,9 +217,9 @@ Shep watches your CI pipeline after push. If it fails, the agent reads the logs,
 
 Push, PR, merge, CI watch, CI fix retries, timeouts, model selection, agent type — configure per feature with flags or set global defaults with `shep settings`. Nothing is hardcoded.
 
-### 100% Local
+### Local-first, Cloud-optional
 
-All data lives in `~/.shep/` as SQLite. No cloud, no account, no tracking. Your code is only sent to whichever AI agent you configure, under that agent's own terms.
+Shep runs 100% locally by default — all data lives in `~/.shep/` as SQLite, your code is only sent to whichever AI agent you configure under that agent's own terms. Prefer zero setup? [Shep Cloud](https://app.shep.bot) gives you the same experience in your browser, free.
 
 ### Optional: Spec-Driven Development
 
