@@ -160,7 +160,7 @@ function AgentGraphInner({
         type: 'editable',
         position: nextPosition(curr),
         data: {
-          label: 'New step',
+          label: t('agentEditor.newStep'),
           description: '',
           editing: true,
           onLabelChange: handleLabelChange,
@@ -176,7 +176,7 @@ function AgentGraphInner({
   function handleSave() {
     setError(null);
     const payload = serialize(nodes, edges);
-    const validation = validate(payload);
+    const validation = validate(payload, t);
     if (validation) {
       setError(validation);
       return;
@@ -185,7 +185,7 @@ function AgentGraphInner({
       const fn = onSaveOverride ?? saveAgentGraph;
       const result = await fn({ agentType: graph.agentType, ...payload });
       if (!result.ok) {
-        setError(result.error ?? 'Failed to save graph');
+        setError(result.error ?? t('agentEditor.failedToSaveGraph'));
         return;
       }
       setSavedAt(new Date());
@@ -206,7 +206,7 @@ function AgentGraphInner({
       const fn = onResetOverride ?? resetAgentGraph;
       const result = await fn({ agentType: graph.agentType });
       if (!result.ok) {
-        setError(result.error ?? 'Failed to reset graph');
+        setError(result.error ?? t('agentEditor.failedToResetGraph'));
         return;
       }
       setSavedAt(new Date());
@@ -337,6 +337,7 @@ function AgentGraphInner({
 import { Handle } from '@xyflow/react';
 
 function EditableNode({ id, data }: NodeProps<Node<NodeData>>) {
+  const { t } = useTranslation('web');
   const { label, description, editing, onLabelChange, onDescriptionChange, onDelete } = data;
   return (
     <div className="bg-card relative min-w-[180px] rounded-md border px-2 py-1.5 shadow-sm">
@@ -347,23 +348,23 @@ function EditableNode({ id, data }: NodeProps<Node<NodeData>>) {
             value={label}
             onChange={(e) => onLabelChange(id, e.target.value)}
             className="border-border bg-background w-full rounded border px-1 py-0.5 text-xs font-semibold"
-            placeholder="label"
-            aria-label={`Label for node ${id}`}
+            placeholder={t('agentEditor.nodeLabelPlaceholder')}
+            aria-label={t('agentEditor.nodeLabelAria', { id })}
             data-testid={`graph-node-label-${id}`}
           />
           <input
             value={description ?? ''}
             onChange={(e) => onDescriptionChange(id, e.target.value)}
             className="border-border bg-background w-full rounded border px-1 py-0.5 text-[10px]"
-            placeholder="description"
-            aria-label={`Description for node ${id}`}
+            placeholder={t('agentEditor.nodeDescriptionPlaceholder')}
+            aria-label={t('agentEditor.nodeDescriptionAria', { id })}
             data-testid={`graph-node-description-${id}`}
           />
           <button
             type="button"
             onClick={() => onDelete(id)}
             className="text-destructive absolute -top-2 -right-2 flex size-4 items-center justify-center rounded-full border bg-white shadow-sm"
-            aria-label={`Delete node ${id}`}
+            aria-label={t('agentEditor.deleteNodeAria', { id })}
             data-testid={`graph-node-delete-${id}`}
           >
             <Trash2 className="size-2.5" />
@@ -444,20 +445,23 @@ function serialize(
   };
 }
 
-function validate(payload: {
-  nodes: AgentGraphDescriptor['nodes'];
-  edges: AgentGraphDescriptor['edges'];
-}): string | null {
-  if (payload.nodes.length === 0) return 'Graph must have at least one node.';
+function validate(
+  payload: {
+    nodes: AgentGraphDescriptor['nodes'];
+    edges: AgentGraphDescriptor['edges'];
+  },
+  t: (key: string, options?: Record<string, string>) => string
+): string | null {
+  if (payload.nodes.length === 0) return t('agentEditor.graphMustHaveNode');
   const ids = new Set<string>();
   for (const n of payload.nodes) {
-    if (!n.label) return `Node ${n.id} must have a label.`;
-    if (ids.has(n.id)) return `Duplicate node id: ${n.id}`;
+    if (!n.label) return t('agentEditor.nodeMustHaveLabel', { id: n.id });
+    if (ids.has(n.id)) return t('agentEditor.duplicateNodeId', { id: n.id });
     ids.add(n.id);
   }
   for (const e of payload.edges) {
-    if (!ids.has(e.from)) return `Edge references unknown source: ${e.from}`;
-    if (!ids.has(e.to)) return `Edge references unknown target: ${e.to}`;
+    if (!ids.has(e.from)) return t('agentEditor.edgeUnknownSource', { id: e.from });
+    if (!ids.has(e.to)) return t('agentEditor.edgeUnknownTarget', { id: e.to });
   }
   return null;
 }

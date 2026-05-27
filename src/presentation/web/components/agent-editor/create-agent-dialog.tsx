@@ -85,7 +85,7 @@ export function CreateAgentDialog({
           : {}),
       });
       if (!result.ok) {
-        setError(result.error ?? 'Failed to create agent');
+        setError(result.error ?? t('agentEditor.failedToCreateAgent'));
         return;
       }
       const next = result.agentType ?? agentType;
@@ -111,7 +111,7 @@ export function CreateAgentDialog({
       <DialogTrigger asChild>
         <Button data-testid="create-agent-trigger">
           <Plus className="size-4" />
-          New agent
+          {t('agentEditor.newAgent')}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-xl" data-testid="create-agent-dialog">
@@ -134,8 +134,9 @@ export function CreateAgentDialog({
               aria-invalid={agentType.length > 0 && !typeValid}
             />
             <p className="text-muted-foreground text-xs">
-              kebab-case, starts with a letter, max 64 chars (matches{' '}
-              <code className="bg-muted rounded px-1">/^[a-z][a-z0-9-]+$/</code>)
+              {t('agentEditor.stableTypeIdHelpPrefix')}{' '}
+              <code className="bg-muted rounded px-1">/^[a-z][a-z0-9-]+$/</code>
+              {t('agentEditor.stableTypeIdHelpSuffix')}
             </p>
           </div>
 

@@ -27,11 +27,11 @@ export function AgentList({ agents }: AgentListProps) {
       <div className="bg-muted/30 rounded-lg border border-dashed p-6">
         <p className="text-sm font-medium">{t('agentEditor.noAgentsRegistered')}</p>
         <p className="text-muted-foreground text-sm">
-          The built-in prompt registry is empty — register slots in
+          {t('agentEditor.emptyRegistryPrefix')}
           <code className="bg-muted mx-1 rounded px-1 py-0.5 text-xs">
             builtin-prompt-registry.ts
           </code>
-          to expose agents in this editor.
+          {t('agentEditor.emptyRegistrySuffix')}
         </p>
       </div>
     );
@@ -57,16 +57,16 @@ export function AgentList({ agents }: AgentListProps) {
               <p className="truncate text-sm font-medium">{agent.displayName ?? agent.agentType}</p>
               {agent.isCustom ? (
                 <Badge variant="secondary" className="shrink-0">
-                  Custom
+                  {t('agentEditor.custom')}
                 </Badge>
               ) : null}
             </div>
             <p className="text-muted-foreground text-xs">
               {agent.isCustom ? agent.agentType : null}
               {agent.isCustom ? ' · ' : ''}
-              {agent.promptCount} prompt{agent.promptCount === 1 ? '' : 's'}
+              {t('agentEditor.promptCount', { count: agent.promptCount })}
               {agent.overrideCount > 0
-                ? ` · ${agent.overrideCount} override${agent.overrideCount === 1 ? '' : 's'}`
+                ? ` · ${t('agentEditor.overrideCount', { count: agent.overrideCount })}`
                 : ''}
             </p>
           </div>
@@ -74,7 +74,7 @@ export function AgentList({ agents }: AgentListProps) {
             href={`/agents/${agent.agentType}` as Route}
             className="text-primary inline-flex shrink-0 items-center gap-1 text-xs hover:underline"
           >
-            Edit
+            {t('agentEditor.edit')}
             <ArrowRight className="size-3" />
           </Link>
         </li>

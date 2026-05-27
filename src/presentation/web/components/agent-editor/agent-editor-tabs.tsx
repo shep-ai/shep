@@ -53,7 +53,7 @@ export function AgentEditorTabs({
         {prompts.length > 1 ? (
           <div className="flex items-center gap-2 text-xs">
             <label htmlFor="playground-prompt-select" className="text-muted-foreground">
-              Use prompt:
+              {t('agentEditor.usePrompt')}
             </label>
             <select
               id="playground-prompt-select"
