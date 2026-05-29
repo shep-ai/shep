@@ -63,6 +63,15 @@ export function createRunCommand(): Command {
     )
     .option('-r, --repo <path>', t('cli:commands.run.repoOption'))
     .option('-s, --stream', t('cli:commands.run.streamOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep run analyze-repository
+  $ shep run analyze-repository --prompt "Focus on security"
+  $ shep run analyze-repository --repo /path/to/repo
+  $ shep run analyze-repository --stream`
+    )
     .action(async (agentName: string, options: RunOptions) => {
       try {
         const useCase = container.resolve(RunAgentUseCase);

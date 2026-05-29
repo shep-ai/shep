@@ -26,18 +26,28 @@ import { getCliI18n } from '../i18n.js';
  */
 export function createVersionCommand(): Command {
   const t = getCliI18n().t;
-  return new Command('version').description(t('cli:commands.version.description')).action(() => {
-    const versionService = container.resolve<IVersionService>('IVersionService');
-    const info = versionService.getVersion();
+  return new Command('version')
+    .description(t('cli:commands.version.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep version                  Show detailed version information
+  $ shep --version                Show version number only
+  $ shep version                  Includes Node.js and platform details`
+    )
+    .action(() => {
+      const versionService = container.resolve<IVersionService>('IVersionService');
+      const info = versionService.getVersion();
 
-    messages.newline();
-    console.log(`${fmt.heading(info.name)} ${fmt.version(info.version)}`);
-    console.log(colors.muted(info.description));
-    messages.newline();
-    console.log(`${fmt.label(t('cli:commands.version.nodeLabel'))}     ${process.version}`);
-    console.log(
-      `${fmt.label(t('cli:commands.version.platformLabel'))} ${process.platform} ${process.arch}`
-    );
-    messages.newline();
-  });
+      messages.newline();
+      console.log(`${fmt.heading(info.name)} ${fmt.version(info.version)}`);
+      console.log(colors.muted(info.description));
+      messages.newline();
+      console.log(`${fmt.label(t('cli:commands.version.nodeLabel'))}     ${process.version}`);
+      console.log(
+        `${fmt.label(t('cli:commands.version.platformLabel'))} ${process.platform} ${process.arch}`
+      );
+      messages.newline();
+    });
 }

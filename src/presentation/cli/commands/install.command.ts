@@ -45,6 +45,14 @@ export function createInstallCommand(): Command {
       })
     )
     .option('--how', t('cli:commands.install.howOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep install                  List available tools
+  $ shep install claude-code      Install Claude Code
+  $ shep install claude-code --how Show installation instructions only`
+    )
     .action(async (tool: string | undefined, options: InstallOptions) => {
       try {
         // No tool specified — show available tools
