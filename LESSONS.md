@@ -699,3 +699,11 @@ E2E specs in `tests/e2e/web/` run against `pnpm dev:web` (Next.js dev mode, Turb
 Symptom: `toHaveURL` fails with `N × unexpected value "<old url>"`, then passes on retry. Reported as `1 flaky` in the Playwright summary.
 
 **Rule:** in any spec under `tests/e2e/web/`, when waiting for navigation after a click, use `await page.waitForURL(...)`, never `await expect(page).toHaveURL(...)`. Reserve `toHaveURL` for asserting the URL **after** you already know navigation completed (e.g., after a `waitForURL` or after the destination's content is visible).
+
+## Never Use `page.waitForLoadState('networkidle')` Against `pnpm dev:web`
+
+The Next.js web UI mounts inside an `AppShell` that opens a long-lived SSE stream to `/api/agent-events`. That means the page can be "busy" forever (the network is never truly idle for 500ms), so `waitForLoadState('networkidle')` can hit its 30s timeout even when the UI is already ready.
+
+Symptom: a spec times out on CI waiting for `networkidle`, then passes on retry with no code changes.
+
+**Rule:** in any spec under `tests/e2e/web/`, never use `await page.waitForLoadState('networkidle')`. Prefer element-based waits (e.g. `await expect(page.getByTestId('...')).toBeVisible()`) for the first meaningful UI surface on the page.

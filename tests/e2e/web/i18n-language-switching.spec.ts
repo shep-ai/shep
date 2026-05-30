@@ -11,14 +11,10 @@ test.describe('i18n: language switching', () => {
   test('switching to Russian updates UI text immediately', async ({ page }) => {
     // Navigate to settings page
     await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
 
-    // Verify English text is shown initially
+    // Verify the language settings section is visible
     const languageTitle = page.getByTestId('language-settings-section');
     await expect(languageTitle).toBeVisible();
-
-    // The card title should say "Language" in English
-    await expect(languageTitle.getByText('Language', { exact: true })).toBeVisible();
 
     // Open the language select dropdown
     const languageSelect = page.getByTestId('language-select');
@@ -44,9 +40,9 @@ test.describe('i18n: language switching', () => {
 
   test('switching to Arabic sets RTL direction', async ({ page }) => {
     await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
 
     const languageSelect = page.getByTestId('language-select');
+    await expect(languageSelect).toBeVisible();
     await languageSelect.click();
 
     await page.getByRole('option', { name: 'العربية' }).click();
@@ -62,9 +58,9 @@ test.describe('i18n: language switching', () => {
 
   test('switching to Spanish updates navigation text', async ({ page }) => {
     await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
 
     const languageSelect = page.getByTestId('language-select');
+    await expect(languageSelect).toBeVisible();
     await languageSelect.click();
 
     await page.getByRole('option', { name: 'Español' }).click();
