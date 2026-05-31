@@ -1,0 +1,42 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SdlcTask.yaml
+type: object
+properties:
+  featureId:
+    type: string
+    description: FK to the parent Feature (epic) that owns this task
+  taskKey:
+    type: string
+    description: Stable idempotency key within the feature (e.g. 'task-1'); unique per featureId
+  title:
+    type: string
+    description: Human-readable title of the task shown on the kanban card
+  description:
+    type: string
+    description: Optional detailed description or acceptance criteria for the task
+  status:
+    $ref: TaskState.yaml
+    description: Current kanban status of the task (Todo, WIP, Review, Done)
+  sortOrder:
+    type: number
+    description: Manual sort order within the column (float64 for gap-free insertion)
+  branch:
+    type: string
+    description: Git branch where implementation work for this task occurs
+  dependsOnKeys:
+    type: array
+    items:
+      type: string
+    description: taskKeys within the same feature that this task depends on
+  agentRunId:
+    type: string
+    description: ID of the agent run executing or that last executed this task
+required:
+  - featureId
+  - taskKey
+  - title
+  - status
+  - sortOrder
+allOf:
+  - $ref: BaseEntity.yaml
+description: A first-class persisted SDLC task within a Feature (epic) tracked on the SDLC Board
