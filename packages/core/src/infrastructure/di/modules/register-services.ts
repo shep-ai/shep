@@ -62,6 +62,7 @@ import { AttachmentStorageService } from '../../services/attachment-storage.serv
 import type { IShepInstanceService } from '../../../application/ports/output/services/shep-instance-service.interface.js';
 import { ShepInstanceService } from '../../services/shep-instance.service.js';
 import type { INotificationService } from '../../../application/ports/output/services/notification-service.interface.js';
+import type { IWhatsAppNotifier } from '../../../application/ports/output/services/whatsapp-notifier.interface.js';
 import { DesktopNotifier } from '../../services/notifications/desktop-notifier.js';
 import { NotificationService } from '../../services/notifications/notification.service.js';
 import { getNotificationBus } from '../../services/notifications/notification-bus.js';
@@ -268,7 +269,12 @@ export function registerServices(container: DependencyContainer): void {
     useFactory: (c) => {
       const bus = c.resolve('NotificationEventBus') as ReturnType<typeof getNotificationBus>;
       const desktopNotif = c.resolve('DesktopNotifier') as DesktopNotifier;
-      return new NotificationService(bus, desktopNotif);
+      // WhatsApp is an optional outbound channel (spec 101). Resolved lazily so
+      // its absence (or the registration module not having run) is harmless.
+      const whatsAppNotifier = c.isRegistered('IWhatsAppNotifier')
+        ? (c.resolve('IWhatsAppNotifier') as IWhatsAppNotifier)
+        : undefined;
+      return new NotificationService(bus, desktopNotif, whatsAppNotifier);
     },
   });
 

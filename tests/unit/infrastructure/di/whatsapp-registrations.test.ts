@@ -100,4 +100,15 @@ describe('WhatsApp DI registrations (spec 101)', () => {
     );
     expect(container.resolve(WhatsAppConnectionService)).toBeInstanceOf(WhatsAppConnectionService);
   });
+
+  it('resolves the WhatsApp notifier and wires it into INotificationService', async () => {
+    const { initializeContainer } = await import(CONTAINER);
+    const { WhatsAppNotifier } = await import(
+      '../../../../packages/core/src/infrastructure/services/whatsapp/whatsapp-notifier.js'
+    );
+    const container = await initializeContainer();
+    expect(container.resolve('IWhatsAppNotifier')).toBeInstanceOf(WhatsAppNotifier);
+    // INotificationService must still resolve with the optional channel present.
+    expect(() => container.resolve('INotificationService')).not.toThrow();
+  });
 });

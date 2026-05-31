@@ -15,6 +15,7 @@ import type {
 } from '../../../domain/generated/output.js';
 import { NotificationEventType } from '../../../domain/generated/output.js';
 import type { INotificationService } from '../../../application/ports/output/services/notification-service.interface.js';
+import type { IWhatsAppNotifier } from '../../../application/ports/output/services/whatsapp-notifier.interface.js';
 import { getSettings } from '../settings.service.js';
 import type { NotificationBus } from './notification-bus.js';
 import type { DesktopNotifier } from './desktop-notifier.js';
@@ -44,10 +45,16 @@ const EVENT_TYPE_TO_CONFIG_KEY: Record<NotificationEventType, keyof Notification
 export class NotificationService implements INotificationService {
   private readonly bus: NotificationBus;
   private readonly desktopNotifier: DesktopNotifier;
+  private readonly whatsAppNotifier?: IWhatsAppNotifier;
 
-  constructor(bus: NotificationBus, desktopNotifier: DesktopNotifier) {
+  constructor(
+    bus: NotificationBus,
+    desktopNotifier: DesktopNotifier,
+    whatsAppNotifier?: IWhatsAppNotifier
+  ) {
     this.bus = bus;
     this.desktopNotifier = desktopNotifier;
+    this.whatsAppNotifier = whatsAppNotifier;
   }
 
   notify(event: NotificationEvent): void {
@@ -63,6 +70,10 @@ export class NotificationService implements INotificationService {
     if (notifications.inApp.enabled || notifications.browser.enabled) {
       this.bus.emit('notification', event);
     }
+
+    // Fan out to WhatsApp (optional channel). Fire-and-forget; respects the
+    // same per-event filter above. No-op when the notifier isn't wired.
+    this.whatsAppNotifier?.notify(event);
 
     // Desktop notifications disabled — removed in favour of in-app toasts.
     // The DesktopNotifier dependency is kept for API compatibility but never called.

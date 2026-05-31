@@ -105,3 +105,5 @@ export type {
   WhatsAppConnectionInfo,
 } from './whatsapp-gateway.interface.js';
 export { WHATSAPP_GATEWAY_TOKEN } from './whatsapp-gateway.interface.js';
+export type { IWhatsAppNotifier } from './whatsapp-notifier.interface.js';
+export { WHATSAPP_NOTIFIER_TOKEN } from './whatsapp-notifier.interface.js';

@@ -180,4 +180,40 @@ describe('NotificationService', () => {
       expect(desktopNotifier.send).not.toHaveBeenCalled();
     });
   });
+
+  describe('whatsapp channel (spec 101)', () => {
+    it('forwards the event to the optional WhatsApp notifier', () => {
+      initSettingsWithNotifications({ inApp: { enabled: true } });
+      const whatsAppNotifier = { notify: vi.fn() };
+      service = new NotificationService(getNotificationBus(), desktopNotifier, whatsAppNotifier);
+
+      const event = createTestEvent();
+      service.notify(event);
+
+      expect(whatsAppNotifier.notify).toHaveBeenCalledWith(event);
+    });
+
+    it('does not forward an event filtered out by user preferences', () => {
+      // Disable agentCompleted; the WhatsApp channel must respect the same filter.
+      initSettingsWithNotifications({
+        inApp: { enabled: true },
+        events: {
+          ...createDefaultSettings().notifications.events,
+          agentCompleted: false,
+        },
+      });
+      const whatsAppNotifier = { notify: vi.fn() };
+      service = new NotificationService(getNotificationBus(), desktopNotifier, whatsAppNotifier);
+
+      service.notify(createTestEvent({ eventType: NotificationEventType.AgentCompleted }));
+
+      expect(whatsAppNotifier.notify).not.toHaveBeenCalled();
+    });
+
+    it('works without a WhatsApp notifier (optional dependency)', () => {
+      initSettingsWithNotifications({ inApp: { enabled: true } });
+      service = new NotificationService(getNotificationBus(), desktopNotifier);
+      expect(() => service.notify(createTestEvent())).not.toThrow();
+    });
+  });
 });
