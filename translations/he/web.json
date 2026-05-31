@@ -250,6 +250,32 @@
         "settingsService": "שירות הגדרות",
         "settingsSpec": "מפרט הגדרות"
       }
+    },
+    "whatsapp": {
+      "title": "WhatsApp",
+      "description": "שגרו והנחו את סוכני shep מתוך WhatsApp. שלחו הודעה כדי להתחיל, והשיבו בשרשור כדי להמשיך.",
+      "hint": "רק מספרים ברשימה המורשית יכולים לשגר. Baileys משתמש בחשבון WhatsApp Web שלכם (סיכון לתנאי השימוש); ה-Cloud API בטוח מחסימה אך דורש חשבון Meta Business.",
+      "enable": "הפעלת אינטגרציית WhatsApp",
+      "enableDescription": "חברו את WhatsApp כדי לשגר ולהנחות סוכנים מהטלפון.",
+      "adapter": "מתאם",
+      "adapterDescription": "Baileys מקשר מספר אישי/עסקי; ה-Cloud API משתמש ב-API הרשמי של WhatsApp Business.",
+      "adapterBaileys": "Baileys (WhatsApp Web)",
+      "adapterCloudApi": "Cloud API (רשמי)",
+      "allowedNumbers": "שולחים מורשים",
+      "allowedNumbersDescription": "מספרי E.164 מופרדים בפסיקים שמורשים לשגר משימות.",
+      "cloudPhoneNumberId": "מזהה מספר טלפון של Cloud API",
+      "cloudAccessToken": "אסימון גישה של Cloud API",
+      "cloudVerifyToken": "אסימון אימות Webhook",
+      "cloudAppSecret": "סוד אפליקציה",
+      "baileysHint": "התקינו את חבילת Baileys האופציונלית (pnpm add @whiskeysockets/baileys), ואז קשרו את המספר — קוד ה-QR יופיע כאן כשהשרת פועל.",
+      "cloudApiHint": "הזינו את פרטי אפליקציית Meta, ואז כוונו את ה-Webhook של WhatsApp לשרת shep הזה.",
+      "statusValue": {
+        "disconnected": "מנותק",
+        "connecting": "מתחבר",
+        "awaiting-scan": "סרקו QR",
+        "connected": "מחובר",
+        "error": "שגיאה"
+      }
     }
   },
   "navigation": {

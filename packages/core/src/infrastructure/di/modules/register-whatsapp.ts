@@ -30,6 +30,10 @@ export function registerWhatsApp(container: DependencyContainer): void {
   // Both adapters are concrete singletons; the connection service picks one.
   container.registerSingleton(WhatsAppBaileysGateway);
   container.registerSingleton(WhatsAppCloudApiGateway);
+  // String alias so the web Cloud API webhook route can resolve the adapter.
+  container.register('WhatsAppCloudApiGateway', {
+    useFactory: (c) => c.resolve(WhatsAppCloudApiGateway),
+  });
 
   container.registerSingleton(DispatchWhatsAppMessageUseCase);
   container.register('DispatchWhatsAppMessageUseCase', {

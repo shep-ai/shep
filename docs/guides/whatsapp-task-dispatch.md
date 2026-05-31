@@ -4,10 +4,11 @@ Run shep's idea-to-deploy loop from a WhatsApp thread — built for mobile-first
 Hebrew-speaking solo founders and small teams. Send a message to start work,
 receive agent updates, and steer the agent by replying in the chat.
 
-> Status: core engine + both adapters + connection service shipped and tested.
-> The web Settings UI (link/QR, adapter picker, status badge) and outbound
-> lifecycle notifications over WhatsApp are tracked as follow-ons in
-> `specs/101-whatsapp-task-dispatch`.
+> Status: shipped. Core engine, both adapters, connection service, outbound
+> lifecycle notifications, web Settings UI (adapter picker + status badge), the
+> Cloud API webhook route, and the `shep whatsapp status` command are all in.
+> Remaining nice-to-have (tracked in `specs/101-whatsapp-task-dispatch`):
+> feature-bound HITL approve/reject over WhatsApp.
 
 ## How it works
 

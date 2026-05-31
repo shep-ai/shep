@@ -48,6 +48,7 @@ import {
 import { getEditorTypeIcon } from '@/components/common/editor-type-icons';
 import { AgentModelPicker } from '@/components/features/settings/AgentModelPicker';
 import { GithubIntegrationSection } from '@/components/features/settings/github-integration-section';
+import { WhatsAppSettings } from '@/components/features/settings/whatsapp/whatsapp-settings';
 const LANGUAGE_OPTIONS = [
   { value: Language.English, nativeName: 'English' },
   { value: Language.Ukrainian, nativeName: 'Українська' },
@@ -1981,6 +1982,27 @@ export function SettingsPageClient({
             sessions you start from shep. It never leaves this machine.
           </SectionHint>
         </div>
+
+        {/* ── WhatsApp (spec 101, gated on the whatsappDispatch flag) ── */}
+        {flags.whatsappDispatch ? (
+          <div
+            id="section-whatsapp"
+            className="grid scroll-mt-18 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[1fr_280px]"
+          >
+            <SettingsSection
+              icon={MessageSquare}
+              title={t('settings.whatsapp.title')}
+              description={t('settings.whatsapp.description')}
+              testId="whatsapp-settings-section"
+            >
+              <WhatsAppSettings
+                config={settings.whatsapp}
+                onSave={(whatsapp) => save({ whatsapp })}
+              />
+            </SettingsSection>
+            <SectionHint>{t('settings.whatsapp.hint')}</SectionHint>
+          </div>
+        ) : null}
 
         {/* ── Database ── */}
         <div

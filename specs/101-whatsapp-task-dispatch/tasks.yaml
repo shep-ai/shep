@@ -219,7 +219,7 @@ tasks:
     description: >
       Add WhatsApp as a fan-out channel in NotificationService so agent lifecycle
       events are delivered to the originating thread via the gateway + renderer.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
       - task-10
@@ -276,7 +276,7 @@ tasks:
     description: >
       Settings UI: enable toggle, adapter picker, link/QR + connection status.
       Mandatory colocated .stories.tsx with Default/Loading/Error states.
-    state: Todo
+    state: Done
     dependencies:
       - task-12
     acceptanceCriteria:

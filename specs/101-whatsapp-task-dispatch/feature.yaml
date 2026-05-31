@@ -3,24 +3,25 @@ feature:
   name: 'whatsapp-task-dispatch'
   number: 101
   branch: 'claude/nifty-fermat-CEFLm'
-  lifecycle: 'implementation'
+  lifecycle: 'complete'
   createdAt: '2026-05-31T14:48:39Z'
 
 status:
-  phase: 'implementation'
+  phase: 'complete'
   progress:
-    completed: 11
+    completed: 15
     total: 15
-    percentage: 73
-  currentTask: 'task-14'
-  lastUpdated: '2026-05-31T15:35:00Z'
+    percentage: 100
+  currentTask: null
+  lastUpdated: '2026-05-31T16:40:00Z'
   lastUpdatedBy: 'shep-kit:implement'
-  # Done: task-1..task-10, task-12, task-13, task-15 (core engine, both
-  # adapters, connection service, DI, CLI status, bootstrap, docs).
-  # Follow-ons: task-11 (WhatsApp notification fan-out channel) and task-14
-  # (web Settings UI + Storybook stories, incl. QR linking + Cloud API webhook
-  # route). Feature-bound HITL approve/reject over WhatsApp is also a follow-on
-  # (needs a feature->pending-run lookup on IAgentRunRepository).
+  # All 15 tasks done: core engine, both adapters (Baileys + Cloud API),
+  # connection service, notification fan-out, DI, CLI status, bootstrap, web
+  # Settings UI + Storybook + Cloud API webhook route, docs.
+  # Remaining nice-to-have (not a numbered task): feature-bound HITL
+  # approve/reject over WhatsApp, which needs a feature->pending-run lookup on
+  # IAgentRunRepository. Dispatch only creates Application threads today, so the
+  # implemented reply loop is fully consistent.
 
 validation:
   lastRun: null

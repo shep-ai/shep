@@ -250,6 +250,32 @@
         "settingsService": "Serviço de configurações",
         "settingsSpec": "Especificação de configurações"
       }
+    },
+    "whatsapp": {
+      "title": "WhatsApp",
+      "description": "Dispatch and steer shep agents from WhatsApp. Send a message to start work, then reply in the thread to keep going.",
+      "hint": "Only numbers in the authorized list can dispatch. Baileys uses your linked WhatsApp Web account (ToS risk); the Cloud API is ban-safe but needs a Meta Business account.",
+      "enable": "Enable WhatsApp integration",
+      "enableDescription": "Connect WhatsApp so you can dispatch and steer agents from your phone.",
+      "adapter": "Adapter",
+      "adapterDescription": "Baileys links a personal/business number; the Cloud API uses the official WhatsApp Business API.",
+      "adapterBaileys": "Baileys (WhatsApp Web)",
+      "adapterCloudApi": "Cloud API (official)",
+      "allowedNumbers": "Authorized senders",
+      "allowedNumbersDescription": "Comma-separated E.164 numbers allowed to dispatch tasks.",
+      "cloudPhoneNumberId": "Cloud API phone number ID",
+      "cloudAccessToken": "Cloud API access token",
+      "cloudVerifyToken": "Webhook verify token",
+      "cloudAppSecret": "App secret",
+      "baileysHint": "Install the optional Baileys package (pnpm add @whiskeysockets/baileys), then link your number — the QR appears here once the server is running.",
+      "cloudApiHint": "Enter your Meta app credentials, then point the WhatsApp webhook at this shep instance.",
+      "statusValue": {
+        "disconnected": "Disconnected",
+        "connecting": "Connecting",
+        "awaiting-scan": "Scan QR",
+        "connected": "Connected",
+        "error": "Error"
+      }
     }
   },
   "navigation": {
