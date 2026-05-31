@@ -19,7 +19,7 @@ tasks:
       Add WhatsAppConfig model (enabled, adapter, linkedNumber, status, cloud API
       fields), WhatsAppAdapterKind + WhatsAppThreadTargetKind enums, and a
       whatsappDispatch FeatureFlag to settings.tsp. Regenerate output.ts.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - "pnpm tsp:compile regenerates output.ts with no manual edits"
@@ -33,7 +33,7 @@ tasks:
       Define application-layer output ports for the messaging gateway (connect,
       sendMessage, onInboundMessage, status, logout) and the thread<->session
       mapping repository. No provider types leak through the gateway contract.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -48,7 +48,7 @@ tasks:
       Additive migration creating whatsapp_thread_mappings; SQLite repository
       implementing IWhatsAppThreadMappingRepository (upsert by thread, find by
       thread, find active by target).
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -69,7 +69,7 @@ tasks:
       Wire WhatsAppConfig + whatsappDispatch flag through migration, settings
       mapper, repository INSERT/UPDATE column lists, and settings-defaults factory
       per the LESSONS.md feature-flag checklist.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -90,7 +90,7 @@ tasks:
       A template renderer that produces outbound WhatsApp text per event type
       (started/needs-approval/completed/failed/question/dispatched/not-linked) in
       the user's locale. Add strings to all 9 locales, Hebrew-first.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -111,7 +111,7 @@ tasks:
       DispatchWhatsAppMessageUseCase — given an inbound message from a linked
       number with no active mapping, create a feature or interactive application
       via existing use cases and persist the thread<->session mapping.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
       - task-5
@@ -133,7 +133,7 @@ tasks:
       RouteWhatsAppReplyUseCase — given an inbound reply with an active mapping,
       route to answer-question / approve / reject / continue-session via existing
       use cases based on the mapping target and reply content.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
       - task-5
@@ -154,7 +154,7 @@ tasks:
     description: >
       WhatsAppCloudApiGateway implementing IWhatsAppGateway via the Graph API
       (send text; verify + parse inbound webhook). Zero new deps.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -175,7 +175,7 @@ tasks:
       WhatsAppBaileysGateway implementing IWhatsAppGateway. Lazy dynamic import of
       baileys; multi-file auth state under shep home; QR/pairing; auto-reconnect;
       graceful actionable error when the package is not installed.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -196,7 +196,7 @@ tasks:
       Singleton service (start/stop/isRunning) that resolves the configured
       adapter, connects, and pipes inbound events to the dispatch/reply use cases.
       Follows NotificationWatcherService lifecycle.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
       - task-7
@@ -241,7 +241,7 @@ tasks:
       Register gateway adapters, connection service, mapping repository, renderer,
       and use cases in the container, including string-token aliases for any use
       case reachable from web.
-    state: Todo
+    state: Done
     dependencies:
       - task-10
       - task-11
@@ -262,7 +262,7 @@ tasks:
     description: >
       Thin Commander command calling use cases: link (show QR/pairing), status,
       logout. Presentation stays thin; all logic in use cases/services.
-    state: Todo
+    state: Done
     dependencies:
       - task-12
     acceptanceCriteria:
@@ -290,7 +290,7 @@ tasks:
     description: >
       Initialize/start WhatsAppConnectionService in ui/_serve startup alongside
       other watchers; add docs page and update LESSONS.md with new wiring.
-    state: Todo
+    state: Done
     dependencies:
       - task-12
     acceptanceCriteria:
