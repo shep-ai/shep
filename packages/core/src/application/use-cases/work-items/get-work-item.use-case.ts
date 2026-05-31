@@ -1,3 +1,9 @@
+/**
+ * Get Work Item Use Case
+ *
+ * Retrieves a single work item by its ID via IWorkItemRepository.
+ * Returns ok: false if the work item is not found.
+ */
 import { injectable, inject } from 'tsyringe';
 import type { WorkItem } from '../../../domain/generated/output.js';
 import type { IWorkItemRepository } from '../../ports/output/repositories/work-item-repository.interface.js';

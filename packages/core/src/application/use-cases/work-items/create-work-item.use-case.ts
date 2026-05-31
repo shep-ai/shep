@@ -1,3 +1,9 @@
+/**
+ * Create Work Item Use Case
+ *
+ * Creates a new work item in a project. Validates the project and state exist,
+ * generates a UUID, and persists the work item via IWorkItemRepository.
+ */
 import { injectable, inject } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import type { WorkItem } from '../../../domain/generated/output.js';

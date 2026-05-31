@@ -1,3 +1,8 @@
+/**
+ * Delete Work Item Use Case
+ *
+ * Deletes a work item by its ID via IWorkItemRepository.
+ */
 import { injectable, inject } from 'tsyringe';
 import type { IWorkItemRepository } from '../../ports/output/repositories/work-item-repository.interface.js';
 

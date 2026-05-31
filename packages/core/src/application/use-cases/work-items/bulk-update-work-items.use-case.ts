@@ -1,3 +1,9 @@
+/**
+ * Bulk Update Work Items Use Case
+ *
+ * Updates multiple work items in a single operation via IWorkItemRepository.
+ * Returns a Result with failures[] for items that could not be updated.
+ */
 import { injectable, inject } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import type { IWorkItemRepository } from '../../ports/output/repositories/work-item-repository.interface.js';

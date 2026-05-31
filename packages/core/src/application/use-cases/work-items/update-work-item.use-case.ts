@@ -1,3 +1,9 @@
+/**
+ * Update Work Item Use Case
+ *
+ * Updates an existing work item's fields via IWorkItemRepository.
+ * Validates the work item exists before applying changes.
+ */
 import { injectable, inject } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import type { WorkItem } from '../../../domain/generated/output.js';

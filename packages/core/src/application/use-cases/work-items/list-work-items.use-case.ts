@@ -1,3 +1,9 @@
+/**
+ * List Work Items Use Case
+ *
+ * Lists work items matching optional filters via IWorkItemRepository.
+ * Supports filtering by project, state, assignee, and other criteria.
+ */
 import { injectable, inject } from 'tsyringe';
 import type { WorkItem } from '../../../domain/generated/output.js';
 import type {
