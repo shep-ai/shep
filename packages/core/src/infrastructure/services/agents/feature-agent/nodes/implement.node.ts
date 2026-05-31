@@ -33,6 +33,11 @@ import {
 } from '../phase-timing-context.js';
 import { updateNodeLifecycle } from '../lifecycle-context.js';
 import {
+  seedBoardTasks,
+  setBoardTaskStatus,
+  setBoardSubTaskStatus,
+} from '../sdlc-board-context.js';
+import {
   buildImplementPhasePrompt,
   type PlanPhase,
   type PlanYaml,
@@ -40,6 +45,7 @@ import {
   type TasksYaml,
 } from './prompts/implement.prompt.js';
 import { createEvidenceNode } from './evidence.node.js';
+import { TaskState } from '@/domain/generated/output.js';
 
 /**
  * Update feature.yaml with current implementation progress.
@@ -130,6 +136,32 @@ export function createImplementNode(executor: IAgentExecutor) {
 
       // --- Check for completed phases (skip on resume) ---
       const completedPhaseIds = getCompletedPhases(state.specDir);
+
+      // --- Seed SDLC board: idempotent upsert of all phases as Tasks
+      //     and their tasks.yaml entries as SubTasks (best-effort). ---
+      {
+        const seedArray = planData.phases.map((phase, phaseIndex) => {
+          const phaseTasks = phase.taskIds?.length
+            ? phase.taskIds
+                .map((id) => taskMap.get(id))
+                .filter((t): t is PhaseTask => t !== undefined)
+            : tasksData.tasks.filter((t) => t.phaseId === phase.id);
+
+          return {
+            taskKey: phase.id,
+            title: phase.name,
+            description: phase.description,
+            sortOrder: phaseIndex,
+            subTasks: phaseTasks.map((task, taskIndex) => ({
+              subTaskKey: task.id,
+              name: task.title,
+              description: task.description,
+              sortOrder: taskIndex,
+            })),
+          };
+        });
+        await seedBoardTasks(seedArray);
+      }
       const retryOpts = { logger: log };
 
       // --- Execute phases in order ---
@@ -147,6 +179,11 @@ export function createImplementNode(executor: IAgentExecutor) {
         if (completedPhaseIds.includes(phase.id)) {
           completedTasks += phaseTasks.length;
           log.info(`Phase ${phase.id} "${phase.name}" — already complete, skipping`);
+          // Mark board task and all its sub-tasks as Done (idempotent, best-effort)
+          await setBoardTaskStatus(phase.id, TaskState.Done);
+          for (const task of phaseTasks) {
+            await setBoardSubTaskStatus(phase.id, task.id, TaskState.Done);
+          }
           continue;
         }
 
@@ -166,6 +203,11 @@ export function createImplementNode(executor: IAgentExecutor) {
           phaseTasks[0].id,
           log
         );
+        // Transition board task and sub-tasks to WIP (best-effort)
+        await setBoardTaskStatus(phase.id, TaskState.WIP);
+        for (const task of phaseTasks) {
+          await setBoardSubTaskStatus(phase.id, task.id, TaskState.WIP);
+        }
 
         const options = buildExecutorOptions(state, undefined, 'implement');
         const promptContext = { isLastPhase, phaseIndex: i, totalPhases };
@@ -248,6 +290,11 @@ export function createImplementNode(executor: IAgentExecutor) {
 
         completedTasks += phaseTasks.length;
         markPhaseComplete(state.specDir, phase.id, log);
+        // Transition board task and sub-tasks to Done (best-effort)
+        await setBoardTaskStatus(phase.id, TaskState.Done);
+        for (const task of phaseTasks) {
+          await setBoardSubTaskStatus(phase.id, task.id, TaskState.Done);
+        }
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
         messages.push(
           `[implement] Phase ${phase.id} "${phase.name}" — ${phaseTasks.length} task(s) done (${elapsed}s)`
