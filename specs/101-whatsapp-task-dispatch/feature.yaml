@@ -1,0 +1,36 @@
+feature:
+  id: '101-whatsapp-task-dispatch'
+  name: 'whatsapp-task-dispatch'
+  number: 101
+  branch: 'claude/nifty-fermat-CEFLm'
+  lifecycle: 'research'
+  createdAt: '2026-05-31T14:48:39Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-05-31T14:48:39Z'
+  lastUpdatedBy: 'shep-kit:new-feature'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-05-31T14:48:39Z'
+    completedBy: 'shep-kit:new-feature'
+
+errors:
+  current: null
+  history: []
