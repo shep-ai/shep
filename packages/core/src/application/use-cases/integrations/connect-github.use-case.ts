@@ -1,3 +1,9 @@
+/**
+ * Connect GitHub Use Case
+ *
+ * Mints and stores a GitHub integration token via IGithubIntegrationRepository.
+ * Throws InvalidGithubTokenError if the token is invalid or expired.
+ */
 import { inject, injectable } from 'tsyringe';
 
 import type { IGithubIntegrationRepository } from '../../ports/output/repositories/github-integration.repository.interface.js';
