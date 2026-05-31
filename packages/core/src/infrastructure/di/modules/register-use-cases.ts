@@ -112,6 +112,12 @@ import { EvaluateSupervisorDecisionUseCase } from '../../../application/use-case
 import { AgentQuestionSupervisorRouter } from '../../../application/use-cases/agents/agent-question-supervisor-router.js';
 import { EscalateToUserUseCase } from '../../../application/use-cases/agents/escalate-to-user.use-case.js';
 
+// SDLC Board (feature 099) use cases
+import { ListSdlcBoardUseCase } from '../../../application/use-cases/sdlc-board/list-sdlc-board.use-case.js';
+import { UpdateSdlcTaskStatusUseCase } from '../../../application/use-cases/sdlc-board/update-sdlc-task-status.use-case.js';
+import { ReorderSdlcTaskUseCase } from '../../../application/use-cases/sdlc-board/reorder-sdlc-task.use-case.js';
+import { UpdateSdlcSubTaskStatusUseCase } from '../../../application/use-cases/sdlc-board/update-sdlc-subtask-status.use-case.js';
+
 // Bedrock integration (feature 098) use cases
 import { EnableBedrockForApplicationUseCase } from '../../../application/use-cases/applications/enable-bedrock-for-application.use-case.js';
 import { RunBedrockLifecycleUseCase } from '../../../application/use-cases/applications/run-bedrock-lifecycle.use-case.js';
@@ -504,6 +510,12 @@ export function registerUseCases(container: DependencyContainer): void {
     useFactory: (c) => c.resolve(DeleteCustomAgentUseCase),
   });
 
+  // ─── SDLC Board (feature 099) use cases ─────────────────────────────────
+  container.registerSingleton(ListSdlcBoardUseCase);
+  container.registerSingleton(UpdateSdlcTaskStatusUseCase);
+  container.registerSingleton(ReorderSdlcTaskUseCase);
+  container.registerSingleton(UpdateSdlcSubTaskStatusUseCase);
+
   // ─── Bedrock integration (feature 098) use cases ────────────────────────
   container.registerSingleton(EnableBedrockForApplicationUseCase);
   container.registerSingleton(RunBedrockLifecycleUseCase);
@@ -536,5 +548,19 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('GetCuratedIssuesByLaneUseCase', {
     useFactory: (c) => c.resolve(GetCuratedIssuesByLaneUseCase),
+  });
+
+  // ─── SDLC Board (feature 099) string aliases ────────────────────────────
+  container.register('ListSdlcBoardUseCase', {
+    useFactory: (c) => c.resolve(ListSdlcBoardUseCase),
+  });
+  container.register('UpdateSdlcTaskStatusUseCase', {
+    useFactory: (c) => c.resolve(UpdateSdlcTaskStatusUseCase),
+  });
+  container.register('ReorderSdlcTaskUseCase', {
+    useFactory: (c) => c.resolve(ReorderSdlcTaskUseCase),
+  });
+  container.register('UpdateSdlcSubTaskStatusUseCase', {
+    useFactory: (c) => c.resolve(UpdateSdlcSubTaskStatusUseCase),
   });
 }
