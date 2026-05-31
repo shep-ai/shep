@@ -122,6 +122,14 @@ export function createServeCommand(): Command {
         });
         getMonthlyRecapWatcher().start();
 
+        // Start WhatsApp connection service (spec 101) — no-op unless the
+        // whatsappDispatch flag is on AND the integration is enabled.
+        const whatsappService = container.resolve<{
+          start(): Promise<void>;
+          stop(): Promise<void>;
+        }>('WhatsAppConnectionService');
+        void whatsappService.start();
+
         // Graceful shutdown handler — identical pattern to ui.command.ts
         let isShuttingDown = false;
         const shutdown = async () => {
@@ -136,6 +144,7 @@ export function createServeCommand(): Command {
           getAutoArchiveWatcher().stop();
           getStaleGoodFirstIssueWatcher().stop();
           getMonthlyRecapWatcher().stop();
+          void whatsappService.stop();
           const deploymentService = container.resolve<IDeploymentService>('IDeploymentService');
           deploymentService.stopAll();
           await service.stop();

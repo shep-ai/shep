@@ -699,3 +699,51 @@ E2E specs in `tests/e2e/web/` run against `pnpm dev:web` (Next.js dev mode, Turb
 Symptom: `toHaveURL` fails with `N × unexpected value "<old url>"`, then passes on retry. Reported as `1 flaky` in the Playwright summary.
 
 **Rule:** in any spec under `tests/e2e/web/`, when waiting for navigation after a click, use `await page.waitForURL(...)`, never `await expect(page).toHaveURL(...)`. Reserve `toHaveURL` for asserting the URL **after** you already know navigation completed (e.g., after a `waitForURL` or after the destination's content is visible).
+
+## Optional Heavy Provider Deps — Load via Non-Literal Dynamic Import (spec 101)
+
+`@whiskeysockets/baileys` (WhatsApp Web) carries a large, partly-native
+transitive tree (libsignal, protobufjs) that breaks Next.js / Storybook /
+Electron bundling, and its `latest` dist-tag is a release candidate. Adding it
+to `package.json` without a matching lockfile also breaks `pnpm install
+--frozen-lockfile` in CI.
+
+**Rule:** for an OPTIONAL provider dependency, load it with a NON-LITERAL
+dynamic import so TypeScript does not try to resolve the (absent) module and
+the eager build graph never includes it:
+
+```ts
+const pkg: string = '@whiskeysockets/baileys'; // typed as string → import() returns any
+try { return await import(pkg); } catch { throw new NotInstalledError(); }
+```
+
+`import('@literal')` would make tsc resolve the module (typecheck error when not
+installed) AND pull it into the bundle. The `string`-typed indirection avoids
+both. Surface a clear, actionable install hint when the import fails; keep the
+ban-safe alternative adapter (Cloud API over `fetch`, zero deps) behind the same
+port so the feature still works without the optional package.
+
+## App-Layer Enums Are NOT in domain/generated/output.ts (spec 101)
+
+`WhatsAppMessageKind` was defined in `application/use-cases/whatsapp/` (an
+application-layer taxonomy), but the renderer imported it from
+`domain/generated/output.js` — it compiled (TS resolved the name from somewhere)
+but was `undefined` at runtime, crashing the catalog at module load with
+`Cannot read properties of undefined (reading 'NotLinked')`.
+
+**Rule:** only TypeSpec-derived enums (e.g. `WhatsAppAdapterKind`,
+`WhatsAppConnectionStatus`, `WhatsAppThreadTargetKind`) live in
+`domain/generated/output.ts`. Application-layer enums/const-objects must be
+imported from their own module. If an enum is undefined at runtime but the build
+passed, check the import path first.
+
+## Settings Repository INSERT/UPDATE Omits Some Columns — Add Runtime-Mutated Ones (spec 101)
+
+`sqlite-settings.repository.ts` hardcodes its INSERT/UPDATE column lists and
+silently omits several columns the mapper produces (`default_home_page`,
+`skill_injection_*`), relying on DB DEFAULTs. better-sqlite3 IGNORES extra keys
+on the bound object, so this doesn't error — it just never persists those
+fields. For WhatsApp, `status` and `linkedNumber` change at RUNTIME and the
+`whatsappDispatch` toggle must persist, so I added every new column to BOTH the
+INSERT (column list + VALUES) and the UPDATE SET clause. Round-trip tests with
+non-default values are the only way to catch a missing column.

@@ -58,6 +58,7 @@ import { createDoctorCommand } from './commands/doctor.command.js';
 import { createSupervisorCommand } from './commands/supervisor/index.js';
 import { createBedrockCommand } from './commands/bedrock/bedrock.command.js';
 import { createContributorsCommand } from './commands/contributors/index.js';
+import { createWhatsappCommand } from './commands/whatsapp/whatsapp.command.js';
 import { messages } from './ui/index.js';
 
 // Daemon lifecycle commands
@@ -153,6 +154,7 @@ async function bootstrap() {
     program.addCommand(createSupervisorCommand());
     program.addCommand(createBedrockCommand());
     program.addCommand(createContributorsCommand());
+    program.addCommand(createWhatsappCommand());
     program.addCommand(createUpgradeCommand());
 
     // Daemon lifecycle commands (task-9)

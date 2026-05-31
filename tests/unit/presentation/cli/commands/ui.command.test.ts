@@ -40,6 +40,12 @@ vi.mock('@/infrastructure/di/container.js', () => ({
       if (token === 'IBrowserOpener') {
         return { open: mockBrowserOpen };
       }
+      if (token === 'WhatsAppConnectionService') {
+        return {
+          start: vi.fn().mockResolvedValue(undefined),
+          stop: vi.fn().mockResolvedValue(undefined),
+        };
+      }
       // Return empty stubs for notification-related and PR sync services
       if (
         token === 'IAgentRunRepository' ||

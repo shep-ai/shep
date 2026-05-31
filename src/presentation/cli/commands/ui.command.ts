@@ -150,6 +150,14 @@ Examples:
         });
         getMonthlyRecapWatcher().start();
 
+        // Start WhatsApp connection service (spec 101) — no-op unless the
+        // whatsappDispatch flag is on AND the integration is enabled.
+        const whatsappService = container.resolve<{
+          start(): Promise<void>;
+          stop(): Promise<void>;
+        }>('WhatsAppConnectionService');
+        void whatsappService.start();
+
         const baseUrl = `http://localhost:${port}`;
         messages.success(t('cli:commands.ui.serverReady', { url: fmt.code(baseUrl) }));
         messages.info(t('cli:commands.ui.pressCtrlC'));
@@ -179,6 +187,7 @@ Examples:
           getAutoArchiveWatcher().stop();
           getStaleGoodFirstIssueWatcher().stop();
           getMonthlyRecapWatcher().stop();
+          void whatsappService.stop();
           await service.stop();
           process.exit(0);
         };

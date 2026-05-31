@@ -33,6 +33,12 @@ vi.mock('@/infrastructure/di/container.js', () => ({
       if (token === 'IDeploymentService') {
         return mockDeploymentService;
       }
+      if (token === 'WhatsAppConnectionService') {
+        return {
+          start: vi.fn().mockResolvedValue(undefined),
+          stop: vi.fn().mockResolvedValue(undefined),
+        };
+      }
       if (
         token === 'IAgentRunRepository' ||
         token === 'IPhaseTimingRepository' ||

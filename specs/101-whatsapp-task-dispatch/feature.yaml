@@ -9,12 +9,18 @@ feature:
 status:
   phase: 'implementation'
   progress:
-    completed: 0
+    completed: 11
     total: 15
-    percentage: 0
-  currentTask: 'task-1'
-  lastUpdated: '2026-05-31T14:48:39Z'
-  lastUpdatedBy: 'shep-kit:plan'
+    percentage: 73
+  currentTask: 'task-14'
+  lastUpdated: '2026-05-31T15:35:00Z'
+  lastUpdatedBy: 'shep-kit:implement'
+  # Done: task-1..task-10, task-12, task-13, task-15 (core engine, both
+  # adapters, connection service, DI, CLI status, bootstrap, docs).
+  # Follow-ons: task-11 (WhatsApp notification fan-out channel) and task-14
+  # (web Settings UI + Storybook stories, incl. QR linking + Cloud API webhook
+  # route). Feature-bound HITL approve/reject over WhatsApp is also a follow-on
+  # (needs a feature->pending-run lookup on IAgentRunRepository).
 
 validation:
   lastRun: null
