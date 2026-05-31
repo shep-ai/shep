@@ -4,6 +4,41 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.207.0](/compare/v1.206.2...v1.207.0) · _2026-05-31_
+
+> _Under the hood_ maintenance keeps the engine running smooth — no new features, just the quiet work that makes everything else possible.
+
+
+
+### ✨ Features
+
+* **agents:** add claude-opus-4-8 model support across all agents ([#697](https://github.com/shep-ai/shep/issues/697)) ([20a8035](https://github.com/shep-ai/shep/commit/20a8035c91e65dead92178c1fad56f48e595e087))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.207.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.206.2](/compare/v1.206.1...v1.206.2) · _2026-05-28_
 
 > _Under the hood_ maintenance keeps the machine running smooth — no features, no fixes, just the quiet work that holds everything together.

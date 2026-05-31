@@ -4,7 +4,13 @@ const CATALOG: { agentType: string; label: string; models: string[] }[] = [
   {
     agentType: 'claude-code',
     label: 'Claude Code',
-    models: ['claude-opus-4-7', 'claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'],
+    models: [
+      'claude-opus-4-8',
+      'claude-opus-4-7',
+      'claude-opus-4-6',
+      'claude-sonnet-4-6',
+      'claude-haiku-4-5',
+    ],
   },
   {
     agentType: 'codex-cli',
@@ -32,6 +38,7 @@ const CATALOG: { agentType: string; label: string; models: string[] }[] = [
       'claude-opus-4.5',
       'claude-opus-4.6',
       'claude-opus-4.7',
+      'claude-opus-4.8',
       'claude-sonnet-4',
       'claude-sonnet-4.5',
       'claude-sonnet-4.6',
@@ -48,6 +55,7 @@ const CATALOG: { agentType: string; label: string; models: string[] }[] = [
     agentType: 'cursor',
     label: 'Cursor CLI',
     models: [
+      'claude-opus-4-8',
       'claude-opus-4-7',
       'claude-opus-4-6',
       'claude-sonnet-4-6',

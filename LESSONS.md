@@ -713,3 +713,15 @@ When building a web UI feature, shipping the presentational components and their
 4. Only THEN the isolated components + Storybook stories.
 
 **Sequencing:** build the page UI as a first-class deliverable of the same phase, not a "later". When planning a UI feature, the route + client + nav are line items, never assumed. Treat "build:storybook passes" as a quality gate, NOT as "the UI is done".
+## Adding a New Claude Model — Exact Touchpoints
+
+Model lists are centralized, but several adapters keep their own provider-format copies. Claude Code passes `options.model` straight to the `claude` CLI via `--model`, so no mapping is needed there — but Cursor and Copilot rewrite the canonical hyphenated ID into their own format. To add a model (e.g. `claude-opus-4-8`), touch ALL of:
+
+1. `packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts` — add to `CLAUDE_CODE_MODELS`, `CURSOR_MODELS`, and `COPILOT_CLI_MODELS` (note Copilot uses dotted form `claude-opus-4.8`, the others hyphenated). This is the source of truth for `AgentExecutorFactory.getSupportedModels()`.
+2. `src/presentation/web/lib/model-metadata.ts` — add a `displayName`/`description` entry (hyphenated key). Missing entries fall back to a prettified raw ID.
+3. `packages/core/src/infrastructure/services/agents/common/executors/cursor-executor.service.ts` — `CURSOR_MODEL_MAP` maps `claude-opus-4-8` → `opus-4.8`. Unmapped IDs pass through unchanged (a silent bug — the catalog can list a model the map doesn't translate).
+4. `packages/core/src/infrastructure/services/agents/common/executors/copilot-cli-executor.service.ts` — `LEGACY_MODEL_ALIASES` maps hyphenated → dotted for old settings payloads.
+5. `.storybook/mocks/app/actions/get-all-agent-models.ts` and `get-supported-models.ts` — Storybook bundles the client only, so these mocks must mirror the catalog or the picker stories drift.
+6. `tests/unit/infrastructure/services/agents/agent-executor-factory.test.ts` — `getSupportedModels` tests assert exact lists AND lengths per agent (Claude Code, Cursor, Copilot). Update the arrays and the `toHaveLength` count.
+
+The default model (`settings-defaults.factory.ts` `DEFAULT_MODEL`) is a SEPARATE decision — adding a model does NOT change the default. Don't touch it unless explicitly asked.
