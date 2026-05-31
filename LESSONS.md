@@ -699,3 +699,17 @@ E2E specs in `tests/e2e/web/` run against `pnpm dev:web` (Next.js dev mode, Turb
 Symptom: `toHaveURL` fails with `N × unexpected value "<old url>"`, then passes on retry. Reported as `1 flaky` in the Playwright summary.
 
 **Rule:** in any spec under `tests/e2e/web/`, when waiting for navigation after a click, use `await page.waitForURL(...)`, never `await expect(page).toHaveURL(...)`. Reserve `toHaveURL` for asserting the URL **after** you already know navigation completed (e.g., after a `waitForURL` or after the destination's content is visible).
+
+## A Web Feature Is Not Done Until the PAGE Exists and Is Reachable — Components + Storybook Are Not Enough
+
+When building a web UI feature, shipping the presentational components and their Storybook stories is only HALF the job. Storybook proves a component renders in isolation; it does NOT make the feature usable. A user cannot reach a Storybook story from the running app.
+
+**What went wrong:** During the SDLC board build, the board components (`SdlcBoard`/`Column`/`Card`) + stories were built and `build:storybook` passed — but there was no `app/sdlc/page.tsx` route, no client component wiring the SSE hook + server actions, and no sidebar nav link. The feature was invisible in `shep ui` / `pnpm dev:web`. The user had to say "always build the page UI!".
+
+**Rule — every web feature MUST include, in the same body of work, ALL of:**
+1. The **route/page** under `src/presentation/web/app/<feature>/page.tsx` (server loader that resolves the use case via DI, `export const dynamic = 'force-dynamic'`).
+2. The **client component** that wires real-time (SSE hook) + mutations (server actions) + optimistic UI to the presentational components.
+3. The **sidebar nav entry** (+ any entry points) so the page is discoverable — see the sibling lesson "New Feature Pages Must Be Reachable".
+4. Only THEN the isolated components + Storybook stories.
+
+**Sequencing:** build the page UI as a first-class deliverable of the same phase, not a "later". When planning a UI feature, the route + client + nav are line items, never assumed. Treat "build:storybook passes" as a quality gate, NOT as "the UI is done".
