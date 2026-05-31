@@ -24,6 +24,7 @@ import type {
   ApprovalGateDefaults,
   FeatureFlags,
   SkillInjectionConfig,
+  WhatsAppConfig,
 } from '../generated/output';
 import {
   AgentType,
@@ -32,6 +33,7 @@ import {
   EditorType,
   SkillSourceType,
   TerminalType,
+  WhatsAppAdapterKind,
 } from '../generated/output';
 
 /**
@@ -222,6 +224,12 @@ export function createDefaultSettings(): Settings {
     codeReview: false,
     collaboration: false,
     bedrockIntegration: true,
+    whatsappDispatch: false,
+  };
+
+  const whatsapp: WhatsAppConfig = {
+    enabled: false,
+    adapter: WhatsAppAdapterKind.Baileys,
   };
 
   return {
@@ -234,6 +242,7 @@ export function createDefaultSettings(): Settings {
     notifications,
     workflow,
     featureFlags,
+    whatsapp,
     defaultHomePage: DefaultHomePage.ControlCenter,
     onboardingComplete: false,
     createdAt: now,

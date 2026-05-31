@@ -20,6 +20,7 @@ export interface FeatureFlagsState {
   codeReview: boolean;
   collaboration: boolean;
   bedrockIntegration: boolean;
+  whatsappDispatch: boolean;
 }
 
 export function getFeatureFlags(): FeatureFlagsState {
@@ -35,6 +36,7 @@ export function getFeatureFlags(): FeatureFlagsState {
           codeReview: flags.codeReview,
           collaboration: flags.collaboration,
           bedrockIntegration: flags.bedrockIntegration,
+          whatsappDispatch: flags.whatsappDispatch,
         };
       }
     }
@@ -53,6 +55,7 @@ export function getFeatureFlags(): FeatureFlagsState {
     codeReview: false,
     collaboration: isEnabled(process.env.NEXT_PUBLIC_FLAG_COLLABORATION),
     bedrockIntegration: isEnabled(process.env.NEXT_PUBLIC_FLAG_BEDROCK_INTEGRATION),
+    whatsappDispatch: isEnabled(process.env.NEXT_PUBLIC_FLAG_WHATSAPP_DISPATCH),
   };
 }
 
@@ -105,5 +108,8 @@ export const featureFlags = {
   },
   get bedrockIntegration() {
     return getFeatureFlags().bedrockIntegration;
+  },
+  get whatsappDispatch() {
+    return getFeatureFlags().whatsappDispatch;
   },
 } as const;

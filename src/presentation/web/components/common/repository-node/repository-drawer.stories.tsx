@@ -98,6 +98,7 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
     codeReview: false,
     collaboration: false,
     bedrockIntegration: false,
+    whatsappDispatch: false,
   };
 
   return (

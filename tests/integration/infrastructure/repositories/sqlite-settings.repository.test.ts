@@ -22,6 +22,8 @@ import {
   EditorType,
   Language,
   TerminalType,
+  WhatsAppAdapterKind,
+  WhatsAppConnectionStatus,
 } from '@/domain/generated/output.js';
 
 describe('SQLiteSettingsRepository', () => {
@@ -524,6 +526,7 @@ describe('SQLiteSettingsRepository', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: false,
+        whatsappDispatch: false,
       };
 
       await repository.initialize(settings);
@@ -537,6 +540,7 @@ describe('SQLiteSettingsRepository', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: false,
+        whatsappDispatch: false,
       });
     });
 
@@ -554,6 +558,7 @@ describe('SQLiteSettingsRepository', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: false,
+        whatsappDispatch: false,
       });
     });
 
@@ -569,6 +574,7 @@ describe('SQLiteSettingsRepository', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: false,
+        whatsappDispatch: false,
       };
       settings.updatedAt = new Date('2025-01-02T00:00:00Z');
       await repository.update(settings);
@@ -582,6 +588,7 @@ describe('SQLiteSettingsRepository', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: false,
+        whatsappDispatch: false,
       });
     });
 
@@ -595,6 +602,7 @@ describe('SQLiteSettingsRepository', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: false,
+        whatsappDispatch: false,
       };
 
       await repository.initialize(settings);
@@ -882,6 +890,86 @@ describe('SQLiteSettingsRepository', () => {
       // Assert
       expect(loaded?.system.autoUpdate).toBe(false);
       expect(typeof loaded?.system.autoUpdate).toBe('boolean');
+    });
+  });
+
+  describe('whatsapp config (spec 101)', () => {
+    it('round-trips a fully-populated WhatsAppConfig with non-default values', async () => {
+      const settings = createTestSettings();
+      settings.whatsapp = {
+        enabled: true,
+        adapter: WhatsAppAdapterKind.CloudApi,
+        linkedNumber: '+972500000000',
+        status: WhatsAppConnectionStatus.Connected,
+        allowedNumbers: ['+972500000001', '+972500000002'],
+        cloudApiPhoneNumberId: 'pn-123',
+        cloudApiAccessToken: 'token-abc',
+        cloudApiVerifyToken: 'verify-xyz',
+        cloudApiAppSecret: 'secret-987',
+      };
+
+      await repository.initialize(settings);
+      const loaded = await repository.load();
+
+      expect(loaded?.whatsapp).toEqual({
+        enabled: true,
+        adapter: WhatsAppAdapterKind.CloudApi,
+        linkedNumber: '+972500000000',
+        status: WhatsAppConnectionStatus.Connected,
+        allowedNumbers: ['+972500000001', '+972500000002'],
+        cloudApiPhoneNumberId: 'pn-123',
+        cloudApiAccessToken: 'token-abc',
+        cloudApiVerifyToken: 'verify-xyz',
+        cloudApiAppSecret: 'secret-987',
+      });
+    });
+
+    it('persists whatsapp changes via update() (write path, not DB default)', async () => {
+      const settings = createTestSettings();
+      await repository.initialize(settings);
+
+      settings.whatsapp = {
+        enabled: true,
+        adapter: WhatsAppAdapterKind.Baileys,
+        linkedNumber: '+14155550123',
+        status: WhatsAppConnectionStatus.AwaitingScan,
+      };
+      settings.updatedAt = new Date('2025-02-01T00:00:00Z');
+      await repository.update(settings);
+
+      const loaded = await repository.load();
+      expect(loaded?.whatsapp?.enabled).toBe(true);
+      expect(loaded?.whatsapp?.adapter).toBe(WhatsAppAdapterKind.Baileys);
+      expect(loaded?.whatsapp?.linkedNumber).toBe('+14155550123');
+      expect(loaded?.whatsapp?.status).toBe(WhatsAppConnectionStatus.AwaitingScan);
+      // Optional fields left unset stay undefined (not empty strings)
+      expect(loaded?.whatsapp?.cloudApiAccessToken).toBeUndefined();
+      expect(loaded?.whatsapp?.allowedNumbers).toBeUndefined();
+    });
+
+    it('persists the whatsappDispatch feature flag (both true and false)', async () => {
+      const settings = createTestSettings();
+      settings.featureFlags = {
+        envDeploy: false,
+        debug: false,
+        reactFileManager: false,
+        projects: false,
+        codeReview: false,
+        collaboration: false,
+        bedrockIntegration: false,
+        whatsappDispatch: true,
+      };
+      await repository.initialize(settings);
+
+      let loaded = await repository.load();
+      expect(loaded?.featureFlags?.whatsappDispatch).toBe(true);
+
+      settings.featureFlags.whatsappDispatch = false;
+      settings.updatedAt = new Date('2025-02-02T00:00:00Z');
+      await repository.update(settings);
+
+      loaded = await repository.load();
+      expect(loaded?.featureFlags?.whatsappDispatch).toBe(false);
     });
   });
 });

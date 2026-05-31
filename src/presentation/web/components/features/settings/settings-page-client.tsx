@@ -403,6 +403,7 @@ export function SettingsPageClient({
     codeReview: false,
     collaboration: false,
     bedrockIntegration: true,
+    whatsappDispatch: false,
   };
 
   // Language state
@@ -1783,6 +1784,18 @@ export function SettingsPageClient({
               checked={flags.bedrockIntegration}
               onChange={(v) => {
                 const newFlags = { ...flags, bedrockIntegration: v };
+                setFlags(newFlags);
+                save({ featureFlags: newFlags });
+              }}
+            />
+            <SwitchRow
+              label={t('settings.featureFlags.whatsappDispatch')}
+              description={t('settings.featureFlags.whatsappDispatchDescription')}
+              id="flag-whatsapp-dispatch"
+              testId="switch-flag-whatsapp-dispatch"
+              checked={flags.whatsappDispatch}
+              onChange={(v) => {
+                const newFlags = { ...flags, whatsappDispatch: v };
                 setFlags(newFlags);
                 save({ featureFlags: newFlags });
               }}

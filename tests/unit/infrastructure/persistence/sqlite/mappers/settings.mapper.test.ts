@@ -160,6 +160,7 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     feature_flag_code_review: 0,
     feature_flag_collaboration: 0,
     feature_flag_bedrock_integration: 0,
+    feature_flag_whatsapp_dispatch: 0,
     interactive_agent_enabled: 1,
     interactive_agent_auto_timeout_minutes: 15,
     interactive_agent_max_concurrent_sessions: 3,
@@ -168,6 +169,15 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     skill_injection_enabled: 0,
     skill_injection_skills: null,
     default_home_page: 'control-center',
+    whatsapp_enabled: 0,
+    whatsapp_adapter: 'baileys',
+    whatsapp_linked_number: null,
+    whatsapp_status: null,
+    whatsapp_allowed_numbers: null,
+    whatsapp_cloud_api_phone_number_id: null,
+    whatsapp_cloud_api_access_token: null,
+    whatsapp_cloud_api_verify_token: null,
+    whatsapp_cloud_api_app_secret: null,
     ...overrides,
   };
 }

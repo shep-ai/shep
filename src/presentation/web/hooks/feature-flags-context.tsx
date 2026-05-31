@@ -11,6 +11,7 @@ const defaultFlags: FeatureFlagsState = {
   codeReview: false,
   collaboration: false,
   bedrockIntegration: true,
+  whatsappDispatch: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsState>(defaultFlags);

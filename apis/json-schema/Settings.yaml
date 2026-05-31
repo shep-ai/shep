@@ -42,6 +42,9 @@ properties:
   defaultHomePage:
     $ref: DefaultHomePage.yaml
     description: "Default landing page when opening the web UI (default: control-center)"
+  whatsapp:
+    $ref: WhatsAppConfig.yaml
+    description: WhatsApp integration configuration (optional, defaults applied at runtime)
 required:
   - models
   - user

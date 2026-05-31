@@ -38,6 +38,7 @@ import "../../common/enums/editor.tsp";
 import "../../common/enums/language.tsp";
 import "../../common/enums/notification.tsp";
 import "../../common/enums/terminal.tsp";
+import "../../common/enums/whatsapp.tsp";
 import "../../agents/supervisor-policy.tsp";
 
 /**
@@ -613,6 +614,58 @@ model FeatureFlags {
 
   @doc("Enable project-bedrock memory integration UI and server actions (spec 098)")
   bedrockIntegration: boolean = true;
+
+  @doc("Enable WhatsApp-native task dispatch and interactive control (spec 101)")
+  whatsappDispatch: boolean = false;
+}
+
+/**
+ * WhatsApp Integration Configuration (spec 101)
+ *
+ * Configures the WhatsApp task-dispatch surface: which adapter backs the
+ * gateway, the linked number, authorization, live status, and the official
+ * Cloud API credentials. Provider SDKs never appear here — this is pure
+ * configuration consumed by the infrastructure adapters.
+ *
+ * Optional on Settings for backward compatibility; runtime defaults are applied
+ * when absent. Gated by the `whatsappDispatch` feature flag.
+ *
+ * ## Adapter Selection
+ *
+ * - `baileys` (default): unofficial WhatsApp Web. Links a personal/business
+ *   number via QR/pairing code; multi-file auth state is persisted under the
+ *   shep home directory. No Meta approval, but violates WhatsApp ToS (ban risk).
+ * - `cloud-api`: official WhatsApp Business Cloud API. Ban-safe; requires the
+ *   Cloud API credentials below and a Meta Business account.
+ */
+@doc("WhatsApp integration configuration (spec 101)")
+model WhatsAppConfig {
+  @doc("Whether the WhatsApp integration is active (default: false)")
+  enabled: boolean = false;
+
+  @doc("Which messaging adapter backs the gateway (default: baileys)")
+  adapter: WhatsAppAdapterKind = WhatsAppAdapterKind.Baileys;
+
+  @doc("Linked WhatsApp number in E.164 form (the account shep speaks AS)")
+  linkedNumber?: string;
+
+  @doc("Last observed connection status (runtime; not user-edited)")
+  status?: WhatsAppConnectionStatus;
+
+  @doc("E.164 numbers authorized to dispatch tasks; empty means only the linked number")
+  allowedNumbers?: string[];
+
+  @doc("Cloud API: phone number ID from the Meta app dashboard")
+  cloudApiPhoneNumberId?: string;
+
+  @doc("Cloud API: permanent access token (stored in the settings DB)")
+  cloudApiAccessToken?: string;
+
+  @doc("Cloud API: webhook verify token (echoed during webhook setup)")
+  cloudApiVerifyToken?: string;
+
+  @doc("Cloud API: app secret used to verify inbound webhook signatures")
+  cloudApiAppSecret?: string;
 }
 
 /**
@@ -894,4 +947,12 @@ model Settings extends BaseEntity {
    */
   @doc("Default landing page when opening the web UI (default: control-center)")
   defaultHomePage?: DefaultHomePage;
+
+  /**
+   * WhatsApp integration configuration (spec 101).
+   * Optional for backward compatibility — defaults applied at runtime.
+   * Gated by the `whatsappDispatch` feature flag.
+   */
+  @doc("WhatsApp integration configuration (optional, defaults applied at runtime)")
+  whatsapp?: WhatsAppConfig;
 }

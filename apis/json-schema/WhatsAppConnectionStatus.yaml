@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: WhatsAppConnectionStatus.yaml
+type: string
+enum:
+  - disconnected
+  - connecting
+  - awaiting-scan
+  - connected
+  - error
+description: WhatsApp connection status

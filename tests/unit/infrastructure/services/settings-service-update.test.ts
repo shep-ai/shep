@@ -76,6 +76,7 @@ describe('updateSettings', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: false,
+        whatsappDispatch: false,
       },
     };
     updateSettings(updated);

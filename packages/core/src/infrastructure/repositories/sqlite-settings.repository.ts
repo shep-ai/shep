@@ -77,7 +77,12 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         interactive_agent_max_concurrent_sessions,
         auto_archive_delay_minutes,
         stage_timeout_fast_implement_ms,
-        fab_position_swapped
+        fab_position_swapped,
+        feature_flag_whatsapp_dispatch,
+        whatsapp_enabled, whatsapp_adapter, whatsapp_linked_number, whatsapp_status,
+        whatsapp_allowed_numbers,
+        whatsapp_cloud_api_phone_number_id, whatsapp_cloud_api_access_token,
+        whatsapp_cloud_api_verify_token, whatsapp_cloud_api_app_secret
       ) VALUES (
         @id, @created_at, @updated_at,
         @model_analyze, @model_requirements, @model_plan, @model_implement, @model_default,
@@ -112,7 +117,12 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         @interactive_agent_max_concurrent_sessions,
         @auto_archive_delay_minutes,
         @stage_timeout_fast_implement_ms,
-        @fab_position_swapped
+        @fab_position_swapped,
+        @feature_flag_whatsapp_dispatch,
+        @whatsapp_enabled, @whatsapp_adapter, @whatsapp_linked_number, @whatsapp_status,
+        @whatsapp_allowed_numbers,
+        @whatsapp_cloud_api_phone_number_id, @whatsapp_cloud_api_access_token,
+        @whatsapp_cloud_api_verify_token, @whatsapp_cloud_api_app_secret
       )
     `);
 
@@ -225,7 +235,17 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         interactive_agent_max_concurrent_sessions = @interactive_agent_max_concurrent_sessions,
         auto_archive_delay_minutes = @auto_archive_delay_minutes,
         stage_timeout_fast_implement_ms = @stage_timeout_fast_implement_ms,
-        fab_position_swapped = @fab_position_swapped
+        fab_position_swapped = @fab_position_swapped,
+        feature_flag_whatsapp_dispatch = @feature_flag_whatsapp_dispatch,
+        whatsapp_enabled = @whatsapp_enabled,
+        whatsapp_adapter = @whatsapp_adapter,
+        whatsapp_linked_number = @whatsapp_linked_number,
+        whatsapp_status = @whatsapp_status,
+        whatsapp_allowed_numbers = @whatsapp_allowed_numbers,
+        whatsapp_cloud_api_phone_number_id = @whatsapp_cloud_api_phone_number_id,
+        whatsapp_cloud_api_access_token = @whatsapp_cloud_api_access_token,
+        whatsapp_cloud_api_verify_token = @whatsapp_cloud_api_verify_token,
+        whatsapp_cloud_api_app_secret = @whatsapp_cloud_api_app_secret
       WHERE id = @id
     `);
 

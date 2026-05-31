@@ -30,6 +30,10 @@ properties:
     type: boolean
     default: true
     description: Enable project-bedrock memory integration UI and server actions (spec 098)
+  whatsappDispatch:
+    type: boolean
+    default: false
+    description: Enable WhatsApp-native task dispatch and interactive control (spec 101)
 required:
   - envDeploy
   - debug
@@ -38,4 +42,5 @@ required:
   - codeReview
   - collaboration
   - bedrockIntegration
+  - whatsappDispatch
 description: Feature flag toggles for runtime feature control

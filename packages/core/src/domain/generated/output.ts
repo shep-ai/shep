@@ -691,6 +691,63 @@ export type FeatureFlags = {
    * Enable project-bedrock memory integration UI and server actions (spec 098)
    */
   bedrockIntegration: boolean;
+  /**
+   * Enable WhatsApp-native task dispatch and interactive control (spec 101)
+   */
+  whatsappDispatch: boolean;
+};
+export enum WhatsAppAdapterKind {
+  Baileys = 'baileys',
+  CloudApi = 'cloud-api',
+}
+export enum WhatsAppConnectionStatus {
+  Disconnected = 'disconnected',
+  Connecting = 'connecting',
+  AwaitingScan = 'awaiting-scan',
+  Connected = 'connected',
+  Error = 'error',
+}
+
+/**
+ * WhatsApp integration configuration (spec 101)
+ */
+export type WhatsAppConfig = {
+  /**
+   * Whether the WhatsApp integration is active (default: false)
+   */
+  enabled: boolean;
+  /**
+   * Which messaging adapter backs the gateway (default: baileys)
+   */
+  adapter: WhatsAppAdapterKind;
+  /**
+   * Linked WhatsApp number in E.164 form (the account shep speaks AS)
+   */
+  linkedNumber?: string;
+  /**
+   * Last observed connection status (runtime; not user-edited)
+   */
+  status?: WhatsAppConnectionStatus;
+  /**
+   * E.164 numbers authorized to dispatch tasks; empty means only the linked number
+   */
+  allowedNumbers?: string[];
+  /**
+   * Cloud API: phone number ID from the Meta app dashboard
+   */
+  cloudApiPhoneNumberId?: string;
+  /**
+   * Cloud API: permanent access token (stored in the settings DB)
+   */
+  cloudApiAccessToken?: string;
+  /**
+   * Cloud API: webhook verify token (echoed during webhook setup)
+   */
+  cloudApiVerifyToken?: string;
+  /**
+   * Cloud API: app secret used to verify inbound webhook signatures
+   */
+  cloudApiAppSecret?: string;
 };
 
 /**
@@ -809,6 +866,10 @@ export type Settings = BaseEntity & {
    * Default landing page when opening the web UI (default: control-center)
    */
   defaultHomePage?: DefaultHomePage;
+  /**
+   * WhatsApp integration configuration (optional, defaults applied at runtime)
+   */
+  whatsapp?: WhatsAppConfig;
 };
 export enum SupervisorScopeType {
   global = 'global',
@@ -4340,6 +4401,10 @@ export enum InteractiveSessionEventType {
   Ready = 'interactive_session_ready',
   Stopped = 'interactive_session_stopped',
   Error = 'interactive_session_error',
+}
+export enum WhatsAppThreadTargetKind {
+  Feature = 'feature',
+  Application = 'application',
 }
 export enum BedrockLifecycleAction {
   Init = 'init',

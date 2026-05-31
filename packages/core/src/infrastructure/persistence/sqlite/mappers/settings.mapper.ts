@@ -24,6 +24,9 @@ import {
   type Language,
   type TerminalType,
   type DefaultHomePage,
+  type WhatsAppConfig,
+  type WhatsAppAdapterKind,
+  type WhatsAppConnectionStatus,
 } from '../../../../domain/generated/output.js';
 
 /**
@@ -124,6 +127,7 @@ export interface SettingsRow {
   feature_flag_code_review: number;
   feature_flag_collaboration: number;
   feature_flag_bedrock_integration: number;
+  feature_flag_whatsapp_dispatch: number;
   // Interactive agent config (added in migration 046)
   interactive_agent_enabled: number;
   interactive_agent_auto_timeout_minutes: number;
@@ -141,6 +145,17 @@ export interface SettingsRow {
 
   // Default home page (added in migration 095)
   default_home_page: string;
+
+  // WhatsApp integration config (added in migration 105, spec 101)
+  whatsapp_enabled: number;
+  whatsapp_adapter: string;
+  whatsapp_linked_number: string | null;
+  whatsapp_status: string | null;
+  whatsapp_allowed_numbers: string | null; // JSON array of E.164 strings
+  whatsapp_cloud_api_phone_number_id: string | null;
+  whatsapp_cloud_api_access_token: string | null;
+  whatsapp_cloud_api_verify_token: string | null;
+  whatsapp_cloud_api_app_secret: string | null;
 }
 
 /**
@@ -249,6 +264,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     feature_flag_code_review: settings.featureFlags?.codeReview ? 1 : 0,
     feature_flag_collaboration: settings.featureFlags?.collaboration ? 1 : 0,
     feature_flag_bedrock_integration: settings.featureFlags?.bedrockIntegration ? 1 : 0,
+    feature_flag_whatsapp_dispatch: settings.featureFlags?.whatsappDispatch ? 1 : 0,
 
     // InteractiveAgentConfig (boolean → 0/1, integer fields; defaults applied here)
     interactive_agent_enabled: (settings.interactiveAgent?.enabled ?? true) ? 1 : 0,
@@ -270,6 +286,55 @@ export function toDatabase(settings: Settings): SettingsRow {
 
     // Default home page (default: control-center)
     default_home_page: settings.defaultHomePage ?? 'control-center',
+
+    // WhatsApp integration config (spec 101; optional secrets → NULL)
+    whatsapp_enabled: settings.whatsapp?.enabled ? 1 : 0,
+    whatsapp_adapter: settings.whatsapp?.adapter ?? 'baileys',
+    whatsapp_linked_number: settings.whatsapp?.linkedNumber ?? null,
+    whatsapp_status: settings.whatsapp?.status ?? null,
+    whatsapp_allowed_numbers: settings.whatsapp?.allowedNumbers?.length
+      ? JSON.stringify(settings.whatsapp.allowedNumbers)
+      : null,
+    whatsapp_cloud_api_phone_number_id: settings.whatsapp?.cloudApiPhoneNumberId ?? null,
+    whatsapp_cloud_api_access_token: settings.whatsapp?.cloudApiAccessToken ?? null,
+    whatsapp_cloud_api_verify_token: settings.whatsapp?.cloudApiVerifyToken ?? null,
+    whatsapp_cloud_api_app_secret: settings.whatsapp?.cloudApiAppSecret ?? null,
+  };
+}
+
+/**
+ * Build the WhatsAppConfig spread from DB row columns (spec 101).
+ *
+ * Always returns a `whatsapp` object so callers get a stable shape; required
+ * fields fall back to their defaults (disabled, baileys adapter) and optional
+ * secrets / runtime fields are omitted when NULL.
+ */
+function buildWhatsAppFromRow(row: SettingsRow): WhatsAppConfig {
+  const allowedNumbers: string[] | undefined =
+    row.whatsapp_allowed_numbers !== null
+      ? (JSON.parse(row.whatsapp_allowed_numbers) as string[])
+      : undefined;
+
+  return {
+    enabled: row.whatsapp_enabled === 1,
+    adapter: (row.whatsapp_adapter ?? 'baileys') as WhatsAppAdapterKind,
+    ...(row.whatsapp_linked_number !== null && { linkedNumber: row.whatsapp_linked_number }),
+    ...(row.whatsapp_status !== null && {
+      status: row.whatsapp_status as WhatsAppConnectionStatus,
+    }),
+    ...(allowedNumbers !== undefined && { allowedNumbers }),
+    ...(row.whatsapp_cloud_api_phone_number_id !== null && {
+      cloudApiPhoneNumberId: row.whatsapp_cloud_api_phone_number_id,
+    }),
+    ...(row.whatsapp_cloud_api_access_token !== null && {
+      cloudApiAccessToken: row.whatsapp_cloud_api_access_token,
+    }),
+    ...(row.whatsapp_cloud_api_verify_token !== null && {
+      cloudApiVerifyToken: row.whatsapp_cloud_api_verify_token,
+    }),
+    ...(row.whatsapp_cloud_api_app_secret !== null && {
+      cloudApiAppSecret: row.whatsapp_cloud_api_app_secret,
+    }),
   };
 }
 
@@ -435,6 +500,7 @@ export function fromDatabase(row: SettingsRow): Settings {
       codeReview: row.feature_flag_code_review === 1,
       collaboration: row.feature_flag_collaboration === 1,
       bedrockIntegration: row.feature_flag_bedrock_integration === 1,
+      whatsappDispatch: row.feature_flag_whatsapp_dispatch === 1,
     },
 
     // InteractiveAgentConfig (INTEGER 0/1 → boolean, integer → number)
@@ -451,6 +517,9 @@ export function fromDatabase(row: SettingsRow): Settings {
 
     // Default home page
     defaultHomePage: (row.default_home_page ?? 'control-center') as DefaultHomePage,
+
+    // WhatsApp integration config (spec 101)
+    whatsapp: buildWhatsAppFromRow(row),
 
     // Onboarding (INTEGER → boolean)
     onboardingComplete: row.onboarding_complete === 1,

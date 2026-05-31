@@ -319,6 +319,15 @@ describe('createDefaultSettings', () => {
         codeReview: false,
         collaboration: false,
         bedrockIntegration: true,
+        whatsappDispatch: false,
+      });
+    });
+
+    it('should default whatsapp config to disabled with the baileys adapter', () => {
+      const settings = createDefaultSettings();
+      expect(settings.whatsapp).toEqual({
+        enabled: false,
+        adapter: 'baileys',
       });
     });
   });

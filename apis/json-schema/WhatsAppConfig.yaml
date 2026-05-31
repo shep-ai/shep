@@ -1,0 +1,39 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: WhatsAppConfig.yaml
+type: object
+properties:
+  enabled:
+    type: boolean
+    default: false
+    description: "Whether the WhatsApp integration is active (default: false)"
+  adapter:
+    $ref: WhatsAppAdapterKind.yaml
+    default: baileys
+    description: "Which messaging adapter backs the gateway (default: baileys)"
+  linkedNumber:
+    type: string
+    description: Linked WhatsApp number in E.164 form (the account shep speaks AS)
+  status:
+    $ref: WhatsAppConnectionStatus.yaml
+    description: Last observed connection status (runtime; not user-edited)
+  allowedNumbers:
+    type: array
+    items:
+      type: string
+    description: E.164 numbers authorized to dispatch tasks; empty means only the linked number
+  cloudApiPhoneNumberId:
+    type: string
+    description: "Cloud API: phone number ID from the Meta app dashboard"
+  cloudApiAccessToken:
+    type: string
+    description: "Cloud API: permanent access token (stored in the settings DB)"
+  cloudApiVerifyToken:
+    type: string
+    description: "Cloud API: webhook verify token (echoed during webhook setup)"
+  cloudApiAppSecret:
+    type: string
+    description: "Cloud API: app secret used to verify inbound webhook signatures"
+required:
+  - enabled
+  - adapter
+description: WhatsApp integration configuration (spec 101)

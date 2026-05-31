@@ -15,6 +15,7 @@ const defaultFeatureFlags = {
   codeReview: false,
   collaboration: false,
   bedrockIntegration: false,
+  whatsappDispatch: false,
 };
 
 const meta: Meta<typeof AppSidebar> = {
