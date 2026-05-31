@@ -4,66 +4,325 @@
 name: whatsapp-task-dispatch
 summary: Task breakdown for 101-whatsapp-task-dispatch
 
-# Relationships
-relatedFeatures: []
-technologies: []
+relatedFeatures:
+  - "021-agent-notifications"
+  - "016-hitl-approval-gates"
+technologies:
+  - TypeScript
+  - "@whiskeysockets/baileys"
 relatedLinks: []
 
-# Structured task list — this is the single source of truth for tasks.
-# The content field below is a summary only; it does NOT duplicate task details.
 tasks:
   - id: task-1
-    title: { { TASK_1_TITLE } }
-    description: { { TASK_1_DESCRIPTION } }
+    title: TypeSpec models — WhatsAppConfig, enums, feature flag
+    description: >
+      Add WhatsAppConfig model (enabled, adapter, linkedNumber, status, cloud API
+      fields), WhatsAppAdapterKind + WhatsAppThreadTargetKind enums, and a
+      whatsappDispatch FeatureFlag to settings.tsp. Regenerate output.ts.
     state: Todo
     dependencies: []
     acceptanceCriteria:
-      - { { CRITERION_1 } }
-      - { { CRITERION_2 } }
-    tdd:
-      red:
-        - Write tests for {{FEATURE_1}}
-      green:
-        - Implement {{FEATURE_1}} to pass tests
-      refactor:
-        - Extract helpers, improve naming
-    estimatedEffort: { { EFFORT_1 } }
+      - "pnpm tsp:compile regenerates output.ts with no manual edits"
+      - "WhatsAppConfig is optional on Settings; whatsappDispatch defaults false"
+    tdd: null # TypeSpec model + codegen
+    estimatedEffort: M
 
   - id: task-2
-    title: { { TASK_2_TITLE } }
-    description: { { TASK_2_DESCRIPTION } }
+    title: Output ports — IWhatsAppGateway + IWhatsAppThreadMappingRepository
+    description: >
+      Define application-layer output ports for the messaging gateway (connect,
+      sendMessage, onInboundMessage, status, logout) and the thread<->session
+      mapping repository. No provider types leak through the gateway contract.
     state: Todo
     dependencies:
       - task-1
     acceptanceCriteria:
-      - { { CRITERION_1 } }
-      - { { CRITERION_2 } }
-    tdd: null # No TDD for foundational/doc tasks
-    estimatedEffort: { { EFFORT_2 } }
+      - "Ports live under application/ports/output, import only domain types"
+      - "Gateway is provider-agnostic (no Baileys/Cloud types in signatures)"
+    tdd: null # interfaces only
+    estimatedEffort: S
 
-# Total effort estimate
-totalEstimate: { { TOTAL_EFFORT } }
+  - id: task-3
+    title: Thread-mapping persistence — migration + SQLite repository
+    description: >
+      Additive migration creating whatsapp_thread_mappings; SQLite repository
+      implementing IWhatsAppThreadMappingRepository (upsert by thread, find by
+      thread, find active by target).
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - "Migration is additive only (no drops/renames)"
+      - "Integration test round-trips a mapping by thread and by target"
+    tdd:
+      red:
+        - Write integration test for repository upsert/find round-trip
+      green:
+        - Implement migration + SQLite repository
+      refactor:
+        - Extract row mapper, share helpers
+    estimatedEffort: M
 
-# Open questions
+  - id: task-4
+    title: Settings wiring end-to-end (config + feature flag)
+    description: >
+      Wire WhatsAppConfig + whatsappDispatch flag through migration, settings
+      mapper, repository INSERT/UPDATE column lists, and settings-defaults factory
+      per the LESSONS.md feature-flag checklist.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "Round-trip test persists non-default WhatsAppConfig + flag and reads back"
+      - "Mapper and repo SQL both include every new column"
+    tdd:
+      red:
+        - Write mapper + repository round-trip tests with non-default values
+      green:
+        - Implement migration, mapper edits, repo SQL edits, defaults
+      refactor:
+        - De-duplicate column lists where possible
+    estimatedEffort: L
+
+  - id: task-5
+    title: Localized message-template renderer + translations
+    description: >
+      A template renderer that produces outbound WhatsApp text per event type
+      (started/needs-approval/completed/failed/question/dispatched/not-linked) in
+      the user's locale. Add strings to all 9 locales, Hebrew-first.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - "Renderer returns Hebrew text for he locale and falls back to en"
+      - "All 9 locales contain every template key (no missing keys)"
+    tdd:
+      red:
+        - Write unit tests for each event type + locale fallback
+      green:
+        - Implement renderer reading locale message catalog
+      refactor:
+        - Extract key constants (no magic strings)
+    estimatedEffort: M
+
+  - id: task-6
+    title: Inbound dispatch use case
+    description: >
+      DispatchWhatsAppMessageUseCase — given an inbound message from a linked
+      number with no active mapping, create a feature or interactive application
+      via existing use cases and persist the thread<->session mapping.
+    state: Todo
+    dependencies:
+      - task-3
+      - task-5
+    acceptanceCriteria:
+      - "Unknown/unlinked sender is rejected (no feature created)"
+      - "Creates via existing use case and persists mapping (verified with mocks)"
+    tdd:
+      red:
+        - Write unit tests for linked/unlinked + feature vs app branches
+      green:
+        - Implement use case orchestrating existing create use cases
+      refactor:
+        - Extract intent parsing helper
+    estimatedEffort: L
+
+  - id: task-7
+    title: Reply-routing use case
+    description: >
+      RouteWhatsAppReplyUseCase — given an inbound reply with an active mapping,
+      route to answer-question / approve / reject / continue-session via existing
+      use cases based on the mapping target and reply content.
+    state: Todo
+    dependencies:
+      - task-3
+      - task-5
+    acceptanceCriteria:
+      - "Approve/reject keywords route to HITL use cases (locale-aware)"
+      - "Free-text routes to answer-question or interactive-session use case"
+    tdd:
+      red:
+        - Write unit tests for each routing branch with mocks
+      green:
+        - Implement routing logic delegating to existing use cases
+      refactor:
+        - Extract keyword matcher (no magic strings; enum-backed)
+    estimatedEffort: L
+
+  - id: task-8
+    title: Cloud API adapter (fetch-based)
+    description: >
+      WhatsAppCloudApiGateway implementing IWhatsAppGateway via the Graph API
+      (send text; verify + parse inbound webhook). Zero new deps.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - "sendMessage builds correct Graph request (fetch mocked in tests)"
+      - "Webhook signature verification + payload parsing unit-tested"
+    tdd:
+      red:
+        - Write unit tests for request building + webhook parsing
+      green:
+        - Implement adapter over global fetch
+      refactor:
+        - Extract endpoint/constant config
+    estimatedEffort: M
+
+  - id: task-9
+    title: Baileys adapter (lazy optional import)
+    description: >
+      WhatsAppBaileysGateway implementing IWhatsAppGateway. Lazy dynamic import of
+      baileys; multi-file auth state under shep home; QR/pairing; auto-reconnect;
+      graceful actionable error when the package is not installed.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - "Absent package yields a clear localized install-hint error (unit-tested)"
+      - "Inbound payload -> port event mapping is unit-tested"
+    tdd:
+      red:
+        - Write unit tests for missing-package handling + payload mapping
+      green:
+        - Implement adapter with lazy import + mapping helpers
+      refactor:
+        - Isolate provider-shaped mapping in a pure helper
+    estimatedEffort: L
+
+  - id: task-10
+    title: WhatsAppConnectionService watcher
+    description: >
+      Singleton service (start/stop/isRunning) that resolves the configured
+      adapter, connects, and pipes inbound events to the dispatch/reply use cases.
+      Follows NotificationWatcherService lifecycle.
+    state: Todo
+    dependencies:
+      - task-6
+      - task-7
+      - task-8
+      - task-9
+    acceptanceCriteria:
+      - "start() is a no-op when flag off or config disabled"
+      - "Inbound event routes to dispatch vs reply by mapping presence (unit-tested)"
+    tdd:
+      red:
+        - Write unit tests for lifecycle + inbound routing with a fake gateway
+      green:
+        - Implement service selecting adapter and wiring use cases
+      refactor:
+        - Extract adapter-selection from settings
+    estimatedEffort: M
+
+  - id: task-11
+    title: WhatsApp notification channel
+    description: >
+      Add WhatsApp as a fan-out channel in NotificationService so agent lifecycle
+      events are delivered to the originating thread via the gateway + renderer.
+    state: Todo
+    dependencies:
+      - task-5
+      - task-10
+    acceptanceCriteria:
+      - "Notification for a feature with a mapped thread sends a WhatsApp message"
+      - "No mapped thread -> no WhatsApp send (unit-tested)"
+    tdd:
+      red:
+        - Write unit test for channel fan-out gated on mapping + settings
+      green:
+        - Implement channel inside NotificationService
+      refactor:
+        - Keep channel selection table-driven
+    estimatedEffort: M
+
+  - id: task-12
+    title: DI registration + string-token aliases
+    description: >
+      Register gateway adapters, connection service, mapping repository, renderer,
+      and use cases in the container, including string-token aliases for any use
+      case reachable from web.
+    state: Todo
+    dependencies:
+      - task-10
+      - task-11
+    acceptanceCriteria:
+      - "Container resolves IWhatsAppGateway, repo, service, use cases"
+      - "Web-reachable use cases have string aliases (resolve test passes)"
+    tdd:
+      red:
+        - Write container resolution test for new tokens
+      green:
+        - Register services + aliases
+      refactor:
+        - Group registrations in a dedicated module
+    estimatedEffort: M
+
+  - id: task-13
+    title: CLI command — shep whatsapp link/status/logout
+    description: >
+      Thin Commander command calling use cases: link (show QR/pairing), status,
+      logout. Presentation stays thin; all logic in use cases/services.
+    state: Todo
+    dependencies:
+      - task-12
+    acceptanceCriteria:
+      - "Command resolves dependencies via DI and prints localized status"
+      - "No business logic in the command body"
+    tdd: null # thin presentation; covered by use-case tests
+    estimatedEffort: M
+
+  - id: task-14
+    title: Web Settings section + Storybook stories
+    description: >
+      Settings UI: enable toggle, adapter picker, link/QR + connection status.
+      Mandatory colocated .stories.tsx with Default/Loading/Error states.
+    state: Todo
+    dependencies:
+      - task-12
+    acceptanceCriteria:
+      - "Component has colocated stories (Default/Loading/Error) — build:storybook green"
+      - "Gated on whatsappDispatch flag; strings localized in all locales"
+    tdd: null # UI; logic lives in use cases/server actions
+    estimatedEffort: L
+
+  - id: task-15
+    title: Bootstrap connection service + docs
+    description: >
+      Initialize/start WhatsAppConnectionService in ui/_serve startup alongside
+      other watchers; add docs page and update LESSONS.md with new wiring.
+    state: Todo
+    dependencies:
+      - task-12
+    acceptanceCriteria:
+      - "Service starts on server boot when enabled, stops on shutdown"
+      - "Docs describe link flow, adapter choice, and optional Baileys install"
+    tdd: null # bootstrap wiring
+    estimatedEffort: S
+
+totalEstimate: XL (15 tasks, ~4 phases)
+
 openQuestions: []
 
-# Markdown content — summary and acceptance checklist only.
-# Individual task details live in the tasks[] array above (no duplication).
 content: |
   ## Summary
 
-  {{BRIEF_DESCRIPTION_OF_SCOPE}} — {{TASK_COUNT}} tasks across {{PHASE_COUNT}} phases.
+  WhatsApp-native task dispatch + interactive control — 15 tasks across 4 phases,
+  delivered as independently testable slices under MANDATORY TDD. Foundation
+  (TypeSpec, ports, persistence, settings) → core (templates, dispatch, reply
+  routing) → adapters + connection (Cloud API, Baileys, watcher, notification
+  channel) → wiring + presentation (DI, CLI, web settings, bootstrap, docs).
 
   ## Acceptance Checklist
 
   Before marking feature complete:
 
   - [ ] All tasks completed
-  - [ ] Tests passing (`pnpm test`)
+  - [ ] Tests passing (`pnpm test:unit && pnpm test:int`)
   - [ ] Linting clean (`pnpm lint`)
   - [ ] Types valid (`pnpm typecheck`)
   - [ ] TypeSpec compiles (`pnpm tsp:compile`)
-  - [ ] PR created and reviewed
+  - [ ] Storybook builds (`pnpm build:storybook`)
+  - [ ] Build green (`pnpm build`)
 
   ---
 

@@ -4,59 +4,128 @@
 name: whatsapp-task-dispatch
 summary: Implementation plan for 101-whatsapp-task-dispatch
 
-# Relationships
-relatedFeatures: []
-technologies: []
+relatedFeatures:
+  - "021-agent-notifications"
+  - "016-hitl-approval-gates"
+technologies:
+  - TypeScript
+  - "@whiskeysockets/baileys"
 relatedLinks: []
 
 # Structured implementation phases
 phases:
   - id: phase-1
-    name: 'Foundation'
+    name: "Foundation (domain, ports, persistence, settings)"
     parallel: false
     taskIds:
       - task-1
       - task-2
-  - id: phase-2
-    name: 'Core Implementation'
-    parallel: false
-    taskIds:
       - task-3
       - task-4
+  - id: phase-2
+    name: "Core application logic (templates, dispatch, reply routing)"
+    parallel: false
+    taskIds:
+      - task-5
+      - task-6
+      - task-7
+  - id: phase-3
+    name: "Adapters & connection (Cloud API, Baileys, watcher, notifications)"
+    parallel: false
+    taskIds:
+      - task-8
+      - task-9
+      - task-10
+      - task-11
+  - id: phase-4
+    name: "Wiring & presentation (DI, CLI, web settings, bootstrap, docs)"
+    parallel: false
+    taskIds:
+      - task-12
+      - task-13
+      - task-14
+      - task-15
 
 # File change tracking
 filesToCreate:
-  - src/domain/entities/{{ENTITY_NAME}}.ts
-  - tests/unit/domain/entities/{{ENTITY_NAME}}.test.ts
+  - packages/core/src/application/ports/output/services/whatsapp-gateway.interface.ts
+  - packages/core/src/application/ports/output/repositories/whatsapp-thread-mapping-repository.interface.ts
+  - packages/core/src/application/use-cases/whatsapp/dispatch-whatsapp-message.use-case.ts
+  - packages/core/src/application/use-cases/whatsapp/route-whatsapp-reply.use-case.ts
+  - packages/core/src/infrastructure/services/whatsapp/whatsapp-cloud-api.gateway.ts
+  - packages/core/src/infrastructure/services/whatsapp/whatsapp-baileys.gateway.ts
+  - packages/core/src/infrastructure/services/whatsapp/whatsapp-connection.service.ts
+  - packages/core/src/infrastructure/services/whatsapp/whatsapp-message-templates.ts
 
 filesToModify:
-  - src/infrastructure/di/container.ts
-  - package.json
+  - tsp/domain/entities/settings.tsp
+  - packages/core/src/infrastructure/di/container.ts
+  - packages/core/src/infrastructure/services/notifications/notification.service.ts
 
-# Open questions (should all be resolved before implementation)
 openQuestions: []
 
-# Markdown content — architecture, strategy, and risks only.
-# Task-level detail lives in tasks.yaml (no duplication).
 content: |
   ## Status
 
   - **Phase:** Planning
   - **Updated:** 2026-05-31
 
-  ## Architecture Overview
+  ## Architecture Overview (Clean Architecture)
+
+  WhatsApp is an additional **presentation/transport** surface over the existing
+  core API. Dependencies point inward; no provider SDK escapes infrastructure/.
 
   ```
-  {{ARCHITECTURE_DIAGRAM}}
+  WhatsApp (phone)
+        │  inbound text
+        ▼
+  [infrastructure] Gateway adapter (Baileys | Cloud API)  ──┐
+        │  port event (IWhatsAppGateway.onInboundMessage)   │ outbound
+        ▼                                                    │ (rendered,
+  [infrastructure] WhatsAppConnectionService (watcher)       │  localized)
+        │  delegates (no business logic here)                │
+        ▼                                                    │
+  [application] DispatchWhatsAppMessageUseCase /             │
+                RouteWhatsAppReplyUseCase                    │
+        │  orchestrate EXISTING use cases                    │
+        ▼                                                    │
+  [application] CreateFeature / CreateApplication /          │
+                SendInteractiveMessage / approve / reject /  │
+                answer-question                              │
+        │                                                    │
+        ▼                                                    │
+  [infrastructure] thread<->session mapping (SQLite)         │
+                                                             │
+  [infrastructure] NotificationService ── WhatsApp channel ──┘
+        (agent lifecycle events -> originating thread)
   ```
+
+  Dependency rule check:
+  - **domain/** — only TypeSpec-generated enums/models (adapter kind, target kind, WhatsAppConfig).
+  - **application/** — ports + use cases; import domain + ports only; no provider imports.
+  - **infrastructure/** — adapters, watcher, renderer, repo, DI; the ONLY place baileys / fetch / SQLite live.
+  - **presentation/** — CLI command + web settings; call use cases only.
 
   ## Implementation Strategy
 
-  **MANDATORY TDD**: All phases with executable code follow RED-GREEN-REFACTOR cycles.
+  **MANDATORY TDD**: every task with executable logic follows RED → GREEN →
+  REFACTOR (see tasks.yaml `tdd` blocks). Phases are ordered so each builds on a
+  green, tested base:
 
-  High-level walkthrough of how the phases connect and why they are ordered
-  this way. Focus on architectural decisions and data flow — not individual
-  task descriptions (see tasks.yaml for the detailed breakdown).
+  1. **Foundation** establishes the contracts and persistence the rest depends on
+     (TypeSpec models, ports, mapping table, settings wiring).
+  2. **Core application logic** implements the provider-agnostic decisions
+     (localized templates, inbound dispatch, reply routing) against mocked ports —
+     fully unit-testable with no network.
+  3. **Adapters & connection** provide the infrastructure: a fetch-based Cloud API
+     adapter, a lazy-import Baileys adapter, the persistent connection watcher, and
+     the WhatsApp notification fan-out channel.
+  4. **Wiring & presentation** registers everything in DI (with string aliases),
+     adds the thin CLI command and web Settings section (+ mandatory Storybook
+     stories), bootstraps the watcher on server start, and documents the flow.
+
+  Each slice is committed independently with green unit/integration tests so the
+  branch is never left red.
 
   ## Files to Create/Modify
 
@@ -64,32 +133,60 @@ content: |
 
   | File | Purpose |
   | ---- | ------- |
-  | {{FILE_PATH}} | {{PURPOSE}} |
+  | application/ports/output/services/whatsapp-gateway.interface.ts | Provider-agnostic messaging port |
+  | application/ports/output/repositories/whatsapp-thread-mapping-repository.interface.ts | Thread↔session mapping port |
+  | application/use-cases/whatsapp/dispatch-whatsapp-message.use-case.ts | Inbound → create feature/app |
+  | application/use-cases/whatsapp/route-whatsapp-reply.use-case.ts | Reply → answer/approve/reject/continue |
+  | infrastructure/services/whatsapp/whatsapp-cloud-api.gateway.ts | Cloud API adapter (fetch) |
+  | infrastructure/services/whatsapp/whatsapp-baileys.gateway.ts | Baileys adapter (lazy import) |
+  | infrastructure/services/whatsapp/whatsapp-connection.service.ts | Persistent connection watcher |
+  | infrastructure/services/whatsapp/whatsapp-message-templates.ts | Localized outbound renderer |
+  | infrastructure/persistence/sqlite/migrations/NNN-*.ts | mapping table + settings columns |
+  | presentation/cli/commands/whatsapp/*.ts | shep whatsapp link/status/logout |
+  | presentation/web/components/features/settings/whatsapp/* | Settings UI + stories |
 
   ### Modified Files
 
   | File | Changes |
   | ---- | ------- |
-  | {{FILE_PATH}} | {{CHANGES}} |
+  | tsp/domain/entities/settings.tsp | WhatsAppConfig, enums, whatsappDispatch flag |
+  | infrastructure/.../settings.mapper.ts + sqlite-settings.repository.ts | persist config + flag |
+  | domain/factories/settings-defaults.factory.ts | defaults |
+  | infrastructure/services/notifications/notification.service.ts | WhatsApp fan-out channel |
+  | infrastructure/di/container.ts (+ modules) | register adapters/service/repo/use cases + aliases |
+  | presentation/cli/commands/{ui,_serve}.command.ts | bootstrap connection watcher |
+  | translations/<locale>/*.json | templates + settings strings (all 9 locales) |
 
   ## Testing Strategy (TDD: Tests FIRST)
 
   **CRITICAL:** Tests are written FIRST in each TDD cycle.
 
-  ### Unit Tests (RED -> GREEN -> REFACTOR)
+  ### Unit Tests (RED → GREEN → REFACTOR)
 
-  - {{TEST_AREA_1}}
-  - {{TEST_AREA_2}}
+  - Message-template renderer: every event type + Hebrew + en fallback.
+  - DispatchWhatsAppMessageUseCase: linked/unlinked, feature vs app branches.
+  - RouteWhatsAppReplyUseCase: approve/reject/answer/continue routing.
+  - Cloud API adapter: Graph request building + webhook parse/verify (fetch mocked).
+  - Baileys adapter: missing-package handling + inbound payload mapping.
+  - WhatsAppConnectionService: lifecycle + inbound routing with a fake gateway.
+  - NotificationService WhatsApp channel: send gated on mapping + settings.
+  - DI container: resolves new tokens + string aliases.
 
   ### Integration Tests
 
-  - {{INTEGRATION_TEST_1}}
+  - Thread-mapping SQLite repository round-trip (by thread, by target).
+  - Settings repository round-trip with non-default WhatsAppConfig + flag.
 
   ## Risk Mitigation
 
   | Risk | Mitigation |
   | ---- | ---------- |
-  | {{RISK}} | {{MITIGATION}} |
+  | Baileys ToS / number ban | Surface in UI copy; ban-safe Cloud API adapter behind same port |
+  | Baileys heavy/native deps break bundler/CI | Lazy dynamic import; optional user-install; not in package.json/lockfile |
+  | Persistent socket drops | Auto-reconnect w/ backoff; auth state on disk; isRunning() health |
+  | Inbound spoofing | Only linked numbers actioned; Cloud API webhook signature check |
+  | Logic creep into transport | Strict: gateway/service transport only; all decisions in use cases |
+  | Settings wiring drift | Follow LESSONS.md feature-flag checklist; round-trip tests with non-defaults |
 
   ---
 
