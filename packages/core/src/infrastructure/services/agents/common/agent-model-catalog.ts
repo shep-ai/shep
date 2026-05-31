@@ -8,6 +8,7 @@
  */
 
 export const CLAUDE_CODE_MODELS: string[] = [
+  'claude-opus-4-8',
   'claude-opus-4-7',
   'claude-opus-4-6',
   'claude-sonnet-4-6',
@@ -23,6 +24,7 @@ export const GEMINI_CLI_MODELS: string[] = [
 ];
 
 export const CURSOR_MODELS: string[] = [
+  'claude-opus-4-8',
   'claude-opus-4-7',
   'claude-opus-4-6',
   'claude-sonnet-4-6',
@@ -54,6 +56,7 @@ export const COPILOT_CLI_MODELS: string[] = [
   'claude-opus-4.5',
   'claude-opus-4.6',
   'claude-opus-4.7',
+  'claude-opus-4.8',
   'claude-sonnet-4',
   'claude-sonnet-4.5',
   'claude-sonnet-4.6',
