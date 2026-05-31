@@ -16,6 +16,7 @@ import {
   Settings,
   TableProperties,
   FolderKanban,
+  KanbanSquare,
   MessageCircleQuestion,
   ShieldCheck,
   Bot,
@@ -192,6 +193,12 @@ export function AppSidebar({
             label={t('navigation.inventory')}
             href="/features"
             active={pathname === '/features'}
+          />
+          <SidebarNavItem
+            icon={KanbanSquare}
+            label="SDLC Board"
+            href="/sdlc"
+            active={pathname?.startsWith('/sdlc') ?? false}
           />
           <SidebarNavItem
             icon={Wrench}
