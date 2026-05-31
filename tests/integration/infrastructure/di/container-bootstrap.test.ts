@@ -169,6 +169,10 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   // SDLC Kanban Board (feature sdlc-board)
   'ISdlcTaskRepository',
   'ISdlcSubTaskRepository',
+  // Phase 3a: tracker port consumed by the feature-agent worker; must be
+  // registered before any worker boots (LESSONS: transitive worker tokens
+  // must be verified here).
+  'ISdlcBoardTracker',
 ] as const;
 
 describe('DI container bootstrap (integration)', () => {

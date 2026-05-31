@@ -14,6 +14,7 @@ import type { ISpecArtifactParser } from '../../../application/ports/output/serv
 import type { ISettingsRepository } from '../../../application/ports/output/repositories/settings.repository.interface.js';
 import type { IAgentSessionRepositoryRegistry } from '../../../application/ports/output/agents/agent-session-repository-registry.interface.js';
 import type { ISupervisorAgent } from '../../../application/ports/output/agents/supervisor-agent.interface.js';
+import type { ISdlcBoardTracker } from '../../../application/ports/output/agents/sdlc-board-tracker.interface.js';
 
 import { AgentExecutorFactory } from '../../services/agents/common/agent-executor-factory.service.js';
 import { AgentExecutorProvider } from '../../services/agents/common/agent-executor-provider.service.js';
@@ -34,6 +35,7 @@ import { FeatureAgentLifecyclePublisher } from '../../services/agents/feature-ag
 import { FeatureAgentGateQuestionPublisher } from '../../services/agents/feature-agent/feature-agent-gate-question-publisher.js';
 import { FeatureAgentSupervisorGateEvaluator } from '../../services/agents/feature-agent/feature-agent-supervisor-gate-evaluator.js';
 import { LangGraphSupervisorAgent } from '../../services/agents/supervisor-agent/langgraph-supervisor-agent.js';
+import { SdlcBoardTracker } from '../../services/agents/sdlc-board-tracker.js';
 
 /**
  * Register agent-execution infrastructure: executor factory/provider, runner,
@@ -157,4 +159,14 @@ export function registerAgents(container: DependencyContainer): void {
   // feature-flag short-circuit can run. Forgetting this registration crashes
   // every feature-agent worker on boot, even when the collaboration flag is off.
   container.registerSingleton<ISupervisorAgent>('ISupervisorAgent', LangGraphSupervisorAgent);
+
+  // ISdlcBoardTracker — output port through which the feature-agent writes
+  // task and sub-task progress onto the SDLC Board (spec sdlc-board, phase 3a).
+  // Registered as a singleton (stateless adapter; repos own the state) and
+  // aliased under the string token so any worker/use-case can inject it
+  // without importing the concrete class.
+  container.registerSingleton(SdlcBoardTracker);
+  container.register<ISdlcBoardTracker>('ISdlcBoardTracker', {
+    useFactory: (c) => c.resolve(SdlcBoardTracker),
+  });
 }

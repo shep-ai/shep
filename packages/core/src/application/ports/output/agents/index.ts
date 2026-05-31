@@ -42,6 +42,7 @@ export type {
   AgentMessageHandler,
   AgentMessageUnsubscribe,
 } from './agent-message-bus.interface.js';
+export type { ISdlcBoardTracker, SeedTask, SeedSubTask } from './sdlc-board-tracker.interface.js';
 export { ALLOWED_AGENT_MESSAGE_TARGET_KINDS } from './agent-message-bus.interface.js';
 export type {
   IAgentQuestionService,
