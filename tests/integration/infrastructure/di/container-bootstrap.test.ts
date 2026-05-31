@@ -166,6 +166,9 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   // Contributor onboarding (feature 097)
   'IContributorRepository',
   'IRecognitionEventRepository',
+  // SDLC Kanban Board (feature sdlc-board)
+  'ISdlcTaskRepository',
+  'ISdlcSubTaskRepository',
 ] as const;
 
 describe('DI container bootstrap (integration)', () => {

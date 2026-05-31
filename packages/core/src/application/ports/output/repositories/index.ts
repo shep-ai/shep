@@ -32,3 +32,11 @@ export type {
   IRecognitionEventRepository,
   RecognitionInsertResult,
 } from './recognition-event-repository.interface.js';
+export type {
+  ISdlcTaskRepository,
+  SdlcTaskUpsertFields,
+} from './sdlc-task-repository.interface.js';
+export type {
+  ISdlcSubTaskRepository,
+  SdlcSubTaskUpsertFields,
+} from './sdlc-subtask-repository.interface.js';
