@@ -17,6 +17,10 @@ export function createBedrockShipCommand(): Command {
   const cmd = new Command('ship').description(
     'Commit bedrock memory updates inside the application worktree'
   );
+  cmd.addHelpText(
+    'after',
+    `\nExamples:\n  $ shep bedrock ship --app my-app    Commit bedrock updates`
+  );
   appOption(cmd).action(async (options: { app: string }) => {
     try {
       const useCase = container.resolve<RunBedrockLifecycleUseCase>(

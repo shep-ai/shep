@@ -17,6 +17,10 @@ export function createBedrockSyncCommand(): Command {
   const cmd = new Command('sync').description(
     'Reconcile bedrock memory with git state inside the application worktree'
   );
+  cmd.addHelpText(
+    'after',
+    `\nExamples:\n  $ shep bedrock sync --app my-app    Reconcile with git state`
+  );
   appOption(cmd).action(async (options: { app: string }) => {
     try {
       const useCase = container.resolve<RunBedrockLifecycleUseCase>(

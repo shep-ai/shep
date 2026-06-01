@@ -33,6 +33,7 @@ function tiersOf(health: BedrockHealth): BedrockTierStatus[] {
 export function createBedrockDoctorCommand(): Command {
   return new Command('doctor')
     .description('Verify bedrock prerequisites (Python, pipx, bedrock binary)')
+    .addHelpText('after', `\nExamples:\n  $ shep bedrock doctor    Check prerequisites`)
     .action(async () => {
       try {
         const useCase = container.resolve<CheckBedrockHealthUseCase>(

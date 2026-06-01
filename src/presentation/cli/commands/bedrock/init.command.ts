@@ -16,6 +16,10 @@ export function createBedrockInitCommand(): Command {
   const cmd = new Command('init').description(
     'Enable bedrock memory for an application and run `bedrock init`'
   );
+  cmd.addHelpText(
+    'after',
+    `\nExamples:\n  $ shep bedrock init --app my-app    Enable bedrock memory`
+  );
   appOption(cmd).action(async (options: { app: string }) => {
     try {
       const useCase = container.resolve<EnableBedrockForApplicationUseCase>(
