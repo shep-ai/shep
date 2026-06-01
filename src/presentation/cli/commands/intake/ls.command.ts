@@ -9,6 +9,13 @@ export function createLsCommand(): Command {
     .description('List intake items for a project')
     .argument('<project>', 'Project slug or identifier prefix')
     .option('-s, --status <status>', 'Filter by status (Pending, Accepted, Declined, Duplicate)')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep intake ls my-project                     List all intake items
+  $ shep intake ls my-project --status Pending     Filter by status`
+    )
     .action(async (projectSlug: string, opts: { status?: string }) => {
       try {
         const getProject = container.resolve(GetPmProjectUseCase);

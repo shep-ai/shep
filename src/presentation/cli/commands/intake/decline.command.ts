@@ -9,6 +9,13 @@ export function createDeclineCommand(): Command {
     .description('Decline an intake item with a reason')
     .argument('<id>', 'Intake item ID')
     .option('-r, --reason <reason>', 'Reason for declining')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep intake decline abc123                   Interactive prompt for reason
+  $ shep intake decline abc123 -r "Duplicate"      Non-interactive with reason`
+    )
     .action(async (intakeItemId: string, opts: { reason?: string }) => {
       try {
         const reason =

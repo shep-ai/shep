@@ -7,6 +7,12 @@ export function createAcceptCommand(): Command {
   return new Command('accept')
     .description('Accept an intake item and convert it to a work item')
     .argument('<id>', 'Intake item ID')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep intake accept abc123    Accept an intake item by ID`
+    )
     .action(async (intakeItemId: string) => {
       try {
         const useCase = container.resolve(AcceptIntakeItemUseCase);
