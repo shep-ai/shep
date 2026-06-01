@@ -38,3 +38,11 @@ export type {
   WhatsAppThreadMappingInput,
 } from './whatsapp-thread-mapping-repository.interface.js';
 export { WHATSAPP_THREAD_MAPPING_REPOSITORY_TOKEN } from './whatsapp-thread-mapping-repository.interface.js';
+export type {
+  ISdlcTaskRepository,
+  SdlcTaskUpsertFields,
+} from './sdlc-task-repository.interface.js';
+export type {
+  ISdlcSubTaskRepository,
+  SdlcSubTaskUpsertFields,
+} from './sdlc-subtask-repository.interface.js';

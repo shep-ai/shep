@@ -30,6 +30,8 @@ import { IS_WINDOWS } from '../../../../platform.js';
  * Models that already match Cursor's naming pass through unchanged.
  */
 const CURSOR_MODEL_MAP: Record<string, string> = {
+  'claude-opus-4-8': 'opus-4.8',
+  'claude-opus-4-7': 'opus-4.7',
   'claude-opus-4-6': 'opus-4.6',
   'claude-sonnet-4-6': 'sonnet-4.6',
   'claude-haiku-4-5': 'haiku-4.5',

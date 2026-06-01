@@ -9,8 +9,9 @@ export interface ModelMeta {
  */
 const MODEL_METADATA: Record<string, ModelMeta> = {
   // Claude models
-  'claude-opus-4-7': { displayName: 'Opus 4.7', description: 'Most capable, complex tasks' },
-  'claude-opus-4-6': { displayName: 'Opus 4.6', description: 'Previous flagship' },
+  'claude-opus-4-8': { displayName: 'Opus 4.8', description: 'Most capable, complex tasks' },
+  'claude-opus-4-7': { displayName: 'Opus 4.7', description: 'Previous flagship' },
+  'claude-opus-4-6': { displayName: 'Opus 4.6', description: 'Legacy flagship' },
   'claude-sonnet-4-6': { displayName: 'Sonnet 4.6', description: 'Fast & balanced' },
   'claude-haiku-4-5': { displayName: 'Haiku 4.5', description: 'Lightweight & quick' },
 

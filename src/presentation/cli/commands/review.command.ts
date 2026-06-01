@@ -149,6 +149,16 @@ export function createReviewCommand(): Command {
     .option('--owner <owner>', t('cli:commands.codeReview.ownerOption'))
     .option('--repo <repo>', t('cli:commands.codeReview.repoOption'))
     .option('--post', t('cli:commands.codeReview.postOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep review 42
+  $ shep review https://github.com/org/repo/pull/42
+  $ shep review show abc12345
+  $ shep review list
+  $ shep review post abc12345`
+    )
     .action(async (target: string | undefined, options: ReviewOptions) => {
       if (!target) {
         reviewCmd.help();

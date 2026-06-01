@@ -32,6 +32,8 @@ import { InitializeSettingsUseCase } from '@/application/use-cases/settings/init
 import { setHeartbeatContext } from './heartbeat.js';
 import { setPhaseTimingContext, recordLifecycleEvent } from './phase-timing-context.js';
 import { setLifecycleContext } from './lifecycle-context.js';
+import { setSdlcBoardContext } from './sdlc-board-context.js';
+import type { ISdlcBoardTracker } from '@/application/ports/output/agents/sdlc-board-tracker.interface.js';
 import { setLogPrefix, getLogPrefix } from './log-context.js';
 import { FeatureAgentLifecyclePublisher } from './feature-agent-lifecycle-publisher.js';
 import { FeatureAgentGateQuestionPublisher } from './feature-agent-gate-question-publisher.js';
@@ -322,6 +324,11 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   // fires on every transition, automatically unblocking eligible blocked children.
   const updateLifecycleUseCase = container.resolve(UpdateFeatureLifecycleUseCase);
   setLifecycleContext(args.featureId, updateLifecycleUseCase);
+
+  // Set SDLC board context so the implement node can write task/sub-task progress
+  // to the board in real time. Best-effort: tracker errors are swallowed in the context.
+  const sdlcBoardTracker = container.resolve<ISdlcBoardTracker>('ISdlcBoardTracker');
+  setSdlcBoardContext(args.featureId, sdlcBoardTracker);
 
   // Record lifecycle event
   await recordLifecycleEvent(args.resume ? 'run:resumed' : 'run:started');

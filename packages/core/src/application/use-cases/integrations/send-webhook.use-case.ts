@@ -1,3 +1,9 @@
+/**
+ * Send Webhook Use Case
+ *
+ * Sends a webhook event to GitHub via IGithubIntegrationService.
+ * Returns { ok: false, error } on failure rather than throwing.
+ */
 import { injectable, inject } from 'tsyringe';
 import type {
   IWebhookService,

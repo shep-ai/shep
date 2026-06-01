@@ -1,0 +1,35 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SdlcSubTask.yaml
+type: object
+properties:
+  taskId:
+    type: string
+    description: FK to the parent SdlcTask that owns this sub-task
+  featureId:
+    type: string
+    description: Denormalized FK to the parent Feature for efficient board-level queries
+  subTaskKey:
+    type: string
+    description: Stable idempotency key within the task (e.g. 'subtask-1'); unique per taskId
+  name:
+    type: string
+    description: Human-readable name of the sub-task step shown in the card progress list
+  description:
+    type: string
+    description: Optional additional detail or acceptance criteria for this sub-task
+  status:
+    $ref: TaskState.yaml
+    description: Current execution status of this sub-task (Todo, WIP, Review, Done)
+  sortOrder:
+    type: number
+    description: Manual sort order within the parent task (float64 for gap-free insertion)
+required:
+  - taskId
+  - featureId
+  - subTaskKey
+  - name
+  - status
+  - sortOrder
+allOf:
+  - $ref: BaseEntity.yaml
+description: A persisted granular sub-task step within an SdlcTask, tracked on the SDLC Board

@@ -50,3 +50,5 @@ import "./operation-log-entry.tsp";
 import "./code-review.tsp";
 import "./contributor.tsp";
 import "./recognition-event.tsp";
+import "./sdlc-task.tsp";
+import "./sdlc-subtask.tsp";

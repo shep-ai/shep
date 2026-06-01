@@ -1,3 +1,9 @@
+/**
+ * Get GitHub Integration Status Use Case
+ *
+ * Returns the current GitHub integration status (connected/disconnected)
+ * via IGithubIntegrationRepository.
+ */
 import { inject, injectable } from 'tsyringe';
 
 import type {

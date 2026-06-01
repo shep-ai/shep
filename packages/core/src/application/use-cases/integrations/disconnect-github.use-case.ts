@@ -1,3 +1,8 @@
+/**
+ * Disconnect GitHub Use Case
+ *
+ * Removes the GitHub integration token via IGithubIntegrationRepository.
+ */
 import { inject, injectable } from 'tsyringe';
 
 import type { IGithubIntegrationRepository } from '../../ports/output/repositories/github-integration.repository.interface.js';

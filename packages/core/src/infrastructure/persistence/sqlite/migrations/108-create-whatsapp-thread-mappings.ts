@@ -1,5 +1,5 @@
 /**
- * Migration 106: whatsapp_thread_mappings table (spec 101).
+ * Migration 108: whatsapp_thread_mappings table (spec 101).
  *
  * Binds a WhatsApp conversation thread to the shep entity it drives (a Feature
  * or an interactive Application session) so that replies route to the right

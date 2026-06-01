@@ -1,5 +1,5 @@
 /**
- * Migration 105: Add WhatsApp integration columns to the settings table (spec 101).
+ * Migration 107: Add WhatsApp integration columns to the settings table (spec 101).
  *
  * Adds:
  *   - feature_flag_whatsapp_dispatch (INTEGER 0/1, default 0) — gates the whole

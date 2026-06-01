@@ -169,6 +169,14 @@ export function createUpgradeCommand(spawnFn: SpawnFn = defaultSpawn): Command {
   const t = getCliI18n().t;
   return new Command('upgrade')
     .description(t('cli:commands.upgrade.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep upgrade                  Upgrade Shep to the latest version
+  $ shep stop && shep upgrade     Upgrade and restart the daemon automatically
+  $ shep upgrade                  No-op when Shep is already up to date`
+    )
     .action(async () => {
       try {
         const versionService = container.resolve<IVersionService>('IVersionService');

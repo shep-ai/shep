@@ -97,6 +97,12 @@ import { SQLiteContributorRepository } from '../../repositories/sqlite-contribut
 import type { IRecognitionEventRepository } from '../../../application/ports/output/repositories/recognition-event-repository.interface.js';
 import { SQLiteRecognitionEventRepository } from '../../repositories/sqlite-recognition-event.repository.js';
 
+// SDLC Kanban Board (feature sdlc-board) repositories
+import type { ISdlcTaskRepository } from '../../../application/ports/output/repositories/sdlc-task-repository.interface.js';
+import { SQLiteSdlcTaskRepository } from '../../repositories/sqlite-sdlc-task.repository.js';
+import type { ISdlcSubTaskRepository } from '../../../application/ports/output/repositories/sdlc-subtask-repository.interface.js';
+import { SQLiteSdlcSubTaskRepository } from '../../repositories/sqlite-sdlc-subtask.repository.js';
+
 /**
  * Register all SQLite-backed repositories.
  *
@@ -289,5 +295,13 @@ export function registerRepositories(container: DependencyContainer): void {
   container.register<IRecognitionEventRepository>('IRecognitionEventRepository', {
     useFactory: (c) =>
       new SQLiteRecognitionEventRepository(c.resolve<Database.Database>('Database')),
+  });
+
+  // ─── SDLC Kanban Board (feature sdlc-board) repositories ──────────────
+  container.register<ISdlcTaskRepository>('ISdlcTaskRepository', {
+    useFactory: (c) => new SQLiteSdlcTaskRepository(c.resolve<Database.Database>('Database')),
+  });
+  container.register<ISdlcSubTaskRepository>('ISdlcSubTaskRepository', {
+    useFactory: (c) => new SQLiteSdlcSubTaskRepository(c.resolve<Database.Database>('Database')),
   });
 }

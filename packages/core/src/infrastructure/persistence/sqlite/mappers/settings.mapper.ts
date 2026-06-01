@@ -146,7 +146,7 @@ export interface SettingsRow {
   // Default home page (added in migration 095)
   default_home_page: string;
 
-  // WhatsApp integration config (added in migration 105, spec 101)
+  // WhatsApp integration config (added in migration 107, spec 101)
   whatsapp_enabled: number;
   whatsapp_adapter: string;
   whatsapp_linked_number: string | null;

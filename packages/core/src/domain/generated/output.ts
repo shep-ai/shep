@@ -3015,6 +3015,82 @@ export type RecognitionEvent = BaseEntity & {
 };
 
 /**
+ * A first-class persisted SDLC task within a Feature (epic) tracked on the SDLC Board
+ */
+export type SdlcTask = BaseEntity & {
+  /**
+   * FK to the parent Feature (epic) that owns this task
+   */
+  featureId: string;
+  /**
+   * Stable idempotency key within the feature (e.g. 'task-1'); unique per featureId
+   */
+  taskKey: string;
+  /**
+   * Human-readable title of the task shown on the kanban card
+   */
+  title: string;
+  /**
+   * Optional detailed description or acceptance criteria for the task
+   */
+  description?: string;
+  /**
+   * Current kanban status of the task (Todo, WIP, Review, Done)
+   */
+  status: TaskState;
+  /**
+   * Manual sort order within the column (float64 for gap-free insertion)
+   */
+  sortOrder: float64;
+  /**
+   * Git branch where implementation work for this task occurs
+   */
+  branch?: string;
+  /**
+   * taskKeys within the same feature that this task depends on
+   */
+  dependsOnKeys?: string[];
+  /**
+   * ID of the agent run executing or that last executed this task
+   */
+  agentRunId?: string;
+};
+
+/**
+ * A persisted granular sub-task step within an SdlcTask, tracked on the SDLC Board
+ */
+export type SdlcSubTask = BaseEntity & {
+  /**
+   * FK to the parent SdlcTask that owns this sub-task
+   */
+  taskId: string;
+  /**
+   * Denormalized FK to the parent Feature for efficient board-level queries
+   */
+  featureId: string;
+  /**
+   * Stable idempotency key within the task (e.g. 'subtask-1'); unique per taskId
+   */
+  subTaskKey: string;
+  /**
+   * Human-readable name of the sub-task step shown in the card progress list
+   */
+  name: string;
+  /**
+   * Optional additional detail or acceptance criteria for this sub-task
+   */
+  description?: string;
+  /**
+   * Current execution status of this sub-task (Todo, WIP, Review, Done)
+   */
+  status: TaskState;
+  /**
+   * Manual sort order within the parent task (float64 for gap-free insertion)
+   */
+  sortOrder: float64;
+};
+
+/**
  * Single installation suggestion for a tool
  */
 export type InstallationSuggestion = {
