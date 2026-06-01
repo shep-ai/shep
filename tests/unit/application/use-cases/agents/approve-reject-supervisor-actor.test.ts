@@ -77,6 +77,7 @@ function makeRunRepo(run: AgentRun) {
     create: vi.fn(),
     findById: vi.fn().mockResolvedValue(run),
     findByThreadId: vi.fn(),
+    findLatestByFeatureId: vi.fn().mockResolvedValue(null),
     updateStatus: vi.fn(),
     findRunningByPid: vi.fn(),
     list: vi.fn(),

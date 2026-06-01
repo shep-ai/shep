@@ -15,13 +15,15 @@ status:
   currentTask: null
   lastUpdated: '2026-05-31T16:40:00Z'
   lastUpdatedBy: 'shep-kit:implement'
-  # All 15 tasks done: core engine, both adapters (Baileys + Cloud API),
-  # connection service, notification fan-out, DI, CLI status, bootstrap, web
-  # Settings UI + Storybook + Cloud API webhook route, docs.
-  # Remaining nice-to-have (not a numbered task): feature-bound HITL
-  # approve/reject over WhatsApp, which needs a feature->pending-run lookup on
-  # IAgentRunRepository. Dispatch only creates Application threads today, so the
-  # implemented reply loop is fully consistent.
+  # All 15 tasks done plus feature-bound HITL: core engine, both adapters
+  # (Baileys + Cloud API), connection service, notification fan-out, DI, CLI
+  # status, bootstrap, web Settings UI + Storybook + Cloud API webhook route,
+  # and WhatsApp approve/reject routing to the HITL use cases (locale-aware
+  # classifier + IAgentRunRepository.findLatestByFeatureId).
+  # Remaining (distinct future capability, not in scope here): a way to BIND a
+  # feature to a WhatsApp thread — dispatch only creates Application bindings
+  # today, so the feature-HITL path is implemented and tested but reachable
+  # only once a feature↔thread binding exists.
 
 validation:
   lastRun: null

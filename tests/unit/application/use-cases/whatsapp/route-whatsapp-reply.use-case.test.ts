@@ -20,7 +20,7 @@ function appMapping(): WhatsAppThreadMapping {
   };
 }
 
-function setup(app: unknown) {
+function setup(app: unknown, opts?: { run?: unknown }) {
   const applicationRepo = { findById: vi.fn().mockResolvedValue(app) } as any;
   const sendInteractiveMessage = { execute: vi.fn().mockResolvedValue({ id: 'msg-1' }) } as any;
   const threadMappings = {
@@ -29,14 +29,48 @@ function setup(app: unknown) {
     findActiveByTarget: vi.fn(),
     deactivate: vi.fn().mockResolvedValue(undefined),
   } as any;
+  const agentRunRepo = {
+    findLatestByFeatureId: vi
+      .fn()
+      .mockResolvedValue('run' in (opts ?? {}) ? opts!.run : { id: 'run-1' }),
+  } as any;
+  const approveAgentRun = {
+    execute: vi.fn().mockResolvedValue({ approved: true, reason: 'ok' }),
+  } as any;
+  const rejectAgentRun = {
+    execute: vi.fn().mockResolvedValue({ rejected: true, reason: 'ok' }),
+  } as any;
   const logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() } as any;
   const useCase = new RouteWhatsAppReplyUseCase(
     applicationRepo,
     sendInteractiveMessage,
     threadMappings,
+    agentRunRepo,
+    approveAgentRun,
+    rejectAgentRun,
     logger
   );
-  return { useCase, applicationRepo, sendInteractiveMessage, threadMappings, logger };
+  return {
+    useCase,
+    applicationRepo,
+    sendInteractiveMessage,
+    threadMappings,
+    agentRunRepo,
+    approveAgentRun,
+    rejectAgentRun,
+    logger,
+  };
+}
+
+function featureMapping() {
+  return {
+    threadId: 'thread-2',
+    targetKind: WhatsAppThreadTargetKind.Feature,
+    targetId: 'feat-1',
+    active: true,
+    createdAt: 1,
+    updatedAt: 1,
+  };
 }
 
 describe('RouteWhatsAppReplyUseCase', () => {
@@ -94,16 +128,52 @@ describe('RouteWhatsAppReplyUseCase', () => {
     expect(arg.agentType).toBeUndefined();
   });
 
-  it('returns UnknownCommand for a feature-bound thread (follow-on path)', async () => {
-    const result = await env.useCase.execute({
-      mapping: {
-        ...appMapping(),
-        targetKind: WhatsAppThreadTargetKind.Feature,
-        targetId: 'feat-1',
-      },
-      text: 'yes',
+  describe('feature-bound HITL routing', () => {
+    it('approves the latest run when the reply is affirmative', async () => {
+      const result = await env.useCase.execute({ mapping: featureMapping(), text: 'yes' });
+      expect(env.agentRunRepo.findLatestByFeatureId).toHaveBeenCalledWith('feat-1');
+      expect(env.approveAgentRun.execute).toHaveBeenCalledWith('run-1');
+      expect(env.rejectAgentRun.execute).not.toHaveBeenCalled();
+      expect(result.message.kind).toBe(WhatsAppMessageKind.ApprovalAccepted);
     });
-    expect(result.message.kind).toBe(WhatsAppMessageKind.UnknownCommand);
-    expect(env.sendInteractiveMessage.execute).not.toHaveBeenCalled();
+
+    it('approves on a Hebrew affirmative', async () => {
+      const result = await env.useCase.execute({ mapping: featureMapping(), text: 'כן' });
+      expect(env.approveAgentRun.execute).toHaveBeenCalledWith('run-1');
+      expect(result.message.kind).toBe(WhatsAppMessageKind.ApprovalAccepted);
+    });
+
+    it('rejects the latest run when the reply is negative, passing the text as feedback', async () => {
+      const result = await env.useCase.execute({ mapping: featureMapping(), text: 'no' });
+      expect(env.rejectAgentRun.execute).toHaveBeenCalledWith('run-1', 'no');
+      expect(env.approveAgentRun.execute).not.toHaveBeenCalled();
+      expect(result.message.kind).toBe(WhatsAppMessageKind.ApprovalRejected);
+    });
+
+    it('treats ambiguous free-text as UnknownCommand (never a silent approval)', async () => {
+      const result = await env.useCase.execute({
+        mapping: featureMapping(),
+        text: 'maybe do it differently',
+      });
+      expect(env.approveAgentRun.execute).not.toHaveBeenCalled();
+      expect(env.rejectAgentRun.execute).not.toHaveBeenCalled();
+      expect(result.message.kind).toBe(WhatsAppMessageKind.UnknownCommand);
+    });
+
+    it('reports NoActiveThread when the feature has no agent run', async () => {
+      env = setup(null, { run: null });
+      const result = await env.useCase.execute({ mapping: featureMapping(), text: 'yes' });
+      expect(result.message.kind).toBe(WhatsAppMessageKind.NoActiveThread);
+    });
+
+    it('surfaces an Error when approval is not applicable', async () => {
+      env.approveAgentRun.execute.mockResolvedValueOnce({
+        approved: false,
+        reason: 'no gate open',
+      });
+      const result = await env.useCase.execute({ mapping: featureMapping(), text: 'approve' });
+      expect(result.message.kind).toBe(WhatsAppMessageKind.Error);
+      expect(result.message.params?.detail).toBe('no gate open');
+    });
   });
 });

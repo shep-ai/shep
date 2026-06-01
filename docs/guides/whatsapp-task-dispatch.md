@@ -6,9 +6,12 @@ receive agent updates, and steer the agent by replying in the chat.
 
 > Status: shipped. Core engine, both adapters, connection service, outbound
 > lifecycle notifications, web Settings UI (adapter picker + status badge), the
-> Cloud API webhook route, and the `shep whatsapp status` command are all in.
-> Remaining nice-to-have (tracked in `specs/101-whatsapp-task-dispatch`):
-> feature-bound HITL approve/reject over WhatsApp.
+> Cloud API webhook route, the `shep whatsapp status` command, and feature-bound
+> HITL approve/reject routing are all in. The one remaining future capability
+> (tracked in `specs/101-whatsapp-task-dispatch`) is a way to BIND an existing
+> feature to a WhatsApp thread — today dispatch creates Application bindings, so
+> the feature-HITL path is implemented/tested but reachable only once such a
+> binding exists.
 
 ## How it works
 

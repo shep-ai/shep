@@ -43,6 +43,7 @@ function buildUseCase(bus: InMemoryOperationLogEventBus): StreamAgentEventsUseCa
     create: vi.fn(),
     findById: vi.fn().mockResolvedValue(null),
     findByThreadId: vi.fn(),
+    findLatestByFeatureId: vi.fn().mockResolvedValue(null),
     findByIds: vi.fn().mockResolvedValue([]),
     updateStatus: vi.fn(),
     updatePinnedConfig: vi.fn(),

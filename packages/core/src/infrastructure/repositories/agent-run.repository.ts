@@ -105,6 +105,19 @@ export class SQLiteAgentRunRepository implements IAgentRunRepository {
     return fromDatabase(row);
   }
 
+  async findLatestByFeatureId(featureId: string): Promise<AgentRun | null> {
+    const stmt = this.db.prepare(
+      'SELECT * FROM agent_runs WHERE feature_id = ? ORDER BY created_at DESC LIMIT 1'
+    );
+    const row = stmt.get(featureId) as AgentRunRow | undefined;
+
+    if (!row) {
+      return null;
+    }
+
+    return fromDatabase(row);
+  }
+
   async updateStatus(
     id: string,
     status: AgentRunStatus,

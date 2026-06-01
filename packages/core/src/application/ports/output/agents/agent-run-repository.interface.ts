@@ -61,6 +61,16 @@ export interface IAgentRunRepository {
   findByThreadId(threadId: string): Promise<AgentRun | null>;
 
   /**
+   * Find the most recently created agent run for a feature, or null if the
+   * feature has no runs. Used to resolve the run a WhatsApp HITL reply
+   * (approve/reject) should act on (spec 101).
+   *
+   * @param featureId - The feature id
+   * @returns The latest agent run for the feature, or null
+   */
+  findLatestByFeatureId(featureId: string): Promise<AgentRun | null>;
+
+  /**
    * Update agent run status with optional additional field updates.
    *
    * @param id - The agent run ID

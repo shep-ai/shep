@@ -92,6 +92,7 @@ describe('AgentRunnerService', () => {
         return storedRuns.get(id) ?? null;
       }),
       findByThreadId: vi.fn().mockResolvedValue(null),
+      findLatestByFeatureId: vi.fn().mockResolvedValue(null),
       findByIds: vi.fn().mockResolvedValue([]),
       updateStatus: vi
         .fn()

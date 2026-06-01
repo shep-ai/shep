@@ -49,6 +49,7 @@ function makeAgentRunRepo(run: Partial<AgentRun> | null): IAgentRunRepository {
     create: vi.fn(),
     findById,
     findByThreadId: vi.fn(),
+    findLatestByFeatureId: vi.fn().mockResolvedValue(null),
     findByPid: vi.fn(),
     findActive: vi.fn(),
     findByFeatureId: vi.fn(),

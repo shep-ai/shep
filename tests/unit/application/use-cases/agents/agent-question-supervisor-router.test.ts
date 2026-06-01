@@ -74,6 +74,7 @@ function fakeAgentRunRepo(): IAgentRunRepository {
     create: vi.fn(),
     findById: vi.fn().mockResolvedValue(null),
     findByThreadId: vi.fn(),
+    findLatestByFeatureId: vi.fn().mockResolvedValue(null),
     updateStatus: vi.fn(),
     updatePinnedConfig: vi.fn(),
     findRunningByPid: vi.fn(),

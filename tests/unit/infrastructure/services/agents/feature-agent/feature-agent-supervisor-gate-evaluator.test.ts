@@ -218,6 +218,7 @@ function buildEvaluator(opts: {
     create: vi.fn(),
     findById: vi.fn().mockResolvedValue(waitingRun()),
     findByThreadId: vi.fn(),
+    findLatestByFeatureId: vi.fn().mockResolvedValue(null),
     updateStatus: vi.fn(),
     findRunningByPid: vi.fn(),
     list: vi.fn(),

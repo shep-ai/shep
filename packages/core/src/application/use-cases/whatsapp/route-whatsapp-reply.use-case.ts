@@ -3,10 +3,9 @@
  *
  * Handles an inbound WhatsApp message that arrives on a thread ALREADY bound to
  * a shep entity. For an Application-bound thread, the reply is forwarded into
- * the live interactive agent session (the two-way chat loop). Feature-bound
- * threads (autonomous HITL gates) are a documented follow-on — task-6 only ever
- * creates Application bindings in this iteration, so that branch is unreachable
- * today and returns a clear, guided outcome rather than guessing.
+ * the live interactive agent session (the two-way chat loop). For a
+ * Feature-bound thread, the reply is classified as approve / reject / other and
+ * routed to the HITL approve/reject use cases against the feature's latest run.
  *
  * Pure orchestration — no rendering, no transport. Returns a structured
  * outcome (WhatsAppMessage) the infrastructure layer renders and sends.
@@ -16,11 +15,15 @@ import { injectable, inject } from 'tsyringe';
 
 import type { IApplicationRepository } from '../../ports/output/repositories/application-repository.interface.js';
 import type { IWhatsAppThreadMappingRepository } from '../../ports/output/repositories/whatsapp-thread-mapping-repository.interface.js';
+import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { ILogger } from '../../ports/output/services/logger.interface.js';
 import type { WhatsAppThreadMapping } from '../../ports/output/repositories/whatsapp-thread-mapping-repository.interface.js';
 import { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
+import { ApproveAgentRunUseCase } from '../agents/approve-agent-run.use-case.js';
+import { RejectAgentRunUseCase } from '../agents/reject-agent-run.use-case.js';
 import { WhatsAppThreadTargetKind } from '../../../domain/generated/output.js';
 import { featureIdForApplication } from '../../../domain/shared/feature-id.js';
+import { classifyReplyIntent, WhatsAppReplyIntent } from './whatsapp-reply-intent.js';
 import {
   WhatsAppMessageKind,
   whatsAppMessage,
@@ -47,6 +50,12 @@ export class RouteWhatsAppReplyUseCase {
     private readonly sendInteractiveMessage: SendInteractiveMessageUseCase,
     @inject('IWhatsAppThreadMappingRepository')
     private readonly threadMappings: IWhatsAppThreadMappingRepository,
+    @inject('IAgentRunRepository')
+    private readonly agentRunRepo: IAgentRunRepository,
+    @inject(ApproveAgentRunUseCase)
+    private readonly approveAgentRun: ApproveAgentRunUseCase,
+    @inject(RejectAgentRunUseCase)
+    private readonly rejectAgentRun: RejectAgentRunUseCase,
     @inject('ILogger')
     private readonly logger: ILogger
   ) {}
@@ -62,14 +71,54 @@ export class RouteWhatsAppReplyUseCase {
       case WhatsAppThreadTargetKind.Application:
         return this.forwardToApplicationSession(mapping, content);
       case WhatsAppThreadTargetKind.Feature:
-        // Feature-bound HITL approve/reject over WhatsApp is a follow-on
-        // (needs a feature→pending-run lookup not on the repo port yet).
-        this.logger.info('[whatsapp] reply to feature-bound thread is not yet supported', {
-          featureId: mapping.targetId,
-        });
-        return { message: whatsAppMessage(WhatsAppMessageKind.UnknownCommand) };
+        return this.routeFeatureHitl(mapping.targetId, content);
       default:
         return { message: whatsAppMessage(WhatsAppMessageKind.UnknownCommand) };
+    }
+  }
+
+  /**
+   * Route a reply on a feature-bound thread to a HITL approve/reject decision.
+   * Free-text that isn't a clear yes/no is treated as UnknownCommand so the
+   * agent never receives an ambiguous "approval".
+   */
+  private async routeFeatureHitl(featureId: string, content: string): Promise<WhatsAppReplyResult> {
+    const intent = classifyReplyIntent(content);
+    if (intent === WhatsAppReplyIntent.Other) {
+      return { message: whatsAppMessage(WhatsAppMessageKind.UnknownCommand) };
+    }
+
+    const run = await this.agentRunRepo.findLatestByFeatureId(featureId);
+    if (!run) {
+      this.logger.warn('[whatsapp] no agent run found for feature-bound reply', { featureId });
+      return { message: whatsAppMessage(WhatsAppMessageKind.NoActiveThread) };
+    }
+
+    try {
+      if (intent === WhatsAppReplyIntent.Approve) {
+        const result = await this.approveAgentRun.execute(run.id);
+        return {
+          message: result.approved
+            ? whatsAppMessage(WhatsAppMessageKind.ApprovalAccepted)
+            : whatsAppMessage(WhatsAppMessageKind.Error, { detail: result.reason }),
+        };
+      }
+      const result = await this.rejectAgentRun.execute(run.id, content);
+      return {
+        message: result.rejected
+          ? whatsAppMessage(WhatsAppMessageKind.ApprovalRejected)
+          : whatsAppMessage(WhatsAppMessageKind.Error, { detail: result.reason }),
+      };
+    } catch (err) {
+      this.logger.error('[whatsapp] failed to apply HITL decision', {
+        featureId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return {
+        message: whatsAppMessage(WhatsAppMessageKind.Error, {
+          detail: err instanceof Error ? err.message : undefined,
+        }),
+      };
     }
   }
 

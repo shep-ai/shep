@@ -747,3 +747,17 @@ fields. For WhatsApp, `status` and `linkedNumber` change at RUNTIME and the
 `whatsappDispatch` toggle must persist, so I added every new column to BOTH the
 INSERT (column list + VALUES) and the UPDATE SET clause. Round-trip tests with
 non-default values are the only way to catch a missing column.
+
+## Adding a Required Method to a Port Breaks Every Full Mock of It (spec 101)
+
+Adding `findLatestByFeatureId` to `IAgentRunRepository` compiled the production
+impl fine but broke ~17 unit tests that build a FULL typed mock object
+(`const repo: IAgentRunRepository = { create: vi.fn(), findById: vi.fn(), ... }`).
+TS2741 "Property X is missing" fires at every such fixture — not at the
+interface.
+
+**Rule:** when you add a method to a widely-mocked output port, grep for an
+existing sibling method (e.g. `findByThreadId:`) across `tests/` and add the new
+`vi.fn()` next to it in every full mock in one pass. `as any` / `Partial<>`
+mocks are unaffected; only fully-typed object literals break. Prefer this over
+making the method optional — optional methods on a port are a smell.
