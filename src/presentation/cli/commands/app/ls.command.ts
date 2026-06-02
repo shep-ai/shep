@@ -42,10 +42,10 @@ Usage Examples:
         console.log(chalk.bold(`\n${t('cli:commands.app.ls.header')}\n`));
         console.log(
           chalk.bold(
-            `${chalk.cyan(t('cli:commands.app.ls.idHeader').padEnd(8)}${chalk.green(t('cli:commands.app.ls.nameHeader')).padEnd(25)}${t('cli:commands.app.ls.statusHeader').padEnd(12)}${t('cli:commands.app.ls.updatedHeader')}`,
+            `${chalk.cyan(t('cli:commands.app.ls.idHeader')).padEnd(8)}${chalk.green(t('cli:commands.app.ls.nameHeader')).padEnd(25)}${t('cli:commands.app.ls.statusHeader').padEnd(12)}${t('cli:commands.app.ls.updatedHeader')}`,
           ),
         );
-        console.log(chalk.gray('??'.repeat(72)));
+        console.log(chalk.gray('?'.repeat(72)));
 
         for (const app of apps) {
           const updatedAt = app.updatedAt
