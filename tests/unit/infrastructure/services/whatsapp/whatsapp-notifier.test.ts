@@ -38,20 +38,18 @@ function setup(opts?: { settings?: unknown; mapping?: unknown; gateway?: unknown
   const sendMessage = vi.fn().mockResolvedValue(undefined);
   const gateway = opts && 'gateway' in opts ? opts.gateway : { sendMessage };
   const threadMappings = {
-    findActiveByTarget: vi
-      .fn()
-      .mockResolvedValue(
-        'mapping' in (opts ?? {})
-          ? opts!.mapping
-          : {
-              threadId: 'thread-1',
-              targetKind: WhatsAppThreadTargetKind.Application,
-              targetId: '123',
-              active: true,
-              createdAt: 1,
-              updatedAt: 1,
-            }
-      ),
+    findActiveByTarget: vi.fn().mockResolvedValue(
+      'mapping' in (opts ?? {})
+        ? opts!.mapping
+        : {
+            threadId: 'thread-1',
+            targetKind: WhatsAppThreadTargetKind.Application,
+            targetId: '123',
+            active: true,
+            createdAt: 1,
+            updatedAt: 1,
+          }
+    ),
   } as any;
   const connectionService = { getActiveGateway: vi.fn().mockReturnValue(gateway) } as any;
   const logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() } as any;
