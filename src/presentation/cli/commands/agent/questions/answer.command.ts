@@ -24,6 +24,13 @@ export function createAnswerCommand(): Command {
     .requiredOption('--app <id>', 'Application id (required for scope isolation)')
     .requiredOption('--answer <text>', 'The answer to record')
     .option('--answered-by <actor>', 'Actor id (e.g. user:alice)', 'user:cli')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep agent questions answer q-abc123 --app app-123 --answer "yes"
+  $ shep agent questions answer q-abc123 --app app-123 --answer "approve" --answered-by user:cli`
+    )
     .action(async (questionId: string, options: AnswerOptions) => {
       try {
         const useCase = container.resolve(AnswerAgentQuestionUseCase);

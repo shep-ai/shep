@@ -24,6 +24,14 @@ export function createCancelCommand(): Command {
     .requiredOption('--app <id>', 'Application id (required for scope isolation)')
     .option('--reason <text>', 'Optional reason recorded as the answer field')
     .option('--cancelled-by <actor>', 'Actor id (e.g. user:alice)', 'user:cli')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep agent questions cancel q-abc123 --app app-123
+  $ shep agent questions cancel q-abc123 --app app-123 --reason "No longer needed"
+  $ shep agent questions cancel q-abc123 --app app-123 --cancelled-by user:alice`
+    )
     .action(async (questionId: string, options: CancelOptions) => {
       try {
         const useCase = container.resolve(CancelAgentQuestionUseCase);
