@@ -103,3 +103,4 @@ export type {
   IPluginHealthChecker,
   PluginHealthResult,
 } from './plugin-health-checker.interface.js';
+export type { IPluginCatalog, CatalogEntry } from './plugin-catalog.interface.js';

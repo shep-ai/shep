@@ -10,6 +10,7 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AddPluginUseCase } from '@/application/use-cases/plugins/add-plugin.use-case.js';
 import type { IPluginRepository } from '@/application/ports/output/repositories/plugin-repository.interface.js';
+import { PluginCatalogService } from '@/infrastructure/services/plugin/plugin-catalog.js';
 import { PluginType, PluginTransport, PluginHealthStatus } from '@/domain/generated/output.js';
 
 describe('AddPluginUseCase', () => {
@@ -26,7 +27,7 @@ describe('AddPluginUseCase', () => {
       delete: vi.fn(),
     };
 
-    useCase = new AddPluginUseCase(mockPluginRepo);
+    useCase = new AddPluginUseCase(mockPluginRepo, new PluginCatalogService());
   });
 
   describe('catalog-based install', () => {

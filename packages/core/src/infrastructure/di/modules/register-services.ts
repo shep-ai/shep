@@ -71,6 +71,8 @@ import type { IPluginHealthChecker } from '../../../application/ports/output/ser
 import { PluginHealthCheckerService } from '../../services/plugin/plugin-health-checker.service.js';
 import type { IMcpServerManager } from '../../../application/ports/output/services/mcp-server-manager.interface.js';
 import { McpServerManagerService } from '../../services/plugin/mcp-server-manager.service.js';
+import type { IPluginCatalog } from '../../../application/ports/output/services/plugin-catalog.interface.js';
+import { PluginCatalogService } from '../../services/plugin/plugin-catalog.js';
 import type { ILogger } from '../../../application/ports/output/services/logger.interface.js';
 import { ConsoleLogger } from '../../services/logging/console-logger.js';
 import type { IOperationLogService } from '../../../application/ports/output/services/operation-log-service.interface.js';
@@ -258,6 +260,7 @@ export function registerServices(container: DependencyContainer): void {
   container.registerSingleton<IShepInstanceService>('IShepInstanceService', ShepInstanceService);
 
   // ─── AI tool plugin system services ───────────────────────────────────
+  container.registerSingleton<IPluginCatalog>('IPluginCatalog', PluginCatalogService);
   container.registerSingleton<IPluginHealthChecker>(
     'IPluginHealthChecker',
     PluginHealthCheckerService

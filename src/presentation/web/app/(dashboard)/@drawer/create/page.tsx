@@ -56,15 +56,15 @@ export default async function CreateDrawerPage({ searchParams }: CreateDrawerPag
 
   const [features, repositories, workflowDefaults, viewerPerm, application, plugins] =
     await Promise.all([
-    listFeatures.execute(),
-    listRepos.execute().catch(() => []),
-    getWorkflowDefaults().catch(() => undefined),
-    repo
-      ? getViewerPermission(repo).catch(() => ({ canPushDirectly: false }))
-      : Promise.resolve({ canPushDirectly: false }),
-    applicationPromise,
-    listPlugins.execute().catch(() => []),
-  ]);
+      listFeatures.execute(),
+      listRepos.execute().catch(() => []),
+      getWorkflowDefaults().catch(() => undefined),
+      repo
+        ? getViewerPermission(repo).catch(() => ({ canPushDirectly: false }))
+        : Promise.resolve({ canPushDirectly: false }),
+      applicationPromise,
+      listPlugins.execute().catch(() => []),
+    ]);
 
   const featureOptions = features
     .map((f) => ({ id: f.id, name: f.name }))

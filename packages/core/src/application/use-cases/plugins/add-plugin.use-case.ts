@@ -21,7 +21,7 @@ import {
   PluginHealthStatus,
 } from '../../../domain/generated/output.js';
 import type { IPluginRepository } from '../../ports/output/repositories/plugin-repository.interface.js';
-import { getCatalogEntry } from '../../../infrastructure/services/plugin/plugin-catalog.js';
+import type { IPluginCatalog } from '../../ports/output/services/plugin-catalog.interface.js';
 
 export interface AddCustomPluginInput {
   name: string;
@@ -41,7 +41,9 @@ export interface AddCustomPluginInput {
 export class AddPluginUseCase {
   constructor(
     @inject('IPluginRepository')
-    private readonly pluginRepo: IPluginRepository
+    private readonly pluginRepo: IPluginRepository,
+    @inject('IPluginCatalog')
+    private readonly pluginCatalog: IPluginCatalog
   ) {}
 
   async execute(input: string | AddCustomPluginInput): Promise<Plugin> {
@@ -58,7 +60,7 @@ export class AddPluginUseCase {
 
     if (typeof input === 'string') {
       // Catalog-based install
-      const catalogEntry = getCatalogEntry(input);
+      const catalogEntry = this.pluginCatalog.getEntry(input);
       if (!catalogEntry) {
         throw new Error(
           `Plugin "${input}" not found in catalog. Use custom install with explicit configuration.`

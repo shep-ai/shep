@@ -10,6 +10,7 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GetPluginCatalogUseCase } from '@/application/use-cases/plugins/get-plugin-catalog.use-case.js';
 import type { IPluginRepository } from '@/application/ports/output/repositories/plugin-repository.interface.js';
+import { PluginCatalogService } from '@/infrastructure/services/plugin/plugin-catalog.js';
 import { PluginType, PluginHealthStatus } from '@/domain/generated/output.js';
 import type { Plugin } from '@/domain/generated/output.js';
 
@@ -41,7 +42,7 @@ describe('GetPluginCatalogUseCase', () => {
       delete: vi.fn(),
     };
 
-    useCase = new GetPluginCatalogUseCase(mockPluginRepo);
+    useCase = new GetPluginCatalogUseCase(mockPluginRepo, new PluginCatalogService());
   });
 
   it('should return all catalog entries', async () => {

@@ -11,8 +11,10 @@
 
 import { injectable, inject } from 'tsyringe';
 import type { IPluginRepository } from '../../ports/output/repositories/plugin-repository.interface.js';
-import type { CatalogEntry } from '../../../infrastructure/services/plugin/plugin-catalog.js';
-import { getCatalogEntries } from '../../../infrastructure/services/plugin/plugin-catalog.js';
+import type {
+  CatalogEntry,
+  IPluginCatalog,
+} from '../../ports/output/services/plugin-catalog.interface.js';
 
 export interface CatalogEntryWithStatus extends CatalogEntry {
   isInstalled: boolean;
@@ -22,11 +24,13 @@ export interface CatalogEntryWithStatus extends CatalogEntry {
 export class GetPluginCatalogUseCase {
   constructor(
     @inject('IPluginRepository')
-    private readonly pluginRepo: IPluginRepository
+    private readonly pluginRepo: IPluginRepository,
+    @inject('IPluginCatalog')
+    private readonly pluginCatalog: IPluginCatalog
   ) {}
 
   async execute(): Promise<CatalogEntryWithStatus[]> {
-    const catalog = getCatalogEntries();
+    const catalog = this.pluginCatalog.getEntries();
     const installedPlugins = await this.pluginRepo.list();
     const installedNames = new Set(installedPlugins.map((p) => p.name));
 

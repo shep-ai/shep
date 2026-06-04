@@ -6,12 +6,14 @@ import type { Application } from '@shepai/core/domain/generated/output';
 const mockListFeaturesExecute = vi.fn();
 const mockListReposExecute = vi.fn();
 const mockGetApplicationExecute = vi.fn();
+const mockListPluginsExecute = vi.fn().mockResolvedValue([]);
 
 vi.mock('@/lib/server-container', () => ({
   resolve: (token: string) => {
     if (token === 'ListFeaturesUseCase') return { execute: mockListFeaturesExecute };
     if (token === 'ListRepositoriesUseCase') return { execute: mockListReposExecute };
     if (token === 'GetApplicationUseCase') return { execute: mockGetApplicationExecute };
+    if (token === 'ListPluginsUseCase') return { execute: mockListPluginsExecute };
     throw new Error(`Unknown token: ${token}`);
   },
 }));
@@ -71,6 +73,7 @@ describe('CreateDrawerPage (server component)', () => {
     vi.clearAllMocks();
     mockListFeaturesExecute.mockResolvedValue([]);
     mockListReposExecute.mockResolvedValue([]);
+    mockListPluginsExecute.mockResolvedValue([]);
   });
 
   it('forwards initialApplicationId + repositoryPath when applicationId resolves', async () => {
