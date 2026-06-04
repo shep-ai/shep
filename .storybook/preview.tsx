@@ -1,6 +1,16 @@
 import type { Preview } from '@storybook/react';
 import React, { useEffect } from 'react';
+import { I18nextProvider } from 'react-i18next';
+import webI18n from '../src/presentation/web/lib/i18n';
 import '../src/presentation/web/app/globals.css';
+
+// Provides the web i18next instance so components using `useTranslation()`
+// render real strings instead of raw key paths.
+const I18nDecorator = (Story: React.FC) => (
+  <I18nextProvider i18n={webI18n}>
+    <Story />
+  </I18nextProvider>
+);
 
 // Decorator to handle theme based on background color
 const ThemeDecorator = (
@@ -58,7 +68,7 @@ const preview: Preview = {
       },
     },
   },
-  decorators: [ThemeDecorator, DrawerPageDecorator],
+  decorators: [I18nDecorator, ThemeDecorator, DrawerPageDecorator],
 };
 
 export default preview;

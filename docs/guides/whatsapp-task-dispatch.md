@@ -13,6 +13,19 @@ receive agent updates, and steer the agent by replying in the chat.
 > the feature-HITL path is implemented/tested but reachable only once such a
 > binding exists.
 
+## Settings UI
+
+The WhatsApp section appears in **Settings → WhatsApp** once the
+`whatsappDispatch` feature flag is on.
+
+| Baileys (default), connected | Cloud API selected |
+| --- | --- |
+| ![Default](../screenshots/whatsapp/whatsapp-settings-default.png) | ![Cloud API](../screenshots/whatsapp/whatsapp-settings-cloud-api.png) |
+
+Switching the adapter to **Cloud API** reveals the Meta Graph credential fields
+(phone number ID, access token, verify token, app secret). The connection-status
+badge reflects the live adapter state (Connected / Scan QR / Error).
+
 ## How it works
 
 ```
