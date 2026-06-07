@@ -9,6 +9,14 @@ export function createLsCommand(): Command {
     .argument('<recipient>', 'Recipient user ID')
     .option('-p, --project <projectId>', 'Filter by project ID')
     .option('--unread', 'Show only unread notifications')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep notifications ls alice                          List all of alice's notifications
+  $ shep notifications ls alice --unread                 Show only unread notifications
+  $ shep notifications ls alice --project proj-abc12345  Filter by project ID`
+    )
     .action(async (recipientId: string, opts: { project?: string; unread?: boolean }) => {
       try {
         const useCase = container.resolve(ListNotificationsUseCase);

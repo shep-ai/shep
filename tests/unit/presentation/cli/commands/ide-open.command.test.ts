@@ -131,6 +131,29 @@ describe('IDE Open Command', () => {
         expect(opt, `Expected option ${flag}`).toBeDefined();
       }
     });
+
+    it('should include examples in help output', () => {
+      const cmd = createIdeOpenCommand();
+      let output = '';
+      cmd.configureOutput({
+        writeOut: (text) => {
+          output += text;
+        },
+      });
+      cmd.exitOverride();
+      try {
+        cmd.parse(['node', 'test', 'feat-abc12345', '--help']);
+      } catch {
+        // Commander throws when help is requested with exitOverride enabled.
+      }
+
+      expect(output).toContain('Examples:');
+      expect(output).toContain(
+        '$ shep ide feat-abc12345                Open the configured default editor'
+      );
+      expect(output).toContain('$ shep ide feat-abc12345 --vscode        Force Visual Studio Code');
+      expect(output).toContain('$ shep ide feat-abc12345 --cursor        Force Cursor');
+    });
   });
 
   describe('IDE selection', () => {

@@ -38,6 +38,33 @@ describe('notifications ls command', () => {
     expect(cmd.name()).toBe('ls');
   });
 
+  it('should include examples in help output', () => {
+    const cmd = createLsCommand();
+    let output = '';
+    cmd.configureOutput({
+      writeOut: (text) => {
+        output += text;
+      },
+    });
+    cmd.exitOverride();
+    try {
+      cmd.parse(['node', 'test', 'alice', '--help']);
+    } catch {
+      // Commander throws when help is requested with exitOverride enabled.
+    }
+
+    expect(output).toContain('Examples:');
+    expect(output).toContain(
+      "$ shep notifications ls alice                          List all of alice's notifications"
+    );
+    expect(output).toContain(
+      '$ shep notifications ls alice --unread                 Show only unread notifications'
+    );
+    expect(output).toContain(
+      '$ shep notifications ls alice --project proj-abc12345  Filter by project ID'
+    );
+  });
+
   it('should list notifications', async () => {
     mockExecute.mockResolvedValue({
       ok: true,
