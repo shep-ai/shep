@@ -55,6 +55,7 @@ import { registerCloudDeploy } from './modules/register-cloud-deploy.js';
 import { registerIntegrations } from './modules/register-integrations.js';
 import { registerDeployment } from './modules/register-deployment.js';
 import { registerUseCases } from './modules/register-use-cases.js';
+import { registerPmUseCases } from './modules/register-pm-use-cases.js';
 import { registerInteractive } from './modules/register-interactive.js';
 import { registerWhatsApp } from './modules/register-whatsapp.js';
 
@@ -90,6 +91,7 @@ export async function initializeContainer(): Promise<typeof container> {
   registerIntegrations(container);
   registerDeployment(container);
   registerUseCases(container);
+  registerPmUseCases(container);
   registerInteractive(container);
   registerWhatsApp(container);
 

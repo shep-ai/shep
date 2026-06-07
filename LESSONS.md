@@ -787,3 +787,22 @@ Model lists are centralized, but several adapters keep their own provider-format
 6. `tests/unit/infrastructure/services/agents/agent-executor-factory.test.ts` — `getSupportedModels` tests assert exact lists AND lengths per agent (Claude Code, Cursor, Copilot). Update the arrays and the `toHaveLength` count.
 
 The default model (`settings-defaults.factory.ts` `DEFAULT_MODEL`) is a SEPARATE decision — adding a model does NOT change the default. Don't touch it unless explicitly asked.
+
+## A Use Case Is Not Wired Until It's Registered in the DI Container by STRING Token
+
+`@injectable()` on a use case only makes it resolvable by its CLASS token (`container.resolve(MyUseCase)`), which is how CLI commands resolve. The web/server layer resolves by STRING token (`resolve('MyUseCase')` via `server-container.ts`). A string token throws "Attempted to resolve unregistered dependency token" unless it is explicitly registered.
+
+**What went wrong:** The plane-like PM feature (PR #552) added ~74 use cases (projects, work-items, cycles, modules, epics, intake, pages, time-entries, members, notifications, search, analytics, auth, etc.) and their repositories, but NONE of the use cases were registered in the DI container. Repositories were registered, so it looked wired — but every PM web page threw at runtime (`/projects` was the one the user hit). The whole feature was dead in the web UI.
+
+**Rule — registering a use case requires BOTH lines, in a `register-*.ts` module called from `container.ts`:**
+1. `container.registerSingleton(MyUseCase);` — class token (CLI).
+2. `container.register('MyUseCase', { useFactory: (c) => c.resolve(MyUseCase) });` — string token (web).
+
+**How to catch the whole class of bug:** diff the string tokens the web resolves against what the container registers:
+```
+grep -rhoP "resolve<\w+>\('(\w+UseCase)'\)" src/presentation/web | grep -oP "'\w+UseCase'" | tr -d "'" | sort -u  # web side
+grep -rhoP "register(Singleton|Instance)?(<[^>]+>)?\('(\w+UseCase)'" packages/core/src/infrastructure/di/ | grep -oP "'\w+UseCase'" | tr -d "'" | sort -u  # registered
+```
+`comm -23` the two lists. Beware: registrations use generic syntax `register<IFoo>('Foo', ...)` and const tokens (`IBedrockIntegrationServiceToken = 'IBedrockIntegrationService'`) — naive greps miss both and produce false "missing" hits. Always confirm against the real container by RESOLVING, not just grepping.
+
+**Prevention:** every new feature's DI wiring needs a registration test that bootstraps the real container and resolves each string token — see `tests/unit/infrastructure/di/pm-use-case-registrations.test.ts`. A feature with web pages but no DI-registration test is not done. When a file like `register-use-cases.ts` exceeds ~300 lines, add a dedicated `register-<feature>.ts` module instead of growing it.
