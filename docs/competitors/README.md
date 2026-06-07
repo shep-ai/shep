@@ -72,6 +72,12 @@ Idea → Requirements → Research → Plan → Code → Tests → PR → CI →
 | [Aider](./aider.md)             | AI pair programming in the terminal                    | Git-first pioneer         |
 | [Cline](./cline.md)             | VS Code agent with plan/act modes                      | 4M+ installs              |
 
+### IDE-First Coding Agents
+
+| Tool                             | What It Does                                   | Profile                        |
+| -------------------------------- | ---------------------------------------------- | ------------------------------ |
+| [Cursor](./cursor.md)            | IDE-first autonomous coding + context optimization | Closest IDE-native benchmark    |
+
 ### App Builders (Adjacent)
 
 These target a different audience (non-developers, rapid prototyping) but share the "describe it, get it built" philosophy:
