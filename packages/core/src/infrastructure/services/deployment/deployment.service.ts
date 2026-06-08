@@ -27,6 +27,7 @@ import type {
   LogEntry,
 } from '@/application/ports/output/services/deployment-service.interface.js';
 import { detectDevScript } from './detect-dev-script.js';
+import { buildDevServerEnv } from './dev-server-env.js';
 import { createDeploymentLogger } from './deployment-logger.js';
 import { parsePort } from './parse-port.js';
 import { LogRingBuffer } from './log-ring-buffer.js';
@@ -261,6 +262,8 @@ export class DeploymentService implements IDeploymentService {
           cwd: spawnDir,
           shell: true,
           stdio: 'ignore',
+          // Scrub cli-only vars (esp. Anthropic creds) from install scripts too.
+          env: buildDevServerEnv(process.env),
           ...(IS_WINDOWS ? { windowsHide: true } : {}),
         });
         log.info('Dependencies installed successfully');
@@ -285,7 +288,11 @@ export class DeploymentService implements IDeploymentService {
       stdio: ['ignore', 'pipe', 'pipe'] as const,
       // Prevent child shep instances (e.g. worktree dev servers) from running
       // recoverAll() on the shared ~/.shep/data DB and killing our processes.
-      env: { ...process.env, SHEP_SKIP_RECOVERY: '1' },
+      // buildDevServerEnv strips cli-only vars (NEXT_ASSET_PREFIX, PORT,
+      // Anthropic creds) so user dev servers don't inherit them — chiefly
+      // NEXT_ASSET_PREFIX=/cli, which otherwise makes a user's Next.js app emit
+      // /cli/_next/... asset URLs that 404 on the preview origin.
+      env: buildDevServerEnv(process.env, { SHEP_SKIP_RECOVERY: '1' }),
     });
 
     if (!child.pid) {

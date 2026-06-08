@@ -806,3 +806,13 @@ grep -rhoP "register(Singleton|Instance)?(<[^>]+>)?\('(\w+UseCase)'" packages/co
 `comm -23` the two lists. Beware: registrations use generic syntax `register<IFoo>('Foo', ...)` and const tokens (`IBedrockIntegrationServiceToken = 'IBedrockIntegrationService'`) — naive greps miss both and produce false "missing" hits. Always confirm against the real container by RESOLVING, not just grepping.
 
 **Prevention:** every new feature's DI wiring needs a registration test that bootstraps the real container and resolves each string token — see `tests/unit/infrastructure/di/pm-use-case-registrations.test.ts`. A feature with web pages but no DI-registration test is not done. When a file like `register-use-cases.ts` exceeds ~300 lines, add a dedicated `register-<feature>.ts` module instead of growing it.
+
+## User Dev Servers Must Not Inherit cli-only Env (NEXT_ASSET_PREFIX, PORT)
+
+In the cloud org-runner pod, the cli process runs with `NEXT_ASSET_PREFIX=/cli` and `PORT=3000` set pod-wide (so the cli's own Next.js UI is served correctly behind the shep-cloud `/cli` proxy). `DeploymentService.start()` spawned user dev servers with `env: { ...process.env }`, so a user's Next.js dev server **inherited `NEXT_ASSET_PREFIX=/cli`** and emitted `/cli/_next/...` asset URLs. Those 404 on the preview origin (`<port>-<orgHex>.preview.shep.bot`) because a Next server serves static at `/_next/...`, not `/cli/_next/...` — every previewed app loaded unstyled with a console full of `/cli/_next/static/*` 404s.
+
+**Rule:** scrub cli-only vars (`NEXT_ASSET_PREFIX`, `PORT`, Anthropic creds) from the env at the spawn point via `buildDevServerEnv()` — do NOT rely on the org-runner `env-scrub` PATH wrappers, which only intercept `npm/pnpm/yarn/bun/npx` by name and are bypassed when the binary (e.g. `bun`, or a globally-installed pnpm in `/data/.npm-global/bin`) resolves ahead of `/usr/local/sbin`. Keep `HOST`/`HOSTNAME` (intentionally `0.0.0.0` so the preview proxy can reach the dev server on the pod IP).
+
+## Debugging Prod 404s: Read the Request's Referer/Origin BEFORE Theorizing
+
+I first "fixed" these `/cli/_next/*` 404s as a per-org-pod build-skew problem (shep-cloud PR #22) — plausible, but WRONG: the failing requests' **`Referer` was the preview host** (`<port>-<org>.preview.shep.bot`), i.e. they came from a *user dev server*, not the cli UI. The ingress access log line carries Referer, status, and `upstream_addr` — read those FIRST. A 404 from a path that a healthy pod serves at 200 means the request isn't going where you assume; the Referer/Host tells you which proxy path (`/cli/*` vs `/preview-proxy`) actually handled it. Confirm the exact failing request path end-to-end before writing a fix.

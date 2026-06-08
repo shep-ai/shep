@@ -95,6 +95,28 @@ describe('DeploymentService', () => {
       );
     });
 
+    it('should scrub cli-only env vars (NEXT_ASSET_PREFIX, PORT) from the spawned dev server', () => {
+      const prevPrefix = process.env.NEXT_ASSET_PREFIX;
+      const prevPort = process.env.PORT;
+      process.env.NEXT_ASSET_PREFIX = '/cli';
+      process.env.PORT = '3000';
+      try {
+        service.start('feature-1', '/project/path');
+
+        const spawnCall = (deps.spawn as ReturnType<typeof vi.fn>).mock.calls[0];
+        const env = spawnCall[2].env as NodeJS.ProcessEnv;
+        expect(env.NEXT_ASSET_PREFIX).toBeUndefined();
+        expect(env.PORT).toBeUndefined();
+        // Still wires through the recovery guard.
+        expect(env.SHEP_SKIP_RECOVERY).toBe('1');
+      } finally {
+        if (prevPrefix === undefined) delete process.env.NEXT_ASSET_PREFIX;
+        else process.env.NEXT_ASSET_PREFIX = prevPrefix;
+        if (prevPort === undefined) delete process.env.PORT;
+        else process.env.PORT = prevPort;
+      }
+    });
+
     it('should store entry in Map with Booting state', () => {
       service.start('feature-1', '/project/path');
 
