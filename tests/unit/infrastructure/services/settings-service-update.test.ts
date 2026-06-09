@@ -75,12 +75,9 @@ describe('updateSettings', () => {
         projects: false,
         codeReview: false,
         collaboration: false,
-<<<<<<< HEAD
         bedrockIntegration: false,
         whatsappDispatch: false,
-=======
         aspm: false,
->>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
       },
     };
     updateSettings(updated);

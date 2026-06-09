@@ -15,6 +15,7 @@ function makeApp(overrides: Partial<Application>): Application {
     additionalPaths: [],
     status: 'Idle' as never,
     setupComplete: true,
+    bedrockEnabled: false,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

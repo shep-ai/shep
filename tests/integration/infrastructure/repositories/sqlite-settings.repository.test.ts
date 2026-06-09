@@ -525,12 +525,9 @@ describe('SQLiteSettingsRepository', () => {
         projects: false,
         codeReview: false,
         collaboration: false,
-<<<<<<< HEAD
         bedrockIntegration: false,
         whatsappDispatch: false,
-=======
         aspm: false,
->>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
       };
 
       await repository.initialize(settings);
@@ -543,12 +540,9 @@ describe('SQLiteSettingsRepository', () => {
         projects: false,
         codeReview: false,
         collaboration: false,
-<<<<<<< HEAD
         bedrockIntegration: false,
         whatsappDispatch: false,
-=======
         aspm: false,
->>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
       });
     });
 
@@ -565,12 +559,9 @@ describe('SQLiteSettingsRepository', () => {
         projects: false,
         codeReview: false,
         collaboration: false,
-<<<<<<< HEAD
         bedrockIntegration: false,
         whatsappDispatch: false,
-=======
         aspm: false,
->>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
       });
     });
 
@@ -585,12 +576,9 @@ describe('SQLiteSettingsRepository', () => {
         projects: false,
         codeReview: false,
         collaboration: false,
-<<<<<<< HEAD
         bedrockIntegration: false,
         whatsappDispatch: false,
-=======
         aspm: false,
->>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
       };
       settings.updatedAt = new Date('2025-01-02T00:00:00Z');
       await repository.update(settings);
@@ -603,12 +591,9 @@ describe('SQLiteSettingsRepository', () => {
         projects: false,
         codeReview: false,
         collaboration: false,
-<<<<<<< HEAD
         bedrockIntegration: false,
         whatsappDispatch: false,
-=======
         aspm: false,
->>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
       });
     });
 
@@ -621,12 +606,9 @@ describe('SQLiteSettingsRepository', () => {
         projects: false,
         codeReview: false,
         collaboration: false,
-<<<<<<< HEAD
         bedrockIntegration: false,
         whatsappDispatch: false,
-=======
         aspm: false,
->>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
       };
 
       await repository.initialize(settings);
@@ -982,6 +964,7 @@ describe('SQLiteSettingsRepository', () => {
         collaboration: false,
         bedrockIntegration: false,
         whatsappDispatch: true,
+        aspm: false,
       };
       await repository.initialize(settings);
 

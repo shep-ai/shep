@@ -159,12 +159,9 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     feature_flag_projects: 0,
     feature_flag_code_review: 0,
     feature_flag_collaboration: 0,
-<<<<<<< HEAD
     feature_flag_bedrock_integration: 0,
     feature_flag_whatsapp_dispatch: 0,
-=======
     feature_flag_aspm: 0,
->>>>>>> e15cf2c03 (feat(domain): gate aspm module behind feature flag)
     interactive_agent_enabled: 1,
     interactive_agent_auto_timeout_minutes: 15,
     interactive_agent_max_concurrent_sessions: 3,
