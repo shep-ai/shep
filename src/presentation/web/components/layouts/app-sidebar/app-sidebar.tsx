@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Bot,
   GraduationCap,
+  Brain,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -199,6 +200,12 @@ export function AppSidebar({
             label="SDLC Board"
             href="/sdlc"
             active={pathname?.startsWith('/sdlc') ?? false}
+          />
+          <SidebarNavItem
+            icon={Brain}
+            label={t('navigation.projectMemory')}
+            href="/memory"
+            active={pathname?.startsWith('/memory') ?? false}
           />
           <SidebarNavItem
             icon={Wrench}

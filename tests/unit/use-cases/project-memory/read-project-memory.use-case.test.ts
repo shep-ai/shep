@@ -29,7 +29,10 @@ describe('ReadProjectMemoryUseCase', () => {
       create: vi.fn(),
       findById: vi.fn(),
       listByRepository: vi.fn().mockResolvedValue([]),
+      listAll: vi.fn().mockResolvedValue([]),
       upsert: vi.fn(),
+      updateContent: vi.fn(),
+      delete: vi.fn(),
     };
     useCase = new ReadProjectMemoryUseCase(repo);
   });

@@ -121,6 +121,7 @@ import { UpdateSdlcSubTaskStatusUseCase } from '../../../application/use-cases/s
 // Project memory ("Shep Brain", feature 102) use cases
 import { ReadProjectMemoryUseCase } from '../../../application/use-cases/project-memory/read-project-memory.use-case.js';
 import { RecordProjectMemoryUseCase } from '../../../application/use-cases/project-memory/record-project-memory.use-case.js';
+import { ManageProjectMemoryUseCase } from '../../../application/use-cases/project-memory/manage-project-memory.use-case.js';
 
 // Bedrock integration (feature 098) use cases
 import { EnableBedrockForApplicationUseCase } from '../../../application/use-cases/applications/enable-bedrock-for-application.use-case.js';
@@ -523,6 +524,7 @@ export function registerUseCases(container: DependencyContainer): void {
   // ─── Project memory ("Shep Brain", feature 102) use cases ───────────────
   container.registerSingleton(ReadProjectMemoryUseCase);
   container.registerSingleton(RecordProjectMemoryUseCase);
+  container.registerSingleton(ManageProjectMemoryUseCase);
 
   // ─── Bedrock integration (feature 098) use cases ────────────────────────
   container.registerSingleton(EnableBedrockForApplicationUseCase);
@@ -578,5 +580,8 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('RecordProjectMemoryUseCase', {
     useFactory: (c) => c.resolve(RecordProjectMemoryUseCase),
+  });
+  container.register('ManageProjectMemoryUseCase', {
+    useFactory: (c) => c.resolve(ManageProjectMemoryUseCase),
   });
 }

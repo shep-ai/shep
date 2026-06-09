@@ -68,6 +68,29 @@ export interface IProjectMemoryRepository {
   listByRepository(repositoryPath: string): Promise<ProjectMemory[]>;
 
   /**
+   * List every memory entry across all repositories, ordered by repository,
+   * then category, then most-recently-updated first. Backs the management UI.
+   *
+   * @returns All persisted memory entries
+   */
+  listAll(): Promise<ProjectMemory[]>;
+
+  /**
+   * Update an existing entry's content (and bump updatedAt).
+   *
+   * @param id      - The entry UUID
+   * @param content - The new content
+   */
+  updateContent(id: string, content: string): Promise<void>;
+
+  /**
+   * Delete an entry by its unique ID. No-op if it does not exist.
+   *
+   * @param id - The entry UUID
+   */
+  delete(id: string): Promise<void>;
+
+  /**
    * Idempotent upsert keyed on (repositoryPath, category, entryKey).
    * Inserts a new row if the key does not exist, otherwise updates the
    * existing row's `content`, `sourceFeatureId`, and `updatedAt`. Safe to

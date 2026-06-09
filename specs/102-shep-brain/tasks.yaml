@@ -185,8 +185,71 @@ tasks:
         - Reuse executeNode helpers / option builders where possible
     estimatedEffort: L
 
+  - id: task-8
+    title: Repository + use case for memory management
+    description: >
+      Extend IProjectMemoryRepository with listAll, updateContent, and delete.
+      Add ManageProjectMemoryUseCase (list all/by-repo, update content, delete)
+      mirroring the ManageLabelsUseCase precedent. Register in DI (class token +
+      string alias). Integration + unit tests.
+    state: Done
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - listAll returns entries across repos; updateContent/delete work
+      - ManageProjectMemoryUseCase validates input, length-caps content
+      - Resolvable from DI by 'ManageProjectMemoryUseCase'
+    tdd:
+      red:
+        - Repo integration tests for listAll/updateContent/delete; use-case unit tests
+      green:
+        - Implement repo methods + use case; wire DI
+      refactor:
+        - Reuse MAX_CONTENT_LENGTH constant
+    estimatedEffort: M
+
+  - id: task-9
+    title: Project Memory management page + server actions
+    description: >
+      Server actions (list/update/delete) calling ManageProjectMemoryUseCase via
+      resolve(). An ungated /memory page (server component) that lists entries
+      and passes them to a client panel. Sidebar nav item (ungated, like SDLC
+      Board) + translation keys (en, runtime fallback for other locales).
+    state: Done
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - /memory page renders entries; sidebar links to it
+      - Server actions return {data?, error?} and resolve the use case by token
+      - Translation keys added under navigation + memory
+    tdd: null
+    estimatedEffort: M
+
+  - id: task-10
+    title: ProjectMemoryPanel component + Storybook story
+    description: >
+      Client component grouping entries by category with inline content edit and
+      confirmed (AlertDialog) delete, updating local state after each mutation.
+      Colocated .stories.tsx (WithEntries / SingleCategory / Empty) + Storybook
+      action mock. RTL test for grouping, edit, delete, and empty/error states.
+    state: Done
+    dependencies:
+      - task-9
+    acceptanceCriteria:
+      - Groups by category; edit + delete call the server actions and update the list
+      - Colocated Storybook story exists; storybook build passes
+      - RTL test covers render/edit/delete/empty/error
+    tdd:
+      red:
+        - RTL test for ProjectMemoryPanel
+      green:
+        - Build the component + story + mock
+      refactor:
+        - Extract category label/order constants
+    estimatedEffort: M
+
 # Total effort estimate
-totalEstimate: M-L (7 tasks, 5 phases)
+totalEstimate: L (10 tasks, 6 phases)
 
 # Open questions
 openQuestions: []

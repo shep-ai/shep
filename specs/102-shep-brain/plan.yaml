@@ -41,6 +41,13 @@ phases:
     parallel: false
     taskIds:
       - task-7
+  - id: phase-6
+    name: 'Management UI (web)'
+    parallel: false
+    taskIds:
+      - task-8
+      - task-9
+      - task-10
 
 # File change tracking
 filesToCreate:
@@ -53,6 +60,11 @@ filesToCreate:
   - packages/core/src/application/use-cases/project-memory/record-project-memory.use-case.ts
   - packages/core/src/infrastructure/services/agents/feature-agent/nodes/extract-memory.node.ts
   - packages/core/src/infrastructure/services/agents/feature-agent/nodes/prompts/extract-memory.prompt.ts
+  - packages/core/src/application/use-cases/project-memory/manage-project-memory.use-case.ts
+  - src/presentation/web/app/actions/manage-project-memory.ts
+  - src/presentation/web/app/memory/page.tsx
+  - src/presentation/web/components/features/project-memory/project-memory-panel.tsx
+  - src/presentation/web/components/features/project-memory/project-memory-panel.stories.tsx
 
 filesToModify:
   - tsp/domain/index.tsp

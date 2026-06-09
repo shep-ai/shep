@@ -14,7 +14,10 @@ describe('RecordProjectMemoryUseCase', () => {
       create: vi.fn(),
       findById: vi.fn(),
       listByRepository: vi.fn(),
+      listAll: vi.fn(),
       upsert: vi.fn().mockResolvedValue(undefined),
+      updateContent: vi.fn(),
+      delete: vi.fn(),
     };
     useCase = new RecordProjectMemoryUseCase(repo);
   });

@@ -49,6 +49,25 @@ export class SQLiteProjectMemoryRepository implements IProjectMemoryRepository {
     return rows.map(fromDatabase);
   }
 
+  async listAll(): Promise<ProjectMemory[]> {
+    const stmt = this.db.prepare(
+      'SELECT * FROM project_memory ORDER BY repository_path ASC, category ASC, updated_at DESC'
+    );
+    const rows = stmt.all() as ProjectMemoryRow[];
+    return rows.map(fromDatabase);
+  }
+
+  async updateContent(id: string, content: string): Promise<void> {
+    const stmt = this.db.prepare(
+      'UPDATE project_memory SET content = ?, updated_at = ? WHERE id = ?'
+    );
+    stmt.run(content, Date.now(), id);
+  }
+
+  async delete(id: string): Promise<void> {
+    this.db.prepare('DELETE FROM project_memory WHERE id = ?').run(id);
+  }
+
   async upsert(entry: ProjectMemoryUpsert): Promise<void> {
     const now = Date.now();
     const stmt = this.db.prepare(`

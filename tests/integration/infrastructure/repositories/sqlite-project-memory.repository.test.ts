@@ -224,6 +224,51 @@ describe('SQLiteProjectMemoryRepository', () => {
     });
   });
 
+  describe('listAll()', () => {
+    it('returns entries across all repositories, ordered by repo then category', async () => {
+      await repo.create(
+        makeMemory({ id: 'b', repositoryPath: '/repo-b', category: MemoryCategory.Library })
+      );
+      await repo.create(
+        makeMemory({ id: 'a2', repositoryPath: '/repo-a', category: MemoryCategory.Library })
+      );
+      await repo.create(
+        makeMemory({ id: 'a1', repositoryPath: '/repo-a', category: MemoryCategory.Convention })
+      );
+
+      const all = await repo.listAll();
+      expect(all.map((r) => r.id)).toEqual(['a1', 'a2', 'b']);
+    });
+
+    it('returns an empty array when the store is empty', async () => {
+      expect(await repo.listAll()).toHaveLength(0);
+    });
+  });
+
+  describe('updateContent()', () => {
+    it('updates content in place and bumps updated_at', async () => {
+      await repo.create(makeMemory({ updatedAt: NOW }));
+
+      await repo.updateContent('mem-001', 'Rewritten guidance.');
+
+      const found = await repo.findById('mem-001');
+      expect(found!.content).toBe('Rewritten guidance.');
+      expect(found!.updatedAt.getTime()).toBeGreaterThanOrEqual(NOW.getTime());
+    });
+  });
+
+  describe('delete()', () => {
+    it('removes the entry by id', async () => {
+      await repo.create(makeMemory());
+      await repo.delete('mem-001');
+      expect(await repo.findById('mem-001')).toBeNull();
+    });
+
+    it('is a no-op for a nonexistent id', async () => {
+      await expect(repo.delete('nope')).resolves.toBeUndefined();
+    });
+  });
+
   describe('date handling', () => {
     it('stores and retrieves dates with millisecond precision', async () => {
       const precise = new Date('2026-05-15T12:34:56.789Z');
