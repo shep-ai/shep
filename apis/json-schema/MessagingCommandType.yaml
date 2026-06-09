@@ -1,0 +1,17 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: MessagingCommandType.yaml
+type: string
+enum:
+  - new
+  - approve
+  - reject
+  - stop
+  - resume
+  - status
+  - mute
+  - unmute
+  - list
+  - chat
+  - end
+  - help
+description: Slash commands supported via messaging remote control

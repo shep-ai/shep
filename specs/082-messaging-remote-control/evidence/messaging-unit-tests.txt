@@ -1,0 +1,15 @@
+Evidence: Messaging Service Unit Tests
+Captured: 2026-04-02T12:15:52Z
+Command: pnpm vitest run tests/unit/infrastructure/services/messaging/
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-messaging-remote-control
+
+ ✓  node  tests/unit/infrastructure/services/messaging/content-sanitizer.test.ts (9 tests) 2ms
+ ✓  node  tests/unit/infrastructure/services/messaging/chat-relay.test.ts (8 tests) 5ms
+ ✓  node  tests/unit/infrastructure/services/messaging/notification-emitter.test.ts (7 tests) 5ms
+ ✓  node  tests/unit/infrastructure/services/messaging/command-executor.test.ts (15 tests) 5ms
+
+ Test Files  4 passed (4)
+      Tests  39 passed (39)
+   Start at  12:15:52
+   Duration  136ms (transform 156ms, setup 99ms, import 121ms, tests 16ms, environment 0ms)

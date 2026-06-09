@@ -1089,6 +1089,7 @@ npx @shepai/cli@latest
 
 * **tsp:** add ukrainian (uk) translation ([#535](https://github.com/shep-ai/shep/issues/535)) ([a9170fb](https://github.com/shep-ai/shep/commit/a9170fbdf081870469c58bc3433b17b000e83316))
 
+
 ## [1.175.1](https://github.com/shep-ai/shep/compare/v1.175.0...v1.175.1) (2026-04-06)
 
 

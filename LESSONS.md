@@ -112,6 +112,29 @@ A user reported their newly-created application got stuck on bootstrap with `Age
 - `packages/core/src/application/use-cases/applications/create-application.use-case.ts` — resolves + persists.
 
 If you add another agent picker or another use case that creates per-entity agent overrides, plug them into THIS chain. Do not add a sixth source of "what's the default agent".
+## Messaging Remote Control: HttpGatewayClient Uses an Unsupported OAuth Grant
+
+`HttpGatewayClient.fetchAccessToken` (feat/messaging-remote-control, feature 082) hardcodes
+`grant_type=client_credentials` in its call to `POST /oauth/token`. The OSS Commands Gateway
+demo mode (`AUTH_MODE=demo`) advertises only `authorization_code` and `refresh_token` in its
+`.well-known/openid-configuration` and returns `400 {"error":"unsupported grant_type"}` for
+`client_credentials`. As a result, `BeginMessagingPairingUseCase` always throws
+"Gateway authentication failed: ..." and the web pairing dialog never opens — the Pair button
+silently fails because (a) the server action returns `{ success: false, error }` and
+(b) no `<Toaster />` is mounted in the web layout, so the `toast.error(...)` never renders.
+
+**What to fix before this can work end-to-end against a real gateway:**
+1. Swap `HttpGatewayClient.fetchAccessToken` to the authorization-code + PKCE flow
+   (matches the gateway's supported grants), OR add device-code support on the gateway side.
+2. Mount a sonner `<Toaster />` in the web root layout so pairing failures are visible to
+   the user instead of silently failing.
+3. The feature was marked `fast-implement` complete and merged to main without ever being
+   exercised against a live OSS gateway. Add a smoke test that spins up the gateway Go binary
+   in CI and runs `BeginMessagingPairingUseCase` against it.
+
+**Rule:** Any time a feature integrates with an external service, it must be validated against
+a live instance of that service — unit tests with fetch mocks are not sufficient because they
+only verify what you *think* the protocol is.
 
 ## Adding a Web Feature Flag — Full Wiring Checklist
 

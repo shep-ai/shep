@@ -1,0 +1,12 @@
+Evidence: Serve Command Tests (including messaging service integration)
+Captured: 2026-04-02T12:15:53Z
+Command: pnpm vitest run tests/unit/commands/_serve.command.test.ts
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-messaging-remote-control
+
+ ✓  node  tests/unit/commands/_serve.command.test.ts (12 tests) 7ms
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  12:15:53
+   Duration  151ms (transform 66ms, setup 23ms, import 63ms, tests 7ms, environment 0ms)

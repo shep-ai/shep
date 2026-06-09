@@ -1,0 +1,28 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: MessagingCommand.yaml
+type: object
+properties:
+  type:
+    $ref: MessagingFrameType.yaml
+    description: "Type of frame: command, chat_message, or chat_control"
+  command:
+    $ref: MessagingCommandType.yaml
+    description: The slash command name (new, approve, reject, stop, resume, status)
+  featureId:
+    type: string
+    description: Target feature ID (short numeric or full UUID)
+  args:
+    type: string
+    description: Free-text arguments (feature description, rejection feedback, chat text)
+  chatId:
+    type: string
+    description: Chat ID for routing responses back to the correct conversation
+  platform:
+    $ref: MessagingPlatform.yaml
+    description: Platform for routing responses back (telegram or whatsapp)
+required:
+  - type
+  - command
+  - chatId
+  - platform
+description: A parsed command received from a messaging platform via the Gateway tunnel

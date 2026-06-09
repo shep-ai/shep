@@ -1,0 +1,12 @@
+Evidence: TypeSpec Compilation
+Captured: 2026-04-02T12:14:50Z
+Command: pnpm tsp:compile
+
+> @shepai/cli@1.163.0 tsp:compile /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-messaging-remote-control
+> tsp compile tsp/
+
+TypeSpec compiler v0.60.1
+
+Compilation completed successfully.
+
+All messaging domain models (MessagingCommand, MessagingConfig, MessagingNotification, MessagingPlatform, etc.) compile successfully.

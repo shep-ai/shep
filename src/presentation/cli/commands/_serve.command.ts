@@ -58,6 +58,7 @@ import type { IRepositoryRepository } from '@/application/ports/output/repositor
 import type { IGitHubRepositoryService } from '@/application/ports/output/services/github-repository-service.interface.js';
 import type { IDesktopNotifier } from '@/application/ports/output/services/i-desktop-notifier.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
+import type { IMessagingService } from '@/application/ports/output/services/messaging-service.interface.js';
 import { getCliI18n } from '../i18n.js';
 import type { IWorkflowRepository } from '@/application/ports/output/repositories/workflow-repository.interface.js';
 import type { IWorkflowExecutionRepository } from '@/application/ports/output/repositories/workflow-execution-repository.interface.js';
@@ -152,6 +153,12 @@ export function createServeCommand(): Command {
           await getWorkflowScheduler().start();
         }
 
+        // Start messaging service if configured (spec 082)
+        const messagingService = container.resolve<IMessagingService>('IMessagingService');
+        if (messagingService.isConfigured()) {
+          await messagingService.start();
+        }
+
         // Graceful shutdown handler — identical pattern to ui.command.ts
         let isShuttingDown = false;
         const shutdown = async () => {
@@ -170,6 +177,7 @@ export function createServeCommand(): Command {
           getStaleGoodFirstIssueWatcher().stop();
           getMonthlyRecapWatcher().stop();
           void whatsappService.stop();
+          await messagingService.stop();
           const deploymentService = container.resolve<IDeploymentService>('IDeploymentService');
           deploymentService.stopAll();
           await service.stop();

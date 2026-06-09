@@ -18,7 +18,8 @@
       "layout": "Розташування",
       "database": "База даних",
       "integrations": "Інтеграції",
-      "security": "Security"
+      "security": "Security",
+      "messaging": "Повідомлення"
     },
     "language": {
       "title": "Мова",

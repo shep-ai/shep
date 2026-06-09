@@ -15,6 +15,25 @@ import 'reflect-metadata';
 import { container } from 'tsyringe';
 import type Database from 'better-sqlite3';
 
+// Messaging — not yet in a registration module
+import type { IMessagingService } from '../../application/ports/output/services/messaging-service.interface.js';
+import { getSettings } from '../services/settings.service.js';
+import { BeginMessagingPairingUseCase } from '../../application/use-cases/messaging/begin-pairing.use-case.js';
+import { ConfirmMessagingPairingUseCase } from '../../application/use-cases/messaging/confirm-pairing.use-case.js';
+import { DisconnectMessagingUseCase } from '../../application/use-cases/messaging/disconnect-messaging.use-case.js';
+import type { IGatewayClient } from '../../application/ports/output/services/gateway-client.interface.js';
+import { HttpGatewayClient } from '../services/messaging/http-gateway.client.js';
+import { StubGatewayClient } from '../services/messaging/stub-gateway.client.js';
+import { type getNotificationBus } from '../services/notifications/notification-bus.js';
+import { CreateFeatureUseCase } from '../../application/use-cases/features/create/create-feature.use-case.js';
+import { ApproveAgentRunUseCase } from '../../application/use-cases/agents/approve-agent-run.use-case.js';
+import { RejectAgentRunUseCase } from '../../application/use-cases/agents/reject-agent-run.use-case.js';
+import { StopAgentRunUseCase } from '../../application/use-cases/agents/stop-agent-run.use-case.js';
+import { ResumeFeatureUseCase } from '../../application/use-cases/features/resume-feature.use-case.js';
+import { ListFeaturesUseCase } from '../../application/use-cases/features/list-features.use-case.js';
+import { ShowFeatureUseCase } from '../../application/use-cases/features/show-feature.use-case.js';
+import { ListRepositoriesUseCase } from '../../application/use-cases/repositories/list-repositories.use-case.js';
+
 // Database connection
 import { getSQLiteConnection } from '../persistence/sqlite/connection.js';
 import { runSQLiteMigrations } from '../persistence/sqlite/migrations.js';
@@ -113,6 +132,29 @@ export async function initializeContainer(): Promise<typeof container> {
   deploymentService.setDatabase(db);
   deploymentService.recoverAll();
   container.registerInstance<IDeploymentService>('IDeploymentService', deploymentService);
+
+  // ─── Messaging registration ──────────────────────────────────────────────
+  if (process.env.SHEP_MOCK_GATEWAY === '1') {
+    container.register<IGatewayClient>('IGatewayClient', {
+      useFactory: () => new StubGatewayClient(),
+    });
+  } else {
+    container.register<IGatewayClient>('IGatewayClient', {
+      useFactory: () => new HttpGatewayClient(),
+    });
+  }
+  container.registerSingleton(BeginMessagingPairingUseCase);
+  container.registerSingleton(ConfirmMessagingPairingUseCase);
+  container.registerSingleton(DisconnectMessagingUseCase);
+  container.register('BeginMessagingPairingUseCase', {
+    useFactory: (c) => c.resolve(BeginMessagingPairingUseCase),
+  });
+  container.register('ConfirmMessagingPairingUseCase', {
+    useFactory: (c) => c.resolve(ConfirmMessagingPairingUseCase),
+  });
+  container.register('DisconnectMessagingUseCase', {
+    useFactory: (c) => c.resolve(DisconnectMessagingUseCase),
+  });
 
   // ─── Boot-time workflow-step recovery ────────────────────────────────────
   // Any step left in `running` by a previous daemon is orphaned. Flip it to
@@ -250,6 +292,103 @@ export async function initializeContainer(): Promise<typeof container> {
   // Startup cleanup: mark any zombie sessions (booting/ready from a prior
   // server run) as stopped.
   await interactiveSessionRepo.markAllActiveStopped();
+
+  // Register messaging service as a lazy factory — only instantiated when
+  // the daemon resolves it. Avoids loading ws and messaging code for CLI commands.
+  container.register<IMessagingService>('IMessagingService', {
+    useFactory: (c) => {
+      let instance: IMessagingService | null = null;
+      const getInstance = async (): Promise<IMessagingService> => {
+        if (!instance) {
+          const { MessagingService } = await import('../services/messaging/messaging.service.js');
+          const { HttpTelegramClient } = await import(
+            '../services/messaging/http-telegram.client.js'
+          );
+          const settingsModule = await import('../services/settings.service.js');
+          const settings = settingsModule.getSettings();
+          const messagingConfig = settings.messaging ?? {
+            enabled: false,
+            debounceMs: 5000,
+            chatBufferMs: 3000,
+          };
+
+          // Fetch an OAuth access token from the Gateway so the tunnel
+          // upgrade carries a valid Bearer header. If the fetch fails the
+          // service still constructs (isConfigured will return false) so
+          // startup doesn't crash the daemon.
+          let accessToken = '';
+          if (messagingConfig.enabled && messagingConfig.gatewayUrl) {
+            try {
+              const gatewayClient = c.resolve<IGatewayClient>('IGatewayClient');
+              const token = await gatewayClient.fetchAccessToken({
+                gatewayUrl: messagingConfig.gatewayUrl,
+                clientId: messagingConfig.gatewayClientId ?? 'commands-desktop-public',
+              });
+              accessToken = token.accessToken;
+            } catch {
+              // Non-fatal — isConfigured() will gate start().
+            }
+          }
+
+          // Bot token precedence: settings.db > env var. Per-platform token
+          // from settings takes priority; env var is a dev convenience.
+          const telegramBotToken =
+            messagingConfig.telegram?.botToken ?? process.env.SHEP_TELEGRAM_BOT_TOKEN;
+
+          instance = new MessagingService({
+            config: messagingConfig,
+            accessToken,
+            telegramClient: new HttpTelegramClient(),
+            telegramBotToken,
+            notificationBus: c.resolve('NotificationEventBus') as ReturnType<
+              typeof getNotificationBus
+            >,
+            featureRepo: c.resolve<IFeatureRepository>('IFeatureRepository'),
+            createFeature: c.resolve(CreateFeatureUseCase),
+            approveAgentRun: c.resolve(ApproveAgentRunUseCase),
+            rejectAgentRun: c.resolve(RejectAgentRunUseCase),
+            stopAgentRun: c.resolve(StopAgentRunUseCase),
+            resumeFeature: c.resolve(ResumeFeatureUseCase),
+            listFeatures: c.resolve(ListFeaturesUseCase),
+            showFeature: c.resolve(ShowFeatureUseCase),
+            listRepositories: c.resolve(ListRepositoriesUseCase),
+            confirmPairing: c.resolve(ConfirmMessagingPairingUseCase),
+            interactiveSessionService: c.resolve<IInteractiveSessionService>(
+              'IInteractiveSessionService'
+            ),
+          });
+        }
+        return instance;
+      };
+      return new Proxy({} as IMessagingService, {
+        get: (_target, prop) => {
+          if (prop === 'isConfigured') {
+            // isConfigured is synchronous — check settings directly.
+            // A route is enough: the tunnel must start in pending-pairing
+            // state so the daemon can receive the user's `/pair <code>`
+            // message and auto-confirm via the tunnel.
+            return () => {
+              try {
+                const settings = getSettings();
+                const mc = settings.messaging;
+                if (!mc?.enabled || !mc?.gatewayUrl || !mc?.deviceId) return false;
+                const telegramReady = !!mc.telegram?.routeId;
+                const whatsappReady = !!mc.whatsapp?.routeId;
+                return telegramReady || whatsappReady;
+              } catch {
+                return false;
+              }
+            };
+          }
+          return async (...args: unknown[]) => {
+            const svc = await getInstance();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return (svc as any)[prop](...args);
+          };
+        },
+      });
+    },
+  });
 
   _initialized = true;
   return container;

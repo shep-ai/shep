@@ -126,6 +126,7 @@
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
+    "@types/ws": "^8.18.1",
     "@typespec-tools/emitter-typescript": "^0.3.0",
     "@typespec/compiler": "^0.60.0",
     "@typespec/json-schema": "^0.60.0",
@@ -252,6 +253,7 @@
     "tsyringe": "^4.10.0",
     "umzug": "^3.8.2",
     "which": "^5.0.0",
+    "ws": "^8.20.0",
     "zod": "^4.3.6"
   }
 }

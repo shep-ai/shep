@@ -1,0 +1,34 @@
+feature:
+  id: "082-messaging-remote-control"
+  name: "messaging-remote-control"
+  number: 82
+  branch: "feat/082-messaging-remote-control"
+  lifecycle: "research"
+  createdAt: "2026-04-02T08:29:01Z"
+status:
+  phase: "research"
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: "2026-04-02T08:29:01Z"
+  lastUpdatedBy: "feature-agent"
+  completedPhases:
+    - "evidence"
+    - "fast-implement"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-04-02T08:29:01Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []

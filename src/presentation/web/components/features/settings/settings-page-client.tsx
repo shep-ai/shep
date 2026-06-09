@@ -20,6 +20,7 @@ import {
   LayoutGrid,
   Home,
   Shield,
+  MessageCircle,
   Eye,
   EyeOff,
   Github,
@@ -51,6 +52,7 @@ import { getEditorTypeIcon } from '@/components/common/editor-type-icons';
 import { AgentModelPicker } from '@/components/features/settings/AgentModelPicker';
 import { GithubIntegrationSection } from '@/components/features/settings/github-integration-section';
 import { WhatsAppSettings } from '@/components/features/settings/whatsapp/whatsapp-settings';
+import { MessagingSettingsSection } from '@/components/features/settings/messaging-settings-section';
 const LANGUAGE_OPTIONS = [
   { value: Language.English, nativeName: 'English' },
   { value: Language.Ukrainian, nativeName: 'Українська' },
@@ -108,6 +110,7 @@ const SECTIONS = [
   { id: 'ci', labelKey: 'settings.sections.ci', icon: Activity },
   { id: 'stage-timeouts', labelKey: 'settings.sections.timeouts', icon: Timer },
   { id: 'notifications', labelKey: 'settings.sections.notifications', icon: Bell },
+  { id: 'messaging', labelKey: 'settings.sections.messaging', icon: MessageCircle },
   { id: 'feature-flags', labelKey: 'settings.sections.flags', icon: Flag },
   { id: 'interactive-agent', labelKey: 'settings.sections.chat', icon: MessageSquare },
   { id: 'home-page', labelKey: 'settings.sections.homePage', icon: Home },
@@ -1775,6 +1778,25 @@ export function SettingsPageClient({
             ]}
           >
             {t('settings.notifications.hint')}
+          </SectionHint>
+        </div>
+
+        {/* ── Messaging Remote Control ── */}
+        <div
+          id="section-messaging"
+          className="grid scroll-mt-18 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[1fr_280px]"
+        >
+          <MessagingSettingsSection messaging={settings.messaging} />
+          <SectionHint
+            links={[
+              {
+                label: 'Commands.com Gateway',
+                href: 'https://github.com/Commands-com/gateway',
+              },
+            ]}
+          >
+            Drive Shep remotely from Telegram or WhatsApp. Pair a chat to send commands and receive
+            notifications through the Commands.com Gateway.
           </SectionHint>
         </div>
 

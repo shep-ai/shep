@@ -41,7 +41,8 @@
     "reflect-metadata": "^0.2.2",
     "tsyringe": "^4.10.0",
     "umzug": "^3.8.2",
-    "which": "^5.0.0"
+    "which": "^5.0.0",
+    "ws": "^8.20.0"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.1",

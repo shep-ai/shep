@@ -195,6 +195,31 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     security_mode: 'Advisory',
     security_last_evaluation_at: null,
     security_policy_source: null,
+    // Messaging columns (migration 056) — all default to "unconfigured".
+    messaging_enabled: 0,
+    messaging_gateway_url: null,
+    messaging_device_id: null,
+    messaging_gateway_client_id: null,
+    messaging_debounce_ms: null,
+    messaging_chat_buffer_ms: null,
+    messaging_telegram_enabled: 0,
+    messaging_telegram_paired: 0,
+    messaging_telegram_chat_id: null,
+    messaging_telegram_route_id: null,
+    messaging_telegram_route_token: null,
+    messaging_telegram_public_url: null,
+    messaging_telegram_bot_token: null,
+    messaging_telegram_pending_code: null,
+    messaging_telegram_pending_expires_at: null,
+    messaging_whatsapp_enabled: 0,
+    messaging_whatsapp_paired: 0,
+    messaging_whatsapp_chat_id: null,
+    messaging_whatsapp_route_id: null,
+    messaging_whatsapp_route_token: null,
+    messaging_whatsapp_public_url: null,
+    messaging_whatsapp_bot_token: null,
+    messaging_whatsapp_pending_code: null,
+    messaging_whatsapp_pending_expires_at: null,
     ...overrides,
   };
 }
@@ -1456,6 +1481,115 @@ describe('Settings Mapper', () => {
       const row = toDatabase(settings);
       const restored = fromDatabase(row);
       expect(restored.featureFlags).toEqual(settings.featureFlags);
+    });
+  });
+
+  // Messaging remote control persistence (migration 056).
+  // Backward-compat requirement: a row written by an older build (all
+  // messaging_* columns at their default 0/null) must still decode to a
+  // valid MessagingConfig that consumer code can .?chain against.
+  describe('messaging remote control persistence', () => {
+    it('should default to disabled messaging config when row columns are unset', () => {
+      const row = createTestRow(); // defaults: all messaging_* at 0/null
+      const restored = fromDatabase(row);
+      expect(restored.messaging).toBeDefined();
+      expect(restored.messaging?.enabled).toBe(false);
+      expect(restored.messaging?.debounceMs).toBe(5000);
+      expect(restored.messaging?.chatBufferMs).toBe(3000);
+      expect(restored.messaging?.telegram).toBeUndefined();
+      expect(restored.messaging?.whatsapp).toBeUndefined();
+    });
+
+    it('should round-trip a fully configured Telegram pairing', () => {
+      const original = createTestSettings({
+        messaging: {
+          enabled: true,
+          gatewayUrl: 'http://localhost:8080',
+          deviceId: 'shep-dev-1',
+          gatewayClientId: 'commands-desktop-public',
+          debounceMs: 4000,
+          chatBufferMs: 2500,
+          telegram: {
+            enabled: true,
+            paired: true,
+            chatId: '123456',
+            routeId: 'rt_abc',
+            routeToken: 'tok_xyz',
+            publicUrl: 'http://localhost:8080/integrations/rt_abc/tok_xyz',
+            botToken: 'bot:secret',
+          },
+        },
+      });
+      const row = toDatabase(original);
+      expect(row.messaging_enabled).toBe(1);
+      expect(row.messaging_gateway_url).toBe('http://localhost:8080');
+      expect(row.messaging_telegram_paired).toBe(1);
+      expect(row.messaging_telegram_route_id).toBe('rt_abc');
+
+      const restored = fromDatabase(row);
+      expect(restored.messaging?.enabled).toBe(true);
+      expect(restored.messaging?.gatewayUrl).toBe('http://localhost:8080');
+      expect(restored.messaging?.deviceId).toBe('shep-dev-1');
+      expect(restored.messaging?.telegram?.paired).toBe(true);
+      expect(restored.messaging?.telegram?.chatId).toBe('123456');
+      expect(restored.messaging?.telegram?.routeId).toBe('rt_abc');
+      expect(restored.messaging?.telegram?.publicUrl).toBe(
+        'http://localhost:8080/integrations/rt_abc/tok_xyz'
+      );
+      expect(restored.messaging?.telegram?.botToken).toBe('bot:secret');
+      expect(restored.messaging?.whatsapp).toBeUndefined();
+    });
+
+    it('should preserve a pending pairing (no chatId, no paired) through round-trip', () => {
+      const original = createTestSettings({
+        messaging: {
+          enabled: true,
+          gatewayUrl: 'http://localhost:8080',
+          deviceId: 'shep-dev-1',
+          debounceMs: 5000,
+          chatBufferMs: 3000,
+          telegram: {
+            enabled: true,
+            paired: false,
+            pendingPairingCode: '482913',
+            pendingPairingExpiresAt: '2026-04-09T13:00:00.000Z',
+            routeId: 'rt_abc',
+            routeToken: 'tok_xyz',
+            publicUrl: 'http://localhost:8080/integrations/rt_abc/tok_xyz',
+          },
+        },
+      });
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+      expect(restored.messaging?.telegram?.paired).toBe(false);
+      expect(restored.messaging?.telegram?.pendingPairingCode).toBe('482913');
+      expect(restored.messaging?.telegram?.pendingPairingExpiresAt).toBe(
+        '2026-04-09T13:00:00.000Z'
+      );
+      expect(restored.messaging?.telegram?.chatId).toBeUndefined();
+    });
+
+    it('should serialize a Date pendingPairingExpiresAt to ISO string', () => {
+      const expires = new Date('2026-04-09T13:00:00.000Z');
+      const row = toDatabase(
+        createTestSettings({
+          messaging: {
+            enabled: true,
+            gatewayUrl: 'http://localhost:8080',
+            deviceId: 'shep-dev-1',
+            debounceMs: 5000,
+            chatBufferMs: 3000,
+            telegram: {
+              enabled: true,
+              paired: false,
+              pendingPairingCode: '111111',
+              pendingPairingExpiresAt: expires,
+              routeId: 'rt_abc',
+            },
+          },
+        })
+      );
+      expect(row.messaging_telegram_pending_expires_at).toBe('2026-04-09T13:00:00.000Z');
     });
   });
 });

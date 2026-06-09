@@ -15,6 +15,8 @@ import type {
   Settings,
   SkillInjectionConfig,
   SkillSource,
+  MessagingConfig,
+  MessagingPlatformConfig,
 } from '../../../../domain/generated/output.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import {
@@ -169,6 +171,34 @@ export interface SettingsRow {
   security_mode: string;
   security_last_evaluation_at: string | null;
   security_policy_source: string | null;
+
+  // Messaging remote control config (added in migration 056)
+  messaging_enabled: number;
+  messaging_gateway_url: string | null;
+  messaging_device_id: string | null;
+  messaging_gateway_client_id: string | null;
+  messaging_debounce_ms: number | null;
+  messaging_chat_buffer_ms: number | null;
+
+  messaging_telegram_enabled: number;
+  messaging_telegram_paired: number;
+  messaging_telegram_chat_id: string | null;
+  messaging_telegram_route_id: string | null;
+  messaging_telegram_route_token: string | null;
+  messaging_telegram_public_url: string | null;
+  messaging_telegram_bot_token: string | null;
+  messaging_telegram_pending_code: string | null;
+  messaging_telegram_pending_expires_at: string | null;
+
+  messaging_whatsapp_enabled: number;
+  messaging_whatsapp_paired: number;
+  messaging_whatsapp_chat_id: string | null;
+  messaging_whatsapp_route_id: string | null;
+  messaging_whatsapp_route_token: string | null;
+  messaging_whatsapp_public_url: string | null;
+  messaging_whatsapp_bot_token: string | null;
+  messaging_whatsapp_pending_code: string | null;
+  messaging_whatsapp_pending_expires_at: string | null;
 }
 
 /**
@@ -324,6 +354,9 @@ export function toDatabase(settings: Settings): SettingsRow {
     security_mode: settings.security?.mode ?? 'Advisory',
     security_last_evaluation_at: settings.security?.lastEvaluationAt ?? null,
     security_policy_source: settings.security?.policySource ?? null,
+
+    // Messaging remote control (migration 056)
+    ...messagingToRow(settings.messaging),
   };
 }
 
@@ -361,6 +394,83 @@ function buildWhatsAppFromRow(row: SettingsRow): WhatsAppConfig {
       cloudApiAppSecret: row.whatsapp_cloud_api_app_secret,
     }),
   };
+}
+
+/**
+ * Serialize MessagingConfig into the snake_case DB row columns.
+ * An undefined config writes zeros/nulls so the row is valid.
+ */
+function messagingToRow(
+  messaging: MessagingConfig | undefined
+): Pick<
+  SettingsRow,
+  | 'messaging_enabled'
+  | 'messaging_gateway_url'
+  | 'messaging_device_id'
+  | 'messaging_gateway_client_id'
+  | 'messaging_debounce_ms'
+  | 'messaging_chat_buffer_ms'
+  | 'messaging_telegram_enabled'
+  | 'messaging_telegram_paired'
+  | 'messaging_telegram_chat_id'
+  | 'messaging_telegram_route_id'
+  | 'messaging_telegram_route_token'
+  | 'messaging_telegram_public_url'
+  | 'messaging_telegram_bot_token'
+  | 'messaging_telegram_pending_code'
+  | 'messaging_telegram_pending_expires_at'
+  | 'messaging_whatsapp_enabled'
+  | 'messaging_whatsapp_paired'
+  | 'messaging_whatsapp_chat_id'
+  | 'messaging_whatsapp_route_id'
+  | 'messaging_whatsapp_route_token'
+  | 'messaging_whatsapp_public_url'
+  | 'messaging_whatsapp_bot_token'
+  | 'messaging_whatsapp_pending_code'
+  | 'messaging_whatsapp_pending_expires_at'
+> {
+  const tg = messaging?.telegram;
+  const wa = messaging?.whatsapp;
+  return {
+    messaging_enabled: messaging?.enabled ? 1 : 0,
+    messaging_gateway_url: messaging?.gatewayUrl ?? null,
+    messaging_device_id: messaging?.deviceId ?? null,
+    messaging_gateway_client_id: messaging?.gatewayClientId ?? null,
+    messaging_debounce_ms: messaging?.debounceMs ?? null,
+    messaging_chat_buffer_ms: messaging?.chatBufferMs ?? null,
+
+    messaging_telegram_enabled: tg?.enabled ? 1 : 0,
+    messaging_telegram_paired: tg?.paired ? 1 : 0,
+    messaging_telegram_chat_id: tg?.chatId ?? null,
+    messaging_telegram_route_id: tg?.routeId ?? null,
+    messaging_telegram_route_token: tg?.routeToken ?? null,
+    messaging_telegram_public_url: tg?.publicUrl ?? null,
+    messaging_telegram_bot_token: tg?.botToken ?? null,
+    messaging_telegram_pending_code: tg?.pendingPairingCode ?? null,
+    messaging_telegram_pending_expires_at: serializeIsoLike(tg?.pendingPairingExpiresAt),
+
+    messaging_whatsapp_enabled: wa?.enabled ? 1 : 0,
+    messaging_whatsapp_paired: wa?.paired ? 1 : 0,
+    messaging_whatsapp_chat_id: wa?.chatId ?? null,
+    messaging_whatsapp_route_id: wa?.routeId ?? null,
+    messaging_whatsapp_route_token: wa?.routeToken ?? null,
+    messaging_whatsapp_public_url: wa?.publicUrl ?? null,
+    messaging_whatsapp_bot_token: wa?.botToken ?? null,
+    messaging_whatsapp_pending_code: wa?.pendingPairingCode ?? null,
+    messaging_whatsapp_pending_expires_at: serializeIsoLike(wa?.pendingPairingExpiresAt),
+  };
+}
+
+/**
+ * The generated TypeSpec type for `pendingPairingExpiresAt` is `any` because
+ * TypeSpec emitted a loose shape for this `utcDateTime` field. Callers pass
+ * either a Date or an ISO string; we normalize both to a string for storage.
+ */
+function serializeIsoLike(value: unknown): string | null {
+  if (value == null) return null;
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'string') return value;
+  return String(value);
 }
 
 /**
@@ -565,7 +675,100 @@ export function fromDatabase(row: SettingsRow): Settings {
       }),
     },
 
+    // Messaging remote control (migration 056)
+    // Always present — even for rows written before the migration, defaults
+    // decode to { enabled: false, debounceMs: 5000, chatBufferMs: 3000 } so
+    // consumers always see a valid MessagingConfig shape.
+    messaging: messagingFromRow(row),
+
     // Onboarding (INTEGER → boolean)
     onboardingComplete: row.onboarding_complete === 1,
   };
+}
+
+/**
+ * Deserialize MessagingConfig from the DB row. Returns a fully populated
+ * MessagingConfig with safe defaults for rows that predate migration 056 or
+ * were written by code that never set the messaging field (e.g. main branch).
+ */
+function messagingFromRow(row: SettingsRow): MessagingConfig {
+  const telegram = readPlatform(
+    row.messaging_telegram_enabled,
+    row.messaging_telegram_paired,
+    row.messaging_telegram_chat_id,
+    row.messaging_telegram_route_id,
+    row.messaging_telegram_route_token,
+    row.messaging_telegram_public_url,
+    row.messaging_telegram_bot_token,
+    row.messaging_telegram_pending_code,
+    row.messaging_telegram_pending_expires_at
+  );
+  const whatsapp = readPlatform(
+    row.messaging_whatsapp_enabled,
+    row.messaging_whatsapp_paired,
+    row.messaging_whatsapp_chat_id,
+    row.messaging_whatsapp_route_id,
+    row.messaging_whatsapp_route_token,
+    row.messaging_whatsapp_public_url,
+    row.messaging_whatsapp_bot_token,
+    row.messaging_whatsapp_pending_code,
+    row.messaging_whatsapp_pending_expires_at
+  );
+
+  const config: MessagingConfig = {
+    enabled: (row.messaging_enabled ?? 0) === 1,
+    debounceMs: row.messaging_debounce_ms ?? 5000,
+    chatBufferMs: row.messaging_chat_buffer_ms ?? 3000,
+  };
+  if (row.messaging_gateway_url !== null && row.messaging_gateway_url !== undefined) {
+    config.gatewayUrl = row.messaging_gateway_url;
+  }
+  if (row.messaging_device_id !== null && row.messaging_device_id !== undefined) {
+    config.deviceId = row.messaging_device_id;
+  }
+  if (row.messaging_gateway_client_id !== null && row.messaging_gateway_client_id !== undefined) {
+    config.gatewayClientId = row.messaging_gateway_client_id;
+  }
+  if (telegram) config.telegram = telegram;
+  if (whatsapp) config.whatsapp = whatsapp;
+  return config;
+}
+
+function readPlatform(
+  enabled: number | null | undefined,
+  paired: number | null | undefined,
+  chatId: string | null,
+  routeId: string | null,
+  routeToken: string | null,
+  publicUrl: string | null,
+  botToken: string | null,
+  pendingCode: string | null,
+  pendingExpiresAt: string | null
+): MessagingPlatformConfig | undefined {
+  // Omit the platform entirely when no data has been written. This matches
+  // the pre-persistence shape where callers used `config.telegram?.paired`.
+  const hasAny =
+    (enabled ?? 0) === 1 ||
+    (paired ?? 0) === 1 ||
+    chatId !== null ||
+    routeId !== null ||
+    routeToken !== null ||
+    publicUrl !== null ||
+    botToken !== null ||
+    pendingCode !== null ||
+    pendingExpiresAt !== null;
+  if (!hasAny) return undefined;
+
+  const platform: MessagingPlatformConfig = {
+    enabled: (enabled ?? 0) === 1,
+    paired: (paired ?? 0) === 1,
+  };
+  if (chatId !== null) platform.chatId = chatId;
+  if (routeId !== null) platform.routeId = routeId;
+  if (routeToken !== null) platform.routeToken = routeToken;
+  if (publicUrl !== null) platform.publicUrl = publicUrl;
+  if (botToken !== null) platform.botToken = botToken;
+  if (pendingCode !== null) platform.pendingPairingCode = pendingCode;
+  if (pendingExpiresAt !== null) platform.pendingPairingExpiresAt = pendingExpiresAt;
+  return platform;
 }

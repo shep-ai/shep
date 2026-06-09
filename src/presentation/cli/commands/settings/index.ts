@@ -23,6 +23,7 @@ import { createIdeCommand } from './ide.command.js';
 import { createWorkflowCommand } from './workflow.command.js';
 import { createModelCommand } from './model.command.js';
 import { createLanguageCommand } from './language.command.js';
+import { createMessagingCommand } from './messaging.command.js';
 import { onboardingWizard } from '../../../tui/wizards/onboarding/onboarding.wizard.js';
 import { messages } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
@@ -39,7 +40,8 @@ export function createSettingsCommand(): Command {
     .addCommand(createIdeCommand())
     .addCommand(createWorkflowCommand())
     .addCommand(createModelCommand())
-    .addCommand(createLanguageCommand());
+    .addCommand(createLanguageCommand())
+    .addCommand(createMessagingCommand());
 
   // Default action: launch the full setup wizard when no subcommand is given
   cmd.action(async () => {

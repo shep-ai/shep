@@ -1,0 +1,40 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: MessagingConfig.yaml
+type: object
+properties:
+  enabled:
+    type: boolean
+    default: false
+    description: Whether messaging remote control is enabled
+  gatewayUrl:
+    type: string
+    description: URL of the Commands.com Gateway instance
+  deviceId:
+    type: string
+    description: Device ID used when registering integration routes and opening the tunnel
+  gatewayClientId:
+    type: string
+    description: OAuth client ID for fetching gateway access tokens (demo mode uses public client)
+  telegram:
+    $ref: MessagingPlatformConfig.yaml
+    description: Telegram platform configuration
+  whatsapp:
+    $ref: MessagingPlatformConfig.yaml
+    description: WhatsApp platform configuration
+  debounceMs:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 5000
+    description: "Debounce window in milliseconds for notification delivery (default: 5000)"
+  chatBufferMs:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 3000
+    description: "Buffer interval in milliseconds for chat relay output batching (default: 3000)"
+required:
+  - enabled
+  - debounceMs
+  - chatBufferMs
+description: Messaging remote control configuration

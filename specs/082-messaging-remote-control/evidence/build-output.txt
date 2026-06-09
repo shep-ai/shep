@@ -1,0 +1,11 @@
+Evidence: Build Output
+Captured: 2026-04-02T12:15:00Z
+Command: pnpm build
+
+> @shepai/cli@1.163.0 build /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-messaging-remote-control
+> pnpm build:cli
+
+> @shepai/cli@1.163.0 build:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-messaging-remote-control
+> tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths && shx mkdir -p dist/packages/core/src/infrastructure/services/tool-installer && shx rm -rf dist/packages/core/src/infrastructure/services/tool-installer/tools && shx cp -r packages/core/src/infrastructure/services/tool-installer/tools dist/packages/core/src/infrastructure/services/tool-installer/tools && shx rm -rf dist/translations && shx cp -r translations dist/translations
+
+Build completed successfully with zero errors.

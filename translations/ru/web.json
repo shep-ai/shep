@@ -18,7 +18,8 @@
       "layout": "Расположение",
       "database": "База данных",
       "integrations": "Интеграции",
-      "security": "Security"
+      "security": "Security",
+      "messaging": "Messaging"
     },
     "language": {
       "title": "Язык",

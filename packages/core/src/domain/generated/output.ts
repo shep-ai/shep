@@ -832,6 +832,86 @@ export type FabLayoutConfig = {
    */
   swapPosition: boolean;
 };
+
+/**
+ * Configuration for a single messaging platform connection
+ */
+export type MessagingPlatformConfig = {
+  /**
+   * Whether this platform connection is active
+   */
+  enabled: boolean;
+  /**
+   * Platform-specific chat ID for message routing (set during pairing)
+   */
+  chatId?: string;
+  /**
+   * Whether the chat has been verified via pairing code
+   */
+  paired: boolean;
+  /**
+   * One-time code shown to the user during pairing, cleared once confirmed
+   */
+  pendingPairingCode?: string;
+  /**
+   * Expiry timestamp for the pending pairing code (ISO-8601)
+   */
+  pendingPairingExpiresAt?: any;
+  /**
+   * Gateway integration route ID allocated during pairing
+   */
+  routeId?: string;
+  /**
+   * Gateway integration route token (path-auth) allocated during pairing
+   */
+  routeToken?: string;
+  /**
+   * Public webhook URL that the messaging platform should POST updates to
+   */
+  publicUrl?: string;
+  /**
+   * Bot API token used by the daemon to send outbound messages (Telegram: 123456:ABC...)
+   */
+  botToken?: string;
+};
+
+/**
+ * Messaging remote control configuration
+ */
+export type MessagingConfig = {
+  /**
+   * Whether messaging remote control is enabled
+   */
+  enabled: boolean;
+  /**
+   * URL of the Commands.com Gateway instance
+   */
+  gatewayUrl?: string;
+  /**
+   * Device ID used when registering integration routes and opening the tunnel
+   */
+  deviceId?: string;
+  /**
+   * OAuth client ID for fetching gateway access tokens (demo mode uses public client)
+   */
+  gatewayClientId?: string;
+  /**
+   * Telegram platform configuration
+   */
+  telegram?: MessagingPlatformConfig;
+  /**
+   * WhatsApp platform configuration
+   */
+  whatsapp?: MessagingPlatformConfig;
+  /**
+   * Debounce window in milliseconds for notification delivery (default: 5000)
+   */
+  debounceMs: number;
+  /**
+   * Buffer interval in milliseconds for chat relay output batching (default: 3000)
+   */
+  chatBufferMs: number;
+};
 export enum SecurityMode {
   Disabled = 'Disabled',
   Advisory = 'Advisory',
@@ -925,6 +1005,10 @@ export type Settings = BaseEntity & {
    * Supply-chain security configuration (optional, defaults applied at runtime)
    */
   security?: SecurityConfig;
+  /**
+   * Messaging remote control configuration (optional, defaults applied at runtime)
+   */
+  messaging?: MessagingConfig;
 };
 export enum SupervisorScopeType {
   global = 'global',
@@ -2505,6 +2589,81 @@ export type EffectivePolicySnapshot = {
    * Resolved per-action-category enforcement dispositions
    */
   actionDispositions: ActionDispositionEntry[];
+};
+export enum MessagingFrameType {
+  Command = 'command',
+  ChatMessage = 'chat_message',
+  ChatControl = 'chat_control',
+}
+export enum MessagingCommandType {
+  New = 'new',
+  Approve = 'approve',
+  Reject = 'reject',
+  Stop = 'stop',
+  Resume = 'resume',
+  Status = 'status',
+  Mute = 'mute',
+  Unmute = 'unmute',
+  List = 'list',
+  Chat = 'chat',
+  End = 'end',
+  Help = 'help',
+}
+export enum MessagingPlatform {
+  Telegram = 'telegram',
+  WhatsApp = 'whatsapp',
+}
+
+/**
+ * A parsed command received from a messaging platform via the Gateway tunnel
+ */
+export type MessagingCommand = {
+  /**
+   * Type of frame: command, chat_message, or chat_control
+   */
+  type: MessagingFrameType;
+  /**
+   * The slash command name (new, approve, reject, stop, resume, status)
+   */
+  command: MessagingCommandType;
+  /**
+   * Target feature ID (short numeric or full UUID)
+   */
+  featureId?: string;
+  /**
+   * Free-text arguments (feature description, rejection feedback, chat text)
+   */
+  args?: string;
+  /**
+   * Chat ID for routing responses back to the correct conversation
+   */
+  chatId: string;
+  /**
+   * Platform for routing responses back (telegram or whatsapp)
+   */
+  platform: MessagingPlatform;
+};
+
+/**
+ * A notification or response sent from Shep to a messaging platform via the Gateway tunnel
+ */
+export type MessagingNotification = {
+  /**
+   * Event type: feature lifecycle, CI status, gate waiting, command response, chat response
+   */
+  event: string;
+  /**
+   * ID of the feature this notification relates to
+   */
+  featureId: string;
+  /**
+   * Human-readable feature name or title
+   */
+  title: string;
+  /**
+   * Human-readable notification body (sanitized, no code or secrets)
+   */
+  message: string;
 };
 export enum EstimateType {
   None = 'None',

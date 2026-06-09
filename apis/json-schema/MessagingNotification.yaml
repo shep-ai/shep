@@ -1,0 +1,22 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: MessagingNotification.yaml
+type: object
+properties:
+  event:
+    type: string
+    description: "Event type: feature lifecycle, CI status, gate waiting, command response, chat response"
+  featureId:
+    type: string
+    description: ID of the feature this notification relates to
+  title:
+    type: string
+    description: Human-readable feature name or title
+  message:
+    type: string
+    description: Human-readable notification body (sanitized, no code or secrets)
+required:
+  - event
+  - featureId
+  - title
+  - message
+description: A notification or response sent from Shep to a messaging platform via the Gateway tunnel

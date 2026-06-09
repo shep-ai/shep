@@ -48,6 +48,9 @@ properties:
   security:
     $ref: SecurityConfig.yaml
     description: Supply-chain security configuration (optional, defaults applied at runtime)
+  messaging:
+    $ref: MessagingConfig.yaml
+    description: Messaging remote control configuration (optional, defaults applied at runtime)
 required:
   - models
   - user

@@ -18,7 +18,8 @@
       "layout": "Layout",
       "database": "Banco de Dados",
       "integrations": "Integrações",
-      "security": "Security"
+      "security": "Security",
+      "messaging": "Messaging"
     },
     "language": {
       "title": "Idioma",

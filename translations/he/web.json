@@ -18,7 +18,8 @@
       "layout": "פריסה",
       "database": "מסד נתונים",
       "integrations": "אינטגרציות",
-      "security": "Security"
+      "security": "Security",
+      "messaging": "Messaging"
     },
     "language": {
       "title": "שפה",

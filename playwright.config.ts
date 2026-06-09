@@ -45,7 +45,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'pnpm dev:web',
-    env: { PORT: '3001', SHEP_COLLABORATION_FLAG: '1' },
+    env: { PORT: '3001', SHEP_COLLABORATION_FLAG: '1', SHEP_MOCK_GATEWAY: '1' },
     url: 'http://localhost:3001',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

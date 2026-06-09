@@ -40,6 +40,7 @@ import "../../common/enums/notification.tsp";
 import "../../common/enums/security.tsp";
 import "../../common/enums/terminal.tsp";
 import "../../common/enums/whatsapp.tsp";
+import "../../common/enums/messaging.tsp";
 import "../../agents/supervisor-policy.tsp";
 
 /**
@@ -823,6 +824,94 @@ model FabLayoutConfig {
  * | lastEvaluationAt | (none)     | ISO timestamp of last policy evaluation  |
  * | policySource     | (none)     | Where the active policy was loaded from  |
  */
+/**
+ * Messaging Remote Control Configuration
+ *
+ * Configuration for controlling Shep remotely via messaging platforms
+ * (Telegram, WhatsApp) through the Commands.com Gateway.
+ *
+ * ## Setup Flow
+ *
+ * 1. User deploys the Gateway or connects to an existing one
+ * 2. `shep settings messaging` wizard configures platform credentials
+ * 3. Shep registers integration routes on the Gateway
+ * 4. User pairs their messaging chat via a one-time verification code
+ * 5. Notifications and commands flow bidirectionally
+ */
+@doc("Configuration for a single messaging platform connection")
+model MessagingPlatformConfig {
+  @doc("Whether this platform connection is active")
+  enabled: boolean = false;
+
+  @doc("Platform-specific chat ID for message routing (set during pairing)")
+  chatId?: string;
+
+  @doc("Whether the chat has been verified via pairing code")
+  paired: boolean = false;
+
+  @doc("One-time code shown to the user during pairing, cleared once confirmed")
+  pendingPairingCode?: string;
+
+  @doc("Expiry timestamp for the pending pairing code (ISO-8601)")
+  pendingPairingExpiresAt?: utcDateTime;
+
+  @doc("Gateway integration route ID allocated during pairing")
+  routeId?: string;
+
+  @doc("Gateway integration route token (path-auth) allocated during pairing")
+  routeToken?: string;
+
+  @doc("Public webhook URL that the messaging platform should POST updates to")
+  publicUrl?: string;
+
+  @doc("Bot API token used by the daemon to send outbound messages (Telegram: 123456:ABC...)")
+  botToken?: string;
+}
+
+@doc("Messaging remote control configuration")
+model MessagingConfig {
+  @doc("Whether messaging remote control is enabled")
+  enabled: boolean = false;
+
+  @doc("URL of the Commands.com Gateway instance")
+  gatewayUrl?: string;
+
+  @doc("Device ID used when registering integration routes and opening the tunnel")
+  deviceId?: string;
+
+  @doc("OAuth client ID for fetching gateway access tokens (demo mode uses public client)")
+  gatewayClientId?: string;
+
+  @doc("Telegram platform configuration")
+  telegram?: MessagingPlatformConfig;
+
+  @doc("WhatsApp platform configuration")
+  whatsapp?: MessagingPlatformConfig;
+
+  @doc("Debounce window in milliseconds for notification delivery (default: 5000)")
+  debounceMs: int32 = 5000;
+
+  @doc("Buffer interval in milliseconds for chat relay output batching (default: 3000)")
+  chatBufferMs: int32 = 3000;
+}
+
+/**
+ * Security Configuration
+ *
+ * Stores the effective security mode and evaluation metadata in the
+ * Settings singleton. The mode controls whether supply-chain security
+ * checks are disabled, advisory (surface findings), or enforced (block
+ * risky actions). Full policy rules live in shep.security.yaml; this
+ * model tracks the persisted effective state.
+ *
+ * ## Fields
+ *
+ * | Field            | Default    | Description                              |
+ * |------------------|------------|------------------------------------------|
+ * | mode             | Advisory   | Active security mode                     |
+ * | lastEvaluationAt | (none)     | ISO timestamp of last policy evaluation  |
+ * | policySource     | (none)     | Where the active policy was loaded from  |
+ */
 @doc("Supply-chain security configuration persisted in settings")
 model SecurityConfig {
   /**
@@ -1028,4 +1117,13 @@ model Settings extends BaseEntity {
    */
   @doc("Supply-chain security configuration (optional, defaults applied at runtime)")
   security?: SecurityConfig;
+
+  /**
+   * Messaging remote control configuration.
+   * Controls external messaging integration (Telegram, WhatsApp) via
+   * the Commands.com Gateway for remote notifications and commands.
+   * Optional for backward compatibility — defaults applied at runtime.
+   */
+  @doc("Messaging remote control configuration (optional, defaults applied at runtime)")
+  messaging?: MessagingConfig;
 }

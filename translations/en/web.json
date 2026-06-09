@@ -18,7 +18,8 @@
       "layout": "Layout",
       "database": "Database",
       "integrations": "Integrations",
-      "security": "Security"
+      "security": "Security",
+      "messaging": "Messaging"
     },
     "language": {
       "title": "Language",

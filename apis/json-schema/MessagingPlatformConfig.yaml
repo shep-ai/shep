@@ -1,0 +1,38 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: MessagingPlatformConfig.yaml
+type: object
+properties:
+  enabled:
+    type: boolean
+    default: false
+    description: Whether this platform connection is active
+  chatId:
+    type: string
+    description: Platform-specific chat ID for message routing (set during pairing)
+  paired:
+    type: boolean
+    default: false
+    description: Whether the chat has been verified via pairing code
+  pendingPairingCode:
+    type: string
+    description: One-time code shown to the user during pairing, cleared once confirmed
+  pendingPairingExpiresAt:
+    type: string
+    format: date-time
+    description: Expiry timestamp for the pending pairing code (ISO-8601)
+  routeId:
+    type: string
+    description: Gateway integration route ID allocated during pairing
+  routeToken:
+    type: string
+    description: Gateway integration route token (path-auth) allocated during pairing
+  publicUrl:
+    type: string
+    description: Public webhook URL that the messaging platform should POST updates to
+  botToken:
+    type: string
+    description: "Bot API token used by the daemon to send outbound messages (Telegram: 123456:ABC...)"
+required:
+  - enabled
+  - paired
+description: Configuration for a single messaging platform connection

@@ -18,7 +18,8 @@
       "layout": "التخطيط",
       "database": "قاعدة البيانات",
       "integrations": "التكاملات",
-      "security": "Security"
+      "security": "Security",
+      "messaging": "Messaging"
     },
     "language": {
       "title": "اللغة",
