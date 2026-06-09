@@ -248,8 +248,58 @@ tasks:
         - Extract category label/order constants
     estimatedEffort: M
 
+  - id: task-11
+    title: Cross-project (organization-wide) memory
+    description: >
+      Add a MemoryScope (Project | Organization). Organization-scoped entries are
+      read by every project's agents in addition to that project's own memory.
+      Migration 121 adds a `scope` column (default 'Project'); repository gains
+      listOrganization + updateScope; ReadProjectMemoryUseCase merges project +
+      org entries (dedup by id); ManageProjectMemoryUseCase.setScope promotes/
+      demotes.
+    state: Done
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - scope persists (default Project) and round-trips Organization
+      - listOrganization returns org entries across all repos
+      - Read use case injects project + all org entries for a repo
+      - setScope promotes/demotes; rejects unknown id
+    tdd:
+      red:
+        - Repo integration (scope round-trip, listOrganization, updateScope); use-case units (org merge, setScope)
+      green:
+        - tsp enum + field, migration, mapper, repo methods, use-case changes
+      refactor:
+        - Dedup merge by id in the read use case
+    estimatedEffort: M
+
+  - id: task-12
+    title: Scope controls in the management UI
+    description: >
+      Surface scope in ProjectMemoryPanel: an "Organization" badge on org-wide
+      entries and a promote/demote toggle (Globe / FolderGit2) calling a new
+      setProjectMemoryScope server action. Translation keys (scope + actions)
+      across all 9 locales. RTL coverage for badge + promote.
+    state: Done
+    dependencies:
+      - task-11
+      - task-10
+    acceptanceCriteria:
+      - Org entries show an Organization badge; toggle promotes/demotes
+      - setProjectMemoryScope server action + Storybook mock
+      - memory.scope/actions keys in all 9 locales
+    tdd:
+      red:
+        - RTL test for org badge + promote
+      green:
+        - Panel controls + server action + i18n
+      refactor:
+        - Reuse MemoryScope across component and tests
+    estimatedEffort: M
+
 # Total effort estimate
-totalEstimate: L (10 tasks, 6 phases)
+totalEstimate: L (12 tasks, 6 phases)
 
 # Open questions
 openQuestions: []

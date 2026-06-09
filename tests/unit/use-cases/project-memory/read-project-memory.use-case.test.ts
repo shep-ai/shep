@@ -30,8 +30,10 @@ describe('ReadProjectMemoryUseCase', () => {
       findById: vi.fn(),
       listByRepository: vi.fn().mockResolvedValue([]),
       listAll: vi.fn().mockResolvedValue([]),
+      listOrganization: vi.fn().mockResolvedValue([]),
       upsert: vi.fn(),
       updateContent: vi.fn(),
+      updateScope: vi.fn(),
       delete: vi.fn(),
     };
     useCase = new ReadProjectMemoryUseCase(repo);
@@ -84,6 +86,30 @@ describe('ReadProjectMemoryUseCase', () => {
     const { blob } = await useCase.execute({ repositoryPath: '/repo' });
     const bulletCount = blob.split('\n').filter((l) => l.startsWith('- ')).length;
     expect(bulletCount).toBe(12); // MAX_ENTRIES_PER_CATEGORY
+  });
+
+  it('merges organization-wide entries in with the project entries', async () => {
+    vi.mocked(repo.listByRepository).mockResolvedValue([
+      entry({ id: 'p1', category: MemoryCategory.Convention, content: 'Project convention.' }),
+    ]);
+    vi.mocked(repo.listOrganization).mockResolvedValue([
+      entry({ id: 'o1', category: MemoryCategory.Library, content: 'Org-wide library choice.' }),
+    ]);
+
+    const { blob, entryCount } = await useCase.execute({ repositoryPath: '/repo' });
+
+    expect(blob).toContain('Project convention.');
+    expect(blob).toContain('Org-wide library choice.');
+    expect(entryCount).toBe(2);
+  });
+
+  it('dedupes an org entry that also appears in the project list', async () => {
+    const shared = entry({ id: 'dup', category: MemoryCategory.Library, content: 'Shared.' });
+    vi.mocked(repo.listByRepository).mockResolvedValue([shared]);
+    vi.mocked(repo.listOrganization).mockResolvedValue([shared]);
+
+    const { entryCount } = await useCase.execute({ repositoryPath: '/repo' });
+    expect(entryCount).toBe(1);
   });
 
   it('omits categories that have no entries', async () => {

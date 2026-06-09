@@ -38,7 +38,20 @@ export class ReadProjectMemoryUseCase {
       return { blob: '', entryCount: 0 };
     }
 
-    const entries = await this.memoryRepo.listByRepository(repositoryPath);
+    // The agent sees this project's own memory PLUS every organization-wide
+    // entry (authored once, reused across all related projects). Dedup by id so
+    // an org entry that originated in this same repo isn't counted twice.
+    const [projectEntries, orgEntries] = await Promise.all([
+      this.memoryRepo.listByRepository(repositoryPath),
+      this.memoryRepo.listOrganization(),
+    ]);
+
+    const byId = new Map<string, (typeof projectEntries)[number]>();
+    for (const entry of [...projectEntries, ...orgEntries]) {
+      byId.set(entry.id, entry);
+    }
+    const entries = [...byId.values()];
+
     return { blob: renderMemoryBlob(entries), entryCount: entries.length };
   }
 }

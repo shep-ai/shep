@@ -761,7 +761,9 @@
       "edit": "Edit",
       "delete": "Delete",
       "save": "Save",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "makeOrgWide": "Make organization-wide",
+      "makeProjectOnly": "Make project-only"
     },
     "deleteDialog": {
       "title": "Delete this memory entry?",
@@ -770,6 +772,9 @@
     "errors": {
       "emptyContent": "Memory content cannot be empty.",
       "updateFailed": "Failed to update the memory entry."
+    },
+    "scope": {
+      "organization": "Organization"
     }
   }
 }

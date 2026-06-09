@@ -2,14 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ProjectMemoryPanel } from '@/components/features/project-memory/project-memory-panel';
-import { MemoryCategory, type ProjectMemory } from '@shepai/core/domain/generated/output';
+import {
+  MemoryCategory,
+  MemoryScope,
+  type ProjectMemory,
+} from '@shepai/core/domain/generated/output';
 
 const updateProjectMemory = vi.fn();
 const deleteProjectMemory = vi.fn();
+const setProjectMemoryScope = vi.fn();
 
 vi.mock('@/app/actions/manage-project-memory', () => ({
   updateProjectMemory: (...args: unknown[]) => updateProjectMemory(...args),
   deleteProjectMemory: (...args: unknown[]) => deleteProjectMemory(...args),
+  setProjectMemoryScope: (...args: unknown[]) => setProjectMemoryScope(...args),
 }));
 
 const NOW = new Date('2026-06-01T10:00:00Z');
@@ -32,6 +38,7 @@ describe('ProjectMemoryPanel', () => {
   beforeEach(() => {
     updateProjectMemory.mockReset();
     deleteProjectMemory.mockReset();
+    setProjectMemoryScope.mockReset();
   });
 
   it('renders the empty state when there are no entries', () => {
@@ -84,6 +91,29 @@ describe('ProjectMemoryPanel', () => {
 
     expect(deleteProjectMemory).toHaveBeenCalledWith('m-1');
     await waitFor(() => expect(screen.queryByText('To be removed.')).not.toBeInTheDocument());
+  });
+
+  it('shows an Organization badge for organization-scoped entries', () => {
+    render(
+      <ProjectMemoryPanel
+        entries={[entry({ scope: MemoryScope.Organization, content: 'Org-wide rule.' })]}
+      />
+    );
+    expect(screen.getByTestId('project-memory-org-badge')).toBeInTheDocument();
+  });
+
+  it('promotes a project entry to organization-wide', async () => {
+    const user = userEvent.setup();
+    setProjectMemoryScope.mockResolvedValue({
+      memory: entry({ scope: MemoryScope.Organization }),
+    });
+
+    render(<ProjectMemoryPanel entries={[entry({ scope: MemoryScope.Project })]} />);
+
+    await user.click(screen.getByTestId('project-memory-scope-toggle'));
+
+    expect(setProjectMemoryScope).toHaveBeenCalledWith('m-1', MemoryScope.Organization);
+    await waitFor(() => expect(screen.getByTestId('project-memory-org-badge')).toBeInTheDocument());
   });
 
   it('surfaces an error when an edit is saved empty', async () => {

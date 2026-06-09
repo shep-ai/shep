@@ -3167,6 +3167,10 @@ export enum MemoryCategory {
   ArchitectureDecision = 'ArchitectureDecision',
   CiFixResolution = 'CiFixResolution',
 }
+export enum MemoryScope {
+  Project = 'Project',
+  Organization = 'Organization',
+}
 
 /**
  * A durable, categorised unit of per-repository project knowledge (Shep Brain)
@@ -3192,6 +3196,10 @@ export type ProjectMemory = BaseEntity & {
    * Optional ID of the feature whose merge produced this entry
    */
   sourceFeatureId?: string;
+  /**
+   * Reach of this entry: Project (default) or Organization-wide
+   */
+  scope?: MemoryScope;
 };
 
 /**

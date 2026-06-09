@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ManageProjectMemoryUseCase } from '@/application/use-cases/project-memory/manage-project-memory.use-case.js';
 import type { IProjectMemoryRepository } from '@/application/ports/output/repositories/project-memory-repository.interface.js';
 import type { ProjectMemory } from '@/domain/generated/output.js';
-import { MemoryCategory } from '@/domain/generated/output.js';
+import { MemoryCategory, MemoryScope } from '@/domain/generated/output.js';
 import { MAX_CONTENT_LENGTH } from '@/application/use-cases/project-memory/project-memory.constants.js';
 
 describe('ManageProjectMemoryUseCase', () => {
@@ -27,8 +27,10 @@ describe('ManageProjectMemoryUseCase', () => {
       findById: vi.fn().mockResolvedValue(entry),
       listByRepository: vi.fn().mockResolvedValue([entry]),
       listAll: vi.fn().mockResolvedValue([entry]),
+      listOrganization: vi.fn().mockResolvedValue([]),
       upsert: vi.fn(),
       updateContent: vi.fn().mockResolvedValue(undefined),
+      updateScope: vi.fn().mockResolvedValue(undefined),
       delete: vi.fn().mockResolvedValue(undefined),
     };
     useCase = new ManageProjectMemoryUseCase(repo);
@@ -73,6 +75,22 @@ describe('ManageProjectMemoryUseCase', () => {
       await useCase.update('m1', 'x'.repeat(MAX_CONTENT_LENGTH + 50));
       const [, content] = vi.mocked(repo.updateContent).mock.calls[0];
       expect(content.length).toBe(MAX_CONTENT_LENGTH);
+    });
+  });
+
+  describe('setScope()', () => {
+    it('promotes an entry to organization scope', async () => {
+      const result = await useCase.setScope('m1', MemoryScope.Organization);
+      expect(result.ok).toBe(true);
+      expect(repo.updateScope).toHaveBeenCalledWith('m1', MemoryScope.Organization);
+      if (result.ok) expect(result.memory.scope).toBe(MemoryScope.Organization);
+    });
+
+    it('rejects an unknown id', async () => {
+      vi.mocked(repo.findById).mockResolvedValue(null);
+      const result = await useCase.setScope('missing', MemoryScope.Organization);
+      expect(result.ok).toBe(false);
+      expect(repo.updateScope).not.toHaveBeenCalled();
     });
   });
 

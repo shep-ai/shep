@@ -17,6 +17,9 @@ properties:
   sourceFeatureId:
     type: string
     description: Optional ID of the feature whose merge produced this entry
+  scope:
+    $ref: MemoryScope.yaml
+    description: "Reach of this entry: Project (default) or Organization-wide"
 required:
   - repositoryPath
   - category

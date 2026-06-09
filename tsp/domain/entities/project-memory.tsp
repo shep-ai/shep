@@ -25,6 +25,26 @@
 import "../../common/base.tsp";
 
 /**
+ * The reach of a ProjectMemory entry.
+ *
+ * `Project` entries apply only to their own repository. `Organization` entries
+ * are company-wide: every project's agents read them at the start of every
+ * feature, in addition to that project's own memory. This lets knowledge that
+ * holds across related projects (shared conventions, org-wide tooling, recurring
+ * CI fixes) be authored once and reused everywhere.
+ */
+@doc("Reach of a project-memory entry: a single project or the whole organization")
+enum MemoryScope {
+  /** Applies only to the entry's own repository. */
+  @doc("Applies only to the entry's own repository")
+  Project,
+
+  /** Applies across every project in the organization. */
+  @doc("Applies across every project in the organization")
+  Organization,
+}
+
+/**
  * The kind of knowledge a ProjectMemory entry captures. Used to render the
  * memory blob in labelled sections and to let consumers filter by category.
  */
@@ -133,4 +153,12 @@ model ProjectMemory extends BaseEntity {
    */
   @doc("Optional ID of the feature whose merge produced this entry")
   sourceFeatureId?: string;
+
+  /**
+   * Reach of this entry. Defaults to `Project` (own repository only) when
+   * absent. `Organization` entries are injected into every project's agents.
+   * Optional so existing rows and fixtures default to project scope.
+   */
+  @doc("Reach of this entry: Project (default) or Organization-wide")
+  scope?: MemoryScope;
 }

@@ -9,7 +9,11 @@
  * - Infrastructure layer provides concrete implementations
  */
 
-import type { ProjectMemory, MemoryCategory } from '../../../../domain/generated/output.js';
+import type {
+  ProjectMemory,
+  MemoryCategory,
+  MemoryScope,
+} from '../../../../domain/generated/output.js';
 
 /**
  * Fields supplied when upserting a memory entry by its stable key.
@@ -31,6 +35,8 @@ export interface ProjectMemoryUpsert {
   content: string;
   /** Optional ID of the feature whose merge produced this entry. */
   sourceFeatureId?: string;
+  /** Reach of the entry. Defaults to Project when omitted. */
+  scope?: MemoryScope;
 }
 
 /**
@@ -76,12 +82,30 @@ export interface IProjectMemoryRepository {
   listAll(): Promise<ProjectMemory[]>;
 
   /**
+   * List all Organization-scoped entries (across every repository). These are
+   * injected into every project's agents in addition to the project's own
+   * memory.
+   *
+   * @returns All organization-wide entries
+   */
+  listOrganization(): Promise<ProjectMemory[]>;
+
+  /**
    * Update an existing entry's content (and bump updatedAt).
    *
    * @param id      - The entry UUID
    * @param content - The new content
    */
   updateContent(id: string, content: string): Promise<void>;
+
+  /**
+   * Update an existing entry's scope (and bump updatedAt). Used to promote a
+   * project learning to organization-wide, or demote it back.
+   *
+   * @param id    - The entry UUID
+   * @param scope - The new scope
+   */
+  updateScope(id: string, scope: MemoryScope): Promise<void>;
 
   /**
    * Delete an entry by its unique ID. No-op if it does not exist.

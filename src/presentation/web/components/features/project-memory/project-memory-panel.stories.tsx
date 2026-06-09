@@ -1,5 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { MemoryCategory, type ProjectMemory } from '@shepai/core/domain/generated/output';
+import {
+  MemoryCategory,
+  MemoryScope,
+  type ProjectMemory,
+} from '@shepai/core/domain/generated/output';
 import { ProjectMemoryPanel } from './project-memory-panel';
 
 const meta: Meta<typeof ProjectMemoryPanel> = {
@@ -35,6 +39,7 @@ const mockEntries: ProjectMemory[] = [
     category: MemoryCategory.ArchitectureDecision,
     entryKey: 'agent-executor-provider',
     content: 'All agent calls flow through IAgentExecutorProvider — never hardcode an agent type.',
+    scope: MemoryScope.Organization,
   }),
   entry({
     id: 'l1',

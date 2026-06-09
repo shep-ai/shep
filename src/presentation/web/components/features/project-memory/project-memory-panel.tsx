@@ -14,9 +14,9 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Brain, Pencil, Trash2 } from 'lucide-react';
+import { Brain, Globe, FolderGit2, Pencil, Trash2 } from 'lucide-react';
 import type { ProjectMemory } from '@shepai/core/domain/generated/output';
-import { MemoryCategory } from '@shepai/core/domain/generated/output';
+import { MemoryCategory, MemoryScope } from '@shepai/core/domain/generated/output';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,7 +30,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { updateProjectMemory, deleteProjectMemory } from '@/app/actions/manage-project-memory';
+import {
+  updateProjectMemory,
+  deleteProjectMemory,
+  setProjectMemoryScope,
+} from '@/app/actions/manage-project-memory';
 
 export interface ProjectMemoryPanelProps {
   entries: ProjectMemory[];
@@ -111,6 +115,17 @@ export function ProjectMemoryPanel({ entries: initialEntries }: ProjectMemoryPan
     setEntries((prev) => prev.filter((e) => e.id !== id));
   }, [pendingDelete]);
 
+  const toggleScope = useCallback(async (entry: ProjectMemory) => {
+    const next =
+      entry.scope === MemoryScope.Organization ? MemoryScope.Project : MemoryScope.Organization;
+    const result = await setProjectMemoryScope(entry.id, next);
+    if (result.error || !result.memory) {
+      setError(result.error ?? 'Failed to update scope.');
+      return;
+    }
+    setEntries((prev) => prev.map((e) => (e.id === entry.id ? { ...e, scope: next } : e)));
+  }, []);
+
   if (entries.length === 0) {
     return (
       <div
@@ -183,6 +198,19 @@ export function ProjectMemoryPanel({ entries: initialEntries }: ProjectMemoryPan
                       <Button
                         variant="ghost"
                         size="icon-xs"
+                        title={
+                          entry.scope === MemoryScope.Organization
+                            ? t('memory.actions.makeProjectOnly')
+                            : t('memory.actions.makeOrgWide')
+                        }
+                        onClick={() => toggleScope(entry)}
+                        data-testid="project-memory-scope-toggle"
+                      >
+                        {entry.scope === MemoryScope.Organization ? <FolderGit2 /> : <Globe />}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
                         title={t('memory.actions.edit')}
                         onClick={() => startEdit(entry)}
                         data-testid="project-memory-edit"
@@ -202,6 +230,16 @@ export function ProjectMemoryPanel({ entries: initialEntries }: ProjectMemoryPan
                   </div>
                 )}
                 <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-2 text-[10px]">
+                  {entry.scope === MemoryScope.Organization ? (
+                    <Badge
+                      variant="secondary"
+                      className="gap-1 text-[10px]"
+                      data-testid="project-memory-org-badge"
+                    >
+                      <Globe className="size-2.5" />
+                      {t('memory.scope.organization')}
+                    </Badge>
+                  ) : null}
                   <span className="font-mono">{entry.repositoryPath}</span>
                   {entry.sourceFeatureId ? (
                     <Badge variant="outline" className="text-[10px]">

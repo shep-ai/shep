@@ -14,7 +14,7 @@ import { createInMemoryDatabase, tableExists } from '../../../helpers/database.h
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
 import { SQLiteProjectMemoryRepository } from '@/infrastructure/repositories/sqlite-project-memory.repository.js';
 import type { ProjectMemory } from '@/domain/generated/output.js';
-import { MemoryCategory } from '@/domain/generated/output.js';
+import { MemoryCategory, MemoryScope } from '@/domain/generated/output.js';
 
 describe('SQLiteProjectMemoryRepository', () => {
   let db: Database.Database;
@@ -242,6 +242,51 @@ describe('SQLiteProjectMemoryRepository', () => {
 
     it('returns an empty array when the store is empty', async () => {
       expect(await repo.listAll()).toHaveLength(0);
+    });
+  });
+
+  describe('scope', () => {
+    it('defaults to Project when not set and round-trips Organization', async () => {
+      await repo.create(makeMemory({ id: 'proj' }));
+      await repo.create(
+        makeMemory({ id: 'org', entryKey: 'org-key', scope: MemoryScope.Organization })
+      );
+
+      expect((await repo.findById('proj'))!.scope).toBe(MemoryScope.Project);
+      expect((await repo.findById('org'))!.scope).toBe(MemoryScope.Organization);
+    });
+
+    it('listOrganization returns only organization-scoped entries across repos', async () => {
+      await repo.create(makeMemory({ id: 'p', entryKey: 'p' }));
+      await repo.create(
+        makeMemory({
+          id: 'o1',
+          entryKey: 'o1',
+          scope: MemoryScope.Organization,
+          repositoryPath: '/repo-a',
+        })
+      );
+      await repo.create(
+        makeMemory({
+          id: 'o2',
+          entryKey: 'o2',
+          scope: MemoryScope.Organization,
+          repositoryPath: '/repo-b',
+        })
+      );
+
+      const org = await repo.listOrganization();
+      expect(org.map((e) => e.id).sort()).toEqual(['o1', 'o2']);
+    });
+
+    it('updateScope promotes and demotes an entry', async () => {
+      await repo.create(makeMemory({ updatedAt: NOW }));
+
+      await repo.updateScope('mem-001', MemoryScope.Organization);
+      expect((await repo.findById('mem-001'))!.scope).toBe(MemoryScope.Organization);
+
+      await repo.updateScope('mem-001', MemoryScope.Project);
+      expect((await repo.findById('mem-001'))!.scope).toBe(MemoryScope.Project);
     });
   });
 

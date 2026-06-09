@@ -10,7 +10,11 @@
  * - source_feature_id is nullable (optional in the domain)
  */
 
-import type { ProjectMemory, MemoryCategory } from '../../../../domain/generated/output.js';
+import {
+  type ProjectMemory,
+  type MemoryCategory,
+  MemoryScope,
+} from '../../../../domain/generated/output.js';
 
 /**
  * Database row type matching the project_memory table schema.
@@ -22,6 +26,7 @@ export interface ProjectMemoryRow {
   entry_key: string;
   content: string;
   source_feature_id: string | null;
+  scope: string;
   created_at: number;
   updated_at: number;
 }
@@ -37,6 +42,7 @@ export function toDatabase(memory: ProjectMemory): ProjectMemoryRow {
     entry_key: memory.entryKey,
     content: memory.content,
     source_feature_id: memory.sourceFeatureId ?? null,
+    scope: memory.scope ?? MemoryScope.Project,
     created_at: memory.createdAt instanceof Date ? memory.createdAt.getTime() : memory.createdAt,
     updated_at: memory.updatedAt instanceof Date ? memory.updatedAt.getTime() : memory.updatedAt,
   };
@@ -53,6 +59,7 @@ export function fromDatabase(row: ProjectMemoryRow): ProjectMemory {
     entryKey: row.entry_key,
     content: row.content,
     sourceFeatureId: row.source_feature_id ?? undefined,
+    scope: (row.scope as MemoryScope) ?? MemoryScope.Project,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   };

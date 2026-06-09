@@ -12,7 +12,7 @@
  */
 
 import { injectable, inject } from 'tsyringe';
-import type { ProjectMemory } from '../../../domain/generated/output.js';
+import type { ProjectMemory, MemoryScope } from '../../../domain/generated/output.js';
 import type { IProjectMemoryRepository } from '../../ports/output/repositories/project-memory-repository.interface.js';
 import { MAX_CONTENT_LENGTH } from './project-memory.constants.js';
 
@@ -21,6 +21,10 @@ export type UpdateProjectMemoryResult =
   | { ok: false; error: string };
 
 export type DeleteProjectMemoryResult = { ok: true } | { ok: false; error: string };
+
+export type SetProjectMemoryScopeResult =
+  | { ok: true; memory: ProjectMemory }
+  | { ok: false; error: string };
 
 @injectable()
 export class ManageProjectMemoryUseCase {
@@ -56,6 +60,21 @@ export class ManageProjectMemoryUseCase {
     await this.memoryRepo.updateContent(trimmedId, capped);
 
     return { ok: true, memory: { ...existing, content: capped, updatedAt: new Date() } };
+  }
+
+  /**
+   * Change an entry's scope — promote a project learning to organization-wide
+   * (read by every project's agents) or demote it back to project-only.
+   */
+  async setScope(id: string, scope: MemoryScope): Promise<SetProjectMemoryScopeResult> {
+    const trimmedId = id?.trim();
+    if (!trimmedId) return { ok: false, error: 'Memory id is required.' };
+
+    const existing = await this.memoryRepo.findById(trimmedId);
+    if (!existing) return { ok: false, error: `Memory not found: "${trimmedId}"` };
+
+    await this.memoryRepo.updateScope(trimmedId, scope);
+    return { ok: true, memory: { ...existing, scope, updatedAt: new Date() } };
   }
 
   /**

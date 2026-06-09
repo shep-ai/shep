@@ -2,7 +2,7 @@
 
 import { resolve } from '@/lib/server-container';
 import type { ManageProjectMemoryUseCase } from '@shepai/core/application/use-cases/project-memory/manage-project-memory.use-case';
-import type { ProjectMemory } from '@shepai/core/domain/generated/output';
+import type { ProjectMemory, MemoryScope } from '@shepai/core/domain/generated/output';
 
 export async function listProjectMemory(
   repositoryPath?: string
@@ -32,6 +32,25 @@ export async function updateProjectMemory(
     return { memory: result.memory };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to update project memory';
+    return { error: message };
+  }
+}
+
+export async function setProjectMemoryScope(
+  id: string,
+  scope: MemoryScope
+): Promise<{ memory?: ProjectMemory; error?: string }> {
+  if (!id?.trim()) {
+    return { error: 'Memory id is required' };
+  }
+
+  try {
+    const useCase = resolve<ManageProjectMemoryUseCase>('ManageProjectMemoryUseCase');
+    const result = await useCase.setScope(id, scope);
+    if (!result.ok) return { error: result.error };
+    return { memory: result.memory };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to update memory scope';
     return { error: message };
   }
 }
