@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: MemoryCategory.yaml
+type: string
+enum:
+  - Convention
+  - Library
+  - NamingPattern
+  - ArchitectureDecision
+  - CiFixResolution
+description: Category of a persisted project-memory entry
