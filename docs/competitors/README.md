@@ -45,7 +45,7 @@ Idea → Requirements → Research → Plan → Code → Tests → PR → CI →
 | Parallel features via worktrees | Yes                                 | Auto-Claude, Windsurf (Wave 13)                    |
 | Open source CLI                 | Yes (MIT)                           | OpenCode, Aider, Cline, Spec Kitty                 |
 | Web dashboard                   | Yes (React Flow)                    | Auto-Claude (Electron), Spec Kitty (kanban)        |
-| Agent-agnostic                  | Claude Code, Cursor CLI, Gemini CLI | Spec Kitty (multi-agent), Gas Town (Claude only)   |
+| Agent-agnostic | Claude Code, Cursor CLI, Gemini CLI, Codex CLI | Spec Kitty (multi-agent), Gas Town (Claude only)   |
 
 ---
 
@@ -71,6 +71,7 @@ Idea → Requirements → Research → Plan → Code → Tests → PR → CI →
 | [OpenCode](./opencode.md)       | Terminal AI coding agent with 120K+ stars              | Biggest community         |
 | [Aider](./aider.md)             | AI pair programming in the terminal                    | Git-first pioneer         |
 | [Cline](./cline.md)             | VS Code agent with plan/act modes                      | 4M+ installs              |
+| [Codex](./codex.md) | OpenAI's terminal coding agent | OpenAI ecosystem |
 
 ### App Builders (Adjacent)
 
