@@ -1,0 +1,208 @@
+name: "mcp-server"
+summary: >
+  Implement an MCP server as a thin presentation adapter over existing use cases,
+  following the established clean architecture pattern. The server uses the official
+  @modelcontextprotocol/sdk with stdio transport, registers 11 core tools with zod v4
+  input schemas, resolves use cases from the shared DI container, and is launched via
+  a new `shep mcp` CLI command. Architecture is designed for easy extensibility —
+  adding a tool requires only a schema, a registration call, and a handler function.
+
+relatedFeatures: []
+technologies:
+  - "@modelcontextprotocol/sdk (v1.23+ with native zod v4 support)"
+  - "zod (v4.3.6 — existing dependency, used for MCP tool input schemas)"
+  - "tsyringe (existing DI container — resolves use cases in tool handlers)"
+  - "commander (existing CLI framework — new shep mcp command)"
+
+relatedLinks:
+  - title: "MCP TypeScript SDK — npm"
+    url: "https://www.npmjs.com/package/@modelcontextprotocol/sdk"
+  - title: "MCP specification — transports"
+    url: "https://modelcontextprotocol.io/specification/2025-03-26/basic/transports"
+  - title: "Build an MCP server — official tutorial"
+    url: "https://modelcontextprotocol.io/docs/develop/build-server"
+  - title: "MCP TypeScript SDK — GitHub"
+    url: "https://github.com/modelcontextprotocol/typescript-sdk"
+
+phases:
+  - id: "phase-1"
+    name: "Foundation — SDK, Server Core, and First Tool"
+    description: >
+      Install the MCP SDK dependency, create the MCP server service with stdio
+      transport, wire it into the DI container, and implement one tool (list_features)
+      end-to-end. This validates the entire architecture before scaling to more tools.
+    parallel: false
+
+  - id: "phase-2"
+    name: "Tool Registration — Feature and Agent Tools"
+    description: >
+      Register the remaining 10 tools in batches: feature tools (show, create, start),
+      agent tools (run, show, list, stop), repo tools (list), and settings tools
+      (get, update). Each tool follows the same thin-adapter pattern established in
+      phase 1: zod schema + handler that delegates to a use case.
+    parallel: false
+
+  - id: "phase-3"
+    name: "CLI Command and Integration"
+    description: >
+      Create the `shep mcp` CLI command, register it in the CLI entry point, add
+      help text with Claude Desktop configuration example, implement graceful
+      shutdown on SIGINT/SIGTERM, and wire up stderr-only logging.
+    parallel: false
+
+  - id: "phase-4"
+    name: "Integration Tests and Polish"
+    description: >
+      Write integration tests using the MCP SDK client for full protocol round-trips
+      (initialize -> tools/list -> tools/call -> response). Verify error handling paths,
+      input validation, and stdio safety. Final polish and documentation.
+    parallel: false
+
+filesToCreate:
+  - "packages/core/src/infrastructure/services/mcp/mcp-server.service.ts"
+  - "packages/core/src/infrastructure/services/mcp/tools/feature-tools.ts"
+  - "packages/core/src/infrastructure/services/mcp/tools/agent-tools.ts"
+  - "packages/core/src/infrastructure/services/mcp/tools/repo-tools.ts"
+  - "packages/core/src/infrastructure/services/mcp/tools/settings-tools.ts"
+  - "packages/core/src/infrastructure/services/mcp/tools/index.ts"
+  - "src/presentation/cli/commands/mcp.command.ts"
+  - "tests/unit/infrastructure/services/mcp/mcp-server.service.test.ts"
+  - "tests/unit/infrastructure/services/mcp/tools/feature-tools.test.ts"
+  - "tests/unit/infrastructure/services/mcp/tools/agent-tools.test.ts"
+  - "tests/unit/infrastructure/services/mcp/tools/repo-tools.test.ts"
+  - "tests/unit/infrastructure/services/mcp/tools/settings-tools.test.ts"
+  - "tests/unit/commands/mcp.command.test.ts"
+  - "tests/integration/infrastructure/services/mcp/mcp-round-trip.test.ts"
+
+filesToModify:
+  - "package.json"
+  - "packages/core/src/infrastructure/di/container.ts"
+  - "src/presentation/cli/index.ts"
+
+openQuestions: []
+
+content: |
+  ## Architecture Overview
+
+  The MCP server fits naturally into the existing clean architecture as a **presentation adapter**
+  — the same pattern used by the CLI commands, TUI, and web UI. It sits in the infrastructure
+  layer, resolves use cases from the shared DI container, and contains zero business logic.
+
+  ```
+  MCP Client (Claude Desktop, Cursor, etc.)
+    | stdio (JSON-RPC)
+  McpServerService (infrastructure/services/mcp/)
+    | resolves from container
+  Use Cases (application/use-cases/)
+    |
+  Repositories & Services (infrastructure/)
+  ```
+
+  The server uses the official `@modelcontextprotocol/sdk` `McpServer` class, which handles
+  protocol negotiation, JSON-RPC framing, and tool dispatch. Our code only needs to:
+  1. Create an `McpServer` instance with server metadata
+  2. Register tools with zod schemas and handler functions
+  3. Connect the server to a `StdioServerTransport`
+  4. Handle graceful shutdown
+
+  ## Key Design Decisions
+
+  ### 1. Tool Registration Pattern — Grouped by Domain
+
+  Tools are organized into domain-grouped files (`feature-tools.ts`, `agent-tools.ts`, etc.)
+  rather than one file per tool or one monolithic file. Each file exports a
+  `registerXxxTools(server, container)` function that registers all tools for that domain.
+
+  **Rationale:** Grouping by domain keeps related schemas and handlers together (easy to
+  maintain), while the registration function pattern keeps the main server file clean. The
+  barrel `index.ts` exports a single `registerAllTools()` function.
+
+  **Alternatives rejected:**
+  - One file per tool: Too many small files (11+) with repetitive boilerplate
+  - One monolithic file: Hard to navigate, poor separation of concerns
+
+  ### 2. Thin Handler Pattern — No Business Logic in MCP Layer
+
+  Each tool handler follows a strict pattern:
+
+  ```typescript
+  server.tool("tool_name", "description", zodSchema, async (params) => {
+    const useCase = container.resolve(SomeUseCase);
+    const result = await useCase.execute(params);
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  });
+  ```
+
+  Error handling wraps each handler in try/catch returning `{ isError: true }`.
+
+  **Rationale:** This keeps the MCP layer as a pure adapter (NFR-6). Business logic stays in
+  use cases. Adding a new tool is mechanical — no architectural decisions needed.
+
+  ### 3. Server as Infrastructure Service (Not Application Port)
+
+  The MCP server is implemented directly as an infrastructure service class rather than
+  defining an `IMcpServerService` application port interface. The spec suggested an
+  application port, but this adds unnecessary abstraction — the MCP server is a presentation
+  concern that will not have multiple implementations.
+
+  **Rationale:** The CLI commands follow the same pattern — they are presentation code that
+  directly resolves use cases from the container. No CLI command defines an application port.
+  The MCP server should follow suit.
+
+  ### 4. Shared DI Container — No New Bootstrap
+
+  The MCP server reuses the existing `initializeContainer()` and `initializeSettings()`
+  bootstrap sequence from `src/presentation/cli/index.ts`. The `shep mcp` command action
+  calls these first, then creates and starts the MCP server.
+
+  **Rationale:** Follows the existing pattern. All presentation adapters share one container
+  (decision from spec Q5). No state duplication, no extra database connections.
+
+  ### 5. Stdio Transport Only (Phase 1)
+
+  The spec selected "stdio + streamable HTTP" but the functional requirements only define
+  stdio behavior. HTTP transport is deferred to a follow-up — it requires port management,
+  auth, CORS, and daemon lifecycle (start/stop commands) that significantly increase scope.
+
+  **Rationale:** stdio covers 90%+ of MCP client integrations (Claude Desktop, Cursor, VS Code
+  Copilot, Windsurf). HTTP can be added incrementally without changing the core tool registration
+  architecture.
+
+  ### 6. Long-Running Operations Return Immediately
+
+  `run_agent` and `start_feature` return the run ID immediately rather than blocking or
+  streaming. The client polls via `show_agent_run` for status updates.
+
+  **Rationale:** MCP tools are request-response. Blocking would cause timeouts for operations
+  that take minutes. The async pattern (start then poll) is idiomatic for AI agent workflows.
+
+  ## Implementation Strategy
+
+  **Phase 1** establishes the full vertical slice: SDK installation, server core, DI wiring,
+  and one complete tool (`list_features`). This validates that the MCP SDK works with our
+  zod v4, that use case resolution from the container works in tool handlers, and that the
+  test infrastructure is sound. It is the riskiest phase — SDK compatibility is the main
+  unknown.
+
+  **Phase 2** is mechanical — registering the remaining 10 tools following the proven pattern.
+  Tools are added in domain-grouped batches (features, agents, repos, settings) with tests
+  for each batch.
+
+  **Phase 3** builds the CLI command (`shep mcp`) that brings everything together. This is
+  kept separate from the server core so the server can be tested in isolation without CLI
+  bootstrapping. Signal handling (SIGINT/SIGTERM) and stderr logging are wired here.
+
+  **Phase 4** adds integration tests using the MCP SDK client to verify real protocol behavior
+  (not just unit-level handler testing). This catches issues that unit tests miss: transport
+  serialization, protocol negotiation, and end-to-end error propagation.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | MCP SDK v1.23+ not available or broken with zod v4.3.6 | Phase 1 validates SDK compatibility first. Fallback: use raw JSON Schema for tool inputs (bypasses zod requirement) |
+  | stdout pollution corrupts MCP JSON-RPC stream | Redirect all logging to stderr early in phase 1. Unit test verifies no stdout writes |
+  | Use case resolution fails in MCP context | Phase 1 integration test validates full container to use case to response flow |
+  | Tool handler errors crash the server | Every handler wrapped in try-catch. Integration test sends malformed inputs to verify graceful error responses |
+  | Large tool count overwhelms AI agent context | Start with 11 core tools (per FR-3). Architecture supports adding more incrementally |
+  | DI container not initialized before MCP accepts connections | Server start method initializes container before connecting transport (same bootstrap as CLI) |

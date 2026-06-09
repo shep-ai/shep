@@ -64,6 +64,7 @@ import { MessageDispatcher } from '../services/interactive/api/message-dispatche
 import { ChatStateAssembler } from '../services/interactive/api/chat-state.assembler.js';
 import { WorkflowHooks } from '../services/interactive/api/workflow-hooks.js';
 import type { ILogger } from '../../application/ports/output/services/logger.interface.js';
+import type { IVersionService } from '../../application/ports/output/services/version-service.interface.js';
 
 // Topic-grouped registration modules
 import { registerRepositories } from './modules/register-repositories.js';
@@ -387,6 +388,20 @@ export async function initializeContainer(): Promise<typeof container> {
           };
         },
       });
+    },
+  });
+
+  // McpServerFactory is registered as a lazy async factory to avoid importing
+  // @modelcontextprotocol/sdk for non-MCP commands. The factory uses dynamic
+  // import() — the actual SDK import only happens when the factory is called.
+  container.register('McpServerFactory', {
+    useFactory: (c) => {
+      return async () => {
+        const { McpServerService } = await import('../services/mcp/mcp-server.service.js');
+        const versionService = c.resolve<IVersionService>('IVersionService');
+        const { version } = versionService.getVersion();
+        return new McpServerService(version, c);
+      };
     },
   });
 

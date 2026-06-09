@@ -1,0 +1,128 @@
+name: "mcp-server"
+number: 77
+branch: "feat/077-mcp-server"
+oneLiner: "Expose shep capabilities as an MCP server for AI agent integration"
+userQuery: "Add MCP support, make shep expose MCP\n"
+summary: "Add an MCP (Model Context Protocol) server to shep so that external AI agents (Claude Desktop, Cursor, VS Code Copilot, etc.) can discover and invoke shep capabilities as MCP tools. The server will expose core use cases — feature management, agent runs, repository operations, and settings — over stdio and streamable HTTP transports using the official @modelcontextprotocol/sdk.\n"
+phase: "Requirements"
+sizeEstimate: "L"
+relatedFeatures: []
+technologies:
+  - "@modelcontextprotocol/sdk (v1.23+ — official MCP TypeScript SDK with zod v4 support)"
+  - "zod (already a project dependency v4.3.6 — used for MCP tool input schemas)"
+  - "tsyringe (existing DI container — for resolving use cases in tool handlers)"
+  - "commander (existing CLI framework — new `shep mcp` command)"
+  - "TypeSpec (domain model definitions for any new MCP-related types)"
+relatedLinks:
+  - title: "MCP TypeScript SDK — npm"
+    url: "https://www.npmjs.com/package/@modelcontextprotocol/sdk"
+  - title: "MCP specification — transports"
+    url: "https://modelcontextprotocol.io/specification/2025-03-26/basic/transports"
+  - title: "Build an MCP server — official tutorial"
+    url: "https://modelcontextprotocol.io/docs/develop/build-server"
+  - title: "MCP TypeScript SDK — GitHub"
+    url: "https://github.com/modelcontextprotocol/typescript-sdk"
+  - title: "MCP SDK Zod v4 compatibility — GitHub issue"
+    url: "https://github.com/modelcontextprotocol/typescript-sdk/issues/925"
+openQuestions:
+  - question: "Which MCP primitives should the server expose — tools only, or also resources and prompts?"
+    resolved: true
+    options:
+      - option: "Tools only"
+        description: "Expose use cases as MCP tools only. Simplest to implement, covers the primary use case of AI agents invoking shep operations. Resources and prompts can be added later."
+        selected: false
+      - option: "Tools + resources"
+        description: "Also expose MCP resources (e.g., feature details, settings as readable data). More comprehensive but increases scope."
+        selected: true
+      - option: "Tools + resources + prompts"
+        description: "Full MCP primitive support. Most complete but significantly increases scope and maintenance burden."
+        selected: false
+    selectionRationale: "Tools are the primary mechanism for AI agent integration with shep. Resources and prompts are lower priority — agents can read data via tool calls (e.g., show_feature returns feature data). Starting with tools keeps scope manageable and delivers the core value. Resources and prompts can be added in a follow-up."
+    answer: "Tools + resources"
+  - question: "Which transport modes should the initial release support?"
+    resolved: true
+    options:
+      - option: "stdio only"
+        description: "The standard transport for local IDE integrations (Claude Desktop, Cursor, VS Code). Client spawns shep mcp as a child process. Simplest, no auth needed, covers 90%+ of use cases."
+        selected: false
+      - option: "stdio + streamable HTTP"
+        description: "Both transports from day one. HTTP enables remote access and multi-client scenarios but requires auth considerations."
+        selected: true
+      - option: "streamable HTTP only"
+        description: "HTTP transport only. Unusual choice — most MCP clients expect stdio as the primary transport."
+        selected: false
+    selectionRationale: "stdio is the de facto standard for MCP server integration with AI clients. Claude Desktop, Cursor, VS Code Copilot, and Windsurf all use stdio as their primary transport. HTTP transport adds complexity (port management, auth, CORS) with limited initial benefit. Ship stdio first, add HTTP in a follow-up if demand exists."
+    answer: "stdio + streamable HTTP"
+  - question: "How many use cases should the initial MCP tool set expose?"
+    resolved: true
+    options:
+      - option: "Core subset (10-12 tools)"
+        description: "Focus on the most commonly used operations: list/show/create features, run/list/show agents, list repos, get/update settings. Keeps the tool list discoverable and manageable for AI agents."
+        selected: false
+      - option: "Comprehensive (25+ tools)"
+        description: "Expose all available use cases as MCP tools. More powerful but the large tool list may overwhelm AI agent context windows and increase LLM token costs."
+        selected: true
+      - option: "Minimal (5-6 tools)"
+        description: "Only the most essential operations. Quick to implement but too limited for real use."
+        selected: false
+    selectionRationale: "A core subset of 10-12 tools provides the most valuable operations while keeping the tool list manageable. AI agents have limited context windows and must reason about which tool to use — a shorter, focused list is more effective than an exhaustive one. Additional tools can be added incrementally based on user demand."
+    answer: "Comprehensive (25+ tools)"
+  - question: "How should the zod v4 compatibility with the MCP SDK be handled?"
+    resolved: true
+    options:
+      - option: "Use MCP SDK v1.23+ with native zod v4 support"
+        description: "The MCP SDK v1.23.0+ has backwards-compatible zod v4 support. Use the latest SDK version that works with the project's existing zod v4.3.6. If v1.23 is still in beta, pin to the beta and upgrade when stable."
+        selected: true
+      - option: "Install zod v3 alongside v4"
+        description: "Install zod v3 as a separate dependency specifically for MCP tool schemas. Adds complexity with two zod versions but guarantees compatibility."
+        selected: false
+      - option: "Use raw JSON Schema instead of zod"
+        description: "Bypass zod entirely for MCP tool input schemas by writing raw JSON Schema objects. Avoids version conflicts but loses type safety and validation benefits."
+        selected: false
+    selectionRationale: "The MCP SDK team has shipped zod v4 support in v1.23.0+. Using the latest SDK with native v4 compatibility is the cleanest approach — no dual dependencies, no loss of type safety. If the stable release is not yet available, the beta can be used with a pin and upgraded when stable."
+    answer: "Use MCP SDK v1.23+ with native zod v4 support"
+  - question: "Should the MCP server share the DI container instance with the web server when both are running?"
+    resolved: true
+    options:
+      - option: "Shared container instance"
+        description: "The MCP server resolves use cases from the same DI container as the CLI and web server. Follows the existing pattern where all presentation adapters share one container. Simpler, no state duplication."
+        selected: true
+      - option: "Separate container instance"
+        description: "Create a fresh DI container for the MCP server. Provides isolation but duplicates database connections and service state."
+        selected: false
+    selectionRationale: "The existing architecture uses a single DI container shared across all presentation layers (CLI, TUI, web). The MCP server is another presentation adapter and should follow the same pattern. Use cases and repositories are already designed to be shared — creating a separate container would duplicate database connections and risk state inconsistency."
+    answer: "Shared container instance"
+  - question: "Should long-running operations like run_agent stream progress or return immediately?"
+    resolved: true
+    options:
+      - option: "Return immediately with run ID"
+        description: "Start the agent run and return the run ID immediately. The client can poll for status via show_agent_run. Simple, stateless, fits the MCP request-response model well."
+        selected: true
+      - option: "Stream progress via MCP notifications"
+        description: "Use MCP server notifications to stream agent run progress. More real-time but complex to implement and not all MCP clients handle notifications well."
+        selected: false
+      - option: "Block until completion"
+        description: "Wait for the agent run to complete before returning. Simple but could block for minutes, causing timeouts."
+        selected: false
+    selectionRationale: "MCP tools follow a request-response model. Returning the run ID immediately lets the AI agent decide when to check status, which aligns with how agents naturally work (start operation, do other things, check back). Blocking would cause timeouts for long runs, and streaming notifications adds complexity without clear benefit since most MCP clients don't surface live notifications to users."
+    answer: "Return immediately with run ID"
+  - question: "What should the CLI command structure be for launching the MCP server?"
+    resolved: true
+    options:
+      - option: "shep mcp (foreground, stdio)"
+        description: "Single command that runs the MCP server in foreground over stdio. The MCP client spawns this process. Clean and simple — matches how every other MCP server works."
+        selected: true
+      - option: "shep mcp start / shep mcp stop (daemon)"
+        description: "Daemon-style start/stop commands. More complex, useful for HTTP transport but unnecessary for stdio."
+        selected: false
+      - option: "shep serve --mcp (flag on existing serve)"
+        description: "Add MCP as a flag to the existing serve command. Mixes concerns between web server and MCP server."
+        selected: false
+    selectionRationale: "The standard pattern for MCP servers is a single foreground command that the client spawns as a child process. Users configure their MCP client (Claude Desktop, Cursor, etc.) to run 'shep mcp' — the client manages the lifecycle. A daemon pattern is unnecessary for stdio and would complicate the setup. If HTTP transport is added later, daemon commands can be introduced then."
+    answer: "shep mcp (foreground, stdio)"
+content: "## Problem Statement\n\nShep is an autonomous AI-native SDLC platform with rich capabilities for\nmanaging features, running AI agents, tracking repositories, and configuring\nsettings. Today these capabilities are only accessible via the CLI, TUI, and\nweb UI. External AI agents (Claude Desktop, Cursor, VS Code Copilot, Windsurf,\netc.) cannot programmatically discover or invoke shep's functionality.\n\nMCP (Model Context Protocol) is the emerging standard for AI agents to discover\nand call tools exposed by external systems. By running shep as an MCP server,\nany MCP-compatible client can list features, start agent runs, manage repos,\nand more — without custom integration code.\n\n## Success Criteria\n\n- [ ] `shep mcp` command starts a foreground MCP server over stdio transport\n- [ ] MCP server advertises 10-12 tools corresponding to core shep use cases\n- [ ] Claude Desktop can discover all shep MCP tools via its tool listing UI\n- [ ] An MCP client can successfully call each exposed tool and receive valid responses\n- [ ] Tool input validation rejects malformed requests with descriptive error messages\n- [ ] Use case errors (e.g., feature not found) are returned as MCP error responses, not crashes\n- [ ] The MCP server shares the existing DI container and database — no state duplication\n- [ ] No console.log output on stdout (would corrupt MCP JSON-RPC protocol)\n- [ ] All MCP tool handlers have unit tests with >90% coverage\n- [ ] Integration test demonstrates full MCP round-trip (client -> server -> use case -> response)\n- [ ] `shep mcp --help` displays usage instructions with example Claude Desktop config\n- [ ] The server responds to MCP `initialize` and `tools/list` requests within 500ms\n\n## Functional Requirements\n\n- **FR-1: MCP server lifecycle** — The system shall start an MCP server in foreground mode when `shep mcp` is executed, listening on stdio (stdin/stdout) for JSON-RPC messages per the MCP specification.\n\n- **FR-2: MCP protocol compliance** — The server shall implement the MCP protocol including `initialize`, `tools/list`, and `tools/call` methods using the official @modelcontextprotocol/sdk.\n\n- **FR-3: Tool registration** — The server shall register the following core tools with descriptive names, descriptions, and zod-validated input schemas:\n  - `list_features` — List all features with optional status filter\n  - `show_feature` — Get detailed feature information by ID (supports prefix matching)\n  - `create_feature` — Create a new feature with name and description\n  - `start_feature` — Start a pending feature (triggers agent run)\n  - `run_agent` — Run an agent on a feature (returns run ID immediately)\n  - `show_agent_run` — Get agent run status and details\n  - `list_agent_runs` — List all agent runs\n  - `stop_agent_run` — Stop a running agent\n  - `list_repositories` — List all tracked repositories\n  - `get_settings` — Get current shep settings\n  - `update_settings` — Update shep settings\n\n- **FR-4: Tool input validation** — Each tool shall define a zod schema for its input parameters. Invalid inputs shall be rejected with a descriptive MCP error before reaching the use case layer.\n\n- **FR-5: Tool response format** — Tool responses shall return MCP-compliant content blocks with type \"text\" containing JSON-serialized use case results. Error responses shall include the error message as text content with `isError: true`.\n\n- **FR-6: Use case delegation** — Each MCP tool handler shall resolve its corresponding use case from the shared DI container and delegate execution. The MCP layer shall not contain business logic.\n\n- **FR-7: Error handling** — Use case exceptions shall be caught by the MCP tool handler and returned as MCP error responses (text content with `isError: true`), never as unhandled exceptions that crash the server.\n\n- **FR-8: Graceful shutdown** — The server shall handle SIGINT and SIGTERM signals gracefully, closing the MCP transport and cleaning up resources.\n\n- **FR-9: Server metadata** — The server shall identify itself with name \"shep\" and the current CLI version in the MCP initialize response.\n\n- **FR-10: CLI command** — A new `shep mcp` CLI command shall launch the MCP server. The command shall include `--help` text with an example `claude_desktop_config.json` snippet showing how to configure Claude Desktop to use shep as an MCP server.\n\n- **FR-11: Stdio safety** — The MCP server process shall not write any non-MCP output to stdout. All diagnostic logging shall go to stderr via console.error or a logger configured for stderr.\n\n- **FR-12: DI container initialization** — The MCP server shall initialize the DI container (including database) before accepting MCP connections, following the same bootstrap sequence as the CLI.\n\n## Non-Functional Requirements\n\n- **NFR-1: Startup performance** — The MCP server shall be ready to accept connections within 2 seconds of process start, measured from exec to first successful `initialize` response.\n\n- **NFR-2: Tool call latency** — Individual tool calls shall add less than 50ms of overhead beyond the underlying use case execution time (measured as MCP handler overhead, not use case time).\n\n- **NFR-3: Memory footprint** — The MCP server process shall consume less than 100MB RSS at idle (after initialization, before any tool calls).\n\n- **NFR-4: Reliability** — The server shall not crash on any valid or invalid MCP request. All error paths shall be handled gracefully and return proper MCP error responses.\n\n- **NFR-5: Security — no network exposure** — The stdio transport shall not open any network ports. The server process is only accessible by the parent process that spawned it.\n\n- **NFR-6: Maintainability — thin adapter** — The MCP server layer shall be a thin presentation adapter with no business logic. Adding a new tool should require only: (1) a zod input schema, (2) a tool registration call, and (3) a handler that resolves and calls a use case.\n\n- **NFR-7: Testability** — All MCP tool handlers shall be unit-testable in isolation by mocking the DI container. Integration tests shall use the MCP SDK client to verify protocol-level behavior.\n\n- **NFR-8: Logging** — All server logs shall be written to stderr only. The log level shall be configurable via `--log-level` flag (default: warn) to avoid noisy output during normal operation.\n\n- **NFR-9: Compatibility** — The server shall work with MCP protocol version 2024-11-05 or later, compatible with Claude Desktop, Cursor, VS Code Copilot, and Windsurf.\n\n- **NFR-10: Dependency hygiene** — The only new npm dependency shall be @modelcontextprotocol/sdk. The server shall reuse existing project dependencies (zod, tsyringe, commander) without adding extras.\n\n## Product Questions & AI Recommendations\n\n| # | Question | AI Recommendation | Rationale |\n| - | -------- | ----------------- | --------- |\n| 1 | Which MCP primitives to expose? | Tools only | Resources and prompts can be added later; tools cover the primary use case |\n| 2 | Which transport modes? | stdio only | Standard for local IDE integrations; HTTP adds auth complexity |\n| 3 | How many tools initially? | Core subset (10-12) | Keeps tool list discoverable; avoids overwhelming AI agent context |\n| 4 | Zod v4 compatibility approach? | Use MCP SDK v1.23+ with native zod v4 support | Cleanest approach; no dual deps needed |\n| 5 | Share DI container? | Yes, shared instance | Follows existing architecture pattern; no state duplication |\n| 6 | Long-running operation model? | Return immediately with run ID | Fits MCP request-response; avoids timeouts |\n| 7 | CLI command structure? | `shep mcp` (foreground, stdio) | Standard MCP pattern; client manages lifecycle |\n\n## Affected Areas\n\n| Area | Impact | Reasoning |\n| ---- | ------ | --------- |\n| `packages/core/src/infrastructure/services/` | High | New MCP server service implementation |\n| `packages/core/src/application/ports/output/services/` | High | New IMcpServerService interface |\n| `packages/core/src/infrastructure/di/container.ts` | Medium | Register MCP server service |\n| `src/presentation/cli/commands/` | Medium | New `shep mcp` command |\n| `src/presentation/cli/index.ts` | Low | Register the new mcp command |\n| `package.json` | Low | Add @modelcontextprotocol/sdk dependency |\n| `tests/unit/` | High | Unit tests for MCP service, tool handlers, command |\n| `tests/integration/` | Medium | Integration tests for MCP tool execution |\n\n## Dependencies\n\n- **@modelcontextprotocol/sdk v1.23+** — New npm dependency (must support zod v4)\n- **zod v4.3.6** — Already present, used for MCP tool input schemas\n- **tsyringe** — Existing DI container for use case resolution\n- **commander** — Existing CLI framework for `shep mcp` command\n- **Existing use cases** — Feature, agent, repo, settings use cases (no changes needed)\n- **DI container** — Must be initialized before MCP server starts (same bootstrap as CLI)\n\n## Size Estimate\n\n**L** — This is a multi-day effort involving:\n- New application port interface (IMcpServerService)\n- New infrastructure service (McpServerService with 10-12 tool registrations)\n- New CLI command (`shep mcp`)\n- Zod input schemas for each tool\n- Unit tests for each tool handler (~10-12 test files)\n- Integration test for MCP protocol round-trip\n- DI container registration\n- stderr-only logging setup\n\nThe core architecture is straightforward (thin adapter over existing use cases),\nbut the breadth of tools to define, validate, and test makes this L-sized.\n"
+rejectionFeedback:
+  - iteration: 1
+    message: "Resolve merge conflicts"
+    phase: "merge"
+    timestamp: "2026-03-24T09:40:00.364Z"

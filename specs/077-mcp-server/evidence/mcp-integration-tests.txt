@@ -1,0 +1,51 @@
+MCP Integration Tests — 23 tests passing (protocol round-trip)
+================================================================
+
+Test Run: vitest run --reporter=verbose
+Command: npx vitest run tests/integration/infrastructure/services/mcp/mcp-round-trip.test.ts
+
+Test Files: 1 passed (1)
+Tests:      23 passed (23)
+Duration:   1.23s
+
+────────────────────────────────────────────────────────
+
+tests/integration/infrastructure/services/mcp/mcp-round-trip.test.ts (23 tests)
+
+  MCP Protocol Round-Trip (integration) > initialize
+    ✓ returns server metadata with name "shep" and version
+
+  MCP Protocol Round-Trip (integration) > tools/list
+    ✓ returns all 11 registered tools
+    ✓ includes all expected tool names
+    ✓ every tool has a non-empty description
+    ✓ every tool has an inputSchema
+
+  MCP Protocol Round-Trip (integration) > tools/call — success paths
+    ✓ list_features returns JSON array of features
+    ✓ list_features with status filter passes filter to use case
+    ✓ show_feature returns feature details as JSON
+    ✓ create_feature returns created feature
+    ✓ run_agent returns run ID immediately
+    ✓ list_repositories returns repository list
+    ✓ get_settings returns current settings
+    ✓ update_settings returns updated settings
+
+  MCP Protocol Round-Trip (integration) > tools/call — error paths
+    ✓ returns isError: true when use case throws
+    ✓ returns error message for feature not found
+    ✓ returns error for agent run not found via show_agent_run
+    ✓ returns error when create_feature use case fails
+    ✓ returns error when non-Error object is thrown
+
+  MCP Protocol Round-Trip (integration) > tools/call — input validation
+    ✓ rejects show_feature without required featureId
+    ✓ rejects create_feature without required fields
+    ✓ rejects run_agent without required agentName and prompt
+
+  MCP Protocol Round-Trip (integration) > server lifecycle
+    ✓ server remains responsive after an error in one tool call
+    ✓ multiple sequential tool calls work correctly
+
+Transport: InMemoryTransport (linked pair) + MCP Client SDK
+DI Container: Mocked with use case stubs for test isolation

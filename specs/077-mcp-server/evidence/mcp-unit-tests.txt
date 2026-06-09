@@ -1,0 +1,126 @@
+MCP Unit Tests — 75 tests passing across 7 test files
+======================================================
+
+Test Run: vitest run --reporter=verbose
+Command: npx vitest run tests/unit/infrastructure/services/mcp/ tests/unit/commands/mcp.command.test.ts
+
+Test Files: 7 passed (7)
+Tests:      75 passed (75)
+
+────────────────────────────────────────────────────────
+
+tests/unit/infrastructure/services/mcp/mcp-server-di.test.ts (3 tests)
+  McpServerService DI Registration
+    ✓ resolves McpServerFactory as an async function
+    ✓ factory creates a McpServerService with correct version
+    ✓ factory passes the container to McpServerService
+
+tests/unit/commands/mcp.command.test.ts (20 tests)
+  mcp command > command structure
+    ✓ returns a Commander Command instance
+    ✓ has name "mcp"
+    ✓ has a description about MCP server
+    ✓ has a --log-level option
+    ✓ --log-level defaults to warn
+  mcp command > help text
+    ✓ includes claude_desktop_config.json example
+    ✓ includes mcpServers config with shep command
+  mcp command > command execution
+    ✓ resolves McpServerFactory from container
+    ✓ calls the factory to create the MCP server service
+    ✓ calls start() on the MCP server service
+    ✓ registers SIGINT handler
+    ✓ registers SIGTERM handler
+  mcp command > graceful shutdown
+    ✓ SIGINT triggers server.stop()
+    ✓ SIGTERM triggers server.stop()
+    ✓ shutdown handler exits the process
+    ✓ prevents double shutdown
+  mcp command > stdio safety
+    ✓ MCP server source files contain no console.log calls
+    ✓ MCP server command does not write to stdout during startup
+  mcp command > error handling
+    ✓ sets process.exitCode = 1 on factory error
+    ✓ sets process.exitCode = 1 on start error
+
+tests/unit/infrastructure/services/mcp/tools/feature-tools.test.ts (19 tests)
+  Feature Tools > registerFeatureTools
+    ✓ registers list_features tool
+    ✓ list_features tool has a description
+  Feature Tools > list_features handler
+    ✓ calls ListFeaturesUseCase.execute() with empty filters when no params provided
+    ✓ passes lifecycle filter when status is provided
+    ✓ returns successful result as JSON text content
+    ✓ returns use case error as MCP error response with isError: true
+  Feature Tools > show_feature handler
+    ✓ registers show_feature tool
+    ✓ calls ShowFeatureUseCase with featureId
+    ✓ returns feature data as JSON text content
+    ✓ returns error when feature not found
+  Feature Tools > create_feature handler
+    ✓ registers create_feature tool
+    ✓ calls CreateFeatureUseCase with userInput and repositoryPath
+    ✓ passes optional name and description to use case
+    ✓ returns created feature as JSON text content
+    ✓ returns error when creation fails
+  Feature Tools > start_feature handler
+    ✓ registers start_feature tool
+    ✓ calls StartFeatureUseCase with featureId
+    ✓ returns result with run ID as JSON text content
+    ✓ returns error when feature cannot be started
+
+tests/unit/infrastructure/services/mcp/tools/agent-tools.test.ts (13 tests)
+  Agent Tools > registerAgentTools
+    ✓ registers all four agent tools
+  Agent Tools > run_agent handler
+    ✓ calls RunAgentUseCase with agentName and prompt
+    ✓ returns agent run data as JSON text content
+    ✓ returns error when agent is unknown
+  Agent Tools > show_agent_run handler
+    ✓ calls GetAgentRunUseCase with runId
+    ✓ returns agent run details as JSON text content
+    ✓ returns error when run not found
+  Agent Tools > list_agent_runs handler
+    ✓ calls ListAgentRunsUseCase.execute()
+    ✓ returns agent runs as JSON text content
+    ✓ returns error when use case fails
+  Agent Tools > stop_agent_run handler
+    ✓ calls StopAgentRunUseCase with runId
+    ✓ returns stop result as JSON text content
+    ✓ returns error when stop fails
+
+tests/unit/infrastructure/services/mcp/tools/repo-tools.test.ts (4 tests)
+  Repository Tools > registerRepoTools
+    ✓ registers list_repositories tool
+  Repository Tools > list_repositories handler
+    ✓ calls ListRepositoriesUseCase.execute()
+    ✓ returns repositories as JSON text content
+    ✓ returns error when use case fails
+
+tests/unit/infrastructure/services/mcp/tools/settings-tools.test.ts (7 tests)
+  Settings Tools > registerSettingsTools
+    ✓ registers both settings tools
+  Settings Tools > get_settings handler
+    ✓ calls LoadSettingsUseCase.execute()
+    ✓ returns settings as JSON text content
+    ✓ returns error when settings not found
+  Settings Tools > update_settings handler
+    ✓ calls UpdateSettingsUseCase with provided settings
+    ✓ returns updated settings as JSON text content
+    ✓ returns error when update fails
+
+tests/unit/infrastructure/services/mcp/mcp-server.service.test.ts (9 tests)
+  McpServerService > constructor
+    ✓ creates an instance without throwing
+    ✓ exposes the underlying McpServer instance
+  McpServerService > server metadata
+    ✓ configures server with name "shep"
+  McpServerService > start()
+    ✓ connects a StdioServerTransport
+    ✓ returns a promise that resolves
+  McpServerService > stop()
+    ✓ closes the server
+    ✓ returns a promise that resolves
+  McpServerService > tool registration with container
+    ✓ registers all 11 tools when container is provided
+    ✓ all tools follow snake_case naming convention

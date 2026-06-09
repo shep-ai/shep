@@ -1,0 +1,22 @@
+$ shep mcp --help
+Usage: shep mcp [options]
+
+Start the MCP server for AI agent integration
+
+Options:
+  --log-level <level>  Logging verbosity for stderr output (debug, info, warn,
+                       error) (default: "warn")
+  -h, --help           display help for command
+
+Example Claude Desktop configuration (claude_desktop_config.json):
+  {
+    "mcpServers": {
+      "shep": {
+        "command": "shep",
+        "args": ["mcp"]
+      }
+    }
+  }
+
+The MCP server communicates over stdio (stdin/stdout) using JSON-RPC.
+All diagnostic output goes to stderr so it does not interfere with the protocol.

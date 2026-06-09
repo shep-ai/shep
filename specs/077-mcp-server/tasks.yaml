@@ -1,0 +1,449 @@
+name: "mcp-server"
+summary: >
+  14 tasks across 4 phases: foundation and first tool (phase 1), tool registration
+  in domain batches (phase 2), CLI command and integration wiring (phase 3), and
+  integration tests with polish (phase 4).
+
+relatedFeatures: []
+technologies:
+  - "@modelcontextprotocol/sdk"
+  - "zod"
+  - "tsyringe"
+  - "commander"
+relatedLinks:
+  - title: "MCP TypeScript SDK — npm"
+    url: "https://www.npmjs.com/package/@modelcontextprotocol/sdk"
+  - title: "MCP specification — transports"
+    url: "https://modelcontextprotocol.io/specification/2025-03-26/basic/transports"
+
+tasks:
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Install @modelcontextprotocol/sdk dependency"
+    description: >
+      Add @modelcontextprotocol/sdk v1.23+ to the root package.json dependencies.
+      Verify it resolves correctly with the existing zod v4.3.6 — no version conflicts.
+      Run pnpm install and confirm the lockfile updates cleanly.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "@modelcontextprotocol/sdk is listed in package.json dependencies"
+      - "pnpm install completes without errors or peer dependency warnings for zod"
+      - "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js' resolves in TypeScript"
+    tdd: null
+    estimatedEffort: "15min"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Create McpServerService core with stdio transport"
+    description: >
+      Create the MCP server service class that wraps the SDK McpServer. The service
+      accepts the DI container, creates the McpServer with name/version metadata,
+      and exposes start() (connects stdio transport) and stop() (closes transport)
+      methods. No tools registered yet — just the server lifecycle.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "McpServerService class exists at packages/core/src/infrastructure/services/mcp/mcp-server.service.ts"
+      - "Constructor accepts DI container and version string"
+      - "start() connects StdioServerTransport and returns a promise"
+      - "stop() closes the transport gracefully"
+      - "Server identifies as name 'shep' with the provided version in MCP initialize response"
+      - "All unit tests pass"
+    tdd:
+      red:
+        - "Write test that McpServerService constructor creates an instance without throwing"
+        - "Write test that start() connects the transport (mock StdioServerTransport)"
+        - "Write test that stop() closes the transport"
+        - "Write test that server metadata includes name 'shep' and the provided version"
+      green:
+        - "Implement McpServerService with McpServer from SDK"
+        - "Wire StdioServerTransport in start()"
+        - "Implement stop() to close transport"
+      refactor:
+        - "Extract server configuration into typed options if constructor grows"
+    estimatedEffort: "1h"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Implement list_features tool with zod schema"
+    description: >
+      Register the first MCP tool — list_features — to validate the full tool
+      registration pattern end-to-end. Define the zod input schema (optional status
+      filter), implement the handler that resolves ListFeaturesUseCase from the
+      container and returns JSON-serialized results. Include error handling wrapper.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "list_features tool is registered on the MCP server"
+      - "Tool has a zod schema with optional status filter parameter"
+      - "Handler resolves ListFeaturesUseCase from container and delegates"
+      - "Successful results returned as JSON text content"
+      - "Use case errors returned as MCP error response (isError: true)"
+      - "All unit tests pass"
+    tdd:
+      red:
+        - "Write test that list_features tool is registered (appears in tool list)"
+        - "Write test that handler calls ListFeaturesUseCase.execute() with correct params"
+        - "Write test that successful result is returned as JSON text content"
+        - "Write test that use case error is returned as MCP error response with isError: true"
+        - "Write test that invalid input (wrong type for status) is rejected by zod validation"
+      green:
+        - "Create feature-tools.ts with registerFeatureTools() function"
+        - "Define zod schema for list_features input"
+        - "Implement handler that resolves use case and delegates"
+        - "Add try-catch error wrapper"
+        - "Call registerFeatureTools() from McpServerService constructor"
+      refactor:
+        - "Extract shared error-handling wrapper into a helper function for reuse by other tools"
+        - "Create tools/index.ts barrel with registerAllTools()"
+    estimatedEffort: "1.5h"
+
+  - id: "task-4"
+    phaseId: "phase-1"
+    title: "Register McpServerService in DI container"
+    description: >
+      Register the McpServerService in the DI container so it can be resolved
+      by the CLI command. Follow the existing lazy-registration pattern to avoid
+      importing the MCP SDK for non-MCP commands (same pattern as IWebServerService).
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "McpServerService is registered in container.ts with a string token"
+      - "Registration uses lazy factory to avoid importing MCP SDK for other commands"
+      - "container.resolve('McpServerService') returns a valid instance"
+      - "Existing tests still pass (no side effects from registration)"
+    tdd:
+      red:
+        - "Write test that container.resolve('McpServerService') returns an instance"
+        - "Write test that resolving does not import MCP SDK eagerly (lazy factory)"
+      green:
+        - "Add lazy factory registration for McpServerService in container.ts"
+      refactor:
+        - "Verify registration follows the same pattern as IWebServerService lazy proxy"
+    estimatedEffort: "30min"
+
+  - id: "task-5"
+    phaseId: "phase-2"
+    title: "Implement show_feature, create_feature, and start_feature tools"
+    description: >
+      Register the remaining feature-domain tools. show_feature takes a featureId
+      string (supports prefix matching via ShowFeatureUseCase). create_feature takes
+      name and description. start_feature takes featureId and returns immediately
+      with the run ID.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "show_feature tool registered with featureId zod schema"
+      - "create_feature tool registered with name and description zod schema"
+      - "start_feature tool registered with featureId zod schema"
+      - "Each handler resolves its use case from the container"
+      - "start_feature returns run ID without blocking"
+      - "Error cases return MCP error responses"
+      - "All unit tests pass"
+    tdd:
+      red:
+        - "Write test that show_feature calls ShowFeatureUseCase with featureId"
+        - "Write test that show_feature returns feature data as JSON text"
+        - "Write test that show_feature returns error when feature not found"
+        - "Write test that create_feature calls CreateFeatureUseCase with name and description"
+        - "Write test that start_feature calls StartFeatureUseCase and returns run ID"
+      green:
+        - "Add show_feature, create_feature, start_feature registrations to feature-tools.ts"
+        - "Define zod schemas for each tool"
+        - "Implement handlers delegating to respective use cases"
+      refactor:
+        - "Ensure consistent JSON response format across all feature tools"
+    estimatedEffort: "1.5h"
+
+  - id: "task-6"
+    phaseId: "phase-2"
+    title: "Implement run_agent, show_agent_run, list_agent_runs, and stop_agent_run tools"
+    description: >
+      Register agent-domain tools. run_agent takes agentName and prompt, returns
+      the run ID immediately (non-blocking). show_agent_run takes runId. list_agent_runs
+      takes no required params. stop_agent_run takes runId.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "run_agent tool registered with agentName and prompt zod schema"
+      - "show_agent_run tool registered with runId zod schema"
+      - "list_agent_runs tool registered (no required params)"
+      - "stop_agent_run tool registered with runId zod schema"
+      - "run_agent returns run ID immediately without blocking"
+      - "Error cases return MCP error responses"
+      - "All unit tests pass"
+    tdd:
+      red:
+        - "Write test that run_agent calls RunAgentUseCase and returns run ID"
+        - "Write test that run_agent does not block (returns before agent completes)"
+        - "Write test that show_agent_run calls GetAgentRunUseCase with runId"
+        - "Write test that list_agent_runs calls ListAgentRunsUseCase"
+        - "Write test that stop_agent_run calls StopAgentRunUseCase with runId"
+        - "Write test that unknown agent returns error response"
+      green:
+        - "Create agent-tools.ts with registerAgentTools() function"
+        - "Define zod schemas for each agent tool"
+        - "Implement handlers delegating to respective use cases"
+      refactor:
+        - "Verify run_agent uses execute() (blocking variant that returns run object) not executeStream()"
+    estimatedEffort: "1.5h"
+
+  - id: "task-7"
+    phaseId: "phase-2"
+    title: "Implement list_repositories tool"
+    description: >
+      Register the repository-domain tool. list_repositories has no required
+      parameters and returns all tracked repositories.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "list_repositories tool registered with empty/minimal zod schema"
+      - "Handler resolves ListRepositoriesUseCase from container"
+      - "Returns repository list as JSON text content"
+      - "All unit tests pass"
+    tdd:
+      red:
+        - "Write test that list_repositories calls ListRepositoriesUseCase.execute()"
+        - "Write test that result is returned as JSON text content"
+        - "Write test that use case error returns MCP error response"
+      green:
+        - "Create repo-tools.ts with registerRepoTools() function"
+        - "Define zod schema and implement handler"
+      refactor:
+        - "Verify response format matches other tool responses"
+    estimatedEffort: "30min"
+
+  - id: "task-8"
+    phaseId: "phase-2"
+    title: "Implement get_settings and update_settings tools"
+    description: >
+      Register settings-domain tools. get_settings has no required params and returns
+      the current settings. update_settings takes a partial settings object and
+      delegates to UpdateSettingsUseCase.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "get_settings tool registered with no required params"
+      - "update_settings tool registered with partial settings zod schema"
+      - "Handlers resolve LoadSettingsUseCase and UpdateSettingsUseCase respectively"
+      - "Settings returned/updated as JSON text content"
+      - "All unit tests pass"
+    tdd:
+      red:
+        - "Write test that get_settings calls LoadSettingsUseCase.execute()"
+        - "Write test that get_settings returns settings as JSON text"
+        - "Write test that update_settings calls UpdateSettingsUseCase with provided fields"
+        - "Write test that invalid settings input is rejected by zod validation"
+      green:
+        - "Create settings-tools.ts with registerSettingsTools() function"
+        - "Define zod schemas for get_settings and update_settings"
+        - "Implement handlers delegating to use cases"
+      refactor:
+        - "Update tools/index.ts barrel to include all tool registration functions"
+    estimatedEffort: "1h"
+
+  - id: "task-9"
+    phaseId: "phase-2"
+    title: "Wire all tool groups into registerAllTools barrel"
+    description: >
+      Create the tools/index.ts barrel that calls all registerXxxTools() functions.
+      Update McpServerService to call registerAllTools() during construction.
+      Verify all 11 tools appear in tools/list response.
+    state: "Todo"
+    dependencies:
+      - "task-5"
+      - "task-6"
+      - "task-7"
+      - "task-8"
+    acceptanceCriteria:
+      - "tools/index.ts exports registerAllTools(server, container)"
+      - "McpServerService calls registerAllTools() during construction"
+      - "All 11 tools appear when listing tools"
+      - "All unit tests pass"
+    tdd:
+      red:
+        - "Write test that registerAllTools registers all 11 tools on the server"
+        - "Write test that McpServerService exposes all 11 tools after construction"
+      green:
+        - "Implement registerAllTools() that calls all four registration functions"
+        - "Update McpServerService to use registerAllTools()"
+      refactor:
+        - "Ensure tool names follow consistent snake_case convention"
+    estimatedEffort: "30min"
+
+  - id: "task-10"
+    phaseId: "phase-3"
+    title: "Create shep mcp CLI command"
+    description: >
+      Create the Commander command for `shep mcp` that bootstraps the DI container,
+      creates the McpServerService, and starts it on stdio. Include --help text
+      with example Claude Desktop configuration JSON. Add --log-level option
+      (default: warn) for stderr logging verbosity.
+    state: "Todo"
+    dependencies:
+      - "task-9"
+    acceptanceCriteria:
+      - "mcp.command.ts exists at src/presentation/cli/commands/mcp.command.ts"
+      - "Command name is 'mcp' with description about MCP server"
+      - "Action resolves McpServerService from container and calls start()"
+      - "--log-level option accepts debug, info, warn, error (default: warn)"
+      - "--help includes Claude Desktop config example"
+      - "All unit tests pass"
+    tdd:
+      red:
+        - "Write test that command has name 'mcp'"
+        - "Write test that command has --log-level option with default 'warn'"
+        - "Write test that action resolves McpServerService and calls start()"
+        - "Write test that help text includes claude_desktop_config.json example"
+      green:
+        - "Create mcp.command.ts with createMcpCommand() factory function"
+        - "Implement action that resolves and starts the MCP server"
+        - "Add --log-level option parsing"
+        - "Add help text with Claude Desktop config example"
+      refactor:
+        - "Ensure error handling follows the same pattern as other CLI commands"
+    estimatedEffort: "1h"
+
+  - id: "task-11"
+    phaseId: "phase-3"
+    title: "Register mcp command in CLI entry point"
+    description: >
+      Import and register the mcp command in src/presentation/cli/index.ts alongside
+      the other commands. Verify it appears in `shep --help` output.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "createMcpCommand() is imported in index.ts"
+      - "program.addCommand(createMcpCommand()) is called"
+      - "shep --help shows the mcp command in the command list"
+    tdd:
+      red:
+        - "Write test that mcp command is registered on the program"
+      green:
+        - "Add import and addCommand call in index.ts"
+      refactor:
+        - "Verify import ordering matches existing convention"
+    estimatedEffort: "15min"
+
+  - id: "task-12"
+    phaseId: "phase-3"
+    title: "Implement graceful shutdown and stderr logging"
+    description: >
+      Add SIGINT/SIGTERM signal handlers to the mcp command that call
+      McpServerService.stop(). Ensure all logging goes to stderr only — no
+      console.log calls in any MCP code path. Add a stdio safety guard that
+      intercepts accidental stdout writes.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "SIGINT handler calls server.stop() and exits cleanly"
+      - "SIGTERM handler calls server.stop() and exits cleanly"
+      - "No console.log calls exist in MCP server code (only console.error for stderr)"
+      - "Stdio safety test verifies no non-MCP output on stdout"
+      - "All unit tests pass"
+    tdd:
+      red:
+        - "Write test that SIGINT triggers graceful shutdown"
+        - "Write test that SIGTERM triggers graceful shutdown"
+        - "Write test that no console.log calls exist in MCP source files (static analysis or grep)"
+        - "Write test that MCP server does not write non-protocol data to stdout"
+      green:
+        - "Add signal handlers in mcp command action"
+        - "Audit and replace any console.log with console.error in MCP code"
+      refactor:
+        - "Consider extracting signal handling into a shared utility if pattern is reused"
+    estimatedEffort: "45min"
+
+  - id: "task-13"
+    phaseId: "phase-4"
+    title: "Write MCP protocol round-trip integration tests"
+    description: >
+      Write integration tests using the MCP SDK Client to verify full protocol
+      behavior. Tests connect to the server via stdio in-process (or spawned process),
+      send initialize, tools/list, and tools/call requests, and verify responses.
+      Test both success and error paths.
+    state: "Todo"
+    dependencies:
+      - "task-9"
+      - "task-12"
+    acceptanceCriteria:
+      - "Integration test initializes MCP client-server connection"
+      - "Test verifies initialize response includes server name and version"
+      - "Test verifies tools/list returns all 11 tools with correct schemas"
+      - "Test verifies tools/call on list_features returns valid JSON response"
+      - "Test verifies tools/call with invalid input returns error response"
+      - "Test verifies tools/call on nonexistent tool returns error"
+      - "All integration tests pass"
+    tdd:
+      red:
+        - "Write test that MCP initialize returns server metadata"
+        - "Write test that tools/list returns 11 tools"
+        - "Write test that tools/call list_features returns features array"
+        - "Write test that tools/call with invalid params returns isError: true"
+        - "Write test that tools/call on unknown tool returns error"
+      green:
+        - "Set up MCP Client with in-process transport for testing"
+        - "Initialize DI container with in-memory database for test isolation"
+        - "Implement each test assertion"
+      refactor:
+        - "Extract test setup into shared helper for reuse in future MCP tests"
+    estimatedEffort: "2h"
+
+  - id: "task-14"
+    phaseId: "phase-4"
+    title: "Validate build, lint, and full test suite"
+    description: >
+      Run pnpm validate (lint + format + typecheck + tsp) and pnpm test to ensure
+      all existing tests still pass and no type errors were introduced. Fix any
+      issues found.
+    state: "Todo"
+    dependencies:
+      - "task-13"
+    acceptanceCriteria:
+      - "pnpm validate passes with zero errors"
+      - "pnpm test passes with zero failures"
+      - "pnpm build completes successfully"
+      - "No type errors in new or modified files"
+    tdd: null
+    estimatedEffort: "30min"
+
+totalEstimate: "12h"
+openQuestions: []
+
+content: |
+  ## Summary
+
+  The implementation is structured as 14 tasks across 4 phases, totaling approximately
+  12 hours of effort.
+
+  Phase 1 (Foundation) establishes the full vertical slice: SDK installation, the
+  McpServerService core with stdio transport, the first tool (list_features) that
+  validates the entire tool registration pattern, and DI container wiring. This phase
+  is intentionally front-loaded with risk mitigation — if the MCP SDK has compatibility
+  issues with zod v4, we discover it immediately on task 1-2 rather than after building
+  out all 11 tools.
+
+  Phase 2 (Tool Registration) is the bulk of the work but follows a mechanical pattern
+  established in phase 1. Tools are registered in domain-grouped batches: features
+  (show, create, start), agents (run, show, list, stop), repositories (list), and
+  settings (get, update). Each batch has its own test file and follows the same
+  zod-schema + handler + error-wrapper pattern. The final task in this phase wires all
+  groups together via the barrel export.
+
+  Phase 3 (CLI Command) creates the shep mcp CLI command, registers it in the entry
+  point, adds help text with Claude Desktop configuration examples, implements graceful
+  SIGINT/SIGTERM shutdown, and ensures all logging goes to stderr only.
+
+  Phase 4 (Integration and Polish) adds protocol-level integration tests using the MCP
+  SDK client for full round-trip verification, then runs the complete validation suite
+  (lint, typecheck, tests, build) to confirm nothing is broken.

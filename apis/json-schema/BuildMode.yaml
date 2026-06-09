@@ -5,4 +5,5 @@ enum:
   - application
   - fast
   - spec
+  - exploration
 description: How a feature run is executed (controls which SDLC pipeline it follows)

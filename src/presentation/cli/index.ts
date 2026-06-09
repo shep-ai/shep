@@ -23,6 +23,7 @@
  *   shep repo         Manage tracked repositories
  *   shep settings     Configure Shep settings
  *   shep upgrade      Upgrade Shep CLI to the latest version
+ *   shep mcp          Start the MCP server for AI agent integration
  *   shep --version    Display version number only
  *
  * Global Options:
@@ -64,6 +65,7 @@ import { createAspmCommand } from './commands/aspm/index.js';
 import { createSecurityCommand } from './commands/security.command.js';
 import { createWorkflowCommand } from './commands/workflow/index.js';
 import { createPluginCommand } from './commands/plugin/index.js';
+import { createMcpCommand } from './commands/mcp.command.js';
 import { messages } from './ui/index.js';
 
 // Daemon lifecycle commands
@@ -166,6 +168,7 @@ async function bootstrap() {
     program.addCommand(createPluginCommand());
     program.addCommand(createUpgradeCommand());
     program.addCommand(createWorkflowCommand());
+    program.addCommand(createMcpCommand());
 
     // Daemon lifecycle commands (task-9)
     program.addCommand(createStartCommand());

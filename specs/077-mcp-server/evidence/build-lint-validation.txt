@@ -1,0 +1,17 @@
+Build and Lint Validation
+=========================
+
+$ pnpm build
+> tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths
+✓ Build completed successfully — zero errors
+
+$ pnpm lint
+> eslint . --max-warnings 0 --cache
+✓ Lint passed — zero errors, zero warnings
+
+MCP SDK Compatibility:
+  @modelcontextprotocol/sdk v1.27.1 installed
+  zod v4.3.6 (existing project dependency)
+  Peer dependency satisfied: @modelcontextprotocol/sdk requires zod ^3.25 || ^4.0
+
+All validation checks pass.

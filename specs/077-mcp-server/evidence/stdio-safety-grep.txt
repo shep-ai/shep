@@ -1,0 +1,18 @@
+Stdio Safety Verification — console.log grep
+=============================================
+
+Search: console.log in MCP server code paths
+Scope: packages/core/src/infrastructure/services/mcp/ and src/presentation/cli/commands/mcp.command.ts
+
+$ grep -rn "console.log" packages/core/src/infrastructure/services/mcp/
+(no matches)
+
+$ grep -rn "console.log" src/presentation/cli/commands/mcp.command.ts
+(no matches)
+
+Result: PASS — Zero console.log calls found in MCP server code.
+All logging uses console.error (stderr) to avoid corrupting the stdio JSON-RPC protocol.
+
+Additionally verified by unit test:
+  tests/unit/commands/mcp.command.test.ts > stdio safety > MCP server source files contain no console.log calls ✓
+  tests/unit/commands/mcp.command.test.ts > stdio safety > MCP server command does not write to stdout during startup ✓

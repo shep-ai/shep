@@ -1,0 +1,19 @@
+Full Test Suite Results
+=======================
+
+Unit Tests (pnpm test:unit):
+  Test Files: 355 passed (355)
+  Tests:      4824 passed (4824)
+  Duration:   ~93s
+
+Integration Tests (pnpm test:int):
+  Test Files: 48 passed (48)
+  Tests:      569 passed (569)
+  Duration:   ~47s
+
+Total: 5393 tests passing across 403 test files — zero failures
+
+MCP-specific breakdown:
+  Unit:        75 tests across 7 files (service, DI, 4 tool groups, CLI command)
+  Integration: 23 tests across 1 file (protocol round-trip via InMemoryTransport)
+  MCP total:   98 tests

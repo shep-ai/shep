@@ -1,0 +1,41 @@
+feature:
+  id: "077-mcp-server"
+  name: "mcp-server"
+  number: 77
+  branch: "feat/077-mcp-server"
+  lifecycle: "research"
+  createdAt: "2026-03-23T20:32:18Z"
+status:
+  phase: "implementation-complete"
+  progress:
+    completed: 14
+    total: 14
+    percentage: 100
+  currentTask: null
+  lastUpdated: "2026-03-24T10:18:29.581Z"
+  lastUpdatedBy: "feature-agent:implement"
+  completedPhases:
+    - "analyze"
+    - "requirements"
+    - "research"
+    - "plan"
+    - "phase-1"
+    - "phase-2"
+    - "phase-3"
+    - "phase-4"
+    - "evidence"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-03-23T20:32:18Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []
