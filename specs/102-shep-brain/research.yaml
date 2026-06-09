@@ -1,0 +1,133 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: shep-brain
+summary: Technical analysis for 102-shep-brain — persistent project memory.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - LangGraph
+  - SQLite (better-sqlite3 + umzug)
+  - TypeSpec
+relatedLinks:
+  - title: Repository pattern + DI
+    url: ./docs/architecture/repository-pattern.md
+
+# Structured technology decisions
+decisions:
+  - title: Where memory is stored
+    chosen: SQLite table `project_memory`, one row per memory entry, scoped by repositoryPath
+    rejected:
+      - A single YAML/JSON blob file in the repo (mempalace.yaml style)
+      - Reusing LESSONS.md as the programmatic store
+    rationale: >
+      The repo already persists all durable state in the shared ~/.shep SQLite DB
+      behind the repository pattern (umzug migrations, mapper, port). Per-entry rows
+      enable categorisation, dedup by a stable key, querying by category, and
+      incremental append after each merge without rewriting a whole file. LESSONS.md
+      is human-prose and never parsed; mempalace.yaml is a file-room layout, not
+      knowledge. A DB store keeps memory machine-updatable and agent-agnostic.
+  - title: How memory reaches the agent at feature start
+    chosen: New optional `projectMemory` state channel injected into analyze + research producer prompts
+    rejected:
+      - Writing memory to a temp file and passing it via --attach
+      - Reading memory from a global singleton inside each node
+    rationale: >
+      LESSONS.md is explicit that nodes must read feature-scoped values from graph
+      `state`, never a global singleton. Threading memory through a state channel
+      (loaded once by the worker and surfaced in the early prompts) matches the
+      existing pattern for per-feature flags and keeps nodes pure/testable. --attach
+      is a CLI-only path and would not cover TUI/web-initiated features.
+  - title: When and how memory is extracted
+    chosen: New terminal LangGraph node `extract_memory` that runs after a successful merge and calls a record use case
+    rejected:
+      - Extracting inside the merge node before worktree cleanup
+      - Post-processing in the worker after graph.invoke()
+    rationale: >
+      A dedicated node preserves checkpoint/resume semantics and conditional
+      re-execution routing (merge currently routes to END; we re-point it to
+      extract_memory → END). It keeps the merge node single-responsibility and lets
+      extraction be skipped cleanly when the feature was not merged. The node uses
+      the injected IAgentExecutor to summarise the just-merged change into structured
+      entries, then persists them through the RecordProjectMemoryUseCase.
+  - title: Entry shape and dedup
+    chosen: Category enum + stable `entryKey` per (repositoryPath, category, entryKey) with upsert semantics
+    rejected:
+      - Free-form text entries with no key (append-only, unbounded growth)
+    rationale: >
+      A stable key lets the extraction step upsert ("preferred test runner is vitest")
+      instead of appending duplicates every merge. Categories (Convention, Library,
+      NamingPattern, ArchitectureDecision, CiFixResolution) let the read use case
+      render a compact, sectioned blob and let future UI filter. Unbounded append
+      would bloat the injected prompt over time.
+
+# Open questions (should be resolved by end of research)
+openQuestions: []
+
+# Markdown content (the full research document)
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-06-09
+
+  ## Technology Decisions
+
+  ### Storage: SQLite `project_memory` table
+
+  Memory lives as one row per entry in the shared `~/.shep` SQLite DB, behind an
+  output port (`IProjectMemoryRepository`) with a mapper and an additive umzug
+  migration (`109-create-project-memory.ts`), exactly like `sdlc_subtasks` (mig
+  106). Rows are scoped by normalised `repositoryPath` and carry a `category`, a
+  stable `entryKey` for upsert, the `content`, optional `sourceFeatureId`, and
+  timestamps.
+
+  ### Injection: `projectMemory` state channel
+
+  The feature-agent worker loads the repository's memory blob once via
+  `ReadProjectMemoryUseCase` and seeds an optional `projectMemory?: string` state
+  channel. The analyze and research prompt builders render it as a clearly
+  demarcated, read-only "PROJECT MEMORY" context section. Nodes never read a
+  global singleton for this (per LESSONS.md). Empty/absent memory degrades to no
+  section — zero behaviour change for fresh repos.
+
+  ### Extraction: post-merge `extract_memory` node
+
+  A new terminal node is wired after `merge`: `merge --routeReexecution-->
+  extract_memory --> END` (today merge routes straight to END). It only does work
+  when the feature actually merged (guards on `state.commitHash`/merge outcome),
+  uses the injected `IAgentExecutor` to distil structured entries from the merged
+  diff + CI-fix history, and persists them via `RecordProjectMemoryUseCase`.
+  Failure to extract must never fail the feature (best-effort, logged).
+
+  ## Library Analysis
+
+  | Library | Version | Purpose | Pros | Cons |
+  | ------- | ------- | ------- | ---- | ---- |
+  | better-sqlite3 | existing | Persist memory rows | Already the project DB; synchronous, fast | — |
+  | umzug | existing | Additive migration | Existing runner auto-discovers `NNN-*.ts` | — |
+  | @langchain/langgraph | existing | New extraction node | Existing graph + checkpointing | Must preserve resume semantics |
+  | TypeSpec | existing | `ProjectMemory` model + category enum | Single source of truth, codegen | Required fields ripple to fixtures |
+
+  ## Security Considerations
+
+  Memory content is model-generated text persisted locally and re-injected into
+  prompts. Extraction prompts must instruct the agent to record only conventions/
+  decisions — never secrets, tokens, or credentials — and the record use case
+  should treat content as untrusted text (no eval/exec, length-capped per entry).
+
+  ## Performance Implications
+
+  Read path adds one indexed SQLite query at feature start (negligible). The
+  injected blob is bounded by per-category caps to keep prompt size stable as the
+  store grows. Extraction is one extra agent call per merged feature, gated on a
+  successful merge only.
+
+  ## Open Questions
+
+  All questions resolved.
+
+  ---
+
+  _Updated by `/shep-kit:research` — proceed with `/shep-kit:plan`_
