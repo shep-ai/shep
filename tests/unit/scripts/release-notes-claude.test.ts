@@ -15,8 +15,18 @@ const internals = __test__ as unknown as {
   postProcessTagline: (raw: string) => string | null;
   summarizeCommits: (commits: unknown[]) => string;
   hasAuthCredentials: (env: Record<string, string | undefined>) => boolean;
+  hasUserFacingChanges: (commits: unknown[]) => boolean;
+  isMaintenanceOnlyFraming: (tagline: string) => boolean;
+  buildPrompt: (args: { commits: unknown[]; version: string }) => string;
 };
-const { postProcessTagline, summarizeCommits, hasAuthCredentials } = internals;
+const {
+  postProcessTagline,
+  summarizeCommits,
+  hasAuthCredentials,
+  hasUserFacingChanges,
+  isMaintenanceOnlyFraming,
+  buildPrompt,
+} = internals;
 
 function makeQuery(messages: unknown[]) {
   return vi.fn().mockReturnValue({
@@ -98,7 +108,73 @@ describe('hasAuthCredentials', () => {
   });
 });
 
+describe('hasUserFacingChanges', () => {
+  it('is true when any feat/fix/perf commit is present', () => {
+    expect(hasUserFacingChanges([{ type: 'chore' }, { type: 'feat' }])).toBe(true);
+    expect(hasUserFacingChanges([{ type: 'fix' }])).toBe(true);
+  });
+
+  it('is false for a chore/docs-only release', () => {
+    expect(hasUserFacingChanges([{ type: 'chore' }, { type: 'docs' }])).toBe(false);
+    expect(hasUserFacingChanges([])).toBe(false);
+  });
+});
+
+describe('isMaintenanceOnlyFraming', () => {
+  it('flags the contradictory framings that shipped in v1.210.0', () => {
+    expect(
+      isMaintenanceOnlyFraming(
+        "Under the hood maintenance and housekeeping — no user-facing changes, just a cleaner foundation for what's next."
+      )
+    ).toBe(true);
+    expect(isMaintenanceOnlyFraming('Behind the scenes cleanup')).toBe(true);
+  });
+
+  it('does not flag a legitimate feature tagline', () => {
+    expect(isMaintenanceOnlyFraming('Ship ASPM — _security posture_ at a glance.')).toBe(false);
+  });
+});
+
+describe('buildPrompt', () => {
+  it('forbids maintenance framing when the release is user-facing', () => {
+    const prompt = buildPrompt({
+      commits: [{ type: 'feat', subject: 'add aspm' }],
+      version: '1.210.0',
+    });
+    expect(prompt).toContain('SHIPS user-facing changes');
+    expect(prompt).toContain('behind a feature flag');
+  });
+
+  it('allows a modest framing for a chore-only release', () => {
+    const prompt = buildPrompt({
+      commits: [{ type: 'chore', subject: 'bump deps' }],
+      version: '1.0.0',
+    });
+    expect(prompt).toContain('chore-only release');
+  });
+});
+
 describe('generateTagline', () => {
+  it('rejects a maintenance-framed tagline when the release ships features', async () => {
+    const claudeQuery = makeQuery([
+      {
+        type: 'result',
+        subtype: 'success',
+        result: 'Under the hood maintenance — no user-facing changes.',
+      },
+    ]);
+
+    const tagline = await generateTagline({
+      commits: [{ type: 'feat', subject: 'add aspm module' }],
+      version: '1.210.0',
+      claudeQuery,
+      env: TEST_ENV,
+      logger: { info: () => undefined, warn: () => undefined },
+    });
+
+    expect(tagline).toBeNull();
+  });
+
   it('returns the Claude result string on success', async () => {
     const claudeQuery = makeQuery([
       {

@@ -70,12 +70,17 @@ export async function generateNotes(pluginConfig = {}, context = {}) {
 
   if (repoInfo && token) {
     try {
+      const defaultBranch = pluginConfig.defaultBranch || DEFAULT_BRANCH;
+      // Pin evidence URLs to the immutable release tag so branch-pinned image
+      // links in PR bodies keep resolving after the feature branch is deleted.
+      const ref = pluginConfig.ref || context.nextRelease?.gitTag || defaultBranch;
       await attachEvidenceToCommits(augmentedCommits, {
         owner: repoInfo.owner,
         repo: repoInfo.repo,
         token,
         fetcher: pluginConfig.fetcher,
-        defaultBranch: pluginConfig.defaultBranch || DEFAULT_BRANCH,
+        defaultBranch,
+        ref,
       });
     } catch (err) {
       logger.warn?.(`[release-notes] evidence enrichment failed: ${err?.message ?? err}`);

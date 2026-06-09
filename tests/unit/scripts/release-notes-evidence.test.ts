@@ -12,6 +12,7 @@ import {
   getPrNumbersFromCommit,
   fetchPrBody,
   attachEvidenceToCommits,
+  normalizeRepoMediaUrl,
 } from '../../../scripts/release-notes-evidence.mjs';
 
 const REPO = { owner: 'shep-ai', repo: 'shep' };
@@ -111,6 +112,81 @@ describe('extractEvidenceFromBody', () => {
     const body = '`specs/095-feature/evidence/screenshot.png`';
     const evidence = extractEvidenceFromBody(body, {});
     expect(evidence).toEqual([]);
+  });
+
+  it('rewrites branch-pinned repo image URLs to the stable release ref', () => {
+    const body =
+      '![dash](https://raw.githubusercontent.com/shep-ai/shep/feat/aspm-platform/specs/098-aspm-platform/evidence/app.png)';
+    const evidence = extractEvidenceFromBody(body, { ...REPO, ref: 'v1.210.0' });
+
+    expect(evidence[0].url).toBe(
+      'https://raw.githubusercontent.com/shep-ai/shep/v1.210.0/specs/098-aspm-platform/evidence/app.png'
+    );
+  });
+
+  it('pins bare repo evidence paths to ref when provided', () => {
+    const body = '`specs/098-aspm-platform/evidence/app.png`';
+    const evidence = extractEvidenceFromBody(body, { ...REPO, ref: 'v1.210.0' });
+
+    expect(evidence[0].url).toBe(
+      'https://raw.githubusercontent.com/shep-ai/shep/v1.210.0/specs/098-aspm-platform/evidence/app.png'
+    );
+  });
+
+  it('leaves external (non-repo) image URLs untouched', () => {
+    const body = '![x](https://cdn.example.com/feat/aspm/shot.png)';
+    const evidence = extractEvidenceFromBody(body, { ...REPO, ref: 'v1.210.0' });
+    expect(evidence[0].url).toBe('https://cdn.example.com/feat/aspm/shot.png');
+  });
+});
+
+describe('normalizeRepoMediaUrl', () => {
+  const opts = { owner: 'shep-ai', repo: 'shep', ref: 'v1.210.0' };
+
+  it('rewrites a branch-pinned raw URL to the ref', () => {
+    expect(
+      normalizeRepoMediaUrl(
+        'https://raw.githubusercontent.com/shep-ai/shep/feat/x/docs/a.png',
+        opts
+      )
+    ).toBe('https://raw.githubusercontent.com/shep-ai/shep/v1.210.0/docs/a.png');
+  });
+
+  it('preserves a query string on the raw URL', () => {
+    expect(
+      normalizeRepoMediaUrl(
+        'https://raw.githubusercontent.com/shep-ai/shep/main/docs/a.png?token=abc',
+        opts
+      )
+    ).toBe('https://raw.githubusercontent.com/shep-ai/shep/v1.210.0/docs/a.png?token=abc');
+  });
+
+  it('converts a github.com blob URL to a raw URL pinned at the ref', () => {
+    expect(
+      normalizeRepoMediaUrl('https://github.com/shep-ai/shep/blob/some-branch/docs/a.png', opts)
+    ).toBe('https://raw.githubusercontent.com/shep-ai/shep/v1.210.0/docs/a.png');
+  });
+
+  it('does not touch URLs for a different repo', () => {
+    const url = 'https://raw.githubusercontent.com/other/repo/main/docs/a.png';
+    expect(normalizeRepoMediaUrl(url, opts)).toBe(url);
+  });
+
+  it('does not touch non-github hosts or user-attachments', () => {
+    const cdn = 'https://cdn.example.com/x.png';
+    const attachment = 'https://github.com/user-attachments/assets/abc123';
+    expect(normalizeRepoMediaUrl(cdn, opts)).toBe(cdn);
+    expect(normalizeRepoMediaUrl(attachment, opts)).toBe(attachment);
+  });
+
+  it('is a no-op when ref is missing or url is malformed', () => {
+    expect(normalizeRepoMediaUrl('not a url', opts)).toBe('not a url');
+    expect(
+      normalizeRepoMediaUrl('https://raw.githubusercontent.com/shep-ai/shep/main/a.png', {
+        owner: 'shep-ai',
+        repo: 'shep',
+      })
+    ).toBe('https://raw.githubusercontent.com/shep-ai/shep/main/a.png');
   });
 });
 
@@ -247,6 +323,31 @@ describe('attachEvidenceToCommits', () => {
     });
     expect(commits[1]).not.toHaveProperty('evidenceMarkdown');
     expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('normalizes branch-pinned evidence URLs to the release ref', async () => {
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        body: '![dash](https://raw.githubusercontent.com/shep-ai/shep/feat/aspm/specs/098/evidence/app.png)',
+      }),
+    });
+    const commits = [{ type: 'feat', subject: 'add aspm (#628)', references: [{ issue: '628' }] }];
+
+    await attachEvidenceToCommits(commits as unknown[] as never[], {
+      owner: 'shep-ai',
+      repo: 'shep',
+      token: 'tok',
+      ref: 'v1.210.0',
+      fetcher: fetcher as unknown as typeof fetch,
+    });
+
+    expect(commits[0]).toMatchObject({
+      evidenceMarkdown: [
+        '![dash](https://raw.githubusercontent.com/shep-ai/shep/v1.210.0/specs/098/evidence/app.png)',
+      ],
+    });
   });
 
   it('is a no-op when token / repo are missing (graceful degrade)', async () => {
