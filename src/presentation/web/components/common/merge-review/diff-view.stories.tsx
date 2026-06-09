@@ -150,7 +150,7 @@ const meta: Meta<typeof DiffView> = {
 export default meta;
 type Story = StoryObj<typeof DiffView>;
 
-/** Default — multiple files with various change types. */
+/** Default — multiple files with various change types shown in a file tree. */
 export const Default: Story = {
   args: {
     fileDiffs: sampleFiles,
@@ -189,5 +189,36 @@ export const RenamedFile: Story = {
 export const EmptyDiffs: Story = {
   args: {
     fileDiffs: [],
+  },
+};
+
+/** Root-level files without directory nesting. */
+export const RootLevelFiles: Story = {
+  args: {
+    fileDiffs: [
+      {
+        path: 'package.json',
+        additions: 3,
+        deletions: 1,
+        status: 'modified',
+        hunks: [
+          {
+            header: '@@ -10,3 +10,5 @@',
+            lines: [
+              { type: 'context', content: '  "dependencies": {', oldNumber: 10, newNumber: 10 },
+              { type: 'added', content: '    "new-dep": "^1.0.0",', newNumber: 11 },
+              { type: 'context', content: '  }', oldNumber: 11, newNumber: 12 },
+            ],
+          },
+        ],
+      },
+      {
+        path: 'README.md',
+        additions: 10,
+        deletions: 0,
+        status: 'modified',
+        hunks: [],
+      },
+    ],
   },
 };

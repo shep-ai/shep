@@ -1,21 +1,86 @@
 'use client';
 
-import { useState } from 'react';
-import { ChevronRight, FileText, FilePlus, FileMinus, FileEdit } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { FileText, FilePlus, FileMinus, FileEdit } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Tree, Folder, File, type TreeViewElement } from '@/components/ui/file-tree';
 import type { MergeReviewFileDiff, MergeReviewDiffHunk } from './merge-review-config';
 
 const STATUS_CONFIG = {
-  added: { icon: FilePlus, label: 'A', className: 'text-green-600' },
-  modified: { icon: FileEdit, label: 'M', className: 'text-amber-600' },
-  deleted: { icon: FileMinus, label: 'D', className: 'text-red-600' },
-  renamed: { icon: FileEdit, label: 'R', className: 'text-blue-600' },
+  added: { icon: FilePlus, className: 'text-green-600' },
+  modified: { icon: FileEdit, className: 'text-amber-600' },
+  deleted: { icon: FileMinus, className: 'text-red-600' },
+  renamed: { icon: FileEdit, className: 'text-blue-600' },
 } as const;
 
-function FileStatusIcon({ status }: { status: MergeReviewFileDiff['status'] }) {
-  const config = STATUS_CONFIG[status];
-  const Icon = config.icon;
-  return <Icon className={cn('h-3.5 w-3.5 shrink-0', config.className)} />;
+/** Build a tree structure from flat file paths. */
+export function buildFileTree(fileDiffs: MergeReviewFileDiff[]): TreeViewElement[] {
+  const root: TreeViewElement[] = [];
+
+  for (const diff of fileDiffs) {
+    const parts = diff.path.split('/');
+    let currentLevel = root;
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      const isFile = i === parts.length - 1;
+      const pathSoFar = parts.slice(0, i + 1).join('/');
+
+      const existing = currentLevel.find(
+        (el) => el.name === part && el.type === (isFile ? 'file' : 'folder')
+      );
+
+      if (existing) {
+        if (!isFile && existing.children) {
+          currentLevel = existing.children;
+        }
+      } else {
+        const node: TreeViewElement = {
+          id: pathSoFar,
+          name: part,
+          type: isFile ? 'file' : 'folder',
+          ...(isFile ? {} : { children: [] }),
+        };
+        currentLevel.push(node);
+        if (!isFile && node.children) {
+          currentLevel = node.children;
+        }
+      }
+    }
+  }
+
+  return collapseSingleChildFolders(root);
+}
+
+/** Collapse folders that contain only one child folder (e.g. src/components -> src/components). */
+function collapseSingleChildFolders(elements: TreeViewElement[]): TreeViewElement[] {
+  return elements.map((el) => {
+    if (el.type === 'folder' && el.children) {
+      const collapsed = collapseSingleChildFolders(el.children);
+      if (collapsed.length === 1 && collapsed[0].type === 'folder' && collapsed[0].children) {
+        return {
+          ...collapsed[0],
+          id: `${el.id}/${collapsed[0].name}`,
+          name: `${el.name}/${collapsed[0].name}`,
+          children: collapsed[0].children,
+        };
+      }
+      return { ...el, children: collapsed };
+    }
+    return el;
+  });
+}
+
+/** Count the total number of file descendants under an element. */
+function countFiles(element: TreeViewElement): number {
+  if (element.type === 'file') return 1;
+  if (!element.children) return 0;
+  return element.children.reduce((sum, child) => sum + countFiles(child), 0);
+}
+
+/** Get folder IDs for the first level of folders only (top-level). */
+function getTopLevelFolderIds(elements: TreeViewElement[]): string[] {
+  return elements.filter((el) => el.type === 'folder').map((el) => el.id);
 }
 
 function HunkView({ hunk }: { hunk: MergeReviewDiffHunk }) {
@@ -59,55 +124,77 @@ function HunkView({ hunk }: { hunk: MergeReviewDiffHunk }) {
   );
 }
 
-function FileDiffItem({ file }: { file: MergeReviewFileDiff }) {
-  const [isOpen, setIsOpen] = useState(false);
+function DiffFileIcon({ status }: { status: MergeReviewFileDiff['status'] }) {
+  const config = STATUS_CONFIG[status];
+  const Icon = config.icon;
+  return <Icon className={cn('size-4 shrink-0', config.className)} />;
+}
 
-  const fileName = file.path.split('/').pop() ?? file.path;
-  const dirPath = file.path.includes('/') ? file.path.slice(0, file.path.lastIndexOf('/')) : '';
+function DiffStats({ additions, deletions }: { additions: number; deletions: number }) {
+  return (
+    <span className="ml-auto shrink-0 text-[10px]">
+      {additions > 0 ? <span className="text-green-600">+{additions}</span> : null}
+      {additions > 0 && deletions > 0 ? ' ' : null}
+      {deletions > 0 ? <span className="text-red-600">-{deletions}</span> : null}
+    </span>
+  );
+}
+
+function FileTreeNode({
+  element,
+  diffMap,
+  selectedFile,
+  onSelectFile,
+}: {
+  element: TreeViewElement;
+  diffMap: Map<string, MergeReviewFileDiff>;
+  selectedFile: string | null;
+  onSelectFile: (path: string) => void;
+}) {
+  if (element.type === 'folder' && element.children) {
+    const fileCount = countFiles(element);
+    return (
+      <Folder
+        key={element.id}
+        value={element.id}
+        element={`${element.name} (${fileCount})`}
+        className="text-muted-foreground"
+      >
+        {element.children.map((child) => (
+          <FileTreeNode
+            key={child.id}
+            element={child}
+            diffMap={diffMap}
+            selectedFile={selectedFile}
+            onSelectFile={onSelectFile}
+          />
+        ))}
+      </Folder>
+    );
+  }
+
+  const diff = diffMap.get(element.id);
+  const status = diff?.status ?? 'modified';
 
   return (
-    <div className="border-border border-b last:border-b-0">
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="hover:bg-muted/50 flex w-full items-center gap-2 px-3 py-2 text-start"
-      >
-        <ChevronRight
-          className={cn(
-            'text-muted-foreground h-3 w-3 shrink-0 transition-transform duration-150',
-            isOpen && 'rotate-90'
-          )}
-        />
-        <FileStatusIcon status={file.status} />
-        <span className="text-foreground min-w-0 flex-1 truncate text-xs">
-          {dirPath ? (
-            <>
-              <span className="text-muted-foreground">{dirPath}/</span>
-              {fileName}
-            </>
-          ) : (
-            fileName
-          )}
-        </span>
-        {file.oldPath ? (
+    <File
+      key={element.id}
+      value={element.id}
+      fileIcon={<DiffFileIcon status={status} />}
+      isSelect={selectedFile === element.id}
+      handleSelect={onSelectFile}
+      className="w-full"
+    >
+      <span className="flex min-w-0 flex-1 items-center gap-1">
+        <span className="truncate">{element.name}</span>
+        {diff?.oldPath ? (
           <span className="text-muted-foreground truncate text-[10px]">
-            &larr; {file.oldPath.split('/').pop()}
+            &larr; {diff.oldPath.split('/').pop()}
           </span>
         ) : null}
-        <span className="shrink-0 text-[10px]">
-          {file.additions > 0 ? <span className="text-green-600">+{file.additions}</span> : null}
-          {file.additions > 0 && file.deletions > 0 ? ' ' : null}
-          {file.deletions > 0 ? <span className="text-red-600">-{file.deletions}</span> : null}
-        </span>
-      </button>
-      {isOpen && file.hunks.length > 0 ? (
-        <div className="border-border overflow-x-auto border-t">
-          {file.hunks.map((hunk) => (
-            <HunkView key={hunk.header} hunk={hunk} />
-          ))}
-        </div>
-      ) : null}
-    </div>
+        {diff ? <DiffStats additions={diff.additions} deletions={diff.deletions} /> : null}
+      </span>
+    </File>
   );
 }
 
@@ -116,6 +203,25 @@ export interface DiffViewProps {
 }
 
 export function DiffView({ fileDiffs }: DiffViewProps) {
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+
+  const treeElements = useMemo(() => buildFileTree(fileDiffs), [fileDiffs]);
+  const topLevelFolderIds = useMemo(() => getTopLevelFolderIds(treeElements), [treeElements]);
+
+  const diffMap = useMemo(() => {
+    const map = new Map<string, MergeReviewFileDiff>();
+    for (const diff of fileDiffs) {
+      map.set(diff.path, diff);
+    }
+    return map;
+  }, [fileDiffs]);
+
+  const handleSelectFile = useCallback((path: string) => {
+    setSelectedFile((prev) => (prev === path ? null : path));
+  }, []);
+
+  const selectedDiff = selectedFile ? diffMap.get(selectedFile) : null;
+
   if (fileDiffs.length === 0) return null;
 
   return (
@@ -128,9 +234,37 @@ export function DiffView({ fileDiffs }: DiffViewProps) {
         </div>
       </div>
       <div className="border-border border-t">
-        {fileDiffs.map((file) => (
-          <FileDiffItem key={`${file.status}-${file.path}`} file={file} />
-        ))}
+        <div className="py-2">
+          <Tree
+            elements={treeElements}
+            initialExpandedItems={topLevelFolderIds}
+            indicator={true}
+            sort="none"
+            className="text-xs"
+          >
+            {treeElements.map((element) => (
+              <FileTreeNode
+                key={element.id}
+                element={element}
+                diffMap={diffMap}
+                selectedFile={selectedFile}
+                onSelectFile={handleSelectFile}
+              />
+            ))}
+          </Tree>
+        </div>
+        {selectedDiff && selectedDiff.hunks.length > 0 ? (
+          <div className="border-border overflow-x-auto border-t">
+            <div className="bg-muted/30 flex items-center gap-2 px-3 py-1.5">
+              <DiffFileIcon status={selectedDiff.status} />
+              <span className="text-foreground font-mono text-xs">{selectedDiff.path}</span>
+              <DiffStats additions={selectedDiff.additions} deletions={selectedDiff.deletions} />
+            </div>
+            {selectedDiff.hunks.map((hunk) => (
+              <HunkView key={hunk.header} hunk={hunk} />
+            ))}
+          </div>
+        ) : null}
       </div>
     </div>
   );

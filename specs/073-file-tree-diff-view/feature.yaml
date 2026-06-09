@@ -1,0 +1,33 @@
+feature:
+  id: "073-file-tree-diff-view"
+  name: "file-tree-diff-view"
+  number: 73
+  branch: "feat/073-file-tree-diff-view"
+  lifecycle: "research"
+  createdAt: "2026-03-21T06:22:23Z"
+status:
+  phase: "research"
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: "2026-03-21T06:22:23Z"
+  lastUpdatedBy: "feature-agent"
+  completedPhases:
+    - "fast-implement"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-03-21T06:22:23Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []
