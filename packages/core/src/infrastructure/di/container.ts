@@ -37,6 +37,7 @@ import { SettingsProviderAdapter } from '../services/interactive/lifecycle/setti
 import { AgentConfigResolver } from '../services/interactive/lifecycle/agent-config.resolver.js';
 import { AgentStreamConsumer } from '../services/interactive/runtime/agent-stream.consumer.js';
 import { BootPromptResolver } from '../services/interactive/lifecycle/boot-prompt.resolver.js';
+import { ReadProjectMemoryUseCase } from '../../application/use-cases/project-memory/read-project-memory.use-case.js';
 import { SessionBootstrapper } from '../services/interactive/lifecycle/session-bootstrapper.js';
 import { SessionTerminator } from '../services/interactive/lifecycle/session-terminator.js';
 import { TurnExecutor } from '../services/interactive/runtime/turn.executor.js';
@@ -165,7 +166,11 @@ export async function initializeContainer(): Promise<typeof container> {
   const featureRepository = container.resolve<IFeatureRepository>('IFeatureRepository');
   const agentExecutorFactory = container.resolve<IAgentExecutorFactory>('IAgentExecutorFactory');
   const featureContextBuilder = new FeatureContextBuilder();
-  const bootPromptResolver = new BootPromptResolver(featureRepository, featureContextBuilder);
+  const bootPromptResolver = new BootPromptResolver(
+    featureRepository,
+    featureContextBuilder,
+    container.resolve(ReadProjectMemoryUseCase)
+  );
   const interactionCoordinator = new UserInteractionCoordinator(
     sessionPersistence,
     streamEventDispatcher,

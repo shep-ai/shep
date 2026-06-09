@@ -298,8 +298,34 @@ tasks:
         - Reuse MemoryScope across component and tests
     estimatedEffort: M
 
+  - id: task-13
+    title: Inject memory into every agent prompt (not just analyze/research)
+    description: >
+      Extend memory injection beyond the first two nodes so EVERY running agent
+      shares the context: requirements, plan, implement, fast-implement, merge
+      (commit-push-pr), the CI-fix loop prompt, and the interactive chat agent
+      (FeatureContextBuilder via BootPromptResolver). Add renderProjectMemoryBlock
+      for non-state prompts; thread the blob into the CI-fix prompt and the
+      interactive resolver (best-effort load).
+    state: Done
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Every producer prompt + CI-fix + interactive context includes the section when memory is present and omits it when absent
+      - CI-fix prompt receives state.projectMemory via the loop params
+      - Interactive resolver loads memory by feature.repositoryPath (best-effort) and passes it to buildContext
+      - Parametrised test proves injection across all prompts
+    tdd:
+      red:
+        - Parametrised prompt-injection test across all prompts + resolver test
+      green:
+        - Inject section into each prompt; wire CI-fix + interactive
+      refactor:
+        - Share renderProjectMemoryBlock between state and non-state prompts
+    estimatedEffort: M
+
 # Total effort estimate
-totalEstimate: L (12 tasks, 6 phases)
+totalEstimate: L (13 tasks, 6 phases)
 
 # Open questions
 openQuestions: []

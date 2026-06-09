@@ -13,6 +13,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import yaml from 'js-yaml';
 import { readSpecFile } from '../node-helpers.js';
+import { buildProjectMemorySection } from './project-memory-section.js';
 import type { FeatureAgentState } from '../../state.js';
 import { COMMIT_CO_AUTHOR } from '../../../../git/pr-branding.js';
 
@@ -179,7 +180,7 @@ export function buildFastImplementPrompt(state: FeatureAgentState): string {
 
   sections.push(`You are a senior software engineer implementing a change directly from a user request.
 ${rejectionSection}
-## User Request
+${buildProjectMemorySection(state)}## User Request
 
 ${userQuery}
 

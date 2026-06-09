@@ -238,6 +238,7 @@ export function createMergeNode(deps: MergeNodeDeps) {
               existingAttempts: ciFixAttempts,
               messages,
               log,
+              projectMemory: state.projectMemory,
             }
           );
           ciStatus = ciResult.ciStatus;

@@ -9,6 +9,7 @@
 
 import yaml from 'js-yaml';
 import { readSpecFile, buildCommitPushBlock } from '../node-helpers.js';
+import { buildProjectMemorySection } from './project-memory-section.js';
 import type { FeatureAgentState } from '../../state.js';
 
 export function buildRequirementsPrompt(state: FeatureAgentState): string {
@@ -56,7 +57,7 @@ ${olderSection}
 
   return `You are a product analyst performing the REQUIREMENTS phase of feature development.
 ${rejectionFeedbackSection}
-## Your Task
+${buildProjectMemorySection(state)}## Your Task
 
 1. Read the current spec with codebase analysis below
 2. Build a complete set of functional and non-functional requirements

@@ -37,6 +37,8 @@ export interface CiWatchFixParams {
   existingAttempts: number;
   messages: string[];
   log: NodeLogger;
+  /** Project memory blob injected into the CI-fix prompt (past CI fixes etc.). */
+  projectMemory?: string;
 }
 
 export type CiFixStatusValue = 'idle' | 'watching' | 'fixing' | 'success' | 'exhausted' | 'timeout';
@@ -130,7 +132,7 @@ export async function runCiWatchFixLoop(
   params: CiWatchFixParams
 ): Promise<CiWatchFixResult> {
   const { executor, gitPrService } = deps;
-  const { cwd, branch, options, feature, prUrl, prNumber, messages, log } = params;
+  const { cwd, branch, options, feature, prUrl, prNumber, messages, log, projectMemory } = params;
 
   const settings = getSettings();
   const maxAttempts = settings.workflow?.ciMaxFixAttempts ?? 3;
@@ -227,7 +229,13 @@ export async function runCiWatchFixLoop(
 
     // Invoke fix executor — maxAttempts:1 prevents retryExecute's internal
     // retry logic from consuming CI fix attempts behind the outer loop's back.
-    const fixPrompt = buildCiWatchFixPrompt(failureLogs, ciFixAttempts + 1, maxAttempts, branch);
+    const fixPrompt = buildCiWatchFixPrompt(
+      failureLogs,
+      ciFixAttempts + 1,
+      maxAttempts,
+      branch,
+      projectMemory
+    );
     try {
       const fixResult = await retryExecute(executor, fixPrompt, options, {
         maxAttempts: 1,

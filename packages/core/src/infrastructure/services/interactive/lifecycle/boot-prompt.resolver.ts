@@ -23,6 +23,7 @@
  */
 
 import type { IFeatureRepository } from '../../../../application/ports/output/repositories/feature-repository.interface.js';
+import type { ReadProjectMemoryUseCase } from '../../../../application/use-cases/project-memory/read-project-memory.use-case.js';
 import type { FeatureContextBuilder } from '../feature-context.builder.js';
 
 export interface BootPromptResult {
@@ -35,7 +36,8 @@ export interface BootPromptResult {
 export class BootPromptResolver {
   constructor(
     private readonly featureRepo: IFeatureRepository,
-    private readonly contextBuilder: FeatureContextBuilder
+    private readonly contextBuilder: FeatureContextBuilder,
+    private readonly readProjectMemory: ReadProjectMemoryUseCase
   ) {}
 
   /**
@@ -60,13 +62,29 @@ export class BootPromptResolver {
     } else {
       const feature = await this.featureRepo.findById(featureId);
       const openPRs: string[] = feature?.pr?.url ? [feature.pr.url] : [];
+
+      // Inject the repository's project memory ("Shep Brain") so the
+      // interactive agent shares the same durable context as the SDLC agents.
+      // Best-effort: a load failure must never block the session boot.
+      let projectMemory: string | undefined;
+      const repositoryPath = feature?.repositoryPath ?? worktreePath;
+      if (repositoryPath) {
+        try {
+          const { blob } = await this.readProjectMemory.execute({ repositoryPath });
+          projectMemory = blob.length > 0 ? blob : undefined;
+        } catch {
+          projectMemory = undefined;
+        }
+      }
+
       context = this.contextBuilder.buildContext(
         feature ??
           ({ id: featureId, name: featureId } as Parameters<
             FeatureContextBuilder['buildContext']
           >[0]),
         worktreePath,
-        openPRs
+        openPRs,
+        projectMemory
       );
     }
 

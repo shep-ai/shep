@@ -62,6 +62,28 @@ const sampleTask: PhaseTask = {
   estimatedEffort: 'S',
 };
 
+describe('buildImplementPhasePrompt — project memory', () => {
+  it('injects the project-memory section when present', () => {
+    const prompt = buildImplementPhasePrompt(
+      baseState({ projectMemory: '### Conventions\n- Always TDD.' }),
+      samplePhase,
+      [sampleTask],
+      { isLastPhase: false, phaseIndex: 0, totalPhases: 1 }
+    );
+    expect(prompt).toContain('Project Memory (read-only reference)');
+    expect(prompt).toContain('Always TDD.');
+  });
+
+  it('omits the section when no memory is present', () => {
+    const prompt = buildImplementPhasePrompt(baseState(), samplePhase, [sampleTask], {
+      isLastPhase: false,
+      phaseIndex: 0,
+      totalPhases: 1,
+    });
+    expect(prompt).not.toContain('Project Memory (read-only reference)');
+  });
+});
+
 describe('buildImplementPhasePrompt — co-author branding', () => {
   it('should include Shep Bot co-author trailer in commit instructions', () => {
     const prompt = buildImplementPhasePrompt(baseState(), samplePhase, [sampleTask], {

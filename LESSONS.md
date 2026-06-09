@@ -963,3 +963,38 @@ How to apply:
 - Inventory / list / explorer views: include every non-Archived, non-deleted Feature. Render `branch` as the secondary identifier.
 - Scan / build / deploy actions: when the action requires an on-disk path, check `worktreePath` per row at action time and disable the action (or fall back) when it is missing — do not pre-filter the row out of the list.
 - Tests: pin down the "row with null worktreePath still appears" case explicitly. It is the more common shape in real data.
+
+## A New Cross-Cutting Context (Memory/Skills) Must Reach EVERY Agent Prompt, Not Just the First Node
+
+When wiring a repository-wide context blob ("Shep Brain" project memory) into the
+feature-agent, the first cut only injected it into the `analyze` and `research`
+prompts. That left the highest-value phases — `implement`, `fast-implement`,
+`merge` (commit + CI-fix) — and the entire interactive chat agent with NO memory.
+The user immediately asked "is anything injecting this when relevant?" — because
+a feature that only reaches 2 of ~8 agent prompts looks done but isn't.
+
+Rules for any cross-cutting context that "every agent should see":
+
+1. **Enumerate every agent-call prompt before claiming done.** For the
+   feature-agent that is: analyze, requirements, research, plan, implement,
+   fast-implement, merge commit-push-pr, AND the CI-fix loop prompt. Plus the
+   interactive agent's `FeatureContextBuilder.buildContext`. Grep for
+   `executor.execute(` and every `build*Prompt(` to find them all.
+2. **Custom-execution nodes are easy to miss.** `analyze/requirements/research/
+   plan` go through `executeNode(name, executor, buildXPrompt)`, but `implement`,
+   `fast-implement`, and `merge` build prompts inline and call the executor
+   directly — they will NOT inherit anything you add to `executeNode`.
+3. **Prompts that don't take graph state need a parameter.** `buildCiWatchFixPrompt`
+   and `buildLocalSquashMergePrompt` take primitives, not `state`. Thread the blob
+   through as an explicit optional arg (and update the caller that has `state`).
+   The CI-fix prompt is the single most relevant place for "past CI fixes" memory.
+4. **The interactive agent is a separate subsystem.** It boots via
+   `BootPromptResolver` → `FeatureContextBuilder.buildContext`. Inject the read
+   use case into the resolver, load by `feature.repositoryPath`, pass the blob in.
+   Best-effort: a load failure must never block session boot.
+5. **Provide a raw-string renderer, not just a state-based one.** Expose
+   `renderProjectMemoryBlock(blob)` alongside `buildProjectMemorySection(state)`
+   so non-state prompts can render the identical block without duplicating the
+   defensive framing text.
+6. **Test the breadth.** One parametrised test asserting the section appears in
+   every prompt (and is omitted when empty) is the proof that "all agents see it".

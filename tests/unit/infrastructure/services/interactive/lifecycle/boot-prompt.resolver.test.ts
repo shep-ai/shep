@@ -14,6 +14,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BootPromptResolver } from '@/infrastructure/services/interactive/lifecycle/boot-prompt.resolver.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { FeatureContextBuilder } from '@/infrastructure/services/interactive/feature-context.builder.js';
+import type { ReadProjectMemoryUseCase } from '@/application/use-cases/project-memory/read-project-memory.use-case.js';
+
+function makeReadProjectMemory(blob = ''): ReadProjectMemoryUseCase {
+  return {
+    execute: vi.fn().mockResolvedValue({ blob, entryCount: blob ? 1 : 0 }),
+  } as unknown as ReadProjectMemoryUseCase;
+}
 
 function makeFeatureRepo(pr?: { url: string }): IFeatureRepository {
   return {
@@ -50,7 +57,7 @@ describe('BootPromptResolver', () => {
   beforeEach(() => {
     featureRepo = makeFeatureRepo();
     contextBuilder = makeContextBuilder();
-    resolver = new BootPromptResolver(featureRepo, contextBuilder);
+    resolver = new BootPromptResolver(featureRepo, contextBuilder, makeReadProjectMemory());
   });
 
   // Case 1: pendingUserContent is defined
@@ -95,18 +102,35 @@ describe('BootPromptResolver', () => {
       expect(contextBuilder.buildContext).toHaveBeenCalledWith(
         expect.objectContaining({ id: 'feat-1' }),
         '/wt',
-        expect.any(Array)
+        expect.any(Array),
+        undefined
       );
     });
 
     it('passes PR URL when feature has one', async () => {
       featureRepo = makeFeatureRepo({ url: 'https://github.com/owner/repo/pull/1' });
-      resolver = new BootPromptResolver(featureRepo, contextBuilder);
+      resolver = new BootPromptResolver(featureRepo, contextBuilder, makeReadProjectMemory());
       await resolver.resolve('feat-1', '/wt', undefined, undefined);
       expect(contextBuilder.buildContext).toHaveBeenCalledWith(
         expect.anything(),
         expect.anything(),
-        ['https://github.com/owner/repo/pull/1']
+        ['https://github.com/owner/repo/pull/1'],
+        undefined
+      );
+    });
+
+    it('loads project memory and passes it to buildContext', async () => {
+      resolver = new BootPromptResolver(
+        featureRepo,
+        contextBuilder,
+        makeReadProjectMemory('### Conventions\n- Use use-cases.')
+      );
+      await resolver.resolve('feat-1', '/wt', undefined, undefined);
+      expect(contextBuilder.buildContext).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.any(Array),
+        '### Conventions\n- Use use-cases.'
       );
     });
 
@@ -115,7 +139,8 @@ describe('BootPromptResolver', () => {
       expect(contextBuilder.buildContext).toHaveBeenCalledWith(
         expect.anything(),
         expect.anything(),
-        []
+        [],
+        undefined
       );
     });
 
@@ -125,7 +150,8 @@ describe('BootPromptResolver', () => {
       expect(contextBuilder.buildContext).toHaveBeenCalledWith(
         expect.objectContaining({ id: 'feat-unknown', name: 'feat-unknown' }),
         '/wt',
-        []
+        [],
+        undefined
       );
     });
   });

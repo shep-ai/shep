@@ -429,7 +429,8 @@ describe('createMergeNode — CI watch/fix loop', () => {
         'test failure logs',
         1,
         3,
-        expect.any(String)
+        expect.any(String),
+        undefined
       );
     });
 
