@@ -23,7 +23,7 @@
  */
 
 import type { IFeatureRepository } from '../../../../application/ports/output/repositories/feature-repository.interface.js';
-import type { ReadProjectMemoryUseCase } from '../../../../application/use-cases/project-memory/read-project-memory.use-case.js';
+import type { SelectProjectMemoryUseCase } from '../../../../application/use-cases/project-memory/select-project-memory.use-case.js';
 import type { FeatureContextBuilder } from '../feature-context.builder.js';
 
 export interface BootPromptResult {
@@ -37,7 +37,7 @@ export class BootPromptResolver {
   constructor(
     private readonly featureRepo: IFeatureRepository,
     private readonly contextBuilder: FeatureContextBuilder,
-    private readonly readProjectMemory: ReadProjectMemoryUseCase
+    private readonly selectProjectMemory: SelectProjectMemoryUseCase
   ) {}
 
   /**
@@ -63,14 +63,19 @@ export class BootPromptResolver {
       const feature = await this.featureRepo.findById(featureId);
       const openPRs: string[] = feature?.pr?.url ? [feature.pr.url] : [];
 
-      // Inject the repository's project memory ("Shep Brain") so the
-      // interactive agent shares the same durable context as the SDLC agents.
-      // Best-effort: a load failure must never block the session boot.
+      // Inject the project memory ("Shep Brain") most relevant to this feature
+      // so the interactive agent shares the same durable context as the SDLC
+      // agents. Best-effort: a load failure must never block the session boot.
       let projectMemory: string | undefined;
       const repositoryPath = feature?.repositoryPath ?? worktreePath;
       if (repositoryPath) {
         try {
-          const { blob } = await this.readProjectMemory.execute({ repositoryPath });
+          const taskText = [feature?.name, feature?.description].filter(Boolean).join(' ');
+          const { blob } = await this.selectProjectMemory.execute({
+            repositoryPath,
+            phase: 'interactive',
+            taskText,
+          });
           projectMemory = blob.length > 0 ? blob : undefined;
         } catch {
           projectMemory = undefined;

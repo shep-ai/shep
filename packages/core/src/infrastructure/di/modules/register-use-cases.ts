@@ -120,6 +120,7 @@ import { UpdateSdlcSubTaskStatusUseCase } from '../../../application/use-cases/s
 
 // Project memory ("Shep Brain", feature 102) use cases
 import { ReadProjectMemoryUseCase } from '../../../application/use-cases/project-memory/read-project-memory.use-case.js';
+import { SelectProjectMemoryUseCase } from '../../../application/use-cases/project-memory/select-project-memory.use-case.js';
 import { RecordProjectMemoryUseCase } from '../../../application/use-cases/project-memory/record-project-memory.use-case.js';
 import { ManageProjectMemoryUseCase } from '../../../application/use-cases/project-memory/manage-project-memory.use-case.js';
 
@@ -523,6 +524,7 @@ export function registerUseCases(container: DependencyContainer): void {
 
   // ─── Project memory ("Shep Brain", feature 102) use cases ───────────────
   container.registerSingleton(ReadProjectMemoryUseCase);
+  container.registerSingleton(SelectProjectMemoryUseCase);
   container.registerSingleton(RecordProjectMemoryUseCase);
   container.registerSingleton(ManageProjectMemoryUseCase);
 
@@ -577,6 +579,9 @@ export function registerUseCases(container: DependencyContainer): void {
   // ─── Project memory ("Shep Brain", feature 102) string aliases ──────────
   container.register('ReadProjectMemoryUseCase', {
     useFactory: (c) => c.resolve(ReadProjectMemoryUseCase),
+  });
+  container.register('SelectProjectMemoryUseCase', {
+    useFactory: (c) => c.resolve(SelectProjectMemoryUseCase),
   });
   container.register('RecordProjectMemoryUseCase', {
     useFactory: (c) => c.resolve(RecordProjectMemoryUseCase),

@@ -20,6 +20,7 @@ import {
   createExtractMemoryNode,
   type ExtractMemoryNodeDeps,
 } from './nodes/extract-memory.node.js';
+import type { MemorySelector } from './nodes/node-helpers.js';
 
 // Re-export for consumers
 export { FeatureAgentAnnotation, type FeatureAgentState } from './state.js';
@@ -36,6 +37,8 @@ export interface FastFeatureAgentGraphDeps {
    * node that distils durable project knowledge after a successful merge.
    */
   extractMemoryDeps?: Omit<ExtractMemoryNodeDeps, 'executor'>;
+  /** Selects the relevant project-memory subset per phase/task. */
+  selectProjectMemory?: MemorySelector;
 }
 
 /**
@@ -75,11 +78,11 @@ export function createFastFeatureAgentGraph(
   // Support legacy signature: createFastFeatureAgentGraph(executor, checkpointer)
   const deps: FastFeatureAgentGraphDeps =
     'execute' in depsOrExecutor ? { executor: depsOrExecutor } : depsOrExecutor;
-  const { executor } = deps;
+  const { executor, selectProjectMemory } = deps;
 
   const graph = new StateGraph(FeatureAgentAnnotation).addNode(
     'fast-implement',
-    createFastImplementNode(executor)
+    createFastImplementNode(executor, selectProjectMemory)
   );
 
   graph.addEdge(START, 'fast-implement');

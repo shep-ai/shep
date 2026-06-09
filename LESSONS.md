@@ -998,3 +998,41 @@ Rules for any cross-cutting context that "every agent should see":
    defensive framing text.
 6. **Test the breadth.** One parametrised test asserting the section appears in
    every prompt (and is omitted when empty) is the proof that "all agents see it".
+
+## Injecting a Knowledge Store Into Prompts: Select Per-Prompt, Don't Dump the Whole Thing
+
+First we injected the FULL project-memory blob into every agent prompt. The user
+pushed back: "we shouldn't inject the whole memory, we should have a smart
+mechanism to understand what we need to inject per project/repo/task/prompt."
+Dumping everything bloats prompts, drowns the relevant entries in noise, and
+scales badly as the store grows.
+
+The pattern for injecting any growing knowledge store (memory, skills, docs)
+into an LLM prompt:
+
+1. **Make selection a first-class, pluggable port.** Define an
+   `IMemoryRelevanceScorer` (score(query, entries) → ranked) so a deterministic
+   scorer ships now and a semantic/embedding scorer can drop in later without
+   touching callers. Keep it agent-agnostic — no provider SDK in the port.
+2. **A deterministic scorer is enough for v1 and needs no deps:** combine
+   (a) lexical overlap between the entry and the task text, (b) phase→category
+   affinity (CI-fix cares about past CI fixes; implement cares about conventions
+   & naming), and (c) recency. Weight and sum to [0,1].
+3. **Budget, don't cap by count.** Greedily include top-ranked entries up to a
+   token budget so prompt size is bounded no matter how big the store is. Always
+   include at least the single most relevant entry.
+4. **Select per prompt at execution time, not once globally.** The worker used to
+   load ONE blob into state. Wrong — each phase/task wants a different subset.
+   Select inside the node boundary (async) with the phase + a derived task text,
+   then pass the selected blob to the (still pure, still sync) prompt builder via
+   a shallow-cloned state. Prompt builders and their tests stay unchanged.
+5. **The query is context-specific.** Derive task text from the spec/research/plan
+   for producer phases; use the FAILURE LOGS as the query for the CI-fix prompt
+   (so matching past fixes surface); use the feature name/description for the
+   interactive agent.
+6. **Thread the selector as an OPTIONAL dep** through graph deps → node factories
+   → executeNode (and the custom nodes). Optional = existing tests/callers keep
+   compiling and behave as before (no selector → no selection).
+7. **When you mock node-helpers in a node test, add every new export the node
+   imports** (e.g. `applyMemorySelection`) or the node throws "x is not a
+   function" at runtime.

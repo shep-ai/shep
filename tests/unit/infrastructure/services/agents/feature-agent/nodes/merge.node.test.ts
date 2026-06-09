@@ -78,6 +78,7 @@ vi.mock('@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js', 
       }
     ),
   buildExecutorOptions: vi.fn().mockReturnValue({ cwd: '/tmp/worktree', maxTurns: 50 }),
+  applyMemorySelection: vi.fn(async (state: unknown) => state),
 }));
 
 // Mock heartbeat

@@ -512,10 +512,61 @@ export function removeSpecCommitsIfNeeded(
  * - Error catching that returns error state instead of throwing
  * - Consistent state shape for success and failure
  */
+/**
+ * Selects the relevant memory subset for a phase. Implemented by
+ * SelectProjectMemoryUseCase.execute and injected into nodes so memory
+ * selection stays pluggable and testable (omit it → no selection).
+ */
+export type MemorySelector = (input: {
+  repositoryPath: string;
+  phase: string;
+  taskText: string;
+}) => Promise<{ blob: string }>;
+
+/** Maximum spec text (chars) fed to the relevance scorer as the task descriptor. */
+const MAX_TASK_TEXT_CHARS = 8000;
+
+/**
+ * Derive a task descriptor for relevance ranking from the spec artifacts that
+ * exist so far. Later phases naturally get richer text (research/plan present).
+ */
+export function deriveTaskText(state: FeatureAgentState): string {
+  return [
+    readSpecFile(state.specDir, 'spec.yaml'),
+    readSpecFile(state.specDir, 'research.yaml'),
+    readSpecFile(state.specDir, 'plan.yaml'),
+  ]
+    .filter((s) => s && s.length > 0)
+    .join('\n')
+    .slice(0, MAX_TASK_TEXT_CHARS);
+}
+
+/**
+ * Returns a copy of `state` whose `projectMemory` holds only the entries
+ * relevant to this phase + task. Best-effort: any failure (or no selector)
+ * leaves the original state untouched.
+ */
+export async function applyMemorySelection(
+  state: FeatureAgentState,
+  phase: string,
+  selectMemory: MemorySelector | undefined,
+  taskTextOverride?: string
+): Promise<FeatureAgentState> {
+  if (!selectMemory || !state.repositoryPath) return state;
+  try {
+    const taskText = taskTextOverride ?? deriveTaskText(state);
+    const { blob } = await selectMemory({ repositoryPath: state.repositoryPath, phase, taskText });
+    return { ...state, projectMemory: blob.length > 0 ? blob : undefined };
+  } catch {
+    return state;
+  }
+}
+
 export function executeNode(
   nodeName: string,
   executor: IAgentExecutor,
-  buildPrompt: (state: FeatureAgentState, log: NodeLogger) => string
+  buildPrompt: (state: FeatureAgentState, log: NodeLogger) => string,
+  selectMemory?: MemorySelector
 ): (state: FeatureAgentState) => Promise<Partial<FeatureAgentState>> {
   const log = createNodeLogger(nodeName);
 
@@ -571,7 +622,9 @@ export function executeNode(
     const startTime = Date.now();
 
     const resumePrefix = buildResumeContext(state.resumeReason);
-    const prompt = resumePrefix + buildPrompt(state, log);
+    // Inject only the memory entries relevant to THIS phase + task.
+    const stateForPrompt = await applyMemorySelection(state, nodeName, selectMemory);
+    const prompt = resumePrefix + buildPrompt(stateForPrompt, log);
     const options = buildExecutorOptions(state, undefined, nodeName);
 
     // Record phase start with pre-execution metadata

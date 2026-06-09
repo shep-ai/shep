@@ -11,6 +11,7 @@ import {
   createExtractMemoryNode,
   type ExtractMemoryNodeDeps,
 } from './nodes/extract-memory.node.js';
+import type { MemorySelector } from './nodes/node-helpers.js';
 import { createValidateNode } from './nodes/validate.node.js';
 import { createRepairNode } from './nodes/repair.node.js';
 import { validateSpecAnalyze, validateSpecRequirements } from './nodes/schemas/spec.schema.js';
@@ -39,6 +40,11 @@ export interface FeatureAgentGraphDeps {
    * node that distils durable project knowledge after a successful merge.
    */
   extractMemoryDeps?: Omit<ExtractMemoryNodeDeps, 'executor'>;
+  /**
+   * Selects the relevant project-memory subset per phase/task. When provided,
+   * every producer node injects only on-topic memory instead of the whole store.
+   */
+  selectProjectMemory?: MemorySelector;
 }
 
 /**
@@ -211,15 +217,15 @@ export function createFeatureAgentGraph(
   // Support legacy signature: createFeatureAgentGraph(executor, checkpointer)
   const deps: FeatureAgentGraphDeps =
     'execute' in depsOrExecutor ? { executor: depsOrExecutor } : depsOrExecutor;
-  const { executor } = deps;
+  const { executor, selectProjectMemory } = deps;
 
   const graph = new StateGraph(FeatureAgentAnnotation)
     // --- Producer nodes ---
-    .addNode('analyze', createAnalyzeNode(executor))
-    .addNode('requirements', createRequirementsNode(executor))
-    .addNode('research', createResearchNode(executor))
-    .addNode('plan', createPlanNode(executor))
-    .addNode('implement', createImplementNode(executor))
+    .addNode('analyze', createAnalyzeNode(executor, selectProjectMemory))
+    .addNode('requirements', createRequirementsNode(executor, selectProjectMemory))
+    .addNode('research', createResearchNode(executor, selectProjectMemory))
+    .addNode('plan', createPlanNode(executor, selectProjectMemory))
+    .addNode('implement', createImplementNode(executor, selectProjectMemory))
 
     // --- Validate nodes ---
     // Each validate node receives its SUCCESSOR phase name (the phase that runs

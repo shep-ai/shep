@@ -27,6 +27,8 @@ import {
   shouldInterrupt,
   retryExecute,
   buildExecutorOptions,
+  applyMemorySelection,
+  type MemorySelector,
 } from '../node-helpers.js';
 import { reportNodeStart } from '../../heartbeat.js';
 import {
@@ -49,6 +51,8 @@ import type { IGitForkService } from '@/application/ports/output/services/git-fo
 
 export interface MergeNodeDeps {
   executor: IAgentExecutor;
+  /** Selects the relevant project-memory subset for the merge + CI-fix prompts. */
+  selectMemory?: MemorySelector;
   getDiffSummary: (cwd: string, baseBranch: string) => Promise<DiffSummary>;
   hasRemote: (cwd: string) => Promise<boolean>;
   getDefaultBranch: (cwd: string) => Promise<string>;
@@ -176,8 +180,13 @@ export function createMergeNode(deps: MergeNodeDeps) {
         const effectiveState = remoteAvailable ? state : { ...state, push: false, openPr: false };
 
         log.info('Agent call 1: commit + push + PR');
-        const commitPushPrPrompt = buildCommitPushPrPrompt(
+        const mergePromptState = await applyMemorySelection(
           effectiveState,
+          'merge',
+          deps.selectMemory
+        );
+        const commitPushPrPrompt = buildCommitPushPrPrompt(
+          mergePromptState,
           branch,
           baseBranch,
           repoUrl
@@ -238,7 +247,8 @@ export function createMergeNode(deps: MergeNodeDeps) {
               existingAttempts: ciFixAttempts,
               messages,
               log,
-              projectMemory: state.projectMemory,
+              selectMemory: deps.selectMemory,
+              repositoryPath: state.repositoryPath,
             }
           );
           ciStatus = ciResult.ciStatus;

@@ -324,8 +324,37 @@ tasks:
         - Share renderProjectMemoryBlock between state and non-state prompts
     estimatedEffort: M
 
+  - id: task-14
+    title: Smart per-prompt relevance selection (not the whole store)
+    description: >
+      Replace whole-blob injection with a relevance selector. Add an
+      IMemoryRelevanceScorer port + a deterministic LexicalMemoryRelevanceScorer
+      (phase→category affinity + lexical overlap with the task text + recency).
+      SelectProjectMemoryUseCase loads candidates (repo + org), ranks via the
+      scorer, and greedily includes top entries up to a token budget. Each node
+      selects its own subset at execution time (phase + derived task text); the
+      CI-fix loop ranks by the actual failure logs; the interactive agent ranks
+      by the feature name/description. Pluggable seam for future embeddings.
+    state: Done
+    dependencies:
+      - task-13
+    acceptanceCriteria:
+      - IMemoryRelevanceScorer port + LexicalMemoryRelevanceScorer (DI-registered)
+      - SelectProjectMemoryUseCase ranks + token-budgets; always includes top entry
+      - Each prompt receives only its relevant subset (per phase + task)
+      - CI-fix ranks by failure logs; interactive ranks by feature description
+      - Whole-blob seeding removed from the worker
+    tdd:
+      red:
+        - Scorer unit tests (lexical, category affinity, recency); select use-case unit tests (budget, merge, empty)
+      green:
+        - Build port + scorer + select use case; wire selector through nodes
+      refactor:
+        - Share loadCandidateMemory between read + select
+    estimatedEffort: L
+
 # Total effort estimate
-totalEstimate: L (13 tasks, 6 phases)
+totalEstimate: XL (14 tasks, 6 phases)
 
 # Open questions
 openQuestions: []

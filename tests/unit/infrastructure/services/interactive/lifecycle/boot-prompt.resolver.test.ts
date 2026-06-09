@@ -14,12 +14,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BootPromptResolver } from '@/infrastructure/services/interactive/lifecycle/boot-prompt.resolver.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { FeatureContextBuilder } from '@/infrastructure/services/interactive/feature-context.builder.js';
-import type { ReadProjectMemoryUseCase } from '@/application/use-cases/project-memory/read-project-memory.use-case.js';
+import type { SelectProjectMemoryUseCase } from '@/application/use-cases/project-memory/select-project-memory.use-case.js';
 
-function makeReadProjectMemory(blob = ''): ReadProjectMemoryUseCase {
+function makeReadProjectMemory(blob = ''): SelectProjectMemoryUseCase {
   return {
-    execute: vi.fn().mockResolvedValue({ blob, entryCount: blob ? 1 : 0 }),
-  } as unknown as ReadProjectMemoryUseCase;
+    execute: vi
+      .fn()
+      .mockResolvedValue({ blob, selectedCount: blob ? 1 : 0, totalCount: blob ? 1 : 0 }),
+  } as unknown as SelectProjectMemoryUseCase;
 }
 
 function makeFeatureRepo(pr?: { url: string }): IFeatureRepository {
