@@ -1,0 +1,19 @@
+TypeScript Build — Compilation Results
+=======================================
+
+$ pnpm build
+
+> @shepai/cli@1.122.2 build
+> pnpm build:cli
+
+> @shepai/cli@1.122.2 build:cli
+> tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths && ...
+
+Build completed successfully — zero TypeScript errors.
+
+Evidence: The full TypeScript compilation succeeds with no errors, confirming:
+- GitPrErrorCode enum extensions (REMOTE_ALREADY_EXISTS, REPO_CREATE_FAILED) are valid
+- IGitPrService interface extensions (createGitHubRepo, addRemote) are properly typed
+- GitPrService implementation satisfies the extended interface
+- InitRemoteRepositoryUseCase types are correct
+- CLI command imports and DI registration compile cleanly

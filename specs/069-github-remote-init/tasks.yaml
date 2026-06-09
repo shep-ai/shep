@@ -1,0 +1,365 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: github-remote-init
+summary: >
+  10 tasks across 4 phases: interface extension, infrastructure implementation,
+  use case orchestration, and CLI command with integration test.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - TypeScript
+  - Commander.js
+  - tsyringe
+  - gh CLI
+  - Vitest
+relatedLinks: []
+
+# Structured task list
+tasks:
+  # ── Phase 1: Interface & Error Codes ──────────────────────────────────────
+
+  - id: task-1
+    phaseId: phase-1
+    title: 'Add REMOTE_ALREADY_EXISTS and REPO_CREATE_FAILED to GitPrErrorCode'
+    description: >
+      Extend the GitPrErrorCode enum with two new values. REMOTE_ALREADY_EXISTS
+      is thrown when hasRemote() returns true (use case guard). REPO_CREATE_FAILED
+      covers gh repo create failures that are not auth or ENOENT.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - 'GitPrErrorCode enum contains REMOTE_ALREADY_EXISTS = "REMOTE_ALREADY_EXISTS"'
+      - 'GitPrErrorCode enum contains REPO_CREATE_FAILED = "REPO_CREATE_FAILED"'
+      - 'Existing error codes and GitPrError class are unchanged'
+      - 'TypeScript compiles with no errors'
+    tdd:
+      red:
+        - 'No test needed — this is a type-level change. Verified by TypeScript compiler.'
+      green:
+        - 'Add the two new enum values to GitPrErrorCode in git-pr-service.interface.ts'
+      refactor:
+        - 'Ensure alphabetical or logical ordering of enum values'
+    estimatedEffort: '15min'
+
+  - id: task-2
+    phaseId: phase-1
+    title: 'Add createGitHubRepo() and addRemote() to IGitPrService interface'
+    description: >
+      Extend the IGitPrService interface with two new method signatures:
+      createGitHubRepo(cwd, name, options) returning Promise<string> (repo URL),
+      and addRemote(cwd, remoteName, remoteUrl) returning Promise<void>. Include
+      JSDoc with @param and @throws annotations matching existing style.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - 'IGitPrService has createGitHubRepo(cwd: string, name: string, options: { isPrivate: boolean; org?: string }): Promise<string>'
+      - 'IGitPrService has addRemote(cwd: string, remoteName: string, remoteUrl: string): Promise<void>'
+      - 'JSDoc documents parameters and thrown error codes'
+      - 'TypeScript compiles (concrete GitPrService will fail until task-4, expected)'
+    tdd:
+      red:
+        - 'No test needed — this is a type-level change. TypeScript compiler verifies.'
+      green:
+        - 'Add both method signatures to the IGitPrService interface in git-pr-service.interface.ts'
+      refactor:
+        - 'Group the new methods logically near existing remote-related methods (hasRemote, getRemoteUrl, push)'
+    estimatedEffort: '15min'
+
+  # ── Phase 2: Infrastructure Implementation ────────────────────────────────
+
+  - id: task-3
+    phaseId: phase-2
+    title: 'Write unit tests for GitPrService.addRemote()'
+    description: >
+      Create test file git-pr.service.addRemote.test.ts with tests for the
+      addRemote() method: success case verifying git remote add args, and error
+      case verifying GIT_ERROR wrapping. Follow existing test patterns using
+      mocked ExecFunction.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - 'Test file exists at tests/unit/infrastructure/services/git/git-pr.service.addRemote.test.ts'
+      - 'Tests cover: success (correct git remote add args passed to execFile)'
+      - 'Tests cover: failure (execFile rejects → GitPrError with GIT_ERROR code)'
+      - 'All tests fail (RED) because addRemote() is not yet implemented'
+    tdd:
+      red:
+        - 'Write test: addRemote() calls execFile with ["git", ["remote", "add", "origin", "https://..."], { cwd }]'
+        - 'Write test: addRemote() wraps execFile rejection in GitPrError with GIT_ERROR code'
+      green:
+        - 'Implement addRemote() in GitPrService: try { await this.execFile("git", ["remote", "add", remoteName, remoteUrl], { cwd }) } catch { throw this.parseGitError(error) }'
+      refactor:
+        - 'Ensure method placement near other remote methods in GitPrService'
+    estimatedEffort: '30min'
+
+  - id: task-4
+    phaseId: phase-2
+    title: 'Write unit tests for GitPrService.createGitHubRepo()'
+    description: >
+      Create test file git-pr.service.createGitHubRepo.test.ts with tests for
+      success (private repo, public repo, org repo), and error cases (ENOENT →
+      GH_NOT_FOUND, auth failure → AUTH_FAILURE, generic failure → REPO_CREATE_FAILED).
+      Follow existing parseGhError test patterns.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - 'Test file exists at tests/unit/infrastructure/services/git/git-pr.service.createGitHubRepo.test.ts'
+      - 'Tests cover: private repo (--private flag in args)'
+      - 'Tests cover: public repo (--public flag in args)'
+      - 'Tests cover: org repo (org/name format in args)'
+      - 'Tests cover: returns trimmed stdout as repo URL'
+      - 'Tests cover: ENOENT → GH_NOT_FOUND error'
+      - 'Tests cover: auth error → AUTH_FAILURE error'
+      - 'Tests cover: generic failure → REPO_CREATE_FAILED error'
+      - 'All tests fail (RED) because createGitHubRepo() is not yet implemented'
+    tdd:
+      red:
+        - 'Write test: createGitHubRepo() with isPrivate=true calls execFile with gh repo create args including --private --source=. --remote=origin --push'
+        - 'Write test: createGitHubRepo() with isPrivate=false passes --public instead of --private'
+        - 'Write test: createGitHubRepo() with org="myorg" passes "myorg/name" as repo name'
+        - 'Write test: createGitHubRepo() returns trimmed stdout (repo URL)'
+        - 'Write test: ENOENT error → GH_NOT_FOUND code'
+        - 'Write test: auth error message → AUTH_FAILURE code'
+        - 'Write test: other error → REPO_CREATE_FAILED code'
+      green:
+        - 'Implement createGitHubRepo() in GitPrService using gh repo create with --source=. --push'
+        - 'Build repoName as options.org ? `${options.org}/${name}` : name'
+        - 'Use parseGhError for error handling, with special case for REPO_CREATE_FAILED'
+      refactor:
+        - 'Extract gh args construction if it improves readability'
+        - 'Ensure parseGhError returns REPO_CREATE_FAILED for non-auth, non-ENOENT errors (may need to update parseGhError or create wrapper)'
+    estimatedEffort: '45min'
+
+  - id: task-5
+    phaseId: phase-2
+    title: 'Update parseGhError to support REPO_CREATE_FAILED code'
+    description: >
+      The existing parseGhError returns GIT_ERROR for unclassified gh failures.
+      createGitHubRepo() needs to distinguish repo creation failures from generic
+      git errors. Either add a parameter to parseGhError or wrap the error in the
+      createGitHubRepo method to reclassify GIT_ERROR as REPO_CREATE_FAILED when
+      the context is repo creation.
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - 'createGitHubRepo() throws GitPrError with REPO_CREATE_FAILED code for non-auth, non-ENOENT gh failures'
+      - 'Existing parseGhError behavior for other methods is unchanged'
+      - 'All createGitHubRepo tests pass (GREEN)'
+      - 'All existing git-pr.service tests still pass'
+    tdd:
+      red:
+        - 'The REPO_CREATE_FAILED test from task-4 should now be the driver — verify it still fails if not yet handled'
+      green:
+        - 'In createGitHubRepo catch block: catch error, call parseGhError, if result code is GIT_ERROR reclassify as REPO_CREATE_FAILED, then throw'
+      refactor:
+        - 'Consider if a helper method (parseGhRepoError) is cleaner than inline reclassification'
+    estimatedEffort: '20min'
+
+  # ── Phase 3: Use Case Orchestration ───────────────────────────────────────
+
+  - id: task-6
+    phaseId: phase-3
+    title: 'Write unit tests for InitRemoteRepositoryUseCase'
+    description: >
+      Create test file with comprehensive use case tests using mocked
+      IGitPrService and IToolInstallerService. Test the full orchestration:
+      happy path, gh not installed, remote already exists, create fails,
+      default name from directory, custom name, org support, post-creation
+      verification failure.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - 'Test file exists at tests/unit/application/use-cases/repositories/init-remote-repository.use-case.test.ts'
+      - 'Tests cover: happy path (gh available, no remote, create succeeds, hasRemote confirms)'
+      - 'Tests cover: gh not installed (checkAvailability returns missing → GH_NOT_FOUND or descriptive error)'
+      - 'Tests cover: remote already exists (hasRemote true → REMOTE_ALREADY_EXISTS error)'
+      - 'Tests cover: create fails (createGitHubRepo throws → error propagated)'
+      - 'Tests cover: default name derived from basename of cwd'
+      - 'Tests cover: custom name passed through'
+      - 'Tests cover: org passed through to createGitHubRepo options'
+      - 'Tests cover: isPublic=true → isPrivate=false passed to createGitHubRepo'
+      - 'All tests fail (RED) because use case does not exist yet'
+    tdd:
+      red:
+        - 'Write happy path test: gh available, hasRemote false, createGitHubRepo returns URL, result contains repoUrl/repoName/isPrivate'
+        - 'Write test: checkAvailability returns { status: "missing" } → throws error with GH_NOT_FOUND or actionable message'
+        - 'Write test: hasRemote returns true → throws GitPrError with REMOTE_ALREADY_EXISTS'
+        - 'Write test: createGitHubRepo throws → error propagated unchanged'
+        - 'Write test: no name provided, cwd is /home/user/my-project → repoName is "my-project"'
+        - 'Write test: name "custom-repo" provided → createGitHubRepo called with "custom-repo"'
+        - 'Write test: org "myorg" provided → createGitHubRepo called with options.org = "myorg"'
+        - 'Write test: isPublic true → createGitHubRepo called with isPrivate=false'
+      green:
+        - 'Create init-remote-repository.use-case.ts with @injectable class injecting IGitPrService and IToolInstallerService via string tokens'
+        - 'Implement execute(): checkAvailability → hasRemote guard → derive name → createGitHubRepo → return result'
+      refactor:
+        - 'Extract input validation into a private method if execute() gets long'
+        - 'Ensure error messages are actionable per NFR-2'
+    estimatedEffort: '1h'
+
+  - id: task-7
+    phaseId: phase-3
+    title: 'Register InitRemoteRepositoryUseCase in DI container'
+    description: >
+      Import and register InitRemoteRepositoryUseCase as a singleton in the DI
+      container (container.ts), following the existing pattern used by
+      AddRepositoryUseCase, ListRepositoriesUseCase, etc.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - 'InitRemoteRepositoryUseCase imported in container.ts'
+      - 'container.registerSingleton(InitRemoteRepositoryUseCase) called alongside other repository use cases'
+      - 'TypeScript compiles with no errors'
+      - 'pnpm build succeeds'
+    tdd:
+      red:
+        - 'No test needed — DI registration is verified by the integration test in task-10'
+      green:
+        - 'Add import and registerSingleton call in container.ts near AddRepositoryUseCase registration'
+      refactor:
+        - 'Ensure import is alphabetically ordered with other use case imports'
+    estimatedEffort: '10min'
+
+  # ── Phase 4: CLI Command & Integration ────────────────────────────────────
+
+  - id: task-8
+    phaseId: phase-4
+    title: 'Create init-remote CLI command'
+    description: >
+      Create init-remote.command.ts in src/presentation/cli/commands/repo/ with
+      createInitRemoteCommand() function. The command accepts optional [name]
+      argument, --public flag, and --org <name> option. It resolves
+      InitRemoteRepositoryUseCase from the DI container, calls execute(), and
+      formats success/error output. Error handling switches on GitPrErrorCode
+      for actionable messages.
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - 'File exists at src/presentation/cli/commands/repo/init-remote.command.ts'
+      - 'Command name is "init-remote"'
+      - 'Command description explains what it does'
+      - 'Optional [name] argument for repo name'
+      - '--public flag (default: false, meaning private by default)'
+      - '--org <name> option for organization repos'
+      - 'Resolves InitRemoteRepositoryUseCase from container'
+      - 'On success: displays repo URL and visibility'
+      - 'On REMOTE_ALREADY_EXISTS: actionable error message'
+      - 'On GH_NOT_FOUND: error with install instructions'
+      - 'On AUTH_FAILURE: error with "gh auth login" guidance'
+      - 'On REPO_CREATE_FAILED: error with gh message preserved'
+      - 'Sets process.exitCode = 1 on error'
+    tdd:
+      red:
+        - 'No isolated unit test for CLI command — verified by integration test in task-10'
+      green:
+        - 'Create createInitRemoteCommand() following ls.command.ts pattern'
+        - 'Parse arguments and options, call use case, format output'
+        - 'Switch on GitPrErrorCode for error-specific messages'
+      refactor:
+        - 'Ensure consistent error message formatting with other repo commands'
+    estimatedEffort: '30min'
+
+  - id: task-9
+    phaseId: phase-4
+    title: 'Register init-remote command in repo command group'
+    description: >
+      Import createInitRemoteCommand in src/presentation/cli/commands/repo/index.ts
+      and register it via .addCommand() alongside the existing ls and show commands.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - 'createInitRemoteCommand imported from ./init-remote.command.js'
+      - '.addCommand(createInitRemoteCommand()) called on repo command'
+      - '`shep repo init-remote --help` shows the command with correct options'
+    tdd:
+      red:
+        - 'No isolated test — verified by integration test in task-10'
+      green:
+        - 'Add import and .addCommand() call in repo/index.ts'
+      refactor:
+        - 'Update JSDoc comment at top of file to list init-remote as a subcommand'
+    estimatedEffort: '10min'
+
+  - id: task-10
+    phaseId: phase-4
+    title: 'Write integration test for shep repo init-remote command'
+    description: >
+      Create integration test that exercises the full CLI command flow end-to-end.
+      Test command registration (help output), argument parsing, and error
+      handling paths. Use mocked ExecFunction to avoid actual gh/git subprocess
+      calls.
+    state: Todo
+    dependencies:
+      - task-9
+    acceptanceCriteria:
+      - 'Test file exists at tests/integration/cli/commands/repo/init-remote.command.test.ts'
+      - 'Tests verify command is registered under `shep repo`'
+      - 'Tests verify [name] argument parsing'
+      - 'Tests verify --public flag parsing'
+      - 'Tests verify --org flag parsing'
+      - 'Tests verify error output for missing gh CLI'
+      - 'Tests verify error output for existing remote'
+      - 'Tests verify success output with repo URL'
+      - 'All tests pass (GREEN)'
+    tdd:
+      red:
+        - 'Write test: command is registered and --help shows init-remote description'
+        - 'Write test: command with no args uses directory name and private defaults'
+        - 'Write test: command with [name] and --public passes correct input to use case'
+        - 'Write test: command with --org <name> passes org to use case'
+        - 'Write test: error from use case is displayed with actionable message'
+      green:
+        - 'Tests should pass given the implementation from tasks 8-9'
+        - 'If any test fails, fix the command implementation'
+      refactor:
+        - 'Extract test helpers for common setup if repeated across tests'
+        - 'Ensure test isolation (no shared state between tests)'
+    estimatedEffort: '45min'
+
+# Total effort estimate
+totalEstimate: '4h 40min'
+
+# Open questions
+openQuestions: []
+
+# Markdown content (the full tasks document)
+content: |
+  ## Summary
+
+  The implementation is broken into 10 tasks across 4 phases, totaling approximately
+  4h 40min of effort. The work follows strict dependency ordering: interface and error
+  types first (Phase 1), then service method implementations with tests (Phase 2), then
+  the use case with tests (Phase 3), and finally the CLI command with integration test
+  (Phase 4).
+
+  Phase 1 is pure type-level work — extending the GitPrErrorCode enum and IGitPrService
+  interface. No runtime behavior changes, verified by TypeScript compilation.
+
+  Phase 2 implements the two new GitPrService methods (addRemote and createGitHubRepo)
+  following TDD: tests are written first against the interface contract, then minimal
+  implementations are written to make them pass. The createGitHubRepo method uses the
+  atomic `gh repo create --source=. --push` approach, and parseGhError is updated to
+  support the REPO_CREATE_FAILED code.
+
+  Phase 3 creates the InitRemoteRepositoryUseCase with comprehensive unit tests covering
+  all orchestration paths: happy path, gh not installed, remote already exists, create
+  failure, default name derivation, custom name, org support, and visibility toggle.
+  The use case is then registered in the DI container.
+
+  Phase 4 is the presentation layer: the CLI command is created with argument parsing
+  and error-specific output formatting, registered in the repo command group, and
+  verified with an integration test that exercises the full stack.
+
+  ---
+
+  _Task breakdown complete — ready for implementation_

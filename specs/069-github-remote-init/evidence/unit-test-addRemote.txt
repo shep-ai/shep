@@ -1,0 +1,16 @@
+GitPrService.addRemote — Unit Test Results
+==========================================
+
+Test File: tests/unit/infrastructure/services/git/git-pr.service.addRemote.test.ts
+Runner: Vitest v4.0.18
+
+✓ GitPrService.addRemote > should call git remote add with correct arguments (2ms)
+✓ GitPrService.addRemote > should resolve without returning a value on success (0ms)
+✓ GitPrService.addRemote > should throw GitPrError with GIT_ERROR code when git remote add fails (1ms)
+
+Test Files  1 passed (1)
+     Tests  3 passed (3)
+
+Evidence: All 3 tests pass. addRemote() correctly invokes `git remote add`
+with the provided remote name and URL, and wraps failures in GitPrError
+with GIT_ERROR code.

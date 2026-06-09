@@ -1,0 +1,38 @@
+shep repo init-remote CLI Command — Integration Test Results
+============================================================
+
+Test File: tests/integration/cli/commands/repo/init-remote.command.test.ts
+Runner: Vitest v4.0.18
+
+✓ shep repo init-remote command > should be registered as a subcommand of repo (3ms)
+✓ shep repo init-remote command > should create a command named "init-remote" (1ms)
+✓ shep repo init-remote command > should have a description mentioning GitHub (0ms)
+✓ shep repo init-remote command > should have an optional [name] argument (1ms)
+✓ shep repo init-remote command > should call execute with cwd and default options when no args given (3ms)
+✓ shep repo init-remote command > should pass [name] argument to use case (0ms)
+✓ shep repo init-remote command > should pass --public flag as isPublic: true (1ms)
+✓ shep repo init-remote command > should pass --org flag value to use case (0ms)
+✓ shep repo init-remote command > should pass [name], --public, and --org together (1ms)
+✓ shep repo init-remote command > should display success message with repo URL on success (0ms)
+✓ shep repo init-remote command > should display visibility as "private" for private repos (0ms)
+✓ shep repo init-remote command > should display visibility as "public" for public repos (0ms)
+✓ shep repo init-remote command > should set process.exitCode = 1 on REMOTE_ALREADY_EXISTS error (1ms)
+✓ shep repo init-remote command > should set process.exitCode = 1 on GH_NOT_FOUND error (0ms)
+✓ shep repo init-remote command > should set process.exitCode = 1 on AUTH_FAILURE error (0ms)
+✓ shep repo init-remote command > should set process.exitCode = 1 on REPO_CREATE_FAILED error and show gh message (0ms)
+✓ shep repo init-remote command > should set process.exitCode = 1 on generic error (3ms)
+
+Test Files  1 passed (1)
+     Tests  17 passed (17)
+
+Evidence: All 17 integration tests pass. The CLI command correctly:
+- Is registered under the `repo` command group
+- Accepts optional [name] argument, --public flag, --org option
+- Passes all arguments/options correctly to the use case
+- Displays success message with repo URL and visibility
+- Handles all error codes with actionable messages and process.exitCode = 1
+  - REMOTE_ALREADY_EXISTS: warns remote already configured
+  - GH_NOT_FOUND: shows install instructions
+  - AUTH_FAILURE: shows `gh auth login` guidance
+  - REPO_CREATE_FAILED: preserves gh error message
+  - Generic error: shows unexpected error message

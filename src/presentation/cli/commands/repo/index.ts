@@ -7,9 +7,10 @@
  *   shep repo [subcommand]
  *
  * Subcommands:
- *   shep repo ls             List tracked repositories
- *   shep repo show <id>      Display details of a tracked repository
- *   shep repo add             Import a GitHub repository
+ *   shep repo ls                      List tracked repositories
+ *   shep repo show <id>               Display details of a tracked repository
+ *   shep repo add                     Import a GitHub repository
+ *   shep repo init-remote [name]      Create a GitHub repo and configure the remote
  */
 
 import { Command } from 'commander';

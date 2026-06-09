@@ -1,0 +1,22 @@
+GitPrService.createGitHubRepo — Unit Test Results
+==================================================
+
+Test File: tests/unit/infrastructure/services/git/git-pr.service.createGitHubRepo.test.ts
+Runner: Vitest v4.0.18
+
+✓ GitPrService.createGitHubRepo > should create a private repo with correct gh args (2ms)
+✓ GitPrService.createGitHubRepo > should create a public repo with --public flag (1ms)
+✓ GitPrService.createGitHubRepo > should prefix repo name with org when org option is provided (0ms)
+✓ GitPrService.createGitHubRepo > should return the trimmed stdout as the repo URL (0ms)
+✓ GitPrService.createGitHubRepo > should throw GitPrError with GH_NOT_FOUND when gh is not installed (ENOENT) (1ms)
+✓ GitPrService.createGitHubRepo > should throw GitPrError with AUTH_FAILURE when gh is not authenticated (0ms)
+✓ GitPrService.createGitHubRepo > should throw GitPrError with REPO_CREATE_FAILED on generic gh failure (0ms)
+
+Test Files  1 passed (1)
+     Tests  7 passed (7)
+
+Evidence: All 7 tests pass. createGitHubRepo() correctly:
+- Invokes `gh repo create` with --private/--public flags and --source=. --push
+- Prefixes org name when org option provided
+- Returns trimmed stdout (repo URL)
+- Maps ENOENT → GH_NOT_FOUND, auth errors → AUTH_FAILURE, generic → REPO_CREATE_FAILED

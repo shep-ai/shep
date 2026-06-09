@@ -1,0 +1,30 @@
+InitRemoteRepositoryUseCase — Unit Test Results
+================================================
+
+Test File: tests/unit/application/use-cases/repositories/init-remote-repository.use-case.test.ts
+Runner: Vitest v4.0.18
+
+✓ InitRemoteRepositoryUseCase > should create a GitHub repo, returning url, name, and privacy (3ms)
+✓ InitRemoteRepositoryUseCase > should throw when gh CLI is not installed (1ms)
+✓ InitRemoteRepositoryUseCase > should throw REMOTE_ALREADY_EXISTS when remote is already configured (1ms)
+✓ InitRemoteRepositoryUseCase > should propagate errors from createGitHubRepo (1ms)
+✓ InitRemoteRepositoryUseCase > should derive repo name from basename of cwd when name is not provided (0ms)
+✓ InitRemoteRepositoryUseCase > should use custom name when provided (0ms)
+✓ InitRemoteRepositoryUseCase > should pass org option through to createGitHubRepo (0ms)
+✓ InitRemoteRepositoryUseCase > should pass isPrivate=false when isPublic is true (1ms)
+✓ InitRemoteRepositoryUseCase > should default to private when isPublic is not specified (1ms)
+✓ InitRemoteRepositoryUseCase > should handle Windows-style paths for basename extraction (0ms)
+✓ InitRemoteRepositoryUseCase > should include actionable message when gh CLI is missing (1ms)
+✓ InitRemoteRepositoryUseCase > should include actionable message when remote already exists (0ms)
+
+Test Files  1 passed (1)
+     Tests  12 passed (12)
+
+Evidence: All 12 tests pass. The use case correctly:
+- Orchestrates: check gh availability → check hasRemote → createGitHubRepo → return result
+- Guards: throws on missing gh CLI, throws REMOTE_ALREADY_EXISTS when remote exists
+- Propagates: passes through errors from createGitHubRepo unchanged
+- Derives: repo name from directory basename (cross-platform, handles Windows paths)
+- Passes: custom name, org, isPublic options through to service layer
+- Defaults: private when isPublic not specified
+- Errors: includes actionable messages (install instructions, remote already exists guidance)

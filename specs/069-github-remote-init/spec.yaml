@@ -1,0 +1,456 @@
+name: github-remote-init
+number: 69
+branch: feat/069-github-remote-init
+oneLiner: Create a GitHub remote repository and link it for repos without a remote
+userQuery: >
+  Add support to init remote github repository for a repo without remote github
+  repo
+summary: >
+  Add a new CLI command `shep repo init-remote` that creates a GitHub repository
+  via `gh repo create` and configures the local git remote for repositories that
+  don't yet have one. This integrates into the existing Clean Architecture
+  layers: new methods on IGitPrService, a new use case
+  (InitRemoteRepositoryUseCase), and a new CLI command under the `repo` command
+  group. The command detects missing remotes, creates a private GitHub
+  repository (by default), sets the `origin` remote, and pushes the current
+  branch — enabling all downstream shep workflows (PRs, CI, push) to function.
+phase: Requirements
+sizeEstimate: M
+relatedFeatures: []
+technologies:
+  - TypeScript
+  - Commander (CLI framework)
+  - tsyringe (DI)
+  - gh CLI (GitHub CLI for repo creation)
+  - Vitest (testing)
+relatedLinks: []
+openQuestions:
+  - question: Should the repository default to private or public visibility?
+    resolved: true
+    options:
+      - option: Private by default
+        description: >
+          Default to private visibility. Users must explicitly pass --public to
+          create a public repo. This is the safer default — prevents accidental
+          exposure of proprietary code. Matches gh CLI default behavior and
+          enterprise security expectations.
+        selected: false
+      - option: Public by default
+        description: >
+          Default to public visibility. Users must explicitly pass --private to
+          create a private repo. Better for open-source workflows but risky for
+          enterprise users who may accidentally publish internal code.
+        selected: false
+      - option: Always prompt the user
+        description: >
+          Require the user to explicitly choose visibility every time. Safest
+          but adds friction and breaks the autonomous workflow principle.
+        selected: true
+    selectionRationale: >
+      Private by default is the safest choice and matches gh CLI's own default
+      behavior. Accidental public exposure of proprietary code is a much worse
+      outcome than requiring an explicit --public flag for open-source repos.
+    answer: Always prompt the user
+  - question: Should the command auto-push the current branch after setting the remote?
+    resolved: true
+    options:
+      - option: Auto-push current branch
+        description: >
+          After creating the repo and adding the remote, automatically push the
+          current branch with --set-upstream. This gives a fully working remote
+          setup in one command — the user can immediately create PRs and use CI.
+          Matches the behavior of gh repo create --source.
+        selected: true
+      - option: Only set remote, no push
+        description: >
+          Only create the GitHub repo and add the remote. The user must manually
+          push afterward. More explicit but requires an extra step and leaves
+          the remote in a partially-configured state (no tracking branch).
+        selected: false
+    selectionRationale: >
+      Auto-pushing completes the remote setup in a single command. A remote
+      without any pushed branches is functionally useless for shep workflows (PR
+      creation, CI checks). The gh repo create --source flag already pushes
+      automatically, so this matches user expectations.
+    answer: Auto-push current branch
+  - question: How should the GitHub repo name be determined?
+    resolved: true
+    options:
+      - option: Default to directory name, allow override
+        description: >
+          Use the local directory name as the GitHub repo name by default.
+          Accept an optional positional argument or --name flag to override.
+          This matches gh repo create behavior and is the most intuitive default
+          — no user input needed in the common case.
+        selected: true
+      - option: Always require explicit name
+        description: >
+          Force the user to provide a repo name every time. More explicit but
+          adds unnecessary friction when the directory name is usually the
+          correct choice.
+        selected: false
+      - option: Derive from package.json name
+        description: >
+          Read the name from package.json if it exists. More "smart" but
+          introduces coupling to Node.js projects and may produce unexpected
+          names (scoped packages like @org/name).
+        selected: false
+    selectionRationale: >
+      Directory name is the most universal and predictable default. It works for
+      any project type (not just Node.js), matches gh CLI behavior, and the
+      override flag handles edge cases.
+    answer: Default to directory name, allow override
+  - question: Should the command support creating repos under a GitHub organization?
+    resolved: true
+    options:
+      - option: Support --org flag for organization repos
+        description: >
+          Add an --org <name> option that creates the repo under a GitHub
+          organization instead of the user's personal account. Many enterprise
+          users need org repos. The gh CLI supports this natively with the
+          owner/name syntax.
+        selected: true
+      - option: Personal account only (no org support)
+        description: >
+          Only create repos under the authenticated user's personal account.
+          Simpler but excludes a large segment of enterprise/team users.
+        selected: false
+    selectionRationale: >
+      Organization support is essential for enterprise users and trivial to
+      implement — it's just a prefix on the repo name (org/repo-name) passed to
+      gh repo create. Excluding it would make the feature unusable for many
+      teams.
+    answer: Support --org flag for organization repos
+  - question: >-
+      Should the command integrate with IToolInstallerService to auto-install gh
+      CLI?
+    resolved: true
+    options:
+      - option: Check availability, suggest install on failure
+        description: >
+          Use the existing gh CLI availability check pattern to verify gh is
+          installed and authenticated. On failure, display a clear error message
+          with install/auth instructions. Do NOT auto-install — gh installation
+          requires system-level permissions and user consent.
+        selected: true
+      - option: Auto-install gh CLI if missing
+        description: >
+          Automatically install gh CLI via IToolInstallerService if not found.
+          More autonomous but may surprise users with system-level changes and
+          requires elevated permissions on some platforms.
+        selected: false
+      - option: No availability check
+        description: >
+          Let the gh command fail naturally and bubble up the raw error. Simpler
+          code but produces confusing error messages for users who don't have gh
+          installed.
+        selected: false
+    selectionRationale: >
+      Checking availability and providing clear guidance strikes the right
+      balance between autonomy and user control. Auto-installing system tools
+      without consent is an antipattern, but failing silently with cryptic
+      errors is poor UX.
+    answer: Check availability, suggest install on failure
+  - question: >-
+      Where should new service methods live — extend IGitPrService or create a
+      new interface?
+    resolved: true
+    options:
+      - option: Extend IGitPrService with new methods
+        description: >
+          Add createGitHubRepo() and addRemote() directly to IGitPrService.
+          Keeps all git/GitHub operations in one place. The interface is already
+          the home for hasRemote(), getRemoteUrl(), and push() — remote creation
+          is a natural extension. Avoids proliferating interfaces.
+        selected: true
+      - option: Create a new IGitHubRepoService interface
+        description: >
+          Create a separate interface for GitHub repository management. Better
+          separation of concerns (PR operations vs repo management) but adds DI
+          complexity and a new service class for just two methods.
+        selected: false
+    selectionRationale: >
+      IGitPrService already owns remote-related operations (hasRemote,
+      getRemoteUrl, push). Adding createGitHubRepo() and addRemote() is a
+      natural extension that keeps the interface cohesive. A separate interface
+      for two methods would be over-engineered.
+    answer: Extend IGitPrService with new methods
+content: >
+  ## Problem Statement
+
+
+  When a user runs `shep` on a local repository that has no GitHub remote
+  configured,
+
+  several critical workflows break or are unavailable: PR creation (`gh pr
+  create`), CI status
+
+  checks (`gh run list`), push operations, and any feature that relies on
+  `hasRemote()`.
+
+  Currently, `ensureGitRepository()` in `WorktreeService` handles local git
+  initialization
+
+  (creating a repo with an initial commit), but there is no equivalent for
+  creating and
+
+  linking a GitHub remote. Users must manually run `gh repo create` and `git
+  remote add`
+
+  outside of shep, which breaks the autonomous workflow promise.
+
+
+  This feature adds a `shep repo init-remote` command and underlying use case to
+  create a
+
+  GitHub repository via the `gh` CLI and configure the local `origin` remote,
+  bridging the
+
+  gap between local-only repos and the GitHub-dependent features in shep.
+
+
+  ## Success Criteria
+
+
+  - [ ] `IGitPrService` interface extended with `createGitHubRepo(cwd, name,
+  isPrivate)` method
+
+  - [ ] `IGitPrService` interface extended with `addRemote(cwd, remoteName,
+  remoteUrl)` method
+
+  - [ ] `GitPrService` implements `createGitHubRepo()` using `gh repo create`
+
+  - [ ] `GitPrService` implements `addRemote()` using `git remote add`
+
+  - [ ] `InitRemoteRepositoryUseCase` created in application layer
+
+  - [ ] Use case validates gh CLI availability before proceeding
+
+  - [ ] Use case checks `hasRemote()` and rejects if remote already exists
+
+  - [ ] Use case auto-pushes current branch after remote setup
+
+  - [ ] `shep repo init-remote` CLI command registered under `repo` command
+  group
+
+  - [ ] CLI command accepts optional `[name]` positional argument for repo name
+
+  - [ ] CLI command supports `--public` flag (default is private)
+
+  - [ ] CLI command supports `--org <name>` flag for organization repos
+
+  - [ ] Graceful error with actionable message when gh CLI is not installed
+
+  - [ ] Graceful error with actionable message when gh CLI is not authenticated
+
+  - [ ] Graceful error when remote already exists (no destructive action)
+
+  - [ ] Unit tests for `createGitHubRepo()` service method (success + error
+  cases)
+
+  - [ ] Unit tests for `addRemote()` service method (success + error cases)
+
+  - [ ] Unit tests for `InitRemoteRepositoryUseCase` with mocked dependencies
+
+  - [ ] Integration test for `shep repo init-remote` CLI command flow
+
+
+  ## Functional Requirements
+
+
+  - **FR-1**: The system SHALL provide a `shep repo init-remote` CLI command
+  that creates a
+    GitHub repository and configures the local git remote in a single operation.
+
+  - **FR-2**: The command SHALL accept an optional positional argument `[name]`
+  to specify the
+    GitHub repository name. When omitted, the system SHALL default to the local directory name.
+
+  - **FR-3**: The command SHALL accept a `--public` flag to create a public
+  repository. When
+    the flag is omitted, the repository SHALL be created as private.
+
+  - **FR-4**: The command SHALL accept an `--org <name>` option to create the
+  repository under
+    a GitHub organization. When omitted, the repository SHALL be created under the authenticated
+    user's personal account.
+
+  - **FR-5**: The system SHALL verify that the `gh` CLI is installed and
+  authenticated before
+    attempting repository creation. On failure, the system SHALL display a clear error message
+    with instructions for installing or authenticating `gh`.
+
+  - **FR-6**: The system SHALL check whether the local repository already has a
+  configured remote.
+    If a remote already exists, the system SHALL abort with a descriptive error message and
+    SHALL NOT modify any existing remote configuration.
+
+  - **FR-7**: The system SHALL create the GitHub repository using `gh repo
+  create` with the
+    appropriate visibility and name arguments.
+
+  - **FR-8**: The system SHALL add the newly created repository URL as the
+  `origin` remote
+    using `git remote add origin <url>`.
+
+  - **FR-9**: After setting the remote, the system SHALL automatically push the
+  current branch
+    with `--set-upstream` to establish tracking.
+
+  - **FR-10**: The system SHALL extend `IGitPrService` with a
+  `createGitHubRepo(cwd, name, isPrivate)`
+    method that returns the created repository URL.
+
+  - **FR-11**: The system SHALL extend `IGitPrService` with an `addRemote(cwd,
+  remoteName, remoteUrl)`
+    method that adds a git remote to the local repository.
+
+  - **FR-12**: The system SHALL implement a new `InitRemoteRepositoryUseCase` in
+  the application
+    layer that orchestrates the full flow: validate preconditions, create repo, add remote, push.
+
+  - **FR-13**: All new service methods SHALL use the existing `ExecFunction`
+  injection pattern
+    for subprocess execution, maintaining testability.
+
+  - **FR-14**: All errors from `gh` and `git` subprocess calls SHALL be caught
+  and wrapped in
+    `GitPrError` with appropriate `GitPrErrorCode` values.
+
+  ## Non-Functional Requirements
+
+
+  - **NFR-1 — Testability**: All new code SHALL be unit-testable via dependency
+  injection.
+    Service methods SHALL use the injected `ExecFunction`; the use case SHALL depend on
+    `IGitPrService` interface, not the concrete implementation.
+
+  - **NFR-2 — Error UX**: All error messages SHALL be actionable — they SHALL
+  tell the user
+    what went wrong AND what to do about it (e.g., "gh CLI not found. Install it with:
+    brew install gh").
+
+  - **NFR-3 — Safety**: The command SHALL be non-destructive — it SHALL NOT
+  overwrite, remove,
+    or modify existing remote configurations. The `hasRemote()` guard SHALL prevent accidental
+    re-initialization.
+
+  - **NFR-4 — Cross-platform**: The implementation SHALL work on macOS, Linux,
+  and Windows.
+    Path handling SHALL use forward-slash normalization. Subprocess execution SHALL respect
+    the platform-specific `ExecFunction` configuration (e.g., `shell: true` on Windows).
+
+  - **NFR-5 — Architecture compliance**: The implementation SHALL follow Clean
+  Architecture
+    layering: interface in `application/ports/output/`, implementation in `infrastructure/services/`,
+    use case in `application/use-cases/`, CLI command in `presentation/cli/commands/`.
+
+  - **NFR-6 — Performance**: The command SHALL complete within 30 seconds under
+  normal network
+    conditions. The gh repo create call is the only network-bound operation.
+
+  - **NFR-7 — Idempotency awareness**: If the command fails mid-execution (e.g.,
+  repo created but
+    remote not added), re-running the command SHALL detect the partial state and provide guidance
+    rather than creating a duplicate repository.
+
+  ## Product Questions & AI Recommendations
+
+
+  | # | Question | AI Recommendation | Rationale |
+
+  | - | -------- | ----------------- | --------- |
+
+  | 1 | Default visibility (private vs public)? | Private by default | Prevents
+  accidental exposure of proprietary code; matches gh CLI defaults |
+
+  | 2 | Auto-push after setting remote? | Yes, auto-push current branch | A
+  remote without pushed branches is useless for shep workflows (PRs, CI) |
+
+  | 3 | How to determine repo name? | Default to directory name, allow override
+  | Universal, predictable, works for any project type; override handles edge
+  cases |
+
+  | 4 | Support organization repos? | Yes, via --org flag | Essential for
+  enterprise users; trivial to implement with gh CLI |
+
+  | 5 | gh CLI availability handling? | Check and suggest install on failure |
+  Balance between autonomy and user control; clear error UX |
+
+  | 6 | Extend IGitPrService or new interface? | Extend IGitPrService | Natural
+  home for remote operations; avoids interface proliferation |
+
+
+  ## Affected Areas
+
+
+  | Area | Impact | Reasoning |
+
+  | ---- | ------ | --------- |
+
+  |
+  `packages/core/src/application/ports/output/services/git-pr-service.interface.ts`
+  | High | Add `createGitHubRepo()` and `addRemote()` to the interface |
+
+  | `packages/core/src/infrastructure/services/git/git-pr.service.ts` | High |
+  Implement the new methods using `gh repo create` and `git remote add` |
+
+  | `packages/core/src/application/use-cases/repositories/` | High | New
+  `InitRemoteRepositoryUseCase` |
+
+  | `src/presentation/cli/commands/repo/` | High | New `init-remote.command.ts`
+  and update `index.ts` |
+
+  | `packages/core/src/infrastructure/di/container.ts` | Low | Register new use
+  case |
+
+  | `tests/unit/infrastructure/services/git/` | Medium | New unit tests for
+  service methods |
+
+  | `tests/unit/application/use-cases/repositories/` | Medium | New unit tests
+  for use case |
+
+  | `tests/integration/` | Medium | Integration test for CLI command |
+
+
+  ## Dependencies
+
+
+  - **gh CLI**: Must be installed and authenticated (`gh auth login`). The tool
+  installer
+    service (`IToolInstallerService`) already manages `gh` availability checks.
+  - **IGitPrService**: Existing interface and implementation that will be
+  extended with two new methods.
+
+  - **ExecFunction**: Injected subprocess executor already registered in the DI
+  container.
+
+  - **Commander.js**: For adding the new CLI subcommand under the `repo` group.
+
+  - **GitPrError / GitPrErrorCode**: Existing error types for consistent error
+  handling.
+
+
+  ## Size Estimate
+
+
+  **M** — This feature touches 4 layers (interface, implementation, use case,
+  CLI command)
+
+  but each change is well-scoped. The `gh repo create` integration follows the
+  exact same
+
+  subprocess pattern already used throughout GitPrService. The main complexity
+  is in the
+
+  use case orchestration logic (checking preconditions, handling partial
+  failures) and
+
+  writing comprehensive TDD test cycles. Estimated at 2-3 days including TDD
+  cycles.
+
+
+  ---
+
+
+  _Requirements complete — proceed with research phase_
