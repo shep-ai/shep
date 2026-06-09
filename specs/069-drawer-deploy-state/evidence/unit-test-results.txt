@@ -1,0 +1,55 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-drawer-deploy-state[39m
+
+[90mstderr[2m | tests/unit/presentation/web/hooks/use-deploy-action.test.ts[2m > [22m[2museDeployAction[2m > [22m[2mdeploy()[2m > [22m[2msets deployError when server action returns error
+[22m[39m[useDeployAction] deploy failed: No dev script found
+
+[90mstderr[2m | tests/unit/presentation/web/hooks/use-deploy-action.test.ts[2m > [22m[2museDeployAction[2m > [22m[2mdeploy()[2m > [22m[2mauto-clears deployError after 5 seconds
+[22m[39m[useDeployAction] deploy failed: No dev script found
+
+[90mstderr[2m | tests/unit/presentation/web/hooks/use-deploy-action.test.ts[2m > [22m[2museDeployAction[2m > [22m[2mdeploy()[2m > [22m[2mcatches thrown errors and sets deployError
+[22m[39m[useDeployAction] deploy threw exception: Network error Error: Network error
+    at [90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-drawer-deploy-state/[39mtests/unit/presentation/web/hooks/use-deploy-action.test.ts:138:43
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-drawer-deploy-state/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-drawer-deploy-state/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-drawer-deploy-state/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-drawer-deploy-state/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1209:10[90m)[39m
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-drawer-deploy-state/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1653:37
+    at Traces.$ [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-drawer-deploy-state/[39mnode_modules/[4m.pnpm[24m/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[39m
+    at trace [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-drawer-deploy-state/[39mnode_modules/[4m.pnpm[24m/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-drawer-deploy-state/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1653:12[90m)[39m
+
+[90mstderr[2m | tests/unit/presentation/web/hooks/use-deploy-action.test.ts[2m > [22m[2museDeployAction[2m > [22m[2mdeploy()[2m > [22m[2mis no-op when input is null
+[22m[39m[useDeployAction] deploy() called but input is null — no-op
+
+[90mstderr[2m | tests/unit/presentation/web/hooks/use-deploy-action.test.ts[2m > [22m[2museDeployAction[2m > [22m[2mdeploy()[2m > [22m[2mis no-op while deployLoading is true
+[22m[39m[useDeployAction] deploy() called but already loading — no-op
+
+[90mstderr[2m | tests/unit/presentation/web/hooks/use-deploy-action.test.ts[2m > [22m[2museDeployAction[2m > [22m[2mpolling[2m > [22m[2mdoes not start polling when deploy fails
+[22m[39m[useDeployAction] deploy failed: No dev script
+
+[90mstderr[2m | tests/unit/presentation/web/hooks/use-deploy-action.test.ts[2m > [22m[2museDeployAction[2m > [22m[2mcleanup[2m > [22m[2mcleans up error timer on unmount
+[22m[39m[useDeployAction] deploy failed: Failed
+
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/hooks/use-deploy-action.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/features/control-center/control-center.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 75[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m28 passed[39m[22m[90m (28)[39m
+[2m   Start at [22m 19:11:37
+[2m   Duration [22m 1.01s[2m (transform 337ms, setup 167ms, import 560ms, tests 108ms, environment 595ms)[22m
+

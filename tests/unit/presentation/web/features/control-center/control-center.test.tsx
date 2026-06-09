@@ -72,6 +72,10 @@ vi.mock('@/app/actions/check-agent-auth', () => ({
   ),
 }));
 
+vi.mock('@/app/actions/get-deployment-status', () => ({
+  getDeploymentStatus: vi.fn(() => Promise.resolve(null)),
+}));
+
 vi.mock('@/components/common/feature-node/agent-type-icons', () => ({
   getAgentTypeIcon: () => {
     function MockIcon(props: Record<string, unknown>) {
