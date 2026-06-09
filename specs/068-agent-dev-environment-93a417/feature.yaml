@@ -1,0 +1,36 @@
+feature:
+  id: '068-agent-dev-environment-93a417'
+  name: 'agent-dev-environment-93a417'
+  number: 68
+  branch: 'feat/068-agent-dev-environment-93a417'
+  lifecycle: 'research'
+  createdAt: '2026-03-16T11:13:07Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-03-16T11:13:07Z'
+  lastUpdatedBy: 'feature-agent'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-03-16T11:13:07Z'
+    completedBy: 'feature-agent'
+
+errors:
+  current: null
+  history: []

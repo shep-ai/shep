@@ -6,12 +6,37 @@ import { StartRepositoryDeploymentUseCase } from '../../../application/use-cases
 import { StopDeploymentUseCase } from '../../../application/use-cases/deployments/stop-deployment.use-case.js';
 import { GetDeploymentStatusUseCase } from '../../../application/use-cases/deployments/get-deployment-status.use-case.js';
 import { ListDeploymentsUseCase } from '../../../application/use-cases/deployments/list-deployments.use-case.js';
+import type { IDevEnvironmentAgent } from '../../../application/ports/output/services/dev-environment-agent.interface.js';
+import { DevEnvironmentAgentService } from '../../services/deployment/dev-environment-agent.service.js';
+import type { IAgentDeploymentService } from '../../../application/ports/output/services/agent-deployment-service.interface.js';
+import { AgentDeploymentService } from '../../services/deployment/agent-deployment.service.js';
+import type { IStructuredAgentCaller } from '../../../application/ports/output/agents/structured-agent-caller.interface.js';
+import type { IDeploymentService } from '../../../application/ports/output/services/deployment-service.interface.js';
 
 /**
- * Register local-deployment use cases. The `IDeploymentService` instance itself
- * is constructed eagerly in container.ts (it calls `recoverAll()` at startup).
+ * Register local-deployment use cases and agent-based deployment services.
+ * The `IDeploymentService` instance itself is constructed eagerly in container.ts
+ * (it calls `recoverAll()` at startup).
  */
 export function registerDeployment(container: DependencyContainer): void {
+  // Agent-based deployment services (dev environment analysis)
+  container.register<IDevEnvironmentAgent>('IDevEnvironmentAgent', {
+    useFactory: (c) => {
+      const caller = c.resolve<IStructuredAgentCaller>('IStructuredAgentCaller');
+      return new DevEnvironmentAgentService({ structuredAgentCaller: caller });
+    },
+  });
+  container.register<IAgentDeploymentService>('IAgentDeploymentService', {
+    useFactory: (c) => {
+      const devEnvAgent = c.resolve<IDevEnvironmentAgent>('IDevEnvironmentAgent');
+      const deploySvc = c.resolve<IDeploymentService>('IDeploymentService');
+      return new AgentDeploymentService({
+        devEnvironmentAgent: devEnvAgent,
+        deploymentService: deploySvc,
+      });
+    },
+  });
+
   container.registerSingleton(StartApplicationDeploymentUseCase);
   container.registerSingleton(StartFeatureDeploymentUseCase);
   container.registerSingleton(StartRepositoryDeploymentUseCase);

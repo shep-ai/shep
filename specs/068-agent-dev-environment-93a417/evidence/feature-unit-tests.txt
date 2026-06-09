@@ -1,0 +1,123 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417[39m
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22manalyze[2m > [22mshould call the structured agent caller with a prompt containing directory listing[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22manalyze[2m > [22mshould pass the correct JSON schema to the agent caller[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22manalyze[2m > [22mshould return the analysis from the agent[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22manalyze[2m > [22mshould return not-deployable for repos with no server to start[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22manalyze[2m > [22mshould include key config file contents in the prompt[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22manalyze[2m > [22mshould handle repos without a recognized config file gracefully[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22manalyze[2m > [22mshould throw when the repository path does not exist[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22manalyze[2m > [22mshould pass silent and maxTurns options to the agent caller[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22mcaching[2m > [22mshould cache analysis results and return cached on second call[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22mcaching[2m > [22mshould use separate cache entries for different repos[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22mcaching[2m > [22mshould skip cache when skipCache option is true[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22mcaching[2m > [22mshould update cache when skipCache forces re-analysis[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22mcaching[2m > [22mshould clear cache for a specific repo[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22mcaching[2m > [22mshould clear all caches[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22mcaching[2m > [22mshould not cache failed analyses (agent throws)[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22mprompt construction[2m > [22mshould include Python files in the analysis when present[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22mprompt construction[2m > [22mshould include Go files in the analysis when present[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22mprompt construction[2m > [22mshould include Rust files in the analysis when present[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22mprompt construction[2m > [22mshould read relevant config files and include their contents[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/dev-environment-agent.test.ts[2m > [22mDevEnvironmentAgentService[2m > [22mprompt construction[2m > [22mshould truncate large config files to prevent prompt overflow[32m 0[2mms[22m[39m
+[90mstderr[2m | tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22m[2mAgentDeploymentService[2m > [22m[2mdeploy - error handling[2m > [22m[2mshould return error when agent analysis fails
+[22m[39m[AgentDeploymentService] agent analysis failed: Agent unavailable
+
+[90mstderr[2m | tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22m[2mAgentDeploymentService[2m > [22m[2mdeploy - error handling[2m > [22m[2mshould return error when deployment service start fails
+[22m[39m[AgentDeploymentService] deployment start failed: Failed to spawn process
+
+[90mstderr[2m | tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22m[2mAgentDeploymentService[2m > [22m[2mdeploy - error handling[2m > [22m[2mshould return error when setup command fails
+[22m[39m[AgentDeploymentService] setup command failed: pnpm install failed with exit code 1
+
+[90mstderr[2m | tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22m[2mAgentDeploymentService[2m > [22m[2mdeploy - error handling[2m > [22m[2mshould return error when analysis returns deployable but null command
+[22m[39m[AgentDeploymentService] analysis marked repo as deployable but provided no command
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22mAgentDeploymentService[2m > [22mdeploy - deployable repo[2m > [22mshould analyze the repo via DevEnvironmentAgent[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22mAgentDeploymentService[2m > [22mdeploy - deployable repo[2m > [22mshould start the deployment service with the detected command[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22mAgentDeploymentService[2m > [22mdeploy - deployable repo[2m > [22mshould return success with Booting state and analysis[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22mAgentDeploymentService[2m > [22mdeploy - deployable repo[2m > [22mshould pass skipCache option to the agent[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22mAgentDeploymentService[2m > [22mdeploy - deployable repo[2m > [22mshould run setup commands before starting the dev server[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22mAgentDeploymentService[2m > [22mdeploy - deployable repo[2m > [22mshould run multiple setup commands in order[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22mAgentDeploymentService[2m > [22mdeploy - not deployable repo[2m > [22mshould return not-deployable result without starting deployment[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22mAgentDeploymentService[2m > [22mdeploy - error handling[2m > [22mshould return error when agent analysis fails[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22mAgentDeploymentService[2m > [22mdeploy - error handling[2m > [22mshould return error when deployment service start fails[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22mAgentDeploymentService[2m > [22mdeploy - error handling[2m > [22mshould return error when setup command fails[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/deployment/agent-deployment.service.test.ts[2m > [22mAgentDeploymentService[2m > [22mdeploy - error handling[2m > [22mshould return error when analysis returns deployable but null command[32m 0[2mms[22m[39m
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22m[2mdeployRepository server action[2m > [22m[2mvalidates repositoryPath is an absolute path
+[22m[39m[deployRepository] rejected — not an absolute path
+
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22m[2mdeployRepository server action[2m > [22m[2mreturns error for empty repositoryPath
+[22m[39m[deployRepository] rejected — not an absolute path
+
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22m[2mdeployRepository server action[2m > [22m[2mreturns error when directory does not exist
+[22m[39m[deployRepository] directory does not exist: "/nonexistent/path"
+
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22m[2mdeployRepository server action[2m > [22m[2mreturns error when agent reports repo is not deployable
+[22m[39m[deployRepository] agent deployment returned not-deployable: This is a data-only repository with no server to start
+
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22m[2mdeployFeature server action[2m > [22m[2mreturns error when featureId is empty
+[22m[39m[deployFeature] rejected — featureId is empty
+
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22m[2mdeployFeature server action[2m > [22m[2mreturns error when feature is not found
+[22m[39m[deployFeature] feature not found in repository: "nonexistent-id"
+
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22m[2mdeployFeature server action[2m > [22m[2mreturns error when worktree directory does not exist
+[22m[39m[deployFeature] worktree path does not exist on disk: "/mock/.shep/repos/abc123/wt/feat-my-feature"
+
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22m[2mdeployFeature server action[2m > [22m[2mreturns error when agent reports repo is not deployable
+[22m[39m[deployFeature] agent deployment returned not-deployable: This is a CLI utility with no web server
+
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22m[2mdeployRepository server action[2m > [22m[2mreturns error when deploy throws
+[22m[39m[deployRepository] error: Agent unavailable Error: Agent unavailable
+    at [90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mtests/unit/presentation/web/actions/deploy-repository.test.ts:106:34
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1209:10[90m)[39m
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1653:37
+    at Traces.$ [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[39m
+    at trace [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1653:12[90m)[39m
+
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22m[2mdeployRepository server action[2m > [22m[2mreturns generic error for non-Error throws
+[22m[39m[deployRepository] error: Failed to deploy repository unexpected
+
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22mdeployRepository server action[2m > [22mvalidates repositoryPath is an absolute path[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22mdeployRepository server action[2m > [22mreturns error for empty repositoryPath[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22mdeployRepository server action[2m > [22maccepts Windows-style absolute paths when path.isAbsolute recognizes them[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22mdeployRepository server action[2m > [22mreturns error when directory does not exist[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22mdeployRepository server action[2m > [22mcalls agentDeploymentService.deploy with repositoryPath as both targetId and path[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22mdeployRepository server action[2m > [22mreturns error when agent reports repo is not deployable[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22mdeployRepository server action[2m > [22mreturns error when deploy throws[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-repository.test.ts[2m > [22mdeployRepository server action[2m > [22mreturns generic error for non-Error throws[32m 0[2mms[22m[39m
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22m[2mdeployFeature server action[2m > [22m[2mreturns error when deploy throws
+[22m[39m[deployFeature] error: Agent unavailable Error: Agent unavailable
+    at [90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mtests/unit/presentation/web/actions/deploy-feature.test.ts:113:34
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1209:10[90m)[39m
+    at [90mfile:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1653:37
+    at Traces.$ [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[39m
+    at trace [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/vitest@4.0.18_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_lightningcss@1.30.2_terser@5.46.0_tsx@4.21.0_yaml@2.8.2/node_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-agent-dev-environment-93a417/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.18/node_modules/[4m@vitest[24m/runner/dist/index.js:1653:12[90m)[39m
+
+[90mstderr[2m | tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22m[2mdeployFeature server action[2m > [22m[2mreturns generic error for non-Error throws
+[22m[39m[deployFeature] error: Failed to deploy feature unexpected
+
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22mdeployFeature server action[2m > [22mresolves feature, computes worktree path, and calls agentDeploymentService.deploy[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22mdeployFeature server action[2m > [22mreturns error when featureId is empty[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22mdeployFeature server action[2m > [22mreturns error when feature is not found[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22mdeployFeature server action[2m > [22mreturns error when worktree directory does not exist[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22mdeployFeature server action[2m > [22mreturns error when agent reports repo is not deployable[32m 0[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22mdeployFeature server action[2m > [22mreturns error when deploy throws[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[46m web [49m[39m tests/unit/presentation/web/actions/deploy-feature.test.ts[2m > [22mdeployFeature server action[2m > [22mreturns generic error for non-Error throws[32m 0[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[32m46 passed[39m[22m[90m (46)[39m
+[2m   Start at [22m 13:29:08
+[2m   Duration [22m 183ms[2m (transform 150ms, setup 199ms, import 151ms, tests 23ms, environment 0ms)[22m
+
