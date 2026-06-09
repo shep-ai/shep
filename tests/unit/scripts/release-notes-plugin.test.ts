@@ -178,6 +178,29 @@ describe('generateNotes (plugin)', () => {
     expect(notes).toContain('![dark-mode](https://example.com/screenshot.png)');
   });
 
+  it('rewrites branch-pinned evidence URLs to the release tag', async () => {
+    const context = makeContext({
+      commits: [makeRawCommit()],
+      env: {
+        CLAUDE_CODE_OAUTH_TOKEN: 'tok',
+        GITHUB_TOKEN: 'gh',
+      },
+    });
+    const fetcher = fakeFetcher({
+      '596':
+        '![dash](https://raw.githubusercontent.com/shep-ai/shep/feat/my-branch/specs/098/evidence/app.png)',
+    });
+    const claudeQuery = fakeClaudeQuery('shipped tabs');
+
+    const notes = await generateNotes({ claudeQuery, fetcher }, context as never);
+
+    // makeContext sets nextRelease.gitTag to v1.200.0
+    expect(notes).toContain(
+      '![dash](https://raw.githubusercontent.com/shep-ai/shep/v1.200.0/specs/098/evidence/app.png)'
+    );
+    expect(notes).not.toContain('feat/my-branch');
+  });
+
   it('falls back to the static tagline when Claude returns nothing', async () => {
     const context = makeContext({
       commits: [makeRawCommit()],

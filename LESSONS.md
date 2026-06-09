@@ -1063,3 +1063,21 @@ breaking offline CI:
 6. **eslint `prefer-nullish-coalescing` vs. empty env strings:** `process.env.X ||
    DEFAULT` is flagged. But `??` won't fall back on an empty string. Use
    `const v = process.env.X?.trim(); return v && v.length ? v : DEFAULT;`.
+## Release-notes generator: ground the tagline in commit types, pin evidence to an immutable ref
+
+Two bugs shipped together in the v1.210.0 GitHub release (custom `scripts/release-notes-*.mjs` semantic-release plugin):
+
+1. **Tagline contradicted the changelog.** Claude wrote _"Under the hood maintenance and housekeeping — no user-facing changes…"_ for a release whose only commit was a `feat` (gated behind a feature flag). A flagged feature still ships. The prompt let Claude reason "behind a flag ⇒ internal", and nothing validated the result against the actual commit types.
+2. **Evidence images 404'd.** PR bodies embedded `raw.githubusercontent.com/owner/repo/<feature-branch>/specs/.../evidence/*.png`. After squash-merge the branch is deleted ⇒ broken images. The extractor added PR-body URLs verbatim.
+
+Fixes:
+
+- `buildPrompt` now branches on `hasUserFacingChanges` (any feat/fix/perf) and explicitly forbids "maintenance / housekeeping / under the hood / behind the scenes / no user-facing changes" framings for user-facing releases. Plus a post-generation guard (`isMaintenanceOnlyFraming`) rejects a contradictory tagline and falls back to the static one.
+- `normalizeRepoMediaUrl` rewrites any repo-hosted raw/blob URL to the immutable release tag (`nextRelease.gitTag`), threaded through as `ref`. Bare `specs|docs|evidence` paths now also pin to the tag, not `main`.
+
+Rules:
+
+- A git **ref can contain slashes** (`feat/aspm-platform`). You cannot split ref-from-path positionally in a `raw.githubusercontent.com/owner/repo/<ref>/<path>` URL. Recover the path by locating the first known repo root segment (`specs`/`docs`/`evidence`), not by `slice(3)`.
+- Anything permanent (release notes, changelog) must reference an **immutable ref** (tag or commit SHA), never a branch — branches get deleted.
+- When an LLM writes user-facing copy from structured data, **validate the output against that same data** before publishing. Don't trust the prompt alone; add a deterministic guard that falls back on contradiction.
+- `.mjs` scripts under ESLint need browser/Node globals declared: `/* global fetch, URL */`.
