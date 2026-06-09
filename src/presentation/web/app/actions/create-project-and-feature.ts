@@ -3,7 +3,7 @@
 import { resolve } from '@/lib/server-container';
 import type { CreateProjectUseCase } from '@shepai/core/application/use-cases/projects/create-project.use-case';
 import type { AddRepositoryUseCase } from '@shepai/core/application/use-cases/repositories/add-repository.use-case';
-import type { Feature, Repository } from '@shepai/core/domain/generated/output';
+import { BuildMode, type Feature, type Repository } from '@shepai/core/domain/generated/output';
 import { createFeature } from './create-feature';
 
 interface QuickFeatureInput {
@@ -91,7 +91,7 @@ export async function createProjectAndFeature(input: QuickFeatureInput): Promise
       attachments,
       agentType,
       model,
-      fast: input.fast,
+      mode: input.fast === false ? undefined : BuildMode.Fast,
     });
 
     if (featureResult.error) {

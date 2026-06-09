@@ -45,6 +45,7 @@ describe('VALID_TAB_KEYS', () => {
       'tech-decisions',
       'product-decisions',
       'merge-review',
+      'prototype',
       'chat',
       'bedrock',
     ];

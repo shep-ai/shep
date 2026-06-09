@@ -19,6 +19,8 @@ import { createFeatureAgentGraph } from './feature-agent-graph.js';
 import type { FeatureAgentGraphDeps } from './feature-agent-graph.js';
 import { createFastFeatureAgentGraph } from './fast-feature-agent-graph.js';
 import type { FastFeatureAgentGraphDeps } from './fast-feature-agent-graph.js';
+import { createExplorationAgentGraph } from './exploration-agent-graph.js';
+import type { ExplorationAgentGraphDeps } from './exploration-agent-graph.js';
 import { createCheckpointer } from '../common/checkpointer.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IAgentExecutorProvider } from '@/application/ports/output/agents/agent-executor-provider.interface.js';
@@ -74,6 +76,7 @@ export interface WorkerArgs {
   resumePayload?: string;
   agentType?: AgentType;
   fast?: boolean;
+  exploration?: boolean;
   model?: string;
   resumeReason?: string;
   securityMode?: SecurityMode;
@@ -118,6 +121,7 @@ export function parseWorkerArgs(args: string[]): WorkerArgs {
   const enableEvidence = args.includes('--enable-evidence');
   const commitEvidence = args.includes('--commit-evidence');
   const fast = args.includes('--fast');
+  const exploration = args.includes('--explore');
   const threadIdx = args.indexOf('--thread-id');
   const threadId =
     threadIdx !== -1 && threadIdx + 1 < args.length ? args[threadIdx + 1] : undefined;
@@ -187,6 +191,7 @@ export function parseWorkerArgs(args: string[]): WorkerArgs {
     resumePayload,
     agentType,
     fast,
+    exploration,
     model,
     resumeReason,
     securityMode,
@@ -256,6 +261,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     ...(args.resumePayload ? ['--resume-payload', args.resumePayload] : []),
     ...(args.agentType ? ['--agent-type', args.agentType] : []),
     ...(args.fast ? ['--fast'] : []),
+    ...(args.exploration ? ['--explore'] : []),
     ...(args.model ? ['--model', args.model] : []),
     ...(args.securityMode ? ['--security-mode', args.securityMode] : []),
     ...(args.securityActionDispositions
@@ -331,15 +337,23 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   const checkpointPath = join(homedir(), '.shep', 'checkpoints', `${checkpointId}.db`);
   log(`Creating checkpointer at ${checkpointPath} (thread: ${checkpointId})`);
   const checkpointer = createCheckpointer(checkpointPath);
-  // Both graph factories return compiled graphs with identical FeatureAgentAnnotation
+  // All graph factories return compiled graphs with identical FeatureAgentAnnotation
   // state shape and invoke() interface. Cast through unknown because the compiled
   // graphs have different node name types but share the same runtime contract.
-  const graph = args.fast
-    ? (createFastFeatureAgentGraph(
-        graphDeps as FastFeatureAgentGraphDeps,
-        checkpointer
-      ) as unknown as ReturnType<typeof createFeatureAgentGraph>)
-    : createFeatureAgentGraph(graphDeps, checkpointer);
+  let graph: ReturnType<typeof createFeatureAgentGraph>;
+  if (args.exploration) {
+    graph = createExplorationAgentGraph(
+      { executor } as ExplorationAgentGraphDeps,
+      checkpointer
+    ) as unknown as ReturnType<typeof createFeatureAgentGraph>;
+  } else if (args.fast) {
+    graph = createFastFeatureAgentGraph(
+      graphDeps as FastFeatureAgentGraphDeps,
+      checkpointer
+    ) as unknown as ReturnType<typeof createFeatureAgentGraph>;
+  } else {
+    graph = createFeatureAgentGraph(graphDeps, checkpointer);
+  }
 
   // Mark the run as running with our PID
   const now = new Date();

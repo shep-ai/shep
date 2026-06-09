@@ -59,6 +59,7 @@ export class FeatureAgentProcessService implements IFeatureAgentProcessService {
       resumePayload?: string;
       agentType?: AgentType;
       fast?: boolean;
+      exploration?: boolean;
       model?: string;
       resumeReason?: string;
       securityMode?: SecurityMode;
@@ -123,6 +124,9 @@ export class FeatureAgentProcessService implements IFeatureAgentProcessService {
     }
     if (options?.fast) {
       args.push('--fast');
+    }
+    if (options?.exploration) {
+      args.push('--explore');
     }
     if (options?.model) {
       args.push('--model', options.model);

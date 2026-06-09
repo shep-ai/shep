@@ -347,9 +347,14 @@ describe('createDefaultSettings', () => {
   });
 
   describe('WorkflowConfig defaults', () => {
-    it('should default workflow.defaultFastMode to true', () => {
+    it('should default workflow.defaultMode to Fast', () => {
       const settings = createDefaultSettings();
-      expect(settings.workflow.defaultFastMode).toBe(true);
+      expect(settings.workflow.defaultMode).toBe('Fast');
+    });
+
+    it('should default workflow.explorationMaxIterations to 10', () => {
+      const settings = createDefaultSettings();
+      expect(settings.workflow.explorationMaxIterations).toBe(10);
     });
 
     it('should include all workflow defaults', () => {
@@ -365,7 +370,8 @@ describe('createDefaultSettings', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        defaultFastMode: true,
+        defaultMode: 'Fast',
+        explorationMaxIterations: 10,
         autoArchiveDelayMinutes: 10,
         skillInjection: {
           enabled: false,

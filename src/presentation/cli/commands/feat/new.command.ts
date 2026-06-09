@@ -18,7 +18,7 @@ import { container } from '@/infrastructure/di/container.js';
 import { CreateFeatureUseCase } from '@/application/use-cases/features/create/create-feature.use-case.js';
 import { CreateFeatureFromRemoteUseCase } from '@/application/use-cases/features/create/create-feature-from-remote.use-case.js';
 import type { ApprovalGates, Feature } from '@/domain/generated/output.js';
-import { SdlcLifecycle } from '@/domain/generated/output.js';
+import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import { colors, messages, spinner } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
@@ -38,6 +38,7 @@ interface NewOptions {
   allowAll?: boolean;
   parent?: string;
   fast?: boolean;
+  explore?: boolean;
   pending?: boolean;
   model?: string;
   attach?: string[];
@@ -81,7 +82,7 @@ function getWorkflowDefaults(): WorkflowDefaults {
     allowPlan: gates.allowPlan,
     allowMerge: gates.allowMerge,
     push: gates.pushOnImplementationComplete,
-    fast: settings.workflow.defaultFastMode,
+    fast: settings.workflow.defaultMode !== 'spec',
   };
 }
 
@@ -106,6 +107,7 @@ export function createNewCommand(): Command {
     .option('--pending', t('cli:commands.feat.new.pendingOption'))
     .option('--fast', t('cli:commands.feat.new.fastOption'))
     .option('--no-fast', t('cli:commands.feat.new.noFastOption'))
+    .option('--explore', t('cli:commands.feat.new.exploreOption'))
     .option('--model <model>', t('cli:commands.feat.new.modelOption'))
     .option('--no-rebase', t('cli:commands.feat.new.noRebaseOption'))
     .option('--inject-skills', t('cli:commands.feat.new.injectSkillsOption'))
@@ -175,6 +177,19 @@ export function createNewCommand(): Command {
 
         const fast = options.fast ?? defaults.fast;
 
+        // Validate mutually exclusive mode flags
+        if (options.explore && options.fast) {
+          messages.error(t('cli:commands.feat.new.exploreAndFastConflict'));
+          process.exitCode = 1;
+          return;
+        }
+
+        const buildMode = options.explore
+          ? BuildMode.Exploration
+          : fast
+            ? BuildMode.Fast
+            : BuildMode.Application;
+
         const commonInput = {
           userInput: description,
           approvalGates,
@@ -183,6 +198,7 @@ export function createNewCommand(): Command {
           ...(parentId !== undefined && { parentId }),
           ...(options.pending && { pending: true }),
           ...(fast && { fast: true }),
+          buildMode,
           ...(options.model !== undefined && { model: options.model }),
           ...(attachmentPaths.length > 0 && { attachmentPaths }),
         };

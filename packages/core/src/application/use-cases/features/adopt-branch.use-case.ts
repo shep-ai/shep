@@ -131,6 +131,7 @@ export class AdoptBranchUseCase {
       },
       worktreePath,
       repositoryId: repository.id,
+      iterationCount: 0,
       pr: prData,
       bedrockEnabled: false,
       createdAt: now,

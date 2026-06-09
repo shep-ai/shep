@@ -79,6 +79,9 @@ const BUILD_MODE_META: Record<BuildMode, { icon: typeof Zap; labelKey: string }>
   [BuildModeEnum.Application]: { icon: LayoutGrid, labelKey: 'createDrawer.modeApplication' },
   [BuildModeEnum.Fast]: { icon: Zap, labelKey: 'createDrawer.modeFast' },
   [BuildModeEnum.Spec]: { icon: ClipboardList, labelKey: 'createDrawer.modeSpec' },
+  // Exploration is retained in the meta map only so legacy `buildMode='exploration'`
+  // rows do not crash if they ever flow through this path; it is never rendered in the picker.
+  [BuildModeEnum.Exploration]: { icon: RefreshCw, labelKey: 'createDrawer.modeExploration' },
 };
 
 /** Minimal feature descriptor for the parent selector. */
@@ -265,7 +268,7 @@ function resolveInitialMode(
   workflowDefaults: WorkflowDefaults | undefined
 ): BuildMode {
   if (initialMode) return initialMode;
-  if (workflowDefaults?.fast === false) return BuildModeEnum.Spec;
+  if (workflowDefaults?.defaultMode) return workflowDefaults.defaultMode as BuildMode;
   return BuildModeEnum.Fast;
 }
 
@@ -377,7 +380,7 @@ export function FeatureCreateDrawer({
       setEnableEvidence(workflowDefaults.enableEvidence);
       setCommitEvidence(workflowDefaults.commitEvidence);
       if (!effectiveInitialMode) {
-        setMode(workflowDefaults.fast !== false ? BuildModeEnum.Fast : BuildModeEnum.Spec);
+        setMode((workflowDefaults.defaultMode as BuildMode | undefined) ?? BuildModeEnum.Fast);
       }
       setInjectSkills(workflowDefaults.injectSkills ?? false);
     }

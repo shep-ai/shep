@@ -496,9 +496,13 @@ export type WorkflowConfig = {
    */
   hideCiStatus?: boolean;
   /**
-   * Default new features to fast mode (default: true)
+   * Default feature mode for new features: 'Regular', 'Fast', or 'Exploration' (default: 'Fast')
    */
-  defaultFastMode: boolean;
+  defaultMode: string;
+  /**
+   * Maximum exploration feedback iterations (default: 10, 0 = unlimited)
+   */
+  explorationMaxIterations?: number;
   /**
    * Minutes after completion before auto-archiving a feature (default: 10, 0 = disabled)
    */
@@ -1209,6 +1213,7 @@ export enum SdlcLifecycle {
   Maintain = 'Maintain',
   Blocked = 'Blocked',
   Pending = 'Pending',
+  Exploring = 'Exploring',
   Deleting = 'Deleting',
   AwaitingUpstream = 'AwaitingUpstream',
   Archived = 'Archived',
@@ -1217,6 +1222,7 @@ export enum BuildMode {
   Application = 'application',
   Fast = 'fast',
   Spec = 'spec',
+  Exploration = 'exploration',
 }
 
 /**
@@ -1236,6 +1242,7 @@ export type ApprovalGates = {
    */
   allowMerge: boolean;
 };
+export type integer = any;
 export enum PrStatus {
   Open = 'Open',
   Merged = 'Merged',
@@ -1469,6 +1476,14 @@ export type Feature = SoftDeletableEntity & {
    * Per-feature plugin activation overrides mapping plugin names to enabled state (JSON-serialized in DB)
    */
   activePlugins?: Record<string, boolean>;
+  /**
+   * Number of prototype iterations completed so far (incremented on each feedback loop)
+   */
+  iterationCount?: integer;
+  /**
+   * Maximum exploration feedback iterations (default: 10, 0 = unlimited)
+   */
+  maxIterations?: integer;
   /**
    * Pull request data (null until PR created)
    */
@@ -4446,7 +4461,6 @@ export enum WorkflowExecutionStatus {
   Failed = 'failed',
   Cancelled = 'cancelled',
 }
-export type integer = any;
 
 /**
  * A single execution record for a scheduled workflow run

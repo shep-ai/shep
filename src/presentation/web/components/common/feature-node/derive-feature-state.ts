@@ -173,6 +173,7 @@ export const sdlcLifecycleMap: Record<string, FeatureLifecyclePhase> = {
   'Deploy & QA': 'deploy',
   Maintain: 'maintain',
   Pending: 'pending',
+  Exploring: 'exploring',
   Archived: 'maintain',
 };
 
@@ -187,6 +188,7 @@ const phaseNameToLifecycle: Record<string, FeatureLifecyclePhase> = {
   maintain: 'maintain',
   blocked: 'requirements',
   pending: 'pending',
+  exploring: 'exploring',
   archived: 'maintain',
 };
 

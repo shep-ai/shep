@@ -6,6 +6,7 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { BuildMode } from '@/domain/generated/output.js';
 
 const { mockResolve, mockCreateExecute, mockFindByIdPrefix } = vi.hoisted(() => ({
   mockResolve: vi.fn(),
@@ -363,15 +364,18 @@ describe('createNewCommand', () => {
       const cmd = createNewCommand();
       await cmd.parseAsync(['Fix typo', '--fast'], { from: 'user' });
 
-      expect(mockCreateExecute).toHaveBeenCalledWith(expect.objectContaining({ fast: true }));
+      expect(mockCreateExecute).toHaveBeenCalledWith(
+        expect.objectContaining({ mode: BuildMode.Fast })
+      );
     });
 
-    it('should not set fast on input when --fast is not provided', async () => {
+    it('should use default mode from settings when --fast is not provided', async () => {
       const cmd = createNewCommand();
       await cmd.parseAsync(['Add feature'], { from: 'user' });
 
       const callArg = mockCreateExecute.mock.calls[0][0];
-      expect(callArg.fast).toBeUndefined();
+      // Default settings have no defaultMode set, so fallback is Fast
+      expect(callArg.mode).toBe(BuildMode.Fast);
     });
 
     it('should combine --fast with --allow-all', async () => {
@@ -380,7 +384,7 @@ describe('createNewCommand', () => {
 
       expect(mockCreateExecute).toHaveBeenCalledWith(
         expect.objectContaining({
-          fast: true,
+          mode: BuildMode.Fast,
           approvalGates: { allowPrd: true, allowPlan: true, allowMerge: true },
         })
       );
@@ -391,6 +395,46 @@ describe('createNewCommand', () => {
       const fastOption = cmd.options.find((o) => o.long === '--fast');
       expect(fastOption).toBeDefined();
       expect(fastOption?.description).toBeTruthy();
+    });
+  });
+
+  describe('--explore flag', () => {
+    it('should pass mode=Exploration to use case when --explore is provided', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Explore an idea', '--explore'], { from: 'user' });
+
+      expect(mockCreateExecute).toHaveBeenCalledWith(
+        expect.objectContaining({ mode: BuildMode.Exploration })
+      );
+    });
+
+    it('should show error and set exit code 1 when both --explore and --fast are provided', async () => {
+      const { messages: mockMessages } = await import(
+        '../../../../../../src/presentation/cli/ui/index.js'
+      );
+
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Explore an idea', '--explore', '--fast'], { from: 'user' });
+
+      expect(process.exitCode).toBe(1);
+      expect(mockMessages.error).toHaveBeenCalledWith(expect.stringContaining('--explore'));
+      expect(mockCreateExecute).not.toHaveBeenCalled();
+    });
+
+    it('should use workflow default mode when no mode flag is provided', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature'], { from: 'user' });
+
+      const callArg = mockCreateExecute.mock.calls[0][0];
+      // Default settings have no defaultMode set, so fallback is Fast
+      expect(callArg.mode).toBe(BuildMode.Fast);
+    });
+
+    it('should expose --explore option in command help', () => {
+      const cmd = createNewCommand();
+      const exploreOption = cmd.options.find((o) => o.long === '--explore');
+      expect(exploreOption).toBeDefined();
+      expect(exploreOption?.description).toBeTruthy();
     });
   });
 

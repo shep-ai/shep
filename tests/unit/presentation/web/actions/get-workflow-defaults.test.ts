@@ -20,16 +20,16 @@ describe('getWorkflowDefaults server action', () => {
     mockGetSettings.mockReturnValue({
       workflow: {
         openPrOnImplementationComplete: true,
+        defaultMode: 'Fast',
+        ciWatchEnabled: true,
+        enableEvidence: true,
+        commitEvidence: true,
         approvalGateDefaults: {
           allowPrd: true,
           allowPlan: false,
           allowMerge: true,
           pushOnImplementationComplete: true,
         },
-        ciWatchEnabled: true,
-        enableEvidence: true,
-        commitEvidence: true,
-        defaultFastMode: true,
         skillInjection: { enabled: true, skills: [] },
       },
     });
@@ -47,25 +47,25 @@ describe('getWorkflowDefaults server action', () => {
       ciWatchEnabled: true,
       enableEvidence: true,
       commitEvidence: true,
-      fast: true,
+      defaultMode: 'Fast',
       injectSkills: true,
     });
   });
 
-  it('returns all false when workflow defaults are all false', async () => {
+  it('returns Regular mode when defaultMode is Regular', async () => {
     mockGetSettings.mockReturnValue({
       workflow: {
         openPrOnImplementationComplete: false,
+        defaultMode: 'Regular',
+        ciWatchEnabled: false,
+        enableEvidence: false,
+        commitEvidence: false,
         approvalGateDefaults: {
           allowPrd: false,
           allowPlan: false,
           allowMerge: false,
           pushOnImplementationComplete: false,
         },
-        ciWatchEnabled: false,
-        enableEvidence: false,
-        commitEvidence: false,
-        defaultFastMode: false,
         skillInjection: { enabled: false, skills: [] },
       },
     });
@@ -83,7 +83,7 @@ describe('getWorkflowDefaults server action', () => {
       ciWatchEnabled: false,
       enableEvidence: false,
       commitEvidence: false,
-      fast: false,
+      defaultMode: 'Regular',
       injectSkills: false,
     });
   });
@@ -101,7 +101,6 @@ describe('getWorkflowDefaults server action', () => {
         ciWatchEnabled: false,
         enableEvidence: false,
         commitEvidence: false,
-        defaultFastMode: false,
       },
     });
 
@@ -124,7 +123,6 @@ describe('getWorkflowDefaults server action', () => {
         ciWatchEnabled: false,
         enableEvidence: false,
         commitEvidence: false,
-        defaultFastMode: false,
       },
     });
 

@@ -16,7 +16,7 @@
  */
 
 import { injectable, inject } from 'tsyringe';
-import { SdlcLifecycle } from '../../../domain/generated/output.js';
+import { SdlcLifecycle, BuildMode } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
 import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
@@ -77,6 +77,7 @@ export class CheckAndUnblockFeaturesUseCase {
             commitEvidence: child.commitEvidence,
             ...(child.fast ? { fast: true } : {}),
             securityMode: (await this.settingsRepository.load())?.security?.mode,
+            ...(child.buildMode === BuildMode.Exploration ? { exploration: true } : {}),
           }
         );
       }

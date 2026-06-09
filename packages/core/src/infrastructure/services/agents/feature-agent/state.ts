@@ -151,6 +151,25 @@ export const FeatureAgentAnnotation = Annotation.Root({
     reducer: (_prev, next) => next,
     default: () => ({}),
   }),
+  // --- Exploration mode state channels ---
+  iterationCount: Annotation<number>({
+    reducer: (_prev, next) => next,
+    default: () => 0,
+  }),
+  maxIterations: Annotation<number>({
+    reducer: (_prev, next) => next,
+    default: () => 10,
+  }),
+  feedbackHistory: Annotation<string[]>({
+    reducer: (prev, next) => [...prev, ...next],
+    default: () => [],
+  }),
+  explorationStatus: Annotation<
+    'generating' | 'waiting-feedback' | 'applying-feedback' | 'promoting' | 'discarding' | undefined
+  >({
+    reducer: (_prev, next) => next,
+    default: () => undefined,
+  }),
 });
 
 export type FeatureAgentState = typeof FeatureAgentAnnotation.State;

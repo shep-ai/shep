@@ -88,7 +88,7 @@ function createTestSettings(overrides: Partial<Settings> = {}): Settings {
       enableEvidence: false,
       commitEvidence: false,
       ciWatchEnabled: true,
-      defaultFastMode: true,
+      defaultMode: 'Fast',
     },
     security: {
       mode: SecurityMode.Advisory,
@@ -145,7 +145,7 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     workflow_enable_evidence: 0,
     workflow_commit_evidence: 0,
     hide_ci_status: 1,
-    default_fast_mode: 1,
+    default_mode: 'Fast',
     ci_watch_enabled: 1,
     ci_max_fix_attempts: null,
     ci_watch_timeout_ms: null,
@@ -180,6 +180,7 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     interactive_agent_max_concurrent_sessions: 3,
     auto_archive_delay_minutes: 10,
     fab_position_swapped: 0,
+    exploration_max_iterations: null,
     skill_injection_enabled: 0,
     skill_injection_skills: null,
     default_home_page: 'control-center',
@@ -942,73 +943,129 @@ describe('Settings Mapper', () => {
     });
   });
 
-  describe('toDatabase() - defaultFastMode', () => {
-    it('should map workflow.defaultFastMode=true to default_fast_mode=1', () => {
+  describe('toDatabase() - defaultMode', () => {
+    it('should map workflow.defaultMode=Fast to default_mode=Fast', () => {
       const settings = createTestSettings({
         workflow: {
           ...createTestSettings().workflow,
-          defaultFastMode: true,
+          defaultMode: 'Fast',
         },
       });
       const row = toDatabase(settings);
-      expect(row.default_fast_mode).toBe(1);
+      expect(row.default_mode).toBe('Fast');
     });
 
-    it('should map workflow.defaultFastMode=false to default_fast_mode=0', () => {
+    it('should map workflow.defaultMode=Regular to default_mode=Regular', () => {
       const settings = createTestSettings({
         workflow: {
           ...createTestSettings().workflow,
-          defaultFastMode: false,
+          defaultMode: 'Regular',
         },
       });
       const row = toDatabase(settings);
-      expect(row.default_fast_mode).toBe(0);
+      expect(row.default_mode).toBe('Regular');
+    });
+
+    it('should map workflow.defaultMode=Exploration to default_mode=Exploration', () => {
+      const settings = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          defaultMode: 'Exploration',
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.default_mode).toBe('Exploration');
     });
   });
 
-  describe('fromDatabase() - defaultFastMode', () => {
-    it('should map default_fast_mode=1 to workflow.defaultFastMode=true', () => {
-      const row = createTestRow({ default_fast_mode: 1 });
+  describe('fromDatabase() - defaultMode', () => {
+    it('should map default_mode=Fast to workflow.defaultMode=Fast', () => {
+      const row = createTestRow({ default_mode: 'Fast' });
       const settings = fromDatabase(row);
-      expect(settings.workflow.defaultFastMode).toBe(true);
+      expect(settings.workflow.defaultMode).toBe('Fast');
     });
 
-    it('should map default_fast_mode=0 to workflow.defaultFastMode=false', () => {
-      const row = createTestRow({ default_fast_mode: 0 });
+    it('should map default_mode=Regular to workflow.defaultMode=Regular', () => {
+      const row = createTestRow({ default_mode: 'Regular' });
       const settings = fromDatabase(row);
-      expect(settings.workflow.defaultFastMode).toBe(false);
+      expect(settings.workflow.defaultMode).toBe('Regular');
     });
 
-    it('should default to true when column is null (migration backward compat)', () => {
-      const row = createTestRow({ default_fast_mode: undefined as any });
+    it('should default to Fast when column is null (migration backward compat)', () => {
+      const row = createTestRow({ default_mode: undefined as any });
       const settings = fromDatabase(row);
-      expect(settings.workflow.defaultFastMode).toBe(true);
+      expect(settings.workflow.defaultMode).toBe('Fast');
     });
   });
 
-  describe('round-trip - defaultFastMode', () => {
-    it('should preserve defaultFastMode=true through toDatabase → fromDatabase', () => {
+  describe('round-trip - defaultMode', () => {
+    it('should preserve defaultMode=Fast through toDatabase → fromDatabase', () => {
       const original = createTestSettings({
         workflow: {
           ...createTestSettings().workflow,
-          defaultFastMode: true,
+          defaultMode: 'Fast',
         },
       });
       const row = toDatabase(original);
       const restored = fromDatabase(row);
-      expect(restored.workflow.defaultFastMode).toBe(true);
+      expect(restored.workflow.defaultMode).toBe('Fast');
     });
 
-    it('should preserve defaultFastMode=false through toDatabase → fromDatabase', () => {
+    it('should preserve defaultMode=Regular through toDatabase → fromDatabase', () => {
       const original = createTestSettings({
         workflow: {
           ...createTestSettings().workflow,
-          defaultFastMode: false,
+          defaultMode: 'Regular',
         },
       });
       const row = toDatabase(original);
       const restored = fromDatabase(row);
-      expect(restored.workflow.defaultFastMode).toBe(false);
+      expect(restored.workflow.defaultMode).toBe('Regular');
+    });
+
+    it('should preserve defaultMode=Exploration through toDatabase → fromDatabase', () => {
+      const original = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          defaultMode: 'Exploration',
+        },
+      });
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+      expect(restored.workflow.defaultMode).toBe('Exploration');
+    });
+  });
+
+  describe('toDatabase() - explorationMaxIterations', () => {
+    it('should map workflow.explorationMaxIterations=10 to exploration_max_iterations=10', () => {
+      const settings = createTestSettings({
+        workflow: {
+          ...createTestSettings().workflow,
+          explorationMaxIterations: 10,
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.exploration_max_iterations).toBe(10);
+    });
+
+    it('should map undefined explorationMaxIterations to null', () => {
+      const settings = createTestSettings();
+      const row = toDatabase(settings);
+      expect(row.exploration_max_iterations).toBeNull();
+    });
+  });
+
+  describe('fromDatabase() - explorationMaxIterations', () => {
+    it('should map exploration_max_iterations=10 to workflow.explorationMaxIterations=10', () => {
+      const row = createTestRow({ exploration_max_iterations: 10 });
+      const settings = fromDatabase(row);
+      expect(settings.workflow.explorationMaxIterations).toBe(10);
+    });
+
+    it('should omit explorationMaxIterations when column is null', () => {
+      const row = createTestRow({ exploration_max_iterations: null });
+      const settings = fromDatabase(row);
+      expect(settings.workflow.explorationMaxIterations).toBeUndefined();
     });
   });
 

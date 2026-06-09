@@ -4,6 +4,7 @@ import { within, userEvent, fn, expect } from '@storybook/test';
 import { FeatureCreateDrawer } from './feature-create-drawer';
 import type { FeatureCreatePayload, RepositoryOption } from './feature-create-drawer';
 import type { WorkflowDefaults } from '@/app/actions/get-workflow-defaults';
+import { BuildMode } from '@shepai/core/domain/generated/output';
 import { Button } from '@/components/ui/button';
 import { DrawerCloseGuardProvider } from '@/hooks/drawer-close-guard';
 
@@ -343,7 +344,7 @@ const SAMPLE_WORKFLOW_DEFAULTS: WorkflowDefaults = {
   ciWatchEnabled: true,
   enableEvidence: true,
   commitEvidence: false,
-  fast: true,
+  defaultMode: BuildMode.Fast,
   injectSkills: false,
 };
 

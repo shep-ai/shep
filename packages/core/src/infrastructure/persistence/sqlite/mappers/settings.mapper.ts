@@ -123,7 +123,7 @@ export interface SettingsRow {
   workflow_enable_evidence: number;
   workflow_commit_evidence: number;
   hide_ci_status: number;
-  default_fast_mode: number;
+  default_mode: string;
 
   // FeatureFlags (featureFlags.*)
   feature_flag_env_deploy: number;
@@ -148,6 +148,9 @@ export interface SettingsRow {
 
   // FAB layout config (added in migration 050)
   fab_position_swapped: number;
+
+  // Exploration max iterations (added in migration 053)
+  exploration_max_iterations: number | null;
 
   // Skill injection config (added in migration 051)
   skill_injection_enabled: number;
@@ -288,7 +291,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     workflow_enable_evidence: settings.workflow.enableEvidence ? 1 : 0,
     workflow_commit_evidence: settings.workflow.commitEvidence ? 1 : 0,
     hide_ci_status: settings.workflow.hideCiStatus !== false ? 1 : 0,
-    default_fast_mode: settings.workflow.defaultFastMode !== false ? 1 : 0,
+    default_mode: settings.workflow.defaultMode ?? 'Fast',
 
     // Onboarding (boolean → INTEGER)
     onboarding_complete: settings.onboardingComplete ? 1 : 0,
@@ -327,6 +330,9 @@ export function toDatabase(settings: Settings): SettingsRow {
 
     // FAB layout config (default: not swapped)
     fab_position_swapped: (settings.fabLayout?.swapPosition ?? false) ? 1 : 0,
+
+    // Exploration max iterations (default: 10)
+    exploration_max_iterations: settings.workflow.explorationMaxIterations ?? null,
 
     // Skill injection config (default: disabled, no skills)
     skill_injection_enabled: settings.workflow.skillInjection?.enabled ? 1 : 0,
@@ -625,7 +631,10 @@ export function fromDatabase(row: SettingsRow): Settings {
       enableEvidence: row.workflow_enable_evidence === 1,
       commitEvidence: row.workflow_commit_evidence === 1,
       hideCiStatus: row.hide_ci_status === 1,
-      defaultFastMode: (row.default_fast_mode ?? 1) !== 0,
+      defaultMode: row.default_mode ?? 'Fast',
+      ...(row.exploration_max_iterations !== null && {
+        explorationMaxIterations: row.exploration_max_iterations,
+      }),
       autoArchiveDelayMinutes: row.auto_archive_delay_minutes ?? 10,
     },
 

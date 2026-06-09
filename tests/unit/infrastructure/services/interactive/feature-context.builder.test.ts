@@ -20,7 +20,7 @@ vi.mock('node:child_process', () => ({
 
 import { FeatureContextBuilder } from '@/infrastructure/services/interactive/feature-context.builder.js';
 import type { Feature, Task } from '@/domain/generated/output.js';
-import { SdlcLifecycle, TaskState } from '@/domain/generated/output.js';
+import { SdlcLifecycle, TaskState, BuildMode } from '@/domain/generated/output.js';
 
 function makeTask(overrides?: Partial<Task>): Task {
   return {
@@ -60,6 +60,7 @@ function makeFeature(overrides?: Partial<Feature>): Feature {
       updatedAt: new Date(),
     },
     relatedArtifacts: [],
+    buildMode: BuildMode.Application,
     fast: false,
     push: false,
     openPr: false,

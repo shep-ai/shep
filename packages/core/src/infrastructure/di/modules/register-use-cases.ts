@@ -27,6 +27,7 @@ import { ResumeFeatureUseCase } from '../../../application/use-cases/features/re
 import { StartFeatureUseCase } from '../../../application/use-cases/features/start-feature.use-case.js';
 import { UpdateFeaturePinnedConfigUseCase } from '../../../application/use-cases/features/update-feature-pinned-config.use-case.js';
 import { AdoptBranchUseCase } from '../../../application/use-cases/features/adopt-branch.use-case.js';
+import { PromoteExplorationUseCase } from '../../../application/use-cases/features/promote/promote-exploration.use-case.js';
 import { GetFeatureArtifactUseCase } from '../../../application/use-cases/features/get-feature-artifact.use-case.js';
 import { GetResearchArtifactUseCase } from '../../../application/use-cases/features/get-research-artifact.use-case.js';
 import { GetPlanArtifactUseCase } from '../../../application/use-cases/features/get-plan-artifact.use-case.js';
@@ -169,6 +170,7 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(StartFeatureUseCase);
   container.registerSingleton(UpdateFeaturePinnedConfigUseCase);
   container.registerSingleton(AdoptBranchUseCase);
+  container.registerSingleton(PromoteExplorationUseCase);
   container.registerSingleton(GetFeatureArtifactUseCase);
   container.registerSingleton(GetResearchArtifactUseCase);
   container.registerSingleton(GetPlanArtifactUseCase);
@@ -282,6 +284,9 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('AdoptBranchUseCase', {
     useFactory: (c) => c.resolve(AdoptBranchUseCase),
+  });
+  container.register('PromoteExplorationUseCase', {
+    useFactory: (c) => c.resolve(PromoteExplorationUseCase),
   });
   container.register('StopAgentRunUseCase', {
     useFactory: (c) => c.resolve(StopAgentRunUseCase),

@@ -111,6 +111,7 @@ export class CreateFeatureUseCase {
     const effectiveBuildMode: BuildMode =
       input.buildMode ?? ((input.fast ?? false) ? BuildMode.Fast : BuildMode.Application);
     const isFastMode = effectiveBuildMode === BuildMode.Fast;
+    const isExplorationMode = effectiveBuildMode === BuildMode.Exploration;
 
     // Soft-warn when a spec-mode feature is created without a parent
     // application. The legacy "FAB → New feature → Spec" path intentionally
@@ -122,9 +123,11 @@ export class CreateFeatureUseCase {
       );
     }
 
-    let initialLifecycle: SdlcLifecycle = isFastMode
-      ? SdlcLifecycle.Implementation
-      : SdlcLifecycle.Requirements;
+    let initialLifecycle: SdlcLifecycle = isExplorationMode
+      ? SdlcLifecycle.Exploring
+      : isFastMode
+        ? SdlcLifecycle.Implementation
+        : SdlcLifecycle.Requirements;
     let shouldSpawn = true;
     let effectiveRepoPath = input.repositoryPath.replace(/\\/g, '/');
 
@@ -233,15 +236,22 @@ export class CreateFeatureUseCase {
       specPath: '',
       repositoryId: repository.id,
       ...(input.parentId ? { parentId: input.parentId } : {}),
+      iterationCount: 0,
       bedrockEnabled: false,
       createdAt: now,
       updatedAt: now,
     };
 
+    // Set maxIterations for exploration mode (requires settings)
+    const settingsForExploration = await this.loadSettingsOrThrow();
+    if (isExplorationMode) {
+      feature.maxIterations = settingsForExploration.workflow.explorationMaxIterations ?? 10;
+    }
+
     await this.featureRepo.create(feature);
 
     // Create agent run record (pending state — agent not spawned yet)
-    const settings = await this.loadSettingsOrThrow();
+    const settings = settingsForExploration;
     const agentRun = {
       id: runId,
       agentType: (input.agentType as typeof settings.agent.type) ?? settings.agent.type,
@@ -321,7 +331,11 @@ export class CreateFeatureUseCase {
       slug,
       featureNumber,
       input.userInput,
-      input.fast ? 'fast' : undefined
+      feature.buildMode === BuildMode.Fast
+        ? 'fast'
+        : feature.buildMode === BuildMode.Exploration
+          ? 'exploration'
+          : undefined
     );
 
     // Commit pending attachments if sessionId was provided (web UI flow)
@@ -430,7 +444,8 @@ export class CreateFeatureUseCase {
           ciWatchEnabled: input.ciWatchEnabled ?? true,
           enableEvidence: input.enableEvidence ?? false,
           commitEvidence: input.commitEvidence ?? false,
-          ...(input.fast ? { fast: true } : {}),
+          ...(feature.buildMode === BuildMode.Fast ? { fast: true } : {}),
+          ...(feature.buildMode === BuildMode.Exploration ? { exploration: true } : {}),
           ...(input.agentType ? { agentType: input.agentType as AgentType } : {}),
           ...(input.model ? { model: input.model } : {}),
           securityMode: settings.security?.mode,

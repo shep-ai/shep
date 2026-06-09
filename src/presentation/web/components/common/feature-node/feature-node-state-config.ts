@@ -15,6 +15,7 @@ import type {
   CiStatus,
   DeploymentState,
   SecurityMode,
+  BuildMode,
 } from '@shepai/core/domain/generated/output';
 import type { AgentTypeValue } from './agent-type-icons';
 
@@ -37,7 +38,8 @@ export type FeatureLifecyclePhase =
   | 'review'
   | 'awaitingUpstream'
   | 'deploy'
-  | 'maintain';
+  | 'maintain'
+  | 'exploring';
 
 /** Human-readable display labels for lifecycle phases. */
 export const lifecycleDisplayLabels: Record<FeatureLifecyclePhase, string> = {
@@ -49,6 +51,7 @@ export const lifecycleDisplayLabels: Record<FeatureLifecyclePhase, string> = {
   awaitingUpstream: 'AWAITING UPSTREAM',
   deploy: 'DEPLOY & QA',
   maintain: 'COMPLETED',
+  exploring: 'EXPLORING',
 };
 
 /** Inline-start border color for each lifecycle phase. */
@@ -61,6 +64,7 @@ export const lifecycleBorderColors: Record<FeatureLifecyclePhase, string> = {
   awaitingUpstream: 'border-s-amber-500',
   deploy: 'border-s-emerald-500',
   maintain: 'border-s-gray-400',
+  exploring: 'border-s-amber-400',
 };
 
 /** Accent bar background color for each lifecycle phase. */
@@ -73,6 +77,7 @@ export const lifecycleAccentColors: Record<FeatureLifecyclePhase, string> = {
   awaitingUpstream: 'bg-amber-500',
   deploy: 'bg-emerald-500',
   maintain: 'bg-gray-400',
+  exploring: 'bg-amber-400',
 };
 
 /** Phase badge: short letter, color classes, and user-friendly tooltip. */
@@ -157,6 +162,15 @@ export const lifecyclePhaseBadge: Record<
     tooltip: 'Completed',
     description: 'All done — the feature has been merged and delivered successfully.',
   },
+  exploring: {
+    letter: 'E',
+    bg: 'bg-amber-100 dark:bg-amber-900/40',
+    text: 'text-amber-600 dark:text-amber-300',
+    dot: 'bg-amber-400',
+    tooltip: 'Exploring',
+    description:
+      'Prototyping — the AI is generating a quick prototype. Review it and provide feedback to iterate.',
+  },
 };
 
 /** State-based inline-start border overrides (takes precedence over lifecycle). */
@@ -183,6 +197,7 @@ export const lifecycleRunningVerbs: Record<FeatureLifecyclePhase, string> = {
   awaitingUpstream: 'Awaiting upstream',
   deploy: 'Deploying',
   maintain: 'Maintaining',
+  exploring: 'Prototyping',
 };
 
 export interface FeatureNodeData {
@@ -211,6 +226,10 @@ export interface FeatureNodeData {
   errorMessage?: string;
   /** Whether the feature was created in fast mode (skip SDLC phases). */
   fastMode?: boolean;
+  /** Feature execution mode (Regular, Fast, Exploration). */
+  mode?: BuildMode;
+  /** Current feedback iteration count in exploration mode. */
+  iterationCount?: number;
   /** Agent executor type (e.g. "claude-code", "cursor"). */
   agentType?: AgentTypeValue;
   /** LLM model identifier used for this feature's agent run. */

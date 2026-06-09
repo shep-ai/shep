@@ -163,6 +163,10 @@ function createMockState(overrides?: Partial<FeatureAgentState>): FeatureAgentSt
     securityMode: SecurityMode.Disabled,
     securityActionDispositions: {},
     mcpConfigPath: undefined,
+    iterationCount: 0,
+    maxIterations: 10,
+    feedbackHistory: [],
+    explorationStatus: undefined,
     ...overrides,
   };
 }

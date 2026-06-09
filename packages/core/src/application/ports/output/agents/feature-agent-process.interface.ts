@@ -52,6 +52,7 @@ export interface IFeatureAgentProcessService {
       resumePayload?: string;
       agentType?: AgentType;
       fast?: boolean;
+      exploration?: boolean;
       model?: string;
       resumeReason?: string;
       securityMode?: SecurityMode;

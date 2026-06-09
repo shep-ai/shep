@@ -9,6 +9,7 @@ import {
   Trash2,
   Zap,
   ClipboardList,
+  FlaskConical,
   Loader2,
   Globe,
   RotateCcw,
@@ -44,6 +45,7 @@ import {
   lifecycleRunningVerbs,
   lifecyclePhaseBadge,
 } from './feature-node-state-config';
+import { BuildMode } from '@shepai/core/domain/generated/output';
 import type { FeatureNodeData } from './feature-node-state-config';
 import { getAgentTypeIcon } from './agent-type-icons';
 import { FeatureSessionsDropdown } from './feature-sessions-dropdown';
@@ -332,8 +334,10 @@ export function FeatureNode({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span data-testid="feature-node-fast-mode-badge" className="shrink-0">
-                  {data.fastMode ? (
+                <span data-testid="feature-node-mode-badge" className="shrink-0">
+                  {data.buildMode === BuildMode.Exploration ? (
+                    <FlaskConical className="h-3.5 w-3.5 text-amber-500" />
+                  ) : data.buildMode === BuildMode.Fast || data.fastMode ? (
                     <Zap className="h-3.5 w-3.5 text-amber-500" />
                   ) : (
                     <ClipboardList className="h-3.5 w-3.5 text-indigo-500" />
@@ -341,7 +345,11 @@ export function FeatureNode({
                 </span>
               </TooltipTrigger>
               <TooltipContent side="top">
-                {data.fastMode ? t('featureNode.fastMode') : t('featureNode.specDriven')}
+                {data.buildMode === BuildMode.Exploration
+                  ? t('featureNode.explorationMode')
+                  : data.buildMode === BuildMode.Fast || data.fastMode
+                    ? t('featureNode.fastMode')
+                    : t('featureNode.specDriven')}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

@@ -13,6 +13,7 @@ export type FeatureTabKey =
   | 'tech-decisions'
   | 'product-decisions'
   | 'merge-review'
+  | 'prototype'
   | 'chat'
   | 'bedrock';
 
@@ -26,6 +27,7 @@ export const VALID_TAB_KEYS: ReadonlySet<string> = new Set<FeatureTabKey>([
   'tech-decisions',
   'product-decisions',
   'merge-review',
+  'prototype',
   'chat',
   'bedrock',
 ]);
@@ -56,6 +58,7 @@ export type DrawerView =
 
 /** Derives the initial tab from node lifecycle + state. */
 export function deriveInitialTab(node: FeatureNodeData): FeatureTabKey {
+  if (node.lifecycle === 'exploring') return 'prototype';
   if (node.lifecycle === 'requirements' && node.state === 'action-required') return 'prd-review';
   // Fast-mode features skip the tech-decisions phase entirely, so don't focus
   // a tab that isn't visible.

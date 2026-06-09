@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { BuildMode } from '@shepai/core/domain/generated/output';
 
 const mockCreateRecord = vi.fn();
 const mockInitializeAndSpawn = vi
@@ -219,10 +220,12 @@ describe('createFeature server action', () => {
       await createFeature({
         description: 'Fix the typo',
         repositoryPath: '/repo',
-        fast: true,
+        mode: BuildMode.Fast,
       });
 
-      expect(mockCreateRecord).toHaveBeenCalledWith(expect.objectContaining({ fast: true }));
+      expect(mockCreateRecord).toHaveBeenCalledWith(
+        expect.objectContaining({ mode: BuildMode.Fast })
+      );
     });
 
     it('omits fast when input has fast=false', async () => {
@@ -231,7 +234,7 @@ describe('createFeature server action', () => {
       await createFeature({
         description: 'Fix the typo',
         repositoryPath: '/repo',
-        fast: false,
+        mode: BuildMode.Application,
       });
 
       const callArg = mockCreateRecord.mock.calls[0][0];
@@ -257,12 +260,12 @@ describe('createFeature server action', () => {
       await createFeature({
         description: 'Fix the typo',
         repositoryPath: '/repo',
-        fast: true,
+        mode: BuildMode.Fast,
       });
 
       expect(mockInitializeAndSpawn).toHaveBeenCalledWith(
         feature,
-        expect.objectContaining({ fast: true }),
+        expect.objectContaining({ mode: BuildMode.Fast }),
         true
       );
     });

@@ -414,13 +414,21 @@ model WorkflowConfig {
   hideCiStatus?: boolean;
 
   /**
-   * Whether new features default to fast mode (skip SDLC phases, implement directly).
-   * When true, `shep feat new` and the web UI create drawer will default to fast mode
-   * unless explicitly overridden with --no-fast.
-   * Per-feature override: `feat new --fast` or `feat new --no-fast`
+   * Default feature mode for new features.
+   * Controls whether `shep feat new` and the web UI create drawer default to
+   * regular (full SDLC), fast (skip phases), or exploration (prototype iteration) mode.
+   * Per-feature override: `feat new --fast`, `feat new --no-fast`, `feat new --explore`
    */
-  @doc("Default new features to fast mode (default: true)")
-  defaultFastMode: boolean = true;
+  @doc("Default feature mode for new features: 'Regular', 'Fast', or 'Exploration' (default: 'Fast')")
+  defaultMode: string = "Fast";
+
+  /**
+   * Maximum number of feedback iterations allowed in exploration mode.
+   * When the limit is reached, the user is prompted to promote or discard.
+   * Set to 0 for unlimited iterations.
+   */
+  @doc("Maximum exploration feedback iterations (default: 10, 0 = unlimited)")
+  explorationMaxIterations?: int32;
 
   /**
    * Automatically archive features that reach the Maintain (completed) lifecycle

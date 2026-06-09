@@ -6,6 +6,7 @@ import type { FeatureCreateDrawerProps } from '@/components/common/feature-creat
 import { DrawerCloseGuardProvider } from '@/hooks/drawer-close-guard';
 import type { FileAttachment } from '@shepai/core/infrastructure/services/file-dialog.service';
 import type { WorkflowDefaults } from '@/app/actions/get-workflow-defaults';
+import { BuildMode } from '@shepai/core/domain/generated/output';
 
 // Mock pickFiles client helper
 const mockPickFiles = vi.fn<() => Promise<FileAttachment[] | null>>();
@@ -309,7 +310,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: false,
+        defaultMode: BuildMode.Spec,
         injectSkills: false,
       };
       const { rerender } = render(
@@ -410,7 +411,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: false,
+        defaultMode: BuildMode.Spec,
         injectSkills: false,
       };
       renderDrawer({ workflowDefaults: defaults });
@@ -744,7 +745,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: true,
+        defaultMode: BuildMode.Fast,
         injectSkills: false,
       };
       renderDrawer({ workflowDefaults: defaults });
@@ -759,7 +760,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: false,
+        defaultMode: BuildMode.Spec,
         injectSkills: false,
       };
       renderDrawer({ workflowDefaults: defaults });
@@ -774,7 +775,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: true,
+        defaultMode: BuildMode.Fast,
         injectSkills: false,
       };
       renderDrawer({ workflowDefaults: defaults, initialMode: 'spec' });
@@ -1355,7 +1356,7 @@ describe('FeatureCreateDrawer', () => {
         ciWatchEnabled: true,
         enableEvidence: false,
         commitEvidence: false,
-        fast: true,
+        defaultMode: BuildMode.Fast,
         injectSkills: false,
       };
       const { rerender } = render(

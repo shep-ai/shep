@@ -101,6 +101,12 @@ properties:
   activePlugins:
     $ref: RecordBoolean.yaml
     description: Per-feature plugin activation overrides mapping plugin names to enabled state (JSON-serialized in DB)
+  iterationCount:
+    type: integer
+    description: Number of prototype iterations completed so far (incremented on each feedback loop)
+  maxIterations:
+    type: integer
+    description: "Maximum exploration feedback iterations (default: 10, 0 = unlimited)"
   pr:
     $ref: PullRequest.yaml
     description: Pull request data (null until PR created)

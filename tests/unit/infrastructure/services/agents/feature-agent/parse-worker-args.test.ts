@@ -49,7 +49,7 @@ describe('parseWorkerArgs - agentType', () => {
   });
 });
 
-describe('parseWorkerArgs - fast', () => {
+describe('parseWorkerArgs - mode flags', () => {
   const baseArgs = [
     '--feature-id',
     'feat-001',
@@ -66,9 +66,15 @@ describe('parseWorkerArgs - fast', () => {
     expect(args.fast).toBe(true);
   });
 
-  it('should set fast to false when --fast is not present', () => {
+  it('should default fast to false when --fast is not present', () => {
     const args = parseWorkerArgs(baseArgs);
     expect(args.fast).toBe(false);
+    expect(args.exploration).toBe(false);
+  });
+
+  it('should parse --explore for exploration mode', () => {
+    const args = parseWorkerArgs([...baseArgs, '--explore']);
+    expect(args.exploration).toBe(true);
   });
 
   it('should coexist with other flags', () => {

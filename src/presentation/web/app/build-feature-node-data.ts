@@ -1,5 +1,5 @@
 import type { Feature, AgentRun } from '@shepai/core/domain/generated/output';
-import { AgentRunStatus } from '@shepai/core/domain/generated/output';
+import { AgentRunStatus, BuildMode } from '@shepai/core/domain/generated/output';
 import {
   deriveNodeState,
   deriveProgress,
@@ -58,7 +58,9 @@ export function buildFeatureNodeData(
     summary: feature.description,
     userQuery: feature.userQuery,
     createdAt: feature.createdAt instanceof Date ? feature.createdAt.getTime() : feature.createdAt,
-    ...(feature.fast && { fastMode: true }),
+    ...(feature.buildMode === BuildMode.Fast && { fastMode: true }),
+    mode: feature.buildMode,
+    ...(feature.iterationCount > 0 && { iterationCount: feature.iterationCount }),
     approvalGates: feature.approvalGates,
     push: feature.push,
     openPr: feature.openPr,

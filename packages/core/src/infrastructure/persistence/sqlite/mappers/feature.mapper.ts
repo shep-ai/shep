@@ -95,6 +95,9 @@ export interface FeatureRow {
   bedrock_enabled: number;
   // Plugin activation overrides (JSON object: {pluginName: boolean})
   active_plugins: string | null;
+  // Exploration mode tracking
+  iteration_count: number | null;
+  max_iterations: number | null;
   // Soft delete
   deleted_at: number | null;
   created_at: number;
@@ -173,6 +176,9 @@ export function toDatabase(feature: Feature): FeatureRow {
       feature.activePlugins && Object.keys(feature.activePlugins).length > 0
         ? JSON.stringify(feature.activePlugins)
         : null,
+    // Exploration mode tracking
+    iteration_count: feature.iterationCount ?? 0,
+    max_iterations: feature.maxIterations ?? null,
     // Soft delete
     deleted_at:
       feature.deletedAt instanceof Date ? feature.deletedAt.getTime() : (feature.deletedAt ?? null),
@@ -262,6 +268,9 @@ export function fromDatabase(row: FeatureRow): Feature {
     ...(row.active_plugins != null && {
       activePlugins: JSON.parse(row.active_plugins) as Record<string, boolean>,
     }),
+    // Exploration mode tracking
+    iterationCount: row.iteration_count ?? 0,
+    ...(row.max_iterations != null && { maxIterations: row.max_iterations }),
     // Soft delete
     ...(row.deleted_at != null && { deletedAt: new Date(row.deleted_at) }),
   };

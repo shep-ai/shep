@@ -11,6 +11,8 @@
  *    user prompt.
  *  - `spec` runs the full spec-driven (SDD) pipeline, typically scoped to
  *    an existing Application via `Feature.applicationId`.
+ *  - `exploration` runs iterative prototyping with a feedback loop before
+ *    committing to full implementation.
  *
  * Lowercase string values are deliberate: they match the existing UI
  * `BuildMode` union and the existing `?mode=` URL param scheme, so
@@ -41,4 +43,12 @@ enum BuildMode {
    */
   @doc("Spec-driven (SDD) run, typically scoped to an existing Application")
   Spec: "spec",
+
+  /**
+   * Exploration mode — iterative prototyping with a feedback loop.
+   * The agent generates quick prototypes, interrupts for user feedback,
+   * and iterates until the user promotes to a full feature or discards.
+   */
+  @doc("Iterative prototyping with feedback loop before committing to implementation")
+  Exploration: "exploration",
 }

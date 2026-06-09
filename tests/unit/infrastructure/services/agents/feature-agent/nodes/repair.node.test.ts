@@ -70,6 +70,10 @@ function baseState(_overrides: Partial<FeatureAgentState> = {}): FeatureAgentSta
     securityMode: 'Disabled',
     securityActionDispositions: {},
     mcpConfigPath: undefined,
+    iterationCount: 0,
+    maxIterations: 10,
+    feedbackHistory: [],
+    explorationStatus: undefined,
   } as FeatureAgentState;
 }
 

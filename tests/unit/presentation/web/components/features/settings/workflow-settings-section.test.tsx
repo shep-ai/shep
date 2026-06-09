@@ -24,7 +24,7 @@ const defaultWorkflow = {
   commitEvidence: false,
   ciWatchEnabled: true,
   hideCiStatus: false,
-  defaultFastMode: true,
+  defaultMode: 'Fast',
 };
 
 describe('WorkflowSettingsSection', () => {

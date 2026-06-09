@@ -443,6 +443,14 @@ model Feature extends SoftDeletableEntity {
   @doc("Per-feature plugin activation overrides mapping plugin names to enabled state (JSON-serialized in DB)")
   activePlugins?: Record<boolean>;
 
+  // ── Exploration Mode ───────────────────────────────────────
+
+  @doc("Number of prototype iterations completed so far (incremented on each feedback loop)")
+  iterationCount?: integer;
+
+  @doc("Maximum exploration feedback iterations (default: 10, 0 = unlimited)")
+  maxIterations?: integer;
+
   // ── Pull Request Tracking ──────────────────────────────────
 
   @doc("Pull request data (null until PR created)")

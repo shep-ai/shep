@@ -30,6 +30,7 @@ export const LIFECYCLE_TO_NODE: Record<SdlcLifecycle, string> = {
   [SdlcLifecycle.Deleting]: 'blocked',
   [SdlcLifecycle.AwaitingUpstream]: 'merge',
   [SdlcLifecycle.Archived]: 'archived',
+  [SdlcLifecycle.Exploring]: 'prototype-generate',
 };
 
 /**

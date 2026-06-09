@@ -12,6 +12,7 @@ enum:
   - Maintain
   - Blocked
   - Pending
+  - Exploring
   - Deleting
   - AwaitingUpstream
   - Archived

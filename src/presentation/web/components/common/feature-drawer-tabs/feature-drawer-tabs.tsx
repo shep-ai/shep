@@ -21,6 +21,7 @@ import {
   RotateCcw,
   Zap,
   Layers,
+  FlaskConical,
 } from 'lucide-react';
 import type { NotificationEvent } from '@shepai/core/domain/generated/output';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -49,10 +50,12 @@ import { ProductDecisionsSummary } from '@/components/common/product-decisions-s
 import { MergeReview } from '@/components/common/merge-review';
 import { DrawerActionBar } from '@/components/common/drawer-action-bar';
 import type { RejectAttachment } from '@/components/common/drawer-action-bar';
+import type { BuildMode } from '@shepai/core/domain/generated/output';
 import { OverviewTab } from './overview-tab';
 import { ActivityTab } from './activity-tab';
 import { LogTab } from './log-tab';
 import { PlanTab } from './plan-tab';
+import { PrototypeTab } from './prototype-tab';
 import { ChatTab } from '@/components/features/chat/ChatTab';
 import { useFeatureLogs } from '@/hooks/use-feature-logs';
 import { useTabDataFetch } from './use-tab-data-fetch';
@@ -74,6 +77,7 @@ interface TabDef {
 /** All possible tabs in display order. */
 const ALL_TABS: TabDef[] = [
   { key: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { key: 'prototype', label: 'Prototype', icon: FlaskConical },
   { key: 'activity', label: 'Activity', icon: Activity },
   { key: 'log', label: 'Log', icon: ScrollText },
   { key: 'plan', label: 'Plan', icon: Map },
@@ -91,7 +95,17 @@ function computeVisibleTabs(
   interactiveAgentEnabled = true,
   bedrockIntegrationEnabled = false
 ): FeatureTabKey[] {
-  const tabs: FeatureTabKey[] = ['overview', 'activity'];
+  const tabs: FeatureTabKey[] = ['overview'];
+
+  // Exploration mode: show prototype tab, skip SDLC-specific tabs
+  if (node.lifecycle === 'exploring') {
+    tabs.push('prototype', 'activity');
+    if (node.hasAgentRun) tabs.push('log');
+    if (interactiveAgentEnabled) tabs.push('chat');
+    return tabs;
+  }
+
+  tabs.push('activity');
 
   if (node.hasAgentRun) {
     tabs.push('log');
@@ -194,6 +208,12 @@ export interface FeatureDrawerTabsProps {
   pinnedConfig?: FeatureDrawerPinnedConfig;
   continuationActionsDisabled?: boolean;
 
+  // Exploration / Prototype
+  onSubmitFeedback?: (feedback: string) => Promise<void>;
+  onPromote?: (targetMode: BuildMode.Application | BuildMode.Fast) => Promise<void>;
+  onDiscardExploration?: () => Promise<void>;
+  isPrototypeSubmitting?: boolean;
+
   // Interactive agent
   /** When false, the Chat tab is hidden from the tab bar (FR-17). Defaults to true. */
   interactiveAgentEnabled?: boolean;
@@ -256,6 +276,10 @@ export function FeatureDrawerTabs({
   pinnedConfig,
   continuationActionsDisabled = false,
   sseEvents,
+  onSubmitFeedback,
+  onPromote,
+  onDiscardExploration,
+  isPrototypeSubmitting,
   interactiveAgentEnabled = true,
   onRetry,
   onStop,
@@ -623,6 +647,19 @@ export function FeatureDrawerTabs({
             rebaseError={rebaseError}
           />
         </TabsContent>
+
+        {/* Prototype tab — visible for exploration features */}
+        {visibleTabs.includes('prototype') ? (
+          <TabsContent value="prototype" className="mt-0 flex-1 overflow-y-auto">
+            <PrototypeTab
+              data={featureNode}
+              onSubmitFeedback={onSubmitFeedback}
+              onPromote={onPromote}
+              onDiscard={onDiscardExploration}
+              isSubmitting={isPrototypeSubmitting}
+            />
+          </TabsContent>
+        ) : null}
 
         <TabsContent value="activity" className="mt-0 flex-1 overflow-y-auto">
           <ActivityTab

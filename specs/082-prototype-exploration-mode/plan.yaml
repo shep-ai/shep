@@ -1,0 +1,232 @@
+name: "prototype-exploration-mode"
+summary: >
+  Implementation plan for adding exploration/prototyping mode to Shep. The approach replaces
+  the boolean fast field with a FeatureMode enum (Regular, Fast, Exploration), adds an Exploring
+  lifecycle state, creates a new LangGraph exploration graph factory with interrupt-based feedback
+  loops, extends the Web UI with a three-way mode selector and prototype review drawer, adds CLI
+  commands for feedback and promotion, and performs an in-place database migration. The plan is
+  organized into 7 phases: domain foundation, persistence migration, agent graph infrastructure,
+  application use cases, CLI presentation, Web UI presentation, and settings integration.
+
+relatedFeatures:
+  - "052-fast-prompt-to-pr"
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "LangGraph (@langchain/langgraph)"
+  - "React / Next.js"
+  - "Commander.js"
+  - "shadcn/ui"
+  - "SQLite (better-sqlite3)"
+  - "tsyringe (DI)"
+  - "React Flow (@xyflow/react)"
+  - "Lucide React (icons)"
+  - "Storybook"
+  - "Vitest"
+
+relatedLinks:
+  - title: "LangGraph Interrupt/Resume Documentation"
+    url: "https://langchain-ai.github.io/langgraphjs/how-tos/human_in_the_loop/breakpoints/"
+  - title: "LangGraph Annotation State Channels"
+    url: "https://langchain-ai.github.io/langgraphjs/concepts/low_level/"
+  - title: "TypeSpec Enum Documentation"
+    url: "https://typespec.io/docs/language-basics/enums"
+
+phases:
+  - id: "phase-1"
+    name: "Domain Foundation (TypeSpec + Generated Code)"
+    description: "Define FeatureMode enum and Exploring lifecycle state in TypeSpec, add iteration fields to Feature entity, compile to TypeScript. This phase is the prerequisite for all other work since every layer depends on these domain types."
+    parallel: false
+
+  - id: "phase-2"
+    name: "Persistence Migration (Boolean-to-Enum + Schema)"
+    description: "Create SQLite migration to replace the boolean fast column with a TEXT mode column, update the feature mapper from boolean to enum mapping, and update repository queries. This phase must follow domain types and precede any runtime code that reads mode."
+    parallel: false
+
+  - id: "phase-3"
+    name: "Agent Graph Infrastructure (Exploration Graph + Worker Routing)"
+    description: "Build the exploration agent graph factory with prototype-generate and apply-feedback nodes, extend FeatureAgentAnnotation with exploration state channels, create the exploration prompt builder, and update worker routing from --fast boolean to --mode enum. This is the core runtime engine for exploration mode."
+    parallel: false
+
+  - id: "phase-4"
+    name: "Application Use Cases (Create + Promote + Discard)"
+    description: "Extend CreateFeatureUseCase to handle exploration mode (Exploring lifecycle, minimal spec, exploration graph spawning), create PromoteExplorationUseCase for in-place mode transition, and extend discard/delete logic for exploration cleanup."
+    parallel: false
+
+  - id: "phase-5"
+    name: "CLI Presentation (Commands + Flags)"
+    description: "Add --explore flag to feat new, create feat feedback and feat promote subcommands, update workflow defaults from boolean fast to mode enum. CLI is addressed before Web UI because it is thinner and validates the use case API surface."
+    parallel: false
+
+  - id: "phase-6"
+    name: "Web UI Presentation (Mode Selector + Canvas + Drawer)"
+    description: "Replace the fast toggle with a three-way mode selector (ToggleGroup), add exploring state config for canvas nodes with amber styling and FlaskConical icon, create prototype review drawer tab with diff view and feedback input, and add promote/discard actions."
+    parallel: false
+
+  - id: "phase-7"
+    name: "Settings Integration + Polish"
+    description: "Replace workflow.defaultFastMode boolean with workflow.defaultMode enum in TypeSpec and settings service, add explorationMaxIterations setting, wire defaults into CLI and Web UI, and perform end-to-end integration testing."
+    parallel: false
+
+filesToCreate:
+  - "tsp/common/enums/feature-mode.tsp"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/051-replace-fast-with-mode.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/exploration-agent-graph.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/exploration-agent-graph.test.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/nodes/prototype-generate.node.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/nodes/prototype-generate.node.test.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/nodes/apply-feedback.node.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/nodes/apply-feedback.node.test.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/nodes/prompts/apply-feedback.prompt.ts"
+  - "packages/core/src/application/use-cases/features/promote/promote-exploration.use-case.ts"
+  - "packages/core/src/application/use-cases/features/promote/promote-exploration.use-case.test.ts"
+  - "packages/core/src/presentation/cli/commands/feat/feedback.command.ts"
+  - "packages/core/src/presentation/cli/commands/feat/promote.command.ts"
+  - "packages/core/src/presentation/web/components/common/feature-drawer-tabs/tabs/prototype-tab.tsx"
+  - "packages/core/src/presentation/web/components/common/feature-drawer-tabs/tabs/prototype-tab.stories.tsx"
+  - "packages/core/src/presentation/web/components/common/feature-create-drawer/mode-selector.tsx"
+  - "packages/core/src/presentation/web/components/common/feature-create-drawer/mode-selector.stories.tsx"
+
+filesToModify:
+  - "tsp/domain/entities/feature.tsp"
+  - "tsp/common/enums/lifecycle.tsp"
+  - "tsp/domain/entities/settings.tsp"
+  - "packages/core/src/domain/generated/output.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/feature.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/feature.mapper.test.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/index.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/state.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-worker.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-process.service.ts"
+  - "packages/core/src/infrastructure/services/spec/spec-initializer.service.ts"
+  - "packages/core/src/application/use-cases/features/create/create-feature.use-case.ts"
+  - "packages/core/src/application/use-cases/features/create/create-feature.use-case.test.ts"
+  - "packages/core/src/presentation/cli/commands/feat/new.command.ts"
+  - "packages/core/src/presentation/cli/commands/feat/index.ts"
+  - "packages/core/src/presentation/web/components/common/feature-create-drawer/feature-create-drawer.tsx"
+  - "packages/core/src/presentation/web/components/common/feature-node/feature-node-state-config.ts"
+  - "packages/core/src/presentation/web/components/common/feature-node/feature-node.tsx"
+  - "packages/core/src/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.tsx"
+  - "packages/core/src/infrastructure/services/settings/settings-defaults.factory.ts"
+
+openQuestions: []
+
+content: |
+  ## Architecture Overview
+
+  Exploration mode is a third workflow mode alongside Regular (full SDLC) and Fast (direct
+  implementation). It follows the same architectural patterns already established for fast mode:
+  a dedicated LangGraph graph factory, worker routing based on a mode flag, and presentation-layer
+  toggles that map to a domain enum.
+
+  The key architectural insight is that exploration differs from fast mode in exactly two ways:
+  (1) graph topology — exploration loops via interrupt/resume for feedback instead of running
+  a single pass, and (2) lifecycle state — exploration uses a dedicated Exploring state instead
+  of jumping straight to Implementation. Everything else — worktree isolation, agent execution,
+  canvas rendering, feature entity storage — is reused as-is.
+
+  The implementation layers out cleanly across Clean Architecture:
+  - **Domain (TypeSpec)**: FeatureMode enum, Exploring lifecycle state, iteration fields
+  - **Application**: Extended CreateFeatureUseCase, new PromoteExplorationUseCase
+  - **Infrastructure**: Exploration graph factory, exploration nodes, worker routing, migration
+  - **Presentation**: CLI flags/commands, Web UI mode selector and prototype drawer tab
+
+  ## Key Design Decisions
+
+  ### 1. FeatureMode Enum Replacing Boolean fast Field
+
+  The boolean `fast` field on Feature is replaced with a `FeatureMode` enum
+  (`Regular`, `Fast`, `Exploration`). This prevents the invalid state space that two booleans
+  would create (fast=true AND exploration=true) and scales cleanly to future modes. The enum
+  is defined in TypeSpec and auto-generates to TypeScript. The database migration maps
+  `fast=1` to `'Fast'` and `fast=0` to `'Regular'`.
+
+  **Trade-off**: This is a cross-cutting migration that touches mapper, repository, use cases,
+  CLI, and Web UI. However, it is a one-time cost that pays for itself in domain correctness
+  and prevents an entire category of bugs.
+
+  ### 2. Exploring Lifecycle State
+
+  A dedicated `Exploring` state is added to `SdlcLifecycle` rather than reusing `Started` or
+  `Implementation`. The lifecycle enum is used directly by canvas node styling, drawer tab
+  visibility, SSE event mapping, and worker lifecycle updates. A dedicated state ensures all
+  these systems handle exploration correctly without special-case boolean checks.
+
+  Valid transitions from Exploring:
+  - `Exploring -> Implementation` (promote to fast — skip SDLC)
+  - `Exploring -> Requirements` (promote to regular — full SDLC from requirements)
+  - `Exploring -> Deleting` (discard exploration)
+  - Self-loop for feedback iterations (lifecycle stays Exploring)
+
+  ### 3. New Graph Factory with Looping Topology
+
+  A third graph factory `createExplorationAgentGraph()` is created alongside the existing
+  `createFeatureAgentGraph()` and `createFastFeatureAgentGraph()`. The topology is:
+  `START -> prototype-generate -> interrupt(feedback) -> [apply-feedback -> prototype-generate]* -> END`.
+
+  The graph uses custom node functions rather than the `executeNode()` factory because
+  `executeNode()` is tightly coupled to the approval gate pattern (completedPhases,
+  shouldInterrupt, _approvalAction). The exploration nodes reuse lower-level shared utilities
+  (retryExecute, createNodeLogger, recordPhaseStart/End) for clean separation.
+
+  ### 4. Interrupt/Resume for Feedback Loop
+
+  The feedback loop reuses the existing LangGraph `interrupt()` and `Command({resume, update})`
+  pattern proven by approval gates. The resume payload extends to support three actions:
+  `{action: 'iterate', feedback: string}`, `{action: 'promote', targetMode: 'Regular'|'Fast'}`,
+  and `{action: 'discard'}`. This avoids building a new communication channel and preserves
+  full agent context across iterations via LangGraph checkpointing.
+
+  ### 5. In-Place Mode Transition for Promotion
+
+  Promoting an exploration to a real feature is a state transition, not an entity migration.
+  The PromoteExplorationUseCase changes mode (Exploration -> Regular or Fast), transitions
+  lifecycle (Exploring -> Requirements or Implementation), optionally scaffolds missing spec
+  YAMLs, and spawns the appropriate agent graph. The worktree and prototype code are preserved.
+
+  ### 6. Web UI Mode Selector
+
+  The binary fast-mode Switch toggle is replaced with a three-option SegmentedControl
+  (shadcn/ui ToggleGroup with type='single'). Each option has an icon (ClipboardList, Zap,
+  FlaskConical) and label. When Explore is selected, approval gates are hidden entirely.
+
+  ### 7. Iteration Count on Feature Entity
+
+  The iteration count is persisted on the Feature entity (not just in graph state) so the
+  Web UI can read it through the standard feature data flow without accessing checkpoint DBs.
+  The graph nodes update the feature record after each iteration.
+
+  ## Implementation Strategy
+
+  The phases are ordered by dependency:
+
+  1. **Domain first** — TypeSpec enums and entity fields must exist before any code references them.
+  2. **Persistence second** — The database schema must match the new domain model before runtime
+     code can read/write features.
+  3. **Agent graph third** — The exploration graph factory and nodes must exist before use cases
+     can spawn them.
+  4. **Use cases fourth** — Create/Promote/Discard use cases depend on domain types, persistence,
+     and graph infrastructure.
+  5. **CLI fifth** — CLI commands are thin wrappers around use cases; implementing them validates
+     the use case API.
+  6. **Web UI sixth** — Web UI is the richest presentation layer; it builds on the same use cases
+     with additional visual components.
+  7. **Settings last** — Settings integration wires defaults into both CLI and Web UI, making it
+     a natural final phase.
+
+  Within each phase, work proceeds in TDD cycles: write a failing test that asserts the new
+  behavior, implement the minimum code to pass, then refactor for quality.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Boolean-to-enum migration breaks existing features | Migration maps fast=1 to Fast and fast=0 to Regular with explicit verification. Integration test confirms existing features continue to work post-migration. |
+  | Exploration graph feedback loop runs indefinitely | Configurable iteration limit (default 10) in settings. Graph notifies user when approaching limit and forces promote/discard at max. |
+  | Context window degradation over many iterations | Prompt builder summarizes older feedback history instead of including full text. Only the latest 3 iterations get full context; earlier rounds get single-line summaries. |
+  | Checkpoint database grows with iterations | Each checkpoint is ~10-50KB. Even 20+ iterations produce negligible impact. Discarded explorations trigger checkpoint cleanup. |
+  | Worker crash during feedback loop loses state | LangGraph checkpointing persists state after each node. Resume-from-interrupt recovers from the last checkpoint automatically. |
+  | ToggleGroup mode selector confuses existing users | Default mode matches existing behavior (Fast if defaultFastMode was true). The switch-to-ToggleGroup change preserves the user's current default. |
+  | Parallel development risk from XL feature size | Phases are independent enough to be developed sequentially with clear boundaries. Each phase has its own test suite that validates before moving on. |
