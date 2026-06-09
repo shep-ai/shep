@@ -21,4 +21,7 @@ enum:
   - agent_message_blocked
   - supervisor_escalated
   - supervisor_failed
+  - workflow_started
+  - workflow_completed
+  - workflow_failed
 description: Types of agent lifecycle notification events

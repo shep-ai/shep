@@ -1,0 +1,925 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "scheduled-workflows"
+summary: >
+  30 tasks across 5 phases implementing the scheduled-workflows feature end-to-end,
+  from TypeSpec domain models through SQLite persistence, application use cases,
+  scheduler service, CLI commands, and web UI management page. Each code task
+  includes TDD cycles (red-green-refactor). Estimated total: 32-40 hours.
+
+relatedFeatures: []
+technologies:
+  - "TypeSpec"
+  - "croner v10.x"
+  - "better-sqlite3"
+  - "tsyringe"
+  - "umzug"
+  - "Commander.js"
+  - "cli-table3"
+  - "Next.js App Router"
+  - "shadcn/ui"
+  - "Vitest"
+relatedLinks:
+  - title: "croner npm package"
+    url: "https://www.npmjs.com/package/croner"
+
+tasks:
+  # ═══════════════════════════════════════════════════════════════════
+  # Phase 1: Domain Foundation
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Install croner dependency"
+    description: >
+      Add croner v10.x to the @shepai/core package dependencies. This is the
+      cron expression parsing, validation, and next-run calculation library
+      used by the scheduler service and the ScheduleWorkflow use case.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "croner v10.x is listed in packages/core/package.json dependencies"
+      - "pnpm install completes successfully with no conflicts"
+      - "croner can be imported in a test file and Cron constructor works"
+    tdd: null
+    estimatedEffort: "15min"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Define WorkflowTriggerType and WorkflowExecutionStatus enums in TypeSpec"
+    description: >
+      Create tsp/common/enums/scheduled-workflow.tsp with WorkflowTriggerType
+      (Manual, Scheduled) and WorkflowExecutionStatus (Queued, Running, Completed,
+      Failed, Cancelled) enums following the existing @doc decorator pattern in
+      notification.tsp. Register in tsp/common/enums/index.tsp.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "tsp/common/enums/scheduled-workflow.tsp exists with both enums"
+      - "Each enum value has a @doc decorator"
+      - "Enums use string values matching snake_case convention"
+      - "tsp/common/enums/index.tsp imports the new file"
+      - "pnpm tsp:compile succeeds"
+    tdd: null
+    estimatedEffort: "20min"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Define ScheduledWorkflow entity in TypeSpec"
+    description: >
+      Create tsp/domain/entities/scheduled-workflow.tsp with the ScheduledWorkflow
+      model extending SoftDeletableEntity. Fields: name (string), description
+      (optional string), prompt (string), toolConstraints (optional string array),
+      cronExpression (optional string), timezone (optional string), enabled
+      (boolean), lastRunAt (optional utcDateTime), nextRunAt (optional utcDateTime),
+      repositoryPath (string). Register in tsp/domain/entities/index.tsp.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "tsp/domain/entities/scheduled-workflow.tsp exists with correct fields"
+      - "Model extends SoftDeletableEntity"
+      - "All fields have @doc decorators"
+      - "tsp/domain/entities/index.tsp imports the new file"
+      - "pnpm tsp:compile succeeds and ScheduledWorkflow appears in output.ts"
+    tdd: null
+    estimatedEffort: "20min"
+
+  - id: "task-4"
+    phaseId: "phase-1"
+    title: "Define WorkflowExecution entity in TypeSpec"
+    description: >
+      Create tsp/domain/entities/workflow-execution.tsp with the WorkflowExecution
+      model extending BaseEntity. Fields: workflowId (UUID), triggerType
+      (WorkflowTriggerType), status (WorkflowExecutionStatus), startedAt
+      (utcDateTime), completedAt (optional utcDateTime), durationMs (optional
+      integer), outputSummary (optional string), errorMessage (optional string).
+      Register in tsp/domain/entities/index.tsp.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "tsp/domain/entities/workflow-execution.tsp exists with correct fields"
+      - "Model extends BaseEntity (not SoftDeletableEntity)"
+      - "References WorkflowTriggerType and WorkflowExecutionStatus enums"
+      - "tsp/domain/entities/index.tsp imports the new file"
+      - "pnpm tsp:compile succeeds and WorkflowExecution appears in output.ts"
+    tdd: null
+    estimatedEffort: "20min"
+
+  - id: "task-5"
+    phaseId: "phase-1"
+    title: "Create IClock port interface"
+    description: >
+      Define the IClock interface in the application ports layer with a single
+      now(): Date method. Create a RealClock implementation in the infrastructure
+      services layer. This enables deterministic testing of time-dependent logic
+      in the scheduler service without vi.useFakeTimers().
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "IClock interface exists at application/ports/output/services/clock.interface.ts"
+      - "RealClock implementation exists at infrastructure/services/clock.ts"
+      - "RealClock.now() returns new Date()"
+    tdd:
+      red:
+        - "Write test asserting RealClock.now() returns a Date close to Date.now()"
+      green:
+        - "Implement IClock interface and RealClock class"
+      refactor:
+        - "Ensure IClock is exported from the ports barrel file if one exists"
+    estimatedEffort: "15min"
+
+  - id: "task-6"
+    phaseId: "phase-1"
+    title: "Extend NotificationEventType enum with workflow events"
+    description: >
+      Add WorkflowStarted, WorkflowCompleted, and WorkflowFailed variants to the
+      NotificationEventType enum in tsp/common/enums/notification.tsp. These events
+      will be emitted by the scheduler service during workflow execution.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "NotificationEventType enum has WorkflowStarted, WorkflowCompleted, WorkflowFailed"
+      - "Each new variant has a @doc decorator and string value (e.g., workflow_started)"
+      - "pnpm tsp:compile succeeds"
+    tdd: null
+    estimatedEffort: "10min"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Phase 2: Persistence Layer
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: "task-7"
+    phaseId: "phase-2"
+    title: "Create SQLite migration 044 for workflow tables"
+    description: >
+      Create migration 044-create-scheduled-workflows.ts with CREATE TABLE statements
+      for scheduled_workflows and workflow_executions tables. Follow the umzug
+      up/down pattern. Include indexes on workflow_id, started_at, and composite
+      (status, started_at) for the executions table. Use CREATE TABLE IF NOT EXISTS
+      for idempotency.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+      - "task-4"
+    acceptanceCriteria:
+      - "Migration file exists at the correct path"
+      - "scheduled_workflows table has all required columns with correct types"
+      - "workflow_executions table has all required columns with correct types"
+      - "Foreign key from workflow_executions.workflow_id to scheduled_workflows.id exists"
+      - "Three indexes exist on workflow_executions"
+      - "Migration runs successfully on a fresh database"
+      - "Migration is idempotent (running twice does not error)"
+    tdd:
+      red:
+        - "Write integration test that runs migration on in-memory SQLite and asserts both tables exist with correct columns"
+      green:
+        - "Implement the migration with CREATE TABLE IF NOT EXISTS and CREATE INDEX IF NOT EXISTS"
+      refactor:
+        - "Verify column types and constraints match the domain model spec"
+    estimatedEffort: "45min"
+
+  - id: "task-8"
+    phaseId: "phase-2"
+    title: "Create workflow mapper (toDatabase/fromDatabase)"
+    description: >
+      Create workflow.mapper.ts with ScheduledWorkflowRow type and bidirectional
+      mapper functions following the feature.mapper.ts pattern. Handle camelCase to
+      snake_case conversion, dates as unix milliseconds, booleans as 0/1 integers,
+      and toolConstraints as JSON-serialized string array.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "ScheduledWorkflowRow interface defined with snake_case column names"
+      - "toDatabase() correctly maps ScheduledWorkflow to ScheduledWorkflowRow"
+      - "fromDatabase() correctly maps ScheduledWorkflowRow to ScheduledWorkflow"
+      - "Dates converted to/from unix milliseconds"
+      - "Boolean enabled field converted to/from 0/1"
+      - "toolConstraints serialized as JSON string, deserialized as string array"
+      - "Optional fields handled correctly (null in DB for undefined in domain)"
+    tdd:
+      red:
+        - "Write test: toDatabase() with a full ScheduledWorkflow object produces correct row with snake_case keys, unix ms dates, 0/1 boolean, JSON toolConstraints"
+        - "Write test: fromDatabase() with a full row produces correct domain object with camelCase keys, Date objects, boolean, parsed array"
+        - "Write test: round-trip toDatabase(fromDatabase(row)) preserves data"
+        - "Write test: optional fields (null cronExpression, null toolConstraints) handled correctly"
+      green:
+        - "Implement toDatabase() and fromDatabase() functions"
+      refactor:
+        - "Extract any shared date/boolean conversion helpers if duplicated with existing mappers"
+    estimatedEffort: "45min"
+
+  - id: "task-9"
+    phaseId: "phase-2"
+    title: "Create workflow execution mapper (toDatabase/fromDatabase)"
+    description: >
+      Create workflow-execution.mapper.ts with WorkflowExecutionRow type and
+      bidirectional mapper functions. Handle camelCase to snake_case, dates as unix
+      milliseconds, and enum string values.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+    acceptanceCriteria:
+      - "WorkflowExecutionRow interface defined with snake_case column names"
+      - "toDatabase() correctly maps WorkflowExecution to WorkflowExecutionRow"
+      - "fromDatabase() correctly maps WorkflowExecutionRow to WorkflowExecution"
+      - "Dates converted to/from unix milliseconds"
+      - "Enum values passed through as strings"
+      - "Optional fields (completedAt, durationMs, outputSummary, errorMessage) handle null"
+    tdd:
+      red:
+        - "Write test: toDatabase() with a completed execution produces correct row"
+        - "Write test: fromDatabase() with a row produces correct domain object"
+        - "Write test: optional fields (null completedAt, null durationMs) handled correctly"
+        - "Write test: round-trip preserves data integrity"
+      green:
+        - "Implement toDatabase() and fromDatabase() functions"
+      refactor:
+        - "Ensure consistent patterns with workflow.mapper.ts"
+    estimatedEffort: "30min"
+
+  - id: "task-10"
+    phaseId: "phase-2"
+    title: "Define IWorkflowRepository port interface"
+    description: >
+      Create the IWorkflowRepository interface in the application ports layer
+      following the IFeatureRepository pattern. Methods: create, findById,
+      findByName (with repositoryPath), findEnabled, list (with optional filters),
+      update, softDelete. Export from the repositories barrel file.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "Interface file exists at application/ports/output/repositories/"
+      - "All 7 methods are defined with correct parameter and return types"
+      - "WorkflowListFilters type defined for the list() method"
+      - "Exported from the repositories index.ts barrel"
+    tdd: null
+    estimatedEffort: "20min"
+
+  - id: "task-11"
+    phaseId: "phase-2"
+    title: "Define IWorkflowExecutionRepository port interface"
+    description: >
+      Create the IWorkflowExecutionRepository interface in the application ports
+      layer. Methods: create, findById, findByWorkflowId (with optional limit),
+      findByStatus, update, deleteOlderThan (returns count of deleted records).
+      Export from the repositories barrel file.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+    acceptanceCriteria:
+      - "Interface file exists at application/ports/output/repositories/"
+      - "All 6 methods are defined with correct parameter and return types"
+      - "deleteOlderThan returns Promise<number> for cleanup reporting"
+      - "Exported from the repositories index.ts barrel"
+    tdd: null
+    estimatedEffort: "15min"
+
+  - id: "task-12"
+    phaseId: "phase-2"
+    title: "Implement SQLiteWorkflowRepository"
+    description: >
+      Implement the IWorkflowRepository interface using better-sqlite3 with
+      prepared statements. Follow the SQLiteFeatureRepository pattern with
+      @injectable() decorator and Database constructor injection. Use the
+      workflow mapper for all conversions. Support soft-delete via deleted_at
+      column (WHERE deleted_at IS NULL in reads).
+    state: "Todo"
+    dependencies:
+      - "task-7"
+      - "task-8"
+      - "task-10"
+    acceptanceCriteria:
+      - "Class implements IWorkflowRepository"
+      - "All 7 methods work correctly against SQLite"
+      - "findByName scopes by repositoryPath and excludes soft-deleted records"
+      - "findEnabled returns only enabled, non-deleted workflows"
+      - "list supports optional filters (repositoryPath, enabled state)"
+      - "softDelete sets deleted_at timestamp, does not remove the row"
+      - "All queries use prepared statements"
+    tdd:
+      red:
+        - "Write test: create() inserts a workflow, findById() retrieves it"
+        - "Write test: findByName() returns workflow by name+repoPath, null for non-existent"
+        - "Write test: findEnabled() returns only enabled non-deleted workflows"
+        - "Write test: list() returns all non-deleted workflows, respects filters"
+        - "Write test: update() modifies fields correctly"
+        - "Write test: softDelete() sets deleted_at, findById() returns null after soft delete"
+      green:
+        - "Implement all repository methods with prepared statements and mapper"
+      refactor:
+        - "Extract common query patterns, ensure consistent error handling"
+    estimatedEffort: "1h30min"
+
+  - id: "task-13"
+    phaseId: "phase-2"
+    title: "Implement SQLiteWorkflowExecutionRepository"
+    description: >
+      Implement the IWorkflowExecutionRepository interface using better-sqlite3.
+      Follow the same patterns as SQLiteWorkflowRepository. The deleteOlderThan
+      method uses a DELETE WHERE started_at < ? query for retention cleanup.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+      - "task-9"
+      - "task-11"
+    acceptanceCriteria:
+      - "Class implements IWorkflowExecutionRepository"
+      - "All 6 methods work correctly against SQLite"
+      - "findByWorkflowId returns executions ordered by started_at DESC with optional limit"
+      - "findByStatus returns executions matching the given status"
+      - "deleteOlderThan removes records and returns the count"
+    tdd:
+      red:
+        - "Write test: create() inserts execution, findById() retrieves it"
+        - "Write test: findByWorkflowId() returns executions for a workflow, ordered by started_at DESC"
+        - "Write test: findByWorkflowId() respects limit parameter"
+        - "Write test: findByStatus() returns only matching executions"
+        - "Write test: update() modifies status and completedAt correctly"
+        - "Write test: deleteOlderThan() removes old records and returns count"
+      green:
+        - "Implement all repository methods with prepared statements and mapper"
+      refactor:
+        - "Ensure index usage for findByWorkflowId and deleteOlderThan queries"
+    estimatedEffort: "1h"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Phase 3: Application Logic and Scheduler Service
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: "task-14"
+    phaseId: "phase-3"
+    title: "Implement CreateWorkflowUseCase"
+    description: >
+      Create the use case that validates workflow name uniqueness within a
+      repository, validates optional cron expression using croner, generates a
+      UUID, calculates nextRunAt if a cron expression is provided, and persists
+      via IWorkflowRepository. Follow the @injectable() pattern with @inject
+      tokens.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+      - "task-1"
+    acceptanceCriteria:
+      - "Validates name uniqueness within the same repositoryPath"
+      - "Validates cron expression via croner (rejects invalid expressions with clear error)"
+      - "Calculates nextRunAt from cron expression if provided"
+      - "Generates UUID for the new workflow"
+      - "Persists workflow via IWorkflowRepository.create()"
+      - "Returns the created ScheduledWorkflow"
+    tdd:
+      red:
+        - "Write test: execute() with valid input creates and returns workflow"
+        - "Write test: execute() with duplicate name throws error"
+        - "Write test: execute() with invalid cron expression throws descriptive error"
+        - "Write test: execute() with cron expression calculates nextRunAt"
+        - "Write test: execute() without cron expression leaves nextRunAt null"
+      green:
+        - "Implement CreateWorkflowUseCase with validation, cron parsing, and persistence"
+      refactor:
+        - "Extract cron validation helper for reuse in ScheduleWorkflowUseCase"
+    estimatedEffort: "1h"
+
+  - id: "task-15"
+    phaseId: "phase-3"
+    title: "Implement UpdateWorkflowUseCase"
+    description: >
+      Create the use case that updates an existing workflow's name, description,
+      prompt, or tool constraints. If the name is changed, validate uniqueness.
+      If the cron expression or timezone is changed, recalculate nextRunAt.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "Finds existing workflow by ID, throws if not found"
+      - "Updates only provided fields (partial update)"
+      - "Validates new name uniqueness if name is changed"
+      - "Recalculates nextRunAt if cron expression or timezone changes"
+      - "Persists updated workflow via IWorkflowRepository.update()"
+    tdd:
+      red:
+        - "Write test: execute() updates description successfully"
+        - "Write test: execute() with name change validates uniqueness"
+        - "Write test: execute() with non-existent ID throws error"
+        - "Write test: execute() with cron change recalculates nextRunAt"
+      green:
+        - "Implement UpdateWorkflowUseCase"
+      refactor:
+        - "Share cron validation logic with CreateWorkflowUseCase"
+    estimatedEffort: "45min"
+
+  - id: "task-16"
+    phaseId: "phase-3"
+    title: "Implement DeleteWorkflowUseCase"
+    description: >
+      Create the use case that soft-deletes a workflow. Cancels any pending
+      queued executions by marking them as cancelled. Preserves execution history
+      (subject to retention policy).
+    state: "Todo"
+    dependencies:
+      - "task-10"
+      - "task-11"
+    acceptanceCriteria:
+      - "Finds workflow by name or ID, throws if not found"
+      - "Soft-deletes workflow via IWorkflowRepository.softDelete()"
+      - "Marks any queued executions for this workflow as cancelled"
+      - "Returns confirmation with workflow name"
+    tdd:
+      red:
+        - "Write test: execute() soft-deletes workflow"
+        - "Write test: execute() cancels queued executions for the workflow"
+        - "Write test: execute() with non-existent name throws error"
+      green:
+        - "Implement DeleteWorkflowUseCase"
+      refactor:
+        - "Ensure atomic operation for delete + cancel queued"
+    estimatedEffort: "30min"
+
+  - id: "task-17"
+    phaseId: "phase-3"
+    title: "Implement ListWorkflowsUseCase and GetWorkflowUseCase"
+    description: >
+      Create two simple use cases: ListWorkflowsUseCase returns all workflows
+      for a repository path with optional filters. GetWorkflowUseCase finds a
+      single workflow by name or ID.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "ListWorkflowsUseCase returns workflows filtered by repositoryPath"
+      - "ListWorkflowsUseCase supports optional enabled filter"
+      - "GetWorkflowUseCase finds by name+repoPath or by ID"
+      - "GetWorkflowUseCase throws descriptive error if not found"
+    tdd:
+      red:
+        - "Write test: ListWorkflows returns all workflows for a repo path"
+        - "Write test: ListWorkflows filters by enabled state"
+        - "Write test: GetWorkflow finds by name and repoPath"
+        - "Write test: GetWorkflow finds by ID"
+        - "Write test: GetWorkflow throws for non-existent workflow"
+      green:
+        - "Implement both use cases"
+      refactor:
+        - "Ensure consistent error message format across use cases"
+    estimatedEffort: "30min"
+
+  - id: "task-18"
+    phaseId: "phase-3"
+    title: "Implement ScheduleWorkflowUseCase"
+    description: >
+      Create the use case that sets, updates, or removes a cron schedule on a
+      workflow. Validates the cron expression using croner. Calculates nextRunAt.
+      Removing a schedule (null cron) clears cronExpression and nextRunAt.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+      - "task-1"
+    acceptanceCriteria:
+      - "Sets cron expression and timezone on the workflow"
+      - "Validates cron expression via croner"
+      - "Calculates and sets nextRunAt based on cron expression and optional timezone"
+      - "Passing null cron expression removes the schedule (clears cron and nextRunAt)"
+      - "Returns the updated workflow"
+    tdd:
+      red:
+        - "Write test: execute() sets cron expression and calculates nextRunAt"
+        - "Write test: execute() with timezone calculates nextRunAt in that timezone"
+        - "Write test: execute() with null cron clears schedule"
+        - "Write test: execute() with invalid cron throws descriptive error"
+        - "Write test: execute() with non-existent workflow throws error"
+      green:
+        - "Implement ScheduleWorkflowUseCase"
+      refactor:
+        - "Reuse cron validation helper from CreateWorkflowUseCase"
+    estimatedEffort: "45min"
+
+  - id: "task-19"
+    phaseId: "phase-3"
+    title: "Implement ToggleWorkflowUseCase"
+    description: >
+      Create the use case that enables or disables a workflow's schedule. When
+      enabling, recalculate nextRunAt from the cron expression. When disabling,
+      preserve the cron expression but the scheduler will skip it.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "Finds workflow by name or ID, throws if not found"
+      - "Sets enabled to true or false"
+      - "When enabling, recalculates nextRunAt if cron expression exists"
+      - "Returns the updated workflow"
+    tdd:
+      red:
+        - "Write test: execute(enable=true) enables workflow and recalculates nextRunAt"
+        - "Write test: execute(enable=false) disables workflow"
+        - "Write test: execute() with non-existent workflow throws error"
+        - "Write test: enabling workflow without cron expression succeeds but nextRunAt stays null"
+      green:
+        - "Implement ToggleWorkflowUseCase"
+      refactor:
+        - "Share nextRunAt calculation logic"
+    estimatedEffort: "30min"
+
+  - id: "task-20"
+    phaseId: "phase-3"
+    title: "Implement RunWorkflowUseCase"
+    description: >
+      Create the use case that manually triggers a workflow execution. Creates a
+      WorkflowExecution record with triggerType=Manual and status=Queued, then
+      signals the scheduler service to process the queue. This use case does NOT
+      execute the workflow directly — the scheduler handles actual execution.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+      - "task-11"
+    acceptanceCriteria:
+      - "Finds workflow by name or ID, throws if not found"
+      - "Creates WorkflowExecution with Manual trigger type and Queued status"
+      - "Returns the created execution record"
+      - "Works on both enabled and disabled workflows (manual trigger always allowed)"
+    tdd:
+      red:
+        - "Write test: execute() creates a queued execution with Manual trigger"
+        - "Write test: execute() works on disabled workflows"
+        - "Write test: execute() with non-existent workflow throws error"
+      green:
+        - "Implement RunWorkflowUseCase"
+      refactor:
+        - "Ensure execution ID is a UUID"
+    estimatedEffort: "30min"
+
+  - id: "task-21"
+    phaseId: "phase-3"
+    title: "Implement GetWorkflowHistoryUseCase"
+    description: >
+      Create the use case that returns paginated execution history for a workflow.
+      Returns executions ordered by started_at DESC with an optional limit.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+      - "task-11"
+    acceptanceCriteria:
+      - "Finds workflow by name or ID, throws if not found"
+      - "Returns execution history ordered by started_at DESC"
+      - "Supports a limit parameter (default 20)"
+      - "Returns empty array for workflows with no execution history"
+    tdd:
+      red:
+        - "Write test: execute() returns executions ordered by most recent first"
+        - "Write test: execute() respects limit parameter"
+        - "Write test: execute() returns empty array for new workflow"
+        - "Write test: execute() with non-existent workflow throws error"
+      green:
+        - "Implement GetWorkflowHistoryUseCase"
+      refactor:
+        - "Consider adding pagination cursor support for future enhancement"
+    estimatedEffort: "20min"
+
+  - id: "task-22"
+    phaseId: "phase-3"
+    title: "Implement WorkflowSchedulerService"
+    description: >
+      Build the core scheduler service following the NotificationWatcherService
+      pattern. Implements start()/stop()/isRunning() lifecycle. Polls every 60s
+      (configurable). Each tick: queries enabled workflows with nextRunAt <= now,
+      enqueues them, dequeues and executes one at a time, updates nextRunAt. Uses
+      injectable IClock for deterministic testing. Includes crash recovery on
+      startup (marks stale running executions as failed) and retention cleanup
+      (every 100 ticks). Emits notification events for workflow start/complete/fail.
+    state: "Todo"
+    dependencies:
+      - "task-5"
+      - "task-10"
+      - "task-11"
+      - "task-6"
+    acceptanceCriteria:
+      - "Follows start()/stop()/isRunning() pattern from NotificationWatcherService"
+      - "Polls at configurable interval (default 60s)"
+      - "First poll runs immediately on start()"
+      - "Queries enabled workflows where nextRunAt <= clock.now()"
+      - "Enqueues due workflows into FIFO queue"
+      - "Executes one workflow at a time (sequential)"
+      - "Updates workflow lastRunAt and nextRunAt after execution"
+      - "Creates WorkflowExecution records with correct status transitions"
+      - "Marks stale running executions as failed on startup (crash recovery)"
+      - "Runs retention cleanup every 100 ticks"
+      - "Emits WorkflowStarted, WorkflowCompleted, WorkflowFailed notification events"
+      - "Uses IClock for all time operations (no direct Date.now())"
+      - "Graceful stop() clears interval and does not interrupt running execution"
+    tdd:
+      red:
+        - "Write test: start() begins polling, stop() stops polling"
+        - "Write test: poll() queries due workflows and enqueues them"
+        - "Write test: poll() executes one queued workflow per tick"
+        - "Write test: execution creates WorkflowExecution with Running status, updates to Completed on success"
+        - "Write test: failed execution sets status to Failed with error message"
+        - "Write test: crash recovery marks stale Running executions as Failed on startup"
+        - "Write test: retention cleanup deletes records older than 30 days every 100 ticks"
+        - "Write test: emits WorkflowStarted event at execution start"
+        - "Write test: emits WorkflowCompleted event on success"
+        - "Write test: emits WorkflowFailed event on failure"
+        - "Write test: updates workflow lastRunAt and recalculates nextRunAt"
+        - "Write test: sequential execution - second workflow waits until first completes"
+      green:
+        - "Implement WorkflowSchedulerService with polling loop, queue, execution, crash recovery, retention cleanup, and notification emission"
+      refactor:
+        - "Extract execution logic into private methods for readability"
+        - "Ensure singleton accessor functions (initializeWorkflowScheduler, getWorkflowScheduler) match watcher pattern"
+    estimatedEffort: "3h"
+
+  - id: "task-23"
+    phaseId: "phase-3"
+    title: "Create built-in workflow templates"
+    description: >
+      Implement two factory functions returning partial ScheduledWorkflow objects:
+      (1) issue-triage template with a prompt for scanning and closing resolved
+      GitHub issues, constrained to git and github tools; (2) branch-rebase template
+      with a prompt for rebasing tracked feature branches on main, constrained to
+      git tools only.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "issue-triage template returns partial ScheduledWorkflow with name, description, prompt, toolConstraints"
+      - "branch-rebase template returns partial ScheduledWorkflow with name, description, prompt, toolConstraints"
+      - "Templates have descriptive prompts that cover the motivating use cases"
+      - "Tool constraints follow the allowlist pattern"
+    tdd:
+      red:
+        - "Write test: issueTriage template returns object with expected name and toolConstraints"
+        - "Write test: branchRebase template returns object with expected name and toolConstraints"
+        - "Write test: both templates have non-empty prompt fields"
+      green:
+        - "Implement both template factory functions"
+      refactor:
+        - "Review prompts for clarity and completeness"
+    estimatedEffort: "30min"
+
+  - id: "task-24"
+    phaseId: "phase-3"
+    title: "Register all new services in DI container"
+    description: >
+      Add DI registrations for IWorkflowRepository, IWorkflowExecutionRepository,
+      IClock, all 9 use cases, and the WorkflowSchedulerService to the container.
+      Follow existing patterns: factory for repositories, singleton for use cases,
+      string-token alias for web route access.
+    state: "Todo"
+    dependencies:
+      - "task-12"
+      - "task-13"
+      - "task-14"
+      - "task-15"
+      - "task-16"
+      - "task-17"
+      - "task-18"
+      - "task-19"
+      - "task-20"
+      - "task-21"
+      - "task-22"
+      - "task-5"
+    acceptanceCriteria:
+      - "IWorkflowRepository registered with factory pattern using Database injection"
+      - "IWorkflowExecutionRepository registered with factory pattern"
+      - "IClock registered with instance registration (RealClock)"
+      - "All 9 use cases registered as singletons with string-token aliases"
+      - "Container resolves all new services without errors"
+    tdd:
+      red:
+        - "Write test: container resolves IWorkflowRepository"
+        - "Write test: container resolves each use case by string token"
+      green:
+        - "Add all registrations to container.ts"
+      refactor:
+        - "Group workflow registrations in a clearly labeled section of container.ts"
+    estimatedEffort: "45min"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Phase 4: CLI Presentation
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: "task-25"
+    phaseId: "phase-4"
+    title: "Create workflow CLI command group with create, list, and show subcommands"
+    description: >
+      Create the workflow/ command directory with index.ts assembling subcommands.
+      Implement create (with --template option), list (table output with cli-table3),
+      and show (detailed single workflow view) subcommands. Register the workflow
+      command group in the main CLI program (src/presentation/cli/index.ts).
+    state: "Todo"
+    dependencies:
+      - "task-24"
+    acceptanceCriteria:
+      - "workflow/index.ts creates command group with Commander.js"
+      - "create subcommand accepts name, prompt, optional description, optional tool-constraints, optional template"
+      - "list subcommand shows table with name, schedule, status, last run, enabled"
+      - "show subcommand displays detailed workflow info"
+      - "Command group registered in main CLI"
+      - "All commands provide clear error messages for invalid input"
+    tdd:
+      red:
+        - "Write test: createWorkflowCommand() returns a Commander Command with expected subcommands"
+        - "Write test: create subcommand calls CreateWorkflowUseCase with correct args"
+        - "Write test: create subcommand with --template resolves template and creates workflow"
+        - "Write test: list subcommand calls ListWorkflowsUseCase and formats table"
+      green:
+        - "Implement index.ts, create.command.ts, list.command.ts, show.command.ts"
+      refactor:
+        - "Extract table formatting helpers for reuse across commands"
+    estimatedEffort: "1h30min"
+
+  - id: "task-26"
+    phaseId: "phase-4"
+    title: "Implement run, schedule, enable, disable, and history CLI subcommands"
+    description: >
+      Implement the remaining CLI subcommands: run (manual trigger), schedule (set
+      cron with --cron flag and optional --timezone), enable, disable, and history
+      (table output of execution records). Add them to the workflow command group.
+    state: "Todo"
+    dependencies:
+      - "task-25"
+    acceptanceCriteria:
+      - "run subcommand triggers workflow execution and shows status"
+      - "schedule subcommand sets cron expression, validates input, shows next run"
+      - "enable/disable subcommands toggle workflow state"
+      - "history subcommand shows execution table with status, duration, trigger type, timestamps"
+      - "All commands provide cron expression examples in help text"
+    tdd:
+      red:
+        - "Write test: run subcommand calls RunWorkflowUseCase"
+        - "Write test: schedule subcommand calls ScheduleWorkflowUseCase with cron and timezone"
+        - "Write test: enable subcommand calls ToggleWorkflowUseCase with enabled=true"
+        - "Write test: history subcommand calls GetWorkflowHistoryUseCase and formats table"
+      green:
+        - "Implement run.command.ts, schedule.command.ts, enable.command.ts, disable.command.ts, history.command.ts"
+      refactor:
+        - "Ensure consistent output formatting across all subcommands"
+    estimatedEffort: "1h30min"
+
+  - id: "task-27"
+    phaseId: "phase-4"
+    title: "Implement update and delete CLI subcommands"
+    description: >
+      Implement the update subcommand (supports --name, --description, --prompt,
+      --tool-constraints flags for partial update) and the delete subcommand (with
+      confirmation prompt). Add them to the workflow command group.
+    state: "Todo"
+    dependencies:
+      - "task-25"
+    acceptanceCriteria:
+      - "update subcommand calls UpdateWorkflowUseCase with only provided fields"
+      - "delete subcommand calls DeleteWorkflowUseCase"
+      - "delete subcommand includes confirmation prompt (skippable with --force)"
+      - "Both commands provide clear success/error messages"
+    tdd:
+      red:
+        - "Write test: update subcommand calls UpdateWorkflowUseCase with partial fields"
+        - "Write test: delete subcommand calls DeleteWorkflowUseCase"
+      green:
+        - "Implement update.command.ts and delete.command.ts"
+      refactor:
+        - "Verify help text and usage examples are clear"
+    estimatedEffort: "45min"
+
+  - id: "task-28"
+    phaseId: "phase-4"
+    title: "Integrate scheduler service into daemon startup and shutdown"
+    description: >
+      Modify _serve.command.ts to initialize and start the WorkflowSchedulerService
+      alongside existing watchers. Add scheduler stop() to the graceful shutdown
+      handler. Follow the exact same pattern used for NotificationWatcherService
+      initialization.
+    state: "Todo"
+    dependencies:
+      - "task-22"
+      - "task-24"
+    acceptanceCriteria:
+      - "WorkflowSchedulerService resolved from DI container in _serve.command.ts"
+      - "Scheduler start() called after web server and notification watcher start"
+      - "Scheduler stop() called in the shutdown handler before process.exit"
+      - "Follows the same initialization pattern as NotificationWatcherService"
+    tdd:
+      red:
+        - "Write test: serve command initializes and starts the workflow scheduler"
+        - "Write test: shutdown handler stops the workflow scheduler"
+      green:
+        - "Add scheduler initialization and shutdown to _serve.command.ts"
+      refactor:
+        - "Ensure initialization order is correct (web server first, then watchers and scheduler)"
+    estimatedEffort: "30min"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Phase 5: Web UI
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: "task-29"
+    phaseId: "phase-5"
+    title: "Create workflow server actions and workflows page"
+    description: >
+      Create server actions for listing workflows, getting workflow history,
+      toggling workflow enabled state, and triggering workflow runs. Build the
+      /workflows server page component that loads data via server actions in
+      Promise.all() and passes to the client component. Follow the settings
+      page pattern with export const dynamic = 'force-dynamic'.
+    state: "Todo"
+    dependencies:
+      - "task-24"
+    acceptanceCriteria:
+      - "Server actions resolve use cases from DI container via resolve() function"
+      - "list-workflows.ts, get-workflow-history.ts, toggle-workflow.ts, trigger-workflow.ts server actions exist"
+      - "Each server action has 'use server' directive and type-safe result interface"
+      - "/workflows/page.tsx server component loads data and renders client component"
+      - "Error handling returns descriptive error objects, not thrown exceptions"
+    tdd:
+      red:
+        - "Write test: list-workflows server action calls ListWorkflowsUseCase"
+        - "Write test: toggle-workflow server action calls ToggleWorkflowUseCase"
+        - "Write test: trigger-workflow server action calls RunWorkflowUseCase"
+      green:
+        - "Implement all four server actions and the page server component"
+      refactor:
+        - "Ensure consistent error handling pattern across all server actions"
+    estimatedEffort: "1h"
+
+  - id: "task-30"
+    phaseId: "phase-5"
+    title: "Build workflow management client components with Storybook stories"
+    description: >
+      Create the client-side components: WorkflowsPageClient (main container),
+      WorkflowList (list view with table), WorkflowListItem (single workflow row
+      with enable/disable toggle and trigger button), WorkflowExecutionHistory
+      (expandable execution log table). Use shadcn/ui components for consistent
+      styling. Create colocated .stories.tsx files for all components with factory
+      test data.
+    state: "Todo"
+    dependencies:
+      - "task-29"
+    acceptanceCriteria:
+      - "WorkflowsPageClient renders workflow list with correct data"
+      - "WorkflowListItem shows name, schedule, status, last run, enabled toggle, trigger button"
+      - "Enable/disable toggle calls toggleWorkflow server action via useTransition()"
+      - "Trigger button calls triggerWorkflow server action"
+      - "WorkflowExecutionHistory shows status, duration, trigger type, timestamps"
+      - "All 4 components have colocated .stories.tsx files"
+      - "Stories use Meta/StoryObj pattern with factory test data"
+      - "Components are accessible and follow shadcn/ui patterns"
+    tdd:
+      red:
+        - "Write test: WorkflowList renders workflow items from props"
+        - "Write test: WorkflowListItem enable/disable toggle fires callback"
+        - "Write test: WorkflowListItem trigger button fires callback"
+        - "Write test: WorkflowExecutionHistory renders execution rows"
+      green:
+        - "Implement all four client components"
+        - "Create Storybook stories for all components"
+      refactor:
+        - "Ensure responsive design, verify with Storybook viewport addon"
+        - "Extract any reusable sub-components"
+    estimatedEffort: "3h"
+
+totalEstimate: "32-40 hours"
+openQuestions: []
+
+content: |
+  ## Summary
+
+  The scheduled-workflows feature is broken into 30 tasks across 5 phases.
+
+  **Phase 1 (Domain Foundation, 6 tasks)** establishes the TypeSpec models,
+  enums, croner dependency, and IClock interface. These are the atomic building
+  blocks that every subsequent phase depends on. Tasks in this phase are mostly
+  non-code (TypeSpec definitions) with one small testable unit (IClock).
+
+  **Phase 2 (Persistence Layer, 7 tasks)** creates the database migration, mappers,
+  port interfaces, and repository implementations. This is the data access layer
+  that use cases and the scheduler service depend on. All repository tasks have
+  comprehensive TDD cycles testing against in-memory SQLite databases.
+
+  **Phase 3 (Application Logic, 11 tasks)** is the largest phase, implementing
+  all 9 use cases, the WorkflowSchedulerService (the most complex single task),
+  built-in templates, and DI container registration. The scheduler service task
+  is estimated at 3h and covers polling, sequential execution, crash recovery,
+  retention cleanup, and notification emission — all testable via injectable
+  IClock and mock repositories.
+
+  **Phase 4 (CLI Presentation, 4 tasks)** wires use cases to Commander.js
+  commands and integrates the scheduler into the daemon lifecycle. CLI commands
+  are grouped logically: CRUD commands first, then operational commands, then
+  daemon integration.
+
+  **Phase 5 (Web UI, 2 tasks)** builds the management page with server actions
+  and client components, plus Storybook stories. The web UI is kept to a
+  management view (list, history, enable/disable, trigger) — workflow creation
+  remains CLI-only.
+
+  The dependency chain flows strictly downward: Phase 1 unblocks Phase 2,
+  Phase 2 unblocks Phase 3, Phase 3 unblocks Phases 4 and 5.
+
+  ---
+
+  _Task breakdown complete — proceed to implementation phase_

@@ -27,6 +27,9 @@
  * | PR Checks Failed   | error    |
  * | PR Blocked         | warning  |
  * | MR Review Ready    | info     |
+ * | Workflow Started   | info     |
+ * | Workflow Completed | success  |
+ * | Workflow Failed    | error    |
  */
 /**
  * Types of agent lifecycle events that trigger notifications.
@@ -95,6 +98,15 @@ enum NotificationEventType {
 
   @doc("Supervisor agent evaluation failed (timeout, model error, exception); fell back to standard human approval (spec 093, FR-22)")
   SupervisorFailed: "supervisor_failed",
+
+  @doc("Scheduled workflow execution has started")
+  WorkflowStarted: "workflow_started",
+
+  @doc("Scheduled workflow execution completed successfully")
+  WorkflowCompleted: "workflow_completed",
+
+  @doc("Scheduled workflow execution failed with an error")
+  WorkflowFailed: "workflow_failed",
 }
 
 /**

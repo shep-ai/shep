@@ -412,6 +412,7 @@ export function SettingsPageClient({
     whatsappDispatch: false,
     clusters: false,
     supplyChainSecurity: true,
+    scheduledWorkflows: false,
   };
 
   // Language state
@@ -1725,6 +1726,45 @@ export function SettingsPageClient({
                 save(buildNotificationPayload({ events: newEvents }));
               }}
             />
+
+            {flags.scheduledWorkflows ? (
+              <>
+                <SubsectionLabel>Scheduled Workflow Events</SubsectionLabel>
+                <SwitchRow
+                  label="Workflow started"
+                  id="notif-event-workflowStarted"
+                  testId="switch-event-workflowStarted"
+                  checked={events.workflowStarted ?? false}
+                  onChange={(v) => {
+                    const newEvents = { ...events, workflowStarted: v };
+                    setEvents(newEvents);
+                    save(buildNotificationPayload({ events: newEvents }));
+                  }}
+                />
+                <SwitchRow
+                  label="Workflow completed"
+                  id="notif-event-workflowCompleted"
+                  testId="switch-event-workflowCompleted"
+                  checked={events.workflowCompleted ?? false}
+                  onChange={(v) => {
+                    const newEvents = { ...events, workflowCompleted: v };
+                    setEvents(newEvents);
+                    save(buildNotificationPayload({ events: newEvents }));
+                  }}
+                />
+                <SwitchRow
+                  label="Workflow failed"
+                  id="notif-event-workflowFailed"
+                  testId="switch-event-workflowFailed"
+                  checked={events.workflowFailed ?? false}
+                  onChange={(v) => {
+                    const newEvents = { ...events, workflowFailed: v };
+                    setEvents(newEvents);
+                    save(buildNotificationPayload({ events: newEvents }));
+                  }}
+                />
+              </>
+            ) : null}
           </SettingsSection>
           <SectionHint
             links={[
@@ -1866,6 +1906,18 @@ export function SettingsPageClient({
               checked={flags.clusters}
               onChange={(v) => {
                 const newFlags = { ...flags, clusters: v };
+                setFlags(newFlags);
+                save({ featureFlags: newFlags });
+              }}
+            />
+            <SwitchRow
+              label="Scheduled Workflows"
+              description="Enable scheduled workflows — create, schedule, and execute automated workflows on a cron schedule"
+              id="flag-scheduledWorkflows"
+              testId="switch-flag-scheduledWorkflows"
+              checked={flags.scheduledWorkflows}
+              onChange={(v) => {
+                const newFlags = { ...flags, scheduledWorkflows: v };
                 setFlags(newFlags);
                 save({ featureFlags: newFlags });
               }}

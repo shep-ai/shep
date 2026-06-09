@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: WorkflowExecutionStatus.yaml
+type: string
+enum:
+  - queued
+  - running
+  - completed
+  - failed
+  - cancelled
+description: Lifecycle status of a workflow execution

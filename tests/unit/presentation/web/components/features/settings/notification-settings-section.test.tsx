@@ -28,6 +28,9 @@ const defaultNotifications = {
     prChecksPassed: true,
     prChecksFailed: true,
     prBlocked: true,
+    workflowStarted: true,
+    workflowCompleted: true,
+    workflowFailed: true,
   },
 };
 

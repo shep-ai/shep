@@ -18,6 +18,7 @@ const defaultFeatureFlags = {
   whatsappDispatch: false,
   aspm: false,
   clusters: false,
+  scheduledWorkflows: false,
 };
 
 const meta: Meta<typeof AppSidebar> = {

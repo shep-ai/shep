@@ -549,6 +549,15 @@ model NotificationEventConfig {
 
   @doc("Notify when the supervisor evaluator fails and the system falls back to standard human approval (spec 093, FR-22). Default ON — actionable.")
   supervisorFailed?: boolean = true;
+
+  @doc("Notify when a scheduled workflow execution starts")
+  workflowStarted?: boolean = true;
+
+  @doc("Notify when a scheduled workflow execution completes successfully")
+  workflowCompleted?: boolean = true;
+
+  @doc("Notify when a scheduled workflow execution fails")
+  workflowFailed?: boolean = true;
 }
 
 /**
@@ -627,6 +636,9 @@ model FeatureFlags {
 
   @doc("Enable the supply chain security feature (policy engine, badges, settings, CLI, CI gate). When false, the feature is inert regardless of SecurityMode.")
   supplyChainSecurity: boolean = true;
+
+  @doc("Enable scheduled workflows feature — workflow creation, scheduling, and execution")
+  scheduledWorkflows: boolean = false;
 }
 
 /**

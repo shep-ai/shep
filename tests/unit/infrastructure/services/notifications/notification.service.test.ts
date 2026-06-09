@@ -124,6 +124,9 @@ describe('NotificationService', () => {
           prChecksFailed: true,
           prBlocked: true,
           mergeReviewReady: true,
+          workflowStarted: true,
+          workflowCompleted: true,
+          workflowFailed: true,
         },
       });
       service = new NotificationService(getNotificationBus(), desktopNotifier);
@@ -150,6 +153,9 @@ describe('NotificationService', () => {
           prChecksFailed: true,
           prBlocked: true,
           mergeReviewReady: true,
+          workflowStarted: true,
+          workflowCompleted: true,
+          workflowFailed: true,
         },
       });
       service = new NotificationService(getNotificationBus(), desktopNotifier);

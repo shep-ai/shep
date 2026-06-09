@@ -1,0 +1,297 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "scheduled-workflows"
+summary: >
+  Implementation plan for the scheduled-workflows feature, delivering user-defined
+  reusable automation (expressed as agent prompts with optional tool constraints)
+  that can run on-demand via CLI/web UI or on a cron schedule managed by the shep
+  daemon. The plan follows Clean Architecture across five phases: (1) domain model
+  foundation with TypeSpec, (2) persistence layer with SQLite repositories and
+  migration, (3) application use cases and scheduler service, (4) CLI presentation
+  layer, and (5) web UI management page. Each phase builds on the prior, maintaining
+  strict dependency inversion and TDD methodology throughout.
+
+relatedFeatures: []
+technologies:
+  - "TypeSpec (domain model definitions)"
+  - "croner v10.x (cron expression parsing, validation, next-run calculation)"
+  - "better-sqlite3 (workflow and execution persistence)"
+  - "tsyringe (dependency injection)"
+  - "umzug (database migrations)"
+  - "Commander.js (CLI command group)"
+  - "cli-table3 (CLI table output)"
+  - "Next.js App Router (web UI pages and server actions)"
+  - "shadcn/ui (workflow UI components)"
+  - "Vitest (unit and integration testing)"
+relatedLinks:
+  - title: "croner GitHub - Hexagon/croner"
+    url: "https://github.com/Hexagon/croner"
+  - title: "croner npm package"
+    url: "https://www.npmjs.com/package/croner"
+
+phases:
+  - id: "phase-1"
+    name: "Domain Foundation"
+    description: >
+      Define the core domain models in TypeSpec (ScheduledWorkflow entity,
+      WorkflowExecution entity, WorkflowTriggerType enum, WorkflowExecutionStatus
+      enum) and compile them to TypeScript. Also install the croner dependency and
+      create the IClock port interface for testable time handling. This phase has
+      zero runtime dependencies and must come first because every subsequent phase
+      imports these generated types.
+    parallel: false
+
+  - id: "phase-2"
+    name: "Persistence Layer"
+    description: >
+      Create the SQLite migration (044) for the scheduled_workflows and
+      workflow_executions tables, build the bidirectional mappers, define the
+      IWorkflowRepository and IWorkflowExecutionRepository port interfaces in the
+      application layer, and implement the SQLite repository classes. This phase
+      depends on the generated domain types from Phase 1 and provides the data
+      access layer that all use cases and services need.
+    parallel: false
+
+  - id: "phase-3"
+    name: "Application Logic and Scheduler Service"
+    description: >
+      Implement the 9 use cases (Create, Update, Delete, List, Get, Run, Schedule,
+      GetHistory, Toggle), build the WorkflowSchedulerService following the existing
+      watcher pattern (setInterval polling at 60s, sequential execution queue, crash
+      recovery, retention cleanup), create the built-in workflow templates, extend
+      notification events, and register everything in the DI container. This is the
+      largest phase and the core of the feature — it connects domain models to
+      repositories and provides the execution engine.
+    parallel: false
+
+  - id: "phase-4"
+    name: "CLI Presentation"
+    description: >
+      Create the 'workflow' command group with 10 subcommands (create, update,
+      delete, list, show, run, schedule, enable, disable, history), register it in
+      the main CLI program, and integrate the scheduler service startup into the
+      daemon's _serve command with graceful shutdown. This phase wires the
+      application layer to the CLI interface.
+    parallel: false
+
+  - id: "phase-5"
+    name: "Web UI"
+    description: >
+      Build the /workflows management page with server component, client component,
+      and server actions for listing workflows, viewing execution history,
+      enabling/disabling workflows, and manually triggering runs. Create Storybook
+      stories for all new components. Extend the existing SSE endpoint for
+      near-real-time workflow status updates.
+    parallel: false
+
+filesToCreate:
+  # TypeSpec models
+  - "tsp/domain/entities/scheduled-workflow.tsp"
+  - "tsp/domain/entities/workflow-execution.tsp"
+  - "tsp/common/enums/scheduled-workflow.tsp"
+  # Application port interfaces
+  - "packages/core/src/application/ports/output/repositories/workflow-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/workflow-execution-repository.interface.ts"
+  - "packages/core/src/application/ports/output/services/clock.interface.ts"
+  - "packages/core/src/application/ports/output/services/scheduler-service.interface.ts"
+  # Use cases
+  - "packages/core/src/application/use-cases/workflows/create-workflow.use-case.ts"
+  - "packages/core/src/application/use-cases/workflows/update-workflow.use-case.ts"
+  - "packages/core/src/application/use-cases/workflows/delete-workflow.use-case.ts"
+  - "packages/core/src/application/use-cases/workflows/list-workflows.use-case.ts"
+  - "packages/core/src/application/use-cases/workflows/get-workflow.use-case.ts"
+  - "packages/core/src/application/use-cases/workflows/run-workflow.use-case.ts"
+  - "packages/core/src/application/use-cases/workflows/schedule-workflow.use-case.ts"
+  - "packages/core/src/application/use-cases/workflows/get-workflow-history.use-case.ts"
+  - "packages/core/src/application/use-cases/workflows/toggle-workflow.use-case.ts"
+  - "packages/core/src/application/use-cases/workflows/templates/issue-triage.template.ts"
+  - "packages/core/src/application/use-cases/workflows/templates/branch-rebase.template.ts"
+  # Infrastructure - persistence
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/044-create-scheduled-workflows.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/workflow.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/workflow-execution.mapper.ts"
+  # Infrastructure - repositories
+  - "packages/core/src/infrastructure/repositories/sqlite-workflow.repository.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-workflow-execution.repository.ts"
+  # Infrastructure - services
+  - "packages/core/src/infrastructure/services/clock.ts"
+  - "packages/core/src/infrastructure/services/workflow-scheduler/workflow-scheduler.service.ts"
+  # CLI commands
+  - "src/presentation/cli/commands/workflow/index.ts"
+  - "src/presentation/cli/commands/workflow/create.command.ts"
+  - "src/presentation/cli/commands/workflow/update.command.ts"
+  - "src/presentation/cli/commands/workflow/delete.command.ts"
+  - "src/presentation/cli/commands/workflow/list.command.ts"
+  - "src/presentation/cli/commands/workflow/show.command.ts"
+  - "src/presentation/cli/commands/workflow/run.command.ts"
+  - "src/presentation/cli/commands/workflow/schedule.command.ts"
+  - "src/presentation/cli/commands/workflow/enable.command.ts"
+  - "src/presentation/cli/commands/workflow/disable.command.ts"
+  - "src/presentation/cli/commands/workflow/history.command.ts"
+  # Web UI
+  - "src/presentation/web/app/workflows/page.tsx"
+  - "src/presentation/web/components/features/workflows/workflows-page-client.tsx"
+  - "src/presentation/web/components/features/workflows/workflow-list.tsx"
+  - "src/presentation/web/components/features/workflows/workflow-list-item.tsx"
+  - "src/presentation/web/components/features/workflows/workflow-execution-history.tsx"
+  - "src/presentation/web/app/actions/list-workflows.ts"
+  - "src/presentation/web/app/actions/get-workflow-history.ts"
+  - "src/presentation/web/app/actions/toggle-workflow.ts"
+  - "src/presentation/web/app/actions/trigger-workflow.ts"
+  # Storybook stories
+  - "src/presentation/web/components/features/workflows/workflows-page-client.stories.tsx"
+  - "src/presentation/web/components/features/workflows/workflow-list.stories.tsx"
+  - "src/presentation/web/components/features/workflows/workflow-list-item.stories.tsx"
+  - "src/presentation/web/components/features/workflows/workflow-execution-history.stories.tsx"
+  # Tests
+  - "packages/core/src/application/use-cases/workflows/__tests__/create-workflow.use-case.test.ts"
+  - "packages/core/src/application/use-cases/workflows/__tests__/update-workflow.use-case.test.ts"
+  - "packages/core/src/application/use-cases/workflows/__tests__/delete-workflow.use-case.test.ts"
+  - "packages/core/src/application/use-cases/workflows/__tests__/list-workflows.use-case.test.ts"
+  - "packages/core/src/application/use-cases/workflows/__tests__/get-workflow.use-case.test.ts"
+  - "packages/core/src/application/use-cases/workflows/__tests__/run-workflow.use-case.test.ts"
+  - "packages/core/src/application/use-cases/workflows/__tests__/schedule-workflow.use-case.test.ts"
+  - "packages/core/src/application/use-cases/workflows/__tests__/get-workflow-history.use-case.test.ts"
+  - "packages/core/src/application/use-cases/workflows/__tests__/toggle-workflow.use-case.test.ts"
+  - "packages/core/src/infrastructure/repositories/__tests__/sqlite-workflow.repository.test.ts"
+  - "packages/core/src/infrastructure/repositories/__tests__/sqlite-workflow-execution.repository.test.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/__tests__/workflow.mapper.test.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/__tests__/workflow-execution.mapper.test.ts"
+  - "packages/core/src/infrastructure/services/workflow-scheduler/__tests__/workflow-scheduler.service.test.ts"
+
+filesToModify:
+  - "tsp/domain/entities/index.tsp"
+  - "tsp/common/enums/index.tsp"
+  - "tsp/common/enums/notification.tsp"
+  - "packages/core/src/application/ports/output/repositories/index.ts"
+  - "packages/core/src/infrastructure/di/container.ts"
+  - "src/presentation/cli/index.ts"
+  - "src/presentation/cli/commands/_serve.command.ts"
+  - "package.json"
+
+openQuestions: []
+
+content: |
+  ## Status
+
+  - **Phase:** Planning (complete)
+  - **Updated:** 2026-03-20
+
+  ## Architecture Overview
+
+  The scheduled-workflows feature integrates into shep's existing Clean Architecture
+  as a new vertical slice spanning all four layers. The architecture follows
+  established patterns exactly:
+
+  **Domain Layer** — Two new TypeSpec entities (ScheduledWorkflow extending
+  SoftDeletableEntity, WorkflowExecution extending BaseEntity) and two new enums
+  (WorkflowTriggerType, WorkflowExecutionStatus). This mirrors the existing
+  Feature/AgentRun entity separation. ScheduledWorkflow uses soft-delete to preserve
+  execution history for audit; WorkflowExecution uses hard-delete via the 30-day
+  retention policy.
+
+  **Application Layer** — Nine use cases following the @injectable() single-execute()
+  pattern, two repository port interfaces following IFeatureRepository's structure,
+  and an IClock interface for testable time handling. Templates are implemented as
+  pure factory functions returning partial ScheduledWorkflow objects.
+
+  **Infrastructure Layer** — SQLite repositories with bidirectional mappers following
+  the feature.mapper.ts pattern (camelCase to snake_case, dates as unix ms, booleans
+  as 0/1, arrays as JSON). A new migration (044) creates both tables. The
+  WorkflowSchedulerService follows the NotificationWatcherService/PrSyncWatcherService
+  pattern: singleton with start()/stop()/isRunning(), setInterval polling at 60s,
+  immediate first poll, graceful shutdown via clearInterval.
+
+  **Presentation Layer** — CLI: new 'workflow' command group with 10 subcommands
+  following the feat/ pattern (Commander.js factory functions, cli-table3 output).
+  Web: /workflows page following the settings page pattern (server component to server
+  actions to client component), with Storybook stories for all components.
+
+  ## Key Design Decisions
+
+  ### 1. croner for Cron Scheduling (not node-cron or cron)
+
+  croner v10.x was selected because it has zero dependencies (matching shep's
+  minimal-dependency philosophy), native TypeScript definitions, built-in timezone
+  with DST awareness, and both validation and next-run calculation in a single
+  package. At ~15 KB it is 3x lighter than node-cron. The paused instantiation
+  pattern (new Cron(expr, { paused: true })) enables validation-only use without
+  starting timers, and nextRun() accepts a reference Date for injectable clock
+  compatibility.
+
+  ### 2. Sequential Execution with In-Memory Queue (not parallel)
+
+  Workflows operate on a shared git repository where concurrent modifications would
+  cause conflicts. The existing agent runner uses a single-execution model. Sequential
+  execution with a FIFO queue is simpler to implement, test, and debug. The queue is
+  in-memory (lost on daemon restart, but missed schedules are not retroactively
+  executed per FR-17). A concurrency limit can be added later as an enhancement.
+
+  ### 3. Polling-Based Scheduler (not croner timer triggers)
+
+  The scheduler uses setInterval polling (60s) rather than croner's built-in timer
+  triggers. This matches the existing watcher pattern, avoids maintaining in-memory
+  Cron instances for every enabled workflow, simplifies daemon restart recovery, and
+  enables fully deterministic testing via an injectable IClock. croner is used only
+  for validation and nextRun() calculation — not for its timer functionality.
+
+  ### 4. Injectable IClock (not vi.useFakeTimers)
+
+  An IClock interface with now(): Date enables deterministic testing of cron
+  evaluation, nextRunAt calculation, and retention cleanup without depending on
+  system time or Vitest timer mocking. croner's nextRun() and match() accept a
+  reference Date parameter, making them compatible with this approach.
+
+  ### 5. Separate Repository Interfaces (not combined)
+
+  IWorkflowRepository and IWorkflowExecutionRepository follow the existing
+  IFeatureRepository pattern. Separating them enables independent testing and clear
+  single responsibility, consistent with how the codebase separates Feature from
+  AgentRun persistence.
+
+  ### 6. Management View for Web UI (not full CRUD)
+
+  The web UI provides list view, execution history, enable/disable, and manual
+  trigger — but workflow creation and editing remain CLI-only. Agent prompt authoring
+  is a text-heavy operation better suited to CLI. This reduces frontend complexity
+  while delivering real monitoring and quick-action value.
+
+  ## Implementation Strategy
+
+  The five phases follow strict dependency order:
+
+  **Phase 1 (Domain Foundation)** must come first because every subsequent file
+  imports the generated TypeSpec types. This is the smallest phase and unblocks
+  everything else.
+
+  **Phase 2 (Persistence)** builds on Phase 1 types to create the database schema,
+  mappers, and repositories. All use cases depend on repositories.
+
+  **Phase 3 (Application Logic)** is the largest phase, implementing 9 use cases,
+  the scheduler service, templates, and notification integration. It depends on
+  Phase 2 repositories and Phase 1 types.
+
+  **Phase 4 (CLI)** wires use cases to Commander.js commands and integrates the
+  scheduler into the daemon. It depends on Phase 3 use cases.
+
+  **Phase 5 (Web UI)** creates the management page with server actions that resolve
+  use cases from the DI container. It depends on Phase 3 use cases and Phase 4
+  daemon integration (for the SSE event stream).
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | TypeSpec compilation breaks existing types | Run pnpm tsp:compile immediately after model creation and verify output.ts before proceeding |
+  | croner API incompatibility at runtime | Pin croner to v10.x. Write integration tests exercising Cron constructor, nextRun(), and match() |
+  | Migration conflicts with other branches | Use migration 044 (next after 043). Use CREATE TABLE IF NOT EXISTS for idempotency |
+  | Scheduler service blocks daemon event loop | SQLite queries are fast (<1ms for indexed queries). Poll runs async via setInterval |
+  | Stale running executions after daemon crash | Recovery sweep on startup marks running as failed before scheduler starts polling |
+  | Unbounded execution history growth | 30-day retention cleanup every 100 scheduler ticks (~100 minutes). Configurable via settings |
+  | Web UI deviates from existing patterns | Follow the settings page pattern exactly: server component, server actions, client component |
+  | Agent execution within workflow fails silently | Wrap execution in try/catch, mark as failed with error details, emit WorkflowFailed notification |
+
+  ---
+
+  _Planning complete — proceed to implementation phase_

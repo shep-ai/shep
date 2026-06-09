@@ -1,0 +1,38 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: WorkflowExecution.yaml
+type: object
+properties:
+  workflowId:
+    $ref: UUID.yaml
+    description: ID of the ScheduledWorkflow that was executed
+  triggerType:
+    $ref: WorkflowTriggerType.yaml
+    description: How this execution was triggered (manual or scheduled)
+  status:
+    $ref: WorkflowExecutionStatus.yaml
+    description: Current lifecycle status of this execution
+  startedAt:
+    type: string
+    format: date-time
+    description: Timestamp when the execution started running
+  completedAt:
+    type: string
+    format: date-time
+    description: Timestamp when the execution completed or failed (null if still running)
+  durationMs:
+    type: integer
+    description: Duration of the execution in milliseconds (null if still running)
+  outputSummary:
+    type: string
+    description: Summary of the execution output (truncated if too long)
+  errorMessage:
+    type: string
+    description: Error message if the execution failed
+required:
+  - workflowId
+  - triggerType
+  - status
+  - startedAt
+allOf:
+  - $ref: BaseEntity.yaml
+description: A single execution record for a scheduled workflow run

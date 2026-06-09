@@ -78,6 +78,18 @@ properties:
     type: boolean
     default: true
     description: Notify when the supervisor evaluator fails and the system falls back to standard human approval (spec 093, FR-22). Default ON — actionable.
+  workflowStarted:
+    type: boolean
+    default: true
+    description: Notify when a scheduled workflow execution starts
+  workflowCompleted:
+    type: boolean
+    default: true
+    description: Notify when a scheduled workflow execution completes successfully
+  workflowFailed:
+    type: boolean
+    default: true
+    description: Notify when a scheduled workflow execution fails
 required:
   - agentStarted
   - phaseCompleted

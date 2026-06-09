@@ -143,6 +143,9 @@ export function createDefaultSettings(): Settings {
       prChecksFailed: true,
       prBlocked: true,
       mergeReviewReady: true,
+      workflowStarted: true,
+      workflowCompleted: true,
+      workflowFailed: true,
     },
   };
 
@@ -236,6 +239,7 @@ export function createDefaultSettings(): Settings {
     whatsappDispatch: false,
     clusters: false,
     supplyChainSecurity: true,
+    scheduledWorkflows: false,
   };
 
   const whatsapp: WhatsAppConfig = {

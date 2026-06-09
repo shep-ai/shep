@@ -46,7 +46,10 @@ vi.mock('@/infrastructure/di/container.js', () => ({
         token === 'INotificationService' ||
         token === 'IRepositoryRepository' ||
         token === 'IGitHubRepositoryService' ||
-        token === 'IDesktopNotifier'
+        token === 'IDesktopNotifier' ||
+        token === 'IWorkflowRepository' ||
+        token === 'IWorkflowExecutionRepository' ||
+        token === 'IClock'
       ) {
         return {};
       }
@@ -108,6 +111,16 @@ vi.mock('@/application/use-cases/contributors/generate-monthly-recap.use-case.js
 }));
 vi.mock('@/application/use-cases/contributors/publish-monthly-recap.use-case.js', () => ({
   PublishMonthlyRecapUseCase: vi.fn(),
+}));
+
+// Mock workflow scheduler
+vi.mock('@/infrastructure/services/workflow-scheduler/workflow-scheduler.service.js', () => ({
+  initializeWorkflowScheduler: vi.fn(),
+  getWorkflowScheduler: vi.fn().mockReturnValue({
+    start: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn(),
+  }),
+  hasWorkflowScheduler: vi.fn().mockReturnValue(true),
 }));
 
 const mockWebServerService = {

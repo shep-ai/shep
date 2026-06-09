@@ -80,6 +80,7 @@ describe('updateSettings', () => {
         aspm: false,
         clusters: false,
         supplyChainSecurity: true,
+        scheduledWorkflows: false,
       },
     };
     updateSettings(updated);

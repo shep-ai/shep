@@ -26,3 +26,4 @@ import "./build-mode.tsp";
 import "./whatsapp.tsp";
 import "./cluster.tsp";
 import "./security.tsp";
+import "./scheduled-workflow.tsp";

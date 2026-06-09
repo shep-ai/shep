@@ -61,6 +61,7 @@ import { registerWhatsApp } from './modules/register-whatsapp.js';
 import { registerAspm } from './modules/register-aspm.js';
 import { registerCluster } from './modules/register-cluster.js';
 import { registerSecurity } from './modules/register-security.js';
+import { registerScheduledWorkflows } from './modules/register-scheduled-workflows.js';
 
 let _initialized = false;
 
@@ -100,6 +101,7 @@ export async function initializeContainer(): Promise<typeof container> {
   registerAspm(container);
   registerCluster(container);
   registerSecurity(container);
+  registerScheduledWorkflows(container);
 
   // ─── Eager deployment service ────────────────────────────────────────────
   // DeploymentService needs the database and calls `recoverAll()` at startup,

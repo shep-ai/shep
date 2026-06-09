@@ -40,6 +40,9 @@ const EVENT_TYPE_TO_CONFIG_KEY: Record<NotificationEventType, keyof Notification
   [NotificationEventType.AgentMessageBlocked]: 'agentMessageBlocked',
   [NotificationEventType.SupervisorEscalated]: 'supervisorEscalated',
   [NotificationEventType.SupervisorFailed]: 'supervisorFailed',
+  [NotificationEventType.WorkflowStarted]: 'workflowStarted',
+  [NotificationEventType.WorkflowCompleted]: 'workflowCompleted',
+  [NotificationEventType.WorkflowFailed]: 'workflowFailed',
 };
 
 export class NotificationService implements INotificationService {

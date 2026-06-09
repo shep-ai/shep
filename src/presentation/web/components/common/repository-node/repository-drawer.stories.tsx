@@ -101,6 +101,7 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
     whatsappDispatch: false,
     aspm: false,
     clusters: false,
+    scheduledWorkflows: true,
   };
 
   return (

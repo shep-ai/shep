@@ -1,0 +1,149 @@
+name: "scheduled-workflows"
+number: 73
+branch: "feat/073-scheduled-workflows"
+oneLiner: "User-defined workflows that run on demand or on a cron schedule via the shep daemon"
+summary: "Add a workflow engine to shep that lets users define reusable automation scripts (expressed as agent prompts with optional tool constraints) and execute them on demand via CLI/web UI or on a recurring cron schedule managed by the daemon process. Workflows are persisted in SQLite, scheduled via a new daemon-hosted scheduler service, and executed as agent tasks. The two motivating examples are auto-closing resolved GitHub issues with evidence and rebasing all tracked feature branches on main.\n"
+phase: "Requirements"
+sizeEstimate: "L"
+relatedFeatures: []
+technologies:
+  - "TypeSpec (domain model definitions)"
+  - "better-sqlite3 (workflow and schedule persistence)"
+  - "tsyringe (dependency injection)"
+  - "croner (cron expression parsing and scheduling)"
+  - "LangGraph (agent graph orchestration)"
+  - "Commander.js (CLI commands)"
+  - "Next.js (web UI for workflow management)"
+  - "shadcn/ui (workflow UI components)"
+  - "Vitest (testing)"
+  - "umzug (database migrations)"
+relatedLinks:
+  - title: "node-cron - npm"
+    url: "https://www.npmjs.com/package/node-cron"
+  - title: "croner - lightweight cron scheduler"
+    url: "https://www.npmjs.com/package/croner"
+  - title: "GitHub Actions workflow syntax reference"
+    url: "https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions"
+openQuestions:
+  - question: "Which cron library should be used for schedule evaluation?"
+    resolved: true
+    options:
+      - option: "croner"
+        description: "Lightweight, zero-dependency cron scheduler with excellent TypeScript support, sub-second precision, timezone awareness, and active maintenance. Supports both parsing and triggering. ~15 KB bundle size."
+        selected: true
+      - option: "node-cron"
+        description: "Popular cron scheduler with large community adoption. Heavier dependency tree, weaker TypeScript types, no timezone support without additional libraries. ~50 KB bundle size."
+        selected: false
+      - option: "cron (npm)"
+        description: "Full-featured cron library with timezone support via luxon. Heaviest option with multiple transitive dependencies. Mature but more complexity than needed."
+        selected: false
+    selectionRationale: "croner is recommended because it has zero dependencies (aligning with shep's minimal-dependency philosophy), native TypeScript definitions, built-in timezone support, and is significantly lighter than alternatives. It supports both cron expression validation and scheduling triggers in a single package."
+    answer: "croner"
+  - question: "How should workflow definitions be stored and managed?"
+    resolved: true
+    options:
+      - option: "SQLite-only storage"
+        description: "Workflow definitions stored entirely in the shep SQLite database. Users create/edit workflows via CLI commands or web UI. Simple, centralized, consistent with existing shep patterns for features and settings."
+        selected: false
+      - option: "YAML file-based definitions"
+        description: "Workflows defined as YAML files in a .shep/workflows/ directory, similar to GitHub Actions. Git-trackable and shareable. Requires file watching and sync logic."
+        selected: false
+      - option: "Hybrid (YAML + SQLite)"
+        description: "Define workflows in YAML files but sync to SQLite for runtime scheduling. Offers git-trackability plus database query performance. Adds complexity of two-source synchronization."
+        selected: true
+    selectionRationale: "SQLite-only storage is recommended for the initial implementation because it is consistent with how shep stores all other entities (features, settings, sessions), avoids the complexity of file watching and two-source sync, and keeps the implementation scope manageable. A future enhancement could add YAML import/export for workflow portability."
+    answer: "Hybrid (YAML + SQLite)"
+  - question: "What level of workflow step complexity should the initial release support?"
+    resolved: true
+    options:
+      - option: "Single-step agent prompt"
+        description: "Each workflow is a single agent prompt with optional tool constraints. The agent receives the prompt and executes it end-to-end. Simple to implement, covers the two motivating use cases (issue triage, branch rebase), and avoids the complexity of multi-step orchestration."
+        selected: false
+      - option: "Multi-step sequential pipeline"
+        description: "Workflows consist of ordered steps, each with its own prompt and tool constraints. Steps execute sequentially with output passed between them. More powerful but significantly more complex domain model and execution engine."
+        selected: false
+      - option: "DAG-based workflow graph"
+        description: "Full directed acyclic graph of steps with parallel execution, conditional branches, and data flow between nodes. Most powerful but extremely complex, essentially building a workflow engine like Temporal or Airflow."
+        selected: true
+    selectionRationale: "Single-step agent prompt is recommended because both motivating use cases (issue triage and branch rebase) can be expressed as a single comprehensive prompt. The agent's LangGraph-based reasoning is already capable of multi-step execution within a single prompt. Starting simple avoids premature abstraction and keeps the feature deliverable within the L size estimate. Multi-step pipelines can be added later as an enhancement."
+    answer: "DAG-based workflow graph"
+  - question: "How should concurrent workflow execution be handled?"
+    resolved: true
+    options:
+      - option: "Sequential execution with queue"
+        description: "Only one workflow runs at a time. Subsequent triggers are queued and executed in order. Prevents resource contention and simplifies error handling. May delay time-sensitive workflows."
+        selected: false
+      - option: "Parallel execution with concurrency limit"
+        description: "Multiple workflows can run simultaneously up to a configurable limit (e.g., 3). Better throughput but requires resource management, conflict detection for workflows touching the same repo, and more complex status tracking."
+        selected: true
+      - option: "Unrestricted parallel execution"
+        description: "All triggered workflows run immediately with no limits. Maximum throughput but risks resource exhaustion and git conflicts when multiple workflows modify the same repository."
+        selected: false
+    selectionRationale: "Sequential execution with queue is recommended because workflows operate on a shared git repository where concurrent modifications would cause conflicts. The existing agent runner uses a similar single-execution model. Sequential execution is simpler to implement, reason about, and debug. A concurrency limit can be added later if needed."
+    answer: "Parallel execution with concurrency limit"
+  - question: "Should workflow execution history have a retention policy?"
+    resolved: true
+    options:
+      - option: "Time-based retention (30 days)"
+        description: "Automatically purge execution records older than 30 days. Prevents unbounded database growth. Simple to implement via a periodic cleanup query."
+        selected: true
+      - option: "Count-based retention (last 100 per workflow)"
+        description: "Keep only the most recent 100 executions per workflow. Predictable storage per workflow but could lose recent history for high-frequency workflows."
+        selected: false
+      - option: "No automatic retention"
+        description: "Keep all execution history indefinitely. Simplest implementation but risks unbounded database growth over months of operation."
+        selected: false
+    selectionRationale: "Time-based retention of 30 days is recommended as a sensible default that prevents unbounded growth while preserving enough history for debugging and auditing. The retention period should be configurable via settings. A cleanup routine can run as part of the scheduler service's periodic tick."
+    answer: "Time-based retention (30 days)"
+  - question: "What scope should the web UI have in the initial release?"
+    resolved: true
+    options:
+      - option: "List and status view only"
+        description: "Web UI shows a read-only list of workflows with their schedules, status, and recent execution history. Creating and editing workflows is CLI-only. Reduces frontend scope significantly."
+        selected: false
+      - option: "Full CRUD with execution view"
+        description: "Web UI supports creating, editing, deleting, enabling/disabling workflows, viewing execution history and logs, and manually triggering runs. Complete management experience."
+        selected: true
+      - option: "Management view with manual trigger"
+        description: "Web UI shows workflow list, schedule status, execution history, and allows enabling/disabling and manual triggering. Workflow creation and editing remain CLI-only to keep the web scope focused."
+        selected: false
+    selectionRationale: "Management view with manual trigger is recommended as a pragmatic middle ground. Users will create workflows via CLI (which is natural for defining prompts and tool constraints), but the web UI provides monitoring, history, and quick actions (enable/disable/trigger). This reduces frontend complexity while still providing real value over CLI-only interaction."
+    answer: "Full CRUD with execution view"
+  - question: "How should workflow tool constraints be specified?"
+    resolved: true
+    options:
+      - option: "Allowlist of tool names"
+        description: "Users specify which tools the workflow agent is allowed to use (e.g., git, github, file-read). Explicit and secure — the agent cannot access tools not in the list. Requires users to know available tool names."
+        selected: false
+      - option: "Denylist of tool names"
+        description: "Users specify which tools to block. Agent can use everything else. Easier to configure but less secure — new tools are automatically available unless explicitly blocked."
+        selected: false
+      - option: "No tool constraints"
+        description: "The workflow agent has access to all tools available to the configured agent type. Simplest but offers no sandboxing. Relies entirely on prompt engineering for safety."
+        selected: true
+    selectionRationale: "Allowlist of tool names is recommended because it follows the principle of least privilege. Workflows running unattended on a schedule should have explicit boundaries on what they can do. An allowlist ensures that adding new tools to shep doesn't inadvertently expand the capabilities of existing workflows. A sensible default set can be pre-configured per workflow template."
+    answer: "No tool constraints"
+  - question: "Should the feature include built-in workflow templates?"
+    resolved: true
+    options:
+      - option: "Two starter templates"
+        description: "Ship with two templates matching the motivating use cases: (1) GitHub issue triage and (2) branch rebase. Users can create workflows from these templates or from scratch. Provides immediate value and serves as documentation-by-example."
+        selected: false
+      - option: "No templates"
+        description: "Users create all workflows from scratch. Keeps the implementation minimal but requires users to figure out effective prompts and tool configurations themselves."
+        selected: false
+      - option: "Template marketplace"
+        description: "A registry of community-contributed templates that users can browse and install. Powerful but massive scope increase far beyond the core feature."
+        selected: true
+    selectionRationale: "Two starter templates are recommended because they directly address the motivating use cases, validate the workflow engine end-to-end during development, and serve as practical examples for users creating their own workflows. The templates also provide excellent test fixtures."
+    answer: "Template marketplace"
+content: "## Problem Statement\n\nShep currently orchestrates AI-driven feature development through a linear SDLC\npipeline (analyze -> requirements -> research -> plan -> implement -> review). However,\nusers also need to run recurring maintenance and automation tasks that don't fit the\nfeature lifecycle — for example:\n\n1. **GitHub issue triage**: Scan open issues, check if they're resolved by existing\n   commits or PRs, add evidence comments, and close them automatically.\n2. **Branch maintenance**: Rebase all tracked shep feature branches on main and\n   resolve merge conflicts.\n3. **Custom automations**: Any user-defined workflow that combines agent intelligence\n   with repository operations on a schedule.\n\nToday, users must manually trigger these operations or build external automation.\nThere is no way to define reusable workflows within shep or schedule them to run\nperiodically via the daemon.\n\n## Success Criteria\n\n- [ ] Users can create a workflow definition via `shep workflow create` with a name, agent prompt, and optional tool constraints\n- [ ] Users can list all workflows via `shep workflow list` showing name, schedule status, last run time, and enabled state\n- [ ] Users can manually trigger a workflow via `shep workflow run <name>` and see execution output\n- [ ] Users can attach a cron schedule to a workflow via `shep workflow schedule <name> --cron \"<expression>\"`\n- [ ] The daemon automatically executes scheduled workflows at the correct times when running\n- [ ] Users can enable/disable a workflow's schedule via `shep workflow enable/disable <name>`\n- [ ] Users can view execution history via `shep workflow history <name>` showing status, duration, and timestamps\n- [ ] Users can delete a workflow via `shep workflow delete <name>`\n- [ ] The web UI displays a workflow management page with list view, execution history, and enable/disable/trigger controls\n- [ ] Workflow execution emits events through the notification bus (started, completed, failed)\n- [ ] Execution history older than 30 days is automatically purged\n- [ ] Two built-in templates are available: GitHub issue triage and branch rebase\n- [ ] All domain models are defined in TypeSpec and compiled to TypeScript\n- [ ] All new code has unit test coverage with TDD methodology\n- [ ] Web UI components have colocated Storybook stories\n\n## Functional Requirements\n\n- **FR-1**: The system MUST allow users to create a workflow definition consisting of a unique name, human-readable description, an agent prompt (the instruction the AI agent will execute), and an optional allowlist of permitted tools.\n- **FR-2**: The system MUST allow users to list all workflow definitions with their current state (enabled/disabled, last execution time, next scheduled run, cron expression if scheduled).\n- **FR-3**: The system MUST allow users to manually trigger execution of any workflow on demand via CLI (`shep workflow run <name>`) or web UI trigger button, regardless of whether it has a cron schedule.\n- **FR-4**: The system MUST allow users to attach, update, or remove a cron schedule from a workflow. Cron expressions follow standard 5-field format (minute, hour, day-of-month, month, day-of-week) with optional timezone specification.\n- **FR-5**: The daemon process MUST evaluate cron schedules and automatically trigger workflow execution at the correct times. The scheduler checks for due workflows at a regular polling interval (default: 60 seconds).\n- **FR-6**: The system MUST allow users to enable or disable a workflow's schedule without deleting the cron expression. Disabled workflows retain their schedule but do not execute automatically. Manual triggering is still allowed on disabled workflows.\n- **FR-7**: The system MUST persist a complete execution history for each workflow run, including: execution ID, workflow ID, trigger type (manual or scheduled), start time, end time, duration, status (queued, running, completed, failed, cancelled), and output/error summary.\n- **FR-8**: The system MUST execute workflows sequentially — only one workflow runs at a time. Additional triggers (manual or scheduled) are queued in FIFO order and executed when the current run completes.\n- **FR-9**: The system MUST allow users to delete a workflow definition. Deleting a workflow cancels any pending scheduled runs and removes the schedule, but preserves execution history for audit purposes (subject to retention policy).\n- **FR-10**: The system MUST emit typed events through the existing NotificationEventBus when a workflow execution starts, completes, or fails, enabling notification delivery through existing channels.\n- **FR-11**: The system MUST automatically purge execution history records older than a configurable retention period (default: 30 days). Purging runs as part of the scheduler service's periodic tick.\n- **FR-12**: The system MUST provide two built-in workflow templates: (1) GitHub issue triage — scans open issues, identifies resolved ones, adds evidence comments, and closes them; (2) Branch rebase — rebases all tracked shep feature branches on main.\n- **FR-13**: The web UI MUST display a workflow management page showing a list of all workflows with their schedule, status, and recent execution history. The UI MUST support enabling/disabling workflows and manually triggering runs. Workflow creation and editing remain CLI-only.\n- **FR-14**: The system MUST allow users to view detailed execution history for a specific workflow via CLI (`shep workflow history <name>`) and web UI, including status, duration, trigger type, and output/error summary.\n- **FR-15**: The system MUST validate cron expressions at schedule creation time and reject invalid expressions with a clear error message. The validation MUST use the same cron library (croner) that evaluates schedules at runtime to ensure consistency.\n- **FR-16**: The system MUST allow users to update an existing workflow's name, description, prompt, or tool constraints via `shep workflow update <name>`. Updating a workflow does not affect currently running or queued executions.\n- **FR-17**: The system MUST gracefully handle daemon restarts — on startup, the scheduler service MUST load all enabled scheduled workflows from the database and resume scheduling. Missed scheduled runs during downtime are NOT retroactively executed; the next run occurs at the next matching cron time.\n\n## Non-Functional Requirements\n\n- **NFR-1 (Performance)**: The scheduler polling loop MUST complete in under 100ms per tick, including database queries for due workflows and queue management. The scheduler MUST NOT block the daemon's event loop or degrade web server responsiveness.\n- **NFR-2 (Reliability)**: Workflow execution MUST be crash-safe. If the daemon crashes during a workflow run, the execution record MUST be marked as failed (not stuck in \"running\") on next startup via a recovery sweep.\n- **NFR-3 (Storage)**: Workflow execution history MUST NOT grow unbounded. The automatic 30-day retention policy MUST be enforced. With the default purge policy, the database should not accumulate more than ~50,000 execution records under normal usage patterns (10 workflows, 4 runs/day each).\n- **NFR-4 (Security)**: Workflow tool constraints MUST be enforced at the agent execution level — the agent MUST NOT be able to bypass the allowlist. Prompts stored in the database MUST be treated as user input and not interpreted as system commands.\n- **NFR-5 (UX - CLI)**: All `shep workflow` commands MUST provide clear, human-readable output. List output MUST be formatted as a table. Error messages MUST include actionable remediation steps (e.g., \"Invalid cron expression. Example: '0 9 * * MON' runs every Monday at 9am\").\n- **NFR-6 (UX - Web)**: The workflow management page MUST load in under 2 seconds. Execution status MUST update in near-real-time (within 5 seconds) via polling or server-sent events.\n- **NFR-7 (Maintainability)**: All domain models MUST be defined in TypeSpec first. All new services MUST use constructor injection via tsyringe. All repositories MUST implement output port interfaces defined in the application layer. The feature MUST follow the existing Clean Architecture layer boundaries.\n- **NFR-8 (Testability)**: The scheduler service MUST be testable without real timers — the cron evaluation logic MUST accept an injectable clock/time provider. All repository methods MUST be testable with an in-memory or test SQLite database.\n- **NFR-9 (Observability)**: Workflow execution MUST produce structured log output including workflow name, execution ID, trigger type, and duration. Failed executions MUST log the error with full context.\n- **NFR-10 (Graceful Degradation)**: If the cron library fails to parse a schedule, the workflow MUST remain in a disabled state with a clear error stored. A single failing workflow MUST NOT prevent other workflows from executing.\n\n## Product Questions & AI Recommendations\n\n| # | Question | AI Recommendation | Rationale |\n| - | -------- | ----------------- | --------- |\n| 1 | Which cron library? | croner | Zero dependencies, native TypeScript, built-in timezone support, lightweight |\n| 2 | How to store workflow definitions? | SQLite-only | Consistent with existing patterns, avoids file-sync complexity |\n| 3 | Workflow step complexity? | Single-step agent prompt | Covers motivating use cases, avoids premature abstraction |\n| 4 | Concurrent execution model? | Sequential with queue | Avoids git conflicts, matches existing agent runner model |\n| 5 | Execution history retention? | 30-day time-based | Prevents unbounded growth, configurable default |\n| 6 | Web UI scope? | Management view with trigger | CLI for creation, web for monitoring and quick actions |\n| 7 | Tool constraint model? | Allowlist | Principle of least privilege for unattended execution |\n| 8 | Built-in templates? | Two starter templates | Validates engine, provides examples, immediate user value |\n\n## Affected Areas\n\n| Area | Impact | Reasoning |\n| ---- | ------ | --------- |\n| `tsp/domain/entities/` | High | New Workflow and WorkflowExecution TypeSpec models defining the domain |\n| `packages/core/src/domain/generated/output.ts` | High | Auto-generated from TypeSpec — new types will appear here after compile |\n| `tsp/common/enums/` | Medium | New enums for WorkflowTriggerType (manual, cron), WorkflowExecutionStatus (queued, running, completed, failed, cancelled) |\n| `packages/core/src/application/use-cases/` | High | New use cases: CreateWorkflow, UpdateWorkflow, DeleteWorkflow, ListWorkflows, RunWorkflow, ScheduleWorkflow, GetWorkflowHistory, EnableWorkflow, DisableWorkflow |\n| `packages/core/src/application/ports/output/repositories/` | High | New IWorkflowRepository and IWorkflowExecutionRepository interfaces |\n| `packages/core/src/application/ports/output/services/` | Medium | New ISchedulerService interface for cron-based scheduling |\n| `packages/core/src/infrastructure/repositories/` | High | New SQLiteWorkflowRepository and SQLiteWorkflowExecutionRepository |\n| `packages/core/src/infrastructure/persistence/sqlite/migrations/` | High | New migration(s) for workflow tables (workflows, workflow_executions) |\n| `packages/core/src/infrastructure/persistence/sqlite/mappers/` | Medium | New mappers for workflow domain entities |\n| `packages/core/src/infrastructure/services/` | High | New WorkflowSchedulerService managing cron jobs and execution queue via the daemon |\n| `packages/core/src/infrastructure/di/container.ts` | Medium | Register new repositories, services, and use cases |\n| `src/presentation/cli/commands/` | High | New `workflow` command group (create, update, list, run, schedule, enable, disable, history, delete) |\n| `src/presentation/web/` | Medium | Workflow management UI page with list view, execution history, and action controls |\n| `packages/core/src/infrastructure/services/daemon/` | Medium | Daemon startup needs to initialize and start the scheduler service |\n| `src/presentation/cli/commands/_serve.command.ts` | Low | Initialize scheduler service alongside existing watchers |\n| `packages/core/src/infrastructure/services/notifications/` | Low | Workflow events emitted through existing notification bus |\n\n## Dependencies\n\n**Existing Code Dependencies:**\n- DI container (`infrastructure/di/container.ts`) — registration of new services\n- Agent execution infrastructure (`infrastructure/services/agents/`) — running workflow agent tasks\n- Notification system (`infrastructure/services/notifications/`) — emitting workflow events\n- Daemon lifecycle (`infrastructure/services/daemon/`) — hosting the scheduler process\n- Git service (`infrastructure/services/git/`) — branch operations for rebase workflows\n- GitHub integration (`infrastructure/services/external/`) — issue/PR operations for triage workflows\n- SQLite persistence layer — workflow data storage\n- TypeSpec compilation pipeline — domain model generation\n- Watcher service pattern (`NotificationWatcherService`, `PrSyncWatcherService`) — architecture template for scheduler service\n\n**New Library Dependencies:**\n- `croner` — cron expression parsing, validation, and next-run calculation. Zero-dependency,\n  TypeScript-native. Used for schedule evaluation in the WorkflowSchedulerService and\n  cron expression validation in CLI/use case input handling.\n\n## Size Estimate\n\n**L (week+)** — This feature spans all four architecture layers (domain, application,\ninfrastructure, presentation) and introduces new domain entities (Workflow, WorkflowExecution),\n9+ use cases, a new scheduler service with execution queue, a new CLI command group with\n9 subcommands, new database migrations, and a web UI management page. The agent execution\nintegration, built-in templates, and crash recovery logic add additional complexity. The\nsingle-step workflow model and CLI-only creation scope keep the feature within L rather\nthan growing to XL.\n\n---\n\n_Requirements defined — proceed with research phase_\n"
+rejectionFeedback:
+  - iteration: 1
+    message: "The whole scheduled workflow should be behind feature flag, and only when enabled we should se it and its related settings."
+    phase: "merge"
+    timestamp: "2026-03-22T08:00:26.629Z"
+  - iteration: 2
+    message: "Resolve merge conflicts"
+    phase: "merge"
+    timestamp: "2026-03-24T09:40:10.582Z"

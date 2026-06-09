@@ -72,6 +72,9 @@ describe('SQLiteSettingsRepository', () => {
         prChecksFailed: true,
         prBlocked: true,
         mergeReviewReady: true,
+        workflowStarted: true,
+        workflowCompleted: true,
+        workflowFailed: true,
       },
     },
     workflow: {
@@ -530,6 +533,7 @@ describe('SQLiteSettingsRepository', () => {
         aspm: false,
         clusters: false,
         supplyChainSecurity: true,
+        scheduledWorkflows: false,
       };
 
       await repository.initialize(settings);
@@ -547,6 +551,7 @@ describe('SQLiteSettingsRepository', () => {
         aspm: false,
         clusters: false,
         supplyChainSecurity: true,
+        scheduledWorkflows: false,
       });
     });
 
@@ -570,6 +575,7 @@ describe('SQLiteSettingsRepository', () => {
         // When settings is initialized without featureFlags, the mapper writes 0 for all
         // flags (including supplyChainSecurity), so load-back returns false across the board.
         supplyChainSecurity: false,
+        scheduledWorkflows: false,
       });
     });
 
@@ -589,6 +595,7 @@ describe('SQLiteSettingsRepository', () => {
         aspm: false,
         clusters: false,
         supplyChainSecurity: true,
+        scheduledWorkflows: false,
       };
       settings.updatedAt = new Date('2025-01-02T00:00:00Z');
       await repository.update(settings);
@@ -606,6 +613,7 @@ describe('SQLiteSettingsRepository', () => {
         aspm: false,
         clusters: false,
         supplyChainSecurity: true,
+        scheduledWorkflows: false,
       });
     });
 
@@ -623,6 +631,7 @@ describe('SQLiteSettingsRepository', () => {
         aspm: false,
         clusters: false,
         supplyChainSecurity: true,
+        scheduledWorkflows: false,
       };
 
       await repository.initialize(settings);
@@ -981,6 +990,7 @@ describe('SQLiteSettingsRepository', () => {
         aspm: false,
         clusters: false,
         supplyChainSecurity: false,
+        scheduledWorkflows: false,
       };
       await repository.initialize(settings);
 

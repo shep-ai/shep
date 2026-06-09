@@ -1,0 +1,592 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: scheduled-workflows
+summary: >
+  Technical research for the scheduled-workflows feature covering cron scheduling
+  with croner, SQLite persistence for workflow definitions and execution history,
+  a daemon-hosted scheduler service following the existing watcher pattern, new
+  TypeSpec domain models, Clean Architecture layering with 9+ use cases, CLI command
+  group with Commander.js, and a web UI management page with Next.js server actions.
+
+# Relationships
+relatedFeatures: []
+
+technologies:
+  - "croner (cron expression parsing and scheduling)"
+  - "better-sqlite3 (workflow and execution persistence)"
+  - "tsyringe (dependency injection)"
+  - "TypeSpec (domain model definitions)"
+  - "umzug (database migrations)"
+  - "Commander.js (CLI commands)"
+  - "Next.js App Router (web UI pages and API routes)"
+  - "shadcn/ui (workflow UI components)"
+  - "Vitest (unit and integration testing)"
+  - "LangGraph (agent graph orchestration for workflow execution)"
+
+relatedLinks:
+  - title: "croner GitHub - Hexagon/croner"
+    url: "https://github.com/Hexagon/croner"
+  - title: "croner npm package"
+    url: "https://www.npmjs.com/package/croner"
+  - title: "node-cron vs node-schedule vs croner comparison"
+    url: "https://www.pkgpulse.com/blog/node-cron-vs-node-schedule-vs-croner-task-scheduling-nodejs-2026"
+  - title: "GitHub Actions workflow syntax reference"
+    url: "https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions"
+
+# Structured technology decisions
+decisions:
+  - title: "Cron Library Selection"
+    chosen: "croner v10.x"
+    rejected:
+      - "node-cron — popular (~3M weekly downloads) but has no built-in TypeScript types (requires @types), no timezone support without additional libraries, heavier dependency tree (~50 KB), and weaker error handling (silent failures)"
+      - "cron (npm) — full-featured with timezone via luxon but heaviest option with multiple transitive dependencies, more complexity than needed for simple schedule evaluation"
+      - "node-schedule — supports RecurrenceRule and Date objects but also requires @types, similar weight to cron, and over-featured for our cron-only use case"
+    rationale: >
+      croner is the optimal choice because it has zero dependencies (aligning with shep's
+      minimal-dependency philosophy visible in @shepai/core's package.json which has only 3
+      dependencies), native TypeScript definitions, built-in timezone support with DST awareness,
+      and both cron expression validation and scheduling triggers in a single package. At ~15 KB
+      it is significantly lighter than alternatives. The Cron class supports paused instantiation
+      for validation-only use (new Cron(expr, { paused: true })), nextRun()/nextRuns() for
+      schedule preview, match() for checking if a date matches a pattern, and msToNext() for
+      calculating polling intervals. The unref option allows the Node.js process to exit cleanly
+      even with active jobs. Version 10.x requires Node.js >= 18.0 which is compatible with
+      shep's engines.node >= 22.0.0 requirement.
+
+  - title: "Domain Model Design (TypeSpec)"
+    chosen: "Two new entities (ScheduledWorkflow and WorkflowExecution) extending BaseEntity, plus two new enums (WorkflowTriggerType and WorkflowExecutionStatus)"
+    rejected:
+      - "Single entity combining workflow and execution — violates SRP and makes querying execution history inefficient; the existing pattern separates entities clearly (Feature vs AgentRun)"
+      - "Extend SoftDeletableEntity for both — unnecessary for WorkflowExecution which should be hard-deleted by retention policy; only ScheduledWorkflow benefits from soft delete to preserve audit trail"
+    rationale: >
+      Following the existing codebase pattern where Feature and AgentRun are separate entities,
+      ScheduledWorkflow defines the reusable automation (name, prompt, schedule, tool constraints)
+      while WorkflowExecution tracks each run instance (status, timing, output). ScheduledWorkflow
+      extends SoftDeletableEntity (matching Feature pattern) so deleted workflows preserve execution
+      history. WorkflowExecution extends BaseEntity since it will be hard-deleted by the 30-day
+      retention policy. New enums follow the existing pattern in tsp/common/enums/ with string
+      values and @doc decorators. The ScheduledWorkflow entity includes: name (unique string),
+      description (optional string), prompt (string — the agent instruction), toolConstraints
+      (optional string array — allowlist of permitted tools), cronExpression (optional string),
+      timezone (optional string), enabled (boolean), lastRunAt (optional utcDateTime),
+      nextRunAt (optional utcDateTime), repositoryPath (string). WorkflowExecution includes:
+      workflowId (UUID), triggerType (WorkflowTriggerType), status (WorkflowExecutionStatus),
+      startedAt (utcDateTime), completedAt (optional utcDateTime), durationMs (optional integer),
+      outputSummary (optional string), errorMessage (optional string).
+
+  - title: "Database Schema Design"
+    chosen: "Two new SQLite tables (scheduled_workflows and workflow_executions) created via umzug migration 044"
+    rejected:
+      - "Store workflows in a JSON column on settings — would break the repository pattern, make querying inefficient, and couple workflows to the singleton settings record"
+      - "Store workflows as YAML files with SQLite index — adds file-sync complexity, two-source-of-truth problems, and is inconsistent with how all other entities are persisted in shep"
+    rationale: >
+      Consistent with how all entities in shep are persisted (features, agent_runs, settings,
+      repositories, dev_servers all have dedicated SQLite tables). The migration follows the
+      existing umzug pattern (numbered 044-create-scheduled-workflows.ts, exported up/down
+      functions, idempotent column checks). The scheduled_workflows table stores domain fields
+      with snake_case columns, complex fields (tool_constraints) as JSON strings, booleans as
+      0/1 integers, and dates as unix milliseconds — all matching the established mapper pattern
+      in packages/core/src/infrastructure/persistence/sqlite/mappers/. The workflow_executions
+      table has a foreign key to scheduled_workflows(id) and indexes on workflow_id and
+      started_at for efficient history queries and retention cleanup. A composite index on
+      (status, started_at) supports the scheduler's query for queued executions.
+
+  - title: "Scheduler Service Architecture"
+    chosen: "WorkflowSchedulerService following the existing watcher service pattern with setInterval polling, integrated into daemon lifecycle"
+    rejected:
+      - "Use croner's built-in timer triggers directly — while croner can fire callbacks at cron times, this approach requires the service to maintain in-memory Cron instances for every enabled workflow, complicating daemon restart recovery and making it harder to test without real timers"
+      - "Run scheduler as a separate process — adds IPC complexity, deployment overhead, and is inconsistent with how notification and PR sync watchers run in-process within the daemon"
+    rationale: >
+      The codebase has two established watcher services (NotificationWatcherService polling at 3s,
+      PrSyncWatcherService polling at 30s) that follow an identical pattern: singleton with
+      start()/stop()/isRunning() methods, setInterval-based polling, in-memory Map for state
+      tracking, immediate first poll, and graceful shutdown via clearInterval. The
+      WorkflowSchedulerService will follow this exact pattern with a 60-second poll interval.
+      Each tick: (1) query enabled workflows where nextRunAt <= now, (2) enqueue due workflows,
+      (3) if no workflow is running, dequeue and execute the next one, (4) run retention cleanup
+      periodically (every 100 ticks). The service uses croner only for cron expression validation
+      and nextRun() calculation — not for its timer functionality — making it fully testable with
+      an injectable clock. The service is initialized in _serve.command.ts alongside the existing
+      watchers and stopped in the SIGTERM/SIGINT shutdown handler.
+
+  - title: "Workflow Execution Model"
+    chosen: "Sequential execution with in-memory FIFO queue"
+    rejected:
+      - "Parallel execution with concurrency limit — workflows operate on a shared git repository where concurrent modifications would cause conflicts; adds significant complexity for resource management, conflict detection, and status tracking"
+      - "Unrestricted parallel execution — risks resource exhaustion and git conflicts when multiple workflows modify the same repository; no isolation boundary between workflows"
+    rationale: >
+      Both motivating use cases (issue triage and branch rebase) operate on the same git
+      repository. The existing agent runner uses a single-execution model for similar reasons.
+      Sequential execution is simpler to implement, reason about, and debug. The queue is
+      maintained in-memory within the WorkflowSchedulerService (an array of workflow IDs).
+      If the daemon restarts, the queue is lost but this is acceptable since missed scheduled
+      runs are not retroactively executed per FR-17. A concurrency limit can be added later
+      as an enhancement if workflows are scoped to different repositories.
+
+  - title: "Repository Layer Design"
+    chosen: "Two repository interfaces (IWorkflowRepository, IWorkflowExecutionRepository) with SQLite implementations and bidirectional mappers"
+    rejected:
+      - "Single combined repository — violates SRP and makes it harder to test execution history independently; the existing codebase separates IFeatureRepository from IAgentRunRepository for the same reason"
+      - "Generic repository base class — the codebase does not use base repository classes; each repository is standalone with its own mapper functions, which provides more flexibility per entity"
+    rationale: >
+      Follows the established pattern where each entity has its own repository interface in
+      packages/core/src/application/ports/output/repositories/ and SQLite implementation in
+      packages/core/src/infrastructure/repositories/. IWorkflowRepository handles CRUD for
+      ScheduledWorkflow entities with methods like findByName(), findEnabled(), list(filters).
+      IWorkflowExecutionRepository handles execution records with methods like
+      findByWorkflowId(id, limit), findByStatus(status), deleteOlderThan(date). Each has
+      dedicated mapper files (workflow.mapper.ts, workflow-execution.mapper.ts) with
+      toDatabase()/fromDatabase() functions following the exact pattern in feature.mapper.ts.
+      Registered in DI container with factory pattern using string tokens.
+
+  - title: "Use Case Organization"
+    chosen: "Dedicated use-case directory with 9 use cases following existing single-method pattern"
+    rejected:
+      - "Combine related operations into fewer fat use cases — violates the single responsibility principle followed by existing use cases like ListFeaturesUseCase and CreateFeatureUseCase"
+      - "Use a service class instead of use cases — breaks Clean Architecture layering; the application layer should only contain use cases and port interfaces, not services"
+    rationale: >
+      The existing use case pattern uses @injectable() classes with a single async execute()
+      method, injecting repositories and services via @inject() with string tokens. The 9 use
+      cases are: CreateWorkflowUseCase, UpdateWorkflowUseCase, DeleteWorkflowUseCase,
+      ListWorkflowsUseCase, GetWorkflowUseCase, RunWorkflowUseCase, ScheduleWorkflowUseCase,
+      GetWorkflowHistoryUseCase, ToggleWorkflowUseCase (handles enable/disable). Each is
+      registered as a singleton in the DI container with a string-token alias for web route
+      access (matching the Turbopack compatibility pattern).
+
+  - title: "CLI Command Structure"
+    chosen: "New 'workflow' command group with subcommands following the existing feat/settings/agent pattern"
+    rejected:
+      - "Add workflow commands as subcommands of 'feat' — workflows are independent of the feature lifecycle; mixing them would confuse the CLI taxonomy"
+      - "Use a single 'workflow' command with mode flags — inconsistent with the established subcommand pattern (feat new, feat ls, settings show); harder to discover and document"
+    rationale: >
+      The codebase uses Commander.js with a consistent pattern: a createXxxCommand() factory
+      function that returns a Command with .addCommand() for each subcommand. Each subcommand
+      is in its own file (e.g., new.command.ts, ls.command.ts). The 'workflow' group will
+      mirror the 'feat' group structure with: create, update, delete, list, show, run,
+      schedule, enable, disable, history. Registered in src/presentation/cli/index.ts via
+      program.addCommand(createWorkflowCommand()). CLI table output uses cli-table3 (already
+      a dependency).
+
+  - title: "Web UI Architecture"
+    chosen: "New /workflows route with server page component, client page component, and Next.js server actions — management view with enable/disable/trigger controls"
+    rejected:
+      - "Full CRUD in web UI — workflow creation involves writing agent prompts and tool constraint lists which are better suited to CLI; web CRUD adds significant frontend complexity for form validation and prompt editing"
+      - "Read-only list view — too limited; users need quick actions (enable/disable/trigger) without switching to CLI for common operations"
+    rationale: >
+      Follows the established settings page pattern: server component (page.tsx) calls server
+      actions in Promise.all() to load data, passes it to a PageClient component for
+      interactivity. Uses 'use client' directive, useTransition() for form submissions, and
+      server actions for mutations. The workflow list shows name, schedule, status, last run,
+      next run, and enabled state. Action buttons for enable/disable and manual trigger.
+      Execution history shown in an expandable section or detail view. Real-time status updates
+      via the existing SSE pattern in /api/agent-events (extended to include workflow events)
+      or a dedicated /api/workflow-events SSE endpoint polling every 5 seconds. All components
+      get colocated .stories.tsx files following the Meta/StoryObj pattern with factory test data.
+
+  - title: "Notification Integration"
+    chosen: "Extend existing NotificationEventType enum with workflow-specific events and emit via NotificationService"
+    rejected:
+      - "Create a separate event bus for workflows — duplicates infrastructure, breaks the single notification pipeline, and would require separate SSE endpoints"
+      - "Skip notifications for workflow events — users need visibility into automated workflow execution, especially for failures during unattended scheduled runs"
+    rationale: >
+      The existing notification system is well-designed for extension. The NotificationEventType
+      enum in tsp/common/enums/notification.tsp already covers agent lifecycle events.
+      Adding WorkflowStarted, WorkflowCompleted, WorkflowFailed events follows the same pattern.
+      The NotificationService.notify() method fans out to the notification bus, which feeds the
+      SSE endpoint for web UI toasts. The scheduler service calls notificationService.notify()
+      at execution start, completion, and failure — matching how the NotificationWatcherService
+      emits events for agent runs.
+
+  - title: "Crash Recovery and Daemon Restart"
+    chosen: "Recovery sweep on startup marking stale 'running' executions as 'failed', with no retroactive execution of missed schedules"
+    rejected:
+      - "Retroactive execution of missed schedules — could trigger a flood of workflow runs after extended downtime, potentially causing issues with external services (GitHub rate limits) and confusing execution history"
+      - "No recovery handling — would leave executions stuck in 'running' state indefinitely, making status tracking unreliable"
+    rationale: >
+      On startup, the WorkflowSchedulerService queries for any WorkflowExecution records with
+      status 'running' and marks them as 'failed' with an error message indicating daemon crash.
+      This matches the graceful degradation requirement (NFR-10) and prevents stale state. For
+      missed schedules during downtime, the scheduler simply recalculates nextRunAt from the
+      current time using croner's nextRun() — the next execution happens at the next valid cron
+      time, not retroactively. This is the same approach used by most production schedulers
+      (systemd timers, Kubernetes CronJobs).
+
+  - title: "Execution History Retention"
+    chosen: "Time-based 30-day retention with configurable period, cleanup running as part of scheduler tick"
+    rejected:
+      - "Count-based retention (last 100 per workflow) — unpredictable; high-frequency workflows would lose recent history faster than low-frequency ones"
+      - "No automatic retention — risks unbounded database growth over months of operation; at 10 workflows running 4x/day, that is 1200 records/month growing indefinitely"
+    rationale: >
+      The retention period defaults to 30 days and is configurable via the settings system
+      (extending WorkflowConfig in the Settings domain model). Cleanup runs as a
+      DELETE FROM workflow_executions WHERE started_at < ? query during the scheduler's
+      periodic tick (every 100 ticks = ~100 minutes at 60s intervals). This amortizes the
+      cleanup cost and keeps it out of the critical polling path. With the default policy,
+      maximum records under normal usage is ~1200/month with 30-day cap = ~1200 records,
+      well within SQLite's comfortable range.
+
+  - title: "Tool Constraint Enforcement"
+    chosen: "Allowlist passed to agent executor at invocation time, stored as JSON array in the workflow definition"
+    rejected:
+      - "Denylist approach — less secure; new tools added to shep would automatically be available to existing workflows unless explicitly blocked"
+      - "No constraints — workflows running unattended on a schedule should have explicit boundaries on capabilities; relies entirely on prompt engineering for safety which is insufficient for production use"
+    rationale: >
+      The tool constraints are stored as a JSON array of tool name strings in the
+      scheduled_workflows.tool_constraints column. When the scheduler executes a workflow,
+      it passes the allowlist to the agent executor. The agent resolution flows through
+      IAgentExecutorProvider (as mandated by CLAUDE.md), and tool constraints are applied
+      at the executor level. A null/empty allowlist means no constraints (all tools available).
+      This follows the principle of least privilege for unattended execution. Default constraint
+      sets can be pre-configured in the built-in templates.
+
+  - title: "Built-in Workflow Templates"
+    chosen: "Two starter templates (GitHub issue triage and branch rebase) implemented as factory functions returning partial ScheduledWorkflow objects"
+    rejected:
+      - "Template marketplace — massive scope increase far beyond the core feature; requires a registry, versioning, and community infrastructure"
+      - "No templates — users would have to figure out effective prompts and tool configurations from scratch with no examples"
+    rationale: >
+      Templates are implemented as pure functions in a templates/ directory under the use case
+      layer (e.g., application/use-cases/workflows/templates/). Each returns a partial
+      ScheduledWorkflow with pre-configured name, description, prompt, and toolConstraints.
+      Users can create workflows from templates via 'shep workflow create --template issue-triage'
+      or '--template branch-rebase'. Templates validate the workflow engine end-to-end during
+      development and serve as practical documentation for users creating custom workflows.
+      The issue triage template constrains tools to git and github operations. The branch
+      rebase template constrains tools to git operations only.
+
+# Open questions (resolved during research)
+openQuestions:
+  - question: "How should the scheduler service handle the clock for testability?"
+    resolved: true
+    options:
+      - option: "Injectable clock interface"
+        description: "Define an IClock interface with now(): Date method. Inject it into the scheduler service. In tests, provide a mock clock. In production, use a real clock implementation. Follows the dependency inversion principle."
+        selected: true
+      - option: "Date.now() with vi.useFakeTimers()"
+        description: "Use Date.now() directly in production code and rely on Vitest's fake timers for testing. Simpler but tightly couples tests to timer mocking behavior and can cause subtle timing issues."
+        selected: false
+      - option: "Pass current time as parameter to poll()"
+        description: "The poll() method accepts a 'now' parameter instead of reading the clock internally. Simple but leaks implementation details to callers and makes the production call site awkward."
+        selected: false
+    selectionRationale: >
+      An injectable IClock interface is the cleanest approach for the scheduler service.
+      The codebase already uses constructor injection extensively via tsyringe. The clock
+      is registered in the DI container with a real implementation for production and a
+      mock for tests. This allows deterministic testing of cron evaluation, nextRunAt
+      calculation, and retention cleanup without depending on system time. croner's
+      nextRun() and match() methods accept a reference Date parameter, making them
+      compatible with an injectable clock.
+
+  - question: "Where should the scheduler service be initialized in the daemon lifecycle?"
+    resolved: true
+    options:
+      - option: "In _serve.command.ts alongside existing watchers"
+        description: "Initialize and start the WorkflowSchedulerService in the same place where NotificationWatcherService and PrSyncWatcherService are started. Add it to the shutdown handler. Follows the established pattern exactly."
+        selected: true
+      - option: "In the DI container initialization"
+        description: "Auto-start the scheduler when the container initializes. Simpler but violates the principle that DI registration should not have side effects. Would also start the scheduler in non-daemon contexts (CLI commands)."
+        selected: false
+      - option: "As a separate daemon process"
+        description: "Spawn a dedicated scheduler process from the main daemon. Provides isolation but adds IPC complexity and is inconsistent with how other long-running services operate."
+        selected: false
+    selectionRationale: >
+      The _serve.command.ts file is the daemon's entry point where all long-running
+      services are initialized. It already follows the pattern of resolving services
+      from the DI container, calling start(), and registering stop() in the shutdown
+      handler. Adding the WorkflowSchedulerService here is a one-line addition to each
+      section (start and shutdown). The scheduler must only run in the daemon context,
+      not during CLI commands, which this approach guarantees.
+
+  - question: "How should the web UI fetch and display workflow execution status in near-real-time?"
+    resolved: true
+    options:
+      - option: "Extend existing SSE endpoint with workflow events"
+        description: "Add workflow execution events to the existing /api/agent-events SSE stream. The web UI already subscribes to this stream for agent lifecycle updates. Reuses infrastructure and reduces client-side connection overhead."
+        selected: true
+      - option: "Create a dedicated /api/workflow-events SSE endpoint"
+        description: "New SSE endpoint specific to workflow events with its own polling interval (5s). Separates concerns but adds another persistent connection per client and duplicates SSE infrastructure."
+        selected: false
+      - option: "Client-side polling with fetch"
+        description: "The web UI polls a REST endpoint every 5 seconds for workflow status updates. Simplest to implement but creates more HTTP overhead and higher latency than SSE. Does not reuse existing real-time infrastructure."
+        selected: false
+    selectionRationale: >
+      The existing /api/agent-events SSE endpoint already provides a real-time event
+      stream to the web UI with a 500ms polling interval and heartbeat. Extending it
+      to include workflow execution events (started, completed, failed) is the most
+      efficient approach. The web UI client already has SSE subscription logic that can
+      be extended to handle workflow event types. This avoids opening additional SSE
+      connections and keeps the real-time architecture unified. The workflow events use
+      the same NotificationEvent structure, making them compatible with the existing
+      event pipeline.
+
+# Markdown content (the full research document)
+content: |
+  ## Status
+
+  - **Phase:** Research (complete)
+  - **Updated:** 2026-03-20
+
+  ## Technology Decisions
+
+  ### 1. Cron Library Selection
+
+  **Chosen:** croner v10.x
+
+  **Rejected:**
+  - node-cron — no built-in TypeScript types, no timezone support, heavier deps (~50 KB)
+  - cron (npm) — heaviest option with luxon transitive dependency, over-featured
+  - node-schedule — requires @types, similar weight to cron, over-featured for cron-only use
+
+  **Rationale:** croner has zero dependencies, native TypeScript, built-in timezone with DST
+  awareness, validation via paused instantiation, and nextRun()/nextRuns() for schedule preview.
+  At ~15 KB it aligns with shep's minimal-dependency philosophy. The unref option allows clean
+  process exit. Compatible with Node.js >= 22.0.0.
+
+  ### 2. Domain Model Design (TypeSpec)
+
+  **Chosen:** Two entities (ScheduledWorkflow extending SoftDeletableEntity, WorkflowExecution
+  extending BaseEntity) plus two enums (WorkflowTriggerType, WorkflowExecutionStatus)
+
+  **Rejected:**
+  - Single combined entity — violates SRP, inefficient for history queries
+  - SoftDeletableEntity for both — execution records should be hard-deleted by retention
+
+  **Rationale:** Mirrors Feature/AgentRun separation. ScheduledWorkflow holds the reusable
+  definition, WorkflowExecution tracks each run. Enums follow tsp/common/enums/ pattern.
+
+  **ScheduledWorkflow fields:** name, description?, prompt, toolConstraints?, cronExpression?,
+  timezone?, enabled, lastRunAt?, nextRunAt?, repositoryPath
+
+  **WorkflowExecution fields:** workflowId, triggerType, status, startedAt, completedAt?,
+  durationMs?, outputSummary?, errorMessage?
+
+  **WorkflowTriggerType enum:** Manual, Scheduled
+
+  **WorkflowExecutionStatus enum:** Queued, Running, Completed, Failed, Cancelled
+
+  ### 3. Database Schema Design
+
+  **Chosen:** Two tables via migration 044-create-scheduled-workflows.ts
+
+  **scheduled_workflows table:**
+  - id TEXT PRIMARY KEY
+  - name TEXT NOT NULL UNIQUE
+  - description TEXT
+  - prompt TEXT NOT NULL
+  - tool_constraints TEXT (JSON array)
+  - cron_expression TEXT
+  - timezone TEXT
+  - enabled INTEGER NOT NULL DEFAULT 1
+  - last_run_at INTEGER (unix ms)
+  - next_run_at INTEGER (unix ms)
+  - repository_path TEXT NOT NULL
+  - deleted_at INTEGER (unix ms, soft delete)
+  - created_at INTEGER NOT NULL (unix ms)
+  - updated_at INTEGER NOT NULL (unix ms)
+
+  **workflow_executions table:**
+  - id TEXT PRIMARY KEY
+  - workflow_id TEXT NOT NULL REFERENCES scheduled_workflows(id)
+  - trigger_type TEXT NOT NULL
+  - status TEXT NOT NULL
+  - started_at INTEGER NOT NULL (unix ms)
+  - completed_at INTEGER (unix ms)
+  - duration_ms INTEGER
+  - output_summary TEXT
+  - error_message TEXT
+  - created_at INTEGER NOT NULL (unix ms)
+  - updated_at INTEGER NOT NULL (unix ms)
+  - INDEX idx_executions_workflow_id (workflow_id)
+  - INDEX idx_executions_started_at (started_at)
+  - INDEX idx_executions_status_started (status, started_at)
+
+  ### 4. Scheduler Service Architecture
+
+  **Chosen:** WorkflowSchedulerService with setInterval polling (60s), in daemon process
+
+  **Rejected:**
+  - croner's built-in timer triggers — harder to test, complicates restart recovery
+  - Separate scheduler process — adds IPC complexity, inconsistent with existing pattern
+
+  **Rationale:** Follows NotificationWatcherService and PrSyncWatcherService patterns exactly:
+  singleton with start()/stop()/isRunning(), setInterval polling, in-memory state Map, immediate
+  first poll, graceful shutdown. Uses croner only for validation and nextRun() calculation.
+  Injectable IClock for deterministic testing.
+
+  **Poll logic per tick:**
+  1. Query enabled workflows where next_run_at <= clock.now()
+  2. Enqueue due workflow IDs to in-memory FIFO queue
+  3. If no execution is running, dequeue next and start execution
+  4. Every 100 ticks: run retention cleanup (DELETE WHERE started_at < 30 days ago)
+
+  **Crash recovery on startup:**
+  - Query workflow_executions WHERE status = 'running'
+  - Mark them as 'failed' with error 'daemon crashed during execution'
+  - Recalculate nextRunAt for all enabled workflows
+
+  ### 5. Workflow Execution Model
+
+  **Chosen:** Sequential execution with in-memory FIFO queue
+
+  **Rejected:**
+  - Parallel with concurrency limit — git conflicts on shared repository
+  - Unrestricted parallel — resource exhaustion risk
+
+  **Rationale:** Workflows operate on shared git repo. Matches existing agent runner model.
+  Simple to implement, reason about, and debug. Queue is in-memory (lost on restart, but
+  missed schedules are not retroactively executed per FR-17).
+
+  ### 6. Repository Layer Design
+
+  **Chosen:** Two interfaces (IWorkflowRepository, IWorkflowExecutionRepository) with SQLite
+  implementations and bidirectional mappers
+
+  **IWorkflowRepository methods:**
+  - create(workflow): Promise<void>
+  - findById(id): Promise<ScheduledWorkflow | null>
+  - findByName(name, repoPath): Promise<ScheduledWorkflow | null>
+  - findEnabled(): Promise<ScheduledWorkflow[]>
+  - list(filters?): Promise<ScheduledWorkflow[]>
+  - update(workflow): Promise<void>
+  - softDelete(id): Promise<void>
+
+  **IWorkflowExecutionRepository methods:**
+  - create(execution): Promise<void>
+  - findById(id): Promise<WorkflowExecution | null>
+  - findByWorkflowId(workflowId, limit?): Promise<WorkflowExecution[]>
+  - findByStatus(status): Promise<WorkflowExecution[]>
+  - update(execution): Promise<void>
+  - deleteOlderThan(date): Promise<number>
+
+  ### 7. Use Case Organization
+
+  **Chosen:** 9 use cases in application/use-cases/workflows/
+
+  1. CreateWorkflowUseCase — validate name uniqueness, create entity
+  2. UpdateWorkflowUseCase — update fields, recalculate nextRunAt if schedule changed
+  3. DeleteWorkflowUseCase — soft delete, cancel pending runs
+  4. ListWorkflowsUseCase — list with optional filters (enabled, repoPath)
+  5. GetWorkflowUseCase — find by name or ID
+  6. RunWorkflowUseCase — manual trigger, enqueue execution
+  7. ScheduleWorkflowUseCase — validate cron expression, set schedule, calculate nextRunAt
+  8. GetWorkflowHistoryUseCase — paginated execution history for a workflow
+  9. ToggleWorkflowUseCase — enable/disable workflow schedule
+
+  ### 8. CLI Command Structure
+
+  **Chosen:** 'workflow' command group registered in main CLI
+
+  Commands: create, update, delete, list, show, run, schedule, enable, disable, history
+
+  Each follows the createXxxCommand() factory pattern. Table output via cli-table3.
+
+  ### 9. Web UI Architecture
+
+  **Chosen:** Management view at /workflows with enable/disable/trigger controls
+
+  Structure:
+  - src/presentation/web/app/workflows/page.tsx (server component)
+  - src/presentation/web/components/features/workflows/workflows-page-client.tsx (client)
+  - Server actions for data loading and mutations
+  - Real-time updates via extended SSE endpoint
+
+  ### 10. Notification Integration
+
+  **Chosen:** Extend NotificationEventType enum with WorkflowStarted, WorkflowCompleted,
+  WorkflowFailed events
+
+  ### 11. Crash Recovery
+
+  **Chosen:** Startup sweep marking stale 'running' as 'failed', no retroactive execution
+
+  ### 12. Built-in Templates
+
+  **Chosen:** Two factory functions (issue-triage, branch-rebase) returning partial
+  ScheduledWorkflow objects with pre-configured prompts and tool constraints
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | croner v10.x | Cron parsing, validation, scheduling | Use | Zero deps, native TS, timezone, lightweight |
+  | node-cron | Cron scheduling | Reject | No TS types, no timezone, heavier |
+  | cron (npm) | Cron scheduling | Reject | Heavy with luxon dependency |
+  | node-schedule | Flexible scheduling | Reject | Over-featured, needs @types |
+  | better-sqlite3 | Database | Use (existing) | Already in use for all persistence |
+  | umzug | Migrations | Use (existing) | Already in use for schema management |
+  | tsyringe | DI | Use (existing) | Already in use for all injection |
+  | cli-table3 | CLI table output | Use (existing) | Already in use for formatted output |
+  | Commander.js | CLI commands | Use (existing) | Already in use for all CLI commands |
+
+  ## Security Considerations
+
+  **Prompt injection prevention:** Workflow prompts are stored as plain strings in SQLite and
+  passed to the agent executor as user content, not as system instructions. The agent's system
+  prompt is controlled by shep, not by the workflow definition. This prevents stored prompt
+  injection attacks where a malicious workflow prompt tries to override system behavior.
+
+  **Tool constraint enforcement:** The allowlist is enforced at the agent executor level, not
+  just validated at creation time. Even if a prompt attempts to use a tool not in the allowlist,
+  the executor blocks the call. This provides defense-in-depth beyond prompt-level restrictions.
+
+  **Unattended execution security:** Scheduled workflows run without user supervision. The
+  combination of tool constraints (limiting what the agent can do) and sequential execution
+  (preventing concurrent repo modifications) provides a safety net. Failed workflows are
+  logged with full context for audit review.
+
+  **Input validation:** Cron expressions are validated using croner (the same library used
+  for evaluation) at creation/update time. Invalid expressions are rejected with clear error
+  messages. Workflow names are validated for uniqueness and format constraints.
+
+  ## Performance Implications
+
+  **Scheduler polling overhead:** The 60-second poll interval means the scheduler queries the
+  database once per minute. The query (SELECT from scheduled_workflows WHERE enabled = 1 AND
+  next_run_at <= ?) is indexed and returns at most a handful of rows. This completes in under
+  1ms on SQLite, well within the 100ms NFR-1 requirement.
+
+  **Execution queue:** The in-memory queue has O(1) enqueue/dequeue operations. Queue size is
+  bounded by the number of enabled workflows (typically < 20).
+
+  **Retention cleanup:** The periodic DELETE query runs every ~100 minutes and targets an indexed
+  column (started_at). Even with 50,000 records, this completes in milliseconds on SQLite.
+
+  **Web UI load time:** The workflows page loads data from a single indexed SQLite table. With
+  < 100 workflows expected, the query returns in under 1ms. Combined with the SSE stream for
+  real-time updates, the page meets the 2-second NFR-6 requirement easily.
+
+  **No event loop blocking:** All database operations use better-sqlite3's synchronous API
+  wrapped in async functions (matching existing pattern). The scheduler's poll runs as an
+  async function invoked by setInterval, so it does not block the event loop.
+
+  ## Architecture Notes
+
+  **Clean Architecture compliance:** The feature spans all four layers:
+  - Domain: TypeSpec models (ScheduledWorkflow, WorkflowExecution, enums)
+  - Application: 9 use cases + 2 repository port interfaces + 1 service port interface
+  - Infrastructure: SQLite repositories, mappers, migration, scheduler service, DI registration
+  - Presentation: CLI command group (10 subcommands) + web UI page with server actions
+
+  **DI container integration:** New registrations follow established patterns:
+  - Repositories: factory pattern with Database injection
+  - Use cases: singleton registration + string-token alias
+  - Scheduler service: singleton with watcher dependencies
+  - IClock: instance registration (real Clock in prod, MockClock in test)
+
+  **TypeSpec workflow:** New .tsp files in tsp/domain/entities/ and tsp/common/enums/.
+  After running pnpm tsp:compile, generated types appear in output.ts. All code references
+  the generated types, never the .tsp files directly.
+
+  **Migration sequencing:** Migration 044 creates both tables in a single migration file
+  (matching the pattern where related schema changes are grouped). Uses CREATE TABLE IF NOT
+  EXISTS for idempotency.
+
+  **Testing strategy:** All services accept injected dependencies (repositories, clock,
+  notification service). Tests use in-memory SQLite databases (matching existing test setup)
+  and mock implementations of port interfaces. The injectable IClock enables deterministic
+  testing of time-dependent scheduler logic without vi.useFakeTimers() complexity.
+
+  ---
+
+  _Research complete — proceed to planning phase_

@@ -1,0 +1,129 @@
+============================================================
+  CLI Workflow Commands Demo
+  Date: 2026-03-21 00:10:19 UTC
+============================================================
+
+--- Step 1: List workflows (empty) ---
+
+ℹ No workflows found. Create one with: shep workflow create <name> --prompt <prompt>
+
+
+--- Step 2: Create a workflow ---
+
+✓ Workflow created
+  Name:    lint-check-1774051819
+  ID:      f17de0e7
+  Enabled: yes
+  Desc:    Automated lint check for CI
+
+
+--- Step 3: Create a workflow from template ---
+
+✓ Workflow created
+  Name:    triage-1774051819
+  ID:      e95bbd10
+  Enabled: yes
+  Desc:    Scan open GitHub issues, identify resolved ones by checking commits and PRs, add evidence comments, and close them automatically.
+
+
+--- Step 4: List workflows (should show 2) ---
+
+  Workflows (2)
+
+  Name                    Schedule              Status            Last Run        Enabled   
+  lint-check-1774051819   -                     ● on-demand       never           ● on
+  triage-1774051819       -                     ● on-demand       never           ● on
+
+
+--- Step 5: Show workflow details ---
+
+  Workflow: lint-check-1774051819
+
+  ID           f17de0e7-7d63-4bcd-b31a-db250c4772ed
+  Name         lint-check-1774051819
+  Description  Automated lint check for CI
+  Status       ● on-demand
+  Enabled      yes
+  Repository   /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-scheduled-workflows
+
+  Schedule
+  Cron      none
+  Timezone  system default
+  Next Run  none
+  Last Run  never
+
+  Constraints
+  Tools  bash
+
+  Timestamps
+  Created  3/21/2026, 2:10:20 AM
+  Updated  3/21/2026, 2:10:20 AM
+
+  Prompt
+  Run eslint on all TypeScript files and report any issues
+
+
+--- Step 6: Schedule workflow (every Monday at 9am EST) ---
+
+✓ Schedule set for "lint-check-1774051819"
+  Cron:     0 9 * * MON
+  Timezone: America/New_York
+  Next run: 3/23/2026, 3:00:00 PM
+
+
+--- Step 7: List workflows (after scheduling) ---
+
+  Workflows (2)
+
+  Name                    Schedule              Status            Last Run        Enabled   
+  lint-check-1774051819   0 9 * * MON           ● scheduled       never           ● on
+  triage-1774051819       -                     ● on-demand       never           ● on
+
+
+--- Step 8: Disable workflow ---
+✓ Workflow "lint-check-1774051819" disabled
+ℹ Manual triggers are still allowed via: shep workflow run <name>
+
+--- Step 9: Enable workflow ---
+✓ Workflow "lint-check-1774051819" enabled
+  Next run: 3/23/2026, 3:00:00 PM
+
+--- Step 10: Update workflow ---
+
+✓ Workflow "lint-check-1774051819" updated
+
+
+--- Step 11: Manually trigger workflow ---
+
+✓ Workflow execution queued
+  Execution ID: d2eae318
+  Status:       queued
+  Trigger:      manual
+
+ℹ View execution history: shep workflow history lint-check-1774051819
+
+--- Step 12: View execution history ---
+
+  Execution History: lint-check-1774051819 (1)
+
+  ID          Status            Trigger       Duration    Started               
+  d2eae318    ○ queued          manual        -           3/21/2026, 2:10:23 AM
+
+
+--- Step 13: Remove schedule ---
+
+✓ Schedule removed from "lint-check-1774051819"
+
+
+--- Step 14: Delete workflows ---
+✓ Deleted workflow "lint-check-1774051819"
+✓ Deleted workflow "triage-1774051819"
+
+--- Step 15: List workflows (should be empty) ---
+
+ℹ No workflows found. Create one with: shep workflow create <name> --prompt <prompt>
+
+
+============================================================
+  Demo complete — all commands executed successfully
+============================================================

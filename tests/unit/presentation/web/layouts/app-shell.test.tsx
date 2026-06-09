@@ -60,6 +60,7 @@ const defaultFlags = {
   whatsappDispatch: false,
   aspm: false,
   clusters: false,
+  scheduledWorkflows: false,
 };
 
 function renderShell(children: React.ReactNode) {

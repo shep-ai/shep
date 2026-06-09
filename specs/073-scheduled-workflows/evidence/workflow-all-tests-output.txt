@@ -1,0 +1,67 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-scheduled-workflows
+
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/workflow-execution.mapper.test.ts (11 tests) 4ms
+ ✓  node  tests/unit/application/use-cases/workflows/create-workflow.use-case.test.ts (7 tests) 41ms
+ ✓  node  tests/unit/infrastructure/services/workflow-scheduler/workflow-scheduler.service.test.ts (11 tests) 46ms
+ ✓  node  tests/unit/application/use-cases/workflows/update-workflow.use-case.test.ts (5 tests) 11ms
+ ✓  node  tests/unit/application/use-cases/workflows/schedule-workflow.use-case.test.ts (5 tests) 29ms
+ ✓  node  tests/unit/application/use-cases/workflows/list-workflows.use-case.test.ts (7 tests) 7ms
+ ✓  node  tests/unit/application/use-cases/workflows/toggle-workflow.use-case.test.ts (4 tests) 7ms
+ ✓  node  tests/unit/infrastructure/persistence/sqlite/mappers/workflow.mapper.test.ts (17 tests) 10ms
+stdout | tests/unit/presentation/cli/commands/workflow/workflow-commands.test.ts > Workflow CLI Commands > create subcommand > calls CreateWorkflowUseCase with correct args
+  [muted:Name:]    [accent:test-workflow]
+  [muted:ID:]      wf-001-u
+  [muted:Enabled:] [success:yes]
+  [muted:Desc:]    A test workflow
+
+stdout | tests/unit/presentation/cli/commands/workflow/workflow-commands.test.ts > Workflow CLI Commands > create subcommand > creates workflow from template
+  [muted:Name:]    [accent:issue-triage]
+  [muted:ID:]      wf-001-u
+  [muted:Enabled:] [success:yes]
+  [muted:Desc:]    A test workflow
+
+stdout | tests/unit/presentation/cli/commands/workflow/workflow-commands.test.ts > Workflow CLI Commands > create subcommand > passes tool constraints correctly
+  [muted:Name:]    [accent:test-workflow]
+  [muted:ID:]      wf-001-u
+  [muted:Enabled:] [success:yes]
+  [muted:Desc:]    A test workflow
+
+ ✓  node  tests/unit/application/use-cases/workflows/run-workflow.use-case.test.ts (4 tests) 7ms
+stdout | tests/unit/presentation/cli/commands/workflow/workflow-commands.test.ts > Workflow CLI Commands > create subcommand > passes disabled flag correctly
+  [muted:Name:]    [accent:test-workflow]
+  [muted:ID:]      wf-001-u
+  [muted:Enabled:] [muted:no]
+  [muted:Desc:]    A test workflow
+
+ ✓  node  tests/unit/application/use-cases/workflows/delete-workflow.use-case.test.ts (4 tests) 10ms
+stdout | tests/unit/presentation/cli/commands/workflow/workflow-commands.test.ts > Workflow CLI Commands > run subcommand > calls RunWorkflowUseCase and shows status
+  [muted:Execution ID:] exec-001
+  [muted:Status:]       [info:queued]
+  [muted:Trigger:]      [info:manual]
+
+stdout | tests/unit/presentation/cli/commands/workflow/workflow-commands.test.ts > Workflow CLI Commands > schedule subcommand > calls ScheduleWorkflowUseCase with cron expression
+  [muted:Cron:]     [accent:0 9 * * MON]
+  [muted:Next run:] 3/24/2026, 11:00:00 AM
+
+stdout | tests/unit/presentation/cli/commands/workflow/workflow-commands.test.ts > Workflow CLI Commands > schedule subcommand > passes timezone when specified
+  [muted:Cron:]     [accent:0 9 * * MON]
+  [muted:Timezone:] America/New_York
+
+stdout | tests/unit/presentation/cli/commands/workflow/workflow-commands.test.ts > Workflow CLI Commands > update subcommand > calls UpdateWorkflowUseCase with partial fields
+  [muted:Name:] [accent:new-name]
+
+ ✓  node  tests/unit/presentation/cli/commands/workflow/workflow-commands.test.ts (28 tests) 53ms
+ ✓  node  tests/unit/application/use-cases/workflows/get-workflow-history.use-case.test.ts (4 tests) 9ms
+ ✓  node  tests/unit/presentation/cli/commands/workflow/serve-scheduler.test.ts (3 tests) 6ms
+ ✓  node  tests/unit/presentation/cli/commands/workflow/format-helpers.test.ts (14 tests) 7ms
+ ✓  node  tests/unit/application/use-cases/workflows/templates.test.ts (7 tests) 4ms
+ ✓  node  tests/integration/application/use-cases/settings/workflow-command-flow.test.ts (11 tests) 272ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-workflow-execution.repository.test.ts (18 tests) 418ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-workflow.repository.test.ts (30 tests) 596ms
+
+ Test Files  18 passed (18)
+      Tests  190 passed (190)
+   Start at  01:55:21
+   Duration  1.16s (transform 1.89s, setup 0ms, import 3.03s, tests 1.54s, environment 2ms)
+

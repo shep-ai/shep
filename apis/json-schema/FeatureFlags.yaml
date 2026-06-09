@@ -46,6 +46,10 @@ properties:
     type: boolean
     default: true
     description: Enable the supply chain security feature (policy engine, badges, settings, CLI, CI gate). When false, the feature is inert regardless of SecurityMode.
+  scheduledWorkflows:
+    type: boolean
+    default: false
+    description: Enable scheduled workflows feature — workflow creation, scheduling, and execution
 required:
   - envDeploy
   - debug
@@ -58,4 +62,5 @@ required:
   - aspm
   - clusters
   - supplyChainSecurity
+  - scheduledWorkflows
 description: Feature flag toggles for runtime feature control

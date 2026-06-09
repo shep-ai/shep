@@ -27,6 +27,12 @@ const PR_EVENT_TOGGLES = [
   { key: 'prBlocked', label: 'PR Blocked' },
 ] as const;
 
+const WORKFLOW_EVENT_TOGGLES = [
+  { key: 'workflowStarted', label: 'Workflow Started' },
+  { key: 'workflowCompleted', label: 'Workflow Completed' },
+  { key: 'workflowFailed', label: 'Workflow Failed' },
+] as const;
+
 export interface NotificationSettingsSectionProps {
   notifications: NotificationPreferences;
 }
@@ -135,6 +141,23 @@ export function NotificationSettingsSection({ notifications }: NotificationSetti
         <div className="space-y-3">
           <h3 className="text-sm font-semibold">PR Events</h3>
           {PR_EVENT_TOGGLES.map(({ key, label }) => (
+            <div key={key} className="flex items-center justify-between">
+              <Label htmlFor={`notif-event-${key}`}>{label}</Label>
+              <Switch
+                id={`notif-event-${key}`}
+                data-testid={`switch-event-${key}`}
+                checked={events[key]}
+                onCheckedChange={(v) => handleEventChange(key, v)}
+              />
+            </div>
+          ))}
+        </div>
+
+        <Separator />
+
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold">Workflow Events</h3>
+          {WORKFLOW_EVENT_TOGGLES.map(({ key, label }) => (
             <div key={key} className="flex items-center justify-between">
               <Label htmlFor={`notif-event-${key}`}>{label}</Label>
               <Switch

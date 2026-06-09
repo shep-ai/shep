@@ -1,0 +1,46 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ScheduledWorkflow.yaml
+type: object
+properties:
+  name:
+    type: string
+    description: Unique human-readable name identifying this workflow within the repository
+  description:
+    type: string
+    description: Optional human-readable description of what this workflow does
+  prompt:
+    type: string
+    description: Agent prompt instruction that the AI agent will execute when the workflow runs
+  toolConstraints:
+    type: array
+    items:
+      type: string
+    description: Optional allowlist of tool names the workflow agent is permitted to use
+  cronExpression:
+    type: string
+    description: "Cron expression defining the schedule (5-field format: min hour dom month dow)"
+  timezone:
+    type: string
+    description: IANA timezone for cron evaluation (e.g. America/New_York). Defaults to UTC
+  enabled:
+    type: boolean
+    description: Whether the workflow schedule is active. Disabled workflows retain their cron expression but do not auto-execute
+  lastRunAt:
+    type: string
+    format: date-time
+    description: Timestamp of the most recent execution (manual or scheduled)
+  nextRunAt:
+    type: string
+    format: date-time
+    description: Calculated timestamp of the next scheduled execution based on cron expression
+  repositoryPath:
+    type: string
+    description: Absolute file system path to the repository this workflow operates on
+required:
+  - name
+  - prompt
+  - enabled
+  - repositoryPath
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: User-defined reusable automation that runs on demand or on a cron schedule

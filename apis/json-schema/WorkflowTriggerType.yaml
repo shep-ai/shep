@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: WorkflowTriggerType.yaml
+type: string
+enum:
+  - manual
+  - scheduled
+description: How a workflow execution was triggered

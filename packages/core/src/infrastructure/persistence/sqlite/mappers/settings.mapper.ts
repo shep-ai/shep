@@ -83,6 +83,9 @@ export interface SettingsRow {
   notif_evt_pr_checks_failed: number;
   notif_evt_pr_blocked: number;
   notif_evt_merge_review_ready: number;
+  notif_evt_workflow_started: number;
+  notif_evt_workflow_completed: number;
+  notif_evt_workflow_failed: number;
 
   // WorkflowConfig (workflow.*)
   workflow_open_pr_on_impl_complete: number;
@@ -132,7 +135,7 @@ export interface SettingsRow {
   feature_flag_aspm: number;
   feature_flag_clusters: number;
   feature_flag_supply_chain_security: number;
-
+  feature_flag_scheduled_workflows: number;
   // Interactive agent config (added in migration 046)
   interactive_agent_enabled: number;
   interactive_agent_auto_timeout_minutes: number;
@@ -226,6 +229,9 @@ export function toDatabase(settings: Settings): SettingsRow {
     notif_evt_pr_checks_failed: settings.notifications.events.prChecksFailed ? 1 : 0,
     notif_evt_pr_blocked: settings.notifications.events.prBlocked ? 1 : 0,
     notif_evt_merge_review_ready: settings.notifications.events.mergeReviewReady ? 1 : 0,
+    notif_evt_workflow_started: settings.notifications.events.workflowStarted ? 1 : 0,
+    notif_evt_workflow_completed: settings.notifications.events.workflowCompleted ? 1 : 0,
+    notif_evt_workflow_failed: settings.notifications.events.workflowFailed ? 1 : 0,
 
     // WorkflowConfig (boolean → INTEGER)
     workflow_open_pr_on_impl_complete: settings.workflow.openPrOnImplementationComplete ? 1 : 0,
@@ -278,6 +284,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     feature_flag_aspm: settings.featureFlags?.aspm ? 1 : 0,
     feature_flag_clusters: settings.featureFlags?.clusters ? 1 : 0,
     feature_flag_supply_chain_security: settings.featureFlags?.supplyChainSecurity ? 1 : 0,
+    feature_flag_scheduled_workflows: settings.featureFlags?.scheduledWorkflows ? 1 : 0,
 
     // InteractiveAgentConfig (boolean → 0/1, integer fields; defaults applied here)
     interactive_agent_enabled: (settings.interactiveAgent?.enabled ?? true) ? 1 : 0,
@@ -483,6 +490,9 @@ export function fromDatabase(row: SettingsRow): Settings {
         prChecksFailed: row.notif_evt_pr_checks_failed === 1,
         prBlocked: row.notif_evt_pr_blocked === 1,
         mergeReviewReady: row.notif_evt_merge_review_ready === 1,
+        workflowStarted: row.notif_evt_workflow_started === 1,
+        workflowCompleted: row.notif_evt_workflow_completed === 1,
+        workflowFailed: row.notif_evt_workflow_failed === 1,
       },
     },
 
@@ -523,6 +533,7 @@ export function fromDatabase(row: SettingsRow): Settings {
       clusters: row.feature_flag_clusters === 1,
       // Default true when column is missing/null (pre-migration upgrades)
       supplyChainSecurity: (row.feature_flag_supply_chain_security ?? 1) !== 0,
+      scheduledWorkflows: row.feature_flag_scheduled_workflows === 1,
     },
 
     // InteractiveAgentConfig (INTEGER 0/1 → boolean, integer → number)

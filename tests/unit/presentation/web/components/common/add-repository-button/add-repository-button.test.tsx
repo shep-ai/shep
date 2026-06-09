@@ -59,6 +59,7 @@ vi.mock('@/hooks/feature-flags-context', () => ({
     whatsappDispatch: false,
     aspm: false,
     clusters: false,
+    scheduledWorkflows: false,
   })),
 }));
 
@@ -83,6 +84,7 @@ describe('AddRepositoryButton', () => {
       whatsappDispatch: false,
       aspm: false,
       clusters: false,
+      scheduledWorkflows: false,
     });
   });
 
@@ -182,6 +184,7 @@ describe('AddRepositoryButton', () => {
         whatsappDispatch: false,
         aspm: false,
         clusters: false,
+        scheduledWorkflows: false,
       });
     });
 
@@ -314,6 +317,7 @@ describe('AddRepositoryButton', () => {
         whatsappDispatch: false,
         aspm: false,
         clusters: false,
+        scheduledWorkflows: false,
       });
     });
 
@@ -388,6 +392,7 @@ describe('AddRepositoryButton', () => {
         whatsappDispatch: false,
         aspm: false,
         clusters: false,
+        scheduledWorkflows: false,
       });
       const user = userEvent.setup();
       render(<AddRepositoryButton />);

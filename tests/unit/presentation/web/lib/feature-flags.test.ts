@@ -31,6 +31,7 @@ describe('getFeatureFlags', () => {
         envDeploy: false,
         debug: true,
         reactFileManager: false,
+        scheduledWorkflows: false,
       },
     });
 
@@ -92,6 +93,7 @@ describe('getFeatureFlags', () => {
         envDeploy: false,
         debug: false,
         reactFileManager: false,
+        scheduledWorkflows: false,
       },
     });
 
@@ -150,6 +152,7 @@ describe('featureFlags (backward-compatible const)', () => {
         envDeploy: true,
         debug: false,
         reactFileManager: false,
+        scheduledWorkflows: false,
       },
     });
 
@@ -163,6 +166,7 @@ describe('featureFlags (backward-compatible const)', () => {
         envDeploy: false,
         debug: true,
         reactFileManager: false,
+        scheduledWorkflows: false,
       },
     });
 

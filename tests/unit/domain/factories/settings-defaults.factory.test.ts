@@ -303,6 +303,9 @@ describe('createDefaultSettings', () => {
           prChecksFailed: true,
           prBlocked: true,
           mergeReviewReady: true,
+          workflowStarted: true,
+          workflowCompleted: true,
+          workflowFailed: true,
         },
       });
     });
@@ -330,6 +333,7 @@ describe('createDefaultSettings', () => {
         // Master kill switch for the supply chain security feature —
         // defaults to true so existing users keep the feature they already see.
         supplyChainSecurity: true,
+        scheduledWorkflows: false,
       });
     });
 
@@ -550,6 +554,9 @@ describe('createDefaultSettings', () => {
           prChecksFailed: true,
           prBlocked: true,
           mergeReviewReady: true,
+          workflowStarted: true,
+          workflowCompleted: true,
+          workflowFailed: true,
         },
       });
     });

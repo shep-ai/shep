@@ -57,3 +57,5 @@ import "./aspm/index.tsp";
 import "./cluster.tsp";
 import "./cluster-repository.tsp";
 import "./cluster-application.tsp";
+import "./scheduled-workflow.tsp";
+import "./workflow-execution.tsp";

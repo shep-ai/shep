@@ -1,0 +1,170 @@
+=== shep workflow --help ===
+Usage: shep workflow [options] [command]
+
+Manage scheduled workflows
+
+Options:
+  -h, --help                 display help for command
+
+Commands:
+  create [options] <name>    Create a new workflow
+  list|ls [options]          List all workflows
+  show [options] <name>      Show workflow details
+  run [options] <name>       Manually trigger a workflow
+  schedule [options] <name>  Set a cron schedule on a workflow
+  enable [options] <name>    Enable a workflow schedule
+  disable [options] <name>   Disable a workflow schedule
+  history [options] <name>   View workflow execution history
+  update [options] <name>    Update a workflow
+  delete [options] <name>    Delete a workflow
+  help [command]             display help for command
+
+=== shep workflow create --help ===
+Usage: shep workflow create [options] <name>
+
+Create a new workflow
+
+Arguments:
+  name                          Unique workflow name
+
+Options:
+  -p, --prompt <prompt>         Agent prompt (the instruction the AI agent will
+                                execute)
+  -d, --description <text>      Human-readable description
+  -t, --tool-constraint <tool>  Allowed tool (repeatable) (default: [])
+  --template <name>             Create from built-in template (issue-triage,
+                                branch-rebase)
+  -r, --repo <path>             Repository path (defaults to current directory)
+  --disabled                    Create in disabled state
+  -h, --help                    display help for command
+
+=== shep workflow list --help ===
+Usage: shep workflow list|ls [options]
+
+List all workflows
+
+Options:
+  -r, --repo <path>  Repository path (defaults to current directory)
+  -h, --help         display help for command
+
+=== shep workflow show --help ===
+Usage: shep workflow show [options] <name>
+
+Show workflow details
+
+Arguments:
+  name               Workflow name or ID
+
+Options:
+  -r, --repo <path>  Repository path (defaults to current directory)
+  -h, --help         display help for command
+
+=== shep workflow run --help ===
+Usage: shep workflow run [options] <name>
+
+Manually trigger a workflow
+
+Arguments:
+  name               Workflow name or ID
+
+Options:
+  -r, --repo <path>  Repository path (defaults to current directory)
+  -h, --help         display help for command
+
+=== shep workflow schedule --help ===
+Usage: shep workflow schedule [options] <name>
+
+Set a cron schedule on a workflow
+
+Arguments:
+  name                     Workflow name or ID
+
+Options:
+  -c, --cron <expression>  Cron expression (e.g., "0 9 * * MON" for every Monday
+                           at 9am)
+  -z, --timezone <tz>      IANA timezone (e.g., "America/New_York")
+  --remove                 Remove the current schedule
+  -r, --repo <path>        Repository path (defaults to current directory)
+  -h, --help               display help for command
+
+Examples:
+  shep workflow schedule my-workflow --cron "0 9 * * MON"           Every Monday at 9am
+  shep workflow schedule my-workflow --cron "0 */6 * * *"           Every 6 hours
+  shep workflow schedule my-workflow --cron "30 2 * * *" -z UTC     Daily at 2:30 AM UTC
+  shep workflow schedule my-workflow --remove                        Remove schedule
+
+Cron format: minute hour day-of-month month day-of-week
+  minute:        0-59
+  hour:          0-23
+  day-of-month:  1-31
+  month:         1-12 (or JAN-DEC)
+  day-of-week:   0-7 (0 and 7 are Sunday, or MON-SUN)
+
+
+=== shep workflow enable --help ===
+Usage: shep workflow enable [options] <name>
+
+Enable a workflow schedule
+
+Arguments:
+  name               Workflow name or ID
+
+Options:
+  -r, --repo <path>  Repository path (defaults to current directory)
+  -h, --help         display help for command
+
+=== shep workflow disable --help ===
+Usage: shep workflow disable [options] <name>
+
+Disable a workflow schedule
+
+Arguments:
+  name               Workflow name or ID
+
+Options:
+  -r, --repo <path>  Repository path (defaults to current directory)
+  -h, --help         display help for command
+
+=== shep workflow history --help ===
+Usage: shep workflow history [options] <name>
+
+View workflow execution history
+
+Arguments:
+  name                  Workflow name or ID
+
+Options:
+  -l, --limit <number>  Max results (default: 20)
+  -r, --repo <path>     Repository path (defaults to current directory)
+  -h, --help            display help for command
+
+=== shep workflow update --help ===
+Usage: shep workflow update [options] <name>
+
+Update a workflow
+
+Arguments:
+  name                          Workflow name or ID
+
+Options:
+  -n, --name <name>             New workflow name
+  -p, --prompt <prompt>         New agent prompt
+  -d, --description <text>      New description
+  -t, --tool-constraint <tool>  Replace tool constraints (repeatable) (default:
+                                [])
+  -r, --repo <path>             Repository path (defaults to current directory)
+  -h, --help                    display help for command
+
+=== shep workflow delete --help ===
+Usage: shep workflow delete [options] <name>
+
+Delete a workflow
+
+Arguments:
+  name               Workflow name or ID
+
+Options:
+  --force            Skip confirmation
+  -r, --repo <path>  Repository path (defaults to current directory)
+  -h, --help         display help for command
+

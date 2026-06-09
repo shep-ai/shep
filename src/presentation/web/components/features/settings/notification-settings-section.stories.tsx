@@ -25,6 +25,9 @@ const allEvents = {
   prChecksPassed: true,
   prChecksFailed: true,
   prBlocked: true,
+  workflowStarted: true,
+  workflowCompleted: true,
+  workflowFailed: true,
 };
 
 const noEvents = {
@@ -39,6 +42,9 @@ const noEvents = {
   prChecksPassed: false,
   prChecksFailed: false,
   prBlocked: false,
+  workflowStarted: false,
+  workflowCompleted: false,
+  workflowFailed: false,
 };
 
 export const Default: Story = {

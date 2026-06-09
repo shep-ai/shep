@@ -49,6 +49,7 @@ const defaultFlags = {
   whatsappDispatch: false,
   aspm: false,
   clusters: false,
+  scheduledWorkflows: false,
 };
 
 function renderWithSidebar(ui: React.ReactElement) {

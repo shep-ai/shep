@@ -38,6 +38,7 @@ export type {
   LaunchIdeSuccess,
   LaunchIdeFailed,
 } from './ide-launcher-service.interface.js';
+export type { IClock } from './clock.interface.js';
 export type { IDaemonService, DaemonState } from './daemon-service.interface.js';
 export type { IDeploymentService, DeploymentStatus } from './deployment-service.interface.js';
 export type {

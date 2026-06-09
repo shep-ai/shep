@@ -23,6 +23,7 @@ export interface FeatureFlagsState {
   bedrockIntegration: boolean;
   whatsappDispatch: boolean;
   clusters: boolean;
+  scheduledWorkflows: boolean;
 }
 
 export function getFeatureFlags(): FeatureFlagsState {
@@ -41,6 +42,7 @@ export function getFeatureFlags(): FeatureFlagsState {
           bedrockIntegration: flags.bedrockIntegration,
           whatsappDispatch: flags.whatsappDispatch,
           clusters: flags.clusters,
+          scheduledWorkflows: flags.scheduledWorkflows,
         };
       }
     }
@@ -74,6 +76,7 @@ export function getFeatureFlags(): FeatureFlagsState {
     bedrockIntegration: isEnabled(process.env.NEXT_PUBLIC_FLAG_BEDROCK_INTEGRATION),
     whatsappDispatch: isEnabled(process.env.NEXT_PUBLIC_FLAG_WHATSAPP_DISPATCH),
     clusters: false,
+    scheduledWorkflows: false,
   };
 }
 
@@ -135,5 +138,8 @@ export const featureFlags = {
   },
   get clusters() {
     return getFeatureFlags().clusters;
+  },
+  get scheduledWorkflows() {
+    return getFeatureFlags().scheduledWorkflows;
   },
 } as const;

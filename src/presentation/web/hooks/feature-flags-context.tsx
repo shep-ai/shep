@@ -14,6 +14,7 @@ const defaultFlags: FeatureFlagsState = {
   whatsappDispatch: false,
   aspm: false,
   clusters: false,
+  scheduledWorkflows: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsState>(defaultFlags);

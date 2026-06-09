@@ -13,6 +13,7 @@ import {
   ZapOff,
   Wrench,
   Puzzle,
+  CalendarClock,
   Settings,
   TableProperties,
   FolderKanban,
@@ -313,6 +314,14 @@ export function AppSidebar({
                   active: pathname?.startsWith('/aspm/compliance') ?? false,
                 },
               ]}
+            />
+          ) : null}
+          {featureFlags.scheduledWorkflows ? (
+            <SidebarNavItem
+              icon={CalendarClock}
+              label="Workflows"
+              href="/workflows"
+              active={pathname === '/workflows'}
             />
           ) : null}
           <SidebarNavItem

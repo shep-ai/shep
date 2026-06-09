@@ -107,6 +107,7 @@
     "@openrouter/ai-sdk-provider": "^2.5.1",
     "ai": "^6.0.0",
     "ajv": "^8.18.0",
+    "croner": "^10.0.0",
     "tree-kill": "^1.2.2",
     "which": "^5.0.0"
   }

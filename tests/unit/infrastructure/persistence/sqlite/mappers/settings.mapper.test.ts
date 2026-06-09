@@ -72,6 +72,9 @@ function createTestSettings(overrides: Partial<Settings> = {}): Settings {
         prChecksFailed: true,
         prBlocked: true,
         mergeReviewReady: true,
+        workflowStarted: true,
+        workflowCompleted: true,
+        workflowFailed: true,
       },
     },
     workflow: {
@@ -135,6 +138,9 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     notif_evt_pr_checks_failed: 1,
     notif_evt_pr_blocked: 1,
     notif_evt_merge_review_ready: 1,
+    notif_evt_workflow_started: 1,
+    notif_evt_workflow_completed: 1,
+    notif_evt_workflow_failed: 1,
     workflow_open_pr_on_impl_complete: 0,
     workflow_enable_evidence: 0,
     workflow_commit_evidence: 0,
@@ -168,6 +174,7 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     feature_flag_aspm: 0,
     feature_flag_clusters: 0,
     feature_flag_supply_chain_security: 1,
+    feature_flag_scheduled_workflows: 0,
     interactive_agent_enabled: 1,
     interactive_agent_auto_timeout_minutes: 15,
     interactive_agent_max_concurrent_sessions: 3,
@@ -212,6 +219,9 @@ describe('Settings Mapper', () => {
             prChecksFailed: true,
             prBlocked: true,
             mergeReviewReady: true,
+            workflowStarted: true,
+            workflowCompleted: true,
+            workflowFailed: true,
           },
         },
       });
@@ -239,6 +249,9 @@ describe('Settings Mapper', () => {
             prChecksFailed: true,
             prBlocked: true,
             mergeReviewReady: true,
+            workflowStarted: true,
+            workflowCompleted: true,
+            workflowFailed: true,
           },
         },
       });
@@ -266,6 +279,9 @@ describe('Settings Mapper', () => {
             prChecksFailed: true,
             prBlocked: true,
             mergeReviewReady: true,
+            workflowStarted: true,
+            workflowCompleted: true,
+            workflowFailed: true,
           },
         },
       });
@@ -295,6 +311,9 @@ describe('Settings Mapper', () => {
             prChecksFailed: false,
             prBlocked: false,
             mergeReviewReady: false,
+            workflowStarted: false,
+            workflowCompleted: false,
+            workflowFailed: false,
           },
         },
       });
@@ -378,6 +397,9 @@ describe('Settings Mapper', () => {
             prChecksFailed: false,
             prBlocked: false,
             mergeReviewReady: false,
+            workflowStarted: false,
+            workflowCompleted: false,
+            workflowFailed: false,
           },
         },
       });
@@ -410,6 +432,9 @@ describe('Settings Mapper', () => {
           prChecksFailed: true,
           prBlocked: true,
           mergeReviewReady: true,
+          workflowStarted: true,
+          workflowCompleted: true,
+          workflowFailed: true,
         },
       });
     });
@@ -1371,6 +1396,7 @@ describe('Settings Mapper', () => {
           aspm: false,
           clusters: false,
           supplyChainSecurity: true,
+          scheduledWorkflows: false,
         },
       });
       const row = toDatabase(settings);
@@ -1391,6 +1417,7 @@ describe('Settings Mapper', () => {
           aspm: false,
           clusters: false,
           supplyChainSecurity: false,
+          scheduledWorkflows: false,
         },
       });
       const row = toDatabase(settings);
@@ -1423,6 +1450,7 @@ describe('Settings Mapper', () => {
           aspm: true,
           clusters: true,
           supplyChainSecurity: false,
+          scheduledWorkflows: false,
         },
       });
       const row = toDatabase(settings);
