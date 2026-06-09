@@ -18,6 +18,10 @@ export interface ActionButtonProps {
   variant?: 'outline' | 'ghost' | 'default' | 'destructive' | 'secondary' | 'link';
   /** Button size. @default 'sm' */
   size?: 'default' | 'xs' | 'sm' | 'lg' | 'icon' | 'icon-xs' | 'icon-sm' | 'icon-lg';
+  /** Extra CSS classes for the button. */
+  className?: string;
+  /** Explicitly disable the button (in addition to loading state). */
+  disabled?: boolean;
 }
 
 export function ActionButton({
@@ -29,6 +33,8 @@ export function ActionButton({
   iconOnly = false,
   variant = 'outline',
   size = 'sm',
+  className: extraClassName,
+  disabled,
 }: ActionButtonProps) {
   const clickSound = useSoundAction('click');
 
@@ -42,7 +48,7 @@ export function ActionButton({
       variant={variant}
       size={size}
       aria-label={label}
-      disabled={loading}
+      disabled={loading || disabled}
       onClick={handleClick}
       className={cn(
         'gap-1.5',
@@ -50,7 +56,8 @@ export function ActionButton({
         !error &&
           iconOnly &&
           variant === 'ghost' &&
-          'text-muted-foreground cursor-pointer rounded-full transition-colors hover:text-blue-500'
+          'text-muted-foreground cursor-pointer rounded-full transition-colors hover:text-blue-500',
+        extraClassName
       )}
     >
       {loading ? (

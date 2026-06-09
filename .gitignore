@@ -105,3 +105,4 @@ node_modules/.cache/prettier/
 storybook-static/
 .worktrees/
 .plan/
+.superpowers/

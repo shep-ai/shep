@@ -56,6 +56,13 @@ import type { IRepositoryRepository } from '@/application/ports/output/repositor
 import type { IGitHubRepositoryService } from '@/application/ports/output/services/github-repository-service.interface.js';
 import type { IDesktopNotifier } from '@/application/ports/output/services/i-desktop-notifier.js';
 import type { IMessagingService } from '@/application/ports/output/services/messaging-service.interface.js';
+import type { ITunnelService } from '@/application/ports/output/services/tunnel-service.interface.js';
+import type { IWebhookService as IGitHubWebhookServiceType } from '@/application/ports/output/services/webhook-service.interface.js';
+import {
+  initializeWebhookManager,
+  getWebhookManager,
+  hasWebhookManager,
+} from '@/infrastructure/services/webhook/webhook-manager.service.js';
 
 const DEFAULT_PORT = 3000;
 
@@ -209,6 +216,17 @@ async function main() {
         console.warn('[dev-server] failed to start messaging service:', err);
       }
     }
+
+    // Start webhook system (optional — falls back to polling if cloudflared is not installed)
+    try {
+      const tunnelService = container.resolve<ITunnelService>('ITunnelService');
+      const webhookService = container.resolve<IGitHubWebhookServiceType>('IGitHubWebhookService');
+      initializeWebhookManager(tunnelService, webhookService);
+      // Start is async and non-blocking — failures are logged, not thrown
+      void getWebhookManager().start(port);
+    } catch (error) {
+      console.warn('[dev-server] Webhook system init failed (using polling fallback):', error);
+    }
   } catch (error) {
     console.warn('[dev-server] DI initialization failed — features will be empty:', error);
   }
@@ -261,6 +279,13 @@ async function main() {
       try {
         const deploymentService = container.resolve<IDeploymentService>('IDeploymentService');
         deploymentService.stopAll();
+      } catch {
+        /* not initialized */
+      }
+      try {
+        if (hasWebhookManager()) {
+          await getWebhookManager().stop();
+        }
       } catch {
         /* not initialized */
       }

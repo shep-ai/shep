@@ -277,6 +277,13 @@ const multipleReposWithActions: RepositoryNodeData[] = [
   },
 ];
 
+export const WithWebhookButton: Story = {
+  args: {
+    repositoryPath: '/home/user/shep-ai/cli',
+  },
+  render: (args) => <RepositoryNodeCanvas data={args} />,
+};
+
 export const MultipleWithActions: Story = {
   render: () => {
     const nodes: RepositoryNodeType[] = multipleReposWithActions.map((data, i) => ({

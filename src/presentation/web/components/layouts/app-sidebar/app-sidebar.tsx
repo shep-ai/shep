@@ -31,6 +31,7 @@ import {
   ClipboardCheck,
   Gauge,
   Server,
+  Webhook,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -330,6 +331,12 @@ export function AppSidebar({
             label={t('navigation.plugins')}
             href="/plugins"
             active={pathname === '/plugins'}
+          />
+          <SidebarNavItem
+            icon={Webhook}
+            label="Webhooks"
+            href="/webhooks"
+            active={pathname === '/webhooks'}
           />
           <SidebarNavItem
             icon={Settings}

@@ -124,3 +124,7 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
 export const WithGitOperations: Story = {
   render: () => <WithGitOpsTemplate data={repoData} />,
 };
+
+export const WithWebhookSection: Story = {
+  render: () => <RepositoryDrawerShellTemplate data={repoData} />,
+};

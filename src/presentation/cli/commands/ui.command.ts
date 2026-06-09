@@ -56,6 +56,13 @@ import type { IBrowserOpener } from '@/application/ports/output/services/i-brows
 import type { IRepositoryRepository } from '@/application/ports/output/repositories/repository-repository.interface.js';
 import type { IGitHubRepositoryService } from '@/application/ports/output/services/github-repository-service.interface.js';
 import type { IDesktopNotifier } from '@/application/ports/output/services/i-desktop-notifier.js';
+import type { ITunnelService } from '@/application/ports/output/services/tunnel-service.interface.js';
+import type { IWebhookService as IGitHubWebhookServiceType } from '@/application/ports/output/services/webhook-service.interface.js';
+import {
+  initializeWebhookManager,
+  getWebhookManager,
+  hasWebhookManager,
+} from '@/infrastructure/services/webhook/webhook-manager.service.js';
 import { colors, fmt, messages } from '../ui/index.js';
 import { getCliI18n } from '../i18n.js';
 
@@ -158,6 +165,18 @@ Examples:
         }>('WhatsAppConnectionService');
         void whatsappService.start();
 
+        // Start webhook system (optional — falls back to polling if cloudflared is not available)
+        try {
+          const tunnelService = container.resolve<ITunnelService>('ITunnelService');
+          const webhookService =
+            container.resolve<IGitHubWebhookServiceType>('IGitHubWebhookService');
+          initializeWebhookManager(tunnelService, webhookService);
+          // Start is async and non-blocking — failures are logged, not thrown
+          void getWebhookManager().start(port);
+        } catch {
+          // Webhook system is optional; polling continues to work
+        }
+
         const baseUrl = `http://localhost:${port}`;
         messages.success(t('cli:commands.ui.serverReady', { url: fmt.code(baseUrl) }));
         messages.info(t('cli:commands.ui.pressCtrlC'));
@@ -182,6 +201,9 @@ Examples:
           const forceExit = setTimeout(() => process.exit(0), 5000);
           forceExit.unref();
 
+          if (hasWebhookManager()) {
+            await getWebhookManager().stop();
+          }
           getPrSyncWatcher().stop();
           getNotificationWatcher().stop();
           getAutoArchiveWatcher().stop();

@@ -178,6 +178,7 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "better-sqlite3",
+      "cloudflared",
       "electron",
       "electron-winstaller",
       "esbuild",
@@ -236,6 +237,7 @@
     "ajv-formats": "^3.0.1",
     "better-sqlite3": "^12.6.2",
     "cli-table3": "^0.6.5",
+    "cloudflared": "^0.7.1",
     "commander": "^14.0.3",
     "croner": "^10.0.0",
     "i18next": "^26.0.1",

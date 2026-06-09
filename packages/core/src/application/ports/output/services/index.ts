@@ -115,3 +115,9 @@ export type {
 } from './plugin-health-checker.interface.js';
 
 export type { IPluginCatalog, CatalogEntry } from './plugin-catalog.interface.js';
+export type { ITunnelService, TunnelUrlChangeHandler } from './tunnel-service.interface.js';
+export type {
+  IWebhookService,
+  WebhookEvent,
+  WebhookValidationResult,
+} from './webhook-service.interface.js';

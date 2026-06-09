@@ -34,6 +34,16 @@ import { ListFeaturesUseCase } from '../../application/use-cases/features/list-f
 import { ShowFeatureUseCase } from '../../application/use-cases/features/show-feature.use-case.js';
 import { ListRepositoriesUseCase } from '../../application/use-cases/repositories/list-repositories.use-case.js';
 
+// Webhook and tunnel services (PR #367: per-repo webhook toggle)
+import type { ITunnelService } from '../../application/ports/output/services/tunnel-service.interface.js';
+import type { IWebhookService as IGitHubWebhookServiceInterface } from '../../application/ports/output/services/webhook-service.interface.js';
+import type { IFeatureRepository } from '../../application/ports/output/repositories/feature-repository.interface.js';
+import type { IGitPrService } from '../../application/ports/output/services/git-pr-service.interface.js';
+import type { INotificationService } from '../../application/ports/output/services/notification-service.interface.js';
+import type { ExecFunction } from '../services/webhook/github-webhook.service.js';
+import { CloudflareTunnelService } from '../services/tunnel/cloudflare-tunnel.service.js';
+import { GitHubWebhookService } from '../services/webhook/github-webhook.service.js';
+
 // Database connection
 import { getSQLiteConnection } from '../persistence/sqlite/connection.js';
 import { runSQLiteMigrations } from '../persistence/sqlite/migrations.js';
@@ -46,7 +56,6 @@ import type { IInteractiveMessageRepository } from '../../application/ports/outp
 import type { IWorkflowStepRepository } from '../../application/ports/output/repositories/workflow-step-repository.interface.js';
 import type { IInteractiveSessionService } from '../../application/ports/output/services/interactive-session-service.interface.js';
 import type { IAgentExecutorFactory } from '../../application/ports/output/agents/agent-executor-factory.interface.js';
-import type { IFeatureRepository } from '../../application/ports/output/repositories/feature-repository.interface.js';
 import { InteractiveSessionService } from '../services/interactive/interactive-session.service.js';
 import { FeatureContextBuilder } from '../services/interactive/feature-context.builder.js';
 import { SessionRegistry } from '../services/interactive/core/session-registry.js';
@@ -155,6 +164,23 @@ export async function initializeContainer(): Promise<typeof container> {
   });
   container.register('DisconnectMessagingUseCase', {
     useFactory: (c) => c.resolve(DisconnectMessagingUseCase),
+  });
+
+  // ─── Tunnel and webhook services (PR #367: per-repo webhook toggle) ────────
+  container.register<ITunnelService>('ITunnelService', {
+    useFactory: () => new CloudflareTunnelService(),
+  });
+
+  // Register GitHub webhook service under a distinct token to avoid colliding with
+  // the outbound-delivery IWebhookService (webhook.interface.ts / NoopWebhookService).
+  container.register<IGitHubWebhookServiceInterface>('IGitHubWebhookService', {
+    useFactory: (c) => {
+      const featureRepo = c.resolve<IFeatureRepository>('IFeatureRepository');
+      const gitPrService = c.resolve<IGitPrService>('IGitPrService');
+      const notifService = c.resolve<INotificationService>('INotificationService');
+      const execFnResolved = c.resolve<ExecFunction>('ExecFunction');
+      return new GitHubWebhookService(featureRepo, gitPrService, notifService, execFnResolved);
+    },
   });
 
   // ─── Boot-time workflow-step recovery ────────────────────────────────────

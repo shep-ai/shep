@@ -1,11 +1,13 @@
 'use client';
 
 import { useCallback } from 'react';
-import { Code2, Terminal, FolderOpen, RefreshCw } from 'lucide-react';
+import { Code2, Terminal, FolderOpen, RefreshCw, Radio } from 'lucide-react';
 import { BaseDrawer } from '@/components/common/base-drawer';
 import { DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { ActionButton } from '@/components/common/action-button';
+import { useWebhookAction } from '@/hooks/use-webhook-action';
 import type { RepositoryNodeData } from './repository-node-config';
 import { useRepositoryActions } from './use-repository-actions';
 import { SecurityPanel } from './security-panel';
@@ -25,6 +27,13 @@ export function RepositoryDrawer({ data, onClose, securityEvents }: RepositoryDr
   const actions = useRepositoryActions(
     data?.repositoryPath ? { repositoryId: data.id, repositoryPath: data.repositoryPath } : null
   );
+  const webhookAction = useWebhookAction(data?.repositoryPath ?? null);
+
+  const webhookLabel = !webhookAction.tunnelConnected
+    ? 'Webhook unavailable \u2014 tunnel not running'
+    : webhookAction.enabled
+      ? 'Disable Webhook'
+      : 'Enable Webhook';
 
   return (
     <BaseDrawer
@@ -124,6 +133,44 @@ export function RepositoryDrawer({ data, onClose, securityEvents }: RepositoryDr
               </div>
             </>
           ) : null}
+          <Separator />
+          <div className="flex flex-col gap-3 p-4">
+            <div className="text-muted-foreground text-xs font-semibold tracking-wider">
+              WEBHOOKS
+            </div>
+            <div className="flex flex-col gap-2">
+              <ActionButton
+                label={webhookLabel}
+                onClick={webhookAction.toggle}
+                loading={webhookAction.loading}
+                error={!!webhookAction.error}
+                icon={Radio}
+                variant="outline"
+                size="sm"
+                disabled={!webhookAction.tunnelConnected}
+                className={
+                  webhookAction.enabled && !webhookAction.error
+                    ? 'border-green-500/30 text-green-500 hover:text-green-600'
+                    : undefined
+                }
+              />
+              {webhookAction.enabled && webhookAction.webhookId ? (
+                <div className="flex flex-col gap-2">
+                  <div className="text-muted-foreground text-xs">
+                    Webhook #{webhookAction.webhookId}
+                    {webhookAction.repoFullName ? ` on ${webhookAction.repoFullName}` : ''}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {['pull_request', 'check_suite', 'check_run'].map((event) => (
+                      <Badge key={event} variant="secondary" className="text-xs">
+                        {event}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
         </>
       ) : null}
     </BaseDrawer>
