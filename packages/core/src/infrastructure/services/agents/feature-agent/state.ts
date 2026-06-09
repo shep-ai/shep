@@ -26,6 +26,12 @@ export const FeatureAgentAnnotation = Annotation.Root({
     reducer: (_prev, next) => next ?? _prev,
     default: () => undefined,
   }),
+  // Accumulated, durable project memory ("Shep Brain") for this repository,
+  // pre-rendered as a blob and injected into the early producer prompts.
+  projectMemory: Annotation<string | undefined>({
+    reducer: (_prev, next) => next ?? _prev,
+    default: () => undefined,
+  }),
   messages: Annotation<string[]>({
     reducer: (prev, next) => [...prev, ...next],
     default: () => [],
@@ -72,6 +78,12 @@ export const FeatureAgentAnnotation = Annotation.Root({
   ciStatus: Annotation<string | null>({
     reducer: (_prev, next) => (next !== undefined ? next : _prev),
     default: () => null,
+  }),
+  // True once the feature has actually been merged into its base branch.
+  // Set by the merge node and read by the post-merge extract_memory node.
+  merged: Annotation<boolean>({
+    reducer: (_prev, next) => next,
+    default: () => false,
   }),
   push: Annotation<boolean>({
     reducer: (_prev, next) => next,

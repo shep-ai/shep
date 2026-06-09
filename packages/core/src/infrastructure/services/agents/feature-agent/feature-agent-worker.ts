@@ -41,6 +41,8 @@ import { FeatureAgentSupervisorGateEvaluator } from './feature-agent-supervisor-
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
 import { UpdateFeatureLifecycleUseCase } from '@/application/use-cases/features/update/update-feature-lifecycle.use-case.js';
 import { CleanupFeatureWorktreeUseCase } from '@/application/use-cases/features/cleanup-feature-worktree.use-case.js';
+import { ReadProjectMemoryUseCase } from '@/application/use-cases/project-memory/read-project-memory.use-case.js';
+import { RecordProjectMemoryUseCase } from '@/application/use-cases/project-memory/record-project-memory.use-case.js';
 
 import type { ApprovalGates } from '@/domain/generated/output.js';
 
@@ -251,6 +253,21 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   const featureRepository = container.resolve<IFeatureRepository>('IFeatureRepository');
   const cleanupFeatureWorktreeUseCase = container.resolve(CleanupFeatureWorktreeUseCase);
 
+  // Load persisted project memory ("Shep Brain") for this repository so the
+  // early producer nodes (analyze/research) start context-aware instead of as
+  // a blank slate. Best-effort: a load failure must never block the run.
+  let projectMemoryBlob: string | undefined;
+  try {
+    const readProjectMemory = container.resolve(ReadProjectMemoryUseCase);
+    const { blob } = await readProjectMemory.execute({ repositoryPath: args.repo });
+    projectMemoryBlob = blob.length > 0 ? blob : undefined;
+    if (projectMemoryBlob) {
+      log(`Loaded project memory (${projectMemoryBlob.length} chars)`);
+    }
+  } catch (err) {
+    log(`Project memory load skipped: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
   const graphDeps: FeatureAgentGraphDeps = {
     executor,
     mergeNodeDeps: {
@@ -276,6 +293,9 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
       gitPrService,
       gitForkService: container.resolve<IGitForkService>('IGitForkService'),
       cleanupFeatureWorktreeUseCase,
+    },
+    extractMemoryDeps: {
+      recordProjectMemory: container.resolve(RecordProjectMemoryUseCase),
     },
   };
 
@@ -433,6 +453,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
           ...(args.approvalGates ? { approvalGates: args.approvalGates } : {}),
           ...(args.model ? { model: args.model } : {}),
           ...(args.resumeReason ? { resumeReason: args.resumeReason } : {}),
+          ...(projectMemoryBlob ? { projectMemory: projectMemoryBlob } : {}),
           push: args.push ?? false,
           openPr: args.openPr ?? false,
           forkAndPr: args.forkAndPr ?? false,
@@ -457,6 +478,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
           specDir: args.specDir,
           ...(args.approvalGates ? { approvalGates: args.approvalGates } : {}),
           ...(args.model ? { model: args.model } : {}),
+          ...(projectMemoryBlob ? { projectMemory: projectMemoryBlob } : {}),
           push: args.push ?? false,
           openPr: args.openPr ?? false,
           forkAndPr: args.forkAndPr ?? false,

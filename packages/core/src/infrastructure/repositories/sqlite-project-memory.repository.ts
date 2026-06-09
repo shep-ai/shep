@@ -1,0 +1,78 @@
+/**
+ * SQLite ProjectMemory Repository Implementation
+ *
+ * Implements IProjectMemoryRepository using better-sqlite3.
+ */
+
+import type Database from 'better-sqlite3';
+import { injectable } from 'tsyringe';
+import type {
+  IProjectMemoryRepository,
+  ProjectMemoryUpsert,
+} from '../../application/ports/output/repositories/project-memory-repository.interface.js';
+import type { ProjectMemory } from '../../domain/generated/output.js';
+import {
+  toDatabase,
+  fromDatabase,
+  type ProjectMemoryRow,
+} from '../persistence/sqlite/mappers/project-memory.mapper.js';
+
+@injectable()
+export class SQLiteProjectMemoryRepository implements IProjectMemoryRepository {
+  constructor(private readonly db: Database.Database) {}
+
+  async create(memory: ProjectMemory): Promise<void> {
+    const row = toDatabase(memory);
+    const stmt = this.db.prepare(`
+      INSERT INTO project_memory (
+        id, repository_path, category, entry_key, content,
+        source_feature_id, created_at, updated_at
+      ) VALUES (
+        @id, @repository_path, @category, @entry_key, @content,
+        @source_feature_id, @created_at, @updated_at
+      )
+    `);
+    stmt.run(row);
+  }
+
+  async findById(id: string): Promise<ProjectMemory | null> {
+    const stmt = this.db.prepare('SELECT * FROM project_memory WHERE id = ?');
+    const row = stmt.get(id) as ProjectMemoryRow | undefined;
+    return row ? fromDatabase(row) : null;
+  }
+
+  async listByRepository(repositoryPath: string): Promise<ProjectMemory[]> {
+    const stmt = this.db.prepare(
+      'SELECT * FROM project_memory WHERE repository_path = ? ORDER BY category ASC, updated_at DESC'
+    );
+    const rows = stmt.all(repositoryPath) as ProjectMemoryRow[];
+    return rows.map(fromDatabase);
+  }
+
+  async upsert(entry: ProjectMemoryUpsert): Promise<void> {
+    const now = Date.now();
+    const stmt = this.db.prepare(`
+      INSERT INTO project_memory (
+        id, repository_path, category, entry_key, content,
+        source_feature_id, created_at, updated_at
+      ) VALUES (
+        @id, @repository_path, @category, @entry_key, @content,
+        @source_feature_id, @created_at, @updated_at
+      )
+      ON CONFLICT(repository_path, category, entry_key) DO UPDATE SET
+        content           = excluded.content,
+        source_feature_id = excluded.source_feature_id,
+        updated_at        = excluded.updated_at
+    `);
+    stmt.run({
+      id: entry.id,
+      repository_path: entry.repositoryPath,
+      category: entry.category,
+      entry_key: entry.entryKey,
+      content: entry.content,
+      source_feature_id: entry.sourceFeatureId ?? null,
+      created_at: now,
+      updated_at: now,
+    });
+  }
+}

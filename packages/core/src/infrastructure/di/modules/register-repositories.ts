@@ -102,6 +102,9 @@ import type { ISdlcTaskRepository } from '../../../application/ports/output/repo
 import { SQLiteSdlcTaskRepository } from '../../repositories/sqlite-sdlc-task.repository.js';
 import type { ISdlcSubTaskRepository } from '../../../application/ports/output/repositories/sdlc-subtask-repository.interface.js';
 import { SQLiteSdlcSubTaskRepository } from '../../repositories/sqlite-sdlc-subtask.repository.js';
+// Project memory ("Shep Brain", feature 102) repository
+import type { IProjectMemoryRepository } from '../../../application/ports/output/repositories/project-memory-repository.interface.js';
+import { SQLiteProjectMemoryRepository } from '../../repositories/sqlite-project-memory.repository.js';
 
 /**
  * Register all SQLite-backed repositories.
@@ -303,5 +306,10 @@ export function registerRepositories(container: DependencyContainer): void {
   });
   container.register<ISdlcSubTaskRepository>('ISdlcSubTaskRepository', {
     useFactory: (c) => new SQLiteSdlcSubTaskRepository(c.resolve<Database.Database>('Database')),
+  });
+
+  // ─── Project memory ("Shep Brain", feature 102) repository ────────────
+  container.register<IProjectMemoryRepository>('IProjectMemoryRepository', {
+    useFactory: (c) => new SQLiteProjectMemoryRepository(c.resolve<Database.Database>('Database')),
   });
 }

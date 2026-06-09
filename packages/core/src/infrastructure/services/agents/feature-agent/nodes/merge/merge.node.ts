@@ -505,6 +505,7 @@ export function createMergeNode(deps: MergeNodeDeps) {
         prUrl,
         prNumber,
         ciStatus,
+        merged,
         ciFixAttempts,
         ciFixHistory,
         ciFixStatus,

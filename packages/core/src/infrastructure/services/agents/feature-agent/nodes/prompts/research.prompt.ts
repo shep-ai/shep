@@ -7,6 +7,7 @@
  */
 
 import { readSpecFile, buildCommitPushBlock } from '../node-helpers.js';
+import { buildProjectMemorySection } from './project-memory-section.js';
 import type { FeatureAgentState } from '../../state.js';
 
 export function buildResearchPrompt(state: FeatureAgentState): string {
@@ -15,7 +16,7 @@ export function buildResearchPrompt(state: FeatureAgentState): string {
 
   return `You are a technical architect performing the RESEARCH phase of feature development.
 
-## Your Task
+${buildProjectMemorySection(state)}## Your Task
 
 1. Read the feature spec with requirements below
 2. Research how to implement this feature technically

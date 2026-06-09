@@ -22,7 +22,7 @@ tasks:
       repositoryPath, category, entryKey, content, optional sourceFeatureId.
       Non-invariant fields stay optional to avoid rippling required-field changes
       into ~20 fixtures.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - tsp/domain/entities/project-memory.tsp defines ProjectMemory + MemoryCategory
@@ -45,7 +45,7 @@ tasks:
       created_at, updated_at), a UNIQUE index on (repository_path, category,
       entry_key) for upsert, and a lookup index on repository_path. Mirrors
       migration 106 exactly.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -68,7 +68,7 @@ tasks:
       SQLite implementation with hardcoded INSERT ... ON CONFLICT upsert and a
       listByRepository query ordered by category then updatedAt. Mapper converts
       every column both directions. Register in DI (factory + string token).
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -92,7 +92,7 @@ tasks:
       category-sectioned text blob (with per-category caps) suitable for prompt
       injection. Empty store ⇒ empty string. Injected via port; no infra import.
       Register with class token + string alias.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:
@@ -116,7 +116,7 @@ tasks:
       of {category, entryKey, content} entries and upserts them via the repository.
       Caps content length per entry; ignores empty entries. Register with class
       token + string alias.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:
@@ -141,7 +141,7 @@ tasks:
       and research prompt builders render a clearly demarcated, read-only PROJECT
       MEMORY section when present; omit entirely when absent. Nodes read from
       state, never a global singleton (LESSONS.md).
-    state: Todo
+    state: Done
     dependencies:
       - task-4
     acceptanceCriteria:
@@ -166,7 +166,7 @@ tasks:
       entries (conventions, libraries, naming, architecture decisions, CI-fix
       resolutions) from the merged change; persists via RecordProjectMemoryUseCase.
       Best-effort: any failure is logged and swallowed, returning state unchanged.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
       - task-6

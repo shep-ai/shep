@@ -91,6 +91,9 @@ describe('WorktreeService.ensureGitRepository (integration)', () => {
     await execFile('git', ['init'], { cwd: tempDir });
     await execFile('git', ['config', 'user.name', 'Test'], { cwd: tempDir });
     await execFile('git', ['config', 'user.email', 'test@test.com'], { cwd: tempDir });
+    // Never sign this throwaway commit — must not depend on the developer's /
+    // CI runner's global commit-signing setup (gpg/ssh).
+    await execFile('git', ['config', 'commit.gpgsign', 'false'], { cwd: tempDir });
     await execFile('git', ['commit', '--allow-empty', '-m', 'Pre-existing commit'], {
       cwd: tempDir,
     });

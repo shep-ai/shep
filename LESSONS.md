@@ -813,6 +813,48 @@ In the cloud org-runner pod, the cli process runs with `NEXT_ASSET_PREFIX=/cli` 
 
 **Rule:** scrub cli-only vars (`NEXT_ASSET_PREFIX`, `PORT`, Anthropic creds) from the env at the spawn point via `buildDevServerEnv()` — do NOT rely on the org-runner `env-scrub` PATH wrappers, which only intercept `npm/pnpm/yarn/bun/npx` by name and are bypassed when the binary (e.g. `bun`, or a globally-installed pnpm in `/data/.npm-global/bin`) resolves ahead of `/usr/local/sbin`. Keep `HOST`/`HOSTNAME` (intentionally `0.0.0.0` so the preview proxy can reach the dev server on the pod IP).
 
+## LangGraph Node Wiring Must Stay One Fluent Chain (Node-Name Types)
+
+`new StateGraph(...).addNode('a',...).addNode('b',...)` returns a type whose
+node-name string-literal union grows with each `.addNode`. If you split the chain
+across statements that re-reference the same `const graph` — e.g.
+`graph.addNode('merge',...).addEdge(...); ... graph.addConditionalEdges('merge',...)`
+— the second statement sees `graph`'s ORIGINAL declared type (without `'merge'`)
+and fails with `Argument of type '"merge"' is not assignable to parameter of type
+'<existing node union>'`. Keep every `.addNode/.addEdge/.addConditionalEdges` for
+new nodes in a SINGLE fluent expression so the augmented node-name type flows
+through. (Hit when wiring the post-merge `extract_memory` node in both
+feature-agent-graph.ts and fast-feature-agent-graph.ts.)
+
+## Prompt Files Live One Dir Deeper Than Nodes — Relative Imports Need +1 `../`
+
+`feature-agent/nodes/*.ts` reach `domain/generated/output.js` with five `../`.
+Files under `feature-agent/nodes/prompts/*.ts` are one level deeper and need SIX
+`../`. This only fails at test/runtime (`Cannot find module`), not always at
+typecheck. When adding a new prompt builder that imports a domain type, copy the
+import depth from a sibling in `nodes/prompts/`, not from `nodes/`.
+
+## Adding a FeatureAgentAnnotation State Channel Ripples to Full-State Fixtures
+
+LangGraph's `StateType` makes every channel a REQUIRED key (value may be
+`undefined`, but the key must be present). Adding a channel to
+`FeatureAgentAnnotation` breaks every fixture that builds a *complete*
+`FeatureAgentState` object literal (not `Partial`) — they fail with `Property 'x'
+is missing`. Also update `state.test.ts`: it asserts `channelNames.length).toBe(N)`
+and lists each channel via `toContain`. Known full-state fixtures to update:
+`merge-step-real-git/setup.ts` (`makeState`), `repair.node.test.ts` (`baseState`),
+`langgraph/nodes/fast-implement.node.test.ts` (`createMockState`).
+
+## Test Git Harnesses Must Disable commit.gpgsign
+
+Throwaway git repos created by integration harnesses inherit the developer's /
+runner's global `commit.gpgsign=true`. In environments where signing is enforced
+(e.g. a sandbox signing server that can 400), `git commit` fails during harness
+SETUP — surfacing as unrelated-looking failures (`createLocalOnlyHarness`,
+verify-merge, local-merge). Always `git config commit.gpgsign false` in the
+harness's repo right after setting `user.name/email`, so the harness never
+depends on ambient signing config.
+
 ## Debugging Prod 404s: Read the Request's Referer/Origin BEFORE Theorizing
 
 I first "fixed" these `/cli/_next/*` 404s as a per-org-pod build-skew problem (shep-cloud PR #22) — plausible, but WRONG: the failing requests' **`Referer` was the preview host** (`<port>-<org>.preview.shep.bot`), i.e. they came from a *user dev server*, not the cli UI. The ingress access log line carries Referer, status, and `upstream_addr` — read those FIRST. A 404 from a path that a healthy pod serves at 200 means the request isn't going where you assume; the Referer/Host tells you which proxy path (`/cli/*` vs `/preview-proxy`) actually handled it. Confirm the exact failing request path end-to-end before writing a fix.

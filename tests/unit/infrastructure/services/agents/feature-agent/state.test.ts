@@ -27,7 +27,7 @@ describe('FeatureAgentAnnotation', () => {
       expect(FeatureAgentAnnotation.spec).toBeDefined();
     });
 
-    it('should have all 29 channels', () => {
+    it('should have all 34 channels', () => {
       const channelNames = Object.keys(FeatureAgentAnnotation.spec);
       // Original: featureId, repositoryPath, specDir, worktreePath, currentNode, error,
       //           approvalGates, messages, validationRetries, lastValidationTarget, lastValidationErrors
@@ -58,7 +58,9 @@ describe('FeatureAgentAnnotation', () => {
       expect(channelNames).toContain('ciWatchEnabled');
       expect(channelNames).toContain('enableEvidence');
       expect(channelNames).toContain('commitEvidence');
-      expect(channelNames.length).toBe(32);
+      expect(channelNames).toContain('projectMemory');
+      expect(channelNames).toContain('merged');
+      expect(channelNames.length).toBe(34);
     });
   });
 
