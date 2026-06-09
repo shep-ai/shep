@@ -1,0 +1,105 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SecurityFinding.yaml
+type: object
+properties:
+  applicationId:
+    $ref: UUID.yaml
+    description: Primary asset anchor — the Application this finding attaches to
+  serviceId:
+    $ref: UUID.yaml
+    description: Optional Service this finding attaches to (sub-asset of Application)
+  apiAssetId:
+    $ref: UUID.yaml
+    description: Optional ApiAsset this finding attaches to
+  cloudEnvironmentId:
+    $ref: UUID.yaml
+    description: Optional CloudEnvironment this finding attaches to
+  findingDomain:
+    $ref: FindingDomain.yaml
+    description: Finding domain (Code/Dependency/Secret/Container/Cloud/Api/Identity/Runtime/Compliance/Ai)
+  ruleId:
+    type: string
+    description: Scanner rule identifier (e.g. semgrep.rule.id, codeql.query.id, trivy CVE id)
+  title:
+    type: string
+    description: Short human-readable title
+  description:
+    type: string
+    description: Long-form description (post-redaction)
+  locationPath:
+    type: string
+    description: Repo-relative path of the finding location (POSIX separators)
+  locationLine:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: 1-based line number of the finding location
+  scannerRaw:
+    type: string
+    description: Raw scanner output (JSON-serialized, post-redaction)
+  scannerRawHash:
+    type: string
+    description: SHA-256 hash of the original scanner-supplied raw document (audit-only)
+  rawSeverity:
+    type: string
+    description: Raw scanner severity string as emitted (e.g. HIGH, error, 8.1) — preserved for audit
+  canonicalSeverity:
+    $ref: CanonicalSeverity.yaml
+    description: Canonical severity used for filtering, SLAs, and posture rollups
+  cveId:
+    type: string
+    description: CVE identifier when applicable (e.g. CVE-2024-12345)
+  cweId:
+    type: string
+    description: CWE identifier when applicable (e.g. CWE-79)
+  owaspAsvsControlId:
+    type: string
+    description: OWASP ASVS control id when the scanner emitted a taxa reference
+  kev:
+    type: boolean
+    description: True iff the finding's CVE is present in CISA's Known Exploited Vulnerabilities catalog
+  epssPercentile:
+    type: number
+    description: FIRST EPSS exploit-probability percentile (0..1) when known; null when EPSS lookup is unavailable
+  ownerId:
+    $ref: UUID.yaml
+    description: Resolved owner of the finding
+  state:
+    $ref: FindingState.yaml
+    description: "Lifecycle state of the finding (see also: read-time effective state w/ exceptions)"
+  currentRiskScoreId:
+    $ref: UUID.yaml
+    description: Foreign key to the latest RiskScore for this finding (O(1) dashboard reads)
+  workItemId:
+    $ref: UUID.yaml
+    description: Optional link to a Shep WorkItem this finding has been routed into
+  source:
+    type: string
+    description: Source of ingestion (e.g. sarif:semgrep, sarif:codeql, cyclonedx:1.5)
+  discoveredAt:
+    type: string
+    format: date-time
+    description: When the finding was first discovered (used for SLA math)
+  lastSeenAt:
+    type: string
+    format: date-time
+    description: When the finding was most recently re-observed by a scanner
+  firstFixedAt:
+    type: string
+    format: date-time
+    description: When the finding was first observed as fixed
+required:
+  - applicationId
+  - findingDomain
+  - ruleId
+  - title
+  - description
+  - rawSeverity
+  - canonicalSeverity
+  - state
+  - source
+  - discoveredAt
+  - lastSeenAt
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: Unified security finding produced by ingestion adapters across every ASPM domain

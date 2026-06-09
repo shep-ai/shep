@@ -1,0 +1,750 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "aspm-platform"
+summary: >
+  Implementation plan for the ASPM module. Delivered as ten ordered phases that follow
+  Shep's TypeSpec-first, Clean Architecture, ports-and-adapters conventions. Phase 1
+  lays the TypeSpec foundation (extends Application + new ASPM enums/value objects + a
+  register-aspm.ts DI skeleton). Phases 2-9 deliver the eight ASPM epics independently
+  shippable behind /aspm: asset+ownership; findings ingestion (SARIF); SBOM+exploit
+  intel (CycloneDX+KEV+EPSS); risk scoring+prioritization; SLA+campaigns+exceptions;
+  executive dashboards + developer routing; AI-change review queue; compliance surface.
+  Phase 10 finishes CLI surface, Storybook + Playwright coverage, and documentation.
+  Every use case is RED-first; risk scoring is covered by a fixture-driven golden test;
+  every web component ships with a colocated *.stories.tsx; every entity gets a
+  numbered idempotent SQLite migration.
+
+# Relationships
+relatedFeatures: []
+
+technologies:
+  - "TypeSpec (tsp/) — domain model authoring; generates packages/core/src/domain/generated/output.ts"
+  - "TypeScript (strict) across packages/core and src/presentation"
+  - "Clean Architecture (domain / application / infrastructure / presentation)"
+  - "tsyringe — dependency injection via @injectable / @inject string tokens"
+  - "better-sqlite3 + umzug — embedded persistence with numbered idempotent migrations"
+  - "Vitest — unit + integration tests"
+  - "Playwright — e2e tests"
+  - "Next.js App Router — src/presentation/web with server + client components"
+  - "React + Tailwind + shadcn/ui — web UI primitives"
+  - "Storybook — mandatory colocated .stories.tsx for every web component"
+  - "Commander — CLI under src/presentation/cli/commands"
+  - "Server-Sent Events (SSE) — Shep's existing live-update transport"
+  - "React Flow (@xyflow/react) — asset-risk relationship graph view"
+  - "ajv + ajv-formats — JSON Schema validation for SARIF/CycloneDX"
+  - "sarif (types-only) — SARIF v2.1.0 TypeScript types"
+  - "@cyclonedx/cyclonedx-library (conditional) — CycloneDX 1.5+ parsing"
+  - "yaml — parser for .shep/ownership.yaml"
+  - "undici — KEV/EPSS feed download"
+  - "OWASP ASVS / CWE Top 25 / SARIF v2.1.0 / CycloneDX 1.5 / CISA KEV / FIRST EPSS — industry vocabularies"
+
+relatedLinks:
+  - title: "Clean Architecture overview (project doc)"
+    url: "./docs/architecture/clean-architecture.md"
+  - title: "Repository pattern + DI (project doc)"
+    url: "./docs/architecture/repository-pattern.md"
+  - title: "TypeSpec authoring guide (project doc)"
+    url: "./docs/development/typespec-guide.md"
+  - title: "TDD guide (project doc)"
+    url: "./docs/development/tdd-guide.md"
+  - title: "Web UI architecture (project doc)"
+    url: "./docs/ui/architecture.md"
+  - title: "OASIS SARIF v2.1.0 specification"
+    url: "https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html"
+  - title: "OWASP CycloneDX SBOM spec"
+    url: "https://cyclonedx.org/specification/overview/"
+  - title: "CISA KEV catalog"
+    url: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+  - title: "FIRST EPSS scoring system"
+    url: "https://www.first.org/epss/"
+  - title: "CVSS v3.1 specification"
+    url: "https://www.first.org/cvss/v3.1/specification-document"
+  - title: "CWE Top 25"
+    url: "https://cwe.mitre.org/top25/"
+  - title: "OWASP ASVS"
+    url: "https://owasp.org/www-project-application-security-verification-standard/"
+
+# Structured implementation phases
+phases:
+  - id: "phase-1"
+    name: "Foundation & TypeSpec Scaffolding"
+    description: >
+      Extend the Application entity with optional ASPM fields, define ASPM enums
+      (CanonicalSeverity, FindingDomain, FindingState, ExceptionReason, Exposure,
+      Criticality, DataClassification, AssetType, AiSignalType, ComplianceFramework,
+      SlaState, CampaignStatus, AiSignalState) and shared value objects (FindingFilter,
+      CVEReference, OwnershipPath, SLAWindow), generate code via pnpm tsp:compile,
+      and add the register-aspm.ts DI skeleton wired into container.ts. No persisted
+      state yet — this phase establishes types and DI plumbing only.
+    parallel: false
+  - id: "phase-2"
+    name: "Asset & Ownership Model"
+    description: >
+      Add Owner, Team, BusinessUnit, Service, ApiAsset, CloudEnvironment entities with
+      numbered SQLite migrations, repositories, and mappers. Implement the
+      IOwnershipYamlReader port and YAML adapter, plus the pure-domain ownership
+      resolver. Ship use cases assign-owner, import-ownership-yaml,
+      resolve-ownership-for-finding, list-owners. ALTER the existing applications
+      table to add ASPM-relevant columns with safe defaults via an idempotent migration.
+    parallel: false
+  - id: "phase-3"
+    name: "SecurityFinding Entity + SARIF Ingestion"
+    description: >
+      Define SecurityFinding TSP, migration, repository, mapper. Define
+      IFindingIngestPort and ship the SARIF v2.1.0 adapter (ajv-validated + hand-rolled
+      walker). Build the pure-domain Redactor (secret patterns + SHA-256 raw hash).
+      Implement ingest-findings (transactional, deduped on
+      applicationId+findingDomain+ruleId+location+cveId) and list-findings (paged,
+      filterable via FindingFilter). Cross-platform path normalization on every
+      location field.
+    parallel: false
+  - id: "phase-4"
+    name: "SBOM Ingestion + Exploit Intelligence"
+    description: >
+      Define ISbomPort and ship the CycloneDX 1.5+ adapter (evaluate
+      @cyclonedx/cyclonedx-library; fall back to hand-rolled if its runtime deps are
+      heavy). Define IExploitIntelPort with getEpssPercentile and isKev; implement the
+      local-cached KEV+EPSS feed loader (mtime-based 24h refresh, content-type guards,
+      graceful offline degradation). Extend ingestion to populate cveId, cweId, and
+      asvs control links on findings.
+    parallel: false
+  - id: "phase-5"
+    name: "Risk Scoring & Prioritization"
+    description: >
+      Define RiskScore value object and risk_scores table (append-only history with
+      currentRiskScoreId pointer on finding). Implement the pure-domain computeRiskScore
+      function with documented weights (CVSS, EPSS, KEV, exposure, criticality, data
+      classification). Golden-file fixture test asserts determinism across multiple
+      inputs. Ship compute-risk-score-for-finding and rank-findings use cases. Build
+      the Finding detail panel with the breakdown UI and Storybook stories.
+    parallel: false
+  - id: "phase-6"
+    name: "SLA, Remediation Campaigns & Risk Exceptions"
+    description: >
+      Define SecurityPolicy (calendar-day SLA windows per canonical severity, default
+      C=7/H=30/M=90/L=180), RemediationCampaign (serialized targetQuery reusing
+      FindingFilter, read-time progress), and RiskException (typed reason enum,
+      expiry, immutable audit log). Define ISlaClockPort with system-clock adapter.
+      Pure-domain functions for SLA state and effective-finding-state (factoring in
+      exceptions). Use cases for create/update/close campaign, declare/revoke
+      exception, list-expiring-exceptions, get-campaign-progress.
+    parallel: false
+  - id: "phase-7"
+    name: "Executive Dashboards & Developer Task Routing"
+    description: >
+      Implement get-posture-summary, get-risk-trend (time-bucketed posture metrics
+      from finding state changes), get-application-posture, and SSE posture stream
+      endpoint. Implement convert-finding-to-work-item (single + bulk, idempotent on
+      existing linkage). Build the /aspm dashboard, /aspm/findings page, /aspm/inventory
+      with React Flow asset-risk graph, all required Storybook stories, and the
+      Application tab augmentation.
+    parallel: false
+  - id: "phase-8"
+    name: "AI-Change Review Queue"
+    description: >
+      Define AiChangeRiskSignal entity with its own state machine
+      (Open/Acknowledged/GraduatedToFinding/Dismissed/Resolved). Implement
+      record-ai-change-risk-signal (callable via IAgentExecutorProvider hooks),
+      graduate-ai-signal-to-finding, dismiss-ai-signal, and list-ai-signals. Build the
+      /aspm/ai-review queue UI with Storybook coverage.
+    parallel: false
+  - id: "phase-9"
+    name: "Compliance Surface"
+    description: >
+      Define ComplianceControl entity (frameworkId enum: OwaspAsvs/CweTop25), seed
+      MVP control rows, link findings to controls via ingestion adapter taxa
+      references, and implement get-compliance-coverage plus the /aspm/compliance view.
+    parallel: false
+  - id: "phase-10"
+    name: "CLI Surface, E2E Coverage & Documentation"
+    description: >
+      Wire the full shep aspm Commander subcommand tree (ingest, findings, campaigns,
+      posture, exceptions, ai-review). Add at least one Playwright e2e covering the
+      dashboard → findings → declare-exception → posture-refresh happy path. Write
+      docs/architecture/aspm.md and update docs/api/domain-models.md. Run pnpm
+      validate end-to-end.
+    parallel: false
+  - id: "phase-11"
+    name: "Native Scanning — replace upload-driven ingest with in-house scan/rescan"
+    description: >
+      Build the in-house scanning stack so the user never has to upload a SARIF or
+      install a third-party scanner CLI. Stack: (1) pure-domain `SbomBuilder` that
+      parses package/container/IaC manifests across 9+ ecosystems into the
+      `SoftwareBillOfMaterials` shape the existing `IngestSbomUseCase` consumes;
+      (2) `IOsvVulnerabilityPort` adapter against the unauthenticated osv.dev
+      query-batch API for SCA; (3) pure-domain `SecretScanner` (regex + Shannon
+      entropy) emitting SARIF; (4) `IGitOwnershipPort` deriving ownership from
+      local `git` (blame/log/CODEOWNERS) — augments `.shep/ownership.yaml` without
+      overriding it; (5) three agent-driven analyzers — `SastAnalysisAgent`,
+      `ContainerHardeningAgent`, `IacSecurityAgent` — resolved via the existing
+      `IAgentExecutorProvider` per the agent-resolution rule; (6) orchestration use
+      cases `ScanApplicationUseCase` + `RescanApplicationUseCase` + the SSE stream
+      `/api/aspm/scan/stream`; (7) UX migration replacing every 'Ingest data'
+      trigger with 'Scan' / 'Rescan' and demoting the existing `AspmIngestDialog`
+      to a secondary 'Upload existing report' affordance; (8) nightly auto-rescan
+      daemon honoring per-app opt-out. Scope is the **local working tree only** —
+      no `git fetch`, no remote refs, no third-party scanner installs.
+    parallel: false
+
+# File change tracking
+filesToCreate:
+  # TypeSpec — domain
+  - "tsp/domain/entities/aspm/security-finding.tsp"
+  - "tsp/domain/entities/aspm/risk-score.tsp"
+  - "tsp/domain/entities/aspm/owner.tsp"
+  - "tsp/domain/entities/aspm/team.tsp"
+  - "tsp/domain/entities/aspm/business-unit.tsp"
+  - "tsp/domain/entities/aspm/service.tsp"
+  - "tsp/domain/entities/aspm/api-asset.tsp"
+  - "tsp/domain/entities/aspm/cloud-environment.tsp"
+  - "tsp/domain/entities/aspm/remediation-campaign.tsp"
+  - "tsp/domain/entities/aspm/security-policy.tsp"
+  - "tsp/domain/entities/aspm/risk-exception.tsp"
+  - "tsp/domain/entities/aspm/compliance-control.tsp"
+  - "tsp/domain/entities/aspm/ai-change-risk-signal.tsp"
+  - "tsp/domain/value-objects/aspm/canonical-severity.tsp"
+  - "tsp/domain/value-objects/aspm/finding-domain.tsp"
+  - "tsp/domain/value-objects/aspm/finding-state.tsp"
+  - "tsp/domain/value-objects/aspm/exception-reason.tsp"
+  - "tsp/domain/value-objects/aspm/exposure.tsp"
+  - "tsp/domain/value-objects/aspm/criticality.tsp"
+  - "tsp/domain/value-objects/aspm/data-classification.tsp"
+  - "tsp/domain/value-objects/aspm/sla-state.tsp"
+  - "tsp/domain/value-objects/aspm/campaign-status.tsp"
+  - "tsp/domain/value-objects/aspm/ai-signal-state.tsp"
+  - "tsp/domain/value-objects/aspm/ai-signal-type.tsp"
+  - "tsp/domain/value-objects/aspm/compliance-framework.tsp"
+  - "tsp/domain/value-objects/aspm/finding-filter.tsp"
+  - "tsp/domain/value-objects/aspm/cve-reference.tsp"
+  - "tsp/domain/value-objects/aspm/ownership-path.tsp"
+  - "tsp/domain/value-objects/aspm/sla-window.tsp"
+  - "tsp/domain/value-objects/aspm/risk-score-breakdown.tsp"
+
+  # Domain — pure logic
+  - "packages/core/src/domain/aspm/scoring/compute-risk-score.ts"
+  - "packages/core/src/domain/aspm/scoring/weights.ts"
+  - "packages/core/src/domain/aspm/scoring/severity-mapping.ts"
+  - "packages/core/src/domain/aspm/sla/compute-sla-state.ts"
+  - "packages/core/src/domain/aspm/ownership/resolve-ownership.ts"
+  - "packages/core/src/domain/aspm/redactor/redact-secrets.ts"
+  - "packages/core/src/domain/aspm/redactor/secret-patterns.ts"
+  - "packages/core/src/domain/aspm/dedup/finding-dedup-key.ts"
+  - "packages/core/src/domain/aspm/exceptions/effective-finding-state.ts"
+  - "packages/core/src/domain/aspm/errors/finding-not-found.ts"
+  - "packages/core/src/domain/aspm/errors/campaign-closed.ts"
+  - "packages/core/src/domain/aspm/errors/owner-orphaned-finding.ts"
+  - "packages/core/src/domain/aspm/errors/exception-expired.ts"
+  - "packages/core/src/domain/aspm/errors/ai-signal-already-graduated.ts"
+  - "packages/core/src/domain/aspm/errors/ingestion-too-large.ts"
+
+  # Application — output ports
+  - "packages/core/src/application/ports/output/repositories/finding-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/risk-score-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/owner-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/team-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/business-unit-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/service-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/api-asset-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/cloud-environment-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/remediation-campaign-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/security-policy-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/risk-exception-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/compliance-control-repository.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/ai-change-risk-signal-repository.interface.ts"
+  - "packages/core/src/application/ports/output/services/finding-ingest-port.interface.ts"
+  - "packages/core/src/application/ports/output/services/sbom-port.interface.ts"
+  - "packages/core/src/application/ports/output/services/exploit-intel-port.interface.ts"
+  - "packages/core/src/application/ports/output/services/sla-clock-port.interface.ts"
+  - "packages/core/src/application/ports/output/services/ownership-yaml-reader.interface.ts"
+
+  # Application — use cases (ASPM)
+  - "packages/core/src/application/use-cases/aspm/ownership/assign-owner.ts"
+  - "packages/core/src/application/use-cases/aspm/ownership/import-ownership-yaml.ts"
+  - "packages/core/src/application/use-cases/aspm/ownership/resolve-ownership-for-finding.ts"
+  - "packages/core/src/application/use-cases/aspm/ownership/list-owners.ts"
+  - "packages/core/src/application/use-cases/aspm/findings/ingest-findings.ts"
+  - "packages/core/src/application/use-cases/aspm/findings/ingest-sbom.ts"
+  - "packages/core/src/application/use-cases/aspm/findings/list-findings.ts"
+  - "packages/core/src/application/use-cases/aspm/findings/get-finding.ts"
+  - "packages/core/src/application/use-cases/aspm/findings/rank-findings.ts"
+  - "packages/core/src/application/use-cases/aspm/findings/compute-risk-score-for-finding.ts"
+  - "packages/core/src/application/use-cases/aspm/findings/recompute-all-risk-scores.ts"
+  - "packages/core/src/application/use-cases/aspm/findings/convert-finding-to-work-item.ts"
+  - "packages/core/src/application/use-cases/aspm/findings/bulk-convert-findings.ts"
+  - "packages/core/src/application/use-cases/aspm/campaigns/create-campaign.ts"
+  - "packages/core/src/application/use-cases/aspm/campaigns/update-campaign.ts"
+  - "packages/core/src/application/use-cases/aspm/campaigns/close-campaign.ts"
+  - "packages/core/src/application/use-cases/aspm/campaigns/list-campaigns.ts"
+  - "packages/core/src/application/use-cases/aspm/campaigns/get-campaign-progress.ts"
+  - "packages/core/src/application/use-cases/aspm/exceptions/declare-exception.ts"
+  - "packages/core/src/application/use-cases/aspm/exceptions/revoke-exception.ts"
+  - "packages/core/src/application/use-cases/aspm/exceptions/list-expiring-exceptions.ts"
+  - "packages/core/src/application/use-cases/aspm/posture/get-posture-summary.ts"
+  - "packages/core/src/application/use-cases/aspm/posture/get-risk-trend.ts"
+  - "packages/core/src/application/use-cases/aspm/posture/get-application-posture.ts"
+  - "packages/core/src/application/use-cases/aspm/ai-review/record-ai-change-risk-signal.ts"
+  - "packages/core/src/application/use-cases/aspm/ai-review/graduate-ai-signal-to-finding.ts"
+  - "packages/core/src/application/use-cases/aspm/ai-review/dismiss-ai-signal.ts"
+  - "packages/core/src/application/use-cases/aspm/ai-review/list-ai-signals.ts"
+  - "packages/core/src/application/use-cases/aspm/compliance/get-compliance-coverage.ts"
+
+  # Infrastructure — migrations (numbers start where the existing migration numbering ends)
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/101-alter-applications-add-aspm-fields.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/102-create-owners.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/103-create-teams.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/104-create-business-units.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/105-create-services.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/106-create-api-assets.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/107-create-cloud-environments.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/108-create-security-findings.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/109-create-risk-scores.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/110-create-remediation-campaigns.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/111-create-security-policies.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/112-create-risk-exceptions.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/113-create-compliance-controls.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/114-create-ai-change-risk-signals.ts"
+
+  # Infrastructure — repositories + mappers
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-finding-repository.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-risk-score-repository.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-owner-repository.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-team-repository.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-business-unit-repository.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-service-repository.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-api-asset-repository.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-cloud-environment-repository.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-remediation-campaign-repository.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-security-policy-repository.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-risk-exception-repository.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-compliance-control-repository.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-ai-change-risk-signal-repository.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/mappers/finding-mapper.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/mappers/risk-score-mapper.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/mappers/campaign-mapper.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/mappers/exception-mapper.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/mappers/ai-signal-mapper.ts"
+
+  # Infrastructure — services (adapters)
+  - "packages/core/src/infrastructure/services/aspm/sarif-ingest-adapter.ts"
+  - "packages/core/src/infrastructure/services/aspm/cyclonedx-sbom-adapter.ts"
+  - "packages/core/src/infrastructure/services/aspm/exploit-intel-adapter.ts"
+  - "packages/core/src/infrastructure/services/aspm/kev-feed-loader.ts"
+  - "packages/core/src/infrastructure/services/aspm/epss-feed-loader.ts"
+  - "packages/core/src/infrastructure/services/aspm/system-sla-clock.ts"
+  - "packages/core/src/infrastructure/services/aspm/ownership-yaml-reader.ts"
+
+  # DI
+  - "packages/core/src/infrastructure/di/modules/register-aspm.ts"
+
+  # Presentation — CLI
+  - "src/presentation/cli/commands/aspm/index.ts"
+  - "src/presentation/cli/commands/aspm/aspm-ingest-command.ts"
+  - "src/presentation/cli/commands/aspm/aspm-findings-command.ts"
+  - "src/presentation/cli/commands/aspm/aspm-campaigns-command.ts"
+  - "src/presentation/cli/commands/aspm/aspm-posture-command.ts"
+  - "src/presentation/cli/commands/aspm/aspm-exceptions-command.ts"
+  - "src/presentation/cli/commands/aspm/aspm-ai-review-command.ts"
+
+  # Presentation — web routes
+  - "src/presentation/web/app/aspm/page.tsx"
+  - "src/presentation/web/app/aspm/findings/page.tsx"
+  - "src/presentation/web/app/aspm/findings/[id]/page.tsx"
+  - "src/presentation/web/app/aspm/campaigns/page.tsx"
+  - "src/presentation/web/app/aspm/campaigns/[id]/page.tsx"
+  - "src/presentation/web/app/aspm/inventory/page.tsx"
+  - "src/presentation/web/app/aspm/owners/page.tsx"
+  - "src/presentation/web/app/aspm/compliance/page.tsx"
+  - "src/presentation/web/app/aspm/ai-review/page.tsx"
+  - "src/presentation/web/app/api/aspm/posture/stream/route.ts"
+
+  # Presentation — web components (each ships with a colocated .stories.tsx)
+  - "src/presentation/web/components/features/aspm/posture-cards.tsx"
+  - "src/presentation/web/components/features/aspm/posture-cards.stories.tsx"
+  - "src/presentation/web/components/features/aspm/findings-table.tsx"
+  - "src/presentation/web/components/features/aspm/findings-table.stories.tsx"
+  - "src/presentation/web/components/features/aspm/findings-filter-bar.tsx"
+  - "src/presentation/web/components/features/aspm/findings-filter-bar.stories.tsx"
+  - "src/presentation/web/components/features/aspm/finding-detail-panel.tsx"
+  - "src/presentation/web/components/features/aspm/finding-detail-panel.stories.tsx"
+  - "src/presentation/web/components/features/aspm/risk-score-breakdown.tsx"
+  - "src/presentation/web/components/features/aspm/risk-score-breakdown.stories.tsx"
+  - "src/presentation/web/components/features/aspm/severity-badge.tsx"
+  - "src/presentation/web/components/features/aspm/severity-badge.stories.tsx"
+  - "src/presentation/web/components/features/aspm/sla-badge.tsx"
+  - "src/presentation/web/components/features/aspm/sla-badge.stories.tsx"
+  - "src/presentation/web/components/features/aspm/campaign-board.tsx"
+  - "src/presentation/web/components/features/aspm/campaign-board.stories.tsx"
+  - "src/presentation/web/components/features/aspm/owner-map.tsx"
+  - "src/presentation/web/components/features/aspm/owner-map.stories.tsx"
+  - "src/presentation/web/components/features/aspm/risk-trend-chart.tsx"
+  - "src/presentation/web/components/features/aspm/risk-trend-chart.stories.tsx"
+  - "src/presentation/web/components/features/aspm/ai-review-queue.tsx"
+  - "src/presentation/web/components/features/aspm/ai-review-queue.stories.tsx"
+  - "src/presentation/web/components/features/aspm/compliance-coverage-view.tsx"
+  - "src/presentation/web/components/features/aspm/compliance-coverage-view.stories.tsx"
+  - "src/presentation/web/components/features/aspm/asset-risk-graph/asset-risk-graph.tsx"
+  - "src/presentation/web/components/features/aspm/asset-risk-graph/asset-risk-graph.stories.tsx"
+  - "src/presentation/web/components/features/aspm/asset-risk-graph/asset-node.tsx"
+  - "src/presentation/web/components/features/aspm/asset-risk-graph/asset-node.stories.tsx"
+  - "src/presentation/web/components/features/aspm/asset-risk-graph/build-asset-graph-nodes.ts"
+
+  # Tests
+  - "tests/unit/domain/aspm/compute-risk-score.test.ts"
+  - "tests/unit/domain/aspm/compute-risk-score.golden.test.ts"
+  - "tests/unit/domain/aspm/redact-secrets.test.ts"
+  - "tests/unit/domain/aspm/resolve-ownership.test.ts"
+  - "tests/unit/domain/aspm/compute-sla-state.test.ts"
+  - "tests/unit/domain/aspm/finding-dedup-key.test.ts"
+  - "tests/unit/domain/aspm/effective-finding-state.test.ts"
+  - "tests/unit/use-cases/aspm/ingest-findings.test.ts"
+  - "tests/unit/use-cases/aspm/list-findings.test.ts"
+  - "tests/unit/use-cases/aspm/rank-findings.test.ts"
+  - "tests/unit/use-cases/aspm/compute-risk-score-for-finding.test.ts"
+  - "tests/unit/use-cases/aspm/convert-finding-to-work-item.test.ts"
+  - "tests/unit/use-cases/aspm/bulk-convert-findings.test.ts"
+  - "tests/unit/use-cases/aspm/create-campaign.test.ts"
+  - "tests/unit/use-cases/aspm/get-campaign-progress.test.ts"
+  - "tests/unit/use-cases/aspm/declare-exception.test.ts"
+  - "tests/unit/use-cases/aspm/revoke-exception.test.ts"
+  - "tests/unit/use-cases/aspm/list-expiring-exceptions.test.ts"
+  - "tests/unit/use-cases/aspm/get-posture-summary.test.ts"
+  - "tests/unit/use-cases/aspm/get-risk-trend.test.ts"
+  - "tests/unit/use-cases/aspm/get-application-posture.test.ts"
+  - "tests/unit/use-cases/aspm/record-ai-change-risk-signal.test.ts"
+  - "tests/unit/use-cases/aspm/graduate-ai-signal-to-finding.test.ts"
+  - "tests/unit/use-cases/aspm/dismiss-ai-signal.test.ts"
+  - "tests/unit/use-cases/aspm/get-compliance-coverage.test.ts"
+  - "tests/unit/use-cases/aspm/ingest-sbom.test.ts"
+  - "tests/unit/use-cases/aspm/assign-owner.test.ts"
+  - "tests/unit/use-cases/aspm/import-ownership-yaml.test.ts"
+  - "tests/unit/use-cases/aspm/resolve-ownership-for-finding.test.ts"
+  - "tests/integration/infrastructure/persistence/sqlite/aspm/finding-repository.int.test.ts"
+  - "tests/integration/infrastructure/persistence/sqlite/aspm/owner-repository.int.test.ts"
+  - "tests/integration/infrastructure/persistence/sqlite/aspm/risk-score-repository.int.test.ts"
+  - "tests/integration/infrastructure/persistence/sqlite/aspm/remediation-campaign-repository.int.test.ts"
+  - "tests/integration/infrastructure/persistence/sqlite/aspm/risk-exception-repository.int.test.ts"
+  - "tests/integration/infrastructure/persistence/sqlite/aspm/ai-change-risk-signal-repository.int.test.ts"
+  - "tests/integration/infrastructure/services/aspm/sarif-ingest-adapter.int.test.ts"
+  - "tests/integration/infrastructure/services/aspm/cyclonedx-sbom-adapter.int.test.ts"
+  - "tests/integration/infrastructure/services/aspm/exploit-intel-adapter.int.test.ts"
+  - "tests/fixtures/aspm/sarif/semgrep-sample.sarif.json"
+  - "tests/fixtures/aspm/sarif/codeql-sample.sarif.json"
+  - "tests/fixtures/aspm/sarif/trivy-sample.sarif.json"
+  - "tests/fixtures/aspm/sbom/cyclonedx-1.5-sample.json"
+  - "tests/fixtures/aspm/kev/cisa-kev-sample.json"
+  - "tests/fixtures/aspm/epss/epss-sample.csv"
+  - "tests/fixtures/aspm/ownership/ownership-sample.yaml"
+  - "tests/fixtures/aspm/scoring/golden-cases.json"
+  - "tests/e2e/aspm-dashboard-happy-path.spec.ts"
+
+  # Docs
+  - "docs/architecture/aspm.md"
+
+  # Phase 11 — Native scanning (TSP)
+  - "tsp/domain/entities/aspm/scan-run.tsp"
+  - "tsp/domain/entities/aspm/scanner-profile.tsp"
+
+  # Phase 11 — Domain (pure)
+  - "packages/core/src/domain/aspm/scan/scan-stage.ts"
+  - "packages/core/src/domain/aspm/scan/secret-scanner.ts"
+  - "packages/core/src/domain/aspm/scan/secret-rule-pack.ts"
+  - "packages/core/src/domain/aspm/scan/sbom-builder.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/npm-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/python-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/go-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/rust-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/jvm-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/ruby-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/php-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/dotnet-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/container-manifest-parser.ts"
+  - "packages/core/src/domain/aspm/scan/manifest-parsers/iac-manifest-parser.ts"
+
+  # Phase 11 — Application ports
+  - "packages/core/src/application/ports/output/services/osv-vulnerability-port.interface.ts"
+  - "packages/core/src/application/ports/output/services/git-ownership-port.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/scan-run-repository.interface.ts"
+
+  # Phase 11 — Application use cases
+  - "packages/core/src/application/use-cases/aspm/scan/scan-application.ts"
+  - "packages/core/src/application/use-cases/aspm/scan/rescan-application.ts"
+  - "packages/core/src/application/use-cases/aspm/scan/list-scan-runs.ts"
+  - "packages/core/src/application/use-cases/aspm/scan/get-scan-run.ts"
+  - "packages/core/src/application/use-cases/aspm/scan/configure-scanner-profile.ts"
+
+  # Phase 11 — Infrastructure (adapters + agents)
+  - "packages/core/src/infrastructure/services/aspm/osv-vulnerability-adapter.ts"
+  - "packages/core/src/infrastructure/services/aspm/git-ownership-adapter.ts"
+  - "packages/core/src/infrastructure/repositories/aspm/sqlite-scan-run-repository.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/118-create-scan-runs.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/119-add-scanner-profile-to-applications.ts"
+  - "packages/core/src/infrastructure/services/aspm/agents/sast-analysis-agent.ts"
+  - "packages/core/src/infrastructure/services/aspm/agents/container-hardening-agent.ts"
+  - "packages/core/src/infrastructure/services/aspm/agents/iac-security-agent.ts"
+  - "packages/core/src/infrastructure/services/aspm/scan-scheduler.service.ts"
+
+  # Phase 11 — Web UI
+  - "src/presentation/web/app/api/aspm/scan/route.ts"
+  - "src/presentation/web/app/api/aspm/scan/stream/route.ts"
+  - "src/presentation/web/app/actions/aspm-scan.ts"
+  - "src/presentation/web/components/features/aspm/aspm-scan-dialog/aspm-scan-dialog.tsx"
+  - "src/presentation/web/components/features/aspm/aspm-scan-dialog/aspm-scan-dialog.stories.tsx"
+  - "src/presentation/web/components/features/aspm/scan-progress-panel/scan-progress-panel.tsx"
+  - "src/presentation/web/components/features/aspm/scan-progress-panel/scan-progress-panel.stories.tsx"
+  - "src/presentation/web/components/features/aspm/scanner-profile-section/scanner-profile-section.tsx"
+  - "src/presentation/web/components/features/aspm/scanner-profile-section/scanner-profile-section.stories.tsx"
+  - ".storybook/mocks/app/actions/aspm-scan.ts"
+
+  # Phase 11 — CLI
+  - "src/presentation/cli/commands/aspm/aspm-scan-command.ts"
+  - "src/presentation/cli/commands/aspm/aspm-rescan-command.ts"
+
+  # Phase 11 — Tests
+  - "tests/unit/domain/aspm/scan/secret-scanner.test.ts"
+  - "tests/unit/domain/aspm/scan/sbom-builder.test.ts"
+  - "tests/unit/application/use-cases/aspm/scan/scan-application.test.ts"
+  - "tests/unit/infrastructure/services/aspm/osv-vulnerability-adapter.test.ts"
+  - "tests/unit/infrastructure/services/aspm/git-ownership-adapter.test.ts"
+  - "tests/unit/infrastructure/services/aspm/scan-scheduler.test.ts"
+  - "tests/integration/infrastructure/repositories/sqlite-scan-run-repository.test.ts"
+  - "tests/fixtures/aspm/scan/sample-repos/README.md"
+  - "tests/e2e/aspm-scan-happy-path.spec.ts"
+
+  # Phase 11 — Docs
+  - "docs/architecture/aspm-scanning.md"
+
+filesToModify:
+  - "tsp/domain/entities/application.tsp"
+  - "tsp/main.tsp"
+  - "packages/core/src/infrastructure/di/container.ts"
+  - "src/presentation/cli/index.ts"
+  - "src/presentation/web/components/features/applications/application-detail.tsx"
+  - "docs/api/domain-models.md"
+  - "package.json"
+
+  # Phase 11 — Modifications
+  - "tsp/domain/entities/application.tsp"  # add ScannerProfile field + lastScannedAt
+  - "packages/core/src/infrastructure/di/modules/register-aspm.ts"  # register scan use cases + scanner port + scheduler
+  - "src/presentation/web/components/features/aspm/posture-cards.tsx"  # swap AspmIngestDialog → AspmScanDialog in empty state
+  - "src/presentation/web/components/features/aspm/findings-table.tsx"  # same swap
+  - "src/presentation/web/components/features/aspm/aspm-application-section.tsx"  # same swap
+  - "src/presentation/web/components/features/aspm/aspm-sub-nav/aspm-sub-nav.tsx"  # Scan/Rescan primary button replaces 'Ingest data'
+  - "src/presentation/web/components/features/aspm/aspm-ingest-dialog/aspm-ingest-dialog.tsx"  # demoted; mounted inside scan dialog as 'Upload existing report' tab
+  - "src/presentation/cli/commands/aspm/index.ts"  # register scan + rescan subcommands
+
+# Open questions (should all be resolved before implementation)
+openQuestions: []
+
+# Markdown content (the full plan document)
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-05-19
+
+  ## Architecture Overview
+
+  The ASPM module slots into Shep's existing Clean Architecture stack without bending
+  any of the rules in `CLAUDE.md` or `.claude/rules/*`. The dependency direction is
+  preserved: **TypeSpec → domain → application → infrastructure / presentation**.
+
+  - **TypeSpec layer (`tsp/`)** authors every new entity, enum, and value object.
+    `Application` gains four optional ASPM fields (`criticality`, `exposure`,
+    `dataClassification`, `businessUnit`). Adjacent asset entities (`Service`,
+    `ApiAsset`, `CloudEnvironment`) cover non-application assets. ASPM-only entities
+    (`SecurityFinding`, `RiskScore`, `Owner`, `Team`, `BusinessUnit`,
+    `RemediationCampaign`, `SecurityPolicy`, `RiskException`, `ComplianceControl`,
+    `AiChangeRiskSignal`) live under `tsp/domain/entities/aspm/`. Value objects
+    (`FindingFilter`, `CVEReference`, `OwnershipPath`, `SLAWindow`,
+    `RiskScoreBreakdown`, and the canonical enums) live under
+    `tsp/domain/value-objects/aspm/`. `pnpm tsp:compile` regenerates
+    `packages/core/src/domain/generated/output.ts` — the file is never hand-edited.
+
+  - **Domain layer (`packages/core/src/domain/aspm/`)** holds pure logic only:
+    `computeRiskScore` (weights, severity mapping), `computeSlaState`,
+    `resolveOwnership`, `redactSecrets`, `findingDedupKey`, `effectiveFindingState`,
+    and typed domain errors (`FindingNotFound`, `CampaignClosed`,
+    `OwnerOrphanedFinding`, `ExceptionExpired`, `AiSignalAlreadyGraduated`,
+    `IngestionTooLarge`). No `Date.now()`, no `process.env`, no infra imports. All
+    time enters via `ISlaClockPort`.
+
+  - **Application layer (`packages/core/src/application/`)** defines the output ports
+    (`IFindingRepository`, `IRiskScoreRepository`, `IOwnerRepository`, ...,
+    `IFindingIngestPort`, `ISbomPort`, `IExploitIntelPort`, `ISlaClockPort`,
+    `IOwnershipYamlReader`) and the ~35 use cases organized by sub-area
+    (`ownership/`, `findings/`, `campaigns/`, `exceptions/`, `posture/`,
+    `ai-review/`, `compliance/`). Use cases are the **only** entry point — CLI/web
+    never bypass them. They are RED-first per `CLAUDE.md`.
+
+  - **Infrastructure layer (`packages/core/src/infrastructure/`)** ships:
+    - Numbered, idempotent SQLite migrations under `persistence/sqlite/migrations/`
+      starting at `101-…` (next free number after the existing 100-create-custom-agents.ts).
+    - One repository per entity with a mapper, normalizing paths to POSIX before
+      persistence (per `packages/CLAUDE.md`).
+    - Concrete adapters: SARIF parser, CycloneDX parser, KEV/EPSS feed loader,
+      YAML ownership reader, system clock implementation of `ISlaClockPort`.
+    - `register-aspm.ts` in `infrastructure/di/modules/` wires every repository,
+      port, service, and use case by string token. `container.ts` invokes it after
+      the existing `register-*` modules so migrations run first and ASPM repos can
+      depend on `IApplicationRepository` and `IWorkItemRepository`.
+
+  - **Presentation layer (`src/presentation/`)** adds:
+    - CLI: `shep aspm` parent command with `ingest`, `findings`, `campaigns`,
+      `posture`, `exceptions`, `ai-review` subcommands routed to use cases.
+    - Web: new routes under `app/aspm/*` (dashboard, findings, findings/[id],
+      campaigns, campaigns/[id], inventory, owners, compliance, ai-review) and an
+      SSE endpoint at `app/api/aspm/posture/stream/route.ts`.
+    - Components under `components/features/aspm/` — every one with a colocated
+      `*.stories.tsx` covering Default/Loading/Error and the relevant variants
+      (Critical/High/KEV/Exception/AiGraduated).
+    - An ASPM section on the existing Application detail view (risk score badge,
+      top findings, owners, exception count).
+
+  - **Tests**: unit tests under `tests/unit/`, integration tests under
+    `tests/integration/`, Playwright e2e under `tests/e2e/`, fixtures under
+    `tests/fixtures/aspm/`. The risk-scoring golden test reads
+    `tests/fixtures/aspm/scoring/golden-cases.json` and asserts deterministic
+    output across multiple input shapes.
+
+  ## Key Design Decisions
+
+  Every choice below cross-references the corresponding `decisions[]` entry in
+  `research.yaml`.
+
+  **1. Extend the existing `Application` entity instead of inventing a new
+  `SecurityAsset`.** Application is already the operational anchor for repository,
+  agent session, deployment, features, and cycles. Adding four optional ASPM fields
+  is one idempotent ALTER migration with safe defaults. Non-application assets
+  (`Service`, `ApiAsset`, `CloudEnvironment`) are added as adjacent entities so the
+  data model covers them without polymorphism. *(Research decision 1.)*
+
+  **2. Transparent composite `RiskScore` over CVSS + EPSS + KEV + exposure +
+  criticality + data classification.** Computed by a pure-domain function with
+  documented weights and stored as an append-only `risk_scores` table (history
+  preserved for the trend chart, current score pointed to via
+  `currentRiskScoreId`). Fixture-driven golden test asserts determinism. KEV/EPSS
+  adapters can return null and scoring degrades gracefully. *(Research decisions 2,
+  17 — Risk score lives in its own table with history.)*
+
+  **3. Two ingestion ports for MVP: `IFindingIngestPort` (SARIF v2.1.0) and
+  `ISbomPort` (CycloneDX 1.5+).** Both parsed via `ajv` + hand-rolled walker.
+  Vendor-native adapters slot in later behind the same ports. The 100MB size cap
+  and synchronous transactional ingest match NFR-6 and NFR-14. *(Research decisions
+  3, 16, 19 — synchronous transactional ingest.)*
+
+  **4. Ownership via `.shep/ownership.yaml` + UI override.** Two-source resolver
+  is a pure function in `domain/aspm/ownership/resolve-ownership.ts`. CODEOWNERS
+  remains a future fallback. *(Research decision 4.)*
+
+  **5. Calendar-day SLAs per canonical severity, defaulted Critical=7 / High=30 /
+  Medium=90 / Low=180, configurable on `SecurityPolicy`.** SLA state is a pure
+  function of `(discoveredAt, severity, policy, now)` over `ISlaClockPort`.
+  *(Research decision 5.)*
+
+  **6. AI-change risk gets its own `AiChangeRiskSignal` entity, not a tagged
+  Finding.** Keeps Finding SLA math and exception stats clean; graduates to a
+  Finding only when confirmed. *(Research decision 6.)*
+
+  **7. Canonical 5-level severity (Critical/High/Medium/Low/Info) AND preserved
+  raw.** Mapping tables are typed domain constants — no magic strings.
+  *(Research decision 7.)*
+
+  **8. Self-declared `RiskException` with expiry + immutable audit log.** Approval
+  chain deferred until Shep has a permissions subsystem. Effective finding state
+  factors in exceptions at read time. *(Research decision 8.)*
+
+  **9. Query-shaped `RemediationCampaign` with a serialized `FindingFilter` value
+  object.** The same `FindingFilter` is reused by `list-findings`, `rank-findings`,
+  campaign target queries, and bulk work-item conversion. Campaign progress is
+  computed at read time — no Finding↔Campaign join table. *(Research decisions 9,
+  18.)*
+
+  **10. `ComplianceControl` covering OWASP ASVS + CWE Top 25.** Findings link to
+  zero-or-more controls via SARIF taxa references. Regulated frameworks
+  (SOC 2/PCI/HIPAA) are additive rows in the same table later. *(Research decision
+  10.)*
+
+  **11. On-demand `convert-finding-to-work-item` (plus bulk variant).** Engineers
+  triage in `/aspm`, route the ones that matter into the existing WorkItem
+  backlog. Single optional `workItemId` reference on Finding; bulk is idempotent.
+  *(Research decision 11.)*
+
+  **12. Ship the React Flow asset-risk graph in MVP.** Reuses `@xyflow/react`
+  v12 already in tree, and shares `build-graph-nodes`-style helpers with the
+  existing graph code. Falls back to the tabular inventory view behind a feature
+  flag if perf becomes a blocker — no domain-layer impact. *(Research decision
+  12.)*
+
+  **13. Multi-workspace-ready data shape.** ASPM tables carry a nullable
+  `workspaceId` column today (defaulted to the active workspace constant). When
+  the tenancy subsystem lands, it's a backfill, not a structural rewrite.
+  *(Research decision 13.)*
+
+  **14. Persistence: `better-sqlite3` + numbered idempotent migrations, one
+  concept per migration, `IF NOT EXISTS` + pragma index guards.** Matches the
+  existing 001–100 migration files exactly. Each ingestion run is wrapped in a
+  single transaction. *(Research decision 14.)*
+
+  **15. DI: `register-aspm.ts` invoked from `container.ts` after the existing
+  `register-*` modules.** Explicit registration by string token, ordered after the
+  core repositories ASPM depends on. *(Research decision 15.)*
+
+  **16. KEV/EPSS via `IExploitIntelPort` + local-cached feed loader.** mtime-based
+  24h refresh, content-type checks, graceful offline degradation. *(Research
+  decision 17.)*
+
+  **17. Secret redaction at persistence time via a pure-domain `Redactor`.** AWS/
+  GCP/Azure key prefixes, high-entropy ≥32 char strings, `sk_`/`ghp_` token
+  prefixes, PEM headers. Raw is SHA-256 hashed; only the hash is stored.
+  *(Research decision 18.)*
+
+  ## Implementation Strategy
+
+  Ten phases, each independently shippable, ordered by dependency. Foundation
+  first (TypeSpec + DI skeleton), then the asset/ownership graph, then findings
+  ingestion (the entity everything else hangs off), then SBOM + KEV/EPSS (which
+  power scoring), then the scoring layer itself, then the workflow primitives
+  (SLA + campaigns + exceptions), then the executive surface and developer
+  routing, then the AI-change differentiator, then compliance, then polish (CLI,
+  e2e, docs).
+
+  The order is dictated by:
+
+  - **TypeSpec-first (NFR-2)**: every entity must be authored in `tsp/` and codegen
+    run before any domain/application/infrastructure code can reference it.
+    Phase 1 generates all the types so subsequent phases compile.
+  - **Repository dependencies**: `SecurityFinding` depends on `Owner`+`Application`,
+    so ownership lands in phase 2 before findings in phase 3.
+  - **Scoring depends on KEV/EPSS**: phase 5 (scoring) must follow phase 4 (exploit
+    intel) so the score breakdown can be computed end-to-end.
+  - **Dashboards depend on findings + scoring + SLA**: phase 7 follows phases
+    3-6.
+  - **AI-change review reuses owner/asset plumbing**: phase 8 follows phase 2 but
+    can land alongside or after phase 7 since they share UI infrastructure.
+  - **CLI + e2e need the full stack**: phase 10 follows everything.
+
+  Each phase delivers a coherent vertical slice — domain → use cases → adapters →
+  CLI/UI — so the `/aspm` area boots earlier and grows progressively. The
+  Storybook + e2e gates are enforced phase-by-phase so the CI surface never
+  regresses.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | TypeSpec codegen race (consumers compile before regeneration) | Phase 1 commits the regenerated `output.ts` and any subsequent TSP change re-runs `pnpm tsp:compile` before code that consumes it lands. CI runs `pnpm validate` which includes `tsp:compile`. |
+  | SARIF/CycloneDX schema drift | `ajv` validates incoming docs against pinned schema versions; adapters are version-aware and degrade gracefully on unknown extensions (FR-7). Fixture suite covers Semgrep/CodeQL/Trivy SARIF dialects. |
+  | KEV/EPSS feed outage or schema change | `IExploitIntelPort` returns `null`/`false` on failure; scoring degrades to CVSS+context only (research decision 17). Adapter validates content type + minimum row count and falls back to the last good cache. |
+  | Risk-score determinism regression | Golden-file fixture test asserts byte-stable output across 10+ representative inputs. Any weight change requires updating the fixture intentionally. |
+  | Ingestion DoS via huge SARIF | 100MB size cap (configurable on `SecurityPolicy`), ajv-validated, transactional. Adapter rejects with `IngestionTooLarge` before parsing. |
+  | Secret leakage through scanner output | Pure-domain `Redactor` runs on `description` + `scannerRaw` before persistence; raw is hashed-only. Unit tests assert all canonical patterns are masked. |
+  | Cross-platform path divergence (NFR-11) | Every mapper normalizes location paths to POSIX before write; dedup key uses the normalized form. Round-trip integration tests exercise both separators. |
+  | 50k-finding dashboard perf (NFR-7/8) | Composite indexes per migration (applicationId+canonicalSeverity+state; cveId; ownerId+state; discoveredAt); `currentRiskScoreId` pointer keeps rank queries O(n log n). SSE deltas avoid full reloads. |
+  | React Flow graph perf on large datasets | Phase 7 implements per-application aggregation; if 50k findings overwhelm the canvas, a feature flag switches inventory to the tabular fallback — no domain-layer impact. |
+  | Use-case sprawl in `application/use-cases/aspm/` | Use cases are grouped into sub-areas (`findings/`, `campaigns/`, ...) with each file under 300 lines (NFR-19). Shared filtering and pagination live in domain helpers. |
+  | Migration ordering breakage | Migration numbers are explicit (101–114) and chosen to extend the existing sequence with no gaps. `register-aspm.ts` runs after migrations. |
+  | Workspace forward-compat | Every ASPM table includes a nullable `workspaceId` column today (defaulted to the active workspace constant). When tenancy lands it's a backfill, not a structural change. |
+  | Test gap on integration boundary | Each repository has a round-trip integration test; each adapter has a fixture-driven adapter test; one Playwright e2e covers the dashboard happy path. |
+  | File-length creep | Every new file ≤300 lines (NFR-19); refactor-before-extending rule enforced in code review. |
+  | Storybook gate failure on CI | Every component file has a colocated `*.stories.tsx` from day one (FR-40, NFR-5); Default/Loading/Error variants are mandatory. |

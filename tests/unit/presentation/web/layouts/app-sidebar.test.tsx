@@ -47,6 +47,7 @@ const defaultFlags = {
   collaboration: false,
   bedrockIntegration: false,
   whatsappDispatch: false,
+  aspm: false,
 };
 
 function renderWithSidebar(ui: React.ReactElement) {

@@ -60,6 +60,25 @@ properties:
     type: boolean
     default: false
     description: Whether project-bedrock memory integration is enabled for this application
+  criticality:
+    $ref: Criticality.yaml
+    description: "ASPM: business criticality tier of this application"
+  exposure:
+    $ref: Exposure.yaml
+    description: "ASPM: network exposure classification of this application"
+  dataClassification:
+    $ref: DataClassification.yaml
+    description: "ASPM: data sensitivity classification of this application"
+  businessUnit:
+    type: string
+    description: "ASPM: business unit grouping (free-form string, used for posture rollups)"
+  scannerProfile:
+    $ref: ScannerProfile.yaml
+    description: "ASPM: per-application scanner configuration (stage toggles, excludes, schedule)"
+  lastScannedAt:
+    type: string
+    format: date-time
+    description: "ASPM: timestamp of the last completed scan run (any status) for this application"
 required:
   - name
   - slug

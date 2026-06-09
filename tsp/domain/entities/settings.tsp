@@ -604,19 +604,22 @@ model FeatureFlags {
   reactFileManager: boolean = false;
 
   @doc("Enable Projects pages and navigation (project management)")
-  projects: boolean = false;
+  projects: boolean = true;
 
   @doc("Enable AI-powered code review for pull requests")
-  codeReview: boolean = false;
+  codeReview: boolean = true;
 
   @doc("Enable agent collaboration, supervisor agent, and unified question pipeline (spec 093)")
-  collaboration: boolean = false;
+  collaboration: boolean = true;
 
   @doc("Enable project-bedrock memory integration UI and server actions (spec 098)")
   bedrockIntegration: boolean = true;
 
   @doc("Enable WhatsApp-native task dispatch and interactive control (spec 101)")
   whatsappDispatch: boolean = false;
+
+  @doc("Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098)")
+  aspm: boolean = true;
 }
 
 /**

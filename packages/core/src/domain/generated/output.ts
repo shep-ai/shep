@@ -695,6 +695,10 @@ export type FeatureFlags = {
    * Enable WhatsApp-native task dispatch and interactive control (spec 101)
    */
   whatsappDispatch: boolean;
+  /**
+   * Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098)
+   */
+  aspm: boolean;
 };
 export enum WhatsAppAdapterKind {
   Baileys = 'baileys',
@@ -2027,6 +2031,49 @@ export enum CloudDeploymentStatus {
   Deployed = 'Deployed',
   Failed = 'Failed',
 }
+export enum Criticality {
+  Tier1 = 'Tier1',
+  Tier2 = 'Tier2',
+  Tier3 = 'Tier3',
+}
+export enum Exposure {
+  Internet = 'Internet',
+  Internal = 'Internal',
+  Airgapped = 'Airgapped',
+  Unknown = 'Unknown',
+}
+export enum DataClassification {
+  Public = 'Public',
+  Internal = 'Internal',
+  Confidential = 'Confidential',
+  Restricted = 'Restricted',
+}
+export enum ScanStageName {
+  Sbom = 'sbom',
+  Sca = 'sca',
+  Secrets = 'secrets',
+  Sast = 'sast',
+  Container = 'container',
+  Iac = 'iac',
+}
+
+/**
+ * Per-application scanner configuration (stage toggles, excludes, schedule)
+ */
+export type ScannerProfile = {
+  /**
+   * Stages that should run during a scan. Empty array = scan nothing.
+   */
+  enabledStages: ScanStageName[];
+  /**
+   * Glob patterns to exclude from every stage (node_modules, dist, build artifacts)
+   */
+  pathExcludes: string[];
+  /**
+   * Whether the nightly auto-rescan scheduler should include this application
+   */
+  autoRescan: boolean;
+};
 
 /**
  * A persistent AI-powered application workspace
@@ -2104,6 +2151,30 @@ export type Application = SoftDeletableEntity & {
    * Whether project-bedrock memory integration is enabled for this application
    */
   bedrockEnabled: boolean;
+  /**
+   * ASPM: business criticality tier of this application
+   */
+  criticality?: Criticality;
+  /**
+   * ASPM: network exposure classification of this application
+   */
+  exposure?: Exposure;
+  /**
+   * ASPM: data sensitivity classification of this application
+   */
+  dataClassification?: DataClassification;
+  /**
+   * ASPM: business unit grouping (free-form string, used for posture rollups)
+   */
+  businessUnit?: string;
+  /**
+   * ASPM: per-application scanner configuration (stage toggles, excludes, schedule)
+   */
+  scannerProfile?: ScannerProfile;
+  /**
+   * ASPM: timestamp of the last completed scan run (any status) for this application
+   */
+  lastScannedAt?: any;
 };
 
 /**
@@ -3124,6 +3195,686 @@ export type ProjectMemory = BaseEntity & {
 };
 
 /**
+ * Top-level rollup grouping for ASPM (e.g. division, product line)
+ */
+export type BusinessUnit = SoftDeletableEntity & {
+  /**
+   * Human-readable business unit name
+   */
+  name: string;
+  /**
+   * Optional short identifier for URL slugs and CLI usage
+   */
+  slug?: string;
+};
+
+/**
+ * Team groups owners and rolls up ASPM posture
+ */
+export type Team = SoftDeletableEntity & {
+  /**
+   * Human-readable team name
+   */
+  name: string;
+  /**
+   * Optional short identifier for URL slugs and CLI usage
+   */
+  slug?: string;
+  /**
+   * Business unit this team rolls up into
+   */
+  businessUnitId?: UUID;
+};
+
+/**
+ * Owner of ASPM assets and findings (person or team identifier)
+ */
+export type Owner = SoftDeletableEntity & {
+  /**
+   * Human-readable owner name
+   */
+  name: string;
+  /**
+   * Optional contact handle (e.g. email, Slack handle, GitHub login)
+   */
+  handle?: string;
+  /**
+   * Team this owner belongs to
+   */
+  teamId?: UUID;
+  /**
+   * Free-form notes about this owner (e.g. on-call rotation, escalation)
+   */
+  notes?: string;
+};
+
+/**
+ * Service — adjacent asset attached to an Application
+ */
+export type Service = SoftDeletableEntity & {
+  /**
+   * Human-readable service name
+   */
+  name: string;
+  /**
+   * Optional short identifier for URL slugs and CLI usage
+   */
+  slug?: string;
+  /**
+   * Application this service belongs to
+   */
+  applicationId: UUID;
+  /**
+   * Optional owner override (otherwise inherits from Application)
+   */
+  ownerId?: UUID;
+  /**
+   * Optional exposure override (otherwise inherits from Application)
+   */
+  exposure?: Exposure;
+};
+
+/**
+ * API asset — external or internal API surface attached to an Application
+ */
+export type ApiAsset = SoftDeletableEntity & {
+  /**
+   * Human-readable API asset name
+   */
+  name: string;
+  /**
+   * Base URL of the API (e.g. https://api.example.com/v1)
+   */
+  baseUrl?: string;
+  /**
+   * Application this API asset belongs to
+   */
+  applicationId: UUID;
+  /**
+   * Optional owner override (otherwise inherits from Application)
+   */
+  ownerId?: UUID;
+  /**
+   * Optional exposure override (otherwise inherits from Application)
+   */
+  exposure?: Exposure;
+  /**
+   * Optional path to the API schema file (POSIX separators, repo-relative)
+   */
+  schemaPath?: string;
+};
+
+/**
+ * Cloud environment — deployment target / account / project
+ */
+export type CloudEnvironment = SoftDeletableEntity & {
+  /**
+   * Human-readable environment name (e.g. payments-prod, web-staging)
+   */
+  name: string;
+  /**
+   * Cloud provider identifier (free-form; e.g. aws, gcp, azure, cloudflare)
+   */
+  provider: string;
+  /**
+   * Provider-specific account / project / subscription id
+   */
+  accountId?: string;
+  /**
+   * Application this cloud environment belongs to
+   */
+  applicationId: UUID;
+  /**
+   * Optional owner override (otherwise inherits from Application)
+   */
+  ownerId?: UUID;
+  /**
+   * Optional region identifier
+   */
+  region?: string;
+};
+export enum ComplianceFramework {
+  OwaspAsvs = 'OwaspAsvs',
+  CweTop25 = 'CweTop25',
+}
+
+/**
+ * Single control within a compliance framework (OWASP ASVS / CWE Top 25 / ...)
+ */
+export type ComplianceControl = SoftDeletableEntity & {
+  /**
+   * Compliance framework this control belongs to
+   */
+  frameworkId: ComplianceFramework;
+  /**
+   * Framework-specific control identifier (e.g. V2.1.1, CWE-79)
+   */
+  controlId: string;
+  /**
+   * Short human-readable title
+   */
+  title: string;
+  /**
+   * Long-form description of what the control covers
+   */
+  description: string;
+};
+export enum CanonicalSeverity {
+  Critical = 'Critical',
+  High = 'High',
+  Medium = 'Medium',
+  Low = 'Low',
+  Info = 'Info',
+}
+
+/**
+ * SLA window (calendar days) for a single canonical severity
+ */
+export type SLAWindow = {
+  /**
+   * Canonical severity this window applies to
+   */
+  severity: CanonicalSeverity;
+  /**
+   * SLA window in calendar days from discoveredAt
+   */
+  windowDays: number;
+};
+
+/**
+ * Workspace-wide ASPM security policy (SLA windows + ingestion limits)
+ */
+export type SecurityPolicy = SoftDeletableEntity & {
+  /**
+   * Human-readable policy name
+   */
+  name: string;
+  /**
+   * Whether this is the active policy for the workspace (only one active)
+   */
+  active: boolean;
+  /**
+   * SLA windows per canonical severity (calendar days)
+   */
+  slaWindows: SLAWindow[];
+  /**
+   * Maximum ingestion document size in bytes (default 100MB)
+   */
+  maxIngestBytes: bigint;
+};
+export enum FindingDomain {
+  Code = 'Code',
+  Dependency = 'Dependency',
+  Secret = 'Secret',
+  Container = 'Container',
+  Cloud = 'Cloud',
+  Api = 'Api',
+  Identity = 'Identity',
+  Runtime = 'Runtime',
+  Compliance = 'Compliance',
+  Ai = 'Ai',
+}
+export enum FindingState {
+  Open = 'Open',
+  Triaged = 'Triaged',
+  InProgress = 'InProgress',
+  Resolved = 'Resolved',
+  Closed = 'Closed',
+  Exception = 'Exception',
+}
+
+/**
+ * Unified security finding produced by ingestion adapters across every ASPM domain
+ */
+export type SecurityFinding = SoftDeletableEntity & {
+  /**
+   * Primary asset anchor — the Application this finding attaches to
+   */
+  applicationId: UUID;
+  /**
+   * Optional Service this finding attaches to (sub-asset of Application)
+   */
+  serviceId?: UUID;
+  /**
+   * Optional ApiAsset this finding attaches to
+   */
+  apiAssetId?: UUID;
+  /**
+   * Optional CloudEnvironment this finding attaches to
+   */
+  cloudEnvironmentId?: UUID;
+  /**
+   * Finding domain (Code/Dependency/Secret/Container/Cloud/Api/Identity/Runtime/Compliance/Ai)
+   */
+  findingDomain: FindingDomain;
+  /**
+   * Scanner rule identifier (e.g. semgrep.rule.id, codeql.query.id, trivy CVE id)
+   */
+  ruleId: string;
+  /**
+   * Short human-readable title
+   */
+  title: string;
+  /**
+   * Long-form description (post-redaction)
+   */
+  description: string;
+  /**
+   * Repo-relative path of the finding location (POSIX separators)
+   */
+  locationPath?: string;
+  /**
+   * 1-based line number of the finding location
+   */
+  locationLine?: number;
+  /**
+   * Raw scanner output (JSON-serialized, post-redaction)
+   */
+  scannerRaw?: string;
+  /**
+   * SHA-256 hash of the original scanner-supplied raw document (audit-only)
+   */
+  scannerRawHash?: string;
+  /**
+   * Raw scanner severity string as emitted (e.g. HIGH, error, 8.1) — preserved for audit
+   */
+  rawSeverity: string;
+  /**
+   * Canonical severity used for filtering, SLAs, and posture rollups
+   */
+  canonicalSeverity: CanonicalSeverity;
+  /**
+   * CVE identifier when applicable (e.g. CVE-2024-12345)
+   */
+  cveId?: string;
+  /**
+   * CWE identifier when applicable (e.g. CWE-79)
+   */
+  cweId?: string;
+  /**
+   * OWASP ASVS control id when the scanner emitted a taxa reference
+   */
+  owaspAsvsControlId?: string;
+  /**
+   * True iff the finding's CVE is present in CISA's Known Exploited Vulnerabilities catalog
+   */
+  kev?: boolean;
+  /**
+   * FIRST EPSS exploit-probability percentile (0..1) when known; null when EPSS lookup is unavailable
+   */
+  epssPercentile?: float64;
+  /**
+   * Resolved owner of the finding
+   */
+  ownerId?: UUID;
+  /**
+   * Lifecycle state of the finding (see also: read-time effective state w/ exceptions)
+   */
+  state: FindingState;
+  /**
+   * Foreign key to the latest RiskScore for this finding (O(1) dashboard reads)
+   */
+  currentRiskScoreId?: UUID;
+  /**
+   * Optional link to a Shep WorkItem this finding has been routed into
+   */
+  workItemId?: UUID;
+  /**
+   * Source of ingestion (e.g. sarif:semgrep, sarif:codeql, cyclonedx:1.5)
+   */
+  source: string;
+  /**
+   * When the finding was first discovered (used for SLA math)
+   */
+  discoveredAt: any;
+  /**
+   * When the finding was most recently re-observed by a scanner
+   */
+  lastSeenAt: any;
+  /**
+   * When the finding was first observed as fixed
+   */
+  firstFixedAt?: any;
+};
+
+/**
+ * Per-dimension breakdown of a composite RiskScore total
+ */
+export type RiskScoreBreakdown = {
+  /**
+   * Total composite score, 0-100 inclusive
+   */
+  total: number;
+  /**
+   * Contribution from CVSS base severity
+   */
+  cvssContribution: float64;
+  /**
+   * Contribution from EPSS exploitability percentile
+   */
+  epssContribution: float64;
+  /**
+   * Contribution from CISA KEV membership
+   */
+  kevContribution: float64;
+  /**
+   * Contribution from asset exposure
+   */
+  exposureContribution: float64;
+  /**
+   * Contribution from asset criticality tier
+   */
+  criticalityContribution: float64;
+  /**
+   * Contribution from data classification
+   */
+  dataClassificationContribution: float64;
+};
+
+/**
+ * Append-only composite risk-score row for a SecurityFinding
+ */
+export type RiskScore = BaseEntity & {
+  /**
+   * SecurityFinding this score row belongs to
+   */
+  findingId: UUID;
+  /**
+   * Total composite score (0-100)
+   */
+  total: number;
+  /**
+   * Per-dimension breakdown — sum equals total (modulo rounding)
+   */
+  breakdown: RiskScoreBreakdown;
+  /**
+   * When the score was computed
+   */
+  computedAt: any;
+  /**
+   * Stable hash of the scoring inputs (used to dedupe identical recomputes)
+   */
+  inputsHash: string;
+};
+export enum ExceptionReason {
+  FalsePositive = 'FalsePositive',
+  AcceptedRisk = 'AcceptedRisk',
+  CompensatingControl = 'CompensatingControl',
+  NotApplicable = 'NotApplicable',
+  Other = 'Other',
+}
+export enum RiskExceptionStatus {
+  Active = 'Active',
+  Expired = 'Expired',
+  Revoked = 'Revoked',
+}
+
+/**
+ * Self-declared risk exception masking a finding from posture and SLA math
+ */
+export type RiskException = SoftDeletableEntity & {
+  /**
+   * Finding this exception applies to
+   */
+  findingId: UUID;
+  /**
+   * Typed reason from the exception taxonomy
+   */
+  reason: ExceptionReason;
+  /**
+   * Human-readable justification (free-form)
+   */
+  justification: string;
+  /**
+   * Who declared the exception (owner id)
+   */
+  declaredBy: UUID;
+  /**
+   * When the exception was declared
+   */
+  declaredAt: any;
+  /**
+   * Expiry date — once passed the finding re-enters posture rollups
+   */
+  expiresAt: any;
+  /**
+   * Current lifecycle status
+   */
+  status: RiskExceptionStatus;
+};
+
+/**
+ * Reusable filter shape for findings list / ranking / campaign queries
+ */
+export type FindingFilter = {
+  /**
+   * Restrict to these canonical severities
+   */
+  severities?: CanonicalSeverity[];
+  /**
+   * Restrict to these finding domains
+   */
+  findingDomains?: FindingDomain[];
+  /**
+   * Restrict to findings on these applications
+   */
+  applicationIds?: UUID[];
+  /**
+   * Restrict to findings owned by these owners
+   */
+  ownerIds?: UUID[];
+  /**
+   * Restrict to findings with KEV-listed CVEs (true) or non-KEV (false)
+   */
+  kev?: boolean;
+  /**
+   * Restrict to these finding states
+   */
+  states?: FindingState[];
+  /**
+   * Restrict to these scanner rule identifiers
+   */
+  ruleIds?: string[];
+  /**
+   * Restrict to these CVE identifiers
+   */
+  cveIds?: string[];
+};
+export enum CampaignStatus {
+  Draft = 'Draft',
+  Active = 'Active',
+  Paused = 'Paused',
+  Completed = 'Completed',
+  Cancelled = 'Cancelled',
+}
+
+/**
+ * Remediation campaign with a query-shaped target and read-time progress
+ */
+export type RemediationCampaign = SoftDeletableEntity & {
+  /**
+   * Human-readable campaign name
+   */
+  name: string;
+  /**
+   * Long-form description / sprint goal
+   */
+  description: string;
+  /**
+   * Serialized target query — same shape as list-findings filter
+   */
+  targetQuery: FindingFilter;
+  /**
+   * Lifecycle state of the campaign
+   */
+  status: CampaignStatus;
+  /**
+   * Owner accountable for the campaign
+   */
+  ownerId?: UUID;
+  /**
+   * Target completion date
+   */
+  dueDate?: any;
+  /**
+   * When the campaign transitioned to Completed or Cancelled
+   */
+  closedAt?: any;
+};
+export enum AiSignalType {
+  SecretInDiff = 'SecretInDiff',
+  HighRiskDependencyAdded = 'HighRiskDependencyAdded',
+  LargeUnreviewedDiff = 'LargeUnreviewedDiff',
+  LicenseViolation = 'LicenseViolation',
+  PromptInjectionShape = 'PromptInjectionShape',
+  Other = 'Other',
+}
+export enum AiSignalState {
+  Open = 'Open',
+  Acknowledged = 'Acknowledged',
+  GraduatedToFinding = 'GraduatedToFinding',
+  Dismissed = 'Dismissed',
+  Resolved = 'Resolved',
+}
+
+/**
+ * AI-generated change risk signal — Shep's differentiating triage record
+ */
+export type AiChangeRiskSignal = SoftDeletableEntity & {
+  /**
+   * Application this signal attaches to
+   */
+  applicationId: UUID;
+  /**
+   * Originating Shep agent session id (so reviewers can navigate to the run)
+   */
+  agentSessionId?: string;
+  /**
+   * Type of AI-change risk signal
+   */
+  signalType: AiSignalType;
+  /**
+   * Canonical severity for posture rollups when graduated
+   */
+  severity: CanonicalSeverity;
+  /**
+   * Short human-readable summary of the signal
+   */
+  summary: string;
+  /**
+   * Free-form evidence payload (JSON-serialized — diff snippets, dep name, etc.)
+   */
+  evidence?: string;
+  /**
+   * Lifecycle state in the AI-review queue
+   */
+  state: AiSignalState;
+  /**
+   * Optional owner of the signal (otherwise inherits from Application)
+   */
+  ownerId?: UUID;
+  /**
+   * If graduated, the resulting SecurityFinding id
+   */
+  graduatedFindingId?: UUID;
+  /**
+   * When the signal was first recorded
+   */
+  discoveredAt: any;
+  /**
+   * When the signal was resolved, dismissed, or graduated
+   */
+  resolvedAt?: any;
+};
+export enum ScanTrigger {
+  User = 'User',
+  Schedule = 'Schedule',
+  Event = 'Event',
+}
+export enum ScanStatus {
+  Pending = 'Pending',
+  Running = 'Running',
+  Succeeded = 'Succeeded',
+  Failed = 'Failed',
+  Partial = 'Partial',
+}
+export enum ScanStageStatus {
+  Pending = 'Pending',
+  Running = 'Running',
+  Succeeded = 'Succeeded',
+  Failed = 'Failed',
+  Skipped = 'Skipped',
+}
+
+/**
+ * One stage of a ScanRun, with timing + outcome metadata
+ */
+export type ScanStage = {
+  /**
+   * Which stage this is (sbom/sca/secrets/sast/container/iac)
+   */
+  name: ScanStageName;
+  /**
+   * Lifecycle state of this stage
+   */
+  status: ScanStageStatus;
+  /**
+   * When this stage transitioned to Running
+   */
+  startedAt?: any;
+  /**
+   * When this stage transitioned to a terminal state
+   */
+  finishedAt?: any;
+  /**
+   * Number of findings this stage produced (after dedup)
+   */
+  findingsCount?: number;
+  /**
+   * Number of components this stage produced (only meaningful for sbom)
+   */
+  componentsCount?: number;
+  /**
+   * Short human-readable error summary when status=Failed
+   */
+  errorMessage?: string;
+};
+
+/**
+ * A single execution of the ASPM scanner over one application
+ */
+export type ScanRun = BaseEntity & {
+  /**
+   * Application this scan targeted
+   */
+  applicationId: UUID;
+  /**
+   * Origin of this scan invocation
+   */
+  triggeredBy: ScanTrigger;
+  /**
+   * Lifecycle state of the run
+   */
+  status: ScanStatus;
+  /**
+   * When the run transitioned to Running
+   */
+  startedAt: any;
+  /**
+   * When the run transitioned to a terminal state (Succeeded/Failed/Partial)
+   */
+  finishedAt?: any;
+  /**
+   * Per-stage progress. Order matches ScannerProfile.enabledStages.
+   */
+  stages: ScanStage[];
+  /**
+   * Total findings produced across all stages of this run (after dedup)
+   */
+  findingsCount: number;
+};
+
+/**
  * Single installation suggestion for a tool
  */
 export type InstallationSuggestion = {
@@ -3445,6 +4196,58 @@ export type BedrockMemorySnapshot = {
    * UTC timestamp of the most recently modified bedrock memory file (if any)
    */
   mostRecentlyModifiedAt?: any;
+};
+
+/**
+ * Reference to a CVE record with optional CVSS / EPSS / KEV enrichment
+ */
+export type CVEReference = {
+  /**
+   * CVE identifier (e.g. CVE-2024-12345)
+   */
+  cveId: string;
+  /**
+   * CVSS v3.x base score (0.0-10.0)
+   */
+  cvssScore?: float64;
+  /**
+   * CVSS vector string (e.g. CVSS:3.1/AV:N/AC:L/...)
+   */
+  cvssVector?: string;
+  /**
+   * EPSS percentile (0.0-1.0)
+   */
+  epssPercentile?: float64;
+  /**
+   * Whether the CVE appears in the CISA KEV catalog
+   */
+  kev?: boolean;
+};
+
+/**
+ * A single ownership mapping (path glob -> owner/team/business unit)
+ */
+export type OwnershipPath = {
+  /**
+   * Path glob this mapping applies to (POSIX separators, repo-relative)
+   */
+  pathGlob: string;
+  /**
+   * Owner UUID assigned to this path
+   */
+  ownerId: UUID;
+  /**
+   * Team UUID assigned to this path
+   */
+  teamId?: UUID;
+  /**
+   * BusinessUnit UUID assigned to this path
+   */
+  businessUnitId?: UUID;
+  /**
+   * Source of the mapping (yaml | ui)
+   */
+  source: string;
 };
 export enum AgentStatus {
   Idle = 'Idle',
@@ -4529,6 +5332,17 @@ export enum DiagnosticStatus {
   Ok = 'ok',
   Warn = 'warn',
   Fail = 'fail',
+}
+export enum SlaState {
+  Healthy = 'Healthy',
+  AtRisk = 'AtRisk',
+  Breached = 'Breached',
+}
+export enum AssetType {
+  Application = 'Application',
+  Service = 'Service',
+  ApiAsset = 'ApiAsset',
+  CloudEnvironment = 'CloudEnvironment',
 }
 export enum AgentFeature {
   sessionResume = 'session-resume',

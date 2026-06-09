@@ -1,0 +1,2018 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "aspm-platform"
+summary: >
+  62 tasks across 10 phases. Phase 1 establishes the TypeSpec foundation and DI
+  scaffolding. Phases 2-9 deliver the eight ASPM epics from research (asset+ownership,
+  findings ingestion, SBOM+exploit intel, risk scoring, SLA+campaigns+exceptions,
+  executive dashboards + work-item routing, AI-change review queue, compliance).
+  Phase 10 finishes CLI surface, e2e coverage, and documentation. Every code task
+  has explicit RED/GREEN/REFACTOR cycles; every web component task ships with
+  colocated Storybook stories; every entity task ships with an idempotent migration
+  and a round-trip integration test.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - "TypeSpec"
+  - "TypeScript"
+  - "better-sqlite3"
+  - "tsyringe"
+  - "Vitest"
+  - "Playwright"
+  - "Next.js App Router"
+  - "Storybook"
+  - "shadcn/ui"
+  - "React Flow"
+  - "Commander"
+  - "ajv"
+  - "yaml"
+  - "undici"
+
+relatedLinks:
+  - title: "TDD guide (project doc)"
+    url: "./docs/development/tdd-guide.md"
+  - title: "TypeSpec guide (project doc)"
+    url: "./docs/development/typespec-guide.md"
+  - title: "Clean Architecture overview (project doc)"
+    url: "./docs/architecture/clean-architecture.md"
+  - title: "SARIF v2.1.0"
+    url: "https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html"
+  - title: "CycloneDX 1.5"
+    url: "https://cyclonedx.org/specification/overview/"
+  - title: "CISA KEV"
+    url: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+  - title: "FIRST EPSS"
+    url: "https://www.first.org/epss/"
+  - title: "CVSS v3.1"
+    url: "https://www.first.org/cvss/v3.1/specification-document"
+
+# Structured task list
+tasks:
+
+  # ============================================================================
+  # Phase 1 — Foundation & TypeSpec scaffolding
+  # ============================================================================
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Author ASPM canonical enums and value objects in TypeSpec"
+    description: >
+      Add all ASPM enums (CanonicalSeverity, FindingDomain, FindingState,
+      ExceptionReason, Exposure, Criticality, DataClassification, SlaState,
+      CampaignStatus, AiSignalState, AiSignalType, ComplianceFramework, AssetType)
+      and shared value objects (CVEReference, OwnershipPath, SLAWindow,
+      RiskScoreBreakdown, FindingFilter) under tsp/domain/value-objects/aspm/.
+      Register them in tsp/main.tsp.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "All listed enums + value objects authored under tsp/domain/value-objects/aspm/"
+      - "tsp/main.tsp includes the new files"
+      - "pnpm tsp:compile completes with zero diagnostics"
+      - "Re-running pnpm tsp:compile is idempotent (no file diff)"
+    tdd:
+      red:
+        - "Add a snapshot test under tests/unit/domain/aspm/typespec-output.test.ts that asserts the generated output.ts exports each enum and value object name"
+      green:
+        - "Author the .tsp files using extend-from-base-types per typespec-guide.md"
+        - "Run pnpm tsp:compile to regenerate output.ts; commit the regenerated file"
+      refactor:
+        - "Co-locate canonical-severity bands and FindingFilter shape into a single discoverable file"
+    estimatedEffort: "3h"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Extend Application TypeSpec with optional ASPM fields"
+    description: >
+      Add optional fields to Application: criticality (Criticality enum), exposure
+      (Exposure enum), dataClassification (DataClassification enum), businessUnit
+      (string). Run pnpm tsp:compile and verify the generated Application type
+      now exposes the new fields as optional.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "tsp/domain/entities/application.tsp adds four optional ASPM fields"
+      - "pnpm tsp:compile is green and idempotent"
+      - "All existing Application consumers still typecheck"
+    tdd:
+      red:
+        - "Add a typecheck-style test that constructs an Application with the new fields and asserts they are optional (omitting them must still compile)"
+      green:
+        - "Add the optional properties to application.tsp; regenerate output.ts"
+      refactor:
+        - "Group ASPM-relevant fields under a doc-commented section"
+    estimatedEffort: "1h"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Author ASPM entities in TypeSpec (no migrations yet)"
+    description: >
+      Add TSP files for SecurityFinding, RiskScore, Owner, Team, BusinessUnit,
+      Service, ApiAsset, CloudEnvironment, RemediationCampaign, SecurityPolicy,
+      RiskException, ComplianceControl, AiChangeRiskSignal. Each extends
+      SoftDeletableEntity (or BaseEntity where soft-delete is not applicable, e.g.
+      RiskScore which is append-only history). Register in tsp/main.tsp.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "All listed entities authored under tsp/domain/entities/aspm/"
+      - "Each entity has the fields enumerated in FR-3, FR-9, FR-11, FR-16, FR-19, FR-22, FR-29, FR-33"
+      - "pnpm tsp:compile is green and idempotent"
+      - "Generated output.ts exports each entity type"
+    tdd:
+      red:
+        - "Add a typecheck-style test that imports each generated type and asserts a known required field exists on it"
+      green:
+        - "Author the .tsp files; regenerate output.ts"
+      refactor:
+        - "Cross-link related entities via doc comments (Finding ↔ Application, Exception ↔ Finding, etc.)"
+    estimatedEffort: "5h"
+
+  - id: "task-4"
+    phaseId: "phase-1"
+    title: "Add ASPM domain error classes"
+    description: >
+      Author typed error classes under packages/core/src/domain/aspm/errors/:
+      FindingNotFound, CampaignClosed, OwnerOrphanedFinding, ExceptionExpired,
+      AiSignalAlreadyGraduated, IngestionTooLarge. Each extends the project's
+      DomainError base.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "Each error class has a stable name and code"
+      - "Errors throw with the expected message format"
+    tdd:
+      red:
+        - "Add tests that construct each error and assert .name, .code, and .message shape"
+      green:
+        - "Author the error classes extending DomainError"
+      refactor:
+        - "Co-locate error codes in a shared codes.ts to avoid string drift"
+    estimatedEffort: "1h"
+
+  - id: "task-5"
+    phaseId: "phase-1"
+    title: "Scaffold register-aspm.ts DI module wired into container.ts"
+    description: >
+      Create packages/core/src/infrastructure/di/modules/register-aspm.ts with a
+      registerAspm(container) export that registers nothing yet but is invoked
+      from container.ts after the existing register-* modules. Add string-token
+      constants module aspm-tokens.ts under the same dir.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+    acceptanceCriteria:
+      - "register-aspm.ts exists and is invoked by container.ts"
+      - "Container boot is green (existing tests still pass)"
+      - "Token constants are exported from aspm-tokens.ts (no magic strings)"
+    tdd:
+      red:
+        - "Add a test asserting container.resolve does not throw when registerAspm is invoked with no other registrations"
+      green:
+        - "Implement registerAspm; add invocation to container.ts after the existing register-* calls"
+      refactor:
+        - "Add a per-port token type alias for compile-time safety"
+    estimatedEffort: "1h"
+
+  # ============================================================================
+  # Phase 2 — Asset & Ownership Model
+  # ============================================================================
+  - id: "task-6"
+    phaseId: "phase-2"
+    title: "Migration: ALTER applications to add criticality / exposure / dataClassification / businessUnit"
+    description: >
+      Numbered migration 101 that ALTERs the applications table to add the four
+      optional ASPM columns with safe defaults. Idempotent: re-running is a no-op
+      per LESSONS.md.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+      - "task-5"
+    acceptanceCriteria:
+      - "Migration file 101-alter-applications-add-aspm-fields.ts exists"
+      - "up() adds columns conditionally (pragma table_info check) — no-op when present"
+      - "down() removes the added columns where possible (SQLite limitations documented)"
+      - "Re-running migrations is a no-op"
+    tdd:
+      red:
+        - "Add a migration int test that runs migrations twice and asserts the schema is unchanged after the second run"
+      green:
+        - "Implement the migration using the existing pragma-guarded ALTER pattern"
+      refactor:
+        - "Extract a shared addColumnIfMissing helper if it doesn't already exist"
+    estimatedEffort: "1h"
+
+  - id: "task-7"
+    phaseId: "phase-2"
+    title: "Owner / Team / BusinessUnit migrations + repositories + mappers"
+    description: >
+      Three numbered migrations (102/103/104) creating owners, teams, business_units
+      tables with foreign keys (owner.teamId, team.businessUnitId). SqliteOwnerRepository,
+      SqliteTeamRepository, SqliteBusinessUnitRepository implementations with mappers,
+      registered in register-aspm.ts. Round-trip integration tests for each.
+    state: "Todo"
+    dependencies:
+      - "task-6"
+    acceptanceCriteria:
+      - "Migrations idempotent (IF NOT EXISTS, pragma index_list checks)"
+      - "Repos implement create/findById/findAll/update/softDelete + relevant by-foreign-key methods"
+      - "Mappers handle null/undefined symmetrically"
+      - "Round-trip int tests cover create→read→update→softDelete for each"
+    tdd:
+      red:
+        - "Add round-trip int tests under tests/integration/infrastructure/persistence/sqlite/aspm/ that fail because the table doesn't exist"
+      green:
+        - "Author migrations; implement repos + mappers; register in DI"
+      refactor:
+        - "Extract a common SqliteRepositoryBase helper if read-paths duplicate"
+    estimatedEffort: "4h"
+
+  - id: "task-8"
+    phaseId: "phase-2"
+    title: "Service / ApiAsset / CloudEnvironment migrations + repositories"
+    description: >
+      Three migrations (105/106/107) for adjacent asset entities, each FK'd to
+      applications. Repos + mappers + integration round-trip tests.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "Migrations idempotent and FK to applications.id"
+      - "Repos implement standard CRUD + findByApplicationId"
+      - "Round-trip int tests green"
+    tdd:
+      red:
+        - "Integration tests asserting findByApplicationId returns the expected set"
+      green:
+        - "Author migrations, repos, mappers; register in DI"
+      refactor:
+        - "Cross-platform path normalization helper reused by all three (if any path-bearing fields exist on ApiAsset.url etc.)"
+    estimatedEffort: "3h"
+
+  - id: "task-9"
+    phaseId: "phase-2"
+    title: "Pure-domain ownership resolver"
+    description: >
+      Implement resolveOwnership(application, ymlDoc, uiOverride) -> Owner | null
+      with deterministic priority (UI override > YAML > application's listed owner).
+      No infra deps, no Date.now(), no env access.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "Pure function — no infra imports"
+      - "Priority order documented and tested"
+      - "Returns null cleanly when no owner can be resolved"
+    tdd:
+      red:
+        - "Unit tests covering each priority path + the null-fallback path"
+        - "Tests for path-glob match in ymlDoc (e.g. src/api/**)"
+      green:
+        - "Implement the resolver; extract glob-match helper if needed"
+      refactor:
+        - "Move glob-match into a separate file if it grows past ~30 lines"
+    estimatedEffort: "2h"
+
+  - id: "task-10"
+    phaseId: "phase-2"
+    title: "IOwnershipYamlReader port + YAML adapter"
+    description: >
+      Define IOwnershipYamlReader in application/ports/output/services/. Concrete
+      adapter under infrastructure/services/aspm/ownership-yaml-reader.ts that reads
+      .shep/ownership.yaml from the Application's repo dir, parses via the existing
+      yaml lib, and returns a typed structure. Adapter is path-safe per
+      packages/CLAUDE.md.
+    state: "Todo"
+    dependencies:
+      - "task-9"
+    acceptanceCriteria:
+      - "Port interface defined in application/ports/output/services/"
+      - "Adapter parses sample fixture without errors"
+      - "Missing file returns empty document, not an exception"
+      - "Wired in register-aspm.ts"
+    tdd:
+      red:
+        - "Integration test that reads tests/fixtures/aspm/ownership/ownership-sample.yaml and asserts the parsed shape"
+        - "Test for missing-file fallback"
+      green:
+        - "Author the port, adapter, fixture"
+      refactor:
+        - "Validate the parsed structure against an ajv schema for catchable errors"
+    estimatedEffort: "2h"
+
+  - id: "task-11"
+    phaseId: "phase-2"
+    title: "Ownership use cases — assign / import / resolve / list"
+    description: >
+      Use cases assign-owner, import-ownership-yaml, resolve-ownership-for-finding,
+      list-owners under application/use-cases/aspm/ownership/. Each is RED-first.
+      Wired in register-aspm.ts.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "Each use case is @injectable with constructor port injection (no infra imports)"
+      - "import-ownership-yaml reads via IOwnershipYamlReader and persists rows via Owner/Team/BU repos"
+      - "resolve-ownership-for-finding returns Owner or throws OwnerOrphanedFinding when no resolution"
+    tdd:
+      red:
+        - "Per-use-case unit tests with mocked ports asserting the behavior"
+      green:
+        - "Implement each use case with minimal logic to pass the tests"
+      refactor:
+        - "Extract shared filter helpers into application/use-cases/aspm/shared/"
+    estimatedEffort: "3h"
+
+  # ============================================================================
+  # Phase 3 — SecurityFinding entity + SARIF ingestion
+  # ============================================================================
+  - id: "task-12"
+    phaseId: "phase-3"
+    title: "Migration: create security_findings + composite indexes"
+    description: >
+      Migration 108 creating the security_findings table with all FR-9 fields and
+      composite indexes (applicationId, canonicalSeverity, state), (cveId),
+      (ownerId, state), (discoveredAt). Nullable workspaceId for forward compat.
+      Idempotent.
+    state: "Todo"
+    dependencies:
+      - "task-7"
+    acceptanceCriteria:
+      - "Migration creates table + four indexes inside IF NOT EXISTS / pragma guards"
+      - "Re-run is a no-op"
+    tdd:
+      red:
+        - "Int test that re-runs migrations and asserts schema unchanged"
+      green:
+        - "Author migration"
+      refactor:
+        - "Document index choices inline (kept short per code-quality.md)"
+    estimatedEffort: "1h"
+
+  - id: "task-13"
+    phaseId: "phase-3"
+    title: "SqliteFindingRepository + mapper + round-trip integration test"
+    description: >
+      Implement repo with create / findById / list (paged + filter) / softDelete /
+      updateState. Mapper normalizes POSIX paths and JSON-encodes scannerRaw. Wired
+      in register-aspm.ts.
+    state: "Todo"
+    dependencies:
+      - "task-12"
+    acceptanceCriteria:
+      - "Round-trip int test green for all CRUD paths"
+      - "Cross-platform path normalization verified"
+    tdd:
+      red:
+        - "Integration tests covering create→findById→list(filter)→softDelete"
+      green:
+        - "Implement repo + mapper; register in DI"
+      refactor:
+        - "Extract list-with-FindingFilter logic into a builder helper if it grows"
+    estimatedEffort: "3h"
+
+  - id: "task-14"
+    phaseId: "phase-3"
+    title: "Pure-domain Redactor (secret patterns + SHA-256 raw hash)"
+    description: >
+      Implement redactSecrets(text) over AWS/GCP/Azure key prefixes, high-entropy
+      ≥32 char strings, sk_/ghp_ prefixes, PEM headers. Plus computeRawHash(blob)
+      via SHA-256 (Node crypto in a thin adapter — keep the function pure by
+      accepting a hash function parameter).
+    state: "Todo"
+    dependencies:
+      - "task-4"
+    acceptanceCriteria:
+      - "Pure function with documented pattern set"
+      - "Unit tests cover each pattern + a no-false-positive case on plain English text"
+      - "computeRawHash is deterministic for the same input"
+    tdd:
+      red:
+        - "Unit tests asserting each canonical secret pattern is masked"
+        - "Tests asserting normal code/text is left intact"
+      green:
+        - "Implement patterns + redactor"
+      refactor:
+        - "Extract pattern table into secret-patterns.ts"
+    estimatedEffort: "2h"
+
+  - id: "task-15"
+    phaseId: "phase-3"
+    title: "Finding dedup key (pure domain)"
+    description: >
+      Implement findingDedupKey(input) computing the dedup key
+      (applicationId, findingDomain, ruleId, normalizedPath, line, cveId). Pure
+      function; used by ingest and the unique constraint.
+    state: "Todo"
+    dependencies:
+      - "task-12"
+    acceptanceCriteria:
+      - "Deterministic key for the same input"
+      - "Path normalized to POSIX before hashing"
+    tdd:
+      red:
+        - "Unit tests asserting identical inputs produce identical keys; different cveIds produce different keys"
+        - "Tests asserting Windows-style backslashes produce the same key as POSIX"
+      green:
+        - "Implement the function"
+      refactor:
+        - "Pre-compute the key into the mapper write-path"
+    estimatedEffort: "1h"
+
+  - id: "task-16"
+    phaseId: "phase-3"
+    title: "IFindingIngestPort + SARIF adapter (ajv + hand-rolled walker)"
+    description: >
+      Define IFindingIngestPort in application/ports/output/services/. Implement
+      the SARIF v2.1.0 adapter under infrastructure/services/aspm/sarif-ingest-adapter.ts:
+      load doc, ajv-validate, walk runs[].results[], shape to a domain-friendly
+      FindingDraft[] including taxa references for ASVS/CWE. Apply 100MB size cap.
+    state: "Todo"
+    dependencies:
+      - "task-14"
+      - "task-15"
+    acceptanceCriteria:
+      - "Adapter rejects malformed docs cleanly via ajv (no raw throw)"
+      - "Size cap raises IngestionTooLarge"
+      - "Walks Semgrep / CodeQL / Trivy SARIF fixtures correctly"
+      - "Wired in register-aspm.ts"
+    tdd:
+      red:
+        - "Integration test loading each SARIF fixture and asserting the expected FindingDraft count + shape"
+      green:
+        - "Implement ajv schema + walker + size guard"
+      refactor:
+        - "Keep file under 300 lines by extracting walker into separate helpers"
+    estimatedEffort: "5h"
+
+  - id: "task-17"
+    phaseId: "phase-3"
+    title: "ingest-findings use case (transactional, deduped)"
+    description: >
+      Use case that takes (applicationId, sourceType, rawDoc) and orchestrates:
+      parse via IFindingIngestPort, redact via Redactor, compute dedup key,
+      resolve ownership, INSERT OR IGNORE under a single SQLite transaction. Emits
+      a structured ingestion-run summary (counts: new/duplicate/updated, duration,
+      file hash). Calls resolveOwnership.
+    state: "Todo"
+    dependencies:
+      - "task-11"
+      - "task-13"
+      - "task-16"
+    acceptanceCriteria:
+      - "Re-ingesting an identical SARIF doc is a no-op (zero new rows)"
+      - "10k-finding fixture ingests in <30s on a dev laptop"
+      - "Failure mid-batch rolls back; no partial state"
+      - "Emits the ingestion-run summary required by NFR-15"
+    tdd:
+      red:
+        - "Unit test with mocked ports asserting the no-op-on-re-ingest behavior"
+        - "Int test using the SARIF fixture asserting row counts and dedup"
+      green:
+        - "Implement the use case using the transactional repo helper"
+      refactor:
+        - "Extract the ingestion-summary builder into a domain helper"
+    estimatedEffort: "4h"
+
+  - id: "task-18"
+    phaseId: "phase-3"
+    title: "list-findings + get-finding use cases (FindingFilter primitive)"
+    description: >
+      list-findings takes a FindingFilter (severities, findingDomains, applicationIds,
+      ownerIds, kev?, state[], ruleIds) + pagination cursor. get-finding returns one
+      by id. Used by CLI, web, and campaign progress.
+    state: "Todo"
+    dependencies:
+      - "task-13"
+    acceptanceCriteria:
+      - "Paginated response < 300ms on 50k fixture"
+      - "All filter dimensions exercised by tests"
+      - "FindingFilter is a typed value object — no magic strings"
+    tdd:
+      red:
+        - "Unit tests with mocked repo asserting filter passthrough"
+        - "Int test asserting perf budget on the 50k fixture"
+      green:
+        - "Implement both use cases"
+      refactor:
+        - "Centralize the filter→SQL conversion in a single domain helper"
+    estimatedEffort: "3h"
+
+  - id: "task-19"
+    phaseId: "phase-3"
+    title: "Findings web components — table + filter bar + severity badge"
+    description: >
+      findings-table.tsx, findings-filter-bar.tsx, severity-badge.tsx under
+      components/features/aspm/, each with a colocated *.stories.tsx (Default /
+      Loading / Error + Critical/High/Medium/Low/Info variants).
+    state: "Todo"
+    dependencies:
+      - "task-18"
+    acceptanceCriteria:
+      - "Storybook builds; every story renders"
+      - "Keyboard navigable; severity badges meet WCAG 2.1 AA contrast"
+    tdd:
+      red:
+        - "Vitest+RTL tests asserting render-state for Default/Loading/Error"
+      green:
+        - "Implement components + stories with realistic mock data"
+      refactor:
+        - "Extract a shared TableHeader pattern if duplicate across views"
+    estimatedEffort: "5h"
+
+  # ============================================================================
+  # Phase 4 — SBOM ingestion + Exploit intelligence
+  # ============================================================================
+  - id: "task-20"
+    phaseId: "phase-4"
+    title: "ISbomPort + CycloneDX 1.5 adapter"
+    description: >
+      Define ISbomPort. Evaluate @cyclonedx/cyclonedx-library; if its runtime deps
+      are too heavy for cross-platform shipping, ship a hand-rolled walker over
+      ajv-validated JSON. Returns SbomDraft with components[] + embedded vulns.
+    state: "Todo"
+    dependencies:
+      - "task-16"
+    acceptanceCriteria:
+      - "Adapter parses the CycloneDX 1.5 fixture into the SbomDraft shape"
+      - "Size cap applied"
+      - "Wired in register-aspm.ts"
+    tdd:
+      red:
+        - "Int test loading tests/fixtures/aspm/sbom/cyclonedx-1.5-sample.json and asserting components/vulns shape"
+      green:
+        - "Implement chosen adapter path"
+      refactor:
+        - "Extract walker helpers; keep file under 300 lines"
+    estimatedEffort: "4h"
+
+  - id: "task-21"
+    phaseId: "phase-4"
+    title: "ingest-sbom use case"
+    description: >
+      Use case that ingests a CycloneDX doc and creates dependency-domain
+      SecurityFinding rows keyed by cveId. Reuses dedup key from task-15.
+    state: "Todo"
+    dependencies:
+      - "task-17"
+      - "task-20"
+    acceptanceCriteria:
+      - "Re-ingesting same SBOM is a no-op"
+      - "Dependency-domain findings created with correct cveId / cweId"
+    tdd:
+      red:
+        - "Unit test with mocked ISbomPort asserting Finding draft shape"
+        - "Int test asserting no-op on re-ingest"
+      green:
+        - "Implement; reuse ingestion pipeline from task-17"
+      refactor:
+        - "Share orchestration helpers with ingest-findings"
+    estimatedEffort: "2h"
+
+  - id: "task-22"
+    phaseId: "phase-4"
+    title: "IExploitIntelPort + KEV / EPSS feed loaders with local cache"
+    description: >
+      Port methods getEpssPercentile(cveId), isKev(cveId). Adapter caches the KEV
+      JSON + EPSS CSV under the Shep home dir with mtime-based 24h refresh; offline
+      returns null/false; content-type + minimum-row-count guards; HTTPS via undici.
+    state: "Todo"
+    dependencies:
+      - "task-5"
+    acceptanceCriteria:
+      - "Offline path: returns null/false without throwing"
+      - "Cache mtime refresh respected"
+      - "Adapter unit-testable with an injected fetch + clock"
+    tdd:
+      red:
+        - "Integration test using mocked fetch returning a fixture KEV JSON + EPSS CSV"
+        - "Tests asserting offline graceful degradation"
+      green:
+        - "Implement loaders; wire in DI"
+      refactor:
+        - "Extract HTTPS+cache helper if duplicated between KEV and EPSS"
+    estimatedEffort: "4h"
+
+  - id: "task-23"
+    phaseId: "phase-4"
+    title: "Wire KEV/EPSS enrichment into ingestion"
+    description: >
+      Extend ingest-findings + ingest-sbom to call IExploitIntelPort during draft
+      shaping, populating kev flag and epssPercentile fields on the finding row.
+    state: "Todo"
+    dependencies:
+      - "task-17"
+      - "task-21"
+      - "task-22"
+    acceptanceCriteria:
+      - "Findings with cveId carry KEV/EPSS context after ingestion"
+      - "Missing cveId path still works end-to-end"
+    tdd:
+      red:
+        - "Int test asserting KEV-listed CVE produces kev=true on the row"
+      green:
+        - "Add enrichment step to the ingestion pipeline"
+      refactor:
+        - "Batch port calls per ingestion run to avoid per-finding round-trips"
+    estimatedEffort: "2h"
+
+  # ============================================================================
+  # Phase 5 — Risk scoring & prioritization
+  # ============================================================================
+  - id: "task-24"
+    phaseId: "phase-5"
+    title: "Migration: create risk_scores (append-only) + currentRiskScoreId on findings"
+    description: >
+      Migration 109 creates the risk_scores table (id, findingId, total, breakdown
+      JSON, computedAt, inputsHash). Adds nullable currentRiskScoreId column to
+      security_findings. Indexes on (findingId, computedAt desc) and
+      (total desc) for ranking.
+    state: "Todo"
+    dependencies:
+      - "task-12"
+    acceptanceCriteria:
+      - "Migration idempotent"
+      - "currentRiskScoreId nullable column added to findings"
+    tdd:
+      red:
+        - "Int test that runs migrations twice and asserts schema unchanged"
+      green:
+        - "Author migration"
+      refactor:
+        - "Inline-document index choices"
+    estimatedEffort: "1h"
+
+  - id: "task-25"
+    phaseId: "phase-5"
+    title: "SqliteRiskScoreRepository + mapper"
+    description: >
+      Repository with append(score) + findCurrentForFinding(findingId) +
+      findHistory(findingId). Wired in register-aspm.ts.
+    state: "Todo"
+    dependencies:
+      - "task-24"
+    acceptanceCriteria:
+      - "Round-trip int test green"
+      - "History returns rows in computedAt desc order"
+    tdd:
+      red:
+        - "Int test asserting append-then-findCurrent returns the latest row"
+      green:
+        - "Implement repo + mapper"
+      refactor:
+        - "Use a prepared statement cache for hot paths"
+    estimatedEffort: "1h"
+
+  - id: "task-26"
+    phaseId: "phase-5"
+    title: "Pure-domain computeRiskScore with documented weights"
+    description: >
+      Pure function computeRiskScore(inputs) over (CVSS, EPSS, KEV, exposure,
+      criticality, dataClassification). Returns RiskScore value object including
+      every contribution + inputsHash. Weights documented as named constants in
+      weights.ts (no magic numbers).
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "No infra imports; no Date.now()"
+      - "inputsHash deterministic for identical inputs"
+      - "Returned breakdown sums to total within rounding tolerance"
+    tdd:
+      red:
+        - "Unit tests covering each contribution path independently"
+        - "Determinism test asserting two calls with identical inputs return identical scores"
+      green:
+        - "Implement weights.ts + computeRiskScore"
+      refactor:
+        - "Extract severity-mapping table to its own file"
+    estimatedEffort: "3h"
+
+  - id: "task-27"
+    phaseId: "phase-5"
+    title: "Golden-file fixture test for risk scoring"
+    description: >
+      tests/fixtures/aspm/scoring/golden-cases.json contains 10+ representative
+      cases (CVSS-only, CVSS+EPSS, KEV-listed, internet-exposed-critical-asset,
+      no-CVE secret finding, etc.) each with the expected score. Test asserts
+      byte-stable output across the fixture.
+    state: "Todo"
+    dependencies:
+      - "task-26"
+    acceptanceCriteria:
+      - "Fixture authored with at least 10 cases"
+      - "Test passes; any weight change requires fixture update"
+    tdd:
+      red:
+        - "Author the fixture + test that asserts each case's expected total + breakdown"
+      green:
+        - "Tune weights / fixtures until the test passes"
+      refactor:
+        - "Document why each fixture case exists in a header comment"
+    estimatedEffort: "2h"
+
+  - id: "task-28"
+    phaseId: "phase-5"
+    title: "Use cases — compute-risk-score-for-finding + recompute-all-risk-scores"
+    description: >
+      compute-risk-score-for-finding takes a findingId, gathers inputs via repos +
+      IExploitIntelPort, calls computeRiskScore, appends to risk_scores, updates
+      currentRiskScoreId. recompute-all-risk-scores walks all open findings
+      (paged) and re-scores; used on policy change / feed refresh.
+    state: "Todo"
+    dependencies:
+      - "task-23"
+      - "task-25"
+      - "task-26"
+    acceptanceCriteria:
+      - "Unit tests with mocked deps asserting append + pointer update"
+      - "Bulk recompute does not block on a single failure"
+    tdd:
+      red:
+        - "Unit tests for the happy path + single-failure-isolation behavior"
+      green:
+        - "Implement both use cases"
+      refactor:
+        - "Extract chunked pagination helper if it doesn't already exist"
+    estimatedEffort: "2h"
+
+  - id: "task-29"
+    phaseId: "phase-5"
+    title: "rank-findings use case"
+    description: >
+      Takes a FindingFilter + pagination cursor, joins security_findings with the
+      current risk_scores row, orders by total desc. Returns ranked page.
+    state: "Todo"
+    dependencies:
+      - "task-18"
+      - "task-25"
+    acceptanceCriteria:
+      - "Returned in <300ms on the 50k fixture (NFR-8)"
+      - "Filter coverage matches list-findings"
+    tdd:
+      red:
+        - "Unit test asserting sort order + filter passthrough"
+        - "Int perf assertion on the 50k fixture"
+      green:
+        - "Implement the use case + repo method"
+      refactor:
+        - "Share filter→SQL helper with list-findings"
+    estimatedEffort: "2h"
+
+  - id: "task-30"
+    phaseId: "phase-5"
+    title: "Web components — finding detail panel + risk-score breakdown"
+    description: >
+      finding-detail-panel.tsx and risk-score-breakdown.tsx under
+      components/features/aspm/, with colocated .stories.tsx covering
+      Default/Loading/Error + CVSS-only / EPSS-boosted / KEV / no-CVE variants.
+    state: "Todo"
+    dependencies:
+      - "task-29"
+    acceptanceCriteria:
+      - "Storybook builds; all variants render"
+      - "Breakdown shows each contribution with the source signal"
+    tdd:
+      red:
+        - "RTL tests asserting the rendered contributions for each variant"
+      green:
+        - "Implement components + stories"
+      refactor:
+        - "Memoize the breakdown table if re-renders become costly"
+    estimatedEffort: "3h"
+
+  # ============================================================================
+  # Phase 6 — SLA, campaigns, exceptions
+  # ============================================================================
+  - id: "task-31"
+    phaseId: "phase-6"
+    title: "Migration: create security_policies + seed default policy"
+    description: >
+      Migration 111 creates security_policies (id, name, slaCriticalDays,
+      slaHighDays, slaMediumDays, slaLowDays, ingestionMaxBytes, isActive). Seeds
+      one default policy on first migration run (idempotent — checked by name).
+    state: "Todo"
+    dependencies:
+      - "task-12"
+    acceptanceCriteria:
+      - "Migration idempotent"
+      - "Default policy exists post-run; re-run does not duplicate"
+    tdd:
+      red:
+        - "Int test asserting exactly one default policy after re-running migrations"
+      green:
+        - "Author migration"
+      refactor:
+        - "Document the default values as constants used by both migration and the policy editor"
+    estimatedEffort: "1h"
+
+  - id: "task-32"
+    phaseId: "phase-6"
+    title: "SqliteSecurityPolicyRepository + ISlaClockPort + system-clock adapter"
+    description: >
+      Standard repo. ISlaClockPort with .now(): Date. Concrete system-clock adapter
+      returns new Date(). Wired in register-aspm.ts.
+    state: "Todo"
+    dependencies:
+      - "task-31"
+    acceptanceCriteria:
+      - "Repo round-trip int test green"
+      - "Clock adapter mockable in tests"
+    tdd:
+      red:
+        - "Int test for the policy repo"
+        - "Unit test asserting the system clock adapter returns the expected shape"
+      green:
+        - "Implement both"
+      refactor:
+        - "Co-locate the test clock fake helper under tests/test-utils/aspm/"
+    estimatedEffort: "1h"
+
+  - id: "task-33"
+    phaseId: "phase-6"
+    title: "Pure-domain SLA state computation"
+    description: >
+      computeSlaState(discoveredAt, severity, policy, now) returns
+      Healthy/AtRisk/Breached. Healthy when elapsed < 50% of window; AtRisk
+      50-100%; Breached ≥100%. Pure function.
+    state: "Todo"
+    dependencies:
+      - "task-32"
+    acceptanceCriteria:
+      - "No infra imports"
+      - "All three states covered by unit tests + boundary cases"
+    tdd:
+      red:
+        - "Unit tests for each band + boundary"
+      green:
+        - "Implement; reuse SLAWindow value object"
+      refactor:
+        - "Extract band thresholds to named constants"
+    estimatedEffort: "1h"
+
+  - id: "task-34"
+    phaseId: "phase-6"
+    title: "Migration + repo for risk_exceptions + audit log"
+    description: >
+      Migration 112 creates risk_exceptions (id, findingId, reasonEnum,
+      justification, declaredBy, declaredAt, expiresAt, status, audit log JSON).
+      SqliteRiskExceptionRepository with create / findActiveForFinding /
+      listExpiring / revoke.
+    state: "Todo"
+    dependencies:
+      - "task-12"
+    acceptanceCriteria:
+      - "Migration idempotent"
+      - "Audit-log column is JSON-encoded array; append-only via repo API"
+      - "Round-trip int tests green"
+    tdd:
+      red:
+        - "Int test covering declare→revoke flow + audit-log append"
+      green:
+        - "Author migration, repo, mapper"
+      refactor:
+        - "Reuse the existing audit-log column pattern from pm_audit_log"
+    estimatedEffort: "2h"
+
+  - id: "task-35"
+    phaseId: "phase-6"
+    title: "effective-finding-state (read-time) considering active exceptions"
+    description: >
+      Pure-domain function that computes the effective finding state given the
+      raw state, any active exception, and now. Expired exceptions cause the state
+      to fall back to the underlying finding state.
+    state: "Todo"
+    dependencies:
+      - "task-34"
+    acceptanceCriteria:
+      - "Active exception → effective state = Exception"
+      - "Expired exception → effective state falls back to underlying state"
+      - "No infra imports"
+    tdd:
+      red:
+        - "Unit tests covering active, expired, revoked, and never-declared paths"
+      green:
+        - "Implement the function"
+      refactor:
+        - "Co-locate with computeSlaState since both share the now input"
+    estimatedEffort: "1h"
+
+  - id: "task-36"
+    phaseId: "phase-6"
+    title: "Exception use cases — declare / revoke / list-expiring"
+    description: >
+      declare-exception (validates reason + expiresAt + justification),
+      revoke-exception (appends audit), list-expiring-exceptions (returns
+      exceptions expiring within N days for the dashboard tile).
+    state: "Todo"
+    dependencies:
+      - "task-35"
+    acceptanceCriteria:
+      - "Unit tests with mocked deps assert state transitions + audit append"
+      - "Re-declaring on a finding with an active exception throws cleanly"
+    tdd:
+      red:
+        - "Per-use-case unit tests"
+      green:
+        - "Implement; reuse the audit-log helper"
+      refactor:
+        - "Extract a guard helper for active-exception checks"
+    estimatedEffort: "2h"
+
+  - id: "task-37"
+    phaseId: "phase-6"
+    title: "Migration + repo for remediation_campaigns"
+    description: >
+      Migration 110 creates remediation_campaigns (id, name, description,
+      targetQueryJson, status, ownerId, dueDate, createdAt, closedAt, auditLogJson).
+      SqliteRemediationCampaignRepository.
+    state: "Todo"
+    dependencies:
+      - "task-12"
+    acceptanceCriteria:
+      - "Migration idempotent"
+      - "targetQueryJson conforms to FindingFilter on read"
+      - "Round-trip int tests green"
+    tdd:
+      red:
+        - "Int test for full CRUD + state transitions"
+      green:
+        - "Author migration, repo, mapper"
+      refactor:
+        - "Reuse FindingFilter parse helper with list/rank-findings"
+    estimatedEffort: "2h"
+
+  - id: "task-38"
+    phaseId: "phase-6"
+    title: "Campaign use cases — create / update / close / list / get-progress"
+    description: >
+      create-campaign / update-campaign / close-campaign / list-campaigns /
+      get-campaign-progress. get-campaign-progress re-runs the targetQuery via
+      list-findings and computes (total, closed, atRisk, blocked) at read time.
+    state: "Todo"
+    dependencies:
+      - "task-29"
+      - "task-33"
+      - "task-37"
+    acceptanceCriteria:
+      - "Unit tests with mocked repos assert each verb"
+      - "get-campaign-progress correctly counts atRisk/breached using computeSlaState"
+    tdd:
+      red:
+        - "Per-use-case unit tests"
+      green:
+        - "Implement using list-findings for progress computation"
+      refactor:
+        - "Extract progress-counting helper into a pure function"
+    estimatedEffort: "3h"
+
+  - id: "task-39"
+    phaseId: "phase-6"
+    title: "Web components — sla-badge + campaign-board"
+    description: >
+      sla-badge.tsx (Healthy/AtRisk/Breached/Exception) and campaign-board.tsx with
+      filter-by-application, progress bars, and a link to the included findings.
+      Colocated .stories.tsx with Default/Loading/Error + state variants.
+    state: "Todo"
+    dependencies:
+      - "task-38"
+    acceptanceCriteria:
+      - "Storybook builds; all variants render"
+      - "Keyboard navigable; SLA colors meet WCAG 2.1 AA"
+    tdd:
+      red:
+        - "RTL tests asserting render-state for each variant"
+      green:
+        - "Implement components + stories"
+      refactor:
+        - "Extract a progress-bar primitive if duplicated"
+    estimatedEffort: "4h"
+
+  # ============================================================================
+  # Phase 7 — Executive dashboards + developer routing
+  # ============================================================================
+  - id: "task-40"
+    phaseId: "phase-7"
+    title: "get-posture-summary use case"
+    description: >
+      Returns: total open findings by canonical severity, top-N at-risk
+      applications, KEV-listed count, SLA-breach count, exception count,
+      AI-change queue depth, last-ingested-at. Uses repository aggregate methods
+      added in this task.
+    state: "Todo"
+    dependencies:
+      - "task-29"
+      - "task-33"
+    acceptanceCriteria:
+      - "Returns within 1s on the 50k fixture (NFR-7)"
+      - "Each field assertable independently"
+    tdd:
+      red:
+        - "Unit tests with a mocked repo asserting each field"
+        - "Int perf assertion on the 50k fixture"
+      green:
+        - "Implement use case + repo aggregate methods"
+      refactor:
+        - "Move aggregate SQL into named query functions"
+    estimatedEffort: "3h"
+
+  - id: "task-41"
+    phaseId: "phase-7"
+    title: "get-risk-trend + get-application-posture use cases"
+    description: >
+      get-risk-trend returns time-bucketed posture metrics (daily, 30-day window)
+      derived from finding state changes. get-application-posture returns per-Application
+      open-by-severity, top 10 by risk score, owner, last scan, sparkline data.
+    state: "Todo"
+    dependencies:
+      - "task-40"
+    acceptanceCriteria:
+      - "Unit tests covering bucket boundaries and empty-window behavior"
+    tdd:
+      red:
+        - "Unit tests with mocked repo asserting bucketing logic"
+      green:
+        - "Implement; reuse audit/state-change history for the trend"
+      refactor:
+        - "Extract bucket-builder into a pure helper"
+    estimatedEffort: "3h"
+
+  - id: "task-42"
+    phaseId: "phase-7"
+    title: "SSE posture stream endpoint"
+    description: >
+      app/api/aspm/posture/stream/route.ts streams posture deltas on finding state
+      changes using the existing SSE pattern. Each delta carries a typed event.
+    state: "Todo"
+    dependencies:
+      - "task-40"
+    acceptanceCriteria:
+      - "Stream emits deltas on finding state change"
+      - "Reconnect handles last-event-id correctly"
+    tdd:
+      red:
+        - "Vitest test asserting the route emits typed events on a fake state-change emitter"
+      green:
+        - "Implement the route reusing the existing SSE helper"
+      refactor:
+        - "Type the event payload via a shared module"
+    estimatedEffort: "2h"
+
+  - id: "task-43"
+    phaseId: "phase-7"
+    title: "Web — /aspm dashboard + posture-cards + risk-trend-chart"
+    description: >
+      app/aspm/page.tsx renders the dashboard using get-posture-summary +
+      get-risk-trend. posture-cards.tsx and risk-trend-chart.tsx in
+      components/features/aspm/, each with colocated stories.
+    state: "Todo"
+    dependencies:
+      - "task-41"
+      - "task-42"
+    acceptanceCriteria:
+      - "Initial paint <1s on the 50k fixture"
+      - "All stories render"
+      - "SSE subscription updates posture-cards live"
+    tdd:
+      red:
+        - "RTL tests for each component variant"
+      green:
+        - "Implement the page + components + stories"
+      refactor:
+        - "Extract a shared 'kpi card' primitive"
+    estimatedEffort: "5h"
+
+  - id: "task-44"
+    phaseId: "phase-7"
+    title: "Web — /aspm/findings + /aspm/findings/[id] pages"
+    description: >
+      Server-component pages calling rank-findings + get-finding. Findings page
+      wires the filter-bar + table from task-19; detail page renders the
+      finding-detail-panel + risk-score-breakdown from task-30 plus declare/revoke
+      exception controls and convert-to-work-item action.
+    state: "Todo"
+    dependencies:
+      - "task-19"
+      - "task-30"
+      - "task-36"
+    acceptanceCriteria:
+      - "Both pages render server-side with mock data in Storybook"
+      - "Exception declare action persists and refreshes posture"
+    tdd:
+      red:
+        - "RTL tests asserting page composition + action wiring"
+      green:
+        - "Implement pages"
+      refactor:
+        - "Centralize the action handlers via a hooks module"
+    estimatedEffort: "4h"
+
+  - id: "task-45"
+    phaseId: "phase-7"
+    title: "convert-finding-to-work-item + bulk-convert-findings use cases"
+    description: >
+      Single-finding conversion creates a Shep WorkItem with title/description/
+      ownerId and a back-reference to the finding (workItemId set on the finding).
+      Bulk variant takes a FindingFilter and is idempotent on existing linkage.
+    state: "Todo"
+    dependencies:
+      - "task-18"
+    acceptanceCriteria:
+      - "Re-running bulk-convert is a no-op for findings with existing linkage"
+      - "Failure on one finding does not roll back successful ones (logs each)"
+    tdd:
+      red:
+        - "Unit tests with mocked WorkItem repo asserting create + back-ref"
+        - "Idempotence test for bulk"
+      green:
+        - "Implement; reuse IWorkItemRepository"
+      refactor:
+        - "Extract the idempotence guard into a shared helper"
+    estimatedEffort: "3h"
+
+  - id: "task-46"
+    phaseId: "phase-7"
+    title: "Augment Application detail view with ASPM section"
+    description: >
+      Add an ASPM tab/section to the existing application-detail.tsx showing risk
+      score badge, top findings, owners, exception count. Server-fetch via
+      get-application-posture.
+    state: "Todo"
+    dependencies:
+      - "task-41"
+      - "task-44"
+    acceptanceCriteria:
+      - "ASPM section visible on existing applications without ASPM data (empty state)"
+      - "All existing application detail tests still pass"
+    tdd:
+      red:
+        - "RTL test asserting ASPM section renders with both populated and empty states"
+      green:
+        - "Add the section + wire data"
+      refactor:
+        - "Extract empty-state primitive if duplicated"
+    estimatedEffort: "2h"
+
+  - id: "task-47"
+    phaseId: "phase-7"
+    title: "Web — /aspm/inventory with React Flow asset-risk graph"
+    description: >
+      app/aspm/inventory/page.tsx renders the asset-risk-graph component. Reuses
+      @xyflow/react v12 in tree. build-asset-graph-nodes.ts derives nodes/edges
+      from application/service/finding data. Custom asset-node.tsx. All with
+      colocated stories.
+    state: "Todo"
+    dependencies:
+      - "task-29"
+    acceptanceCriteria:
+      - "Graph renders on a fixture of 200 assets within 1s"
+      - "Feature flag falls back to tabular view if perf budget is exceeded"
+      - "Storybook builds; all variants render"
+    tdd:
+      red:
+        - "RTL test asserting node/edge counts derived from a fixture"
+      green:
+        - "Implement; reuse build-graph-nodes patterns from existing graph code"
+      refactor:
+        - "Memoize node data builder per existing pattern"
+    estimatedEffort: "6h"
+
+  - id: "task-48"
+    phaseId: "phase-7"
+    title: "Web — /aspm/owners + owner-map component"
+    description: >
+      Owner map renders owners with their assigned findings rolled up by team/BU.
+      Component + colocated stories.
+    state: "Todo"
+    dependencies:
+      - "task-11"
+      - "task-40"
+    acceptanceCriteria:
+      - "Storybook builds; all variants render"
+    tdd:
+      red:
+        - "RTL test asserting render of multi-team / multi-BU fixture"
+      green:
+        - "Implement component + stories + page"
+      refactor:
+        - "Extract a shared rollup helper if used elsewhere"
+    estimatedEffort: "3h"
+
+  # ============================================================================
+  # Phase 8 — AI-change review queue
+  # ============================================================================
+  - id: "task-49"
+    phaseId: "phase-8"
+    title: "Migration + repo for ai_change_risk_signals"
+    description: >
+      Migration 114 creates ai_change_risk_signals (id, applicationId,
+      agentSessionId, signalType, severity, summary, evidenceJson, state,
+      discoveredAt, resolvedAt). SqliteAiChangeRiskSignalRepository.
+    state: "Todo"
+    dependencies:
+      - "task-12"
+    acceptanceCriteria:
+      - "Migration idempotent"
+      - "Round-trip int test green for all state transitions"
+    tdd:
+      red:
+        - "Int test asserting create→state transitions→softDelete"
+      green:
+        - "Author migration, repo, mapper"
+      refactor:
+        - "Reuse audit-log helper if used elsewhere"
+    estimatedEffort: "2h"
+
+  - id: "task-50"
+    phaseId: "phase-8"
+    title: "AI-review use cases — record / graduate / dismiss / list"
+    description: >
+      record-ai-change-risk-signal accepts applicationId + agentSessionId +
+      signalType + evidence + severity; callable by Shep's agent infra via
+      IAgentExecutorProvider hooks (no SDK imports outside infrastructure).
+      graduate-ai-signal-to-finding converts a signal into a SecurityFinding
+      preserving evidence + ownership. dismiss-ai-signal records justification.
+      list-ai-signals supports the queue UI.
+    state: "Todo"
+    dependencies:
+      - "task-17"
+      - "task-49"
+    acceptanceCriteria:
+      - "Unit tests for each use case"
+      - "graduate-ai-signal-to-finding is idempotent on already-graduated signals (throws AiSignalAlreadyGraduated)"
+      - "record is agent-agnostic"
+    tdd:
+      red:
+        - "Per-use-case unit tests with mocked deps"
+      green:
+        - "Implement each"
+      refactor:
+        - "Extract shared signal-evidence shaper"
+    estimatedEffort: "3h"
+
+  - id: "task-51"
+    phaseId: "phase-8"
+    title: "Web — /aspm/ai-review + ai-review-queue component"
+    description: >
+      app/aspm/ai-review/page.tsx + ai-review-queue.tsx with graduate/dismiss
+      actions. Colocated stories with Default/Loading/Error + Open/Graduated/
+      Dismissed variants.
+    state: "Todo"
+    dependencies:
+      - "task-50"
+    acceptanceCriteria:
+      - "Storybook builds; all variants render"
+      - "Actions persist and refresh the queue"
+    tdd:
+      red:
+        - "RTL tests asserting graduate/dismiss action wiring"
+      green:
+        - "Implement component + stories + page"
+      refactor:
+        - "Extract shared action-button row primitive"
+    estimatedEffort: "3h"
+
+  # ============================================================================
+  # Phase 9 — Compliance surface
+  # ============================================================================
+  - id: "task-52"
+    phaseId: "phase-9"
+    title: "Migration + repo + seeding for compliance_controls"
+    description: >
+      Migration 113 creates compliance_controls (id, frameworkId, controlId,
+      title, description) and a finding_compliance_controls join table. Seed
+      OWASP ASVS L1/L2 control rows + CWE Top 25 rows (idempotent — checked by
+      (frameworkId, controlId)). Repository with findByFramework + linkToFinding.
+    state: "Todo"
+    dependencies:
+      - "task-12"
+    acceptanceCriteria:
+      - "Migration idempotent; seed runs once"
+      - "Round-trip int test green"
+    tdd:
+      red:
+        - "Int test asserting seed counts + idempotence"
+      green:
+        - "Author migration + seed + repo"
+      refactor:
+        - "Extract seed-data into a fixtures file consumed by the migration"
+    estimatedEffort: "2h"
+
+  - id: "task-53"
+    phaseId: "phase-9"
+    title: "Wire SARIF taxa references → ComplianceControl links during ingestion"
+    description: >
+      Extend the SARIF adapter to extract ASVS + CWE taxa references and the
+      ingestion use case to insert finding_compliance_controls rows.
+    state: "Todo"
+    dependencies:
+      - "task-17"
+      - "task-52"
+    acceptanceCriteria:
+      - "SARIF fixture with taxa references produces the expected join rows"
+    tdd:
+      red:
+        - "Int test asserting the join rows after ingestion"
+      green:
+        - "Add taxa extraction to the walker + link writes to the use case"
+      refactor:
+        - "Cache control id lookups per ingestion run"
+    estimatedEffort: "2h"
+
+  - id: "task-54"
+    phaseId: "phase-9"
+    title: "get-compliance-coverage use case + /aspm/compliance view"
+    description: >
+      Use case returns per-framework coverage (controls covered, controls with
+      open findings, controls without evidence). compliance-coverage-view.tsx
+      under components/features/aspm/ with colocated stories.
+    state: "Todo"
+    dependencies:
+      - "task-53"
+    acceptanceCriteria:
+      - "Unit test asserting coverage math"
+      - "Storybook builds; all variants render"
+    tdd:
+      red:
+        - "Per-use-case unit test + RTL tests for the view"
+      green:
+        - "Implement use case + view + page"
+      refactor:
+        - "Extract per-framework coverage helper"
+    estimatedEffort: "3h"
+
+  # ============================================================================
+  # Phase 10 — CLI, e2e, docs
+  # ============================================================================
+  - id: "task-55"
+    phaseId: "phase-10"
+    title: "CLI — shep aspm ingest command"
+    description: >
+      Commander subcommand under cli/commands/aspm/ for shep aspm ingest --sarif
+      and --sbom flags. Resolves ingest-findings / ingest-sbom from the DI
+      container. Emits ingestion summary; supports --json output.
+    state: "Todo"
+    dependencies:
+      - "task-17"
+      - "task-21"
+    acceptanceCriteria:
+      - "shep aspm ingest --sarif <file> --application <slug> exits 0 on the fixture"
+      - "Re-running on the same file emits 0-new"
+      - "--json emits a structured summary"
+    tdd:
+      red:
+        - "CLI e2e test invoking the command on a fixture and asserting exit code + summary"
+      green:
+        - "Implement command + DI wiring"
+      refactor:
+        - "Extract output formatting into a shared ui helper"
+    estimatedEffort: "2h"
+
+  - id: "task-56"
+    phaseId: "phase-10"
+    title: "CLI — shep aspm findings + campaigns + posture + exceptions + ai-review"
+    description: >
+      Remaining Commander subcommands. Each is thin (parse + use-case-call +
+      format). All under cli/commands/aspm/.
+    state: "Todo"
+    dependencies:
+      - "task-18"
+      - "task-29"
+      - "task-36"
+      - "task-38"
+      - "task-40"
+      - "task-50"
+    acceptanceCriteria:
+      - "Each command exits 0 on its happy path with a deterministic output shape"
+      - "Help text follows the existing style"
+    tdd:
+      red:
+        - "Per-subcommand snapshot tests of --help output + a happy path"
+      green:
+        - "Implement subcommands"
+      refactor:
+        - "Centralize formatting helpers"
+    estimatedEffort: "5h"
+
+  - id: "task-57"
+    phaseId: "phase-10"
+    title: "Playwright e2e — ASPM dashboard happy path"
+    description: >
+      tests/e2e/aspm-dashboard-happy-path.spec.ts covers: open /aspm dashboard →
+      drill into findings list → open a finding → declare an exception → see
+      posture update.
+    state: "Todo"
+    dependencies:
+      - "task-43"
+      - "task-44"
+    acceptanceCriteria:
+      - "E2e passes locally and in CI"
+      - "Uses data-testid for selectors"
+    tdd:
+      red:
+        - "Author the spec; expect failure until UI wiring is complete"
+      green:
+        - "Wire any missing data-testid attributes; re-run until green"
+      refactor:
+        - "Extract a helper for the declare-exception flow"
+    estimatedEffort: "3h"
+
+  - id: "task-58"
+    phaseId: "phase-10"
+    title: "Docs — docs/architecture/aspm.md + domain-models update"
+    description: >
+      Author docs/architecture/aspm.md covering the module overview, ports,
+      entities, and how a finding flows from SARIF to dashboard. Update
+      docs/api/domain-models.md with the new entities.
+    state: "Todo"
+    dependencies:
+      - "task-57"
+    acceptanceCriteria:
+      - "New doc file exists and lints"
+      - "domain-models.md lists every new entity with its key fields"
+    tdd: null
+    estimatedEffort: "2h"
+
+  - id: "task-59"
+    phaseId: "phase-10"
+    title: "Add npm dependencies and run pnpm install"
+    description: >
+      Add ajv, ajv-formats, sarif (types-only), and conditionally
+      @cyclonedx/cyclonedx-library to package.json. yaml + undici are already
+      in tree. Run pnpm install. Commit lockfile changes.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "pnpm install green"
+      - "pnpm validate green after install"
+    tdd: null
+    estimatedEffort: "30min"
+
+  - id: "task-60"
+    phaseId: "phase-10"
+    title: "Full validate + integration + e2e run"
+    description: >
+      Run pnpm validate, pnpm test:unit, pnpm test:int, pnpm test:e2e:aspm
+      (or the chosen e2e tag). Fix any failures owned by this feature.
+    state: "Todo"
+    dependencies:
+      - "task-55"
+      - "task-56"
+      - "task-57"
+      - "task-58"
+      - "task-59"
+    acceptanceCriteria:
+      - "pnpm validate green"
+      - "All ASPM unit + int tests green"
+      - "ASPM e2e green"
+    tdd: null
+    estimatedEffort: "2h"
+
+  - id: "task-61"
+    phaseId: "phase-10"
+    title: "Storybook build green + every component story present"
+    description: >
+      Run pnpm build:storybook. Verify every component under
+      components/features/aspm/ has a colocated *.stories.tsx covering at minimum
+      Default/Loading/Error + the variants required by NFR-17.
+    state: "Todo"
+    dependencies:
+      - "task-19"
+      - "task-30"
+      - "task-39"
+      - "task-43"
+      - "task-47"
+      - "task-48"
+      - "task-51"
+      - "task-54"
+    acceptanceCriteria:
+      - "Storybook builds without errors"
+      - "Every ASPM component file has a colocated .stories.tsx"
+    tdd: null
+    estimatedEffort: "1h"
+
+  - id: "task-62"
+    phaseId: "phase-10"
+    title: "Run accessibility audit on new ASPM pages"
+    description: >
+      Use the existing a11y tooling to check WCAG 2.1 AA compliance on /aspm,
+      /aspm/findings, /aspm/findings/[id], /aspm/campaigns, /aspm/inventory,
+      /aspm/owners, /aspm/compliance, /aspm/ai-review. Fix any violations.
+    state: "Todo"
+    dependencies:
+      - "task-60"
+    acceptanceCriteria:
+      - "Zero WCAG 2.1 AA violations on each new ASPM route"
+    tdd: null
+    estimatedEffort: "2h"
+
+  # ── Phase 11 — Native Scanning ─────────────────────────────────────────────
+
+  - id: "task-63"
+    phaseId: "phase-11"
+    title: "Add ScanRun + ScannerProfile TSP models and regenerate"
+    description: >
+      Author tsp/domain/entities/aspm/scan-run.tsp (id, applicationId, triggeredBy
+      enum [User|Schedule|Event], status enum [Pending|Running|Succeeded|Failed|
+      Partial], startedAt, finishedAt?, stages: ScanStage[]) and
+      tsp/domain/entities/aspm/scanner-profile.tsp (per-app config). Extend
+      Application with `lastScannedAt: utcDateTime?` and `scannerProfile?:
+      ScannerProfile`. Run `pnpm tsp:compile`; do not edit the generated file.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "ScanRun + ScannerProfile + ScanStage appear in domain/generated/output.ts"
+      - "Application carries lastScannedAt and scannerProfile fields"
+      - "pnpm validate green"
+    tdd: "Snapshot the generated output diff in tests/unit/domain/generated/scan-run.snapshot.ts to catch accidental schema drift."
+    estimatedEffort: "1.5h"
+
+  - id: "task-64"
+    phaseId: "phase-11"
+    title: "Migration 118 — create scan_runs table"
+    description: >
+      Add scan_runs columns: id PK, application_id FK, triggered_by TEXT,
+      status TEXT, started_at INTEGER, finished_at INTEGER NULLABLE,
+      stages_json TEXT NOT NULL. Idempotent ALTER guarded by pragma table_info
+      check, mirroring migration 116's pattern.
+    state: "Todo"
+    dependencies:
+      - "task-63"
+    acceptanceCriteria:
+      - "Running migration twice is a no-op"
+      - "down() leaves a TODO comment per project convention (SQLite drop-column unsupported)"
+    tdd: "tests/integration/infrastructure/persistence/sqlite/migrations/118-create-scan-runs.test.ts asserts table created with correct columns and idempotency."
+    estimatedEffort: "0.5h"
+
+  - id: "task-65"
+    phaseId: "phase-11"
+    title: "Migration 119 — add scanner_profile_json + last_scanned_at to applications"
+    description: >
+      ALTER TABLE applications ADD COLUMN scanner_profile_json TEXT NOT NULL DEFAULT '{}'
+      and last_scanned_at INTEGER NULLABLE. Idempotent.
+    state: "Todo"
+    dependencies:
+      - "task-63"
+    acceptanceCriteria:
+      - "Applications mapper round-trips scannerProfile and lastScannedAt"
+    tdd: "Extend the existing sqlite-application.repository test with a scanner-profile round-trip case."
+    estimatedEffort: "0.5h"
+
+  - id: "task-66"
+    phaseId: "phase-11"
+    title: "Build pure-domain SecretScanner with regex + Shannon-entropy rule pack"
+    description: >
+      domain/aspm/scan/secret-scanner.ts plus secret-rule-pack.ts. Rule pack covers
+      AWS (AKIA/ASIA), GitHub PATs (ghp_/gho_/ghs_/ghu_), Slack (xox[abp]-),
+      Stripe (sk_live_), Google OAuth (ya29.), RSA/EC/OpenSSH private-key headers,
+      generic 40+ char high-entropy tokens labeled API_KEY/SECRET/TOKEN, JWT-shaped
+      strings (decode header + filter test issuers). Output is SARIF v2.1.0 ready
+      for IngestFindingsUseCase. No third-party dependency.
+    state: "Todo"
+    dependencies:
+      - "task-63"
+    acceptanceCriteria:
+      - "Fixture repo with 12 seeded secrets is detected 100% (zero false negatives on the seed set)"
+      - "False-positive rate < 5% on a curated negative set (placeholder strings, base64-encoded images, test vectors)"
+      - "Re-running twice produces identical fingerprints (NFR-24)"
+    tdd: "tests/unit/domain/aspm/scan/secret-scanner.test.ts — RED test asserts each rule's positive + at least one negative case BEFORE implementation."
+    estimatedEffort: "5h"
+
+  - id: "task-67"
+    phaseId: "phase-11"
+    title: "Build pure-domain SbomBuilder + 9 manifest parsers"
+    description: >
+      domain/aspm/scan/sbom-builder.ts orchestrates per-ecosystem parsers under
+      domain/aspm/scan/manifest-parsers/: npm, python (pip/poetry/pipenv), go,
+      rust, jvm (maven + gradle), ruby, php, dotnet, container (Dockerfile +
+      compose), iac (terraform + kubernetes + github-actions). Each parser returns
+      SbomComponentDraft[]; the builder dedupes by purl-like identifier. Reuse the
+      existing SoftwareBillOfMaterials shape so IngestSbomUseCase consumes the
+      output unchanged.
+    state: "Todo"
+    dependencies:
+      - "task-63"
+    acceptanceCriteria:
+      - "Each parser has fixture-driven golden tests (input manifest → expected component list)"
+      - "Builder correctly merges multi-ecosystem repos (e.g. a Python+JS monorepo)"
+      - "Container parser extracts base-image purls from FROM lines with multi-stage builds"
+      - "IaC parser flags Terraform provider versions, K8s container images, and GHA workflow `uses:` lines"
+    tdd: "Per-parser test file under tests/unit/domain/aspm/scan/manifest-parsers/ with RED golden test before each parser is implemented."
+    estimatedEffort: "10h"
+
+  - id: "task-68"
+    phaseId: "phase-11"
+    title: "OSV.dev vulnerability adapter (IOsvVulnerabilityPort)"
+    description: >
+      application/ports/output/services/osv-vulnerability-port.interface.ts +
+      infrastructure/services/aspm/osv-vulnerability-adapter.ts. Uses fetch (no
+      external HTTP client dep). POSTs the SBOM in batches to
+      https://api.osv.dev/v1/querybatch, then follows up with /v1/vulns/{id} for
+      each hit. Caches responses on disk under .shep/cache/osv/ for deterministic
+      offline re-scans. Graceful degradation when offline: cache-only mode with
+      a `cacheOnly: true` flag on the result.
+    state: "Todo"
+    dependencies:
+      - "task-67"
+    acceptanceCriteria:
+      - "Live test uses MSW to stub osv.dev responses; no real network during CI"
+      - "Cache hit short-circuits the HTTP path"
+      - "Offline mode returns cached results without throwing"
+    tdd: "tests/unit/infrastructure/services/aspm/osv-vulnerability-adapter.test.ts asserts batch/individual/cache paths."
+    estimatedEffort: "4h"
+
+  - id: "task-69"
+    phaseId: "phase-11"
+    title: "Git ownership adapter (IGitOwnershipPort)"
+    description: >
+      application/ports/output/services/git-ownership-port.interface.ts +
+      infrastructure/services/aspm/git-ownership-adapter.ts. Uses the existing
+      `IProcessSpawnService` (NOT shell: true; see src/CLAUDE.md cross-platform
+      rules) to invoke `git log --pretty=format:%ae --follow <path>` and `git
+      blame --line-porcelain <path>`. Aggregates author emails + frequency,
+      falls back to CODEOWNERS when blame is insufficient. Output augments
+      .shep/ownership.yaml — explicit YAML beats inferred git.
+    state: "Todo"
+    dependencies:
+      - "task-63"
+    acceptanceCriteria:
+      - "Adapter works on Windows (path separator normalization; no shell: true)"
+      - "When both .shep/ownership.yaml AND git blame have a match, YAML wins"
+      - "CODEOWNERS fallback parsed correctly (glob syntax)"
+    tdd: "tests/unit/infrastructure/services/aspm/git-ownership-adapter.test.ts spawns a real temp git repo via the existing harness."
+    estimatedEffort: "4h"
+
+  - id: "task-70"
+    phaseId: "phase-11"
+    title: "SQLite ScanRun repository + DI wiring"
+    description: >
+      sqlite-scan-run-repository.ts implementing IScanRunRepository (save / find
+      by id / list latest per application). Wire into register-aspm.ts under both
+      the class token and the string-token alias 'IScanRunRepository' so web
+      routes can resolve it. Add the string token to
+      tests/integration/infrastructure/di/container-bootstrap.test.ts
+      CRITICAL_INFRA_TOKENS per the bootstrap-test lesson.
+    state: "Todo"
+    dependencies:
+      - "task-64"
+    acceptanceCriteria:
+      - "container-bootstrap test passes with the new token"
+      - "Repository round-trips a ScanRun with multi-stage progress"
+    tdd: "tests/integration/infrastructure/repositories/sqlite-scan-run-repository.test.ts."
+    estimatedEffort: "3h"
+
+  - id: "task-71"
+    phaseId: "phase-11"
+    title: "Agent-driven SAST analyzer (SastAnalysisAgent)"
+    description: >
+      Add a LangGraph node under infrastructure/services/aspm/agents/sast-analysis-agent.ts
+      that, given a chunk of source files (token-budget bounded), returns
+      SecurityFinding drafts with cwe + owasp taxa. MUST resolve its executor via
+      IAgentExecutorProvider — NO hardcoded provider/agent type. Reuse the
+      existing agent prompt patterns + JSON-schema-constrained output (same shape
+      the SARIF adapter emits) so the result flows through IngestFindingsUseCase
+      unchanged.
+    state: "Todo"
+    dependencies:
+      - "task-66"
+    acceptanceCriteria:
+      - "No infrastructure/agents/* provider class is imported by the analyzer"
+      - "Output passes the same SARIF normalization as third-party scanner output"
+      - "Failure mode (provider error / quota) sets ScanStage.status='failed' without throwing"
+    tdd: "tests/unit/infrastructure/services/aspm/agents/sast-analysis-agent.test.ts with a fake IAgentExecutorProvider returning canned JSON."
+    estimatedEffort: "6h"
+
+  - id: "task-72"
+    phaseId: "phase-11"
+    title: "Agent-driven container hardening analyzer (ContainerHardeningAgent)"
+    description: >
+      Same shape as task-71 but specialized for Dockerfiles + docker-compose +
+      k8s deployment manifests. Targets: running as root, latest-tag base,
+      unpinned digests, missing HEALTHCHECK, exposed sensitive ports, missing
+      USER, COPY of .git / .env, --privileged.
+    state: "Todo"
+    dependencies:
+      - "task-71"
+    acceptanceCriteria:
+      - "Detects the 7 listed anti-patterns on a fixture Dockerfile"
+      - "Returns SARIF-shaped output"
+    tdd: "Per-agent test with fake provider and golden fixtures."
+    estimatedEffort: "4h"
+
+  - id: "task-73"
+    phaseId: "phase-11"
+    title: "Agent-driven IaC misconfiguration analyzer (IacSecurityAgent)"
+    description: >
+      Same shape as task-71 but for Terraform / Kubernetes / CloudFormation /
+      GitHub Actions workflows. Targets: public buckets, open security groups,
+      missing encryption-at-rest, hard-coded credentials, GHA
+      pull_request_target + checkout-PR-head pattern.
+    state: "Todo"
+    dependencies:
+      - "task-71"
+    acceptanceCriteria:
+      - "Detects each of the 5 categories on fixture files"
+      - "Returns SARIF-shaped output"
+    tdd: "Per-agent test with fake provider and golden fixtures."
+    estimatedEffort: "5h"
+
+  - id: "task-74"
+    phaseId: "phase-11"
+    title: "ScanApplicationUseCase orchestration"
+    description: >
+      application/use-cases/aspm/scan/scan-application.ts. Inputs: applicationId,
+      stagesEnabled[], triggeredBy. Runs enabled stages with bounded concurrency
+      (default 3), creates a ScanRun, updates per-stage progress, pipes outputs
+      through IngestSbomUseCase (sbom stage) and IngestFindingsUseCase (sca /
+      secrets / sast / container / iac stages — each emits SARIF). Updates
+      applications.last_scanned_at on success. Idempotent re-scan (FR-8 / NFR-10).
+    state: "Todo"
+    dependencies:
+      - "task-66"
+      - "task-67"
+      - "task-68"
+      - "task-69"
+      - "task-70"
+      - "task-71"
+      - "task-72"
+      - "task-73"
+    acceptanceCriteria:
+      - "Re-running on an unchanged tree adds zero new findings (deterministic dedup)"
+      - "Stage failure marks ScanStage='failed' + ScanRun='partial' (NFR-25)"
+      - "Concurrency cap enforced; respects ScannerProfile excludes"
+    tdd: "tests/unit/application/use-cases/aspm/scan/scan-application.test.ts with fake adapters; RED before implementation."
+    estimatedEffort: "5h"
+
+  - id: "task-75"
+    phaseId: "phase-11"
+    title: "RescanApplicationUseCase + ListScanRunsUseCase + GetScanRunUseCase"
+    description: >
+      Thin wrappers over ScanApplicationUseCase / IScanRunRepository. Rescan
+      passes triggeredBy='user' (or 'event'/'schedule'); list returns the latest
+      N per application; get returns one with full stage detail.
+    state: "Todo"
+    dependencies:
+      - "task-74"
+    acceptanceCriteria:
+      - "Both have string-token aliases in register-aspm.ts"
+      - "Added to CRITICAL_INFRA_TOKENS in container-bootstrap.test.ts"
+    tdd: "Unit tests with mock ScanApplicationUseCase asserting triggeredBy propagation."
+    estimatedEffort: "2h"
+
+  - id: "task-76"
+    phaseId: "phase-11"
+    title: "Scan SSE endpoint /api/aspm/scan/stream"
+    description: >
+      Mirror /api/aspm/posture/stream pattern. Subscribes to ScanRun updates via
+      the existing IDomainEventBus, emits 'scan-stage' deltas + a terminal
+      'scan-completed' event. Gated on requireFeatureFlag('aspm').
+    state: "Todo"
+    dependencies:
+      - "task-74"
+    acceptanceCriteria:
+      - "Health check returns 200 when flag on, 404 when off"
+      - "Client reconnect with Last-Event-ID gets a fresh snapshot"
+    tdd: "tests/integration/presentation/web/api/aspm/scan-stream.test.ts."
+    estimatedEffort: "3h"
+
+  - id: "task-77"
+    phaseId: "phase-11"
+    title: "Server action aspm-scan.ts + Storybook mock"
+    description: >
+      src/presentation/web/app/actions/aspm-scan.ts exposes startScan(input) +
+      rescanApplication(input) + listScanRuns(applicationId). Pattern: same as
+      aspm-ingest.ts — requireFeatureFlag, FormData input, FeatureFlagDisabledError
+      → ok:false. Add matching .storybook/mocks/app/actions/aspm-scan.ts.
+    state: "Todo"
+    dependencies:
+      - "task-75"
+    acceptanceCriteria:
+      - "Server action returns { ok, summary, error } in all paths"
+      - "Storybook build succeeds with the new mock"
+    tdd: "tests/unit/presentation/web/actions/aspm-scan.test.ts."
+    estimatedEffort: "2h"
+
+  - id: "task-78"
+    phaseId: "phase-11"
+    title: "Web — AspmScanDialog + ScanProgressPanel components (+ stories)"
+    description: >
+      Two new colocated components. AspmScanDialog: application picker (reuses
+      listAspmIngestApplications), stage checklist (sbom/sca/secrets/sast/
+      container/iac), 'Scan now' submit, secondary tab 'Upload existing report'
+      embedding the existing AspmIngestDialog. ScanProgressPanel: subscribes to
+      /api/aspm/scan/stream, renders per-stage status + count + duration. Both
+      MUST have colocated .stories.tsx with at minimum Default / Loading / Error
+      / partial-failure states (mandatory rule).
+    state: "Todo"
+    dependencies:
+      - "task-76"
+      - "task-77"
+    acceptanceCriteria:
+      - "Both components have stories that pass the Storybook build"
+      - "Dialog passes a11y audit (no missing labels, no contrast violations)"
+      - "Progress panel updates without full re-mount on SSE event"
+    tdd: "Component tests under tests/unit/presentation/web/features/aspm/aspm-scan-dialog/."
+    estimatedEffort: "8h"
+
+  - id: "task-79"
+    phaseId: "phase-11"
+    title: "UX migration — replace every 'Ingest data' trigger with Scan/Rescan"
+    description: >
+      Swap the AspmIngestDialog usage in posture-cards.tsx, findings-table.tsx,
+      aspm-application-section.tsx, and aspm-sub-nav.tsx for AspmScanDialog.
+      Keep AspmIngestDialog mounted INSIDE the new dialog as the 'Upload existing
+      report' secondary tab (additive — CI pipelines still work). Rename the
+      dashboard 'Last ingested' tile to 'Last scanned'.
+    state: "Todo"
+    dependencies:
+      - "task-78"
+    acceptanceCriteria:
+      - "Grep for 'Ingest data' returns zero matches in src/presentation/web"
+      - "Dashboard tile reads 'Last scanned' and updates after a scan finishes"
+      - "All existing tests for the three component files still pass (updated for the new dialog testids)"
+    tdd: "Update the three existing component tests to assert presence of AspmScanDialog testid."
+    estimatedEffort: "2h"
+
+  - id: "task-80"
+    phaseId: "phase-11"
+    title: "CLI — shep aspm scan + shep aspm rescan"
+    description: >
+      Two new Commander subcommands under src/presentation/cli/commands/aspm/.
+      Same patterns as the existing aspm-ingest-command.ts. Resolve the
+      application via the existing resolveApplication helper, call
+      ScanApplicationUseCase / RescanApplicationUseCase, stream stage progress
+      to the terminal with the colored UI primitives.
+    state: "Todo"
+    dependencies:
+      - "task-75"
+    acceptanceCriteria:
+      - "shep aspm scan --app <slug> [--stages sbom,secrets] [--json] works end-to-end"
+      - "shep aspm rescan is a one-liner over the same use case"
+      - "Both hidden behind the aspm feature flag like the rest of the aspm command tree"
+    tdd: "tests/unit/presentation/cli/commands/aspm/aspm-scan-command.test.ts using the Commander test harness."
+    estimatedEffort: "3h"
+
+  - id: "task-81"
+    phaseId: "phase-11"
+    title: "Nightly auto-rescan scheduler"
+    description: >
+      infrastructure/services/aspm/scan-scheduler.service.ts. Daemon-side cron
+      loop (reuses the existing scheduler primitive if one exists; otherwise a
+      thin setInterval guarded by the daemon's lifecycle). Queries all
+      Applications where aspm.autoRescan !== false and lastScannedAt < now-24h,
+      enqueues RescanApplicationUseCase. Settings toggle: autoRescanEnabled
+      (default true). Per-app override on Application.scannerProfile.autoRescan.
+    state: "Todo"
+    dependencies:
+      - "task-75"
+    acceptanceCriteria:
+      - "Fake-clock test verifies the 24h gate"
+      - "Per-app opt-out honored"
+      - "Setting toggle disables scheduler entirely"
+    tdd: "tests/unit/infrastructure/services/aspm/scan-scheduler.test.ts with vi.useFakeTimers()."
+    estimatedEffort: "4h"
+
+  - id: "task-82"
+    phaseId: "phase-11"
+    title: "Scanner profile settings panel"
+    description: >
+      ScannerProfileSection component under components/features/aspm/. Mounted
+      inside the existing settings page (gated on featureFlags.aspm). Lets the
+      user toggle each stage, set path excludes (glob list), and view per-app
+      last-scan summary. Wired to a new server action saveScannerProfile.
+    state: "Todo"
+    dependencies:
+      - "task-65"
+      - "task-77"
+    acceptanceCriteria:
+      - "Save round-trips into applications.scanner_profile_json"
+      - "Path excludes are honored by SbomBuilder + SecretScanner (regression test)"
+    tdd: "Component test for the settings section + use-case test for the saver."
+    estimatedEffort: "4h"
+
+  - id: "task-83"
+    phaseId: "phase-11"
+    title: "E2E Playwright happy path — scan one repo end-to-end"
+    description: >
+      tests/e2e/aspm-scan-happy-path.spec.ts. Sets up a fixture repo with a
+      seeded secret + a known-vulnerable dependency, navigates to /aspm,
+      clicks Scan, waits for SSE 'scan-completed', asserts:
+      - findings count > 0 in the posture cards,
+      - the seeded secret appears in /aspm/findings,
+      - the OSV vulnerability appears in /aspm/findings,
+      - 'Last scanned' tile is recent.
+    state: "Todo"
+    dependencies:
+      - "task-79"
+      - "task-80"
+    acceptanceCriteria:
+      - "Test passes consistently on linux + macos + windows runners"
+      - "Mocked OSV.dev responses (MSW) so no live network during CI"
+    tdd: null
+    estimatedEffort: "4h"
+
+  - id: "task-84"
+    phaseId: "phase-11"
+    title: "Docs — docs/architecture/aspm-scanning.md + update aspm.md"
+    description: >
+      Architecture doc explaining the scan stages, the in-house vs agent-driven
+      split, the local-branch-only contract, the offline-degradation behavior,
+      and the upload escape-hatch. Update docs/architecture/aspm.md to link to it
+      and remove the 'requires upload' language from the dashboard tour.
+    state: "Todo"
+    dependencies:
+      - "task-83"
+    acceptanceCriteria:
+      - "Doc renders cleanly in the existing docs site"
+      - "Every Phase 11 FR cross-referenced"
+    tdd: null
+    estimatedEffort: "2h"
+
+# Total effort estimate
+totalEstimate: "200h (~5 dev-weeks at 40h/week, including Phase 11)"
+
+# Open questions
+openQuestions: []
+
+# Markdown content
+content: |
+  ## Status
+
+  - **Phase:** Implementation
+  - **Updated:** 2026-05-19
+
+  ## Summary
+
+  62 ordered tasks across 10 phases.
+
+  **Phase 1 — Foundation & TypeSpec scaffolding** (tasks 1-5) authors every ASPM
+  enum, value object, and entity in TypeSpec; extends `Application` with four
+  optional ASPM fields; codegens `output.ts`; adds the domain error classes; and
+  scaffolds the `register-aspm.ts` DI module wired into the existing
+  `container.ts`. No persisted state yet — phase 1 is types and DI plumbing only,
+  so every subsequent phase compiles immediately.
+
+  **Phase 2 — Asset & ownership model** (tasks 6-11) ships the ALTER migration
+  for `applications`, the `Owner`/`Team`/`BusinessUnit`/`Service`/`ApiAsset`/
+  `CloudEnvironment` migrations + repos, the pure-domain ownership resolver, the
+  `IOwnershipYamlReader` port + YAML adapter, and the ownership use cases.
+
+  **Phase 3 — SecurityFinding entity + SARIF ingestion** (tasks 12-19) creates
+  the `security_findings` table with its composite indexes, the SARIF v2.1.0
+  ingestion adapter (ajv-validated + hand-rolled walker), the pure-domain
+  `Redactor` and dedup-key, the transactional `ingest-findings` use case, the
+  `list-findings`/`get-finding` use cases, and the findings table + filter bar +
+  severity badge components with full Storybook coverage.
+
+  **Phase 4 — SBOM + exploit intel** (tasks 20-23) ships the `ISbomPort` +
+  CycloneDX 1.5 adapter, the `ingest-sbom` use case, the `IExploitIntelPort`
+  with KEV + EPSS local-cached feed loaders, and wires KEV/EPSS enrichment into
+  the ingestion pipeline.
+
+  **Phase 5 — Risk scoring & prioritization** (tasks 24-30) creates the
+  append-only `risk_scores` table with the `currentRiskScoreId` pointer on the
+  finding, implements the pure-domain `computeRiskScore` with documented
+  weights, asserts determinism via a golden-file fixture, ships the
+  compute/recompute/rank use cases, and builds the finding detail panel +
+  risk-score breakdown components with Storybook coverage.
+
+  **Phase 6 — SLA + campaigns + exceptions** (tasks 31-39) creates
+  `SecurityPolicy` (with a seeded default), the `ISlaClockPort`, the pure-domain
+  SLA state computation, the `RiskException` migration + repo + audit log, the
+  read-time `effective-finding-state` function, the exception use cases, the
+  `RemediationCampaign` migration + repo, the campaign use cases (including
+  read-time progress), and the SLA badge + campaign board components.
+
+  **Phase 7 — Executive dashboards + developer routing** (tasks 40-48) ships
+  `get-posture-summary` / `get-risk-trend` / `get-application-posture`, the SSE
+  posture stream endpoint, the `/aspm` dashboard with posture cards + trend
+  chart, the `/aspm/findings` + `/aspm/findings/[id]` pages, the
+  `convert-finding-to-work-item` (+ bulk) use cases, the Application detail
+  view's ASPM section, the React Flow asset-risk graph at `/aspm/inventory`,
+  and the owner map.
+
+  **Phase 8 — AI-change review queue** (tasks 49-51) ships the
+  `AiChangeRiskSignal` migration + repo, the record/graduate/dismiss/list use
+  cases (callable by Shep's existing agent infra via `IAgentExecutorProvider`),
+  and the `/aspm/ai-review` page + queue component.
+
+  **Phase 9 — Compliance surface** (tasks 52-54) ships the `ComplianceControl`
+  migration with seeded OWASP ASVS + CWE Top 25 rows, wires SARIF taxa
+  references into the ingestion pipeline, and ships `get-compliance-coverage` +
+  the `/aspm/compliance` view.
+
+  **Phase 10 — CLI, e2e, docs** (tasks 55-62) wires the full `shep aspm`
+  Commander subcommand tree, the Playwright e2e covering the dashboard happy
+  path, the architecture docs, the npm dependency additions, the full
+  `pnpm validate` + test + e2e run, the Storybook build, and the accessibility
+  audit.
+
+  ## Total Estimate
+
+  ~138h (~3.5 dev-weeks at 40h/week). XL feature, matching the spec sizing.
+  Each phase is independently shippable behind the same `/aspm` route, so
+  intermediate PRs land in user-visible increments.

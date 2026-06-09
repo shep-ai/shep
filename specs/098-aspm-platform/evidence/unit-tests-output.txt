@@ -1,0 +1,500 @@
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/layouts/app-shell.test.tsx (9 tests) 625ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/features/control-center/use-control-center-state.test.tsx (36 tests) 252ms
+ ✓  web  tests/unit/presentation/web/components/common/application-node/application-node.test.tsx (21 tests) 764ms
+ ✓  web  tests/unit/presentation/web/common/version-badge.test.tsx (8 tests) 625ms
+     ✓ shows upgrade button in tooltip when update is available  437ms
+ ✓  web  tests/unit/presentation/web/features/skills/skill-list.test.tsx (7 tests) 474ms
+     ✓ renders category headings for groups with skills  315ms
+ ✓  web  tests/unit/presentation/web/button.test.tsx (8 tests) 467ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-manager.test.tsx (9 tests) 494ms
+     ✓ renders FeatureRowActions portals for discovered containers  322ms
+ ✓  web  tests/unit/presentation/web/app/features/feature-tree-page-client.test.tsx (5 tests) 637ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/components/common/theme-toggle/theme-toggle.test.tsx (7 tests) 492ms
+     ✓ sets --x and --y CSS custom properties from click coordinates when API is available  309ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/features/control-center/control-center.test.tsx (3 tests) 504ms
+ ✓  web  tests/unit/presentation/web/components/common/control-center-drawer/feature-drawer-client.test.tsx (2 tests) 392ms
+     ✓ blocks continuation actions while the pinned config save is in flight and patches local node data after success  361ms
+ ✓  web  tests/unit/presentation/web/components/supervisor/supervisor-decision-why-drawer.test.tsx (5 tests) 375ms
+ ✓  web  tests/unit/presentation/web/features/skills/skill-card.test.tsx (16 tests) 605ms
+ ✓  web  tests/unit/presentation/web/common/feature-node/feature-sessions-dropdown.test.tsx (7 tests) 843ms
+     ✓ displays session previews after opening  500ms
+ ✓  web  tests/unit/presentation/web/common/feature-list-item.test.tsx (5 tests) 630ms
+     ✓ fires onClick callback when clicked  304ms
+ ✓  web  tests/unit/presentation/web/hooks/use-npm-version-check.test.ts (6 tests) 314ms
+ ✓  web  tests/unit/presentation/web/layouts/sidebar.test.tsx (5 tests) 218ms
+ ✓  web  tests/unit/presentation/web/layouts/dashboard-layout.test.tsx (6 tests) 237ms
+ ✓  web  tests/unit/presentation/web/components/ui/sidebar-persistence.test.tsx (9 tests) 331ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/branch-sync-status.test.tsx (12 tests) 339ms
+ ✓  web  tests/unit/presentation/web/hooks/use-deployment-logs.test.ts (15 tests) 279ms
+ ✓  web  tests/unit/presentation/web/input.test.tsx (7 tests) 230ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/common/sidebar-nav-item.test.tsx (4 tests) 229ms
+ ✓  web  tests/unit/presentation/web/common/page-header.test.tsx (8 tests) 160ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/notification-settings-section.test.tsx (6 tests) 346ms
+ ✓  web  tests/unit/presentation/web/features/version-page-client.test.tsx (2 tests) 498ms
+     ✓ renders version info  430ms
+ ✓  web  tests/unit/presentation/web/common/repository-node/repository-node.test.tsx (7 tests) 721ms
+     ✓ renders repository name  334ms
+ ✓  web  tests/unit/presentation/web/components/common/deployment-status-badge/deployment-status-badge.test.tsx (13 tests) 769ms
+     ✓ renders green badge with clickable URL when status is Ready  431ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/plan-tab.test.tsx (13 tests) 588ms
+ ✓  web  tests/unit/presentation/web/components/common/action-button/action-button-sound.test.tsx (2 tests) 477ms
+     ✓ plays click sound when button is clicked  455ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/layouts/app-shell-variant.test.tsx (8 tests) 291ms
+ ✓  web  tests/unit/presentation/web/common/empty-state.test.tsx (9 tests) 206ms
+ ✓  web  tests/unit/presentation/web/card.test.tsx (7 tests) 394ms
+     ✓ renders with CardFooter  338ms
+ ✓  web  tests/unit/presentation/web/components/common/attachment-card/attachment-card.test.tsx (3 tests) 446ms
+     ✓ calls onRemove when remove button is clicked  388ms
+ ✓  web  tests/unit/presentation/web/alert.test.tsx (4 tests) 344ms
+ ✓  web  tests/unit/presentation/web/hooks/use-graph-state.test.tsx (24 tests) 138ms
+Not implemented: navigation to another Document
+ ✓  web  tests/unit/presentation/web/components/common/sidebar-nav-item/sidebar-nav-item.test.tsx (1 test) 223ms
+ ✓  web  tests/unit/presentation/web/components/common/sidebar-collapse-toggle/sidebar-collapse-toggle.test.tsx (2 tests) 195ms
+ ✓  web  tests/unit/presentation/web/common/feature-status-badges.test.tsx (5 tests) 140ms
+ ✓  web  tests/unit/presentation/web/layouts/header.test.tsx (5 tests) 265ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/diff-view.test.tsx (13 tests) 137ms
+stderr | tests/unit/presentation/web/lib/skills.test.ts > getSkills > skips skills with malformed frontmatter
+Skipping skill "bad-skill": invalid or missing frontmatter in SKILL.md
+ ✓  web  tests/unit/presentation/web/lib/skills.test.ts (48 tests) 283ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer/use-feature-actions.test.ts (24 tests) 133ms
+ ✓  web  tests/unit/presentation/web/features/aspm/finding-detail-panel.test.tsx (8 tests) 126ms
+ ✓  web  tests/unit/presentation/web/features/aspm/ai-review-queue.test.tsx (8 tests) 86ms
+ ✓  web  tests/unit/presentation/web/hooks/use-agent-events.test.ts (16 tests) 222ms
+ ✓  web  tests/unit/presentation/web/hooks/use-version.test.ts (4 tests) 81ms
+ ✓  web  tests/unit/presentation/web/features/aspm/risk-score-breakdown.test.tsx (6 tests) 73ms
+ ✓  web  tests/unit/presentation/web/api/directory-list.test.ts (16 tests) 90ms
+ ✓  web  tests/unit/presentation/web/features/aspm/campaign-board.test.tsx (9 tests) 124ms
+ ✓  web  tests/unit/presentation/web/components/common/repository-node/use-repository-actions.test.ts (15 tests) 69ms
+ ✓  web  tests/unit/presentation/web/features/aspm/findings-table.test.tsx (13 tests) 127ms
+ ✓  web  tests/unit/presentation/web/components/common/tech-decisions-review/tech-decisions-review-sound.test.tsx (2 tests) 133ms
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/hooks/use-notifications.test.ts (9 tests) 72ms
+ ✓  web  tests/unit/presentation/web/components/common/product-decisions-summary/product-decisions-summary.test.tsx (9 tests) 143ms
+ ✓  web  tests/unit/presentation/web/components/onboarding/welcome-banner.test.tsx (4 tests) 70ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-drawer-tabs/use-tab-data-fetch.test.ts (16 tests) 74ms
+ ✓  web  tests/unit/presentation/web/features/aspm/compliance-coverage-view.test.tsx (8 tests) 94ms
+ ✓  web  tests/unit/presentation/web/features/aspm/risk-trend-chart.test.tsx (5 tests) 62ms
+ ✓  web  tests/unit/presentation/web/features/aspm/finding-actions.test.tsx (5 tests) 90ms
+ ✓  web  tests/unit/presentation/web/common/sidebar-section-header.test.tsx (3 tests) 79ms
+ ✓  web  tests/unit/presentation/web/api/deployment-logs-sse.test.ts (10 tests) 120ms
+ ✓  web  tests/unit/presentation/web/api/tools-install.test.ts (4 tests) 87ms
+ ✓  web  tests/unit/presentation/web/features/aspm/posture-cards.test.tsx (6 tests) 118ms
+ ✓  web  tests/unit/presentation/web/components/features/settings/database-settings-section.test.tsx (4 tests) 41ms
+ ✓  web  tests/unit/presentation/web/features/aspm/sla-badge.test.tsx (7 tests) 92ms
+ ✓  web  tests/unit/presentation/web/components/common/inline-attachments/inline-attachments.test.tsx (13 tests) 124ms
+ ✓  web  tests/unit/presentation/web/features/aspm/severity-badge.test.tsx (7 tests) 163ms
+ ✓  web  tests/unit/presentation/web/common/feature-status-group.test.tsx (3 tests) 103ms
+ ✓  web  tests/unit/presentation/web/features/aspm/aspm-application-section.test.tsx (6 tests) 80ms
+ ✓  web  tests/unit/presentation/web/hooks/use-drawer-sync.test.ts (11 tests) 102ms
+ ✓  web  tests/unit/presentation/web/hooks/use-viewport-persistence.test.ts (21 tests) 40ms
+ ✓  web  tests/unit/presentation/web/components/agent-activity/agent-activity-feed.test.tsx (6 tests) 49ms
+ ✓  web  tests/unit/presentation/web/features/aspm/owner-map.test.tsx (6 tests) 48ms
+ ✓  web  tests/unit/presentation/web/features/aspm/asset-risk-graph.test.tsx (5 tests) 66ms
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's pause() method
+ ✓  web  tests/unit/presentation/web/app-layout-integration.test.tsx (4 tests) 67ms
+ ✓  web  tests/unit/presentation/web/use-theme.test.tsx (6 tests) 41ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-tree-table.test.tsx (4 tests) 35ms
+ ✓  web  tests/unit/presentation/web/features/application-page/open-in-control-center-menu-item.test.tsx (3 tests) 42ms
+ ✓  web  tests/unit/presentation/web/hooks/use-sound-action.test.ts (28 tests) 67ms
+ ✓  web  tests/unit/presentation/web/features/application-page/application-page-loader-patch.test.ts (4 tests) 67ms
+ ✓  web  tests/unit/presentation/web/common/elapsed-time.test.tsx (5 tests) 104ms
+ ✓  web  tests/unit/presentation/web/badge.test.tsx (3 tests) 130ms
+ ✓  web  tests/unit/presentation/web/common/loading-skeleton.test.tsx (9 tests) 60ms
+ ✓  web  tests/unit/presentation/web/hooks/sidebar-features-context.test.tsx (11 tests) 52ms
+ ✓  web  tests/unit/presentation/web/components/common/ci-status-badge/ci-status-badge.test.tsx (3 tests) 60ms
+ ✓  web  tests/unit/presentation/web/hooks/use-deploy-action.test.tsx (7 tests) 60ms
+ ✓  web  tests/unit/presentation/web/api/tools-install-stream.test.ts (4 tests) 136ms
+ ✓  web  tests/unit/presentation/web/lib/rtl-fonts.test.ts (7 tests) 64ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-create-drawer/feature-create-drawer.test.tsx (100 tests) 35075ms
+       ✓ renders the drawer header when open  613ms
+       ✓ renders cancel and submit buttons  1148ms
+       ✓ accepts text in the description field  1688ms
+       ✓ disables submit button when description is empty  429ms
+       ✓ enables submit button when description has content  845ms
+       ✓ calls onSubmit with payload containing description (no name field)  570ms
+       ✓ includes attachments array with file objects  765ms
+       ✓ sends approvalGates with only PRD checked  1395ms
+       ✓ sends all-true approvalGates when all checkboxes are checked  832ms
+       ✓ sends all-false approvalGates when no checkboxes are checked  367ms
+       ✓ resets all switches to defaults after close and reopen  346ms
+       ✓ submits correct approvalGates after All toggle  497ms
+       ✓ clears all form fields after submit without unmounting  2863ms
+       ✓ clears form data on submit so next open starts fresh  506ms
+       ✓ removes attachment when remove button is clicked  338ms
+       ✓ plays create sound on form submit  635ms
+       ✓ mode=fast submits with fast: true  917ms
+       ✓ mode=spec submits with fast: false  661ms
+       ✓ mode resets to default after submit  1332ms
+       ✓ submits the form when Ctrl+Enter is pressed in the textarea  306ms
+       ✓ submits the form when Meta+Enter is pressed in the textarea  482ms
+       ✓ does not submit on plain Enter (without modifier)  351ms
+       ✓ shows attachment chip after pasting an image from clipboard  334ms
+       ✓ includes sessionId in submitted payload  1159ms
+       ✓ submit button is disabled when no repo selected and repositoryPath is empty  661ms
+       ✓ submit button is enabled when repo is selected via combobox  800ms
+       ✓ handleSubmit includes selectedRepoPath in payload  707ms
+       ✓ shows check icon for selected repository  316ms
+       ✓ clicking "Add new repository..." opens folder picker and adds repo  320ms
+       ✓ can submit feature after adding new repo via combobox  742ms
+       ✓ resets forkAndPr state to false when canPushDirectly changes from false to true  826ms
+       ✓ calls getViewerPermission on repo change and updates toggle visibility  537ms
+       ✓ excludes forkAndPr from submission payload when canPush is true  474ms
+       ✓ keeps the mode picker editable when initialApplicationId is set  358ms
+       ✓ leaves description editable when initialApplicationId is set  470ms
+       ✓ submit payload uses fast=false (spec mode) when initialApplicationId is set  848ms
+ ✓  web  tests/unit/presentation/web/features/control-center/use-fab-actions.test.tsx (4 tests) 38ms
+ ✓  web  tests/unit/presentation/web/i18n.test.tsx (7 tests) 26ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/build-grouped-tree.test.ts (20 tests) 19ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/actions-column.test.ts (8 tests) 8ms
+ ✓  web  tests/unit/presentation/web/smoke-imports.test.ts (5 tests) 56ms
+ ✓  web  tests/unit/presentation/web/hooks/use-smart-deploy-state.test.ts (5 tests) 28ms
+ ✓  web  tests/unit/presentation/web/hooks/use-apps-only-route-guard.test.ts (13 tests) 21ms
+ ✓  web  tests/unit/presentation/web/hooks/use-tool-install-stream.test.ts (6 tests) 35ms
+ ✓  web  tests/unit/presentation/web/actions/features/create-feature.test.ts (21 tests) 12ms
+ ✓  web  tests/unit/presentation/web/app/build-graph-nodes.test.ts (22 tests) 23ms
+ ✓  web  tests/unit/presentation/web/app/dashboard/drawer/create/create-page.test.ts (5 tests) 9ms
+ ✓  web  tests/unit/presentation/web/lib/derive-graph.test.ts (22 tests) 20ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review-config.test.ts (11 tests) 5ms
+stderr | tests/unit/presentation/web/actions/deploy-feature.test.ts > deployFeature server action > returns {success:false, error} when the use case throws
+[deployFeature] error: Feature not found: nonexistent-id Error: Feature not found: nonexistent-id
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/tests/unit/presentation/web/actions/deploy-feature.test.ts:37:35
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/vitest@4.0.18_@opentelemetry+api@1.9.0_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_light_aa59cdbaf81e3a86c6d640de00a60c1e/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
+    at trace (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/vitest@4.0.18_@opentelemetry+api@1.9.0_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_light_aa59cdbaf81e3a86c6d640de00a60c1e/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:12)
+stderr | tests/unit/presentation/web/actions/deploy-feature.test.ts > deployFeature server action > returns a generic error for non-Error throws
+[deployFeature] error: Failed to deploy feature unexpected
+ ✓  web  tests/unit/presentation/web/actions/deploy-feature.test.ts (3 tests) 8ms
+ ✓  web  tests/unit/presentation/web/actions/update-model.test.ts (8 tests) 8ms
+ ✓  web  tests/unit/presentation/web/app/features/get-feature-tree-data.test.ts (11 tests) 11ms
+ ✓  web  tests/unit/presentation/web/actions/load-settings.test.ts (3 tests) 12ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/feature-row-actions-config.test.ts (14 tests) 13ms
+stderr | tests/unit/presentation/web/actions/deploy-repository.test.ts > deployRepository server action > returns {success:false, error} when the use case throws a validation error
+[deployRepository] error: repositoryPath must be an absolute path Error: repositoryPath must be an absolute path
+    at /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/tests/unit/presentation/web/actions/deploy-repository.test.ts:37:35
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/vitest@4.0.18_@opentelemetry+api@1.9.0_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_light_aa59cdbaf81e3a86c6d640de00a60c1e/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
+    at trace (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/vitest@4.0.18_@opentelemetry+api@1.9.0_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_light_aa59cdbaf81e3a86c6d640de00a60c1e/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-aspm-platform/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:12)
+stderr | tests/unit/presentation/web/actions/deploy-repository.test.ts > deployRepository server action > returns a generic error for non-Error throws
+[deployRepository] error: Failed to deploy repository boom
+ ✓  web  tests/unit/presentation/web/actions/deploy-repository.test.ts (3 tests) 12ms
+ ✓  web  tests/unit/presentation/web/actions/pick-files.test.ts (4 tests) 5ms
+ ✓  web  tests/unit/presentation/web/chat/tool-bubble-detect.test.ts (25 tests) 9ms
+ ✓  web  tests/unit/presentation/web/common/feature-node/derive-feature-state.test.ts (47 tests) 5ms
+ ✓  web  tests/unit/presentation/web/actions/open-folder.test.ts (12 tests) 10ms
+ ✓  web  tests/unit/presentation/web/actions/open-shell.test.ts (19 tests) 7ms
+ ✓  web  tests/unit/presentation/web/app/actions/get-feature-plan.test.ts (8 tests) 6ms
+ ✓  web  tests/unit/presentation/web/actions/update-feature-pinned-config.test.ts (7 tests) 9ms
+ ✓  web  tests/unit/presentation/web/app/actions/import-github-repository.test.ts (9 tests) 7ms
+ ✓  web  tests/unit/presentation/web/actions/get-viewer-permission.test.ts (8 tests) 10ms
+ ✓  web  tests/unit/presentation/web/actions/reject-feature.test.ts (12 tests) 5ms
+ ✓  web  tests/unit/presentation/web/hooks/deployment-status-store.test.ts (9 tests) 4ms
+ ✓  web  tests/unit/presentation/web/features/control-center/derive-state.test.ts (6 tests) 9ms
+ ✓  web  tests/unit/presentation/web/lib/parse-log-line.test.ts (25 tests) 18ms
+ ✓  web  tests/unit/presentation/web/api/version.test.ts (4 tests) 10ms
+ ✓  web  tests/unit/presentation/web/actions/get-deployment-status.test.ts (2 tests) 2ms
+ ✓  web  tests/unit/presentation/web/app/actions/list-github-repositories.test.ts (7 tests) 49ms
+ ✓  web  tests/unit/presentation/web/lib/feature-flags.test.ts (16 tests) 4ms
+ ✓  web  tests/unit/presentation/web/actions/merge-review/get-merge-review-data.test.ts (23 tests) 12ms
+ ✓  web  tests/unit/presentation/web/actions/approve-feature.test.ts (7 tests) 7ms
+ ✓  web  tests/unit/presentation/web/actions/features/delete-feature.test.ts (8 tests) 7ms
+ ✓  web  tests/unit/presentation/web/actions/get-supported-models.test.ts (6 tests) 8ms
+ ✓  web  tests/unit/presentation/web/actions/get-deployment-logs.test.ts (5 tests) 4ms
+ ✓  web  tests/unit/presentation/web/actions/update-settings.test.ts (6 tests) 9ms
+ ✓  web  tests/unit/presentation/web/actions/get-workflow-defaults.test.ts (4 tests) 3ms
+ ✓  web  tests/unit/presentation/web/actions/stop-deployment.test.ts (4 tests) 7ms
+ ✓  web  tests/unit/presentation/web/actions/get-feature-drawer-data.test.ts (7 tests) 9ms
+ ✓  web  tests/unit/presentation/web/app/actions/get-feature-phase-timings.test.ts (8 tests) 8ms
+ ✓  web  tests/unit/presentation/web/actions/open-ide.test.ts (9 tests) 17ms
+ ✓  web  tests/unit/presentation/web/lib/format-duration.test.ts (9 tests) 5ms
+ ✓  web  tests/unit/presentation/web/features/aspm/build-asset-graph-nodes.test.ts (5 tests) 5ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/build-tree-data.test.ts (8 tests) 6ms
+ ✓  web  tests/unit/presentation/web/actions/pick-folder.test.ts (4 tests) 2ms
+ ✓  web  tests/unit/presentation/web/lib/language.test.ts (11 tests) 4ms
+ ✓  web  tests/unit/presentation/web/app/features/inventory-filters.test.ts (24 tests) 7ms
+ ✓  web  tests/unit/presentation/web/lib/url-params.test.ts (7 tests) 3ms
+ ✓  web  tests/unit/presentation/web/components/common/control-center-drawer/drawer-view.test.ts (11 tests) 3ms
+ ✓  web  tests/unit/presentation/web/app/actions/list-github-organizations.test.ts (4 tests) 3ms
+ ✓  web  tests/unit/presentation/web/lib/compare-versions.test.ts (7 tests) 2ms
+ ✓  web  tests/unit/presentation/web/actions/compose-user-input.test.ts (7 tests) 2ms
+ ✓  web  tests/unit/presentation/web/components/features/chat/is-workflow-in-flight.test.ts (6 tests) 2ms
+ Test Files  634 passed (634)
+      Tests  7730 passed (7730)
+   Start at  21:42:39
+   Duration  61.43s (transform 24.67s, setup 75.71s, import 106.13s, tests 154.93s, environment 124.70s)

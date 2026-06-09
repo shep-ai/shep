@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DataClassification.yaml
+type: string
+enum:
+  - Public
+  - Internal
+  - Confidential
+  - Restricted
+description: Sensitivity classification for the data handled by an ASPM asset

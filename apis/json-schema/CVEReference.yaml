@@ -1,0 +1,22 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CVEReference.yaml
+type: object
+properties:
+  cveId:
+    type: string
+    description: CVE identifier (e.g. CVE-2024-12345)
+  cvssScore:
+    type: number
+    description: CVSS v3.x base score (0.0-10.0)
+  cvssVector:
+    type: string
+    description: CVSS vector string (e.g. CVSS:3.1/AV:N/AC:L/...)
+  epssPercentile:
+    type: number
+    description: EPSS percentile (0.0-1.0)
+  kev:
+    type: boolean
+    description: Whether the CVE appears in the CISA KEV catalog
+required:
+  - cveId
+description: Reference to a CVE record with optional CVSS / EPSS / KEV enrichment

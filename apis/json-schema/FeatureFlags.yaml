@@ -16,15 +16,15 @@ properties:
     description: Use the built-in React file manager instead of the native OS folder picker
   projects:
     type: boolean
-    default: false
+    default: true
     description: Enable Projects pages and navigation (project management)
   codeReview:
     type: boolean
-    default: false
+    default: true
     description: Enable AI-powered code review for pull requests
   collaboration:
     type: boolean
-    default: false
+    default: true
     description: Enable agent collaboration, supervisor agent, and unified question pipeline (spec 093)
   bedrockIntegration:
     type: boolean
@@ -34,6 +34,10 @@ properties:
     type: boolean
     default: false
     description: Enable WhatsApp-native task dispatch and interactive control (spec 101)
+  aspm:
+    type: boolean
+    default: true
+    description: Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098)
 required:
   - envDeploy
   - debug
@@ -43,4 +47,5 @@ required:
   - collaboration
   - bedrockIntegration
   - whatsappDispatch
+  - aspm
 description: Feature flag toggles for runtime feature control

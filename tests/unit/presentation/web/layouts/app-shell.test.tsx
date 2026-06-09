@@ -58,6 +58,7 @@ const defaultFlags = {
   collaboration: false,
   bedrockIntegration: false,
   whatsappDispatch: false,
+  aspm: false,
 };
 
 function renderShell(children: React.ReactNode) {

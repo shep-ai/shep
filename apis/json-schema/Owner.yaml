@@ -1,0 +1,21 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Owner.yaml
+type: object
+properties:
+  name:
+    type: string
+    description: Human-readable owner name
+  handle:
+    type: string
+    description: Optional contact handle (e.g. email, Slack handle, GitHub login)
+  teamId:
+    $ref: UUID.yaml
+    description: Team this owner belongs to
+  notes:
+    type: string
+    description: Free-form notes about this owner (e.g. on-call rotation, escalation)
+required:
+  - name
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: Owner of ASPM assets and findings (person or team identifier)

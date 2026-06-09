@@ -1,0 +1,11 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FindingState.yaml
+type: string
+enum:
+  - Open
+  - Triaged
+  - InProgress
+  - Resolved
+  - Closed
+  - Exception
+description: Lifecycle state of a security finding

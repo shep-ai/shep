@@ -1,0 +1,252 @@
+{
+  "cases": [
+    {
+      "name": "info-only-no-context",
+      "inputs": {
+        "canonicalSeverity": "Info"
+      },
+      "expected": {
+        "total": 0,
+        "cvssContribution": 0,
+        "epssContribution": 0,
+        "kevContribution": 0,
+        "exposureContribution": 0,
+        "criticalityContribution": 0,
+        "dataClassificationContribution": 0,
+        "inputsHash": "90329103"
+      }
+    },
+    {
+      "name": "low-no-context",
+      "inputs": {
+        "canonicalSeverity": "Low"
+      },
+      "expected": {
+        "total": 7,
+        "cvssContribution": 7,
+        "epssContribution": 0,
+        "kevContribution": 0,
+        "exposureContribution": 0,
+        "criticalityContribution": 0,
+        "dataClassificationContribution": 0,
+        "inputsHash": "8dab0697"
+      }
+    },
+    {
+      "name": "medium-no-context",
+      "inputs": {
+        "canonicalSeverity": "Medium"
+      },
+      "expected": {
+        "total": 19,
+        "cvssContribution": 19.25,
+        "epssContribution": 0,
+        "kevContribution": 0,
+        "exposureContribution": 0,
+        "criticalityContribution": 0,
+        "dataClassificationContribution": 0,
+        "inputsHash": "c9086e20"
+      }
+    },
+    {
+      "name": "high-no-context",
+      "inputs": {
+        "canonicalSeverity": "High"
+      },
+      "expected": {
+        "total": 28,
+        "cvssContribution": 28,
+        "epssContribution": 0,
+        "kevContribution": 0,
+        "exposureContribution": 0,
+        "criticalityContribution": 0,
+        "dataClassificationContribution": 0,
+        "inputsHash": "5fe52eeb"
+      }
+    },
+    {
+      "name": "critical-no-context",
+      "inputs": {
+        "canonicalSeverity": "Critical"
+      },
+      "expected": {
+        "total": 35,
+        "cvssContribution": 35,
+        "epssContribution": 0,
+        "kevContribution": 0,
+        "exposureContribution": 0,
+        "criticalityContribution": 0,
+        "dataClassificationContribution": 0,
+        "inputsHash": "1bd9ba9a"
+      }
+    },
+    {
+      "name": "high-with-cvss-78",
+      "inputs": {
+        "canonicalSeverity": "High",
+        "cvssBase": 7.8
+      },
+      "expected": {
+        "total": 27,
+        "cvssContribution": 27.3,
+        "epssContribution": 0,
+        "kevContribution": 0,
+        "exposureContribution": 0,
+        "criticalityContribution": 0,
+        "dataClassificationContribution": 0,
+        "inputsHash": "b7ea80c7"
+      }
+    },
+    {
+      "name": "critical-with-epss-mid",
+      "inputs": {
+        "canonicalSeverity": "Critical",
+        "epssPercentile": 0.5
+      },
+      "expected": {
+        "total": 43,
+        "cvssContribution": 35,
+        "epssContribution": 7.5,
+        "kevContribution": 0,
+        "exposureContribution": 0,
+        "criticalityContribution": 0,
+        "dataClassificationContribution": 0,
+        "inputsHash": "57edce5e"
+      }
+    },
+    {
+      "name": "high-kev-listed",
+      "inputs": {
+        "canonicalSeverity": "High",
+        "kev": true
+      },
+      "expected": {
+        "total": 48,
+        "cvssContribution": 28,
+        "epssContribution": 0,
+        "kevContribution": 20,
+        "exposureContribution": 0,
+        "criticalityContribution": 0,
+        "dataClassificationContribution": 0,
+        "inputsHash": "cced14c6"
+      }
+    },
+    {
+      "name": "critical-kev-epss-high",
+      "inputs": {
+        "canonicalSeverity": "Critical",
+        "cvssBase": 9.8,
+        "epssPercentile": 0.9,
+        "kev": true
+      },
+      "expected": {
+        "total": 68,
+        "cvssContribution": 34.3,
+        "epssContribution": 13.5,
+        "kevContribution": 20,
+        "exposureContribution": 0,
+        "criticalityContribution": 0,
+        "dataClassificationContribution": 0,
+        "inputsHash": "b5d05107"
+      }
+    },
+    {
+      "name": "medium-internet-tier1-confidential",
+      "inputs": {
+        "canonicalSeverity": "Medium",
+        "exposure": "Internet",
+        "criticality": "Tier1",
+        "dataClassification": "Confidential"
+      },
+      "expected": {
+        "total": 48,
+        "cvssContribution": 19.25,
+        "epssContribution": 0,
+        "kevContribution": 0,
+        "exposureContribution": 15,
+        "criticalityContribution": 10,
+        "dataClassificationContribution": 3.5,
+        "inputsHash": "04d92a0f"
+      }
+    },
+    {
+      "name": "high-airgapped-tier3-public",
+      "inputs": {
+        "canonicalSeverity": "High",
+        "exposure": "Airgapped",
+        "criticality": "Tier3",
+        "dataClassification": "Public"
+      },
+      "expected": {
+        "total": 33,
+        "cvssContribution": 28,
+        "epssContribution": 0,
+        "kevContribution": 0,
+        "exposureContribution": 1.5,
+        "criticalityContribution": 3,
+        "dataClassificationContribution": 0,
+        "inputsHash": "3ba49a99"
+      }
+    },
+    {
+      "name": "fully-saturated-max-100",
+      "inputs": {
+        "canonicalSeverity": "Critical",
+        "cvssBase": 10,
+        "epssPercentile": 1,
+        "kev": true,
+        "exposure": "Internet",
+        "criticality": "Tier1",
+        "dataClassification": "Restricted"
+      },
+      "expected": {
+        "total": 100,
+        "cvssContribution": 35,
+        "epssContribution": 15,
+        "kevContribution": 20,
+        "exposureContribution": 15,
+        "criticalityContribution": 10,
+        "dataClassificationContribution": 5,
+        "inputsHash": "390de74f"
+      }
+    },
+    {
+      "name": "no-cve-secret-finding-high",
+      "inputs": {
+        "canonicalSeverity": "High",
+        "exposure": "Internet",
+        "criticality": "Tier2",
+        "dataClassification": "Restricted"
+      },
+      "expected": {
+        "total": 54,
+        "cvssContribution": 28,
+        "epssContribution": 0,
+        "kevContribution": 0,
+        "exposureContribution": 15,
+        "criticalityContribution": 6,
+        "dataClassificationContribution": 5,
+        "inputsHash": "4579b7cc"
+      }
+    },
+    {
+      "name": "low-internal-tier2-internal",
+      "inputs": {
+        "canonicalSeverity": "Low",
+        "exposure": "Internal",
+        "criticality": "Tier2",
+        "dataClassification": "Internal"
+      },
+      "expected": {
+        "total": 22,
+        "cvssContribution": 7,
+        "epssContribution": 0,
+        "kevContribution": 0,
+        "exposureContribution": 7.5,
+        "criticalityContribution": 6,
+        "dataClassificationContribution": 1.5,
+        "inputsHash": "bbce3cc0"
+      }
+    }
+  ]
+}

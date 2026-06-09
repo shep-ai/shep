@@ -1,0 +1,53 @@
+feature:
+  id: "098-aspm-platform"
+  name: "aspm-platform"
+  number: 98
+  branch: "feat/098-aspm-platform"
+  lifecycle: "research"
+  createdAt: "2026-05-19T10:39:28Z"
+status:
+  phase: "phase-11"
+  progress:
+    completed: 82
+    total: 84
+    percentage: 98
+  currentTask: null
+  lastUpdated: "2026-05-20T22:00:00.000Z"
+  lastUpdatedBy: "user-implement:phase-11"
+  completedPhases:
+    - "analyze"
+    - "requirements"
+    - "research"
+    - "plan"
+    - "phase-1"
+    - "phase-2"
+    - "phase-3"
+    - "phase-4"
+    - "phase-5"
+    - "phase-6"
+    - "phase-7"
+    - "phase-8"
+    - "phase-9"
+    - "phase-10"
+    - "evidence"
+  upcomingPhases: []
+  deferredTasks:
+    - id: "task-76"
+      reason: "SSE /api/aspm/scan/stream — not blocking since the orchestrator returns the full ScanApplicationResult synchronously. Tracked as follow-up."
+    - id: "task-83"
+      reason: "Playwright E2E happy path — requires a live Shep daemon + fixture repo with seeded vulnerabilities. Tracked as follow-up; the orchestration use case has unit coverage and the CLI/server actions are end-to-end testable manually."
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-05-19T10:39:28Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []

@@ -1,0 +1,43 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FindingFilter.yaml
+type: object
+properties:
+  severities:
+    type: array
+    items:
+      $ref: CanonicalSeverity.yaml
+    description: Restrict to these canonical severities
+  findingDomains:
+    type: array
+    items:
+      $ref: FindingDomain.yaml
+    description: Restrict to these finding domains
+  applicationIds:
+    type: array
+    items:
+      $ref: UUID.yaml
+    description: Restrict to findings on these applications
+  ownerIds:
+    type: array
+    items:
+      $ref: UUID.yaml
+    description: Restrict to findings owned by these owners
+  kev:
+    type: boolean
+    description: Restrict to findings with KEV-listed CVEs (true) or non-KEV (false)
+  states:
+    type: array
+    items:
+      $ref: FindingState.yaml
+    description: Restrict to these finding states
+  ruleIds:
+    type: array
+    items:
+      type: string
+    description: Restrict to these scanner rule identifiers
+  cveIds:
+    type: array
+    items:
+      type: string
+    description: Restrict to these CVE identifiers
+description: Reusable filter shape for findings list / ranking / campaign queries

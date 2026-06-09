@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: AssetType.yaml
+type: string
+enum:
+  - Application
+  - Service
+  - ApiAsset
+  - CloudEnvironment
+description: Discriminator for the kind of ASPM asset a finding attaches to

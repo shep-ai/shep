@@ -1,0 +1,25 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Service.yaml
+type: object
+properties:
+  name:
+    type: string
+    description: Human-readable service name
+  slug:
+    type: string
+    description: Optional short identifier for URL slugs and CLI usage
+  applicationId:
+    $ref: UUID.yaml
+    description: Application this service belongs to
+  ownerId:
+    $ref: UUID.yaml
+    description: Optional owner override (otherwise inherits from Application)
+  exposure:
+    $ref: Exposure.yaml
+    description: Optional exposure override (otherwise inherits from Application)
+required:
+  - name
+  - applicationId
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: Service — adjacent asset attached to an Application

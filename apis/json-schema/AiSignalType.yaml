@@ -1,0 +1,11 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: AiSignalType.yaml
+type: string
+enum:
+  - SecretInDiff
+  - HighRiskDependencyAdded
+  - LargeUnreviewedDiff
+  - LicenseViolation
+  - PromptInjectionShape
+  - Other
+description: Type of AI-generated change risk signal

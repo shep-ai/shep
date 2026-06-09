@@ -17,6 +17,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { CiStatusBadge } from '@/components/common/ci-status-badge';
 import { DrawerActionBar } from '@/components/common/drawer-action-bar';
 import { DiffView } from './diff-view';
@@ -40,6 +41,44 @@ function getExtension(path: string): string {
 /** Build the API URL for serving an evidence file (paths are pre-normalized to absolute). */
 function buildEvidenceUrl(absolutePath: string): string {
   return `/api/evidence?path=${encodeURIComponent(absolutePath)}`;
+}
+
+/**
+ * Image preview with click-to-open-fullscreen behavior.
+ *
+ * The thumbnail is rendered as a `<button>` so it's keyboard-focusable; activation
+ * opens a Dialog containing the same image scaled to fit the viewport. The Dialog's
+ * built-in overlay click + ESC + close button all dismiss.
+ */
+function EvidenceImage({ url, description }: { url: string; description: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="group ring-offset-background focus-visible:ring-ring block w-full cursor-zoom-in rounded-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+        aria-label={`Open ${description} full size`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={url}
+          alt={description}
+          className="max-h-80 w-full rounded-md border object-contain transition-opacity group-hover:opacity-90"
+          loading="lazy"
+        />
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="flex h-[90vh] w-[90vw] max-w-none flex-col gap-3 p-4 sm:rounded-lg">
+          <DialogTitle className="pe-8 text-sm font-medium">{description}</DialogTitle>
+          <div className="bg-muted/30 flex min-h-0 flex-1 items-center justify-center overflow-auto rounded-md">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={url} alt={description} className="max-h-full max-w-full object-contain" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
 
 function EvidenceItem({ evidence }: { evidence: MergeReviewEvidence }) {
@@ -85,13 +124,7 @@ function EvidenceItem({ evidence }: { evidence: MergeReviewEvidence }) {
       {expanded && url ? (
         <div className="border-border border-t px-3 py-2.5">
           {isImage ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={url}
-              alt={evidence.description}
-              className="max-h-80 w-full rounded-md border object-contain"
-              loading="lazy"
-            />
+            <EvidenceImage url={url} description={evidence.description} />
           ) : isVideo ? (
             <video
               src={url}

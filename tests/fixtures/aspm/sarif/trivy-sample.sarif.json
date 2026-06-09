@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Trivy",
+          "rules": [
+            {
+              "id": "CVE-2024-1234",
+              "name": "openssl-vuln",
+              "shortDescription": { "text": "OpenSSL DoS" },
+              "defaultConfiguration": { "level": "error" },
+              "properties": {
+                "tags": ["dependency", "cve"],
+                "cve": "CVE-2024-1234",
+                "cwe": "CWE-400",
+                "security-severity": "8.8"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CVE-2024-1234",
+          "level": "error",
+          "message": { "text": "openssl@3.0.2 is vulnerable to CVE-2024-1234" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "package-lock.json" },
+                "region": { "startLine": 1 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

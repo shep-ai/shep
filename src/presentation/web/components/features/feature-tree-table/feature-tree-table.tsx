@@ -43,6 +43,34 @@ export interface FeatureTreeRow {
   _applicationId?: string;
   /** Optional cloud preview URL for application rows */
   _applicationCloudUrl?: string;
+  /** ASPM canonical-severity rollup attached to application rows for the
+   *  /aspm/inventory tree-table — undefined on non-app rows or when the
+   *  ASPM module is disabled. Consumed by callers via {@link FeatureTreeTableProps.extraColumns}. */
+  _aspmOpenBySeverity?: { severity: string; count: number }[];
+  /** ASPM total open finding count for the application row. */
+  _aspmTotalOpen?: number;
+  /** Timestamp the application was last scanned by the native scanner. */
+  _aspmLastScannedAt?: Date | null;
+  /**
+   * Marks a synthetic placeholder row emitted by the ASPM inventory builder
+   * for a Repository that has no Application attached yet. The repo still
+   * shows in the tree (so users can trigger Scan-all or add an app), but no
+   * actions portal or posture badges are rendered for the row itself.
+   */
+  _isRepoPlaceholder?: boolean;
+  /**
+   * Marks a row that represents a Feature (git worktree) on the ASPM
+   * inventory tree. Feature rows can live either as `_children` of an
+   * application row (when the feature has `applicationId` set) or as
+   * top-level rows under a repository group (when the feature is not
+   * scoped to any application). Carries `_featureId` + `_featureWorktreePath`
+   * so the row-actions manager can portal a "Scan this branch" trigger.
+   */
+  _isAspmFeature?: boolean;
+  /** Domain Feature.id when this row represents a feature/worktree. */
+  _featureId?: string;
+  /** Absolute path to the feature's git worktree — what the scanner walks. */
+  _featureWorktreePath?: string;
 }
 
 export interface InventoryRepo {
@@ -71,6 +99,12 @@ export interface FeatureTreeTableProps {
   onTableRender?: (container: HTMLDivElement) => void;
   /** Called when the (+) button on a repo group header is clicked, with the repository path. */
   onCreateFeatureForRepo?: (repositoryPath: string) => void;
+  /**
+   * Extra columns inserted between the standard Branch column and the
+   * frozen actions column. Lets the /aspm/inventory tree-table append
+   * severity-badge + last-scanned columns without forking the table.
+   */
+  extraColumns?: ColumnDefinition[];
 }
 
 // ── Constants ────────────────────────────────────────────────
@@ -252,10 +286,16 @@ export function actionsColumnFormatter(cell: CellComponent): string | HTMLElemen
 interface ColumnConfig {
   onRowClick?: (row: FeatureTreeRow) => void;
   groupBy?: GroupByField | null;
+  /** Extra columns appended before the frozen actions column. */
+  extraColumns?: ColumnDefinition[];
 }
 
 /** All possible columns. We'll filter out the grouped-by column in tree mode. */
-export function buildColumns({ onRowClick, groupBy }: ColumnConfig): ColumnDefinition[] {
+export function buildColumns({
+  onRowClick,
+  groupBy,
+  extraColumns,
+}: ColumnConfig): ColumnDefinition[] {
   const clickProps = onRowClick
     ? {
         cellClick: (_e: UIEvent, cell: CellComponent) => {
@@ -312,6 +352,7 @@ export function buildColumns({ onRowClick, groupBy }: ColumnConfig): ColumnDefin
       headerSort: !isGrouped,
       formatter: branchFormatter,
     },
+    ...(extraColumns ?? []),
     {
       title: '',
       field: ACTIONS_COLUMN_FIELD,
@@ -466,6 +507,7 @@ export function FeatureTreeTable({
   itemSortDir = 'asc',
   onTableRender,
   onCreateFeatureForRepo,
+  extraColumns,
 }: FeatureTreeTableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const tabulatorRef = useRef<Tabulator | null>(null);
@@ -484,7 +526,7 @@ export function FeatureTreeTable({
     if (!containerRef.current) return;
 
     const isGrouped = !!groupBy;
-    const columns = buildColumns({ onRowClick: stableOnRowClick, groupBy });
+    const columns = buildColumns({ onRowClick: stableOnRowClick, groupBy, extraColumns });
 
     const tableData = isGrouped
       ? buildGroupedTree(data, groupBy!, groupSortDir, itemSortField, itemSortDir)
@@ -541,7 +583,7 @@ export function FeatureTreeTable({
       table.destroy();
       tabulatorRef.current = null;
     };
-  }, [data, stableOnRowClick, groupBy, groupSortDir, itemSortField, itemSortDir]);
+  }, [data, stableOnRowClick, groupBy, groupSortDir, itemSortField, itemSortDir, extraColumns]);
 
   return (
     <div

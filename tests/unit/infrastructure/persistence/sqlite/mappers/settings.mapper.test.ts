@@ -161,6 +161,7 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     feature_flag_collaboration: 0,
     feature_flag_bedrock_integration: 0,
     feature_flag_whatsapp_dispatch: 0,
+    feature_flag_aspm: 0,
     interactive_agent_enabled: 1,
     interactive_agent_auto_timeout_minutes: 15,
     interactive_agent_max_concurrent_sessions: 3,

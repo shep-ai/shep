@@ -57,6 +57,7 @@ vi.mock('@/hooks/feature-flags-context', () => ({
     collaboration: false,
     bedrockIntegration: false,
     whatsappDispatch: false,
+    aspm: false,
   })),
 }));
 
@@ -79,6 +80,7 @@ describe('AddRepositoryButton', () => {
       collaboration: false,
       bedrockIntegration: false,
       whatsappDispatch: false,
+      aspm: false,
     });
   });
 
@@ -176,6 +178,7 @@ describe('AddRepositoryButton', () => {
         collaboration: false,
         bedrockIntegration: false,
         whatsappDispatch: false,
+        aspm: false,
       });
     });
 
@@ -306,6 +309,7 @@ describe('AddRepositoryButton', () => {
         collaboration: false,
         bedrockIntegration: false,
         whatsappDispatch: false,
+        aspm: false,
       });
     });
 
@@ -378,6 +382,7 @@ describe('AddRepositoryButton', () => {
         collaboration: false,
         bedrockIntegration: false,
         whatsappDispatch: false,
+        aspm: false,
       });
       const user = userEvent.setup();
       render(<AddRepositoryButton />);

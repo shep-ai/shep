@@ -1,0 +1,38 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RiskException.yaml
+type: object
+properties:
+  findingId:
+    $ref: UUID.yaml
+    description: Finding this exception applies to
+  reason:
+    $ref: ExceptionReason.yaml
+    description: Typed reason from the exception taxonomy
+  justification:
+    type: string
+    description: Human-readable justification (free-form)
+  declaredBy:
+    $ref: UUID.yaml
+    description: Who declared the exception (owner id)
+  declaredAt:
+    type: string
+    format: date-time
+    description: When the exception was declared
+  expiresAt:
+    type: string
+    format: date-time
+    description: Expiry date — once passed the finding re-enters posture rollups
+  status:
+    $ref: RiskExceptionStatus.yaml
+    description: Current lifecycle status
+required:
+  - findingId
+  - reason
+  - justification
+  - declaredBy
+  - declaredAt
+  - expiresAt
+  - status
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: Self-declared risk exception masking a finding from posture and SLA math

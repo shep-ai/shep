@@ -19,6 +19,7 @@ export interface FeatureFlagsState {
   projects: boolean;
   codeReview: boolean;
   collaboration: boolean;
+  aspm: boolean;
   bedrockIntegration: boolean;
   whatsappDispatch: boolean;
 }
@@ -35,6 +36,7 @@ export function getFeatureFlags(): FeatureFlagsState {
           projects: flags.projects,
           codeReview: flags.codeReview,
           collaboration: flags.collaboration,
+          aspm: flags.aspm,
           bedrockIntegration: flags.bedrockIntegration,
           whatsappDispatch: flags.whatsappDispatch,
         };
@@ -51,9 +53,22 @@ export function getFeatureFlags(): FeatureFlagsState {
         : true,
     debug: false,
     reactFileManager: isEnabled(process.env.NEXT_PUBLIC_FLAG_REACT_FILE_MANAGER),
-    projects: false,
-    codeReview: false,
-    collaboration: isEnabled(process.env.NEXT_PUBLIC_FLAG_COLLABORATION),
+    projects:
+      process.env.NEXT_PUBLIC_FLAG_PROJECTS !== undefined
+        ? isEnabled(process.env.NEXT_PUBLIC_FLAG_PROJECTS)
+        : true,
+    codeReview:
+      process.env.NEXT_PUBLIC_FLAG_CODE_REVIEW !== undefined
+        ? isEnabled(process.env.NEXT_PUBLIC_FLAG_CODE_REVIEW)
+        : true,
+    collaboration:
+      process.env.NEXT_PUBLIC_FLAG_COLLABORATION !== undefined
+        ? isEnabled(process.env.NEXT_PUBLIC_FLAG_COLLABORATION)
+        : true,
+    aspm:
+      process.env.NEXT_PUBLIC_FLAG_ASPM !== undefined
+        ? isEnabled(process.env.NEXT_PUBLIC_FLAG_ASPM)
+        : true,
     bedrockIntegration: isEnabled(process.env.NEXT_PUBLIC_FLAG_BEDROCK_INTEGRATION),
     whatsappDispatch: isEnabled(process.env.NEXT_PUBLIC_FLAG_WHATSAPP_DISPATCH),
   };
@@ -105,6 +120,9 @@ export const featureFlags = {
   },
   get collaboration() {
     return getFeatureFlags().collaboration;
+  },
+  get aspm() {
+    return getFeatureFlags().aspm;
   },
   get bedrockIntegration() {
     return getFeatureFlags().bedrockIntegration;

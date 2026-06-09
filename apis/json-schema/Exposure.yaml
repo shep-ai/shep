@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Exposure.yaml
+type: string
+enum:
+  - Internet
+  - Internal
+  - Airgapped
+  - Unknown
+description: Exposure classification for an ASPM asset

@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CanonicalSeverity.yaml
+type: string
+enum:
+  - Critical
+  - High
+  - Medium
+  - Low
+  - Info
+description: Canonical 5-level severity for ASPM findings (aligned with CVSS v3.1 bands)

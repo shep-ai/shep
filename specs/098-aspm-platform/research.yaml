@@ -1,0 +1,867 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "aspm-platform"
+summary: >
+  Technical research for adding an Application Security Posture Management (ASPM) module to Shep.
+  Confirms a TypeSpec-first, Clean Architecture, ports-and-adapters approach anchored on the existing
+  Application entity (extended with criticality/exposure/dataClassification/businessUnit), with
+  SARIF + CycloneDX ingestion ports, a transparent composite RiskScore value object computed by a
+  pure-domain function, KEV/EPSS enrichment behind IExploitIntelPort, a calendar-day ISlaClockPort,
+  and a separate AiChangeRiskSignal entity for AI-generated change risk. Persistence uses
+  better-sqlite3 with numbered, idempotent migrations and a register-aspm DI module wired into the
+  existing tsyringe container.
+
+# Relationships
+relatedFeatures: []
+
+technologies:
+  - "TypeSpec (tsp/) — domain model authoring; generates packages/core/src/domain/generated/output.ts"
+  - "better-sqlite3 + umzug — embedded persistence with numbered, idempotent migrations"
+  - "tsyringe — dependency injection via @injectable / @inject string tokens"
+  - "Vitest — unit + integration tests under tests/"
+  - "Playwright — e2e tests"
+  - "Next.js App Router — src/presentation/web with server + client components"
+  - "React + Tailwind + shadcn/ui — web UI primitives"
+  - "Storybook — mandatory colocated .stories.tsx for every web component"
+  - "Commander — CLI under src/presentation/cli/commands"
+  - "Server-Sent Events (SSE) — Shep's existing live-update transport"
+  - "React Flow (@xyflow/react) — asset-risk relationship graph view (already in tree)"
+  - "ajv + ajv-formats — JSON Schema validation for SARIF/CycloneDX"
+  - "@cyclonedx/cyclonedx-library — CycloneDX 1.5+ parsing (conditional on cross-platform fit)"
+  - "sarif (types-only npm package) — SARIF v2.1.0 TypeScript types"
+  - "yaml — parser for .shep/ownership.yaml"
+  - "undici (Node fetch) — KEV/EPSS feed download"
+  - "OWASP ASVS / CWE Top 25 / SARIF v2.1.0 / CycloneDX 1.5 / CISA KEV / FIRST EPSS — industry vocabularies"
+
+relatedLinks:
+  - title: "Clean Architecture overview (project doc)"
+    url: "./docs/architecture/clean-architecture.md"
+  - title: "Repository pattern + DI (project doc)"
+    url: "./docs/architecture/repository-pattern.md"
+  - title: "TypeSpec authoring guide (project doc)"
+    url: "./docs/development/typespec-guide.md"
+  - title: "TDD guide (project doc)"
+    url: "./docs/development/tdd-guide.md"
+  - title: "Web UI architecture (project doc)"
+    url: "./docs/ui/architecture.md"
+  - title: "OWASP ASVS — application security verification standard"
+    url: "https://owasp.org/www-project-application-security-verification-standard/"
+  - title: "OASIS SARIF v2.1.0 specification"
+    url: "https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html"
+  - title: "CISA Known Exploited Vulnerabilities (KEV) catalog"
+    url: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+  - title: "FIRST EPSS — Exploit Prediction Scoring System"
+    url: "https://www.first.org/epss/"
+  - title: "OWASP CycloneDX SBOM spec"
+    url: "https://cyclonedx.org/specification/overview/"
+  - title: "CVSS v3.1 specification"
+    url: "https://www.first.org/cvss/v3.1/specification-document"
+  - title: "CWE Top 25 most dangerous software weaknesses"
+    url: "https://cwe.mitre.org/top25/"
+
+# Structured technology decisions
+decisions:
+  - title: "Asset model — extend Application vs. introduce SecurityAsset"
+    chosen: "Extend the existing Application TypeSpec entity with optional ASPM fields (criticality, exposure, dataClassification, businessUnit) and add narrow adjacent entities (Service, ApiAsset, CloudEnvironment) only for assets that genuinely don't map to an Application."
+    rejected:
+      - "Polymorphic SecurityAsset entity — duplicates ownership/exposure metadata, requires double lookups for every finding, and drifts from changes to the Application entity."
+      - "Replace Application as the asset anchor entirely — too invasive; would force breaking changes across cycles/features/agents/deployment that already key off Application."
+    rationale: >
+      Application is already the canonical workspace anchor in tsp/domain/entities/application.tsp
+      (repository, agent session, deployment status, features/cycles). Extending it with optional
+      ASPM context keeps risk on the same object engineers and AppSec already work with, gives
+      ownership/feature-link rollups for free, and matches the codebase's TypeSpec-first +
+      'extend SoftDeletableEntity' pattern. The existing application.tsp already mixes operational
+      and deployment context (cloudDeploymentProvider, cloudDeploymentStatus, ...) so adding
+      criticality/exposure/dataClassification/businessUnit is the consistent move. Service /
+      ApiAsset / CloudEnvironment are added only as adjacent entities to cover real assets that
+      aren't applications, anchored back to an Application by id.
+
+  - title: "Risk scoring — transparent composite vs. opaque vs. pass-through"
+    chosen: "A transparent composite RiskScore value object (total 0-100) computed by a pure-domain function combining CVSS base severity, EPSS percentile, KEV membership boost, asset exposure, asset criticality, and data classification, with every contribution stored on the entity for audit."
+    rejected:
+      - "Proprietary opaque score — not explainable to AppSec/auditors, impossible to defend in postmortems, hard to test deterministically."
+      - "Pass-through scanner severity — defeats the entire purpose of ASPM (unified prioritization across scanners); 'High' from Snyk isn't 'High' from Semgrep."
+    rationale: >
+      Composite scoring is the only option that delivers on the feature's core promise (prioritize
+      what matters across scanners). Implementing it as a pure-domain function (no infra deps, no
+      Date.now(), no env access) keeps NFR-9 (Determinism) satisfied, enables a fixture-driven
+      golden-file test asserting stable output across multiple inputs (NFR-3), and lets the UI
+      render the breakdown. CVSS+EPSS+KEV+exposure+criticality+dataClassification is the
+      industry-standard envelope used by every credible ASPM and matches CISA BOD 22-01 reasoning.
+      Weights are documented constants in the domain module, not magic numbers in commands or
+      components (.claude/rules/code-quality.md). KEV/EPSS feed adapters can ship as stubs
+      returning null — scoring degrades gracefully to CVSS+context only.
+
+  - title: "Ingestion formats — SARIF + CycloneDX vs. SARIF only vs. broad vendor coverage"
+    chosen: "Two open-standard ingestion ports in MVP: IFindingIngestPort for SARIF v2.1.0 (covers SAST/IaC/secret/container) and ISbomPort for CycloneDX 1.5+ (covers dependency inventories with embedded vulnerabilities). Both ports are designed so SPDX, Snyk-native, Dependabot, GHAS and runtime adapters can land in follow-up epics without rewriting use cases."
+    rejected:
+      - "SARIF only — misses the dependency/SBOM context that is precisely what makes EPSS/KEV scoring meaningful for the dependency domain."
+      - "SARIF + CycloneDX + SPDX + vendor-native (Snyk/Dependabot/GHAS) in MVP — XL adapter sprawl, much of it stub-quality on day one, locks provider-specific behaviour inside infrastructure prematurely."
+    rationale: >
+      SARIF and CycloneDX together cover ~80% of real-world AppSec scanner output as open OASIS/OWASP
+      standards. Both are JSON-shaped and schema-validatable (ajv). The port interfaces
+      (IFindingIngestPort, ISbomPort) live in application/ports/output/services/ next to the
+      existing pattern (file-system-service.interface.ts, deployment-service.interface.ts).
+      Concrete SARIF/CycloneDX adapters live in infrastructure/services/ and are wired through
+      register-aspm.ts. Adding SPDX or Snyk-native later is purely an infrastructure addition
+      behind the same port — the ingest-findings use case never changes.
+
+  - title: "Ownership source — declared YAML + UI override vs. CODEOWNERS-only vs. UI-only"
+    chosen: "Two-source ownership with deterministic priority resolution: (1) UI-declared override on Application/Service/ApiAsset, (2) .shep/ownership.yaml checked into the Application's repository (parsed via IOwnershipYamlReader). CODEOWNERS-derived ownership is reserved as a future fallback adapter behind the same Owner repository."
+    rejected:
+      - "CODEOWNERS / git-blame inference only — noisy, fragile to author churn, doesn't capture team or business unit, and CODEOWNERS isn't universal across repositories."
+      - "UI-assigned only — drifts from code reality, not auditable in git, doesn't scale to large monorepos where owners need to be expressed per directory."
+    rationale: >
+      Declared YAML matches engineering culture (source-of-truth in code, auditable in git,
+      survives author churn) and the UI override gives AppSec the escape hatch when reality
+      shifts faster than the repo. Resolution is a pure function in domain/, taking the UI
+      override, YAML doc, and Application as inputs — easy to unit-test, no infra dependency.
+      The IOwnershipYamlReader port shape mirrors existing readers in
+      application/ports/output/services/ and the yaml lib is already in tree.
+
+  - title: "SLA unit — calendar days vs. business days vs. per-policy"
+    chosen: "Calendar days, configurable per canonical severity on the active SecurityPolicy (defaults Critical=7, High=30, Medium=90, Low=180). SLA state (Healthy/AtRisk/Breached) is a pure function of (discoveredAt, severity, policy, now)."
+    rejected:
+      - "Business days with holiday calendar — requires a holiday-calendar subsystem (state, locales, regional configuration) that doesn't exist in Shep and is out of MVP scope."
+      - "Per-policy SLA unit (mixed calendar/business) — confusing in rollups, hard to test, makes posture aggregation inconsistent across applications."
+    rationale: >
+      Calendar days are deterministic, align with CISA BOD 22-01-style regulatory expectations,
+      and let the SLA computation stay a pure domain function over ISlaClockPort.now(). Building
+      a holiday-calendar abstraction would balloon MVP scope for marginal value. Business-day
+      mode can be added later as a SecurityPolicy field without breaking the existing model —
+      the SLA computation already takes the policy as input.
+
+  - title: "AI-change risk — dedicated AiChangeRiskSignal entity vs. tagged Finding vs. defer"
+    chosen: "A separate AiChangeRiskSignal entity with its own state machine (Open/Acknowledged/GraduatedToFinding/Dismissed/Resolved) and a dedicated /aspm/ai-review queue. Signals share owner/asset plumbing with SecurityFinding and have an explicit graduate-ai-signal-to-finding use case for confirmed risk."
+    rejected:
+      - "Emit normal SecurityFindings with origin=ai — pollutes SLA math and severity stats with unconfirmed signals, makes the engineering backlog noisy, conflates 'someone wrote code that smells risky' with 'a scanner confirmed a vulnerability'."
+      - "Defer AI-change risk to a later epic — sacrifices Shep's unique differentiator on day one (every credible ASPM competitor lacks this); building it later would require a parallel data path."
+    rationale: >
+      Modelling AI-change risk separately keeps the Findings backlog clean (SLAs, exception math,
+      campaign progress all stay accurate), gives reviewers a purpose-built triage queue, and
+      preserves the graduation path when a signal is confirmed. This matches Shep's existing
+      pattern of separate-but-linked entities (Feature → WorkItem, Application → Repository)
+      rather than overloading one model. The record-ai-change-risk-signal use case is callable
+      by Shep's existing agent infrastructure post-change hooks via IAgentExecutorProvider —
+      keeping us agent-agnostic per .claude/rules/code-quality.md.
+
+  - title: "Severity normalization — canonical 5-level + preserved raw vs. raw-only vs. CVSS-only"
+    chosen: "Store both the scanner's raw severity string AND a normalized canonical 5-level enum (Critical / High / Medium / Low / Info) on every SecurityFinding. All UI filters, SLA math, posture rollups, and campaign queries operate on the canonical level. Mapping rules live in pure-domain functions per scanner."
+    rejected:
+      - "Scanner-native severity only — makes posture aggregation impossible because 'High' from Snyk doesn't equal 'High' from Semgrep doesn't equal 'High' from Trivy."
+      - "Force every finding through a CVSS-derived score — many SAST/secret findings have no CVSS; mapping is lossy and forced; CVSS isn't designed for code-level findings."
+    rationale: >
+      A canonical level is non-negotiable for unified posture (NFR / FR-9). Preserving the raw
+      scanner severity keeps the audit trail and lets the UI show 'Semgrep called this MEDIUM'
+      for context. The canonical bands align with CVSS v3.1 severity ranges (Critical 9.0-10,
+      High 7.0-8.9, Medium 4.0-6.9, Low 0.1-3.9, Info), so when a finding has a CVSS we use it
+      directly; when it doesn't, the per-scanner mapping table fills in. Mapping tables are
+      typed constants in domain/, not magic strings in adapters (.claude/rules/code-quality.md —
+      No Magic Values).
+
+  - title: "Risk exceptions — self-declared with expiry vs. approval chain vs. none"
+    chosen: "Self-declared RiskException with a typed reason enum (FalsePositive/AcceptedRisk/CompensatingControl/NotApplicable/Other), justification text, expiry date, and an immutable audit log of state transitions. Expired exceptions automatically re-include the finding in posture rollups via the read-side state computation. An approval chain can be layered on later behind the same entity once Shep has a permissions subsystem."
+    rejected:
+      - "Approval chain in MVP — requires roles/permissions infrastructure that doesn't exist in Shep yet (single-tenant model); creates a bottleneck without a corresponding governance benefit at this scale."
+      - "No exceptions at all — every team needs false-positive and won't-fix; without exceptions the backlog drowns engineers and the SLA-breach count becomes meaningless."
+    rationale: >
+      Self-declared + expiry + audit log unblocks engineers immediately while preserving
+      auditability through the immutable log and forced re-review on expiry. Exception state is
+      computed at read time (pure function of stored RiskException records + now from
+      ISlaClockPort) so SLA math and posture stats stay deterministic. The audit pattern
+      matches the existing pm-audit-log + activity-log + operation-log infrastructure already
+      in packages/core/src/infrastructure/persistence/sqlite.
+
+  - title: "Remediation campaigns — query-shaped + filterable per app"
+    chosen: "RemediationCampaign carries a serialized targetQuery (severity, findingDomain, application, owner, kev flag, ruleId, ...) plus optional per-application filter. The same primitive serves cross-cutting fleet themes ('fix all KEV-listed log4j') and per-service sprints. Campaign progress is computed at read time by re-running the query — no explicit Finding↔Campaign join table."
+    rejected:
+      - "Per-application campaigns only — misses the cross-cutting 'fix all log4j' workflow that is bread-and-butter for AppSec."
+      - "Cross-application themes only — less intuitive for engineers who think per-service; forces awkward filters for the common case."
+      - "Explicit Finding↔Campaign join table — every new finding has to be matched against every active campaign on ingestion; harder to keep consistent than read-time recomputation."
+    rationale: >
+      A query-shaped campaign reuses the same filter primitive the Findings list already needs
+      (rank-findings use case takes the identical filter shape), so there is zero duplicate
+      work. Read-time computation keeps Finding ingestion fast (NFR-6) and means a campaign
+      'just works' retroactively on findings that already existed. The serialized query is a
+      typed value object in domain/, not a freeform string.
+
+  - title: "Compliance framework(s) — OWASP ASVS + CWE Top 25 vs. SOC2/PCI/HIPAA vs. none"
+    chosen: "OWASP ASVS + CWE Top 25 mapping in MVP. ComplianceControl entity stores (frameworkId, controlId, title, description); Findings link to zero-or-more ComplianceControls. Adapters populate links when scanner output references CWE or ASVS taxa (SARIF supports this natively). Regulated frameworks (SOC 2, PCI DSS, HIPAA) are additive rows in the same table — no schema change needed to add them later."
+    rejected:
+      - "SOC2 + PCI DSS + OWASP ASVS in MVP — opinionated mappings go stale quickly, risk misleading auditors if maintained poorly, and require significant content authoring outside the engineering work."
+      - "No compliance framework in MVP — misses a major ASPM use case; the framework mapping is shaped by the data model so retrofitting later is harder than building it in now."
+    rationale: >
+      OWASP ASVS + CWE Top 25 are open standards directly applicable to code-level findings
+      (which is what scanners produce). SARIF includes ASVS/CWE references natively in
+      'taxonomies' and 'taxa' fields — the SARIF adapter populates ComplianceControl links
+      during ingestion. The data shape (ComplianceControl table + Finding↔Control link) is
+      identical for SOC2/PCI/HIPAA, so those frameworks become content additions, not
+      migrations.
+
+  - title: "Findings → developer tasks — on-demand conversion vs. auto-create vs. silo"
+    chosen: "On-demand convert-finding-to-work-item use case that creates a Shep WorkItem with a back-reference to the originating SecurityFinding. Bulk variant accepts the same campaign-style query and is idempotent on existing linkage."
+    rejected:
+      - "Auto-create a WorkItem for every High/Critical finding — floods backlogs on first ingestion (a 10k-finding SARIF import would mint 10k work items), can't deduplicate first, removes triage."
+      - "Findings stay siloed in /aspm — defeats developer task routing; the security backlog becomes a parallel system engineers ignore."
+    rationale: >
+      On-demand conversion matches AppSec's actual workflow (triage in /aspm, route the ones
+      that matter into the engineering backlog). The Finding ↔ WorkItem link is a single
+      optional workItemId reference in TSP, mirroring how other entities cross-link in this
+      codebase (e.g., feature.tsp ↔ tasks-artifact.tsp). Auto-creation can later be added as a
+      policy-driven action without changing the data model.
+
+  - title: "Graph view in MVP — React Flow asset-risk graph vs. tabular vs. never"
+    chosen: "Ship a React Flow asset-risk relationship graph in MVP as the primary inventory visualization, alongside the tabular Findings/Posture/Campaign views. React Flow is already in tree (@xyflow/react v12, per MEMORY.md), the data shape is already returned by use cases, and a graph view is a strong differentiator for the AppSec audience."
+    rejected:
+      - "Tabular MVP only, defer graph — accepted as fallback if graph performance work blows the MVP budget; can be re-evaluated during implementation."
+      - "Skip graph entirely — closes the door on a powerful visualization permanently; loses an obvious demo asset for the ASPM module."
+    rationale: >
+      The feature spec explicitly selects this option ('Ship a React Flow asset-risk graph in
+      MVP'), React Flow is already used in the codebase (see web build-graph-nodes.ts /
+      build-feature-node-data.ts), and the use-case layer already returns the right data shape
+      (assets, findings, ownership). The graph is purely a presentation concern over the same
+      get-application-posture + list-findings data; if performance with 50k findings becomes a
+      blocker we degrade to the tabular view behind a feature flag — no domain-layer impact.
+
+  - title: "Workspace scoping — multi-workspace per-tenant DBs"
+    chosen: "Multi-workspace (per-tenant DBs) as the long-term answer, with the MVP shape compatible with single-workspace today: BusinessUnit is a field on Application (and rolls up posture in dashboards) and the data model carries no implicit single-workspace assumptions in the new ASPM tables. When Shep's workspace/permissions subsystem lands, the same tables get a workspaceId index."
+    rejected:
+      - "Single workspace; BusinessUnit as field only — accepted in practice for MVP, but the selected option in the spec is multi-workspace; we treat the spec's choice as the target shape and design tables to accept a future workspaceId without migration breakage."
+      - "Hard per-BU scope inside one workspace — requires a permissions subsystem Shep doesn't have; scope creep."
+    rationale: >
+      The feature spec selects 'Multi-workspace (per-tenant DBs)' as the answer. Shep is
+      single-tenant today, so the MVP delivers BusinessUnit as a grouping field on Application
+      and rolls up posture by BU in dashboards. ASPM tables are designed with nullable
+      workspaceId columns (defaulted to the active workspace constant today) so the future
+      multi-workspace migration is a backfill, not a rewrite. This keeps the data shape
+      forward-compatible without building tenancy plumbing now.
+
+  - title: "Persistence — better-sqlite3 with numbered, idempotent migrations"
+    chosen: "Follow the existing migrations convention under packages/core/src/infrastructure/persistence/sqlite/migrations/ — numbered files (e.g., 101-create-security-findings.ts) exporting up()/down(), guarded by IF NOT EXISTS for CREATE TABLE and pragma('index_list') checks for indexes. ASPM gets one table per entity plus its indexes; ALTER on the existing applications table uses safe-default ADD COLUMN."
+    rejected:
+      - "Single mega-migration for the whole ASPM module — harder to bisect on failure; violates the existing one-concept-per-migration convention (see migrations 076-100)."
+      - "ORM (drizzle / kysely / prisma) introduction — would replace better-sqlite3 + umzug across the entire codebase; out of scope for one feature."
+    rationale: >
+      Matches the established pattern exactly (see 100-create-custom-agents.ts: pragma check,
+      IF NOT EXISTS, conditional index creation, no destructive op). LESSONS.md / NFR-18
+      require idempotent migrations. better-sqlite3 transactions wrap ingestion runs (NFR-6)
+      for atomic rollback. Indexes follow NFR-7 / NFR-8 — composite indexes on (applicationId,
+      canonicalSeverity, state), (cveId), (ownerId, state), (discoveredAt) — sized for the 50k
+      finding budget.
+
+  - title: "DI wiring — register-aspm.ts module"
+    chosen: "New packages/core/src/infrastructure/di/modules/register-aspm.ts that registers ASPM repositories, ports, services, and use cases by string token, invoked from infrastructure/di/container.ts after the existing register-* modules and after migrations run."
+    rejected:
+      - "Inline registration in container.ts — container.ts already delegates to per-area register-* modules (register-agents, register-repositories, etc.); adding inline registrations would diverge from convention and grow the file beyond the 300-line guideline (NFR-19)."
+      - "Auto-discovery via decorators alone — tsyringe supports it but the codebase uses explicit register-* modules for ordering control and to keep the dependency graph greppable."
+    rationale: >
+      Matches the existing module layout (register-agents.ts, register-cloud-deploy.ts,
+      register-deployment.ts, register-integrations.ts, ...). Explicit registration keeps test
+      mocking by container.registerInstance straightforward and lets us insert ASPM after the
+      core repositories on which findings depend (Application repo, WorkItem repo).
+
+  - title: "SARIF and CycloneDX parsing libraries"
+    chosen: "Use ajv + ajv-formats for JSON Schema validation of incoming documents, with thin domain-shaped parsers in infrastructure/services that walk the validated tree. For SARIF, ship a hand-rolled walker keyed off the v2.1.0 schema; for CycloneDX, evaluate @cyclonedx/cyclonedx-library and fall back to hand-rolled walker if its runtime dependencies are too heavy."
+    rejected:
+      - "@microsoft/sarif-multitool (CLI) — Node wrapper around a .NET binary; cross-platform install pain (per packages/CLAUDE.md), heavyweight for parsing alone."
+      - "sarif npm package (raw types only) — types are fine but it ships no validator/walker; we'd still need ajv."
+      - "Custom regex/JSON.parse only — no schema validation; NFR-14 requires robust rejection of malformed input."
+    rationale: >
+      ajv is the standard JSON Schema validator in the Node ecosystem and is already used by
+      other tsp-generated code paths indirectly. A hand-rolled walker over validated JSON keeps
+      the adapter file under the 300-line guideline and keeps domain-shaping logic explicit.
+      The cyclonedx-library evaluation happens in the implementation phase; if its native deps
+      clash with packages/CLAUDE.md cross-platform requirements we ship hand-rolled. Both paths
+      converge on the same ISbomPort contract so use cases don't care.
+
+  - title: "KEV/EPSS adapter strategy — local-cached feed loader behind IExploitIntelPort"
+    chosen: "IExploitIntelPort with two methods: getEpssPercentile(cveId) and isKev(cveId). The concrete adapter downloads the CISA KEV JSON and the FIRST EPSS CSV on demand, caches them on disk under the Shep home dir (mtime-based refresh, default 24h), and returns null/false when offline. Pure-domain RiskScore computation degrades gracefully when null is returned."
+    rejected:
+      - "Embed KEV/EPSS data in the repo — feeds are large (~MB) and stale within days; bad fit for a checked-in artifact."
+      - "Synchronous fetch on each scoring call — blows out NFR-7 dashboard latency budget; requires network on every read."
+      - "Third-party API (vulnDB, vendor feeds) — paid, locks us into a vendor, requires a credential subsystem."
+    rationale: >
+      KEV and EPSS are public, free, well-shaped, and small (KEV ~1MB JSON, EPSS daily CSV
+      ~10MB). A local-cached loader behind the port lets use cases stay deterministic for tests
+      (inject a fake IExploitIntelPort returning fixture data) and keeps the production
+      experience fast. The adapter's IO uses undici-style fetch already vetted in the codebase
+      and respects packages/CLAUDE.md (tmpdir, path normalization for the cache file).
+
+  - title: "Web architecture — Next.js App Router routes + colocated Storybook"
+    chosen: "New routes under src/presentation/web/app/aspm/* (dashboard, findings, findings/[id], campaigns, campaigns/[id], inventory, owners, compliance, ai-review). Each new feature component lives under src/presentation/web/components/features/aspm/ with a colocated *.stories.tsx covering Default/Loading/Error plus relevant variants (Critical/High/KEV/Exception/AiGraduated). SSE for live posture updates uses the existing app/api/.../stream pattern."
+    rejected:
+      - "Pages router or hand-rolled REST — codebase is firmly on App Router with server components; introducing pages router would diverge."
+      - "Skip Storybook for ASPM components — violates a mandatory project rule; commits without stories will be rejected (CLAUDE.md)."
+    rationale: >
+      Matches the existing layout (app/agents, app/applications, app/features, etc.) and reuses
+      build-graph-nodes/build-feature-node-data style shared helpers for the React Flow graph.
+      Server components handle posture/finding reads; SSE handles live updates over the
+      existing transport. Storybook coverage is mandatory per .claude/rules and prevented from
+      regressing by CI.
+
+  - title: "CLI architecture — Commander subcommand group"
+    chosen: "A single 'shep aspm' parent command under src/presentation/cli/commands/ with subcommands ingest|findings|campaigns|posture|exceptions|ai-review. Each subcommand resolves its use case from the tsyringe container — no logic in the command file beyond argument parsing, output formatting, and exit codes."
+    rejected:
+      - "Top-level commands ('shep findings', 'shep campaigns', ...) — flatter, but pollutes the top-level help and clashes with the existing 'shep features' / 'shep cycles' grouping."
+      - "Use cases called directly from a script — bypasses the established CLI pattern; loses --json and color output conventions."
+    rationale: >
+      Matches docs/cli/architecture.md and the existing command groupings. Thin commands keep
+      logic in use cases per .claude/rules/code-quality.md ('Use Cases as the Only Entry
+      Point').
+
+  - title: "Secret redaction — domain-layer redactor for raw scanner output"
+    chosen: "A pure-domain Redactor module that runs over scanner-supplied description and scannerRaw fields before persistence (NFR-13). Pattern set: AWS/GCP/Azure key prefixes, high-entropy alphanumeric strings ≥32 chars, common API token prefixes (sk_, ghp_, ...), private key headers. The full raw is hashed (SHA-256) and only the hash is stored; the redacted body remains readable."
+    rejected:
+      - "Persist raw scanner output untouched — violates NFR-13 and risks re-emitting secrets to the UI/CLI/SSE."
+      - "Use a third-party secret-scanner library (gitleaks/trufflehog) as a runtime dep — heavyweight install, unnecessary for the redactor scope, would couple ASPM to an external binary."
+    rationale: >
+      Keeps the redactor as a pure domain function (testable, deterministic, no infra). The
+      pattern set covers the high-leverage cases without false-positives over normal code
+      snippets. Hashing the raw preserves dedup/audit ability without the leakage risk.
+
+# Open questions (should be resolved by end of research)
+openQuestions:
+  - question: "Should we implement the ASPM SQLite tables as one-table-per-entity with foreign keys to applications, or use a single polymorphic findings table joined to a typed asset reference?"
+    resolved: true
+    options:
+      - option: "One table per entity + FK to applications.id"
+        description: "security_findings, remediation_campaigns, risk_exceptions, owners, teams, business_units, services, api_assets, cloud_environments, risk_scores, ai_change_risk_signals, security_policies, compliance_controls — each as its own table, with explicit FK constraints to applications(id). Pros: matches existing convention (every TSP entity → its own table); easy to query and index per-entity; aligns with Clean Architecture repository-per-entity pattern."
+        selected: true
+      - option: "Single findings table with polymorphic asset_type column"
+        description: "One findings table with (asset_type, asset_id) columns indexing into application/service/api_asset by type discriminator. Pros: fewer tables. Cons: no FK enforcement; harder to index; departs from the existing one-entity-one-table convention."
+        selected: false
+      - option: "EAV-style attribute table"
+        description: "Generic asset+attributes tables. Pros: maximum flexibility. Cons: terrible read perf for dashboards; impossible to index meaningfully; rejected by every Shep convention."
+        selected: false
+    selectionRationale: >
+      Matches the existing convention across migrations 001-100 in
+      packages/core/src/infrastructure/persistence/sqlite/migrations (one CREATE TABLE per
+      concept, FKs explicit, indexes added in the same migration). Repository-per-entity
+      registration in register-aspm.ts maps 1:1 to the table layout, keeping the codebase
+      greppable. Indexes (applicationId, canonicalSeverity, state, discoveredAt, cveId,
+      ownerId) satisfy NFR-7/NFR-8 latency budgets on a 50k-finding dataset.
+
+  - question: "How should we model the campaign target query — typed value object or freeform JSON?"
+    resolved: true
+    options:
+      - option: "Typed value object (TSP) with a typed filter shape"
+        description: "A FindingFilter value object in tsp/domain/value-objects with explicit fields (severities: CanonicalSeverity[], findingDomains: FindingDomain[], applicationIds: UUID[], ownerIds: UUID[], kev?: boolean, state?: FindingState[], ruleIds: string[]). Reused by rank-findings, list-findings, get-application-posture, and remediation-campaign target-query. Stored as JSON on the campaign row but with a strict shape. Pros: same primitive for list + campaign; type-safe; testable; one filter to maintain."
+        selected: true
+      - option: "Freeform JSON blob on the campaign row"
+        description: "Store any JSON the UI sends. Pros: most flexible. Cons: no type safety; query evolution silently breaks; impossible to migrate."
+        selected: false
+      - option: "Separate join table mapping findings to campaigns"
+        description: "Materialize the membership on ingestion. Pros: O(1) reads. Cons: ingestion writes O(active_campaigns) per finding; campaign edits require backfill; stale membership when criteria change."
+        selected: false
+    selectionRationale: >
+      A typed FindingFilter value object reused across list/rank/campaign is consistent with
+      Shep's tsp-first convention and avoids three near-identical filter types. JSON storage of
+      the typed shape lets us evolve fields under a schema validator. Read-time computation
+      keeps ingestion fast (NFR-6) and means campaigns trivially apply retroactively to
+      existing findings.
+
+  - question: "Where should the RiskScore live — embedded value object on SecurityFinding or its own table?"
+    resolved: true
+    options:
+      - option: "Separate risk_scores table keyed by findingId, latest score wins"
+        description: "Each compute writes a new risk_scores row; the SecurityFinding stores currentRiskScoreId. Pros: full history for trend/audit; can show 'score evolution' over time; matches NFR-12 (no destructive overwrites); aligns with how the existing audit/operation-log persistence works."
+        selected: true
+      - option: "Embedded JSON column on security_findings"
+        description: "Single risk_score_json column on the finding row, overwritten on recompute. Pros: simplest read. Cons: loses score history; harder to render the trend chart required by FR-25."
+        selected: false
+      - option: "No persistence — recompute on every read"
+        description: "Pure compute on demand. Pros: zero storage. Cons: blows the NFR-7/NFR-8 latency budget for any dashboard rendering thousands of findings; defeats audit (no record of what the score was at SLA breach)."
+        selected: false
+    selectionRationale: >
+      A separate risk_scores table preserves the trend history (FR-25), supports audit ('what
+      was the score on 2026-05-10?'), and matches existing append-only audit-style storage in
+      the codebase (operation_logs, pm_audit_log, activity_log). The currentRiskScoreId pointer
+      keeps dashboard reads O(1) per finding. Per-entity repository (IRiskScoreRepository) is
+      consistent with the rest of ASPM persistence.
+
+  - question: "Should ingestion run synchronously in the CLI/HTTP request or be queued via a background worker?"
+    resolved: true
+    options:
+      - option: "Synchronous use-case execution wrapped in a SQLite transaction"
+        description: "ingest-findings runs inline, in a single transaction, completing within the 30s NFR-6 budget for 10k findings. The CLI surfaces progress; the web upload endpoint streams progress via SSE. Pros: simple; no worker infrastructure; matches existing use-case-driven patterns. Cons: very large files (100k+ findings) need chunking."
+        selected: true
+      - option: "Background worker queue (e.g., a new daemon)"
+        description: "Add a worker daemon for ingestion. Pros: handles arbitrarily large files. Cons: new infrastructure; new failure modes; out of scope for MVP given NFR-6 budget."
+        selected: false
+      - option: "Streaming chunked ingestion with checkpoints"
+        description: "Process in batches with persisted checkpoints. Pros: resumable on crash. Cons: more state; harder to test; saves little vs. retrying a transactional run."
+        selected: false
+    selectionRationale: >
+      better-sqlite3 transactions easily handle 10k inserts in well under the NFR-6 budget on a
+      developer laptop (SQLite synchronous inserts in a transaction routinely exceed 50k/sec).
+      Synchronous execution matches every other long-running use case in this codebase and
+      avoids inventing a worker subsystem. NFR-14 size cap (default 100MB) bounds the worst
+      case. A future worker can be slotted behind the same ingest-findings use case if real
+      workloads exceed the synchronous budget.
+
+  # ── Phase 11 — Native scanning decisions ─────────────────────────────────
+  - question: "Where does the SCA vulnerability data come from in Phase 11 (we can't ship Trivy/Grype)?"
+    resolved: true
+    options:
+      - option: "OSV.dev (osv.dev) — unauthenticated batch API"
+        description: "Google-maintained aggregated vulnerability database covering npm, PyPI, Go modules, crates.io, Maven Central, RubyGems, Packagist, NuGet, Hex, Pub, and more. Single endpoint `/v1/querybatch` accepts up to 1000 package queries per call. No auth, no rate-limit credentials. Reference: https://google.github.io/osv.dev/api/. Pros: covers the same ecosystems our in-house SBOM builder parses; one API; deterministic; cacheable on disk. Cons: occasional outages (mitigated by on-disk cache); per-ecosystem coverage uneven for very niche package managers."
+        selected: true
+      - option: "GitHub Advisory Database GraphQL API"
+        description: "Pros: high-quality curated advisories. Cons: requires a GH token (auth surface we don't want), rate-limited."
+        selected: false
+      - option: "NVD JSON 2.0 feed"
+        description: "Pros: authoritative US-government source. Cons: not indexed by package — would require us to build the CPE→package mapping ourselves, which is a multi-year project."
+        selected: false
+    selectionRationale: "OSV.dev is the only zero-auth, package-indexed, multi-ecosystem source. It's the data source Trivy/Grype/OSV-Scanner all consume anyway — we just cut out the CLI middleman. The existing `IExploitIntelPort` (KEV/EPSS) already follows the same offline-cache pattern, so the operational model is proven in this codebase."
+
+  - question: "Pure-code vs agent-driven for SAST / container hardening / IaC misconfig?"
+    resolved: true
+    options:
+      - option: "Agent-driven via IAgentExecutorProvider"
+        description: "Three specialized LangGraph nodes (SastAnalysisAgent, ContainerHardeningAgent, IacSecurityAgent) receive source / Dockerfile / Terraform chunks bounded by token budget and return SecurityFinding[] with cwe + owasp taxa. Output normalizes to SARIF v2.1.0 so it flows through the existing IngestFindingsUseCase. Resolved via IAgentExecutorProvider — no hardcoded provider, satisfying the codebase's agent-resolution rule."
+        selected: true
+      - option: "In-house Semgrep-like AST rules engine"
+        description: "Pros: deterministic, no LLM cost. Cons: building a multi-language AST + rule pack is a multi-quarter project; the value of Shep being AI-native is exactly what this option throws away."
+        selected: false
+      - option: "Bundle Semgrep-OSS as a downloaded binary"
+        description: "Pros: battle-tested. Cons: defeats the user directive of zero third-party CLI installs; adds a maintenance vector (tracking Semgrep releases, breaking-change rule packs)."
+        selected: false
+    selectionRationale: "User directive (2026-05-20) — minimize third-party, use the agent system for judgment-heavy analysis. SAST, container hardening, and IaC misconfig are exactly the cases where Claude/Sonnet routinely outperforms static rules: it can read intent, follow conditional flow, and prioritize realistic risk. Deterministic adapters (SBOM, secrets, OSV) cover the parts where rules beat LLMs."
+
+  - question: "How are secrets detected without a third-party scanner?"
+    resolved: true
+    options:
+      - option: "In-house regex + Shannon-entropy rule pack"
+        description: "Pure-domain SecretScanner with a curated rule pack (AWS keys, GitHub PATs, Slack/Stripe/Google tokens, RSA/EC private keys, generic high-entropy 40+ char strings labeled API_KEY/SECRET/TOKEN, JWT shape detection). Each rule has a positive + negative test case. Output is SARIF v2.1.0. ~300 LOC, no dependencies. Re-running on an unchanged tree produces identical fingerprints (NFR-24)."
+        selected: true
+      - option: "Bundle gitleaks as a downloaded binary"
+        description: "Pros: comprehensive rule pack out of the box. Cons: same as the Semgrep option — third-party install we're trying to avoid."
+        selected: false
+      - option: "Agent-driven secret detection"
+        description: "Pros: catches novel patterns. Cons: high token cost on large repos; non-deterministic; secret detection is exactly the case where deterministic regex/entropy is the right tool. LLMs for secret-spotting also raise an obvious data-egress concern (we'd be sending high-entropy strings to a remote provider)."
+        selected: false
+    selectionRationale: "Regex + entropy is the established right tool for secret detection — every major scanner does it the same way. Building this in-house is small (~300 LOC including the rule pack), keeps secret material strictly local (never sent to an LLM provider), and runs in milliseconds. The OSS rule packs from trufflehog/gitleaks are MIT-licensed reference for the patterns themselves; we re-author them rather than vendor."
+
+  - question: "Ownership source for findings in Phase 11?"
+    resolved: true
+    options:
+      - option: ".shep/ownership.yaml (explicit) + git-derived (inferred) fallback"
+        description: "The existing .shep/ownership.yaml stays the explicit source of truth (FR-13). When no YAML entry matches a finding's path, the new IGitOwnershipPort runs `git log` / `git blame` against the local working tree to derive a probable owner. Explicit always beats inferred. CODEOWNERS is parsed as a tertiary fallback. All git operations are local — no `git fetch`."
+        selected: true
+      - option: "Pure CODEOWNERS-based inference"
+        description: "Pros: GitHub-native. Cons: CODEOWNERS isn't universal; many repos don't have one; doesn't capture team/business-unit context."
+        selected: false
+      - option: "UI-only ownership"
+        description: "Pros: simplest plumbing. Cons: drifts from code reality; doesn't scale; rejected in Phase 3 for the same reasons."
+        selected: false
+    selectionRationale: "User directive (2026-05-20) — 'owner should be from commits so git cli can cover that'. Layering git-derived ownership BEHIND the explicit YAML preserves the engineering-culture-as-source-of-truth model from Phase 3 while removing the bootstrap-empty-state cost (you get reasonable ownership the moment you scan, without having to author the YAML first)."
+
+  - question: "Scope of the working tree per scan — branch, history, or remote?"
+    resolved: true
+    options:
+      - option: "Local working tree of the currently-checked-out branch only"
+        description: "Every scanner reads from the working tree as it sits on disk. No `git fetch`, no `git log` walking beyond what ownership requires for the current branch's blame, no remote refs touched, no historical commit checkouts. Re-scanning after `git switch` reflects the new branch."
+        selected: true
+      - option: "Default branch only (regardless of what's checked out)"
+        description: "Pros: stable reference point. Cons: doesn't help during local development (the very moment a user wants posture feedback most); diverges from the user's mental model."
+        selected: false
+      - option: "Full history walk"
+        description: "Pros: catches historical secrets/vulns. Cons: massive perf cost; out of scope for an MVP; better served by a dedicated historical-audit feature later."
+        selected: false
+    selectionRationale: "User directive (2026-05-20) — 'cover only local branches'. This matches the iterate-fix-verify loop (you want feedback on what you're working on, not on what's already shipped), bounds scan time, and avoids the entire class of failure modes that comes with network/auth (fetch failures, credential prompts, large pack files). A future 'historical audit' feature can sit alongside without colliding."
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-05-19
+
+  ## Technology Decisions
+
+  ### 1. Asset model — extend Application
+
+  **Chosen:** Extend the existing `Application` TypeSpec entity with optional ASPM fields
+  (`criticality`, `exposure`, `dataClassification`, `businessUnit`), and add narrow adjacent
+  entities (`Service`, `ApiAsset`, `CloudEnvironment`) for assets that don't naturally map to
+  an Application.
+
+  **Rejected:**
+  - Polymorphic `SecurityAsset` entity — duplicates ownership/exposure metadata, double lookups
+    for every finding, drifts from `Application` changes.
+  - Replace `Application` as the asset anchor — too invasive; would break cycles/features/agents/
+    deployment which already key off it.
+
+  **Rationale:** `Application` is already the canonical workspace anchor (repository, agent
+  session, deployment status, features/cycles). Extending it with optional ASPM context keeps
+  risk on the same object engineers and AppSec already use, gives ownership/feature rollups for
+  free, and matches the codebase's existing TypeSpec convention of extending `SoftDeletableEntity`.
+
+  ### 2. Risk scoring — transparent composite
+
+  **Chosen:** A `RiskScore` value object (total 0-100) computed by a pure-domain function from
+  CVSS, EPSS, KEV, exposure, criticality, and data classification. Every contribution is stored
+  on the entity.
+
+  **Rejected:**
+  - Proprietary opaque score — not explainable; impossible to defend in postmortems; hard to test.
+  - Pass-through scanner severity — defeats unified prioritization across scanners.
+
+  **Rationale:** Composite scoring is the only option delivering on the core ASPM promise. As a
+  pure-domain function it satisfies NFR-9 (Determinism) and enables a fixture-driven golden test
+  (NFR-3). Weights are documented domain constants, not magic numbers. KEV/EPSS adapters can
+  ship as stubs returning `null`; scoring degrades gracefully.
+
+  ### 3. Ingestion formats — SARIF + CycloneDX
+
+  **Chosen:** `IFindingIngestPort` (SARIF v2.1.0) and `ISbomPort` (CycloneDX 1.5+) as the two
+  MVP ingestion ports. SPDX, Snyk-native, Dependabot, GHAS, and runtime adapters slot in later
+  behind the same interfaces.
+
+  **Rejected:**
+  - SARIF only — misses the SBOM/dependency context that makes EPSS/KEV scoring meaningful.
+  - SARIF + CycloneDX + SPDX + vendor-native in MVP — XL adapter sprawl, much stub-quality.
+
+  **Rationale:** Both are open OASIS/OWASP standards covering ~80% of real-world scanner output.
+  Ports live next to existing service ports (`file-system-service.interface.ts` style); concrete
+  parsers live in `infrastructure/services/` and are wired via `register-aspm.ts`. New adapters
+  later are purely infrastructure changes.
+
+  ### 4. Ownership — declared YAML + UI override
+
+  **Chosen:** Two-source ownership with deterministic priority resolution: (1) UI override on
+  Application/Service/ApiAsset, (2) `.shep/ownership.yaml` parsed via `IOwnershipYamlReader`.
+  CODEOWNERS support reserved as a future fallback behind the same `IOwnerRepository`.
+
+  **Rejected:**
+  - CODEOWNERS / git-blame inference only — noisy, fragile, doesn't capture team or BU.
+  - UI-only assignment — drifts from code reality, not auditable in git.
+
+  **Rationale:** Source-of-truth in code (engineering culture) + UI override (AppSec escape
+  hatch). Resolution is a pure domain function — easy to unit-test.
+
+  ### 5. SLA — calendar days
+
+  **Chosen:** Calendar days per canonical severity (default Critical=7, High=30, Medium=90,
+  Low=180), configurable on `SecurityPolicy`. SLA state computed deterministically via
+  `ISlaClockPort.now()`.
+
+  **Rejected:**
+  - Business days with holiday calendar — requires a holiday-calendar subsystem out of MVP scope.
+  - Per-policy SLA unit — confusing rollups, hard to test.
+
+  **Rationale:** Matches CISA BOD 22-01 norms. Pure function over `(discoveredAt, severity,
+  policy, now)`. Business-day mode can be added later behind the same model.
+
+  ### 6. AI-change risk — dedicated entity
+
+  **Chosen:** `AiChangeRiskSignal` entity with its own state machine and queue at `/aspm/ai-review`,
+  graduating to `SecurityFinding` only when confirmed. Shares owner/asset plumbing with findings.
+
+  **Rejected:**
+  - Tag normal SecurityFindings with `origin=ai` — pollutes SLA math, exception stats, backlog.
+  - Defer to later — sacrifices Shep's unique differentiator on day one.
+
+  **Rationale:** Keeps the Findings backlog clean while purpose-building a triage queue for
+  AI-introduced risk. Matches Shep's existing 'separate but linked' pattern (Feature → WorkItem).
+  Records are written by Shep's existing agent infrastructure via `IAgentExecutorProvider` —
+  agent-agnostic per `.claude/rules/code-quality.md`.
+
+  ### 7. Severity normalization — canonical + raw
+
+  **Chosen:** Store both raw scanner severity AND a canonical 5-level enum (Critical/High/
+  Medium/Low/Info). All UI, SLA, posture, and campaign queries operate on the canonical level.
+
+  **Rejected:**
+  - Scanner-native only — posture aggregation impossible.
+  - CVSS-only — many SAST/secret findings have no CVSS.
+
+  **Rationale:** Canonical level enables unified posture; raw preserves audit trail. Bands align
+  with CVSS v3.1 ranges. Mapping tables are typed domain constants.
+
+  ### 8. Risk exceptions — self-declared with expiry + audit log
+
+  **Chosen:** `RiskException` with typed reason enum, justification, expiry, and immutable audit
+  log. Read-side state computation includes expiry. Approval chain deferred until Shep has a
+  permissions subsystem.
+
+  **Rejected:**
+  - Approval chain in MVP — no permissions subsystem to build on.
+  - No exceptions at all — backlog drowns engineering; SLA breach count becomes noise.
+
+  **Rationale:** Unblocks engineers; audit log preserves accountability; expiry forces re-review.
+  Matches existing audit-log patterns (`pm_audit_log`, `activity_log`).
+
+  ### 9. Remediation campaigns — query-shaped
+
+  **Chosen:** `RemediationCampaign` carries a serialized `targetQuery` reusing the same
+  `FindingFilter` value object as `rank-findings`/`list-findings`. Campaign progress is computed
+  at read time — no Finding↔Campaign join table.
+
+  **Rejected:**
+  - Per-application only — misses fleet-wide themes.
+  - Cross-application only — awkward for per-service triage.
+  - Explicit join table — every new finding has to be matched against every active campaign.
+
+  **Rationale:** One filter primitive, two workflows. Retroactive campaign membership for free.
+
+  ### 10. Compliance — OWASP ASVS + CWE Top 25
+
+  **Chosen:** `ComplianceControl` entity with framework enum (OwaspAsvs/CweTop25). Findings link
+  to zero-or-more controls. SARIF adapter populates links from taxa references.
+
+  **Rejected:**
+  - SOC2 + PCI DSS + HIPAA in MVP — opinionated mappings stale quickly; content authoring burden.
+  - No framework in MVP — misses a major ASPM use case; harder to retrofit.
+
+  **Rationale:** Open standards; directly applicable to code findings; SARIF natively references
+  ASVS/CWE; regulated frameworks slot in as additional `ComplianceControl` rows without schema
+  change.
+
+  ### 11. Findings → developer tasks — on-demand
+
+  **Chosen:** On-demand `convert-finding-to-work-item` use case; bulk variant accepts the same
+  `FindingFilter` query.
+
+  **Rejected:**
+  - Auto-create on ingestion — floods backlog; removes triage.
+  - Findings stay siloed — security backlog becomes a parallel ignored system.
+
+  **Rationale:** Matches AppSec workflow (triage then route). Single optional `workItemId` on
+  the finding; bulk is idempotent on existing linkage.
+
+  ### 12. Graph view — React Flow in MVP
+
+  **Chosen:** Ship a React Flow asset-risk graph alongside tabular views, reusing the existing
+  React Flow integration (`@xyflow/react` v12).
+
+  **Rejected:**
+  - Tabular only (kept as a fallback) — accepted if perf budget blows during implementation.
+  - Skip graph permanently — closes the door on a strong differentiator.
+
+  **Rationale:** Spec selects this option. React Flow is already in tree (see web
+  `build-graph-nodes.ts`); the data shape is already returned by use cases; the graph is a
+  presentation-only concern.
+
+  ### 13. Workspace scoping — multi-workspace target
+
+  **Chosen:** Design ASPM tables with a nullable `workspaceId` column ready for the future
+  multi-workspace migration; in MVP it defaults to the active workspace constant. `BusinessUnit`
+  remains a grouping field on `Application` for dashboard rollups.
+
+  **Rejected:**
+  - Single workspace; BU as field only — spec selects multi-workspace; we plan for that shape.
+  - Hard per-BU permissioning — requires a permissions subsystem out of scope.
+
+  **Rationale:** Forward-compatible without building tenancy plumbing today; future migration
+  is a backfill rather than a schema rewrite.
+
+  ### 14. Persistence — better-sqlite3 + numbered idempotent migrations
+
+  **Chosen:** Follow the existing `packages/core/src/infrastructure/persistence/sqlite/migrations/`
+  pattern exactly — numbered files (`101-create-security-findings.ts`, etc.), `IF NOT EXISTS`
+  + `pragma('index_list')` guards, `up`/`down`, one concept per migration.
+
+  **Rejected:**
+  - Mega-migration for the whole module — hard to bisect; violates convention.
+  - Introduce a TypeScript ORM — out of scope.
+
+  **Rationale:** Matches every existing migration (see 100-create-custom-agents.ts), satisfies
+  NFR-18 (idempotent), supports rollback via `down()`.
+
+  ### 15. DI wiring — register-aspm.ts
+
+  **Chosen:** New `packages/core/src/infrastructure/di/modules/register-aspm.ts` registering
+  repositories, ports, services, and use cases by string token; invoked from `container.ts`
+  after existing `register-*` modules.
+
+  **Rejected:**
+  - Inline registration in container.ts — diverges from convention; grows the file beyond the
+    300-line guideline.
+  - Auto-discovery only — loses explicit ordering control.
+
+  **Rationale:** Matches existing module layout (`register-agents.ts`, `register-cloud-deploy.ts`,
+  ...). Explicit registration keeps test mocking via `container.registerInstance`
+  straightforward.
+
+  ### 16. SARIF / CycloneDX parsing
+
+  **Chosen:** `ajv` + `ajv-formats` for JSON Schema validation; hand-rolled domain-shaped walkers
+  in `infrastructure/services/`. For CycloneDX, evaluate `@cyclonedx/cyclonedx-library` and
+  fall back to hand-rolled if its runtime deps are too heavy for cross-platform shipping.
+
+  **Rejected:**
+  - `@microsoft/sarif-multitool` — .NET binary; cross-platform install pain.
+  - `sarif` npm package (types only) — no validator/walker; we'd still need ajv.
+  - Custom JSON.parse only — fails NFR-14 (robust rejection of malformed input).
+
+  **Rationale:** ajv is the Node-standard validator. Walkers stay small (sub-300-line files,
+  NFR-19). Both paths converge on the same `ISbomPort` contract.
+
+  ### 17. KEV/EPSS — local-cached feed loader
+
+  **Chosen:** `IExploitIntelPort.getEpssPercentile(cveId)` and `isKev(cveId)`. The adapter
+  downloads CISA KEV JSON and FIRST EPSS CSV on demand, caches under the Shep home dir
+  (mtime-based refresh, 24h default), returns `null`/`false` when offline.
+
+  **Rejected:**
+  - Embed feeds in repo — large, stale within days.
+  - Synchronous fetch per scoring call — blows dashboard latency.
+  - Paid third-party API — vendor lock-in; credential subsystem needed.
+
+  **Rationale:** Public, free, small. Local caching satisfies NFR-7; offline degradation keeps
+  scoring usable. Tests inject a fake port returning fixture data.
+
+  ### 18. Secret redaction
+
+  **Chosen:** Pure-domain `Redactor` module run over scanner-supplied `description` and
+  `scannerRaw` before persistence. Patterns: AWS/GCP/Azure key prefixes, high-entropy strings
+  ≥32 chars, common token prefixes (`sk_`, `ghp_`, ...), private key headers. Raw is SHA-256
+  hashed; only the hash is stored.
+
+  **Rejected:**
+  - Persist scanner raw untouched — violates NFR-13.
+  - Bundle a secret-scanner binary — heavyweight; out of scope.
+
+  **Rationale:** Pure domain function; testable; covers high-leverage cases without false
+  positives on normal code.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | `ajv` + `ajv-formats` | JSON Schema validation for SARIF / CycloneDX inputs | **Use** | Node-standard validator; satisfies NFR-14 (robust rejection of malformed input). |
+  | `@cyclonedx/cyclonedx-library` | CycloneDX 1.5+ parsing | **Use (conditional)** | Evaluate during impl; fall back to hand-rolled walker if runtime deps clash with cross-platform requirements. |
+  | `@microsoft/sarif-multitool` | SARIF parsing CLI | **Reject** | .NET-bundled binary; cross-platform install pain per `packages/CLAUDE.md`. |
+  | `sarif` (types-only) | SARIF v2.1.0 TypeScript types | **Use** | Types only — no runtime dep; works alongside ajv-validated walking. |
+  | `yaml` | Parse `.shep/ownership.yaml` | **Use** | Already in tree; standard parser; small surface. |
+  | `gitleaks` / `trufflehog` (binaries) | Runtime secret scanning | **Reject** | Out of MVP scope; the in-tree Redactor handles persistence-time redaction. |
+  | Custom RiskScore weights/constants module | Composite scoring weights | **Use (domain)** | Pure constants; live with the scoring function in `domain/aspm/scoring/`. |
+  | better-sqlite3 + umzug | Persistence + migrations | **Use (existing)** | Already the standard; one new migration per ASPM table. |
+  | tsyringe | DI | **Use (existing)** | `register-aspm.ts` follows the existing modular registration pattern. |
+  | `@xyflow/react` (React Flow) | Asset-risk relationship graph | **Use (existing)** | Already in tree; data shape already returned by use cases; reuse `build-graph-nodes.ts` style helpers. |
+  | Storybook | Component coverage | **Use (mandatory)** | Required by CLAUDE.md — every ASPM component needs colocated `*.stories.tsx`. |
+  | Playwright | E2E coverage | **Use (existing)** | One ASPM happy-path suite (dashboard → finding detail → declare exception → posture refresh). |
+  | undici / Node fetch | KEV/EPSS feed download | **Use (existing)** | Already used in tree; works around the `IExploitIntelPort` for cache + fallback. |
+  | An ORM (drizzle/kysely/prisma) | Replace better-sqlite3 raw SQL | **Reject** | Out of scope; would replace persistence across the entire codebase. |
+  | Custom background worker daemon | Async ingestion | **Reject (MVP)** | Synchronous use-case execution fits NFR-6; new worker subsystem is out of scope. |
+
+  ## Security Considerations
+
+  - **Secret leakage from scanner output (NFR-13).** SARIF rules may include the offending code
+    snippet, which can contain credentials. The domain `Redactor` runs before persistence on
+    `description` and `scannerRaw`. The full raw is SHA-256 hashed for dedup/audit; only the
+    hash is stored. The Redactor pattern set covers AWS/GCP/Azure key prefixes, high-entropy
+    strings ≥32 chars, common token prefixes (`sk_`, `ghp_`, GitHub PATs), and PEM headers. As a
+    pure domain function it is fully unit-testable.
+  - **Adapter robustness (NFR-14).** Both SARIF and CycloneDX parsers validate against the
+    schema via `ajv`, enforce a default 100MB max-size guard, and reject malformed input with a
+    typed error rather than throwing raw exceptions. The size cap is configurable via the
+    active `SecurityPolicy`.
+  - **Risk exception abuse.** Because exceptions are self-declared in MVP (no approval chain),
+    the audit log + expiry mechanism is the governance control: every exception state change is
+    logged with declared-by, reason, and justification; expired exceptions automatically
+    re-include the finding in posture rollups.
+  - **KEV/EPSS feed integrity.** The CISA and FIRST endpoints are HTTPS-pinned; the adapter
+    verifies content type + minimum row count before caching. A corrupted feed falls back to
+    the last good cache; if no cache exists, the adapter returns `null`/`false` and scoring
+    degrades gracefully (CVSS + context only).
+  - **Ingestion DoS via large or pathological files.** The 100MB size cap and the schema
+    validator prevent runaway parsing. Transactions wrap the entire ingest so a partial failure
+    rolls back cleanly.
+  - **Cross-platform paths (packages/CLAUDE.md).** All location paths from SARIF (rule
+    locations, files, ...) are normalized to POSIX-style separators before persistence. Path
+    comparisons in dedup use the normalized form.
+  - **Multi-workspace forward-compat.** `workspaceId` columns are nullable today; when Shep
+    grows a permissions subsystem this becomes a NOT NULL backfill rather than a structural
+    rewrite. No ASPM table assumes single-tenant in code.
+
+  ## Performance Implications
+
+  - **Ingestion (NFR-6).** A 10k-finding SARIF file must ingest in <30s on a developer laptop.
+    better-sqlite3 transactions trivially exceed 50k inserts/sec for the row sizes used here;
+    the binding cost is JSON parsing + schema validation. The walker streams over the
+    validated tree once and prepares `INSERT OR IGNORE` statements keyed on the dedup key
+    `(applicationId, findingDomain, ruleId, location.path, location.line, cveId)`.
+  - **Dashboard render (NFR-7).** `/aspm` initial paint <1s with 50k findings. Achieved by:
+    indexed columns on `security_findings(applicationId, canonicalSeverity, state)`,
+    `security_findings(cveId)`, `security_findings(ownerId, state)`,
+    `security_findings(discoveredAt)`; pre-aggregated counts computed via the
+    `get-posture-summary` use case; SSE deltas avoid full reloads on state changes.
+  - **Findings list (NFR-8).** Paginated list (25/page, sorted by risk score desc) <300ms on
+    50k. The `rank-findings` use case joins `security_findings` with the latest `risk_scores`
+    row per finding (using the cached `currentRiskScoreId` pointer) and orders by
+    `risk_scores.total`. Composite index supports the common filter shape.
+  - **RiskScore recomputation.** Pure-domain compute; bulk recompute over 50k findings is
+    network-bound on KEV/EPSS — mitigated by the local feed cache (24h refresh). Recompute is
+    triggered on policy change, on KEV/EPSS feed refresh, and on demand.
+  - **Campaign progress (FR-17, read-time).** Computed by re-running the campaign's
+    `FindingFilter` query. Index coverage matches the filter shape; expected sub-100ms for the
+    common campaign sizes.
+  - **React Flow graph.** Asset-risk graph virtualizes node rendering and uses memoized node
+    data builders (per the existing `build-feature-node-data.ts` pattern). If 50k findings turn
+    into a node-density problem, the graph degrades to per-application aggregation behind a
+    feature flag — no domain-layer impact.
+
+  ## Architecture Notes
+
+  - **Layering (NFR-1).** Strict Clean Architecture:
+    - `tsp/domain/entities/aspm/` and `tsp/domain/value-objects/` define the new TSP models;
+      `pnpm tsp:compile` regenerates `packages/core/src/domain/generated/output.ts` (NFR-2).
+    - `packages/core/src/domain/aspm/` holds pure-domain logic (RiskScore compute, SLA state,
+      ownership resolution, Redactor) — no infra imports, no `Date.now()`, no env access.
+    - `packages/core/src/application/use-cases/aspm/` holds ~35 RED-first use cases (NFR-3)
+      organized by sub-area (ingestion, ranking, ownership, campaigns, exceptions, AI review,
+      posture, compliance, work-item routing).
+    - `packages/core/src/application/ports/output/repositories/` defines `I<Entity>Repository`
+      interfaces per ASPM entity.
+    - `packages/core/src/application/ports/output/services/` defines `IFindingIngestPort`,
+      `ISbomPort`, `IExploitIntelPort`, `ISlaClockPort`, `IOwnershipYamlReader`.
+    - `packages/core/src/infrastructure/persistence/sqlite/migrations/` adds one numbered,
+      idempotent migration per new entity plus one for the `applications` ALTER (NFR-18).
+    - `packages/core/src/infrastructure/repositories/` implements the repositories with
+      mappers; all paths normalized per `packages/CLAUDE.md`.
+    - `packages/core/src/infrastructure/services/` implements the SARIF/CycloneDX adapters,
+      the KEV/EPSS feed loader, the YAML ownership reader, and the system-clock implementation
+      of `ISlaClockPort`.
+    - `packages/core/src/infrastructure/di/modules/register-aspm.ts` wires everything by string
+      token; `container.ts` invokes it after migrations run.
+  - **Presentation (NFR-1).** Web routes under `src/presentation/web/app/aspm/*`; feature
+    components under `src/presentation/web/components/features/aspm/` with mandatory colocated
+    `*.stories.tsx` (NFR-5, NFR-17). CLI under `src/presentation/cli/commands/aspm/`. SSE
+    under `app/api/aspm/posture/stream` reusing the existing transport. Presentation never
+    imports from `infrastructure/` — all access via use cases resolved from the DI container.
+  - **Agent-agnostic (NFR-4).** AI-change risk recording and any LLM-assisted triage go
+    through `IAgentExecutorProvider`. No Anthropic/OpenAI SDK import outside `infrastructure/`.
+  - **Determinism (NFR-9, NFR-10).** Risk score, SLA state, ownership resolution, dedup key
+    are pure functions. Time is supplied via `ISlaClockPort`. Re-ingestion of an identical
+    document is a no-op on the dedup key.
+  - **Soft-delete + audit (NFR-12).** Findings, campaigns, exceptions, owners all extend
+    `SoftDeletableEntity`. State changes append to an immutable audit log; nothing is
+    destructively lost.
+  - **File-length discipline (NFR-19).** Each migration, repository, use case, and adapter
+    stays under ~300 lines. Risk-scoring and SLA logic decompose into named domain helpers.
+  - **TypeSpec-first (NFR-2).** All new domain types authored in `tsp/`. The generated
+    `domain/generated/output.ts` is never hand-edited. `pnpm tsp:compile` is idempotent.
+
+  ## Staged Epics (for the planning phase to consume)
+
+  1. **Asset + ownership model.** Extend `Application` TSP, add `Owner`/`Team`/`BusinessUnit`/
+     `Service`/`ApiAsset`/`CloudEnvironment` entities, `IOwnershipYamlReader`, ownership
+     resolution use cases.
+  2. **Findings ingestion + unified view.** `SecurityFinding` entity, `IFindingIngestPort`
+     (SARIF), `ingest-findings` use case, findings list use case + table component.
+  3. **SBOM + exploit intel.** `ISbomPort` (CycloneDX), `IExploitIntelPort` (KEV + EPSS feed
+     loaders), dependency-domain findings.
+  4. **Risk scoring + prioritization.** `RiskScore` value object + repository, compute use
+     case, `rank-findings`, finding detail panel with breakdown.
+  5. **Campaigns + SLA + exceptions.** `RemediationCampaign`, `SecurityPolicy`,
+     `RiskException`, `ISlaClockPort`, campaign board, SLA badges.
+  6. **Executive dashboards + developer routing.** `get-posture-summary`, `get-risk-trend`,
+     `get-application-posture`, `convert-finding-to-work-item`, `bulk-convert-findings`.
+  7. **AI-change review queue.** `AiChangeRiskSignal` entity, record/graduate/dismiss use
+     cases, `/aspm/ai-review` route.
+  8. **Compliance surface.** `ComplianceControl`, `get-compliance-coverage`, compliance view.
+
+  Each epic is independently shippable behind the same `/aspm` area.

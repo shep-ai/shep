@@ -134,7 +134,7 @@ Feature flags are persisted in the Settings singleton and toggled via the Settin
 7. `src/presentation/web/lib/feature-flags.ts` — add field to `FeatureFlagsState` interface, to the DB-primary branch, and to the env-var fallback branch (+ optional deprecated accessor)
 8. `src/presentation/web/components/features/settings/settings-page-client.tsx` — add `<SwitchRow>` inside the Feature Flags `SettingsSection` and add the key to the fallback object at the top (`const featureFlags = settings.featureFlags ?? { ... }`).
 9. Translation strings in EVERY locale — `translations/<lang>/web.json` → `settings.featureFlags.<name>` and `settings.featureFlags.<name>Description`. Missing keys render as the raw key path on-screen. Locales: `en, ar, es, de, fr, he, pt, uk, ru`.
-10. Gate the UI on `featureFlags.<name>` wherever the feature is exposed (sidebar, routes, search, FAB actions)
+10. Gate the UI on `featureFlags.<name>` wherever the feature is exposed (sidebar, routes, search, FAB actions). **If the feature ships any pages under `src/presentation/web/app/<name>/`, you MUST also ADD a `SidebarNavItem` in `app-sidebar.tsx` gated on the flag — "gate the existing sidebar entry" silently passes when there is no entry to gate. See the "New Feature Pages Must Be Reachable" lesson below.**
 11. Update hardcoded `FeatureFlags` / `FeatureFlagsState` fixtures across stories, tests, and hooks. `tsc --noEmit` will surface every one — run `pnpm typecheck` BEFORE committing so the pre-commit hook doesn't bounce. Known fixture locations (grow this list when a new one shows up):
     - `src/presentation/web/hooks/feature-flags-context.tsx`
     - `src/presentation/web/components/features/settings/settings-page-client.tsx` (fallback object)
@@ -159,16 +159,23 @@ Feature flags are persisted in the Settings singleton and toggled via the Settin
 
 ## New Feature Pages Must Be Reachable — Nav + Entry Points Are Mandatory
 
-When a new feature flag gates pages (e.g. `/agent-questions`, `/application/[id]/supervisor`), implementation is NOT done until:
+When a new feature flag gates pages (e.g. `/agent-questions`, `/application/[id]/supervisor`, `/aspm`), implementation is NOT done until:
 
-1. **Sidebar nav item** added (gated on the flag) so the page is discoverable — add `badge` support when there's a live count (e.g. pending questions)
+1. **Sidebar nav item** added in `src/presentation/web/components/layouts/app-sidebar/app-sidebar.tsx` (gated on the flag) so the page is discoverable — add `badge` support when there's a live count (e.g. pending questions). Pattern: `{featureFlags.<name> ? <SidebarNavItem icon={...} label={t('navigation.<name>')} href="/<name>" active={pathname?.startsWith('/<name>') ?? false} /> : null}`
 2. **Entry point from related surfaces** — e.g. supervisor config linked from the app overflow menu, not just a raw URL
 3. **First-run onboarding callout** — when the flag first turns on and the user has never tried it, show a dismissable callout (use `localStorage` for dismissed state) with links to the new surfaces
-4. **Translation keys** for any new nav label (all 9 locales)
+4. **Translation keys** for any new nav label (all 9 locales: en, ar, de, es, fr, he, pt, ru, uk) under `navigation.<name>`
 
-**What went wrong (spec 093):** All four were missing. The pages existed and SSE events were wired, but users had no way to reach them from the UI. `agentQuestions` and `supervisorDecisions` events were being received by the hook but nothing consumed them visually.
+**Concrete heuristic:** If you create a directory under `src/presentation/web/app/<name>/`, the same diff must add a `SidebarNavItem` for it. Treat them as inseparable — a route without nav is a dead page.
 
-**Rule:** After building any feature-flagged page, immediately ask: "Can a user who just turned on the flag actually find and use this?" If the answer requires knowing the URL, it's not done.
+**Self-check before claiming done:** open the app, enable the flag in Settings → Feature Flags, and verify you can navigate to the new page WITHOUT typing the URL. If the only way in is the URL bar, the work is incomplete.
+
+**Failures of this lesson (recurring — fix the pattern, not just the symptom):**
+
+- **Spec 093 (collaboration flag):** All four items missing. Pages existed, SSE events were wired, users had no way to reach them. `agentQuestions` and `supervisorDecisions` events were received by the hook but nothing consumed them visually.
+- **Spec 098 (ASPM flag):** Sidebar nav item missing. The user enabled the flag from Settings, but the only way to reach `/aspm` was to type the URL. Caught when the user asked "once enabled, how do I get it from the sidenav?" — should have been caught by me when shipping the gate.
+
+**Rule:** After building any feature-flagged page, immediately ask: "Can a user who just turned on the flag actually find and use this?" If the answer requires knowing the URL, it's not done. This is the second time this lesson has been violated — the pattern is "I gated the existing surfaces" without checking whether a sidebar entry needed to be CREATED. Gating presupposes existence; creation is a separate step.
 
 ## Onboarding Callouts Must Not Drop Users in a Dead End
 
@@ -858,3 +865,101 @@ depends on ambient signing config.
 ## Debugging Prod 404s: Read the Request's Referer/Origin BEFORE Theorizing
 
 I first "fixed" these `/cli/_next/*` 404s as a per-org-pod build-skew problem (shep-cloud PR #22) — plausible, but WRONG: the failing requests' **`Referer` was the preview host** (`<port>-<org>.preview.shep.bot`), i.e. they came from a *user dev server*, not the cli UI. The ingress access log line carries Referer, status, and `upstream_addr` — read those FIRST. A 404 from a path that a healthy pod serves at 200 means the request isn't going where you assume; the Referer/Host tells you which proxy path (`/cli/*` vs `/preview-proxy`) actually handled it. Confirm the exact failing request path end-to-end before writing a fix.
+
+## No CLI-Only Flows in the Web UI — Every Workflow Must Be Doable from the App
+
+The web UI is the product, not a console for the CLI. Telling a user to "Run `shep aspm ingest --sarif <file> --application <slug>`" from a web empty state is a UX failure: it requires them to leave the browser, know the CLI, know their app slug, and find the file path — none of which the UI helped with. Worse, the empty state stays empty forever because there's no way to populate it from the UI, so the section silently appears broken on every visit.
+
+**Concrete recurrence (spec 098 — ASPM):** Three places shipped with `<code>shep aspm ingest --sarif</code>` instructions in their empty states (`posture-cards.tsx`, `findings-table.tsx`, `aspm-application-section.tsx`). The CLI command existed, the use case existed, the DI wiring existed for everything except the web — but no server action, no dialog, no button. Users had no way to fill the dashboard from the app itself.
+
+**Rule:** If a CLI command exists for a workflow that has any UI surface, the SAME workflow must be reachable from that UI. The CLI is for power users and automation; it is never the primary or only way to do something users will encounter in the browser.
+
+**Checklist when shipping a CLI command that has a paired web surface:**
+
+1. **String-token alias for the use case** — register `container.register('XUseCase', { useFactory: ... })` in the appropriate `register-*.ts` module so a web server action can `resolve<XUseCase>('XUseCase')`. The CLI uses class tokens; the web cannot. Also add the token to `tests/integration/infrastructure/di/container-bootstrap.test.ts` `WEB_ROUTE_TOKENS` so a missing registration trips CI, not production.
+2. **Server action** at `src/presentation/web/app/actions/<name>.ts` that wraps the use case. Always start with `requireFeatureFlag(<name>)`, catch `FeatureFlagDisabledError` separately, and translate other errors into `{ ok: false, error }` so the UI sees a usable shape (never a raw 500).
+3. **Storybook mock** at `.storybook/mocks/app/actions/<name>.ts` — same exported names and signatures, returning fixture data. Without this, the Storybook build fails the moment any component imports the action.
+4. **Dialog or page** that drives the action. File upload? Use FormData + a `<input type="file">` + a labeled drop target. Multi-step? Use the existing `Dialog` primitive with a result panel inline (no second navigation).
+5. **Empty-state CTAs that include the trigger** — never write "Run `shep …`" in an empty state. Write a one-line description of what's missing, then place the trigger button right under it. The user should be able to fix the empty state from where they're standing.
+6. **Persistent entry point** in addition to empty-state CTAs — surface the same trigger somewhere always-visible (sub-nav action, page header button) so a user with existing data can re-run the workflow without first deleting it.
+7. **Revalidate after success** — `revalidatePath('/<section>', 'layout')` so server-component data refreshes without the user reloading.
+
+**Anti-patterns to refuse on sight:**
+
+- `<span>Run <code>shep …</code> to do X</span>` in any web component empty state. Always replace with a button that does X.
+- A web feature that depends on a CLI step the user must run "first" before the web works (e.g. "run `shep init` then refresh"). If init is required, the UI must offer to run it.
+- Surfacing the CLI command as the documentation/help text inside a "How to populate this view" tooltip. Documenting the gap doesn't close it.
+
+**The 5-second test:** open the page in a browser, look at it as a user who has never seen the CLI. Can you complete the primary task on this page without opening a terminal? If no, the page is incomplete.
+
+## Web pages must `import type` use cases — not runtime-import them
+
+Symptom: every `/aspm/*` route returned `Internal Server Error`; Next.js/turbopack logged `Module not found: Can't resolve '../../../../domain/generated/output.js'` (and similar `.js` resolutions deeper in the package). The control-center even returned 500s once the bundler had walked the failing graph once.
+
+Root cause: ASPM server components did `import { GetPostureSummaryUseCase, ... } from '@shepai/core/application/use-cases/aspm/posture/get-posture-summary'`. Importing the *class* as a runtime value forces Next.js to bundle the use-case source, which then walks every `.js`-suffixed relative import inside `packages/core/`. Turbopack's `.js → .ts` resolution doesn't follow those deeper paths reliably, so the bundle fails. Once the graph fails, the dev server enters a stuck state where unrelated routes also 500.
+
+Concrete instance: `src/presentation/web/app/aspm/page.tsx` (and every sibling under `app/aspm/`) used runtime `import { UseCase }` + `resolve(UseCase)`. The convention elsewhere in the repo is `import type { UseCase }` + `resolve<UseCase>('UseCase')` paired with a string-token registration alongside the class token (see `register-use-cases.ts`).
+
+Rules for any new web page or server route:
+
+1. **Always `import type` use cases from `@shepai/core`** — never `import { ClassName }`. Webpack/turbopack will bundle the entire use-case source otherwise, which can break deep relative `.js` imports inside `packages/core/`.
+2. **Resolve via string token** — `resolve<UseCase>('UseCase').execute()`. The use case must also be registered under that string in its DI module.
+3. **Add the string-token alias next to the class registration** in the relevant `register-*.ts` module: `container.register('UseCase', { useFactory: (c) => c.resolve(UseCase) })`. This keeps existing class-token consumers (CLI, tests) working while letting type-only web imports resolve at runtime.
+4. **Domain error classes are safe to runtime-import** when the file has no transitive imports (e.g. `FindingNotFoundError`). Bundling those is harmless because there's no resolution chain to follow.
+5. **If `/aspm/*` (or any route) returns 500 and the log says "Module not found" inside `packages/core/src/`**, the fix is at the *web page*, not the package: swap runtime imports for type imports.
+
+## Owners surface must be populated, not just resolved (feat/aspm-platform, 2026-05-21)
+
+Bug: the ASPM `/aspm/owners` page sat on "No owners yet" forever even when the
+spec promised ownership derived from git committers.
+
+Cause: `ScanApplicationUseCase` resolved a git author email via
+`IGitOwnershipPort.lookup` and then stuffed that raw email straight into
+`SecurityFinding.ownerId`. It never wrote a row to the `owners` table, so
+`IOwnerRepository.listAll()` (which `ListOwnerRollupsUseCase` powers the
+Owners page with) returned empty.
+
+Rule: whenever an external signal (git, OIDC, SSO, agent output) maps to a
+domain entity that has its own rollup/list view, the use case orchestrating
+that signal MUST upsert the entity, not just stamp its identifier on the
+adjacent record. "Resolves to" and "creates the row for" are two separate
+contracts.
+
+How to apply:
+
+- Before reusing an "id" string returned by a port, ask: is there a table whose
+  rollup screen lists rows of that type? If yes, ensure your use case has
+  injected the matching repository and is doing a find-or-create.
+- Cache within a single run (Map<email, ownerId>) to avoid N round-trips when
+  many findings share a committer.
+- Guard the create call against the unique-handle race: on error, re-query.
+
+## In ASPM UI, "branch" = a Feature (worktree), not a git ref on a Repository
+
+The `Repository` domain entity does NOT track multiple branches — it is just `{id, name, path, remoteUrl?}`. The thing users call a "branch" when they ask to "scan this branch" is a **Feature** with a `worktreePath` (and `applicationId` linking back to the parent Application).
+
+When the user requested "scan a repository branch" for ASPM, the right wiring was:
+
+- pass the Feature’s `worktreePath` as a new `scanPath?: string` override on `ScanApplicationUseCase`
+- still attribute findings to `feature.applicationId` (the schema requires it)
+
+Rule: before designing a "scan a branch" / "build a branch" / "deploy a branch" feature, check the Feature entity — not the Repository entity — for `worktreePath` + `branch`. Repositories are just paths.
+
+How to apply:
+
+- If you catch yourself proposing a `branchName` field on Repository, stop — you almost certainly want a Feature reference instead.
+- When extending a use case to scan/build an alternate working tree, prefer an optional `scanPath?: string` (or equivalent) override on the existing use case over inventing a new one. Findings/results still attribute to the Application/Repository row the user cares about.
+
+## Feature.worktreePath is rarely populated — never filter on it
+
+In the live DB virtually every Feature row has `worktree_path = NULL`, even for features in active lifecycle states (Review, Implementation, Maintain). The field only gets set by a few specific flows. Treating it as the source of truth for "is this feature a real branch?" hides almost every feature from any UI that filters on it.
+
+Concrete instance: the ASPM /aspm/inventory page filtered features by `worktreePath !== undefined` so it would only show "scannable" branches. The user expected to see their `feat/aspm-platform` feature under the `cli` repo and instead saw "no applications or branches yet" — because the feature had a null worktree_path even though it had been worked on for weeks.
+
+Rule: never filter feature rows on `worktreePath` for *display* purposes. Use `branch` and `repositoryPath` as the identity of a feature on disk. `worktreePath` is only meaningful when you are about to scan/checkout/spawn against it, and even then you should fall back to `git worktree list` or `<repositoryPath>` instead of hiding the row.
+
+How to apply:
+
+- Inventory / list / explorer views: include every non-Archived, non-deleted Feature. Render `branch` as the secondary identifier.
+- Scan / build / deploy actions: when the action requires an on-disk path, check `worktreePath` per row at action time and disable the action (or fall back) when it is missing — do not pre-filter the row out of the list.
+- Tests: pin down the "row with null worktreePath still appears" case explicitly. It is the more common shape in real data.

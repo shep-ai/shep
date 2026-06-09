@@ -128,6 +128,7 @@ export interface SettingsRow {
   feature_flag_collaboration: number;
   feature_flag_bedrock_integration: number;
   feature_flag_whatsapp_dispatch: number;
+  feature_flag_aspm: number;
   // Interactive agent config (added in migration 046)
   interactive_agent_enabled: number;
   interactive_agent_auto_timeout_minutes: number;
@@ -265,6 +266,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     feature_flag_collaboration: settings.featureFlags?.collaboration ? 1 : 0,
     feature_flag_bedrock_integration: settings.featureFlags?.bedrockIntegration ? 1 : 0,
     feature_flag_whatsapp_dispatch: settings.featureFlags?.whatsappDispatch ? 1 : 0,
+    feature_flag_aspm: settings.featureFlags?.aspm ? 1 : 0,
 
     // InteractiveAgentConfig (boolean → 0/1, integer fields; defaults applied here)
     interactive_agent_enabled: (settings.interactiveAgent?.enabled ?? true) ? 1 : 0,
@@ -501,6 +503,7 @@ export function fromDatabase(row: SettingsRow): Settings {
       collaboration: row.feature_flag_collaboration === 1,
       bedrockIntegration: row.feature_flag_bedrock_integration === 1,
       whatsappDispatch: row.feature_flag_whatsapp_dispatch === 1,
+      aspm: row.feature_flag_aspm === 1,
     },
 
     // InteractiveAgentConfig (INTEGER 0/1 → boolean, integer → number)

@@ -56,3 +56,4 @@ import "./contribution-difficulty.tsp";
 import "./recognition-kind.tsp";
 import "./recap-channel.tsp";
 import "./diagnostic-status.tsp";
+import "./aspm/index.tsp";

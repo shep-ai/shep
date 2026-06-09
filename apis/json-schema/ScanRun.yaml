@@ -1,0 +1,41 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ScanRun.yaml
+type: object
+properties:
+  applicationId:
+    $ref: UUID.yaml
+    description: Application this scan targeted
+  triggeredBy:
+    $ref: ScanTrigger.yaml
+    description: Origin of this scan invocation
+  status:
+    $ref: ScanStatus.yaml
+    description: Lifecycle state of the run
+  startedAt:
+    type: string
+    format: date-time
+    description: When the run transitioned to Running
+  finishedAt:
+    type: string
+    format: date-time
+    description: When the run transitioned to a terminal state (Succeeded/Failed/Partial)
+  stages:
+    type: array
+    items:
+      $ref: ScanStage.yaml
+    description: Per-stage progress. Order matches ScannerProfile.enabledStages.
+  findingsCount:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Total findings produced across all stages of this run (after dedup)
+required:
+  - applicationId
+  - triggeredBy
+  - status
+  - startedAt
+  - stages
+  - findingsCount
+allOf:
+  - $ref: BaseEntity.yaml
+description: A single execution of the ASPM scanner over one application

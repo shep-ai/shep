@@ -31,6 +31,8 @@ export interface IApplicationRepository {
         | 'cloudDeploymentUrl'
         | 'cloudDeploymentError'
         | 'lastDeployedAt'
+        | 'scannerProfile'
+        | 'lastScannedAt'
         | 'bedrockEnabled'
       >
     >

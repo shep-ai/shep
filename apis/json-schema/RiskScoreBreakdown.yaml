@@ -1,0 +1,36 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RiskScoreBreakdown.yaml
+type: object
+properties:
+  total:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Total composite score, 0-100 inclusive
+  cvssContribution:
+    type: number
+    description: Contribution from CVSS base severity
+  epssContribution:
+    type: number
+    description: Contribution from EPSS exploitability percentile
+  kevContribution:
+    type: number
+    description: Contribution from CISA KEV membership
+  exposureContribution:
+    type: number
+    description: Contribution from asset exposure
+  criticalityContribution:
+    type: number
+    description: Contribution from asset criticality tier
+  dataClassificationContribution:
+    type: number
+    description: Contribution from data classification
+required:
+  - total
+  - cvssContribution
+  - epssContribution
+  - kevContribution
+  - exposureContribution
+  - criticalityContribution
+  - dataClassificationContribution
+description: Per-dimension breakdown of a composite RiskScore total

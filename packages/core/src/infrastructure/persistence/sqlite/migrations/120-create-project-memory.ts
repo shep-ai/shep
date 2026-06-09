@@ -1,5 +1,5 @@
 /**
- * Migration 109: Create project_memory table (102-shep-brain — "Shep Brain").
+ * Migration 120: Create project_memory table (102-shep-brain — "Shep Brain").
  *
  * Persistent, per-repository project memory. Each row is one durable,
  * categorised unit of project knowledge (a convention, library choice, naming

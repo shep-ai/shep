@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RiskExceptionStatus.yaml
+type: string
+enum:
+  - Active
+  - Expired
+  - Revoked
+description: Lifecycle status of a risk exception

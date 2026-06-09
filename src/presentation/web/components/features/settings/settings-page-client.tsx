@@ -403,6 +403,7 @@ export function SettingsPageClient({
     projects: false,
     codeReview: false,
     collaboration: false,
+    aspm: false,
     bedrockIntegration: true,
     whatsappDispatch: false,
   };
@@ -1773,6 +1774,18 @@ export function SettingsPageClient({
               checked={flags.collaboration}
               onChange={(v) => {
                 const newFlags = { ...flags, collaboration: v };
+                setFlags(newFlags);
+                save({ featureFlags: newFlags });
+              }}
+            />
+            <SwitchRow
+              label={t('settings.featureFlags.aspm')}
+              description={t('settings.featureFlags.aspmDescription')}
+              id="flag-aspm"
+              testId="switch-flag-aspm"
+              checked={flags.aspm}
+              onChange={(v) => {
+                const newFlags = { ...flags, aspm: v };
                 setFlags(newFlags);
                 save({ featureFlags: newFlags });
               }}

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "semgrep",
+          "rules": [
+            {
+              "id": "javascript.express.security.sql-injection",
+              "name": "express-sql-injection",
+              "shortDescription": { "text": "SQL injection" },
+              "fullDescription": {
+                "text": "Tainted input flows into a SQL query without parameterization."
+              },
+              "defaultConfiguration": { "level": "error" },
+              "properties": {
+                "tags": ["security", "cwe-89"],
+                "cwe": "CWE-89",
+                "security-severity": "9.1"
+              },
+              "relationships": [
+                {
+                  "target": {
+                    "id": "89",
+                    "toolComponent": { "name": "CWE" }
+                  }
+                },
+                {
+                  "target": {
+                    "id": "V5.3.4",
+                    "toolComponent": { "name": "OWASP ASVS" }
+                  }
+                }
+              ]
+            },
+            {
+              "id": "javascript.lang.security.audit.xss",
+              "name": "reflected-xss",
+              "defaultConfiguration": { "level": "warning" },
+              "properties": {
+                "tags": ["security", "xss"],
+                "cwe": "CWE-79",
+                "security-severity": "6.1"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "javascript.express.security.sql-injection",
+          "level": "error",
+          "message": { "text": "Tainted user input flows into db.query()" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/api/users.ts" },
+                "region": { "startLine": 42 }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "javascript.lang.security.audit.xss",
+          "level": "warning",
+          "message": { "text": "Reflected XSS in /search response" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/web/search.tsx" },
+                "region": { "startLine": 17 }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "javascript.lang.security.audit.xss",
+          "level": "warning",
+          "message": { "text": "Reflected XSS in /profile response" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/web/profile.tsx" },
+                "region": { "startLine": 88 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

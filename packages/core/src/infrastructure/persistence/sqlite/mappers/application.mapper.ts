@@ -13,6 +13,10 @@ import type {
   Application,
   CloudDeploymentProvider,
   CloudDeploymentStatus,
+  Criticality,
+  DataClassification,
+  Exposure,
+  ScannerProfile,
 } from '../../../../domain/generated/output.js';
 
 /**
@@ -38,9 +42,32 @@ export interface ApplicationRow {
   cloud_deployment_error: string | null;
   last_deployed_at: number | null;
   bedrock_enabled: number;
+  criticality: string | null;
+  exposure: string | null;
+  data_classification: string | null;
+  business_unit: string | null;
+  scanner_profile_json: string;
+  last_scanned_at: number | null;
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
+}
+
+function parseScannerProfile(json: string | null | undefined): ScannerProfile | undefined {
+  if (!json || json === '{}') return undefined;
+  try {
+    const parsed = JSON.parse(json) as Partial<ScannerProfile>;
+    if (
+      Array.isArray(parsed.enabledStages) &&
+      Array.isArray(parsed.pathExcludes) &&
+      typeof parsed.autoRescan === 'boolean'
+    ) {
+      return parsed as ScannerProfile;
+    }
+  } catch {
+    // Corrupt JSON — fall back to defaults so the app still loads.
+  }
+  return undefined;
 }
 
 function dateOrNumberToMs(value: Date | number): number {
@@ -74,6 +101,15 @@ export function toDatabase(app: Application): ApplicationRow {
         ? dateOrNumberToMs(app.lastDeployedAt)
         : null,
     bedrock_enabled: app.bedrockEnabled ? 1 : 0,
+    criticality: app.criticality ?? null,
+    exposure: app.exposure ?? null,
+    data_classification: app.dataClassification ?? null,
+    business_unit: app.businessUnit ?? null,
+    scanner_profile_json: app.scannerProfile ? JSON.stringify(app.scannerProfile) : '{}',
+    last_scanned_at:
+      app.lastScannedAt !== undefined && app.lastScannedAt !== null
+        ? dateOrNumberToMs(app.lastScannedAt)
+        : null,
     created_at: dateOrNumberToMs(app.createdAt),
     updated_at: dateOrNumberToMs(app.updatedAt),
     deleted_at: app.deletedAt ? dateOrNumberToMs(app.deletedAt) : null,
@@ -109,6 +145,15 @@ export function fromDatabase(row: ApplicationRow): Application {
         ? new Date(row.last_deployed_at)
         : undefined,
     bedrockEnabled: row.bedrock_enabled === 1,
+    criticality: (row.criticality as Criticality | null) ?? undefined,
+    exposure: (row.exposure as Exposure | null) ?? undefined,
+    dataClassification: (row.data_classification as DataClassification | null) ?? undefined,
+    businessUnit: row.business_unit ?? undefined,
+    scannerProfile: parseScannerProfile(row.scanner_profile_json),
+    lastScannedAt:
+      row.last_scanned_at !== null && row.last_scanned_at !== undefined
+        ? new Date(row.last_scanned_at)
+        : undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     deletedAt: row.deleted_at ? new Date(row.deleted_at) : undefined,

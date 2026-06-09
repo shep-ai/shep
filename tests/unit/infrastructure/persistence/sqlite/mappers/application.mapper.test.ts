@@ -4,7 +4,7 @@ import {
   fromDatabase,
   type ApplicationRow,
 } from '@/infrastructure/persistence/sqlite/mappers/application.mapper.js';
-import { ApplicationStatus, type Application } from '@/domain/generated/output.js';
+import { ApplicationStatus, ScanStageName, type Application } from '@/domain/generated/output.js';
 
 function createTestApplication(overrides: Partial<Application> = {}): Application {
   return {
@@ -44,6 +44,12 @@ function createTestRow(overrides: Partial<ApplicationRow> = {}): ApplicationRow 
     cloud_deployment_error: null,
     last_deployed_at: null,
     bedrock_enabled: 0,
+    criticality: null,
+    exposure: null,
+    data_classification: null,
+    business_unit: null,
+    scanner_profile_json: '{}',
+    last_scanned_at: null,
     created_at: new Date('2025-06-01T10:00:00Z').getTime(),
     updated_at: new Date('2025-06-01T12:00:00Z').getTime(),
     deleted_at: null,
@@ -227,6 +233,48 @@ describe('Application Mapper', () => {
       const restored = fromDatabase(toDatabase(original));
 
       expect(restored.bedrockEnabled).toBe(true);
+    });
+  });
+
+  describe('Phase 11 — scanner profile + last scanned', () => {
+    it('serializes a populated scannerProfile to JSON and back', () => {
+      const app = createTestApplication({
+        scannerProfile: {
+          enabledStages: [ScanStageName.Sbom, ScanStageName.Secrets],
+          pathExcludes: ['**/node_modules/**'],
+          autoRescan: false,
+        },
+      });
+      const row = toDatabase(app);
+
+      expect(row.scanner_profile_json).toBe(
+        '{"enabledStages":["sbom","secrets"],"pathExcludes":["**/node_modules/**"],"autoRescan":false}'
+      );
+
+      const roundTripped = fromDatabase(row);
+      expect(roundTripped.scannerProfile).toEqual(app.scannerProfile);
+    });
+
+    it('maps an absent scannerProfile to the empty-object sentinel', () => {
+      const row = toDatabase(createTestApplication());
+
+      expect(row.scanner_profile_json).toBe('{}');
+      expect(fromDatabase(row).scannerProfile).toBeUndefined();
+    });
+
+    it('round-trips lastScannedAt as unix milliseconds', () => {
+      const at = new Date('2026-05-20T16:00:00Z');
+      const app = createTestApplication({ lastScannedAt: at });
+      const row = toDatabase(app);
+
+      expect(row.last_scanned_at).toBe(at.getTime());
+      expect(fromDatabase(row).lastScannedAt).toEqual(at);
+    });
+
+    it('maps an absent lastScannedAt to null and back to undefined', () => {
+      const row = toDatabase(createTestApplication());
+      expect(row.last_scanned_at).toBeNull();
+      expect(fromDatabase(row).lastScannedAt).toBeUndefined();
     });
   });
 

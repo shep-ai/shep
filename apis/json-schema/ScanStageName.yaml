@@ -1,0 +1,11 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ScanStageName.yaml
+type: string
+enum:
+  - sbom
+  - sca
+  - secrets
+  - sast
+  - container
+  - iac
+description: Identifier of a single stage executed by ScanApplicationUseCase

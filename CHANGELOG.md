@@ -4,6 +4,45 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.210.0](/compare/v1.209.2...v1.210.0) · _2026-06-09_
+
+> _Under the hood_ maintenance to keep Shep running smoothly — no new features, just the polish that keeps the engine clean.
+
+
+
+### ✨ Features
+
+* **domain:** add application security posture management module behind feature flag ([#628](https://github.com/shep-ai/shep/issues/628)) ([e691a07](https://github.com/shep-ai/shep/commit/e691a071b343e1ae211117381cace0f730b8122b))
+
+  ![App: /aspm dashboard rendered from the running Next.js dev server, showing posture cards by canonical severity (Critical/High/Medium/Low/Info), KEV/SLA/exception/AI-review tiles, last-ingested tile, and 30-day risk trend chart with severity legend.](https://raw.githubusercontent.com/shep-ai/shep/feat/aspm-platform/specs/098-aspm-platform/evidence/app-aspm-dashboard.png)
+  ![App: /aspm/findings page from the running app, showing the FindingsFilterBar with severity / domain / state / KEV chips and the FindingsTable empty-state guidance ('Run shep aspm ingest --sarif to populate this view').](https://raw.githubusercontent.com/shep-ai/shep/feat/aspm-platform/specs/098-aspm-platform/evidence/app-aspm-findings.png)
+  ![App: /aspm/inventory page from the running app, showing the asset-risk relationship view (React Flow / tabular fallback) with the application+at-risk wiring from get-application-posture.](https://raw.githubusercontent.com/shep-ai/shep/feat/aspm-platform/specs/098-aspm-platform/evidence/app-aspm-inventory.png)
+  ![App: /aspm/owners page from the running app, showing the OwnerMap rendered via ListOwnerRollupsUseCase (server-fetched).](https://raw.githubusercontent.com/shep-ai/shep/feat/aspm-platform/specs/098-aspm-platform/evidence/app-aspm-owners.png)
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.210.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.209.2](/compare/v1.209.1...v1.209.2) · _2026-06-09_
 
 > _No user-facing changes_ — just the unglamorous-but-necessary maintenance work that keeps the engine humming.
