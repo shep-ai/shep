@@ -1036,3 +1036,30 @@ into an LLM prompt:
 7. **When you mock node-helpers in a node test, add every new export the node
    imports** (e.g. `applyMemorySelection`) or the node throws "x is not a
    function" at runtime.
+
+## Wiring an Optional External Capability (Embeddings) Agent-Agnostically + CI-Safe
+
+To add semantic memory ranking without violating the agent-agnostic rule or
+breaking offline CI:
+
+1. **Define an output port** (`IEmbeddingProvider { isAvailable(); embed() }`) and
+   keep the concrete adapter provider-agnostic — any OpenAI-compatible endpoint
+   via `fetch`, configured by env (`SHEP_EMBEDDINGS_API_KEY/BASE_URL/MODEL`). No
+   provider SDK imported, no hardcoded vendor.
+2. **Gate on config + degrade gracefully.** `isAvailable()` is false without an
+   API key, so the default/offline/CI path makes ZERO network calls and behaves
+   exactly as before. The semantic scorer composes the deterministic one and
+   **falls back to it** when the provider is unavailable, the task text is empty,
+   or any embedding call throws. Selection must never fail.
+3. **Compose, don't fork.** The embedding scorer injects the lexical scorer as
+   its fallback and both share one `rankByContentScore(query, entries, contentFn)`
+   helper — only the content signal differs (token overlap vs. cosine). No
+   duplicated category/recency/weight/sort logic.
+4. **Cache embeddings in-process** keyed by a hash of the text, so the same entry
+   isn't re-embedded across the many selections in one agent run.
+5. **Test offline.** Stub the provider for the scorer tests (cosine ranking,
+   fallback, cache); spy on `globalThis.fetch` for the adapter test. Never make a
+   real network call — the no-key default keeps the whole suite deterministic.
+6. **eslint `prefer-nullish-coalescing` vs. empty env strings:** `process.env.X ||
+   DEFAULT` is flagged. But `??` won't fall back on an empty string. Use
+   `const v = process.env.X?.trim(); return v && v.length ? v : DEFAULT;`.

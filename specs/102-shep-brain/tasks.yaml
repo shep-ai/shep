@@ -353,8 +353,35 @@ tasks:
         - Share loadCandidateMemory between read + select
     estimatedEffort: L
 
+  - id: task-15
+    title: Semantic (embedding) relevance scorer behind the port
+    description: >
+      Wire an embedding-based scorer behind IMemoryRelevanceScorer. Add an
+      IEmbeddingProvider port + an OpenAI-compatible adapter gated on
+      SHEP_EMBEDDINGS_API_KEY (offline/CI default → unavailable). The
+      EmbeddingMemoryRelevanceScorer ranks by cosine similarity to the task-text
+      embedding (blended with phase affinity + recency via a shared helper),
+      caches embeddings in-process, and falls back to the lexical scorer when
+      embeddings are unavailable or fail. Becomes the active scorer.
+    state: Done
+    dependencies:
+      - task-14
+    acceptanceCriteria:
+      - IEmbeddingProvider port + OpenAI-compatible adapter (env-gated)
+      - EmbeddingMemoryRelevanceScorer ranks by cosine; caches; falls back to lexical
+      - Active 'IMemoryRelevanceScorer' is the embedding scorer; offline behaviour unchanged
+      - Shared relevance-ranking helper used by both scorers (no duplication)
+    tdd:
+      red:
+        - Embedding scorer unit (fallback, cosine ranking, cache, error fallback); provider unit (isAvailable, fetch)
+      green:
+        - Build port + adapter + scorer; refactor lexical onto shared helper; DI swap
+      refactor:
+        - Extract rankByContentScore shared between lexical + embedding
+    estimatedEffort: L
+
 # Total effort estimate
-totalEstimate: XL (14 tasks, 6 phases)
+totalEstimate: XL (15 tasks, 6 phases)
 
 # Open questions
 openQuestions: []
