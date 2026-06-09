@@ -31,6 +31,7 @@ const defaultFlags = {
   aspm: false,
   clusters: false,
   supplyChainSecurity: false,
+  scheduledWorkflows: false,
 };
 
 /**
