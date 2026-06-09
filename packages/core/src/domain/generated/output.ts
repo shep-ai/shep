@@ -699,6 +699,10 @@ export type FeatureFlags = {
    * Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098)
    */
   aspm: boolean;
+  /**
+   * Enable Clusters navigation and Kubernetes cluster management in the web UI
+   */
+  clusters: boolean;
 };
 export enum WhatsAppAdapterKind {
   Baileys = 'baileys',
@@ -5339,3 +5343,102 @@ export type LocalDeployAgentOperations = {
   Analyze(repositoryPath: string): DeploySkill;
   Ask(query: string): AskResponse;
 };
+export enum ClusterStatus {
+  Provisioning = 'Provisioning',
+  Ready = 'Ready',
+  Stopping = 'Stopping',
+  Stopped = 'Stopped',
+  Error = 'Error',
+  Destroying = 'Destroying',
+}
+
+/**
+ * A managed Kubernetes cluster provisioned via k3s-in-Docker
+ */
+export type Cluster = SoftDeletableEntity & {
+  /**
+   * Human-readable cluster name
+   */
+  name: string;
+  /**
+   * URL-friendly identifier (unique among non-deleted clusters)
+   */
+  slug: string;
+  /**
+   * Optional description of the cluster's purpose
+   */
+  description?: string;
+  /**
+   * Current operational status of the cluster
+   */
+  status: ClusterStatus;
+  /**
+   * The k3d-internal cluster name (set during provisioning)
+   */
+  k3dClusterName?: string;
+  /**
+   * Absolute path to the kubeconfig file
+   */
+  kubeconfigPath?: string;
+  /**
+   * Whether ArgoCD is enabled for this cluster
+   */
+  argoCdEnabled: boolean;
+  /**
+   * Kubernetes namespace where ArgoCD is installed
+   */
+  argoCdNamespace: string;
+  /**
+   * Number of k3s nodes (default 1, reserved for future multi-node support)
+   */
+  nodeCount: number;
+  /**
+   * Timestamp when the cluster was last successfully provisioned
+   */
+  lastProvisionedAt?: any;
+  /**
+   * Timestamp of the most recent health check
+   */
+  lastHealthCheckAt?: any;
+  /**
+   * Error message from the last failed operation (set when status = Error)
+   */
+  errorMessage?: string;
+};
+
+/**
+ * Junction entity linking Clusters to Repositories (many-to-many)
+ */
+export type ClusterRepository = BaseEntity & {
+  /**
+   * The cluster ID
+   */
+  clusterId: UUID;
+  /**
+   * The repository ID
+   */
+  repositoryId: UUID;
+};
+
+/**
+ * Junction entity linking Clusters to Applications (many-to-many)
+ */
+export type ClusterApplication = BaseEntity & {
+  /**
+   * The cluster ID
+   */
+  clusterId: UUID;
+  /**
+   * The application ID
+   */
+  applicationId: UUID;
+};
+
+/**
+ * Single installation suggestion for a tool
+ */
+export type InstallationSuggestion = {
+  /**
+   * Package manager or installation method
+   */
+  packageManager: string;
