@@ -1,0 +1,8 @@
+
+> @shepai/cli@1.183.0 tsp:compile /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-ai-tool-plugin-system
+> tsp compile tsp/
+
+TypeSpec compiler v0.60.1
+
+Compilation completed successfully.
+

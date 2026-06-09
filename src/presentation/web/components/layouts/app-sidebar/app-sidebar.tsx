@@ -14,6 +14,7 @@ import {
   Wrench,
   Puzzle,
   CalendarClock,
+  Plug,
   Settings,
   TableProperties,
   FolderKanban,
@@ -324,6 +325,12 @@ export function AppSidebar({
               active={pathname === '/workflows'}
             />
           ) : null}
+          <SidebarNavItem
+            icon={Plug}
+            label={t('navigation.plugins')}
+            href="/plugins"
+            active={pathname === '/plugins'}
+          />
           <SidebarNavItem
             icon={Settings}
             label={t('navigation.settings')}

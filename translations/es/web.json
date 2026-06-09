@@ -344,7 +344,8 @@
     "aspmAiReview": "AI Review",
     "aspmCompliance": "Compliance",
     "collaboration": "Collaboration",
-    "clusters": "Clústeres"
+    "clusters": "Clústeres",
+    "plugins": "Plugins"
   },
   "sidebar": {
     "features": "Funcionalidades",

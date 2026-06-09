@@ -69,6 +69,7 @@ function baseState(_overrides: Partial<FeatureAgentState> = {}): FeatureAgentSta
     commitEvidence: false,
     securityMode: 'Disabled',
     securityActionDispositions: {},
+    mcpConfigPath: undefined,
   } as FeatureAgentState;
 }
 

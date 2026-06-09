@@ -1,0 +1,343 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: ai-tool-plugin-system
+number: 89
+branch: "feat/089-ai-tool-plugin-system"
+oneLiner: "Pluggable AI-native tool system for integrating external tools (MCP servers, CLIs, hook-based tools) into agentic SDLC workflows"
+userQuery: >
+  I want to be have a feature in shep to plugin ai native tools into the agentic workflows and SDLC and automation,
+  for example if I want to plug in
+  https://github.com/MemPalace/mempalace
+  or
+  https://github.com/alexgreensh/token-optimizer
+  or
+  https://github.com/ruvnet/ruflo
+  or other it would be easy and possible
+summary: >
+  A plugin system that lets users register, configure, and activate external AI-native tools
+  (such as MemPalace, Token Optimizer, Ruflo, or any MCP-compatible tool) into Shep's agentic
+  workflows. Supports three integration types: MCP server plugins (stdio/HTTP transports),
+  hook-based plugins (Claude Code lifecycle hooks), and CLI tool plugins (standalone executables).
+  Builds on existing IAgentExecutorProvider and ISkillInjectorService patterns to provide a
+  unified plugin registry with lifecycle management, per-feature activation, environment variable
+  injection, and automatic MCP server injection into agent execution contexts.
+phase: "Requirements"
+sizeEstimate: "L"
+
+# Relationships
+relatedFeatures: []
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "tsyringe (DI)"
+  - "LangGraph (workflow orchestration)"
+  - "SQLite (persistence)"
+  - "Model Context Protocol (MCP)"
+  - "Next.js (web UI)"
+  - "Commander.js (CLI)"
+  - "shadcn/ui (component library)"
+  - "@modelcontextprotocol/sdk (MCP client)"
+
+relatedLinks:
+  - title: "MemPalace - Local AI memory system with MCP server"
+    url: "https://github.com/MemPalace/mempalace"
+  - title: "Token Optimizer - Token waste reduction and context management"
+    url: "https://github.com/alexgreensh/token-optimizer"
+  - title: "Ruflo - Multi-agent AI orchestration framework with MCP"
+    url: "https://github.com/ruvnet/ruflo"
+  - title: "Model Context Protocol specification"
+    url: "https://modelcontextprotocol.io"
+
+# Open questions (resolved with AI recommendations)
+openQuestions:
+  - question: "What plugin integration types should be supported in the initial release?"
+    resolved: true
+    options:
+      - option: "MCP-only"
+        description: "Only support tools that expose MCP servers (stdio/HTTP). Simplest to build but excludes hook-based tools like Token Optimizer. Would cover MemPalace and Ruflo but not the full spectrum of referenced tools."
+        selected: false
+      - option: "MCP + CLI tools"
+        description: "Support MCP servers and standalone CLI tools (binary or script executables). Covers most tools but misses hook-based integration patterns used by Claude Code plugins."
+        selected: false
+      - option: "MCP + CLI + Hooks"
+        description: "Support all three integration types: MCP servers (primary), CLI tool wrappers, and hook-based lifecycle plugins. Covers the full spectrum of referenced tools including Token Optimizer's hook pattern. More complex but future-proof."
+        selected: true
+    selectionRationale: "All three referenced tools use different integration patterns: MemPalace uses MCP stdio, Ruflo uses MCP with multi-transport, and Token Optimizer uses hooks with no MCP at all. Supporting only MCP would exclude a major category of AI-native tools. The hook integration can be lightweight since it delegates to the existing Claude Code hook system rather than implementing a custom hook runtime."
+    answer: "MCP + CLI + Hooks"
+
+  - question: "How should MCP server lifecycle be managed during agent execution?"
+    resolved: true
+    options:
+      - option: "Pre-spawn per feature"
+        description: "Start all enabled MCP servers when a feature begins execution, keep them running for the entire feature lifecycle, and stop them when the feature completes or is paused. Simple but wasteful if plugins are only needed in specific phases."
+        selected: true
+      - option: "On-demand per node"
+        description: "Start MCP servers only when a LangGraph node that requires them begins execution, and stop them after the node completes. More resource-efficient but adds latency to every node transition and complexity for managing concurrent servers."
+        selected: false
+      - option: "Always-on daemon"
+        description: "Start MCP servers as long-running background daemons that persist across features. Most responsive but consumes resources even when no features are running and requires daemon management infrastructure."
+        selected: false
+    selectionRationale: "Pre-spawn per feature balances simplicity and efficiency. MCP servers are lightweight processes, and the overhead of keeping them alive during a feature (minutes to hours) is negligible. On-demand adds cold-start latency to every phase transition and creates complex lifecycle management. Always-on daemon adds unnecessary infrastructure for tools that are only needed during active agent execution."
+    answer: "Pre-spawn per feature"
+
+  - question: "Where should plugin configuration be stored?"
+    resolved: true
+    options:
+      - option: "Settings entity only"
+        description: "Store all plugin config (registry, activation, env vars) in the existing Settings singleton. Follows established patterns but flattens deeply nested plugin config into the already-large settings table."
+        selected: false
+      - option: "Separate plugins table"
+        description: "Store plugin registry and configuration in a dedicated SQLite table with its own repository and mapper. Keep only a lightweight enablement reference in Settings. Cleaner separation of concerns, easier to query and manage independently."
+        selected: true
+      - option: "File-based config"
+        description: "Store plugin config in a JSON/YAML file on disk (e.g., .shep/plugins.json). Avoids DB complexity but loses transactional integrity, harder to query, and diverges from the established SQLite persistence pattern."
+        selected: false
+    selectionRationale: "The Settings entity is already large (100+ columns) and plugin config is a distinct concern with its own CRUD lifecycle. A dedicated plugins table follows the same pattern as the features table -- separate entity, separate repository, separate mapper. The Settings entity can hold a simple global 'plugins enabled' toggle and per-feature plugin activation lists, while the plugins table holds the full registry (name, type, transport, install command, env vars, health status)."
+    answer: "Separate plugins table"
+
+  - question: "How should plugins be discovered and added?"
+    resolved: true
+    options:
+      - option: "Manual registration only"
+        description: "Users manually specify plugin details via CLI command (name, type, command, args, env vars). Full control but requires users to know exact MCP server invocation details."
+        selected: false
+      - option: "Manual + curated registry"
+        description: "Manual registration plus a built-in catalog of well-known plugins (MemPalace, Ruflo, Token Optimizer, etc.) with pre-configured metadata. Users select from the catalog or add custom entries. Reduces friction for popular tools."
+        selected: true
+      - option: "Auto-discovery from npm/pip"
+        description: "Automatically discover MCP-compatible packages from npm/pip registries via naming conventions or metadata tags. Most convenient but unreliable (no standard MCP package discovery protocol exists), security concerns with auto-installing packages."
+        selected: false
+    selectionRationale: "A curated registry provides the best UX for the referenced tools while remaining open to custom plugins. Auto-discovery from package managers is unreliable and risky. Manual-only is too high-friction for users who just want to add a popular tool. The curated catalog is a simple JSON file in the codebase that maps well-known tool names to their installation commands, MCP server invocations, and default configurations."
+    answer: "Manual + curated registry"
+
+  - question: "Should plugins be activatable per-feature or only globally?"
+    resolved: true
+    options:
+      - option: "Global only"
+        description: "Plugins are either enabled or disabled for all features. Simpler to implement but prevents fine-grained control. Users cannot disable a heavy plugin (like Ruflo's 313 tools) for simple features while keeping it for complex ones."
+        selected: false
+      - option: "Global default + per-feature override"
+        description: "Plugins have a global enabled/disabled default in Settings. Each feature can override individual plugin activation. Follows the exact same pattern as existing per-feature settings (enableEvidence, commitSpecs, forkAndPr) with the established 12-layer settings flow."
+        selected: true
+      - option: "Per-feature only"
+        description: "Plugins are configured independently per feature with no global defaults. Maximum flexibility but requires configuring plugins for every new feature, which is tedious."
+        selected: false
+    selectionRationale: "This mirrors the existing per-feature settings pattern perfectly. Users set global defaults ('always use MemPalace') and override per-feature when needed ('disable Ruflo for this simple bug fix'). The 12-layer settings propagation flow from LESSONS.md already handles this pattern, so the implementation follows established infrastructure."
+    answer: "Global default + per-feature override"
+
+  - question: "How should plugin environment variables (API keys) be handled?"
+    resolved: true
+    options:
+      - option: "Store in plugin config (SQLite)"
+        description: "Store env vars directly in the plugins table alongside other config. Simple to manage but puts secrets in the SQLite database, which may not be encrypted."
+        selected: false
+      - option: "Reference from system env"
+        description: "Plugins declare required env var names, and the system reads them from the host environment at runtime. Secrets never stored by Shep. Users set env vars via .env files or shell profile. Most secure but requires users to manage env vars outside Shep."
+        selected: true
+      - option: "Encrypted settings store"
+        description: "Build a dedicated encrypted keychain for plugin secrets. Most secure in-app storage but adds significant complexity (encryption key management, platform-specific keychain integration) and is out of scope for initial implementation."
+        selected: false
+    selectionRationale: "Referencing from system environment is the standard pattern for all existing tools in Shep (e.g., ANTHROPIC_API_KEY for agent executors). It requires no new secret management infrastructure, works with .env files and CI environments, and keeps secrets out of SQLite. The plugin registry stores only the env var NAMES that a plugin requires, not the values. At spawn time, the system validates that required env vars are present and passes them to the MCP server process."
+    answer: "Reference from system env"
+
+  - question: "What scope of MCP tool filtering should be supported?"
+    resolved: true
+    options:
+      - option: "No filtering (all or nothing)"
+        description: "When a plugin is enabled, all its MCP tools are available. Simple but problematic for tools like Ruflo with 313 tools -- Claude Code has a 40-tool practical limit, and excessive tools degrade agent performance."
+        selected: false
+      - option: "Tool group filtering"
+        description: "Allow users to specify which tool groups or individual tools from a plugin are active. The plugin metadata includes tool group definitions (e.g., Ruflo's 'implement', 'test', 'memory' groups). Users select groups in the config."
+        selected: true
+      - option: "AI-driven dynamic filtering"
+        description: "Automatically select relevant tools per LangGraph node based on the node's purpose (e.g., only memory tools in analyze, only implementation tools in implement). Intelligent but complex and unpredictable."
+        selected: false
+    selectionRationale: "Tool group filtering balances control and simplicity. Ruflo already defines tool groups via CLAUDE_FLOW_TOOL_GROUPS, and the plugin system can formalize this into the registry metadata. Users get a manageable list of checkboxes rather than 313 individual toggles. AI-driven filtering is too complex for V1 and would require per-node tool resolution logic that could behave unpredictably."
+    answer: "Tool group filtering"
+
+  - question: "Should the web UI include a full plugin marketplace or just configuration management?"
+    resolved: true
+    options:
+      - option: "Configuration management only"
+        description: "Web UI shows installed plugins, their status, and configuration toggles. Adding new plugins is CLI-only. Simplest to build and avoids the complexity of a marketplace UI."
+        selected: false
+      - option: "Config + curated catalog browse"
+        description: "Web UI shows installed plugins and also lets users browse/install from the curated catalog. Provides a visual install experience without building a full marketplace with search, ratings, etc."
+        selected: true
+      - option: "Full marketplace"
+        description: "Web UI with search, categories, ratings, install counts, and community submissions. Maximum discoverability but massive scope increase requiring backend APIs and community infrastructure."
+        selected: false
+    selectionRationale: "A curated catalog browser is the sweet spot -- it gives users a visual way to discover and install well-known plugins without the massive infrastructure of a full marketplace. The catalog is a static JSON file shipped with Shep, so no backend APIs are needed. For V1, the catalog covers the referenced tools plus a few more; custom plugins are added via CLI."
+    answer: "Config + curated catalog browse"
+
+# Markdown content (the actual spec)
+content: |
+  ## Problem Statement
+
+  Shep's agentic SDLC workflows currently have limited extensibility for external AI-native tools. While the
+  platform has a tool installer service (for CLI tools like git, gh, Claude Code) and a skill injector service
+  (for agent prompt extensions), there is no unified mechanism to:
+
+  1. **Discover and register** third-party AI tools (memory systems, token optimizers, specialized agents, etc.)
+  2. **Configure tool-specific settings** (API keys, initialization parameters, activation per-feature)
+  3. **Inject tools into agent execution contexts** so LangGraph workflow nodes can use them during autonomous execution
+  4. **Manage tool lifecycle** (install, initialize per-project, health-check, update, remove)
+
+  Users who want to enhance their workflows with tools like MemPalace (persistent AI memory), Token Optimizer
+  (context window management), or Ruflo (specialized agent orchestration) currently have no straightforward
+  path to plug these into Shep's autonomous execution pipeline.
+
+  The referenced tools demonstrate three distinct integration patterns:
+  - **MCP server plugins** (MemPalace, Ruflo) -- expose tools via Model Context Protocol over stdio or HTTP
+  - **Hook-based plugins** (Token Optimizer) -- integrate via Claude Code lifecycle hooks without MCP
+  - **CLI tool plugins** -- standalone executables invoked during workflow steps
+
+  The plugin system must accommodate all three patterns under a unified registry and lifecycle model.
+
+  ## Success Criteria
+
+  - [ ] User can add a plugin from the curated catalog via `shep plugin add mempalace` and it auto-configures
+  - [ ] User can add a custom MCP plugin via `shep plugin add --name my-tool --command "npx my-tool-mcp" --transport stdio`
+  - [ ] User can list all registered plugins and their health status via `shep plugin list`
+  - [ ] User can enable/disable a plugin globally via `shep plugin enable/disable <name>`
+  - [ ] User can override plugin activation per-feature in the create-feature flow
+  - [ ] MCP server plugins are automatically started when a feature begins execution and stopped when it completes
+  - [ ] MCP server connection string is injected into agent execution options so the agent can use plugin-provided tools
+  - [ ] Plugin health check verifies runtime availability (e.g., Python installed for MemPalace) and reports errors
+  - [ ] Plugin environment variables (API keys) are validated at spawn time and missing vars produce clear error messages
+  - [ ] Web UI displays installed plugins with status indicators and toggle controls
+  - [ ] Web UI allows browsing and installing from the curated plugin catalog
+  - [ ] Plugin configuration persists across Shep restarts (SQLite storage)
+  - [ ] Removing a plugin cleans up its configuration and stops any running MCP servers
+  - [ ] At least 3 curated catalog entries ship with V1 (MemPalace, Token Optimizer, Ruflo)
+  - [ ] All plugin management use cases are accessible from CLI, web UI, and (future) TUI via the same core API
+  - [ ] No hardcoded agent types -- plugin injection works with any agent executor (Claude Code, Cursor, Gemini CLI, etc.)
+
+  ## Functional Requirements
+
+  - **FR-1: Plugin Registry** -- The system must maintain a persistent registry of installed plugins in a dedicated SQLite table. Each plugin record stores: unique name, display name, plugin type (mcp/hook/cli), version, installation source, MCP transport type, server command and args, required environment variable names, tool groups, enabled/disabled status, health status, and timestamps.
+
+  - **FR-2: Plugin Type Support** -- The system must support three plugin types: (a) MCP server plugins that expose tools via Model Context Protocol over stdio or HTTP transport, (b) hook-based plugins that integrate via Claude Code lifecycle hooks, and (c) CLI tool plugins that provide standalone executables.
+
+  - **FR-3: Curated Plugin Catalog** -- The system must ship with a built-in catalog of well-known plugins with pre-configured metadata (name, type, install command, server command, required env vars, tool groups). V1 catalog must include at least MemPalace, Token Optimizer, and Ruflo.
+
+  - **FR-4: Plugin Installation** -- The system must support installing plugins from the curated catalog by name (e.g., `shep plugin add mempalace`) and custom plugins by specifying type, command, args, and transport. Installation must verify runtime dependencies (e.g., Python 3.9+ for MemPalace, Node.js 20+ for Ruflo) and report missing dependencies with install guidance.
+
+  - **FR-5: Plugin Removal** -- The system must support removing a plugin by name, which stops any running MCP server processes, removes the plugin record from the registry, and cleans up per-feature activation overrides.
+
+  - **FR-6: Plugin Health Check** -- The system must verify plugin health on demand and at feature-start time. Health checks verify: (a) runtime is available (python3/node on PATH), (b) package is installed (pip show/npx --yes), (c) required env vars are set, (d) MCP server can be started and responds. Health status is stored in the registry and surfaced in CLI and web UI.
+
+  - **FR-7: Global Enable/Disable** -- The system must allow globally enabling or disabling a plugin. Disabled plugins are skipped during feature execution. Enable/disable state persists in the plugin registry.
+
+  - **FR-8: Per-Feature Plugin Activation** -- The system must support per-feature plugin activation overrides following the existing per-feature settings pattern. Each feature can enable or disable specific plugins independently of the global default. This flows through the established 12-layer settings propagation path.
+
+  - **FR-9: MCP Server Lifecycle Management** -- For MCP server plugins, the system must: (a) start the MCP server process when a feature begins execution, (b) pass required environment variables to the server process, (c) monitor the server process for unexpected exits, (d) stop the server process when the feature completes, pauses, or fails, (e) handle concurrent features sharing the same MCP server instance.
+
+  - **FR-10: Agent Execution Integration** -- The system must inject active MCP plugin connection information into AgentExecutionOptions so that agent executors can connect to plugin-provided MCP servers. For Claude Code executor, this means generating the appropriate `--mcp-config` arguments. The integration must be agent-type agnostic via the IAgentExecutor interface.
+
+  - **FR-11: Tool Group Filtering** -- For plugins that expose many tools (e.g., Ruflo with 313), the system must support tool group filtering. Users can select which tool groups are active for a plugin. The plugin catalog metadata includes tool group definitions. Only tools from selected groups are made available to the agent.
+
+  - **FR-12: CLI Commands** -- The system must provide CLI commands under `shep plugin`: `add` (install from catalog or custom), `remove` (uninstall), `list` (show all with status), `enable`/`disable` (toggle global activation), `configure` (set tool groups, env var names), `status` (detailed health check), and `catalog` (browse available plugins).
+
+  - **FR-13: Web UI Plugin Management** -- The web UI must provide: (a) a plugin list view showing installed plugins with status badges and toggle switches, (b) a catalog browser for discovering and installing curated plugins, (c) plugin detail view with configuration options (tool groups, activation status), (d) per-feature plugin toggle in the create-feature drawer.
+
+  - **FR-14: Hook-Based Plugin Support** -- For hook-based plugins (like Token Optimizer), the system must manage plugin installation into the appropriate hooks directory and track their lifecycle. The plugin registry stores the hook type and script path. Hook plugin health is verified by checking script existence and runtime availability.
+
+  - **FR-15: Plugin Configuration Export/Import** -- The system must support exporting the plugin configuration (installed plugins, tool groups, activation status) to a portable format and importing it into another Shep installation. This enables team-wide plugin standardization.
+
+  ## Non-Functional Requirements
+
+  - **NFR-1: Startup Latency** -- Plugin system initialization (loading registry, not starting MCP servers) must add less than 100ms to Shep startup time. MCP servers are only started on feature execution, not on CLI boot.
+
+  - **NFR-2: MCP Server Startup** -- Individual MCP server processes must start and become responsive within 10 seconds. Servers that exceed this timeout are marked unhealthy and skipped for the current feature execution.
+
+  - **NFR-3: Agent-Agnostic Design** -- No component in the plugin system may hardcode a specific agent type. All agent interaction flows through the IAgentExecutor and IAgentExecutorProvider interfaces. Plugin injection must work with Claude Code, Cursor, Gemini CLI, and any future agent executor.
+
+  - **NFR-4: Clean Architecture Compliance** -- Plugin domain models defined in TypeSpec. Port interfaces in application layer. Implementations in infrastructure. Presentation layer (CLI, web) calls only use cases. No cross-layer imports.
+
+  - **NFR-5: Cross-Platform Compatibility** -- The plugin system must work on macOS, Linux, and Windows. Runtime detection (python3 vs python, npx resolution) must handle platform differences. File paths must use path.join(). Process spawning must avoid shell: true.
+
+  - **NFR-6: Security -- No Secret Storage** -- The plugin system must NEVER store API keys, tokens, or other secrets in SQLite or any Shep-managed file. Only environment variable names are stored. Values are read from the host environment at runtime. Missing required env vars produce a clear, actionable error message.
+
+  - **NFR-7: Resource Cleanup** -- All MCP server processes spawned by the plugin system must be cleaned up on feature completion, Shep exit, and unexpected termination (via process signal handlers). Orphaned server processes must not persist after Shep exits.
+
+  - **NFR-8: Graceful Degradation** -- If a plugin's MCP server fails to start or crashes during execution, the feature agent must continue running without the plugin's tools. Plugin failures must be logged and surfaced in the feature status but must not halt the SDLC workflow.
+
+  - **NFR-9: Database Migration Safety** -- New SQLite tables and columns must be additive-only (no DROP/RENAME). Migrations must be backward compatible per LESSONS.md guidance. The plugins table is a new table, not a modification to settings.
+
+  - **NFR-10: Test Coverage** -- All use cases must have unit tests with mocked dependencies. Plugin lifecycle (install, health check, start, stop) must have integration tests. MCP server integration must have at least one end-to-end test with a real (lightweight) MCP server.
+
+  - **NFR-11: Concurrent Feature Safety** -- Multiple features running concurrently may share the same MCP server instance or require separate instances. The plugin system must handle reference counting for shared servers and independent lifecycle for per-feature servers without race conditions.
+
+  - **NFR-12: Catalog Extensibility** -- The curated plugin catalog must be a static data file (JSON) that can be extended without code changes. Adding a new catalog entry requires only editing the catalog file and providing the plugin metadata.
+
+  ## Product Questions & AI Recommendations
+
+  | # | Question | AI Recommendation | Rationale |
+  | - | -------- | ----------------- | --------- |
+  | 1 | What plugin integration types should be supported? | MCP + CLI + Hooks | All three referenced tools use different patterns; MCP-only would exclude Token Optimizer |
+  | 2 | How should MCP server lifecycle be managed? | Pre-spawn per feature | Balances simplicity and efficiency; MCP servers are lightweight processes |
+  | 3 | Where should plugin configuration be stored? | Separate plugins table | Settings entity is already large; plugins have distinct CRUD lifecycle |
+  | 4 | How should plugins be discovered and added? | Manual + curated registry | Curated catalog for popular tools; manual for custom plugins |
+  | 5 | Should plugins be per-feature or global? | Global default + per-feature override | Mirrors existing per-feature settings pattern exactly |
+  | 6 | How should API keys be handled? | Reference from system env | Standard pattern for all existing tools; no new secret management needed |
+  | 7 | What scope of tool filtering? | Tool group filtering | Balances control for large tool sets (Ruflo: 313 tools) without per-tool complexity |
+  | 8 | What web UI scope? | Config + curated catalog browse | Visual install from catalog; full marketplace is out of scope for V1 |
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `tsp/` (TypeSpec models) | High | New domain entities: Plugin, PluginConfig, PluginType enum, PluginTransport enum, PluginHealthStatus enum, ToolGroup model |
+  | `packages/core/src/domain/` | High | Generated types from TypeSpec compilation |
+  | `packages/core/src/application/ports/output/` | High | New port interfaces: IPluginRepository, IPluginLifecycleService, IMcpServerManager |
+  | `packages/core/src/application/use-cases/` | High | New use cases: add-plugin, remove-plugin, configure-plugin, enable-plugin, disable-plugin, list-plugins, check-plugin-health, get-plugin-catalog |
+  | `packages/core/src/infrastructure/services/` | High | New plugin service implementations: registry, MCP server manager, health checker, catalog provider |
+  | `packages/core/src/infrastructure/di/container.ts` | Medium | Register new services, use cases, and string token aliases |
+  | `packages/core/src/infrastructure/persistence/sqlite/` | Medium | New migration for plugins table, new repository and mapper |
+  | `packages/core/src/infrastructure/services/agents/feature-agent/` | Medium | Inject active plugins into agent execution options per workflow node |
+  | `packages/core/src/infrastructure/services/agents/common/executors/` | Medium | Pass plugin-provided MCP server config to agent executor CLI args |
+  | `src/presentation/cli/commands/` | Medium | New CLI command group: `shep plugin add/remove/list/enable/disable/configure/status/catalog` |
+  | `src/presentation/web/` | Medium | Plugin management page, catalog browser, per-feature plugin toggles in create drawer |
+  | `packages/core/src/infrastructure/services/tool-installer/` | Low | May reuse for plugin runtime dependency detection (python3, node) |
+  | `packages/core/src/infrastructure/services/skill-injector/` | Low | Pattern reference; hook-based plugins follow similar injection pattern |
+  | Feature entity and mapper | Low | New optional field for per-feature plugin activation overrides |
+
+  ## Dependencies
+
+  **Internal Dependencies:**
+  - Existing `IAgentExecutorFactory` and `IAgentExecutorProvider` interfaces (plugin tools injected via execution options)
+  - Existing `IToolInstallerService` pattern (for runtime dependency detection -- python3, node availability)
+  - Existing `ISkillInjectorService` pattern (for understanding worktree-level injection and hook management)
+  - Existing `IAgentRegistry` pattern (for plugin discovery/registration pattern reference)
+  - Settings service and per-feature settings flow (for plugin activation toggles)
+  - SQLite persistence layer (for plugin registry storage)
+  - LangGraph feature agent state channels (for per-node plugin availability)
+  - AgentExecutionOptions type (for injecting MCP config into agent executors)
+  - Feature entity (for per-feature plugin override storage)
+
+  **External Dependencies:**
+  - `@modelcontextprotocol/sdk` -- MCP client library for connecting to and managing plugin MCP servers
+  - Runtime detection utilities for Python (pip/pipx) and Node.js (npx/npm) -- no new npm packages needed, uses child_process
+
+  **Referenced Tools (Example Plugins):**
+  - **MemPalace** -- 19 MCP tools via Python stdio server (`python -m mempalace.mcp_server`). Python 3.9+ runtime. No API keys. Local storage in `~/.mempalace/`.
+  - **Token Optimizer** -- Hook-based integration (no MCP). Python 3.8+ runtime. No API keys. Integrates via Claude Code hooks (SessionStart, PreToolUse, PostToolUse, etc.). Config in `~/.claude/token-optimizer/`.
+  - **Ruflo** -- 313 MCP tools via Node.js server (`npx ruflo@latest mcp start`). Node.js 20+ runtime. Requires ANTHROPIC_API_KEY. Supports stdio and HTTP transports. Tool group filtering via CLAUDE_FLOW_TOOL_GROUPS.
+
+  ## Size Estimate
+
+  **L** (week+) -- This feature introduces a new subsystem spanning all four architecture layers:
+  new TypeSpec domain models (Plugin, PluginConfig, enums), new port interfaces (3+), new use cases (8),
+  new infrastructure services (plugin registry, MCP server manager, health checker, catalog provider),
+  new SQLite migration and repository, new CLI command group (8 subcommands), and new web UI components
+  (plugin list, catalog browser, per-feature toggles). The MCP server lifecycle management and
+  per-feature activation flow add significant complexity. The patterns are well-established in the
+  codebase (follows IToolInstallerService, ISkillInjectorService, and per-feature settings precedents),
+  which reduces risk but not scope.
+
+  ---
+
+  _Generated by feature agent -- requirements phase complete_

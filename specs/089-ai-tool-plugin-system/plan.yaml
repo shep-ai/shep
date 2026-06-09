@@ -1,0 +1,302 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "ai-tool-plugin-system"
+summary: >
+  Implementation plan for a pluggable AI-native tool system that integrates external tools
+  (MCP servers, CLIs, hook-based tools) into Shep's agentic SDLC workflows. Uses a dedicated
+  plugins SQLite table, child_process.spawn() for MCP server lifecycle, per-feature temp
+  .mcp.json files for agent executor injection, and a curated catalog for frictionless
+  plugin discovery. Six implementation phases from domain foundation through web UI.
+
+relatedFeatures: []
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "tsyringe (DI)"
+  - "LangGraph (workflow orchestration)"
+  - "SQLite / better-sqlite3 (persistence)"
+  - "Node.js child_process (MCP server spawning)"
+  - "Commander.js (CLI)"
+  - "Next.js (web UI)"
+  - "shadcn/ui (component library)"
+  - "umzug (database migrations)"
+
+relatedLinks:
+  - title: "Model Context Protocol specification"
+    url: "https://modelcontextprotocol.io"
+  - title: "Claude Code MCP configuration docs"
+    url: "https://docs.anthropic.com/en/docs/claude-code/mcp"
+  - title: "MemPalace - MCP stdio plugin example"
+    url: "https://github.com/MemPalace/mempalace"
+  - title: "Token Optimizer - Hook-based plugin example"
+    url: "https://github.com/alexgreensh/token-optimizer"
+  - title: "Ruflo - Large MCP server example (313 tools)"
+    url: "https://github.com/ruvnet/ruflo"
+
+phases:
+  - id: "phase-1"
+    name: "Domain Foundation"
+    description: >
+      Define the Plugin entity, enums (PluginType, PluginTransport, PluginHealthStatus),
+      and ToolGroup model in TypeSpec. Compile to generate TypeScript types. This phase
+      establishes the domain vocabulary that all other layers depend on.
+    parallel: false
+
+  - id: "phase-2"
+    name: "Persistence Layer"
+    description: >
+      Create the plugins SQLite table (migration 060), the active_plugins column on features
+      (migration 061), the PluginRow mapper, and the SQLitePluginRepository. Also extend the
+      Feature mapper to handle activePlugins JSON serialization. This phase provides the
+      storage foundation for the entire plugin subsystem.
+    parallel: false
+
+  - id: "phase-3"
+    name: "Core Services and Use Cases"
+    description: >
+      Define port interfaces (IPluginRepository, IMcpServerManager, IPluginHealthChecker)
+      and implement all eight use cases (AddPlugin, RemovePlugin, ListPlugins, EnablePlugin,
+      DisablePlugin, ConfigurePlugin, CheckPluginHealth, GetPluginCatalog). Implement the
+      curated catalog provider and plugin health checker service. Wire everything into the
+      DI container with string token aliases for web access.
+    parallel: false
+
+  - id: "phase-4"
+    name: "MCP Server Lifecycle and Agent Integration"
+    description: >
+      Implement McpServerManagerService with child_process.spawn(), reference counting for
+      concurrent features, per-feature temp .mcp.json generation, and process signal cleanup.
+      Extend AgentExecutionOptions with mcpConfigPath. Modify ClaudeCodeExecutorService.buildArgs()
+      to inject --mcp-config flag. Integrate plugin startup/shutdown into the feature agent worker.
+    parallel: false
+
+  - id: "phase-5"
+    name: "CLI Commands"
+    description: >
+      Create the plugin command group with eight subcommands: add, remove, list, enable,
+      disable, configure, status, catalog. Follows the settings command group pattern
+      (Commander.js with createPluginCommand() factory). Register in the main CLI entry point.
+    parallel: false
+
+  - id: "phase-6"
+    name: "Web UI"
+    description: >
+      Build the plugin management page (installed plugins list with status badges and toggles),
+      curated catalog browser with install buttons, plugin detail/configure view, and
+      per-feature plugin activation toggles in the create-feature drawer. Create server
+      actions backed by the same use cases as the CLI.
+    parallel: false
+
+filesToCreate:
+  # TypeSpec domain models
+  - "tsp/domain/entities/plugin.tsp"
+  - "tsp/common/enums/plugin.tsp"
+
+  # Port interfaces
+  - "packages/core/src/application/ports/output/repositories/plugin-repository.interface.ts"
+  - "packages/core/src/application/ports/output/services/mcp-server-manager.interface.ts"
+  - "packages/core/src/application/ports/output/services/plugin-health-checker.interface.ts"
+
+  # Use cases
+  - "packages/core/src/application/use-cases/plugins/add-plugin.use-case.ts"
+  - "packages/core/src/application/use-cases/plugins/remove-plugin.use-case.ts"
+  - "packages/core/src/application/use-cases/plugins/list-plugins.use-case.ts"
+  - "packages/core/src/application/use-cases/plugins/enable-plugin.use-case.ts"
+  - "packages/core/src/application/use-cases/plugins/disable-plugin.use-case.ts"
+  - "packages/core/src/application/use-cases/plugins/configure-plugin.use-case.ts"
+  - "packages/core/src/application/use-cases/plugins/check-plugin-health.use-case.ts"
+  - "packages/core/src/application/use-cases/plugins/get-plugin-catalog.use-case.ts"
+
+  # Infrastructure - persistence
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/060-create-plugins-table.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/061-add-active-plugins-to-features.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/plugin.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/repositories/sqlite-plugin.repository.ts"
+
+  # Infrastructure - services
+  - "packages/core/src/infrastructure/services/plugin/mcp-server-manager.service.ts"
+  - "packages/core/src/infrastructure/services/plugin/plugin-health-checker.service.ts"
+  - "packages/core/src/infrastructure/services/plugin/plugin-catalog.ts"
+
+  # CLI commands
+  - "src/presentation/cli/commands/plugin/index.ts"
+  - "src/presentation/cli/commands/plugin/add.command.ts"
+  - "src/presentation/cli/commands/plugin/remove.command.ts"
+  - "src/presentation/cli/commands/plugin/list.command.ts"
+  - "src/presentation/cli/commands/plugin/enable.command.ts"
+  - "src/presentation/cli/commands/plugin/disable.command.ts"
+  - "src/presentation/cli/commands/plugin/configure.command.ts"
+  - "src/presentation/cli/commands/plugin/status.command.ts"
+  - "src/presentation/cli/commands/plugin/catalog.command.ts"
+
+  # Web UI
+  - "src/presentation/web/app/plugins/page.tsx"
+  - "src/presentation/web/components/common/plugin-list/plugin-list.tsx"
+  - "src/presentation/web/components/common/plugin-list/plugin-list.stories.tsx"
+  - "src/presentation/web/components/common/plugin-catalog/plugin-catalog.tsx"
+  - "src/presentation/web/components/common/plugin-catalog/plugin-catalog.stories.tsx"
+  - "src/presentation/web/app/actions/list-plugins.ts"
+  - "src/presentation/web/app/actions/add-plugin.ts"
+  - "src/presentation/web/app/actions/remove-plugin.ts"
+  - "src/presentation/web/app/actions/toggle-plugin.ts"
+  - "src/presentation/web/app/actions/get-plugin-catalog.ts"
+  - "src/presentation/web/app/actions/check-plugin-health.ts"
+  - "src/presentation/web/app/actions/configure-plugin.ts"
+
+  # Tests
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/__tests__/plugin.mapper.test.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/repositories/__tests__/sqlite-plugin.repository.test.ts"
+  - "packages/core/src/application/use-cases/plugins/__tests__/add-plugin.use-case.test.ts"
+  - "packages/core/src/application/use-cases/plugins/__tests__/remove-plugin.use-case.test.ts"
+  - "packages/core/src/application/use-cases/plugins/__tests__/list-plugins.use-case.test.ts"
+  - "packages/core/src/application/use-cases/plugins/__tests__/enable-plugin.use-case.test.ts"
+  - "packages/core/src/application/use-cases/plugins/__tests__/disable-plugin.use-case.test.ts"
+  - "packages/core/src/application/use-cases/plugins/__tests__/configure-plugin.use-case.test.ts"
+  - "packages/core/src/application/use-cases/plugins/__tests__/check-plugin-health.use-case.test.ts"
+  - "packages/core/src/application/use-cases/plugins/__tests__/get-plugin-catalog.use-case.test.ts"
+  - "packages/core/src/infrastructure/services/plugin/__tests__/mcp-server-manager.service.test.ts"
+  - "packages/core/src/infrastructure/services/plugin/__tests__/plugin-health-checker.service.test.ts"
+  - "packages/core/src/infrastructure/services/plugin/__tests__/plugin-catalog.test.ts"
+
+filesToModify:
+  # TypeSpec
+  - "tsp/common/enums/index.tsp"
+  - "tsp/domain/entities/feature.tsp"
+
+  # Generated output (auto-generated from tsp:compile)
+  - "packages/core/src/domain/generated/output.ts"
+
+  # Port index files
+  - "packages/core/src/application/ports/output/repositories/index.ts"
+  - "packages/core/src/application/ports/output/services/index.ts"
+
+  # Agent execution options
+  - "packages/core/src/application/ports/output/agents/agent-executor.interface.ts"
+
+  # Infrastructure - existing services
+  - "packages/core/src/infrastructure/services/agents/common/executors/claude-code-executor.service.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-worker.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/nodes/node-helpers.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/state.ts"
+
+  # Persistence - existing mappers
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/feature.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/repositories/sqlite-feature.repository.ts"
+
+  # DI container
+  - "packages/core/src/infrastructure/di/container.ts"
+
+  # CLI entry point
+  - "src/presentation/cli/commands/index.ts"
+
+  # Web UI - existing components
+  - "src/presentation/web/components/common/feature-create-drawer/feature-create-drawer.tsx"
+  - "src/presentation/web/app/(dashboard)/layout.tsx"
+
+openQuestions: []
+
+content: |
+  ## Architecture Overview
+
+  The AI Tool Plugin System introduces a new subsystem that spans all four Clean Architecture layers,
+  following the same patterns used by the existing Features, Settings, and Tools subsystems.
+
+  **Domain Layer (TypeSpec):** A new Plugin entity with PluginType discriminator (Mcp/Hook/Cli) and
+  optional type-specific fields. Three new enums: PluginType, PluginTransport (Stdio/Http), and
+  PluginHealthStatus (Healthy/Degraded/Unavailable/Unknown). A ToolGroup value object for MCP tool
+  filtering. All defined in TypeSpec and compiled to TypeScript via `pnpm tsp:compile`.
+
+  **Application Layer:** Three new port interfaces (IPluginRepository, IMcpServerManager,
+  IPluginHealthChecker) following the exact patterns of IFeatureRepository, IToolInstallerService,
+  and ISkillInjectorService. Eight use cases with single execute() methods, injectable via tsyringe.
+
+  **Infrastructure Layer:** SQLitePluginRepository with PluginRow mapper (camelCase/snake_case
+  conversion, JSON serialization for arrays). McpServerManagerService using child_process.spawn()
+  with reference counting. PluginHealthCheckerService with tiered checks. Static catalog module.
+  Two additive-only migrations (060 for plugins table, 061 for features.active_plugins column).
+
+  **Presentation Layer:** CLI plugin command group (8 subcommands) following the settings command
+  pattern. Web UI plugin management page with catalog browser, following existing page patterns.
+
+  ## Key Design Decisions
+
+  ### 1. child_process.spawn() over @modelcontextprotocol/sdk
+  Shep is an orchestrator, not an MCP client. It spawns MCP server processes and passes their
+  connection info to agent executors (Claude Code, Cursor) which have their own MCP clients.
+  The codebase already uses child_process extensively in ClaudeCodeExecutorService and
+  ToolInstallerService. No new dependency needed.
+
+  ### 2. Per-feature temp .mcp.json files
+  Claude Code accepts --mcp-config <path> to load MCP server definitions. A temp file per-feature
+  in os.tmpdir() is isolated, avoids conflicts with user's .mcp.json, and maps directly to the
+  existing buildArgs() pattern where disableMcp already translates to --strict-mcp-config.
+  New mcpConfigPath field on AgentExecutionOptions carries the path through the agent-agnostic
+  interface.
+
+  ### 3. Dedicated plugins table (not settings extension)
+  Settings is a large singleton (100+ columns). Plugins are a collection with CRUD lifecycle.
+  Follows the same pattern as features table: separate entity, repository, mapper, migration.
+  Migration 060 creates the table; migration 061 adds active_plugins JSON column to features.
+
+  ### 4. Single Plugin entity with type discriminator
+  Rather than three separate entities (McpPlugin, HookPlugin, CliPlugin), a single entity with
+  PluginType enum and optional type-specific fields keeps the registry simple. Maps cleanly to
+  one table with nullable columns, following the Feature entity pattern where fields like prUrl
+  are only populated in certain lifecycle stages.
+
+  ### 5. Pre-spawn per feature with reference counting
+  MCP servers start when a feature begins execution and stop when it completes. Reference counting
+  handles concurrent features sharing the same plugin. Process signal handlers ensure cleanup on
+  crash. This avoids per-node cold starts and always-on daemon infrastructure.
+
+  ### 6. Hook plugins delegate to Claude Code native hooks
+  The plugin system manages installation of hook scripts into .claude/hooks/, not execution.
+  Claude Code's native hook system handles SessionStart, PreToolUse, PostToolUse, etc.
+  Analogous to SkillInjectorService copying skill files into worktrees.
+
+  ### 7. Environment variables: names only, never values
+  Matches the ANTHROPIC_API_KEY pattern. Plugin registry stores required env var names.
+  At spawn time, values are read from process.env and passed to child process.
+  No secrets in SQLite. Missing vars produce actionable error messages.
+
+  ### 8. Static TypeScript catalog (not JSON file or DB)
+  Follows the TOOL_METADATA pattern in tool-metadata.ts. Type-safe, tree-shaken, no I/O.
+  Easily extensible by editing one file. V1 ships with MemPalace, Token Optimizer, and Ruflo.
+
+  ## Implementation Strategy
+
+  The six phases are ordered by dependency:
+
+  1. **Domain Foundation first** because all other layers import from generated types.
+  2. **Persistence second** because use cases need IPluginRepository, and the feature mapper
+     extension (active_plugins) is needed for per-feature integration later.
+  3. **Core Services and Use Cases third** because they define the API that both CLI and Web use.
+     The catalog and health checker are pure logic with no external dependencies, easy to TDD.
+  4. **MCP Server Lifecycle fourth** because it's the most complex service and depends on use cases
+     being wired. This phase also modifies the agent execution pipeline (AgentExecutionOptions,
+     ClaudeCodeExecutorService, feature agent worker).
+  5. **CLI fifth** because it's a thin layer over use cases. Each command resolves a use case
+     from DI and calls execute(). Quick to implement once use cases are tested.
+  6. **Web UI last** because it depends on server actions that call the same use cases as CLI.
+     The catalog browser and plugin list follow established page patterns.
+
+  Each phase is TDD-driven: write failing tests first, implement minimally, then refactor.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | New required fields on Feature entity break 20+ test fixtures | Use optional field (activePlugins?) so existing fixtures are unaffected. Only Feature tests that explicitly test plugin activation need updating. |
+  | MCP server orphan processes after crash | Register cleanup handlers for SIGTERM, SIGINT, and beforeExit. Use a WeakRef + FinalizationRegistry as safety net. Integration test verifies cleanup. |
+  | Migration breaks backward compatibility | Both migrations are additive-only (CREATE TABLE, ALTER TABLE ADD COLUMN). No drops or renames. Per LESSONS.md. |
+  | Per-feature settings not flowing through all 12 layers | active_plugins is a JSON column on features, not a new boolean. It flows through the Feature entity naturally. The feature agent worker reads it at startup, not per-node. Simpler than the per-feature boolean pattern. |
+  | DI container string token aliases missed for web | Checklist item in the DI registration task. Per LESSONS.md, every use case called from web MUST have a string alias. |
+  | Claude Code --mcp-config flag behavior changes | Integration test with a real lightweight MCP server validates the end-to-end path. Flag is already documented in Claude Code docs. |
+  | Large catalog entries (Ruflo 313 tools) overwhelm agent | Tool group filtering via CLAUDE_FLOW_TOOL_GROUPS env var limits active tools. Default active groups are conservative. |
+  | INSERT/UPDATE SQL missing new columns | Per LESSONS.md, integration tests create/update a feature with activePlugins and read it back. The test fails immediately if SQL is incomplete. |
+
+  ---
+
+  _Implementation plan created 2026-04-13_

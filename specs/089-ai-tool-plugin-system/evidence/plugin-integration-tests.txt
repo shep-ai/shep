@@ -1,0 +1,27 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-ai-tool-plugin-system
+
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > migration > creates the plugins table with correct columns 59ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > migration > creates unique index on name column 14ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > migration > adds active_plugins column to features table 14ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > create() and findById() > creates and retrieves a plugin by id 14ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > create() and findById() > returns null for nonexistent id 13ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > create() and findById() > persists MCP-specific fields correctly 13ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > create() and findById() > persists toolGroups and activeToolGroups correctly 14ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > create() and findById() > persists Hook plugin fields correctly 14ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > create() and findById() > persists CLI plugin fields correctly 14ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > findByName() > finds a plugin by name 14ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > findByName() > returns null for nonexistent name 13ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > list() > returns empty array when no plugins exist 13ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > list() > returns all plugins ordered by name ascending 13ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > update() > updates all mutable fields 13ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > update() > updates health status correctly 14ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > delete() > removes a plugin by id 13ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > delete() > does not error when deleting nonexistent id 14ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-plugin.repository.test.ts > SQLitePluginRepository > unique name constraint > rejects duplicate plugin names 13ms
+
+ Test Files  1 passed (1)
+      Tests  18 passed (18)
+   Start at  09:23:14
+   Duration  522ms (transform 119ms, setup 25ms, import 149ms, tests 290ms, environment 0ms)
+

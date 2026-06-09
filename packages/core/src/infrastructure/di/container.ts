@@ -62,6 +62,7 @@ import { registerAspm } from './modules/register-aspm.js';
 import { registerCluster } from './modules/register-cluster.js';
 import { registerSecurity } from './modules/register-security.js';
 import { registerScheduledWorkflows } from './modules/register-scheduled-workflows.js';
+import { registerPlugins } from './modules/register-plugins.js';
 
 let _initialized = false;
 
@@ -102,6 +103,7 @@ export async function initializeContainer(): Promise<typeof container> {
   registerCluster(container);
   registerSecurity(container);
   registerScheduledWorkflows(container);
+  registerPlugins(container);
 
   // ─── Eager deployment service ────────────────────────────────────────────
   // DeploymentService needs the database and calls `recoverAll()` at startup,

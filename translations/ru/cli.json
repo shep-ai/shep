@@ -827,6 +827,88 @@
         "idArgument": "Review ID (or prefix)",
         "failedToPost": "Failed to post review to GitHub"
       }
+    },
+    "plugin": {
+      "description": "Manage AI tool plugins",
+      "add": {
+        "description": "Install a plugin from catalog or custom configuration",
+        "nameArg": "Plugin name from the curated catalog",
+        "typeOption": "Plugin type for custom install (mcp, hook, cli)",
+        "commandOption": "MCP server command for custom install",
+        "transportOption": "MCP transport protocol (stdio, http)",
+        "nameOption": "Plugin name for custom install",
+        "success": "Plugin \"{{name}}\" installed successfully",
+        "failed": "Failed to install plugin",
+        "customRequiresName": "Custom plugin install requires --name",
+        "customRequiresType": "Custom plugin install requires --type (mcp, hook, cli)",
+        "invalidType": "Invalid plugin type \"{{type}}\". Must be one of: mcp, hook, cli"
+      },
+      "remove": {
+        "description": "Remove an installed plugin",
+        "nameArg": "Name of the plugin to remove",
+        "success": "Plugin \"{{name}}\" removed",
+        "failed": "Failed to remove plugin"
+      },
+      "list": {
+        "description": "List all installed plugins",
+        "title": "Installed Plugins",
+        "nameColumn": "Name",
+        "typeColumn": "Type",
+        "statusColumn": "Status",
+        "healthColumn": "Health",
+        "sourceColumn": "Source",
+        "noPlugins": "No plugins installed. Run 'shep plugin catalog' to browse available plugins.",
+        "failed": "Failed to list plugins"
+      },
+      "enable": {
+        "description": "Enable a plugin globally",
+        "nameArg": "Name of the plugin to enable",
+        "success": "Plugin \"{{name}}\" enabled",
+        "failed": "Failed to enable plugin"
+      },
+      "disable": {
+        "description": "Disable a plugin globally",
+        "nameArg": "Name of the plugin to disable",
+        "success": "Plugin \"{{name}}\" disabled",
+        "failed": "Failed to disable plugin"
+      },
+      "configure": {
+        "description": "Configure plugin settings",
+        "nameArg": "Name of the plugin to configure",
+        "toolGroupsOption": "Comma-separated list of tool groups to enable",
+        "success": "Plugin \"{{name}}\" configured",
+        "noOptions": "No configuration options provided. Use --tool-groups to set active tool groups.",
+        "failed": "Failed to configure plugin"
+      },
+      "status": {
+        "description": "Show detailed health status of a plugin",
+        "nameArg": "Name of the plugin to check (omit for all)",
+        "title": "Plugin Health Status",
+        "allTitle": "Plugin Health Check",
+        "nameLabel": "Name",
+        "typeLabel": "Type",
+        "healthLabel": "Health",
+        "messageLabel": "Details",
+        "enabledLabel": "Enabled",
+        "runtimeLabel": "Runtime",
+        "transportLabel": "Transport",
+        "envVarsLabel": "Required Env Vars",
+        "toolGroupsLabel": "Tool Groups",
+        "activeGroupsLabel": "Active Groups",
+        "noPlugins": "No plugins installed.",
+        "failed": "Failed to check plugin health"
+      },
+      "catalog": {
+        "description": "Browse available plugins from the curated catalog",
+        "title": "Plugin Catalog",
+        "nameColumn": "Name",
+        "typeColumn": "Type",
+        "descriptionColumn": "Description",
+        "statusColumn": "Status",
+        "installed": "Installed",
+        "available": "Available",
+        "failed": "Failed to load plugin catalog"
+      }
     }
   },
   "ui": {

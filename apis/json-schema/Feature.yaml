@@ -98,6 +98,9 @@ properties:
   worktreePath:
     type: string
     description: Absolute path to the git worktree for this feature
+  activePlugins:
+    $ref: RecordBoolean.yaml
+    description: Per-feature plugin activation overrides mapping plugin names to enabled state (JSON-serialized in DB)
   pr:
     $ref: PullRequest.yaml
     description: Pull request data (null until PR created)

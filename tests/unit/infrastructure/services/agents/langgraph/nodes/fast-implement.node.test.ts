@@ -162,6 +162,7 @@ function createMockState(overrides?: Partial<FeatureAgentState>): FeatureAgentSt
     commitEvidence: false,
     securityMode: SecurityMode.Disabled,
     securityActionDispositions: {},
+    mcpConfigPath: undefined,
     ...overrides,
   };
 }

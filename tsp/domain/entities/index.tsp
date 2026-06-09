@@ -59,3 +59,4 @@ import "./cluster-repository.tsp";
 import "./cluster-application.tsp";
 import "./scheduled-workflow.tsp";
 import "./workflow-execution.tsp";
+import "./plugin.tsp";

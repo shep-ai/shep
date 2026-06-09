@@ -98,6 +98,7 @@ function createTestRow(overrides: Partial<FeatureRow> = {}): FeatureRow {
     injected_skills: null,
     inject_skills: 0,
     bedrock_enabled: 0,
+    active_plugins: null,
     deleted_at: null,
     created_at: new Date('2026-03-08T10:00:00Z').getTime(),
     updated_at: new Date('2026-03-08T10:00:00Z').getTime(),
@@ -417,6 +418,46 @@ describe('Feature Mapper — applicationId + buildMode', () => {
       expect(restored.applicationId).toBeUndefined();
       expect(restored.buildMode).toBe(BuildMode.Fast);
       expect(restored.fast).toBe(true);
+    });
+  });
+});
+
+describe('Feature Mapper — activePlugins', () => {
+  describe('toDatabase()', () => {
+    it('serializes activePlugins to JSON string', () => {
+      const feature = createTestFeature({
+        activePlugins: { mempalace: true, ruflo: false },
+      });
+      const row = toDatabase(feature);
+      expect(row.active_plugins).toBe(JSON.stringify({ mempalace: true, ruflo: false }));
+    });
+
+    it('serializes null when activePlugins is undefined', () => {
+      const feature = createTestFeature({ activePlugins: undefined });
+      const row = toDatabase(feature);
+      expect(row.active_plugins).toBeNull();
+    });
+
+    it('serializes null when activePlugins is empty object', () => {
+      const feature = createTestFeature({ activePlugins: {} });
+      const row = toDatabase(feature);
+      expect(row.active_plugins).toBeNull();
+    });
+  });
+
+  describe('fromDatabase()', () => {
+    it('deserializes active_plugins from JSON string', () => {
+      const row = createTestRow({
+        active_plugins: JSON.stringify({ mempalace: true, ruflo: false }),
+      });
+      const feature = fromDatabase(row);
+      expect(feature.activePlugins).toEqual({ mempalace: true, ruflo: false });
+    });
+
+    it('omits activePlugins when active_plugins is null', () => {
+      const row = createTestRow({ active_plugins: null });
+      const feature = fromDatabase(row);
+      expect(feature.activePlugins).toBeUndefined();
     });
   });
 });

@@ -1382,6 +1382,10 @@ export type Feature = SoftDeletableEntity & {
    */
   worktreePath?: string;
   /**
+   * Per-feature plugin activation overrides mapping plugin names to enabled state (JSON-serialized in DB)
+   */
+  activePlugins?: Record<string, boolean>;
+  /**
    * Pull request data (null until PR created)
    */
   pr?: PullRequest;
@@ -4324,6 +4328,129 @@ export type WorkflowExecution = BaseEntity & {
 };
 
 /**
+ * Logical grouping of MCP tools within a plugin for selective activation
+ */
+export type ToolGroup = {
+  /**
+   * Group identifier used for activation and filtering
+   */
+  name: string;
+  /**
+   * Human-readable description of what this tool group provides
+   */
+  description?: string;
+  /**
+   * List of individual tool names belonging to this group
+   */
+  tools?: string[];
+};
+export enum PluginType {
+  Mcp = 'Mcp',
+  Hook = 'Hook',
+  Cli = 'Cli',
+}
+export enum PluginTransport {
+  Stdio = 'Stdio',
+  Http = 'Http',
+}
+export enum PluginHealthStatus {
+  Healthy = 'Healthy',
+  Degraded = 'Degraded',
+  Unavailable = 'Unavailable',
+  Unknown = 'Unknown',
+}
+
+/**
+ * External AI-native tool registered in Shep's plugin system
+ */
+export type Plugin = BaseEntity & {
+  /**
+   * Unique plugin name used as identifier (e.g., 'mempalace', 'ruflo')
+   */
+  name: string;
+  /**
+   * Human-readable display name for UI presentation
+   */
+  displayName: string;
+  /**
+   * Integration type determining how the plugin connects to Shep workflows
+   */
+  type: PluginType;
+  /**
+   * Installed version of the plugin package
+   */
+  version?: string;
+  /**
+   * Installation source: 'catalog' for curated plugins, 'custom' for user-added
+   */
+  installSource?: string;
+  /**
+   * MCP transport protocol (only for Mcp type plugins)
+   */
+  transport?: PluginTransport;
+  /**
+   * Command to start the MCP server process (only for Mcp type plugins)
+   */
+  serverCommand?: string;
+  /**
+   * Arguments passed to the MCP server command (only for Mcp type plugins)
+   */
+  serverArgs?: string[];
+  /**
+   * Environment variable names required by this plugin (names only, never values)
+   */
+  requiredEnvVars?: string[];
+  /**
+   * Available tool groups defined by this plugin for selective activation
+   */
+  toolGroups?: ToolGroup[];
+  /**
+   * Names of currently enabled tool groups from the available set
+   */
+  activeToolGroups?: string[];
+  /**
+   * Whether this plugin is globally enabled for use in features
+   */
+  enabled: boolean;
+  /**
+   * Current operational health status based on multi-tier health checks
+   */
+  healthStatus: PluginHealthStatus;
+  /**
+   * Human-readable details from the most recent health check
+   */
+  healthMessage?: string;
+  /**
+   * Hook event type for lifecycle integration (only for Hook type plugins)
+   */
+  hookType?: string;
+  /**
+   * Path to the hook script file (only for Hook type plugins)
+   */
+  scriptPath?: string;
+  /**
+   * Executable command for CLI tool invocation (only for Cli type plugins)
+   */
+  binaryCommand?: string;
+  /**
+   * Required runtime environment: 'python' or 'node'
+   */
+  runtimeType?: string;
+  /**
+   * Minimum required version of the runtime (e.g., '3.9' for Python, '20' for Node.js)
+   */
+  runtimeMinVersion?: string;
+  /**
+   * Plugin homepage or repository URL for reference
+   */
+  homepageUrl?: string;
+  /**
+   * Brief description of what this plugin provides
+   */
+  description?: string;
+};
+
+/**
  * Single installation suggestion for a tool
  */
 export type InstallationSuggestion = {
@@ -5821,3 +5948,5 @@ export type LocalDeployAgentOperations = {
   Analyze(repositoryPath: string): DeploySkill;
   Ask(query: string): AskResponse;
 };
+
+export namespace TypeSpec {}

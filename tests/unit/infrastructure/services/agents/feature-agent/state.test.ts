@@ -60,7 +60,8 @@ describe('FeatureAgentAnnotation', () => {
       expect(channelNames).toContain('commitEvidence');
       expect(channelNames).toContain('securityMode');
       expect(channelNames).toContain('securityActionDispositions');
-      expect(channelNames.length).toBe(34);
+      expect(channelNames).toContain('mcpConfigPath');
+      expect(channelNames.length).toBe(35);
     });
   });
 

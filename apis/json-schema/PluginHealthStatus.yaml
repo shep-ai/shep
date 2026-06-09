@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PluginHealthStatus.yaml
+type: string
+enum:
+  - Healthy
+  - Degraded
+  - Unavailable
+  - Unknown
+description: Operational health status of a plugin based on multi-tier health checks

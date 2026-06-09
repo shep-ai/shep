@@ -344,7 +344,8 @@
     "aspmAiReview": "AI Review",
     "aspmCompliance": "Compliance",
     "collaboration": "Collaboration",
-    "clusters": "Кластери"
+    "clusters": "Кластери",
+    "plugins": "Plugins"
   },
   "sidebar": {
     "features": "Функції",

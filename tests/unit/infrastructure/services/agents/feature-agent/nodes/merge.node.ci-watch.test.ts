@@ -232,6 +232,7 @@ function baseState(overrides: Partial<FeatureAgentState> = {}): FeatureAgentStat
     evidenceRetries: 0,
     securityMode: 'Disabled',
     securityActionDispositions: {},
+    mcpConfigPath: undefined,
     ...overrides,
   } as FeatureAgentState;
 }
