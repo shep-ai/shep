@@ -53,6 +53,14 @@ export function createAspmIngestCommand(): Command {
     .option('--sarif <file>', 'Path to a SARIF v2.1.0 document')
     .option('--sbom <file>', 'Path to a CycloneDX 1.5+ SBOM document')
     .option('--json', 'Emit a structured JSON summary on stdout')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep aspm ingest --sarif results.sarif --application my-app
+  $ shep aspm ingest --sbom sbom.json --application my-app
+  $ shep aspm ingest --sarif results.sarif --application my-app --json`
+    )
     .action(async (options: IngestOptions) => {
       try {
         if (!options.sarif && !options.sbom) {

@@ -42,7 +42,14 @@ interface AiReviewGraduateOpts {
 }
 
 export function createAspmAiReviewCommand(): Command {
-  const cmd = new Command('ai-review').description('Triage AI-change risk signals');
+  const cmd = new Command('ai-review').description('Triage AI-change risk signals').addHelpText(
+    'after',
+    `
+Examples:
+  $ shep aspm ai-review list --app my-app --state Open --limit 50
+  $ shep aspm ai-review dismiss sig_123 --actor "Jane Doe" --justification "Intentional test code"
+  $ shep aspm ai-review graduate sig_123 --owner user_456`
+  );
 
   cmd
     .command('list')

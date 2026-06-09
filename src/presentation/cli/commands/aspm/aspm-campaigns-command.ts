@@ -54,7 +54,15 @@ interface CampaignsProgressOpts {
 }
 
 export function createAspmCampaignsCommand(): Command {
-  const cmd = new Command('campaigns').description('Manage ASPM remediation campaigns');
+  const cmd = new Command('campaigns').description('Manage ASPM remediation campaigns').addHelpText(
+    'after',
+    `
+Examples:
+  $ shep aspm campaigns list --status Active --owner user_123
+  $ shep aspm campaigns create --name "Q3 Cleanup" --description "Fix high severity bugs" --severity Critical,High
+  $ shep aspm campaigns close cmp_123 --status Completed
+  $ shep aspm campaigns progress cmp_123`
+  );
 
   cmd
     .command('list')

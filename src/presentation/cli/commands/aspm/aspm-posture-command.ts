@@ -33,6 +33,14 @@ export function createAspmPostureCommand(): Command {
     .option('--app <slug>', 'Show per-application posture')
     .option('--top <n>', 'Number of top at-risk apps to include', '5')
     .option('--json', 'Emit JSON instead of a formatted view')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep aspm posture
+  $ shep aspm posture --app my-app
+  $ shep aspm posture --top 10 --json`
+    )
     .action(async (opts: PostureOptions) => {
       try {
         if (opts.app) {

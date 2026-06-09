@@ -42,8 +42,16 @@ interface FindingsShowOptions {
 }
 
 export function createAspmFindingsCommand(): Command {
-  const cmd = new Command('findings').description('List and inspect ASPM security findings');
-
+  const cmd = new Command('findings')
+    .description('List and inspect ASPM security findings')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep aspm findings list --app my-app --severity Critical,High
+  $ shep aspm findings list --owner user_123 --state Open --kev --limit 25
+  $ shep aspm findings show fnd_abc123 --json`
+    );
   cmd
     .command('list')
     .description('List findings (paginated, filterable)')
