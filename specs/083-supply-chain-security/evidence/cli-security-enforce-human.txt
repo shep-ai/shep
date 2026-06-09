@@ -1,0 +1,38 @@
+
+> @shepai/cli@1.166.0 dev:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-supply-chain-security
+> tsx src/presentation/cli/index.ts security enforce
+
+[DeploymentService] No dev servers to recover from database
+
+Mode:     Advisory
+Source:   settings-default
+Total Findings: 8
+
+Dependency Findings
+  [Medium] better-sqlite3: Package "better-sqlite3" has lifecycle scripts that execute during install: install
+    Review the lifecycle scripts in "better-sqlite3" or add it to the allowlist if trusted. Consider using --ignore-scripts during install.
+  [Medium] i18next: Package "i18next" has lifecycle scripts that execute during install: prepare
+    Review the lifecycle scripts in "i18next" or add it to the allowlist if trusted. Consider using --ignore-scripts during install.
+  [Medium] minimatch: Package "minimatch" has lifecycle scripts that execute during install: prepare
+    Review the lifecycle scripts in "minimatch" or add it to the allowlist if trusted. Consider using --ignore-scripts during install.
+  [Medium] react-i18next: Package "react-i18next" has lifecycle scripts that execute during install: prepare
+    Review the lifecycle scripts in "react-i18next" or add it to the allowlist if trusted. Consider using --ignore-scripts during install.
+  [Medium] eslint-plugin-storybook: Package "eslint-plugin-storybook" has lifecycle scripts that execute during install: prepare
+    Review the lifecycle scripts in "eslint-plugin-storybook" or add it to the allowlist if trusted. Consider using --ignore-scripts during install.
+  [Medium] jsdom: Package "jsdom" has lifecycle scripts that execute during install: prepare
+    Review the lifecycle scripts in "jsdom" or add it to the allowlist if trusted. Consider using --ignore-scripts during install.
+  [Medium] tsc-alias: Package "tsc-alias" has lifecycle scripts that execute during install: prepare
+    Review the lifecycle scripts in "tsc-alias" or add it to the allowlist if trusted. Consider using --ignore-scripts during install.
+
+Release Integrity
+  [Medium] npm publish command found without --provenance flag. Add --provenance to generate SLSA provenance attestations.
+
+GitHub Governance (audit-only)
+  [High] Branch "main" has no branch protection rules configured.
+    Enable branch protection for "main" in repository settings. Require pull request reviews and status checks.
+  [Medium] No CODEOWNERS file found in the repository.
+    Add a CODEOWNERS file to the repository root or .github/ directory to enforce code review ownership.
+
+✓ Security enforcement passed
+ℹ Mode is Advisory — findings are reported but do not block
+

@@ -25,3 +25,4 @@ import "./code-review.tsp";
 import "./build-mode.tsp";
 import "./whatsapp.tsp";
 import "./cluster.tsp";
+import "./security.tsp";

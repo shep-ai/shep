@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SecurityMode.yaml
+type: string
+enum:
+  - Disabled
+  - Advisory
+  - Enforce
+description: Effective security mode for a repository

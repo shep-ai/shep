@@ -19,6 +19,7 @@ import { injectable, inject } from 'tsyringe';
 import { SdlcLifecycle } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
+import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
 import { POST_IMPLEMENTATION } from '../../../domain/lifecycle-gates.js';
 
 @injectable()
@@ -26,7 +27,9 @@ export class CheckAndUnblockFeaturesUseCase {
   constructor(
     @inject('IFeatureRepository') private readonly featureRepo: IFeatureRepository,
     @inject('IFeatureAgentProcessService')
-    private readonly agentProcess: IFeatureAgentProcessService
+    private readonly agentProcess: IFeatureAgentProcessService,
+    @inject('ISettingsRepository')
+    private readonly settingsRepository: ISettingsRepository
   ) {}
 
   /**
@@ -73,6 +76,7 @@ export class CheckAndUnblockFeaturesUseCase {
             enableEvidence: child.enableEvidence,
             commitEvidence: child.commitEvidence,
             ...(child.fast ? { fast: true } : {}),
+            securityMode: (await this.settingsRepository.load())?.security?.mode,
           }
         );
       }

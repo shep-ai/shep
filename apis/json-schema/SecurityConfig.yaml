@@ -1,0 +1,17 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SecurityConfig.yaml
+type: object
+properties:
+  mode:
+    $ref: SecurityMode.yaml
+    default: Advisory
+    description: "Effective security mode (default: Advisory)"
+  lastEvaluationAt:
+    type: string
+    description: ISO timestamp of last policy evaluation (null if never evaluated)
+  policySource:
+    type: string
+    description: Source of the active security policy (null if never evaluated)
+required:
+  - mode
+description: Supply-chain security configuration persisted in settings

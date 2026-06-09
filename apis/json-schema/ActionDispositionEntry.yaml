@@ -1,0 +1,14 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ActionDispositionEntry.yaml
+type: object
+properties:
+  category:
+    $ref: SecurityActionCategory.yaml
+    description: The action category
+  disposition:
+    $ref: SecurityActionDisposition.yaml
+    description: How this action should be handled
+required:
+  - category
+  - disposition
+description: Mapping of an action category to its enforcement disposition

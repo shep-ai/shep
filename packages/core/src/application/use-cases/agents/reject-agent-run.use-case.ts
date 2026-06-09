@@ -25,6 +25,7 @@ import type { IFeatureRepository } from '../../ports/output/repositories/feature
 import type { IWorktreePathProvider } from '../../ports/output/services/worktree-path-provider.interface.js';
 import type { INodeHelpers } from '../../ports/output/services/node-helpers.interface.js';
 import type { IPhaseTimingContext } from '../../ports/output/services/phase-timing-context.interface.js';
+import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
 import { AgentRunStatus } from '../../../domain/generated/output.js';
 import type {
   ActivityEntry,
@@ -62,7 +63,9 @@ export class RejectAgentRunUseCase {
     @inject('IPhaseTimingContext')
     private readonly phaseTimingContext: IPhaseTimingContext,
     @inject('IActivityLogRepository')
-    private readonly activityLog: IActivityLogRepository
+    private readonly activityLog: IActivityLogRepository,
+    @inject('ISettingsRepository')
+    private readonly settingsRepository: ISettingsRepository
   ) {}
 
   async execute(
@@ -214,6 +217,7 @@ export class RejectAgentRunUseCase {
         agentType: run.agentType,
         ...(run.modelId ? { model: run.modelId } : {}),
         ...(feature.fast ? { fast: true } : {}),
+        securityMode: (await this.settingsRepository.load())?.security?.mode,
       }
     );
 

@@ -10,6 +10,7 @@ import type { MergeNodeDeps } from '@/infrastructure/services/agents/feature-age
 import type { IAgentExecutor } from '@/application/ports/output/agents/agent-executor.interface.js';
 import type { ExecFunction } from '@/infrastructure/services/git/worktree.service.js';
 import type { FeatureAgentState } from '@/infrastructure/services/agents/feature-agent/state.js';
+import { SecurityMode } from '@/domain/generated/output.js';
 import type { DiffSummary } from '@/application/ports/output/services/git-pr-service.interface.js';
 import { FAKE_PR_URL, makeMockExecutor, makeGitExecutor } from './fixtures.js';
 
@@ -305,6 +306,8 @@ export function makeState(overrides: Partial<FeatureAgentState>): FeatureAgentSt
     ciWatchEnabled: true,
     enableEvidence: false,
     commitEvidence: false,
+    securityMode: SecurityMode.Disabled,
+    securityActionDispositions: {},
     ...overrides,
   };
 }

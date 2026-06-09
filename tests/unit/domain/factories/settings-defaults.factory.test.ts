@@ -18,7 +18,12 @@ import type {
   EnvironmentConfig,
   SystemConfig,
 } from '@/domain/generated/output.js';
-import { AgentType, AgentAuthMethod, SkillSourceType } from '@/domain/generated/output.js';
+import {
+  AgentType,
+  AgentAuthMethod,
+  SkillSourceType,
+  SecurityMode,
+} from '@/domain/generated/output.js';
 
 describe('createDefaultSettings', () => {
   describe('return type and structure', () => {
@@ -309,7 +314,7 @@ describe('createDefaultSettings', () => {
       expect(settings.featureFlags).toBeDefined();
     });
 
-    it('should default feature flags with envDeploy / projects / codeReview / collaboration / aspm enabled', () => {
+    it('should default feature flags with envDeploy / projects / codeReview / collaboration / aspm / supplyChainSecurity enabled', () => {
       const settings = createDefaultSettings();
       expect(settings.featureFlags).toEqual({
         envDeploy: true,
@@ -322,6 +327,9 @@ describe('createDefaultSettings', () => {
         bedrockIntegration: true,
         whatsappDispatch: false,
         clusters: false,
+        // Master kill switch for the supply chain security feature —
+        // defaults to true so existing users keep the feature they already see.
+        supplyChainSecurity: true,
       });
     });
 
@@ -474,6 +482,31 @@ describe('createDefaultSettings', () => {
         'frontend-design',
         'remotion-best-practices',
       ]);
+    });
+  });
+
+  describe('SecurityConfig defaults', () => {
+    it('should have security field defined', () => {
+      const settings = createDefaultSettings();
+      expect(settings.security).toBeDefined();
+    });
+
+    it('should default security.mode to Advisory', () => {
+      const settings = createDefaultSettings();
+      expect(settings.security?.mode).toBe(SecurityMode.Advisory);
+    });
+
+    it('should not set optional security fields', () => {
+      const settings = createDefaultSettings();
+      expect(settings.security?.lastEvaluationAt).toBeUndefined();
+      expect(settings.security?.policySource).toBeUndefined();
+    });
+
+    it('should match TypeSpec model defaults', () => {
+      const settings = createDefaultSettings();
+      expect(settings.security).toEqual({
+        mode: SecurityMode.Advisory,
+      });
     });
   });
 

@@ -13,6 +13,14 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('@/infrastructure/services/settings.service.js', () => ({
+  getSettings: vi.fn().mockReturnValue({
+    agent: { type: 'claude-code' },
+    security: { mode: 'Advisory' },
+  }),
+}));
+
 import { CheckAndUnblockFeaturesUseCase } from '@/application/use-cases/features/check-and-unblock-features.use-case.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IFeatureAgentProcessService } from '@/application/ports/output/agents/feature-agent-process.interface.js';
@@ -86,7 +94,9 @@ describe('CheckAndUnblockFeaturesUseCase', () => {
       checkAndMarkCrashed: vi.fn(),
     };
 
-    useCase = new CheckAndUnblockFeaturesUseCase(mockFeatureRepo, mockAgentProcess);
+    useCase = new CheckAndUnblockFeaturesUseCase(mockFeatureRepo, mockAgentProcess, {
+      load: vi.fn().mockResolvedValue(null),
+    } as any);
   });
 
   // -------------------------------------------------------------------------
@@ -181,6 +191,7 @@ describe('CheckAndUnblockFeaturesUseCase', () => {
         ciWatchEnabled: blockedChild.ciWatchEnabled,
         enableEvidence: blockedChild.enableEvidence,
         commitEvidence: blockedChild.commitEvidence,
+        securityMode: 'Advisory',
       }
     );
   });
@@ -311,6 +322,7 @@ describe('CheckAndUnblockFeaturesUseCase', () => {
         ciWatchEnabled: blockedChild.ciWatchEnabled,
         enableEvidence: blockedChild.enableEvidence,
         commitEvidence: blockedChild.commitEvidence,
+        securityMode: 'Advisory',
       }
     );
   });

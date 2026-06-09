@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ReleaseIntegrityCheckType.yaml
+type: string
+enum:
+  - CiOnlyPublishing
+  - SecretConfiguration
+  - ProvenanceConfiguration
+  - WorkflowIntegrity
+description: Type of release integrity check

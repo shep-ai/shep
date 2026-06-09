@@ -1,5 +1,12 @@
 import { Annotation } from '@langchain/langgraph';
-import type { ApprovalGates, CiFixRecord, Evidence } from '@/domain/generated/output.js';
+import type {
+  ApprovalGates,
+  CiFixRecord,
+  Evidence,
+  SecurityActionCategory,
+  SecurityActionDisposition,
+} from '@/domain/generated/output.js';
+import { SecurityMode } from '@/domain/generated/output.js';
 
 /**
  * State annotation for the feature-agent graph.
@@ -127,6 +134,17 @@ export const FeatureAgentAnnotation = Annotation.Root({
   ciFixStatus: Annotation<'idle' | 'watching' | 'fixing' | 'success' | 'exhausted' | 'timeout'>({
     reducer: (_prev, next) => next,
     default: () => 'idle',
+  }),
+  // --- Security policy state (set once at spawn, read by nodes) ---
+  securityMode: Annotation<SecurityMode>({
+    reducer: (_prev, next) => next,
+    default: () => SecurityMode.Disabled,
+  }),
+  securityActionDispositions: Annotation<
+    Partial<Record<SecurityActionCategory, SecurityActionDisposition>>
+  >({
+    reducer: (_prev, next) => next,
+    default: () => ({}),
   }),
 });
 

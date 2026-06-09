@@ -1,0 +1,11 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DependencyRiskType.yaml
+type: string
+enum:
+  - LockfileInconsistency
+  - NonRegistrySource
+  - LifecycleScript
+  - DenylistViolation
+  - AllowlistViolation
+  - VersionRangePolicy
+description: Type of dependency risk finding

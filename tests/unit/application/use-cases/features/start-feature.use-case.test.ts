@@ -9,6 +9,14 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('@/infrastructure/services/settings.service.js', () => ({
+  getSettings: vi.fn().mockReturnValue({
+    agent: { type: 'claude-code' },
+    security: { mode: 'Advisory' },
+  }),
+}));
+
 import { StartFeatureUseCase } from '@/application/use-cases/features/start-feature.use-case.js';
 import { SdlcLifecycle, AgentRunStatus, BuildMode } from '@/domain/generated/output.js';
 import type { Feature, AgentRun } from '@/domain/generated/output.js';
@@ -122,7 +130,8 @@ describe('StartFeatureUseCase', () => {
       featureRepo as any,
       runRepo as any,
       processService as any,
-      worktreeService as any
+      worktreeService as any,
+      { load: vi.fn().mockResolvedValue(null) } as any
     );
   });
 
@@ -426,6 +435,26 @@ describe('StartFeatureUseCase', () => {
       expect.any(String),
       expect.any(String),
       expect.objectContaining({ agentType: 'dev' })
+    );
+  });
+
+  // -------------------------------------------------------------------------
+  // Security mode threading
+  // -------------------------------------------------------------------------
+
+  it('should pass securityMode from settings to spawn', async () => {
+    featureRepo.findById.mockResolvedValue(createTestFeature());
+    runRepo.findById.mockResolvedValue(createTestRun());
+
+    await useCase.execute('feat-001');
+
+    expect(processService.spawn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(String),
+      expect.any(String),
+      expect.any(String),
+      expect.any(String),
+      expect.objectContaining({ securityMode: 'Advisory' })
     );
   });
 

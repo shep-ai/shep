@@ -230,6 +230,8 @@ function baseState(overrides: Partial<FeatureAgentState> = {}): FeatureAgentStat
     ciFixStatus: 'idle',
     evidence: [],
     evidenceRetries: 0,
+    securityMode: 'Disabled',
+    securityActionDispositions: {},
     ...overrides,
   } as FeatureAgentState;
 }

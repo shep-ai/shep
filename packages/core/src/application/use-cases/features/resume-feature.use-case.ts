@@ -13,6 +13,7 @@ import type { IFeatureRepository } from '../../ports/output/repositories/feature
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
 import type { IWorktreeService } from '../../ports/output/services/worktree-service.interface.js';
+import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
 
 const RESUMABLE_STATUSES = new Set<string>([
   AgentRunStatus.interrupted,
@@ -35,7 +36,9 @@ export class ResumeFeatureUseCase {
     @inject('IFeatureAgentProcessService')
     private readonly processService: IFeatureAgentProcessService,
     @inject('IWorktreeService')
-    private readonly worktreeService: IWorktreeService
+    private readonly worktreeService: IWorktreeService,
+    @inject('ISettingsRepository')
+    private readonly settingsRepository: ISettingsRepository
   ) {}
 
   async execute(
@@ -144,6 +147,7 @@ export class ResumeFeatureUseCase {
         ...(feature.fast ? { fast: true } : {}),
         ...(lastRun.modelId ? { model: lastRun.modelId } : {}),
         resumeReason: lastRun.status,
+        securityMode: (await this.settingsRepository.load())?.security?.mode,
       }
     );
 

@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SecurityActionCategory.yaml
+type: string
+enum:
+  - DependencyInstall
+  - PackageScriptExec
+  - CiWorkflowModify
+  - PublishRelease
+  - SandboxEscalation
+description: Categories of risky agent actions for runtime guardrails

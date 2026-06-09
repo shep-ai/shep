@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SecuritySeverity.yaml
+type: string
+enum:
+  - Low
+  - Medium
+  - High
+  - Critical
+description: Severity level for security findings

@@ -3,6 +3,8 @@ import React, { useEffect } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import webI18n from '../src/presentation/web/lib/i18n';
 import '../src/presentation/web/app/globals.css';
+// Ensure i18n singleton is initialized before any stories render
+import '../src/presentation/web/lib/i18n';
 
 // Provides the web i18next instance so components using `useTranslation()`
 // render real strings instead of raw key paths.

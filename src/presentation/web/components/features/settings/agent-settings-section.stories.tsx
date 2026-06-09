@@ -28,7 +28,7 @@ export const TokenAuth: Story = {
     agent: {
       type: AgentType.GeminiCli,
       authMethod: AgentAuthMethod.Token,
-      token: 'sk-test-token-12345',
+      token: 'test-placeholder',
     },
   },
 };
@@ -65,7 +65,7 @@ export const OpenRouter: Story = {
     agent: {
       type: AgentType.OpenRouter,
       authMethod: AgentAuthMethod.Token,
-      token: 'or-test-api-key-12345',
+      token: 'test-placeholder',
     },
   },
 };
@@ -75,7 +75,7 @@ export const TogetherAi: Story = {
     agent: {
       type: AgentType.TogetherAi,
       authMethod: AgentAuthMethod.Token,
-      token: 'tai-test-api-key-67890',
+      token: 'test-placeholder',
     },
   },
 };

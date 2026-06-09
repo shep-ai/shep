@@ -1,0 +1,107 @@
+
+> @shepai/cli@1.171.0 test:e2e:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-supply-chain-security
+> pnpm build:cli && cross-env SHEP_E2E_USE_DIST=1 vitest run tests/e2e/cli -- --reporter=verbose
+
+
+> @shepai/cli@1.171.0 build:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-supply-chain-security
+> tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths && shx mkdir -p dist/packages/core/src/infrastructure/services/tool-installer && shx rm -rf dist/packages/core/src/infrastructure/services/tool-installer/tools && shx cp -r packages/core/src/infrastructure/services/tool-installer/tools dist/packages/core/src/infrastructure/services/tool-installer/tools && shx rm -rf dist/translations && shx cp -r translations dist/translations
+
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-supply-chain-security
+
+ ✓ |node| tests/e2e/cli/help.test.ts (5 tests) 7726ms
+     ✓ should display help with --help flag  1093ms
+       ✓ exits 0 and does not print help  2383ms
+     ✓ should display help with -h short flag  1358ms
+     ✓ should treat help as unknown subcommand  1385ms
+     ✓ should display version command help with version --help  1502ms
+ ✓ |node| tests/e2e/cli/settings-show.test.ts (7 tests) 11037ms
+     ✓ should display settings as a formatted table with all sections and database metadata  1080ms
+     ✓ should output valid JSON with all settings sections  1650ms
+     ✓ should output valid YAML with proper indentation  1576ms
+       ✓ should work with -o json  1282ms
+       ✓ should work with -o yaml  1888ms
+       ✓ should work with -o table  2142ms
+     ✓ should handle invalid output format  1414ms
+ ✓ |node| tests/e2e/cli/install-command.e2e.test.ts (12 tests) 11073ms
+     ✓ should display help text  1077ms
+       ✓ should print installation instructions for vscode  1742ms
+       ✓ should print installation instructions for cursor  1895ms
+       ✓ should print installation instructions for windsurf  1680ms
+       ✓ should print installation instructions for zed  1829ms
+       ✓ should print installation instructions for antigravity  1851ms
+       ✓ should print installation instructions for cursor-cli with curl  1551ms
+       ✓ should print installation instructions for claude-code with curl  1509ms
+     ✓ should show tool listing when no argument given  1330ms
+       ✓ should fail for unknown tool with friendly message and suggestions  1761ms
+       ✓ should handle tool with special characters gracefully  2124ms
+       ✓ should provide helpful output for empty string tool name  1527ms
+ ✓ |node| tests/e2e/cli/settings-init.test.ts (5 tests) 11390ms
+     ✓ should reinitialize settings with --force and display success message  1243ms
+     ✓ should reset settings to defaults after init  4528ms
+     ✓ should not silently modify settings without --force  1779ms
+     ✓ should work with -f short flag  2215ms
+     ✓ should display help for init command  1624ms
+ ↓ |node| tests/e2e/cli/script-runner.test.ts (1 test | 1 skipped)
+ ✓ |node| tests/e2e/cli/version.test.ts (3 tests) 4893ms
+     ✓ should display full version info with name, description, Node, and platform  1955ms
+     ✓ should display version matching package.json with --version flag  1803ms
+     ✓ should display version number with -v short flag  1133ms
+ ✓ |node| tests/e2e/cli/settings-initialization.test.ts (6 tests) 13754ms
+     ✓ should create non-empty database file on first run  1093ms
+     ✓ should load existing settings without re-initializing on second run  3421ms
+     ✓ should handle corrupted database gracefully  1165ms
+     ✓ should handle missing database with existing directory  1857ms
+     ✓ should handle multiple concurrent CLI invocations safely  5005ms
+     ✓ should use SHEP_HOME environment variable for settings location  1211ms
+ ✓ |node| tests/e2e/cli/errors.test.ts (2 tests) 2522ms
+     ✓ should show error and exit non-zero for unknown command  1407ms
+     ✓ should show error for unknown option  1113ms
+ ✓ |node| tests/e2e/cli/settings-agent.test.ts (7 tests) 13786ms
+       ✓ should display help for agent command  1149ms
+       ✓ should configure agent non-interactively  1689ms
+       ✓ should persist agent config to settings  2822ms
+       ✓ should configure token-based auth  1891ms
+       ✓ should persist token to settings  3722ms
+       ✓ should fail when --agent provided without --auth  1391ms
+       ✓ should fail for unsupported agent type  1121ms
+ ✓ |node| tests/e2e/cli/build-integrity.test.ts (5 tests) 3471ms
+       ✓ should not have module resolution errors when running version  1448ms
+       ✓ should not have module resolution errors when running help  1079ms
+       ✓ should not have module resolution errors when running settings show  713ms
+ ✓ |node| tests/e2e/cli/feat.test.ts (11 tests) 25759ms
+       ✓ should create a feature and display its details  2739ms
+       ✓ should create a git worktree for the feature branch  2779ms
+       ✓ should initialize spec directory with fast-mode YAML files by default  3282ms
+       ✓ should initialize spec directory with all YAML files when --no-fast is used  2974ms
+       ✓ should auto-resolve duplicate feature slugs with suffix  3293ms
+       ✓ should show error when no description is provided  1103ms
+       ✓ should show message when no features exist  1047ms
+       ✓ should list created features  2698ms
+       ✓ should filter features by repository path  1836ms
+       ✓ should display feature details  2608ms
+       ✓ should show error for nonexistent feature ID  1397ms
+ ✓ |node| tests/e2e/cli/ui.test.ts (3 tests) 26534ms
+       ✓ should start on port 4050 and serve the /version page  13898ms
+       ✓ should start on the specified port  6400ms
+       ✓ should auto-increment to next port when default port is occupied  6235ms
+ ✓ |node| tests/e2e/cli/daemon-lifecycle.test.ts (16 tests) 37306ms
+       ✓ shep stop exits 0 and prints a "no daemon" message  1121ms
+       ✓ shep status exits 0 and prints a "not running" message with a shep-start hint  1746ms
+       ✓ exits 0 and prints a localhost URL  2015ms
+       ✓ shep status exits 0 and displays PID and port  1422ms
+       ✓ shep start is idempotent — exits 0 and prints "already running"  1611ms
+       ✓ shep stop exits 0 and deletes daemon.json  6949ms
+       ✓ shep status shows "not running" after stop  550ms
+         ✓ exits 0, stops the old daemon, and invokes startDaemon  6091ms
+         ✓ exits 0 and prints "Daemon was not running" message  1005ms
+         ✓ still invokes startDaemon when daemon was not running  1579ms
+         ✓ stops the daemon before upgrade, restarts it after, and exits 0  6619ms
+         ✓ stops the old daemon, attempts restart, and prints "daemon restored" message  6023ms
+         ✓ completes upgrade without stopping or restarting the daemon  490ms
+
+ Test Files  12 passed | 1 skipped (13)
+      Tests  82 passed | 1 skipped (83)
+   Start at  01:19:13
+   Duration  37.50s (transform 533ms, setup 459ms, import 876ms, tests 169.25s, environment 1ms)
+

@@ -22,6 +22,7 @@ import {
   EditorType,
   Language,
   SkillSourceType,
+  SecurityMode,
   TerminalType,
 } from '@/domain/generated/output.js';
 
@@ -85,6 +86,9 @@ function createTestSettings(overrides: Partial<Settings> = {}): Settings {
       commitEvidence: false,
       ciWatchEnabled: true,
       defaultFastMode: true,
+    },
+    security: {
+      mode: SecurityMode.Advisory,
     },
     onboardingComplete: false,
     ...overrides,
@@ -163,6 +167,7 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     feature_flag_whatsapp_dispatch: 0,
     feature_flag_aspm: 0,
     feature_flag_clusters: 0,
+    feature_flag_supply_chain_security: 1,
     interactive_agent_enabled: 1,
     interactive_agent_auto_timeout_minutes: 15,
     interactive_agent_max_concurrent_sessions: 3,
@@ -180,6 +185,9 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     whatsapp_cloud_api_access_token: null,
     whatsapp_cloud_api_verify_token: null,
     whatsapp_cloud_api_app_secret: null,
+    security_mode: 'Advisory',
+    security_last_evaluation_at: null,
+    security_policy_source: null,
     ...overrides,
   };
 }
@@ -1220,6 +1228,206 @@ describe('Settings Mapper', () => {
       const row = toDatabase(original);
       const restored = fromDatabase(row);
       expect(restored.workflow.skillInjection).toBeUndefined();
+    });
+  });
+
+  describe('toDatabase() - security config', () => {
+    it('should map security.mode to security_mode column', () => {
+      const settings = createTestSettings({
+        security: { mode: SecurityMode.Enforce },
+      } as any);
+      const row = toDatabase(settings);
+      expect(row.security_mode).toBe('Enforce');
+    });
+
+    it('should map security.lastEvaluationAt to security_last_evaluation_at column', () => {
+      const settings = createTestSettings({
+        security: {
+          mode: SecurityMode.Advisory,
+          lastEvaluationAt: '2026-04-05T10:00:00Z',
+        },
+      } as any);
+      const row = toDatabase(settings);
+      expect(row.security_last_evaluation_at).toBe('2026-04-05T10:00:00Z');
+    });
+
+    it('should map security.policySource to security_policy_source column', () => {
+      const settings = createTestSettings({
+        security: {
+          mode: SecurityMode.Enforce,
+          policySource: 'shep.security.yaml',
+        },
+      } as any);
+      const row = toDatabase(settings);
+      expect(row.security_policy_source).toBe('shep.security.yaml');
+    });
+
+    it('should default security_mode to Advisory when security is undefined', () => {
+      const settings = createTestSettings({ security: undefined } as any);
+      const row = toDatabase(settings);
+      expect(row.security_mode).toBe('Advisory');
+    });
+
+    it('should set nullable columns to null when optional fields are missing', () => {
+      const settings = createTestSettings({
+        security: { mode: SecurityMode.Advisory },
+      } as any);
+      const row = toDatabase(settings);
+      expect(row.security_last_evaluation_at).toBeNull();
+      expect(row.security_policy_source).toBeNull();
+    });
+  });
+
+  describe('fromDatabase() - security config', () => {
+    it('should reconstruct security.mode from security_mode column', () => {
+      const row = createTestRow({ security_mode: 'Enforce' });
+      const settings = fromDatabase(row);
+      expect(settings.security?.mode).toBe(SecurityMode.Enforce);
+    });
+
+    it('should reconstruct security.lastEvaluationAt from non-null column', () => {
+      const row = createTestRow({
+        security_mode: 'Advisory',
+        security_last_evaluation_at: '2026-04-05T10:00:00Z',
+      });
+      const settings = fromDatabase(row);
+      expect(settings.security?.lastEvaluationAt).toBe('2026-04-05T10:00:00Z');
+    });
+
+    it('should reconstruct security.policySource from non-null column', () => {
+      const row = createTestRow({
+        security_mode: 'Enforce',
+        security_policy_source: 'shep.security.yaml',
+      });
+      const settings = fromDatabase(row);
+      expect(settings.security?.policySource).toBe('shep.security.yaml');
+    });
+
+    it('should omit lastEvaluationAt when column is null', () => {
+      const row = createTestRow({
+        security_mode: 'Advisory',
+        security_last_evaluation_at: null,
+      });
+      const settings = fromDatabase(row);
+      expect(settings.security?.lastEvaluationAt).toBeUndefined();
+    });
+
+    it('should omit policySource when column is null', () => {
+      const row = createTestRow({
+        security_mode: 'Advisory',
+        security_policy_source: null,
+      });
+      const settings = fromDatabase(row);
+      expect(settings.security?.policySource).toBeUndefined();
+    });
+
+    it('should default mode to Advisory when security_mode is null', () => {
+      const row = createTestRow({ security_mode: undefined as any });
+      const settings = fromDatabase(row);
+      expect(settings.security?.mode).toBe(SecurityMode.Advisory);
+    });
+  });
+
+  describe('round-trip - security config', () => {
+    it('should preserve full security config through toDatabase → fromDatabase', () => {
+      const original = createTestSettings({
+        security: {
+          mode: SecurityMode.Enforce,
+          lastEvaluationAt: '2026-04-05T12:00:00Z',
+          policySource: 'shep.security.yaml',
+        },
+      } as any);
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+      expect(restored.security?.mode).toBe(SecurityMode.Enforce);
+      expect(restored.security?.lastEvaluationAt).toBe('2026-04-05T12:00:00Z');
+      expect(restored.security?.policySource).toBe('shep.security.yaml');
+    });
+
+    it('should preserve minimal security config (mode only) through round-trip', () => {
+      const original = createTestSettings({
+        security: { mode: SecurityMode.Disabled },
+      } as any);
+      const row = toDatabase(original);
+      const restored = fromDatabase(row);
+      expect(restored.security?.mode).toBe(SecurityMode.Disabled);
+      expect(restored.security?.lastEvaluationAt).toBeUndefined();
+      expect(restored.security?.policySource).toBeUndefined();
+    });
+  });
+
+  describe('supplyChainSecurity feature flag (migration 056)', () => {
+    it('maps featureFlags.supplyChainSecurity=true to feature_flag_supply_chain_security=1', () => {
+      const settings = createTestSettings({
+        featureFlags: {
+          envDeploy: false,
+          debug: false,
+          reactFileManager: false,
+          projects: false,
+          codeReview: false,
+          collaboration: false,
+          bedrockIntegration: false,
+          whatsappDispatch: false,
+          aspm: false,
+          clusters: false,
+          supplyChainSecurity: true,
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.feature_flag_supply_chain_security).toBe(1);
+    });
+
+    it('maps featureFlags.supplyChainSecurity=false to feature_flag_supply_chain_security=0', () => {
+      const settings = createTestSettings({
+        featureFlags: {
+          envDeploy: false,
+          debug: false,
+          reactFileManager: false,
+          projects: false,
+          codeReview: false,
+          collaboration: false,
+          bedrockIntegration: false,
+          whatsappDispatch: false,
+          aspm: false,
+          clusters: false,
+          supplyChainSecurity: false,
+        },
+      });
+      const row = toDatabase(settings);
+      expect(row.feature_flag_supply_chain_security).toBe(0);
+    });
+
+    it('reconstructs supplyChainSecurity=true from feature_flag_supply_chain_security=1', () => {
+      const row = createTestRow({ feature_flag_supply_chain_security: 1 });
+      const settings = fromDatabase(row);
+      expect(settings.featureFlags?.supplyChainSecurity).toBe(true);
+    });
+
+    it('reconstructs supplyChainSecurity=false from feature_flag_supply_chain_security=0', () => {
+      const row = createTestRow({ feature_flag_supply_chain_security: 0 });
+      const settings = fromDatabase(row);
+      expect(settings.featureFlags?.supplyChainSecurity).toBe(false);
+    });
+
+    it('round-trips supplyChainSecurity through toDatabase → fromDatabase', () => {
+      const settings = createTestSettings({
+        featureFlags: {
+          envDeploy: true,
+          debug: true,
+          reactFileManager: true,
+          projects: true,
+          codeReview: true,
+          collaboration: true,
+          bedrockIntegration: true,
+          whatsappDispatch: true,
+          aspm: true,
+          clusters: true,
+          supplyChainSecurity: false,
+        },
+      });
+      const row = toDatabase(settings);
+      const restored = fromDatabase(row);
+      expect(restored.featureFlags).toEqual(settings.featureFlags);
     });
   });
 });

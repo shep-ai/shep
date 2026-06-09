@@ -20,6 +20,7 @@ import type {
   ForkOptions,
   PushAccessResult,
   ForkResult,
+  GovernanceFinding,
 } from '../../../application/ports/output/services/github-repository-service.interface.js';
 import {
   GitHubAuthError,
@@ -28,6 +29,7 @@ import {
   GitHubPermissionError,
   GitHubRepoListError,
   GitHubUrlParseError,
+  GovernanceFindingCategory,
 } from '../../../application/ports/output/services/github-repository-service.interface.js';
 
 // ---------------------------------------------------------------------------
@@ -317,6 +319,138 @@ export class GitHubRepositoryService implements IGitHubRepositoryService {
       const err = error instanceof Error ? error : new Error(String(error));
       throw new GitHubForkError(`Failed to fork ${nameWithOwner}: ${err.message}`, err);
     }
+  }
+
+  async auditRepositoryGovernance(
+    owner: string,
+    repo: string,
+    defaultBranch = 'main'
+  ): Promise<GovernanceFinding[]> {
+    const findings: GovernanceFinding[] = [];
+
+    // Check branch protection
+    const branchFindings = await this.checkBranchProtection(owner, repo, defaultBranch);
+    findings.push(...branchFindings);
+
+    // Check CODEOWNERS presence
+    const codeownersFindings = await this.checkCodeowners(owner, repo);
+    findings.push(...codeownersFindings);
+
+    return findings;
+  }
+
+  private async checkBranchProtection(
+    owner: string,
+    repo: string,
+    branch: string
+  ): Promise<GovernanceFinding[]> {
+    try {
+      const { stdout } = await this.execFile('gh', [
+        'api',
+        `/repos/${owner}/${repo}/branches/${branch}/protection`,
+      ]);
+      const protection = JSON.parse(stdout);
+
+      // Protection exists — check for PR review requirements
+      if (!protection.required_pull_request_reviews) {
+        return [
+          {
+            category: GovernanceFindingCategory.BranchProtection,
+            severity: 'Medium',
+            message: `Branch "${branch}" has protection enabled but does not require pull request reviews.`,
+            remediation: `Enable "Require a pull request before merging" in branch protection settings for "${branch}".`,
+          },
+        ];
+      }
+
+      return [];
+    } catch (error) {
+      return this.handleGovernanceCheckError(
+        error,
+        GovernanceFindingCategory.BranchProtection,
+        `Branch "${branch}" has no branch protection rules configured.`,
+        `Enable branch protection for "${branch}" in repository settings. Require pull request reviews and status checks.`
+      );
+    }
+  }
+
+  private async checkCodeowners(owner: string, repo: string): Promise<GovernanceFinding[]> {
+    // CODEOWNERS can live in repo root or .github/ directory
+    const paths = [
+      `/repos/${owner}/${repo}/contents/CODEOWNERS`,
+      `/repos/${owner}/${repo}/contents/.github/CODEOWNERS`,
+    ];
+
+    for (const path of paths) {
+      try {
+        await this.execFile('gh', ['api', path]);
+        // Found CODEOWNERS — no finding needed
+        return [];
+      } catch {
+        // Not found at this path — try next
+      }
+    }
+
+    // Neither location found
+    return [
+      {
+        category: GovernanceFindingCategory.Codeowners,
+        severity: 'Medium',
+        message: 'No CODEOWNERS file found in the repository.',
+        remediation:
+          'Add a CODEOWNERS file to the repository root or .github/ directory to enforce code review ownership.',
+      },
+    ];
+  }
+
+  /**
+   * Handle errors from governance API calls gracefully.
+   * 404 errors are treated as findings (missing config).
+   * Auth/permission errors are treated as Unknown severity findings.
+   */
+  private handleGovernanceCheckError(
+    error: unknown,
+    category: GovernanceFindingCategory,
+    notFoundMessage: string,
+    notFoundRemediation: string
+  ): GovernanceFinding[] {
+    const errMessage = error instanceof Error ? error.message : String(error);
+    const errnoCode = (error as NodeJS.ErrnoException)?.code;
+
+    // gh not installed
+    if (errnoCode === 'ENOENT') {
+      return [
+        {
+          category,
+          severity: 'Unknown',
+          message: 'GitHub CLI (gh) is not installed. Cannot audit repository governance.',
+          remediation: 'Install the GitHub CLI from https://cli.github.com/',
+        },
+      ];
+    }
+
+    // 404 = resource not configured (branch protection, file missing, etc.)
+    if (errMessage.includes('404')) {
+      return [
+        {
+          category,
+          severity: 'High',
+          message: notFoundMessage,
+          remediation: notFoundRemediation,
+        },
+      ];
+    }
+
+    // Auth/permission errors or other unexpected failures — return Unknown finding
+    return [
+      {
+        category,
+        severity: 'Unknown',
+        message: `Unable to audit ${category}: ${errMessage}`,
+        remediation:
+          'Verify that the GitHub CLI is authenticated with sufficient permissions. Run `gh auth login`.',
+      },
+    ];
   }
 
   private async cleanupPartialClone(destination: string): Promise<void> {

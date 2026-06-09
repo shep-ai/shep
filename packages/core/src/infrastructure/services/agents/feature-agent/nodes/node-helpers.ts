@@ -17,6 +17,8 @@ import type {
 } from '@/application/ports/output/agents/agent-executor.interface.js';
 import type { ApprovalGates, Evidence } from '@/domain/generated/output.js';
 import { hasSettings, getSettings } from '@/infrastructure/services/settings.service.js';
+import { SecurityViolationError } from '@/domain/errors/security-violation.error.js';
+import { checkSecurityDisposition, resolveEffectiveSecurityMode } from './security-pre-check.js';
 import type { FeatureAgentState } from '../state.js';
 import { reportNodeStart } from '../heartbeat.js';
 import {
@@ -566,6 +568,45 @@ export function executeNode(
           _needsReexecution: false,
         };
       }
+    }
+
+    // Security pre-check: evaluate policy before executing the agent.
+    // Master kill switch — when the supplyChainSecurity feature flag is off,
+    // resolveEffectiveSecurityMode forces the mode to Disabled so
+    // checkSecurityDisposition returns a skip and no security logic runs.
+    const supplyChainSecurityEnabled = hasSettings()
+      ? (getSettings().featureFlags?.supplyChainSecurity ?? true)
+      : true;
+    const effectiveSecurityMode = resolveEffectiveSecurityMode(
+      state.securityMode,
+      supplyChainSecurityEnabled
+    );
+    const securityCheck = checkSecurityDisposition(
+      nodeName,
+      effectiveSecurityMode,
+      state.securityActionDispositions ?? {}
+    );
+    if (securityCheck.action === 'deny') {
+      throw new SecurityViolationError(
+        `Node "${nodeName}" denied by security policy (category: ${securityCheck.category})`,
+        securityCheck.category,
+        `Action category "${securityCheck.category}" is denied. Update security policy to allow this action.`
+      );
+    }
+    if (securityCheck.action === 'approval_required') {
+      log.info(
+        `Security policy requires approval for "${nodeName}" (category: ${securityCheck.category})`
+      );
+      interrupt({
+        node: nodeName,
+        message: `Security policy requires approval for "${securityCheck.category}" before "${nodeName}" can execute.`,
+        securityCategory: securityCheck.category,
+      });
+    }
+    if (securityCheck.action === 'warn') {
+      log.info(
+        `Security advisory: "${nodeName}" would be restricted (category: ${securityCheck.category})`
+      );
     }
 
     const startTime = Date.now();

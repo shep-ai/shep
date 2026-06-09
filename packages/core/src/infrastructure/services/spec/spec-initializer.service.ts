@@ -12,6 +12,7 @@ import type {
   ISpecInitializerService,
   SpecInitializerResult,
 } from '@/application/ports/output/services/spec-initializer.interface.js';
+import { SECURITY_POLICY_FILENAME } from '@/infrastructure/services/security/security-policy-file-reader.js';
 
 /**
  * Pad a number to 3 digits with leading zeros.
@@ -265,6 +266,63 @@ const TEMPLATES: { filename: string; content: string }[] = [
   { filename: 'feature.yaml', content: FEATURE_YAML },
 ];
 
+// ─── Security Policy Template ─────────────────────────────────────
+// Baseline shep.security.yaml for new repositories.
+
+const SECURITY_POLICY_YAML = `# Shep Supply Chain Security Policy
+# This file defines the security posture for this repository.
+# Shep evaluates this policy during agent execution and CI enforcement.
+#
+# Docs: https://shep.bot/docs/security/policy
+
+# Security mode controls enforcement behavior:
+#   Disabled  - Security checks are skipped entirely
+#   Advisory  - Checks run and findings are reported, but nothing is blocked
+#   Enforce   - Checks run and violations block agent actions and CI jobs
+mode: Advisory
+
+# Action dispositions control how the agent handles each action category.
+# Each entry maps a category to a disposition:
+#   Allowed          - Action proceeds without interruption
+#   Denied           - Action is blocked before execution
+#   ApprovalRequired - Action pauses for human approval via HITL gate
+actionDispositions:
+  - category: DependencyInstall
+    disposition: ApprovalRequired
+  - category: PackageScriptExec
+    disposition: ApprovalRequired
+  - category: CiWorkflowModify
+    disposition: ApprovalRequired
+  - category: PublishRelease
+    disposition: Denied
+  - category: SandboxEscalation
+    disposition: Denied
+
+# Dependency risk rules evaluated by "shep security enforce"
+dependencyRules:
+  # Verify lockfile matches package.json (detects phantom dependencies)
+  checkLockfileConsistency: true
+  # Flag packages with risky lifecycle scripts (preinstall, postinstall)
+  checkLifecycleScripts: true
+  # Flag dependencies sourced from git, file, or HTTP instead of registry
+  checkNonRegistrySource: true
+  # Require exact versions (no ^, ~, *, >= ranges)
+  enforceStrictVersionRanges: false
+  # Packages explicitly allowed (empty = allow all registry packages)
+  allowlist: []
+  # Packages explicitly blocked (takes precedence over allowlist)
+  denylist: []
+
+# Release integrity rules for publish-path enforcement
+releaseRules:
+  # Require publishing only from CI (not local machines)
+  requireCiOnlyPublishing: true
+  # Require npm provenance attestation on published packages
+  requireProvenance: true
+  # Check that release workflow has not been tampered with
+  checkWorkflowIntegrity: true
+`;
+
 export class SpecInitializerService implements ISpecInitializerService {
   async initialize(
     basePath: string,
@@ -307,6 +365,12 @@ export class SpecInitializerService implements ISpecInitializerService {
     );
 
     return { specDir, featureNumber: nnn };
+  }
+
+  async scaffoldSecurityPolicy(repositoryPath: string): Promise<string> {
+    const filePath = join(repositoryPath, SECURITY_POLICY_FILENAME);
+    await writeFile(filePath, SECURITY_POLICY_YAML, 'utf-8');
+    return filePath;
   }
 
   /**

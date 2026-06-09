@@ -1,0 +1,319 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "supply-chain-security"
+summary: >
+  Seven-phase implementation plan for a policy-driven supply-chain security subsystem.
+  Introduces TypeSpec domain models, a central policy engine behind ISecurityPolicyService,
+  hybrid policy storage (shep.security.yaml + SQLite), runtime guardrails in the feature-agent
+  graph via executeNode() pre-checks, executor security validation, a shep security enforce
+  CLI command, CI/release gating, and security surfaces in the Control Center, repository
+  drawer, and settings UI. All decisions follow Clean Architecture layering, TypeSpec-first
+  modeling, and existing DI/persistence patterns.
+
+relatedFeatures:
+  - "016-hitl-approval-gates"
+  - "062-shep-cicd-pipeline"
+  - "077-codex-cli-agent"
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "Node.js 22"
+  - "LangGraph"
+  - "SQLite (better-sqlite3)"
+  - "Umzug"
+  - "tsyringe"
+  - "Commander"
+  - "Next.js 16 App Router"
+  - "React 19"
+  - "Storybook"
+  - "GitHub Actions"
+  - "semantic-release"
+  - "GitHub CLI (gh)"
+  - "js-yaml"
+  - "Vitest"
+  - "Playwright"
+
+relatedLinks:
+  - title: "Clean Architecture"
+    url: "https://github.com/shep-ai/shep/blob/main/docs/architecture/clean-architecture.md"
+  - title: "Agent System Architecture"
+    url: "https://github.com/shep-ai/shep/blob/main/docs/architecture/agent-system.md"
+  - title: "CI/CD Guide"
+    url: "https://github.com/shep-ai/shep/blob/main/docs/development/cicd.md"
+  - title: "TypeSpec Guide"
+    url: "https://github.com/shep-ai/shep/blob/main/docs/development/typespec-guide.md"
+  - title: "npm provenance documentation"
+    url: "https://docs.npmjs.com/generating-provenance-statements"
+
+phases:
+  - id: "phase-1"
+    name: "Domain Models & Schema Foundation"
+    description: >
+      Define all security domain types in TypeSpec (SecurityMode enum, SecurityActionCategory
+      enum, SecurityActionDisposition enum, SecurityPolicy, SecurityEvent, DependencyFinding,
+      ReleaseIntegrityResult, EffectivePolicySnapshot) and extend Settings with a SecurityConfig
+      nested model. Run tsp:compile to generate TypeScript types. Create additive SQLite
+      migrations for security columns on settings and a new security_events table. Extend the
+      settings mapper and defaults factory. This phase produces zero runtime behavior but
+      establishes the type foundation every subsequent phase depends on.
+    parallel: false
+
+  - id: "phase-2"
+    name: "Policy Engine & Persistence"
+    description: >
+      Implement the central policy engine as an application-layer service behind
+      ISecurityPolicyService. Build the policy file reader (shep.security.yaml via js-yaml),
+      policy validator with fail-fast semantics, and deterministic policy evaluator that merges
+      global defaults with repository policy. Implement ISecurityEventRepository and
+      SQLiteSecurityEventRepository for event persistence with 90-day retention cleanup.
+      Register all services in the DI container. This phase delivers the core abstraction
+      that all consumers depend on.
+    parallel: false
+
+  - id: "phase-3"
+    name: "CLI Enforcement Command"
+    description: >
+      Create the shep security command group with the enforce subcommand. Build
+      EnforceSecurityUseCase that orchestrates policy evaluation, dependency-risk checks,
+      and release-integrity checks. Implement the DependencyRiskEvaluator (lockfile
+      consistency, lifecycle scripts, source types, allowlist/denylist, version-range policy)
+      and ReleaseIntegrityEvaluator (CI-only publishing, provenance, workflow integrity).
+      Wire OutputFormatter for human-readable and machine-readable (JSON) output. Exit code
+      0 for pass, 1 for enforce-mode failure.
+    parallel: false
+
+  - id: "phase-4"
+    name: "Executor & Runtime Guardrails"
+    description: >
+      Add securityConstraints to AgentExecutionOptions and validate in executors before
+      launch. Extend FeatureAgentState with security policy channels. Thread effective
+      policy through all spawn sites (create, start, resume, approve, reject, unblock)
+      as CLI args. Add pre-execution security checks in the executeNode() helper that
+      classify actions against policy and either allow, deny (with SecurityViolationError),
+      or route through existing interrupt() for approval-required actions. Persist security
+      events from runtime decisions.
+    parallel: false
+
+  - id: "phase-5"
+    name: "GitHub Governance Audit"
+    description: >
+      Extend IGitHubRepositoryService with an auditRepositoryGovernance() method. Implement
+      gh-CLI-backed checks for branch protection rules, CODEOWNERS presence, and workflow
+      permissions. Surface results as DependencyFinding-style findings with severity and
+      remediation suggestions. Integrate governance audit into the EnforceSecurityUseCase
+      flow. Mark all remote enforcement as audit-only.
+    parallel: false
+
+  - id: "phase-6"
+    name: "Web UI Security Surfaces"
+    description: >
+      Add a SupplyChainSecuritySettingsSection component for the settings page showing
+      effective mode, policy source, last evaluation, and recent findings. Add a security
+      panel to the repository drawer with governance audit and dependency risk summaries.
+      Add a security badge (shield icon) to feature nodes in the Control Center via
+      build-graph-nodes.ts enrichment. Create server actions that resolve security use cases.
+      All new components get colocated .stories.tsx files.
+    parallel: false
+
+  - id: "phase-7"
+    name: "CI Integration & Release Gating"
+    description: >
+      Add a security-enforce job to ci.yml that runs shep security enforce --output json.
+      Gate the release job and dev-publish workflows on the security-enforce job passing.
+      Add the spec-initializer scaffold for shep.security.yaml in new repositories.
+      Run full validation (lint, typecheck, build, unit tests, integration tests, e2e)
+      to confirm no regressions.
+    parallel: false
+
+filesToCreate:
+  - "tsp/domain/entities/security.tsp"
+  - "packages/core/src/application/ports/output/services/security-policy-service.interface.ts"
+  - "packages/core/src/application/ports/output/repositories/security-event.repository.interface.ts"
+  - "packages/core/src/application/use-cases/security/enforce-security.use-case.ts"
+  - "packages/core/src/application/use-cases/security/evaluate-security-policy.use-case.ts"
+  - "packages/core/src/application/use-cases/security/get-security-state.use-case.ts"
+  - "packages/core/src/application/use-cases/security/record-security-event.use-case.ts"
+  - "packages/core/src/infrastructure/services/security/security-policy.service.ts"
+  - "packages/core/src/infrastructure/services/security/security-policy-file-reader.ts"
+  - "packages/core/src/infrastructure/services/security/security-policy-validator.ts"
+  - "packages/core/src/infrastructure/services/security/dependency-risk-evaluator.ts"
+  - "packages/core/src/infrastructure/services/security/release-integrity-evaluator.ts"
+  - "packages/core/src/infrastructure/services/security/governance-auditor.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-security-event.repository.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/security-event.mapper.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/053-add-security-settings-columns.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/054-create-security-events-table.ts"
+  - "src/presentation/cli/commands/security.command.ts"
+  - "src/presentation/web/app/actions/security.ts"
+  - "src/presentation/web/components/features/settings/supply-chain-security-settings-section.tsx"
+  - "src/presentation/web/components/features/settings/supply-chain-security-settings-section.stories.tsx"
+  - "src/presentation/web/components/common/repository-node/security-panel.tsx"
+  - "src/presentation/web/components/common/repository-node/security-panel.stories.tsx"
+  - "src/presentation/web/components/common/security-badge.tsx"
+  - "src/presentation/web/components/common/security-badge.stories.tsx"
+  - "tests/unit/infrastructure/services/security/security-policy.service.test.ts"
+  - "tests/unit/infrastructure/services/security/security-policy-validator.test.ts"
+  - "tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts"
+  - "tests/unit/infrastructure/services/security/release-integrity-evaluator.test.ts"
+  - "tests/unit/infrastructure/services/security/governance-auditor.test.ts"
+  - "tests/unit/infrastructure/repositories/sqlite-security-event.repository.test.ts"
+  - "tests/unit/application/use-cases/security/enforce-security.use-case.test.ts"
+  - "tests/unit/application/use-cases/security/evaluate-security-policy.use-case.test.ts"
+  - "tests/unit/presentation/cli/commands/security.command.test.ts"
+  - "tests/integration/security/security-enforcement.test.ts"
+  - "tests/integration/security/security-persistence.test.ts"
+
+filesToModify:
+  - "tsp/domain/entities/settings.tsp"
+  - "packages/core/src/domain/generated/output.ts"
+  - "packages/core/src/domain/factories/settings-defaults.factory.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/settings.mapper.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-settings.repository.ts"
+  - "packages/core/src/infrastructure/di/container.ts"
+  - "packages/core/src/application/ports/output/agents/agent-executor.interface.ts"
+  - "packages/core/src/infrastructure/services/agents/common/executors/claude-code-executor.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/state.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-worker.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-process.service.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/nodes/node-helpers.ts"
+  - "packages/core/src/application/use-cases/features/create-feature.use-case.ts"
+  - "packages/core/src/application/use-cases/features/start-feature.use-case.ts"
+  - "packages/core/src/application/use-cases/features/resume-feature.use-case.ts"
+  - "packages/core/src/application/use-cases/agents/approve-agent-run.use-case.ts"
+  - "packages/core/src/application/use-cases/agents/reject-agent-run.use-case.ts"
+  - "packages/core/src/application/use-cases/features/check-and-unblock-features.use-case.ts"
+  - "packages/core/src/application/ports/output/services/github-repository-service.interface.ts"
+  - "packages/core/src/infrastructure/services/external/github-repository.service.ts"
+  - "packages/core/src/infrastructure/services/spec/spec-initializer.service.ts"
+  - "src/presentation/cli/index.ts"
+  - "src/presentation/web/app/build-graph-nodes.ts"
+  - "src/presentation/web/components/features/settings/settings-page-client.tsx"
+  - "src/presentation/web/components/common/repository-node/repository-drawer.tsx"
+  - ".github/workflows/ci.yml"
+
+openQuestions: []
+
+content: |
+  ## Architecture Overview
+
+  The supply-chain security feature introduces a cross-cutting security subsystem that spans
+  all four Clean Architecture layers. The design follows the established codebase patterns:
+  TypeSpec-first domain modeling, application-layer use cases as the sole orchestration point,
+  infrastructure services behind port interfaces, and thin presentation layers that call use
+  cases through DI.
+
+  The central architectural element is a **policy engine** (ISecurityPolicyService) in the
+  application layer that computes a deterministic effective policy from three sources: global
+  settings defaults, a repository-scoped shep.security.yaml file, and per-feature-run state.
+  Every consumer — CLI enforcement, runtime guardrails, executor validation, CI checks, and
+  web UI projections — resolves the same service via DI and evaluates the same rules. No
+  executor, node, or workflow implements its own security-rule interpretation (FR-5).
+
+  The runtime enforcement model extends the existing feature-agent graph. The effective policy
+  is computed at agent spawn time, serialized as a CLI arg, parsed in the worker, and injected
+  into LangGraph state channels — matching the existing pattern for per-feature flags like
+  forkAndPr and ciWatchEnabled (per LESSONS.md). The executeNode() helper in node-helpers.ts
+  gains pre-execution security checks that classify agent actions into five categories
+  (FR-7) and either allow, deny, or route through the existing interrupt() mechanism for
+  approval (reusing feature 016 HITL infrastructure).
+
+  Persistence follows the established SQLite pattern. Security settings are added as flattened
+  columns on the existing singleton settings row (matching the 100+ column convention). Security
+  events get their own table (matching the agent_runs pattern for entity-per-row storage).
+  Migrations are additive and idempotent per LESSONS.md.
+
+  ## Key Design Decisions
+
+  ### 1. Central Policy Engine in Application Layer
+
+  The policy engine is an application-layer service behind ISecurityPolicyService, with its
+  implementation in infrastructure/. This matches how IAgentExecutorProvider and
+  IGitHubRepositoryService are structured. The engine reads shep.security.yaml via a file
+  reader, merges with SQLite-persisted defaults, validates with fail-fast semantics, and
+  returns a deterministic EffectivePolicySnapshot. All consumers resolve the same instance.
+
+  **Alternative rejected:** Scattering policy logic across executors and nodes would violate
+  FR-5 and create untestable divergent interpretations.
+
+  ### 2. TypeSpec-First Domain Models in Dedicated File
+
+  New security types go in tsp/domain/entities/security.tsp rather than inflating settings.tsp.
+  A small SecurityConfig model is added to settings.tsp for the settings-embedded fields (mode,
+  lastEvaluationAt, policySource). The full security domain (events, findings, policy, results)
+  lives independently and compiles to the same output.ts.
+
+  **Alternative rejected:** Hand-written TypeScript types would violate the mandatory
+  TypeSpec-first rule. Inlining everything in settings.tsp would overload an already large model.
+
+  ### 3. Hybrid Policy Storage (YAML File + SQLite)
+
+  Repository policy rules live in shep.security.yaml (reviewable in git, portable). Effective
+  mode, evaluation timestamps, and event history persist in SQLite (queryable from web UI,
+  available across sessions). js-yaml (already a project dependency) parses the file.
+
+  ### 4. Runtime Guardrails via executeNode() Pre-Checks
+
+  The executeNode() factory in node-helpers.ts is the central execution point for all graph
+  nodes. Pre-execution checks classify the pending action against the effective policy in
+  state. This is an application-layer enforcement backstop — prompt constraints are a
+  defense-in-depth layer only. Denied actions throw SecurityViolationError before the agent
+  prompt is sent. Approval-required actions call interrupt() per the feature 016 pattern.
+
+  ### 5. Per-Feature Security Policy Threading
+
+  Following LESSONS.md, the effective policy flows through all spawn sites as a CLI arg:
+  create, start, resume, approve, reject, and unblock. The worker parses it into WorkerArgs,
+  and the graph injects it into state channels. Nodes read from state, never from the global
+  settings singleton.
+
+  ### 6. Executor Validation via Optional SecurityConstraints
+
+  AgentExecutionOptions gains an optional securityConstraints field (non-breaking). Before
+  spawning, the executor validates compatibility. In Enforce mode, incompatible executors
+  throw SecurityViolationError. This preserves the IAgentExecutorProvider resolution pattern
+  (FR-19) while adding fail-closed behavior (NFR-3).
+
+  ## Implementation Strategy
+
+  The seven phases are strictly ordered by dependency:
+
+  **Phase 1 (Foundation)** must come first because every subsequent phase depends on the
+  generated TypeScript types. Without SecurityMode, SecurityEvent, etc. in output.ts, nothing
+  can compile.
+
+  **Phase 2 (Policy Engine)** builds on the types to create the core abstraction. The CLI,
+  runtime, and UI all depend on ISecurityPolicyService, so it must exist before any consumer.
+
+  **Phase 3 (CLI Enforcement)** is the first consumer of the policy engine and delivers
+  immediate local value. It also defines the DependencyRiskEvaluator and
+  ReleaseIntegrityEvaluator that CI and runtime later reuse.
+
+  **Phase 4 (Runtime Guardrails)** is the most complex phase, touching executor contracts,
+  worker args, state channels, all spawn sites, and node-helpers.ts. It depends on the policy
+  engine and evaluators from phases 2-3.
+
+  **Phase 5 (GitHub Governance)** extends the existing GitHub service and integrates into
+  the enforcement flow. It is isolated from the runtime guardrails and can be built independently.
+
+  **Phase 6 (Web UI)** depends on the use cases and server actions being available. Settings
+  section, drawer panel, and Control Center badge are independent components that can be
+  built in parallel within the phase.
+
+  **Phase 7 (CI Integration)** is last because it depends on the CLI enforcement command
+  existing and working correctly. CI changes are the highest-risk modification and should
+  only be made once all local functionality is verified.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Migration breaks branch switching | All migrations are additive (new columns/tables only), idempotent (check existence before ALTER/CREATE), and down() is no-op. Per LESSONS.md, never drop or rename columns. |
+  | Policy engine divergence across consumers | Single ISecurityPolicyService port resolved via DI. No consumer implements its own evaluation. Comprehensive unit tests verify deterministic output. |
+  | Runtime guardrails bypass via prompt injection | Application-layer enforcement in executeNode() is the primary mechanism. Prompt constraints are defense-in-depth only. Tests verify blocked actions cannot execute regardless of agent output. |
+  | Spawn sites miss security policy threading | Follow LESSONS.md pattern: grep for all processService.spawn calls, verify each passes security policy from feature entity. Use create-feature.use-case.ts as canonical reference. |
+  | CI workflow changes break existing jobs | Security-enforce is a new parallel job added to the existing needs array. No existing job structure changes. Test in PR before merging. |
+  | Web UI regressions | All new components get colocated .stories.tsx files. Existing components are modified minimally (add section to settings page, panel to drawer, badge to node enrichment). |
+  | Performance degradation from per-action checks | Effective policy computed once at spawn, cached in state. Per-action checks are O(1) map lookups against five categories. NFR-4 budget (100ms) is easily met. |
+  | Settings mapper/repository desync | Follow the established pattern: SettingsRow interface → toDatabase/fromDatabase → SQL column list. Verify all three are in sync per LESSONS.md. |

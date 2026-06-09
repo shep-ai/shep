@@ -20,6 +20,10 @@ import type {
 import type { SpawnFunction } from '../types.js';
 import { getCurrentPhase, getLogPrefix } from '../../feature-agent/log-context.js';
 import { IS_WINDOWS } from '../../../../platform.js';
+import {
+  validateSecurityConstraints,
+  type ExecutorCapabilities,
+} from './security-constraint-validator.js';
 
 /** Features supported by Claude Code CLI */
 const SUPPORTED_FEATURES = new Set<string>([
@@ -60,8 +64,21 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
     process.stdout.write(`[${ts}] ${getCurrentPhase()}${getLogPrefix()}${message}\n`);
   }
 
+  /** Executor capabilities for security constraint validation */
+  private static readonly CAPABILITIES: ExecutorCapabilities = {
+    requiresPermissiveMode: true, // uses --dangerously-skip-permissions
+    executorName: 'claude-code',
+  };
+
   async execute(prompt: string, options?: AgentExecutionOptions): Promise<AgentExecutionResult> {
     this.silent = options?.silent ?? false;
+
+    const warning = validateSecurityConstraints(
+      options?.securityConstraints,
+      ClaudeCodeExecutorService.CAPABILITIES
+    );
+    if (warning) this.log(warning);
+
     // Use stream-json so we get real-time events in the worker log
     // instead of zero output for minutes with --output-format json
     const args = this.buildStreamArgs(prompt, options);
@@ -198,6 +215,12 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
     prompt: string,
     options?: AgentExecutionOptions
   ): AsyncIterable<AgentExecutionStreamEvent> {
+    const warning = validateSecurityConstraints(
+      options?.securityConstraints,
+      ClaudeCodeExecutorService.CAPABILITIES
+    );
+    if (warning) this.log(warning);
+
     const args = this.buildStreamArgs(prompt, options);
     const spawnOpts = this.buildSpawnOptions(options);
     const proc = this.spawn('claude', args, spawnOpts);

@@ -67,6 +67,8 @@ function baseState(_overrides: Partial<FeatureAgentState> = {}): FeatureAgentSta
     enableEvidence: false,
     injectSkills: false,
     commitEvidence: false,
+    securityMode: 'Disabled',
+    securityActionDispositions: {},
   } as FeatureAgentState;
 }
 

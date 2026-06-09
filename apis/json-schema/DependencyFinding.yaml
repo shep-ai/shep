@@ -1,0 +1,28 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DependencyFinding.yaml
+type: object
+properties:
+  packageName:
+    type: string
+    description: Package name (e.g. 'lodash', '@types/node')
+  version:
+    type: string
+    description: Package version or range (e.g. '^4.17.0')
+  severity:
+    $ref: SecuritySeverity.yaml
+    description: Severity of this finding
+  riskType:
+    $ref: DependencyRiskType.yaml
+    description: Type of dependency risk detected
+  message:
+    type: string
+    description: Human-readable description of the finding
+  remediation:
+    type: string
+    description: Actionable remediation guidance
+required:
+  - packageName
+  - severity
+  - riskType
+  - message
+description: Single dependency risk finding

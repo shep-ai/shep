@@ -1,0 +1,592 @@
+name: "supply-chain-security"
+summary: >
+  Comprehensive technical research for the supply-chain security feature.
+  Key decisions include a central policy engine as an application-layer service,
+  TypeSpec-first domain models for security mode/events/findings, hybrid policy
+  storage via shep.security.yaml plus SQLite, runtime guardrails through LangGraph
+  state channels and prompt constraints, a new shep security enforce CLI command
+  following existing Commander patterns, gh-based audit-only GitHub governance,
+  js-yaml for policy file parsing, and security surfaces projected through
+  existing server-action and settings patterns into the Control Center and settings UI.
+
+relatedFeatures:
+  - "016-hitl-approval-gates"
+  - "062-shep-cicd-pipeline"
+  - "077-codex-cli-agent"
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "Node.js 22"
+  - "LangGraph"
+  - "SQLite (better-sqlite3)"
+  - "Umzug"
+  - "tsyringe"
+  - "Commander"
+  - "Next.js 16 App Router"
+  - "React 19"
+  - "Storybook"
+  - "GitHub Actions"
+  - "semantic-release"
+  - "GitHub CLI (gh)"
+  - "js-yaml"
+  - "Vitest"
+  - "Playwright"
+
+relatedLinks:
+  - title: "Clean Architecture"
+    url: "https://github.com/shep-ai/shep/blob/main/docs/architecture/clean-architecture.md"
+  - title: "Agent System Architecture"
+    url: "https://github.com/shep-ai/shep/blob/main/docs/architecture/agent-system.md"
+  - title: "CI/CD Guide"
+    url: "https://github.com/shep-ai/shep/blob/main/docs/development/cicd.md"
+  - title: "TypeSpec Guide"
+    url: "https://github.com/shep-ai/shep/blob/main/docs/development/typespec-guide.md"
+  - title: "npm provenance documentation"
+    url: "https://docs.npmjs.com/generating-provenance-statements"
+  - title: "SLSA framework"
+    url: "https://slsa.dev/spec/v1.0/"
+
+decisions:
+  - title: "Policy Engine Architecture"
+    chosen: "Central application-layer policy engine service behind an ISecurityPolicyService port interface"
+    rejected:
+      - "Scatter policy logic across individual executors and nodes — violates FR-5 requirement for a single policy-evaluation abstraction, creates divergent interpretations, and makes testing impossible without running full graph executions."
+      - "Domain-layer policy engine — policy evaluation depends on reading files and settings from infrastructure, so placing it in the domain layer would violate the dependency rule. The domain defines the types; the application layer orchestrates evaluation."
+      - "Infrastructure-layer policy engine — would allow direct coupling to SQLite and filesystem, but makes the engine unreachable from use cases without crossing layers. Application-layer placement follows the existing use-case pattern and keeps the engine injectable and testable."
+    rationale: >
+      The codebase follows strict Clean Architecture with application-layer use cases as the
+      sole orchestration point. A central ISecurityPolicyService port in application/ports/output/services/
+      with an implementation in infrastructure/ matches how IAgentExecutorProvider,
+      IGitHubRepositoryService, and other cross-cutting services are structured. All consumers
+      (CLI enforcement command, runtime nodes, CI, UI projections) resolve the same service via
+      DI. This ensures FR-5 (central abstraction) and NFR-7 (centrally testable). The service
+      reads the policy file, merges with persisted settings, and returns a deterministic effective
+      policy. No executor, node, or workflow implements its own interpretation.
+
+  - title: "Domain Model Strategy"
+    chosen: "TypeSpec-first models in tsp/ with new security-specific model files, compiled to domain/generated/output.ts"
+    rejected:
+      - "Hand-written TypeScript types in domain/ — violates the mandatory TypeSpec-first rule. Generated output.ts is the source of truth for all domain types. Hand-written types would drift from the canonical schema and break mapper expectations."
+      - "Extend existing settings.tsp with all security fields inline — overloads an already large settings model, mixes security policy concerns with general preferences, and makes the security domain harder to evolve independently."
+    rationale: >
+      The codebase mandates TypeSpec-first domain models. New files like tsp/domain/entities/security.tsp
+      for SecurityPolicy, SecurityMode, SecurityEvent, DependencyFinding, ReleaseIntegrityResult,
+      and EffectivePolicySnapshot follow the same pattern as settings.tsp and feature.tsp.
+      SecurityMode (Disabled/Advisory/Enforce) becomes a TypeSpec enum matching the AgentType/EditorType
+      pattern. A small SecurityConfig model inside settings.tsp holds the mode and last-evaluation
+      timestamp, keeping settings lean while the full security domain lives in its own file.
+      Running pnpm tsp:compile generates all TypeScript types, ensuring mappers and factories
+      stay synchronized.
+
+  - title: "Policy File Format and Location"
+    chosen: "YAML file at repository root (shep.security.yaml) parsed with js-yaml (already a project dependency)"
+    rejected:
+      - "JSON policy file — less readable for humans reviewing in PRs, no comment support, harder to author manually. The codebase already uses YAML extensively for specs, and js-yaml is already a dependency."
+      - "TOML policy file — would require adding a new dependency (e.g., @iarna/toml or smol-toml) when js-yaml already handles the use case. TOML is less familiar to the target audience than YAML."
+      - "TypeScript config file (shep.security.config.ts) — requires dynamic import, introduces code execution at policy load time, harder to validate statically, and creates security risk if a malicious config is committed."
+    rationale: >
+      js-yaml v4.1.1 is already in both the root package.json and the web package.json.
+      YAML is the established format for spec files (spec.yaml, research.yaml, plan.yaml, etc.)
+      and is familiar to users. The policy file lives at the repo root for discoverability and
+      PR reviewability. The policy engine reads shep.security.yaml, validates against a JSON
+      schema derived from the TypeSpec model, and merges with persisted SQLite defaults.
+      Invalid or contradictory rules produce actionable validation errors per FR-2 success criteria.
+
+  - title: "Security Event Persistence Strategy"
+    chosen: "New security_events SQLite table with repository-scoped rows, 90-day retention via periodic cleanup"
+    rejected:
+      - "Embed security events as JSON in the settings table — breaks the normalized persistence pattern, makes querying by date/severity impossible without JSON parsing, and couples event history to the singleton settings row."
+      - "Append-only log file — not queryable from the web UI, not accessible from server actions, requires separate parsing, and does not integrate with the existing SQLite-backed repository pattern."
+      - "Permanent full history — exceeds MVP scope per the resolved open question. 90 days provides sufficient audit context while containing storage growth and UI complexity."
+    rationale: >
+      The codebase uses SQLite for all persistence (features, agent runs, settings, interactive
+      sessions). A new security_events table follows the same pattern as the agent_runs table:
+      repository-scoped rows with timestamps, severity, decision type, actor, and remediation
+      summary. A new ISecurityEventRepository port interface in application/ports/output/repositories/
+      with a SQLiteSecurityEventRepository implementation matches the existing pattern.
+      Migrations are additive (new table, no column drops). The 90-day retention window aligns
+      with the resolved open question and is implemented via a periodic cleanup query
+      (DELETE WHERE created_at < datetime('now', '-90 days')).
+
+  - title: "Runtime Guardrails Implementation"
+    chosen: "LangGraph state channels for security policy plus pre-execution checks in node-helpers.ts executeNode() pattern"
+    rejected:
+      - "Post-execution audit only — detects violations after the damage is done, which is incompatible with Enforce mode fail-closed requirement (NFR-3). Risky actions must be blocked before execution, not logged after."
+      - "Prompt-only constraints without application-layer enforcement — relies entirely on the LLM following instructions, which is unreliable. The agent may ignore prompt instructions. Application-layer checks in node logic provide a deterministic backstop."
+      - "Separate security middleware process — adds process coordination complexity, IPC overhead, and a new failure mode. The existing graph node pattern (executeNode in node-helpers.ts) already provides a central interception point that all nodes pass through."
+    rationale: >
+      The feature-agent worker already passes per-feature flags (commitSpecs, enableEvidence,
+      forkAndPr, etc.) through CLI args into LangGraph state channels, and nodes read from
+      state rather than global singletons (per LESSONS.md). Security policy follows the same
+      pattern: effective policy is computed at spawn time, serialized as a CLI arg, parsed into
+      WorkerArgs, and injected into graph state. The executeNode() helper in node-helpers.ts
+      is the central execution point for all nodes. Pre-execution policy checks evaluate the
+      action category (dependency install, CI edit, publish, etc.) against the effective policy
+      before the agent prompt is sent. Denied actions throw before execution. Approval-required
+      actions route through the existing interrupt() mechanism from feature 016.
+
+  - title: "Executor Security Validation"
+    chosen: "Add optional securityConstraints field to AgentExecutionOptions and validate in executor before launch"
+    rejected:
+      - "Modify IAgentExecutorProvider to reject unsafe executors at resolution time — too coarse-grained, as the same executor may be safe for one action and unsafe for another depending on the specific flags used. Validation must happen at execution time with the specific options in hand."
+      - "Wrap executors in a SecurityExecutorProxy — adds a layer of indirection that obscures the actual executor contract, makes debugging harder, and requires maintaining proxy implementations for each executor type. Direct validation in the existing execute() flow is simpler and more transparent."
+    rationale: >
+      The existing AgentExecutionOptions interface already has fields for allowedTools, maxTurns,
+      and timeout. Adding an optional securityConstraints field is non-breaking and follows the
+      established extension pattern. Before launching the agent subprocess, the executor checks
+      whether the requested sandbox level and tool restrictions are compatible with the
+      security policy. In Enforce mode, if an executor cannot satisfy the constraints (e.g.,
+      it requires --dangerously-skip-permissions but policy forbids it), it throws a
+      SecurityViolationError before spawning. This satisfies FR-6 fail-closed behavior.
+
+  - title: "CLI Enforcement Command Design"
+    chosen: "New shep security command group with enforce subcommand, following existing Commander command-group pattern"
+    rejected:
+      - "Add enforce as a flag on shep feat new — conceptually wrong, enforcement is a repository-wide check not a feature-creation modifier. It should be independently runnable in CI and locally."
+      - "Standalone shep-security binary — unnecessary complexity when the existing CLI already supports command groups (shep feat, shep agent, shep repo). A new shep security group is the natural extension."
+    rationale: >
+      The CLI uses Commander with hierarchical command groups: createFeatCommand() registers
+      13 subcommands, createAgentCommand() registers 7. A createSecurityCommand() function
+      follows the identical pattern, registered in src/presentation/cli/index.ts via
+      program.addCommand(). The enforce subcommand resolves an EnforceSecurityUseCase from DI,
+      executes it, and formats output using the existing OutputFormatter (table/json/yaml).
+      Exit code 0 for pass, 1 for enforce-mode failure, satisfying FR-11. The same use case
+      is callable from CI via shep security enforce --output json.
+
+  - title: "CI Integration Strategy"
+    chosen: "Add security enforcement step to existing ci.yml workflow as a new parallel job, gate publish jobs on enforcement pass"
+    rejected:
+      - "Separate security workflow file — fragments CI configuration, makes it harder to enforce that publish jobs depend on security checks, and diverges from the single-workflow convention in the codebase."
+      - "Run security checks inside the existing lint job — conflates linting with security enforcement, increases lint job duration, and prevents security failures from being distinguishable in CI output."
+    rationale: >
+      The existing ci.yml runs jobs in parallel (lint, typecheck, unit tests, e2e, storybook,
+      gitleaks, semgrep) and gates the release job on all passing. Adding a security-enforce job
+      that runs shep security enforce --output json fits the existing parallel structure.
+      The release job's needs array gains the security-enforce job. Dev publish workflows similarly
+      gain the dependency. This satisfies FR-13 (CI runs enforcement on PRs and before publish)
+      and FR-14 (publish blocked on release-integrity failure) without restructuring existing CI.
+
+  - title: "Dependency Risk Evaluation Approach"
+    chosen: "Repository-local heuristics with optional npm registry metadata augmentation"
+    rejected:
+      - "Third-party vulnerability database integration (e.g., OSV, Snyk API) — exceeds MVP scope per NFR-9, adds external service dependency, requires API keys, and introduces network failure modes in CI."
+      - "Pure lockfile diffing only — too narrow, misses lifecycle script risks, source-type risks (git: vs registry), and version-range policy violations. Local heuristics already cover more ground without network dependencies."
+    rationale: >
+      The resolved open question selected registry metadata plus heuristics. The implementation
+      reads package.json and lockfile (package-lock.json, pnpm-lock.yaml, or yarn.lock),
+      evaluates manifest-lockfile consistency, checks for lifecycle scripts (preinstall,
+      postinstall, prepare) that could execute arbitrary code, verifies dependency source types
+      (registry vs git vs file), applies allowlist/denylist from policy, and checks version-range
+      strictness per policy rules. Optional npm registry lookups for package age and publish
+      frequency augment local signals when network is available. All checks are deterministic
+      given the same inputs, satisfying NFR-2.
+
+  - title: "GitHub Governance Scope"
+    chosen: "Read-only audit via existing gh CLI integration, report gaps without mutating remote settings"
+    rejected:
+      - "Direct GitHub API mutations for branch protection — requires expanded auth scope, new error handling for 403/404 responses, and the current IGitHubRepositoryService only supports read operations (checkAuth, listUserRepositories, getViewerPermission). Adding mutation support is out of MVP scope."
+      - "GitHub App with webhook ingestion — far beyond current architecture per the resolved open question and NFR-9. No webhook storage, no reconciliation layer, no App registration infrastructure exists."
+    rationale: >
+      The existing IGitHubRepositoryService provides checkAuth(), getViewerPermission(),
+      and other gh-CLI-backed read operations. The MVP governance check extends this interface
+      with a new auditRepositoryGovernance() method that uses gh api to inspect branch protection
+      rules, CODEOWNERS presence, and workflow permissions. Results are reported as findings
+      with severity and remediation suggestions, not enforced remotely. This matches FR-15
+      audit-only scope and avoids introducing new auth requirements.
+
+  - title: "Web UI Security Surfaces"
+    chosen: "New settings section component, repository drawer security panel, and Control Center security badge, all following existing patterns"
+    rejected:
+      - "Standalone security dashboard page — creates a disconnected experience from the Control Center canvas that users already monitor. Security state should be visible in context (on feature nodes, in repo drawers, in settings) rather than requiring navigation to a separate page."
+      - "Security information only in CLI — ignores the web UI as a primary interface. The Control Center and settings page are the canonical surfaces for repository and feature state. Security state belongs alongside workflow state."
+    rationale: >
+      The settings page uses composable section components (*-settings-section.tsx) with the
+      useSaveIndicator hook for persistence. A new SupplyChainSecuritySettingsSection follows
+      the identical pattern, showing effective mode, policy source, last evaluation, and recent
+      findings. The repository drawer (repository-drawer.tsx) gains a security panel showing
+      governance audit results and dependency risk summary. Feature nodes in the Control Center
+      can display a security badge (shield icon) when security mode is active, using the existing
+      buildFeatureNodeData enrichment pattern in build-graph-nodes.ts. All new components get
+      colocated .stories.tsx files per NFR-8. Server actions resolve security use cases from DI
+      using the established resolve<T>('Token') pattern.
+
+  - title: "Security Settings Persistence"
+    chosen: "Add SecurityConfig to Settings model in TypeSpec with security_mode and last_evaluation columns in settings table, plus separate security_events table"
+    rejected:
+      - "Completely separate security settings table — breaks the singleton settings pattern and requires a parallel load/update flow. The codebase has one settings row with 100+ flattened columns. Adding a few security columns follows the established convention."
+      - "Store everything in shep.security.yaml with no SQLite backing — loses the ability to persist effective mode across sessions, show last evaluation in UI, and query event history from server actions. The hybrid approach (file for rules, SQLite for state) is the resolved open question answer."
+    rationale: >
+      The settings table uses a flat column layout (model_default, env_default_editor,
+      agent_type, workflow_ci_watch_enabled, etc.). Adding security_mode (TEXT, default 'Advisory'),
+      security_last_evaluation_at (TEXT, nullable ISO timestamp), and security_policy_source (TEXT,
+      nullable) follows the naming convention. The settings mapper (settings.mapper.ts) gains
+      toDatabase/fromDatabase mappings for the new SecurityConfig model. The security_events
+      table is a separate table (not part of settings) for the event log, following the pattern
+      of agent_runs as a separate entity with its own repository. Migrations are additive per
+      the lessons learned.
+
+  - title: "Release Integrity Enforcement"
+    chosen: "Pre-publish validation in the security enforcement flow checking CI-only publishing, provenance configuration, and workflow integrity"
+    rejected:
+      - "Post-publish verification — checks after artifacts are already published provide no supply-chain protection. The damage is done."
+      - "Modify semantic-release plugins directly — couples security logic to the release toolchain, makes it harder to test independently, and does not cover dev publish paths that bypass semantic-release."
+    rationale: >
+      FR-14 requires blocking publish paths before artifact publication. The enforcement
+      flow checks that (1) the release workflow runs in CI (not local), (2) NPM_TOKEN and
+      RELEASE_TOKEN are configured as secrets (not hardcoded), (3) npm provenance flags are
+      present in the publish step, and (4) the release workflow has not been modified in the
+      current PR to remove security controls. These checks run as part of shep security enforce
+      and as a CI job prerequisite to the release job. Both main releases and dev publishes
+      are covered per the resolved open question.
+
+openQuestions:
+  - question: "Should the policy engine support rule inheritance across repository hierarchies (e.g., org-level defaults)?"
+    resolved: true
+    options:
+      - option: "Single repository scope only"
+        description: "Policy is defined and evaluated per-repository with no inheritance. Simple, deterministic, and matches the current single-repo architecture."
+        selected: true
+      - option: "Organization-level defaults with repo overrides"
+        description: "An org-level policy file provides defaults that repositories can override. Requires defining inheritance semantics, merge rules, and a discovery mechanism for the org policy."
+        selected: false
+      - option: "Cascading hierarchy (org > team > repo)"
+        description: "Full cascading with multiple override levels. Maximum flexibility but significant complexity in evaluation, debugging, and conflict resolution."
+        selected: false
+    selectionRationale: >
+      The codebase currently operates on individual repositories with no multi-repo hierarchy
+      concept. Introducing org-level inheritance requires a discovery mechanism, merge semantics,
+      and conflict resolution that are well beyond MVP scope. The policy precedence defined in
+      FR-4 (global defaults -> repo policy -> feature-run state) provides sufficient layering
+      within a single repository. Org-level defaults can be added in a future phase if needed.
+
+  - question: "How should the security event repository handle concurrent writes from multiple agent workers?"
+    resolved: true
+    options:
+      - option: "SQLite WAL mode with serialized writes"
+        description: "Use SQLite WAL (write-ahead logging) mode which is already enabled in the codebase. WAL allows concurrent reads with serialized writes, and better-sqlite3 handles this natively."
+        selected: true
+      - option: "In-memory event buffer with periodic flush"
+        description: "Buffer events in worker memory and flush periodically. Reduces write contention but risks losing events on crash and adds complexity."
+        selected: false
+      - option: "Separate event database per worker"
+        description: "Each worker writes to its own SQLite file, merged later. Eliminates contention but requires a merge step and fragments the event log."
+        selected: false
+    selectionRationale: >
+      The codebase already uses better-sqlite3 with WAL mode for all persistence. Agent
+      workers already write to the same database (updating agent_runs, features) without
+      concurrency issues because better-sqlite3 serializes writes within a process and SQLite
+      WAL handles cross-process concurrency. Security event inserts are small, infrequent
+      (per-action, not per-token), and follow the same write pattern as agent run status
+      updates. No new concurrency mechanism is needed.
+
+  - question: "Should the MVP validate the policy file schema at load time or defer validation to evaluation time?"
+    resolved: true
+    options:
+      - option: "Validate at load time with fail-fast"
+        description: "Parse and validate shep.security.yaml against the TypeSpec-derived schema when the policy engine initializes. Invalid files produce immediate, actionable errors before any checks run."
+        selected: true
+      - option: "Validate lazily at first evaluation"
+        description: "Parse the file at load time but only validate rule semantics when the first check runs. Reduces startup cost but delays error discovery."
+        selected: false
+      - option: "Validate only on explicit lint command"
+        description: "Add a shep security lint command that validates the policy file separately. Reduces load-time overhead but allows invalid policies to slip through if the user forgets to lint."
+        selected: false
+    selectionRationale: >
+      FR-2 success criteria explicitly requires that invalid or contradictory policy definitions
+      fail validation with actionable error output. Fail-fast at load time ensures users see
+      errors immediately when they run any security command or when the policy engine initializes
+      during agent execution. The validation cost is negligible (single YAML parse + schema check)
+      and prevents downstream confusion from partially-valid policies. NFR-5 requires actionable
+      error messages, which are best delivered at the earliest possible point.
+
+  - question: "How should the feature agent communicate security violations back to the user during execution?"
+    resolved: true
+    options:
+      - option: "Interrupt with security violation payload through existing HITL mechanism"
+        description: "When a denied action is detected, the graph node calls interrupt() with a SecurityViolation payload. The user sees the violation in the approval UI and can acknowledge or adjust policy. Reuses the existing approval infrastructure."
+        selected: true
+      - option: "Emit SSE event and continue with degraded execution"
+        description: "Send a real-time SSE notification about the violation but continue execution without the blocked action. The user sees it in the Control Center but cannot intervene in real-time."
+        selected: false
+      - option: "Fail the entire agent run immediately"
+        description: "Any security violation terminates the run with an error status. Maximum safety but poor UX when a single violation kills an otherwise successful feature execution."
+        selected: false
+    selectionRationale: >
+      The existing HITL interrupt mechanism (feature 016) provides exactly the right UX for
+      security violations that require user attention. The user already understands the
+      approval/rejection flow from phase gates. A security interrupt presents the violation
+      details, the blocked action, and remediation options. The user can approve (override for
+      this action), reject (abort the action), or adjust policy. This reuses existing
+      infrastructure (interrupt(), approve/reject use cases, approval UI) rather than building
+      a parallel notification system. For denied actions (not approval-required), the node
+      blocks the action, records a security event, and continues execution without the
+      blocked action rather than killing the run.
+
+  - question: "What is the right granularity for security action categories in the runtime guardrails?"
+    resolved: true
+    options:
+      - option: "Five coarse categories matching FR-7"
+        description: "Dependency installation/upgrade, package-manager script execution, CI/release workflow modification, publish/release actions, and sandbox-escalation requests. Matches the spec exactly and keeps policy authoring simple."
+        selected: true
+      - option: "Fine-grained per-command categories"
+        description: "Separate categories for npm install, npm run, git push, gh pr create, etc. More precise control but significantly increases policy complexity and maintenance burden."
+        selected: false
+      - option: "Two categories (read vs write)"
+        description: "Simplify to read-only vs write operations. Too coarse to distinguish between safe writes (git commit to branch) and risky writes (npm publish, workflow edit)."
+        selected: false
+    selectionRationale: >
+      FR-7 explicitly lists five action categories. The MVP should implement exactly these
+      categories to stay aligned with the spec and keep policy authoring manageable. Each
+      category maps to a clear set of runtime behaviors that the node-helpers.ts executeNode()
+      pattern can intercept. Fine-grained per-command categories can be added later as subcategories
+      without changing the top-level policy schema. The five categories are: DEPENDENCY_INSTALL,
+      PACKAGE_SCRIPT_EXEC, CI_WORKFLOW_MODIFY, PUBLISH_RELEASE, and SANDBOX_ESCALATION.
+
+content: |
+  ## Technology Decisions
+
+  ### 1. Policy Engine Architecture
+
+  **Chosen:** Central application-layer policy engine service behind an ISecurityPolicyService port interface
+
+  **Rejected:**
+  - Scatter policy logic across individual executors and nodes — violates FR-5, creates divergent interpretations, untestable without full graph execution
+  - Domain-layer policy engine — policy evaluation depends on reading files and settings from infrastructure, violating the dependency rule
+  - Infrastructure-layer policy engine — unreachable from use cases without crossing layers
+
+  **Rationale:** The codebase follows strict Clean Architecture with application-layer use cases as the sole orchestration point. A central ISecurityPolicyService port in application/ports/output/services/ with an implementation in infrastructure/ matches how IAgentExecutorProvider, IGitHubRepositoryService, and other cross-cutting services are structured. All consumers (CLI enforcement, runtime nodes, CI, UI) resolve the same service via DI.
+
+  ### 2. Domain Model Strategy
+
+  **Chosen:** TypeSpec-first models in tsp/ with new security-specific model files
+
+  **Rejected:**
+  - Hand-written TypeScript types — violates mandatory TypeSpec-first rule
+  - Extend existing settings.tsp inline — overloads an already large model
+
+  **Rationale:** New tsp/domain/entities/security.tsp defines SecurityPolicy, SecurityMode enum (Disabled/Advisory/Enforce), SecurityEvent, DependencyFinding, ReleaseIntegrityResult, and EffectivePolicySnapshot. A small SecurityConfig model in settings.tsp holds mode and last-evaluation timestamp. pnpm tsp:compile generates all types.
+
+  ### 3. Policy File Format and Location
+
+  **Chosen:** YAML file at repository root (shep.security.yaml) parsed with js-yaml
+
+  **Rejected:**
+  - JSON — less readable, no comments
+  - TOML — requires new dependency
+  - TypeScript config — security risk from code execution at load time
+
+  **Rationale:** js-yaml v4.1.1 is already a project dependency. YAML is the established format for spec files. The file lives at repo root for discoverability and PR reviewability.
+
+  ### 4. Security Event Persistence Strategy
+
+  **Chosen:** New security_events SQLite table with 90-day retention
+
+  **Rejected:**
+  - JSON embedded in settings table — breaks normalized persistence
+  - Append-only log file — not queryable from web UI
+  - Permanent full history — exceeds MVP scope
+
+  **Rationale:** Follows the agent_runs table pattern: repository-scoped rows with timestamps, severity, decision type, actor. A new ISecurityEventRepository port interface with SQLiteSecurityEventRepository implementation.
+
+  ### 5. Runtime Guardrails Implementation
+
+  **Chosen:** LangGraph state channels for security policy plus pre-execution checks in node-helpers.ts executeNode()
+
+  **Rejected:**
+  - Post-execution audit — incompatible with Enforce mode fail-closed requirement
+  - Prompt-only constraints — unreliable, LLM may ignore
+  - Separate security middleware process — unnecessary complexity
+
+  **Rationale:** Effective policy computed at spawn time, serialized as CLI arg, parsed into WorkerArgs, injected into graph state. executeNode() pre-checks evaluate action category against policy. Denied actions throw before execution. Approval-required actions route through existing interrupt() mechanism.
+
+  ### 6. Executor Security Validation
+
+  **Chosen:** Add optional securityConstraints field to AgentExecutionOptions, validate before launch
+
+  **Rejected:**
+  - Reject unsafe executors at resolution time — too coarse-grained
+  - SecurityExecutorProxy wrapper — adds indirection, harder to debug
+
+  **Rationale:** Non-breaking extension of existing AgentExecutionOptions interface. Before spawning the agent, the executor validates that requested sandbox level and tool restrictions are compatible with policy. Enforce mode throws SecurityViolationError if incompatible.
+
+  ### 7. CLI Enforcement Command Design
+
+  **Chosen:** New shep security command group with enforce subcommand
+
+  **Rejected:**
+  - Flag on shep feat new — conceptually wrong, enforcement is repository-wide
+  - Standalone shep-security binary — unnecessary complexity
+
+  **Rationale:** Follows the createFeatCommand()/createAgentCommand() pattern. createSecurityCommand() registered via program.addCommand(). Resolves EnforceSecurityUseCase from DI. OutputFormatter handles table/json/yaml. Exit code 0=pass, 1=fail.
+
+  ### 8. CI Integration Strategy
+
+  **Chosen:** New parallel job in ci.yml, gate publish jobs on security enforcement pass
+
+  **Rejected:**
+  - Separate workflow file — fragments CI config
+  - Inside lint job — conflates concerns
+
+  **Rationale:** Fits existing parallel job structure. Release job's needs array gains the security-enforce job. Dev publish workflows gain the same dependency.
+
+  ### 9. Dependency Risk Evaluation
+
+  **Chosen:** Repository-local heuristics with optional npm registry metadata augmentation
+
+  **Rejected:**
+  - Third-party vulnerability DB (OSV, Snyk) — exceeds MVP scope, adds external dependency
+  - Pure lockfile diffing only — too narrow
+
+  **Rationale:** Reads package.json and lockfile, evaluates manifest-lockfile consistency, lifecycle script risks, dependency source types, allowlist/denylist, and version-range policy. Optional npm registry lookups for package age/publish frequency when network available.
+
+  ### 10. GitHub Governance Scope
+
+  **Chosen:** Read-only audit via existing gh CLI
+
+  **Rejected:**
+  - Direct API mutations — requires expanded auth scope
+  - GitHub App with webhooks — far beyond current architecture
+
+  **Rationale:** Extends IGitHubRepositoryService with auditRepositoryGovernance() using gh api. Reports gaps as findings without mutating remote settings.
+
+  ### 11. Web UI Security Surfaces
+
+  **Chosen:** New settings section, repository drawer panel, and Control Center badge
+
+  **Rejected:**
+  - Standalone security dashboard page — disconnected from Control Center
+  - CLI-only — ignores web UI as primary interface
+
+  **Rationale:** Settings section follows *-settings-section.tsx pattern. Repository drawer gains security panel. Feature nodes display security badge. All components get colocated .stories.tsx files.
+
+  ### 12. Security Settings Persistence
+
+  **Chosen:** Add SecurityConfig to Settings model plus separate security_events table
+
+  **Rejected:**
+  - Separate security settings table — breaks singleton pattern
+  - YAML-only with no SQLite backing — loses effective mode persistence
+
+  **Rationale:** Settings table gains security_mode (TEXT, 'Advisory'), security_last_evaluation_at (TEXT), and security_policy_source (TEXT) columns. security_events is a separate table. Migrations are additive.
+
+  ### 13. Release Integrity Enforcement
+
+  **Chosen:** Pre-publish validation checking CI-only publishing, provenance, and workflow integrity
+
+  **Rejected:**
+  - Post-publish verification — no protection, damage already done
+  - Modify semantic-release plugins — couples security to release toolchain
+
+  **Rationale:** Enforcement flow checks CI-only execution, secret configuration, npm provenance flags, and workflow integrity. Runs as shep security enforce check and CI prerequisite.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | js-yaml | Parse shep.security.yaml policy file | Use (existing) | Already in package.json (v4.1.1), used for spec files, familiar YAML syntax |
+  | better-sqlite3 | Security event persistence | Use (existing) | Already the persistence layer for all entities, WAL mode handles concurrency |
+  | tsyringe | DI for security services | Use (existing) | All services registered via DI container, security services follow same pattern |
+  | Commander | CLI security command group | Use (existing) | All CLI commands use Commander, security follows createXxxCommand() pattern |
+  | @langchain/langgraph | Runtime guardrails via state channels | Use (existing) | Feature agent already uses LangGraph, security policy injected into state |
+  | Umzug | Database migrations for security tables | Use (existing) | All migrations use Umzug, security migrations follow same pattern |
+  | ajv or zod | Policy file schema validation | Reject both | The codebase does not use ajv or zod for runtime validation. TypeSpec generates types; validation should use manual checks matching existing patterns (e.g., settings validation in the factory). Avoid introducing new validation dependencies. |
+  | snyk or npm-audit | Dependency vulnerability scanning | Reject | Exceeds MVP scope per NFR-9, adds external service dependency |
+  | socket.dev | Package reputation scoring | Reject | External service, paid API, not needed for local heuristics MVP |
+  | sigstore | Artifact signing verification | Reject for MVP | Future consideration for release integrity, but npm provenance via --provenance flag handles the MVP requirement without new dependencies |
+
+  ## Security Considerations
+
+  ### Policy File Tampering
+  The shep.security.yaml file is a git-tracked file. If an attacker modifies it in a PR, the enforcement flow must detect the change. The release-integrity check verifies that security-critical workflow files have not been weakened in the current changeset.
+
+  ### Agent Prompt Injection
+  Security constraints embedded in agent prompts can be bypassed by clever prompt injection. This is why application-layer enforcement in node-helpers.ts executeNode() is mandatory as a backstop — prompt constraints are a defense-in-depth layer, not the sole enforcement mechanism.
+
+  ### Secret Exposure
+  The policy engine must never log or display secret values (NPM_TOKEN, RELEASE_TOKEN). Validation checks confirm secrets are configured as GitHub Actions secrets (not hardcoded), but never read or transmit secret values.
+
+  ### SQLite Injection
+  All database operations use parameterized queries via better-sqlite3 prepared statements, matching the existing repository pattern. No string concatenation in SQL.
+
+  ### Denial of Service via Policy
+  A malicious or malformed policy file could define thousands of rules or deeply nested structures. The policy parser should enforce reasonable limits (max rules, max nesting depth) and fail fast on excessive input.
+
+  ## Performance Implications
+
+  ### Policy Evaluation Latency
+  NFR-4 requires policy evaluation under 100ms per gated action. The effective policy is computed once at agent spawn time and cached in state. Per-action checks are simple map lookups (action category -> allowed/denied/approval-required), well under the 100ms budget.
+
+  ### CLI Enforcement Speed
+  NFR-4 requires shep security enforce under 10 seconds for local-only checks. The command reads one YAML file, evaluates lockfile consistency, checks lifecycle scripts, and inspects workflow files — all local filesystem operations. Registry metadata lookups (optional) are the only network calls and should be bounded by timeout.
+
+  ### Database Write Overhead
+  Security event inserts are infrequent (per-action, not per-token) and small (single row with TEXT columns). WAL mode handles concurrent reads without blocking. No measurable impact on agent execution performance.
+
+  ### Web UI Data Loading
+  Security state is loaded alongside existing settings and feature data in server actions. The additional query (latest security events, effective policy) adds one SQLite read per page load — negligible compared to the existing data loading pattern.
+
+  ## Architecture Notes
+
+  ### Layer Responsibilities
+
+  **Domain (tsp/ -> domain/generated/):**
+  - SecurityMode enum (Disabled, Advisory, Enforce)
+  - SecurityActionCategory enum (DependencyInstall, PackageScriptExec, CiWorkflowModify, PublishRelease, SandboxEscalation)
+  - SecurityActionDisposition enum (Allowed, Denied, ApprovalRequired)
+  - SecurityPolicy model (rules, mode, action dispositions)
+  - SecurityEvent model (id, repositoryPath, featureId, severity, category, disposition, actor, timestamp, remediationSummary)
+  - DependencyFinding model (package, version, severity, riskType, remediation)
+  - ReleaseIntegrityResult model (checks, overall pass/fail)
+  - EffectivePolicySnapshot model (mode, source, evaluatedAt, rules)
+  - SecurityConfig model (added to Settings: mode, lastEvaluationAt, policySource)
+
+  **Application (use-cases/ and ports/):**
+  - ISecurityPolicyService port — evaluatePolicy(), getEffectivePolicy(), validatePolicyFile()
+  - ISecurityEventRepository port — save(), findByRepository(), findByFeature(), deleteOlderThan()
+  - EnforceSecurityUseCase — orchestrates full enforcement flow (policy + dependency + release + governance)
+  - EvaluateSecurityPolicyUseCase — computes effective policy from file + settings
+  - GetSecurityStateUseCase — returns current security state for UI projection
+  - RecordSecurityEventUseCase — persists security events from runtime guardrails
+
+  **Infrastructure (services/ and repositories/):**
+  - SecurityPolicyService — reads shep.security.yaml, merges with settings, validates
+  - SQLiteSecurityEventRepository — CRUD for security_events table
+  - SecurityPolicyFileReader — filesystem access for policy file
+  - DependencyRiskEvaluator — lockfile parsing, lifecycle script detection, registry lookups
+  - ReleaseIntegrityEvaluator — workflow inspection, provenance check
+  - GovernanceAuditor — gh CLI calls for branch protection, CODEOWNERS
+  - Settings mapper extensions — toDatabase/fromDatabase for SecurityConfig fields
+  - Migrations — additive: security columns on settings, security_events table
+
+  **Presentation (CLI, Web):**
+  - shep security enforce command — calls EnforceSecurityUseCase, formats output
+  - shep security status command (optional) — quick view of current security state
+  - SupplyChainSecuritySettingsSection — mode selector, policy source, last evaluation
+  - Repository drawer security panel — governance findings, dependency risk summary
+  - Control Center security badge — shield icon on feature nodes when security active
+  - All new components with colocated .stories.tsx files
+
+  ### Integration Points
+
+  1. **Settings flow:** SecurityConfig added to Settings TypeSpec model -> factory defaults -> mapper -> repository -> migrations
+  2. **Agent spawn flow:** Effective policy computed by use case -> serialized as CLI arg -> parsed in worker -> injected into graph state
+  3. **Runtime enforcement:** Node executeNode() checks action category against state.securityPolicy -> blocked/approved/denied
+  4. **HITL integration:** Approval-required actions use existing interrupt() mechanism from feature 016
+  5. **CI enforcement:** New job runs shep security enforce -> exit code gates release job
+  6. **Web projection:** Server actions resolve security use cases -> return data for settings/drawer/canvas
+  7. **Event persistence:** Security events written by runtime nodes and enforcement flow -> queryable by UI
+
+  ### Migration Plan (Additive Only)
+
+  Migration 053 (or next available number):
+  - ALTER TABLE settings ADD COLUMN security_mode TEXT NOT NULL DEFAULT 'Advisory'
+  - ALTER TABLE settings ADD COLUMN security_last_evaluation_at TEXT
+  - ALTER TABLE settings ADD COLUMN security_policy_source TEXT
+
+  Migration 054:
+  - CREATE TABLE security_events (id TEXT PRIMARY KEY, repository_path TEXT NOT NULL, feature_id TEXT, severity TEXT NOT NULL, category TEXT NOT NULL, disposition TEXT NOT NULL, actor TEXT, message TEXT, remediation_summary TEXT, created_at TEXT NOT NULL)
+  - CREATE INDEX idx_security_events_repo_created ON security_events(repository_path, created_at)
+  - CREATE INDEX idx_security_events_feature ON security_events(feature_id)
+
+  All migrations are idempotent (check column/table existence before ALTER/CREATE) per LESSONS.md.

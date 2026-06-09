@@ -49,6 +49,7 @@ function createMockGitHubService(): IGitHubRepositoryService {
     forkRepository: vi
       .fn()
       .mockResolvedValue({ nameWithOwner: 'octocat/my-project', alreadyExisted: false }),
+    auditRepositoryGovernance: vi.fn().mockResolvedValue([]),
   };
 }
 

@@ -44,6 +44,7 @@ export const AllSections: Story = {
         whatsappDispatch: false,
         aspm: false,
         clusters: false,
+        supplyChainSecurity: true,
       },
     },
     shepHome: '/opt/shep',

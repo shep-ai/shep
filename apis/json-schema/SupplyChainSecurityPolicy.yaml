@@ -1,0 +1,24 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SupplyChainSecurityPolicy.yaml
+type: object
+properties:
+  mode:
+    $ref: SecurityMode.yaml
+    description: Desired security mode for this repository
+  actionDispositions:
+    type: array
+    items:
+      $ref: ActionDispositionEntry.yaml
+    description: Per-action-category enforcement dispositions
+  dependencyRules:
+    $ref: DependencyRules.yaml
+    description: Dependency risk evaluation rules
+  releaseRules:
+    $ref: ReleaseRules.yaml
+    description: Release integrity check rules
+required:
+  - mode
+  - actionDispositions
+  - dependencyRules
+  - releaseRules
+description: Security policy configuration from shep.security.yaml

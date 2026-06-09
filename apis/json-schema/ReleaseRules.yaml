@@ -1,0 +1,21 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ReleaseRules.yaml
+type: object
+properties:
+  requireCiOnlyPublishing:
+    type: boolean
+    default: true
+    description: "Require publishing from CI only, not local (default: true)"
+  requireProvenance:
+    type: boolean
+    default: true
+    description: "Require npm provenance flags on publish (default: true)"
+  checkWorkflowIntegrity:
+    type: boolean
+    default: true
+    description: "Check that release workflow has not been tampered with (default: true)"
+required:
+  - requireCiOnlyPublishing
+  - requireProvenance
+  - checkWorkflowIntegrity
+description: Release integrity policy rules

@@ -1,4 +1,10 @@
-import type { Feature, Repository, AgentRun, Cluster } from '@shepai/core/domain/generated/output';
+import type {
+  Feature,
+  Repository,
+  AgentRun,
+  Cluster,
+  SecurityMode,
+} from '@shepai/core/domain/generated/output';
 import { AgentRunStatus } from '@shepai/core/domain/generated/output';
 import {
   deriveNodeState,
@@ -40,6 +46,8 @@ export interface BuildGraphNodesOptions {
   >;
   /** Git info resolution status keyed by repository path */
   repoGitStatus?: Map<string, 'loading' | 'ready' | 'not-a-repo'>;
+  /** Global security mode from settings (omitted or Disabled means no badge) */
+  securityMode?: SecurityMode;
   /** Applications to render on the canvas. Callers are expected to filter
    *  this list to only include applications that are referenced by at least
    *  one feature's `applicationId` so the canvas stays uncluttered for users
@@ -318,6 +326,8 @@ function appendFeatureNodes(
           mergeable: feature.pr.mergeable,
         },
       }),
+      ...(options?.securityMode &&
+        options.securityMode !== 'Disabled' && { securityMode: options.securityMode }),
     };
 
     const featureNodeId = `feat-${feature.id}`;

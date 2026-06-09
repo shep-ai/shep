@@ -25,6 +25,7 @@ import type {
   FeatureFlags,
   SkillInjectionConfig,
   WhatsAppConfig,
+  SecurityConfig,
 } from '../generated/output';
 import {
   AgentType,
@@ -32,6 +33,7 @@ import {
   DefaultHomePage,
   EditorType,
   SkillSourceType,
+  SecurityMode,
   TerminalType,
   WhatsAppAdapterKind,
 } from '../generated/output';
@@ -233,11 +235,16 @@ export function createDefaultSettings(): Settings {
     bedrockIntegration: true,
     whatsappDispatch: false,
     clusters: false,
+    supplyChainSecurity: true,
   };
 
   const whatsapp: WhatsAppConfig = {
     enabled: false,
     adapter: WhatsAppAdapterKind.Baileys,
+  };
+
+  const security: SecurityConfig = {
+    mode: SecurityMode.Advisory,
   };
 
   return {
@@ -252,6 +259,7 @@ export function createDefaultSettings(): Settings {
     featureFlags,
     whatsapp,
     defaultHomePage: DefaultHomePage.ControlCenter,
+    security,
     onboardingComplete: false,
     createdAt: now,
     updatedAt: now,

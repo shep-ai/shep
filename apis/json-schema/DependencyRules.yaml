@@ -1,0 +1,38 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DependencyRules.yaml
+type: object
+properties:
+  checkLockfileConsistency:
+    type: boolean
+    default: true
+    description: "Check manifest-lockfile consistency (default: true)"
+  checkLifecycleScripts:
+    type: boolean
+    default: true
+    description: "Flag packages with lifecycle scripts (default: true)"
+  checkNonRegistrySource:
+    type: boolean
+    default: true
+    description: "Flag non-registry dependency sources (default: true)"
+  enforceStrictVersionRanges:
+    type: boolean
+    default: false
+    description: "Enforce strict version ranges — no ^ or * (default: false)"
+  allowlist:
+    type: array
+    items:
+      type: string
+    description: Packages explicitly allowed (empty = allow all)
+  denylist:
+    type: array
+    items:
+      type: string
+    description: Packages explicitly denied
+required:
+  - checkLockfileConsistency
+  - checkLifecycleScripts
+  - checkNonRegistrySource
+  - enforceStrictVersionRanges
+  - allowlist
+  - denylist
+description: Dependency risk evaluation policy rules

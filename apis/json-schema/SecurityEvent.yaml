@@ -1,0 +1,36 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SecurityEvent.yaml
+type: object
+properties:
+  repositoryPath:
+    type: string
+    description: Absolute path to the repository this event belongs to
+  featureId:
+    type: string
+    description: Feature ID if this event occurred during a feature run
+  severity:
+    $ref: SecuritySeverity.yaml
+    description: Severity of this security event
+  category:
+    $ref: SecurityActionCategory.yaml
+    description: Action category that triggered this event
+  disposition:
+    $ref: SecurityActionDisposition.yaml
+    description: How the action was handled (allowed, denied, approval-required)
+  actor:
+    type: string
+    description: Actor or source that triggered this event (agent, user, CI)
+  message:
+    type: string
+    description: Human-readable event description
+  remediationSummary:
+    type: string
+    description: Actionable remediation guidance
+required:
+  - repositoryPath
+  - severity
+  - category
+  - disposition
+allOf:
+  - $ref: BaseEntity.yaml
+description: Persisted security event for audit and observability

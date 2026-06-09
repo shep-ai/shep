@@ -42,6 +42,17 @@ function createFakePhaseTimingContext(): IPhaseTimingContext {
   };
 }
 
+vi.mock('@/infrastructure/services/settings.service.js', () => ({
+  getSettings: vi.fn().mockReturnValue({
+    agent: { type: 'claude-code' },
+    security: { mode: 'Advisory' },
+  }),
+}));
+
+vi.mock('@/infrastructure/services/agents/feature-agent/phase-timing-context.js', () => ({
+  recordLifecycleEvent: vi.fn(),
+}));
+
 import { readFileSync } from 'node:fs';
 import yaml from 'js-yaml';
 
@@ -143,7 +154,8 @@ describe('RejectAgentRunUseCase (iteration support)', () => {
       createFakeWorktreePaths(),
       fakeNodeHelpers,
       createFakePhaseTimingContext(),
-      { create: vi.fn(), listByWorkItem: vi.fn().mockResolvedValue([]) } as any
+      { create: vi.fn(), listByWorkItem: vi.fn().mockResolvedValue([]) } as any,
+      { load: vi.fn().mockResolvedValue(null) } as any
     );
   });
 

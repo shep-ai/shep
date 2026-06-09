@@ -10,7 +10,12 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { Node } from '@xyflow/react';
-import type { PrStatus, CiStatus, DeploymentState } from '@shepai/core/domain/generated/output';
+import type {
+  PrStatus,
+  CiStatus,
+  DeploymentState,
+  SecurityMode,
+} from '@shepai/core/domain/generated/output';
 import type { AgentTypeValue } from './agent-type-icons';
 
 export type FeatureNodeState =
@@ -269,6 +274,8 @@ export interface FeatureNodeData {
     status: DeploymentState;
     url?: string;
   };
+  /** Security mode when active (Disabled, Advisory, Enforce) */
+  securityMode?: SecurityMode;
   onAction?: () => void;
   onSettings?: () => void;
   hasChildren?: boolean;

@@ -22,6 +22,7 @@ import {
   type AgentAuthMethod,
   type EditorType,
   type Language,
+  type SecurityMode,
   type TerminalType,
   type DefaultHomePage,
   type WhatsAppConfig,
@@ -130,6 +131,8 @@ export interface SettingsRow {
   feature_flag_whatsapp_dispatch: number;
   feature_flag_aspm: number;
   feature_flag_clusters: number;
+  feature_flag_supply_chain_security: number;
+
   // Interactive agent config (added in migration 046)
   interactive_agent_enabled: number;
   interactive_agent_auto_timeout_minutes: number;
@@ -158,6 +161,11 @@ export interface SettingsRow {
   whatsapp_cloud_api_access_token: string | null;
   whatsapp_cloud_api_verify_token: string | null;
   whatsapp_cloud_api_app_secret: string | null;
+
+  // SecurityConfig (added in migration 120, spec 083)
+  security_mode: string;
+  security_last_evaluation_at: string | null;
+  security_policy_source: string | null;
 }
 
 /**
@@ -269,6 +277,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     feature_flag_whatsapp_dispatch: settings.featureFlags?.whatsappDispatch ? 1 : 0,
     feature_flag_aspm: settings.featureFlags?.aspm ? 1 : 0,
     feature_flag_clusters: settings.featureFlags?.clusters ? 1 : 0,
+    feature_flag_supply_chain_security: settings.featureFlags?.supplyChainSecurity ? 1 : 0,
 
     // InteractiveAgentConfig (boolean → 0/1, integer fields; defaults applied here)
     interactive_agent_enabled: (settings.interactiveAgent?.enabled ?? true) ? 1 : 0,
@@ -303,6 +312,11 @@ export function toDatabase(settings: Settings): SettingsRow {
     whatsapp_cloud_api_access_token: settings.whatsapp?.cloudApiAccessToken ?? null,
     whatsapp_cloud_api_verify_token: settings.whatsapp?.cloudApiVerifyToken ?? null,
     whatsapp_cloud_api_app_secret: settings.whatsapp?.cloudApiAppSecret ?? null,
+
+    // SecurityConfig (default: Advisory mode, no evaluation yet)
+    security_mode: settings.security?.mode ?? 'Advisory',
+    security_last_evaluation_at: settings.security?.lastEvaluationAt ?? null,
+    security_policy_source: settings.security?.policySource ?? null,
   };
 }
 
@@ -507,6 +521,8 @@ export function fromDatabase(row: SettingsRow): Settings {
       whatsappDispatch: row.feature_flag_whatsapp_dispatch === 1,
       aspm: row.feature_flag_aspm === 1,
       clusters: row.feature_flag_clusters === 1,
+      // Default true when column is missing/null (pre-migration upgrades)
+      supplyChainSecurity: (row.feature_flag_supply_chain_security ?? 1) !== 0,
     },
 
     // InteractiveAgentConfig (INTEGER 0/1 → boolean, integer → number)
@@ -526,6 +542,17 @@ export function fromDatabase(row: SettingsRow): Settings {
 
     // WhatsApp integration config (spec 101)
     whatsapp: buildWhatsAppFromRow(row),
+
+    // SecurityConfig (TEXT → string, nullable TEXT → optional string)
+    security: {
+      mode: (row.security_mode ?? 'Advisory') as SecurityMode,
+      ...(row.security_last_evaluation_at !== null && {
+        lastEvaluationAt: row.security_last_evaluation_at,
+      }),
+      ...(row.security_policy_source !== null && {
+        policySource: row.security_policy_source,
+      }),
+    },
 
     // Onboarding (INTEGER → boolean)
     onboardingComplete: row.onboarding_complete === 1,

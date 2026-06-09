@@ -153,7 +153,8 @@ function buildApprove(activityLog: IActivityLogRepository, runOverrides?: Partia
     makeTimingRepo() as any,
     fakeWorktreePaths(),
     fakeNodeHelpers(),
-    activityLog
+    activityLog,
+    { load: vi.fn().mockResolvedValue(null) } as any
   );
   return { useCase, runRepo, proc };
 }
@@ -169,7 +170,8 @@ function buildReject(activityLog: IActivityLogRepository, runOverrides?: Partial
     fakeWorktreePaths(),
     fakeNodeHelpers(),
     fakePhaseTimingContext(),
-    activityLog
+    activityLog,
+    { load: vi.fn().mockResolvedValue(null) } as any
   );
   return { useCase, runRepo, proc };
 }

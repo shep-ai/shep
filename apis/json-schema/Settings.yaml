@@ -45,6 +45,9 @@ properties:
   whatsapp:
     $ref: WhatsAppConfig.yaml
     description: WhatsApp integration configuration (optional, defaults applied at runtime)
+  security:
+    $ref: SecurityConfig.yaml
+    description: Supply-chain security configuration (optional, defaults applied at runtime)
 required:
   - models
   - user

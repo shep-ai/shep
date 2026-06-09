@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { SettingsPageClient } from '@/components/features/settings/settings-page-client';
@@ -5,6 +6,10 @@ import { createDefaultSettings } from '@shepai/core/domain/factories/settings-de
 
 vi.mock('@/app/actions/update-settings', () => ({
   updateSettingsAction: vi.fn().mockResolvedValue({ success: true }),
+}));
+
+vi.mock('@/app/actions/security', () => ({
+  updateSecurityModeAction: vi.fn().mockResolvedValue({ success: true }),
 }));
 
 vi.mock('sonner', () => ({
@@ -31,13 +36,14 @@ describe('SettingsPageClient', () => {
     expect(screen.getByText('Settings')).toBeDefined();
   });
 
-  it('renders all six section components', () => {
+  it('renders all section components', () => {
     render(
       <SettingsPageClient settings={settings} shepHome="/home/user/.shep" dbFileSize="2.4 MB" />
     );
     expect(screen.getByTestId('agent-settings-section')).toBeDefined();
     expect(screen.getByTestId('environment-settings-section')).toBeDefined();
     expect(screen.getByTestId('workflow-settings-section')).toBeDefined();
+    expect(screen.getByTestId('security-settings-section')).toBeDefined();
     expect(screen.getByTestId('notification-settings-section')).toBeDefined();
     expect(screen.getByTestId('feature-flags-settings-section')).toBeDefined();
     expect(screen.getByTestId('database-settings-section')).toBeDefined();

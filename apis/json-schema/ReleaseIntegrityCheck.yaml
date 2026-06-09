@@ -1,0 +1,22 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ReleaseIntegrityCheck.yaml
+type: object
+properties:
+  checkType:
+    $ref: ReleaseIntegrityCheckType.yaml
+    description: Type of check performed
+  passed:
+    type: boolean
+    description: Whether this check passed
+  message:
+    type: string
+    description: Human-readable description of the result
+  severity:
+    $ref: SecuritySeverity.yaml
+    description: Severity when this check fails
+required:
+  - checkType
+  - passed
+  - message
+  - severity
+description: Result of a single release integrity check

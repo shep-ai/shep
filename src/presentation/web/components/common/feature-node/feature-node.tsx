@@ -47,6 +47,7 @@ import {
 import type { FeatureNodeData } from './feature-node-state-config';
 import { getAgentTypeIcon } from './agent-type-icons';
 import { FeatureSessionsDropdown } from './feature-sessions-dropdown';
+import { SecurityBadge } from '@/components/common/security-badge';
 
 function AgentIcon({ agentType, className }: { agentType?: string; className?: string }) {
   const IconComponent = getAgentTypeIcon(agentType);
@@ -344,6 +345,7 @@ export function FeatureNode({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          {data.securityMode ? <SecurityBadge mode={data.securityMode} /> : null}
           <h3 className="min-w-0 truncate text-sm font-bold">{data.name}</h3>
         </div>
 

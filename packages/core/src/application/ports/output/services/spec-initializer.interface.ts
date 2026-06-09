@@ -40,4 +40,16 @@ export interface ISpecInitializerService {
     description: string,
     mode?: 'fast'
   ): Promise<SpecInitializerResult>;
+
+  /**
+   * Scaffold a baseline shep.security.yaml file at the repository root.
+   *
+   * Creates the security policy file with Advisory mode, default action
+   * dispositions, and dependency/release rules. Includes YAML comments
+   * explaining each section.
+   *
+   * @param repositoryPath - Absolute path to the repository root
+   * @returns The absolute path to the created security policy file
+   */
+  scaffoldSecurityPolicy(repositoryPath: string): Promise<string>;
 }

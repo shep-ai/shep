@@ -142,7 +142,8 @@ function makeApprove(activityLog: IActivityLogRepository, runRepo: any, processS
     } as any,
     { getWorktreePath: vi.fn().mockReturnValue('/wt') },
     { writeSpecFileAtomic: vi.fn(), safeYamlDump: vi.fn().mockReturnValue('yaml') },
-    activityLog
+    activityLog,
+    { load: vi.fn().mockResolvedValue(null) } as any
   );
 }
 
@@ -176,7 +177,8 @@ function makeReject(activityLog: IActivityLogRepository, runRepo: any, processSe
     { getWorktreePath: vi.fn().mockReturnValue('/wt') },
     { writeSpecFileAtomic: vi.fn(), safeYamlDump: vi.fn().mockReturnValue('yaml') },
     { recordLifecycleEvent: vi.fn().mockResolvedValue(undefined) },
-    activityLog
+    activityLog,
+    { load: vi.fn().mockResolvedValue(null) } as any
   );
 }
 

@@ -79,6 +79,7 @@ describe('updateSettings', () => {
         whatsappDispatch: false,
         aspm: false,
         clusters: false,
+        supplyChainSecurity: true,
       },
     };
     updateSettings(updated);

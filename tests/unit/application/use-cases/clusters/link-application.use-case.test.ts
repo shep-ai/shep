@@ -57,6 +57,7 @@ const sampleApp: Application = {
   additionalPaths: [],
   status: 'Active' as any,
   setupComplete: true,
+  bedrockEnabled: false,
   createdAt: new Date(),
   updatedAt: new Date(),
 };

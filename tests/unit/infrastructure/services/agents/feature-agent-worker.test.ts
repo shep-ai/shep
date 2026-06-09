@@ -10,7 +10,12 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentRunStatus } from '@/domain/generated/output.js';
+import {
+  AgentRunStatus,
+  SecurityMode,
+  SecurityActionCategory,
+  SecurityActionDisposition,
+} from '@/domain/generated/output.js';
 import type { AgentRun } from '@/domain/generated/output.js';
 
 // Use vi.hoisted so mock fns are available when vi.mock factories run
@@ -321,6 +326,99 @@ describe('parseWorkerArgs', () => {
 
     const parsed = parseWorkerArgs(args);
     expect(parsed.fast).toBe(false);
+  });
+
+  it('should parse --security-mode argument', () => {
+    const args = [
+      '--feature-id',
+      'feat-123',
+      '--run-id',
+      'run-456',
+      '--repo',
+      '/path/to/repo',
+      '--spec-dir',
+      '/path/to/specs',
+      '--security-mode',
+      'Enforce',
+    ];
+
+    const parsed = parseWorkerArgs(args);
+    expect(parsed.securityMode).toBe(SecurityMode.Enforce);
+  });
+
+  it('should parse --security-dispositions argument as JSON', () => {
+    const dispositions = {
+      [SecurityActionCategory.DependencyInstall]: SecurityActionDisposition.Denied,
+      [SecurityActionCategory.PublishRelease]: SecurityActionDisposition.ApprovalRequired,
+    };
+    const args = [
+      '--feature-id',
+      'feat-123',
+      '--run-id',
+      'run-456',
+      '--repo',
+      '/path/to/repo',
+      '--spec-dir',
+      '/path/to/specs',
+      '--security-dispositions',
+      JSON.stringify(dispositions),
+    ];
+
+    const parsed = parseWorkerArgs(args);
+    expect(parsed.securityActionDispositions).toEqual(dispositions);
+  });
+
+  it('should default security fields to undefined when not provided', () => {
+    const args = [
+      '--feature-id',
+      'feat-123',
+      '--run-id',
+      'run-456',
+      '--repo',
+      '/path/to/repo',
+      '--spec-dir',
+      '/path/to/specs',
+    ];
+
+    const parsed = parseWorkerArgs(args);
+    expect(parsed.securityMode).toBeUndefined();
+    expect(parsed.securityActionDispositions).toBeUndefined();
+  });
+
+  it('should ignore invalid security-mode values', () => {
+    const args = [
+      '--feature-id',
+      'feat-123',
+      '--run-id',
+      'run-456',
+      '--repo',
+      '/path/to/repo',
+      '--spec-dir',
+      '/path/to/specs',
+      '--security-mode',
+      'InvalidMode',
+    ];
+
+    const parsed = parseWorkerArgs(args);
+    expect(parsed.securityMode).toBeUndefined();
+  });
+
+  it('should handle malformed security-dispositions JSON gracefully', () => {
+    const args = [
+      '--feature-id',
+      'feat-123',
+      '--run-id',
+      'run-456',
+      '--repo',
+      '/path/to/repo',
+      '--spec-dir',
+      '/path/to/specs',
+      '--security-dispositions',
+      'not-valid-json',
+    ];
+
+    const parsed = parseWorkerArgs(args);
+    expect(parsed.securityActionDispositions).toBeUndefined();
   });
 });
 
@@ -835,5 +933,40 @@ describe('runWorker', () => {
     });
 
     expect(mockGateQuestionPublisher.publishWaitingApproval).not.toHaveBeenCalled();
+  });
+
+  it('should pass securityMode and securityActionDispositions to graph invoke', async () => {
+    const dispositions = {
+      [SecurityActionCategory.DependencyInstall]: SecurityActionDisposition.Denied,
+    };
+    await runWorker({
+      featureId: 'feat-1',
+      runId: 'run-1',
+      repo: '/repo',
+      specDir: '/specs',
+      securityMode: SecurityMode.Enforce,
+      securityActionDispositions: dispositions,
+    });
+
+    expect(mockGraphInvoke).toHaveBeenCalledWith(
+      expect.objectContaining({
+        securityMode: SecurityMode.Enforce,
+        securityActionDispositions: dispositions,
+      }),
+      expect.anything()
+    );
+  });
+
+  it('should not include security fields in graph invoke when not provided', async () => {
+    await runWorker({
+      featureId: 'feat-1',
+      runId: 'run-1',
+      repo: '/repo',
+      specDir: '/specs',
+    });
+
+    const invokeArg = mockGraphInvoke.mock.calls[0][0];
+    expect(invokeArg.securityMode).toBeUndefined();
+    expect(invokeArg.securityActionDispositions).toBeUndefined();
   });
 });

@@ -1,0 +1,16 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ReleaseIntegrityResult.yaml
+type: object
+properties:
+  checks:
+    type: array
+    items:
+      $ref: ReleaseIntegrityCheck.yaml
+    description: Individual check results
+  passed:
+    type: boolean
+    description: Whether all checks passed
+required:
+  - checks
+  - passed
+description: Aggregated release integrity evaluation result

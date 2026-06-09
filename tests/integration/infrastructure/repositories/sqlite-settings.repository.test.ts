@@ -529,6 +529,7 @@ describe('SQLiteSettingsRepository', () => {
         whatsappDispatch: false,
         aspm: false,
         clusters: false,
+        supplyChainSecurity: true,
       };
 
       await repository.initialize(settings);
@@ -545,6 +546,7 @@ describe('SQLiteSettingsRepository', () => {
         whatsappDispatch: false,
         aspm: false,
         clusters: false,
+        supplyChainSecurity: true,
       });
     });
 
@@ -565,6 +567,9 @@ describe('SQLiteSettingsRepository', () => {
         whatsappDispatch: false,
         aspm: false,
         clusters: false,
+        // When settings is initialized without featureFlags, the mapper writes 0 for all
+        // flags (including supplyChainSecurity), so load-back returns false across the board.
+        supplyChainSecurity: false,
       });
     });
 
@@ -583,6 +588,7 @@ describe('SQLiteSettingsRepository', () => {
         whatsappDispatch: false,
         aspm: false,
         clusters: false,
+        supplyChainSecurity: true,
       };
       settings.updatedAt = new Date('2025-01-02T00:00:00Z');
       await repository.update(settings);
@@ -599,6 +605,7 @@ describe('SQLiteSettingsRepository', () => {
         whatsappDispatch: false,
         aspm: false,
         clusters: false,
+        supplyChainSecurity: true,
       });
     });
 
@@ -615,6 +622,7 @@ describe('SQLiteSettingsRepository', () => {
         whatsappDispatch: false,
         aspm: false,
         clusters: false,
+        supplyChainSecurity: true,
       };
 
       await repository.initialize(settings);
@@ -971,13 +979,15 @@ describe('SQLiteSettingsRepository', () => {
         bedrockIntegration: false,
         whatsappDispatch: true,
         aspm: false,
+        clusters: false,
+        supplyChainSecurity: false,
       };
       await repository.initialize(settings);
 
       let loaded = await repository.load();
       expect(loaded?.featureFlags?.whatsappDispatch).toBe(true);
 
-      settings.featureFlags.whatsappDispatch = false;
+      settings.featureFlags!.whatsappDispatch = false;
       settings.updatedAt = new Date('2025-02-02T00:00:00Z');
       await repository.update(settings);
 

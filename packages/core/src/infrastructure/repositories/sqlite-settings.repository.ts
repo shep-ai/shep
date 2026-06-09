@@ -71,7 +71,10 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         feature_flag_code_review,
         feature_flag_collaboration,
         feature_flag_bedrock_integration,
+        feature_flag_whatsapp_dispatch,
+        feature_flag_aspm,
         feature_flag_clusters,
+        feature_flag_supply_chain_security,
         workflow_enable_evidence, workflow_commit_evidence,
         hide_ci_status, default_fast_mode,
         interactive_agent_enabled, interactive_agent_auto_timeout_minutes,
@@ -79,11 +82,13 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         auto_archive_delay_minutes,
         stage_timeout_fast_implement_ms,
         fab_position_swapped,
-        feature_flag_whatsapp_dispatch,
+        skill_injection_enabled, skill_injection_skills,
+        default_home_page,
         whatsapp_enabled, whatsapp_adapter, whatsapp_linked_number, whatsapp_status,
         whatsapp_allowed_numbers,
         whatsapp_cloud_api_phone_number_id, whatsapp_cloud_api_access_token,
-        whatsapp_cloud_api_verify_token, whatsapp_cloud_api_app_secret
+        whatsapp_cloud_api_verify_token, whatsapp_cloud_api_app_secret,
+        security_mode, security_last_evaluation_at, security_policy_source
       ) VALUES (
         @id, @created_at, @updated_at,
         @model_analyze, @model_requirements, @model_plan, @model_implement, @model_default,
@@ -112,7 +117,10 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         @feature_flag_code_review,
         @feature_flag_collaboration,
         @feature_flag_bedrock_integration,
+        @feature_flag_whatsapp_dispatch,
+        @feature_flag_aspm,
         @feature_flag_clusters,
+        @feature_flag_supply_chain_security,
         @workflow_enable_evidence, @workflow_commit_evidence,
         @hide_ci_status, @default_fast_mode,
         @interactive_agent_enabled, @interactive_agent_auto_timeout_minutes,
@@ -120,11 +128,13 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         @auto_archive_delay_minutes,
         @stage_timeout_fast_implement_ms,
         @fab_position_swapped,
-        @feature_flag_whatsapp_dispatch,
+        @skill_injection_enabled, @skill_injection_skills,
+        @default_home_page,
         @whatsapp_enabled, @whatsapp_adapter, @whatsapp_linked_number, @whatsapp_status,
         @whatsapp_allowed_numbers,
         @whatsapp_cloud_api_phone_number_id, @whatsapp_cloud_api_access_token,
-        @whatsapp_cloud_api_verify_token, @whatsapp_cloud_api_app_secret
+        @whatsapp_cloud_api_verify_token, @whatsapp_cloud_api_app_secret,
+        @security_mode, @security_last_evaluation_at, @security_policy_source
       )
     `);
 
@@ -228,7 +238,10 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         feature_flag_code_review = @feature_flag_code_review,
         feature_flag_collaboration = @feature_flag_collaboration,
         feature_flag_bedrock_integration = @feature_flag_bedrock_integration,
+        feature_flag_whatsapp_dispatch = @feature_flag_whatsapp_dispatch,
+        feature_flag_aspm = @feature_flag_aspm,
         feature_flag_clusters = @feature_flag_clusters,
+        feature_flag_supply_chain_security = @feature_flag_supply_chain_security,
         workflow_enable_evidence = @workflow_enable_evidence,
         workflow_commit_evidence = @workflow_commit_evidence,
         hide_ci_status = @hide_ci_status,
@@ -239,7 +252,9 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         auto_archive_delay_minutes = @auto_archive_delay_minutes,
         stage_timeout_fast_implement_ms = @stage_timeout_fast_implement_ms,
         fab_position_swapped = @fab_position_swapped,
-        feature_flag_whatsapp_dispatch = @feature_flag_whatsapp_dispatch,
+        skill_injection_enabled = @skill_injection_enabled,
+        skill_injection_skills = @skill_injection_skills,
+        default_home_page = @default_home_page,
         whatsapp_enabled = @whatsapp_enabled,
         whatsapp_adapter = @whatsapp_adapter,
         whatsapp_linked_number = @whatsapp_linked_number,
@@ -248,7 +263,10 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         whatsapp_cloud_api_phone_number_id = @whatsapp_cloud_api_phone_number_id,
         whatsapp_cloud_api_access_token = @whatsapp_cloud_api_access_token,
         whatsapp_cloud_api_verify_token = @whatsapp_cloud_api_verify_token,
-        whatsapp_cloud_api_app_secret = @whatsapp_cloud_api_app_secret
+        whatsapp_cloud_api_app_secret = @whatsapp_cloud_api_app_secret,
+        security_mode = @security_mode,
+        security_last_evaluation_at = @security_last_evaluation_at,
+        security_policy_source = @security_policy_source
       WHERE id = @id
     `);
 

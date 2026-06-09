@@ -46,6 +46,10 @@ function createFakeActivityLog() {
   };
 }
 
+vi.mock('@/infrastructure/services/settings.service.js', () => ({
+  getSettings: vi.fn().mockReturnValue({}),
+}));
+
 // --- Mock Factories ---
 
 function createMockRunRepository() {
@@ -191,7 +195,8 @@ describe('PRD Approval Iterations (Integration)', () => {
         createFakeWorktreePaths(),
         createRealNodeHelpers(),
         createFakePhaseTimingContext(),
-        createFakeActivityLog() as any
+        createFakeActivityLog() as any,
+        { load: vi.fn().mockResolvedValue(null) } as any
       );
 
       const result = await useCase.execute('run-001', 'Please add error handling');
@@ -258,7 +263,8 @@ describe('PRD Approval Iterations (Integration)', () => {
         mockTimingRepo as any,
         createFakeWorktreePaths(),
         createRealNodeHelpers(),
-        createFakeActivityLog() as any
+        createFakeActivityLog() as any,
+        { load: vi.fn().mockResolvedValue(null) } as any
       );
 
       const approvalPayload: PrdApprovalPayload = {
@@ -319,7 +325,8 @@ describe('PRD Approval Iterations (Integration)', () => {
         mockTimingRepo as any,
         createFakeWorktreePaths(),
         createRealNodeHelpers(),
-        createFakeActivityLog() as any
+        createFakeActivityLog() as any,
+        { load: vi.fn().mockResolvedValue(null) } as any
       );
 
       const result = await useCase.execute('run-001');
@@ -359,7 +366,8 @@ describe('PRD Approval Iterations (Integration)', () => {
         createFakeWorktreePaths(),
         createRealNodeHelpers(),
         createFakePhaseTimingContext(),
-        createFakeActivityLog() as any
+        createFakeActivityLog() as any,
+        { load: vi.fn().mockResolvedValue(null) } as any
       );
 
       // Execute 3 sequential rejections
@@ -419,7 +427,8 @@ describe('PRD Approval Iterations (Integration)', () => {
         createFakeWorktreePaths(),
         createRealNodeHelpers(),
         createFakePhaseTimingContext(),
-        createFakeActivityLog() as any
+        createFakeActivityLog() as any,
+        { load: vi.fn().mockResolvedValue(null) } as any
       );
 
       const result = await useCase.execute('run-001', 'Fix 5');

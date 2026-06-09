@@ -187,6 +187,27 @@
         "failedToList": "Fehler beim Auflisten der Tools: {{error}}"
       }
     },
+    "security": {
+      "description": "Supply-chain security policy management",
+      "enforce": {
+        "description": "Evaluate repository security posture and enforce policy",
+        "repoOption": "Repository path (defaults to current directory)",
+        "outputOption": "Output format (table, json, yaml)",
+        "passed": "Security enforcement passed",
+        "failed": "Security enforcement failed",
+        "advisoryNote": "Mode is Advisory — findings are reported but do not block",
+        "disabledNote": "Security mode is Disabled — no checks performed",
+        "modeLabel": "Mode",
+        "sourceLabel": "Source",
+        "dependencyFindingsLabel": "Dependency Findings",
+        "releaseIntegrityLabel": "Release Integrity",
+        "totalFindingsLabel": "Total Findings",
+        "governanceFindingsLabel": "GitHub Governance (audit-only)",
+        "noFindings": "No findings",
+        "failedToEnforce": "Failed to evaluate security posture",
+        "flagDisabledNote": "Supply chain security feature flag is off — enforce is a no-op"
+      }
+    },
     "feat": {
       "description": "Features durch den SDLC-Lebenszyklus verwalten",
       "new": {

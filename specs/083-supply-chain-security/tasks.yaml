@@ -1,0 +1,1096 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "supply-chain-security"
+summary: >
+  34 tasks across 7 phases implementing the supply-chain security subsystem.
+  Covers TypeSpec domain models, policy engine, CLI enforcement, runtime guardrails,
+  GitHub governance audit, web UI surfaces, and CI integration.
+
+relatedFeatures:
+  - "016-hitl-approval-gates"
+  - "062-shep-cicd-pipeline"
+  - "077-codex-cli-agent"
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "Node.js 22"
+  - "LangGraph"
+  - "SQLite (better-sqlite3)"
+  - "Umzug"
+  - "tsyringe"
+  - "Commander"
+  - "Next.js 16 App Router"
+  - "React 19"
+  - "Storybook"
+  - "GitHub Actions"
+  - "js-yaml"
+  - "Vitest"
+  - "Playwright"
+
+relatedLinks:
+  - title: "Clean Architecture"
+    url: "https://github.com/shep-ai/shep/blob/main/docs/architecture/clean-architecture.md"
+  - title: "TypeSpec Guide"
+    url: "https://github.com/shep-ai/shep/blob/main/docs/development/typespec-guide.md"
+
+tasks:
+  # ═══════════════════════════════════════════════════════════════════
+  # PHASE 1 — Domain Models & Schema Foundation
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Define security domain models in TypeSpec"
+    description: >
+      Create tsp/domain/entities/security.tsp with SecurityMode enum (Disabled, Advisory,
+      Enforce), SecurityActionCategory enum (DependencyInstall, PackageScriptExec,
+      CiWorkflowModify, PublishRelease, SandboxEscalation), SecurityActionDisposition enum
+      (Allowed, Denied, ApprovalRequired), SecuritySeverity enum (Low, Medium, High, Critical),
+      SecurityPolicy model, SecurityEvent model, DependencyFinding model,
+      ReleaseIntegrityResult model, and EffectivePolicySnapshot model. Run pnpm tsp:compile
+      to generate output.ts.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "tsp/domain/entities/security.tsp compiles without errors via pnpm tsp:compile"
+      - "All enum values are accessible from packages/core/src/domain/generated/output.ts"
+      - "SecurityEvent model has fields: id, repositoryPath, featureId (optional), severity, category, disposition, actor, message, remediationSummary, createdAt"
+      - "SecurityPolicy model has fields: mode, actionDispositions (map of category to disposition), dependencyRules, releaseRules"
+      - "EffectivePolicySnapshot has fields: mode, source, evaluatedAt, actionDispositions"
+    tdd:
+      red:
+        - "Write test importing generated SecurityMode enum and asserting Disabled, Advisory, Enforce values exist"
+        - "Write test importing SecurityActionCategory enum and asserting all five values"
+        - "Write test importing SecurityEvent type and asserting required field shapes via type checks"
+      green:
+        - "Create security.tsp with all enums and models"
+        - "Run pnpm tsp:compile to generate TypeScript types"
+      refactor:
+        - "Verify naming consistency with existing enums (AgentType, EditorType pattern)"
+        - "Ensure optional fields use ? annotation matching settings.tsp conventions"
+    estimatedEffort: "2h"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Add SecurityConfig to Settings TypeSpec model"
+    description: >
+      Extend tsp/domain/entities/settings.tsp with a SecurityConfig nested model containing
+      mode (SecurityMode, default Advisory), lastEvaluationAt (optional string ISO timestamp),
+      and policySource (optional string). Add security field of type SecurityConfig to the
+      Settings model. Run pnpm tsp:compile to regenerate output.ts.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Settings type in output.ts includes security: SecurityConfig"
+      - "SecurityConfig has mode, lastEvaluationAt, policySource fields"
+      - "pnpm tsp:compile succeeds without errors"
+    tdd:
+      red:
+        - "Write test that imports Settings type and asserts settings.security.mode is a valid SecurityMode value"
+      green:
+        - "Add SecurityConfig model to settings.tsp referencing SecurityMode from security.tsp"
+        - "Add security field to Settings model"
+        - "Run pnpm tsp:compile"
+      refactor:
+        - "Verify SecurityConfig placement follows the WorkflowConfig, AgentConfig nesting pattern"
+    estimatedEffort: "30min"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Create SQLite migration for security settings columns"
+    description: >
+      Create migration 053-add-security-settings-columns.ts that adds three columns to the
+      settings table: security_mode (TEXT NOT NULL DEFAULT 'Advisory'), security_last_evaluation_at
+      (TEXT, nullable), security_policy_source (TEXT, nullable). Migration must be idempotent
+      (check column existence before ALTER) and down() is no-op.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "Migration file exists at the correct path and follows the Umzug pattern"
+      - "Running migration twice does not error (idempotent)"
+      - "New columns have correct types and defaults"
+      - "down() is a no-op"
+    tdd:
+      red:
+        - "Write integration test that runs the migration and asserts columns exist via PRAGMA table_info"
+        - "Write test that running migration twice does not throw"
+      green:
+        - "Implement migration with column-existence checks before each ALTER TABLE"
+      refactor:
+        - "Verify column naming matches the existing snake_case convention (e.g., workflow_ci_watch_enabled)"
+    estimatedEffort: "30min"
+
+  - id: "task-4"
+    phaseId: "phase-1"
+    title: "Create SQLite migration for security_events table"
+    description: >
+      Create migration 054-create-security-events-table.ts that creates the security_events
+      table with columns: id (TEXT PRIMARY KEY), repository_path (TEXT NOT NULL), feature_id
+      (TEXT nullable), severity (TEXT NOT NULL), category (TEXT NOT NULL), disposition (TEXT
+      NOT NULL), actor (TEXT nullable), message (TEXT nullable), remediation_summary (TEXT
+      nullable), created_at (TEXT NOT NULL). Add indexes on (repository_path, created_at)
+      and (feature_id). Idempotent: check table existence before CREATE.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "Migration creates security_events table with all columns"
+      - "Indexes are created for repository_path+created_at and feature_id"
+      - "Running migration twice does not error"
+    tdd:
+      red:
+        - "Write integration test that runs migration and verifies table schema via PRAGMA table_info"
+        - "Write test that verifies indexes exist via PRAGMA index_list"
+      green:
+        - "Implement migration with IF NOT EXISTS on CREATE TABLE and index creation"
+      refactor:
+        - "Verify column types match the generated TypeSpec model field types"
+    estimatedEffort: "30min"
+
+  - id: "task-5"
+    phaseId: "phase-1"
+    title: "Extend settings mapper and defaults factory for SecurityConfig"
+    description: >
+      Update settings.mapper.ts to add security_mode, security_last_evaluation_at, and
+      security_policy_source to the SettingsRow interface, toDatabase(), and fromDatabase().
+      Update settings-defaults.factory.ts to include security defaults (mode: Advisory,
+      lastEvaluationAt: null, policySource: null). Update the INSERT and UPDATE SQL in
+      sqlite-settings.repository.ts to include the new columns.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "SettingsRow interface includes all three security columns"
+      - "toDatabase() maps SecurityConfig to flat columns"
+      - "fromDatabase() reconstructs SecurityConfig from flat columns"
+      - "createDefaultSettings() returns security.mode = SecurityMode.Advisory"
+      - "INSERT and UPDATE SQL in repository include all three columns"
+    tdd:
+      red:
+        - "Write test for toDatabase() asserting security config maps to flat security_mode, security_last_evaluation_at, security_policy_source columns"
+        - "Write test for fromDatabase() asserting flat columns reconstruct SecurityConfig object"
+        - "Write test for createDefaultSettings() asserting security.mode equals Advisory"
+      green:
+        - "Add columns to SettingsRow interface"
+        - "Add mapping logic to toDatabase() and fromDatabase()"
+        - "Add security defaults to factory"
+        - "Add columns to repository SQL statements"
+      refactor:
+        - "Verify all three touchpoints (mapper, factory, repository SQL) are in sync per LESSONS.md"
+    estimatedEffort: "1h"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # PHASE 2 — Policy Engine & Persistence
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: "task-6"
+    phaseId: "phase-2"
+    title: "Define ISecurityPolicyService port interface"
+    description: >
+      Create the application-layer port interface at
+      application/ports/output/services/security-policy-service.interface.ts.
+      Define methods: evaluatePolicy(repositoryPath) returning EffectivePolicySnapshot,
+      getEffectivePolicy(repositoryPath) returning cached or computed policy,
+      validatePolicyFile(filePath) returning validation result with errors array,
+      and getActionDisposition(policy, actionCategory) returning SecurityActionDisposition.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Interface file exists at the correct port path"
+      - "All four methods are declared with correct input/output types"
+      - "Types reference only domain-layer generated types (no infrastructure imports)"
+    tdd:
+      red:
+        - "Write test that imports the interface and asserts it has the expected method signatures (compile-time check)"
+      green:
+        - "Create interface file with all method declarations"
+      refactor:
+        - "Verify naming matches IAgentExecutorProvider and IGitHubRepositoryService patterns"
+    estimatedEffort: "30min"
+
+  - id: "task-7"
+    phaseId: "phase-2"
+    title: "Define ISecurityEventRepository port interface"
+    description: >
+      Create the repository port interface at
+      application/ports/output/repositories/security-event.repository.interface.ts.
+      Define methods: save(event), findByRepository(repositoryPath, options?),
+      findByFeature(featureId, options?), deleteOlderThan(date), and count(repositoryPath).
+      Options support limit, offset, and severity filter.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Interface file exists at the correct port path"
+      - "All methods use domain-layer SecurityEvent types"
+      - "Query methods accept optional filter/pagination parameters"
+    tdd:
+      red:
+        - "Write test importing the interface and verifying method signatures compile"
+      green:
+        - "Create interface file with all method declarations"
+      refactor:
+        - "Verify pattern matches ISettingsRepository and IFeatureRepository conventions"
+    estimatedEffort: "20min"
+
+  - id: "task-8"
+    phaseId: "phase-2"
+    title: "Implement security policy file reader"
+    description: >
+      Create infrastructure/services/security/security-policy-file-reader.ts that reads
+      shep.security.yaml from a given repository path using js-yaml. Returns parsed object
+      or null if file does not exist. Handles YAML parse errors with actionable messages.
+    state: "Todo"
+    dependencies:
+      - "task-6"
+    acceptanceCriteria:
+      - "Reads and parses shep.security.yaml from the given directory"
+      - "Returns null when file does not exist (no throw)"
+      - "Throws with actionable message on YAML syntax errors"
+      - "Does not execute arbitrary code from YAML (uses yaml.load with safe schema)"
+    tdd:
+      red:
+        - "Write test with valid YAML fixture asserting parsed output matches expected structure"
+        - "Write test with missing file asserting null return"
+        - "Write test with malformed YAML asserting descriptive error message"
+      green:
+        - "Implement file reader using fs.readFileSync + yaml.load with DEFAULT_SCHEMA"
+      refactor:
+        - "Extract file path construction to a constant (SECURITY_POLICY_FILENAME)"
+    estimatedEffort: "45min"
+
+  - id: "task-9"
+    phaseId: "phase-2"
+    title: "Implement security policy validator"
+    description: >
+      Create infrastructure/services/security/security-policy-validator.ts that validates
+      a parsed policy object against the expected schema. Checks required fields, valid enum
+      values, contradictory rules (e.g., same category both Allowed and Denied), and
+      reasonable limits (max rules, max nesting depth). Returns a structured validation result
+      with per-field error messages.
+    state: "Todo"
+    dependencies:
+      - "task-8"
+    acceptanceCriteria:
+      - "Valid policy passes validation with zero errors"
+      - "Missing required fields produce specific error messages identifying the field"
+      - "Invalid enum values produce error messages with the valid options"
+      - "Contradictory rules (same category with conflicting dispositions) are caught"
+      - "Excessive input (>100 rules, >5 nesting levels) is rejected with limits message"
+    tdd:
+      red:
+        - "Write test with valid policy asserting empty errors array"
+        - "Write test with missing mode field asserting error references 'mode'"
+        - "Write test with invalid SecurityMode value asserting error lists valid options"
+        - "Write test with contradictory action dispositions asserting conflict error"
+      green:
+        - "Implement validator with manual field checks matching existing settings validation patterns"
+      refactor:
+        - "Extract validation rule functions for reuse across field types"
+    estimatedEffort: "1h"
+
+  - id: "task-10"
+    phaseId: "phase-2"
+    title: "Implement SecurityPolicyService"
+    description: >
+      Create the core policy engine at infrastructure/services/security/security-policy.service.ts
+      implementing ISecurityPolicyService. Reads policy file via reader, validates via validator,
+      merges with persisted settings defaults using deterministic precedence (global defaults
+      first, repo policy second, feature-run state third). Computes EffectivePolicySnapshot.
+      Caches the result per repository path to avoid re-reading on every call.
+    state: "Todo"
+    dependencies:
+      - "task-8"
+      - "task-9"
+      - "task-5"
+    acceptanceCriteria:
+      - "evaluatePolicy() returns EffectivePolicySnapshot with correct mode, source, and action dispositions"
+      - "Policy precedence: global defaults < repo file rules (stricter wins, never weakens)"
+      - "Invalid policy file causes fail-fast with validation errors"
+      - "Missing policy file falls back to settings defaults only"
+      - "getActionDisposition() returns correct disposition for each category"
+      - "Same inputs produce same output (NFR-2 deterministic)"
+    tdd:
+      red:
+        - "Write test with no policy file asserting defaults (Advisory mode, all actions Allowed)"
+        - "Write test with policy file setting mode=Enforce asserting effective mode is Enforce"
+        - "Write test with policy denying DependencyInstall asserting that disposition"
+        - "Write test verifying stricter repo rule cannot be weakened by global default"
+        - "Write test with invalid policy file asserting validation error is thrown"
+      green:
+        - "Implement service with DI constructor injecting file reader, validator, settings repository"
+        - "Implement merge logic with precedence rules"
+        - "Implement per-repository caching"
+      refactor:
+        - "Extract merge logic into a pure function for easier testing"
+        - "Ensure cache invalidation when policy file or settings change"
+    estimatedEffort: "2h"
+
+  - id: "task-11"
+    phaseId: "phase-2"
+    title: "Implement security event mapper and repository"
+    description: >
+      Create security-event.mapper.ts with SecurityEventRow interface, toDatabase(), and
+      fromDatabase() functions. Create sqlite-security-event.repository.ts implementing
+      ISecurityEventRepository with save(), findByRepository(), findByFeature(),
+      deleteOlderThan(), and count() using parameterized SQL.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+      - "task-7"
+    acceptanceCriteria:
+      - "Mapper correctly converts SecurityEvent to/from database row"
+      - "save() inserts a new security event row"
+      - "findByRepository() returns events ordered by created_at DESC with optional limit"
+      - "findByFeature() filters by feature_id"
+      - "deleteOlderThan() removes events older than the given date"
+      - "All SQL uses parameterized queries (no string concatenation)"
+    tdd:
+      red:
+        - "Write test for toDatabase() asserting correct column mapping"
+        - "Write test for fromDatabase() asserting correct model reconstruction"
+        - "Write integration test: save event then findByRepository returns it"
+        - "Write integration test: deleteOlderThan removes old events but keeps recent ones"
+      green:
+        - "Implement mapper with snake_case column mapping"
+        - "Implement repository with parameterized SQL for all operations"
+      refactor:
+        - "Extract common SQL building patterns if shared with other repositories"
+    estimatedEffort: "1.5h"
+
+  - id: "task-12"
+    phaseId: "phase-2"
+    title: "Register security services in DI container"
+    description: >
+      Register ISecurityPolicyService, ISecurityEventRepository, and all supporting
+      infrastructure services (file reader, validator) in the DI container at
+      infrastructure/di/container.ts. Register security use cases (to be created in phase 3).
+    state: "Todo"
+    dependencies:
+      - "task-10"
+      - "task-11"
+    acceptanceCriteria:
+      - "container.resolve('ISecurityPolicyService') returns SecurityPolicyService instance"
+      - "container.resolve('ISecurityEventRepository') returns SQLiteSecurityEventRepository instance"
+      - "No circular dependency errors at bootstrap"
+    tdd:
+      red:
+        - "Write integration test resolving ISecurityPolicyService from container"
+        - "Write integration test resolving ISecurityEventRepository from container"
+      green:
+        - "Add registrations to container.ts following existing patterns"
+      refactor:
+        - "Group security registrations together with a comment section"
+    estimatedEffort: "30min"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # PHASE 3 — CLI Enforcement Command
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: "task-13"
+    phaseId: "phase-3"
+    title: "Implement DependencyRiskEvaluator"
+    description: >
+      Create infrastructure/services/security/dependency-risk-evaluator.ts that evaluates
+      repository-local dependency risk signals. Checks: manifest-lockfile consistency
+      (package.json vs lockfile), dependency source types (registry vs git vs file),
+      risky lifecycle scripts (preinstall, postinstall, prepare), allowlist/denylist
+      violations from policy, and version-range strictness per policy rules. Returns
+      an array of DependencyFinding objects with severity and remediation.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "Detects when lockfile is missing or inconsistent with package.json"
+      - "Flags dependencies from non-registry sources (git:, file:, link:)"
+      - "Identifies packages with lifecycle scripts (preinstall, postinstall)"
+      - "Applies allowlist/denylist from policy rules"
+      - "Reports version ranges that violate strictness policy (e.g., * or > ranges)"
+      - "Each finding includes severity, package name, risk type, and remediation text"
+    tdd:
+      red:
+        - "Write test with consistent lockfile asserting zero findings"
+        - "Write test with missing lockfile asserting High severity finding"
+        - "Write test with git: dependency asserting Medium severity finding"
+        - "Write test with postinstall script asserting finding with remediation"
+        - "Write test with denylisted package asserting Critical severity finding"
+      green:
+        - "Implement lockfile reader supporting pnpm-lock.yaml format (primary)"
+        - "Implement source-type classifier"
+        - "Implement lifecycle script detector reading package.json scripts"
+        - "Implement allowlist/denylist filter"
+        - "Implement version-range strictness checker"
+      refactor:
+        - "Extract individual check functions for testability"
+        - "Add support for package-lock.json and yarn.lock detection (return unsupported finding if not pnpm)"
+    estimatedEffort: "3h"
+
+  - id: "task-14"
+    phaseId: "phase-3"
+    title: "Implement ReleaseIntegrityEvaluator"
+    description: >
+      Create infrastructure/services/security/release-integrity-evaluator.ts that checks
+      release pipeline integrity. Verifies: CI workflow exists and runs in CI (not local),
+      NPM_TOKEN and RELEASE_TOKEN are referenced as secrets (not hardcoded), npm provenance
+      flags (--provenance) are present in publish steps, and release workflow has not been
+      modified to remove security controls in the current changeset. Returns
+      ReleaseIntegrityResult with individual check results and overall pass/fail.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Detects missing CI workflow file"
+      - "Flags hardcoded tokens in workflow files"
+      - "Verifies --provenance flag in npm publish steps"
+      - "Reports overall pass/fail with individual check details"
+      - "Works with the existing ci.yml structure"
+    tdd:
+      red:
+        - "Write test with valid CI workflow asserting overall pass"
+        - "Write test with missing workflow asserting Critical finding"
+        - "Write test with hardcoded token asserting Critical finding"
+        - "Write test with missing --provenance asserting Medium finding"
+      green:
+        - "Implement workflow file reader (parse YAML from .github/workflows/)"
+        - "Implement token reference checker (secrets.* vs literal values)"
+        - "Implement provenance flag scanner"
+        - "Aggregate results into ReleaseIntegrityResult"
+      refactor:
+        - "Extract workflow parsing into reusable helper for governance auditor"
+    estimatedEffort: "2h"
+
+  - id: "task-15"
+    phaseId: "phase-3"
+    title: "Implement EnforceSecurityUseCase"
+    description: >
+      Create application/use-cases/security/enforce-security.use-case.ts that orchestrates
+      the full enforcement flow: evaluate effective policy, run dependency risk checks, run
+      release integrity checks, persist results as security events, and return a structured
+      enforcement result. Supports both Advisory (always exit 0) and Enforce (exit 1 on failure)
+      modes.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+      - "task-13"
+      - "task-14"
+    acceptanceCriteria:
+      - "Evaluates policy, runs all checks, returns aggregate result"
+      - "In Advisory mode, returns findings but overall status is pass"
+      - "In Enforce mode, returns failure status when any check fails"
+      - "In Disabled mode, returns empty result with pass status"
+      - "Persists security events for findings via ISecurityEventRepository"
+      - "Result includes dependency findings, release integrity result, and effective policy"
+    tdd:
+      red:
+        - "Write test with Disabled mode asserting empty pass result"
+        - "Write test with Advisory mode and failures asserting pass status with findings"
+        - "Write test with Enforce mode and failures asserting fail status"
+        - "Write test verifying security events are persisted"
+      green:
+        - "Implement use case with DI constructor"
+        - "Orchestrate policy evaluation, dependency check, release check"
+        - "Map findings to security events and persist"
+        - "Return structured result with mode-aware pass/fail logic"
+      refactor:
+        - "Extract result builder for clean separation of orchestration and formatting"
+    estimatedEffort: "2h"
+
+  - id: "task-16"
+    phaseId: "phase-3"
+    title: "Implement EvaluateSecurityPolicyUseCase"
+    description: >
+      Create application/use-cases/security/evaluate-security-policy.use-case.ts that
+      wraps ISecurityPolicyService.evaluatePolicy() as a use case. Updates settings with
+      the latest evaluation timestamp and policy source. Returns the effective policy snapshot.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "Delegates to ISecurityPolicyService for evaluation"
+      - "Updates settings.security.lastEvaluationAt to current timestamp"
+      - "Updates settings.security.policySource to the source identified by the engine"
+      - "Returns the EffectivePolicySnapshot"
+    tdd:
+      red:
+        - "Write test asserting evaluation delegates to policy service"
+        - "Write test asserting settings are updated with timestamp"
+      green:
+        - "Implement use case with ISecurityPolicyService and ISettingsRepository injected"
+      refactor:
+        - "Ensure timestamp format matches existing ISO patterns in the codebase"
+    estimatedEffort: "45min"
+
+  - id: "task-17"
+    phaseId: "phase-3"
+    title: "Implement GetSecurityStateUseCase"
+    description: >
+      Create application/use-cases/security/get-security-state.use-case.ts that returns
+      the current security state for UI projection: effective mode, policy source, last
+      evaluation result, recent events (limited), and highest-severity open finding.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+      - "task-11"
+    acceptanceCriteria:
+      - "Returns effective mode from settings"
+      - "Returns recent security events (limit 20)"
+      - "Returns highest-severity open finding"
+      - "Returns last evaluation timestamp"
+    tdd:
+      red:
+        - "Write test with no events asserting empty events array and null highest finding"
+        - "Write test with multiple events asserting correct limit and highest severity"
+      green:
+        - "Implement use case querying ISecurityEventRepository and ISecurityPolicyService"
+      refactor:
+        - "Define a SecurityState return type for clean API"
+    estimatedEffort: "45min"
+
+  - id: "task-18"
+    phaseId: "phase-3"
+    title: "Implement RecordSecurityEventUseCase"
+    description: >
+      Create application/use-cases/security/record-security-event.use-case.ts that persists
+      a security event and triggers 90-day retention cleanup. Used by runtime guardrails and
+      enforcement flow to record findings.
+    state: "Todo"
+    dependencies:
+      - "task-11"
+    acceptanceCriteria:
+      - "Saves security event via ISecurityEventRepository"
+      - "Triggers deleteOlderThan with 90-day threshold after save"
+      - "Generates unique ID if not provided"
+    tdd:
+      red:
+        - "Write test asserting event is saved with generated ID"
+        - "Write test asserting retention cleanup is triggered"
+      green:
+        - "Implement use case with ISecurityEventRepository injection"
+      refactor:
+        - "Extract retention days to a named constant (SECURITY_EVENT_RETENTION_DAYS = 90)"
+    estimatedEffort: "30min"
+
+  - id: "task-19"
+    phaseId: "phase-3"
+    title: "Create shep security enforce CLI command"
+    description: >
+      Create src/presentation/cli/commands/security.command.ts with createSecurityCommand()
+      following the createFeatCommand() pattern. Implement enforce subcommand that resolves
+      EnforceSecurityUseCase from DI, executes it, formats output using OutputFormatter
+      (table for human, json for CI via --output flag), and returns exit code 0 (pass)
+      or 1 (fail). Register in src/presentation/cli/index.ts.
+    state: "Todo"
+    dependencies:
+      - "task-15"
+    acceptanceCriteria:
+      - "shep security enforce runs and outputs human-readable summary"
+      - "shep security enforce --output json outputs machine-readable JSON"
+      - "Exit code 0 when all checks pass or mode is Advisory"
+      - "Exit code 1 when Enforce mode and checks fail"
+      - "Command is registered in the CLI program"
+    tdd:
+      red:
+        - "Write test asserting command creates Commander command with enforce subcommand"
+        - "Write test asserting enforce resolves use case and returns formatted output"
+        - "Write test asserting exit code 1 on enforce-mode failure"
+      green:
+        - "Implement createSecurityCommand() with enforce subcommand"
+        - "Wire DI resolution and OutputFormatter"
+        - "Register in index.ts"
+      refactor:
+        - "Extract output formatting into a reusable security output formatter"
+    estimatedEffort: "1.5h"
+
+  - id: "task-20"
+    phaseId: "phase-3"
+    title: "Register phase 2-3 security use cases in DI container"
+    description: >
+      Register EnforceSecurityUseCase, EvaluateSecurityPolicyUseCase, GetSecurityStateUseCase,
+      and RecordSecurityEventUseCase in the DI container. Verify all resolve correctly.
+    state: "Todo"
+    dependencies:
+      - "task-15"
+      - "task-16"
+      - "task-17"
+      - "task-18"
+    acceptanceCriteria:
+      - "All four use cases resolve from container without errors"
+      - "Dependencies are correctly injected"
+    tdd:
+      red:
+        - "Write integration test resolving each use case from container"
+      green:
+        - "Add registrations to container.ts"
+      refactor:
+        - "Group with phase-2 security registrations under the same comment section"
+    estimatedEffort: "20min"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # PHASE 4 — Executor & Runtime Guardrails
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: "task-21"
+    phaseId: "phase-4"
+    title: "Add securityConstraints to AgentExecutionOptions"
+    description: >
+      Extend AgentExecutionOptions in agent-executor.interface.ts with an optional
+      securityConstraints field containing mode (SecurityMode), actionDispositions
+      (map), and sandboxLevel. Define SecurityViolationError class. Update the claude-code
+      executor to validate constraints before launch — in Enforce mode, if the executor
+      requires flags incompatible with policy, throw SecurityViolationError.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "AgentExecutionOptions has optional securityConstraints field"
+      - "SecurityViolationError extends Error with rule, category, and remediation fields"
+      - "Executor validates constraints before spawning"
+      - "Enforce mode with incompatible constraints throws SecurityViolationError"
+      - "No constraints or Disabled/Advisory mode does not block execution"
+    tdd:
+      red:
+        - "Write test asserting execute() with Enforce mode and forbidden sandbox throws SecurityViolationError"
+        - "Write test asserting execute() with Advisory mode logs warning but proceeds"
+        - "Write test asserting execute() with no constraints proceeds normally"
+      green:
+        - "Add SecurityConstraints type and securityConstraints field to AgentExecutionOptions"
+        - "Create SecurityViolationError class"
+        - "Add validation logic to executor execute() method"
+      refactor:
+        - "Extract constraint validation into a pure function for reuse across executor types"
+    estimatedEffort: "1.5h"
+
+  - id: "task-22"
+    phaseId: "phase-4"
+    title: "Add security policy channels to FeatureAgentState"
+    description: >
+      Extend state.ts with security policy channels: securityMode (SecurityMode), and
+      securityActionDispositions (Record of SecurityActionCategory to SecurityActionDisposition).
+      These are set once at graph invoke time and read by nodes. Add corresponding fields
+      to WorkerArgs in feature-agent-worker.ts.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+      - "task-21"
+    acceptanceCriteria:
+      - "FeatureAgentState includes securityMode and securityActionDispositions channels"
+      - "WorkerArgs interface includes securityMode and securityActionDispositions"
+      - "parseWorkerArgs() correctly parses --security-mode and --security-dispositions from CLI args"
+    tdd:
+      red:
+        - "Write test asserting FeatureAgentState includes securityMode channel"
+        - "Write test asserting parseWorkerArgs extracts security args from CLI"
+      green:
+        - "Add channels to FeatureAgentAnnotation"
+        - "Add fields to WorkerArgs"
+        - "Add parsing logic to parseWorkerArgs()"
+      refactor:
+        - "Verify channel reducer patterns match existing flags (e.g., ciWatchEnabled)"
+    estimatedEffort: "1h"
+
+  - id: "task-23"
+    phaseId: "phase-4"
+    title: "Thread security policy through all spawn sites"
+    description: >
+      Update feature-agent-process.service.ts spawn() to pass --security-mode and
+      --security-dispositions as CLI args. Update ALL six spawn sites (create, start, resume,
+      approve, reject, unblock) to pass security policy from the Feature entity or effective
+      policy. Update the worker bootstrap to inject security state into the graph invoke call.
+    state: "Todo"
+    dependencies:
+      - "task-22"
+      - "task-10"
+    acceptanceCriteria:
+      - "spawn() builds --security-mode and --security-dispositions CLI args"
+      - "All six spawn sites pass security policy from feature/settings"
+      - "Worker injects securityMode and securityActionDispositions into graph initial state"
+      - "Grep for processService.spawn confirms zero sites missing security args"
+    tdd:
+      red:
+        - "Write test asserting spawn() includes --security-mode in args when policy is set"
+        - "Write test asserting worker bootstrap passes securityMode to graph.invoke()"
+      green:
+        - "Add security args to spawn() method"
+        - "Update create-feature, start-feature, resume-feature, approve-agent-run, reject-agent-run, and check-and-unblock-features use cases"
+        - "Update worker bootstrap graph.invoke() call"
+      refactor:
+        - "Verify against LESSONS.md checklist for per-feature flag threading"
+    estimatedEffort: "2h"
+
+  - id: "task-24"
+    phaseId: "phase-4"
+    title: "Implement pre-execution security checks in executeNode()"
+    description: >
+      Extend the executeNode() factory in node-helpers.ts with pre-execution security
+      checks. Before sending the agent prompt, classify the pending action based on the
+      current node context (e.g., implement node may install dependencies, merge node may
+      publish). Check the action disposition from state.securityActionDispositions. If
+      Denied, throw SecurityViolationError with remediation message. If ApprovalRequired,
+      call interrupt() with a SecurityApproval payload. Record security events for both
+      denied and approval-required actions.
+    state: "Todo"
+    dependencies:
+      - "task-22"
+      - "task-21"
+      - "task-18"
+    acceptanceCriteria:
+      - "executeNode() reads security dispositions from state"
+      - "Denied actions throw SecurityViolationError before agent prompt"
+      - "ApprovalRequired actions call interrupt() with security payload"
+      - "Allowed actions proceed without delay"
+      - "Security events are recorded for denied and approval-required actions"
+      - "No overhead when securityMode is Disabled"
+    tdd:
+      red:
+        - "Write test with Denied disposition asserting SecurityViolationError before execution"
+        - "Write test with ApprovalRequired disposition asserting interrupt() is called"
+        - "Write test with Allowed disposition asserting normal execution proceeds"
+        - "Write test with Disabled mode asserting no security checks run"
+      green:
+        - "Add action category classification based on node name"
+        - "Add pre-execution check reading from state"
+        - "Implement deny/approve/allow branching"
+        - "Wire RecordSecurityEventUseCase for event persistence"
+      refactor:
+        - "Extract node-to-category mapping into a constant map"
+        - "Ensure classification is extensible for future categories"
+    estimatedEffort: "2.5h"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # PHASE 5 — GitHub Governance Audit
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: "task-25"
+    phaseId: "phase-5"
+    title: "Extend IGitHubRepositoryService with governance audit"
+    description: >
+      Add auditRepositoryGovernance(owner, repo) method to
+      IGitHubRepositoryService that returns governance findings (branch protection
+      rules, CODEOWNERS presence, workflow permissions). Define GovernanceFinding type.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Interface has auditRepositoryGovernance method declaration"
+      - "GovernanceFinding type includes category, severity, message, and remediation"
+    tdd:
+      red:
+        - "Write test importing updated interface and asserting auditRepositoryGovernance method exists"
+      green:
+        - "Add method signature and GovernanceFinding type to interface"
+      refactor:
+        - "Verify GovernanceFinding aligns with DependencyFinding structure"
+    estimatedEffort: "20min"
+
+  - id: "task-26"
+    phaseId: "phase-5"
+    title: "Implement governance auditor via gh CLI"
+    description: >
+      Create infrastructure/services/security/governance-auditor.ts and extend
+      github-repository.service.ts to implement auditRepositoryGovernance(). Use gh api
+      to check branch protection rules (repos/{owner}/{repo}/branches/{branch}/protection),
+      CODEOWNERS presence (repos/{owner}/{repo}/contents/CODEOWNERS), and workflow permissions.
+      Return findings with severity and remediation suggestions. Handle auth/permission
+      errors gracefully (report as Unknown finding, not crash).
+    state: "Todo"
+    dependencies:
+      - "task-25"
+    acceptanceCriteria:
+      - "Checks branch protection via gh api and reports gaps"
+      - "Checks CODEOWNERS presence and reports if missing"
+      - "Handles 404 (no protection) as a finding, not an error"
+      - "Handles auth errors gracefully with Unknown finding"
+      - "Returns array of GovernanceFinding objects"
+    tdd:
+      red:
+        - "Write test with mocked gh responses asserting branch protection gap finding"
+        - "Write test with CODEOWNERS present asserting no finding for that check"
+        - "Write test with CODEOWNERS absent asserting Medium severity finding"
+        - "Write test with auth error asserting Unknown finding instead of crash"
+      green:
+        - "Implement gh api calls for branch protection, CODEOWNERS, workflow permissions"
+        - "Parse responses into GovernanceFinding objects"
+        - "Handle error cases gracefully"
+      refactor:
+        - "Extract gh API call helper to reduce duplication"
+    estimatedEffort: "2h"
+
+  - id: "task-27"
+    phaseId: "phase-5"
+    title: "Integrate governance audit into enforcement flow"
+    description: >
+      Update EnforceSecurityUseCase to include governance audit results. The audit runs
+      as part of the enforce flow alongside dependency and release checks. Governance
+      findings are included in the output and persisted as security events. Governance
+      failures are treated as advisory only (audit-only, per FR-15).
+    state: "Todo"
+    dependencies:
+      - "task-26"
+      - "task-15"
+    acceptanceCriteria:
+      - "enforce flow includes governance findings in result"
+      - "Governance findings are persisted as security events"
+      - "Governance failures do not cause enforce-mode failure (audit-only)"
+      - "CLI output includes governance section"
+    tdd:
+      red:
+        - "Write test asserting enforcement result includes governance findings"
+        - "Write test asserting governance failures do not cause overall failure in Enforce mode"
+      green:
+        - "Add governance audit call to EnforceSecurityUseCase"
+        - "Include governance findings in result object"
+        - "Persist governance events"
+      refactor:
+        - "Ensure governance section is clearly marked as audit-only in output"
+    estimatedEffort: "1h"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # PHASE 6 — Web UI Security Surfaces
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: "task-28"
+    phaseId: "phase-6"
+    title: "Create security server actions"
+    description: >
+      Create src/presentation/web/app/actions/security.ts with server actions:
+      getSecurityStateAction() resolving GetSecurityStateUseCase,
+      enforceSecurityAction() resolving EnforceSecurityUseCase,
+      and updateSecurityModeAction(mode) updating settings via UpdateSettingsUseCase.
+      Follow existing server action patterns (resolve from DI, revalidatePath, return
+      structured results).
+    state: "Todo"
+    dependencies:
+      - "task-17"
+      - "task-15"
+    acceptanceCriteria:
+      - "getSecurityStateAction returns security state for current repository"
+      - "enforceSecurityAction returns enforcement result"
+      - "updateSecurityModeAction updates mode in settings"
+      - "All actions use 'use server' directive"
+      - "Errors are caught and returned as structured error objects"
+    tdd:
+      red:
+        - "Write test asserting getSecurityStateAction returns expected shape"
+        - "Write test asserting updateSecurityModeAction calls update use case"
+      green:
+        - "Implement three server actions following update-settings.ts pattern"
+      refactor:
+        - "Extract common resolve-from-DI pattern if not already abstracted"
+    estimatedEffort: "1h"
+
+  - id: "task-29"
+    phaseId: "phase-6"
+    title: "Create SupplyChainSecuritySettingsSection component"
+    description: >
+      Create supply-chain-security-settings-section.tsx following the agent-settings-section
+      pattern. Shows: security mode selector (Disabled/Advisory/Enforce) with save indicator,
+      policy source display (file path or settings-only), last evaluation timestamp, and
+      recent high-severity findings list. Create colocated .stories.tsx with stories for
+      each mode and with/without findings.
+    state: "Todo"
+    dependencies:
+      - "task-28"
+    acceptanceCriteria:
+      - "Component renders mode selector with three options"
+      - "Mode changes call updateSecurityModeAction and show save indicator"
+      - "Displays policy source and last evaluation timestamp"
+      - "Displays recent findings with severity badges"
+      - "Storybook stories cover Disabled, Advisory, Enforce modes, and findings states"
+    tdd:
+      red:
+        - "Write Storybook story for Advisory mode with no findings"
+        - "Write Storybook story for Enforce mode with Critical finding"
+        - "Write Storybook story for Disabled mode"
+      green:
+        - "Implement component with Card wrapper, mode selector, and findings list"
+        - "Wire updateSecurityModeAction for mode changes"
+        - "Create all stories"
+      refactor:
+        - "Ensure visual consistency with other settings sections (spacing, typography, icons)"
+    estimatedEffort: "2h"
+
+  - id: "task-30"
+    phaseId: "phase-6"
+    title: "Add security panel to repository drawer"
+    description: >
+      Create security-panel.tsx component that shows governance audit results and dependency
+      risk summary for a repository. Integrate into repository-drawer.tsx as a collapsible
+      section. Create colocated .stories.tsx.
+    state: "Todo"
+    dependencies:
+      - "task-28"
+    acceptanceCriteria:
+      - "Security panel shows governance findings with severity icons"
+      - "Panel shows dependency risk summary (count by severity)"
+      - "Panel is collapsible and defaults to expanded when findings exist"
+      - "Integrated into RepositoryDrawer component"
+      - "Storybook stories cover no findings and mixed findings states"
+    tdd:
+      red:
+        - "Write Storybook story for security panel with no findings"
+        - "Write Storybook story with governance and dependency findings"
+      green:
+        - "Implement SecurityPanel component"
+        - "Integrate into RepositoryDrawer"
+        - "Create stories"
+      refactor:
+        - "Ensure severity badge styling matches existing badge patterns"
+    estimatedEffort: "1.5h"
+
+  - id: "task-31"
+    phaseId: "phase-6"
+    title: "Add security badge to Control Center feature nodes"
+    description: >
+      Create security-badge.tsx component (shield icon with color by mode). Update
+      build-graph-nodes.ts to enrich FeatureNodeData with securityMode when security
+      is active. Update the feature node renderer to display the badge. Create colocated
+      .stories.tsx for the badge component.
+    state: "Todo"
+    dependencies:
+      - "task-28"
+    acceptanceCriteria:
+      - "SecurityBadge renders shield icon colored by mode (green=Disabled, yellow=Advisory, red=Enforce)"
+      - "build-graph-nodes.ts includes securityMode in FeatureNodeData when not Disabled"
+      - "Feature nodes display badge when security mode is active"
+      - "Storybook stories for each mode variant"
+    tdd:
+      red:
+        - "Write Storybook story for badge in Advisory mode"
+        - "Write Storybook story for badge in Enforce mode"
+      green:
+        - "Implement SecurityBadge component"
+        - "Update build-graph-nodes.ts enrichment"
+        - "Create stories"
+      refactor:
+        - "Use lucide-react Shield icon matching existing icon conventions"
+    estimatedEffort: "1h"
+
+  - id: "task-32"
+    phaseId: "phase-6"
+    title: "Integrate security settings section into settings page"
+    description: >
+      Add the SupplyChainSecuritySettingsSection to settings-page-client.tsx in the SECTIONS
+      array and render it in the settings page layout. Add i18n translation keys for all
+      security settings labels.
+    state: "Todo"
+    dependencies:
+      - "task-29"
+    acceptanceCriteria:
+      - "Security section appears in the settings page navigation"
+      - "Section renders correctly within the settings layout"
+      - "All labels use i18n translation keys"
+    tdd:
+      red:
+        - "Write test asserting settings page includes security section"
+      green:
+        - "Add section entry to SECTIONS array"
+        - "Add translation keys to locale files"
+        - "Render component in settings page"
+      refactor:
+        - "Verify section ordering makes sense (security near workflow/CI sections)"
+    estimatedEffort: "30min"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # PHASE 7 — CI Integration & Release Gating
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: "task-33"
+    phaseId: "phase-7"
+    title: "Add security-enforce job to CI workflow"
+    description: >
+      Update .github/workflows/ci.yml to add a security-enforce job that runs
+      shep security enforce --output json. Add this job to the release job's needs array
+      to gate publishing on security enforcement passing. The job runs on ubuntu-latest
+      alongside existing parallel jobs.
+    state: "Todo"
+    dependencies:
+      - "task-19"
+    acceptanceCriteria:
+      - "ci.yml includes security-enforce job"
+      - "Job runs shep security enforce --output json"
+      - "Release job depends on security-enforce passing"
+      - "Job uses same setup pattern as existing jobs (checkout, pnpm, node)"
+      - "Existing jobs are not modified (only new job + updated needs)"
+    tdd:
+      red:
+        - "Validate ci.yml parses as valid YAML after changes"
+        - "Verify release job needs array includes security-enforce"
+      green:
+        - "Add security-enforce job to ci.yml"
+        - "Add to release job needs array"
+      refactor:
+        - "Ensure job naming convention matches existing jobs"
+    estimatedEffort: "45min"
+
+  - id: "task-34"
+    phaseId: "phase-7"
+    title: "Add security policy scaffold to spec initializer"
+    description: >
+      Update spec-initializer.service.ts to optionally scaffold a baseline
+      shep.security.yaml file when initializing a new repository or when explicitly
+      requested. The template includes mode: Advisory, default action dispositions, and
+      comments explaining each section.
+    state: "Todo"
+    dependencies:
+      - "task-10"
+    acceptanceCriteria:
+      - "Spec initializer can generate a shep.security.yaml template"
+      - "Template includes valid mode, action dispositions, and dependency rules"
+      - "Template includes YAML comments explaining each field"
+      - "Generated file passes policy validation"
+    tdd:
+      red:
+        - "Write test asserting scaffold generates valid YAML that passes validation"
+        - "Write test asserting all required fields are present in template"
+      green:
+        - "Add security policy template constant"
+        - "Add scaffold method to spec initializer"
+      refactor:
+        - "Ensure template comments match the policy schema documentation"
+    estimatedEffort: "45min"
+
+totalEstimate: "40h"
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  This breakdown contains 34 tasks across 7 phases, estimated at approximately 40 hours
+  of implementation effort.
+
+  The work begins with the type foundation in Phase 1: TypeSpec security models, settings
+  extension, SQLite migrations, and mapper/factory updates. This produces zero runtime
+  behavior but establishes the generated types that every subsequent phase depends on.
+
+  Phase 2 builds the central policy engine (ISecurityPolicyService) with file reading,
+  validation, deterministic evaluation, and event persistence. This is the core abstraction
+  that all consumers share.
+
+  Phase 3 delivers the first user-facing value: the shep security enforce CLI command
+  backed by DependencyRiskEvaluator and ReleaseIntegrityEvaluator. Developers can evaluate
+  their repository security posture locally and in CI.
+
+  Phase 4 is the most complex phase, threading security policy through the entire agent
+  execution pipeline: executor constraints, state channels, all spawn sites, worker args,
+  and pre-execution checks in executeNode(). This follows the per-feature flag threading
+  pattern established in LESSONS.md.
+
+  Phase 5 adds GitHub governance auditing via the existing gh CLI, reporting branch
+  protection and CODEOWNERS gaps as advisory-only findings.
+
+  Phase 6 creates the web UI surfaces: settings section with mode selector, repository
+  drawer security panel, and Control Center security badge. All components get Storybook
+  stories.
+
+  Phase 7 completes the loop with CI integration: a security-enforce job gates the release
+  pipeline, and the spec initializer gains a policy file scaffold for new repositories.
+
+  Every task follows TDD (RED-GREEN-REFACTOR) and explicitly tests the boundaries defined
+  in the acceptance criteria. Dependencies are strictly ordered — no task depends on a later
+  task, and each phase builds on the foundation established by previous phases.

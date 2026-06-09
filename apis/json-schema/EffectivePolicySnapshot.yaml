@@ -1,0 +1,24 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: EffectivePolicySnapshot.yaml
+type: object
+properties:
+  mode:
+    $ref: SecurityMode.yaml
+    description: Resolved effective security mode
+  source:
+    type: string
+    description: Where the policy was sourced from (e.g. 'shep.security.yaml', 'settings-default')
+  evaluatedAt:
+    type: string
+    description: ISO timestamp when this snapshot was computed
+  actionDispositions:
+    type: array
+    items:
+      $ref: ActionDispositionEntry.yaml
+    description: Resolved per-action-category enforcement dispositions
+required:
+  - mode
+  - source
+  - evaluatedAt
+  - actionDispositions
+description: Computed effective security policy snapshot

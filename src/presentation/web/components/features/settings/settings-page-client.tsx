@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useRef, useEffect, useCallback } from 'react';
+import { useState, useTransition, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   Check,
   Bot,
@@ -19,6 +19,7 @@ import {
   MessageSquare,
   LayoutGrid,
   Home,
+  Shield,
   Eye,
   EyeOff,
   Github,
@@ -43,6 +44,7 @@ import {
   AgentAuthMethod,
   EditorType,
   Language,
+  SecurityMode,
   TerminalType,
 } from '@shepai/core/domain/generated/output';
 import { getEditorTypeIcon } from '@/components/common/editor-type-icons';
@@ -61,6 +63,7 @@ const LANGUAGE_OPTIONS = [
   { value: Language.German, nativeName: 'Deutsch' },
 ];
 import { TimeoutSlider } from '@/components/features/settings/timeout-slider';
+import { SupplyChainSecuritySettingsSection } from '@/components/features/settings/supply-chain-security-settings-section';
 import type {
   Settings,
   FeatureFlags,
@@ -101,6 +104,7 @@ const SECTIONS = [
   { id: 'agent', labelKey: 'settings.sections.agent', icon: Bot },
   { id: 'environment', labelKey: 'settings.sections.environment', icon: Terminal },
   { id: 'workflow', labelKey: 'settings.sections.workflow', icon: GitBranch },
+  { id: 'security', labelKey: 'settings.sections.security', icon: Shield },
   { id: 'ci', labelKey: 'settings.sections.ci', icon: Activity },
   { id: 'stage-timeouts', labelKey: 'settings.sections.timeouts', icon: Timer },
   { id: 'notifications', labelKey: 'settings.sections.notifications', icon: Bell },
@@ -407,6 +411,7 @@ export function SettingsPageClient({
     bedrockIntegration: true,
     whatsappDispatch: false,
     clusters: false,
+    supplyChainSecurity: true,
   };
 
   // Language state
@@ -689,11 +694,21 @@ export function SettingsPageClient({
 
   const [activeSection, setActiveSection] = useState<string>('agent');
 
+  // Filter sections based on feature flags. When supplyChainSecurity is off,
+  // hide the Security nav tab AND the section below so the feature is fully inert.
+  const visibleSections = useMemo<readonly (typeof SECTIONS)[number][]>(
+    () =>
+      SECTIONS.filter(
+        (s: (typeof SECTIONS)[number]) => s.id !== 'security' || flags.supplyChainSecurity
+      ),
+    [flags.supplyChainSecurity]
+  );
+
   // Track which section is in view via IntersectionObserver
   useEffect(() => {
-    const els = SECTIONS.map((s) => document.getElementById(`section-${s.id}`)).filter(
-      Boolean
-    ) as HTMLElement[];
+    const els = visibleSections
+      .map((s) => document.getElementById(`section-${s.id}`))
+      .filter(Boolean) as HTMLElement[];
     if (els.length === 0) return;
 
     const observer = new IntersectionObserver(
@@ -709,7 +724,7 @@ export function SettingsPageClient({
 
     for (const el of els) observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [visibleSections]);
 
   const scrollToSection = useCallback((id: string) => {
     const el = document.getElementById(`section-${id}`);
@@ -749,7 +764,7 @@ export function SettingsPageClient({
             </span>
           </span>
           <nav className="ml-auto flex items-center gap-0.5">
-            {SECTIONS.map((s) => {
+            {visibleSections.map((s) => {
               const SectionIcon = s.icon;
               const isActive = activeSection === s.id;
               return (
@@ -1259,6 +1274,34 @@ export function SettingsPageClient({
             {t('settings.workflow.hint')}
           </SectionHint>
         </div>
+
+        {/* ── Security ── (hidden when supplyChainSecurity feature flag is off) */}
+        {flags.supplyChainSecurity ? (
+          <div
+            id="section-security"
+            className="grid scroll-mt-18 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[1fr_280px]"
+          >
+            <SupplyChainSecuritySettingsSection
+              securityState={{
+                mode: settings.security?.mode ?? SecurityMode.Advisory,
+                lastEvaluationAt: settings.security?.lastEvaluationAt ?? null,
+                policySource: settings.security?.policySource ?? null,
+                recentEvents: [],
+                highestSeverityFinding: null,
+              }}
+            />
+            <SectionHint
+              links={[
+                {
+                  label: t('settings.security.links.securitySpec'),
+                  href: 'https://github.com/shep-ai/shep/blob/main/specs/083-supply-chain-security/spec.yaml',
+                },
+              ]}
+            >
+              {t('settings.security.hint')}
+            </SectionHint>
+          </div>
+        ) : null}
 
         {/* ── CI ── */}
         <div

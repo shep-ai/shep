@@ -9,7 +9,10 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { existsSync, readFileSync, readdirSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import yaml from 'js-yaml';
 import { SpecInitializerService } from '@/infrastructure/services/spec/spec-initializer.service.js';
+import { SecurityPolicyValidator } from '@/infrastructure/services/security/security-policy-validator.js';
+import { SECURITY_POLICY_FILENAME } from '@/infrastructure/services/security/security-policy-file-reader.js';
 
 describe('SpecInitializerService', () => {
   let service: SpecInitializerService;
@@ -312,6 +315,100 @@ describe('SpecInitializerService', () => {
       expect(files).toContain('plan.yaml');
       expect(files).toContain('tasks.yaml');
       expect(files).toContain('feature.yaml');
+    });
+  });
+
+  describe('scaffoldSecurityPolicy', () => {
+    it('should create shep.security.yaml at repository root', async () => {
+      const filePath = await service.scaffoldSecurityPolicy(tempDir);
+
+      expect(existsSync(filePath)).toBe(true);
+      expect(filePath).toBe(join(tempDir, SECURITY_POLICY_FILENAME));
+    });
+
+    it('should generate valid YAML that parses without errors', async () => {
+      const filePath = await service.scaffoldSecurityPolicy(tempDir);
+      const content = readFileSync(filePath, 'utf-8');
+
+      const parsed = yaml.load(content, { schema: yaml.DEFAULT_SCHEMA });
+      expect(parsed).toBeDefined();
+      expect(typeof parsed).toBe('object');
+    });
+
+    it('should pass policy validation', async () => {
+      const filePath = await service.scaffoldSecurityPolicy(tempDir);
+      const content = readFileSync(filePath, 'utf-8');
+      const parsed = yaml.load(content, { schema: yaml.DEFAULT_SCHEMA }) as Record<string, unknown>;
+
+      const validator = new SecurityPolicyValidator();
+      const result = validator.validate(parsed);
+
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('should include mode field set to Advisory', async () => {
+      const filePath = await service.scaffoldSecurityPolicy(tempDir);
+      const content = readFileSync(filePath, 'utf-8');
+      const parsed = yaml.load(content, { schema: yaml.DEFAULT_SCHEMA }) as Record<string, unknown>;
+
+      expect(parsed.mode).toBe('Advisory');
+    });
+
+    it('should include all five action category dispositions', async () => {
+      const filePath = await service.scaffoldSecurityPolicy(tempDir);
+      const content = readFileSync(filePath, 'utf-8');
+      const parsed = yaml.load(content, { schema: yaml.DEFAULT_SCHEMA }) as Record<string, unknown>;
+
+      const dispositions = parsed.actionDispositions as {
+        category: string;
+        disposition: string;
+      }[];
+      expect(dispositions).toHaveLength(5);
+
+      const categories = dispositions.map((d) => d.category);
+      expect(categories).toContain('DependencyInstall');
+      expect(categories).toContain('PackageScriptExec');
+      expect(categories).toContain('CiWorkflowModify');
+      expect(categories).toContain('PublishRelease');
+      expect(categories).toContain('SandboxEscalation');
+    });
+
+    it('should include dependency rules', async () => {
+      const filePath = await service.scaffoldSecurityPolicy(tempDir);
+      const content = readFileSync(filePath, 'utf-8');
+      const parsed = yaml.load(content, { schema: yaml.DEFAULT_SCHEMA }) as Record<string, unknown>;
+
+      const rules = parsed.dependencyRules as Record<string, unknown>;
+      expect(rules).toBeDefined();
+      expect(rules.checkLockfileConsistency).toBe(true);
+      expect(rules.checkLifecycleScripts).toBe(true);
+      expect(rules.checkNonRegistrySource).toBe(true);
+      expect(typeof rules.enforceStrictVersionRanges).toBe('boolean');
+      expect(Array.isArray(rules.allowlist)).toBe(true);
+      expect(Array.isArray(rules.denylist)).toBe(true);
+    });
+
+    it('should include release rules', async () => {
+      const filePath = await service.scaffoldSecurityPolicy(tempDir);
+      const content = readFileSync(filePath, 'utf-8');
+      const parsed = yaml.load(content, { schema: yaml.DEFAULT_SCHEMA }) as Record<string, unknown>;
+
+      const rules = parsed.releaseRules as Record<string, unknown>;
+      expect(rules).toBeDefined();
+      expect(rules.requireCiOnlyPublishing).toBe(true);
+      expect(rules.requireProvenance).toBe(true);
+      expect(rules.checkWorkflowIntegrity).toBe(true);
+    });
+
+    it('should include YAML comments explaining sections', async () => {
+      const filePath = await service.scaffoldSecurityPolicy(tempDir);
+      const content = readFileSync(filePath, 'utf-8');
+
+      expect(content).toContain('# Security mode controls enforcement behavior');
+      expect(content).toContain('# Action dispositions control');
+      expect(content).toContain('# Dependency risk rules');
+      expect(content).toContain('# Release integrity rules');
     });
   });
 });

@@ -26,6 +26,7 @@ import "./feature-status.tsp";
 import "./tool.tsp";
 import "./notification-event.tsp";
 import "./repository.tsp";
+import "./security.tsp";
 import "./application.tsp";
 import "./pm-project.tsp";
 import "./work-item.tsp";

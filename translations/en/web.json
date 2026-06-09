@@ -17,7 +17,8 @@
       "homePage": "Home page",
       "layout": "Layout",
       "database": "Database",
-      "integrations": "Integrations"
+      "integrations": "Integrations",
+      "security": "Security"
     },
     "language": {
       "title": "Language",
@@ -241,6 +242,47 @@
       "swapPosition": "Swap FAB positions",
       "swapPositionDescription": "Move the Chat button to the left and the Create button to the right",
       "hint": "The two floating action buttons (Create and Chat) sit in the bottom corners of the control center. Enable this toggle to swap their positions."
+    },
+    "security": {
+      "title": "Supply Chain Security",
+      "sectionTitle": "Security",
+      "sectionDescription": "Policy-driven supply chain security enforcement",
+      "mode": "Security Mode",
+      "modeDescription": "Controls how security policy is enforced",
+      "modeDisabled": "Disabled",
+      "modeAdvisory": "Advisory",
+      "modeEnforce": "Enforce",
+      "policySource": "Policy Source",
+      "policySourceNone": "Settings only",
+      "lastEvaluation": "Last Evaluation",
+      "lastEvaluationNever": "Never",
+      "recentFindings": "Recent Findings",
+      "noFindings": "No findings",
+      "runEnforcement": "Run Enforcement",
+      "running": "Running...",
+      "severity": {
+        "Low": "Low",
+        "Medium": "Medium",
+        "High": "High",
+        "Critical": "Critical"
+      },
+      "hint": "Security mode controls how the policy engine handles violations. Advisory mode logs findings without blocking. Enforce mode blocks risky actions and fails builds.",
+      "links": {
+        "securitySpec": "Security spec"
+      },
+      "badge": {
+        "advisory": "Advisory",
+        "enforce": "Enforce",
+        "disabled": "Disabled"
+      },
+      "panel": {
+        "title": "Security",
+        "governance": "Governance",
+        "dependencies": "Dependencies",
+        "noFindings": "No security findings",
+        "findingsByCategory": "Findings by Severity",
+        "totalFindings": "{{count}} finding(s)"
+      }
     },
     "database": {
       "title": "Database",

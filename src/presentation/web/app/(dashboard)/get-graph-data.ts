@@ -232,13 +232,17 @@ export async function getGraphData(): Promise<{
     // Cluster use case not registered — skip silently
   }
 
-  const { workflow } = getSettings();
+  const { workflow, security, featureFlags } = getSettings();
+  // Master kill switch: when the supplyChainSecurity feature flag is off, skip
+  // passing securityMode so no feature card renders the SecurityBadge.
+  const supplyChainSecurityEnabled = featureFlags?.supplyChainSecurity ?? true;
   const { nodes, edges } = buildGraphNodes(repositories, featuresWithRuns, {
     enableEvidence: workflow.enableEvidence,
     commitEvidence: workflow.commitEvidence,
     ciWatchEnabled: workflow.ciWatchEnabled,
     repoGitInfo: repoGitInfoMap,
     repoGitStatus: repoGitStatusMap,
+    securityMode: supplyChainSecurityEnabled ? security?.mode : undefined,
     applications,
     clusters: clustersWithLinks.length > 0 ? clustersWithLinks : undefined,
   });

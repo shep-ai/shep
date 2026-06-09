@@ -35,6 +35,13 @@ function createFakeNodeHelpers(): INodeHelpers {
   };
 }
 
+vi.mock('@/infrastructure/services/settings.service.js', () => ({
+  getSettings: vi.fn().mockReturnValue({
+    agent: { type: 'claude-code' },
+    security: { mode: 'Advisory' },
+  }),
+}));
+
 import { readFileSync } from 'node:fs';
 import yaml from 'js-yaml';
 
@@ -133,7 +140,8 @@ describe('ApproveAgentRunUseCase with PrdApprovalPayload', () => {
       mockTimingRepo as any,
       createFakeWorktreePaths(),
       fakeNodeHelpers,
-      { create: vi.fn(), listByWorkItem: vi.fn().mockResolvedValue([]) } as any
+      { create: vi.fn(), listByWorkItem: vi.fn().mockResolvedValue([]) } as any,
+      { load: vi.fn().mockResolvedValue(null) } as any
     );
   });
 

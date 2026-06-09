@@ -32,6 +32,7 @@ import type { IActivityLogRepository } from '../../ports/output/repositories/act
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { IWorktreePathProvider } from '../../ports/output/services/worktree-path-provider.interface.js';
 import type { INodeHelpers } from '../../ports/output/services/node-helpers.interface.js';
+import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
 import { AgentRunStatus } from '../../../domain/generated/output.js';
 import type { ActivityEntry, PrdApprovalPayload } from '../../../domain/generated/output.js';
 import {
@@ -63,7 +64,9 @@ export class ApproveAgentRunUseCase {
     @inject('INodeHelpers')
     private readonly nodeHelpers: INodeHelpers,
     @inject('IActivityLogRepository')
-    private readonly activityLog: IActivityLogRepository
+    private readonly activityLog: IActivityLogRepository,
+    @inject('ISettingsRepository')
+    private readonly settingsRepository: ISettingsRepository
   ) {}
 
   async execute(
@@ -185,6 +188,7 @@ export class ApproveAgentRunUseCase {
         agentType: run.agentType,
         ...(run.modelId ? { model: run.modelId } : {}),
         ...(feature?.fast ? { fast: true } : {}),
+        securityMode: (await this.settingsRepository.load())?.security?.mode,
       }
     );
 

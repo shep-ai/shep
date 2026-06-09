@@ -1,0 +1,12 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-supply-chain-security[39m
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/security/governance-auditor.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/security/release-integrity-evaluator.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/infrastructure/services/external/github-repository.service.test.ts [2m([22m[2m32 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m3 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[32m49 passed[39m[22m[90m (49)[39m
+[2m   Start at [22m 21:02:59
+[2m   Duration [22m 144ms[2m (transform 153ms, setup 67ms, import 152ms, tests 24ms, environment 0ms)[22m
+

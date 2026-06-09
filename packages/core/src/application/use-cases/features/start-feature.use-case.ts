@@ -13,6 +13,7 @@ import type { IFeatureRepository } from '../../ports/output/repositories/feature
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
 import type { IWorktreeService } from '../../ports/output/services/worktree-service.interface.js';
+import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
 import { POST_IMPLEMENTATION } from '../../../domain/lifecycle-gates.js';
 
 export interface StartFeatureResult {
@@ -30,7 +31,9 @@ export class StartFeatureUseCase {
     @inject('IFeatureAgentProcessService')
     private readonly processService: IFeatureAgentProcessService,
     @inject('IWorktreeService')
-    private readonly worktreeService: IWorktreeService
+    private readonly worktreeService: IWorktreeService,
+    @inject('ISettingsRepository')
+    private readonly settingsRepository: ISettingsRepository
   ) {}
 
   async execute(featureId: string): Promise<StartFeatureResult> {
@@ -132,6 +135,7 @@ export class StartFeatureUseCase {
           agentType: agentRun.agentType,
           ...(resolved.fast ? { fast: true } : {}),
           ...(agentRun.modelId ? { model: agentRun.modelId } : {}),
+          securityMode: (await this.settingsRepository.load())?.security?.mode,
         }
       );
     }

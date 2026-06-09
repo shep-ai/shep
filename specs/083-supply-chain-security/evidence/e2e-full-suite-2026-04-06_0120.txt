@@ -1,0 +1,366 @@
+=== Supply Chain Security — Full Test Evidence ===
+Date: 2026-04-06 01:20:06 EEST
+Branch: feat/supply-chain-security
+Commit: 41ce70872
+
+========================================
+UNIT TESTS: 5,637 passed (398 files)
+INTEGRATION TESTS: 624 passed (53 files)
+E2E CLI TESTS: 82 passed, 1 skipped (13 files)
+BUILD: SUCCESS
+========================================
+
+--- SECURITY-SPECIFIC TESTS (233 passing) ---
+
+ ✓ |node| tests/integration/infrastructure/repositories/sqlite-security-event.repository.test.ts > SQLiteSecurityEventRepository > save() > should insert a security event 73ms
+ ✓ |node| tests/integration/infrastructure/repositories/sqlite-security-event.repository.test.ts > SQLiteSecurityEventRepository > save() > should handle optional fields as NULL 83ms
+ ✓ |node| tests/integration/infrastructure/repositories/sqlite-security-event.repository.test.ts > SQLiteSecurityEventRepository > findByRepository() > should return events for the given repository path 57ms
+ ✓ |node| tests/integration/infrastructure/repositories/sqlite-security-event.repository.test.ts > SQLiteSecurityEventRepository > findByRepository() > should order results by created_at DESC 54ms
+ ✓ |node| tests/integration/infrastructure/repositories/sqlite-security-event.repository.test.ts > SQLiteSecurityEventRepository > findByRepository() > should support limit option 53ms
+ ✓ |node| tests/integration/infrastructure/repositories/sqlite-security-event.repository.test.ts > SQLiteSecurityEventRepository > findByRepository() > should support severity filter 47ms
+ ✓ |node| tests/integration/infrastructure/repositories/sqlite-security-event.repository.test.ts > SQLiteSecurityEventRepository > findByRepository() > should return empty array when no events match 55ms
+ ✓ |node| tests/integration/infrastructure/repositories/sqlite-security-event.repository.test.ts > SQLiteSecurityEventRepository > findByFeature() > should return events for the given feature ID 53ms
+ ✓ |node| tests/integration/infrastructure/repositories/sqlite-security-event.repository.test.ts > SQLiteSecurityEventRepository > deleteOlderThan() > should remove events older than the given date 60ms
+ ✓ |node| tests/integration/infrastructure/repositories/sqlite-security-event.repository.test.ts > SQLiteSecurityEventRepository > deleteOlderThan() > should return 0 when no events are older than the date 52ms
+ ✓ |node| tests/integration/infrastructure/repositories/sqlite-security-event.repository.test.ts > SQLiteSecurityEventRepository > count() > should return the count of events for a repository 53ms
+ ✓ |node| tests/integration/infrastructure/repositories/sqlite-security-event.repository.test.ts > SQLiteSecurityEventRepository > SQL injection prevention > should safely handle repository paths with special characters 50ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-053.test.ts > Migration 053 — security settings columns > should add security_mode column to settings table 82ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-053.test.ts > Migration 053 — security settings columns > should add security_last_evaluation_at column to settings table 77ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-053.test.ts > Migration 053 — security settings columns > should add security_policy_source column to settings table 76ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-053.test.ts > Migration 053 — security settings columns > should have TEXT type with NOT NULL and default Advisory for security_mode 62ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-053.test.ts > Migration 053 — security settings columns > should have nullable TEXT type for security_last_evaluation_at 83ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-053.test.ts > Migration 053 — security settings columns > should have nullable TEXT type for security_policy_source 110ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-053.test.ts > Migration 053 — security settings columns > should be idempotent (running migration twice does not throw) 182ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-053.test.ts > Migration 053 — security settings columns > should default security_mode to Advisory for new rows 63ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-053.test.ts > Migration 053 — security settings columns > should allow storing different security mode values 70ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-054.test.ts > Migration 054 — security_events table > should create security_events table 81ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-054.test.ts > Migration 054 — security_events table > should have all required columns with correct types 59ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-054.test.ts > Migration 054 — security_events table > should have index on repository_path and created_at 111ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-054.test.ts > Migration 054 — security_events table > should have index on feature_id 54ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-054.test.ts > Migration 054 — security_events table > should be idempotent (running migration twice does not throw) 217ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-054.test.ts > Migration 054 — security_events table > should allow inserting and querying security events 86ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-054.test.ts > Migration 054 — security_events table > should allow nullable fields to be NULL 58ms
+ ✓ |node| tests/integration/infrastructure/persistence/sqlite/migration-054.test.ts > Migration 054 — security_events table > should query by repository_path and created_at using the composite index 75ms
+ ✓ |node| tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts > SpecInitializerService > scaffoldSecurityPolicy > should create shep.security.yaml at repository root 2ms
+ ✓ |node| tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts > SpecInitializerService > scaffoldSecurityPolicy > should generate valid YAML that parses without errors 5ms
+ ✓ |node| tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts > SpecInitializerService > scaffoldSecurityPolicy > should pass policy validation 3ms
+ ✓ |node| tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts > SpecInitializerService > scaffoldSecurityPolicy > should include mode field set to Advisory 2ms
+ ✓ |node| tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts > SpecInitializerService > scaffoldSecurityPolicy > should include all five action category dispositions 2ms
+ ✓ |node| tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts > SpecInitializerService > scaffoldSecurityPolicy > should include dependency rules 4ms
+ ✓ |node| tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts > SpecInitializerService > scaffoldSecurityPolicy > should include release rules 2ms
+ ✓ |node| tests/unit/infrastructure/services/spec/spec-initializer.service.test.ts > SpecInitializerService > scaffoldSecurityPolicy > should include YAML comments explaining sections 3ms
+ ✓ |node| tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should pass securityMode from settings to spawn 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > lockfile consistency > should return zero findings when lockfile is consistent with package.json 4ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > lockfile consistency > should report High severity finding when lockfile is missing 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > lockfile consistency > should skip lockfile check when checkLockfileConsistency is false 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > non-registry source detection > should flag git: dependency with Medium severity 3ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > non-registry source detection > should flag file: dependency with Medium severity 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > non-registry source detection > should flag link: dependency with Medium severity 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > non-registry source detection > should not flag registry dependencies 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > non-registry source detection > should skip source check when checkNonRegistrySource is false 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > lifecycle script detection > should flag package with postinstall script 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > lifecycle script detection > should flag package with preinstall script 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > lifecycle script detection > should not flag packages without lifecycle scripts 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > lifecycle script detection > should skip lifecycle script check when checkLifecycleScripts is false 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > denylist enforcement > should flag denylisted package with Critical severity 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > denylist enforcement > should not flag packages not on denylist 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > allowlist enforcement > should flag package not on allowlist with High severity 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > allowlist enforcement > should not flag packages when allowlist is empty (allow all) 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > version-range strictness > should flag wildcard (*) version when strict ranges enforced 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > version-range strictness > should flag caret (^) version when strict ranges enforced 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > version-range strictness > should flag tilde (~) version when strict ranges enforced 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > version-range strictness > should flag >= or > version when strict ranges enforced 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > version-range strictness > should not flag exact version when strict ranges enforced 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > version-range strictness > should not check version ranges when enforceStrictVersionRanges is false 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > multiple dependency groups > should check both dependencies and devDependencies 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts > DependencyRiskEvaluator > missing package.json > should return empty findings when no package.json exists 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/release-integrity-evaluator.test.ts > ReleaseIntegrityEvaluator > valid CI workflow > should return overall pass when all checks pass 6ms
+ ✓ |node| tests/unit/infrastructure/services/security/release-integrity-evaluator.test.ts > ReleaseIntegrityEvaluator > missing workflow > should report Critical finding when no CI workflow exists 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/release-integrity-evaluator.test.ts > ReleaseIntegrityEvaluator > hardcoded tokens > should flag hardcoded token in workflow with Critical severity 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/release-integrity-evaluator.test.ts > ReleaseIntegrityEvaluator > hardcoded tokens > should pass when tokens use secrets.* references 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/release-integrity-evaluator.test.ts > ReleaseIntegrityEvaluator > provenance configuration > should flag missing --provenance in publish steps with Medium severity 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/release-integrity-evaluator.test.ts > ReleaseIntegrityEvaluator > provenance configuration > should pass when --provenance flag is present in publish steps 16ms
+ ✓ |node| tests/unit/infrastructure/services/security/release-integrity-evaluator.test.ts > ReleaseIntegrityEvaluator > provenance configuration > should skip provenance check when requireProvenance is false 4ms
+ ✓ |node| tests/unit/infrastructure/services/security/release-integrity-evaluator.test.ts > ReleaseIntegrityEvaluator > workflow integrity > should pass when semantic-release is configured properly 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/release-integrity-evaluator.test.ts > ReleaseIntegrityEvaluator > workflow integrity > should skip workflow integrity check when disabled 3ms
+ ✓ |node| tests/unit/infrastructure/services/security/release-integrity-evaluator.test.ts > ReleaseIntegrityEvaluator > all rules disabled > should return pass with no checks when all rules are disabled 3ms
+ ✓ |node| tests/unit/infrastructure/services/security/release-integrity-evaluator.test.ts > ReleaseIntegrityEvaluator > multiple workflow files > should check all YAML files in .github/workflows/ 3ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent-worker.test.ts > parseWorkerArgs > should parse --security-mode argument 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent-worker.test.ts > parseWorkerArgs > should parse --security-dispositions argument as JSON 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent-worker.test.ts > parseWorkerArgs > should default security fields to undefined when not provided 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent-worker.test.ts > parseWorkerArgs > should ignore invalid security-mode values 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent-worker.test.ts > parseWorkerArgs > should handle malformed security-dispositions JSON gracefully 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent-worker.test.ts > runWorker > should pass securityMode and securityActionDispositions to graph invoke 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent-worker.test.ts > runWorker > should not include security fields in graph invoke when not provided 2ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts > Settings Mapper > toDatabase() - security config > should map security.mode to security_mode column 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts > Settings Mapper > toDatabase() - security config > should map security.lastEvaluationAt to security_last_evaluation_at column 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts > Settings Mapper > toDatabase() - security config > should map security.policySource to security_policy_source column 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts > Settings Mapper > toDatabase() - security config > should default security_mode to Advisory when security is undefined 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts > Settings Mapper > toDatabase() - security config > should set nullable columns to null when optional fields are missing 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts > Settings Mapper > fromDatabase() - security config > should reconstruct security.mode from security_mode column 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts > Settings Mapper > fromDatabase() - security config > should reconstruct security.lastEvaluationAt from non-null column 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts > Settings Mapper > fromDatabase() - security config > should reconstruct security.policySource from non-null column 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts > Settings Mapper > fromDatabase() - security config > should omit lastEvaluationAt when column is null 2ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts > Settings Mapper > fromDatabase() - security config > should omit policySource when column is null 5ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts > Settings Mapper > fromDatabase() - security config > should default mode to Advisory when security_mode is null 2ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts > Settings Mapper > round-trip - security config > should preserve full security config through toDatabase → fromDatabase 12ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts > Settings Mapper > round-trip - security config > should preserve minimal security config (mode only) through round-trip 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy.service.test.ts > SecurityPolicyService > evaluatePolicy() > should return Advisory defaults when no policy file exists 3ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy.service.test.ts > SecurityPolicyService > evaluatePolicy() > should use policy file mode when present 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy.service.test.ts > SecurityPolicyService > evaluatePolicy() > should merge action dispositions from policy file 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy.service.test.ts > SecurityPolicyService > evaluatePolicy() > should not allow repo policy to weaken a stricter global setting 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy.service.test.ts > SecurityPolicyService > evaluatePolicy() > should throw when policy file has validation errors 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy.service.test.ts > SecurityPolicyService > evaluatePolicy() > should produce deterministic output for same inputs (NFR-2) 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy.service.test.ts > SecurityPolicyService > getEffectivePolicy() > should cache the result for the same repository path 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy.service.test.ts > SecurityPolicyService > getEffectivePolicy() > should compute separately for different repository paths 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy.service.test.ts > SecurityPolicyService > getEffectivePolicy() > should return same result as evaluatePolicy for first call 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy.service.test.ts > SecurityPolicyService > validatePolicyFile() > should return valid for a valid policy file 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy.service.test.ts > SecurityPolicyService > validatePolicyFile() > should return errors for an invalid policy file 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy.service.test.ts > SecurityPolicyService > validatePolicyFile() > should return valid with empty errors when file does not exist 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy.service.test.ts > SecurityPolicyService > getActionDisposition() > should return the correct disposition for a matched category 6ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy.service.test.ts > SecurityPolicyService > getActionDisposition() > should return Allowed for categories not in the policy 0ms
+ ✓ |node| tests/unit/domain/factories/settings-defaults.factory.test.ts > createDefaultSettings > SecurityConfig defaults > should have security field defined 0ms
+ ✓ |node| tests/unit/domain/factories/settings-defaults.factory.test.ts > createDefaultSettings > SecurityConfig defaults > should default security.mode to Advisory 0ms
+ ✓ |node| tests/unit/domain/factories/settings-defaults.factory.test.ts > createDefaultSettings > SecurityConfig defaults > should not set optional security fields 0ms
+ ✓ |node| tests/unit/domain/factories/settings-defaults.factory.test.ts > createDefaultSettings > SecurityConfig defaults > should match TypeSpec model defaults 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-file-reader.test.ts > SecurityPolicyFileReader > SECURITY_POLICY_FILENAME > should be shep.security.yaml 3ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-file-reader.test.ts > SecurityPolicyFileReader > read() > should return null when file does not exist 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-file-reader.test.ts > SecurityPolicyFileReader > read() > should parse valid YAML and return the object 7ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-file-reader.test.ts > SecurityPolicyFileReader > read() > should throw with actionable message on malformed YAML 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-file-reader.test.ts > SecurityPolicyFileReader > read() > should handle empty YAML file by returning empty object 3ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-file-reader.test.ts > SecurityPolicyFileReader > read() > should handle YAML file with only comments 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-file-reader.test.ts > SecurityPolicyFileReader > read() > should use DEFAULT_SCHEMA to prevent code execution 5ms
+ ✓ |node| tests/unit/application/use-cases/security/enforce-security.use-case.test.ts > EnforceSecurityUseCase > should return empty pass result when mode is Disabled 5ms
+ ✓ |node| tests/unit/application/use-cases/security/enforce-security.use-case.test.ts > EnforceSecurityUseCase > should return pass status with findings in Advisory mode 2ms
+ ✓ |node| tests/unit/application/use-cases/security/enforce-security.use-case.test.ts > EnforceSecurityUseCase > should return fail status with findings in Enforce mode 0ms
+ ✓ |node| tests/unit/application/use-cases/security/enforce-security.use-case.test.ts > EnforceSecurityUseCase > should pass in Enforce mode when no findings exist 1ms
+ ✓ |node| tests/unit/application/use-cases/security/enforce-security.use-case.test.ts > EnforceSecurityUseCase > should persist security events for dependency findings 0ms
+ ✓ |node| tests/unit/application/use-cases/security/enforce-security.use-case.test.ts > EnforceSecurityUseCase > should persist security events for failed release checks 1ms
+ ✓ |node| tests/unit/application/use-cases/security/enforce-security.use-case.test.ts > EnforceSecurityUseCase > should update settings with evaluation timestamp 0ms
+ ✓ |node| tests/unit/application/use-cases/security/enforce-security.use-case.test.ts > EnforceSecurityUseCase > should include governance findings in result 1ms
+ ✓ |node| tests/unit/application/use-cases/security/enforce-security.use-case.test.ts > EnforceSecurityUseCase > should not cause overall failure from governance findings in Enforce mode 1ms
+ ✓ |node| tests/unit/application/use-cases/security/enforce-security.use-case.test.ts > EnforceSecurityUseCase > should persist governance findings as security events 1ms
+ ✓ |node| tests/unit/application/use-cases/security/enforce-security.use-case.test.ts > EnforceSecurityUseCase > should return empty governance findings when git remote fails 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > toDatabase() > should map id correctly 5ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > toDatabase() > should map repositoryPath to repository_path 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > toDatabase() > should map featureId to feature_id 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > toDatabase() > should map featureId to null when absent 1ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > toDatabase() > should map enums as string values 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > toDatabase() > should map Date to ISO string 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > toDatabase() > should map optional fields to null when absent 1ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > fromDatabase() > should reconstruct id 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > fromDatabase() > should reconstruct repositoryPath from repository_path 1ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > fromDatabase() > should type-cast severity enum 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > fromDatabase() > should convert created_at ISO string to Date 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > fromDatabase() > should exclude optional fields when null 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > fromDatabase() > should include optional fields when present 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > round-trip > should preserve all values through toDatabase -> fromDatabase 0ms
+ ✓ |node| tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts > SecurityEvent Mapper > round-trip > should preserve values when optional fields are absent 0ms
+ ✓ |node| tests/unit/application/use-cases/features/resume-feature.use-case.test.ts > ResumeFeatureUseCase > should pass securityMode from settings to spawn 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > classifyNodeAction > should return null for read-only nodes (requirements, research, plan, analyze) 1ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > classifyNodeAction > should classify implement as PackageScriptExec 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > classifyNodeAction > should classify fast-implement as PackageScriptExec 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > classifyNodeAction > should classify merge as CiWorkflowModify 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > classifyNodeAction > should classify ci-fix as CiWorkflowModify 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > classifyNodeAction > should classify evidence as PackageScriptExec 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > classifyNodeAction > should return null for unknown node names 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > checkSecurityDisposition > should return "skip" when securityMode is Disabled 1ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > checkSecurityDisposition > should return "skip" for read-only nodes regardless of mode 1ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > checkSecurityDisposition > should return "allow" when disposition is Allowed 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > checkSecurityDisposition > should return "deny" when disposition is Denied in Enforce mode 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > checkSecurityDisposition > should return "warn" when disposition is Denied in Advisory mode 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > checkSecurityDisposition > should return "approval_required" when disposition is ApprovalRequired in Enforce mode 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > checkSecurityDisposition > should return "warn" when disposition is ApprovalRequired in Advisory mode 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > checkSecurityDisposition > should return "allow" when no disposition is set for the category 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts > checkSecurityDisposition > should handle ci-fix node mapping to CiWorkflowModify 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/governance-auditor.test.ts > GitHubRepositoryService.auditRepositoryGovernance > should return no findings when branch protection is enabled and CODEOWNERS exists 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/governance-auditor.test.ts > GitHubRepositoryService.auditRepositoryGovernance > should report branch protection gap when API returns 404 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/governance-auditor.test.ts > GitHubRepositoryService.auditRepositoryGovernance > should report CODEOWNERS missing when file not found 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/governance-auditor.test.ts > GitHubRepositoryService.auditRepositoryGovernance > should return Unknown severity finding on auth error instead of crashing 1ms
+ ✓ |node| tests/unit/infrastructure/services/security/governance-auditor.test.ts > GitHubRepositoryService.auditRepositoryGovernance > should use custom default branch when provided 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/governance-auditor.test.ts > GitHubRepositoryService.auditRepositoryGovernance > should handle ENOENT (gh not installed) as Unknown finding 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > SecurityMode enum > should have Disabled, Advisory, and Enforce values 2ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > SecurityMode enum > should have exactly three values 1ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > SecurityActionCategory enum > should have all five action categories from FR-7 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > SecurityActionCategory enum > should have exactly five values 1ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > SecurityActionDisposition enum > should have Allowed, Denied, and ApprovalRequired values 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > SecurityActionDisposition enum > should have exactly three values 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > SecuritySeverity enum > should have Low, Medium, High, and Critical values 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > SecuritySeverity enum > should have exactly four values 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > DependencyRiskType enum > should have all risk type values 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > DependencyRiskType enum > should have exactly six values 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > ReleaseIntegrityCheckType enum > should have all check type values 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > ReleaseIntegrityCheckType enum > should have exactly four values 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > SecurityEvent type shape > should be constructible with required and optional fields 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > SecurityEvent type shape > should accept all optional fields 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > SecurityPolicy type shape > should be constructible with all required fields 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > DependencyFinding type shape > should be constructible with required and optional fields 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > ReleaseIntegrityResult type shape > should aggregate check results with overall pass/fail 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > EffectivePolicySnapshot type shape > should contain resolved mode, source, timestamp, and dispositions 1ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > SecurityConfig on Settings > should be an optional field on Settings 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > SecurityConfig on Settings > should have mode, lastEvaluationAt, and policySource fields 0ms
+ ✓ |node| tests/unit/domain/generated/security-types.test.ts > Security Domain Types > SecurityConfig on Settings > should allow optional fields to be omitted 0ms
+ ✓ |node| tests/unit/application/use-cases/security/get-security-state.use-case.test.ts > GetSecurityStateUseCase > should return empty events array and null highest finding when no events exist 4ms
+ ✓ |node| tests/unit/application/use-cases/security/get-security-state.use-case.test.ts > GetSecurityStateUseCase > should return recent events with correct limit 1ms
+ ✓ |node| tests/unit/application/use-cases/security/get-security-state.use-case.test.ts > GetSecurityStateUseCase > should return highest severity finding from recent events 0ms
+ ✓ |node| tests/unit/application/use-cases/security/get-security-state.use-case.test.ts > GetSecurityStateUseCase > should return default mode when settings have no security config 1ms
+ ✓ |node| tests/unit/application/use-cases/security/evaluate-security-policy.use-case.test.ts > EvaluateSecurityPolicyUseCase > should delegate evaluation to policy service 5ms
+ ✓ |node| tests/unit/application/use-cases/security/evaluate-security-policy.use-case.test.ts > EvaluateSecurityPolicyUseCase > should update settings with evaluation timestamp 1ms
+ ✓ |node| tests/unit/application/use-cases/security/evaluate-security-policy.use-case.test.ts > EvaluateSecurityPolicyUseCase > should still return policy even if settings update fails 1ms
+ ✓ |node| tests/unit/application/use-cases/security/record-security-event.use-case.test.ts > RecordSecurityEventUseCase > should save event with generated ID when no ID provided 4ms
+ ✓ |node| tests/unit/application/use-cases/security/record-security-event.use-case.test.ts > RecordSecurityEventUseCase > should preserve existing ID when provided 1ms
+ ✓ |node| tests/unit/application/use-cases/security/record-security-event.use-case.test.ts > RecordSecurityEventUseCase > should trigger retention cleanup after save 1ms
+ ✓ |node| tests/unit/infrastructure/services/agents/executors/security-constraint-validator.test.ts > validateSecurityConstraints > returns undefined when no constraints are provided 1ms
+ ✓ |node| tests/unit/infrastructure/services/agents/executors/security-constraint-validator.test.ts > validateSecurityConstraints > returns undefined when mode is Disabled 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/executors/security-constraint-validator.test.ts > validateSecurityConstraints > returns undefined when sandbox level is permissive (no conflict) 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/executors/security-constraint-validator.test.ts > validateSecurityConstraints > returns undefined when executor supports strict sandbox 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/executors/security-constraint-validator.test.ts > validateSecurityConstraints > throws SecurityViolationError in Enforce mode with incompatible sandbox 1ms
+ ✓ |node| tests/unit/infrastructure/services/agents/executors/security-constraint-validator.test.ts > validateSecurityConstraints > returns warning string in Advisory mode with incompatible sandbox 0ms
+ ✓ |node| tests/unit/infrastructure/services/agents/executors/security-constraint-validator.test.ts > validateSecurityConstraints > does not throw in Advisory mode with incompatible sandbox 1ms
+ ✓ |node| tests/unit/domain/errors/security-violation.error.test.ts > SecurityViolationError > extends Error with correct name 4ms
+ ✓ |node| tests/unit/domain/errors/security-violation.error.test.ts > SecurityViolationError > stores rule, category, and remediation fields 0ms
+ ✓ |node| tests/unit/domain/errors/security-violation.error.test.ts > SecurityViolationError > formats message with rule description 0ms
+ ✓ |node| tests/unit/domain/errors/security-violation.error.test.ts > SecurityViolationError > maintains proper prototype chain for instanceof checks 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-validator.test.ts > SecurityPolicyValidator > validate() > should return valid with empty errors for a valid policy 2ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-validator.test.ts > SecurityPolicyValidator > validate() > should return valid for a minimal policy with only mode 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-validator.test.ts > SecurityPolicyValidator > validate() > should produce error referencing mode for invalid SecurityMode value 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-validator.test.ts > SecurityPolicyValidator > validate() > should produce error for invalid action category 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-validator.test.ts > SecurityPolicyValidator > validate() > should produce error for invalid action disposition 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-validator.test.ts > SecurityPolicyValidator > validate() > should produce error for contradictory action dispositions (same category, different disposition) 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-validator.test.ts > SecurityPolicyValidator > validate() > should allow same category with same disposition (not contradictory) 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-validator.test.ts > SecurityPolicyValidator > validate() > should reject excessive number of action dispositions (>100) 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-validator.test.ts > SecurityPolicyValidator > validate() > should reject excessive denylist length (>100) 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-validator.test.ts > SecurityPolicyValidator > validate() > should validate dependencyRules boolean fields 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-validator.test.ts > SecurityPolicyValidator > validate() > should validate releaseRules boolean fields 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-validator.test.ts > SecurityPolicyValidator > validate() > should produce error when actionDispositions is not an array 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-validator.test.ts > SecurityPolicyValidator > validate() > should produce error when dependencyRules is not an object 0ms
+ ✓ |node| tests/unit/infrastructure/services/security/security-policy-validator.test.ts > SecurityPolicyValidator > validate() > should produce error when releaseRules is not an object 0ms
+ ✓ |node| tests/unit/presentation/cli/commands/security.command.test.ts > createSecurityCommand > should create a Commander command named security 4ms
+ ✓ |node| tests/unit/presentation/cli/commands/security.command.test.ts > createSecurityCommand > should have an enforce subcommand 1ms
+ ✓ |node| tests/unit/presentation/cli/commands/security.command.test.ts > createSecurityCommand > should have --repo and --output options on enforce 0ms
+ ✓ |node| tests/unit/presentation/cli/commands/security.command.test.ts > createSecurityCommand > should default --output to table 1ms
+ ✓ |node| tests/unit/presentation/cli/commands/security.command.test.ts > createSecurityCommand > should default --repo to cwd 1ms
+ ✓ |web| tests/unit/presentation/web/api/directory-list.test.ts > GET /api/directory/list > path validation and security > returns 400 for relative paths (NFR-1) 1ms
+ ✓ |web| tests/unit/presentation/web/api/directory-list.test.ts > GET /api/directory/list > path validation and security > returns 400 for dot-relative paths 1ms
+ ✓ |web| tests/unit/presentation/web/api/directory-list.test.ts > GET /api/directory/list > path validation and security > resolves path with ../ sequences via path.resolve() (NFR-2) 2ms
+ ✓ |web| tests/unit/presentation/web/api/directory-list.test.ts > GET /api/directory/list > path validation and security > returns 404 for non-existent paths 1ms
+ ✓ |web| tests/unit/presentation/web/api/directory-list.test.ts > GET /api/directory/list > path validation and security > returns 400 when path points to a file, not a directory 1ms
+
+--- E2E CLI TESTS ---
+
+> @shepai/cli@1.171.0 test:e2e:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-supply-chain-security
+> pnpm build:cli && cross-env SHEP_E2E_USE_DIST=1 vitest run tests/e2e/cli -- --reporter=verbose
+
+
+> @shepai/cli@1.171.0 build:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-supply-chain-security
+> tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths && shx mkdir -p dist/packages/core/src/infrastructure/services/tool-installer && shx rm -rf dist/packages/core/src/infrastructure/services/tool-installer/tools && shx cp -r packages/core/src/infrastructure/services/tool-installer/tools dist/packages/core/src/infrastructure/services/tool-installer/tools && shx rm -rf dist/translations && shx cp -r translations dist/translations
+
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-supply-chain-security
+
+ ✓ |node| tests/e2e/cli/help.test.ts (5 tests) 7726ms
+     ✓ should display help with --help flag  1093ms
+       ✓ exits 0 and does not print help  2383ms
+     ✓ should display help with -h short flag  1358ms
+     ✓ should treat help as unknown subcommand  1385ms
+     ✓ should display version command help with version --help  1502ms
+ ✓ |node| tests/e2e/cli/settings-show.test.ts (7 tests) 11037ms
+     ✓ should display settings as a formatted table with all sections and database metadata  1080ms
+     ✓ should output valid JSON with all settings sections  1650ms
+     ✓ should output valid YAML with proper indentation  1576ms
+       ✓ should work with -o json  1282ms
+       ✓ should work with -o yaml  1888ms
+       ✓ should work with -o table  2142ms
+     ✓ should handle invalid output format  1414ms
+ ✓ |node| tests/e2e/cli/install-command.e2e.test.ts (12 tests) 11073ms
+     ✓ should display help text  1077ms
+       ✓ should print installation instructions for vscode  1742ms
+       ✓ should print installation instructions for cursor  1895ms
+       ✓ should print installation instructions for windsurf  1680ms
+       ✓ should print installation instructions for zed  1829ms
+       ✓ should print installation instructions for antigravity  1851ms
+       ✓ should print installation instructions for cursor-cli with curl  1551ms
+       ✓ should print installation instructions for claude-code with curl  1509ms
+     ✓ should show tool listing when no argument given  1330ms
+       ✓ should fail for unknown tool with friendly message and suggestions  1761ms
+       ✓ should handle tool with special characters gracefully  2124ms
+       ✓ should provide helpful output for empty string tool name  1527ms
+ ✓ |node| tests/e2e/cli/settings-init.test.ts (5 tests) 11390ms
+     ✓ should reinitialize settings with --force and display success message  1243ms
+     ✓ should reset settings to defaults after init  4528ms
+     ✓ should not silently modify settings without --force  1779ms
+     ✓ should work with -f short flag  2215ms
+     ✓ should display help for init command  1624ms
+ ↓ |node| tests/e2e/cli/script-runner.test.ts (1 test | 1 skipped)
+ ✓ |node| tests/e2e/cli/version.test.ts (3 tests) 4893ms
+     ✓ should display full version info with name, description, Node, and platform  1955ms
+     ✓ should display version matching package.json with --version flag  1803ms
+     ✓ should display version number with -v short flag  1133ms
+ ✓ |node| tests/e2e/cli/settings-initialization.test.ts (6 tests) 13754ms
+     ✓ should create non-empty database file on first run  1093ms
+     ✓ should load existing settings without re-initializing on second run  3421ms
+     ✓ should handle corrupted database gracefully  1165ms
+     ✓ should handle missing database with existing directory  1857ms
+     ✓ should handle multiple concurrent CLI invocations safely  5005ms
+     ✓ should use SHEP_HOME environment variable for settings location  1211ms
+ ✓ |node| tests/e2e/cli/errors.test.ts (2 tests) 2522ms
+     ✓ should show error and exit non-zero for unknown command  1407ms
+     ✓ should show error for unknown option  1113ms
+ ✓ |node| tests/e2e/cli/settings-agent.test.ts (7 tests) 13786ms
+       ✓ should display help for agent command  1149ms
+       ✓ should configure agent non-interactively  1689ms
+       ✓ should persist agent config to settings  2822ms
+       ✓ should configure token-based auth  1891ms
+       ✓ should persist token to settings  3722ms
+       ✓ should fail when --agent provided without --auth  1391ms
+       ✓ should fail for unsupported agent type  1121ms
+ ✓ |node| tests/e2e/cli/build-integrity.test.ts (5 tests) 3471ms
+       ✓ should not have module resolution errors when running version  1448ms
+       ✓ should not have module resolution errors when running help  1079ms
+       ✓ should not have module resolution errors when running settings show  713ms
+ ✓ |node| tests/e2e/cli/feat.test.ts (11 tests) 25759ms
+       ✓ should create a feature and display its details  2739ms
+       ✓ should create a git worktree for the feature branch  2779ms
+       ✓ should initialize spec directory with fast-mode YAML files by default  3282ms
+       ✓ should initialize spec directory with all YAML files when --no-fast is used  2974ms
+       ✓ should auto-resolve duplicate feature slugs with suffix  3293ms
+       ✓ should show error when no description is provided  1103ms
+       ✓ should show message when no features exist  1047ms
+       ✓ should list created features  2698ms
+       ✓ should filter features by repository path  1836ms
+       ✓ should display feature details  2608ms
+       ✓ should show error for nonexistent feature ID  1397ms
+ ✓ |node| tests/e2e/cli/ui.test.ts (3 tests) 26534ms
+       ✓ should start on port 4050 and serve the /version page  13898ms
+       ✓ should start on the specified port  6400ms
+       ✓ should auto-increment to next port when default port is occupied  6235ms
+ ✓ |node| tests/e2e/cli/daemon-lifecycle.test.ts (16 tests) 37306ms
+       ✓ shep stop exits 0 and prints a "no daemon" message  1121ms
+       ✓ shep status exits 0 and prints a "not running" message with a shep-start hint  1746ms
+       ✓ exits 0 and prints a localhost URL  2015ms
+       ✓ shep status exits 0 and displays PID and port  1422ms
+       ✓ shep start is idempotent — exits 0 and prints "already running"  1611ms
+       ✓ shep stop exits 0 and deletes daemon.json  6949ms
+       ✓ shep status shows "not running" after stop  550ms
+         ✓ exits 0, stops the old daemon, and invokes startDaemon  6091ms
+         ✓ exits 0 and prints "Daemon was not running" message  1005ms
+         ✓ still invokes startDaemon when daemon was not running  1579ms
+         ✓ stops the daemon before upgrade, restarts it after, and exits 0  6619ms
+         ✓ stops the old daemon, attempts restart, and prints "daemon restored" message  6023ms
+         ✓ completes upgrade without stopping or restarting the daemon  490ms
+
+ Test Files  12 passed | 1 skipped (13)
+      Tests  82 passed | 1 skipped (83)
+   Start at  01:19:13
+   Duration  37.50s (transform 533ms, setup 459ms, import 876ms, tests 169.25s, environment 1ms)
+
+
+--- BUILD OUTPUT ---
+
+> @shepai/cli@1.171.0 build /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-supply-chain-security
+> pnpm build:cli
+
+
+> @shepai/cli@1.171.0 build:cli /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-supply-chain-security
+> tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths && shx mkdir -p dist/packages/core/src/infrastructure/services/tool-installer && shx rm -rf dist/packages/core/src/infrastructure/services/tool-installer/tools && shx cp -r packages/core/src/infrastructure/services/tool-installer/tools dist/packages/core/src/infrastructure/services/tool-installer/tools && shx rm -rf dist/translations && shx cp -r translations dist/translations
+

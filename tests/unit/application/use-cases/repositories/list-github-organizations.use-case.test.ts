@@ -44,6 +44,7 @@ describe('ListGitHubOrganizationsUseCase', () => {
       forkRepository: vi
         .fn()
         .mockResolvedValue({ nameWithOwner: 'octocat/my-project', alreadyExisted: false }),
+      auditRepositoryGovernance: vi.fn().mockResolvedValue([]),
     };
 
     useCase = new ListGitHubOrganizationsUseCase(mockGitHubService);

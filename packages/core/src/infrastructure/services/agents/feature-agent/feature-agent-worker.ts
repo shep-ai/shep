@@ -26,7 +26,14 @@ import type { IAgentExecutorFactory } from '@/application/ports/output/agents/ag
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { IGitForkService } from '@/application/ports/output/services/git-fork-service.interface.js';
-import { AgentRunStatus, SdlcLifecycle, type AgentType } from '@/domain/generated/output.js';
+import {
+  AgentRunStatus,
+  SdlcLifecycle,
+  SecurityMode,
+  type AgentType,
+  type SecurityActionCategory,
+  type SecurityActionDisposition,
+} from '@/domain/generated/output.js';
 import { initializeSettings } from '@/infrastructure/services/settings.service.js';
 import { InitializeSettingsUseCase } from '@/application/use-cases/settings/initialize-settings.use-case.js';
 import { setHeartbeatContext } from './heartbeat.js';
@@ -66,6 +73,8 @@ export interface WorkerArgs {
   fast?: boolean;
   model?: string;
   resumeReason?: string;
+  securityMode?: SecurityMode;
+  securityActionDispositions?: Partial<Record<SecurityActionCategory, SecurityActionDisposition>>;
 }
 
 /**
@@ -131,6 +140,30 @@ export function parseWorkerArgs(args: string[]): WorkerArgs {
       ? args[resumeReasonIdx + 1]
       : undefined;
 
+  const securityModeIdx = args.indexOf('--security-mode');
+  const securityModeRaw =
+    securityModeIdx !== -1 && securityModeIdx + 1 < args.length
+      ? args[securityModeIdx + 1]
+      : undefined;
+  const securityMode =
+    securityModeRaw && Object.values(SecurityMode).includes(securityModeRaw as SecurityMode)
+      ? (securityModeRaw as SecurityMode)
+      : undefined;
+
+  const securityDispositionsIdx = args.indexOf('--security-dispositions');
+  let securityActionDispositions:
+    | Partial<Record<SecurityActionCategory, SecurityActionDisposition>>
+    | undefined;
+  if (securityDispositionsIdx !== -1 && securityDispositionsIdx + 1 < args.length) {
+    try {
+      securityActionDispositions = JSON.parse(args[securityDispositionsIdx + 1]) as Partial<
+        Record<SecurityActionCategory, SecurityActionDisposition>
+      >;
+    } catch {
+      securityActionDispositions = undefined;
+    }
+  }
+
   return {
     featureId: getArg('feature-id'),
     runId: getArg('run-id'),
@@ -153,6 +186,8 @@ export function parseWorkerArgs(args: string[]): WorkerArgs {
     fast,
     model,
     resumeReason,
+    securityMode,
+    securityActionDispositions,
   };
 }
 
@@ -219,6 +254,10 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     ...(args.agentType ? ['--agent-type', args.agentType] : []),
     ...(args.fast ? ['--fast'] : []),
     ...(args.model ? ['--model', args.model] : []),
+    ...(args.securityMode ? ['--security-mode', args.securityMode] : []),
+    ...(args.securityActionDispositions
+      ? ['--security-dispositions', JSON.stringify(args.securityActionDispositions)]
+      : []),
   ];
   log(`Starting worker — full command:`);
   log(`  ${cmdParts.join(' ')}`);
@@ -440,6 +479,10 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
           ciWatchEnabled: args.ciWatchEnabled ?? true,
           enableEvidence: args.enableEvidence ?? false,
           commitEvidence: args.commitEvidence ?? false,
+          ...(args.securityMode ? { securityMode: args.securityMode } : {}),
+          ...(args.securityActionDispositions
+            ? { securityActionDispositions: args.securityActionDispositions }
+            : {}),
         },
         graphConfig
       );
@@ -464,6 +507,10 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
           ciWatchEnabled: args.ciWatchEnabled ?? true,
           enableEvidence: args.enableEvidence ?? false,
           commitEvidence: args.commitEvidence ?? false,
+          ...(args.securityMode ? { securityMode: args.securityMode } : {}),
+          ...(args.securityActionDispositions
+            ? { securityActionDispositions: args.securityActionDispositions }
+            : {}),
         },
         graphConfig
       );

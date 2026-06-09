@@ -17,7 +17,8 @@
       "homePage": "Home page",
       "layout": "Diseño",
       "database": "Base de datos",
-      "integrations": "Integraciones"
+      "integrations": "Integraciones",
+      "security": "Security"
     },
     "language": {
       "title": "Idioma",
@@ -241,6 +242,47 @@
       "swapPosition": "Intercambiar posiciones de FAB",
       "swapPositionDescription": "Mover el botón de Chat a la izquierda y el de Crear a la derecha",
       "hint": "Los dos botones de acción flotantes (Crear y Chat) se ubican en las esquinas inferiores del centro de control. Active esta opción para intercambiar sus posiciones."
+    },
+    "security": {
+      "title": "Supply Chain Security",
+      "sectionTitle": "Supply Chain Security",
+      "sectionDescription": "Configure security mode and review policy enforcement findings",
+      "mode": "Security mode",
+      "modeDescription": "Controls how the policy engine responds to violations",
+      "modeDisabled": "Disabled",
+      "modeAdvisory": "Advisory",
+      "modeEnforce": "Enforce",
+      "policySource": "Policy source",
+      "policySourceNone": "No policy loaded",
+      "lastEvaluation": "Last evaluation",
+      "lastEvaluationNever": "Never",
+      "recentFindings": "Recent findings",
+      "noFindings": "No security findings recorded",
+      "runEnforcement": "Run enforcement",
+      "running": "Running...",
+      "severity": {
+        "Low": "Low",
+        "Medium": "Medium",
+        "High": "High",
+        "Critical": "Critical"
+      },
+      "hint": "Security mode controls how the policy engine handles violations. Advisory mode logs findings without blocking. Enforce mode blocks risky actions and fails builds.",
+      "links": {
+        "securitySpec": "Security spec"
+      },
+      "badge": {
+        "advisory": "Security: Advisory",
+        "enforce": "Security: Enforce",
+        "disabled": "Security: Disabled"
+      },
+      "panel": {
+        "title": "Security",
+        "governance": "Governance",
+        "dependencies": "Dependencies",
+        "noFindings": "No security findings",
+        "findingsByCategory": "Findings by category",
+        "totalFindings": "{{count}} finding(s)"
+      }
     },
     "database": {
       "title": "Base de datos",

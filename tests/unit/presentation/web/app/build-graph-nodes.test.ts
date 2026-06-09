@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildGraphNodes } from '@/app/build-graph-nodes';
 import { layoutWithDagre, CANVAS_LAYOUT_DEFAULTS } from '@/lib/layout-with-dagre';
-import { SdlcLifecycle } from '@shepai/core/domain/generated/output';
+import { SdlcLifecycle, SecurityMode } from '@shepai/core/domain/generated/output';
 import type { Feature, Repository } from '@shepai/core/domain/generated/output';
 import type { ApplicationWithStatus } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 
@@ -410,6 +410,55 @@ describe('buildGraphNodes', () => {
       const featNode = nodes.find((n) => n.id === 'feat-feat-plain');
       const data = featNode!.data as Record<string, unknown>;
       expect(data.applicationId).toBeUndefined();
+    });
+  });
+
+  describe('securityMode propagation to feature nodes', () => {
+    it('sets data.securityMode on feature nodes when Advisory is passed', () => {
+      const repo = makeRepo({ path: '/my/repo' });
+      const feature = makeFeature({ repositoryPath: '/my/repo' });
+      const { nodes } = buildGraphNodes([repo], [{ feature, run: null }], {
+        securityMode: SecurityMode.Advisory,
+      });
+
+      const featureNode = nodes.find((n) => n.id === 'feat-feat-1');
+      expect(featureNode).toBeDefined();
+      expect((featureNode!.data as { securityMode?: SecurityMode }).securityMode).toBe(
+        SecurityMode.Advisory
+      );
+    });
+
+    it('sets data.securityMode on feature nodes when Enforce is passed', () => {
+      const repo = makeRepo({ path: '/my/repo' });
+      const feature = makeFeature({ repositoryPath: '/my/repo' });
+      const { nodes } = buildGraphNodes([repo], [{ feature, run: null }], {
+        securityMode: SecurityMode.Enforce,
+      });
+
+      const featureNode = nodes.find((n) => n.id === 'feat-feat-1');
+      expect((featureNode!.data as { securityMode?: SecurityMode }).securityMode).toBe(
+        SecurityMode.Enforce
+      );
+    });
+
+    it('omits securityMode from data when Disabled is passed', () => {
+      const repo = makeRepo({ path: '/my/repo' });
+      const feature = makeFeature({ repositoryPath: '/my/repo' });
+      const { nodes } = buildGraphNodes([repo], [{ feature, run: null }], {
+        securityMode: SecurityMode.Disabled,
+      });
+
+      const featureNode = nodes.find((n) => n.id === 'feat-feat-1');
+      expect((featureNode!.data as { securityMode?: SecurityMode }).securityMode).toBeUndefined();
+    });
+
+    it('omits securityMode from data when option is not provided', () => {
+      const repo = makeRepo({ path: '/my/repo' });
+      const feature = makeFeature({ repositoryPath: '/my/repo' });
+      const { nodes } = buildGraphNodes([repo], [{ feature, run: null }]);
+
+      const featureNode = nodes.find((n) => n.id === 'feat-feat-1');
+      expect((featureNode!.data as { securityMode?: SecurityMode }).securityMode).toBeUndefined();
     });
   });
 });

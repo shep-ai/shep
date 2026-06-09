@@ -15,7 +15,14 @@ import { homedir } from 'node:os';
 import { mkdirSync } from 'node:fs';
 import type { IFeatureAgentProcessService } from '@/application/ports/output/agents/feature-agent-process.interface.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
-import { AgentRunStatus, type ApprovalGates, type AgentType } from '@/domain/generated/output.js';
+import {
+  AgentRunStatus,
+  type ApprovalGates,
+  type AgentType,
+  type SecurityMode,
+  type SecurityActionCategory,
+  type SecurityActionDisposition,
+} from '@/domain/generated/output.js';
 import { IS_WINDOWS } from '../../../platform.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -54,6 +61,10 @@ export class FeatureAgentProcessService implements IFeatureAgentProcessService {
       fast?: boolean;
       model?: string;
       resumeReason?: string;
+      securityMode?: SecurityMode;
+      securityActionDispositions?: Partial<
+        Record<SecurityActionCategory, SecurityActionDisposition>
+      >;
     }
   ): number {
     const workerPath = join(__dirname, 'feature-agent-worker.js');
@@ -118,6 +129,12 @@ export class FeatureAgentProcessService implements IFeatureAgentProcessService {
     }
     if (options?.resumeReason) {
       args.push('--resume-reason', options.resumeReason);
+    }
+    if (options?.securityMode) {
+      args.push('--security-mode', options.securityMode);
+    }
+    if (options?.securityActionDispositions) {
+      args.push('--security-dispositions', JSON.stringify(options.securityActionDispositions));
     }
     // Create log file for worker output (for debugging)
     const logsDir = join(homedir(), '.shep', 'logs');

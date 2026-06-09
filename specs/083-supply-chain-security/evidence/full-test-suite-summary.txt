@@ -1,0 +1,58 @@
+Full Test Suite Summary
+======================
+
+Captured: 2026-04-05T21:10:00Z
+
+Unit + Integration Tests
+------------------------
+ Test Files  443 passed (443)
+      Tests  6105 passed (6105)
+   Start at  21:07:58
+   Duration  81.68s (transform 18.99s, setup 72.47s, import 117.97s, tests 301.49s, environment 140.85s)
+
+E2E Tests
+---------
+ Test Files  4 failed | 9 passed | 1 skipped (14)
+      Tests  7 failed | 76 passed | 1 skipped (84)
+   Start at  21:09:24
+   Duration  42.71s
+
+Combined Totals
+---------------
+ Test Files: 4 failed | 452 passed | 1 skipped (457)
+      Tests: 7 failed | 6181 passed | 1 skipped (6189)
+
+---
+
+Failed tests (all E2E, DeploymentService stdout leakage — not security-related):
+ FAIL  tests/e2e/cli/settings-agent.test.ts > CLI: settings agent > shep settings agent --agent claude-code --auth session > should persist agent config to settings
+ FAIL  tests/e2e/cli/settings-agent.test.ts > CLI: settings agent > shep settings agent --agent claude-code --auth token --token sk-test > should persist token to settings
+ FAIL  tests/e2e/cli/settings-init.test.ts > CLI: settings init > should reset settings to defaults after init
+ FAIL  tests/e2e/cli/settings-show.test.ts > CLI: settings show > should output valid JSON with all settings sections
+ FAIL  tests/e2e/cli/settings-show.test.ts > CLI: settings show > short flag -o > should work with -o json
+ FAIL  tests/e2e/cli/version.test.ts > CLI: version > should display version matching package.json with --version flag
+ FAIL  tests/e2e/cli/version.test.ts > CLI: version > should display version number with -v short flag
+
+Root cause: DeploymentService emits "[DeploymentService] No dev servers to recover from database" to
+stdout during CLI startup, polluting JSON/version output parsed by E2E assertions.
+
+---
+
+All security test files passed (17 files, 177 tests):
+ PASS  tests/integration/infrastructure/repositories/sqlite-security-event.repository.test.ts (12 tests)
+ PASS  tests/unit/infrastructure/services/security/dependency-risk-evaluator.test.ts (24 tests)
+ PASS  tests/unit/infrastructure/services/security/release-integrity-evaluator.test.ts (11 tests)
+ PASS  tests/unit/application/use-cases/security/enforce-security.use-case.test.ts (11 tests)
+ PASS  tests/unit/infrastructure/services/security/security-policy.service.test.ts (14 tests)
+ PASS  tests/unit/infrastructure/services/security/security-policy-file-reader.test.ts (7 tests)
+ PASS  tests/unit/infrastructure/services/security/governance-auditor.test.ts (6 tests)
+ PASS  tests/unit/application/use-cases/security/record-security-event.use-case.test.ts (3 tests)
+ PASS  tests/unit/application/use-cases/security/get-security-state.use-case.test.ts (4 tests)
+ PASS  tests/unit/infrastructure/services/security/security-policy-validator.test.ts (14 tests)
+ PASS  tests/unit/domain/generated/security-types.test.ts (21 tests)
+ PASS  tests/unit/infrastructure/services/agents/executors/security-constraint-validator.test.ts (7 tests)
+ PASS  tests/unit/infrastructure/persistence/sqlite/mappers/security-event.mapper.test.ts (15 tests)
+ PASS  tests/unit/application/use-cases/security/evaluate-security-policy.use-case.test.ts (3 tests)
+ PASS  tests/unit/infrastructure/services/agents/feature-agent/nodes/security-pre-check.test.ts (16 tests)
+ PASS  tests/unit/presentation/cli/commands/security.command.test.ts (5 tests)
+ PASS  tests/unit/domain/errors/security-violation.error.test.ts (4 tests)

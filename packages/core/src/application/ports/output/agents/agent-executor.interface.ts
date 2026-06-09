@@ -21,7 +21,13 @@
  * ```
  */
 
-import type { AgentType, AgentFeature } from '../../../../domain/generated/output.js';
+import type {
+  AgentType,
+  AgentFeature,
+  SecurityMode,
+  SecurityActionCategory,
+  SecurityActionDisposition,
+} from '../../../../domain/generated/output.js';
 
 /**
  * Token usage and execution statistics returned by an agent.
@@ -68,6 +74,19 @@ export interface AgentExecutionStreamEvent {
 }
 
 /**
+ * Security constraints derived from the effective security policy.
+ * Passed to executors so they can validate compatibility before launch.
+ */
+export interface SecurityConstraints {
+  /** Effective security mode for this execution */
+  mode: SecurityMode;
+  /** Per-action-category enforcement dispositions */
+  actionDispositions: Record<SecurityActionCategory, SecurityActionDisposition>;
+  /** Required sandbox level (e.g. 'strict' forbids --dangerously-skip-permissions) */
+  sandboxLevel: 'permissive' | 'strict';
+}
+
+/**
  * Options for controlling agent execution behavior.
  */
 export interface AgentExecutionOptions {
@@ -102,6 +121,8 @@ export interface AgentExecutionOptions {
    * Defaults to false; set true via StreamingExecutorProxy automatically.
    */
   streamProgress?: boolean;
+  /** Security policy constraints for this execution */
+  securityConstraints?: SecurityConstraints;
 }
 
 /**

@@ -1,0 +1,141 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-supply-chain-security[39m
+
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-repository.repository.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 633[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/agent-run.repository.test.ts [2m([22m[2m29 tests[22m[2m)[22m[33m 834[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-feature.repository.test.ts [2m([22m[2m35 tests[22m[2m)[22m[33m 1025[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-settings.repository.test.ts [2m([22m[2m47 tests[22m[2m)[22m[33m 1262[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/worktree-git-init.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 1708[2mms[22m[39m
+     [33m[2m✓[22m[39m should not re-initialize an existing git repository [33m 416[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/feature-parent.repository.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 307[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migrations.test.ts [2m([22m[2m66 tests[22m[2m)[22m[33m 1860[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-phase-timing.repository.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 426[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-053.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 241[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/settings/onboarding-to-feature-flow.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 361[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/settings/workflow-command-flow.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 327[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-interactive-session.repository.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 403[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-security-event.repository.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 376[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/features/start-feature.use-case.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 518[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-interactive-message.repository.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 523[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-054.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 698[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/pr-merge.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 4658[2mms[22m[39m
+     [33m[2m✓[22m[39m push=true, openPr=true, allowMerge=true → BUG: verifyMerge skipped after gh pr merge [33m 4655[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/reject-feedback-propagation.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 652[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-feature-repository.find-by-branch.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 330[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/evidence-flow.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 371[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/merge-flow.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 383[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-049.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 263[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/push-merge.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 7494[2mms[22m[39m
+     [33m[2m✓[22m[39m push-no-pr-merge: feature branch should be merged into main after push+merge [33m 7491[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/agents/configure-agent-dev.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 340[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/smoke.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 8408[2mms[22m[39m
+       [33m[2m✓[22m[39m should create a bare repo and clone with main + feature branch [33m 3082[2mms[22m[39m
+       [33m[2m✓[22m[39m createLocalOnlyHarness: should create a local repo with no remote [33m 5173[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/agent-infrastructure.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 498[2mms[22m[39m
+       [33m[2m✓[22m[39m should have analyze-repository agent with graph factory [33m 393[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/gate-tests.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 8721[2mms[22m[39m
+     [33m[2m✓[22m[39m commit-only-with-gate: should interrupt at merge gate when allowMerge=false [33m 3229[2mms[22m[39m
+     [33m[2m✓[22m[39m push-pr-with-gate: should interrupt at merge gate when allowMerge=false (PR path) [33m 5488[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/settings/onboarding-flow.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 258[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/skip-merge.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 4644[2mms[22m[39m
+     [33m[2m✓[22m[39m undefined-gates-silent-skip: should skip merge silently when approvalGates is undefined [33m 4639[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/merge-flow.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 486[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/resume-feedback-propagation.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 512[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/hitl-approval-flow.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 332[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/legacy-migrations.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 287[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/resume-after-error-merge.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 505[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/approve-after-failed-rejection.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 333[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/reject-flow.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 504[2mms[22m[39m
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould emit status change events after cache is seeded
+[22m[39m[SSE] emit: agent_completed for "Test Feature"
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould filter events by runId when query parameter is provided
+[22m[39m[SSE] emit: agent_completed for "Feature Two"
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould emit phase completion events for new completed phases
+[22m[39m[SSE] emit: phase_completed for "Test Feature" (analyze)
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould support multiple concurrent SSE clients independently
+[22m[39m[SSE] emit: agent_completed for "Test Feature"
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould support multiple concurrent SSE clients independently
+[22m[39m[SSE] emit: agent_completed for "Test Feature"
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould emit MergeReviewReady when feature lifecycle transitions to Review
+[22m[39m[SSE] emit: merge_review_ready for "Test Feature" (merge)
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould emit MergeReviewReady without PR URL when PR is not available
+[22m[39m[SSE] emit: merge_review_ready for "Test Feature" (merge)
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould not emit MergeReviewReady for non-Review lifecycle transitions
+[22m[39m[SSE] emit: phase_completed for "Test Feature" (plan)
+
+[90mstderr[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould gracefully handle DI container errors during poll
+[22m[39m[SSE /api/agent-events] poll error #1: DI not ready
+
+[90mstderr[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould gracefully handle DI container errors during poll
+[22m[39m[SSE /api/agent-events] poll error #2: DI not ready
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould gracefully handle DI container errors during poll
+[22m[39m[SSE] emit: agent_completed for "Test Feature"
+
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/api/agent-events-sse.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 136[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-015.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 285[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/gate-configuration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 308[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/sessions/claude-code-session.repository.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/resume-after-error.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 454[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/approve-flow.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 251[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/feedback-and-timing.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 134[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/sqlite-migration-storage.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/git-pr-ci-watch.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/services/tool-installer.service.test.ts [2m([22m[2m32 tests[22m[2m)[22m[32m 277[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.getFailureLogs.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/features/list-features.use-case.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/prd-approval-iterations.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+[2026-04-05T18:03:23.182Z] [repair:spec.yaml] Repairing spec.yaml (attempt 1)
+[2026-04-05T18:03:23.184Z] [repair:spec.yaml] Repair complete (5 chars)
+[2026-04-05T18:03:23.185Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-05T18:03:23.189Z] [validate:spec.yaml] ERROR: YAML parse error in spec.yaml: unexpected end of the stream within a flow collection (15:1)
+
+ 12 |   - React
+ 13 |   - broken item with : colon ca ...
+ 14 | openQuestions: [
+ 15 | 
+------^
+[2026-04-05T18:03:23.190Z] [validate:spec.yaml] Validating spec.yaml
+[2026-04-05T18:03:23.191Z] [validate:spec.yaml] Validation passed
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/yaml-repair-cycle.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/local-merge.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 13520[2mms[22m[39m
+     [33m[2m✓[22m[39m local-merge-no-push: feature branch should be merged into main after node completes [33m 2350[2mms[22m[39m
+     [33m[2m✓[22m[39m no-remote-override-merge: should merge locally when remote unavailable (push+openPr overridden) [33m 8345[2mms[22m[39m
+     [33m[2m✓[22m[39m no-remote-local-merge: should merge locally without any remote [33m 2823[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/verify-merge.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 15498[2mms[22m[39m
+     [33m[2m✓[22m[39m should return true after a true merge (git merge) [33m 646[2mms[22m[39m
+     [33m[2m✓[22m[39m should return true after a squash merge (git merge --squash) [33m 2115[2mms[22m[39m
+     [33m[2m✓[22m[39m should return false when branch has not been merged [33m 4382[2mms[22m[39m
+     [33m[2m✓[22m[39m should return false when main has extra commits after squash but feature has diverged [33m 4422[2mms[22m[39m
+     [33m[2m✓[22m[39m should return true after squash merge with modified tree when premergeBaseSha provided [33m 2674[2mms[22m[39m
+     [33m[2m✓[22m[39m should return true after squash merge even when local branch is deleted (remote fallback) [33m 1259[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.rebase-sync.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 28056[2mms[22m[39m
+     [33m[2m✓[22m[39m should fetch latest main when upstream has new commits (from feature branch) [33m 1657[2mms[22m[39m
+     [33m[2m✓[22m[39m should fast-forward main when on the main branch (uses pull) [33m 7452[2mms[22m[39m
+     [33m[2m✓[22m[39m should succeed silently when main is already up-to-date [33m 3528[2mms[22m[39m
+     [33m[2m✓[22m[39m should throw SYNC_FAILED when on main and local main has diverged from remote [33m 2273[2mms[22m[39m
+     [33m[2m✓[22m[39m should succeed from feature branch even when local main has diverged (fetches origin/main only) [33m 1490[2mms[22m[39m
+     [33m[2m✓[22m[39m should be idempotent — calling sync twice succeeds [33m 1052[2mms[22m[39m
+     [33m[2m✓[22m[39m should successfully rebase feature branch onto main with no conflicts [33m 1393[2mms[22m[39m
+     [33m[2m✓[22m[39m should throw REBASE_CONFLICT when rebase encounters conflicting changes [33m 1074[2mms[22m[39m
+     [33m[2m✓[22m[39m should throw GIT_ERROR when worktree has uncommitted changes [33m 669[2mms[22m[39m
+     [33m[2m✓[22m[39m should throw BRANCH_NOT_FOUND when feature branch does not exist [33m 667[2mms[22m[39m
+     [33m[2m✓[22m[39m should leave worktree clean after aborting a conflicted rebase [33m 1101[2mms[22m[39m
+     [33m[2m✓[22m[39m should produce linear history after successful rebase [33m 1301[2mms[22m[39m
+     [33m[2m✓[22m[39m should succeed when feature branch is already up-to-date with main (no-op rebase) [33m 669[2mms[22m[39m
+     [33m[2m✓[22m[39m getConflictedFiles should return conflicted file paths during a rebase conflict [33m 1114[2mms[22m[39m
+     [33m[2m✓[22m[39m stageFiles + rebaseContinue should complete rebase after manual conflict resolution [33m 1412[2mms[22m[39m
+     [33m[2m✓[22m[39m rebaseAbort should restore branch to pre-rebase state [33m 1203[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m53 passed[39m[22m[90m (53)[39m
+[2m      Tests [22m [1m[32m608 passed[39m[22m[90m (608)[39m
+[2m   Start at [22m 21:03:10
+[2m   Duration [22m 28.35s[2m (transform 3.54s, setup 956ms, import 15.59s, tests 110.62s, environment 7ms)[22m
+
