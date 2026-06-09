@@ -1,0 +1,10 @@
+       ✓ shows empty state message when no repos match search  382ms
+       ✓ shows check icon for selected repository  332ms
+       ✓ can submit feature after adding new repo via combobox  1396ms
+ ✓  web  tests/unit/presentation/web/components/common/control-center-drawer/drawer-view.test.ts (10 tests) 5ms
+
+ Test Files  350 passed (350)
+      Tests  4777 passed (4777)
+   Start at  00:46:17
+   Duration  56.23s (transform 20.46s, setup 38.39s, import 129.15s, tests 139.23s, environment 111.29s)
+

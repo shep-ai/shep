@@ -1,0 +1,40 @@
+feature:
+  id: "077-evidence-image-lightbox"
+  name: "evidence-image-lightbox"
+  number: 77
+  branch: "feat/077-evidence-image-lightbox"
+  lifecycle: "research"
+  createdAt: "2026-03-23T20:43:16Z"
+status:
+  phase: "implementation-complete"
+  progress:
+    completed: 7
+    total: 7
+    percentage: 100
+  currentTask: null
+  lastUpdated: "2026-03-24T09:55:28.634Z"
+  lastUpdatedBy: "feature-agent:implement"
+  completedPhases:
+    - "analyze"
+    - "requirements"
+    - "research"
+    - "plan"
+    - "phase-1"
+    - "phase-2"
+    - "phase-3"
+    - "evidence"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-03-23T20:43:16Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []

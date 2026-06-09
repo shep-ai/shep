@@ -1,0 +1,174 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "evidence-image-lightbox"
+summary: >
+  Implementation plan for adding an image gallery and fullscreen lightbox to the evidence section
+  in the merge review drawer. The approach extends the existing InlineAttachments Dialog pattern
+  with gallery state management, keyboard navigation, and a bottom control bar. A new standalone
+  EvidenceLightbox component is created in common/evidence-lightbox/ and consumed by a modified
+  EvidenceList that splits image vs non-image evidence. No new dependencies — built entirely on
+  existing Radix Dialog, Lucide icons, and Tailwind CSS.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - "React 19 (useState, useEffect, useCallback)"
+  - "Radix UI Dialog (existing @radix-ui/react-dialog)"
+  - "Tailwind CSS v4 (grid layout, aspect-square, object-cover/contain)"
+  - "Lucide React (ChevronLeft, ChevronRight, X, Download)"
+  - "shadcn/ui Dialog primitive (DialogContent, DialogTitle)"
+  - "VisuallyHidden from @radix-ui/react-visually-hidden"
+  - "Storybook 8 (stories for gallery and lightbox states)"
+relatedLinks:
+  - title: "Radix UI Dialog documentation"
+    url: "https://www.radix-ui.com/primitives/docs/components/dialog"
+  - title: "CSS Grid layout MDN reference"
+    url: "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout"
+
+# Structured implementation phases
+phases:
+  - id: "phase-1"
+    name: "EvidenceLightbox Component"
+    description: >
+      Build the standalone EvidenceLightbox component in common/evidence-lightbox/ with fullscreen
+      Radix Dialog, controlled open/selectedIndex props, prev/next navigation buttons, keyboard
+      arrow handling, image counter, description display, and download button. This is the core
+      new component and must be built first since EvidenceList will consume it.
+    parallel: false
+
+  - id: "phase-2"
+    name: "EvidenceList Gallery Integration"
+    description: >
+      Modify the existing EvidenceList component in merge-review.tsx to split evidence into image
+      and non-image arrays, render image evidence as a 3-column thumbnail grid above the existing
+      expandable list, and wire thumbnail clicks to the EvidenceLightbox controlled state. Non-image
+      evidence continues to render as expandable EvidenceItem entries below the gallery.
+    parallel: false
+
+  - id: "phase-3"
+    name: "Storybook Stories & Polish"
+    description: >
+      Create comprehensive Storybook stories for the EvidenceLightbox component covering all
+      required states: default gallery grid, lightbox open, single image, many images (6+), and
+      mixed evidence types (images + non-images). Validate visual correctness and accessibility.
+    parallel: false
+
+# File change tracking
+filesToCreate:
+  - "src/presentation/web/components/common/evidence-lightbox/evidence-lightbox.tsx"
+  - "src/presentation/web/components/common/evidence-lightbox/evidence-lightbox.stories.tsx"
+  - "src/presentation/web/components/common/evidence-lightbox/index.ts"
+
+filesToModify:
+  - "src/presentation/web/components/common/merge-review/merge-review.tsx"
+
+# Open questions (should all be resolved before implementation)
+openQuestions: []
+
+# Markdown content (the full plan document)
+content: |
+  ## Architecture Overview
+
+  The feature adds two visual capabilities to the evidence section of the merge review drawer:
+
+  1. **Thumbnail gallery grid** — Image evidence displayed as a 3-column CSS grid of square
+     thumbnails above the existing expandable evidence list.
+  2. **Fullscreen lightbox** — Clicking any thumbnail opens a Radix Dialog overlay with the
+     full-size image, prev/next navigation, keyboard arrow support, image counter, description,
+     and download button.
+
+  The implementation follows the project's Clean Architecture presentation layer conventions:
+  - New component directory: `common/evidence-lightbox/` (component.tsx, stories.tsx, index.ts)
+  - Modified component: `common/merge-review/merge-review.tsx` (EvidenceList only)
+  - No domain, application, or infrastructure changes
+  - No new npm dependencies
+
+  ### Component Hierarchy (After)
+
+  ```
+  MergeReview
+    EvidenceList (modified)
+      Thumbnail Grid (new — CSS grid of clickable image thumbnails)
+      EvidenceLightbox (new — fullscreen dialog with navigation)
+      Non-image EvidenceItem list (existing — unchanged)
+  ```
+
+  ## Key Design Decisions
+
+  ### 1. Extend InlineAttachments Dialog Pattern
+
+  The InlineAttachments component (inline-attachments.tsx:124-158) already implements a fullscreen
+  image dialog with bg-black/90 overlay, object-contain sizing, styled close button with
+  backdrop-blur, and a download bar. The lightbox replicates this proven pattern and extends it
+  with selectedIndex state, prev/next buttons, keyboard arrow listener, and image counter.
+
+  **Why not a library?** NFR-5 prohibits new dependencies. The required functionality (prev/next,
+  keyboard arrows, counter) is straightforward to build with existing Radix Dialog primitives.
+
+  ### 2. Standalone Component in common/evidence-lightbox/
+
+  The lightbox is a standalone component rather than embedded in merge-review.tsx (already 343
+  lines with 4 components). This keeps merge-review.tsx focused on layout orchestration while the
+  lightbox handles dialog state, keyboard events, and navigation logic. The component follows the
+  project convention of one directory per component with component.tsx, stories.tsx, and index.ts.
+
+  ### 3. Controlled Component Pattern
+
+  EvidenceLightbox receives controlled props: `open`, `onOpenChange`, `selectedIndex`,
+  `onSelectedIndexChange`, and `images` (filtered MergeReviewEvidence[]). This follows Radix
+  Dialog's controlled mode conventions and makes the component easy to test in Storybook (set
+  open=true in args). The parent EvidenceList owns the state, making thumbnail-click-to-open
+  straightforward.
+
+  ### 4. CSS Grid with grid-cols-3 + aspect-square Thumbnails
+
+  The merge review drawer has a constrained fixed width set by BaseDrawer. A 3-column grid with
+  aspect-square thumbnails using object-cover creates a clean, uniform gallery. Responsive
+  auto-fill adds complexity without benefit since the drawer width doesn't change.
+
+  ### 5. Document-Level Keyboard Listener
+
+  Arrow key handling uses a useEffect with document-level keydown listener gated on the dialog
+  open state. This reliably captures ArrowLeft/ArrowRight regardless of which element has focus
+  within the dialog. event.stopPropagation() prevents parent interference per NFR-6. The effect
+  cleans up the listener when the dialog closes or the component unmounts.
+
+  ### 6. Modular Arithmetic for Wrap-Around
+
+  Navigation uses (index + 1) % count for next and (index - 1 + count) % count for prev. This
+  is the standard circular navigation solution with no edge-case branching. For single-image
+  evidence, navigation buttons and counter are hidden entirely.
+
+  ### 7. Image Filtering in EvidenceList
+
+  EvidenceList splits evidence into imageEvidence and nonImageEvidence arrays using the existing
+  IMAGE_EXTENSIONS set and type checks (already at lines 32-33, 50-52 of merge-review.tsx). No
+  separate utility function or data layer changes needed — the filtering stays close to where
+  it's used.
+
+  ## Implementation Strategy
+
+  **Phase 1 (EvidenceLightbox Component)** comes first because it is the core new component with
+  the most complexity: Radix Dialog integration, keyboard event handling, navigation state, and
+  visual styling. Building it first allows it to be developed and tested in isolation via
+  Storybook before integrating with EvidenceList.
+
+  **Phase 2 (EvidenceList Gallery Integration)** modifies the existing EvidenceList to split
+  evidence types, render the thumbnail grid, and wire up the lightbox. This depends on Phase 1
+  because it imports and renders EvidenceLightbox.
+
+  **Phase 3 (Storybook Stories & Polish)** creates comprehensive stories covering all required
+  states. This phase validates the integration end-to-end and ensures the lightbox component
+  meets the mandatory Storybook story requirement.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Keyboard events leaking to parent drawer | event.stopPropagation() on ArrowLeft/ArrowRight handlers; test by verifying no scroll when arrows pressed in lightbox |
+  | Dialog close button styling conflicts | Reuse exact className override string from InlineAttachments ([&>button:last-child] selectors) to ensure consistency |
+  | Thumbnail grid overflow in narrow drawer | grid-cols-3 with gap-2 within the drawer's padded container; thumbnails use w-full to fill grid cells |
+  | Focus trap interference with keyboard nav | Document-level keydown listener works regardless of focus position within Radix Dialog's trap |
+  | Image loading performance with many evidence items | loading="lazy" on all thumbnail img elements; Radix Dialog unmounts content when closed |
+  | Accessibility gaps | VisuallyHidden DialogTitle, aria-label on all nav buttons, meaningful alt text from evidence description |

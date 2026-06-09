@@ -1,0 +1,273 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "evidence-image-lightbox"
+summary: >
+  7 tasks across 3 phases. Phase 1 builds the standalone EvidenceLightbox component with dialog,
+  navigation, and keyboard handling. Phase 2 integrates the gallery grid into EvidenceList.
+  Phase 3 adds comprehensive Storybook stories.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - "React 19"
+  - "Radix UI Dialog"
+  - "Tailwind CSS v4"
+  - "Lucide React"
+  - "Storybook 8"
+relatedLinks:
+  - title: "InlineAttachments dialog pattern reference"
+    url: "src/presentation/web/components/common/inline-attachments/inline-attachments.tsx"
+  - title: "Current EvidenceList implementation"
+    url: "src/presentation/web/components/common/merge-review/merge-review.tsx"
+
+# Structured task list
+tasks:
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Create EvidenceLightbox component scaffold and barrel export"
+    description: >
+      Create the evidence-lightbox/ directory with index.ts barrel export and the base
+      evidence-lightbox.tsx component file. Define the component props interface
+      (EvidenceLightboxProps) with controlled open/onOpenChange, selectedIndex/onSelectedIndexChange,
+      and images array. Render a basic Radix Dialog that shows the selected image fullscreen with
+      the InlineAttachments overlay styling (bg-black/90, object-contain, styled close button).
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "evidence-lightbox/ directory exists with evidence-lightbox.tsx and index.ts"
+      - "EvidenceLightboxProps interface defined with: images (MergeReviewEvidence[]), open (boolean), onOpenChange ((open: boolean) => void), selectedIndex (number), onSelectedIndexChange ((index: number) => void)"
+      - "Dialog renders with bg-black/90 overlay, image at max-h-[90vh] object-contain"
+      - "Close button styled identically to InlineAttachments ([&>button:last-child] overrides)"
+      - "VisuallyHidden DialogTitle for accessibility"
+      - "Component exported from index.ts barrel"
+    tdd:
+      red:
+        - "Write test that renders EvidenceLightbox with open=true and verifies the dialog is visible"
+        - "Write test that verifies the selected image renders with correct src from buildEvidenceUrl"
+        - "Write test that verifies accessible dialog title exists via VisuallyHidden"
+      green:
+        - "Create evidence-lightbox.tsx with EvidenceLightboxProps interface"
+        - "Implement Radix Dialog with controlled open prop and DialogContent styled per InlineAttachments"
+        - "Render selected image with buildEvidenceUrl(images[selectedIndex].relativePath)"
+        - "Add VisuallyHidden DialogTitle with evidence description"
+        - "Create index.ts barrel export"
+      refactor:
+        - "Extract DialogContent className string to a const for readability"
+        - "Ensure prop types are properly exported for consumers"
+    estimatedEffort: "1h"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "Add bottom control bar with counter, description, and download"
+    description: >
+      Add the bottom control bar to the EvidenceLightbox dialog, containing: the image counter
+      (e.g. \"2 / 5\"), the evidence description (truncated to one line with ellipsis), and a
+      download button. The bar uses bg-background styling consistent with InlineAttachments.
+      Counter and description are hidden when there is only one image.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Bottom bar renders below the image with bg-background px-4 py-3 styling"
+      - "Image counter shows \"N / M\" format (e.g. \"2 / 5\")"
+      - "Evidence description text displayed, truncated with ellipsis on overflow (line-clamp-1 or truncate)"
+      - "Download button renders as anchor with href to evidence URL and download attribute"
+      - "Counter and nav buttons hidden when images array has length 1"
+      - "Download button still shown for single image"
+    tdd:
+      red:
+        - "Write test that verifies counter text \"2 / 5\" when selectedIndex=1 and 5 images"
+        - "Write test that verifies description text from current evidence item"
+        - "Write test that verifies download link href matches buildEvidenceUrl output"
+        - "Write test that counter is not rendered when images has length 1"
+      green:
+        - "Add bottom bar div with flex layout, bg-background, px-4 py-3"
+        - "Render counter span with selectedIndex+1 and images.length"
+        - "Render description with truncate/line-clamp-1 class"
+        - "Render download anchor with href=buildEvidenceUrl and download attribute"
+        - "Conditionally hide counter when images.length <= 1"
+      refactor:
+        - "Ensure consistent spacing and alignment between counter, description, and download button"
+    estimatedEffort: "45min"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Add prev/next navigation buttons with wrap-around"
+    description: >
+      Add ChevronLeft and ChevronRight navigation buttons to the lightbox bottom bar. Clicking
+      prev navigates to (selectedIndex - 1 + count) % count, clicking next navigates to
+      (selectedIndex + 1) % count. Buttons are hidden when there is only one image. All buttons
+      have accessible aria-label attributes.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "Prev button renders with ChevronLeft icon and aria-label \"Previous image\""
+      - "Next button renders with ChevronRight icon and aria-label \"Next image\""
+      - "Clicking next on index 0 of 3 images calls onSelectedIndexChange(1)"
+      - "Clicking prev on index 0 of 3 images calls onSelectedIndexChange(2) (wrap-around)"
+      - "Clicking next on last image wraps to index 0"
+      - "Nav buttons hidden when images array has length 1"
+    tdd:
+      red:
+        - "Write test that clicks next button and verifies onSelectedIndexChange called with index+1"
+        - "Write test that clicks prev on index 0 and verifies wrap to last index"
+        - "Write test that clicks next on last index and verifies wrap to 0"
+        - "Write test that nav buttons are not rendered when images.length is 1"
+      green:
+        - "Add prev/next button elements with ChevronLeft/ChevronRight icons to bottom bar"
+        - "Implement goNext and goPrev handlers using modular arithmetic"
+        - "Wire onClick to call onSelectedIndexChange with computed index"
+        - "Conditionally render nav buttons only when images.length > 1"
+        - "Add aria-label to both buttons"
+      refactor:
+        - "Extract navigation logic into goNext/goPrev callbacks with useCallback"
+    estimatedEffort: "30min"
+
+  - id: "task-4"
+    phaseId: "phase-1"
+    title: "Add keyboard arrow navigation"
+    description: >
+      Add a useEffect that registers a document-level keydown listener when the lightbox is open.
+      ArrowLeft triggers prev navigation, ArrowRight triggers next. Events are stopped from
+      propagating to prevent parent interference (NFR-6). Listener is cleaned up when dialog
+      closes or component unmounts.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "Pressing ArrowRight when lightbox is open navigates to next image"
+      - "Pressing ArrowLeft when lightbox is open navigates to previous image"
+      - "Arrow keys wrap around at boundaries (same as button navigation)"
+      - "Keyboard listener is removed when dialog closes (no memory leak)"
+      - "event.stopPropagation() called on handled arrow events"
+      - "No keyboard handler registered when open is false"
+    tdd:
+      red:
+        - "Write test that simulates ArrowRight keydown and verifies onSelectedIndexChange called"
+        - "Write test that simulates ArrowLeft keydown and verifies prev navigation"
+        - "Write test that arrow keys do not fire handler when open is false"
+      green:
+        - "Add useEffect that adds keydown listener to document when open is true"
+        - "Handle ArrowLeft (call goPrev) and ArrowRight (call goNext) with stopPropagation"
+        - "Return cleanup function that removes the listener"
+        - "Depend on open, selectedIndex, and images.length in effect deps"
+      refactor:
+        - "Ensure useCallback wrapping for stable handler references"
+        - "Verify effect dependency array is minimal and correct"
+    estimatedEffort: "30min"
+
+  - id: "task-5"
+    phaseId: "phase-2"
+    title: "Split EvidenceList into image gallery grid and non-image list"
+    description: >
+      Modify the EvidenceList component in merge-review.tsx to partition the evidence array into
+      imageEvidence and nonImageEvidence using the existing IMAGE_EXTENSIONS set and isImage check.
+      Render image evidence as a 3-column CSS grid of square thumbnails (aspect-square,
+      object-cover) above the existing non-image EvidenceItem list. Each thumbnail is a clickable
+      button that sets the lightbox selectedIndex and opens the dialog. Add lightbox state
+      (open, selectedIndex) to EvidenceList and render EvidenceLightbox.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+    acceptanceCriteria:
+      - "EvidenceList splits evidence into imageEvidence and nonImageEvidence arrays"
+      - "Image evidence renders as a grid-cols-3 gap-2 CSS grid of thumbnails"
+      - "Each thumbnail is aspect-square with object-cover and rounded corners"
+      - "Thumbnails use loading=\"lazy\" for performance"
+      - "Clicking a thumbnail sets selectedIndex and opens the lightbox"
+      - "Non-image evidence renders below the grid as EvidenceItem expandable list (unchanged)"
+      - "When no image evidence exists, no gallery grid is rendered"
+      - "EvidenceLightbox component is rendered with controlled state from EvidenceList"
+      - "Alt text on each thumbnail comes from evidence description"
+    tdd:
+      red:
+        - "Write test that renders EvidenceList with mixed evidence and verifies image thumbnails appear in a grid"
+        - "Write test that verifies non-image evidence renders as EvidenceItem below the grid"
+        - "Write test that clicking a thumbnail opens the lightbox at the correct index"
+        - "Write test that only-non-image evidence renders no grid"
+        - "Write test that thumbnails have alt text from evidence description"
+      green:
+        - "Add useMemo to partition evidence into imageEvidence and nonImageEvidence"
+        - "Render thumbnail grid with grid grid-cols-3 gap-2 when imageEvidence.length > 0"
+        - "Each thumbnail: button wrapping img with aspect-square object-cover"
+        - "Add useState for open and selectedIndex"
+        - "Wire thumbnail onClick to set selectedIndex and open=true"
+        - "Import and render EvidenceLightbox with controlled props"
+        - "Render non-image evidence below grid using existing EvidenceItem map"
+      refactor:
+        - "Extract isImageEvidence helper if the inline filter is complex"
+        - "Ensure thumbnail button has proper cursor and hover styling"
+    estimatedEffort: "1h"
+
+  - id: "task-6"
+    phaseId: "phase-3"
+    title: "Create EvidenceLightbox Storybook stories"
+    description: >
+      Create evidence-lightbox.stories.tsx with comprehensive stories covering: default gallery
+      grid (3+ images), lightbox open state showing fullscreen image with controls, single image
+      (no nav buttons or counter), many images (6+), and mixed evidence types (images + non-images
+      showing both gallery and list). Use mock MergeReviewEvidence data with placeholder image URLs.
+    state: "Todo"
+    dependencies:
+      - "task-5"
+    acceptanceCriteria:
+      - "Stories file exists at common/evidence-lightbox/evidence-lightbox.stories.tsx"
+      - "Story: Default — gallery grid with 3 image evidence items"
+      - "Story: LightboxOpen — lightbox dialog visible with image, counter, nav buttons, description, download"
+      - "Story: SingleImage — one image, lightbox without nav buttons or counter"
+      - "Story: ManyImages — 6+ images in gallery grid"
+      - "Story: MixedEvidence — images in grid + non-images in expandable list"
+      - "All stories render without errors"
+    tdd: null
+    estimatedEffort: "1h"
+
+  - id: "task-7"
+    phaseId: "phase-3"
+    title: "Validate build and tests pass"
+    description: >
+      Run the full validation suite (pnpm validate), unit tests (pnpm test:unit), and build
+      (pnpm build) to ensure all new and existing code passes. Fix any lint, typecheck, or test
+      failures discovered.
+    state: "Todo"
+    dependencies:
+      - "task-6"
+    acceptanceCriteria:
+      - "pnpm validate passes (lint + format + typecheck + tsp)"
+      - "pnpm test:unit passes with zero failures"
+      - "pnpm build completes successfully"
+      - "No regressions in existing tests"
+    tdd: null
+    estimatedEffort: "30min"
+
+# Total effort estimate
+totalEstimate: "5h 15min"
+
+# Open questions
+openQuestions: []
+
+# Markdown content (the full tasks document)
+content: |
+  ## Summary
+
+  The implementation is broken into 7 tasks across 3 phases.
+
+  Phase 1 builds the EvidenceLightbox component incrementally: first the base dialog with
+  fullscreen image display (task 1), then the bottom control bar with counter, description, and
+  download (task 2), then prev/next navigation buttons with wrap-around (task 3), and finally
+  keyboard arrow navigation (task 4). Each task adds a layer of functionality with its own TDD
+  cycle, keeping changes small and testable.
+
+  Phase 2 modifies the existing EvidenceList to split evidence into image and non-image arrays,
+  render the thumbnail gallery grid, and wire up the EvidenceLightbox with controlled state
+  (task 5). This is a single focused task that integrates the Phase 1 component into the
+  existing merge review drawer.
+
+  Phase 3 adds comprehensive Storybook stories (task 6) covering all required states (default
+  grid, lightbox open, single image, many images, mixed types) and validates the full build
+  and test suite (task 7).
+
+  The task ordering ensures each task builds on the previous one with no circular dependencies.
+  Phase 1 tasks are sequential because each adds to the same component file. Phase 2 depends
+  on Phase 1 completion. Phase 3 validates everything end-to-end.

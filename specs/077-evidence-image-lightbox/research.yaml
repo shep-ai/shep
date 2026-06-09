@@ -1,0 +1,350 @@
+name: "evidence-image-lightbox"
+summary: >
+  Technical research for adding an image gallery and fullscreen lightbox to the evidence section
+  in the merge review drawer. The implementation extends existing Radix Dialog and InlineAttachments
+  patterns with gallery state management, keyboard navigation, and a bottom control bar. No new
+  dependencies are required — everything builds on existing Radix UI, Lucide icons, and Tailwind CSS.
+
+relatedFeatures: []
+
+technologies:
+  - "React 19 (useState, useEffect, useCallback for lightbox state and keyboard handling)"
+  - "Radix UI Dialog (existing @radix-ui/react-dialog for fullscreen lightbox overlay)"
+  - "Tailwind CSS v4 (grid layout, object-cover/contain, backdrop styling)"
+  - "Lucide React (ChevronLeft, ChevronRight, X, Download icons)"
+  - "shadcn/ui Dialog primitive (reuse existing DialogContent, DialogTitle)"
+  - "VisuallyHidden from radix-ui (accessible dialog title)"
+  - "Next.js 16 (existing /api/evidence route for image serving)"
+  - "Storybook (stories for gallery and lightbox states)"
+
+relatedLinks:
+  - title: "Radix UI Dialog documentation"
+    url: "https://www.radix-ui.com/primitives/docs/components/dialog"
+  - title: "CSS Grid auto-fill/minmax MDN reference"
+    url: "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout/Auto-placement_in_grid_layout"
+
+decisions:
+  - title: "Lightbox implementation approach"
+    chosen: "Extend existing Radix Dialog pattern from InlineAttachments with gallery state"
+    rejected:
+      - "Build custom modal from scratch — would duplicate existing Dialog overlay, focus trapping, ESC handling, and portal behavior that Radix already provides. The InlineAttachments component proves this pattern works well."
+      - "Install a dedicated lightbox library (e.g., yet-another-react-lightbox, photoswipe) — violates NFR-5 (no new dependencies). The required functionality (prev/next navigation, keyboard arrows, counter) is straightforward to build with existing primitives."
+    rationale: >
+      The InlineAttachments component (inline-attachments.tsx:124-158) already implements a
+      fullscreen image dialog with bg-black/90 overlay, object-contain sizing, styled close
+      button, and download bar. The lightbox extends this with selectedIndex state, prev/next
+      buttons, keyboard arrow listener, and image counter. Maximum consistency with minimal new
+      patterns.
+
+  - title: "Component architecture — standalone vs embedded"
+    chosen: "Standalone EvidenceLightbox component in common/evidence-lightbox/ consumed by EvidenceList"
+    rejected:
+      - "Embed lightbox logic directly in merge-review.tsx — would bloat the already 342-line file and make the lightbox untestable in isolation. The merge-review file already contains EvidenceItem, EvidenceTextPreview, EvidenceList, and MergeReview components."
+      - "Create a generic ImageGalleryLightbox component — over-engineering for a single use case. The component needs MergeReviewEvidence-specific logic (description display, evidence URL building). A generic gallery can be extracted later if reuse is needed."
+    rationale: >
+      Following the project convention (one component per directory with component.tsx,
+      stories.tsx, index.ts), a standalone evidence-lightbox in common/ keeps merge-review.tsx
+      focused on layout orchestration while the lightbox handles its own dialog state, keyboard
+      events, and navigation logic. EvidenceList imports and renders EvidenceLightbox, passing the
+      filtered image evidence array and selected index.
+
+  - title: "Gallery grid layout strategy"
+    chosen: "CSS Grid with grid-cols-3 and fixed aspect-square thumbnails"
+    rejected:
+      - "Responsive auto-fill grid with minmax — the merge review drawer has a constrained, fixed width. Auto-fill adds CSS complexity (minmax calculations) without benefit since the column count would always resolve to approximately 3 in the drawer."
+      - "Flexbox wrap layout — less predictable than CSS Grid for equal-width columns. Grid guarantees uniform column sizing and gap handling without needing flex-basis calculations."
+    rationale: >
+      A simple grid grid-cols-3 gap-2 creates a clean, predictable 3-column layout within the
+      drawer's constrained width. Combined with aspect-square and object-cover on each thumbnail,
+      this produces a uniform gallery grid. The drawer width is fixed by the BaseDrawer shell.
+
+  - title: "Thumbnail aspect ratio and cropping"
+    chosen: "Square thumbnails (aspect-square) with object-cover cropping"
+    rejected:
+      - "Natural aspect ratio thumbnails — creates uneven row heights in the grid, making the layout look messy. Since the lightbox shows the full uncropped image, cropping in thumbnails is acceptable."
+      - "Fixed height thumbnails (e.g., h-24) without aspect ratio constraint — inconsistent visual weight across thumbnails depending on image dimensions."
+    rationale: >
+      Square thumbnails create a uniform grid appearance. The aspect-square Tailwind utility with
+      object-cover ensures each thumbnail fills its grid cell with center-cropped content. Users
+      click to see the full image in the lightbox, so thumbnails are purely for identification.
+
+  - title: "Lightbox state management approach"
+    chosen: "useState in parent EvidenceList for selectedIndex + open, passed as controlled props to EvidenceLightbox"
+    rejected:
+      - "useReducer for lightbox state — the state is just two values (selectedIndex, open). A reducer adds indirection without benefit for this simple case."
+      - "Uncontrolled lightbox with internal state — harder to test in Storybook and less flexible for the parent to control which thumbnail opens the lightbox."
+    rationale: >
+      Controlled component pattern (open, onOpenChange, selectedIndex, onSelectedIndexChange)
+      follows Radix Dialog conventions. The parent EvidenceList owns the state, making it
+      straightforward to connect thumbnail clicks to lightbox opening. Storybook stories can
+      simply set open=true in args to show the lightbox state.
+
+  - title: "Image serving and URL construction"
+    chosen: "Reuse existing buildEvidenceUrl() function and /api/evidence route"
+    rejected:
+      - "Create a new API endpoint for thumbnails — the evidence API already serves images with proper MIME types and 1-hour caching. Adding a thumbnail endpoint would require server-side image resizing, which is unnecessary complexity."
+      - "Use next/image for optimization — evidence served via custom API route, not remote URLs. Requires loader config, adds complexity without benefit for localhost files."
+    rationale: >
+      The existing /api/evidence?path= route handles path validation (restricts to ~/.shep/repos/),
+      MIME type detection, and response caching. buildEvidenceUrl() constructs URLs from absolute
+      paths. Both thumbnails and lightbox use the same URL — CSS handles sizing differences.
+
+  - title: "Keyboard event handling strategy"
+    chosen: "useEffect with document-level keydown listener, gated on dialog open state"
+    rejected:
+      - "onKeyDown on DialogContent element — requires content to have focus. Document-level listeners are more reliable for arrow key navigation since they work regardless of focus position within the dialog."
+      - "Radix onOpenAutoFocus + element-level handler — fragile when focus shifts to buttons or other interactive elements."
+    rationale: >
+      Document-level keydown listener in useEffect (added when open=true, removed on cleanup)
+      reliably captures ArrowLeft/ArrowRight regardless of focus position. event.stopPropagation()
+      prevents parent interference per NFR-6. The effect depends on open and navigation state.
+
+  - title: "Navigation wrap-around behavior"
+    chosen: "Modular arithmetic: (index + 1) % count for next, (index - 1 + count) % count for prev"
+    rejected:
+      - "Clamp to bounds (disable buttons at first/last) — spec explicitly requires wrap-around navigation (FR-7)."
+      - "Infinite scroll with duplicated items — over-engineered for simple circular navigation."
+    rationale: >
+      Modular arithmetic is the standard solution for circular navigation. No edge-case branching
+      needed. For single-image evidence (FR-13), navigation buttons are hidden entirely.
+
+  - title: "Download button implementation"
+    chosen: "Anchor element with download attribute pointing to evidence API URL"
+    rejected:
+      - "Fetch + Blob + URL.createObjectURL — unnecessary complexity for local file downloads."
+      - "window.open() with evidence URL — opens a new tab instead of downloading."
+    rationale: >
+      Matches the existing InlineAttachments pattern (inline-attachments.tsx:149-156). Anchor with
+      href and download attribute triggers browser-native download. Consistent and simple.
+
+openQuestions:
+  - question: "Should the lightbox component manage its own Dialog open state or receive it as controlled props?"
+    resolved: true
+    options:
+      - option: "Uncontrolled — lightbox manages open state internally"
+        description: "EvidenceLightbox renders its own Dialog with internal open/onOpenChange state. Parent passes image data and initial index only. Simpler API but parent cannot programmatically open the lightbox."
+        selected: false
+      - option: "Controlled — parent manages open state via props"
+        description: "Parent controls when lightbox opens/closes via open + onOpenChange props. More flexible, easier to test in Storybook, follows Radix Dialog conventions."
+        selected: true
+      - option: "Hybrid — trigger children pattern like Radix DialogTrigger"
+        description: "Lightbox accepts trigger children that open it. Complex API that does not match the thumbnail grid use case well."
+        selected: false
+    selectionRationale: >
+      Controlled component (open, onOpenChange, selectedIndex, onSelectedIndexChange) gives the
+      parent EvidenceList full control over which thumbnail opens the lightbox at which index.
+      Follows Radix Dialog controlled mode conventions. Storybook stories can set open=true in args.
+
+  - question: "Where should image vs non-image evidence filtering happen?"
+    resolved: true
+    options:
+      - option: "Filter in EvidenceList before rendering"
+        description: "EvidenceList splits the evidence array into imageEvidence and nonImageEvidence using the existing IMAGE_EXTENSIONS set and type checks. Passes images to gallery grid, non-images to EvidenceItem list."
+        selected: true
+      - option: "Filter in a utility function exported from evidence-lightbox module"
+        description: "The evidence-lightbox module exports a filterImageEvidence() utility. Couples filtering logic to the lightbox module unnecessarily."
+        selected: false
+      - option: "Filter at the data layer in getMergeReviewData server action"
+        description: "Pre-separate images from non-images at the server level. Changes the MergeReviewData interface to have separate imageEvidence and otherEvidence arrays."
+        selected: false
+    selectionRationale: >
+      Filtering in EvidenceList keeps the logic close to where it is used and avoids changing the
+      MergeReviewData interface or server action. IMAGE_EXTENSIONS and type-based detection already
+      exist in merge-review.tsx (lines 32-33, 50-52). Simple array partition, no separate utility needed.
+
+  - question: "How should the lightbox dialog be styled to match InlineAttachments while accommodating navigation controls?"
+    resolved: true
+    options:
+      - option: "Extend DialogContent with custom className overrides (same as InlineAttachments)"
+        description: "Apply the same DialogContent className pattern: max-w gap-0 overflow-hidden border-0 p-0 with close button selector overrides. Add bottom bar with navigation controls."
+        selected: true
+      - option: "Create a custom LightboxDialogContent wrapper component"
+        description: "Build a new dialog content component encapsulating lightbox styling. Adds an abstraction layer for a single use case."
+        selected: false
+      - option: "Modify the base Dialog primitive to accept a variant prop"
+        description: "Add a lightbox variant to the shadcn/ui Dialog primitive. Changes shared infrastructure for one consumer."
+        selected: false
+    selectionRationale: >
+      The InlineAttachments pattern (inline-attachments.tsx:134) proves DialogContent className
+      overrides work well for custom dialog styling. The lightbox uses the same approach with a
+      slightly wider max-w to accommodate navigation. Bottom bar extends with nav buttons and
+      counter alongside the download button. Avoids modifying shared primitives.
+
+content: |
+  ## Technology Decisions
+
+  ### 1. Lightbox Implementation Approach
+
+  **Chosen:** Extend existing Radix Dialog pattern from InlineAttachments with gallery state
+
+  **Rejected:**
+  - Build custom modal from scratch — duplicates Dialog overlay, focus trapping, ESC handling, and portal rendering
+  - Install a dedicated lightbox library (yet-another-react-lightbox, photoswipe) — violates NFR-5 (no new dependencies) and the functionality is straightforward to build
+
+  **Rationale:** The InlineAttachments component (inline-attachments.tsx:124-158) already implements a fullscreen image dialog with bg-black/90 overlay, object-contain sizing, styled close button, and download bar. The lightbox extends this with selectedIndex state, prev/next buttons, keyboard arrow listener, and image counter. Maximum consistency with minimal new patterns.
+
+  ### 2. Component Architecture
+
+  **Chosen:** Standalone EvidenceLightbox in common/evidence-lightbox/ consumed by EvidenceList
+
+  **Rejected:**
+  - Embed in merge-review.tsx — bloats the 342-line file, untestable in isolation
+  - Generic ImageGalleryLightbox — over-engineering, needs MergeReviewEvidence-specific logic
+
+  **Rationale:** Follows the project convention (component.tsx, stories.tsx, index.ts per directory). EvidenceList imports EvidenceLightbox, passes filtered image array + controlled open/index state.
+
+  ### 3. Gallery Grid Layout
+
+  **Chosen:** CSS Grid with grid-cols-3 gap-2 and aspect-square thumbnails
+
+  **Rejected:**
+  - Responsive auto-fill/minmax — drawer width is fixed, column count always resolves to ~3
+  - Flexbox wrap — less predictable for equal-width columns
+
+  **Rationale:** The merge review drawer has a constrained fixed width. A 3-column grid produces uniform thumbnails. aspect-square + object-cover creates a clean gallery. Simple and predictable.
+
+  ### 4. Thumbnail Aspect Ratio
+
+  **Chosen:** Square (1:1) with object-cover cropping
+
+  **Rejected:**
+  - Natural aspect ratio — uneven row heights, messy grid
+  - Fixed height without aspect constraint — inconsistent visual weight
+
+  **Rationale:** Square thumbnails give a uniform grid. Users click through to the lightbox for the full uncropped image.
+
+  ### 5. Lightbox State Management
+
+  **Chosen:** Controlled component — parent EvidenceList owns open + selectedIndex state
+
+  **Rejected:**
+  - useReducer — only two state values, reducer adds indirection
+  - Uncontrolled with internal state — harder to test, less flexible
+
+  **Rationale:** Controlled props (open, onOpenChange, selectedIndex, onSelectedIndexChange) follow Radix Dialog conventions. Easy to wire up thumbnail clicks and test in Storybook.
+
+  ### 6. Keyboard Event Handling
+
+  **Chosen:** Document-level keydown listener in useEffect, gated on open state
+
+  **Rejected:**
+  - onKeyDown on DialogContent — requires content to have focus
+  - Radix onOpenAutoFocus + element handler — fragile when focus shifts
+
+  **Rationale:** Document-level listener reliably captures ArrowLeft/ArrowRight regardless of focus. event.stopPropagation() prevents parent interference per NFR-6.
+
+  ### 7. Image URL Construction
+
+  **Chosen:** Reuse existing buildEvidenceUrl() and /api/evidence route
+
+  **Rejected:**
+  - New thumbnail API endpoint — unnecessary, no server-side resize needed
+  - next/image — custom API route, no benefit for localhost
+
+  **Rationale:** Existing route handles path validation, MIME types, and caching (max-age=3600). Same URL for thumbnails and lightbox — CSS handles sizing.
+
+  ### 8. Download Implementation
+
+  **Chosen:** Anchor with download attribute (same as InlineAttachments)
+
+  **Rejected:**
+  - Fetch + Blob + createObjectURL — unnecessary complexity
+  - window.open() — opens tab instead of downloading
+
+  **Rationale:** Matches InlineAttachments pattern. Browser-native download behavior.
+
+  ### 9. Navigation Wrap-Around
+
+  **Chosen:** Modular arithmetic: (index +/- 1 + count) % count
+
+  **Rejected:**
+  - Clamp to bounds — spec requires wrap-around (FR-7)
+  - Infinite scroll — over-engineered
+
+  **Rationale:** Standard circular navigation. No edge-case branching.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | @radix-ui/react-dialog | Fullscreen overlay dialog | Use (existing) | Already installed. Provides portal, overlay, focus trap, ESC close, accessible title. |
+  | lucide-react | Navigation icons | Use (existing) | Already installed. ChevronLeft, ChevronRight, X, Download icons needed. |
+  | radix-ui (VisuallyHidden) | Accessible dialog title | Use (existing) | Already used in InlineAttachments for hidden DialogTitle. |
+  | yet-another-react-lightbox | Full-featured lightbox | Reject | Violates NFR-5. Feature needs are simple enough to build with Radix Dialog. |
+  | photoswipe | Touch-optimized lightbox | Reject | Violates NFR-5. Touch gestures not in scope. Heavy library for simple needs. |
+  | react-image-gallery | Gallery + lightbox combo | Reject | Violates NFR-5. Brings its own styling system that conflicts with Tailwind. |
+  | embla-carousel | Swipeable carousel | Reject | Violates NFR-5. Swipe gestures not in scope (desktop-primary UX). |
+  | next/image | Optimized image component | Reject | Evidence served via custom /api/evidence route. Requires loader config, adds complexity without benefit for localhost files. |
+
+  ## Security Considerations
+
+  **Path Traversal Protection:** The /api/evidence route (route.ts:33-36) validates that resolved paths start with ~/.shep/repos/. No changes needed — the lightbox uses the same buildEvidenceUrl() function and API endpoint.
+
+  **Content Security:** Evidence images are local files captured by the shep agent during implementation. They are not user-uploaded external content, so XSS via SVG or other injection vectors is not a concern in this context. Images are served with correct Content-Type headers.
+
+  **Dialog Focus Trapping:** Radix Dialog automatically traps focus within the lightbox when open, preventing interaction with background content. This is both an accessibility feature and prevents unintended actions on obscured UI.
+
+  **Keyboard Event Isolation:** Arrow key handler uses event.stopPropagation() to prevent navigation events from leaking to parent components (NFR-6). Prevents unintended scrolling of the background drawer.
+
+  ## Performance Implications
+
+  **Lazy Loading Thumbnails:** All thumbnail img elements use loading="lazy" (NFR-1) so off-screen images do not trigger network requests until scrolled into view.
+
+  **Dialog Unmount Behavior:** Radix Dialog unmounts content when closed by default (controlled mode with open=false). The fullscreen image only exists in the DOM when the lightbox is open.
+
+  **No Image Preloading:** Adjacent images are not preloaded. Evidence files are served from localhost with 1-hour browser caching, so subsequent views are instant cache hits. Navigation may show a brief load flash on first view.
+
+  **CSS Grid Performance:** A 3-column CSS Grid with typically 1-10 items has negligible layout cost. No virtualization needed.
+
+  **Event Listener Cleanup:** The useEffect cleanup removes the keydown listener when the dialog closes or component unmounts, preventing memory leaks.
+
+  ## Architecture Notes
+
+  ### Component Hierarchy
+
+  ```
+  MergeReview
+    EvidenceList (modified)
+      Gallery Grid (new — renders image thumbnails in CSS grid)
+        Thumbnail img elements (click opens lightbox)
+      EvidenceLightbox (new — fullscreen dialog with navigation)
+        Dialog (Radix)
+          Dark overlay (bg-black/90)
+          Fullscreen image (object-contain, max-h-[90vh])
+          Close button (top-right, styled per InlineAttachments)
+          Bottom bar
+            Description (truncated)
+            Counter (e.g. 2 / 5)
+            Prev/Next buttons (ChevronLeft/Right)
+            Download button
+        Keyboard handler (useEffect on document)
+      Non-image EvidenceItem list (existing — unchanged)
+  ```
+
+  ### File Changes
+
+  | File | Change Type | Description |
+  | ---- | ----------- | ----------- |
+  | common/evidence-lightbox/evidence-lightbox.tsx | New | Lightbox dialog with controlled open/index props, navigation, keyboard handling |
+  | common/evidence-lightbox/evidence-lightbox.stories.tsx | New | Stories: gallery grid, lightbox open, single image, many images, mixed types |
+  | common/evidence-lightbox/index.ts | New | Barrel export |
+  | common/merge-review/merge-review.tsx | Modified | EvidenceList splits images into gallery grid + non-image list, adds lightbox state |
+
+  ### Data Flow
+
+  1. MergeReview receives evidence: MergeReviewEvidence[] from MergeReviewData
+  2. EvidenceList filters evidence into imageEvidence and nonImageEvidence arrays
+  3. Image evidence renders as thumbnail grid (CSS grid with clickable images)
+  4. Click sets selectedIndex and open=true on controlled EvidenceLightbox
+  5. EvidenceLightbox displays the image with navigation controls
+  6. Arrow keys and buttons update selectedIndex via wrap-around arithmetic
+  7. Non-image evidence renders below the grid using existing EvidenceItem component
+
+  ### Integration Points
+
+  - MergeReviewEvidence interface — no changes needed, already has type, description, relativePath
+  - buildEvidenceUrl() — reused as-is for both thumbnails and lightbox images
+  - IMAGE_EXTENSIONS / getExtension() — reused for image type detection
+  - /api/evidence route — no changes needed, serves all image formats with caching
+  - Dialog primitive — reused from @/components/ui/dialog
+  - VisuallyHidden — reused from radix-ui for accessible dialog title

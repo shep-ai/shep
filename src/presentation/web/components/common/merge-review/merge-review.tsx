@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   ExternalLink,
   AlertTriangle,
@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { CiStatusBadge } from '@/components/common/ci-status-badge';
 import { DrawerActionBar } from '@/components/common/drawer-action-bar';
+import { EvidenceLightbox } from '@/components/common/evidence-lightbox';
 import { DiffView } from './diff-view';
 import type { MergeReviewProps, MergeReviewEvidence } from './merge-review-config';
 
@@ -183,7 +184,34 @@ function EvidenceTextPreview({ url }: { url: string }) {
   );
 }
 
+function isImageEvidence(evidence: MergeReviewEvidence): boolean {
+  return (
+    evidence.type === 'Screenshot' || IMAGE_EXTENSIONS.has(getExtension(evidence.relativePath))
+  );
+}
+
 function EvidenceList({ evidence }: { evidence: MergeReviewEvidence[] }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const { imageEvidence, nonImageEvidence } = useMemo(() => {
+    const imgs: MergeReviewEvidence[] = [];
+    const nonImgs: MergeReviewEvidence[] = [];
+    for (const e of evidence) {
+      if (isImageEvidence(e)) {
+        imgs.push(e);
+      } else {
+        nonImgs.push(e);
+      }
+    }
+    return { imageEvidence: imgs, nonImageEvidence: nonImgs };
+  }, [evidence]);
+
+  function handleThumbnailClick(index: number) {
+    setSelectedIndex(index);
+    setLightboxOpen(true);
+  }
+
   return (
     <div className="border-border rounded-lg border">
       <div className="px-4 py-3">
@@ -194,12 +222,45 @@ function EvidenceList({ evidence }: { evidence: MergeReviewEvidence[] }) {
             {evidence.length}
           </Badge>
         </div>
-        <ul className="space-y-2">
-          {evidence.map((e) => (
-            <EvidenceItem key={`${e.type}-${e.relativePath}`} evidence={e} />
-          ))}
-        </ul>
+
+        {imageEvidence.length > 0 ? (
+          /* eslint-disable @next/next/no-img-element -- Local evidence files require raw <img>, not next/image */
+          <div className="mb-3 grid grid-cols-3 gap-2">
+            {imageEvidence.map((e, i) => (
+              <button
+                key={`thumb-${e.relativePath}`}
+                type="button"
+                className="cursor-pointer overflow-hidden rounded-md border"
+                onClick={() => handleThumbnailClick(i)}
+              >
+                <img
+                  src={buildEvidenceUrl(e.relativePath)}
+                  alt={e.description}
+                  className="aspect-square w-full object-cover"
+                  loading="lazy"
+                />
+              </button>
+            ))}
+          </div>
+        ) : /* eslint-enable @next/next/no-img-element */
+        null}
+
+        {nonImageEvidence.length > 0 ? (
+          <ul className="space-y-2">
+            {nonImageEvidence.map((e) => (
+              <EvidenceItem key={`${e.type}-${e.relativePath}`} evidence={e} />
+            ))}
+          </ul>
+        ) : null}
       </div>
+
+      <EvidenceLightbox
+        images={imageEvidence}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+        selectedIndex={selectedIndex}
+        onSelectedIndexChange={setSelectedIndex}
+      />
     </div>
   );
 }

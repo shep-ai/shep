@@ -1,0 +1,31 @@
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > dialog rendering > renders the dialog when open is true 162ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > dialog rendering > does not render the dialog when open is false 2ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > dialog rendering > renders the selected image with correct src 38ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > dialog rendering > renders image alt text from evidence description 25ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > dialog rendering > has an accessible dialog title via VisuallyHidden 18ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > bottom control bar > shows counter text in "N / M" format 19ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > bottom control bar > shows description from current evidence item 18ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > bottom control bar > renders download link with correct href 15ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > bottom control bar > hides counter when there is only one image 16ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > bottom control bar > still shows download button for single image 15ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > prev/next navigation buttons > renders prev and next buttons 16ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > prev/next navigation buttons > clicking next calls onSelectedIndexChange with index + 1 15ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/evidence-list-gallery.test.tsx > EvidenceList gallery integration > thumbnail gallery grid > renders image evidence as thumbnails in a grid 160ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/evidence-list-gallery.test.tsx > EvidenceList gallery integration > thumbnail gallery grid > renders thumbnails with alt text from evidence description 11ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/evidence-list-gallery.test.tsx > EvidenceList gallery integration > thumbnail gallery grid > renders thumbnails with correct evidence API URLs 8ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/evidence-list-gallery.test.tsx > EvidenceList gallery integration > thumbnail gallery grid > renders thumbnails with loading="lazy" 25ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/evidence-list-gallery.test.tsx > EvidenceList gallery integration > mixed evidence types > renders image thumbnails and non-image items separately 24ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/evidence-list-gallery.test.tsx > EvidenceList gallery integration > non-image only evidence > renders no thumbnail grid when all evidence is non-image 12ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > prev/next navigation buttons > clicking prev on index 0 wraps to last index 15ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > prev/next navigation buttons > clicking next on last index wraps to 0 13ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > prev/next navigation buttons > hides nav buttons when there is only one image 12ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > keyboard navigation > ArrowRight navigates to next image 13ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > keyboard navigation > ArrowLeft navigates to previous image 12ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > keyboard navigation > ArrowLeft on index 0 wraps to last 19ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > keyboard navigation > does not fire handler when open is false 1ms
+ ✓  web  tests/unit/presentation/web/components/common/evidence-lightbox/evidence-lightbox.test.tsx > EvidenceLightbox > keyboard navigation > does not fire for non-arrow keys 13ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/evidence-list-gallery.test.tsx > EvidenceList gallery integration > lightbox integration > opens lightbox when a thumbnail is clicked 58ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/evidence-list-gallery.test.tsx > EvidenceList gallery integration > lightbox integration > opens lightbox at the correct index when a specific thumbnail is clicked 40ms
+ Test Files  2 passed (2)
+      Tests  28 passed (28)
+   Duration  1.31s (transform 235ms, setup 282ms, import 583ms, tests 797ms, environment 754ms)
