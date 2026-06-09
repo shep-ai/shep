@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, BackgroundVariant, Panel } from '@xyflow/react';
 import type { Connection, Edge, NodeChange, OnMoveEnd, Viewport } from '@xyflow/react';
 import { Plus } from 'lucide-react';
@@ -35,6 +35,7 @@ export interface FeaturesCanvasProps {
   onNodeClick?: (event: React.MouseEvent, node: CanvasNodeType) => void;
   onPaneClick?: (event: React.MouseEvent) => void;
   onConnect?: (connection: Connection) => void;
+  onEdgesDelete?: (edges: Edge[]) => void;
   onCanvasDrag?: () => void;
   onMoveEnd?: OnMoveEnd;
   toolbar?: React.ReactNode;
@@ -54,6 +55,7 @@ export function FeaturesCanvas({
   onNodesChange,
   onAddFeature,
   onConnect,
+  onEdgesDelete,
   onNodeClick,
   onPaneClick,
   onCanvasDrag,
@@ -150,6 +152,16 @@ export function FeaturesCanvas({
       />
     ) : null;
 
+  // Reject connections at the React Flow visual level — prevents the connection
+  // line from snapping to invalid targets (non-feature nodes, self-connections).
+  const isValidConnection = useCallback((connection: Connection | Edge) => {
+    const { source, target } = connection;
+    if (!source || !target) return false;
+    if (source === target) return false;
+    // Only feature-to-feature connections are valid
+    return source.startsWith('feat-') && target.startsWith('feat-');
+  }, []);
+
   const overlayContent = emptyState ?? fallbackEmptyState;
 
   return (
@@ -164,15 +176,17 @@ export function FeaturesCanvas({
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onConnect={onConnect}
+        onEdgesDelete={onEdgesDelete}
         onNodesChange={onNodesChange}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
         onMoveStart={onCanvasDrag}
         onMoveEnd={onMoveEnd}
+        isValidConnection={isValidConnection}
         defaultViewport={defaultViewport ?? FALLBACK_VIEWPORT}
         nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable={false}
+        nodesConnectable={true}
+        elementsSelectable={true}
         proOptions={{ hideAttribution: true }}
         className="[&_.react-flow__pane]:!cursor-default"
       >

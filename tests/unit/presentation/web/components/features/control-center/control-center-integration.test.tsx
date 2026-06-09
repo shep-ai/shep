@@ -69,6 +69,12 @@ vi.mock('@/app/actions/delete-repository', () => ({
   deleteRepository: vi.fn().mockResolvedValue({ success: true }),
 }));
 
+const mockReparentFeature = vi.fn().mockResolvedValue({ success: true });
+vi.mock('@/app/actions/reparent-feature', () => ({
+  reparentFeature: (...args: unknown[]) => mockReparentFeature(...args),
+}));
+
+import type { Edge } from '@xyflow/react';
 import { ControlCenterInner } from '@/components/features/control-center/control-center-inner';
 import { SidebarFeaturesProvider } from '@/hooks/sidebar-features-context';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -138,12 +144,12 @@ const repoNodeDefault: CanvasNodeType = {
 
 const initialNodes: CanvasNodeType[] = [repoNodeDefault, featureNodeA, featureNodeB];
 
-function renderControlCenter(nodes = initialNodes) {
+function renderControlCenter(nodes = initialNodes, edges: Edge[] = []) {
   return render(
     <SidebarProvider>
       <DrawerCloseGuardProvider>
         <SidebarFeaturesProvider>
-          <ControlCenterInner initialNodes={nodes} initialEdges={[]} />
+          <ControlCenterInner initialNodes={nodes} initialEdges={edges} />
         </SidebarFeaturesProvider>
       </DrawerCloseGuardProvider>
     </SidebarProvider>
@@ -433,6 +439,243 @@ describe('ControlCenterInner URL-based navigation', () => {
       });
 
       expect(mockPush).not.toHaveBeenCalledWith(expect.stringContaining('/create?repo='));
+    });
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  Canvas reparenting via drag-to-connect & edge deletion             */
+/* ------------------------------------------------------------------ */
+
+const featParent: CanvasNodeType = {
+  id: 'feat-parent-1',
+  type: 'featureNode',
+  position: { x: 100, y: 100 },
+  data: {
+    name: 'Parent Feature',
+    description: 'Parent',
+    featureId: 'parent-1',
+    lifecycle: 'implementation',
+    state: 'running',
+    progress: 40,
+    repositoryPath: '/home/user/my-repo',
+    branch: 'feat/parent',
+  } as FeatureNodeData,
+};
+
+const featChild: CanvasNodeType = {
+  id: 'feat-child-1',
+  type: 'featureNode',
+  position: { x: 300, y: 100 },
+  data: {
+    name: 'Child Feature',
+    description: 'Child',
+    featureId: 'child-1',
+    lifecycle: 'requirements',
+    state: 'pending',
+    progress: 0,
+    repositoryPath: '/home/user/my-repo',
+    branch: 'feat/child',
+  } as FeatureNodeData,
+};
+
+const featDone: CanvasNodeType = {
+  id: 'feat-done-1',
+  type: 'featureNode',
+  position: { x: 300, y: 300 },
+  data: {
+    name: 'Done Feature',
+    description: 'Complete',
+    featureId: 'done-1',
+    lifecycle: 'review',
+    state: 'done',
+    progress: 100,
+    repositoryPath: '/home/user/my-repo',
+    branch: 'feat/done',
+  } as FeatureNodeData,
+};
+
+const featOtherRepo: CanvasNodeType = {
+  id: 'feat-other-1',
+  type: 'featureNode',
+  position: { x: 500, y: 100 },
+  data: {
+    name: 'Other Repo Feature',
+    description: 'Different repo',
+    featureId: 'other-1',
+    lifecycle: 'implementation',
+    state: 'running',
+    progress: 20,
+    repositoryPath: '/home/user/other-repo',
+    branch: 'feat/other',
+  } as FeatureNodeData,
+};
+
+const reparentNodes: CanvasNodeType[] = [
+  repoNodeDefault,
+  featParent,
+  featChild,
+  featDone,
+  featOtherRepo,
+];
+
+describe('Canvas reparenting interactions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockReparentFeature.mockResolvedValue({ success: true });
+  });
+
+  describe('handleConnect (drag-to-connect reparenting)', () => {
+    it('calls reparentFeature server action for valid same-repo feature connection', async () => {
+      renderControlCenter(reparentNodes);
+
+      await act(async () => {
+        capturedCanvasProps.onConnect?.({
+          source: 'feat-parent-1',
+          target: 'feat-child-1',
+          sourceHandle: null,
+          targetHandle: null,
+        });
+      });
+
+      // Server action should be called with stripped feature IDs
+      expect(mockReparentFeature).toHaveBeenCalledWith('child-1', 'parent-1');
+    });
+
+    it('rejects connections where source is not a feature node', () => {
+      renderControlCenter(reparentNodes);
+
+      act(() => {
+        capturedCanvasProps.onConnect?.({
+          source: 'repo-default',
+          target: 'feat-child-1',
+          sourceHandle: null,
+          targetHandle: null,
+        });
+      });
+
+      expect(mockReparentFeature).not.toHaveBeenCalled();
+    });
+
+    it('rejects connections where target is not a feature node', () => {
+      renderControlCenter(reparentNodes);
+
+      act(() => {
+        capturedCanvasProps.onConnect?.({
+          source: 'feat-parent-1',
+          target: 'repo-default',
+          sourceHandle: null,
+          targetHandle: null,
+        });
+      });
+
+      expect(mockReparentFeature).not.toHaveBeenCalled();
+    });
+
+    it('rejects self-connections', () => {
+      renderControlCenter(reparentNodes);
+
+      act(() => {
+        capturedCanvasProps.onConnect?.({
+          source: 'feat-parent-1',
+          target: 'feat-parent-1',
+          sourceHandle: null,
+          targetHandle: null,
+        });
+      });
+
+      expect(mockReparentFeature).not.toHaveBeenCalled();
+    });
+
+    it('rejects cross-repository connections', () => {
+      renderControlCenter(reparentNodes);
+
+      act(() => {
+        capturedCanvasProps.onConnect?.({
+          source: 'feat-parent-1',
+          target: 'feat-other-1',
+          sourceHandle: null,
+          targetHandle: null,
+        });
+      });
+
+      expect(mockReparentFeature).not.toHaveBeenCalled();
+    });
+
+    it('rejects connections to terminal-state features', () => {
+      renderControlCenter(reparentNodes);
+
+      act(() => {
+        capturedCanvasProps.onConnect?.({
+          source: 'feat-parent-1',
+          target: 'feat-done-1',
+          sourceHandle: null,
+          targetHandle: null,
+        });
+      });
+
+      expect(mockReparentFeature).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleEdgesDelete (edge deletion unparenting)', () => {
+    it('calls reparentFeature with null parent for dependency edge deletion', async () => {
+      const depEdge: Edge = {
+        id: 'dep-1',
+        source: 'feat-parent-1',
+        target: 'feat-child-1',
+        type: 'dependencyEdge',
+      };
+
+      renderControlCenter(reparentNodes, [depEdge]);
+
+      await act(async () => {
+        capturedCanvasProps.onEdgesDelete?.([depEdge]);
+      });
+
+      expect(mockReparentFeature).toHaveBeenCalledWith('child-1', null);
+    });
+
+    it('ignores non-dependency edges (e.g. repo-to-feature)', async () => {
+      const repoEdge: Edge = {
+        id: 'repo-edge-1',
+        source: 'repo-default',
+        target: 'feat-child-1',
+        type: 'repoToFeature',
+      };
+
+      renderControlCenter(reparentNodes, [repoEdge]);
+
+      await act(async () => {
+        capturedCanvasProps.onEdgesDelete?.([repoEdge]);
+      });
+
+      expect(mockReparentFeature).not.toHaveBeenCalled();
+    });
+
+    it('handles multiple dependency edge deletions at once', async () => {
+      const depEdge1: Edge = {
+        id: 'dep-1',
+        source: 'feat-parent-1',
+        target: 'feat-child-1',
+        type: 'dependencyEdge',
+      };
+      const depEdge2: Edge = {
+        id: 'dep-2',
+        source: 'feat-parent-1',
+        target: 'feat-done-1',
+        type: 'dependencyEdge',
+      };
+
+      renderControlCenter(reparentNodes, [depEdge1, depEdge2]);
+
+      await act(async () => {
+        capturedCanvasProps.onEdgesDelete?.([depEdge1, depEdge2]);
+      });
+
+      expect(mockReparentFeature).toHaveBeenCalledTimes(2);
+      expect(mockReparentFeature).toHaveBeenCalledWith('child-1', null);
+      expect(mockReparentFeature).toHaveBeenCalledWith('done-1', null);
     });
   });
 });

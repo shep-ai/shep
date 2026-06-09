@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import type { Edge, Position } from '@xyflow/react';
 import type { CanvasNodeType } from '@/components/features/features-canvas';
 import type { FeatureNodeData } from '@/components/common/feature-node';
@@ -17,6 +18,7 @@ import {
   type GraphCallbacks,
 } from '@/lib/derive-graph';
 import { layoutWithDagre, getCanvasLayoutDefaults } from '@/lib/layout-with-dagre';
+import { reparentFeature as reparentFeatureAction } from '@/app/actions/reparent-feature';
 
 export type { GraphCallbacks } from '@/lib/derive-graph';
 
@@ -49,6 +51,8 @@ export interface UseGraphStateReturn {
   replaceRepository: (tempId: string, realId: string, data: RepositoryNodeData) => void;
   /** Stable lookup: get the repositoryPath for a feature node. */
   getFeatureRepositoryPath: (featureNodeId: string) => string | undefined;
+  /** Stable lookup: get a feature entry from the domain Map. */
+  getFeatureEntry: (nodeId: string) => FeatureEntry | undefined;
   /** Stable lookup: get repository node data by nodeId. */
   getRepositoryData: (nodeId: string) => RepositoryNodeData | undefined;
   /** Stable lookup: get the current number of repositories in the domain Map. */
@@ -59,6 +63,11 @@ export interface UseGraphStateReturn {
   removeApplication: (nodeId: string) => void;
   /** Update callbacks injected into node data (does NOT trigger re-render). */
   setCallbacks: (callbacks: GraphCallbacks) => void;
+  /**
+   * Optimistically reparent a feature (set/clear parentNodeId in featureMap).
+   * Calls the reparent-feature server action; rolls back on error.
+   */
+  reparentFeature: (childNodeId: string, newParentNodeId: string | null) => void;
   /**
    * Signal that an optimistic mutation has started. While any mutation is
    * in-flight, `reconcile` becomes a no-op so stale poll data cannot
@@ -625,6 +634,10 @@ export function useGraphState(
     return featureMapRef.current.get(featureNodeId)?.data.repositoryPath;
   }, []);
 
+  const getFeatureEntry = useCallback((nodeId: string): FeatureEntry | undefined => {
+    return featureMapRef.current.get(nodeId);
+  }, []);
+
   const getRepositoryData = useCallback((nodeId: string): RepositoryNodeData | undefined => {
     return repoMapRef.current.get(nodeId)?.data;
   }, []);
@@ -636,6 +649,75 @@ export function useGraphState(
   const setCallbacks = useCallback((callbacks: GraphCallbacks) => {
     callbacksRef.current = callbacks;
   }, []);
+
+  const reparentFeatureCallback = useCallback(
+    (childNodeId: string, newParentNodeId: string | null) => {
+      // Snapshot previous parentNodeId for rollback
+      const entry = featureMapRef.current.get(childNodeId);
+      if (!entry) return;
+      const prevParentNodeId = entry.parentNodeId;
+
+      // Extract featureId from node ID (strip 'feat-' prefix)
+      const featureId = childNodeId.startsWith('feat-') ? childNodeId.slice(5) : childNodeId;
+      // Extract parent featureId (strip 'feat-' prefix), or null for unparent
+      const parentFeatureId = newParentNodeId
+        ? newParentNodeId.startsWith('feat-')
+          ? newParentNodeId.slice(5)
+          : newParentNodeId
+        : null;
+
+      // Optimistic update
+      mutationCountRef.current++;
+      setFeatureMap((prev) => {
+        const current = prev.get(childNodeId);
+        if (!current) return prev;
+        const next = new Map(prev);
+        next.set(childNodeId, {
+          ...current,
+          parentNodeId: newParentNodeId ?? undefined,
+        });
+        return next;
+      });
+
+      // Call server action
+      reparentFeatureAction(featureId, parentFeatureId)
+        .then((result) => {
+          if (!result.success) {
+            // Rollback optimistic update
+            setFeatureMap((prev) => {
+              const current = prev.get(childNodeId);
+              if (!current) return prev;
+              const next = new Map(prev);
+              next.set(childNodeId, { ...current, parentNodeId: prevParentNodeId });
+              return next;
+            });
+            toast.error(result.error ?? 'Failed to reparent feature');
+          } else {
+            toast.success(newParentNodeId ? 'Feature reparented' : 'Feature detached from parent');
+          }
+        })
+        .catch(() => {
+          // Rollback optimistic update
+          setFeatureMap((prev) => {
+            const current = prev.get(childNodeId);
+            if (!current) return prev;
+            const next = new Map(prev);
+            next.set(childNodeId, { ...current, parentNodeId: prevParentNodeId });
+            return next;
+          });
+          toast.error('Failed to reparent feature');
+        })
+        .finally(() => {
+          // Delay decrement for poll cooldown
+          const timer = setTimeout(() => {
+            mutationCountRef.current = Math.max(0, mutationCountRef.current - 1);
+            mutationTimersRef.current.delete(timer);
+          }, 3_000);
+          mutationTimersRef.current.add(timer);
+        });
+    },
+    []
+  );
 
   const beginMutation = useCallback(() => {
     mutationCountRef.current++;
@@ -675,11 +757,13 @@ export function useGraphState(
     removeRepository,
     replaceRepository,
     getFeatureRepositoryPath,
+    getFeatureEntry,
     getRepositoryData,
     getRepoMapSize,
     addApplication,
     removeApplication,
     setCallbacks,
+    reparentFeature: reparentFeatureCallback,
     beginMutation,
     endMutation,
     isMutating,

@@ -364,9 +364,12 @@ export function deriveGraph(
   const hasEdges = edges.length > 0;
   for (const node of nodes) {
     const data = node.data as Record<string, unknown>;
-    data.showHandles = hasEdges;
     if (node.type === 'featureNode') {
+      // Feature nodes always show handles for drag-to-connect reparenting
+      data.showHandles = true;
       data.hasChildren = parentNodeIds.has(node.id);
+    } else {
+      data.showHandles = hasEdges;
     }
   }
 

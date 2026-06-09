@@ -49,6 +49,7 @@ describe('InitRemoteRepositoryUseCase', () => {
       getFailureLogs: vi.fn().mockResolvedValue(''),
       syncMain: vi.fn().mockResolvedValue(undefined),
       rebaseOnMain: vi.fn().mockResolvedValue(undefined),
+      rebaseOnBranch: vi.fn().mockResolvedValue(undefined),
       getConflictedFiles: vi.fn().mockResolvedValue([]),
       stageFiles: vi.fn().mockResolvedValue(undefined),
       rebaseContinue: vi.fn().mockResolvedValue(undefined),

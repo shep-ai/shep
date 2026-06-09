@@ -1,0 +1,110 @@
+=== Feature-Specific Unit Test Results ===
+Test run date: 2026-04-07T13:58:00Z
+Branch: feat/feature-dependency-rebase
+Command: pnpm test:unit (full unit suite)
+
+=== ReparentFeatureUseCase (19 tests) ===
+File: tests/unit/use-cases/features/reparent-feature.use-case.test.ts
+Status: PASSED (14ms)
+Coverage: task-1, task-2 (validation, lifecycle adjustment)
+
+=== GitPrService.rebaseOnBranch (13 tests) ===
+File: tests/unit/infrastructure/services/git/git-pr.service.rebase-on-branch.test.ts
+Status: PASSED (8ms)
+Coverage: task-4, task-5 (interface + implementation)
+
+=== CheckAndUnblockFeaturesUseCase Auto-Rebase (16 tests) ===
+File: tests/unit/application/use-cases/features/check-and-unblock-features-rebase.test.ts
+Status: PASSED (47ms)
+Coverage: task-6, task-7 (DI injection + auto-rebase orchestration)
+
+=== Control Center Integration (24 tests) ===
+File: tests/unit/presentation/web/components/features/control-center/control-center-integration.test.tsx
+Status: PASSED (605ms)
+Coverage: task-8, task-9, task-10, task-11, task-14 (canvas reparenting flow)
+
+=== SUMMARY ===
+Feature-specific tests: 4 files, 72 tests - ALL PASSED
+Full unit suite (this run): 383 files, 5402 tests passed
+Duration: 40.85s
+
+--- Detailed Test Output (vitest run, ANSI stripped) ---
+
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.rebase-on-branch.test.ts (13 tests) 8ms
+   ✓ should throw GIT_ERROR when worktree is dirty
+   ✓ should fetch the target branch before rebasing
+   ✓ should checkout the feature branch before rebasing
+   ✓ should call git rebase with origin/<targetBranch> as target
+   ✓ should succeed on clean rebase (no conflicts)
+   ✓ should throw REBASE_CONFLICT when rebase encounters conflicts
+   ✓ should include conflicted file list in REBASE_CONFLICT error message
+   ✓ should detect "could not apply" as rebase conflict
+   ✓ should throw BRANCH_NOT_FOUND when feature branch does not exist
+   ✓ should throw descriptive error when fetch of target branch fails
+   ✓ should throw generic GIT_ERROR on non-conflict rebase failure
+   ✓ should still throw REBASE_CONFLICT even if getConflictedFiles fails
+   ✓ should execute steps in correct order: dirty check → fetch → checkout → rebase
+
+ ✓  node  tests/unit/use-cases/features/reparent-feature.use-case.test.ts (19 tests) 14ms
+   ✓ should successfully reparent a feature under a new parent
+   ✓ should reject self-reparent
+   ✓ should reject direct cycle (A→B, try to reparent A under B)
+   ✓ should reject indirect cycle (A→B→C, try to reparent A under C)
+   ✓ should reject cross-repo reparent
+   ✓ should reject reparenting Done feature
+   ✓ should reject reparenting Archived feature
+   ✓ should reject reparenting to non-existent parent
+   ✓ should successfully unparent (parentId=null)
+   ✓ should transition Started child to Blocked when reparented under pre-implementation parent
+   ✓ should keep Started child unchanged when reparented under post-implementation parent
+   ✓ should transition Blocked child to Started when unparented
+   ✓ should keep Pending child unchanged when unparented
+   ✓ should call CheckAndUnblockFeaturesUseCase when parent is post-implementation
+   ✓ should NOT call CheckAndUnblockFeaturesUseCase when parent is pre-implementation
+   ✓ should reject reparenting to a non-existent feature
+   ✓ should not call repository.update on validation failure
+   ✓ should propagate errors from repository.update
+   ✓ should handle deeply nested ancestor chains in cycle detection
+
+ ✓  node  tests/unit/application/use-cases/features/check-and-unblock-features-rebase.test.ts (16 tests) 47ms
+   ✓ should rebase child branch onto parent branch before spawning agent
+   ✓ should use parent branch name as target for rebaseOnBranch
+   ✓ should call stashPop after successful rebase
+   ✓ should not call stashPop when no changes were stashed
+   ✓ should create agent run and phase timing for rebase operation
+   ✓ should delegate to ConflictResolutionService on rebase conflict
+   ✓ should still spawn agent when rebase fails
+   ✓ should record rebase failure in phase timing
+   ✓ should call stashPop in finally block even when rebase throws
+   ✓ should still rebase and spawn second child when first child rebase fails
+   ✓ should skip rebase when child has active agent run (NFR-3)
+   ✓ should resolve CWD via worktree service
+   ✓ should fall back to repo root when worktree does not exist
+   ✓ should record success with rebased commit summary in phase timing
+   ✓ should isolate failures per child
+   ✓ should respect 5-minute timeout per child rebase
+
+ ✓  web  tests/unit/presentation/web/components/features/control-center/control-center-integration.test.tsx (24 tests) 605ms
+   ✓ handleConnect calls reparentFeature with valid feature-to-feature connection
+   ✓ handleConnect rejects non-feature-to-feature connections
+   ✓ handleConnect rejects self-connections
+   ✓ handleConnect rejects cross-repo connections
+   ✓ handleConnect rejects connections to Done features
+   ✓ handleConnect rejects connections to Archived features
+   ✓ handleEdgesDelete calls reparentFeature(null) for dependency edges
+   ✓ handleEdgesDelete ignores non-dependency edges
+   ✓ handleEdgesDelete processes multiple deletions independently
+   ✓ reparentFeature optimistically updates featureMap
+   ✓ reparentFeature rolls back on server error
+   ✓ reparentFeature unparent sets parentNodeId to undefined
+   ... (all 24 tests passed)
+
+ Test Files  4 passed (4)
+      Tests  72 passed (72)
+
+=== TOTAL FEATURE-SPECIFIC TESTS: 72 passed (72) ===
+
+=== FULL UNIT SUITE (this run) ===
+ Test Files  383 passed (383)
+      Tests  5402 passed (5402)
+   Duration  40.85s

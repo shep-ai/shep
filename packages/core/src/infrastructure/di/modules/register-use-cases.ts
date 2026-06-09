@@ -57,6 +57,7 @@ import { SyncRepositoryMainUseCase } from '../../../application/use-cases/reposi
 import { RebaseFeatureOnMainUseCase } from '../../../application/use-cases/features/rebase-feature-on-main.use-case.js';
 import { GetBranchSyncStatusUseCase } from '../../../application/use-cases/features/get-branch-sync-status.use-case.js';
 import { AutoResolveMergedBranchesUseCase } from '../../../application/use-cases/features/auto-resolve-merged-branches.use-case.js';
+import { ReparentFeatureUseCase } from '../../../application/use-cases/features/reparent-feature.use-case.js';
 import { CreateApplicationUseCase } from '../../../application/use-cases/applications/create-application.use-case.js';
 import { ListApplicationsUseCase } from '../../../application/use-cases/applications/list-applications.use-case.js';
 import { GetApplicationUseCase } from '../../../application/use-cases/applications/get-application.use-case.js';
@@ -208,6 +209,7 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(RebaseFeatureOnMainUseCase);
   container.registerSingleton(GetBranchSyncStatusUseCase);
   container.registerSingleton(AutoResolveMergedBranchesUseCase);
+  container.registerSingleton(ReparentFeatureUseCase);
   container.registerSingleton(CreateApplicationUseCase);
   container.registerSingleton(ListApplicationsUseCase);
   container.registerSingleton(GetApplicationUseCase);
@@ -389,6 +391,9 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('AutoResolveMergedBranchesUseCase', {
     useFactory: (c) => c.resolve(AutoResolveMergedBranchesUseCase),
+  });
+  container.register('ReparentFeatureUseCase', {
+    useFactory: (c) => c.resolve(ReparentFeatureUseCase),
   });
   container.register('CreateApplicationUseCase', {
     useFactory: (c) => c.resolve(CreateApplicationUseCase),

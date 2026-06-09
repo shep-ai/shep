@@ -1,0 +1,103 @@
+=== Integration Test Results ===
+Test run date: 2026-04-07T13:58:23Z
+Branch: feat/feature-dependency-rebase
+Command: pnpm test:int
+
+50 test files, 581 tests - ALL PASSED
+Duration: 20.12s
+
+--- Key integration test suites for this feature ---
+feature-parent.repository.test.ts: 14 tests PASSED (398ms)
+sqlite-feature-repository.find-by-branch.test.ts: 6 tests PASSED (254ms)
+git-pr.service.rebase-sync.test.ts: 16 tests PASSED (19843ms)
+
+--- Full integration suite output (vitest run, ANSI stripped) ---
+
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migrations.test.ts (66 tests) 1191ms
+ ✓  node  tests/integration/infrastructure/services/git/merge-step-real-git/pr-merge.test.ts (1 test) 1921ms
+     ✓ push=true, openPr=true, allowMerge=true → BUG: verifyMerge skipped after gh pr merge  1918ms
+ ✓  node  tests/integration/infrastructure/services/git/worktree-git-init.test.ts (8 tests) 2418ms
+     ✓ should not re-initialize an existing git repository  1390ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-settings.repository.test.ts (47 tests) 942ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-feature.repository.test.ts (35 tests) 702ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-repository.repository.test.ts (20 tests) 319ms
+ ✓  node  tests/integration/infrastructure/services/git/merge-step-real-git/skip-merge.test.ts (1 test) 2398ms
+     ✓ undefined-gates-silent-skip: should skip merge silently when approvalGates is undefined  2396ms
+ ✓  node  tests/integration/infrastructure/repositories/agent-run.repository.test.ts (31 tests) 510ms
+ ✓  node  tests/integration/infrastructure/services/git/merge-step-real-git/push-merge.test.ts (1 test) 3911ms
+     ✓ push-no-pr-merge: feature branch should be merged into main after push+merge  3908ms
+ ✓  node  tests/integration/infrastructure/services/git/merge-step-real-git/smoke.test.ts (7 tests) 4209ms
+       ✓ should create a bare repo and clone with main + feature branch  2075ms
+       ✓ createLocalOnlyHarness: should create a local repo with no remote  2085ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-interactive-session.repository.test.ts (13 tests) 313ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-interactive-message.repository.test.ts (10 tests) 281ms
+ ✓  node  tests/integration/infrastructure/repositories/feature-parent.repository.test.ts (14 tests) 398ms
+ ✓  node  tests/integration/infrastructure/services/git/merge-step-real-git/gate-tests.test.ts (2 tests) 4436ms
+     ✓ commit-only-with-gate: should interrupt at merge gate when allowMerge=false  2469ms
+     ✓ push-pr-with-gate: should interrupt at merge gate when allowMerge=false (PR path)  1966ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-phase-timing.repository.test.ts (14 tests) 427ms
+ ✓  node  tests/integration/application/use-cases/settings/onboarding-to-feature-flow.test.ts (12 tests) 364ms
+ ✓  node  tests/integration/application/use-cases/settings/workflow-command-flow.test.ts (11 tests) 388ms
+ ✓  node  tests/integration/infrastructure/repositories/sqlite-feature-repository.find-by-branch.test.ts (6 tests) 254ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/merge-flow.test.ts (9 tests) 264ms
+ ✓  node  tests/integration/application/use-cases/features/start-feature.use-case.test.ts (10 tests) 457ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/reject-feedback-propagation.test.ts (4 tests) 318ms
+ ✓  node  tests/integration/infrastructure/services/agents/agent-infrastructure.test.ts (13 tests) 286ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/evidence-flow.test.ts (13 tests) 306ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/reject-flow.test.ts (6 tests) 197ms
+ ✓  node  tests/integration/services/tool-installer.service.test.ts (32 tests) 266ms
+ ✓  node  tests/integration/application/use-cases/settings/onboarding-flow.test.ts (4 tests) 168ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/resume-feedback-propagation.test.ts (7 tests) 223ms
+ ✓  node  tests/integration/application/use-cases/agents/configure-agent-dev.test.ts (5 tests) 219ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/resume-after-error.test.ts (5 tests) 183ms
+ ✓  node  tests/integration/infrastructure/services/agents/merge-flow.test.ts (11 tests) 280ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/resume-after-error-merge.test.ts (6 tests) 233ms
+ ✓  node  tests/integration/api/agent-events-sse.test.ts (12 tests) 70ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migration-049.test.ts (5 tests) 266ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/legacy-migrations.test.ts (18 tests) 134ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/migration-015.test.ts (4 tests) 140ms
+ ✓  node  tests/integration/infrastructure/services/agents/hitl-approval-flow.test.ts (7 tests) 126ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/sqlite-migration-storage.test.ts (22 tests) 14ms
+ ✓  node  tests/integration/infrastructure/services/agents/sessions/claude-code-session.repository.test.ts (23 tests) 57ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/approve-after-failed-rejection.test.ts (3 tests) 120ms
+ ✓  node  tests/integration/application/use-cases/features/list-features.use-case.test.ts (2 tests) 42ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/gate-configuration.test.ts (5 tests) 113ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/approve-flow.test.ts (3 tests) 128ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/feedback-and-timing.test.ts (2 tests) 93ms
+ ✓  node  tests/integration/infrastructure/services/git/git-pr-ci-watch.test.ts (5 tests) 5ms
+ ✓  node  tests/integration/services/git/git-pr.service.getFailureLogs.test.ts (11 tests) 5ms
+ ✓  node  tests/integration/prd-approval-iterations.test.ts (7 tests) 22ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/yaml-repair-cycle.test.ts (3 tests) 7ms
+ ✓  node  tests/integration/infrastructure/services/git/merge-step-real-git/local-merge.test.ts (3 tests) 7144ms
+     ✓ local-merge-no-push: feature branch should be merged into main after node completes  2840ms
+     ✓ no-remote-override-merge: should merge locally when remote unavailable (push+openPr overridden)  2624ms
+     ✓ no-remote-local-merge: should merge locally without any remote  1677ms
+ ✓  node  tests/integration/infrastructure/services/git/merge-step-real-git/verify-merge.test.ts (6 tests) 8957ms
+     ✓ should return true after a true merge (git merge)  1761ms
+     ✓ should return true after a squash merge (git merge --squash)  2683ms
+     ✓ should return false when branch has not been merged  950ms
+     ✓ should return false when main has extra commits after squash but feature has diverged  1674ms
+     ✓ should return true after squash merge with modified tree when premergeBaseSha provided  1051ms
+     ✓ should return true after squash merge even when local branch is deleted (remote fallback)  838ms
+ ✓  node  tests/integration/services/git/git-pr.service.rebase-sync.test.ts (16 tests) 19843ms
+     ✓ should fetch latest main when upstream has new commits (from feature branch)  3075ms
+     ✓ should fast-forward main when on the main branch (uses pull)  2904ms
+     ✓ should succeed silently when main is already up-to-date  1395ms
+     ✓ should throw SYNC_FAILED when on main and local main has diverged from remote  1186ms
+     ✓ should succeed from feature branch even when local main has diverged (fetches origin/main only)  1074ms
+     ✓ should be idempotent — calling sync twice succeeds  920ms
+     ✓ should successfully rebase feature branch onto main with no conflicts  1214ms
+     ✓ should throw REBASE_CONFLICT when rebase encounters conflicting changes  959ms
+     ✓ should throw GIT_ERROR when worktree has uncommitted changes  593ms
+     ✓ should throw BRANCH_NOT_FOUND when feature branch does not exist  598ms
+     ✓ should leave worktree clean after aborting a conflicted rebase  987ms
+     ✓ should produce linear history after successful rebase  1147ms
+     ✓ should succeed when feature branch is already up-to-date with main (no-op rebase)  611ms
+     ✓ getConflictedFiles should return conflicted file paths during a rebase conflict  957ms
+     ✓ stageFiles + rebaseContinue should complete rebase after manual conflict resolution  1227ms
+     ✓ rebaseAbort should restore branch to pre-rebase state  993ms
+
+ Test Files  50 passed (50)
+      Tests  581 passed (581)
+   Start at  13:58:23
+   Duration  20.12s

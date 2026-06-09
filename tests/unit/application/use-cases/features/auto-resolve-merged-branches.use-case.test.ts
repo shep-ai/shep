@@ -83,6 +83,7 @@ function createMockGitPrService(): IGitPrService {
     getFailureLogs: vi.fn(),
     syncMain: vi.fn(),
     rebaseOnMain: vi.fn(),
+    rebaseOnBranch: vi.fn(),
     getConflictedFiles: vi.fn(),
     stageFiles: vi.fn(),
     rebaseContinue: vi.fn(),

@@ -1,0 +1,424 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "feature-dependency-rebase"
+summary: >
+  Comprehensive technical analysis for interactive feature reparenting via React Flow
+  drag-to-connect and automatic child branch rebase on parent completion. All infrastructure
+  exists — no new libraries needed. Key decisions: extend existing onConnect no-op handler
+  in use-control-center-state.ts, add reparentFeature mutation to useGraphState, add
+  rebaseOnBranch to IGitPrService, and inject rebase orchestration into
+  CheckAndUnblockFeaturesUseCase between lifecycle transition and agent spawn.
+
+relatedFeatures:
+  - "041-feature-dependencies"
+  - "080-smart-rebase"
+
+technologies:
+  - "TypeScript"
+  - "React 19"
+  - "Next.js 15"
+  - "@xyflow/react (React Flow v12)"
+  - "dagre (graph layout)"
+  - "tsyringe (DI)"
+  - "better-sqlite3"
+  - "node:child_process (git operations)"
+  - "shadcn/ui"
+  - "sonner (toast notifications)"
+
+relatedLinks:
+  - title: "React Flow Connection Handling API"
+    url: "https://reactflow.dev/api-reference/react-flow#connection-handling"
+  - title: "React Flow Edge Utils (BaseEdge, EdgeLabelRenderer)"
+    url: "https://reactflow.dev/api-reference/utils/edge-utils"
+  - title: "Spec 041 - Feature Dependencies"
+    url: "./specs/041-feature-dependencies/"
+  - title: "Spec 080 - Smart Rebase"
+    url: "./specs/080-smart-rebase/"
+
+decisions:
+  - title: "Canvas Reparenting Interaction Pattern"
+    chosen: "Extend existing React Flow onConnect handler in use-control-center-state.ts"
+    rejected:
+      - "Custom drag-and-drop with onNodeDragStop + intersection detection — would conflict with nodesDraggable=false (currently disabled for layout stability) and require custom hit-testing logic. Much more complex for no user benefit."
+      - "Context menu right-click approach — two-step interaction (right-click then select target) is less discoverable and violates the natural graph-editing UX users expect from node editors."
+    rationale: |
+      The codebase already has the plumbing: features-canvas.tsx passes onConnect to ReactFlow
+      (line 153), control-center-inner.tsx wires handleConnect (line 516), and
+      use-control-center-state.ts defines handleConnect as a no-op (line 311). Feature nodes
+      already render source and target Handle components with isConnectable=false (feature-node.tsx
+      lines 138-146 for target, 698-734 for source). Enabling connections requires only:
+      (1) set nodesConnectable=true on ReactFlow, (2) set isConnectable=true on handles,
+      (3) implement the handleConnect callback. This is the native React Flow idiom and the
+      lowest-effort approach.
+
+  - title: "Edge Deletion for Unparenting"
+    chosen: "Enhance DependencyEdge component with hover delete button and keyboard delete support"
+    rejected:
+      - "Context menu on the edge — adds context menu complexity, less discoverable than visual delete button, and inconsistent with standard graph-editing conventions."
+      - "Toolbar action after selecting a feature — requires multi-step interaction (select child, click toolbar unparent button), less intuitive than direct edge interaction."
+    rationale: |
+      The existing DependencyEdge component (dependency-edge.tsx) is a minimal BaseEdge wrapper
+      with dashed styling. It currently has no interactive elements. Adding a hover-visible
+      delete button (X icon from lucide-react) using React Flow's EdgeLabelRenderer is the
+      standard pattern. React Flow supports onEdgesDelete callback and edge selection natively.
+      The canvas currently has elementsSelectable=false — this must be changed to allow edge
+      selection for keyboard delete. We can scope selectability to edges only via
+      edgesSelectable=true while keeping nodesSelectable=false.
+
+  - title: "Optimistic UI Strategy for Reparenting"
+    chosen: "Add reparentFeature mutation to useGraphState that updates parentNodeId in featureMap"
+    rejected:
+      - "Direct edge manipulation via React Flow's addEdge/removeEdge — bypasses the domain Map source of truth. The codebase derives all edges from featureMap/repoMap via deriveGraph (derive-graph.ts). Direct edge manipulation would be overwritten on next derivation cycle."
+      - "Server-first with loading state — wait for server response before updating UI. Violates NFR-1 (100ms latency requirement) and degrades perceived performance."
+    rationale: |
+      The codebase uses domain Maps (featureMap, repoMap, pendingMap) as the single source of
+      truth. All React Flow nodes/edges are derived from these Maps via deriveGraph(). The
+      existing optimistic mutation pattern uses beginMutation()/endMutation() to block poll
+      reconciliation during in-flight mutations (use-graph-state.ts lines 546-560). The
+      reparentFeature mutation must: (1) call beginMutation(), (2) update the child's
+      parentNodeId in featureMap (or set to undefined for unparent), (3) call the server action,
+      (4) on error, revert parentNodeId and show toast, (5) call endMutation(). This triggers
+      automatic re-derivation of edges and dagre re-layout via the topology-key cache mechanism
+      (the edge set changes, so the cache key changes, triggering a full layout recalculation).
+
+  - title: "ReparentFeatureUseCase Architecture"
+    chosen: "New standalone use case in packages/core/src/application/use-cases/features/ with DI registration"
+    rejected:
+      - "Extend CreateFeatureUseCase to handle reparent — violates single responsibility principle. CreateFeatureUseCase handles feature creation flow (spec setup, agent spawn, worktree). Reparent is a distinct operation with different validation and side effects."
+      - "Inline reparent logic in the server action — violates Clean Architecture. Business logic (cycle detection, lifecycle guards, state adjustment) must live in the application layer, not the presentation layer."
+    rationale: |
+      Following the established pattern: each feature operation has its own use case class
+      (CreateFeatureUseCase, DeleteFeatureUseCase, StartFeatureUseCase, etc.), registered as a
+      singleton in the DI container with a string token alias for web server actions. The new
+      ReparentFeatureUseCase will: (1) validate same-repo constraint, (2) detect cycles via
+      upward ancestor walk (reuse pattern from CreateFeatureUseCase lines 106-116), (3) enforce
+      lifecycle guards (reject Done/Archived), (4) update parentId via IFeatureRepository.update(),
+      (5) adjust child lifecycle state based on new parent's lifecycle, (6) trigger rebase if new
+      parent is post-implementation. The use case gets registered with class token + string alias
+      'ReparentFeatureUseCase' (per LESSONS.md pattern).
+
+  - title: "Auto-Rebase Integration Point"
+    chosen: "Inject rebase orchestration into CheckAndUnblockFeaturesUseCase between lifecycle transition and agent spawn"
+    rejected:
+      - "Create a separate AutoRebaseChildrenUseCase triggered by an event — adds event system complexity not present in the codebase. The existing pattern is synchronous use-case chaining (UpdateFeatureLifecycleUseCase calls CheckAndUnblockFeaturesUseCase directly)."
+      - "Trigger rebase from UpdateFeatureLifecycleUseCase directly — wrong level of abstraction. CheckAndUnblockFeaturesUseCase already encapsulates the parent-child unblock logic. Adding rebase here keeps all child-transition logic in one place."
+    rationale: |
+      CheckAndUnblockFeaturesUseCase (check-and-unblock-features.use-case.ts) is the single
+      point where blocked children are transitioned to Started and their agents spawned. The
+      current flow is: (1) verify parent is POST_IMPLEMENTATION, (2) load children via
+      findByParentId, (3) for each Blocked child: set lifecycle=Started, update DB, spawn agent.
+      The rebase must happen between steps 3's DB update and agent spawn. Each child's rebase
+      runs independently (fire-and-forget with error recording) so one failure doesn't block
+      others. The use case needs new dependencies injected: IGitPrService, IWorktreeService,
+      ConflictResolutionService, IAgentRunRepository, IPhaseTimingRepository — following the
+      exact pattern from RebaseFeatureOnMainUseCase.
+
+  - title: "Git Rebase on Arbitrary Branch"
+    chosen: "Add rebaseOnBranch method to IGitPrService interface and implement in GitPrService"
+    rejected:
+      - "Reuse rebaseOnMain with branch parameter overloading — rebaseOnMain's signature is (cwd, featureBranch, baseBranch) and it always targets origin/<baseBranch>. Overloading would change its semantics for all callers, which is risky and confusing."
+      - "Shell out directly from the use case — bypasses the port interface, violates Clean Architecture (use cases must not know about git commands), and duplicates git error handling."
+    rationale: |
+      The existing rebaseOnMain method (git-pr.service.ts lines 830-901) always targets
+      origin/<baseBranch>. For parent-branch rebase, we need to target origin/<parentBranch>
+      where parentBranch is the parent feature's branch name. The new rebaseOnBranch method will
+      follow the same implementation pattern: (1) check dirty worktree, (2) checkout feature
+      branch, (3) rebase onto origin/<targetBranch>. The key difference is that it must first
+      fetch the target branch (git fetch origin <targetBranch>) since it may not have been fetched
+      recently. This reuses the same conflict detection pattern (check stderr for CONFLICT/could
+      not apply) and throws REBASE_CONFLICT for the ConflictResolutionService to handle.
+
+  - title: "Connection Validation Strategy"
+    chosen: "Client-side pre-validation with server-side authoritative validation"
+    rejected:
+      - "Server-only validation — round-trip latency violates NFR-4 (200ms feedback). User would see a brief connected state before the server rejects and it snaps back."
+      - "Client-only validation — insufficient for cycle detection on deep trees (client may not have complete ancestor chain in memory). Also allows race conditions where two clients could create a cycle simultaneously."
+    rationale: |
+      Two-layer validation provides both fast feedback and correctness. Client-side validation in
+      the onConnect handler covers: (1) reject non-feature-to-feature connections (repo group
+      nodes have different node IDs — check for 'feat-' prefix), (2) reject self-connections,
+      (3) reject cross-repo (compare repositoryPath from featureMap entries), (4) reject
+      Done/Archived lifecycle. These are fast local checks. The server-side ReparentFeatureUseCase
+      performs authoritative validation including cycle detection (upward ancestor walk via DB
+      queries). If server rejects, the optimistic UI rolls back and shows a toast error.
+
+  - title: "Rebase Execution Mode"
+    chosen: "Async fire-and-forget with per-child error isolation and activity timeline recording"
+    rejected:
+      - "Synchronous blocking rebase — parent lifecycle transition blocks on child git operations. With 5 children, this makes the transition unacceptably slow and defeats the purpose of async unblocking."
+      - "Queue-based deferred rebase — adds a job queue system not present in the codebase. Over-engineering for the current scale. If a child has 0-2 parents, immediate async execution is sufficient."
+    rationale: |
+      The spec requires async execution (FR-9, NFR-2). Each child rebase creates its own agent
+      run and phase timing record (following RebaseFeatureOnMainUseCase pattern), so failures
+      appear in the activity timeline without additional UI. The pattern is: after updating child
+      lifecycle to Started, fire off the rebase as a Promise that catches its own errors and
+      records them. The agent spawn proceeds regardless — if the rebase fails, the agent will
+      work on an un-rebased branch (which may cause conflicts later but doesn't block work).
+      A timeout of 5 minutes per child prevents runaway processes (NFR-2).
+
+  - title: "Handle Configuration for Feature Nodes"
+    chosen: "Set isConnectable=true on both source and target handles, keep showHandles logic"
+    rejected:
+      - "Always show handles regardless of edges — changes visual appearance for features with no dependencies. The current behavior (handles hidden when no edges) is intentional for visual cleanliness."
+      - "Add separate connection handles distinct from the existing layout handles — doubles the handle count, creates visual clutter, and React Flow connection logic would need to distinguish between layout handles and connection handles."
+    rationale: |
+      The existing handles (feature-node.tsx) serve dual purpose: layout positioning for dagre
+      and connection anchoring for React Flow. Currently isConnectable=false hides the connection
+      affordance. Setting isConnectable=true shows the connection dots on hover. The showHandles
+      logic (derived from edges.length > 0 in derive-graph.ts line 242) controls visibility —
+      but for connections to work, handles must be rendered even when no edges exist. The fix:
+      always render handles (remove the data.showHandles conditional for target handles), but
+      keep them visually hidden (opacity-0) until hover when nodesConnectable=true. The source
+      handle already has the Plus button which can serve as the connection source point.
+
+openQuestions:
+  - question: "Should the auto-rebase await completion before spawning the child agent, or should it fire-and-forget?"
+    resolved: true
+    options:
+      - option: "Fire-and-forget (non-blocking)"
+        description: "Start rebase async, spawn agent immediately. Agent works on potentially un-rebased branch. If rebase finishes first (likely for clean rebases), agent benefits. If rebase fails, agent works on stale branch — conflicts surface later."
+        selected: false
+      - option: "Await rebase then spawn agent"
+        description: "Wait for rebase to complete (with timeout) before spawning the child agent. Agent always works on the rebased branch. But blocks agent spawn for the duration of the rebase (seconds to minutes). Sequential per-child."
+        selected: true
+      - option: "Parallel rebase + agent spawn with sync point"
+        description: "Start rebase and agent in parallel. Agent waits at a sync point (e.g., before implementation phase) for rebase to complete. Complex coordination but maximizes parallelism."
+        selected: false
+    selectionRationale: |
+      The spec says async (FR-9: 'rebase the child feature branch before spawning the child
+      agent'). The word 'before' implies sequential: rebase first, then spawn. Awaiting the
+      rebase ensures the agent always works on a properly rebased branch. The timeout (5 min
+      per child, NFR-2) prevents indefinite blocking. If rebase fails, the agent still spawns
+      (the failure is recorded and the agent works on the un-rebased branch). Each child's
+      rebase+spawn sequence is independent of other children, so multiple children process
+      in parallel at the child level.
+
+  - question: "How should the immediate rebase on reparent work when the new parent is already post-implementation?"
+    resolved: true
+    options:
+      - option: "Call CheckAndUnblockFeaturesUseCase after reparent"
+        description: "After updating parentId, call CheckAndUnblockFeaturesUseCase with the new parent's ID. If the new parent is post-implementation and the child is Blocked, the existing unblock+rebase flow triggers automatically. Reuses existing infrastructure."
+        selected: true
+      - option: "Inline rebase logic in ReparentFeatureUseCase"
+        description: "ReparentFeatureUseCase directly calls the git rebase methods when the new parent is post-implementation. Duplicates the rebase orchestration logic already in CheckAndUnblockFeaturesUseCase."
+        selected: false
+      - option: "No immediate rebase, manual trigger required"
+        description: "Reparenting only updates the dependency relationship. User must manually trigger rebase if needed. Simplest but least helpful — user may not realize the branch is stale."
+        selected: false
+    selectionRationale: |
+      Calling CheckAndUnblockFeaturesUseCase from ReparentFeatureUseCase is the cleanest
+      approach. The use case already handles the gate check (is parent post-implementation?),
+      child lifecycle transition, rebase orchestration, and agent spawn. ReparentFeatureUseCase
+      only needs to: (1) update the parentId, (2) adjust lifecycle if needed (FR-8), (3) call
+      CheckAndUnblockFeaturesUseCase.execute(newParentId) which handles the rest. This avoids
+      duplicating rebase logic.
+
+  - question: "How should elementsSelectable interact with the new connection and edge deletion features?"
+    resolved: true
+    options:
+      - option: "Enable edgesSelectable=true, keep nodesSelectable=false"
+        description: "React Flow v12 supports granular selectability. Allow edge selection (for keyboard delete) while keeping nodes non-selectable (preserving current behavior where nodes don't get selected/highlighted)."
+        selected: true
+      - option: "Enable elementsSelectable=true for both nodes and edges"
+        description: "Allow selection of all elements. This changes the current node interaction model — clicking a node would select it (blue highlight) instead of opening the drawer."
+        selected: false
+      - option: "Keep elementsSelectable=false, use custom click handler on edges"
+        description: "Don't use React Flow's selection system. Instead, add a custom click handler on DependencyEdge that shows a delete confirmation. Avoids changing selectability but loses keyboard delete support."
+        selected: false
+    selectionRationale: |
+      React Flow v12 supports separate edgesSelectable and nodesSelectable props. The current
+      canvas sets elementsSelectable=false (features-canvas.tsx line 162) to prevent selection
+      interfering with the drawer interaction. We can replace this with edgesSelectable=true and
+      keep the default nodesSelectable behavior. Edge selection enables the keyboard delete flow
+      (select edge via click, press Delete/Backspace, triggers onEdgesDelete). The hover delete
+      button on DependencyEdge provides a mouse-only alternative.
+
+content: |
+  ## Technology Decisions
+
+  ### 1. Canvas Reparenting Interaction Pattern
+
+  **Chosen:** Extend existing React Flow onConnect handler in use-control-center-state.ts
+
+  **Rejected:**
+  - Custom drag-and-drop with onNodeDragStop — conflicts with nodesDraggable=false and requires custom hit-testing
+  - Context menu right-click approach — two-step interaction, less discoverable
+
+  **Rationale:** The codebase already has the complete plumbing. FeaturesCanvas passes onConnect to ReactFlow (line 153), the handleConnect callback exists as a documented no-op (line 311). Feature nodes render source/target Handle components. Enabling connections requires setting nodesConnectable=true and implementing the handler — no structural changes needed.
+
+  ### 2. Edge Deletion for Unparenting
+
+  **Chosen:** Enhance DependencyEdge with hover delete button + keyboard delete
+
+  **Rejected:**
+  - Context menu on edge — less discoverable, adds menu complexity
+  - Toolbar action after selecting feature — multi-step interaction
+
+  **Rationale:** DependencyEdge is currently a minimal BaseEdge wrapper. Adding a hover-visible delete button using EdgeLabelRenderer is the standard React Flow pattern. Combined with edge selection (edgesSelectable=true) for keyboard delete, this covers both mouse and keyboard interaction paths.
+
+  ### 3. Optimistic UI Strategy
+
+  **Chosen:** Add reparentFeature mutation to useGraphState
+
+  **Rejected:**
+  - Direct React Flow edge manipulation — bypasses domain Map source of truth, gets overwritten on derivation
+  - Server-first approach — violates 100ms latency requirement (NFR-1)
+
+  **Rationale:** Domain Maps are the single source of truth. Updating parentNodeId in featureMap triggers automatic edge re-derivation via deriveGraph() and dagre re-layout via topology-key cache. The beginMutation/endMutation pattern prevents stale poll data from overwriting optimistic state.
+
+  ### 4. ReparentFeatureUseCase Architecture
+
+  **Chosen:** New standalone use case with DI registration + string token alias
+
+  **Rejected:**
+  - Extend CreateFeatureUseCase — violates single responsibility
+  - Inline logic in server action — violates Clean Architecture
+
+  **Rationale:** Follows the established one-operation-per-use-case pattern. Registered as singleton with 'ReparentFeatureUseCase' string alias for web server action resolution (per LESSONS.md).
+
+  ### 5. Auto-Rebase Integration Point
+
+  **Chosen:** Inject into CheckAndUnblockFeaturesUseCase between lifecycle transition and agent spawn
+
+  **Rejected:**
+  - Separate event-triggered use case — no event system exists in codebase
+  - Trigger from UpdateFeatureLifecycleUseCase — wrong abstraction level
+
+  **Rationale:** CheckAndUnblockFeaturesUseCase is the single point where Blocked→Started transitions happen and agents spawn. Inserting rebase orchestration between DB update and agent spawn is the natural extension. New DI dependencies: IGitPrService, IWorktreeService, ConflictResolutionService, IAgentRunRepository, IPhaseTimingRepository.
+
+  ### 6. Git Rebase on Arbitrary Branch
+
+  **Chosen:** Add rebaseOnBranch to IGitPrService interface
+
+  **Rejected:**
+  - Overload rebaseOnMain — changes semantics for all callers
+  - Shell out from use case — violates port interface pattern
+
+  **Rationale:** New method follows rebaseOnMain's implementation pattern but targets origin/<targetBranch> instead of origin/<baseBranch>. Must fetch the target branch first since it may not be locally available. Same conflict detection (REBASE_CONFLICT error code).
+
+  ### 7. Connection Validation Strategy
+
+  **Chosen:** Two-layer: client-side fast checks + server-side authoritative validation
+
+  **Rejected:**
+  - Server-only — round-trip latency violates 200ms feedback requirement
+  - Client-only — insufficient for deep cycle detection
+
+  **Rationale:** Client validates fast checks (non-feature nodes, self-connection, cross-repo, lifecycle) immediately in onConnect. Server performs authoritative cycle detection via DB ancestor walk. Failed server validation rolls back optimistic UI with toast error.
+
+  ### 8. Rebase Execution Mode
+
+  **Chosen:** Await rebase per-child then spawn agent, parallel across children
+
+  **Rejected:**
+  - Fire-and-forget — agent may work on stale branch
+  - Queue-based deferred — over-engineering, no job queue exists
+
+  **Rationale:** The spec says "rebase before spawning" (FR-9). Await rebase, then spawn agent. Each child processes independently (parallel at child level). 5-minute timeout per child (NFR-2) prevents indefinite blocking. On failure, agent still spawns on un-rebased branch with failure recorded in activity timeline.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | @xyflow/react v12 | Canvas drag-to-connect, edge deletion | Use (existing) | Already installed. onConnect, onEdgesDelete, EdgeLabelRenderer, BaseEdge all available natively. No version change needed. |
+  | dagre | Graph layout after reparent | Use (existing) | Already handles topology-aware re-layout. Changing parentNodeId changes edge set which changes topology key, triggering automatic re-layout. No changes to dagre usage needed. |
+  | sonner | Toast notifications for validation errors | Use (existing) | Already imported in use-control-center-state.ts. Pattern: `toast.error('message')`, `toast.success('message')`. |
+  | tsyringe | DI for ReparentFeatureUseCase | Use (existing) | @injectable() decorator + @inject() for dependencies. String token alias for web resolution. |
+  | better-sqlite3 | Feature persistence (parentId update) | Use (existing) | parent_id column already exists in features table. UPDATE SET clause already includes parent_id (per LESSONS.md verification). No schema migration needed. |
+  | lucide-react | Delete button icon on dependency edge | Use (existing) | X icon already available. Used throughout the codebase for iconography. |
+  | node:child_process | Git rebase operations | Use (existing) | Used by GitPrService via execFile wrapper for all git commands. No changes to execution pattern needed. |
+
+  **No new library dependencies required.** All functionality is achievable with existing installed packages.
+
+  ## Security Considerations
+
+  ### Authorization
+  - Reparenting modifies feature relationships — the server action must validate that the caller has access to both the child and parent features. Currently, server actions run in the context of the local user (Electron app), so no additional auth is needed. If multi-user access is added later, reparent must check ownership of both features.
+
+  ### Cycle Prevention
+  - Cycle detection is a security-critical validation. A cycle in the dependency graph would cause infinite loops in CheckAndUnblockFeaturesUseCase (it walks children recursively). The upward ancestor walk (from CreateFeatureUseCase) must be replicated exactly in ReparentFeatureUseCase. The walk MUST query the DB (not rely on client-provided data) to prevent race conditions.
+
+  ### Git Operation Safety
+  - Auto-rebase modifies the git history of child branches. The stash/restore pattern (from RebaseFeatureOnMainUseCase) must be used to prevent data loss. Rebase abort on failure must always execute (finally block). The worktree isolation prevents cross-feature interference.
+
+  ### Input Validation
+  - Server action must validate featureId and parentId are non-empty strings (or null for unparent). Must reject attempts to reparent to a non-existent parent. Must reject cross-repo reparenting to prevent nonsensical dependency relationships.
+
+  ## Performance Implications
+
+  ### Canvas Re-Layout
+  - Reparenting changes the edge set, which changes the dagre topology key, triggering a full layout recalculation. For typical graphs (10-50 nodes), this is sub-10ms. The optimistic UI pattern ensures the user sees the change within one animation frame (~16ms).
+
+  ### Cycle Detection
+  - Ancestor walk is O(depth) where depth is the maximum nesting of feature dependencies. Typical depth is 1-3 levels. Each level requires a DB query (findById). For 3 levels, this is 3 sequential DB reads — negligible latency on SQLite.
+
+  ### Auto-Rebase
+  - Git rebase operations are I/O-bound (file system + potential network for fetch). Typical clean rebase takes 1-5 seconds. Conflict resolution (agent-powered) can take 30-120 seconds. The 5-minute timeout (NFR-2) prevents runaway processes. Each child rebases independently, so N children rebase in parallel (bounded by system resources, not sequential).
+
+  ### Poll Reconciliation
+  - The 3-second mutation cooldown (endMutation default) is sufficient for server persistence. The next poll after cooldown will fetch the updated parentId from the database, confirming the optimistic state.
+
+  ## Architecture Notes
+
+  ### Clean Architecture Compliance
+  - **Domain layer:** No changes. parentId field already exists on Feature entity (TypeSpec-generated). SdlcLifecycle enum values unchanged.
+  - **Application layer:** New ReparentFeatureUseCase. Modified CheckAndUnblockFeaturesUseCase (add rebase between transition and spawn). New rebaseOnBranch method in IGitPrService interface.
+  - **Infrastructure layer:** Implement rebaseOnBranch in GitPrService (follows rebaseOnMain pattern). Register ReparentFeatureUseCase in DI container with string alias.
+  - **Presentation layer:** Enable connections on FeaturesCanvas. Implement handleConnect in use-control-center-state.ts. Add reparentFeature mutation to useGraphState. Enhance DependencyEdge with delete button. New reparent-feature server action.
+
+  ### Data Flow for Reparenting
+  1. User drags from source handle on child to target handle on parent
+  2. React Flow fires onConnect with Connection {source, target}
+  3. handleConnect validates locally (non-feature nodes, cross-repo, lifecycle)
+  4. On pass: optimistic UI update (set parentNodeId in featureMap)
+  5. Call reparent-feature server action
+  6. Server action resolves ReparentFeatureUseCase via DI
+  7. Use case validates (cycle detection, same-repo, lifecycle guards)
+  8. Use case updates feature.parentId via IFeatureRepository.update()
+  9. Use case adjusts child lifecycle if needed (FR-8)
+  10. Use case calls CheckAndUnblockFeaturesUseCase if new parent is post-implementation
+  11. On server error: rollback optimistic UI, show toast.error
+
+  ### Data Flow for Auto-Rebase
+  1. Parent feature lifecycle transitions (via UpdateFeatureLifecycleUseCase)
+  2. CheckAndUnblockFeaturesUseCase fires (existing hook)
+  3. Gate check: parent in POST_IMPLEMENTATION (Implementation, Review, Maintain)
+  4. Load direct children via findByParentId
+  5. For each Blocked child:
+     a. Set lifecycle=Started, update DB
+     b. Create agent run + phase timing for rebase
+     c. Resolve CWD (worktree or repo root)
+     d. Stash uncommitted changes
+     e. Fetch parent branch (git fetch origin <parentBranch>)
+     f. Rebase child branch onto origin/<parentBranch>
+     g. On conflict: delegate to ConflictResolutionService
+     h. Restore stash (finally block)
+     i. Complete timing (success or error)
+     j. Spawn agent (regardless of rebase outcome)
+
+  ### Key Codebase Files Reference
+  | File | Current State | Required Change |
+  | ---- | ------------- | --------------- |
+  | use-control-center-state.ts:311 | handleConnect is no-op | Implement reparent logic with validation |
+  | features-canvas.tsx:161 | nodesConnectable={false} | Change to true |
+  | features-canvas.tsx:162 | elementsSelectable={false} | Replace with edgesSelectable={true} |
+  | feature-node.tsx:141 | isConnectable={false} on target handle | Change to true |
+  | feature-node.tsx:138 | showHandles conditional | Always render handles (remove conditional) |
+  | dependency-edge.tsx | Minimal BaseEdge wrapper | Add hover delete button via EdgeLabelRenderer |
+  | use-graph-state.ts | No reparent mutation | Add reparentFeature mutation (update parentNodeId) |
+  | derive-graph.ts:242 | showHandles = edges.length > 0 | Always set showHandles=true when nodesConnectable |
+  | check-and-unblock-features.use-case.ts:59 | Spawn immediately after lifecycle update | Insert rebase orchestration before spawn |
+  | git-pr-service.interface.ts | No rebaseOnBranch | Add rebaseOnBranch method |
+  | git-pr.service.ts | No rebaseOnBranch impl | Implement following rebaseOnMain pattern |
+  | container.ts:437-509 | No ReparentFeatureUseCase | Add class registration + string alias |
+
+  ### Database Impact
+  - **No migration needed.** The parent_id column already exists in the features table and is included in the UPDATE SET clause of sqlite-feature.repository.ts. Setting parent_id to a new value or NULL is already supported by the existing SQL.
+
+  ### TypeSpec Impact
+  - **No TypeSpec changes needed.** The parentId field already exists on the Feature entity in the generated output. SdlcLifecycle enum values are unchanged.
+
+  ---
+
+  _Research complete — proceed to planning phase_

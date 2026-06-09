@@ -451,6 +451,22 @@ export interface IGitPrService {
   rebaseOnMain(cwd: string, featureBranch: string, baseBranch: string): Promise<void>;
 
   /**
+   * Rebase the feature branch onto `origin/<targetBranch>`.
+   * Fetches the target branch from the remote first to ensure the
+   * remote-tracking ref is up-to-date, then rebases the feature branch
+   * onto it. Similar to {@link rebaseOnMain} but targets an arbitrary
+   * branch instead of the repository's default branch.
+   *
+   * @param cwd - Working directory path
+   * @param featureBranch - The feature branch to rebase
+   * @param targetBranch - The target branch name (rebase target will be origin/<targetBranch>)
+   * @throws GitPrError with GIT_ERROR code if the worktree is dirty
+   * @throws GitPrError with REBASE_CONFLICT code if conflicts are detected
+   * @throws GitPrError with BRANCH_NOT_FOUND code if a branch does not exist
+   */
+  rebaseOnBranch(cwd: string, featureBranch: string, targetBranch: string): Promise<void>;
+
+  /**
    * Get the list of files with unresolved conflicts (unmerged paths).
    * Uses `git diff --name-only --diff-filter=U` to identify conflicted files.
    *

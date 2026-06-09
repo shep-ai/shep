@@ -183,6 +183,9 @@ describe('IGitPrService', () => {
       rebaseOnMain: async () => {
         /* noop */
       },
+      rebaseOnBranch: async () => {
+        /* noop */
+      },
       getConflictedFiles: async () => [],
       stageFiles: async () => {
         /* noop */

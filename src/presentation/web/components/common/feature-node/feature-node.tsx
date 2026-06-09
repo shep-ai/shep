@@ -138,15 +138,14 @@ export function FeatureNode({
       className="animate-in fade-in group relative duration-300"
       style={{ direction: isRtl ? 'rtl' : 'ltr' }}
     >
-      {data.showHandles ? (
-        <Handle
-          type="target"
-          position={targetHandlePos}
-          isConnectable={false}
-          className="opacity-0!"
-          style={{ top: 70 }}
-        />
-      ) : null}
+      {/* Target handle — always rendered for connection support. */}
+      <Handle
+        type="target"
+        position={targetHandlePos}
+        isConnectable={true}
+        className="opacity-0!"
+        style={{ top: 70 }}
+      />
 
       {/* Action buttons — positioned on the target-handle side of the node (left in LTR, right in RTL). */}
       <div
@@ -738,15 +737,15 @@ export function FeatureNode({
             </Tooltip>
           </TooltipProvider>
         </Handle>
-      ) : data.showHandles ? (
+      ) : (
         <Handle
           type="source"
           position={sourceHandlePos}
-          isConnectable={false}
+          isConnectable={true}
           className="opacity-0!"
           style={{ top: 70 }}
         />
-      ) : null}
+      )}
     </div>
   );
 }

@@ -44,6 +44,7 @@ export interface ControlCenterState {
   edges: Edge[];
   onNodesChange: (changes: NodeChange<CanvasNodeType>[]) => void;
   handleConnect: (connection: Connection) => void;
+  handleEdgesDelete: (edges: Edge[]) => void;
   handleAddRepository: (path: string) => {
     wasEmpty: boolean;
     repoPath: string;
@@ -88,6 +89,9 @@ export interface ControlCenterState {
 /** Must match the message string emitted by the SSE route in agent-events/route.ts */
 const METADATA_UPDATED_MESSAGE = 'Feature metadata updated';
 
+/** Lifecycle states that are terminal and cannot be reparented. */
+const TERMINAL_STATES = new Set(['done', 'archived', 'deleting']);
+
 let nextFeatureId = 0;
 let nextRepoTempId = 0;
 
@@ -114,11 +118,13 @@ export function useControlCenterState(
     removeRepository,
     replaceRepository,
     getFeatureRepositoryPath,
+    getFeatureEntry,
     getRepositoryData,
     getRepoMapSize,
     addApplication: addApplicationToMap,
     removeApplication,
     setCallbacks,
+    reparentFeature,
     beginMutation,
     endMutation,
     isMutating,
@@ -338,9 +344,61 @@ export function useControlCenterState(
     // Intentional no-op: domain Maps are the source of truth.
   }, []);
 
-  const handleConnect = useCallback((_connection: Connection) => {
-    // Connections are managed via domain operations, not direct edge manipulation.
-  }, []);
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      const { source, target } = connection;
+      if (!source || !target) return;
+
+      // Reject non-feature-to-feature connections (repo group nodes don't have 'feat-' prefix)
+      if (!source.startsWith('feat-') || !target.startsWith('feat-')) {
+        toast.error('Only feature-to-feature connections are allowed');
+        return;
+      }
+
+      // Reject self-connections
+      if (source === target) {
+        toast.error('A feature cannot depend on itself');
+        return;
+      }
+
+      // Look up child (target) and parent (source) entries for validation
+      const childEntry = getFeatureEntry(target);
+      const parentEntry = getFeatureEntry(source);
+
+      if (!childEntry || !parentEntry) {
+        toast.error('Feature not found');
+        return;
+      }
+
+      // Reject cross-repo connections
+      if (childEntry.data.repositoryPath !== parentEntry.data.repositoryPath) {
+        toast.error('Features must be in the same repository to form a dependency');
+        return;
+      }
+
+      // Reject if child is in a terminal lifecycle state
+      if (TERMINAL_STATES.has(childEntry.data.state)) {
+        toast.error('Completed features cannot be reparented');
+        return;
+      }
+
+      // All client-side checks passed — delegate to reparentFeature for optimistic update + server call
+      reparentFeature(target, source);
+    },
+    [getFeatureEntry, reparentFeature]
+  );
+
+  const handleEdgesDelete = useCallback(
+    (deletedEdges: Edge[]) => {
+      for (const edge of deletedEdges) {
+        // Only process dependency edges — ignore repo-to-feature edges
+        if (edge.type !== 'dependencyEdge') continue;
+        // target is the child feature node ID
+        reparentFeature(edge.target, null);
+      }
+    },
+    [reparentFeature]
+  );
 
   const createFeatureNode = useCallback(
     (
@@ -719,6 +777,7 @@ export function useControlCenterState(
     edges,
     onNodesChange,
     handleConnect,
+    handleEdgesDelete,
     handleAddRepository,
     handleArchiveFeature,
     handleLayout,

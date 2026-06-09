@@ -24,6 +24,11 @@ vi.mock('@/infrastructure/services/settings.service.js', () => ({
 import { CheckAndUnblockFeaturesUseCase } from '@/application/use-cases/features/check-and-unblock-features.use-case.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IFeatureAgentProcessService } from '@/application/ports/output/agents/feature-agent-process.interface.js';
+import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
+import type { IWorktreeService } from '@/application/ports/output/services/worktree-service.interface.js';
+import type { IConflictResolutionService } from '@/application/ports/output/services/conflict-resolution.interface.js';
+import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
+import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
 import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
 
@@ -71,6 +76,11 @@ describe('CheckAndUnblockFeaturesUseCase', () => {
   let useCase: CheckAndUnblockFeaturesUseCase;
   let mockFeatureRepo: IFeatureRepository;
   let mockAgentProcess: IFeatureAgentProcessService;
+  let mockGitPrService: IGitPrService;
+  let mockWorktreeService: IWorktreeService;
+  let mockConflictResolution: IConflictResolutionService;
+  let mockAgentRunRepo: IAgentRunRepository;
+  let mockPhaseTimingRepo: IPhaseTimingRepository;
 
   const parentId = 'parent-001';
 
@@ -94,9 +104,88 @@ describe('CheckAndUnblockFeaturesUseCase', () => {
       checkAndMarkCrashed: vi.fn(),
     };
 
-    useCase = new CheckAndUnblockFeaturesUseCase(mockFeatureRepo, mockAgentProcess, {
-      load: vi.fn().mockResolvedValue(null),
-    } as any);
+    mockGitPrService = {
+      getDefaultBranch: vi.fn().mockResolvedValue('main'),
+      syncMain: vi.fn().mockResolvedValue(undefined),
+      rebaseOnMain: vi.fn().mockResolvedValue(undefined),
+      rebaseOnBranch: vi.fn().mockResolvedValue(undefined),
+      hasUncommittedChanges: vi.fn(),
+      hasRemote: vi.fn(),
+      getRemoteUrl: vi.fn(),
+      push: vi.fn(),
+      createPr: vi.fn(),
+      mergePr: vi.fn(),
+      mergeBranch: vi.fn(),
+      localMergeSquash: vi.fn(),
+      getCiStatus: vi.fn(),
+      watchCi: vi.fn(),
+      deleteBranch: vi.fn(),
+      getPrDiffSummary: vi.fn(),
+      getFileDiffs: vi.fn(),
+      listPrStatuses: vi.fn(),
+      getMergeableStatus: vi.fn(),
+      verifyMerge: vi.fn(),
+      revParse: vi.fn(),
+      commitAll: vi.fn(),
+      getFailureLogs: vi.fn(),
+      getConflictedFiles: vi.fn(),
+      stageFiles: vi.fn(),
+      rebaseContinue: vi.fn(),
+      rebaseAbort: vi.fn(),
+      stash: vi.fn().mockResolvedValue(false),
+      stashPop: vi.fn().mockResolvedValue(undefined),
+      getBranchSyncStatus: vi.fn(),
+    } as unknown as IGitPrService;
+
+    mockWorktreeService = {
+      create: vi.fn(),
+      addExisting: vi.fn(),
+      remove: vi.fn(),
+      list: vi.fn(),
+      exists: vi.fn().mockResolvedValue(false),
+      branchExists: vi.fn(),
+      remoteBranchExists: vi.fn(),
+      getWorktreePath: vi.fn().mockReturnValue('/repo/.worktrees/feat-x'),
+      listBranches: vi.fn(),
+      prune: vi.fn(),
+      ensureGitRepository: vi.fn(),
+    } as unknown as IWorktreeService;
+
+    mockConflictResolution = {
+      resolve: vi.fn().mockResolvedValue(undefined),
+    } as unknown as IConflictResolutionService;
+
+    mockAgentRunRepo = {
+      create: vi.fn().mockResolvedValue(undefined),
+      findById: vi.fn(),
+      findByIds: vi.fn().mockResolvedValue([]),
+      findByThreadId: vi.fn(),
+      updateStatus: vi.fn().mockResolvedValue(undefined),
+      updatePinnedConfig: vi.fn(),
+      findRunningByPid: vi.fn(),
+      findLatestByFeatureId: vi.fn().mockResolvedValue(null),
+      list: vi.fn(),
+      delete: vi.fn(),
+    } as unknown as IAgentRunRepository;
+
+    mockPhaseTimingRepo = {
+      save: vi.fn().mockResolvedValue(undefined),
+      update: vi.fn().mockResolvedValue(undefined),
+      updateApprovalWait: vi.fn(),
+      findByRunId: vi.fn(),
+      findByFeatureId: vi.fn(),
+    } as unknown as IPhaseTimingRepository;
+
+    useCase = new CheckAndUnblockFeaturesUseCase(
+      mockFeatureRepo,
+      mockAgentProcess,
+      { load: vi.fn().mockResolvedValue(null) } as any,
+      mockGitPrService,
+      mockWorktreeService,
+      mockConflictResolution,
+      mockAgentRunRepo,
+      mockPhaseTimingRepo
+    );
   });
 
   // -------------------------------------------------------------------------

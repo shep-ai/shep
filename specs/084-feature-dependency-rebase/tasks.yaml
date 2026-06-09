@@ -1,0 +1,548 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "feature-dependency-rebase"
+summary: >
+  14 tasks across 4 phases. Phase 1 builds the ReparentFeatureUseCase with validation,
+  server action, and DI wiring. Phase 2 adds rebaseOnBranch to the git service. Phase 3
+  wires auto-rebase into CheckAndUnblockFeaturesUseCase. Phase 4 implements canvas
+  interaction with drag-to-connect, edge deletion, and optimistic UI.
+
+relatedFeatures:
+  - "041-feature-dependencies"
+  - "080-smart-rebase"
+
+technologies:
+  - "TypeScript"
+  - "React 19"
+  - "Next.js 15"
+  - "@xyflow/react (React Flow v12)"
+  - "tsyringe (DI)"
+  - "better-sqlite3"
+  - "node:child_process"
+  - "shadcn/ui"
+  - "sonner"
+  - "lucide-react"
+
+relatedLinks:
+  - title: "React Flow Connection Handling API"
+    url: "https://reactflow.dev/api-reference/react-flow#connection-handling"
+  - title: "Spec 041 - Feature Dependencies"
+    url: "./specs/041-feature-dependencies/"
+  - title: "Spec 080 - Smart Rebase"
+    url: "./specs/080-smart-rebase/"
+
+tasks:
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "ReparentFeatureUseCase — core validation logic"
+    description: >
+      Create the ReparentFeatureUseCase class with constructor DI injection for
+      IFeatureRepository and ICheckAndUnblockFeaturesUseCase. Implement the execute method
+      with all business validations: same-repo check (FR-5), cycle detection via upward
+      ancestor walk (FR-6), lifecycle guards rejecting Done/Archived (FR-7). The cycle
+      detection reuses the pattern from CreateFeatureUseCase lines 106-116 — walk parent
+      chain via findById until null or cycle found.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "ReparentFeatureUseCase class exists with @injectable() decorator"
+      - "execute({featureId, parentId}) validates same-repo constraint"
+      - "execute() detects cycles via upward ancestor walk (self-reparent, direct A->B->A, indirect A->B->C->A)"
+      - "execute() rejects reparenting Done or Archived features"
+      - "execute() rejects reparenting to non-existent parent"
+      - "execute() rejects reparenting to feature in different repository"
+      - "All validation errors throw descriptive error messages"
+    tdd:
+      red:
+        - "Write test: successful reparent updates parentId via repository.update()"
+        - "Write test: reject self-reparent (featureId === parentId)"
+        - "Write test: reject direct cycle (A parent of B, try to reparent A under B)"
+        - "Write test: reject indirect cycle (A->B->C chain, try to reparent A under C)"
+        - "Write test: reject cross-repo reparent (child.repositoryPath !== parent.repositoryPath)"
+        - "Write test: reject reparent of Done feature"
+        - "Write test: reject reparent of Archived feature"
+        - "Write test: reject reparent to non-existent parent (findById returns null)"
+        - "Write test: successful unparent (parentId=null) clears parentId"
+      green:
+        - "Implement execute() with validation chain: load child, validate lifecycle, load parent (if not null), validate same-repo, detect cycles, call repository.update()"
+        - "Implement cycle detection: walk from proposed parent upward via findById until null (safe) or child found (cycle)"
+      refactor:
+        - "Extract cycle detection into private method for clarity"
+        - "Extract validation methods if execute() exceeds 30 lines of logic"
+    estimatedEffort: "2h"
+
+  - id: "task-2"
+    phaseId: "phase-1"
+    title: "ReparentFeatureUseCase — lifecycle state adjustment"
+    description: >
+      Extend the use case to handle lifecycle state adjustment on reparent (FR-8). When
+      reparented under a pre-implementation parent, transition child to Blocked. When
+      reparented under a post-implementation parent, leave child lifecycle unchanged.
+      When unparented, if child was Blocked, transition to Started. After reparent,
+      if new parent is post-implementation, call CheckAndUnblockFeaturesUseCase to
+      trigger the rebase+unblock flow for any Blocked children of the reparented feature.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "Child transitions to Blocked when reparented under pre-implementation parent"
+      - "Child lifecycle unchanged when reparented under post-implementation parent"
+      - "Child transitions from Blocked to Started when unparented"
+      - "Child lifecycle unchanged when unparented from non-Blocked state"
+      - "CheckAndUnblockFeaturesUseCase called with new parentId after reparent if parent is post-implementation"
+      - "Lifecycle adjustment happens after parentId update, before CheckAndUnblock call"
+    tdd:
+      red:
+        - "Write test: reparent Started child under Pending parent -> child becomes Blocked"
+        - "Write test: reparent Started child under Implementation parent -> child stays Started"
+        - "Write test: reparent Blocked child under null (unparent) -> child becomes Started"
+        - "Write test: reparent Pending child under null (unparent) -> child stays Pending"
+        - "Write test: reparent under post-implementation parent -> CheckAndUnblockFeaturesUseCase.execute() called"
+        - "Write test: reparent under pre-implementation parent -> CheckAndUnblockFeaturesUseCase.execute() NOT called"
+      green:
+        - "Add POST_IMPLEMENTATION lifecycle set check (Implementation, Review, Maintain)"
+        - "Implement lifecycle adjustment: check new parent lifecycle, adjust child if needed, update via repository"
+        - "Call CheckAndUnblockFeaturesUseCase.execute(newParentId) when parent is post-implementation"
+      refactor:
+        - "Use the existing POST_IMPLEMENTATION constant from check-and-unblock-features.use-case.ts"
+        - "Ensure lifecycle adjustment and CheckAndUnblock call are in correct order"
+    estimatedEffort: "1.5h"
+
+  - id: "task-3"
+    phaseId: "phase-1"
+    title: "Server action + DI container registration"
+    description: >
+      Create the reparent-feature server action following the established pattern
+      (start-feature.ts as reference). Register ReparentFeatureUseCase in the DI
+      container with both class token and string token alias 'ReparentFeatureUseCase'
+      (per LESSONS.md pattern). The server action resolves the use case via string token,
+      calls execute(), and returns {success, error?}.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "Server action at src/presentation/web/app/actions/reparent-feature.ts"
+      - "Action accepts {featureId: string, parentId: string | null}"
+      - "Action returns {success: boolean, error?: string}"
+      - "Action resolves ReparentFeatureUseCase via string token 'ReparentFeatureUseCase'"
+      - "DI container has class token registration for ReparentFeatureUseCase"
+      - "DI container has string alias 'ReparentFeatureUseCase' via useFactory pattern"
+      - "Action validates non-empty featureId before calling use case"
+    tdd:
+      red:
+        - "Write test: server action returns {success: true} on successful reparent"
+        - "Write test: server action returns {success: false, error: message} on validation failure"
+        - "Write test: server action returns {success: false, error} for empty featureId"
+      green:
+        - "Create reparent-feature.ts with 'use server' directive"
+        - "Implement resolve -> execute -> catch pattern matching start-feature.ts"
+        - "Add ReparentFeatureUseCase import to container.ts"
+        - "Add registerSingleton for class token"
+        - "Add string alias factory registration in the web string tokens block"
+      refactor:
+        - "Ensure error messages from use case propagate cleanly to the action response"
+    estimatedEffort: "45min"
+
+  - id: "task-4"
+    phaseId: "phase-2"
+    title: "Add rebaseOnBranch to IGitPrService interface"
+    description: >
+      Add the rebaseOnBranch(cwd, featureBranch, targetBranch) method signature to the
+      IGitPrService interface. This method rebases a feature branch onto an arbitrary
+      target branch (not just the default branch). The signature mirrors rebaseOnMain
+      but the third parameter is the target branch name (not the base/default branch).
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "IGitPrService interface has rebaseOnBranch(cwd: string, featureBranch: string, targetBranch: string): Promise<void>"
+      - "Method is documented with JSDoc explaining it targets origin/<targetBranch>"
+      - "Method throws REBASE_CONFLICT error code on conflict (same as rebaseOnMain)"
+    tdd:
+      red:
+        - "Write test: mock IGitPrService with rebaseOnBranch method, verify it can be called with correct signature"
+      green:
+        - "Add method signature to IGitPrService interface with JSDoc"
+      refactor:
+        - "Verify JSDoc is consistent with rebaseOnMain documentation style"
+    estimatedEffort: "15min"
+
+  - id: "task-5"
+    phaseId: "phase-2"
+    title: "Implement rebaseOnBranch in GitPrService"
+    description: >
+      Implement the rebaseOnBranch method in GitPrService following the rebaseOnMain
+      pattern (git-pr.service.ts). Key differences: (1) explicit git fetch origin
+      <targetBranch> before rebase since the target branch may not be locally available,
+      (2) rebase onto origin/<targetBranch> instead of origin/<baseBranch>. Same conflict
+      detection pattern — check stderr for CONFLICT/could not apply, throw REBASE_CONFLICT.
+    state: "Todo"
+    dependencies:
+      - "task-4"
+    acceptanceCriteria:
+      - "GitPrService.rebaseOnBranch() fetches the target branch before rebasing"
+      - "Rebases feature branch onto origin/<targetBranch>"
+      - "Throws GitPrError with REBASE_CONFLICT code on conflict"
+      - "Handles fetch failure gracefully (throws descriptive error)"
+      - "Uses same execFile wrapper pattern as rebaseOnMain"
+    tdd:
+      red:
+        - "Write test: successful rebase calls git fetch + git rebase in correct order"
+        - "Write test: rebase conflict detected from stderr, throws REBASE_CONFLICT"
+        - "Write test: fetch failure throws descriptive error"
+        - "Write test: non-zero exit code without conflict pattern throws generic rebase error"
+      green:
+        - "Implement rebaseOnBranch: git fetch origin <targetBranch>, then git rebase origin/<targetBranch>"
+        - "Parse stderr for conflict indicators (same pattern as rebaseOnMain)"
+        - "Throw typed GitPrError with appropriate error codes"
+      refactor:
+        - "Extract shared conflict detection logic between rebaseOnMain and rebaseOnBranch if duplication exceeds 10 lines"
+    estimatedEffort: "1h"
+
+  - id: "task-6"
+    phaseId: "phase-3"
+    title: "Inject rebase dependencies into CheckAndUnblockFeaturesUseCase"
+    description: >
+      Add new DI dependencies to CheckAndUnblockFeaturesUseCase constructor: IGitPrService,
+      IWorktreeService, ConflictResolutionService, IAgentRunRepository, IPhaseTimingRepository.
+      These follow the exact injection pattern from RebaseFeatureOnMainUseCase. No behavior
+      changes yet — just wiring the dependencies so the rebase orchestration (task-7) can
+      use them.
+    state: "Todo"
+    dependencies:
+      - "task-5"
+    acceptanceCriteria:
+      - "Constructor accepts 5 new @inject() parameters: IGitPrService, IWorktreeService, ConflictResolutionService, IAgentRunRepository, IPhaseTimingRepository"
+      - "Dependencies stored as private readonly fields"
+      - "Existing tests still pass (no behavior change)"
+      - "Injection tokens match the patterns used in RebaseFeatureOnMainUseCase"
+    tdd:
+      red:
+        - "Write test: verify CheckAndUnblockFeaturesUseCase can be instantiated with all required dependencies (update test fixtures to provide new mocks)"
+      green:
+        - "Add @inject() decorators and constructor parameters for the 5 new dependencies"
+        - "Update existing test fixtures to provide mock implementations"
+      refactor:
+        - "Ensure constructor parameter order follows convention (repos first, services second)"
+    estimatedEffort: "30min"
+
+  - id: "task-7"
+    phaseId: "phase-3"
+    title: "Implement auto-rebase orchestration in CheckAndUnblockFeaturesUseCase"
+    description: >
+      Add rebase orchestration between the lifecycle transition (child -> Started) and
+      agent spawn in CheckAndUnblockFeaturesUseCase. For each Blocked child: (1) create
+      agent run + phase timing for activity timeline, (2) resolve CWD (worktree or repo
+      root), (3) stash uncommitted changes, (4) fetch and rebase child branch onto parent
+      branch via rebaseOnBranch, (5) on conflict delegate to ConflictResolutionService,
+      (6) restore stash in finally block, (7) record timing (success or failure),
+      (8) spawn agent regardless of rebase outcome. Children process in parallel but
+      each child's rebase awaits before its agent spawn. 5-minute timeout per child.
+    state: "Todo"
+    dependencies:
+      - "task-6"
+    acceptanceCriteria:
+      - "Each Blocked child is rebased onto parent branch before agent spawn"
+      - "Agent run + phase timing created for each rebase operation"
+      - "Stash applied before rebase, restored in finally block"
+      - "Conflict resolution delegated to ConflictResolutionService"
+      - "Rebase failure recorded in phase timing but does not prevent agent spawn"
+      - "One child's rebase failure does not block other children"
+      - "5-minute timeout per child rebase (abort + record timeout failure)"
+      - "Skip rebase if child has active agent run (NFR-3)"
+      - "CWD resolved via worktree service (worktree path if exists, else repo root)"
+    tdd:
+      red:
+        - "Write test: successful rebase — stash called, rebaseOnBranch called with parent branch, stashPop called, agent spawned"
+        - "Write test: rebase conflict — ConflictResolutionService.resolve() called, agent still spawned"
+        - "Write test: rebase failure — error recorded in phase timing, agent still spawned"
+        - "Write test: one child fails rebase, other child succeeds — both agents spawned"
+        - "Write test: child with active agent run — rebase skipped, no agent spawn"
+        - "Write test: agent run and phase timing created for rebase operation"
+        - "Write test: stashPop called in finally block even when rebase throws"
+        - "Write test: parent branch name used as target for rebaseOnBranch"
+      green:
+        - "Add rebaseChildOntoParent private method following RebaseFeatureOnMainUseCase pattern"
+        - "Create agent run with 'rebase-on-parent' description"
+        - "Resolve CWD via worktreeService (check existence, use worktree path or repo root)"
+        - "Stash, rebase, handle conflicts, restore stash in finally"
+        - "Record phase timing with duration, exit code, error"
+        - "Insert rebaseChildOntoParent call between lifecycle update and agent spawn in execute()"
+        - "Add Promise.race with 5-minute timeout per child"
+        - "Skip rebase if feature has activeAgentRunId (NFR-3)"
+      refactor:
+        - "Extract timeout wrapper into helper if used elsewhere"
+        - "Ensure error messages are descriptive for activity timeline display"
+    estimatedEffort: "3h"
+
+  - id: "task-8"
+    phaseId: "phase-4"
+    title: "Add reparentFeature mutation to useGraphState"
+    description: >
+      Add a reparentFeature(childId, newParentId) mutation to the useGraphState hook.
+      This mutation optimistically updates parentNodeId in featureMap for the child
+      feature, uses beginMutation/endMutation guards, calls the reparent-feature server
+      action, and rolls back on error. The parentNodeId change triggers automatic edge
+      re-derivation via deriveGraph() and dagre re-layout via topology-key cache.
+    state: "Todo"
+    dependencies:
+      - "task-3"
+    acceptanceCriteria:
+      - "reparentFeature(childId, newParentId) function exposed from useGraphState"
+      - "Optimistically updates child's parentNodeId in featureMap"
+      - "Uses beginMutation() before update and endMutation() after server response"
+      - "Calls reparent-feature server action"
+      - "Rolls back parentNodeId on server error and shows toast.error"
+      - "Shows toast.success on successful reparent"
+      - "parentNodeId=undefined for unparent (newParentId=null)"
+    tdd:
+      red:
+        - "Write test: reparentFeature updates parentNodeId in featureMap immediately"
+        - "Write test: reparentFeature calls beginMutation before update"
+        - "Write test: reparentFeature calls endMutation after server response"
+        - "Write test: server error rolls back parentNodeId to previous value"
+        - "Write test: unparent sets parentNodeId to undefined"
+      green:
+        - "Add reparentFeature function inside useGraphState hook"
+        - "Save previous parentNodeId for rollback"
+        - "Update featureMap entry with new parentNodeId"
+        - "Call server action, handle success/error"
+        - "Rollback on error, toast on both outcomes"
+      refactor:
+        - "Ensure mutation pattern matches existing patterns (deleteFeature, startFeature)"
+    estimatedEffort: "1h"
+
+  - id: "task-9"
+    phaseId: "phase-4"
+    title: "Implement handleConnect for reparenting in use-control-center-state"
+    description: >
+      Replace the no-op handleConnect (line 311) in use-control-center-state.ts with
+      client-side validation and reparentFeature call. The onConnect callback receives a
+      Connection with source (new parent node ID) and target (child node ID). Validate:
+      reject non-feature nodes (check 'feat-' prefix), reject self-connection, reject
+      cross-repo (compare repositoryPath), reject Done/Archived lifecycle. On pass, call
+      reparentFeature from useGraphState. On validation failure, show toast.error with
+      specific message (NFR-4).
+    state: "Todo"
+    dependencies:
+      - "task-8"
+    acceptanceCriteria:
+      - "handleConnect processes Connection with source (parent) and target (child)"
+      - "Rejects non-feature-to-feature connections (repo group nodes)"
+      - "Rejects self-connections"
+      - "Rejects cross-repo connections with specific error toast"
+      - "Rejects connections to Done/Archived features with specific error toast"
+      - "Calls reparentFeature(childId, parentId) on valid connection"
+      - "Toast errors appear within 200ms of invalid drop (NFR-4)"
+    tdd:
+      red:
+        - "Write test: valid feature-to-feature connection calls reparentFeature"
+        - "Write test: non-feature source node shows toast error and does not call reparentFeature"
+        - "Write test: self-connection shows toast error"
+        - "Write test: cross-repo connection shows 'must be in same repository' toast"
+        - "Write test: Done lifecycle shows 'completed features cannot be reparented' toast"
+      green:
+        - "Replace no-op handleConnect with validation chain"
+        - "Extract featureId from node ID (strip 'feat-' prefix or similar)"
+        - "Look up child and parent in featureMap for validation"
+        - "Call reparentFeature on success, toast.error on failure"
+      refactor:
+        - "Extract validation into a pure function for testability"
+        - "Ensure error messages match spec FR-5, FR-6, FR-7 wording"
+    estimatedEffort: "1h"
+
+  - id: "task-10"
+    phaseId: "phase-4"
+    title: "Implement handleEdgesDelete for unparenting in use-control-center-state"
+    description: >
+      Add onEdgesDelete handler in use-control-center-state.ts. When a dependency edge
+      is deleted, extract the child feature ID from the edge target, and call
+      reparentFeature(childId, null) to clear the parent. Only process dependency edges
+      (filter by edge type). Wire the handler through to features-canvas.tsx.
+    state: "Todo"
+    dependencies:
+      - "task-8"
+    acceptanceCriteria:
+      - "onEdgesDelete callback defined in use-control-center-state"
+      - "Filters to dependency edges only (ignores repo-to-feature edges)"
+      - "Calls reparentFeature(childId, null) for each deleted dependency edge"
+      - "Handler passed through to FeaturesCanvas component"
+    tdd:
+      red:
+        - "Write test: deleting a dependency edge calls reparentFeature with null parentId"
+        - "Write test: deleting a non-dependency edge does not call reparentFeature"
+        - "Write test: deleting multiple edges processes each independently"
+      green:
+        - "Add handleEdgesDelete callback that filters by edge type and calls reparentFeature"
+        - "Wire handler through control-center-inner to features-canvas"
+      refactor:
+        - "Ensure edge type identification is consistent with derive-graph edge type assignment"
+    estimatedEffort: "45min"
+
+  - id: "task-11"
+    phaseId: "phase-4"
+    title: "Enable connections and edge selection on FeaturesCanvas"
+    description: >
+      Update FeaturesCanvas to enable connections and edge selection. Change
+      nodesConnectable={true} (was false), replace elementsSelectable={false} with
+      edgesSelectable={true}. Pass onEdgesDelete callback to ReactFlow. Add
+      isValidConnection prop to reject invalid connections at the React Flow level
+      (prevents the visual connection line from snapping to invalid targets).
+    state: "Todo"
+    dependencies:
+      - "task-9"
+      - "task-10"
+    acceptanceCriteria:
+      - "nodesConnectable={true} on ReactFlow component"
+      - "elementsSelectable removed, edgesSelectable={true} added"
+      - "onEdgesDelete callback passed to ReactFlow"
+      - "isValidConnection rejects non-feature-to-feature connections at visual level"
+      - "Node click still opens drawer (nodesSelectable behavior unchanged)"
+      - "Edge click selects edge (blue highlight for keyboard delete)"
+    tdd:
+      red:
+        - "Write test: FeaturesCanvas renders ReactFlow with nodesConnectable=true"
+        - "Write test: FeaturesCanvas passes onEdgesDelete to ReactFlow"
+        - "Write test: isValidConnection rejects connections to/from non-feature nodes"
+      green:
+        - "Update ReactFlow props in features-canvas.tsx"
+        - "Add isValidConnection callback (check node IDs for feature prefix)"
+        - "Pass onEdgesDelete from props"
+      refactor:
+        - "Verify no visual regressions with edge selection enabled"
+    estimatedEffort: "45min"
+
+  - id: "task-12"
+    phaseId: "phase-4"
+    title: "Enhance DependencyEdge with hover delete button"
+    description: >
+      Add a hover-visible delete button to the DependencyEdge component using React Flow's
+      EdgeLabelRenderer. The button appears at the midpoint of the edge on hover, with an
+      X icon (lucide-react). Clicking the button triggers edge deletion (calls the
+      onEdgesDelete flow). The edge must also support selection state for keyboard delete.
+      Create colocated Storybook story.
+    state: "Todo"
+    dependencies:
+      - "task-11"
+    acceptanceCriteria:
+      - "Delete button (X icon) appears on dependency edge hover"
+      - "Button positioned at edge midpoint via EdgeLabelRenderer"
+      - "Clicking button deletes the edge (triggers onEdgesDelete)"
+      - "Edge supports selection state (visual indicator for keyboard delete)"
+      - "Colocated Storybook story at dependency-edge.stories.tsx"
+      - "Button is keyboard accessible (can be tabbed to and activated)"
+    tdd:
+      red:
+        - "Write test: DependencyEdge renders delete button on hover"
+        - "Write test: clicking delete button calls edge delete handler"
+        - "Write test: DependencyEdge renders without delete button when not hovered"
+      green:
+        - "Add state tracking for hover (onMouseEnter/onMouseLeave on edge group)"
+        - "Render X button via EdgeLabelRenderer at midpoint (labelX, labelY from getBezierPath)"
+        - "Button onClick calls React Flow's deleteElements or dispatches edge delete"
+        - "Add selected styling (e.g., stroke color change)"
+      refactor:
+        - "Extract button styling to match existing codebase design tokens"
+        - "Create Storybook story with various edge states (default, hovered, selected)"
+    estimatedEffort: "1.5h"
+
+  - id: "task-13"
+    phaseId: "phase-4"
+    title: "Update feature node handles for connections"
+    description: >
+      Update feature-node.tsx to enable connections on handles. Set isConnectable={true}
+      on both target and source handles (was false). Always render handles (remove the
+      data.showHandles conditional for the target handle) but keep them visually subtle
+      (opacity transition on hover). Update derive-graph.ts to always set showHandles=true
+      when generating node data, since handles must always be present for connections to
+      work even when no edges exist yet.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "Target handle: isConnectable={true}, always rendered (not conditional on showHandles)"
+      - "Source handle: isConnectable={true}"
+      - "Handles visually subtle when not hovered (opacity-0 or low opacity)"
+      - "Handles become visible on node hover for connection affordance"
+      - "derive-graph.ts always includes showHandles=true in node data"
+      - "Backward compatible: features with no dependencies render correctly"
+    tdd:
+      red:
+        - "Write test: feature node always renders target handle regardless of edges"
+        - "Write test: feature node renders handles with isConnectable={true}"
+        - "Write test: deriveGraph sets showHandles=true on all feature nodes"
+      green:
+        - "Remove conditional rendering of target handle (was gated on data.showHandles)"
+        - "Set isConnectable={true} on both handles"
+        - "Update derive-graph to always set showHandles=true"
+        - "Add CSS transition for handle opacity on hover"
+      refactor:
+        - "Remove showHandles logic from derive-graph if no longer needed"
+        - "Simplify handle rendering code in feature-node"
+    estimatedEffort: "45min"
+
+  - id: "task-14"
+    phaseId: "phase-4"
+    title: "End-to-end integration test for canvas reparenting flow"
+    description: >
+      Write an integration test that exercises the full reparenting flow: drag-to-connect
+      triggers onConnect -> client validation -> optimistic UI update -> server action ->
+      use case validation -> DB update -> lifecycle adjustment. Also test the unparent
+      flow via edge deletion. And test the derive-graph changes: verify that after
+      reparenting, the edge set reflects the new parent-child relationship and the old
+      repo-to-child edge is removed.
+    state: "Todo"
+    dependencies:
+      - "task-11"
+      - "task-12"
+      - "task-13"
+    acceptanceCriteria:
+      - "Integration test covers: connect -> validate -> optimistic update -> server persist"
+      - "Integration test covers: edge delete -> unparent -> optimistic update -> server persist"
+      - "Integration test covers: deriveGraph produces correct edges after reparent"
+      - "Integration test covers: deriveGraph produces correct edges after unparent"
+      - "Integration test covers: topology-key changes after reparent (triggers re-layout)"
+    tdd:
+      red:
+        - "Write test: onConnect with valid connection results in new dependency edge in deriveGraph output"
+        - "Write test: onConnect with valid connection removes old repo-to-child edge in deriveGraph output"
+        - "Write test: edge delete results in repo-to-child edge restored in deriveGraph output"
+        - "Write test: reparent updates featureMap parentNodeId"
+        - "Write test: topology key changes after reparent (edge set changed)"
+      green:
+        - "Wire tests using mock featureMap, call handleConnect/handleEdgesDelete, verify deriveGraph output"
+        - "Verify optimistic state updates in useGraphState"
+      refactor:
+        - "Extract test helpers for creating mock feature maps with parent-child relationships"
+    estimatedEffort: "2h"
+
+totalEstimate: "16h"
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  14 tasks across 4 phases implement the complete feature-dependency-rebase capability.
+
+  **Phase 1 (tasks 1-3)** establishes the backend contract: ReparentFeatureUseCase with all
+  business validations (cycle detection, same-repo, lifecycle guards, state adjustment),
+  the server action, and DI registration. This is the foundation everything else depends on.
+
+  **Phase 2 (tasks 4-5)** adds the git infrastructure: rebaseOnBranch method on IGitPrService
+  and its implementation in GitPrService. Small, focused change following the existing
+  rebaseOnMain pattern.
+
+  **Phase 3 (tasks 6-7)** wires auto-rebase into CheckAndUnblockFeaturesUseCase. This is
+  the most complex phase — injecting rebase orchestration with stash, conflict resolution,
+  timeout, and failure isolation between the existing lifecycle transition and agent spawn.
+  All patterns are proven in RebaseFeatureOnMainUseCase.
+
+  **Phase 4 (tasks 8-14)** implements the canvas interaction layer: optimistic mutations in
+  useGraphState, handleConnect/handleEdgesDelete in control-center state, canvas prop updates,
+  enhanced DependencyEdge with delete button, feature node handle updates, and integration
+  tests. Task 13 (handle updates) has no dependencies and can start in parallel with phase 1.
+
+  Every code task follows TDD (RED-GREEN-REFACTOR). Tests are written first to define
+  expected behavior, then minimal implementation to pass, then cleanup. The task order
+  ensures dependencies are satisfied — inner architecture layers before outer, contracts
+  before consumers.

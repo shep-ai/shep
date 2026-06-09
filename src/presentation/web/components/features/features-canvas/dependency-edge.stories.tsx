@@ -46,6 +46,7 @@ const childData: FeatureNodeData = {
   showHandles: true,
 };
 
+/** Default dependency edge — hover to reveal delete button. */
 export const Default: StoryObj = {
   render: () => (
     <ReactFlow
@@ -75,7 +76,46 @@ export const Default: StoryObj = {
       edgeTypes={{ dependencyEdge: DependencyEdge }}
       fitView
       nodesDraggable={false}
-      nodesConnectable={false}
+      nodesConnectable={true}
+      elementsSelectable={true}
+      proOptions={{ hideAttribution: true }}
+    />
+  ),
+};
+
+/** Edge in selected state — shows delete button and blue highlight stroke. */
+export const Selected: StoryObj = {
+  render: () => (
+    <ReactFlow
+      nodes={[
+        {
+          id: 'parent',
+          type: 'featureNode',
+          position: { x: 50, y: 100 },
+          data: parentData,
+        },
+        {
+          id: 'child',
+          type: 'featureNode',
+          position: { x: 450, y: 100 },
+          data: childData,
+        },
+      ]}
+      edges={[
+        {
+          id: 'dep-1',
+          source: 'parent',
+          target: 'child',
+          type: 'dependencyEdge',
+          selected: true,
+        },
+      ]}
+      nodeTypes={{ featureNode: FeatureNode }}
+      edgeTypes={{ dependencyEdge: DependencyEdge }}
+      fitView
+      nodesDraggable={false}
+      nodesConnectable={true}
+      elementsSelectable={true}
       proOptions={{ hideAttribution: true }}
     />
   ),

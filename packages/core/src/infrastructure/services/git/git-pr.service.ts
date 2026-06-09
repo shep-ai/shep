@@ -1040,6 +1040,88 @@ export class GitPrService implements IGitPrService {
     }
   }
 
+  async rebaseOnBranch(cwd: string, featureBranch: string, targetBranch: string): Promise<void> {
+    // Check for dirty worktree before starting
+    const dirty = await this.hasUncommittedChanges(cwd);
+    if (dirty) {
+      throw new GitPrError(
+        `Cannot rebase: working directory has uncommitted changes. ` +
+          `Please commit or stash your changes before rebasing.`,
+        GitPrErrorCode.GIT_ERROR
+      );
+    }
+
+    // Fetch the target branch from remote — it may not be locally available
+    try {
+      await this.execFile('git', ['fetch', 'origin', targetBranch], { cwd });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const cause = error instanceof Error ? error : undefined;
+      throw new GitPrError(
+        `Failed to fetch target branch '${targetBranch}': ${message}`,
+        GitPrErrorCode.GIT_ERROR,
+        cause
+      );
+    }
+
+    // Checkout the feature branch
+    try {
+      await this.execFile('git', ['checkout', featureBranch], { cwd });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const cause = error instanceof Error ? error : undefined;
+      if (
+        message.includes('did not match') ||
+        message.includes('not a commit') ||
+        message.includes('pathspec')
+      ) {
+        throw new GitPrError(
+          `Branch '${featureBranch}' not found.`,
+          GitPrErrorCode.BRANCH_NOT_FOUND,
+          cause
+        );
+      }
+      throw new GitPrError(
+        `Failed to checkout '${featureBranch}': ${message}`,
+        GitPrErrorCode.GIT_ERROR,
+        cause
+      );
+    }
+
+    // Rebase onto origin/<targetBranch>
+    const rebaseTarget = `origin/${targetBranch}`;
+    try {
+      await this.execFile('git', ['rebase', rebaseTarget], { cwd });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const cause = error instanceof Error ? error : undefined;
+
+      // Detect rebase conflict from git stderr/exit code
+      if (message.includes('CONFLICT') || message.includes('could not apply')) {
+        let conflictedFiles: string[] = [];
+        try {
+          conflictedFiles = await this.getConflictedFiles(cwd);
+        } catch {
+          // Failed to get conflicted files — still report the conflict
+        }
+
+        const fileList =
+          conflictedFiles.length > 0 ? ` Conflicted files: ${conflictedFiles.join(', ')}` : '';
+        throw new GitPrError(
+          `Rebase of '${featureBranch}' onto '${targetBranch}' encountered conflicts.${fileList}`,
+          GitPrErrorCode.REBASE_CONFLICT,
+          cause
+        );
+      }
+
+      throw new GitPrError(
+        `Rebase of '${featureBranch}' onto '${targetBranch}' failed: ${message}`,
+        GitPrErrorCode.GIT_ERROR,
+        cause
+      );
+    }
+  }
+
   async getConflictedFiles(cwd: string): Promise<string[]> {
     try {
       const { stdout } = await this.execFile('git', ['diff', '--name-only', '--diff-filter=U'], {
