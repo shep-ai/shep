@@ -321,6 +321,7 @@ describe('createDefaultSettings', () => {
         aspm: true,
         bedrockIntegration: true,
         whatsappDispatch: false,
+        clusters: false,
       });
     });
 

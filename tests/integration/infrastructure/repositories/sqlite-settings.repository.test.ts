@@ -528,6 +528,7 @@ describe('SQLiteSettingsRepository', () => {
         bedrockIntegration: false,
         whatsappDispatch: false,
         aspm: false,
+        clusters: false,
       };
 
       await repository.initialize(settings);
@@ -543,6 +544,7 @@ describe('SQLiteSettingsRepository', () => {
         bedrockIntegration: false,
         whatsappDispatch: false,
         aspm: false,
+        clusters: false,
       });
     });
 
@@ -562,6 +564,7 @@ describe('SQLiteSettingsRepository', () => {
         bedrockIntegration: false,
         whatsappDispatch: false,
         aspm: false,
+        clusters: false,
       });
     });
 
@@ -579,6 +582,7 @@ describe('SQLiteSettingsRepository', () => {
         bedrockIntegration: false,
         whatsappDispatch: false,
         aspm: false,
+        clusters: false,
       };
       settings.updatedAt = new Date('2025-01-02T00:00:00Z');
       await repository.update(settings);
@@ -594,6 +598,7 @@ describe('SQLiteSettingsRepository', () => {
         bedrockIntegration: false,
         whatsappDispatch: false,
         aspm: false,
+        clusters: false,
       });
     });
 
@@ -609,6 +614,7 @@ describe('SQLiteSettingsRepository', () => {
         bedrockIntegration: false,
         whatsappDispatch: false,
         aspm: false,
+        clusters: false,
       };
 
       await repository.initialize(settings);

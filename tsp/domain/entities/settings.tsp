@@ -620,6 +620,9 @@ model FeatureFlags {
 
   @doc("Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098)")
   aspm: boolean = true;
+
+  @doc("Enable Clusters navigation and Kubernetes cluster management in the web UI")
+  clusters: boolean = false;
 }
 
 /**

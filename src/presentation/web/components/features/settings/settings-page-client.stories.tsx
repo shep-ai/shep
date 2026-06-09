@@ -43,6 +43,7 @@ export const AllSections: Story = {
         bedrockIntegration: false,
         whatsappDispatch: false,
         aspm: false,
+        clusters: false,
       },
     },
     shepHome: '/opt/shep',

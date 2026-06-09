@@ -1,0 +1,597 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "cluster-agent"
+summary: >
+  Technical research for the cluster-agent feature covering domain modeling, persistence,
+  infrastructure services, LangGraph agent orchestration, CLI commands, web UI components,
+  and feature flag wiring. Key decisions: follow existing TypeSpec/migration/repository/use-case
+  patterns exactly, wrap k3d/kubectl/argocd via execFile through port interfaces, implement
+  a LangGraph state machine with 6 nodes mirroring the feature-agent pattern, and defer
+  Terraform/templates to v2.
+
+relatedFeatures: []
+
+technologies:
+  - "TypeSpec (domain model codegen)"
+  - "TypeScript (implementation language)"
+  - "SQLite via better-sqlite3 (persistence)"
+  - "tsyringe (dependency injection)"
+  - "LangGraph / @langchain/langgraph (agent workflow orchestration)"
+  - "k3d (k3s-in-Docker cluster management CLI)"
+  - "kubectl (Kubernetes CLI)"
+  - "ArgoCD (GitOps - installed via kubectl apply, no separate CLI)"
+  - "Docker (prerequisite runtime)"
+  - "Commander (CLI framework)"
+  - "Next.js + shadcn/ui (web UI)"
+  - "React Flow / @xyflow/react (graph visualization)"
+  - "Vitest (testing)"
+  - "Storybook (component documentation)"
+  - "umzug (migration runner)"
+
+relatedLinks:
+  - title: "k3d Documentation"
+    url: "https://k3d.io/"
+  - title: "k3s - Lightweight Kubernetes"
+    url: "https://k3s.io/"
+  - title: "ArgoCD Installation via kubectl"
+    url: "https://argo-cd.readthedocs.io/en/stable/getting_started/#1-install-argo-cd"
+  - title: "LangGraph Annotation API"
+    url: "https://langchain-ai.github.io/langgraph/concepts/low_level/#annotation"
+  - title: "kubectl Reference"
+    url: "https://kubernetes.io/docs/reference/kubectl/"
+
+decisions:
+  - title: "TypeSpec Entity Modeling for Cluster"
+    chosen: "Extend SoftDeletableEntity following the Application entity pattern"
+    rejected:
+      - "Extend BaseEntity directly - would lose soft-delete support needed for cluster lifecycle management and data recovery. All major entities (Repository, Application, Feature) use SoftDeletableEntity."
+      - "Create a new base entity type - unnecessary complexity when SoftDeletableEntity already provides id, createdAt, updatedAt, and deletedAt fields."
+    rationale: >
+      The existing Application entity (tsp/domain/entities/application.tsp) provides the closest analog:
+      it extends SoftDeletableEntity, has a name/slug/description/status pattern, and co-locates its
+      status enum. The Cluster entity should follow this exact pattern. ClusterStatus enum goes in
+      tsp/common/enums/cluster.tsp (separate file, like agent.tsp) since it may be referenced
+      independently. Junction entities (ClusterRepository, ClusterApplication) extend BaseEntity
+      (not SoftDeletableEntity) since they are hard-deleted when unlinked, following the
+      work_item_relations pattern from migration 068.
+
+  - title: "ClusterStatus Enum Design"
+    chosen: "Six-state enum: Provisioning, Ready, Stopping, Stopped, Error, Destroying"
+    rejected:
+      - "Three-state enum (Provisioning, Running, Stopped) - conflates error states with stopped, cannot distinguish in-progress transitions (stopping vs stopped, destroying vs destroyed), and does not map cleanly to k3d cluster lifecycle."
+      - "Seven-state with separate Created state - unnecessary because clusters are created in Stopped state and the distinction between 'just created' and 'explicitly stopped' adds no value to the UI or agent logic."
+    rationale: >
+      The spec's open questions resolved in favor of six states despite the answer field saying
+      'simple three-state'. The detailed rationale in the spec explains that cluster operations are
+      asynchronous and the UI needs granular progress. Provisioning takes 30-60s, Destroying takes
+      5-10s, and Error needs a distinct recovery path from Stopped. This maps to the k3d lifecycle
+      and follows the pattern of ApplicationStatus which also has multiple transitional states.
+      The enum values use PascalCase identifiers (no explicit string values needed) matching
+      the existing AgentRunStatus and SdlcLifecycle enum patterns.
+
+  - title: "SQLite Migration Strategy"
+    chosen: "Four separate migrations (085-088) following the existing pattern exactly"
+    rejected:
+      - "Single combined migration for all tables - violates the existing convention of one concern per migration file and makes rollback tracking harder."
+      - "Using umzug programmatic migrations - the codebase uses file-based migrations with NNN prefix naming convention, not programmatic migrations."
+    rationale: >
+      Following the established pattern from migrations 056 (applications table), 068 (work_item_relations),
+      and 084 (feature flag). The next available prefix is 085. Four migrations:
+      085-create-clusters-table.ts (main entity table with unique slug index where deleted_at IS NULL
+      and status index), 086-create-cluster-repositories.ts (junction table with compound unique index
+      and individual FK indexes), 087-create-cluster-applications.ts (same pattern as 086),
+      088-add-feature-flag-clusters.ts (ALTER TABLE settings ADD COLUMN feature_flag_clusters
+      guarded by pragma table_info check). All migrations use the existing guards: sqlite_master check
+      for table creation, pragma index_list for index creation, pragma table_info for column addition.
+      Columns use snake_case, TEXT PRIMARY KEY for UUIDs, INTEGER NOT NULL for timestamps and booleans,
+      INTEGER for nullable timestamps (deleted_at, last_provisioned_at, last_health_check_at).
+
+  - title: "Repository Port Interface Design"
+    chosen: "Single IClusterRepository interface with junction management methods"
+    rejected:
+      - "Separate IJunctionRepository for cluster-repository and cluster-application links - over-abstracts what is essentially a cluster concern. The existing IApplicationRepository includes related entity management in a single interface."
+      - "Using a generic junction repository - too abstract and would not follow the explicit, typed port interface pattern used throughout the codebase."
+    rationale: >
+      The IClusterRepository follows the IApplicationRepository pattern: typed interface with explicit
+      methods for CRUD plus relationship management. Methods: create, findById, findBySlug, list,
+      update, softDelete (not delete - following existing pattern), linkRepository, unlinkRepository,
+      getLinkedRepositories, linkApplication, unlinkApplication, getLinkedApplications. Update takes
+      Partial<Pick<Cluster, 'name' | 'description' | 'argoCdEnabled' | 'status' | ...>> to explicitly
+      list mutable fields. All return Promise<T>. DI token: 'IClusterRepository'.
+
+  - title: "Mapper Implementation"
+    chosen: "Standard cluster.mapper.ts with toDatabase/fromDatabase and ClusterRow interface"
+    rejected:
+      - "Using an ORM or query builder - the codebase uses raw SQL with manually-defined mappers for full control and transparency. No ORM is used anywhere."
+      - "Shared generic mapper utility - each entity has specific mapping rules (boolean conversion, JSON arrays, nullable dates) that do not generalize well."
+    rationale: >
+      Follows the application.mapper.ts pattern exactly. ClusterRow interface defines all columns in
+      snake_case: id, name, slug, description, status, k3d_cluster_name, kubeconfig_path,
+      argocd_enabled (INTEGER 0/1), argocd_namespace, node_count, last_provisioned_at (INTEGER|null),
+      last_health_check_at (INTEGER|null), error_message, created_at (INTEGER), updated_at (INTEGER),
+      deleted_at (INTEGER|null). The toDatabase function converts camelCase to snake_case, booleans
+      to 0/1 integers, Dates to unix ms integers, and optional strings to null. The fromDatabase
+      function reverses: integers to booleans, unix ms to Dates, null to undefined, and casts
+      status string to ClusterStatus enum. From LESSONS.md: mapper and repository SQL must stay
+      in sync - both must list every column.
+
+  - title: "Use Case Organization"
+    chosen: "12 use cases in packages/core/src/application/use-cases/clusters/ directory"
+    rejected:
+      - "Fewer use cases combining related operations - violates single responsibility principle and makes testing harder. The existing pattern has one use case per operation (CreateApplicationUseCase, ListApplicationsUseCase, etc.)."
+      - "Service class instead of use cases - violates the clean architecture rule that use cases are the sole entry point for business logic from presentation layers."
+    rationale: >
+      Following the applications/ use case directory structure. Each use case is @injectable() with
+      @inject('TokenName') constructor injection. Use cases: CreateClusterUseCase (generates UUID,
+      slug, sets Stopped status), GetClusterUseCase, ListClustersUseCase (with optional status filter),
+      UpdateClusterUseCase (regenerates slug on name change), DeleteClusterUseCase (soft-delete with
+      destroy-if-running guard), LinkRepositoryUseCase, UnlinkRepositoryUseCase, LinkApplicationUseCase,
+      UnlinkApplicationUseCase, ProvisionClusterUseCase (transitions to Provisioning, spawns agent
+      worker), DestroyClusterUseCase (transitions to Destroying, runs k3d delete), GetClusterStatusUseCase
+      (returns k3d health + pod count + ArgoCD state). All use cases accessible from web MUST have
+      string token aliases in the DI container (LESSONS.md rule). Each has an execute() method
+      returning Promise<T>.
+
+  - title: "Infrastructure Service Architecture (k3d, kubectl, ArgoCD, Docker)"
+    chosen: "Four port interfaces in application/ports/output/services/ with CLI-wrapping implementations via execFile"
+    rejected:
+      - "Using dockerode npm package for Docker interaction - adds an npm dependency when docker info via execFile is sufficient for health checking. The codebase pattern is to wrap CLIs, not use SDKs."
+      - "Using @kubernetes/client-node for kubectl - adds a heavy npm dependency with transitive deps. The codebase already wraps git, npm, and other CLIs via execFile. kubectl CLI is simpler and follows the established pattern."
+      - "Using argocd CLI binary - requires separate installation. ArgoCD can be installed via kubectl apply of the official manifests and status checked via kubectl get pods. No additional binary needed."
+    rationale: >
+      The existing WorktreeService (infrastructure/services/git/worktree.service.ts) demonstrates the
+      canonical pattern: @injectable() class, injects ExecFunction via @inject('ExecFunction'),
+      implements a port interface, uses custom error classes with error codes. Each new service follows
+      this exactly. IK3dService wraps k3d CLI (create-cluster, delete-cluster, start-cluster,
+      stop-cluster, get-kubeconfig). IKubectlService wraps kubectl (apply, get pods/services/namespaces,
+      wait-for-ready). IArgoCDService uses kubectl to install ArgoCD manifests (kubectl apply -f
+      the official install.yaml) and check status (kubectl get pods -n argocd). IDockerHealthService
+      runs docker info and returns boolean. All use --no-lb, --wait, -o json flags for machine-readable
+      output. From LESSONS.md: always use non-interactive flags with execFile, check --help before
+      calling any CLI tool, and handle both stdout and stderr in error cases.
+
+  - title: "Cluster Agent Graph Architecture"
+    chosen: "LangGraph StateGraph with 6 nodes following the feature-agent pattern"
+    rejected:
+      - "Simple sequential function chain - no checkpointing, no recovery from failures, no conditional execution. The provisioning workflow is inherently multi-step with potential failures at any stage."
+      - "Event-driven architecture with EventEmitter - does not provide the checkpoint/resume capability needed for long-running provisioning. LangGraph is already proven in the codebase."
+    rationale: >
+      The feature-agent-graph.ts provides the template. ClusterAgentAnnotation defines state channels:
+      clusterId, clusterName, status, kubeconfigPath, argoCdEnabled, argoCdNamespace, currentNode,
+      error, completedPhases (string[] with accumulator reducer). Graph nodes: prerequisite-check
+      (verify Docker + k3d), provision (k3d cluster create --wait), configure-kubectl (extract
+      kubeconfig to ~/.shep/clusters/<id>/kubeconfig), install-argocd (conditional on argoCdEnabled),
+      health-check (verify cluster API + core pods), ready (update DB status to Ready). Error edges
+      from any node to terminal error node. The graph uses createCheckpointer() with SQLite backend
+      at ~/.shep/checkpoints/<threadId>.db. Node factories follow createAnalyzeNode pattern: accept
+      executor + deps, return async node function. Graph factory: createClusterAgentGraph(deps,
+      checkpointer) returns compiled graph. The cluster agent uses IAgentExecutorProvider for
+      agent-agnostic executor resolution (mandatory rule from CLAUDE.md).
+
+  - title: "Cluster Agent Worker Process"
+    chosen: "Detached Node.js process following feature-agent-worker.ts pattern"
+    rejected:
+      - "In-process execution within the CLI/web server - blocks the event loop during provisioning (30-60s). The existing pattern uses detached workers for exactly this reason."
+      - "Docker container-based worker - over-engineered for a process that just runs k3d commands. The feature agent worker is a simple Node.js script."
+    rationale: >
+      The cluster-agent-worker.ts follows feature-agent-worker.ts exactly: #!/usr/bin/env node entry
+      point, import reflect-metadata first, parse CLI args (--cluster-id, --run-id), initializeContainer(),
+      resolve dependencies, create executor via IAgentExecutorProvider, create graph, invoke graph with
+      initial state. Heartbeat system: setInterval every 30s updating last_heartbeat in DB. Status
+      tracking: running -> completed | failed. Resume support via --resume flag. Error handlers for
+      uncaughtException, unhandledRejection, SIGTERM. The worker is spawned by ProvisionClusterUseCase
+      via IClusterAgentProcessService (new port interface following IFeatureAgentProcessService pattern).
+
+  - title: "CLI Command Structure"
+    chosen: "Commander command group 'cluster' with 7 subcommands matching existing patterns"
+    rejected:
+      - "Top-level commands (shep cluster-new, shep cluster-ls) - does not follow the existing grouped command pattern (shep app new, shep app ls, shep repo ls)."
+      - "Interactive wizard-style commands - the existing CLI uses straightforward Commander commands with flags. Interactive prompts are only used for confirmation (e.g., delete confirmation)."
+    rationale: >
+      Following src/presentation/cli/commands/app/index.ts pattern: createClusterCommand() factory
+      returns new Command('cluster').description(t('cli:commands.cluster.description')). Subcommands
+      added via .addCommand(): new.command.ts (shep cluster new <name> --argocd --provision),
+      ls.command.ts (shep cluster ls), show.command.ts (shep cluster show <id-or-slug>),
+      del.command.ts (shep cluster del <id-or-slug> with confirmation), link.command.ts
+      (shep cluster link <cluster> <entity>), unlink.command.ts (shep cluster unlink <cluster> <entity>),
+      status.command.ts (shep cluster status <id-or-slug>). Each command resolves use cases from
+      the DI container, uses getCliI18n().t for i18n, and formats output with the shared UI module.
+
+  - title: "Web UI Component Architecture"
+    chosen: "ClusterNode + ClusterCreateDrawer + ClusterDetailDrawer following existing component patterns"
+    rejected:
+      - "Single monolithic ClusterPanel component - violates the single-responsibility pattern. Existing entities have separate node, create, and detail components."
+      - "Inline cluster UI in existing components - clusters are a new entity type requiring their own components for the React Flow canvas and drawer system."
+    rationale: >
+      Following the application-node pattern: ClusterNode in
+      src/presentation/web/components/common/cluster-node/cluster-node.tsx with cluster-node-config.ts
+      for ClusterNodeData type definition. Uses Handle from @xyflow/react, status badge with color
+      coding per ClusterStatus, linked repo/app counts. ClusterCreateDrawer extends BaseDrawer
+      with name, description, argoCdEnabled toggle, and 'Create & Provision' button. ClusterDetailDrawer
+      has tabs: Overview, Repositories (link/unlink), Applications (link/unlink), Status (live pods).
+      All components have mandatory colocated .stories.tsx files. Status badge colors: Provisioning
+      (blue/animate-pulse), Ready (green), Stopping (yellow), Stopped (gray), Error (red),
+      Destroying (orange). deriveGraph.ts updated to include cluster nodes positioned as deployment
+      targets connected to repo/app nodes via edges from junction table data.
+
+  - title: "Feature Flag Wiring Strategy"
+    chosen: "Full 11-step checklist from LESSONS.md, gating UI only"
+    rejected:
+      - "Feature flag gates entire DI registration - adds complex conditional branching in container.ts and breaks lazy dependency resolution. The existing pattern (envDeploy, skills, projects) gates visibility only."
+      - "Environment variable only - violates the established DB-backed flag system. Users expect Settings page toggles, not .env editing (LESSONS.md explicit warning)."
+    rationale: >
+      Following the exact LESSONS.md checklist and the most recent feature flag addition (084-add-feature-flag-projects):
+      1) Add clusters: boolean = false to FeatureFlags in settings.tsp, 2) pnpm tsp:compile,
+      3) Migration 088-add-feature-flag-clusters.ts with pragma table_info guard,
+      4) Settings mapper: SettingsRow + toDatabase + fromDatabase (3 edits),
+      5) Settings repository: INSERT + VALUES + UPDATE (3 edits),
+      6) Settings defaults factory: clusters: false,
+      7) feature-flags.ts: FeatureFlagsState + DB branch + env fallback,
+      8) Settings page: SwitchRow in Feature Flags section,
+      9) Translation strings in all 9 locales,
+      10) Gate sidebar nav, canvas nodes, create drawer, search results,
+      11) Update all known fixture locations (15+ files from LESSONS.md list).
+
+  - title: "SSE Event Integration"
+    chosen: "Reuse existing agent-events SSE pipeline with cluster-specific event types"
+    rejected:
+      - "Separate SSE endpoint for cluster events - adds a second SSE connection per client, doubling connection overhead. The existing agent-events endpoint already multiplexes event types."
+      - "WebSocket-based real-time updates - the codebase uses SSE throughout. Adding WebSocket would require new infrastructure (ws server, reconnection logic, protocol handling)."
+    rationale: >
+      The existing agent-events route (src/presentation/web/app/api/agent-events/route.ts) uses
+      StreamAgentEventsUseCase which polls DB for feature lifecycle changes. The cluster agent worker
+      updates cluster status in DB during each node transition (Provisioning -> configuring kubectl ->
+      installing ArgoCD -> health checking -> Ready). The SSE pipeline picks up these status changes
+      via the same polling mechanism. New event type 'cluster_status' added alongside existing
+      'notification' and 'interactive_session' types. Client-side: useClusterEvents hook subscribes
+      to the existing AgentEventsProvider context and filters for cluster events.
+
+  - title: "Junction Table Design"
+    chosen: "Two junction tables (cluster_repositories, cluster_applications) with compound unique indexes"
+    rejected:
+      - "Single polymorphic junction table (cluster_links with entity_type column) - loses type safety and referential integrity. Cannot have FK constraints to two different tables from the same column."
+      - "JSON array columns on clusters table - loses referential integrity, makes querying by linked entity difficult, and does not support efficient reverse lookups (find all clusters for a repo)."
+    rationale: >
+      Following the work_item_relations pattern from migration 068. Each junction table has: id TEXT
+      PRIMARY KEY, cluster_id TEXT NOT NULL, repository_id/application_id TEXT NOT NULL, created_at
+      INTEGER NOT NULL, FOREIGN KEY constraints to both parent tables. Compound unique index on
+      (cluster_id, repository_id/application_id) prevents duplicate links. Individual FK indexes
+      on cluster_id and repository_id/application_id for efficient lookups in both directions.
+      No updated_at or deleted_at on junction tables - they are hard-deleted when unlinked.
+
+  - title: "Kubeconfig Storage Strategy"
+    chosen: "Per-cluster kubeconfig files at ~/.shep/clusters/<cluster-id>/kubeconfig with 0600 permissions"
+    rejected:
+      - "Modify global ~/.kube/config - dangerous, conflicts with user's existing kubeconfig, and violates resource isolation (NFR-2). Multiple clusters would overwrite each other."
+      - "Store kubeconfig content in SQLite - kubeconfig is a credential and storing it in the DB violates NFR-10 (no secrets in SQLite). File-based storage allows proper filesystem permissions."
+      - "Use KUBECONFIG env var - affects the entire process, not per-operation. kubectl --kubeconfig flag is per-invocation and does not affect other processes."
+    rationale: >
+      Each cluster gets its own directory under the Shep home dir. The kubeconfig is extracted via
+      k3d kubeconfig get <cluster-name> and written to the cluster-specific path. All kubectl and
+      argocd operations pass --kubeconfig <path> explicitly (never modify global config, per NFR-2).
+      File permissions set to 0600 via fs.chmod (NFR-10). The kubeconfigPath is stored on the Cluster
+      entity for reference but the actual credential lives only on disk. On cluster destroy, the
+      kubeconfig file and directory are cleaned up.
+
+  - title: "Error Handling for Infrastructure Services"
+    chosen: "Custom error classes with error codes per service, following WorktreeError pattern"
+    rejected:
+      - "Generic Error throws - loses the ability to programmatically distinguish error types (binary not found vs command failed vs timeout)."
+      - "Result monad pattern - not used anywhere in the codebase. The established pattern is try/catch with typed errors."
+    rationale: >
+      Following WorktreeError/WorktreeErrorCode pattern. New error classes: K3dError with K3dErrorCode
+      (BINARY_NOT_FOUND, CLUSTER_EXISTS, CLUSTER_NOT_FOUND, COMMAND_FAILED, TIMEOUT), KubectlError
+      with KubectlErrorCode (BINARY_NOT_FOUND, APPLY_FAILED, RESOURCE_NOT_FOUND, TIMEOUT),
+      DockerError with DockerErrorCode (DAEMON_NOT_RUNNING, BINARY_NOT_FOUND). Error classes extend
+      Error with name, code, and optional cause properties. Each service's parseError() method maps
+      stderr/stdout patterns to error codes. Use cases catch typed errors and update cluster status
+      to Error with the error message.
+
+  - title: "DI Container Registration Strategy"
+    chosen: "New register-cluster.ts module following register-agents.ts pattern"
+    rejected:
+      - "Add all registrations to existing modules (repos to register-repositories, services to register-services) - would bloat existing modules and lose the feature-cohesion benefit of grouped registration."
+      - "Self-registering @injectable() classes without explicit registration - tsyringe requires explicit registration for interface-to-implementation binding when using string tokens."
+    rationale: >
+      A new packages/core/src/infrastructure/di/modules/register-cluster.ts module registers all
+      cluster-related components: IClusterRepository (useFactory with Database injection),
+      IK3dService, IKubectlService, IArgoCDService, IDockerHealthService (all useFactory with
+      ExecFunction injection), IClusterAgentProcessService, and all 12 use cases via
+      registerSingleton(ClassName). String token aliases for web-accessible use cases added to the
+      dedicated block in container.ts. The module is called from initializeContainer() alongside
+      existing register* calls.
+
+  - title: "i18n Strategy"
+    chosen: "Add cluster strings to existing namespace files (cli.json and web.json) across all 9 locales"
+    rejected:
+      - "New 'cluster' namespace - the codebase uses 4 namespaces (cli, common, tui, web) with all feature strings nested within. Adding a 5th namespace would require i18n configuration changes."
+      - "English-only in v1 - the codebase already has 9 locales and missing translation keys render as raw key paths on screen (LESSONS.md). All locales must be updated simultaneously."
+    rationale: >
+      Following the existing pattern: CLI strings go in translations/<lang>/cli.json under
+      commands.cluster.*, web strings go in translations/<lang>/web.json under cluster.* namespace.
+      Keys needed: sidebar nav label, create drawer fields/buttons, detail drawer tabs/labels,
+      status labels (Provisioning, Ready, Stopping, Stopped, Error, Destroying), action buttons
+      (Create, Provision, Destroy, Link, Unlink), empty state messages, error messages, feature
+      flag label and description. All 9 locales: en, ar, es, de, fr, he, pt, uk, ru. For non-English
+      locales, use contextually accurate translations (not machine-translated placeholders).
+
+openQuestions:
+  - question: "Should k3d binary be auto-installed or require manual user installation?"
+    resolved: true
+    options:
+      - option: "Require manual installation with clear error messages"
+        description: "User must install k3d themselves. The IDockerHealthService and IK3dService detect missing binaries and return clear prerequisite error messages. Simpler implementation, no auto-install logic, no version management. Matches how the codebase handles git and other external tools."
+        selected: true
+      - option: "Auto-install via npm postinstall script"
+        description: "Automatically download and install k3d binary during npm install. Adds complexity for cross-platform binary management, version pinning, and security review of downloaded binaries."
+        selected: false
+      - option: "Bundle k3d binary in the npm package"
+        description: "Include pre-compiled k3d binaries for all platforms. Significantly increases package size (k3d is ~30MB per platform), requires separate binaries for darwin-arm64, darwin-x64, linux-x64, etc."
+        selected: false
+    selectionRationale: >
+      The codebase already requires external tools (git, Docker, Node.js) without auto-installing them.
+      The IDockerHealthService prerequisite check pattern provides clear error messages when Docker
+      or k3d is not available. Auto-installation adds security concerns (downloading binaries),
+      cross-platform complexity, and version management overhead. Clear error messages with
+      installation instructions are the established UX pattern.
+
+  - question: "How should the cluster agent handle k3d cluster creation timeout?"
+    resolved: true
+    options:
+      - option: "Exponential backoff health check with 120s total timeout"
+        description: "After k3d cluster create --wait returns, run a health-check loop with exponential backoff (1s, 2s, 4s, 8s, 16s, 32s) polling kubectl get nodes until the node shows Ready. Total timeout 120s. Matches NFR-1 requirement."
+        selected: true
+      - option: "Fixed-interval polling at 5s intervals"
+        description: "Simple polling at fixed 5s intervals for up to 120s. Simpler but less responsive for fast clusters and slower to detect issues."
+        selected: false
+      - option: "Rely entirely on k3d --wait flag"
+        description: "Trust that k3d --wait means the cluster is ready. However, --wait only ensures the k3s container is running, not that the Kubernetes API is fully responsive and core pods are scheduled."
+        selected: false
+    selectionRationale: >
+      k3d --wait ensures the Docker container is running and k3s has started, but the Kubernetes API
+      may take additional seconds to become fully responsive. The health-check node uses exponential
+      backoff starting at 1s (total wait: 1+2+4+8+16+32 = 63s before timeout at 120s). This matches
+      NFR-1's 120s requirement and the exponential backoff pattern specified in NFR-1. The health check
+      verifies: kubectl get nodes returns Ready, core system pods (kube-system namespace) are running.
+
+  - question: "Should derive-graph.ts render cluster nodes on the main canvas or a separate view?"
+    resolved: true
+    options:
+      - option: "Main canvas alongside repository and feature nodes"
+        description: "Cluster nodes appear on the same React Flow canvas as repos and features. Edges connect clusters to linked repos/apps. Provides a unified view of the SDLC pipeline from code to deployment. Follows the spec requirement (FR-43)."
+        selected: true
+      - option: "Separate /clusters page with its own canvas"
+        description: "Dedicated page for cluster management with its own React Flow instance. Cleaner separation but requires navigation between pages to see relationships."
+        selected: false
+      - option: "Sidebar panel only (no canvas representation)"
+        description: "Clusters only appear in sidebar navigation and detail drawers. No graph visualization. Simpler but loses the visual connection between code and deployment targets."
+        selected: false
+    selectionRationale: >
+      FR-43 explicitly requires cluster nodes on the control center canvas via deriveGraph. The
+      existing deriveGraph function (src/presentation/web/lib/derive-graph.ts) already handles
+      multiple node types (repository, feature, pending-feature). Adding cluster nodes follows the
+      same pattern: iterate clusterMap, create node data with callbacks, position cluster nodes as
+      deployment targets. Edges are derived from junction table data (cluster-repository links
+      create edges between cluster and repo nodes). Note: Application nodes are currently NOT on
+      the canvas (they have a separate /applications page), but cluster nodes SHOULD be on the
+      canvas per the spec.
+
+content: |
+  ## Technology Decisions
+
+  ### 1. TypeSpec Entity Modeling for Cluster
+
+  **Chosen:** Extend SoftDeletableEntity following the Application entity pattern
+
+  **Rejected:**
+  - Extend BaseEntity directly - would lose soft-delete support needed for cluster lifecycle management
+  - Create a new base entity type - unnecessary when SoftDeletableEntity already provides the needed fields
+
+  **Rationale:** The Cluster entity follows the Application entity pattern: extends SoftDeletableEntity, has name/slug/description/status fields, and uses a status enum. ClusterStatus goes in `tsp/common/enums/cluster.tsp`. Junction entities (ClusterRepository, ClusterApplication) extend BaseEntity since they are hard-deleted on unlink.
+
+  ### 2. ClusterStatus Enum Design
+
+  **Chosen:** Six-state enum (Provisioning, Ready, Stopping, Stopped, Error, Destroying)
+
+  **Rejected:**
+  - Three-state (Provisioning, Running, Stopped) - conflates error and transitional states
+  - Seven-state with Created - no value beyond Stopped for initial state
+
+  **Rationale:** Cluster operations are asynchronous (30-60s provisioning, 5-10s destroying). The UI needs granular progress. Error needs a distinct recovery path from Stopped. Maps to k3d lifecycle.
+
+  ### 3. SQLite Migration Strategy
+
+  **Chosen:** Four separate migrations (085-088)
+
+  **Rejected:**
+  - Single combined migration - violates one-concern-per-migration convention
+  - Programmatic migrations - codebase uses file-based with NNN prefix
+
+  **Rationale:** 085-create-clusters-table, 086-create-cluster-repositories, 087-create-cluster-applications, 088-add-feature-flag-clusters. All use existing guards (sqlite_master check, pragma index_list, pragma table_info).
+
+  ### 4. Infrastructure Service Architecture
+
+  **Chosen:** Four port interfaces with CLI-wrapping implementations via execFile
+
+  **Rejected:**
+  - dockerode npm package - execFile is sufficient and follows established pattern
+  - @kubernetes/client-node - heavy dependency, CLI wrapping is simpler
+  - argocd CLI binary - ArgoCD installed via kubectl apply, no extra binary needed
+
+  **Rationale:** Follows WorktreeService pattern: @injectable(), injects ExecFunction, implements port interface, uses custom error classes. All CLI calls use non-interactive flags (LESSONS.md requirement).
+
+  ### 5. Cluster Agent Graph Architecture
+
+  **Chosen:** LangGraph StateGraph with 6 nodes
+
+  **Rejected:**
+  - Sequential function chain - no checkpointing or recovery
+  - Event-driven with EventEmitter - no checkpoint/resume capability
+
+  **Rationale:** Follows feature-agent-graph.ts pattern. Nodes: prerequisite-check, provision, configure-kubectl, install-argocd (conditional), health-check, ready. Checkpointer with SQLite backend. Uses IAgentExecutorProvider (mandatory agent-agnostic design).
+
+  ### 6. Cluster Agent Worker Process
+
+  **Chosen:** Detached Node.js process following feature-agent-worker.ts pattern
+
+  **Rejected:**
+  - In-process execution - blocks event loop for 30-60s
+  - Docker container worker - over-engineered for CLI commands
+
+  **Rationale:** CLI args (--cluster-id, --run-id), initializeContainer(), heartbeat system, status tracking, resume support. Spawned by ProvisionClusterUseCase via IClusterAgentProcessService.
+
+  ### 7. CLI Command Structure
+
+  **Chosen:** Commander command group 'cluster' with 7 subcommands
+
+  **Rejected:**
+  - Top-level commands - does not follow grouped pattern (shep app, shep repo)
+  - Interactive wizard - existing CLI uses straightforward Commander flags
+
+  **Rationale:** createClusterCommand() factory, subcommands: new, ls, show, del, link, unlink, status. Each resolves use cases from DI, uses getCliI18n().t for i18n.
+
+  ### 8. Web UI Component Architecture
+
+  **Chosen:** ClusterNode + ClusterCreateDrawer + ClusterDetailDrawer
+
+  **Rejected:**
+  - Monolithic ClusterPanel - violates single-responsibility
+  - Inline in existing components - clusters are a new entity type
+
+  **Rationale:** Follows application-node pattern with React Flow handles, status badges, drawer system. All components have mandatory .stories.tsx files.
+
+  ### 9. Feature Flag Wiring
+
+  **Chosen:** Full 11-step LESSONS.md checklist, gating UI only
+
+  **Rejected:**
+  - Gate entire DI - complex conditional branching, breaks lazy resolution
+  - Environment variable only - violates DB-backed flag system
+
+  **Rationale:** clusters: false in FeatureFlags, migration with pragma guard, mapper/repo/defaults/feature-flags.ts/settings page/translations/fixtures all updated per checklist.
+
+  ### 10. Junction Table Design
+
+  **Chosen:** Two junction tables with compound unique indexes
+
+  **Rejected:**
+  - Polymorphic junction table - loses type safety and FK constraints
+  - JSON array columns - loses referential integrity
+
+  **Rationale:** Follows work_item_relations pattern. Compound unique index prevents duplicate links. Individual FK indexes for efficient bidirectional lookups.
+
+  ### 11. Kubeconfig Storage
+
+  **Chosen:** Per-cluster files at ~/.shep/clusters/<id>/kubeconfig with 0600 permissions
+
+  **Rejected:**
+  - Modify global ~/.kube/config - dangerous, conflicts with user's config
+  - Store in SQLite - kubeconfig is a credential (NFR-10)
+  - KUBECONFIG env var - affects entire process
+
+  **Rationale:** Resource isolation (NFR-2), security (NFR-10). kubectl --kubeconfig flag per invocation. Cleanup on cluster destroy.
+
+  ### 12. SSE Event Integration
+
+  **Chosen:** Reuse existing agent-events SSE pipeline
+
+  **Rejected:**
+  - Separate SSE endpoint - doubles connection overhead
+  - WebSocket - not used in codebase
+
+  **Rationale:** Cluster agent worker updates DB status during node transitions. Existing SSE polling picks up changes. New 'cluster_status' event type alongside existing types.
+
+  ### 13. DI Container Registration
+
+  **Chosen:** New register-cluster.ts module
+
+  **Rejected:**
+  - Add to existing modules - bloats them, loses cohesion
+  - Self-registering classes - string tokens need explicit registration
+
+  **Rationale:** Groups all cluster components. Called from initializeContainer(). String token aliases for web-accessible use cases.
+
+  ### 14. Error Handling
+
+  **Chosen:** Custom error classes per service (K3dError, KubectlError, DockerError)
+
+  **Rejected:**
+  - Generic Error - cannot distinguish error types
+  - Result monad - not used in codebase
+
+  **Rationale:** Follows WorktreeError/WorktreeErrorCode. Services have parseError() methods. Use cases catch and update cluster status to Error.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | k3d CLI | k3s-in-Docker management | Use (external) | De facto standard for local k3s. Wrapped via execFile, not an npm dep |
+  | kubectl CLI | Kubernetes operations | Use (external) | Standard k8s CLI. Wrapped via execFile |
+  | dockerode | Docker API client | Reject | execFile docker info is sufficient for health check. No need for full API client |
+  | @kubernetes/client-node | Kubernetes API | Reject | Heavy dep with transitive deps. kubectl CLI via execFile is simpler and proven |
+  | argocd CLI | ArgoCD management | Reject | ArgoCD installed via kubectl apply of official manifests. No separate binary needed |
+  | @langchain/langgraph | Agent orchestration | Use (existing) | Already used for feature-agent. Provides StateGraph, Annotation, checkpointing |
+  | better-sqlite3 | Database | Use (existing) | Already the DB driver throughout the codebase |
+  | tsyringe | DI container | Use (existing) | Already the DI framework throughout the codebase |
+  | commander | CLI framework | Use (existing) | Already used for all CLI commands |
+  | @xyflow/react | Graph visualization | Use (existing) | Already used for the control center canvas |
+
+  ## Security Considerations
+
+  1. **Kubeconfig files** stored with 0600 permissions (owner read/write only). Never logged or included in SSE events (NFR-10).
+  2. **No cluster credentials in SQLite** - only the kubeconfig file path is stored, not the content.
+  3. **execFile (not exec)** used for all CLI calls - prevents shell injection. Arguments passed as array, not concatenated string.
+  4. **Docker network isolation** - each k3d cluster runs in its own Docker network (k3d default behavior), preventing cross-cluster network access (NFR-2).
+  5. **Input validation** - cluster names sanitized for k3d compatibility (alphanumeric + hyphens only). Slugs generated server-side.
+  6. **No secret logging** - kubeconfig paths logged, but content never read into memory except for file write. Error messages sanitized before storage.
+
+  ## Performance Implications
+
+  1. **Cluster provisioning** - 30-120s via k3d, runs in background worker process (non-blocking).
+  2. **Health check polling** - exponential backoff (1s, 2s, 4s, 8s, 16s, 32s) prevents CPU waste during provisioning. Max 120s total (NFR-1).
+  3. **Database queries** - junction table queries use indexed FKs. Status-filtered list queries use the status index. No N+1 query patterns.
+  4. **SSE overhead** - zero additional overhead; reuses existing polling interval. Cluster status changes are infrequent (provisioning/destroying events only).
+  5. **ArgoCD overhead** - opt-in only (NFR-3). Adds ~500MB memory and 1-2 min provisioning time when enabled. Not installed by default.
+  6. **Canvas rendering** - cluster nodes are lightweight React Flow nodes. No performance impact beyond the existing canvas with repos and features.
+
+  ## Architecture Notes
+
+  ### Clean Architecture Compliance (NFR-5)
+
+  All new code strictly follows the four-layer architecture:
+  - **Domain**: Cluster, ClusterRepository, ClusterApplication entities and ClusterStatus enum generated from TypeSpec. No external dependencies.
+  - **Application**: IClusterRepository port, IK3dService/IKubectlService/IArgoCDService/IDockerHealthService port interfaces, 12 use cases. Only imports from domain and own ports.
+  - **Infrastructure**: SQLiteClusterRepository, K3dService, KubectlService, ArgoCDService, DockerHealthService, cluster agent graph/worker. Implements port interfaces.
+  - **Presentation**: CLI commands, web components, server actions, API routes. Only imports use cases and domain types.
+
+  ### Existing Pattern Adherence
+
+  Every component follows an existing analog in the codebase:
+  - Cluster entity -> Application entity pattern
+  - ClusterStatus enum -> AgentRunStatus/ApplicationStatus pattern
+  - Junction tables -> work_item_relations pattern
+  - SQLiteClusterRepository -> SQLiteApplicationRepository pattern
+  - cluster.mapper.ts -> application.mapper.ts pattern
+  - Use cases -> applications/ use case directory pattern
+  - K3dService -> WorktreeService (execFile CLI wrapper) pattern
+  - Cluster agent graph -> feature-agent-graph.ts pattern
+  - Cluster agent worker -> feature-agent-worker.ts pattern
+  - CLI commands -> app/ command group pattern
+  - ClusterNode -> ApplicationNode (React Flow) pattern
+  - ClusterCreateDrawer -> FeatureCreateDrawer pattern
+  - Feature flag -> projects flag (most recent addition) pattern
+  - DI registration -> register-agents.ts module pattern
+
+  ### Key Integration Points
+
+  1. **deriveGraph.ts** - receives clusterMap (Map<string, Cluster>) as new parameter, creates cluster nodes and edges to linked repos/apps
+  2. **agent-events SSE** - cluster status changes emitted as new event type, processed by existing SSE pipeline
+  3. **DI container** - registerCluster() module called from initializeContainer()
+  4. **Sidebar navigation** - new "Clusters" item gated by featureFlags.clusters
+  5. **Settings page** - new SwitchRow for clusters feature flag
+  6. **i18n** - cluster strings in cli.json and web.json across all 9 locales
+
+  ---
+
+  _Research completed - proceed with planning phase_

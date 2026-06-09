@@ -541,6 +541,107 @@
         "notFound": "Application not found: {{id}}"
       }
     },
+    "cluster": {
+      "description": "إدارة المجموعات",
+      "new": {
+        "description": "إنشاء مجموعة جديدة",
+        "nameArgument": "اسم المجموعة",
+        "argocdOption": "تمكين ArgoCD للتسليم المستمر عبر GitOps",
+        "provisionOption": "بدء التوفير فوراً بعد الإنشاء",
+        "spinnerText": "جارٍ إنشاء المجموعة",
+        "clusterCreated": "تم إنشاء المجموعة",
+        "idLabel": "المعرّف:",
+        "nameLabel": "الاسم:",
+        "slugLabel": "الاسم المختصر:",
+        "statusLabel": "الحالة:",
+        "argocdLabel": "ArgoCD:",
+        "provisioningStarted": "بدأ التوفير",
+        "failedToCreate": "فشل إنشاء المجموعة"
+      },
+      "ls": {
+        "description": "عرض المجموعات",
+        "title": "المجموعات",
+        "idColumn": "المعرّف",
+        "nameColumn": "الاسم",
+        "statusColumn": "الحالة",
+        "argocdColumn": "ArgoCD",
+        "reposColumn": "المستودعات",
+        "appsColumn": "التطبيقات",
+        "noClusters": "لم يتم العثور على مجموعات",
+        "failedToList": "فشل عرض المجموعات"
+      },
+      "show": {
+        "description": "عرض تفاصيل مجموعة",
+        "idArgument": "معرّف المجموعة أو الاسم المختصر أو البادئة",
+        "title": "المجموعة: {{name}}",
+        "nameLabel": "الاسم",
+        "slugLabel": "الاسم المختصر",
+        "statusLabel": "الحالة",
+        "descriptionLabel": "الوصف",
+        "argocdLabel": "ArgoCD",
+        "argocdNamespaceLabel": "مساحة اسم ArgoCD",
+        "kubeconfigLabel": "Kubeconfig",
+        "k3dNameLabel": "اسم k3d",
+        "nodeCountLabel": "عدد العقد",
+        "errorLabel": "خطأ",
+        "configTitle": "الإعدادات",
+        "timestampsTitle": "التواريخ",
+        "createdLabel": "تاريخ الإنشاء",
+        "updatedLabel": "تاريخ التحديث",
+        "provisionedLabel": "آخر توفير",
+        "healthCheckLabel": "آخر فحص صحة",
+        "linkedTitle": "الكيانات المرتبطة",
+        "reposLabel": "المستودعات",
+        "appsLabel": "التطبيقات",
+        "failedToShow": "فشل عرض المجموعة"
+      },
+      "del": {
+        "description": "حذف مجموعة",
+        "idArgument": "معرّف المجموعة أو الاسم المختصر أو البادئة",
+        "forceOption": "تخطي مطالبة التأكيد",
+        "confirmDelete": "حذف المجموعة \"{{name}}\"؟ سيتم تدميرها إذا كانت قيد التشغيل.",
+        "cancelled": "تم الإلغاء",
+        "clusterDeleted": "تم حذف المجموعة",
+        "nameLabel": "الاسم:",
+        "slugLabel": "الاسم المختصر:",
+        "failedToDelete": "فشل حذف المجموعة"
+      },
+      "link": {
+        "description": "ربط مستودع أو تطبيق بمجموعة",
+        "clusterArgument": "معرّف المجموعة أو الاسم المختصر أو البادئة",
+        "entityArgument": "معرّف المستودع أو التطبيق",
+        "linked": "تم الربط بالمجموعة",
+        "clusterLabel": "المجموعة:",
+        "entityLabel": "الكيان:",
+        "failedToLink": "فشل ربط الكيان بالمجموعة"
+      },
+      "unlink": {
+        "description": "إلغاء ربط مستودع أو تطبيق من مجموعة",
+        "clusterArgument": "معرّف المجموعة أو الاسم المختصر أو البادئة",
+        "entityArgument": "معرّف المستودع أو التطبيق",
+        "unlinked": "تم إلغاء الربط من المجموعة",
+        "clusterLabel": "المجموعة:",
+        "entityLabel": "الكيان:",
+        "failedToUnlink": "فشل إلغاء ربط الكيان من المجموعة"
+      },
+      "status": {
+        "description": "عرض حالة المجموعة الحية",
+        "idArgument": "معرّف المجموعة أو الاسم المختصر أو البادئة",
+        "title": "حالة المجموعة: {{name}}",
+        "statusLabel": "الحالة",
+        "podCountLabel": "البودات",
+        "serviceCountLabel": "الخدمات",
+        "argocdLabel": "ArgoCD",
+        "notReady": "المجموعة ليست في حالة جاهزة",
+        "podsTitle": "البودات",
+        "servicesTitle": "الخدمات",
+        "failedToGetStatus": "فشل الحصول على حالة المجموعة"
+      },
+      "resolve": {
+        "multipleMatch": "عدة مجموعات تطابق البادئة \"{{id}}\": {{matches}}",
+        "notFound": "المجموعة غير موجودة: {{id}}"
+      }
+    },
     "agent": {
       "description": "إدارة وعرض تشغيلات الوكيل",
       "show": {

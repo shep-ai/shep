@@ -1,4 +1,4 @@
-import type { Feature, Repository, AgentRun } from '@shepai/core/domain/generated/output';
+import type { Feature, Repository, AgentRun, Cluster } from '@shepai/core/domain/generated/output';
 import { AgentRunStatus } from '@shepai/core/domain/generated/output';
 import {
   deriveNodeState,
@@ -45,6 +45,8 @@ export interface BuildGraphNodesOptions {
    *  one feature's `applicationId` so the canvas stays uncluttered for users
    *  who do not use SDD mode. */
   applications?: ApplicationWithStatus[];
+  /** Clusters to render on the canvas (with their linked repository IDs) */
+  clusters?: { cluster: Cluster; linkedRepoIds: string[] }[];
 }
 
 export function buildGraphNodes(
@@ -195,6 +197,39 @@ export function buildGraphNodes(
   // is consistent regardless of how the feature arrived (initial SSR, SSE,
   // optimistic creation).
   appendFeatureNodes(appScopedFeatures, '', featuresWithRuns, nodes, edges, undefined, options);
+
+  // Add cluster nodes + cluster→repo edges
+  if (options?.clusters) {
+    for (const { cluster, linkedRepoIds } of options.clusters) {
+      const clusterNodeId = `cluster-${cluster.id}`;
+      nodes.push({
+        id: clusterNodeId,
+        type: 'clusterNode',
+        position: { x: 0, y: 0 },
+        data: {
+          id: cluster.id,
+          name: cluster.name,
+          description: cluster.description,
+          status: cluster.status,
+          linkedRepoCount: linkedRepoIds.length,
+          linkedAppCount: 0,
+          argoCdEnabled: cluster.argoCdEnabled,
+        },
+      });
+
+      for (const repoId of linkedRepoIds) {
+        const repoNodeId = `repo-${repoId}`;
+        if (nodes.some((n) => n.id === repoNodeId)) {
+          edges.push({
+            id: `cluster-edge-${clusterNodeId}-${repoNodeId}`,
+            source: clusterNodeId,
+            target: repoNodeId,
+            style: { strokeDasharray: '3 3' },
+          });
+        }
+      }
+    }
+  }
 
   return { nodes, edges };
 }

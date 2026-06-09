@@ -59,6 +59,7 @@ const defaultFlags = {
   bedrockIntegration: false,
   whatsappDispatch: false,
   aspm: false,
+  clusters: false,
 };
 
 function renderShell(children: React.ReactNode) {

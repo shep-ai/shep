@@ -541,6 +541,107 @@
         "notFound": "Application not found: {{id}}"
       }
     },
+    "cluster": {
+      "description": "ניהול אשכולות",
+      "new": {
+        "description": "יצירת אשכול חדש",
+        "nameArgument": "שם האשכול",
+        "argocdOption": "הפעלת ArgoCD לאספקה מתמשכת עם GitOps",
+        "provisionOption": "התחלת הקצאה מיד לאחר היצירה",
+        "spinnerText": "יוצר אשכול",
+        "clusterCreated": "האשכול נוצר",
+        "idLabel": "מזהה:",
+        "nameLabel": "שם:",
+        "slugLabel": "כינוי:",
+        "statusLabel": "סטטוס:",
+        "argocdLabel": "ArgoCD:",
+        "provisioningStarted": "ההקצאה החלה",
+        "failedToCreate": "יצירת האשכול נכשלה"
+      },
+      "ls": {
+        "description": "הצגת אשכולות",
+        "title": "אשכולות",
+        "idColumn": "מזהה",
+        "nameColumn": "שם",
+        "statusColumn": "סטטוס",
+        "argocdColumn": "ArgoCD",
+        "reposColumn": "מאגרים",
+        "appsColumn": "אפליקציות",
+        "noClusters": "לא נמצאו אשכולות",
+        "failedToList": "הצגת האשכולות נכשלה"
+      },
+      "show": {
+        "description": "הצגת פרטי אשכול",
+        "idArgument": "מזהה האשכול, כינוי או קידומת",
+        "title": "אשכול: {{name}}",
+        "nameLabel": "שם",
+        "slugLabel": "כינוי",
+        "statusLabel": "סטטוס",
+        "descriptionLabel": "תיאור",
+        "argocdLabel": "ArgoCD",
+        "argocdNamespaceLabel": "מרחב שמות ArgoCD",
+        "kubeconfigLabel": "Kubeconfig",
+        "k3dNameLabel": "שם k3d",
+        "nodeCountLabel": "מספר צמתים",
+        "errorLabel": "שגיאה",
+        "configTitle": "הגדרות",
+        "timestampsTitle": "חותמות זמן",
+        "createdLabel": "נוצר",
+        "updatedLabel": "עודכן",
+        "provisionedLabel": "הקצאה אחרונה",
+        "healthCheckLabel": "בדיקת תקינות אחרונה",
+        "linkedTitle": "ישויות מקושרות",
+        "reposLabel": "מאגרים",
+        "appsLabel": "אפליקציות",
+        "failedToShow": "הצגת האשכול נכשלה"
+      },
+      "del": {
+        "description": "מחיקת אשכול",
+        "idArgument": "מזהה האשכול, כינוי או קידומת",
+        "forceOption": "דלג על אישור",
+        "confirmDelete": "למחוק את האשכול \"{{name}}\"? יושמד אם פעיל.",
+        "cancelled": "בוטל",
+        "clusterDeleted": "האשכול נמחק",
+        "nameLabel": "שם:",
+        "slugLabel": "כינוי:",
+        "failedToDelete": "מחיקת האשכול נכשלה"
+      },
+      "link": {
+        "description": "קישור מאגר או אפליקציה לאשכול",
+        "clusterArgument": "מזהה האשכול, כינוי או קידומת",
+        "entityArgument": "מזהה המאגר או האפליקציה",
+        "linked": "קושר לאשכול",
+        "clusterLabel": "אשכול:",
+        "entityLabel": "ישות:",
+        "failedToLink": "קישור הישות לאשכול נכשל"
+      },
+      "unlink": {
+        "description": "ניתוק מאגר או אפליקציה מאשכול",
+        "clusterArgument": "מזהה האשכול, כינוי או קידומת",
+        "entityArgument": "מזהה המאגר או האפליקציה",
+        "unlinked": "נותק מהאשכול",
+        "clusterLabel": "אשכול:",
+        "entityLabel": "ישות:",
+        "failedToUnlink": "ניתוק הישות מהאשכול נכשל"
+      },
+      "status": {
+        "description": "הצגת סטטוס אשכול בזמן אמת",
+        "idArgument": "מזהה האשכול, כינוי או קידומת",
+        "title": "סטטוס אשכול: {{name}}",
+        "statusLabel": "סטטוס",
+        "podCountLabel": "פודים",
+        "serviceCountLabel": "שירותים",
+        "argocdLabel": "ArgoCD",
+        "notReady": "האשכול אינו במצב מוכן",
+        "podsTitle": "פודים",
+        "servicesTitle": "שירותים",
+        "failedToGetStatus": "קבלת סטטוס האשכול נכשלה"
+      },
+      "resolve": {
+        "multipleMatch": "מספר אשכולות תואמים לקידומת \"{{id}}\": {{matches}}",
+        "notFound": "האשכול לא נמצא: {{id}}"
+      }
+    },
     "agent": {
       "description": "נהל וצפה בהרצות סוכן",
       "show": {

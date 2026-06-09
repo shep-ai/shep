@@ -1,0 +1,105 @@
+$ shep cluster
+
+Usage: shep cluster [options] [command]
+
+Manage clusters
+
+Options:
+  -h, --help                 display help for command
+
+Commands:
+  new [options] <name>       Create a new cluster
+  ls                         List clusters
+  show <id>                  Display details of a cluster
+  del [options] <id>         Delete a cluster
+  link <cluster> <entity>    Link a repository or application to a cluster
+  unlink <cluster> <entity>  Unlink a repository or application from a cluster
+  status <id>                Show live cluster status
+  help [command]             display help for command
+
+$ shep cluster help new
+
+Usage: shep cluster new [options] <name>
+
+Create a new cluster
+
+Arguments:
+  name         Cluster name
+
+Options:
+  --argocd     Enable ArgoCD for GitOps continuous delivery
+  --provision  Start provisioning immediately after creation
+  -h, --help   display help for command
+
+$ shep cluster help ls
+
+Usage: shep cluster ls [options]
+
+List clusters
+
+Options:
+  -h, --help  display help for command
+
+$ shep cluster help show
+
+Usage: shep cluster show [options] <id>
+
+Display details of a cluster
+
+Arguments:
+  id          Cluster ID, slug, or prefix
+
+Options:
+  -h, --help  display help for command
+
+$ shep cluster help del
+
+Usage: shep cluster del [options] <id>
+
+Delete a cluster
+
+Arguments:
+  id           Cluster ID, slug, or prefix
+
+Options:
+  -f, --force  Skip confirmation prompt
+  -h, --help   display help for command
+
+$ shep cluster help link
+
+Usage: shep cluster link [options] <cluster> <entity>
+
+Link a repository or application to a cluster
+
+Arguments:
+  cluster     Cluster ID, slug, or prefix
+  entity      Repository or application ID
+
+Options:
+  -h, --help  display help for command
+
+$ shep cluster help unlink
+
+Usage: shep cluster unlink [options] <cluster> <entity>
+
+Unlink a repository or application from a cluster
+
+Arguments:
+  cluster     Cluster ID, slug, or prefix
+  entity      Repository or application ID
+
+Options:
+  -h, --help  display help for command
+
+$ shep cluster help status
+
+Usage: shep cluster status [options] <id>
+
+Show live cluster status
+
+Arguments:
+  id          Cluster ID, slug, or prefix
+
+Options:
+  -h, --help  display help for command
+

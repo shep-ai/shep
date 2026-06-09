@@ -1,0 +1,22 @@
+{
+  "name": "kubectl",
+  "summary": "Kubernetes command-line client",
+  "description": "kubectl is the official command-line tool for interacting with Kubernetes clusters. Shep uses kubectl to configure access to provisioned clusters and to run health checks. Usually bundled with k3d, but installing it directly is recommended.",
+  "tags": ["cluster"],
+  "author": "Kubernetes Authors",
+  "website": "https://kubernetes.io",
+  "platforms": ["linux", "darwin", "win32"],
+  "iconUrl": "https://cdn.simpleicons.org/kubernetes",
+  "binary": "kubectl",
+  "packageManager": "brew",
+  "commands": {
+    "linux": "curl -LO \"https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl\" && sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl && rm kubectl",
+    "darwin": "brew install kubectl",
+    "win32": "winget install --id Kubernetes.kubectl -e --source winget"
+  },
+  "timeout": 300000,
+  "documentationUrl": "https://kubernetes.io/docs/reference/kubectl/",
+  "verifyCommand": "kubectl version --client",
+  "autoInstall": true,
+  "required": false
+}

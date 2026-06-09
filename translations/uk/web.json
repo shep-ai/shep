@@ -206,10 +206,10 @@
       "aspmDescription": "Enable the ASPM module — findings ingestion, posture dashboard, remediation campaigns, exceptions, and AI-change review queue",
       "bedrockIntegration": "Project Bedrock Memory",
       "bedrockIntegrationDescription": "Enable project-bedrock memory integration (markdown project memory for AI coding agents) — surfaces toggles, drawers, and tabs across applications, repositories, and features. Requires Python 3.9+ and pipx.",
-
       "whatsappDispatch": "Надсилання завдань через WhatsApp",
       "whatsappDispatchDescription": "Запускайте та керуйте агентами shep із WhatsApp — створюйте функції, отримуйте оновлення агента й підтверджуйте етапи, відповідаючи в чаті.",
-
+      "clusters": "Кластери",
+      "clustersDescription": "Увімкнути навігацію кластерів та керування кластерами Kubernetes у веб-інтерфейсі",
       "hint": "Експериментальні функції, що ще перебувають у розробці. Вмикайте на власний ризик — вони можуть змінитися або бути видалені в майбутніх версіях. Режим відлагодження додає докладне журналювання, корисне для усунення неполадок."
     },
     "interactiveAgent": {
@@ -301,7 +301,8 @@
     "aspmOwners": "Owners",
     "aspmAiReview": "AI Review",
     "aspmCompliance": "Compliance",
-    "collaboration": "Collaboration"
+    "collaboration": "Collaboration",
+    "clusters": "Кластери"
   },
   "sidebar": {
     "features": "Функції",
@@ -743,5 +744,53 @@
     "newAgent": "Новий агент",
     "creating": "Створення...",
     "createAgent": "Створити агента"
+  },
+  "cluster": {
+    "status": {
+      "provisioning": "Розгортання",
+      "ready": "Готовий",
+      "stopping": "Зупинка",
+      "stopped": "Зупинено",
+      "error": "Помилка",
+      "destroying": "Знищення"
+    },
+    "createTitle": "Create cluster",
+    "createDescription": "Spin up a local k3s Kubernetes cluster in Docker.",
+    "createAndProvision": "Create & provision",
+    "creating": "Creating…",
+    "nameLabel": "Name",
+    "namePlaceholder": "my-cluster",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "What is this cluster for?",
+    "argoCdLabel": "Install ArgoCD",
+    "argoCdDescription": "Bootstrap GitOps with ArgoCD after the cluster is ready.",
+    "provision": "Provision",
+    "destroy": "Destroy",
+    "remove": "Remove",
+    "cancel": "Cancel",
+    "removeCluster": "Remove cluster",
+    "removeConfirmTitle": "Remove this cluster?",
+    "removeConfirmDescription": "Cluster \"{{name}}\" will be removed from Shep. If it is running it will be destroyed first.",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "fieldStatus": "Status",
+    "fieldKubeconfig": "Kubeconfig",
+    "fieldArgoCd": "ArgoCD",
+    "fieldArgoCdNamespace": "ArgoCD namespace",
+    "fieldLastProvisioned": "Last provisioned",
+    "fieldLastHealthCheck": "Last health check",
+    "fieldError": "Error",
+    "tabOverview": "Overview",
+    "tabRepositories": "Repositories",
+    "tabApplications": "Applications",
+    "tabStatus": "Live status",
+    "noLinkedRepos": "No repositories linked yet.",
+    "noLinkedApps": "No applications linked yet.",
+    "statusLive": "Live cluster status updates here once the cluster is ready.",
+    "statusNotAvailable": "Live status is only available when the cluster is Ready.",
+    "linkedRepos_one": "{{count}} repo",
+    "linkedRepos_other": "{{count}} repos",
+    "linkedApps_one": "{{count}} app",
+    "linkedApps_other": "{{count}} apps"
   }
 }

@@ -1,0 +1,424 @@
+name: "cluster-agent"
+summary: >
+  Implementation plan for the Cluster entity and autonomous cluster agent. The approach follows
+  a strict bottom-up, layer-by-layer build: TypeSpec domain models first, then persistence
+  (migrations, mapper, repository), then application layer (port interfaces and 12 use cases),
+  then infrastructure services (k3d, kubectl, ArgoCD, Docker health wrappers), then the LangGraph
+  cluster agent graph and worker, then feature flag wiring, then CLI commands, and finally web UI
+  components with canvas integration and SSE events. Every layer follows an existing codebase
+  analog exactly. Terraform and deployment templates are deferred to v2.
+
+relatedFeatures: []
+
+technologies:
+  - "TypeSpec (domain model codegen)"
+  - "TypeScript (implementation language)"
+  - "SQLite via better-sqlite3 (persistence)"
+  - "tsyringe (dependency injection)"
+  - "LangGraph / @langchain/langgraph (agent workflow orchestration)"
+  - "k3d (k3s-in-Docker cluster management CLI)"
+  - "kubectl (Kubernetes CLI)"
+  - "ArgoCD (GitOps - installed via kubectl apply)"
+  - "Docker (prerequisite runtime)"
+  - "Commander (CLI framework)"
+  - "Next.js + shadcn/ui (web UI)"
+  - "React Flow / @xyflow/react (graph visualization)"
+  - "Vitest (testing)"
+  - "Storybook (component documentation)"
+
+relatedLinks:
+  - title: "k3d Documentation"
+    url: "https://k3d.io/"
+  - title: "ArgoCD Installation via kubectl"
+    url: "https://argo-cd.readthedocs.io/en/stable/getting_started/#1-install-argo-cd"
+  - title: "LangGraph Annotation API"
+    url: "https://langchain-ai.github.io/langgraph/concepts/low_level/#annotation"
+
+phases:
+  - id: "phase-1"
+    name: "Domain Model & TypeSpec"
+    description: >
+      Define the Cluster entity, ClusterStatus enum, ClusterRepository and ClusterApplication
+      junction entities, and the clusters feature flag field in TypeSpec. Run codegen to generate
+      the domain output. Create the cluster-defaults factory for default entity values. This phase
+      has zero dependencies and produces the type foundation that every subsequent layer depends on.
+    parallel: false
+
+  - id: "phase-2"
+    name: "Persistence Layer"
+    description: >
+      Create four SQLite migrations (clusters table, cluster_repositories junction,
+      cluster_applications junction, feature_flag_clusters setting column), the cluster mapper
+      (domain-to-DB and DB-to-domain conversion), and the SQLiteClusterRepository with full CRUD
+      plus junction table management. Integration tests validate the complete persistence stack
+      against an in-memory SQLite database.
+    parallel: false
+
+  - id: "phase-3"
+    name: "Application Layer - Ports & Use Cases"
+    description: >
+      Define all output port interfaces (IClusterRepository, IK3dService, IKubectlService,
+      IArgoCDService, IDockerHealthService, IClusterAgentProcessService) and implement the 12
+      cluster use cases. Each use case is unit-tested with mocked port dependencies. This phase
+      establishes the complete API boundary that presentation layers consume.
+    parallel: false
+
+  - id: "phase-4"
+    name: "Infrastructure Services"
+    description: >
+      Implement the four CLI-wrapping infrastructure services (K3dService, KubectlService,
+      ArgoCDService, DockerHealthService) with custom error classes per service. Each service
+      wraps an external CLI via execFile through the injected ExecFunction, following the
+      WorktreeService pattern. Also implement the IClusterAgentProcessService for spawning
+      the cluster agent worker.
+    parallel: false
+
+  - id: "phase-5"
+    name: "Cluster Agent Graph & Worker"
+    description: >
+      Build the LangGraph state machine with 6 nodes (prerequisite-check, provision,
+      configure-kubectl, install-argocd, health-check, ready) and error edges. Implement
+      the cluster agent worker process as a detached Node.js script following the
+      feature-agent-worker pattern with heartbeat, status tracking, and resume support.
+    parallel: false
+
+  - id: "phase-6"
+    name: "Feature Flag Wiring & DI Registration"
+    description: >
+      Wire the clusters feature flag through all 11 layers per the LESSONS.md checklist
+      (TypeSpec done in phase 1, migration in phase 2 - this phase covers settings mapper,
+      settings repository SQL, settings defaults, feature-flags.ts, settings page toggle,
+      translations, and fixture updates). Register all new components in the DI container via
+      a new register-cluster.ts module with string token aliases for web-accessible use cases.
+    parallel: false
+
+  - id: "phase-7"
+    name: "CLI Commands"
+    description: >
+      Create the cluster Commander command group with 7 subcommands (new, ls, show, del, link,
+      unlink, status). Each command resolves use cases from the DI container, uses i18n for all
+      strings, and follows the app command group pattern. Unit tests mock all use cases.
+    parallel: false
+
+  - id: "phase-8"
+    name: "Web UI Components & Canvas Integration"
+    description: >
+      Build ClusterNode (React Flow canvas node), ClusterCreateDrawer, and ClusterDetailDrawer
+      with tabs. Integrate cluster nodes into deriveGraph for canvas rendering. Add server actions
+      and API routes for cluster operations. Add SSE event support for cluster agent lifecycle.
+      Wire sidebar navigation gated by the clusters feature flag. All components have mandatory
+      colocated .stories.tsx files.
+    parallel: false
+
+  - id: "phase-9"
+    name: "i18n & Final Verification"
+    description: >
+      Add translation strings for all cluster UI elements across all 9 locales
+      (en, ar, es, de, fr, he, pt, uk, ru) in both cli.json and web.json. Run full validation
+      suite (lint, format, typecheck, tsp, unit tests, integration tests, build) to confirm
+      zero regressions.
+    parallel: false
+
+filesToCreate:
+  # TypeSpec
+  - "tsp/common/enums/cluster.tsp"
+  - "tsp/domain/entities/cluster.tsp"
+  - "tsp/domain/entities/cluster-repository.tsp"
+  - "tsp/domain/entities/cluster-application.tsp"
+
+  # Domain factories
+  - "packages/core/src/domain/factories/cluster-defaults.factory.ts"
+  - "tests/unit/domain/factories/cluster-defaults.factory.test.ts"
+
+  # Migrations
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/085-create-clusters-table.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/086-create-cluster-repositories.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/087-create-cluster-applications.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/088-add-feature-flag-clusters.ts"
+
+  # Mapper
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/cluster.mapper.ts"
+  - "tests/unit/infrastructure/persistence/sqlite/mappers/cluster.mapper.test.ts"
+
+  # Repository port
+  - "packages/core/src/application/ports/output/repositories/cluster-repository.interface.ts"
+
+  # Repository implementation
+  - "packages/core/src/infrastructure/repositories/sqlite-cluster.repository.ts"
+  - "tests/integration/infrastructure/repositories/sqlite-cluster.repository.test.ts"
+
+  # Service port interfaces
+  - "packages/core/src/application/ports/output/services/k3d-service.interface.ts"
+  - "packages/core/src/application/ports/output/services/kubectl-service.interface.ts"
+  - "packages/core/src/application/ports/output/services/argocd-service.interface.ts"
+  - "packages/core/src/application/ports/output/services/docker-health-service.interface.ts"
+  - "packages/core/src/application/ports/output/services/cluster-agent-process-service.interface.ts"
+
+  # Use cases
+  - "packages/core/src/application/use-cases/clusters/types.ts"
+  - "packages/core/src/application/use-cases/clusters/create-cluster.use-case.ts"
+  - "packages/core/src/application/use-cases/clusters/get-cluster.use-case.ts"
+  - "packages/core/src/application/use-cases/clusters/list-clusters.use-case.ts"
+  - "packages/core/src/application/use-cases/clusters/update-cluster.use-case.ts"
+  - "packages/core/src/application/use-cases/clusters/delete-cluster.use-case.ts"
+  - "packages/core/src/application/use-cases/clusters/link-repository.use-case.ts"
+  - "packages/core/src/application/use-cases/clusters/unlink-repository.use-case.ts"
+  - "packages/core/src/application/use-cases/clusters/link-application.use-case.ts"
+  - "packages/core/src/application/use-cases/clusters/unlink-application.use-case.ts"
+  - "packages/core/src/application/use-cases/clusters/provision-cluster.use-case.ts"
+  - "packages/core/src/application/use-cases/clusters/destroy-cluster.use-case.ts"
+  - "packages/core/src/application/use-cases/clusters/get-cluster-status.use-case.ts"
+  - "tests/unit/application/use-cases/clusters/create-cluster.use-case.test.ts"
+  - "tests/unit/application/use-cases/clusters/get-cluster.use-case.test.ts"
+  - "tests/unit/application/use-cases/clusters/list-clusters.use-case.test.ts"
+  - "tests/unit/application/use-cases/clusters/update-cluster.use-case.test.ts"
+  - "tests/unit/application/use-cases/clusters/delete-cluster.use-case.test.ts"
+  - "tests/unit/application/use-cases/clusters/link-repository.use-case.test.ts"
+  - "tests/unit/application/use-cases/clusters/unlink-repository.use-case.test.ts"
+  - "tests/unit/application/use-cases/clusters/link-application.use-case.test.ts"
+  - "tests/unit/application/use-cases/clusters/unlink-application.use-case.test.ts"
+  - "tests/unit/application/use-cases/clusters/provision-cluster.use-case.test.ts"
+  - "tests/unit/application/use-cases/clusters/destroy-cluster.use-case.test.ts"
+  - "tests/unit/application/use-cases/clusters/get-cluster-status.use-case.test.ts"
+
+  # Infrastructure service errors
+  - "packages/core/src/infrastructure/errors/k3d-error.ts"
+  - "packages/core/src/infrastructure/errors/kubectl-error.ts"
+  - "packages/core/src/infrastructure/errors/docker-error.ts"
+
+  # Infrastructure services
+  - "packages/core/src/infrastructure/services/k3d/k3d.service.ts"
+  - "packages/core/src/infrastructure/services/kubectl/kubectl.service.ts"
+  - "packages/core/src/infrastructure/services/argocd/argocd.service.ts"
+  - "packages/core/src/infrastructure/services/docker/docker-health.service.ts"
+  - "tests/unit/infrastructure/services/k3d/k3d.service.test.ts"
+  - "tests/unit/infrastructure/services/kubectl/kubectl.service.test.ts"
+  - "tests/unit/infrastructure/services/argocd/argocd.service.test.ts"
+  - "tests/unit/infrastructure/services/docker/docker-health.service.test.ts"
+
+  # Cluster agent
+  - "packages/core/src/infrastructure/services/agents/cluster-agent/cluster-agent-state.ts"
+  - "packages/core/src/infrastructure/services/agents/cluster-agent/cluster-agent-graph.ts"
+  - "packages/core/src/infrastructure/services/agents/cluster-agent/nodes/prerequisite-check.ts"
+  - "packages/core/src/infrastructure/services/agents/cluster-agent/nodes/provision.ts"
+  - "packages/core/src/infrastructure/services/agents/cluster-agent/nodes/configure-kubectl.ts"
+  - "packages/core/src/infrastructure/services/agents/cluster-agent/nodes/install-argocd.ts"
+  - "packages/core/src/infrastructure/services/agents/cluster-agent/nodes/health-check.ts"
+  - "packages/core/src/infrastructure/services/agents/cluster-agent/nodes/ready.ts"
+  - "packages/core/src/infrastructure/services/agents/cluster-agent/nodes/error.ts"
+  - "packages/core/src/infrastructure/services/agents/cluster-agent/cluster-agent-worker.ts"
+  - "packages/core/src/infrastructure/services/agents/cluster-agent/cluster-agent-process.service.ts"
+  - "tests/unit/infrastructure/services/agents/cluster-agent/cluster-agent-graph.test.ts"
+  - "tests/unit/infrastructure/services/agents/cluster-agent/nodes/prerequisite-check.test.ts"
+  - "tests/unit/infrastructure/services/agents/cluster-agent/nodes/provision.test.ts"
+  - "tests/unit/infrastructure/services/agents/cluster-agent/nodes/health-check.test.ts"
+
+  # DI module
+  - "packages/core/src/infrastructure/di/modules/register-cluster.ts"
+
+  # CLI commands
+  - "src/presentation/cli/commands/cluster/index.ts"
+  - "src/presentation/cli/commands/cluster/new.command.ts"
+  - "src/presentation/cli/commands/cluster/ls.command.ts"
+  - "src/presentation/cli/commands/cluster/show.command.ts"
+  - "src/presentation/cli/commands/cluster/del.command.ts"
+  - "src/presentation/cli/commands/cluster/link.command.ts"
+  - "src/presentation/cli/commands/cluster/unlink.command.ts"
+  - "src/presentation/cli/commands/cluster/status.command.ts"
+  - "tests/unit/presentation/cli/commands/cluster/new.command.test.ts"
+  - "tests/unit/presentation/cli/commands/cluster/ls.command.test.ts"
+  - "tests/unit/presentation/cli/commands/cluster/del.command.test.ts"
+
+  # Web UI components
+  - "src/presentation/web/components/common/cluster-node/cluster-node.tsx"
+  - "src/presentation/web/components/common/cluster-node/cluster-node-config.ts"
+  - "src/presentation/web/components/common/cluster-node/cluster-node.stories.tsx"
+  - "src/presentation/web/components/common/cluster-node/cluster-create-drawer.tsx"
+  - "src/presentation/web/components/common/cluster-node/cluster-create-drawer.stories.tsx"
+  - "src/presentation/web/components/common/cluster-node/cluster-detail-drawer.tsx"
+  - "src/presentation/web/components/common/cluster-node/cluster-detail-drawer.stories.tsx"
+  - "src/presentation/web/components/common/cluster-node/cluster-status-badge.tsx"
+  - "src/presentation/web/components/common/cluster-node/cluster-status-badge.stories.tsx"
+
+  # Web server actions and API routes
+  - "src/presentation/web/app/actions/cluster.ts"
+  - "src/presentation/web/app/api/clusters/route.ts"
+  - "src/presentation/web/app/api/clusters/[id]/route.ts"
+  - "src/presentation/web/app/api/clusters/[id]/link/route.ts"
+  - "src/presentation/web/app/api/clusters/[id]/provision/route.ts"
+  - "src/presentation/web/app/api/clusters/[id]/destroy/route.ts"
+  - "src/presentation/web/app/api/clusters/[id]/status/route.ts"
+
+  # Web hooks
+  - "src/presentation/web/hooks/use-cluster-events.ts"
+
+filesToModify:
+  # TypeSpec
+  - "tsp/domain/entities/settings.tsp"
+  - "tsp/common/enums/index.tsp"
+  - "tsp/domain/entities/index.tsp"
+  - "packages/core/src/domain/generated/output.ts"
+
+  # Settings mapper (feature flag columns)
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/settings.mapper.ts"
+
+  # Settings repository (INSERT/UPDATE SQL)
+  - "packages/core/src/infrastructure/repositories/sqlite-settings.repository.ts"
+
+  # Settings defaults factory
+  - "packages/core/src/domain/factories/settings-defaults.factory.ts"
+
+  # Feature flags web
+  - "src/presentation/web/lib/feature-flags.ts"
+
+  # Settings page toggle
+  - "src/presentation/web/components/features/settings/settings-page-client.tsx"
+
+  # DI container
+  - "packages/core/src/infrastructure/di/container.ts"
+
+  # CLI program (register cluster command group)
+  - "src/presentation/cli/program.ts"
+
+  # Canvas integration
+  - "src/presentation/web/lib/derive-graph.ts"
+
+  # Sidebar navigation
+  - "src/presentation/web/components/layouts/app-sidebar/app-sidebar.tsx"
+
+  # SSE agent events
+  - "src/presentation/web/app/api/agent-events/route.ts"
+
+  # Translations (9 locales x 2 namespaces)
+  - "translations/en/cli.json"
+  - "translations/en/web.json"
+  - "translations/ar/cli.json"
+  - "translations/ar/web.json"
+  - "translations/es/cli.json"
+  - "translations/es/web.json"
+  - "translations/de/cli.json"
+  - "translations/de/web.json"
+  - "translations/fr/cli.json"
+  - "translations/fr/web.json"
+  - "translations/he/cli.json"
+  - "translations/he/web.json"
+  - "translations/pt/cli.json"
+  - "translations/pt/web.json"
+  - "translations/uk/cli.json"
+  - "translations/uk/web.json"
+  - "translations/ru/cli.json"
+  - "translations/ru/web.json"
+
+  # Fixture updates for feature flag type changes
+  - "src/presentation/web/hooks/feature-flags-context.tsx"
+  - "src/presentation/web/components/features/settings/settings-page-client.stories.tsx"
+  - "src/presentation/web/components/layouts/app-sidebar/app-sidebar.stories.tsx"
+  - "src/presentation/web/components/common/repository-node/repository-drawer.stories.tsx"
+  - "tests/unit/presentation/web/layouts/app-sidebar.test.tsx"
+  - "tests/unit/presentation/web/layouts/app-shell.test.tsx"
+  - "tests/unit/presentation/web/components/common/add-repository-button/add-repository-button.test.tsx"
+  - "tests/unit/infrastructure/services/settings-service-update.test.ts"
+  - "tests/unit/infrastructure/persistence/sqlite/mappers/settings.mapper.test.ts"
+  - "tests/integration/infrastructure/repositories/sqlite-settings.repository.test.ts"
+  - "tests/unit/domain/factories/settings-defaults.factory.test.ts"
+
+openQuestions: []
+
+content: |
+  ## Architecture Overview
+
+  The Cluster entity introduces a fourth first-class domain concept alongside Repository,
+  Application, and Feature. It follows the exact same architectural pattern as Application:
+
+  - **Domain layer**: TypeSpec-defined entity extending SoftDeletableEntity with a status enum,
+    generated via `pnpm tsp:compile`. Junction entities (ClusterRepository, ClusterApplication)
+    extend BaseEntity for hard-delete semantics.
+  - **Application layer**: IClusterRepository port interface with 12 methods (CRUD + junction
+    management). Twelve use cases following single-responsibility principle. Four infrastructure
+    port interfaces (IK3dService, IKubectlService, IArgoCDService, IDockerHealthService) plus
+    IClusterAgentProcessService.
+  - **Infrastructure layer**: SQLiteClusterRepository with mapper, four CLI-wrapping services
+    via execFile, LangGraph cluster agent graph with 6 nodes, detached worker process.
+  - **Presentation layer**: CLI command group with 7 subcommands, web UI components (ClusterNode,
+    ClusterCreateDrawer, ClusterDetailDrawer), canvas integration via deriveGraph, server actions,
+    API routes, SSE events.
+
+  The clusters feature flag gates UI visibility only - domain, persistence, and use cases are
+  always registered in the DI container.
+
+  ## Key Design Decisions
+
+  ### 1. Entity Modeling: SoftDeletableEntity + Junction Tables
+
+  Cluster extends SoftDeletableEntity (like Application), gaining id/createdAt/updatedAt/deletedAt.
+  Junction entities extend BaseEntity (not SoftDeletableEntity) since they are hard-deleted on
+  unlink - this follows the work_item_relations pattern from migration 068. ClusterStatus uses
+  six states (Provisioning, Ready, Stopping, Stopped, Error, Destroying) to map the k3d lifecycle
+  and provide granular UI progress.
+
+  ### 2. Persistence: Four Separate Migrations (085-088)
+
+  One concern per migration following established convention. Migration guards use sqlite_master
+  checks for tables and pragma table_info for columns. All columns use the standard type mapping:
+  TEXT for UUIDs/strings, INTEGER for timestamps/booleans, nullable INTEGER for optional dates.
+  Compound unique indexes on junction tables prevent duplicate links.
+
+  ### 3. Infrastructure Services: execFile CLI Wrappers
+
+  All external tool interactions (k3d, kubectl, docker) go through port interfaces implemented
+  as execFile CLI wrappers. This matches the WorktreeService pattern (no npm SDK dependencies).
+  ArgoCD is installed via kubectl apply of official manifests - no separate argocd binary needed.
+  Each service has its own error class with typed error codes for programmatic error handling.
+
+  ### 4. Cluster Agent: LangGraph State Machine
+
+  The cluster agent uses a LangGraph StateGraph with 6 nodes, matching the feature-agent pattern.
+  The install-argocd node has a conditional edge (skipped when argoCdEnabled is false). Error
+  edges from any node transition to a terminal error node that updates cluster status. The worker
+  is a detached Node.js process with heartbeat, PID tracking, and resume support. The agent
+  resolves its executor through IAgentExecutorProvider (mandatory agent-agnostic design).
+
+  ### 5. Feature Flag: UI-Only Gating
+
+  Following the projects/envDeploy/skills pattern, the clusters flag is wired through all 11
+  layers per the LESSONS.md checklist. Migrations always run, DI always registers, only the
+  sidebar, canvas, drawers, and search filter on the flag. The flag defaults to false for
+  backward compatibility.
+
+  ### 6. Web UI: Canvas-Integrated Cluster Nodes
+
+  ClusterNode appears on the control center canvas via deriveGraph, which receives a new
+  clusterMap parameter. Edges connect cluster nodes to linked repository nodes via junction
+  table data. ClusterStatusBadge provides color-coded status with both visual and text
+  indicators for accessibility. Drawers follow the existing create/detail pattern.
+
+  ## Implementation Strategy
+
+  The build proceeds strictly bottom-up through the clean architecture layers:
+
+  1. **Phase 1 (Domain)** first because every other layer depends on the generated types.
+  2. **Phase 2 (Persistence)** next because use cases need the repository to exist.
+  3. **Phase 3 (Application)** next because CLI/web need use cases as their API boundary.
+  4. **Phase 4 (Infrastructure Services)** provides the real implementations for port interfaces.
+  5. **Phase 5 (Agent)** builds on infrastructure services and use cases.
+  6. **Phase 6 (Feature Flag + DI)** wires everything together before exposing to users.
+  7. **Phase 7 (CLI)** is the thinnest presentation layer - validates the use case API.
+  8. **Phase 8 (Web UI)** is the richest presentation layer - builds on validated use cases.
+  9. **Phase 9 (i18n + Verification)** is the final pass for translations and full validation.
+
+  This ordering minimizes rework: each phase has its dependencies satisfied by prior phases.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | TypeSpec codegen changes output.ts shape unexpectedly | Run pnpm tsp:compile after every TypeSpec change and verify generated types before proceeding |
+  | Migration numbering conflicts if other features merge first | Check latest migration prefix before creating files; renumber if needed |
+  | Feature flag wiring misses a fixture location | Follow LESSONS.md 11-step checklist exactly; run pnpm typecheck to surface every FeatureFlags type error |
+  | k3d/kubectl not installed on dev machine | All infrastructure services detect binary availability and return typed errors; integration tests mock execFile |
+  | Cluster provisioning takes longer than 120s | Exponential backoff health check with configurable timeout; clear error on timeout with retry guidance |
+  | Junction table queries cause N+1 patterns | Repository methods batch-load linked entities; integration tests verify query count |
+  | LangGraph checkpoint corruption on worker crash | Checkpoint DB per cluster (not shared); worker deletes stale checkpoint on resume-from-error (LESSONS.md pattern) |
+  | Settings mapper/repository SQL out of sync | Integration test creates settings with non-default feature flag value and reads back - catches silent drops |
+  | Web components missing stories | Create story immediately after component; CI rejects commits without colocated .stories.tsx |
+  | DI string token alias forgotten for web use cases | Add string alias in same commit as use case registration; verify with integration test |

@@ -1,0 +1,58 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Cluster.yaml
+type: object
+properties:
+  name:
+    type: string
+    description: Human-readable cluster name
+  slug:
+    type: string
+    description: URL-friendly identifier (unique among non-deleted clusters)
+  description:
+    type: string
+    description: Optional description of the cluster's purpose
+  status:
+    $ref: ClusterStatus.yaml
+    default: Stopped
+    description: Current operational status of the cluster
+  k3dClusterName:
+    type: string
+    description: The k3d-internal cluster name (set during provisioning)
+  kubeconfigPath:
+    type: string
+    description: Absolute path to the kubeconfig file
+  argoCdEnabled:
+    type: boolean
+    default: false
+    description: Whether ArgoCD is enabled for this cluster
+  argoCdNamespace:
+    type: string
+    default: argocd
+    description: Kubernetes namespace where ArgoCD is installed
+  nodeCount:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 1
+    description: Number of k3s nodes (default 1, reserved for future multi-node support)
+  lastProvisionedAt:
+    type: string
+    format: date-time
+    description: Timestamp when the cluster was last successfully provisioned
+  lastHealthCheckAt:
+    type: string
+    format: date-time
+    description: Timestamp of the most recent health check
+  errorMessage:
+    type: string
+    description: Error message from the last failed operation (set when status = Error)
+required:
+  - name
+  - slug
+  - status
+  - argoCdEnabled
+  - argoCdNamespace
+  - nodeCount
+allOf:
+  - $ref: SoftDeletableEntity.yaml
+description: A managed Kubernetes cluster provisioned via k3s-in-Docker

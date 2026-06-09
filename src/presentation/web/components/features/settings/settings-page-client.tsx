@@ -406,6 +406,7 @@ export function SettingsPageClient({
     aspm: false,
     bedrockIntegration: true,
     whatsappDispatch: false,
+    clusters: false,
   };
 
   // Language state
@@ -1810,6 +1811,18 @@ export function SettingsPageClient({
               checked={flags.whatsappDispatch}
               onChange={(v) => {
                 const newFlags = { ...flags, whatsappDispatch: v };
+                setFlags(newFlags);
+                save({ featureFlags: newFlags });
+              }}
+            />
+            <SwitchRow
+              label={t('settings.featureFlags.clusters')}
+              description={t('settings.featureFlags.clustersDescription')}
+              id="flag-clusters"
+              testId="switch-flag-clusters"
+              checked={flags.clusters}
+              onChange={(v) => {
+                const newFlags = { ...flags, clusters: v };
                 setFlags(newFlags);
                 save({ featureFlags: newFlags });
               }}

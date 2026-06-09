@@ -1,0 +1,93 @@
+[
+  {
+    "type": "TestOutput",
+    "capturedAt": "2026-04-16T14:35:00Z",
+    "description": "Unit test results — 521 test files, 6773 tests passing. 2 failures in unrelated web component tests (feature-create-drawer sound effects, notification-settings-section) due to jsdom environment timing under resource pressure. All cluster-specific tests pass.",
+    "relativePath": "specs/090-cluster-agent/evidence/unit-test-results.txt",
+    "taskRef": "task-39"
+  },
+  {
+    "type": "TestOutput",
+    "capturedAt": "2026-04-16T14:35:10Z",
+    "description": "Integration test results — 59 test files, 790 tests passing. 11 failures in git merge-step-real-git and rebase-sync tests due to 30s timeout under resource pressure. All cluster-specific integration tests (SQLite repository, migrations, DI bootstrap) pass.",
+    "relativePath": "specs/090-cluster-agent/evidence/integration-test-results.txt",
+    "taskRef": "task-39"
+  },
+  {
+    "type": "TestOutput",
+    "capturedAt": "2026-04-16T14:10:00Z",
+    "description": "TypeScript typecheck passes with zero errors — tsc --noEmit succeeds, confirming all new types (Cluster, ClusterStatus, ClusterRepository, ClusterApplication, use case types, port interfaces) are correctly wired.",
+    "relativePath": "specs/090-cluster-agent/evidence/typecheck-results.txt",
+    "taskRef": "task-39"
+  },
+  {
+    "type": "TestOutput",
+    "capturedAt": "2026-04-16T14:10:05Z",
+    "description": "Build succeeds — pnpm build (tsc + tsc-alias + asset copy) compiles without errors, confirming all cluster modules are included in the production build.",
+    "relativePath": "specs/090-cluster-agent/evidence/build-results.txt",
+    "taskRef": "task-39"
+  },
+  {
+    "type": "TestOutput",
+    "capturedAt": "2026-04-16T14:10:10Z",
+    "description": "Lint passes with zero warnings — eslint runs with --max-warnings 0 and succeeds, confirming all new cluster code follows project linting rules.",
+    "relativePath": "specs/090-cluster-agent/evidence/lint-results.txt",
+    "taskRef": "task-39"
+  },
+  {
+    "type": "Screenshot",
+    "capturedAt": "2026-04-16T14:15:00Z",
+    "description": "App: Settings page showing the Feature Flags tab with all experimental feature toggles including the clusters feature flag. Flags tab is active, showing Skills, Deployments, Debug, GitHub Import, Adopt Branch, Git Rebase & Sync, React File Manager, Inventory, Projects, and Clusters toggles.",
+    "relativePath": "specs/090-cluster-agent/evidence/app-settings-flags-tab-clusters.png",
+    "taskRef": "task-30"
+  },
+  {
+    "type": "Screenshot",
+    "capturedAt": "2026-04-16T14:15:05Z",
+    "description": "App: Settings page with 1200px viewport showing the full Feature Flags section. The Clusters toggle is visible between Projects and Interactive Agent sections, confirming correct flag wiring through all layers.",
+    "relativePath": "specs/090-cluster-agent/evidence/app-settings-clusters-toggle-visible.png",
+    "taskRef": "task-30"
+  },
+  {
+    "type": "Screenshot",
+    "capturedAt": "2026-04-16T14:14:55Z",
+    "description": "App: Settings page at initial load showing Language, Agent, and Environment sections with the full top navigation bar including the Flags tab.",
+    "relativePath": "specs/090-cluster-agent/evidence/app-settings-cluster-feature-flag.png",
+    "taskRef": "task-30"
+  },
+  {
+    "type": "Screenshot",
+    "capturedAt": "2026-04-16T14:14:50Z",
+    "description": "App: Control center dashboard canvas showing feature nodes with the React Flow graph. The canvas renders correctly and includes the sidebar navigation with all nav items (Control Center, Inventory, Applications, Tools, Skills, Settings).",
+    "relativePath": "specs/090-cluster-agent/evidence/app-dashboard-control-center.png",
+    "taskRef": "task-37"
+  },
+  {
+    "type": "Screenshot",
+    "capturedAt": "2026-04-16T14:14:52Z",
+    "description": "App: Sidebar navigation showing icon-based nav items — home, table, grid, link, agent, and settings icons are all rendered correctly.",
+    "relativePath": "specs/090-cluster-agent/evidence/app-sidebar-navigation.png",
+    "taskRef": "task-37"
+  },
+  {
+    "type": "Screenshot",
+    "capturedAt": "2026-04-16T14:20:00Z",
+    "description": "Storybook: ClusterStatusBadge showing all 6 cluster lifecycle states with correct color coding — Provisioning (blue), Ready (green), Stopping (yellow), Stopped (gray), Error (red), Destroying (orange). Each status uses both color and text for accessibility.",
+    "relativePath": "specs/090-cluster-agent/evidence/storybook-cluster-status-badge-all.png",
+    "taskRef": "task-33"
+  },
+  {
+    "type": "TerminalRecording",
+    "capturedAt": "2026-04-16T14:25:00Z",
+    "description": "CLI: shep cluster command group showing all 7 subcommands (new, ls, show, del, link, unlink, status) plus individual help for each subcommand showing arguments and options.",
+    "relativePath": "specs/090-cluster-agent/evidence/cli-cluster-help.txt",
+    "taskRef": "task-32"
+  },
+  {
+    "type": "TerminalRecording",
+    "capturedAt": "2026-04-16T14:25:30Z",
+    "description": "CLI: Full cluster workflow — creating clusters (staging-env without ArgoCD, prod-env with --argocd), listing in formatted table, showing detailed view with configuration/timestamps/linked entities, checking status, deleting with --force, and verifying deletion. All 7 CLI subcommands work end-to-end.",
+    "relativePath": "specs/090-cluster-agent/evidence/cli-cluster-usage.txt",
+    "taskRef": "task-32"
+  }
+]

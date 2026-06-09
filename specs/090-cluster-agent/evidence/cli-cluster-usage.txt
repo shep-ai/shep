@@ -1,0 +1,86 @@
+=== Cluster CLI Workflow Demo ===
+
+$ shep cluster new staging-env
+⠋ Creating cluster...                      
+✓ Cluster created
+  ID:       5d3ceed7-033b-4dae-ac0f-b3feceed6127
+  Name:     staging-env
+  Slug:     staging-env
+  Status:   Stopped
+  ArgoCD:   disabled
+
+
+$ shep cluster new prod-env --argocd
+⠋ Creating cluster...                      
+✓ Cluster created
+  ID:       536711eb-b86b-4f30-9443-dcdf4fbb7597
+  Name:     prod-env
+  Slug:     prod-env
+  Status:   Stopped
+  ArgoCD:   enabled
+
+
+$ shep cluster ls
+
+  Clusters (2)
+
+  ID          Name                      Status          ArgoCD  
+  5d3ceed7    staging-env               Stopped         off
+  536711eb    prod-env                  Stopped         on
+
+
+$ shep cluster show staging-env
+
+  Cluster: staging-env
+
+  ID      5d3ceed7-033b-4dae-ac0f-b3feceed6127
+  Name    staging-env
+  Slug    staging-env
+  Status  Stopped
+
+  Configuration
+  ArgoCD            disabled
+  ArgoCD Namespace  argocd
+  Kubeconfig        none
+  k3d Name          none
+  Node Count        1
+
+  Timestamps
+  Created  4/16/2026, 2:02:27 PM
+  Updated  4/16/2026, 2:02:27 PM
+
+  Linked Entities
+  Repositories  none
+  Applications  none
+
+
+$ shep cluster status staging-env
+
+  Cluster Status: staging-env
+
+  Status    Stopped
+  Pods      n/a
+  Services  n/a
+  ArgoCD    disabled
+
+
+$ shep cluster del staging-env --force
+
+✓ Cluster deleted
+  Name: staging-env
+  Slug: staging-env
+
+
+$ shep cluster del prod-env --force
+
+✓ Cluster deleted
+  Name: prod-env
+  Slug: prod-env
+
+
+$ shep cluster ls
+
+ℹ No clusters found
+
+
+=== All 7 CLI subcommands verified ===

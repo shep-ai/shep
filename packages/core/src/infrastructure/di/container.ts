@@ -59,6 +59,7 @@ import { registerPmUseCases } from './modules/register-pm-use-cases.js';
 import { registerInteractive } from './modules/register-interactive.js';
 import { registerWhatsApp } from './modules/register-whatsapp.js';
 import { registerAspm } from './modules/register-aspm.js';
+import { registerCluster } from './modules/register-cluster.js';
 
 let _initialized = false;
 
@@ -96,6 +97,7 @@ export async function initializeContainer(): Promise<typeof container> {
   registerInteractive(container);
   registerWhatsApp(container);
   registerAspm(container);
+  registerCluster(container);
 
   // ─── Eager deployment service ────────────────────────────────────────────
   // DeploymentService needs the database and calls `recoverAll()` at startup,

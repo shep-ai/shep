@@ -13,6 +13,7 @@ const defaultFlags: FeatureFlagsState = {
   bedrockIntegration: true,
   whatsappDispatch: false,
   aspm: false,
+  clusters: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsState>(defaultFlags);

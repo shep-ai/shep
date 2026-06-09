@@ -232,6 +232,7 @@ export function createDefaultSettings(): Settings {
     aspm: true,
     bedrockIntegration: true,
     whatsappDispatch: false,
+    clusters: false,
   };
 
   const whatsapp: WhatsAppConfig = {

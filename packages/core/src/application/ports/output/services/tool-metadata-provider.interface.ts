@@ -24,7 +24,7 @@ export interface ToolMetadata {
   description: string;
 
   /** Tool tags for grouping in listings. A tool can belong to multiple categories. */
-  tags: ('ide' | 'cli-agent' | 'vcs' | 'terminal' | 'memory')[];
+  tags: ('ide' | 'cli-agent' | 'vcs' | 'terminal' | 'memory' | 'cluster')[];
 
   /** Company or developer name */
   author?: string;

@@ -7,11 +7,13 @@ import type { CanvasNodeType } from '@/components/features/features-canvas';
 import type { FeatureNodeData } from '@/components/common/feature-node';
 import type { RepositoryNodeData } from '@/components/common/repository-node';
 import type { ApplicationNodeData } from '@/components/common/application-node/application-node-config';
+import type { ClusterNodeData } from '@/components/common/cluster-node/cluster-node-config';
 import {
   deriveGraph,
   type FeatureEntry,
   type RepoEntry,
   type ApplicationEntry,
+  type ClusterEntry,
   type GraphCallbacks,
 } from '@/lib/derive-graph';
 import { layoutWithDagre, getCanvasLayoutDefaults } from '@/lib/layout-with-dagre';
@@ -80,18 +82,29 @@ function parseMaps(
   featureMap: Map<string, FeatureEntry>;
   repoMap: Map<string, RepoEntry>;
   applicationMap: Map<string, ApplicationEntry>;
+  clusterMap: Map<string, ClusterEntry>;
 } {
   // Build parentNodeId map from dependency edges
   const parentByChild = new Map<string, string>();
+  // Build cluster→repo linked IDs from cluster edges
+  const clusterLinkedRepos = new Map<string, string[]>();
   for (const edge of initialEdges) {
     if (edge.type === 'dependencyEdge') {
       parentByChild.set(edge.target, edge.source);
+    }
+    if (edge.id.startsWith('cluster-edge-')) {
+      const repoIds = clusterLinkedRepos.get(edge.source) ?? [];
+      // Extract repo ID from "repo-<uuid>" node ID
+      const repoId = edge.target.startsWith('repo-') ? edge.target.slice(5) : edge.target;
+      repoIds.push(repoId);
+      clusterLinkedRepos.set(edge.source, repoIds);
     }
   }
 
   const featureMap = new Map<string, FeatureEntry>();
   const repoMap = new Map<string, RepoEntry>();
   const applicationMap = new Map<string, ApplicationEntry>();
+  const clusterMap = new Map<string, ClusterEntry>();
 
   for (const node of initialNodes) {
     if (node.type === 'featureNode') {
@@ -112,10 +125,16 @@ function parseMaps(
         nodeId: node.id,
         data: node.data as ApplicationNodeData,
       });
+    } else if (node.type === 'clusterNode') {
+      clusterMap.set(node.id, {
+        nodeId: node.id,
+        data: node.data as ClusterNodeData,
+        linkedRepoIds: clusterLinkedRepos.get(node.id),
+      });
     }
   }
 
-  return { featureMap, repoMap, applicationMap };
+  return { featureMap, repoMap, applicationMap, clusterMap };
 }
 
 type FeatureDataUpdates = Partial<
@@ -165,6 +184,7 @@ export function useGraphState(
   const [applicationMap, setApplicationMap] = useState<Map<string, ApplicationEntry>>(
     init.applicationMap
   );
+  const [clusterMap, setClusterMap] = useState<Map<string, ClusterEntry>>(init.clusterMap);
   const [pendingMap, setPendingMap] = useState<Map<string, FeatureEntry>>(
     new Map<string, FeatureEntry>()
   );
@@ -218,6 +238,8 @@ export function useGraphState(
         callbacksRef.current.onApplicationDelete?.(applicationId),
       onApplicationCreateSddFeature: (applicationId) =>
         callbacksRef.current.onApplicationCreateSddFeature?.(applicationId),
+      onClusterClick: (clusterId) => callbacksRef.current.onClusterClick?.(clusterId),
+      onClusterDelete: (clusterId) => callbacksRef.current.onClusterDelete?.(clusterId),
     }),
     []
   );
@@ -243,8 +265,16 @@ export function useGraphState(
 
   // Derive graph from domain Maps (runs on every Map change, but dagre only on topology change)
   const derived = useMemo(
-    () => deriveGraph(visibleFeatureMap, repoMap, pendingMap, stableCallbacks, applicationMap),
-    [visibleFeatureMap, repoMap, pendingMap, stableCallbacks, applicationMap]
+    () =>
+      deriveGraph(
+        visibleFeatureMap,
+        repoMap,
+        pendingMap,
+        stableCallbacks,
+        applicationMap,
+        clusterMap
+      ),
+    [visibleFeatureMap, repoMap, pendingMap, stableCallbacks, applicationMap, clusterMap]
   );
 
   // Cache dagre layout positions — only re-run when node set or edge connections change
@@ -448,10 +478,19 @@ export function useGraphState(
     });
 
     // Reconcile applicationMap
-    const { applicationMap: newApplicationMap } = parseMaps(newNodes, newEdges);
+    const { applicationMap: newApplicationMap, clusterMap: newClusterMap } = parseMaps(
+      newNodes,
+      newEdges
+    );
     setApplicationMap((currentAppMap) => {
       if (mapsEqual(currentAppMap, newApplicationMap)) return currentAppMap;
       return newApplicationMap;
+    });
+
+    // Reconcile clusterMap
+    setClusterMap((currentClusterMap) => {
+      if (mapsEqual(currentClusterMap, newClusterMap)) return currentClusterMap;
+      return newClusterMap;
     });
   }, []);
 

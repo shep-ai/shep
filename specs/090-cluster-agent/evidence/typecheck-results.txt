@@ -1,0 +1,8 @@
+$ pnpm typecheck
+
+
+> @shepai/cli@1.188.0 typecheck /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-cluster-agent
+> tsc --noEmit
+
+
+Exit code: 0 — TypeScript typecheck passed with zero errors.
