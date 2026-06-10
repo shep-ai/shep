@@ -17,7 +17,12 @@ import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Feature, PullRequest } from '../../../domain/generated/output.js';
-import { SdlcLifecycle, PrStatus, BuildMode, AgentRunStatus } from '../../../domain/generated/output.js';
+import {
+  SdlcLifecycle,
+  PrStatus,
+  BuildMode,
+  AgentRunStatus,
+} from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { IRepositoryRepository } from '../../ports/output/repositories/repository-repository.interface.js';
 import type { IWorktreeService } from '../../ports/output/services/worktree-service.interface.js';

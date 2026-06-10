@@ -433,7 +433,9 @@ describe('GitHubRepositoryService', () => {
       mockExecFile.mockRejectedValue(err);
 
       await expect(service.getAuthenticatedUser()).rejects.toThrow(GitHubAuthError);
-      await expect(service.getAuthenticatedUser()).rejects.toThrow('Failed to get authenticated user');
+      await expect(service.getAuthenticatedUser()).rejects.toThrow(
+        'Failed to get authenticated user'
+      );
     });
 
     it('should throw GitHubAuthError when not authenticated', async () => {

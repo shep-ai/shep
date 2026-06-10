@@ -16,7 +16,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SdlcLifecycle, AgentRunStatus } from '@/domain/generated/output.js';
 import { AdoptBranchUseCase } from '@/application/use-cases/features/adopt-branch.use-case.js';
-import { initializeSettings, resetSettings, getSettings } from '@/infrastructure/services/settings.service.js';
+import {
+  initializeSettings,
+  resetSettings,
+  getSettings,
+} from '@/infrastructure/services/settings.service.js';
 import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IRepositoryRepository } from '@/application/ports/output/repositories/repository-repository.interface.js';
