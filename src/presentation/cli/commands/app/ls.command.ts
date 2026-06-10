@@ -43,14 +43,17 @@ export function createLsCommand(): Command {
   const t = getCliI18n().t;
   return new Command('ls')
     .description(t('cli:commands.app.ls.description'))
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Examples:
   $ shep app ls
   List all applications with their status.
 
   $ shep app list
   Alias for ls.
-`)
+`
+    )
     .action(async () => {
       try {
         const useCase = container.resolve(ListApplicationsUseCase);

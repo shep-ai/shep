@@ -22,10 +22,13 @@ function sleep(ms: number): Promise<void> {
 export function createGithubLoginCommand(): Command {
   return new Command('github-login')
     .description('Run `gh auth login --web` and wait for authentication to complete')
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Usage Examples:
   $ shep app cloud-providers github-login my-app
-`)
+`
+    )
     .action(async () => {
       try {
         const useCase = container.resolve(EnsureGhAuthenticatedUseCase);

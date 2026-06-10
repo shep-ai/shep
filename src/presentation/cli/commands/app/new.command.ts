@@ -31,12 +31,15 @@ export function createNewCommand(): Command {
     .argument('<description>', t('cli:commands.app.new.descriptionArgument'))
     .option('--agent <type>', t('cli:commands.app.new.agentOption'))
     .option('--model <model>', t('cli:commands.app.new.modelOption'))
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Usage Examples:
   $ shep app new "Build a todo list app with React"
   $ shep app new "REST API for inventory management" --agent claude-code
   $ shep app new "Portfolio website" --model claude-opus-4-6
-`)
+`
+    )
     .action(async (description: string, options: NewOptions) => {
       try {
         const useCase = container.resolve(CreateApplicationUseCase);

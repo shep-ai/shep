@@ -28,11 +28,14 @@ export function createDelCommand(): Command {
     .description(t('cli:commands.app.del.description'))
     .argument('<id>', t('cli:commands.app.del.idArgument'))
     .option('-f, --force', t('cli:commands.app.del.forceOption'))
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Usage Examples:
   $ shep app del my-app
   $ shep app del my-app --force
-`)
+`
+    )
     .action(async (id: string, options: DelOptions) => {
       try {
         const resolved = await resolveApplication(id);
