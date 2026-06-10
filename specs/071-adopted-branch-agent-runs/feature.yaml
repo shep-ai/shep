@@ -1,0 +1,39 @@
+feature:
+  id: 071-adopted-branch-agent-runs
+  name: adopted-branch-agent-runs
+  number: 71
+  branch: feat/071-adopted-branch-agent-runs
+  lifecycle: research
+  createdAt: '2026-03-17T16:32:28Z'
+status:
+  phase: implementation-complete
+  progress:
+    completed: 12
+    total: 12
+    percentage: 100
+  currentTask: null
+  lastUpdated: '2026-03-17T17:52:12.370Z'
+  lastUpdatedBy: feature-agent:implement
+  completedPhases:
+    - analyze
+    - requirements
+    - research
+    - plan
+    - phase-1
+    - phase-2
+    - phase-3
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: feature-created
+    completedAt: '2026-03-17T16:32:28Z'
+    completedBy: feature-agent
+errors:
+  current: null
+  history: []

@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="560" font-family="'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace" font-size="14">
+  <defs>
+    <style>
+      .bg { fill: #1e1e2e; }
+      .titlebar { fill: #313244; }
+      .dot-red { fill: #f38ba8; }
+      .dot-yellow { fill: #f9e2af; }
+      .dot-green { fill: #a6e3a1; }
+      .prompt { fill: #89b4fa; }
+      .cmd { fill: #cdd6f4; }
+      .success { fill: #a6e3a1; }
+      .label { fill: #6c7086; }
+      .value { fill: #cdd6f4; }
+      .title { fill: #cdd6f4; font-size: 13px; }
+      .dim { fill: #585b70; }
+      .heading { fill: #f9e2af; font-weight: bold; }
+      .dir { fill: #89b4fa; }
+      .file { fill: #cdd6f4; }
+    </style>
+  </defs>
+  <!-- Terminal window -->
+  <rect class="bg" width="820" height="560" rx="10"/>
+  <rect class="titlebar" width="820" height="36" rx="10"/>
+  <rect class="bg" x="0" y="26" width="820" height="10"/>
+  <circle class="dot-red" cx="20" cy="18" r="6"/>
+  <circle class="dot-yellow" cx="40" cy="18" r="6"/>
+  <circle class="dot-green" cx="60" cy="18" r="6"/>
+  <text class="title" x="410" y="22" text-anchor="middle">Spec Directory Initialization on Adopt</text>
+
+  <!-- Header -->
+  <text class="heading" x="20" y="60">Feature 1: New spec directory created (no existing specs)</text>
+
+  <text class="prompt" x="20" y="88">$</text>
+  <text class="cmd" x="35" y="88">ls -la wt/feat-user-auth/specs/000-feat-user-auth/</text>
+
+  <text class="file" x="40" y="116">feature.yaml</text>
+  <text class="dim" x="200" y="116">625 bytes</text>
+  <text class="dim" x="310" y="116">&#x2190; auto-generated</text>
+  <text class="file" x="40" y="136">plan.yaml</text>
+  <text class="dim" x="200" y="136">644 bytes</text>
+  <text class="dim" x="310" y="136">&#x2190; auto-generated</text>
+  <text class="file" x="40" y="156">research.yaml</text>
+  <text class="dim" x="200" y="156">577 bytes</text>
+  <text class="dim" x="310" y="156">&#x2190; auto-generated</text>
+  <text class="file" x="40" y="176">spec.yaml</text>
+  <text class="dim" x="200" y="176">917 bytes</text>
+  <text class="dim" x="310" y="176">&#x2190; auto-generated</text>
+  <text class="file" x="40" y="196">tasks.yaml</text>
+  <text class="dim" x="200" y="196">558 bytes</text>
+  <text class="dim" x="310" y="196">&#x2190; auto-generated</text>
+
+  <!-- Separator -->
+  <text class="dim" x="20" y="226">────────────────────────────────────────────────────────</text>
+
+  <text class="heading" x="20" y="254">Feature 2: Sequential numbering (001)</text>
+
+  <text class="prompt" x="20" y="282">$</text>
+  <text class="cmd" x="35" y="282">ls -la wt/feat-payment-flow/specs/001-feat-payment-flow/</text>
+
+  <text class="file" x="40" y="310">feature.yaml</text>
+  <text class="dim" x="200" y="310">634 bytes</text>
+  <text class="file" x="40" y="330">plan.yaml</text>
+  <text class="dim" x="200" y="330">650 bytes</text>
+  <text class="file" x="40" y="350">research.yaml</text>
+  <text class="dim" x="200" y="350">583 bytes</text>
+  <text class="file" x="40" y="370">spec.yaml</text>
+  <text class="dim" x="200" y="370">923 bytes</text>
+  <text class="file" x="40" y="390">tasks.yaml</text>
+  <text class="dim" x="200" y="390">564 bytes</text>
+
+  <!-- Separator -->
+  <text class="dim" x="20" y="420">────────────────────────────────────────────────────────</text>
+
+  <text class="heading" x="20" y="448">Database: Both features linked to AgentRun records</text>
+
+  <text class="label" x="20" y="476">feature_id</text>
+  <text class="label" x="140" y="476">name</text>
+  <text class="label" x="300" y="476">agent_run</text>
+  <text class="label" x="430" y="476">status</text>
+  <text class="label" x="530" y="476">prompt</text>
+
+  <text class="dim" x="20" y="494">&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;</text>
+  <text class="value" x="20" y="514">0c188bc7</text>
+  <text class="value" x="140" y="514">User Auth</text>
+  <text class="value" x="300" y="514">7224dfc4</text>
+  <text class="success" x="430" y="514">pending</text>
+  <text class="value" x="530" y="514">(adopted from branch)</text>
+
+  <text class="value" x="20" y="534">63f14573</text>
+  <text class="value" x="140" y="534">Payment Flow</text>
+  <text class="value" x="300" y="534">d2106702</text>
+  <text class="success" x="430" y="534">pending</text>
+  <text class="value" x="530" y="534">(adopted from branch)</text>
+</svg>

@@ -1,0 +1,240 @@
+name: adopted-branch-agent-runs
+summary: >
+  Implementation plan for adding AgentRun support to adopted branches. Follows
+  CreateFeatureUseCase pattern (lines 156-210) for AgentRun creation with
+  conditional spec directory initialization. All dependencies exist—no new
+  infrastructure needed. Implementation spans three phases: dependency injection
+  setup, core AgentRun creation logic, and comprehensive testing.
+
+relatedFeatures: []
+technologies:
+  - TypeScript
+  - SQLite (better-sqlite3)
+  - TypeSpec (domain modeling)
+  - tsyringe (dependency injection)
+  - Node.js fs module (spec directory detection)
+  - Vitest (testing framework)
+relatedLinks:
+  - title: 'CreateFeatureUseCase - Reference Implementation'
+    url: 'file://packages/core/src/application/use-cases/features/create/create-feature.use-case.ts'
+  - title: 'AdoptBranchUseCase - File to Modify'
+    url: 'file://packages/core/src/application/use-cases/features/adopt-branch.use-case.ts'
+
+phases:
+  - id: phase-1
+    name: 'Dependency Injection & Setup'
+    description: >
+      Add IAgentRunRepository and ISpecInitializerService to AdoptBranchUseCase
+      constructor. Import required Node.js modules (fs, path, crypto) and
+      settings service. Update DI container registration if needed. This
+      foundation enables all subsequent AgentRun creation logic.
+    parallel: false
+
+  - id: phase-2
+    name: 'Core AgentRun & Spec Directory Logic'
+    description: >
+      Implement AgentRun creation following CreateFeatureUseCase pattern (lines
+      156-210). Add conditional spec directory initialization with existsSync
+      detection to preserve existing work. Update Feature entity to include
+      agentRunId and specPath fields. Ensure correct persistence order
+      (AgentRun first, then Feature).
+    parallel: false
+
+  - id: phase-3
+    name: 'Testing & Validation'
+    description: >
+      Write comprehensive unit tests for AdoptBranchUseCase covering AgentRun
+      creation, spec directory initialization (both existing and new), and error
+      handling. Add integration test validating adopt → start → resume → reject
+      flow. Verify no regressions in existing features.
+    parallel: false
+
+filesToCreate:
+  - tests/integration/features/adopt-flow.integration.test.ts
+
+filesToModify:
+  - packages/core/src/application/use-cases/features/adopt-branch.use-case.ts
+  - tests/unit/use-cases/features/adopt-branch.use-case.test.ts
+
+openQuestions: []
+
+content: |
+  ## Architecture Overview
+
+  This feature adds AgentRun creation to the existing AdoptBranchUseCase,
+  making adopted features structurally identical to created features. The
+  implementation follows Clean Architecture dependency rules:
+
+  **Application Layer (Use Case):**
+  - AdoptBranchUseCase orchestrates business logic
+  - Depends on output port interfaces (IAgentRunRepository, ISpecInitializerService)
+  - No direct dependencies on infrastructure implementations
+
+  **Infrastructure Layer (Repositories & Services):**
+  - AgentRunRepository handles SQLite persistence
+  - SpecInitializerService manages file system operations
+  - Both implement application-layer interfaces
+
+  **Pattern Consistency:**
+  AdoptBranchUseCase will mirror CreateFeatureUseCase structure:
+  1. Validation and guards (existing)
+  2. Repository resolution (existing)
+  3. **AgentRun creation (NEW)** — follows CreateFeatureUseCase lines 156-210
+  4. **Spec directory initialization (NEW)** — conditional based on existence check
+  5. Feature entity construction with agentRunId and specPath (MODIFIED)
+  6. Persistence in correct order: AgentRun first, then Feature (NEW)
+
+  This structural consistency ensures:
+  - Easier code reviews (same pattern as CreateFeatureUseCase)
+  - Identical behavior for StartFeatureUseCase, ResumeFeatureUseCase, RejectAgentRunUseCase
+  - Lower cognitive load for maintainers
+
+  ## Key Design Decisions
+
+  ### 1. Follow CreateFeatureUseCase Pattern Exactly
+
+  **Chosen:** Replicate lines 156-210 of CreateFeatureUseCase for AgentRun creation
+
+  **Alternatives Considered:**
+  - Custom initialization logic — rejected due to inconsistency and maintenance burden
+  - Defer to StartFeatureUseCase — rejected due to SRP violation
+  - Optional AgentRun on Feature — rejected due to nullable checks throughout codebase
+
+  **Rationale:** CreateFeatureUseCase provides battle-tested pattern. Structural
+  consistency eliminates special-case handling and ensures all agent-dependent use
+  cases work identically for adopted features.
+
+  **Implementation Details:**
+  - Generate runId via randomUUID()
+  - Read settings for agentType and modelId
+  - Create AgentRun with status=pending, agentName="feature-agent"
+  - Generate new threadId for LangGraph checkpoint isolation
+  - Set prompt to "(adopted from existing branch)" placeholder
+  - Link via feature.agentRunId = runId
+
+  ### 2. Conditional Spec Directory Initialization
+
+  **Chosen:** Detect existing specs/ directory, preserve if exists, create only if missing
+
+  **Alternatives Considered:**
+  - Always initialize new directory — rejected due to data loss risk
+  - Never initialize (defer to agent) — rejected due to architectural invariant violation
+  - Prompt user to choose — rejected due to friction and non-interactive incompatibility
+
+  **Rationale:** Developers often start spec work via /shep-kit:new-feature before
+  adopting into tracking system. Preserving existing work is non-destructive and
+  maintains the invariant that all features have spec directories (required by
+  StartFeatureUseCase line 79).
+
+  **Implementation Details:**
+  ```typescript
+  import { existsSync } from 'node:fs';
+  import { join } from 'node:path';
+
+  const nnn = String(featureNumber).padStart(3, '0');
+  const expectedSpecDir = join(worktreePath, 'specs', `${nnn}-${slug}`);
+
+  let specDir: string;
+  if (existsSync(expectedSpecDir)) {
+    specDir = expectedSpecDir; // Preserve existing
+  } else {
+    const result = await this.specInitializer.initialize(
+      worktreePath,
+      slug,
+      featureNumber,
+      "(adopted from existing branch)"
+    );
+    specDir = result.specDir;
+  }
+  ```
+
+  ### 3. Preserve Existing Lifecycle Logic
+
+  **Chosen:** Keep AdoptBranchUseCase lines 102-103 logic (Review if has PR, Maintain otherwise)
+
+  **Alternatives Considered:**
+  - Always set to Pending — rejected due to UX inconsistency
+  - Always set to Maintain — rejected due to hiding in-progress work
+  - Require --pending flag — rejected due to CLI complexity
+
+  **Rationale:** Lifecycle reflects branch state (Review/Maintain), while
+  AgentRun.status reflects agent execution state (pending). These are orthogonal
+  concerns. Creating an AgentRun adds execution capability without changing branch
+  state semantics.
+
+  ### 4. Skip Agent Validation During Adoption
+
+  **Chosen:** No agent validation in AdoptBranchUseCase
+
+  **Alternatives Considered:**
+  - Validate and fail adoption — rejected because adoption is metadata import, not execution
+  - Validate and mark as failed — rejected due to status pollution
+  - Validate and log warning — rejected due to overhead
+
+  **Rationale:** Matches pattern for features created with --pending flag
+  (CreateFeatureUseCase line 93). Validation happens at execution time
+  (StartFeatureUseCase lines 306-328) when user has explicit intent to run agent.
+  Prevents transient availability issues from blocking metadata operations.
+
+  ### 5. Persistence Order: AgentRun First, Then Feature
+
+  **Chosen:** Create AgentRun record before Feature record
+
+  **Rationale:** Feature has agentRunId foreign key reference. Although SQLite FK
+  is not enforced in current schema, correct ordering prevents future migration
+  issues, matches database normalization best practices, and makes code intention
+  clear.
+
+  **Error Handling:**
+  - Spec init failure → throw before any DB writes
+  - AgentRun creation failure → throw before Feature creation
+  - Feature creation failure → repository layer handles rollback (existing pattern)
+
+  ## Implementation Strategy
+
+  **Phase 1: Dependency Injection & Setup**
+
+  Foundation work to enable AgentRun creation. Add two new dependencies to
+  AdoptBranchUseCase constructor following existing tsyringe pattern. Import
+  Node.js built-in modules (fs, path, crypto) and settings service. This phase
+  changes only the constructor signature and imports—no business logic yet.
+
+  **Why First:** All subsequent logic depends on these dependencies being available.
+  TDD approach: write failing tests that expect AgentRun creation, then add
+  dependencies to make injection possible.
+
+  **Phase 2: Core AgentRun & Spec Directory Logic**
+
+  Implement the actual AgentRun creation and spec directory handling. Insert new
+  logic after repository resolution (line 81 in current AdoptBranchUseCase). Add
+  feature number calculation, conditional spec initialization, AgentRun creation
+  with all required fields, and Feature entity updates (agentRunId, specPath).
+  Update persistence calls to create AgentRun before Feature.
+
+  **Why Second:** Builds on Phase 1 dependencies. This is the core business logic
+  that fulfills all functional requirements. Each task in this phase follows TDD:
+  write test asserting behavior, implement minimal code to pass, refactor.
+
+  **Phase 3: Testing & Validation**
+
+  Comprehensive test coverage including unit tests for all new logic paths and
+  integration test for full adopt → start → resume → reject flow. Verify no
+  regressions in existing features by running full test suite. Validate error
+  handling and edge cases (missing settings, spec init failure, duplicate adoption).
+
+  **Why Last:** Testing validates the implementation from Phases 1-2. Integration
+  tests require completed implementation to verify end-to-end behavior. This phase
+  ensures quality gates are met before merging.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Breaking existing adoption flow | Preserve all existing validation logic (protected branch checks, duplicate detection, slug collision). Only add new logic after line 81 (repository resolution). Run full test suite to catch regressions. |
+  | Data loss from spec directory overwrite | Use existsSync check before calling specInitializer.initialize(). Only create new specs if directory does not exist. Add explicit test case for existing spec preservation. |
+  | AgentRun creation failure leaving orphaned Feature | Follow CreateFeatureUseCase pattern: create AgentRun first, then Feature. If AgentRun fails, throw before Feature creation. Repository pattern handles transaction rollback. |
+  | Inconsistent state between created and adopted features | Replicate CreateFeatureUseCase pattern exactly (lines 156-210). Use same field names, same status values, same persistence order. Add integration test comparing created vs. adopted features. |
+  | Missing settings causing runtime errors | Use optional chaining for settings.models?.default. Set modelId only if default exists. Test with minimal settings (no default model) to ensure graceful handling. |
+  | Feature number collision in spec directory | Use existing feature count as hint (featureRepo.list().length), let SpecInitializerService.resolveNextNumber() handle filesystem scan. Service already handles collision detection (lines 316-335). |
+  | Performance regression from additional DB/FS operations | Total overhead: ~20ms DB + ~11ms FS = ~31ms, well below 50ms NFR-1 requirement. No optimization needed. Monitor adoption time in integration tests to catch unexpected slowdowns. |
+  | Foreign key violation if Feature created before AgentRun | Create AgentRun first, then Feature. Add explicit test case verifying persistence order. Document ordering rationale in inline comments. |

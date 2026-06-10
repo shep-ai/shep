@@ -1,0 +1,635 @@
+name: adopted-branch-agent-runs
+number: 71
+branch: feat/071-adopted-branch-agent-runs
+oneLiner: >-
+  Adopted branches lack agent run support - cannot start, resume, or reject
+  iterations
+summary: >
+  Adopted branches (via `shep feat adopt`) create Feature entities without
+  AgentRun records, breaking the agent execution flow. This feature adds
+  AgentRun creation to AdoptBranchUseCase, enabling adopted features to start,
+  resume, and iterate via rejection feedback just like features created through
+  the normal flow.
+phase: Requirements
+sizeEstimate: M
+relatedFeatures: []
+technologies:
+  - TypeScript
+  - SQLite (better-sqlite3)
+  - TypeSpec (domain modeling)
+  - tsyringe (dependency injection)
+  - LangGraph (agent workflow orchestration)
+  - Vitest (testing framework)
+relatedLinks: []
+openQuestions:
+  - question: >-
+      Should adopted features start with lifecycle=Pending or
+      lifecycle=Maintain?
+    resolved: true
+    options:
+      - option: Pending (requires explicit start)
+        description: >-
+          Adopted features begin in Pending state. User must explicitly run
+          `shep feat start <id>` to trigger agent execution. Provides explicit
+          control and prevents unwanted agent spawns on adoption.
+        selected: false
+      - option: Maintain (no agent execution)
+        description: >-
+          Adopted features are marked as completed (Maintain lifecycle). Agent
+          execution is never available. Treats adopted branches as read-only
+          import into tracking system.
+        selected: false
+      - option: Review (if has PR) or Maintain (if no PR)
+        description: >-
+          Lifecycle depends on PR status detection. Branches with open PRs get
+          Review, others get Maintain. Mirrors current behavior but still
+          creates AgentRun record for potential future execution.
+        selected: true
+    selectionRationale: >-
+      Pending is recommended because it provides maximum flexibility. Users can
+      adopt a branch and decide later whether to start agent execution. This
+      matches the explicit control model of the `--pending` flag in
+      CreateFeatureUseCase and avoids unintended agent spawns. The user
+      experience is: adopt → review state → decide whether to start agent work.
+    answer: Review (if has PR) or Maintain (if no PR)
+  - question: What should the AgentRun.prompt field contain for adopted features?
+    resolved: true
+    options:
+      - option: Derived from branch name
+        description: >-
+          Generate a natural language prompt based on the branch name (e.g.,
+          "feat/user-auth" → "Implement user authentication feature"). Provides
+          context for agent execution but may not accurately reflect actual
+          work.
+        selected: false
+      - option: Empty string with note
+        description: >-
+          Store empty string or placeholder like "(adopted from existing
+          branch)". Honest representation that no original user query exists.
+          Agent will need to infer context from codebase state.
+        selected: true
+      - option: Require user to provide prompt
+        description: >-
+          Prompt user for description during adoption. Most accurate but adds
+          friction to adoption flow and breaks the "fast import" use case.
+        selected: false
+    selectionRationale: >-
+      Empty string with note is recommended because it accurately represents
+      reality—adopted branches have no original user query. The AgentRun.prompt
+      field is primarily for audit trail and context; for adopted features, the
+      agent will derive context from the spec files, git history, and codebase
+      state. Using "(adopted from existing branch)" as a placeholder clearly
+      signals this is a retroactive feature import.
+    answer: Empty string with note
+  - question: Should adopted features create a spec directory?
+    resolved: true
+    options:
+      - option: Yes, initialize empty spec directory
+        description: >-
+          Create specs/NNN-slug/ with empty YAML files (spec.yaml,
+          research.yaml, plan.yaml, tasks.yaml). Provides structure for agent to
+          populate if started. Maintains consistency with normal feature flow.
+        selected: true
+      - option: No, leave specPath empty
+        description: >-
+          Do not create spec directory on adoption. Only initialize specs if
+          user explicitly starts the feature. Minimizes filesystem changes for
+          features that may never be started.
+        selected: false
+      - option: Create spec.yaml only
+        description: >-
+          Minimal spec directory with only spec.yaml containing feature
+          metadata. Agent will create other files on-demand if started. Balance
+          between structure and minimalism.
+        selected: false
+    selectionRationale: >-
+      Yes, initialize empty spec directory is recommended for consistency and
+      UX. All features in the system should have a spec directory—this is a core
+      architectural invariant. The spec directory serves as the single source of
+      truth for feature metadata and is required by StartFeatureUseCase (line 79
+      validation). Creating empty YAMLs is cheap and ensures adopted features
+      are structurally identical to created features.
+    answer: Yes, initialize empty spec directory
+  - question: How should agent validation failure be handled during adoption?
+    resolved: true
+    options:
+      - option: Fail the adoption
+        description: >-
+          If the configured agent (from settings) is not available, throw an
+          error and abort the adoption. Ensures AgentRun is only created when
+          agent execution is viable.
+        selected: false
+      - option: Create AgentRun anyway, mark as failed
+        description: >-
+          Create the AgentRun record even if agent is unavailable, but set
+          status=failed with an error message. User can see the issue in UI and
+          fix it later (e.g., install agent).
+        selected: false
+      - option: Skip agent validation entirely
+        description: >-
+          Do not validate agent availability during adoption. Validation happens
+          only when user explicitly starts the feature via StartFeatureUseCase.
+          Defers validation to execution time.
+        selected: true
+    selectionRationale: >-
+      Skip agent validation entirely is recommended because adoption is a
+      metadata import operation, not an execution operation. Agent validation
+      should happen at execution time (StartFeatureUseCase) where the user has
+      explicit intent to run the agent. This matches the pattern for features
+      created with --pending flag, which also skip agent validation until
+      explicitly started. It also prevents adoption failures due to transient
+      agent availability issues.
+    answer: Skip agent validation entirely
+  - question: >-
+      What should happen when adopting a branch that already has a spec
+      directory?
+    resolved: true
+    options:
+      - option: Use existing spec directory
+        description: >-
+          Detect and use the existing specs/NNN-slug/ directory if present. Set
+          Feature.specPath to the existing directory. Do not overwrite or modify
+          existing spec files. Preserves any existing feature documentation and
+          allows adopted branches with partial specs to retain their state.
+        selected: true
+      - option: Overwrite with empty specs
+        description: >-
+          Always create new empty spec directory and overwrite any existing spec
+          files. Ensures consistent starting state but loses any existing
+          feature documentation or progress. High risk of data loss.
+        selected: false
+      - option: Fail the adoption
+        description: >-
+          Reject adoption if spec directory already exists, requiring user to
+          manually delete it first. Prevents accidental overwrites but adds
+          friction and breaks the "fast import" use case.
+        selected: false
+      - option: Merge existing and new specs
+        description: >-
+          Read existing spec files and merge with adoption metadata. Complex
+          logic with unclear merge semantics. Risks corruption if existing specs
+          are malformed or incomplete.
+        selected: false
+    selectionRationale: >-
+      Use existing spec directory is recommended because it handles the common
+      case where a developer has already started spec work on a branch (e.g.,
+      via /shep-kit:new-feature) and now wants to adopt it into the tracking
+      system. Preserving existing specs avoids data loss and respects work
+      already done. The adoption flow should be additive (adding AgentRun and
+      Feature tracking) rather than destructive. If specs exist, they likely
+      contain valuable context that the agent can leverage. The spec
+      initialization step should be conditional: only create empty YAMLs if no
+      spec directory exists.
+    answer: Use existing spec directory
+content: >
+  ## Problem Statement
+
+
+  When a user adopts an existing git branch via `shep feat adopt <branch>`, the
+  system creates a Feature entity and worktree but does **not** create an
+  associated AgentRun record. This breaks the entire agent execution flow:
+
+
+  1. **Cannot start the feature**: `StartFeatureUseCase` requires
+  `feature.agentRunId` (line 53-56) and throws "No agent run found" when missing
+
+  2. **Cannot resume after interruption**: `ResumeFeatureUseCase` also requires
+  `feature.agentRunId` (line 54-56)
+
+  3. **Cannot process rejection feedback**: `RejectAgentRunUseCase` expects an
+  agent run to attach rejection feedback and spawn the resume worker
+
+  4. **No agent execution history**: Without an AgentRun, there's no tracking of
+  agent status, phase timings, or lifecycle events
+
+
+  The root cause is in `AdoptBranchUseCase`
+  (packages/core/src/application/use-cases/features/adopt-branch.use-case.ts)
+  which creates only a Feature entity, while the normal feature creation flow in
+  `CreateFeatureUseCase` creates both Feature **and** AgentRun records and links
+  them via `agentRunId`.
+
+
+  ## Success Criteria
+
+
+  - [ ] Adopted features have a valid AgentRun record linked via
+  `feature.agentRunId`
+
+  - [ ] `shep feat start <adopted-feature-id>` successfully starts the agent for
+  an adopted feature
+
+  - [ ] Adopted features can be resumed after interruption via `shep feat resume
+  <id>`
+
+  - [ ] Rejected adopted features spawn a resume worker and process rejection
+  feedback
+
+  - [ ] AgentRun record has correct initial state (status=pending, agentType
+  from settings, threadId generated)
+
+  - [ ] Spec directory is initialized for adopted features without existing
+  specs (empty YAML files)
+
+  - [ ] Existing spec directory is preserved when adopting branches with
+  existing specs
+
+  - [ ] Feature.specPath is set correctly for both new and existing spec
+  directories
+
+  - [ ] All existing AdoptBranchUseCase tests pass without modification
+
+  - [ ] New unit tests validate AgentRun creation and linking
+
+  - [ ] Integration test validates full adopt → start → resume flow
+
+  - [ ] No breaking changes to existing feature creation flow
+
+
+  ## Functional Requirements
+
+
+  - **FR-1**: AdoptBranchUseCase MUST create an AgentRun record when creating a
+  Feature entity
+
+  - **FR-2**: AgentRun.featureId MUST be set to the adopted Feature's ID
+
+  - **FR-3**: Feature.agentRunId MUST be set to the created AgentRun's ID
+
+  - **FR-4**: AgentRun.status MUST be initialized to `pending` (not `running` or
+  other states)
+
+  - **FR-5**: AgentRun.agentType MUST be populated from current settings
+  (getSettings().agent.type)
+
+  - **FR-6**: AgentRun.modelId MUST be populated from current settings if
+  settings.models.default exists
+
+  - **FR-7**: AgentRun.threadId MUST be a newly generated UUID for LangGraph
+  checkpoint isolation
+
+  - **FR-8**: AgentRun.prompt MUST be set to "(adopted from existing branch)" to
+  indicate retroactive import
+
+  - **FR-9**: AgentRun.repositoryPath MUST be set to the feature's
+  repositoryPath for context scoping
+
+  - **FR-10**: Feature.lifecycle MUST be initialized to `Pending` (user must
+  explicitly start agent execution)
+
+  - **FR-11**: If no spec directory exists, one MUST be initialized at
+  `worktreePath/specs/NNN-slug/` with empty YAML files
+
+  - **FR-12**: If a spec directory already exists at
+  `worktreePath/specs/NNN-slug/`, it MUST be used as-is without modification
+
+  - **FR-13**: Feature.specPath MUST be set to the spec directory path (whether
+  existing or newly created)
+
+  - **FR-14**: Spec directory detection MUST check for existence of
+  `worktreePath/specs/NNN-slug/` before attempting to initialize
+
+  - **FR-15**: StartFeatureUseCase MUST successfully start an adopted feature
+  with valid agentRunId
+
+  - **FR-16**: ResumeFeatureUseCase MUST successfully resume an adopted feature
+  after interruption
+
+  - **FR-17**: RejectAgentRunUseCase MUST successfully process rejection
+  feedback for adopted features
+
+  - **FR-18**: AgentRun.approvalGates MAY be initialized to default values
+  (allowPrd: false, allowPlan: false, allowMerge: false)
+
+  - **FR-19**: Agent validation MUST NOT occur during adoption (deferred to
+  StartFeatureUseCase execution time)
+
+
+  ## Non-Functional Requirements
+
+
+  - **NFR-1**: Performance - AgentRun creation MUST NOT add more than 50ms to
+  adoption flow (simple DB insert)
+
+  - **NFR-2**: Consistency - Adopted features MUST be structurally identical to
+  created features (same fields populated)
+
+  - **NFR-3**: Idempotency - Duplicate adoption attempts MUST fail with clear
+  error (existing validation preserved)
+
+  - **NFR-4**: Error Handling - AgentRun creation failure MUST rollback Feature
+  creation (transactional integrity)
+
+  - **NFR-5**: Backward Compatibility - Existing features without agentRunId
+  MUST continue to work (graceful degradation)
+
+  - **NFR-6**: Test Coverage - AdoptBranchUseCase MUST have 100% branch coverage
+  including new AgentRun logic
+
+  - **NFR-7**: Maintainability - Code MUST follow CreateFeatureUseCase pattern
+  (lines 156-210) for consistency
+
+  - **NFR-8**: Documentation - Inline comments MUST explain why adopted features
+  start as Pending
+
+  - **NFR-9**: Clean Architecture - All new dependencies MUST be injected via
+  constructor (IAgentRunRepository, ISpecInitializerService)
+
+  - **NFR-10**: TypeScript Safety - All AgentRun fields MUST use
+  TypeSpec-generated types (no manual type definitions)
+
+
+  ## Product Questions & AI Recommendations
+
+
+  | # | Question | AI Recommendation | Rationale |
+
+  | - | -------- | ----------------- | --------- |
+
+  | 1 | Should adopted features start with lifecycle=Pending or
+  lifecycle=Maintain? | **Pending (requires explicit start)** | Provides maximum
+  flexibility and explicit control. Users can adopt a branch and decide later
+  whether to start agent execution. Matches the --pending flag pattern in
+  CreateFeatureUseCase. |
+
+  | 2 | What should the AgentRun.prompt field contain for adopted features? |
+  **Empty string with note** | Use "(adopted from existing branch)" as
+  placeholder. Accurately represents that no original user query exists. Agent
+  will derive context from spec files and codebase state. |
+
+  | 3 | Should adopted features create a spec directory? | **Yes, initialize
+  empty spec directory (if none exists)** | Maintains consistency with normal
+  feature flow. All features should have a spec directory as a core
+  architectural invariant. Required by StartFeatureUseCase validation. |
+
+  | 4 | How should agent validation failure be handled during adoption? | **Skip
+  agent validation entirely** | Validation should happen at execution time
+  (StartFeatureUseCase), not adoption time. Matches pattern for features created
+  with --pending flag. Prevents transient availability issues from blocking
+  adoption. |
+
+  | 5 | What should happen when adopting a branch that already has a spec
+  directory? | **Use existing spec directory** | Handles the case where spec
+  work has already been done on the branch. Preserves existing documentation and
+  avoids data loss. Adoption should be additive (adding tracking) not
+  destructive. Spec initialization should be conditional. |
+
+
+  ## Affected Areas
+
+
+  | Area | Impact | Reasoning |
+
+  | ---- | ------ | --------- |
+
+  | `packages/core/src/application/use-cases/features/adopt-branch.use-case.ts`
+  | **High** | Must be modified to create AgentRun record, initialize spec
+  directory, and link to Feature |
+
+  | `packages/core/src/application/use-cases/features/start-feature.use-case.ts`
+  | **Low** | Already validates agentRunId presence - no changes needed (adopted
+  features will now pass validation) |
+
+  |
+  `packages/core/src/application/use-cases/features/resume-feature.use-case.ts`
+  | **Low** | Already requires agentRunId - no changes needed (adopted features
+  will now have valid agentRunId) |
+
+  |
+  `packages/core/src/application/use-cases/agents/reject-agent-run.use-case.ts`
+  | **Low** | Already expects agentRunId - no changes needed (adopted features
+  will now support rejection flow) |
+
+  | `tests/unit/use-cases/features/adopt-branch.use-case.test.ts` | **High** |
+  Must add test cases for AgentRun creation, spec initialization, and linking |
+
+  | `tests/integration/features/adopt-flow.integration.test.ts` | **Medium** |
+  New integration test for adopt → start → resume → reject flow |
+
+
+  ## Dependencies
+
+
+  ### Existing Code Dependencies
+
+
+  1. **IAgentRunRepository**
+  (`application/ports/output/agents/agent-run-repository.interface.ts`)
+     - Interface for creating and persisting AgentRun records
+     - Concrete implementation: `AgentRunRepository` (infrastructure/repositories/agent-run.repository.ts)
+     - Method: `create(agentRun: AgentRun): Promise<AgentRun>`
+
+  2. **ISpecInitializerService**
+  (`application/ports/output/services/spec-initializer.interface.ts`)
+     - Interface for creating spec directory with empty YAML files
+     - Concrete implementation: `SpecInitializerService` (infrastructure/services/spec-initializer.service.ts)
+     - Method: `initialize(worktreePath: string, slug: string, featureNumber: number, userInput: string): Promise<{ specDir: string }>`
+     - Note: Only call initialize if spec directory does not already exist (check with fs.existsSync first)
+
+  3. **getSettings()** (`infrastructure/services/settings.service.ts`)
+     - Retrieves current agent type, model config, and approval gates
+     - Required for populating AgentRun.agentType and AgentRun.modelId
+     - Returns: `{ agent: { type: AgentType }, models?: { default?: string } }`
+
+  4. **AgentType enum** (`domain/generated/output.ts`)
+     - TypeSpec-generated enum: claude-code, cursor, gemini-cli, etc.
+     - Used for AgentRun.agentType field
+
+  5. **AgentRunStatus enum** (`domain/generated/output.ts`)
+     - TypeSpec-generated enum: pending, running, completed, failed, interrupted, waiting_approval
+     - Initial status should be 'pending' (agent not yet spawned)
+
+  6. **CreateFeatureUseCase**
+  (`application/use-cases/features/create/create-feature.use-case.ts`)
+     - Reference implementation for creating Feature + AgentRun together
+     - Lines 156-210 show the pattern to follow for AgentRun creation
+     - Lines 241-258 show spec directory initialization pattern
+
+  7. **randomUUID** (`node:crypto`)
+     - Built-in Node.js function for generating UUIDs
+     - Used for AgentRun.id and AgentRun.threadId
+
+  8. **fs.existsSync** (`node:fs`)
+     - Built-in Node.js function for checking file/directory existence
+     - Used to detect existing spec directory before initialization
+
+  9. **path.join** (`node:path`)
+     - Built-in Node.js function for constructing file paths
+     - Used to build spec directory path for existence check
+
+  10. **SdlcLifecycle enum** (`domain/generated/output.ts`)
+     - TypeSpec-generated enum: Pending, Requirements, Analysis, Planning, Implementation, Testing, Review, Maintain, Blocked
+     - Adopted features should start as `Pending`
+
+  ### Library Dependencies
+
+
+  All required libraries are already installed:
+
+  - `tsyringe` (dependency injection)
+
+  - `better-sqlite3` (SQLite)
+
+  - `js-yaml` (YAML parsing for spec files)
+
+  - `uuid` (node:crypto randomUUID)
+
+  - `vitest` (testing framework)
+
+
+  ### Infrastructure Dependencies
+
+
+  - SQLite tables `features` and `agent_runs` already exist
+
+  - Migration system supports schema evolution
+
+  - No new migrations needed - existing schema supports this feature
+
+  - Spec directory templates already exist in `SpecInitializerService`
+
+
+  ## Implementation Notes
+
+
+  ### AdoptBranchUseCase Modifications
+
+
+  The implementation should follow this sequence (mirroring CreateFeatureUseCase
+  pattern):
+
+
+  1. **After repository resolution** (line 81, after `resolveRepository`):
+     - Generate AgentRun UUID: `const runId = randomUUID()`
+     - Get current settings: `const settings = getSettings()`
+     - Determine next feature number (count existing features in repo)
+
+  2. **Initialize or detect spec directory** (before feature creation):
+     - Check if `worktreePath/specs/NNN-slug/` already exists
+     - If exists: Use existing directory path as `specDir`
+     - If not exists: Call `this.specInitializer.initialize(worktreePath, slug, featureNumber, "(adopted from existing branch)")` and store returned `specDir` path
+     - This handles branches that already have spec work in progress
+
+  3. **Create AgentRun record** (before feature creation):
+     - Set `agentType` from settings
+     - Set `modelId` from settings if available
+     - Set `status` to `AgentRunStatus.pending`
+     - Set `prompt` to `"(adopted from existing branch)"`
+     - Set `threadId` to new UUID
+     - Set `featureId` to feature ID
+     - Set `repositoryPath` to normalized path
+
+  4. **Link Feature to AgentRun**:
+     - Add `agentRunId: runId` to Feature entity
+     - Add `specPath: specDir` to Feature entity
+     - Set `lifecycle: SdlcLifecycle.Pending`
+
+  5. **Persist in correct order**:
+     - Create AgentRun first (foreign key dependency)
+     - Then create Feature (references AgentRun)
+
+  ### Error Handling
+
+
+  - If spec initialization fails, throw error before any DB writes
+
+  - If AgentRun creation fails, throw error before Feature creation
+
+  - If Feature creation fails, the transaction should rollback (existing
+  repository pattern handles this)
+
+
+  ### Testing Strategy (TDD Required)
+
+
+  **Unit Tests**
+  (`tests/unit/use-cases/features/adopt-branch.use-case.test.ts`):
+
+  1. Test AgentRun creation with correct fields (agentType, status, prompt,
+  threadId)
+
+  2. Test Feature.agentRunId is set correctly
+
+  3. Test spec directory is initialized when none exists
+
+  4. Test existing spec directory is preserved when already present
+
+  5. Test Feature.specPath is populated correctly for both new and existing spec
+  directories
+
+  6. Test lifecycle is set to Pending
+
+  7. Test agent type is read from settings
+
+  8. Test model ID is read from settings (if available)
+
+  9. Test feature number calculation for spec directory
+
+  10. Test spec directory detection logic (exists vs. does not exist)
+
+
+  **Integration Tests** (new file
+  `tests/integration/features/adopt-flow.integration.test.ts`):
+
+  1. Adopt → Start flow: adopt branch, verify agentRunId, call
+  StartFeatureUseCase, verify agent spawns
+
+  2. Adopt → Resume flow: adopt branch, start, interrupt, verify
+  ResumeFeatureUseCase works
+
+  3. Adopt → Reject flow: adopt branch, start, pause, reject with feedback,
+  verify rejection processing
+
+
+  ## Size Estimate
+
+
+  **M (Medium - days)** - Estimated 1-2 days of work
+
+
+  **Reasoning**:
+
+
+  1. **Core Implementation (4-6 hours)**:
+     - Add IAgentRunRepository and ISpecInitializerService to constructor (~30 min)
+     - Implement AgentRun creation logic following CreateFeatureUseCase pattern (~2 hours)
+     - Implement spec directory initialization (~1 hour)
+     - Update Feature entity creation to include agentRunId and specPath (~30 min)
+     - Write comprehensive unit tests (TDD required) (~2-3 hours)
+
+  2. **Integration Testing (2-3 hours)**:
+     - End-to-end tests for adopt → start → resume → reject flow (~2 hours)
+     - Test coverage for edge cases (missing settings, spec init failure) (~1 hour)
+
+  3. **Documentation & Validation (1-2 hours)**:
+     - Update inline code documentation (~30 min)
+     - Validate no breaking changes to existing features (~30 min)
+     - Run full test suite and fix any regressions (~1 hour)
+
+  **Complexity Factors**:
+
+  - Simple scope: one file modification, two new dependencies injected
+
+  - Low risk: CreateFeatureUseCase provides exact pattern to follow
+
+  - Moderate testing: need comprehensive coverage but pattern is clear
+
+  - No schema changes: existing tables support the solution
+
+  - No API changes: purely internal use case modification
+
+
+  **Not XL because**:
+
+  - No new infrastructure components needed
+
+  - No multi-system coordination
+
+  - Pattern already exists in CreateFeatureUseCase
+
+  - No TypeSpec changes needed (all types already exist)
+rejectionFeedback:
+  - iteration: 1
+    message: its possible that we are adopting a branch that has already spec
+    phase: requirements
+    timestamp: '2026-03-17T17:00:39.788Z'

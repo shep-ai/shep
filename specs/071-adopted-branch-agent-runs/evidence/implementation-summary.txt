@@ -1,0 +1,39 @@
+=== Adopted Branch AgentRun Support - Implementation Summary ===
+
+FEATURE: Added AgentRun creation and spec directory initialization to adopted branches
+
+KEY CHANGES:
+
+1. AdoptBranchUseCase (packages/core/src/application/use-cases/features/adopt-branch.use-case.ts)
+   - Added IAgentRunRepository and ISpecInitializerService dependencies
+   - Calculate feature number from existing features count
+   - Conditional spec directory initialization (preserves existing specs)
+   - Create AgentRun record with:
+     * status = pending
+     * prompt = "(adopted from existing branch)"
+     * agentType from settings
+     * threadId generated via randomUUID()
+   - Link Feature.agentRunId to created AgentRun
+   - Set Feature.specPath to spec directory path
+   - Lifecycle logic unchanged (Review if PR exists, Maintain otherwise)
+
+2. Test Coverage
+   - Unit tests: 36 tests covering AgentRun creation, spec initialization, error handling
+   - Integration tests: 7 tests covering adopt → start → resume flow
+
+VERIFICATION:
+All tests passing:
+- AdoptBranchUseCase unit tests: ✓ 36 passed
+- Adopt flow integration tests: ✓ 7 passed
+- Full test suite: ✓ 569 tests passed (48 test files)
+
+SUCCESS CRITERIA MET:
+✓ Adopted features have valid AgentRun record linked via feature.agentRunId
+✓ StartFeatureUseCase works with adopted features
+✓ ResumeFeatureUseCase works with adopted features
+✓ AgentRun has correct initial state (pending, agentType from settings, threadId)
+✓ Spec directory initialized for adopted features without existing specs
+✓ Existing spec directory preserved when already present
+✓ Feature.specPath set correctly for both new and existing spec directories
+✓ All existing tests pass without modification
+✓ No breaking changes to existing feature creation flow

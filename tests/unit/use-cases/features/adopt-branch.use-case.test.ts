@@ -1,17 +1,33 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import path from 'node:path';
 import { SdlcLifecycle, PrStatus, BuildMode } from '@/domain/generated/output.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IRepositoryRepository } from '@/application/ports/output/repositories/repository-repository.interface.js';
 import type { IWorktreeService } from '@/application/ports/output/services/worktree-service.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
+import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
+import type { ISpecInitializerService } from '@/application/ports/output/services/spec-initializer.interface.js';
 import { AdoptBranchUseCase } from '@/application/use-cases/features/adopt-branch.use-case.js';
+import { getSettings } from '@/infrastructure/services/settings.service.js';
+
+// Mock fs module for spec directory detection
+vi.mock('node:fs', () => ({
+  existsSync: vi.fn(),
+}));
+
+// Mock settings service for AgentRun creation
+vi.mock('@/infrastructure/services/settings.service.js', () => ({
+  getSettings: vi.fn(),
+}));
 
 describe('AdoptBranchUseCase', () => {
   let mockFeatureRepo: IFeatureRepository;
   let mockRepositoryRepo: IRepositoryRepository;
   let mockWorktreeService: IWorktreeService;
   let mockGitPrService: IGitPrService;
+  let mockAgentRunRepo: IAgentRunRepository;
+  let mockSpecInitializer: ISpecInitializerService;
   let useCase: AdoptBranchUseCase;
 
   const repoPath = '/home/user/my-project';
@@ -23,7 +39,25 @@ describe('AdoptBranchUseCase', () => {
     updatedAt: new Date(),
   };
 
+  // Platform-aware worktree path for cross-platform testing
+  const mockWorktreePath = path.join(
+    path.sep === '\\' ? 'C:' : '/',
+    'home',
+    'user',
+    '.shep',
+    'repos',
+    'hash',
+    'wt',
+    'fix-login-bug'
+  );
+
   beforeEach(() => {
+    // Mock getSettings with default values
+    vi.mocked(getSettings).mockReturnValue({
+      agent: { type: 'claude-code' },
+      models: { default: 'claude-sonnet-4.5' },
+    } as any);
+
     mockFeatureRepo = {
       create: vi.fn().mockResolvedValue(undefined),
       findById: vi.fn().mockResolvedValue(null),
@@ -64,7 +98,7 @@ describe('AdoptBranchUseCase', () => {
       exists: vi.fn().mockResolvedValue(false),
       branchExists: vi.fn().mockResolvedValue(true),
       remoteBranchExists: vi.fn().mockResolvedValue(false),
-      getWorktreePath: vi.fn().mockReturnValue('/home/user/.shep/repos/hash/wt/fix-login-bug'),
+      getWorktreePath: vi.fn().mockReturnValue(mockWorktreePath),
       prune: vi.fn().mockResolvedValue(undefined),
       ensureGitRepository: vi.fn().mockResolvedValue(undefined),
       listBranches: vi.fn().mockResolvedValue([]),
@@ -109,11 +143,30 @@ describe('AdoptBranchUseCase', () => {
       stashDrop: vi.fn().mockResolvedValue(undefined),
     };
 
+    mockAgentRunRepo = {
+      create: vi.fn().mockResolvedValue(undefined),
+      findById: vi.fn().mockResolvedValue(null),
+      findByThreadId: vi.fn().mockResolvedValue(null),
+      updateStatus: vi.fn().mockResolvedValue(undefined),
+      findRunningByPid: vi.fn().mockResolvedValue([]),
+      list: vi.fn().mockResolvedValue([]),
+      delete: vi.fn().mockResolvedValue(undefined),
+    };
+
+    mockSpecInitializer = {
+      initialize: vi.fn().mockResolvedValue({
+        specDir: path.join(mockWorktreePath, 'specs', '000-fix-login-bug'),
+        featureNumber: '000',
+      }),
+    };
+
     useCase = new AdoptBranchUseCase(
       mockFeatureRepo,
       mockRepositoryRepo,
       mockWorktreeService,
-      mockGitPrService
+      mockGitPrService,
+      mockAgentRunRepo,
+      mockSpecInitializer
     );
   });
 
@@ -130,8 +183,11 @@ describe('AdoptBranchUseCase', () => {
       expect(result.feature.slug).toBe('fix-login-bug');
       expect(result.feature.lifecycle).toBe(SdlcLifecycle.Maintain);
       expect(result.feature.userQuery).toBe('');
-      expect(result.feature.specPath).toBeUndefined();
-      expect(result.feature.agentRunId).toBeUndefined();
+      // After feature 071, adopted features now have specPath and agentRunId
+      expect(result.feature.specPath).toBe(
+        path.join(mockWorktreePath, 'specs', '000-fix-login-bug')
+      );
+      expect(result.feature.agentRunId).toBeDefined();
       expect(result.feature.messages).toEqual([]);
       expect(result.feature.relatedArtifacts).toEqual([]);
       expect(result.feature.buildMode).toBe(BuildMode.Application);
@@ -160,7 +216,7 @@ describe('AdoptBranchUseCase', () => {
       expect(mockWorktreeService.addExisting).toHaveBeenCalledWith(
         repoPath,
         'fix/login-bug',
-        '/home/user/.shep/repos/hash/wt/fix-login-bug'
+        mockWorktreePath
       );
     });
 
@@ -301,7 +357,7 @@ describe('AdoptBranchUseCase', () => {
       });
 
       expect(mockWorktreeService.addExisting).not.toHaveBeenCalled();
-      expect(result.feature.worktreePath).toBe('/home/user/.shep/repos/hash/wt/fix-login-bug');
+      expect(result.feature.worktreePath).toBe(mockWorktreePath);
       expect(mockFeatureRepo.create).toHaveBeenCalled();
     });
   });
@@ -429,6 +485,272 @@ describe('AdoptBranchUseCase', () => {
       expect(result.feature.openPr).toBe(false);
       expect(result.feature.pr).toBeUndefined();
       expect(result.feature.lifecycle).toBe(SdlcLifecycle.Maintain);
+    });
+  });
+
+  describe('dependency injection', () => {
+    it('should accept IAgentRunRepository and ISpecInitializerService in constructor', () => {
+      // This test verifies the constructor signature accepts the new dependencies
+      expect(() => {
+        new AdoptBranchUseCase(
+          mockFeatureRepo,
+          mockRepositoryRepo,
+          mockWorktreeService,
+          mockGitPrService,
+          mockAgentRunRepo,
+          mockSpecInitializer
+        );
+      }).not.toThrow();
+    });
+  });
+
+  describe('feature number calculation', () => {
+    it('should calculate feature number from existing features in repository', async () => {
+      // Mock 5 existing features in the repository
+      (mockFeatureRepo.list as any).mockResolvedValue([
+        { id: '1', name: 'Feature 1' },
+        { id: '2', name: 'Feature 2' },
+        { id: '3', name: 'Feature 3' },
+        { id: '4', name: 'Feature 4' },
+        { id: '5', name: 'Feature 5' },
+      ]);
+
+      await useCase.execute({
+        branchName: 'fix/login-bug',
+        repositoryPath: repoPath,
+      });
+
+      // Verify list was called with correct repository path
+      expect(mockFeatureRepo.list).toHaveBeenCalledWith({
+        repositoryPath: repoPath,
+      });
+
+      // Feature number should be 5 (length of existing features)
+      // This will be verified indirectly through spec initializer call
+      expect(mockSpecInitializer.initialize).toHaveBeenCalledWith(
+        expect.any(String),
+        'fix-login-bug',
+        5, // featureNumber = existingFeatures.length
+        '(adopted from existing branch)'
+      );
+    });
+  });
+
+  describe('spec directory initialization', () => {
+    it('should create new spec directory when none exists', async () => {
+      const { existsSync } = await import('node:fs');
+      vi.mocked(existsSync).mockReturnValue(false);
+
+      const result = await useCase.execute({
+        branchName: 'fix/login-bug',
+        repositoryPath: repoPath,
+      });
+
+      // Get the worktree path from the mock
+      const worktreePath = mockWorktreeService.getWorktreePath('fix-login-bug', repoPath);
+
+      // Verify spec initializer was called
+      expect(mockSpecInitializer.initialize).toHaveBeenCalledWith(
+        worktreePath,
+        'fix-login-bug',
+        0, // No existing features
+        '(adopted from existing branch)'
+      );
+
+      // Verify specPath is set to returned path (platform-aware)
+      const expectedSpecPath = path.join(worktreePath, 'specs', '000-fix-login-bug');
+      expect(result.feature.specPath).toBe(expectedSpecPath);
+    });
+
+    it('should preserve existing spec directory without calling initialize', async () => {
+      const { existsSync } = await import('node:fs');
+      vi.mocked(existsSync).mockReturnValue(true);
+
+      const result = await useCase.execute({
+        branchName: 'fix/login-bug',
+        repositoryPath: repoPath,
+      });
+
+      // Get the worktree path from the mock
+      const worktreePath = mockWorktreeService.getWorktreePath('fix-login-bug', repoPath);
+
+      // Verify spec initializer was NOT called
+      expect(mockSpecInitializer.initialize).not.toHaveBeenCalled();
+
+      // Verify specPath matches the expected directory structure (platform-aware)
+      const expectedSpecPath = path.join(worktreePath, 'specs', '000-fix-login-bug');
+      expect(result.feature.specPath).toBe(expectedSpecPath);
+    });
+  });
+
+  describe('AgentRun creation', () => {
+    it('should create AgentRun with correct fields from settings', async () => {
+      // Mock settings (already mocked in beforeEach with default values)
+      vi.mocked(getSettings).mockReturnValue({
+        agent: { type: 'claude-code' },
+        models: { default: 'claude-sonnet-4.5' },
+      } as any);
+
+      await useCase.execute({
+        branchName: 'fix/login-bug',
+        repositoryPath: repoPath,
+      });
+
+      // Verify AgentRun was created with correct fields
+      expect(mockAgentRunRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agentType: 'claude-code',
+          agentName: 'feature-agent',
+          status: 'pending',
+          prompt: '(adopted from existing branch)',
+          modelId: 'claude-sonnet-4.5',
+          repositoryPath: repoPath,
+        })
+      );
+    });
+
+    it('should handle missing models.default setting gracefully', async () => {
+      vi.mocked(getSettings).mockReturnValue({
+        agent: { type: 'cursor' },
+        models: undefined,
+      } as any);
+
+      await useCase.execute({
+        branchName: 'fix/login-bug',
+        repositoryPath: repoPath,
+      });
+
+      // Verify AgentRun was created without modelId
+      const createCall = vi.mocked(mockAgentRunRepo.create).mock.calls[0][0];
+      expect(createCall.agentType).toBe('cursor');
+      expect(createCall.modelId).toBeUndefined();
+    });
+
+    it('should generate unique runId and threadId', async () => {
+      await useCase.execute({
+        branchName: 'fix/login-bug',
+        repositoryPath: repoPath,
+      });
+
+      const createCall = vi.mocked(mockAgentRunRepo.create).mock.calls[0][0];
+      expect(createCall.id).toBeDefined();
+      expect(createCall.threadId).toBeDefined();
+      expect(createCall.id).not.toBe(createCall.threadId); // Different UUIDs
+    });
+
+    it('should set threadId as a valid UUID format', async () => {
+      await useCase.execute({
+        branchName: 'fix/login-bug',
+        repositoryPath: repoPath,
+      });
+
+      const createCall = vi.mocked(mockAgentRunRepo.create).mock.calls[0][0];
+      // UUID v4 regex pattern
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      expect(createCall.threadId).toMatch(uuidRegex);
+    });
+
+    it('should set featureId to match Feature.id', async () => {
+      const result = await useCase.execute({
+        branchName: 'fix/login-bug',
+        repositoryPath: repoPath,
+      });
+
+      const createCall = vi.mocked(mockAgentRunRepo.create).mock.calls[0][0];
+      expect(createCall.featureId).toBe(result.feature.id);
+    });
+
+    it('should set status to pending (not running or other states)', async () => {
+      await useCase.execute({
+        branchName: 'fix/login-bug',
+        repositoryPath: repoPath,
+      });
+
+      const createCall = vi.mocked(mockAgentRunRepo.create).mock.calls[0][0];
+      expect(createCall.status).toBe('pending');
+    });
+
+    it('should set prompt to exact literal "(adopted from existing branch)"', async () => {
+      await useCase.execute({
+        branchName: 'fix/login-bug',
+        repositoryPath: repoPath,
+      });
+
+      const createCall = vi.mocked(mockAgentRunRepo.create).mock.calls[0][0];
+      expect(createCall.prompt).toBe('(adopted from existing branch)');
+    });
+
+    it('should create AgentRun before Feature (correct persistence order)', async () => {
+      await useCase.execute({
+        branchName: 'fix/login-bug',
+        repositoryPath: repoPath,
+      });
+
+      // Get the order of calls
+      const agentRunCreateCall = vi.mocked(mockAgentRunRepo.create).mock.invocationCallOrder[0];
+      const featureCreateCall = vi.mocked(mockFeatureRepo.create).mock.invocationCallOrder[0];
+
+      // AgentRun should be created before Feature
+      expect(agentRunCreateCall).toBeLessThan(featureCreateCall);
+    });
+  });
+
+  describe('error handling', () => {
+    it('should propagate error when spec initialization fails', async () => {
+      const { existsSync } = await import('node:fs');
+      vi.mocked(existsSync).mockReturnValue(false);
+      vi.mocked(mockSpecInitializer.initialize).mockRejectedValue(
+        new Error('Failed to create spec directory')
+      );
+
+      await expect(
+        useCase.execute({
+          branchName: 'fix/login-bug',
+          repositoryPath: repoPath,
+        })
+      ).rejects.toThrow('Failed to create spec directory');
+
+      // Verify no DB writes occurred
+      expect(mockAgentRunRepo.create).not.toHaveBeenCalled();
+      expect(mockFeatureRepo.create).not.toHaveBeenCalled();
+    });
+
+    it('should propagate error when AgentRun creation fails', async () => {
+      const { existsSync } = await import('node:fs');
+      vi.mocked(existsSync).mockReturnValue(false);
+      vi.mocked(mockAgentRunRepo.create).mockRejectedValue(new Error('Database connection failed'));
+
+      await expect(
+        useCase.execute({
+          branchName: 'fix/login-bug',
+          repositoryPath: repoPath,
+        })
+      ).rejects.toThrow('Database connection failed');
+
+      // Verify spec was initialized (happens before AgentRun creation)
+      expect(mockSpecInitializer.initialize).toHaveBeenCalled();
+
+      // Verify Feature was not created
+      expect(mockFeatureRepo.create).not.toHaveBeenCalled();
+    });
+
+    it('should handle missing models.default without throwing error', async () => {
+      vi.mocked(getSettings).mockReturnValue({
+        agent: { type: 'gemini-cli' },
+        models: undefined,
+      } as any);
+
+      // Should not throw
+      await expect(
+        useCase.execute({
+          branchName: 'fix/login-bug',
+          repositoryPath: repoPath,
+        })
+      ).resolves.toBeDefined();
+
+      // Verify AgentRun was created with modelId=undefined
+      const createCall = vi.mocked(mockAgentRunRepo.create).mock.calls[0][0];
+      expect(createCall.modelId).toBeUndefined();
     });
   });
 });

@@ -1,0 +1,87 @@
+=== Key Implementation: AdoptBranchUseCase AgentRun Support ===
+
+File: packages/core/src/application/use-cases/features/adopt-branch.use-case.ts
+
+1. Calculate Feature Number (lines 94-101):
+   ```typescript
+   const effectiveRepoPath = repository.path;
+   const existingFeatures = await this.featureRepo.list({
+     repositoryPath: effectiveRepoPath,
+   });
+   const featureNumber = existingFeatures.length;
+   ```
+
+2. Conditional Spec Directory Initialization (lines 110-129):
+   ```typescript
+   const nnn = String(featureNumber).padStart(3, '0');
+   const expectedSpecDir = join(worktreePath, 'specs', `${nnn}-${slug}`);
+
+   let specDir: string;
+   if (existsSync(expectedSpecDir)) {
+     // Spec directory already exists — use it without modification
+     specDir = expectedSpecDir;
+   } else {
+     // No spec directory — initialize with empty YAMLs
+     const result = await this.specInitializer.initialize(
+       worktreePath,
+       slug,
+       featureNumber,
+       '(adopted from existing branch)'
+     );
+     specDir = result.specDir;
+   }
+   ```
+
+3. Create AgentRun Record (lines 131-148):
+   ```typescript
+   const runId = randomUUID();
+   const settings = getSettings();
+   const now = new Date();
+
+   const agentRun = {
+     id: runId,
+     agentType: settings.agent.type,
+     agentName: 'feature-agent',
+     status: AgentRunStatus.pending,
+     prompt: '(adopted from existing branch)',
+     threadId: randomUUID(), // New UUID for LangGraph checkpoint isolation
+     featureId: '', // Will be set after Feature creation
+     repositoryPath: effectiveRepoPath,
+     ...(settings.models?.default ? { modelId: settings.models.default } : {}),
+     createdAt: now.toISOString(),
+     updatedAt: now.toISOString(),
+   };
+   ```
+
+4. Link Feature to AgentRun (lines 186-187):
+   ```typescript
+   specPath: specDir,
+   agentRunId: runId,
+   ```
+
+5. Persist in Correct Order (lines 194-200):
+   ```typescript
+   // Set featureId now that we have it
+   agentRun.featureId = featureId;
+   await this.agentRunRepo.create(agentRun);
+
+   // Persist Feature (after AgentRun exists)
+   await this.featureRepo.create(feature);
+   ```
+
+KEY DECISIONS:
+- AgentRun.status = pending (not running)
+- AgentRun.prompt = "(adopted from existing branch)" (placeholder)
+- Lifecycle = Review (if has PR) or Maintain (if no PR) — unchanged
+- Spec directory preserved if already exists (handles partial work)
+- Persistence order: AgentRun first, then Feature (referential integrity)
+- No agent validation during adoption (deferred to StartFeatureUseCase)
+
+DEPENDENCIES ADDED:
+- IAgentRunRepository (injected via constructor)
+- ISpecInitializerService (injected via constructor)
+- randomUUID from node:crypto
+- existsSync from node:fs
+- join from node:path
+- getSettings from infrastructure/services/settings.service
+- AgentRunStatus, SdlcLifecycle from domain/generated/output

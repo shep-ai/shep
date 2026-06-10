@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="440" font-family="'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace" font-size="14">
+  <defs>
+    <style>
+      .bg { fill: #1e1e2e; }
+      .titlebar { fill: #313244; }
+      .dot-red { fill: #f38ba8; }
+      .dot-yellow { fill: #f9e2af; }
+      .dot-green { fill: #a6e3a1; }
+      .prompt { fill: #89b4fa; }
+      .cmd { fill: #cdd6f4; }
+      .success { fill: #a6e3a1; }
+      .label { fill: #6c7086; }
+      .value { fill: #cdd6f4; }
+      .title { fill: #cdd6f4; font-size: 13px; }
+      .dim { fill: #585b70; }
+      .heading { fill: #f9e2af; font-weight: bold; }
+      .check { fill: #a6e3a1; font-weight: bold; }
+      .error { fill: #f38ba8; }
+    </style>
+  </defs>
+  <rect class="bg" width="820" height="440" rx="10"/>
+  <rect class="titlebar" width="820" height="36" rx="10"/>
+  <rect class="bg" x="0" y="26" width="820" height="10"/>
+  <circle class="dot-red" cx="20" cy="18" r="6"/>
+  <circle class="dot-yellow" cx="40" cy="18" r="6"/>
+  <circle class="dot-green" cx="60" cy="18" r="6"/>
+  <text class="title" x="410" y="22" text-anchor="middle">AgentRun &#x2194; Feature Linkage Proof (Database Query)</text>
+
+  <text class="heading" x="20" y="60">Before This Feature (Bug):</text>
+
+  <text class="prompt" x="20" y="88">$</text>
+  <text class="cmd" x="35" y="88">sqlite3 ~/.shep/data "SELECT agent_run_id FROM features WHERE name='User Auth'"</text>
+  <text class="error" x="40" y="112">NULL  &#x2190; No AgentRun! Cannot start, resume, or reject.</text>
+  <text class="error" x="40" y="132">Error: "No agent run found for feature 0c188bc7"</text>
+
+  <text class="dim" x="20" y="162">────────────────────────────────────────────────────────</text>
+
+  <text class="heading" x="20" y="190">After This Feature (Fixed):</text>
+
+  <text class="prompt" x="20" y="218">$</text>
+  <text class="cmd" x="35" y="218">sqlite3 ~/.shep/data "SELECT f.name, f.agent_run_id, a.status, a.prompt</text>
+  <text class="cmd" x="35" y="236">  FROM features f JOIN agent_runs a ON f.agent_run_id = a.id"</text>
+
+  <!-- Table header -->
+  <text class="label" x="40" y="268">name</text>
+  <text class="label" x="200" y="268">agent_run_id</text>
+  <text class="label" x="430" y="268">status</text>
+  <text class="label" x="530" y="268">prompt</text>
+  <text class="dim" x="40" y="282">&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;</text>
+
+  <!-- Row 1 -->
+  <text class="value" x="40" y="302">User Auth</text>
+  <text class="value" x="200" y="302">7224dfc4...a5772ed1</text>
+  <text class="success" x="430" y="302">pending</text>
+  <text class="value" x="530" y="302">(adopted from branch)</text>
+
+  <!-- Row 2 -->
+  <text class="value" x="40" y="322">Payment Flow</text>
+  <text class="value" x="200" y="322">d2106702...6ca871ab</text>
+  <text class="success" x="430" y="322">pending</text>
+  <text class="value" x="530" y="322">(adopted from branch)</text>
+
+  <text class="dim" x="20" y="352">────────────────────────────────────────────────────────</text>
+
+  <!-- Summary checks -->
+  <text class="check" x="20" y="380">&#x2713; AgentRun records created for adopted branches</text>
+  <text class="check" x="20" y="400">&#x2713; Features linked via agent_run_id foreign key</text>
+  <text class="check" x="20" y="420">&#x2713; StartFeatureUseCase can now find the AgentRun</text>
+</svg>

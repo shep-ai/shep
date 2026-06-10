@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="520" font-family="'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace" font-size="14">
+  <defs>
+    <style>
+      .bg { fill: #1e1e2e; }
+      .titlebar { fill: #313244; }
+      .dot-red { fill: #f38ba8; }
+      .dot-yellow { fill: #f9e2af; }
+      .dot-green { fill: #a6e3a1; }
+      .prompt { fill: #89b4fa; }
+      .cmd { fill: #cdd6f4; }
+      .success { fill: #a6e3a1; }
+      .label { fill: #6c7086; }
+      .value { fill: #cdd6f4; }
+      .title { fill: #cdd6f4; font-size: 13px; }
+      .dim { fill: #585b70; }
+      .heading { fill: #f9e2af; font-weight: bold; }
+    </style>
+  </defs>
+  <!-- Terminal window -->
+  <rect class="bg" width="820" height="520" rx="10"/>
+  <rect class="titlebar" width="820" height="36" rx="10"/>
+  <rect class="bg" x="0" y="26" width="820" height="10"/>
+  <circle class="dot-red" cx="20" cy="18" r="6"/>
+  <circle class="dot-yellow" cx="40" cy="18" r="6"/>
+  <circle class="dot-green" cx="60" cy="18" r="6"/>
+  <text class="title" x="410" y="22" text-anchor="middle">shep feat adopt - Branch Adoption with AgentRun</text>
+
+  <!-- Command 1: adopt -->
+  <text class="prompt" x="20" y="60">$</text>
+  <text class="cmd" x="35" y="60">shep feat adopt feat/user-auth --repo ~/projects/my-app</text>
+
+  <text class="success" x="20" y="90">&#x2713; Branch adopted</text>
+  <text class="label" x="40" y="112">ID:</text>
+  <text class="value" x="130" y="112">0c188bc7</text>
+  <text class="label" x="40" y="132">Name:</text>
+  <text class="value" x="130" y="132">User Auth</text>
+  <text class="label" x="40" y="152">Branch:</text>
+  <text class="value" x="130" y="152">feat/user-auth</text>
+  <text class="label" x="40" y="172">Status:</text>
+  <text class="value" x="130" y="172">Maintain</text>
+  <text class="label" x="40" y="192">Worktree:</text>
+  <text class="value" x="130" y="192">~/.shep/repos/07bfab7f/wt/feat-user-auth</text>
+
+  <!-- Separator -->
+  <text class="dim" x="20" y="222">────────────────────────────────────────────────────────</text>
+
+  <!-- Command 2: verify DB -->
+  <text class="prompt" x="20" y="250">$</text>
+  <text class="cmd" x="35" y="250">sqlite3 ~/.shep/data ".mode column" "SELECT * FROM agent_runs"</text>
+
+  <text class="heading" x="20" y="278">AgentRun Record Created:</text>
+  <text class="label" x="40" y="300">id:</text>
+  <text class="value" x="180" y="300">7224dfc4-3a9a-46e9-91fc-a5772ed11ca4</text>
+  <text class="label" x="40" y="320">feature_id:</text>
+  <text class="value" x="180" y="320">0c188bc7-b7e7-4459-bcdf-0621e51813e5</text>
+  <text class="label" x="40" y="340">agent_type:</text>
+  <text class="value" x="180" y="340">claude-code</text>
+  <text class="label" x="40" y="360">status:</text>
+  <text class="success" x="180" y="360">pending</text>
+  <text class="label" x="40" y="380">prompt:</text>
+  <text class="value" x="180" y="380">(adopted from existing branch)</text>
+  <text class="label" x="40" y="400">thread_id:</text>
+  <text class="value" x="180" y="400">a91d86c7-e66e-47f3-9888-943549b7acd9</text>
+
+  <!-- Separator -->
+  <text class="dim" x="20" y="430">────────────────────────────────────────────────────────</text>
+
+  <!-- Command 3: feat ls -->
+  <text class="prompt" x="20" y="458">$</text>
+  <text class="cmd" x="35" y="458">shep feat ls --repo ~/projects/my-app</text>
+
+  <text class="heading" x="20" y="486">Features (1)</text>
+  <text class="label" x="40" y="506">0c188bc7</text>
+  <text class="value" x="140" y="506">User Auth</text>
+  <text class="success" x="310" y="506">Maintain</text>
+  <text class="value" x="430" y="506">my-app</text>
+  <text class="dim" x="540" y="506">&#x25A1; &#x25A1; &#x25A1; &#x25A1;</text>
+</svg>

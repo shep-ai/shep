@@ -1,0 +1,444 @@
+name: adopted-branch-agent-runs
+summary: >
+  Task breakdown for adding AgentRun support to adopted branches. 12 tasks
+  across 3 phases with comprehensive TDD cycles. Total estimated effort: 8-10
+  hours.
+
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+
+tasks:
+  # Phase 1: Dependency Injection & Setup
+  - id: task-1
+    phaseId: phase-1
+    title: 'Add IAgentRunRepository and ISpecInitializerService to constructor'
+    description: >
+      Inject IAgentRunRepository and ISpecInitializerService into
+      AdoptBranchUseCase constructor following existing tsyringe pattern. Add
+      @inject decorators and store as private readonly fields. Update DI
+      container registration in packages/core/src/di/container.ts if needed
+      (verify providers are already registered).
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - 'AdoptBranchUseCase constructor has two new parameters with @inject decorators'
+      - 'Parameters stored as private readonly runRepository and specInitializer fields'
+      - 'TypeScript compilation succeeds with no type errors'
+      - 'Existing unit tests still pass (DI mocking works correctly)'
+    tdd:
+      red:
+        - 'Write unit test that instantiates AdoptBranchUseCase with mocked IAgentRunRepository and ISpecInitializerService'
+        - 'Test should fail because constructor does not accept these parameters yet'
+      green:
+        - 'Add @inject("IAgentRunRepository") private readonly runRepository: IAgentRunRepository to constructor'
+        - 'Add @inject("ISpecInitializerService") private readonly specInitializer: ISpecInitializerService to constructor'
+        - 'Test should now pass'
+      refactor:
+        - 'Verify constructor parameter ordering matches other use cases (repositories first, then services)'
+        - 'Add inline comment explaining why these dependencies are needed'
+    estimatedEffort: '30min'
+
+  - id: task-2
+    phaseId: phase-1
+    title: 'Import required Node.js modules and types'
+    description: >
+      Add imports for randomUUID (node:crypto), existsSync (node:fs), join
+      (node:path), getSettings (infrastructure/services/settings.service.ts),
+      and TypeSpec-generated types (AgentRunStatus, SdlcLifecycle). Verify all
+      imports resolve correctly.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - 'Import randomUUID from node:crypto'
+      - 'Import existsSync from node:fs'
+      - 'Import join from node:path'
+      - 'Import getSettings from settings service'
+      - 'Import AgentRunStatus and SdlcLifecycle from domain/generated/output.ts'
+      - 'TypeScript compilation succeeds with no import errors'
+    tdd: null
+    estimatedEffort: '15min'
+
+  # Phase 2: Core AgentRun & Spec Directory Logic
+  - id: task-3
+    phaseId: phase-2
+    title: 'Calculate feature number for spec directory'
+    description: >
+      After repository resolution (line 81), add logic to calculate next feature
+      number by listing existing features for the repository and using length as
+      hint. This number will be passed to SpecInitializerService which resolves
+      the actual filesystem number.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - 'Feature number calculated via await this.featureRepo.list({ repositoryPath: effectiveRepoPath })'
+      - 'Number stored as const featureNumber = existingFeatures.length'
+      - 'Logic placed after repository resolution, before AgentRun creation'
+      - 'Unit test verifies correct feature number calculation'
+    tdd:
+      red:
+        - 'Write unit test that mocks featureRepo.list() to return 5 features'
+        - 'Assert featureNumber is calculated as 5 (existingFeatures.length)'
+        - 'Test should fail because feature number calculation does not exist yet'
+      green:
+        - 'Add const existingFeatures = await this.featureRepo.list({ repositoryPath: effectiveRepoPath })'
+        - 'Add const featureNumber = existingFeatures.length'
+        - 'Test should now pass'
+      refactor:
+        - 'Add inline comment explaining why we use length as hint (SpecInitializerService resolves actual number)'
+    estimatedEffort: '30min'
+
+  - id: task-4
+    phaseId: phase-2
+    title: 'Implement conditional spec directory initialization'
+    description: >
+      Add logic to check if spec directory already exists at
+      worktreePath/specs/NNN-slug/. If exists, use existing path. If not exists,
+      call specInitializer.initialize() to create directory with empty YAMLs.
+      Store resulting path in specDir variable for later Feature entity update.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - 'Construct expected spec directory path using featureNumber and slug'
+      - 'Check existence with existsSync(expectedSpecDir)'
+      - 'If exists, set specDir = expectedSpecDir'
+      - 'If not exists, call this.specInitializer.initialize() and use returned specDir'
+      - 'Pass "(adopted from existing branch)" as prompt parameter to initialize()'
+      - 'Unit test verifies existing spec directory is preserved'
+      - 'Unit test verifies new spec directory is created when none exists'
+    tdd:
+      red:
+        - 'Write unit test that mocks existsSync to return true (spec exists)'
+        - 'Assert specInitializer.initialize() is NOT called'
+        - 'Assert specDir is set to expected directory path'
+        - 'Test should fail because spec detection logic does not exist yet'
+        - 'Write second unit test that mocks existsSync to return false (no spec)'
+        - 'Assert specInitializer.initialize() IS called with correct parameters'
+        - 'Assert specDir is set to returned path from initialize()'
+      green:
+        - 'Add const nnn = String(featureNumber).padStart(3, "0")'
+        - 'Add const expectedSpecDir = join(worktreePath, "specs", `${nnn}-${slug}`)'
+        - 'Add let specDir: string'
+        - 'Add if (existsSync(expectedSpecDir)) { specDir = expectedSpecDir } else { ... }'
+        - 'In else block, call const result = await this.specInitializer.initialize(worktreePath, slug, featureNumber, "(adopted from existing branch)")'
+        - 'Set specDir = result.specDir'
+        - 'Both tests should now pass'
+      refactor:
+        - 'Extract spec directory path construction to helper variable for clarity'
+        - 'Add inline comment explaining why we preserve existing specs'
+    estimatedEffort: '1h'
+
+  - id: task-5
+    phaseId: phase-2
+    title: 'Create AgentRun record following CreateFeatureUseCase pattern'
+    description: >
+      Implement AgentRun creation logic following CreateFeatureUseCase lines
+      156-210. Generate runId and threadId via randomUUID(). Read settings for
+      agentType and modelId. Create AgentRun entity with status=pending,
+      prompt="(adopted from existing branch)", and all required fields. Persist
+      via this.runRepository.create().
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - 'Generate const runId = randomUUID()'
+      - 'Generate const threadId = randomUUID()'
+      - 'Read const settings = getSettings()'
+      - 'Extract agentType = settings.agent.type'
+      - 'Extract modelId = settings.models?.default (optional chaining)'
+      - 'Create AgentRun entity with all required fields (id, featureId, agentType, agentName="feature-agent", modelId, status=AgentRunStatus.pending, prompt, threadId, repositoryPath)'
+      - 'Call await this.runRepository.create(agentRun)'
+      - 'Store created AgentRun in variable for linking to Feature'
+      - 'Unit test verifies AgentRun created with correct fields'
+      - 'Unit test verifies prompt is "(adopted from existing branch)"'
+      - 'Unit test verifies status is pending'
+      - 'Unit test verifies modelId is optional (handles missing settings.models.default)'
+    tdd:
+      red:
+        - 'Write unit test that mocks getSettings() to return { agent: { type: "claude-code" }, models: { default: "sonnet" } }'
+        - 'Assert runRepository.create() is called with AgentRun having agentType="claude-code", modelId="sonnet", status=pending, prompt="(adopted from existing branch)"'
+        - 'Test should fail because AgentRun creation logic does not exist yet'
+        - 'Write second unit test that mocks getSettings() with NO models.default'
+        - 'Assert AgentRun is created with modelId=undefined'
+      green:
+        - 'Add const runId = randomUUID()'
+        - 'Add const threadId = randomUUID()'
+        - 'Add const settings = getSettings()'
+        - 'Add const agentType = settings.agent.type'
+        - 'Add const modelId = settings.models?.default'
+        - 'Create AgentRun entity object with all fields'
+        - 'Add const createdRun = await this.runRepository.create(agentRun)'
+        - 'Both tests should now pass'
+      refactor:
+        - 'Extract AgentRun creation to follow exact CreateFeatureUseCase structure (lines 156-210)'
+        - 'Add inline comment referencing CreateFeatureUseCase pattern'
+        - 'Verify field order matches CreateFeatureUseCase for consistency'
+    estimatedEffort: '1.5h'
+
+  - id: task-6
+    phaseId: phase-2
+    title: 'Update Feature entity to include agentRunId and specPath'
+    description: >
+      Modify Feature entity construction to add agentRunId (from created
+      AgentRun) and specPath (from spec directory initialization). Ensure
+      lifecycle logic remains unchanged (Review if has PR, Maintain otherwise).
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - 'Feature entity includes agentRunId: runId'
+      - 'Feature entity includes specPath: specDir'
+      - 'Lifecycle logic preserved (Review if PR open, Maintain otherwise)'
+      - 'All other Feature fields unchanged from current implementation'
+      - 'Unit test verifies agentRunId is set correctly'
+      - 'Unit test verifies specPath is set correctly'
+      - 'Unit test verifies lifecycle is still based on PR status'
+    tdd:
+      red:
+        - 'Write unit test that verifies Feature entity includes agentRunId field'
+        - 'Assert agentRunId matches the created AgentRun.id'
+        - 'Test should fail because Feature creation does not include agentRunId yet'
+        - 'Write second unit test that verifies Feature entity includes specPath field'
+        - 'Assert specPath matches the spec directory path'
+      green:
+        - 'Add agentRunId: runId to Feature entity construction'
+        - 'Add specPath: specDir to Feature entity construction'
+        - 'Both tests should now pass'
+      refactor:
+        - 'Verify Feature field order matches CreateFeatureUseCase for consistency'
+        - 'Add inline comment explaining agentRunId and specPath purpose'
+    estimatedEffort: '30min'
+
+  - id: task-7
+    phaseId: phase-2
+    title: 'Update persistence order: AgentRun before Feature'
+    description: >
+      Ensure AgentRun is persisted before Feature to respect referential
+      integrity. AgentRun creation already happened in task-5, so verify Feature
+      creation happens after. Add error handling: if AgentRun creation fails,
+      throw before Feature creation.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - 'AgentRun created via this.runRepository.create() before Feature'
+      - 'Feature created via this.featureRepo.create() after AgentRun'
+      - 'If AgentRun creation fails, error is thrown before Feature creation (no orphaned Feature)'
+      - 'Unit test verifies persistence order (AgentRun mock called before Feature mock)'
+      - 'Unit test verifies AgentRun failure prevents Feature creation'
+    tdd:
+      red:
+        - 'Write unit test that mocks runRepository.create() to throw error'
+        - 'Assert featureRepo.create() is NOT called'
+        - 'Assert error is propagated to caller'
+        - 'Test should fail because error handling does not exist yet'
+      green:
+        - 'Ensure const createdRun = await this.runRepository.create(agentRun) happens before Feature creation'
+        - 'No explicit try/catch needed—let error propagate naturally'
+        - 'Test should now pass'
+      refactor:
+        - 'Add inline comment explaining persistence order and referential integrity'
+        - 'Verify order matches CreateFeatureUseCase pattern'
+    estimatedEffort: '30min'
+
+  # Phase 3: Testing & Validation
+  - id: task-8
+    phaseId: phase-3
+    title: 'Add unit tests for AgentRun creation fields'
+    description: >
+      Write comprehensive unit tests verifying all AgentRun fields are populated
+      correctly: agentType from settings, modelId from settings (with optional
+      chaining test), status=pending, prompt placeholder, threadId generation,
+      featureId linkage, repositoryPath.
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - 'Test: agentType is read from settings.agent.type'
+      - 'Test: modelId is read from settings.models.default (handles undefined)'
+      - 'Test: status is AgentRunStatus.pending'
+      - 'Test: prompt is "(adopted from existing branch)"'
+      - 'Test: threadId is a valid UUID'
+      - 'Test: featureId matches Feature.id'
+      - 'Test: repositoryPath matches Feature.repositoryPath'
+      - 'All unit tests pass'
+    tdd:
+      red:
+        - 'Write test asserting agentType matches settings (already covered in task-5)'
+        - 'Write test asserting modelId is optional (already covered in task-5)'
+        - 'Write test asserting status is pending'
+        - 'Write test asserting prompt is exact literal string'
+        - 'Write test asserting threadId is UUID format (regex match)'
+      green:
+        - 'Implementation already complete from task-5'
+        - 'Tests should pass with current implementation'
+      refactor:
+        - 'Extract common test setup (mock settings, mock repositories) to helper function'
+        - 'Add descriptive test names following "should X when Y" pattern'
+    estimatedEffort: '1h'
+
+  - id: task-9
+    phaseId: phase-3
+    title: 'Add unit tests for spec directory initialization logic'
+    description: >
+      Write unit tests verifying conditional spec directory initialization:
+      existing directory is preserved (no initialize() call), new directory is
+      created (initialize() called with correct parameters), feature number
+      calculation is correct, specPath is set on Feature entity.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - 'Test: When spec directory exists, existsSync returns true, initialize() not called, specPath set to existing directory'
+      - 'Test: When spec directory does not exist, existsSync returns false, initialize() called with correct params, specPath set to returned path'
+      - 'Test: Feature number calculated correctly from existing features count'
+      - 'Test: Spec directory path format is specs/NNN-slug/ (NNN is zero-padded)'
+      - 'Test: initialize() receives "(adopted from existing branch)" as prompt parameter'
+      - 'All unit tests pass'
+    tdd:
+      red:
+        - 'Write test for existing spec directory preservation (already partially covered in task-4)'
+        - 'Write test for new spec directory creation (already partially covered in task-4)'
+        - 'Write test for feature number calculation (already covered in task-3)'
+        - 'Write test for spec path format validation'
+      green:
+        - 'Implementation already complete from task-3 and task-4'
+        - 'Tests should pass with current implementation'
+      refactor:
+        - 'Use test fixtures for expected spec directory paths'
+        - 'Parameterize tests for different feature numbers (1, 10, 100 → "001", "010", "100")'
+    estimatedEffort: '1h'
+
+  - id: task-10
+    phaseId: phase-3
+    title: 'Add unit tests for error handling'
+    description: >
+      Write unit tests verifying error handling for spec initialization failure,
+      AgentRun creation failure, and missing settings. Ensure errors are
+      propagated correctly and no partial state is persisted.
+    state: Todo
+    dependencies:
+      - task-9
+    acceptanceCriteria:
+      - 'Test: When specInitializer.initialize() throws error, error is propagated and no DB writes occur'
+      - 'Test: When runRepository.create() throws error, error is propagated and Feature is not created'
+      - 'Test: When settings.models.default is missing, AgentRun is created with modelId=undefined (no error)'
+      - 'Test: When settings.agent.type is missing, error is thrown or default is used (verify current getSettings() behavior)'
+      - 'All unit tests pass'
+    tdd:
+      red:
+        - 'Write test that mocks specInitializer.initialize() to throw error'
+        - 'Assert error is propagated to caller'
+        - 'Assert runRepository.create() is NOT called'
+        - 'Assert featureRepo.create() is NOT called'
+        - 'Write test that mocks runRepository.create() to throw error (already covered in task-7)'
+        - 'Write test for missing settings.models.default (already covered in task-8)'
+      green:
+        - 'Implementation already handles error propagation (no explicit try/catch, errors bubble up)'
+        - 'Tests should pass with current implementation'
+      refactor:
+        - 'Add descriptive error messages in test assertions'
+        - 'Verify error types match expected error classes'
+    estimatedEffort: '1h'
+
+  - id: task-11
+    phaseId: phase-3
+    title: 'Create integration test for adopt → start → resume → reject flow'
+    description: >
+      Create new integration test file
+      tests/integration/features/adopt-flow.integration.test.ts. Test full flow:
+      adopt branch → verify agentRunId → start feature → verify agent spawns →
+      interrupt → resume → verify resumption → reject with feedback → verify
+      rejection processing. Use real SQLite (in-memory) and real filesystem
+      (temp directory).
+    state: Todo
+    dependencies:
+      - task-10
+    acceptanceCriteria:
+      - 'New file: tests/integration/features/adopt-flow.integration.test.ts created'
+      - 'Test: Adopt branch with no existing spec → verify AgentRun created, spec directory initialized, Feature.agentRunId set'
+      - 'Test: Adopt branch with existing spec → verify AgentRun created, existing spec preserved, Feature.specPath correct'
+      - 'Test: Start adopted feature via StartFeatureUseCase → verify agentRunId validation passes, agent spawns'
+      - 'Test: Resume adopted feature via ResumeFeatureUseCase → verify agentRunId exists, resumption works'
+      - 'Test: Reject adopted feature via RejectAgentRunUseCase → verify rejection feedback attached, resume worker spawned'
+      - 'All integration tests pass'
+    tdd:
+      red:
+        - 'Write integration test that calls AdoptBranchUseCase.execute()'
+        - 'Assert Feature entity has non-null agentRunId'
+        - 'Assert AgentRun record exists in database with correct featureId'
+        - 'Call StartFeatureUseCase.execute() with adopted feature ID'
+        - 'Assert no "No agent run found" error (would fail before implementation)'
+        - 'Test should fail before implementation (no agentRunId on adopted features)'
+      green:
+        - 'Implementation already complete from previous tasks'
+        - 'Test should now pass'
+      refactor:
+        - 'Extract common integration test setup (temp DB, temp filesystem) to helper'
+        - 'Add cleanup logic (delete temp directories, close DB connections)'
+        - 'Add descriptive test names and section comments'
+    estimatedEffort: '2h'
+
+  - id: task-12
+    phaseId: phase-3
+    title: 'Validate no regressions in existing features'
+    description: >
+      Run full test suite (pnpm test) to ensure no existing functionality is
+      broken. Verify all existing AdoptBranchUseCase tests still pass. Verify
+      CreateFeatureUseCase tests still pass. Check for any unexpected test
+      failures and fix if needed.
+    state: Todo
+    dependencies:
+      - task-11
+    acceptanceCriteria:
+      - 'All existing unit tests pass (pnpm test:unit)'
+      - 'All existing integration tests pass (pnpm test:int)'
+      - 'No new TypeScript errors (pnpm typecheck)'
+      - 'No new lint errors (pnpm lint)'
+      - 'Existing AdoptBranchUseCase tests pass without modification'
+      - 'CreateFeatureUseCase tests pass without modification'
+      - 'No unexpected test failures in unrelated use cases'
+    tdd: null
+    estimatedEffort: '1h'
+
+totalEstimate: '8-10h'
+openQuestions: []
+
+content: |
+  ## Summary
+
+  Implementation follows a three-phase approach: (1) inject dependencies and
+  import required modules, (2) implement core AgentRun creation and spec
+  directory logic following CreateFeatureUseCase pattern, (3) comprehensive
+  testing and validation.
+
+  **Phase 1** sets up the foundation by adding IAgentRunRepository and
+  ISpecInitializerService to the constructor and importing Node.js built-in
+  modules (crypto, fs, path) plus settings service. This enables all subsequent
+  AgentRun creation logic.
+
+  **Phase 2** implements the core feature by calculating feature numbers,
+  conditionally initializing spec directories (preserving existing work),
+  creating AgentRun records with all required fields (agentType from settings,
+  status=pending, prompt placeholder, threadId), linking AgentRun to Feature via
+  agentRunId, and ensuring correct persistence order (AgentRun first, then
+  Feature).
+
+  **Phase 3** validates the implementation through comprehensive unit tests
+  (AgentRun field population, spec directory logic, error handling) and
+  integration tests (adopt → start → resume → reject flow). Runs full test
+  suite to ensure no regressions.
+
+  Every task follows TDD: write failing test (RED), implement minimal code to
+  pass (GREEN), refactor for clarity (REFACTOR). Tasks are ordered by
+  dependency—no task depends on a later task. Total estimated effort is 8-10
+  hours across 12 tasks.
+
+  Key architectural decisions:
+  - Follow CreateFeatureUseCase pattern exactly (lines 156-210) for consistency
+  - Conditional spec initialization to preserve existing work
+  - No agent validation during adoption (deferred to StartFeatureUseCase)
+  - Persistence order respects referential integrity (AgentRun before Feature)

@@ -1,0 +1,202 @@
+
+> @shepai/cli@1.129.2 test:int /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-adopted-branch-agent-runs
+> vitest run tests/integration adopt
+
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-adopted-branch-agent-runs[39m
+
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/worktree-git-init.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 5986[2mms[22m[39m
+     [33m[2m✓[22m[39m should create a non-existent directory recursively and initialize git [33m 728[2mms[22m[39m
+     [33m[2m✓[22m[39m should initialize a non-git directory with git init and initial commit [33m 314[2mms[22m[39m
+     [33m[2m✓[22m[39m should create initial commit for existing git repo with unborn branch (no commits) [33m 379[2mms[22m[39m
+     [33m[2m✓[22m[39m should allow worktree creation after fixing unborn branch repo [33m 474[2mms[22m[39m
+     [33m[2m✓[22m[39m should not re-initialize an existing git repository [33m 2783[2mms[22m[39m
+     [33m[2m✓[22m[39m should create an initial commit with the correct message [33m 360[2mms[22m[39m
+     [33m[2m✓[22m[39m should allow worktree creation after auto-initialization [33m 487[2mms[22m[39m
+     [33m[2m✓[22m[39m should include existing files in worktree when initializing a non-git directory (#353) [33m 461[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/push-merge.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 6139[2mms[22m[39m
+     [33m[2m✓[22m[39m push-no-pr-merge: feature branch should be merged into main after push+merge [33m 6136[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/pr-merge.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 5334[2mms[22m[39m
+     [33m[2m✓[22m[39m push=true, openPr=true, allowMerge=true → BUG: verifyMerge skipped after gh pr merge [33m 5331[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/smoke.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 8009[2mms[22m[39m
+       [33m[2m✓[22m[39m should create a bare repo and clone with main + feature branch [33m 2549[2mms[22m[39m
+       [33m[2m✓[22m[39m createLocalOnlyHarness: should create a local repo with no remote [33m 5143[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migrations.test.ts [2m([22m[2m63 tests[22m[2m)[22m[33m 7942[2mms[22m[39m
+       [33m[2m✓[22m[39m should add ci_watch_timeout_ms column as nullable INTEGER [33m 311[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/skip-merge.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 7019[2mms[22m[39m
+     [33m[2m✓[22m[39m undefined-gates-silent-skip: should skip merge silently when approvalGates is undefined [33m 7016[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/gate-tests.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 8744[2mms[22m[39m
+     [33m[2m✓[22m[39m commit-only-with-gate: should interrupt at merge gate when allowMerge=false [33m 5633[2mms[22m[39m
+     [33m[2m✓[22m[39m push-pr-with-gate: should interrupt at merge gate when allowMerge=false (PR path) [33m 3108[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-repository.repository.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 2415[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-phase-timing.repository.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 1868[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/agent-run.repository.test.ts [2m([22m[2m29 tests[22m[2m)[22m[33m 4275[2mms[22m[39m
+       [33m[2m✓[22m[39m should create agent run record [33m 389[2mms[22m[39m
+       [33m[2m✓[22m[39m should not include approvalGates when it is NULL [33m 312[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-settings.repository.test.ts [2m([22m[2m42 tests[22m[2m)[22m[33m 6081[2mms[22m[39m
+       [33m[2m✓[22m[39m should create new settings in database [33m 354[2mms[22m[39m
+       [33m[2m✓[22m[39m should handle missing optional user fields in database [33m 341[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-feature.repository.test.ts [2m([22m[2m29 tests[22m[2m)[22m[33m 3971[2mms[22m[39m
+       [33m[2m✓[22m[39m should find feature by ID [33m 322[2mms[22m[39m
+       [33m[2m✓[22m[39m should filter by both repositoryPath and lifecycle [33m 308[2mms[22m[39m
+       [33m[2m✓[22m[39m should delete a feature [33m 317[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/local-merge.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 12657[2mms[22m[39m
+     [33m[2m✓[22m[39m local-merge-no-push: feature branch should be merged into main after node completes [33m 7238[2mms[22m[39m
+     [33m[2m✓[22m[39m no-remote-override-merge: should merge locally when remote unavailable (push+openPr overridden) [33m 2926[2mms[22m[39m
+     [33m[2m✓[22m[39m no-remote-local-merge: should merge locally without any remote [33m 2489[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/reject-feedback-propagation.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 2898[2mms[22m[39m
+       [33m[2m✓[22m[39m should store phase="requirements" and propagate feedback through 10 PRD iterations [33m 524[2mms[22m[39m
+       [33m[2m✓[22m[39m should store phase="plan" and propagate feedback through 10 plan iterations [33m 686[2mms[22m[39m
+       [33m[2m✓[22m[39m should store phase="merge" and propagate feedback through 10 merge iterations [33m 547[2mms[22m[39m
+       [33m[2m✓[22m[39m should handle 30 total rejections across all 3 phases with correct phase isolation [33m 1115[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/resume-feedback-propagation.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2739[2mms[22m[39m
+       [33m[2m✓[22m[39m should include user rejection feedback in requirements prompt after error reject [33m 715[2mms[22m[39m
+       [33m[2m✓[22m[39m should resume at requirements without feedback (plain retry) [33m 332[2mms[22m[39m
+       [33m[2m✓[22m[39m should resume at research (not restart) on retry [33m 342[2mms[22m[39m
+       [33m[2m✓[22m[39m should include user rejection feedback in plan prompt after error reject [33m 338[2mms[22m[39m
+       [33m[2m✓[22m[39m should resume at implement (not restart) on retry [33m 305[2mms[22m[39m
+       [33m[2m✓[22m[39m should resume at merge without feedback (plain retry) [33m 390[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/settings/onboarding-to-feature-flow.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 2909[2mms[22m[39m
+       [33m[2m✓[22m[39m should use fully autonomous defaults when wizard enables everything [33m 348[2mms[22m[39m
+       [33m[2m✓[22m[39m should override openPr=true default with --no-pr flag (pr=false) [33m 382[2mms[22m[39m
+       [33m[2m✓[22m[39m should override all approval gate defaults with --allow-all [33m 461[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/resume-after-error-merge.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 2320[2mms[22m[39m
+     [33m[2m✓[22m[39m should resume from failed merge — not restart from analyze [33m 781[2mms[22m[39m
+     [33m[2m✓[22m[39m should resume from failed merge with rejection feedback via Command [33m 411[2mms[22m[39m
+     [33m[2m✓[22m[39m should handle fail-at-merge then reject then approve cycle [33m 547[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/feature-parent.repository.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 2877[2mms[22m[39m
+       [33m[2m✓[22m[39m should apply migration v19 and reach the latest schema version [33m 340[2mms[22m[39m
+       [33m[2m✓[22m[39m should add parent_id column to features table [33m 317[2mms[22m[39m
+       [33m[2m✓[22m[39m should create idx_features_parent_id index on features table [33m 349[2mms[22m[39m
+       [33m[2m✓[22m[39m should return empty array when feature has no children [33m 352[2mms[22m[39m
+       [33m[2m✓[22m[39m should return empty array for a non-existent parent ID [33m 327[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/merge-flow.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 3560[2mms[22m[39m
+     [33m[2m✓[22m[39m should interrupt at merge when allowMerge=false (after PRD+Plan auto-approved) [33m 831[2mms[22m[39m
+     [33m[2m✓[22m[39m should walk through all gates: requirements → plan → merge → end [33m 394[2mms[22m[39m
+     [33m[2m✓[22m[39m should reject merge once, re-execute, and interrupt again [33m 467[2mms[22m[39m
+     [33m[2m✓[22m[39m should handle 7+ consecutive merge rejections then approve [33m 593[2mms[22m[39m
+     [33m[2m✓[22m[39m should run fully without interrupts when gates are undefined (with merge node) [33m 506[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/merge-step-real-git/verify-merge.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 19581[2mms[22m[39m
+     [33m[2m✓[22m[39m should return true after a true merge (git merge) [33m 1898[2mms[22m[39m
+     [33m[2m✓[22m[39m should return true after a squash merge (git merge --squash) [33m 6949[2mms[22m[39m
+     [33m[2m✓[22m[39m should return false when branch has not been merged [33m 1862[2mms[22m[39m
+     [33m[2m✓[22m[39m should return false when main has extra commits after squash but feature has diverged [33m 2377[2mms[22m[39m
+     [33m[2m✓[22m[39m should return true after squash merge with modified tree when premergeBaseSha provided [33m 3175[2mms[22m[39m
+     [33m[2m✓[22m[39m should return true after squash merge even when local branch is deleted (remote fallback) [33m 3318[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/merge-flow.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 2749[2mms[22m[39m
+       [33m[2m✓[22m[39m should commit, push, create PR via agent, and set lifecycle to Review [33m 948[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/resume-after-error.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 2085[2mms[22m[39m
+     [33m[2m✓[22m[39m should resume from failed implement — not restart from analyze [33m 1090[2mms[22m[39m
+     [33m[2m✓[22m[39m should handle multiple resume attempts — fail, resume-fail-again, resume-succeed [33m 374[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/agent-infrastructure.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 2838[2mms[22m[39m
+       [33m[2m✓[22m[39m should have analyze-repository agent with graph factory [33m 2636[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/settings/workflow-command-flow.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 2216[2mms[22m[39m
+       [33m[2m✓[22m[39m should enable individual approval gates with flags [33m 434[2mms[22m[39m
+       [33m[2m✓[22m[39m should disable PR with --no-pr (pr=false) [33m 350[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/evidence-flow.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 2444[2mms[22m[39m
+     [33m[2m✓[22m[39m should execute evidence sub-agent within implement node [33m 705[2mms[22m[39m
+     [33m[2m✓[22m[39m should populate evidence state when agent returns evidence JSON [33m 313[2mms[22m[39m
+     [33m[2m✓[22m[39m should not interrupt at evidence (no approval gate) [33m 435[2mms[22m[39m
+     [33m[2m✓[22m[39m should handle empty evidence gracefully when graph ends after implement [33m 361[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/repositories/sqlite-feature-repository.find-by-branch.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1035[2mms[22m[39m
+     [33m[2m✓[22m[39m should return feature when branch matches [33m 309[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/features/start-feature.use-case.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 2050[2mms[22m[39m
+     [33m[2m✓[22m[39m should transition fast Pending feature to Implementation [33m 317[2mms[22m[39m
+     [33m[2m✓[22m[39m should throw when trying to start a feature in Blocked state [33m 429[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/legacy-migrations.test.ts [2m([22m[2m18 tests[22m[2m)[22m[33m 1143[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/reject-flow.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1992[2mms[22m[39m
+     [33m[2m✓[22m[39m should reject requirements, re-execute, and interrupt again (Test 2) [33m 342[2mms[22m[39m
+     [33m[2m✓[22m[39m should handle 7+ consecutive PRD rejections then approve [33m 388[2mms[22m[39m
+     [33m[2m✓[22m[39m should handle 7+ consecutive plan rejections then approve [33m 342[2mms[22m[39m
+     [33m[2m✓[22m[39m should reject plan, re-execute plan only (Test 6) [33m 334[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/agents/configure-agent-dev.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 857[2mms[22m[39m
+     [33m[2m✓[22m[39m should read back agent.type = "dev" from the database after configure [33m 312[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/hitl-approval-flow.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1493[2mms[22m[39m
+     [33m[2m✓[22m[39m should pause at requirements, plan, and implement gates then complete on final resume [33m 568[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/gate-configuration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 733[2mms[22m[39m
+     [33m[2m✓[22m[39m should run fully without interrupts when approvalGates is undefined (Test 7) [33m 376[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/settings/onboarding-flow.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 706[2mms[22m[39m
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould emit status change events after cache is seeded
+[22m[39m[SSE] emit: agent_completed for "Test Feature"
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/use-cases/features/adopt-branch.use-case.test.ts [2m([22m[2m36 tests[22m[2m)[22m[32m 134[2mms[22m[39m
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould filter events by runId when query parameter is provided
+[22m[39m[SSE] emit: agent_completed for "Feature Two"
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould emit phase completion events for new completed phases
+[22m[39m[SSE] emit: phase_completed for "Test Feature" (analyze)
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould support multiple concurrent SSE clients independently
+[22m[39m[SSE] emit: agent_completed for "Test Feature"
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould support multiple concurrent SSE clients independently
+[22m[39m[SSE] emit: agent_completed for "Test Feature"
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould emit MergeReviewReady when feature lifecycle transitions to Review
+[22m[39m[SSE] emit: merge_review_ready for "Test Feature" (merge)
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould emit MergeReviewReady without PR URL when PR is not available
+[22m[39m[SSE] emit: merge_review_ready for "Test Feature" (merge)
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould not emit MergeReviewReady for non-Review lifecycle transitions
+[22m[39m[SSE] emit: phase_completed for "Test Feature" (plan)
+
+[90mstderr[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould gracefully handle DI container errors during poll
+[22m[39m[SSE /api/agent-events] poll error #1: DI not ready
+
+[90mstderr[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould gracefully handle DI container errors during poll
+[22m[39m[SSE /api/agent-events] poll error #2: DI not ready
+
+[90mstdout[2m | tests/integration/api/agent-events-sse.test.ts[2m > [22m[2mSSE API Route: GET /api/agent-events (DB polling)[2m > [22m[2mshould gracefully handle DI container errors during poll
+[22m[39m[SSE] emit: agent_completed for "Test Feature"
+
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/api/agent-events-sse.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 250[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/services/tool-installer.service.test.ts [2m([22m[2m32 tests[22m[2m)[22m[32m 280[2mms[22m[39m
+[90mstdout[2m | tests/unit/commands/feat/adopt.command.test.ts[2m > [22m[2madopt command[2m > [22m[2msuccessful adoption[2m > [22m[2mcalls use case with branch name and cwd as default repo
+[22m[39m  ID:        abc12345
+  Name:      Login Bug
+  Branch:    fix/login-bug
+  Status:    Maintain
+  Worktree:  /home/user/.shep/repos/abc/wt/fix-login-bug
+
+[90mstdout[2m | tests/unit/commands/feat/adopt.command.test.ts[2m > [22m[2madopt command[2m > [22m[2msuccessful adoption[2m > [22m[2mcalls use case with branch name and custom repo path
+[22m[39m  ID:        abc12345
+  Name:      Login Bug
+  Branch:    fix/login-bug
+  Status:    Maintain
+  Worktree:  /home/user/.shep/repos/abc/wt/fix-login-bug
+
+[90mstdout[2m | tests/unit/commands/feat/adopt.command.test.ts[2m > [22m[2madopt command[2m > [22m[2msuccessful adoption[2m > [22m[2muses spinner during execution
+[22m[39m  ID:        abc12345
+  Name:      Login Bug
+  Branch:    fix/login-bug
+  Status:    Maintain
+  Worktree:  /home/user/.shep/repos/abc/wt/fix-login-bug
+
+[90mstdout[2m | tests/unit/commands/feat/adopt.command.test.ts[2m > [22m[2madopt command[2m > [22m[2msuccessful adoption[2m > [22m[2mdoes not set process.exitCode on success
+[22m[39m  ID:        abc12345
+  Name:      Login Bug
+  Branch:    fix/login-bug
+  Status:    Maintain
+  Worktree:  /home/user/.shep/repos/abc/wt/fix-login-bug
+
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-015.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 445[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/commands/feat/adopt.command.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/sessions/claude-code-session.repository.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 187[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/sqlite-migration-storage.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 210[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/features/adopt-flow.integration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/git/git-pr-ci-watch.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 134[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/services/git/git-pr.service.getFailureLogs.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 101[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/approve-after-failed-rejection.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 795[2mms[22m[39m
+     [33m[2m✓[22m[39m requirements: reject → fail during re-exec → approve → should continue to plan without re-interrupting [33m 519[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/approve-flow.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 829[2mms[22m[39m
+     [33m[2m✓[22m[39m should approve requirements and continue to research (Test 1) [33m 415[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/application/use-cases/features/list-features.use-case.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/services/agents/graph-state-transitions/feedback-and-timing.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 387[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/prd-approval-iterations.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m48 passed[39m[22m[90m (48)[39m
+[2m      Tests [22m [1m[32m569 passed[39m[22m[90m (569)[39m
+[2m   Start at [22m 19:53:41
+[2m   Duration [22m 27.44s[2m (transform 7.60s, setup 0ms, import 71.48s, tests 143.57s, environment 87ms)[22m
+
