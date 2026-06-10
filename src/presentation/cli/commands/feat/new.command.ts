@@ -8,6 +8,7 @@
  * @example
  * $ shep feat new "Add user authentication"
  * $ shep feat new "Add login page" --repo /path/to/project
+ * $ shep feat new "Add dark mode" --remote owner/repo
  */
 
 import { Command } from 'commander';
@@ -20,6 +21,13 @@ import { CreateFeatureFromRemoteUseCase } from '@/application/use-cases/features
 import type { ApprovalGates, Feature } from '@/domain/generated/output.js';
 import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
+import {
+  GitHubAuthError,
+  GitHubCloneError,
+  GitHubForkError,
+  GitHubUrlParseError,
+} from '@/application/ports/output/services/github-repository-service.interface.js';
+import type { IRepositoryRepository } from '@/application/ports/output/repositories/repository-repository.interface.js';
 import { colors, messages, spinner } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
 import { getShepHomeDir } from '@/infrastructure/services/filesystem/shep-directory.service.js';
@@ -131,7 +139,7 @@ export function createNewCommand(): Command {
           }
         }
 
-        const repoPath = options.repo ?? process.cwd();
+        let repoPath = options.repo ?? process.cwd();
 
         // Resolve openPr from CLI flags or settings defaults
         const defaults = getWorkflowDefaults();
@@ -231,6 +239,7 @@ export function createNewCommand(): Command {
         }
 
         const { feature, warning } = result;
+        repoPath = options.remote ? feature.repositoryPath : (options.repo ?? process.cwd());
         const repoHash = createHash('sha256').update(repoPath).digest('hex').slice(0, 16);
         const wtSlug = feature.branch.replace(/\//g, '-');
         const worktreePath = join(getShepHomeDir(), 'repos', repoHash, 'wt', wtSlug);
@@ -261,6 +270,16 @@ export function createNewCommand(): Command {
           `  ${colors.muted(t('cli:commands.feat.new.statusLabel'))}   ${feature.lifecycle}`
         );
         console.log(`  ${colors.muted(t('cli:commands.feat.new.worktreeLabel'))} ${worktreePath}`);
+        if (options.remote && feature.repositoryId) {
+          const repoRepo = container.resolve<IRepositoryRepository>('IRepositoryRepository');
+          const repo = await repoRepo.findById(feature.repositoryId);
+          if (repo?.isFork && repo.upstreamUrl) {
+            const upstreamShort = repo.upstreamUrl.replace('https://github.com/', '');
+            console.log(
+              `  ${colors.muted('Fork:')}     ${colors.accent('yes')} (upstream: ${upstreamShort})`
+            );
+          }
+        }
         if (feature.specPath) {
           console.log(
             `  ${colors.muted(t('cli:commands.feat.new.specLabel'))}     ${feature.specPath}`
@@ -295,6 +314,31 @@ export function createNewCommand(): Command {
         console.log(`  ${colors.muted(t('cli:commands.feat.new.reviewLabel'))}   ${hint}`);
         messages.newline();
       } catch (error) {
+        // Handle GitHub-specific errors with actionable messages
+        if (error instanceof GitHubAuthError) {
+          messages.error('GitHub CLI is not authenticated. Run `gh auth login` to sign in.');
+          process.exitCode = 1;
+          return;
+        }
+        if (error instanceof GitHubUrlParseError) {
+          messages.error(`Invalid GitHub URL: ${error.message}`);
+          messages.info(
+            'Supported formats: https://github.com/owner/repo, git@github.com:owner/repo.git, or owner/repo'
+          );
+          process.exitCode = 1;
+          return;
+        }
+        if (error instanceof GitHubCloneError) {
+          messages.error(`Clone failed: ${error.message}`);
+          process.exitCode = 1;
+          return;
+        }
+        if (error instanceof GitHubForkError) {
+          messages.error(`Fork failed: ${error.message}`);
+          process.exitCode = 1;
+          return;
+        }
+
         const err = error instanceof Error ? error : new Error(String(error));
         messages.error(t('cli:commands.feat.new.failedToCreate'), err);
         process.exitCode = 1;

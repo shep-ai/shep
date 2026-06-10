@@ -241,6 +241,7 @@ export function createDefaultSettings(): Settings {
     clusters: false,
     supplyChainSecurity: true,
     scheduledWorkflows: false,
+    githubImport: true,
   };
 
   const whatsapp: WhatsAppConfig = {

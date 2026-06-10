@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { RepositoryCombobox } from './feature-create-drawer';
 import type { RepositoryOption } from './feature-create-drawer';
+import { FeatureFlagsProvider } from '@/hooks/feature-flags-context';
+import type { FeatureFlagsState } from '@/lib/feature-flags';
 
 const SAMPLE_REPOSITORIES: RepositoryOption[] = [
   { id: 'repo-001', name: 'my-app', path: '/Users/dev/projects/my-app' },
@@ -45,15 +47,17 @@ function RepositoryComboboxWrapper({
   repositories: initialRepos,
   initialValue,
   disabled,
+  flags,
 }: {
   repositories: RepositoryOption[];
   initialValue?: string;
   disabled?: boolean;
+  flags?: FeatureFlagsState;
 }) {
   const [repos, setRepos] = useState<RepositoryOption[]>(initialRepos);
   const [value, setValue] = useState<string | undefined>(initialValue);
 
-  return (
+  const combobox = (
     <div className="w-80">
       <RepositoryCombobox
         repositories={repos}
@@ -68,6 +72,12 @@ function RepositoryComboboxWrapper({
       {value ? <p className="text-muted-foreground mt-2 text-xs">Selected: {value}</p> : null}
     </div>
   );
+
+  if (flags) {
+    return <FeatureFlagsProvider flags={flags}>{combobox}</FeatureFlagsProvider>;
+  }
+
+  return combobox;
 }
 
 /** Default state with multiple repositories available for selection. */

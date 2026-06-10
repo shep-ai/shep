@@ -648,6 +648,9 @@ model FeatureFlags {
 
   @doc("Enable scheduled workflows feature — workflow creation, scheduling, and execution")
   scheduledWorkflows: boolean = false;
+
+  @doc("Enable GitHub repository import flow (clone, fork, and add to Shep)")
+  githubImport: boolean = true;
 }
 
 /**

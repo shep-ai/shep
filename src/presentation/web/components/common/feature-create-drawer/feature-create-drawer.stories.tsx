@@ -652,6 +652,24 @@ const SAMPLE_REPOSITORIES: RepositoryOption[] = [
   { id: 'repo-003', name: 'shared-lib', path: '/Users/dev/libs/shared-lib' },
 ];
 
+const _REPOS_WITH_FORKS: RepositoryOption[] = [
+  { id: 'repo-001', name: 'my-app', path: '/Users/dev/projects/my-app' },
+  {
+    id: 'repo-002',
+    name: 'react',
+    path: '/Users/dev/projects/react',
+    isFork: true,
+    upstreamUrl: 'https://github.com/facebook/react',
+  },
+  {
+    id: 'repo-003',
+    name: 'next.js',
+    path: '/Users/dev/projects/next.js',
+    isFork: true,
+    upstreamUrl: 'https://github.com/vercel/next.js',
+  },
+];
+
 function CreateDrawerWithRepoSelector() {
   const [open, setOpen] = useState(false);
 

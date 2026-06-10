@@ -60,6 +60,7 @@ vi.mock('@/hooks/feature-flags-context', () => ({
     aspm: false,
     clusters: false,
     scheduledWorkflows: false,
+    githubImport: true,
   })),
 }));
 
@@ -85,6 +86,7 @@ describe('AddRepositoryButton', () => {
       aspm: false,
       clusters: false,
       scheduledWorkflows: false,
+      githubImport: true,
     });
   });
 
@@ -185,6 +187,7 @@ describe('AddRepositoryButton', () => {
         aspm: false,
         clusters: false,
         scheduledWorkflows: false,
+        githubImport: true,
       });
     });
 
@@ -318,6 +321,7 @@ describe('AddRepositoryButton', () => {
         aspm: false,
         clusters: false,
         scheduledWorkflows: false,
+        githubImport: true,
       });
     });
 
@@ -393,6 +397,7 @@ describe('AddRepositoryButton', () => {
         aspm: false,
         clusters: false,
         scheduledWorkflows: false,
+        githubImport: true,
       });
       const user = userEvent.setup();
       render(<AddRepositoryButton />);

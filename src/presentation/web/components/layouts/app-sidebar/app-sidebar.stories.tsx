@@ -19,6 +19,7 @@ const defaultFeatureFlags = {
   aspm: false,
   clusters: false,
   scheduledWorkflows: false,
+  githubImport: true,
 };
 
 const meta: Meta<typeof AppSidebar> = {

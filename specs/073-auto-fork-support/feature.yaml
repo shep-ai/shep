@@ -1,0 +1,36 @@
+feature:
+  id: '073-auto-fork-support'
+  name: 'auto-fork-support'
+  number: 73
+  branch: 'feat/073-auto-fork-support'
+  lifecycle: 'research'
+  createdAt: '2026-03-19T23:35:30Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-03-19T23:35:30Z'
+  lastUpdatedBy: 'shep-kit:new-feature'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-03-19T23:35:30Z'
+    completedBy: 'shep-kit:new-feature'
+
+errors:
+  current: null
+  history: []

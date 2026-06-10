@@ -1,0 +1,193 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: remote-repo-support
+summary: >
+  Implementation plan for remote repo support. The feature adds a composite
+  CreateFeatureFromRemoteUseCase that chains ImportGitHubRepositoryUseCase and
+  CreateFeatureUseCase, a --remote CLI flag on feat new, an Import from GitHub
+  trigger in the Web UI RepositoryCombobox reusing GitHubImportDialog, a new
+  server action for remote feature creation, and a feature flag default change.
+  No new libraries or TypeSpec model changes needed. Work proceeds in four
+  phases: application layer foundation, CLI integration, Web UI integration,
+  and feature flag plus polish.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - TypeScript
+  - Commander.js (CLI framework)
+  - tsyringe (DI container)
+  - Next.js (Web UI - server actions)
+  - React (Web UI components)
+  - gh CLI (GitHub repository operations)
+  - SQLite (better-sqlite3 persistence)
+  - Vitest (testing framework)
+  - git worktrees
+relatedLinks: []
+
+# Structured implementation phases
+phases:
+  - id: phase-1
+    name: 'Application Layer — Composite Use Case'
+    description: >
+      Build the CreateFeatureFromRemoteUseCase with full TDD coverage. This is
+      the core orchestration that all presentation layers depend on. Must be
+      completed first since both CLI and Web UI consume it. Includes input type
+      definition, DI registration, and comprehensive unit tests covering call
+      ordering, error propagation, progress forwarding, and field passthrough.
+    parallel: false
+
+  - id: phase-2
+    name: 'CLI Integration — --remote Flag'
+    description: >
+      Add the --remote option to the existing feat new command. Wire it to the
+      composite use case with progress display via ora spinner. Includes mutual
+      exclusivity validation with --repo via Commander.js .conflicts(), support
+      for interactive mode when no description is provided, and clone progress
+      feedback.
+    parallel: false
+
+  - id: phase-3
+    name: 'Web UI Integration — Import Trigger + Server Action'
+    description: >
+      Add Import from GitHub trigger in the RepositoryCombobox that opens the
+      existing GitHubImportDialog, create the createFeatureFromRemote server
+      action with two-phase execution, and wire the feature creation drawer to
+      support the remote flow. Includes Storybook stories for modified
+      components per mandatory rules.
+    parallel: false
+
+  - id: phase-4
+    name: 'Feature Flag Default + Final Verification'
+    description: >
+      Change the githubImport feature flag default from false to true in both
+      TypeSpec model and feature-flags.ts fallback. Run full test suite and
+      validate to verify no regressions across all layers.
+    parallel: false
+
+# File change tracking
+filesToCreate:
+  - packages/core/src/application/use-cases/features/create/create-feature-from-remote.use-case.ts
+  - tests/unit/application/use-cases/features/create-feature-from-remote.use-case.test.ts
+  - src/presentation/web/app/actions/create-feature-from-remote.ts
+
+filesToModify:
+  - packages/core/src/infrastructure/di/container.ts
+  - src/presentation/cli/commands/feat/new.command.ts
+  - src/presentation/web/components/common/feature-create-drawer/feature-create-drawer.tsx
+  - src/presentation/web/lib/feature-flags.ts
+  - tsp/domain/entities/settings.tsp
+
+# Open questions (should all be resolved before implementation)
+openQuestions: []
+
+# Markdown content (the full plan document)
+content: |
+  ## Architecture Overview
+
+  The feature fits cleanly into the existing Clean Architecture layering:
+
+  - **Application Layer**: New `CreateFeatureFromRemoteUseCase` follows the composite
+    use case pattern already established by `ImportGitHubRepositoryUseCase` (which
+    injects `AddRepositoryUseCase`). The new use case injects both
+    `ImportGitHubRepositoryUseCase` and `CreateFeatureUseCase`, orchestrating
+    import-then-create in a single call.
+
+  - **Presentation Layer (CLI)**: The existing `feat new` command gains a `--remote`
+    option. When set, the command resolves `CreateFeatureFromRemoteUseCase` instead
+    of `CreateFeatureUseCase`. All existing options (`--push`, `--pr`, `--fast`, etc.)
+    pass through unchanged.
+
+  - **Presentation Layer (Web)**: A new `createFeatureFromRemote` server action
+    delegates to the composite use case. The `RepositoryCombobox` in the feature
+    creation drawer gains an "Import from GitHub" trigger that opens the existing
+    `GitHubImportDialog`. On successful import, the repo auto-selects and the user
+    proceeds with normal feature creation.
+
+  - **Infrastructure Layer**: DI container registers the new use case as a singleton
+    with a string token alias for web route compatibility. No new infrastructure
+    services needed.
+
+  ## Key Design Decisions
+
+  ### 1. Composite Use Case with Two-Phase Support
+
+  **Chosen**: `CreateFeatureFromRemoteUseCase` exposes both `execute()` (for CLI)
+  and `createRecord()` + `initializeAndSpawn()` (for Web).
+
+  **Why**: The Web UI uses a two-phase pattern where Phase 1 (`createRecord`) returns
+  a real feature ID immediately for optimistic navigation, and Phase 2
+  (`initializeAndSpawn`) runs fire-and-forget. The import must complete before
+  `createRecord` since we need the repository path. The composite use case runs
+  import synchronously, then delegates to `CreateFeatureUseCase`'s phase methods.
+
+  **Alternative rejected**: Single `execute()` only — would force the Web UI to
+  block on the full import + create flow, breaking the established async pattern.
+
+  ### 2. Commander.js .conflicts() for Mutual Exclusivity
+
+  **Chosen**: `--remote` uses `.conflicts('repo')` at parse time.
+
+  **Why**: Produces a standard Commander.js error before any DI resolution or use
+  case logic runs. Clean, declarative, zero custom validation code.
+
+  **Alternative rejected**: Runtime validation in the action handler — runs after
+  parsing, requires custom error message code.
+
+  ### 3. Reuse GitHubImportDialog via Trigger Button
+
+  **Chosen**: Add a button in `RepositoryCombobox` that opens the existing
+  `GitHubImportDialog` as a controlled dialog.
+
+  **Why**: The dialog already implements URL validation, browse tabs, loading/error
+  states — all tested. The `onImportComplete` callback provides the `Repository`
+  entity which maps directly to a `RepositoryOption` for auto-selection.
+
+  **Alternative rejected**: Inline URL input in combobox — would duplicate all
+  dialog logic and increase combobox complexity.
+
+  ### 4. Dedicated Server Action (Not Extension)
+
+  **Chosen**: New `createFeatureFromRemote` server action separate from `createFeature`.
+
+  **Why**: Keeps two distinct flows (local vs remote) cleanly separated. The existing
+  `createFeature` action is already 80+ lines. Mixing flows would complicate error
+  handling and input validation.
+
+  ### 5. No TypeSpec Changes
+
+  **Chosen**: No new domain models. `Repository.remoteUrl` already exists.
+
+  **Why**: The composite input is a transient application-layer DTO, not a persisted
+  entity. TypeSpec models are for persisted domain entities only.
+
+  ## Implementation Strategy
+
+  Work proceeds in strict dependency order:
+
+  1. **Phase 1 (Application)** comes first because both CLI and Web depend on the
+     composite use case. Full TDD with mocked child use cases validates orchestration
+     logic before any presentation code touches it.
+
+  2. **Phase 2 (CLI)** is next because it is the primary user-facing entry point
+     described in the spec. Adding `--remote` to `feat new` with progress display
+     and mutual exclusivity gives the core feature.
+
+  3. **Phase 3 (Web)** builds on the same use case with a different presentation.
+     The server action, combobox trigger, and dialog integration complete the Web UI
+     flow. Storybook stories are mandatory per project rules.
+
+  4. **Phase 4 (Feature Flag)** is last because it is the smallest change and should
+     only ship once all import infrastructure is verified working.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Import phase adds latency to Web feature creation | Import runs during dialog interaction before createRecord. User already expects wait (dialog shows spinner). Phase 2 remains fast. |
+  | --remote collides with local path resolution logic | Commander.js .conflicts() prevents --remote + --repo coexistence. When --remote is set, code branches early and never touches local path logic. |
+  | GitHubImportDialog callback does not provide enough info | Dialog onImportComplete already returns full Repository entity with path, name, remoteUrl. Verified in codebase review. |
+  | Feature flag change affects existing users who disabled it | DB-primary resolution means users with explicit false setting keep it. Only new users or unset users see the new default. |
+  | Partial failure: import succeeds but feature creation fails | Idempotent behavior — re-running skips clone (dedup by remoteUrl), so retry is safe. No cleanup needed for the import side. |
+  | Two-phase composite use case complexity | Unit tests validate all phase transitions. The composite delegates to child use cases existing phase methods, keeping its own logic minimal. |

@@ -102,6 +102,7 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
     aspm: false,
     clusters: false,
     scheduledWorkflows: true,
+    githubImport: true,
   };
 
   return (

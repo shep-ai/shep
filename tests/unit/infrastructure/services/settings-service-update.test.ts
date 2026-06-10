@@ -81,6 +81,7 @@ describe('updateSettings', () => {
         clusters: false,
         supplyChainSecurity: true,
         scheduledWorkflows: false,
+        githubImport: true,
       },
     };
     updateSettings(updated);

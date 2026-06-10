@@ -1,0 +1,440 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: remote-repo-support
+summary: >
+  12 tasks across 4 phases. Phase 1 builds the composite use case and registers
+  it in DI. Phase 2 wires the CLI --remote flag with progress display. Phase 3
+  adds the Web UI import trigger, server action, and Storybook stories. Phase 4
+  flips the feature flag default and runs final verification.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - TypeScript
+  - Commander.js
+  - tsyringe
+  - Next.js
+  - React
+  - Vitest
+  - gh CLI
+relatedLinks: []
+
+# Structured task list
+tasks:
+  # ── Phase 1: Application Layer — Composite Use Case ──
+
+  - id: task-1
+    phaseId: phase-1
+    title: 'Define CreateFeatureFromRemoteInput interface'
+    description: >
+      Create the input type for the composite use case. Combines fields from
+      ImportGitHubRepositoryInput (remoteUrl, cloneDest, defaultCloneDir,
+      cloneOptions) with all CreateFeatureInput fields except repositoryPath
+      (which is derived from the import result). This interface lives alongside
+      the use case file.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - 'Interface includes remoteUrl (required string)'
+      - 'Interface includes optional cloneDest, defaultCloneDir, cloneOptions from ImportGitHubRepositoryInput'
+      - 'Interface includes all CreateFeatureInput fields except repositoryPath'
+      - 'Interface exported from the use case module'
+    tdd:
+      red:
+        - 'Write a type-level test that asserts CreateFeatureFromRemoteInput has remoteUrl as required string'
+        - 'Write a type-level test that asserts repositoryPath is NOT in the interface'
+      green:
+        - 'Define the CreateFeatureFromRemoteInput interface with all required and optional fields'
+      refactor:
+        - 'Extract shared field types if there is duplication with existing input interfaces'
+    estimatedEffort: '30min'
+
+  - id: task-2
+    phaseId: phase-1
+    title: 'Implement CreateFeatureFromRemoteUseCase execute method'
+    description: >
+      Create the composite use case class with @injectable() decorator and
+      constructor injection of ImportGitHubRepositoryUseCase and
+      CreateFeatureUseCase. Implement execute() that calls import first to get
+      the repository path, then calls create with the derived path. Follow the
+      exact DI patterns from ImportGitHubRepositoryUseCase.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - 'Use case is decorated with @injectable()'
+      - 'Constructor injects ImportGitHubRepositoryUseCase and CreateFeatureUseCase'
+      - 'execute() calls ImportGitHubRepositoryUseCase.execute() first'
+      - 'execute() passes import result path as repositoryPath to CreateFeatureUseCase.execute()'
+      - 'execute() forwards all CreateFeatureInput fields from input to CreateFeatureUseCase'
+      - 'execute() forwards remoteUrl, cloneDest, defaultCloneDir, cloneOptions to import use case'
+      - 'Returns the Feature from CreateFeatureUseCase.execute()'
+    tdd:
+      red:
+        - 'Write test: execute calls ImportGitHubRepositoryUseCase.execute with correct URL and options'
+        - 'Write test: execute calls CreateFeatureUseCase.execute with repository path from import result'
+        - 'Write test: execute calls import BEFORE create (call order validation)'
+        - 'Write test: execute forwards all CreateFeatureInput fields (userInput, fast, push, etc.)'
+        - 'Write test: execute forwards cloneOptions.onProgress callback to import use case'
+        - 'Write test: execute returns the Feature from CreateFeatureUseCase'
+      green:
+        - 'Implement CreateFeatureFromRemoteUseCase class with constructor injection'
+        - 'Implement execute() that chains import then create'
+      refactor:
+        - 'Extract input mapping helpers if the field spreading is complex'
+    estimatedEffort: '1.5h'
+
+  - id: task-3
+    phaseId: phase-1
+    title: 'Implement two-phase methods (createRecord + initializeAndSpawn)'
+    description: >
+      Add createRecord() and initializeAndSpawn() methods to the composite use
+      case for Web UI consumption. createRecord() runs import synchronously then
+      delegates to CreateFeatureUseCase.createRecord(). initializeAndSpawn()
+      delegates directly to CreateFeatureUseCase.initializeAndSpawn() since
+      import is already complete by that point.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - 'createRecord() calls ImportGitHubRepositoryUseCase.execute() first'
+      - 'createRecord() delegates to CreateFeatureUseCase.createRecord() with derived repositoryPath'
+      - 'createRecord() returns { feature, shouldSpawn } matching CreateFeatureUseCase pattern'
+      - 'initializeAndSpawn() delegates directly to CreateFeatureUseCase.initializeAndSpawn()'
+      - 'initializeAndSpawn() accepts same parameters as CreateFeatureUseCase.initializeAndSpawn()'
+    tdd:
+      red:
+        - 'Write test: createRecord calls import then CreateFeatureUseCase.createRecord with correct path'
+        - 'Write test: createRecord returns { feature, shouldSpawn } from inner createRecord'
+        - 'Write test: initializeAndSpawn delegates to CreateFeatureUseCase.initializeAndSpawn'
+        - 'Write test: createRecord forwards all input fields except repositoryPath'
+      green:
+        - 'Implement createRecord() method'
+        - 'Implement initializeAndSpawn() method'
+      refactor:
+        - 'Extract shared import-then-map logic between execute() and createRecord()'
+    estimatedEffort: '1h'
+
+  - id: task-4
+    phaseId: phase-1
+    title: 'Test error propagation and deduplication passthrough'
+    description: >
+      Add unit tests covering error scenarios and deduplication behavior. When
+      ImportGitHubRepositoryUseCase throws (auth error, URL parse error, clone
+      error), the composite use case must propagate the error without catching.
+      When the URL matches an already-imported repo, import returns the existing
+      repo and create proceeds normally.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - 'GitHubAuthError from import propagates to caller'
+      - 'GitHubUrlParseError from import propagates to caller'
+      - 'GitHubCloneError from import propagates to caller'
+      - 'Errors from CreateFeatureUseCase propagate to caller'
+      - 'When import returns existing repo (dedup), create uses that repos path'
+      - 'Import is not called when only initializeAndSpawn is called (import already done)'
+    tdd:
+      red:
+        - 'Write test: GitHubAuthError from import propagates unchanged'
+        - 'Write test: GitHubUrlParseError from import propagates unchanged'
+        - 'Write test: GitHubCloneError from import propagates unchanged'
+        - 'Write test: error from CreateFeatureUseCase propagates unchanged'
+        - 'Write test: deduplication scenario — import returns existing repo, create uses its path'
+      green:
+        - 'Verify error propagation works (should already pass since execute does not catch)'
+        - 'If needed, ensure no try/catch wrapping in execute that would swallow errors'
+      refactor:
+        - 'Group error tests in a describe block for clarity'
+    estimatedEffort: '45min'
+
+  - id: task-5
+    phaseId: phase-1
+    title: 'Register CreateFeatureFromRemoteUseCase in DI container'
+    description: >
+      Add singleton registration and string token alias in the DI container
+      following the exact pattern used for CreateFeatureUseCase. The string
+      token is needed for Web server action resolution via Turbopack.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - 'container.registerSingleton(CreateFeatureFromRemoteUseCase) added to use case registration section'
+      - 'String token alias registered: CreateFeatureFromRemoteUseCase maps to class resolution'
+      - 'Import added at top of container.ts'
+      - 'Build succeeds with new registration'
+    tdd:
+      red:
+        - 'Write test: container.resolve(CreateFeatureFromRemoteUseCase) returns an instance'
+        - 'Write test: container.resolve with string token CreateFeatureFromRemoteUseCase returns same type'
+      green:
+        - 'Add import for CreateFeatureFromRemoteUseCase in container.ts'
+        - 'Add registerSingleton call in use case registration section'
+        - 'Add string token factory registration in web alias section'
+      refactor:
+        - 'Verify import ordering matches existing conventions in container.ts'
+    estimatedEffort: '30min'
+
+  # ── Phase 2: CLI Integration — --remote Flag ──
+
+  - id: task-6
+    phaseId: phase-2
+    title: 'Add --remote option to feat new command'
+    description: >
+      Add --remote <url> as a Commander.js option on the feat new command with
+      .conflicts("repo") for mutual exclusivity. Update the NewOptions interface
+      to include the remote field. When --remote is provided, resolve
+      CreateFeatureFromRemoteUseCase from the container and call execute() with
+      the remote URL and all other existing options passed through.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - '--remote <url> option added to feat new command'
+      - '.conflicts("repo") prevents using --remote and --repo together'
+      - 'NewOptions interface includes optional remote?: string field'
+      - '--remote appears in shep feat new --help with description and example'
+      - 'When --remote is set, CreateFeatureFromRemoteUseCase is resolved and called'
+      - 'When --remote is not set, existing CreateFeatureUseCase flow is unchanged'
+      - 'All existing options (--push, --pr, --fast, --pending, --model, --attach, --parent) work with --remote'
+      - 'Interactive mode works with --remote (prompts for description if not provided)'
+    tdd:
+      red:
+        - 'Write test: --remote option is defined on the command'
+        - 'Write test: --remote and --repo together produces Commander.js error'
+        - 'Write test: --remote calls CreateFeatureFromRemoteUseCase.execute with correct input'
+        - 'Write test: --remote without description enters interactive mode'
+        - 'Write test: without --remote, existing CreateFeatureUseCase flow runs'
+      green:
+        - 'Add .option to Commander.js command definition with --remote <url> and .conflicts("repo")'
+        - 'Update NewOptions interface with remote field'
+        - 'Add branching logic in action: if remote, resolve and call composite use case'
+        - 'Pass defaultCloneDir from settings to composite use case input'
+      refactor:
+        - 'Extract common input construction logic shared between remote and local paths'
+    estimatedEffort: '1.5h'
+
+  - id: task-7
+    phaseId: phase-2
+    title: 'Add clone progress display with ora spinner'
+    description: >
+      Wire the cloneOptions.onProgress callback to update the ora spinner text
+      during clone operations. Parse progress chunks from gh CLI stderr to show
+      meaningful status (e.g., "Cloning... Receiving objects: 45%"). Ensure
+      liveness feedback per NFR-2 (update at least every 2 seconds).
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - 'Spinner shows "Cloning <repo-name>..." during import'
+      - 'Progress callback updates spinner text with sanitized clone progress'
+      - 'Spinner text updates at least every 2 seconds during active clone'
+      - 'After import completes, spinner transitions to feature creation phase'
+      - 'All existing spinner behavior for feature creation is preserved'
+    tdd:
+      red:
+        - 'Write test: onProgress callback is passed to composite use case input'
+        - 'Write test: progress chunks update a trackable output mechanism'
+      green:
+        - 'Create onProgress callback that parses stderr chunks and updates spinner text'
+        - 'Wire callback into CreateFeatureFromRemoteInput.cloneOptions.onProgress'
+        - 'Add spinner phase for cloning before feature creation spinner'
+      refactor:
+        - 'Extract progress parsing logic into a helper if it becomes complex'
+    estimatedEffort: '1h'
+
+  # ── Phase 3: Web UI Integration ──
+
+  - id: task-8
+    phaseId: phase-3
+    title: 'Create createFeatureFromRemote server action'
+    description: >
+      Create a new Next.js server action that accepts remoteUrl plus all feature
+      creation fields. Resolves CreateFeatureFromRemoteUseCase via string token,
+      calls createRecord() (Phase 1) synchronously, fires initializeAndSpawn()
+      (Phase 2) async. Returns discriminated union { feature?: Feature; error?:
+      string }. Error handling maps GitHubAuthError, GitHubUrlParseError,
+      GitHubCloneError to user-friendly messages following the existing pattern
+      in importGitHubRepository server action.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - 'Server action exported as async function with "use server" directive'
+      - 'Accepts input with remoteUrl and all CreateFeatureInput fields'
+      - 'Resolves CreateFeatureFromRemoteUseCase via string token'
+      - 'Phase 1 (createRecord) runs synchronously, returns feature'
+      - 'Phase 2 (initializeAndSpawn) fires async with .catch error logging'
+      - 'GitHubAuthError maps to "GitHub CLI is not authenticated" message'
+      - 'GitHubUrlParseError maps to "Invalid GitHub URL format" message'
+      - 'GitHubCloneError maps to clone-specific error message'
+      - 'Returns { feature } on success, { error } on failure'
+    tdd:
+      red:
+        - 'Write test: server action calls createRecord with correct input including remoteUrl'
+        - 'Write test: server action returns feature on success'
+        - 'Write test: server action returns error string for GitHubAuthError'
+        - 'Write test: server action returns error string for GitHubUrlParseError'
+        - 'Write test: server action fires initializeAndSpawn async after createRecord'
+      green:
+        - 'Create server action file with "use server" directive'
+        - 'Define input interface matching composite use case input'
+        - 'Implement two-phase execution pattern matching createFeature action'
+        - 'Implement error handling with specific error class detection'
+      refactor:
+        - 'Extract shared error mapping logic if duplicated with importGitHubRepository action'
+    estimatedEffort: '1h'
+
+  - id: task-9
+    phaseId: phase-3
+    title: 'Add Import from GitHub trigger in RepositoryCombobox'
+    description: >
+      Add an "Import from GitHub" button inside the RepositoryCombobox dropdown
+      (in feature-create-drawer.tsx) that opens the existing GitHubImportDialog
+      as a controlled dialog. Guard visibility behind the githubImport feature
+      flag. On successful import via the dialog onImportComplete callback,
+      create a RepositoryOption from the returned Repository entity and call
+      the existing onAddRepository callback to auto-select it.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - 'Import from GitHub button appears in RepositoryCombobox dropdown'
+      - 'Button only visible when githubImport feature flag is enabled'
+      - 'Clicking button opens GitHubImportDialog as controlled modal'
+      - 'On successful import, dialog closes and new repo auto-selects in combobox'
+      - 'RepositoryOption created from Repository entity (id, name, path)'
+      - 'No layout shift or resize of combobox dropdown (NFR-5)'
+      - 'Button has appropriate icon and accessible label'
+    tdd:
+      red:
+        - 'Write test: Import from GitHub button renders when githubImport flag is true'
+        - 'Write test: button does not render when githubImport flag is false'
+        - 'Write test: clicking button opens GitHubImportDialog'
+        - 'Write test: onImportComplete creates RepositoryOption and calls onAddRepository'
+        - 'Write test: dialog closes after successful import'
+      green:
+        - 'Add state for controlling GitHubImportDialog open/close'
+        - 'Add Import from GitHub button in combobox dropdown with feature flag guard'
+        - 'Render GitHubImportDialog with controlled open state'
+        - 'Implement onImportComplete handler that maps Repository to RepositoryOption'
+      refactor:
+        - 'Ensure button styling is consistent with existing combobox actions'
+    estimatedEffort: '1.5h'
+
+  - id: task-10
+    phaseId: phase-3
+    title: 'Wire feature creation drawer to support remote flow'
+    description: >
+      Update the feature creation drawer to handle the case where a repository
+      was just imported via the GitHub dialog. When the user submits the form
+      with a repository that has a remoteUrl, the drawer can use the standard
+      createFeature action since the repo is already registered locally. The
+      remote flow through the drawer is: import via dialog -> auto-select repo
+      -> fill in description -> submit via existing createFeature action.
+    state: Todo
+    dependencies:
+      - task-9
+    acceptanceCriteria:
+      - 'Feature creation form works end-to-end with a freshly imported repository'
+      - 'Imported repo appears in repository list after import completes'
+      - 'Form submission uses existing createFeature action (repo is already local)'
+      - 'Repository list refreshes after import to include the new repo'
+      - 'Error states from import dialog display correctly'
+    tdd:
+      red:
+        - 'Write test: after import, repository list includes newly imported repo'
+        - 'Write test: form submission with imported repo calls createFeature with correct repositoryPath'
+        - 'Write test: import error in dialog does not affect form state'
+      green:
+        - 'Add repository list refresh after successful import (invalidate query or append to list)'
+        - 'Ensure RepositoryOption from import includes correct path for createFeature'
+      refactor:
+        - 'Verify the import-then-create flow matches the spec success criteria'
+    estimatedEffort: '1h'
+
+  - id: task-11
+    phaseId: phase-3
+    title: 'Add Storybook stories for modified components'
+    description: >
+      Create or update Storybook stories for the RepositoryCombobox showing the
+      Import from GitHub trigger in various states: default (flag enabled),
+      flag disabled, dialog open, import in progress, import complete with
+      auto-selection. Mandatory per project rules — commits without stories
+      will be rejected.
+    state: Todo
+    dependencies:
+      - task-10
+    acceptanceCriteria:
+      - 'Story shows RepositoryCombobox with Import from GitHub button visible'
+      - 'Story shows RepositoryCombobox with button hidden (flag disabled)'
+      - 'Story shows GitHubImportDialog in open state from combobox trigger'
+      - 'Stories render without errors in Storybook'
+      - 'Stories colocated with component per project conventions'
+    tdd: null
+    estimatedEffort: '45min'
+
+  # ── Phase 4: Feature Flag Default + Verification ──
+
+  - id: task-12
+    phaseId: phase-4
+    title: 'Change githubImport feature flag default to true'
+    description: >
+      Change the default value of the githubImport feature flag from false to
+      true in two locations: the TypeSpec model (tsp/domain/entities/settings.tsp
+      line 474) and the feature-flags.ts fallback (line 50). Run tsp:compile to
+      regenerate output. Run full test suite and pnpm validate to verify no
+      regressions.
+    state: Todo
+    dependencies:
+      - task-11
+    acceptanceCriteria:
+      - 'TypeSpec model: githubImport default changed from false to true'
+      - 'feature-flags.ts fallback: githubImport changed from false to true'
+      - 'pnpm tsp:compile succeeds with updated model'
+      - 'pnpm validate passes (lint, format, typecheck, tsp)'
+      - 'pnpm test passes with no regressions'
+      - 'Existing users with explicit false setting are not affected (DB-primary resolution)'
+    tdd:
+      red:
+        - 'Write test: getFeatureFlags() returns githubImport: true when no DB setting exists'
+      green:
+        - 'Change default in settings.tsp from false to true'
+        - 'Change default in feature-flags.ts from false to true'
+        - 'Run pnpm tsp:compile to regenerate domain output'
+      refactor:
+        - 'Verify no other files reference the old default value'
+    estimatedEffort: '30min'
+
+# Total effort estimate
+totalEstimate: '10h'
+
+# Open questions
+openQuestions: []
+
+# Markdown content (the full tasks document)
+content: |
+  ## Summary
+
+  12 tasks across 4 phases implementing remote repository support for Shep.
+
+  The work begins with the application layer foundation: defining the input
+  interface and building `CreateFeatureFromRemoteUseCase` with full TDD coverage
+  of the orchestration logic (import-then-create sequencing, error propagation,
+  progress forwarding, two-phase Web UI support, and deduplication passthrough).
+  The use case is registered in the DI container with both class and string token
+  aliases.
+
+  Next, the CLI gains its `--remote` flag on `feat new` with Commander.js
+  `.conflicts()` validation, interactive mode support, and clone progress display
+  via ora spinner updates.
+
+  The Web UI phase adds an "Import from GitHub" trigger in the repository
+  combobox that opens the existing `GitHubImportDialog`, a new server action for
+  remote feature creation with two-phase execution, wiring through the feature
+  creation drawer, and mandatory Storybook stories.
+
+  Finally, the `githubImport` feature flag default flips from false to true in
+  both TypeSpec and the feature-flags.ts fallback, with a full test suite run to
+  verify zero regressions.

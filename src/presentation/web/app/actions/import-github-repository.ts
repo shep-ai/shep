@@ -7,11 +7,18 @@ import {
   GitHubAuthError,
   GitHubUrlParseError,
   GitHubCloneError,
+  GitHubForkError,
 } from '@shepai/core/application/ports/output/services/github-repository-service.interface';
 
 interface ImportGitHubRepositoryInput {
   url: string;
   dest?: string;
+}
+
+export interface ImportGitHubRepositoryResult {
+  repository?: Repository;
+  forked?: boolean;
+  error?: string;
 }
 
 export async function importGitHubRepository(
@@ -36,6 +43,9 @@ export async function importGitHubRepository(
     }
     if (error instanceof GitHubCloneError) {
       return { error: `Clone failed: ${error.message}` };
+    }
+    if (error instanceof GitHubForkError) {
+      return { error: `Fork failed: ${error.message}` };
     }
     const message = error instanceof Error ? error.message : 'Failed to import repository';
     return { error: message };

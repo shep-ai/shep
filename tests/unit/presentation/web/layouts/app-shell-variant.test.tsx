@@ -32,6 +32,7 @@ const defaultFlags = {
   clusters: false,
   supplyChainSecurity: false,
   scheduledWorkflows: false,
+  githubImport: true,
 };
 
 /**

@@ -1,0 +1,70 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: auto-fork-support
+summary: Task breakdown for 073-auto-fork-support
+
+# Relationships
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+
+# Structured task list — this is the single source of truth for tasks.
+# The content field below is a summary only; it does NOT duplicate task details.
+tasks:
+  - id: task-1
+    title: { { TASK_1_TITLE } }
+    description: { { TASK_1_DESCRIPTION } }
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - { { CRITERION_1 } }
+      - { { CRITERION_2 } }
+    tdd:
+      red:
+        - Write tests for {{FEATURE_1}}
+      green:
+        - Implement {{FEATURE_1}} to pass tests
+      refactor:
+        - Extract helpers, improve naming
+    estimatedEffort: { { EFFORT_1 } }
+
+  - id: task-2
+    title: { { TASK_2_TITLE } }
+    description: { { TASK_2_DESCRIPTION } }
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - { { CRITERION_1 } }
+      - { { CRITERION_2 } }
+    tdd: null # No TDD for foundational/doc tasks
+    estimatedEffort: { { EFFORT_2 } }
+
+# Total effort estimate
+totalEstimate: { { TOTAL_EFFORT } }
+
+# Open questions
+openQuestions: []
+
+# Markdown content — summary and acceptance checklist only.
+# Individual task details live in the tasks[] array above (no duplication).
+content: |
+  ## Summary
+
+  {{BRIEF_DESCRIPTION_OF_SCOPE}} — {{TASK_COUNT}} tasks across {{PHASE_COUNT}} phases.
+
+  ## Acceptance Checklist
+
+  Before marking feature complete:
+
+  - [ ] All tasks completed
+  - [ ] Tests passing (`pnpm test`)
+  - [ ] Linting clean (`pnpm lint`)
+  - [ ] Types valid (`pnpm typecheck`)
+  - [ ] TypeSpec compiles (`pnpm tsp:compile`)
+  - [ ] PR created and reviewed
+
+  ---
+
+  _Task details are in the tasks[] array of tasks.yaml_

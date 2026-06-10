@@ -219,6 +219,9 @@ describe('IGitHubRepositoryService', () => {
       'listUserRepositories',
       'listOrganizations',
       'parseGitHubUrl',
+      'checkPushAccess',
+      'forkRepository',
+      'getAuthenticatedUser',
     ];
 
     expect(methodNames).toHaveLength(5);

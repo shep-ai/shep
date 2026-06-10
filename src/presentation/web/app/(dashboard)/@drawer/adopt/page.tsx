@@ -13,7 +13,13 @@ export default async function AdoptDrawerPage({ searchParams }: AdoptDrawerPageP
   const { repo } = await searchParams;
 
   let repositoryPath = repo ?? '';
-  let repositoryOptions: { id: string; name: string; path: string }[] = [];
+  let repositoryOptions: {
+    id: string;
+    name: string;
+    path: string;
+    isFork?: boolean;
+    upstreamUrl?: string;
+  }[] = [];
 
   try {
     const listRepos = resolve<ListRepositoriesUseCase>('ListRepositoriesUseCase');
@@ -22,6 +28,8 @@ export default async function AdoptDrawerPage({ searchParams }: AdoptDrawerPageP
       id: r.id,
       name: r.name,
       path: r.path,
+      isFork: r.isFork,
+      upstreamUrl: r.upstreamUrl,
     }));
 
     if (!repositoryPath && repositories.length > 0) {

@@ -416,6 +416,7 @@ export function SettingsPageClient({
     clusters: false,
     supplyChainSecurity: true,
     scheduledWorkflows: false,
+    githubImport: true,
   };
 
   // Language state

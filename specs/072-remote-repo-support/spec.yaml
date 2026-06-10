@@ -1,0 +1,111 @@
+name: "remote-repo-support"
+number: 72
+branch: "feat/072-remote-repo-support"
+oneLiner: "Enable creating features on remote repos without cloning first via shep feat new --remote"
+userQuery: "Assume I want to contribute to an open source repo and I don't open the repo add this support in SHEP\n"
+summary: "Add a streamlined workflow for contributing to open-source or remote repositories without requiring the user to manually clone them first. Introduces a --remote flag on shep feat new that accepts a GitHub URL (or owner/repo shorthand), auto-clones the repo, registers it, and immediately creates a feature with an agent — all in one command. The Web UI feature creation drawer also gains inline GitHub import so users can pick a remote repo and start a feature without leaving the create form.\n"
+phase: "Requirements"
+sizeEstimate: "M"
+relatedFeatures: []
+technologies:
+  - "TypeScript"
+  - "Commander.js (CLI framework)"
+  - "tsyringe (DI container)"
+  - "Next.js (Web UI - server actions)"
+  - "React (Web UI components)"
+  - "gh CLI (GitHub repository operations)"
+  - "SQLite (better-sqlite3 persistence)"
+  - "TypeSpec (domain model definitions)"
+  - "git worktrees"
+relatedLinks: []
+openQuestions:
+  - question: "Should the orchestration live in a new composite use case or be handled at the presentation layer?"
+    resolved: true
+    options:
+      - option: "New composite use case"
+        description: "Create a CreateFeatureFromRemoteUseCase in the application layer that internally calls ImportGitHubRepositoryUseCase then CreateFeatureUseCase. Keeps orchestration logic testable without presentation dependencies, reusable across CLI/Web/TUI, and follows Clean Architecture principles. Slightly more code but better separation of concerns.\n"
+        selected: true
+      - option: "Presentation-layer orchestration"
+        description: "Each presentation layer (CLI, Web action) calls ImportGitHubRepositoryUseCase then CreateFeatureUseCase sequentially. Simpler, but duplicates orchestration logic across CLI, Web, and TUI entry points. Harder to test as a unit.\n"
+        selected: false
+    selectionRationale: "A composite use case in the application layer follows the project's Clean Architecture pattern, is testable in isolation, and prevents duplicating import-then-create logic across three presentation layers (CLI, Web, TUI). The project already uses this pattern (e.g., ImportGitHubRepositoryUseCase internally calls AddRepositoryUseCase).\n"
+    answer: "New composite use case"
+  - question: "What GitHub URL formats should --remote accept?"
+    resolved: true
+    options:
+      - option: "All formats (HTTPS, SSH, shorthand)"
+        description: "Accept all formats already supported by GitHubRepositoryService.parseGitHubUrl(): HTTPS (https://github.com/owner/repo), SSH (git@github.com:owner/repo.git), and owner/repo shorthand. Maximum flexibility, zero learning curve since the existing parser already handles all three.\n"
+        selected: true
+      - option: "HTTPS and shorthand only"
+        description: "Skip SSH URLs to simplify validation. Some users may paste SSH URLs, which would fail confusingly. However, the existing parser already supports SSH, so there is no simplification benefit.\n"
+        selected: false
+    selectionRationale: "The existing parseGitHubUrl() in GitHubRepositoryService already handles all three formats with proper error messages. Restricting formats would require extra code to reject valid inputs that the infrastructure already supports. Accepting all formats provides the best UX.\n"
+    answer: "All formats (HTTPS, SSH, shorthand)"
+  - question: "How should the Web UI integrate GitHub import into the feature creation flow?"
+    resolved: true
+    options:
+      - option: "Inline tab in repository combobox"
+        description: "Add a \"GitHub Import\" tab or action directly inside the RepositoryCombobox dropdown. User clicks \"Import from GitHub...\", enters URL or browses repos inline, imports, and the repo auto-selects in the combobox. Stays within the create-feature form without opening a separate dialog. Tighter UX but more complex combobox modifications.\n"
+        selected: false
+      - option: "Reuse existing GitHubImportDialog"
+        description: "Add an \"Import from GitHub\" button in the RepositoryCombobox that opens the existing GitHubImportDialog as a modal. On successful import, auto-select the newly imported repo in the combobox. Leverages existing, tested component with minimal new UI code. Slightly more clicks but much faster to implement and already handles URL/browse tabs.\n"
+        selected: true
+    selectionRationale: "The existing GitHubImportDialog already has URL input with validation, repo browsing with search, loading states, and error handling — all tested and working. Reusing it via a trigger button in the RepositoryCombobox avoids duplicating UI logic, keeps the feature creation drawer simple, and delivers the feature faster. The extra click (open dialog) is a minor cost compared to rebuilding the same UI inline.\n"
+    answer: "Reuse existing GitHubImportDialog"
+  - question: "Should the githubImport feature flag be removed or enabled by default?"
+    resolved: true
+    options:
+      - option: "Enable by default, keep flag"
+        description: "Change the default value of the githubImport feature flag from false to true. The flag remains available for users who want to disable it. Low risk since the import infrastructure is already stable. Provides an escape hatch without gating the feature.\n"
+        selected: false
+      - option: "Remove the flag entirely"
+        description: "Remove the githubImport feature flag and make GitHub import always-on. Simplest code but no escape hatch if issues arise. Would require removing flag checks from multiple components.\n"
+        selected: false
+      - option: "Keep flag off by default"
+        description: "Keep the feature flag defaulting to false, requiring users to explicitly enable it. Safest but defeats the purpose — users must know about the flag to use the feature.\n"
+        selected: true
+    selectionRationale: "Enabling by default makes the feature discoverable while keeping the flag as a safety valve. The import infrastructure (gh CLI wrapper, clone, registration) is mature and already used by `shep repo add`. This is a low-risk change that avoids the code churn of removing the flag while ensuring users get the feature without manual opt-in.\n"
+    answer: "Keep flag off by default"
+  - question: "Should the CLI --remote flag also work with shep feat new in interactive mode (no description argument)?"
+    resolved: true
+    options:
+      - option: "Yes, support interactive + remote"
+        description: "When user runs `shep feat new --remote owner/repo` without a description, show the normal interactive prompt for description after import completes. Consistent with how `shep feat new` already works without --remote (prompts for description). User sees import progress first, then is prompted for the feature description.\n"
+        selected: true
+      - option: "No, require description with --remote"
+        description: "Require description as a positional argument when --remote is used. Simplifies flow but breaks the existing pattern where description is optional in interactive mode. Forces users to compose their whole command upfront.\n"
+        selected: false
+    selectionRationale: "The existing `shep feat new` already supports an interactive flow where description is prompted if not provided. Making --remote require a description would break this pattern and force users to construct the full command before running it. Supporting interactive mode is consistent and user-friendly — clone first, then describe what you want to build.\n"
+    answer: "Yes, support interactive + remote"
+  - question: "What should happen when --remote points to an already-imported repository?"
+    resolved: true
+    options:
+      - option: "Skip clone, use existing repo"
+        description: "ImportGitHubRepositoryUseCase already deduplicates by normalized remoteUrl. If the repo is already imported, it returns the existing Repository entity immediately without re-cloning. The feature creation proceeds using the existing local path. Fast, idempotent, no user confusion. Users do not need to know if a repo was previously imported.\n"
+        selected: true
+      - option: "Warn and ask for confirmation"
+        description: "Detect the existing repo and ask the user if they want to use it or re-clone. More explicit but adds friction. Re-cloning an already-registered repo would cause conflicts. The warning adds no real value since using the existing repo is always the correct behavior.\n"
+        selected: false
+    selectionRationale: "ImportGitHubRepositoryUseCase already handles this — it finds the existing Repository by remoteUrl and returns it without cloning. This is the correct, idempotent behavior. Adding a warning or confirmation prompt would add friction for no benefit since re-cloning would create duplicates. The user's intent is \"work on this repo\" regardless of whether it was previously imported.\n"
+    answer: "Skip clone, use existing repo"
+  - question: "Should forking support be included in this feature?"
+    resolved: true
+    options:
+      - option: "No, clone only (fork later)"
+        description: "Clone the repository directly without forking. Users who want to contribute to repos they do not have push access to can fork manually or via a future feature. Keeps scope tight and delivers the core value (single-command remote feature creation) without the complexity of fork management, upstream sync, and PR target selection.\n"
+        selected: false
+      - option: "Yes, auto-fork for non-owned repos"
+        description: "Detect if the user has push access to the repo. If not, auto-fork to the user's account, clone the fork, and set the original as upstream. Provides true open-source contribution workflow but significantly increases scope (fork detection, upstream management, PR targeting to original repo). Could be a follow-up feature.\n"
+        selected: true
+    selectionRationale: "Forking adds significant complexity (permission detection, fork creation, upstream remote management, PR targeting) that is orthogonal to the core value of this feature. The user asked for \"I don't have the repo locally — Shep should handle that.\" Cloning solves this. Fork support is a natural follow-up feature but should not block this delivery.\n"
+    answer: "Yes, auto-fork for non-owned repos"
+content: "## Problem Statement\n\nCurrently, to contribute to an open-source repository using Shep, a user must:\n\n1. Manually clone the repo (`git clone` or `shep repo add --url`)\n2. Navigate to the cloned directory\n3. Run `shep feat new \"description\"`\n\nThis three-step process adds friction. The user must leave the Shep workflow to clone,\nremember the clone path, and then re-enter the workflow. The user's request is clear:\n\"I want to contribute to an open source repo and I don't have it locally — Shep should\nhandle that for me.\"\n\nThe **existing infrastructure** already supports most of this:\n- `ImportGitHubRepositoryUseCase` handles URL parsing, auth checks, cloning, and registration\n- `GitHubRepositoryService` wraps the `gh` CLI for all GitHub operations\n- `CreateFeatureUseCase` creates worktrees and spawns agents\n- The `Repository` entity already has `remoteUrl` support (migration 040)\n- The Web UI has a `GitHubImportDialog` component (gated behind `githubImport` feature flag)\n\nWhat's missing is **orchestration** — a single-step flow that chains import + feature creation.\n\n## Success Criteria\n\n- [ ] `shep feat new --remote https://github.com/owner/repo \"add dark mode\"` clones the repo, registers it, creates a feature, and spawns the agent — all in one command\n- [ ] `shep feat new --remote owner/repo \"add dark mode\"` works with shorthand notation\n- [ ] `shep feat new --remote git@github.com:owner/repo.git \"fix bug\"` works with SSH URLs\n- [ ] Running `--remote` with an already-imported repo skips cloning and creates the feature using the existing local repository\n- [ ] The CLI shows clone progress (receiving objects, resolving deltas) during import\n- [ ] All existing `shep feat new` flags (--push, --pr, --fast, --pending, --model, --attach, --parent) work alongside --remote\n- [ ] The Web UI feature-create-drawer includes an \"Import from GitHub\" option in the repository selector\n- [ ] A user can import a GitHub repo and create a feature on it without leaving the feature creation form in the Web UI\n- [ ] The `githubImport` feature flag defaults to `true` (was `false`)\n- [ ] Clear error messages for: gh CLI not installed, gh not authenticated, invalid URL format, clone failure, network error\n- [ ] Unit tests cover the new composite use case (import → create orchestration)\n- [ ] Integration tests cover the full CLI flow: `--remote` flag → import → feature creation\n- [ ] All existing tests continue to pass (no regressions)\n\n## Functional Requirements\n\n### CLI\n\n- **FR-1**: Add a `--remote <url>` option to `shep feat new` that accepts a GitHub URL (HTTPS, SSH) or `owner/repo` shorthand\n- **FR-2**: When `--remote` is provided, the command must first import the repository (clone + register) via `ImportGitHubRepositoryUseCase`, then create the feature via `CreateFeatureUseCase` using the imported repo's local path\n- **FR-3**: When `--remote` is provided without a description argument, the command must still enter interactive mode to prompt for the description (after import completes)\n- **FR-4**: The `--remote` flag must be mutually exclusive with the `--repo` flag — providing both must produce a clear validation error\n- **FR-5**: Clone progress must be displayed to the user during the import step (reuse existing progress callback pattern from `repo add`)\n- **FR-6**: All existing `shep feat new` options (`--push`, `--pr`, `--fast`, `--pending`, `--model`, `--attach`, `--parent`, approval gates) must continue to work alongside `--remote`\n\n### Application Layer\n\n- **FR-7**: Create a `CreateFeatureFromRemoteUseCase` in the application layer that orchestrates: parse URL → deduplicate → clone (if needed) → register → create feature\n- **FR-8**: The composite use case must accept all `CreateFeatureInput` fields plus a `remoteUrl` field and optional `cloneDest` override\n- **FR-9**: If the remote URL corresponds to an already-imported repository (matched by normalized `remoteUrl`), the use case must skip cloning and use the existing local path\n- **FR-10**: The composite use case must propagate progress callbacks from the clone operation to the caller for UI feedback\n\n### Web UI\n\n- **FR-11**: Add an \"Import from GitHub\" trigger in the `RepositoryCombobox` component that opens the existing `GitHubImportDialog`\n- **FR-12**: On successful import from the dialog, auto-select the newly imported repository in the combobox and close the dialog\n- **FR-13**: Create a new server action (or extend the existing `createFeature` action) that accepts a `remoteUrl` and orchestrates import + feature creation server-side\n- **FR-14**: The GitHub import option in the feature creation drawer must be visible when the `githubImport` feature flag is enabled (default: `true`)\n\n### Feature Flag\n\n- **FR-15**: Change the default value of the `githubImport` feature flag from `false` to `true` so the import UI is available out of the box\n\n### Error Handling\n\n- **FR-16**: When `gh` CLI is not installed, display: \"GitHub CLI (gh) is not installed. Install it from https://cli.github.com/\"\n- **FR-17**: When `gh` CLI is not authenticated, display: \"GitHub CLI is not authenticated. Run `gh auth login` to sign in.\"\n- **FR-18**: When the URL format is invalid, display the supported formats (HTTPS, SSH, owner/repo)\n- **FR-19**: When cloning fails (network, repo not found, permissions), display the specific error from `gh` CLI stderr\n- **FR-20**: A clone failure must not leave a partially-cloned directory on disk (cleanup on error, matching existing behavior in `GitHubRepositoryService.cloneRepository`)\n\n## Non-Functional Requirements\n\n- **NFR-1**: The `--remote` flag must not add measurable latency when not used — the existing `shep feat new` path must remain unchanged in performance\n- **NFR-2**: Clone progress output must update at least every 2 seconds during active clone operations to indicate liveness\n- **NFR-3**: The composite use case must be unit-testable with mocked dependencies (no real git/gh operations in unit tests)\n- **NFR-4**: All new code must follow the existing Clean Architecture layering — no infrastructure imports in the application layer\n- **NFR-5**: The Web UI import trigger must not cause layout shift or resize the repository combobox dropdown\n- **NFR-6**: Error messages must be actionable — each error must tell the user what to do to fix it (e.g., \"Run `gh auth login`\")\n- **NFR-7**: The feature must work without any additional npm dependencies — all required libraries are already in the project\n- **NFR-8**: The `--remote` option must appear in `shep feat new --help` with a clear description and example\n\n## Product Questions & AI Recommendations\n\n| # | Question | AI Recommendation | Rationale |\n| - | -------- | ----------------- | --------- |\n| 1 | Should orchestration live in a composite use case or presentation layer? | New composite use case | Follows Clean Architecture, testable, reusable across CLI/Web/TUI |\n| 2 | What GitHub URL formats should --remote accept? | All formats (HTTPS, SSH, shorthand) | Existing parser already handles all three — no reason to restrict |\n| 3 | How should Web UI integrate GitHub import into feature creation? | Reuse existing GitHubImportDialog | Tested component exists, minimal new UI code, faster delivery |\n| 4 | Should the githubImport feature flag be removed or enabled by default? | Enable by default, keep flag | Discoverable feature with safety valve, low-risk change |\n| 5 | Should --remote work with interactive mode (no description)? | Yes, support interactive + remote | Consistent with existing interactive flow pattern |\n| 6 | What if --remote points to an already-imported repo? | Skip clone, use existing repo | Idempotent behavior already built into ImportGitHubRepositoryUseCase |\n| 7 | Should forking support be included? | No, clone only (fork later) | Forking is orthogonal complexity — keep scope tight, ship core value |\n\n## Affected Areas\n\n| Area | Impact | Reasoning |\n| ---- | ------ | --------- |\n| `src/presentation/cli/commands/feat/new.command.ts` | High | Add --remote flag, orchestrate import-then-create flow |\n| `packages/core/src/application/use-cases/features/create/` | Medium | New composite use case: CreateFeatureFromRemoteUseCase |\n| `src/presentation/web/components/common/feature-create-drawer/` | Medium | Add inline GitHub import option in repository selector |\n| `src/presentation/web/app/actions/create-feature.ts` | Medium | Support remoteUrl input alongside repositoryPath |\n| `src/presentation/web/components/common/repository-combobox/` | Medium | Add \"Import from GitHub\" trigger to combobox actions |\n| `src/presentation/web/lib/feature-flags.ts` | Low | Change githubImport default from false to true |\n| `packages/core/src/application/use-cases/repositories/import-github-repository.use-case.ts` | Low | May need minor adjustments for composability |\n\n## Dependencies\n\n**Existing Code (Already Implemented):**\n- `ImportGitHubRepositoryUseCase` — full GitHub clone + registration pipeline\n- `GitHubRepositoryService` — `gh` CLI wrapper with URL parsing, auth, clone\n- `CreateFeatureUseCase` — two-phase feature creation with worktree setup\n- `Repository.remoteUrl` — domain model field + DB column (migration 040)\n- `GitHubImportDialog` — Web UI component for GitHub import\n- `githubImportWizard` — TUI interactive import wizard\n\n**External Dependencies:**\n- `gh` CLI — must be installed and authenticated for GitHub operations\n- `git` — for worktree operations\n\n## Size Estimate\n\n**M** — Most infrastructure exists. Primary work is orchestration:\n- Application: New CreateFeatureFromRemoteUseCase + unit tests (~1 day)\n- CLI: Add --remote flag to feat new, wire to composite use case (~0.5 day)\n- Web UI: Add GitHub import trigger to RepositoryCombobox + server action (~1 day)\n- Feature flag: Change default value (~0.5 hour)\n- Integration tests: CLI flow, Web flow, deduplication path (~1 day)\n- Total: ~3-4 days of focused work\n"
+rejectionFeedback:
+  - iteration: 1
+    message: "add UI evidence"
+    phase: "merge"
+    timestamp: "2026-03-22T08:01:26.090Z"
+  - iteration: 2
+    message: "the tree view should be all collpased by default and the tree view should be collapsable acordion like"
+    phase: "merge"
+    timestamp: "2026-03-22T08:56:01.557Z"

@@ -46,6 +46,7 @@ export const AllSections: Story = {
         clusters: false,
         supplyChainSecurity: true,
         scheduledWorkflows: false,
+        githubImport: true,
       },
     },
     shepHome: '/opt/shep',

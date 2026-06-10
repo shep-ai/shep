@@ -8,6 +8,39 @@ import type { FileAttachment } from '@shepai/core/infrastructure/services/file-d
 import type { WorkflowDefaults } from '@/app/actions/get-workflow-defaults';
 import { BuildMode } from '@shepai/core/domain/generated/output';
 
+// Mock GitHubImportDialog
+const mockGitHubImportDialog = vi.fn();
+vi.mock('@/components/common/github-import-dialog', () => ({
+  GitHubImportDialog: (props: {
+    open: boolean;
+    onOpenChange: (v: boolean) => void;
+    onImportComplete: (repo: unknown) => void;
+  }) => {
+    mockGitHubImportDialog(props);
+    if (!props.open) return null;
+    return (
+      <div data-testid="github-import-dialog">
+        <button
+          data-testid="github-import-complete-btn"
+          onClick={() =>
+            props.onImportComplete({
+              id: 'imported-repo-1',
+              name: 'imported-repo',
+              path: '/repos/imported-repo',
+              remoteUrl: 'https://github.com/owner/imported-repo',
+            })
+          }
+        >
+          Import
+        </button>
+        <button data-testid="github-import-close-btn" onClick={() => props.onOpenChange(false)}>
+          Close
+        </button>
+      </div>
+    );
+  },
+}));
+
 // Mock pickFiles client helper
 const mockPickFiles = vi.fn<() => Promise<FileAttachment[] | null>>();
 vi.mock('@/components/common/feature-create-drawer/pick-files', () => ({

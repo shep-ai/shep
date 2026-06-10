@@ -11,7 +11,7 @@ vi.mock('@/lib/server-container', () => ({
 const { importGitHubRepository } = await import('@/app/actions/import-github-repository');
 
 // Import error classes after vi.mock (they are real classes, not mocked)
-const { GitHubAuthError, GitHubUrlParseError, GitHubCloneError } = await import(
+const { GitHubAuthError, GitHubUrlParseError, GitHubCloneError, GitHubForkError } = await import(
   '@shepai/core/application/ports/output/services/github-repository-service.interface'
 );
 
@@ -48,6 +48,23 @@ describe('importGitHubRepository', () => {
       url: 'https://github.com/owner/my-repo',
       dest: undefined,
     });
+  });
+
+  it('returns forked true when repository is a fork', async () => {
+    const repo = {
+      id: 'repo-1',
+      name: 'my-repo',
+      path: '/repos/my-repo',
+      remoteUrl: 'https://github.com/myuser/my-repo',
+      isFork: true,
+      upstreamUrl: 'https://github.com/owner/my-repo',
+    };
+    mockExecute.mockResolvedValue(repo);
+
+    const result = await importGitHubRepository({ url: 'https://github.com/owner/my-repo' });
+
+    expect(result.forked).toBe(true);
+    expect(result.repository).toEqual(repo);
   });
 
   it('passes dest option to use case', async () => {
@@ -88,6 +105,14 @@ describe('importGitHubRepository', () => {
     const result = await importGitHubRepository({ url: 'owner/repo' });
 
     expect(result).toEqual({ error: 'Clone failed: Permission denied' });
+  });
+
+  it('returns error string on GitHubForkError', async () => {
+    mockExecute.mockRejectedValue(new GitHubForkError('Fork failed'));
+
+    const result = await importGitHubRepository({ url: 'owner/repo' });
+
+    expect(result).toEqual({ error: 'Fork failed: Fork failed' });
   });
 
   it('returns generic error for other Error instances', async () => {

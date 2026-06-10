@@ -17,6 +17,7 @@ import {
   RefreshCw,
   LayoutGrid,
   ClipboardList,
+  Github,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSoundAction } from '@/hooks/use-sound-action';
@@ -41,6 +42,8 @@ import { ReactFileManagerDialog } from '@/components/common/react-file-manager-d
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { addRepository } from '@/app/actions/add-repository';
 import { BuildMode as BuildModeEnum } from '@shepai/core/domain/generated/output';
+import { GitHubImportDialog } from '@/components/common/github-import-dialog';
+import type { Repository } from '@shepai/core/domain/generated/output';
 import { pickFiles } from './pick-files';
 
 export type { FileAttachment } from '@shepai/core/infrastructure/services/file-dialog.service';
@@ -1606,8 +1609,9 @@ export function RepositoryCombobox({
   const [isAdding, setIsAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [showReactPicker, setShowReactPicker] = useState(false);
+  const [showGitHubImport, setShowGitHubImport] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { reactFileManager: useReactFileManager } = useFeatureFlags();
+  const { reactFileManager: useReactFileManager, githubImport } = useFeatureFlags();
   const { t } = useTranslation('web');
 
   const selectedRepo = repositories.find((r) => r.path === value);
@@ -1677,6 +1681,24 @@ export function RepositoryCombobox({
     }
   }, [isAdding, useReactFileManager, addRepoFromPath]);
 
+  const handleGitHubImportComplete = useCallback(
+    (repository: Repository) => {
+      const newRepo: RepositoryOption = {
+        id: repository.id,
+        name: repository.name,
+        path: repository.path,
+        isFork: repository.isFork,
+        upstreamUrl: repository.upstreamUrl,
+      };
+      onAddRepository?.(newRepo);
+      onChange(newRepo.path);
+      setOpen(false);
+      setQuery('');
+      setShowGitHubImport(false);
+    },
+    [onAddRepository, onChange]
+  );
+
   const handleReactPickerSelect = useCallback(
     async (path: string | null) => {
       setShowReactPicker(false);
@@ -1718,8 +1740,22 @@ export function RepositoryCombobox({
               !selectedRepo && 'text-muted-foreground'
             )}
           >
-            <span className="truncate">
-              {selectedRepo ? selectedRepo.name : 'Select repository...'}
+            <span className="flex items-center gap-1.5 truncate">
+              <span className="truncate">
+                {selectedRepo ? selectedRepo.name : 'Select repository...'}
+              </span>
+              {selectedRepo?.isFork ? (
+                <span
+                  className="bg-muted text-muted-foreground shrink-0 rounded px-1 py-0.5 text-[10px] font-medium"
+                  title={
+                    selectedRepo.upstreamUrl
+                      ? `Fork of ${selectedRepo.upstreamUrl.replace('https://github.com/', '')}`
+                      : 'Forked repository'
+                  }
+                >
+                  Fork
+                </span>
+              ) : null}
             </span>
             <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
           </button>
@@ -1785,8 +1821,19 @@ export function RepositoryCombobox({
               )}
             </div>
 
-            {/* Add new repository — pinned outside scroll area */}
+            {/* Actions — pinned outside scroll area */}
             <Separator />
+            {githubImport ? (
+              <button
+                type="button"
+                onClick={() => setShowGitHubImport(true)}
+                className="hover:bg-accent hover:text-accent-foreground flex w-full items-center gap-2 px-3 py-2 text-sm"
+                data-testid="import-github-item"
+              >
+                <Github className="h-4 w-4 shrink-0" />
+                <span>Import from GitHub...</span>
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={handleAddRepository}
@@ -1815,6 +1862,11 @@ export function RepositoryCombobox({
           if (!isOpen) setShowReactPicker(false);
         }}
         onSelect={handleReactPickerSelect}
+      />
+      <GitHubImportDialog
+        open={showGitHubImport}
+        onOpenChange={setShowGitHubImport}
+        onImportComplete={handleGitHubImportComplete}
       />
     </>
   );

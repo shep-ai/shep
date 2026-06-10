@@ -8,11 +8,14 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BuildMode } from '@/domain/generated/output.js';
 
-const { mockResolve, mockCreateExecute, mockFindByIdPrefix } = vi.hoisted(() => ({
-  mockResolve: vi.fn(),
-  mockCreateExecute: vi.fn(),
-  mockFindByIdPrefix: vi.fn(),
-}));
+const { mockResolve, mockCreateExecute, mockFindByIdPrefix, mockRemoteExecute } = vi.hoisted(
+  () => ({
+    mockResolve: vi.fn(),
+    mockCreateExecute: vi.fn(),
+    mockFindByIdPrefix: vi.fn(),
+    mockRemoteExecute: vi.fn(),
+  })
+);
 
 vi.mock('@/infrastructure/di/container.js', () => ({
   container: { resolve: (...args: unknown[]) => mockResolve(...args) },
@@ -41,6 +44,9 @@ vi.mock('../../../../../../src/presentation/cli/ui/index.js', () => ({
     warning: vi.fn(),
     error: vi.fn(),
     info: vi.fn(),
+  },
+  symbols: {
+    spinner: ['|', '/', '-', '\\'],
   },
   spinner: vi.fn((_label: string, fn: () => Promise<unknown>) => fn()),
 }));
@@ -75,10 +81,12 @@ describe('createNewCommand', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     process.exitCode = undefined as any;
     mockResolve.mockImplementation((token: unknown) => {
       const key = typeof token === 'string' ? token : (token as { name?: string })?.name;
       if (key === 'CreateFeatureUseCase') return { execute: mockCreateExecute };
+      if (key === 'CreateFeatureFromRemoteUseCase') return { execute: mockRemoteExecute };
       if (key === 'IFeatureRepository') return { findByIdPrefix: mockFindByIdPrefix };
       return {};
     });
@@ -91,6 +99,18 @@ describe('createNewCommand', () => {
         lifecycle: 'Requirements',
         agentRunId: 'run-001',
         specPath: '/specs/001-test-feature',
+      },
+    });
+    mockRemoteExecute.mockResolvedValue({
+      feature: {
+        id: 'feat-remote-001',
+        name: 'Remote Feature',
+        slug: 'remote-feature',
+        branch: 'feat/remote-feature',
+        lifecycle: 'Requirements',
+        agentRunId: 'run-remote-001',
+        specPath: '/specs/001-remote-feature',
+        repositoryPath: '/home/test/repos/owner-repo',
       },
     });
     mockHasSettings.mockReturnValue(true);
@@ -683,6 +703,236 @@ describe('createNewCommand', () => {
 
       const { rmSync } = await import('fs');
       rmSync(tmp, { recursive: true, force: true });
+    });
+  });
+
+  describe('--remote flag', () => {
+    it('should expose --remote option in command help', () => {
+      const cmd = createNewCommand();
+      const remoteOption = cmd.options.find((o) => o.long === '--remote');
+      expect(remoteOption).toBeDefined();
+      expect(remoteOption?.description).toBeTruthy();
+    });
+
+    it('should call CreateFeatureFromRemoteUseCase.execute when --remote is provided', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add dark mode', '--remote', 'owner/repo'], { from: 'user' });
+
+      expect(mockRemoteExecute).toHaveBeenCalledTimes(1);
+      expect(mockCreateExecute).not.toHaveBeenCalled();
+    });
+
+    it('should pass remoteUrl to composite use case input', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add dark mode', '--remote', 'https://github.com/owner/repo'], {
+        from: 'user',
+      });
+
+      expect(mockRemoteExecute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          remoteUrl: 'https://github.com/owner/repo',
+          userInput: 'Add dark mode',
+        })
+      );
+    });
+
+    it('should pass approval gates when used with --remote', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature', '--remote', 'owner/repo', '--allow-all'], {
+        from: 'user',
+      });
+
+      expect(mockRemoteExecute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          approvalGates: { allowPrd: true, allowPlan: true, allowMerge: true },
+        })
+      );
+    });
+
+    it('should pass --push flag when used with --remote', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature', '--remote', 'owner/repo', '--push'], { from: 'user' });
+
+      expect(mockRemoteExecute).toHaveBeenCalledWith(expect.objectContaining({ push: true }));
+    });
+
+    it('should pass --pr flag when used with --remote', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature', '--remote', 'owner/repo', '--pr'], { from: 'user' });
+
+      expect(mockRemoteExecute).toHaveBeenCalledWith(expect.objectContaining({ openPr: true }));
+    });
+
+    it('should pass --fast flag when used with --remote', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Fix typo', '--remote', 'owner/repo', '--fast'], { from: 'user' });
+
+      expect(mockRemoteExecute).toHaveBeenCalledWith(expect.objectContaining({ fast: true }));
+    });
+
+    it('should pass --pending flag when used with --remote', async () => {
+      mockRemoteExecute.mockResolvedValue({
+        feature: {
+          id: 'feat-remote-001',
+          name: 'Remote Feature',
+          slug: 'remote-feature',
+          branch: 'feat/remote-feature',
+          lifecycle: 'Pending',
+          agentRunId: 'run-remote-001',
+          specPath: '/specs/001-remote-feature',
+          repositoryPath: '/home/test/repos/owner-repo',
+        },
+      });
+
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature', '--remote', 'owner/repo', '--pending'], {
+        from: 'user',
+      });
+
+      expect(mockRemoteExecute).toHaveBeenCalledWith(expect.objectContaining({ pending: true }));
+    });
+
+    it('should pass --model flag when used with --remote', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(
+        ['Add feature', '--remote', 'owner/repo', '--model', 'claude-opus-4-6'],
+        {
+          from: 'user',
+        }
+      );
+
+      expect(mockRemoteExecute).toHaveBeenCalledWith(
+        expect.objectContaining({ model: 'claude-opus-4-6' })
+      );
+    });
+
+    it('should pass --parent flag when used with --remote', async () => {
+      mockFindByIdPrefix.mockResolvedValue({
+        id: 'parent-feature-uuid-001',
+        name: 'Parent Feature',
+        lifecycle: 'Implementation',
+      });
+
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature', '--remote', 'owner/repo', '--parent', 'parent-fe'], {
+        from: 'user',
+      });
+
+      expect(mockRemoteExecute).toHaveBeenCalledWith(
+        expect.objectContaining({ parentId: 'parent-feature-uuid-001' })
+      );
+    });
+
+    it('should pass defaultCloneDir from settings to composite use case', async () => {
+      mockGetSettings.mockReturnValue({
+        ...makeSettings(),
+        environment: { defaultCloneDirectory: '/custom/clone/dir' },
+      });
+
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature', '--remote', 'owner/repo'], { from: 'user' });
+
+      expect(mockRemoteExecute).toHaveBeenCalledWith(
+        expect.objectContaining({ defaultCloneDir: '/custom/clone/dir' })
+      );
+    });
+
+    it('should not pass defaultCloneDir when settings has no environment', async () => {
+      mockGetSettings.mockReturnValue(makeSettings());
+
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature', '--remote', 'owner/repo'], { from: 'user' });
+
+      const callArg = mockRemoteExecute.mock.calls[0][0];
+      expect(callArg.defaultCloneDir).toBeUndefined();
+    });
+
+    it('should not call CreateFeatureUseCase when --remote is not set', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature'], { from: 'user' });
+
+      expect(mockCreateExecute).toHaveBeenCalledTimes(1);
+      expect(mockRemoteExecute).not.toHaveBeenCalled();
+    });
+
+    it('should display feature output on success with --remote', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add dark mode', '--remote', 'owner/repo'], { from: 'user' });
+
+      const { messages: mockMessages } = await import(
+        '../../../../../../src/presentation/cli/ui/index.js'
+      );
+      expect(mockMessages.success).toHaveBeenCalledWith('Feature created');
+    });
+
+    it('should handle errors from composite use case and set exit code', async () => {
+      mockRemoteExecute.mockRejectedValue(new Error('Clone failed'));
+
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature', '--remote', 'owner/repo'], { from: 'user' });
+
+      expect(process.exitCode).toBe(1);
+    });
+
+    it('should handle GitHubAuthError with actionable message', async () => {
+      const { GitHubAuthError } = await import(
+        '@/application/ports/output/services/github-repository-service.interface.js'
+      );
+      mockRemoteExecute.mockRejectedValue(new GitHubAuthError('not authenticated'));
+
+      const { messages: mockMessages } = await import(
+        '../../../../../../src/presentation/cli/ui/index.js'
+      );
+
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature', '--remote', 'owner/repo'], { from: 'user' });
+
+      expect(process.exitCode).toBe(1);
+      expect(mockMessages.error).toHaveBeenCalledWith(expect.stringContaining('not authenticated'));
+    });
+
+    it('should handle GitHubUrlParseError with supported formats hint', async () => {
+      const { GitHubUrlParseError } = await import(
+        '@/application/ports/output/services/github-repository-service.interface.js'
+      );
+      mockRemoteExecute.mockRejectedValue(new GitHubUrlParseError('bad-url'));
+
+      const { messages: mockMessages } = await import(
+        '../../../../../../src/presentation/cli/ui/index.js'
+      );
+
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature', '--remote', 'bad-url'], { from: 'user' });
+
+      expect(process.exitCode).toBe(1);
+      expect(mockMessages.error).toHaveBeenCalledWith(expect.stringContaining('Invalid'));
+      expect(mockMessages.info).toHaveBeenCalledWith(expect.stringContaining('owner/repo'));
+    });
+
+    it('should handle GitHubCloneError with specific message', async () => {
+      const { GitHubCloneError } = await import(
+        '@/application/ports/output/services/github-repository-service.interface.js'
+      );
+      mockRemoteExecute.mockRejectedValue(new GitHubCloneError('not found'));
+
+      const { messages: mockMessages } = await import(
+        '../../../../../../src/presentation/cli/ui/index.js'
+      );
+
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature', '--remote', 'owner/repo'], { from: 'user' });
+
+      expect(process.exitCode).toBe(1);
+      expect(mockMessages.error).toHaveBeenCalledWith(expect.stringContaining('Clone failed'));
+    });
+
+    it('should pass cloneOptions with onProgress callback when --remote is set', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature', '--remote', 'owner/repo'], { from: 'user' });
+
+      const callArg = mockRemoteExecute.mock.calls[0][0];
+      expect(callArg.cloneOptions).toBeDefined();
+      expect(typeof callArg.cloneOptions.onProgress).toBe('function');
     });
   });
 });

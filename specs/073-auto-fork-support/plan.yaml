@@ -1,0 +1,96 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: auto-fork-support
+summary: Implementation plan for 073-auto-fork-support
+
+# Relationships
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+
+# Structured implementation phases
+phases:
+  - id: phase-1
+    name: 'Foundation'
+    parallel: false
+    taskIds:
+      - task-1
+      - task-2
+  - id: phase-2
+    name: 'Core Implementation'
+    parallel: false
+    taskIds:
+      - task-3
+      - task-4
+
+# File change tracking
+filesToCreate:
+  - src/domain/entities/{{ENTITY_NAME}}.ts
+  - tests/unit/domain/entities/{{ENTITY_NAME}}.test.ts
+
+filesToModify:
+  - src/infrastructure/di/container.ts
+  - package.json
+
+# Open questions (should all be resolved before implementation)
+openQuestions: []
+
+# Markdown content — architecture, strategy, and risks only.
+# Task-level detail lives in tasks.yaml (no duplication).
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-03-20
+
+  ## Architecture Overview
+
+  ```
+  {{ARCHITECTURE_DIAGRAM}}
+  ```
+
+  ## Implementation Strategy
+
+  **MANDATORY TDD**: All phases with executable code follow RED-GREEN-REFACTOR cycles.
+
+  High-level walkthrough of how the phases connect and why they are ordered
+  this way. Focus on architectural decisions and data flow — not individual
+  task descriptions (see tasks.yaml for the detailed breakdown).
+
+  ## Files to Create/Modify
+
+  ### New Files
+
+  | File | Purpose |
+  | ---- | ------- |
+  | {{FILE_PATH}} | {{PURPOSE}} |
+
+  ### Modified Files
+
+  | File | Changes |
+  | ---- | ------- |
+  | {{FILE_PATH}} | {{CHANGES}} |
+
+  ## Testing Strategy (TDD: Tests FIRST)
+
+  **CRITICAL:** Tests are written FIRST in each TDD cycle.
+
+  ### Unit Tests (RED -> GREEN -> REFACTOR)
+
+  - {{TEST_AREA_1}}
+  - {{TEST_AREA_2}}
+
+  ### Integration Tests
+
+  - {{INTEGRATION_TEST_1}}
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | {{RISK}} | {{MITIGATION}} |
+
+  ---
+
+  _Updated by `/shep-kit:plan` — see tasks.yaml for detailed task breakdown_

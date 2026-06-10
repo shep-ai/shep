@@ -1,17 +1,15 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Loader2,
-  Circle,
-  Check,
-  Eye,
-  ChevronRight,
-  CheckCircle2,
-  CircleDashed,
-} from 'lucide-react';
+import { Loader2, Circle, Check, Eye, CheckCircle2, CircleDashed } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion';
 import type { PlanTaskData, ActionItemData } from '@/app/actions/get-feature-plan';
 
 export interface TaskProgressViewProps {
@@ -75,11 +73,13 @@ export function TaskProgressView({ tasks }: TaskProgressViewProps) {
   return (
     <div data-testid="task-progress-view" className="flex flex-col gap-3">
       <ProgressSummary tasks={tasks} />
-      <div data-testid="task-progress-list" className="flex flex-col gap-2">
-        {tasks.map((task, index) => (
-          <TaskCard key={task.title || `task-${index}`} task={task} index={index} />
-        ))}
-      </div>
+      <Accordion type="multiple" defaultValue={[]} data-testid="task-progress-list">
+        <div className="flex flex-col gap-2">
+          {tasks.map((task, index) => (
+            <TaskCard key={task.title || `task-${index}`} task={task} index={index} />
+          ))}
+        </div>
+      </Accordion>
     </div>
   );
 }
@@ -175,61 +175,45 @@ function StatChip({
 // ── Task Card ────────────────────────────────────────────────────────
 
 function TaskCard({ task, index }: { task: PlanTaskData; index: number }) {
-  const [expanded, setExpanded] = useState(false);
   const config = taskStateConfig[task.state] ?? defaultTaskConfig;
   const Icon = config.icon;
-  const hasDetails = task.actionItems.length > 0;
-
-  const handleToggle = useCallback(() => {
-    if (hasDetails) {
-      setExpanded((prev) => !prev);
-    }
-  }, [hasDetails]);
 
   return (
-    <div data-testid={`task-card-${index}`} className={cn('rounded-lg border', config.borderClass)}>
-      <button
-        type="button"
-        onClick={handleToggle}
-        disabled={!hasDetails}
+    <AccordionItem
+      value={`task-${index}`}
+      data-testid={`task-card-${index}`}
+      className={cn('rounded-lg border border-b', config.borderClass)}
+    >
+      <AccordionTrigger
         className={cn(
-          'flex w-full items-start gap-2 px-3 py-2.5 text-start',
-          hasDetails && 'hover:bg-muted/50 cursor-pointer transition-colors'
+          'flex w-full items-start gap-2 px-3 py-2.5 text-left hover:no-underline',
+          'hover:bg-muted/50 cursor-pointer transition-colors'
         )}
       >
-        <Icon
-          className={cn(
-            'mt-0.5 h-4 w-4 shrink-0',
-            config.colorClass,
-            config.spinning && 'animate-spin'
-          )}
-        />
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className={cn('text-sm font-medium', config.colorClass)}>{task.title}</span>
-          {task.description ? (
-            <span className="text-muted-foreground text-xs">{task.description}</span>
-          ) : null}
-        </div>
-        {hasDetails ? (
-          <ChevronRight
+        <div className="flex min-w-0 flex-1 items-start gap-2">
+          <Icon
             className={cn(
-              'text-muted-foreground mt-0.5 h-4 w-4 shrink-0 transition-transform',
-              expanded && 'rotate-90'
+              'mt-0.5 h-4 w-4 shrink-0',
+              config.colorClass,
+              config.spinning && 'animate-spin'
             )}
           />
-        ) : null}
-      </button>
-
-      {expanded && hasDetails ? (
-        <div className="border-t px-3 py-2.5">
-          <div className="flex flex-col gap-2">
-            {task.actionItems.map((item, aiIndex) => (
-              <ActionItemRow key={item.name || `ai-${aiIndex}`} item={item} />
-            ))}
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className={cn('text-sm font-medium', config.colorClass)}>{task.title}</span>
+            {task.description ? (
+              <span className="text-muted-foreground text-xs">{task.description}</span>
+            ) : null}
           </div>
         </div>
-      ) : null}
-    </div>
+      </AccordionTrigger>
+      <AccordionContent className="px-3 pt-0 pb-2.5">
+        <div className="flex flex-col gap-2">
+          {task.actionItems.map((item, aiIndex) => (
+            <ActionItemRow key={item.name || `ai-${aiIndex}`} item={item} />
+          ))}
+        </div>
+      </AccordionContent>
+    </AccordionItem>
   );
 }
 

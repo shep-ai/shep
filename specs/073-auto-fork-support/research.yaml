@@ -1,0 +1,69 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: auto-fork-support
+summary: Technical analysis for 073-auto-fork-support
+
+# Relationships
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+
+# Structured technology decisions
+decisions:
+  - title: { { DECISION_TITLE } }
+    chosen: { { CHOSEN_OPTION } }
+    rejected:
+      - { { OPTION_1 } }
+      - { { OPTION_2 } }
+    rationale: { { RATIONALE } }
+
+# Open questions (should be resolved by end of research)
+openQuestions:
+  []
+  # - question: "Which library should we use?"
+  #   resolved: true
+  #   answer: "Library X because of Y"
+
+# Markdown content (the full research document)
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-03-20
+
+  ## Technology Decisions
+
+  ### {{DECISION_TITLE}}
+
+  **Options considered:**
+
+  1. {{OPTION_1}}
+  2. {{OPTION_2}}
+  3. {{OPTION_3}}
+
+  **Decision:** {{CHOSEN_OPTION}}
+
+  **Rationale:** {{RATIONALE}}
+
+  ## Library Analysis
+
+  | Library     | Version     | Purpose     | Pros     | Cons     |
+  | ----------- | ----------- | ----------- | -------- | -------- |
+  | {{LIBRARY}} | {{VERSION}} | {{PURPOSE}} | {{PROS}} | {{CONS}} |
+
+  ## Security Considerations
+
+  No security implications identified.
+
+  ## Performance Implications
+
+  No performance implications identified.
+
+  ## Open Questions
+
+  All questions resolved.
+
+  ---
+
+  _Updated by `/shep-kit:research` — proceed with `/shep-kit:plan`_

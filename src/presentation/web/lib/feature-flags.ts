@@ -24,6 +24,7 @@ export interface FeatureFlagsState {
   whatsappDispatch: boolean;
   clusters: boolean;
   scheduledWorkflows: boolean;
+  githubImport: boolean;
 }
 
 export function getFeatureFlags(): FeatureFlagsState {
@@ -43,6 +44,7 @@ export function getFeatureFlags(): FeatureFlagsState {
           whatsappDispatch: flags.whatsappDispatch,
           clusters: flags.clusters,
           scheduledWorkflows: flags.scheduledWorkflows,
+          githubImport: flags.githubImport ?? true,
         };
       }
     }
@@ -77,6 +79,7 @@ export function getFeatureFlags(): FeatureFlagsState {
     whatsappDispatch: isEnabled(process.env.NEXT_PUBLIC_FLAG_WHATSAPP_DISPATCH),
     clusters: false,
     scheduledWorkflows: false,
+    githubImport: true,
   };
 }
 

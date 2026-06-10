@@ -133,6 +133,34 @@ export interface CloneOptions {
 }
 
 /**
+ * Result of checking push access to a repository.
+ */
+export interface PushAccessResult {
+  /** Whether the authenticated user has push (write) access */
+  hasPushAccess: boolean;
+  /** The authenticated user's GitHub login (e.g. "octocat") */
+  viewerLogin: string;
+}
+
+/**
+ * Result of forking a repository.
+ */
+export interface ForkResult {
+  /** The fork's nameWithOwner (e.g. "myuser/their-project") */
+  nameWithOwner: string;
+  /** Whether the fork already existed before this call */
+  alreadyExisted: boolean;
+}
+
+/**
+ * Options for forking a repository.
+ */
+export interface ForkOptions {
+  /** Callback for progress display during fork operation */
+  onProgress?: (message: string) => void;
+}
+
+/**
  * Result of parsing a GitHub URL.
  */
 export interface ParsedGitHubUrl {
@@ -142,29 +170,6 @@ export interface ParsedGitHubUrl {
   repo: string;
   /** Combined owner/repo (e.g. "octocat/my-project") */
   nameWithOwner: string;
-}
-
-/**
- * Options for forking a repository.
- */
-export interface ForkOptions {
-  onProgress?: (message: string) => void;
-}
-
-/**
- * Result of checking push access on a repository.
- */
-export interface PushAccessResult {
-  hasPushAccess: boolean;
-  viewerLogin: string;
-}
-
-/**
- * Result of forking a repository.
- */
-export interface ForkResult {
-  nameWithOwner: string;
-  alreadyExisted: boolean;
 }
 
 /**

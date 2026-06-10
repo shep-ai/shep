@@ -50,6 +50,7 @@ const defaultFlags = {
   aspm: false,
   clusters: false,
   scheduledWorkflows: false,
+  githubImport: true,
 };
 
 function renderWithSidebar(ui: React.ReactElement) {

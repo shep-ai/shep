@@ -534,6 +534,7 @@ describe('SQLiteSettingsRepository', () => {
         clusters: false,
         supplyChainSecurity: true,
         scheduledWorkflows: false,
+        githubImport: true,
       };
 
       await repository.initialize(settings);
@@ -552,6 +553,7 @@ describe('SQLiteSettingsRepository', () => {
         clusters: false,
         supplyChainSecurity: true,
         scheduledWorkflows: false,
+        githubImport: true,
       });
     });
 
@@ -576,6 +578,7 @@ describe('SQLiteSettingsRepository', () => {
         // flags (including supplyChainSecurity), so load-back returns false across the board.
         supplyChainSecurity: false,
         scheduledWorkflows: false,
+        githubImport: true,
       });
     });
 
@@ -596,6 +599,7 @@ describe('SQLiteSettingsRepository', () => {
         clusters: false,
         supplyChainSecurity: true,
         scheduledWorkflows: false,
+        githubImport: true,
       };
       settings.updatedAt = new Date('2025-01-02T00:00:00Z');
       await repository.update(settings);
@@ -614,6 +618,7 @@ describe('SQLiteSettingsRepository', () => {
         clusters: false,
         supplyChainSecurity: true,
         scheduledWorkflows: false,
+        githubImport: true,
       });
     });
 
@@ -632,6 +637,7 @@ describe('SQLiteSettingsRepository', () => {
         clusters: false,
         supplyChainSecurity: true,
         scheduledWorkflows: false,
+        githubImport: true,
       };
 
       await repository.initialize(settings);
@@ -991,6 +997,7 @@ describe('SQLiteSettingsRepository', () => {
         clusters: false,
         supplyChainSecurity: false,
         scheduledWorkflows: false,
+        githubImport: true,
       };
       await repository.initialize(settings);
 

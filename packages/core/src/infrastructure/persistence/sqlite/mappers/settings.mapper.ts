@@ -138,6 +138,7 @@ export interface SettingsRow {
   feature_flag_clusters: number;
   feature_flag_supply_chain_security: number;
   feature_flag_scheduled_workflows: number;
+  feature_flag_github_import?: number;
   // Interactive agent config (added in migration 046)
   interactive_agent_enabled: number;
   interactive_agent_auto_timeout_minutes: number;
@@ -318,6 +319,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     feature_flag_clusters: settings.featureFlags?.clusters ? 1 : 0,
     feature_flag_supply_chain_security: settings.featureFlags?.supplyChainSecurity ? 1 : 0,
     feature_flag_scheduled_workflows: settings.featureFlags?.scheduledWorkflows ? 1 : 0,
+    feature_flag_github_import: settings.featureFlags?.githubImport !== false ? 1 : 0,
 
     // InteractiveAgentConfig (boolean → 0/1, integer fields; defaults applied here)
     interactive_agent_enabled: (settings.interactiveAgent?.enabled ?? true) ? 1 : 0,
@@ -653,6 +655,8 @@ export function fromDatabase(row: SettingsRow): Settings {
       // Default true when column is missing/null (pre-migration upgrades)
       supplyChainSecurity: (row.feature_flag_supply_chain_security ?? 1) !== 0,
       scheduledWorkflows: row.feature_flag_scheduled_workflows === 1,
+      // Default true when column is missing/null (pre-migration upgrades)
+      githubImport: (row.feature_flag_github_import ?? 1) !== 0,
     },
 
     // InteractiveAgentConfig (INTEGER 0/1 → boolean, integer → number)

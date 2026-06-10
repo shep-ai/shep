@@ -50,6 +50,10 @@ properties:
     type: boolean
     default: false
     description: Enable scheduled workflows feature — workflow creation, scheduling, and execution
+  githubImport:
+    type: boolean
+    default: true
+    description: Enable GitHub repository import flow (clone, fork, and add to Shep)
 required:
   - envDeploy
   - debug
@@ -63,4 +67,5 @@ required:
   - clusters
   - supplyChainSecurity
   - scheduledWorkflows
+  - githubImport
 description: Feature flag toggles for runtime feature control

@@ -727,6 +727,10 @@ export type FeatureFlags = {
    * Enable scheduled workflows feature — workflow creation, scheduling, and execution
    */
   scheduledWorkflows: boolean;
+  /**
+   * Enable GitHub repository import flow (clone, fork, and add to Shep)
+   */
+  githubImport: boolean;
 };
 export enum WhatsAppAdapterKind {
   Baileys = 'baileys',

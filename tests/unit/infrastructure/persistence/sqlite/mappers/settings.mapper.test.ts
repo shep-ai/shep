@@ -1479,6 +1479,7 @@ describe('Settings Mapper', () => {
           clusters: false,
           supplyChainSecurity: true,
           scheduledWorkflows: false,
+          githubImport: true,
         },
       });
       const row = toDatabase(settings);
@@ -1500,6 +1501,7 @@ describe('Settings Mapper', () => {
           clusters: false,
           supplyChainSecurity: false,
           scheduledWorkflows: false,
+          githubImport: true,
         },
       });
       const row = toDatabase(settings);
@@ -1533,6 +1535,7 @@ describe('Settings Mapper', () => {
           clusters: true,
           supplyChainSecurity: false,
           scheduledWorkflows: false,
+          githubImport: true,
         },
       });
       const row = toDatabase(settings);

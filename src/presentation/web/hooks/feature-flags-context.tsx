@@ -15,6 +15,7 @@ const defaultFlags: FeatureFlagsState = {
   aspm: false,
   clusters: false,
   scheduledWorkflows: false,
+  githubImport: true,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsState>(defaultFlags);
