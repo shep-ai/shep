@@ -146,8 +146,11 @@ describe('AdoptBranchUseCase', () => {
     mockAgentRunRepo = {
       create: vi.fn().mockResolvedValue(undefined),
       findById: vi.fn().mockResolvedValue(null),
+      findByIds: vi.fn().mockResolvedValue([]),
       findByThreadId: vi.fn().mockResolvedValue(null),
+      findLatestByFeatureId: vi.fn().mockResolvedValue(null),
       updateStatus: vi.fn().mockResolvedValue(undefined),
+      updatePinnedConfig: vi.fn().mockResolvedValue(undefined),
       findRunningByPid: vi.fn().mockResolvedValue([]),
       list: vi.fn().mockResolvedValue([]),
       delete: vi.fn().mockResolvedValue(undefined),
@@ -158,6 +161,7 @@ describe('AdoptBranchUseCase', () => {
         specDir: path.join(mockWorktreePath, 'specs', '000-fix-login-bug'),
         featureNumber: '000',
       }),
+      scaffoldSecurityPolicy: vi.fn(),
     };
 
     useCase = new AdoptBranchUseCase(

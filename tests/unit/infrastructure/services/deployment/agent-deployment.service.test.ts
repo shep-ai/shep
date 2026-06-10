@@ -49,9 +49,12 @@ function createMockDeps(
       clearAllCaches: vi.fn(),
     },
     deploymentService: {
+      setDatabase: vi.fn(),
+      recoverAll: vi.fn(),
       start: vi.fn(),
       stop: vi.fn().mockResolvedValue(undefined),
       getStatus: vi.fn().mockReturnValue(null),
+      listAll: vi.fn().mockReturnValue([]),
       stopAll: vi.fn(),
       getLogs: vi.fn().mockReturnValue(null),
       on: vi.fn(),

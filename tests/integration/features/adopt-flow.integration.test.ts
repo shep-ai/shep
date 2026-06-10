@@ -87,6 +87,7 @@ describe('Adopt Flow Integration Tests', () => {
       }),
       findByPathIncludingDeleted: vi.fn().mockResolvedValue(null),
       findByRemoteUrl: vi.fn().mockResolvedValue(null),
+      findByUpstreamUrl: vi.fn().mockResolvedValue(null),
       list: vi.fn().mockResolvedValue([]),
       remove: vi.fn().mockResolvedValue(undefined),
       softDelete: vi.fn().mockResolvedValue(undefined),
@@ -101,8 +102,11 @@ describe('Adopt Flow Integration Tests', () => {
       findById: vi.fn().mockImplementation(async (id) => {
         return createdAgentRuns.find((run) => run.id === id) ?? null;
       }),
+      findByIds: vi.fn().mockResolvedValue([]),
       findByThreadId: vi.fn().mockResolvedValue(null),
+      findLatestByFeatureId: vi.fn().mockResolvedValue(null),
       updateStatus: vi.fn().mockResolvedValue(undefined),
+      updatePinnedConfig: vi.fn().mockResolvedValue(undefined),
       findRunningByPid: vi.fn().mockResolvedValue([]),
       list: vi.fn().mockResolvedValue([]),
       delete: vi.fn().mockResolvedValue(undefined),
@@ -150,6 +154,20 @@ describe('Adopt Flow Integration Tests', () => {
       localMergeSquash: vi.fn(),
       getMergeableStatus: vi.fn().mockResolvedValue(undefined),
       getFailureLogs: vi.fn().mockResolvedValue(''),
+      createGitHubRepo: vi.fn(),
+      addRemote: vi.fn(),
+      pull: vi.fn(),
+      syncMain: vi.fn(),
+      rebaseOnMain: vi.fn(),
+      rebaseOnBranch: vi.fn(),
+      getConflictedFiles: vi.fn().mockResolvedValue([]),
+      stageFiles: vi.fn(),
+      rebaseContinue: vi.fn(),
+      rebaseAbort: vi.fn(),
+      getBranchSyncStatus: vi.fn().mockResolvedValue({ ahead: 0, behind: 0 }),
+      stash: vi.fn().mockResolvedValue(false),
+      stashPop: vi.fn(),
+      stashDrop: vi.fn(),
     };
 
     mockSpecInitializer = {
@@ -161,6 +179,7 @@ describe('Adopt Flow Integration Tests', () => {
         writeFileSync(join(specDir, 'spec.yaml'), 'name: test\n');
         return { specDir, featureNumber: nnn };
       }),
+      scaffoldSecurityPolicy: vi.fn(),
     };
 
     useCase = new AdoptBranchUseCase(

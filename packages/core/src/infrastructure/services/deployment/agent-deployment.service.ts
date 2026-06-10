@@ -113,12 +113,16 @@ export class AgentDeploymentService implements IAgentDeploymentService {
       }
     }
 
-    // Step 4: Start the dev server
+    // Step 4: Start the dev server.
+    // NOTE: main's DeploymentService.start() auto-detects the dev script and
+    // does not (yet) accept an explicit command/cwd override. The agent-derived
+    // `analysis.command` / `analysis.cwd` are logged for observability; wiring an
+    // explicit command override into DeploymentService is tracked as follow-up.
     try {
-      this.deps.deploymentService.start(targetId, targetPath, {
-        command: analysis.command,
-        cwd: analysis.cwd,
-      });
+      log.info(
+        `agent analysis suggests command="${analysis.command}" cwd="${analysis.cwd}" (using auto-detection)`
+      );
+      this.deps.deploymentService.start(targetId, targetPath);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to start deployment';
       log.error(`deployment start failed: ${message}`);
