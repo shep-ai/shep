@@ -54,7 +54,15 @@ interface CampaignsProgressOpts {
 }
 
 export function createAspmCampaignsCommand(): Command {
-  const cmd = new Command('campaigns').description('Manage ASPM remediation campaigns');
+  const cmd = new Command('campaigns').description('Manage ASPM remediation campaigns').addHelpText(
+    'after',
+    `
+Examples:
+  $ shep aspm campaigns list --status Active --owner team-security          List active campaigns by owner
+  $ shep aspm campaigns create --name "Critical fixes" --description "Patch exposed secrets" --severity Critical,High --due 2026-07-01 --actor alice
+  $ shep aspm campaigns close campaign_123 --status Completed --actor alice --note "all findings resolved"
+  $ shep aspm campaigns progress campaign_123 --json                        Export progress metrics`
+  );
 
   cmd
     .command('list')

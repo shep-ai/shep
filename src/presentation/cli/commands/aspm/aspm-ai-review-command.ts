@@ -42,7 +42,14 @@ interface AiReviewGraduateOpts {
 }
 
 export function createAspmAiReviewCommand(): Command {
-  const cmd = new Command('ai-review').description('Triage AI-change risk signals');
+  const cmd = new Command('ai-review').description('Triage AI-change risk signals').addHelpText(
+    'after',
+    `
+Examples:
+  $ shep aspm ai-review list --app api --state Open --limit 50              Review open AI-change signals
+  $ shep aspm ai-review dismiss signal_123 --actor alice --justification "false positive"  Dismiss a signal
+  $ shep aspm ai-review graduate signal_123 --owner team-security --json    Create a finding from a signal`
+  );
 
   cmd
     .command('list')

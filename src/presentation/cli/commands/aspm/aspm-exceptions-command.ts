@@ -24,7 +24,13 @@ interface ListExpiringOpts {
 }
 
 export function createAspmExceptionsCommand(): Command {
-  const cmd = new Command('exceptions').description('Manage ASPM risk exceptions');
+  const cmd = new Command('exceptions').description('Manage ASPM risk exceptions').addHelpText(
+    'after',
+    `
+Examples:
+  $ shep aspm exceptions list-expiring --within 30        Review exceptions expiring this month
+  $ shep aspm exceptions list-expiring --within 7 --json  Export exceptions expiring this week`
+  );
 
   cmd
     .command('list-expiring')

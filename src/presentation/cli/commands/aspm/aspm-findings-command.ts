@@ -42,7 +42,16 @@ interface FindingsShowOptions {
 }
 
 export function createAspmFindingsCommand(): Command {
-  const cmd = new Command('findings').description('List and inspect ASPM security findings');
+  const cmd = new Command('findings')
+    .description('List and inspect ASPM security findings')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep aspm findings list --app api --severity Critical,High --limit 25  Review critical and high findings
+  $ shep aspm findings list --state Open --kev --json                       Export open KEV findings
+  $ shep aspm findings show finding_123 --json                              Inspect one finding`
+    );
 
   cmd
     .command('list')

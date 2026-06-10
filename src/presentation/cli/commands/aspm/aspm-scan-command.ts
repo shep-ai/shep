@@ -71,6 +71,13 @@ function buildCommand(
       'Comma-separated stages to run (sbom,sca,secrets,sast,container,iac)'
     )
     .option('--json', 'Emit a structured JSON summary on stdout')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep aspm scan --app web --stages sbom,secrets --json       Run selected stages and print JSON
+  $ shep aspm rescan --app api --stages secrets                 Re-run only the secrets stage`
+    )
     .action(async (options: ScanOptions) => {
       try {
         const resolved = await resolveApplication(options.app);
