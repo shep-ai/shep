@@ -53,6 +53,8 @@ function createMockState(overrides?: Partial<FeatureAgentState>): FeatureAgentSt
     maxIterations: 10,
     feedbackHistory: [],
     explorationStatus: 'waiting-feedback',
+    projectMemory: undefined,
+    merged: false,
     ...overrides,
   };
 }

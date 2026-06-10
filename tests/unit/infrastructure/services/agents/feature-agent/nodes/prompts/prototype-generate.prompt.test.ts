@@ -89,6 +89,8 @@ function createState(overrides?: Partial<FeatureAgentState>): FeatureAgentState 
     maxIterations: 10,
     feedbackHistory: [],
     explorationStatus: 'generating',
+    projectMemory: undefined,
+    merged: false,
     ...overrides,
   };
 }

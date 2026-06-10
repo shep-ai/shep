@@ -144,6 +144,8 @@ describe('routeAfterPrototypeGenerate', () => {
       maxIterations: 10,
       feedbackHistory: [],
       explorationStatus: 'waiting-feedback',
+      projectMemory: undefined,
+      merged: false,
       ...overrides,
     };
   }
