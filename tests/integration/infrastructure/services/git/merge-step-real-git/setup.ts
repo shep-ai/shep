@@ -91,6 +91,9 @@ export async function createGitHarness(): Promise<GitHarness> {
 
   await realExec('git', ['config', 'user.email', 'test@shep.test'], { cwd: cloneDir });
   await realExec('git', ['config', 'user.name', 'Shep Test'], { cwd: cloneDir });
+  // Never sign harness commits — these throwaway repos must not depend on the
+  // developer's / CI runner's global commit-signing setup (gpg/ssh).
+  await realExec('git', ['config', 'commit.gpgsign', 'false'], { cwd: cloneDir });
 
   writeFileSync(join(cloneDir, 'README.md'), '# Test Repo\n');
   await realExec('git', ['add', 'README.md'], { cwd: cloneDir });
@@ -126,6 +129,9 @@ export async function createLocalOnlyHarness(): Promise<{
   await realExec('git', ['init'], { cwd: repoDir });
   await realExec('git', ['config', 'user.email', 'test@shep.test'], { cwd: repoDir });
   await realExec('git', ['config', 'user.name', 'Shep Test'], { cwd: repoDir });
+  // Never sign harness commits — these throwaway repos must not depend on the
+  // developer's / CI runner's global commit-signing setup (gpg/ssh).
+  await realExec('git', ['config', 'commit.gpgsign', 'false'], { cwd: repoDir });
 
   writeFileSync(join(repoDir, 'README.md'), '# Test Repo\n');
   await realExec('git', ['add', 'README.md'], { cwd: repoDir });
@@ -292,6 +298,8 @@ export function makeState(overrides: Partial<FeatureAgentState>): FeatureAgentSt
     prNumber: null,
     commitHash: null,
     ciStatus: null,
+    merged: false,
+    projectMemory: undefined,
     push: false,
     openPr: false,
     ciFixAttempts: 0,

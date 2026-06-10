@@ -24,6 +24,7 @@ import {
   ShieldAlert,
   Bot,
   GraduationCap,
+  Brain,
   Users,
   Bug,
   Package,
@@ -219,6 +220,12 @@ export function AppSidebar({
             label="SDLC Board"
             href="/sdlc"
             active={pathname?.startsWith('/sdlc') ?? false}
+          />
+          <SidebarNavItem
+            icon={Brain}
+            label={t('navigation.projectMemory')}
+            href="/memory"
+            active={pathname?.startsWith('/memory') ?? false}
           />
           <SidebarNavItem
             icon={Wrench}

@@ -3638,6 +3638,47 @@ export type SdlcSubTask = BaseEntity & {
    */
   sortOrder: float64;
 };
+export enum MemoryCategory {
+  Convention = 'Convention',
+  Library = 'Library',
+  NamingPattern = 'NamingPattern',
+  ArchitectureDecision = 'ArchitectureDecision',
+  CiFixResolution = 'CiFixResolution',
+}
+export enum MemoryScope {
+  Project = 'Project',
+  Organization = 'Organization',
+}
+
+/**
+ * A durable, categorised unit of per-repository project knowledge (Shep Brain)
+ */
+export type ProjectMemory = BaseEntity & {
+  /**
+   * Normalised repository path that scopes this memory entry
+   */
+  repositoryPath: string;
+  /**
+   * Category of knowledge captured by this entry
+   */
+  category: MemoryCategory;
+  /**
+   * Stable upsert key within (repositoryPath, category)
+   */
+  entryKey: string;
+  /**
+   * Concise, actionable memory text injected into agent prompts
+   */
+  content: string;
+  /**
+   * Optional ID of the feature whose merge produced this entry
+   */
+  sourceFeatureId?: string;
+  /**
+   * Reach of this entry: Project (default) or Organization-wide
+   */
+  scope?: MemoryScope;
+};
 
 /**
  * Top-level rollup grouping for ASPM (e.g. division, product line)

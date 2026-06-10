@@ -120,6 +120,12 @@ import { UpdateSdlcTaskStatusUseCase } from '../../../application/use-cases/sdlc
 import { ReorderSdlcTaskUseCase } from '../../../application/use-cases/sdlc-board/reorder-sdlc-task.use-case.js';
 import { UpdateSdlcSubTaskStatusUseCase } from '../../../application/use-cases/sdlc-board/update-sdlc-subtask-status.use-case.js';
 
+// Project memory ("Shep Brain", feature 102) use cases
+import { ReadProjectMemoryUseCase } from '../../../application/use-cases/project-memory/read-project-memory.use-case.js';
+import { SelectProjectMemoryUseCase } from '../../../application/use-cases/project-memory/select-project-memory.use-case.js';
+import { RecordProjectMemoryUseCase } from '../../../application/use-cases/project-memory/record-project-memory.use-case.js';
+import { ManageProjectMemoryUseCase } from '../../../application/use-cases/project-memory/manage-project-memory.use-case.js';
+
 // Bedrock integration (feature 098) use cases
 import { EnableBedrockForApplicationUseCase } from '../../../application/use-cases/applications/enable-bedrock-for-application.use-case.js';
 import { RunBedrockLifecycleUseCase } from '../../../application/use-cases/applications/run-bedrock-lifecycle.use-case.js';
@@ -526,6 +532,12 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(ReorderSdlcTaskUseCase);
   container.registerSingleton(UpdateSdlcSubTaskStatusUseCase);
 
+  // ─── Project memory ("Shep Brain", feature 102) use cases ───────────────
+  container.registerSingleton(ReadProjectMemoryUseCase);
+  container.registerSingleton(SelectProjectMemoryUseCase);
+  container.registerSingleton(RecordProjectMemoryUseCase);
+  container.registerSingleton(ManageProjectMemoryUseCase);
+
   // ─── Bedrock integration (feature 098) use cases ────────────────────────
   container.registerSingleton(EnableBedrockForApplicationUseCase);
   container.registerSingleton(RunBedrockLifecycleUseCase);
@@ -572,5 +584,19 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('UpdateSdlcSubTaskStatusUseCase', {
     useFactory: (c) => c.resolve(UpdateSdlcSubTaskStatusUseCase),
+  });
+
+  // ─── Project memory ("Shep Brain", feature 102) string aliases ──────────
+  container.register('ReadProjectMemoryUseCase', {
+    useFactory: (c) => c.resolve(ReadProjectMemoryUseCase),
+  });
+  container.register('SelectProjectMemoryUseCase', {
+    useFactory: (c) => c.resolve(SelectProjectMemoryUseCase),
+  });
+  container.register('RecordProjectMemoryUseCase', {
+    useFactory: (c) => c.resolve(RecordProjectMemoryUseCase),
+  });
+  container.register('ManageProjectMemoryUseCase', {
+    useFactory: (c) => c.resolve(ManageProjectMemoryUseCase),
   });
 }

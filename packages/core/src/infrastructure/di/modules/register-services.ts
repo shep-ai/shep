@@ -15,6 +15,11 @@ import type { IGitCommitService } from '../../../application/ports/output/servic
 import { GitCommitService } from '../../services/git/git-commit.service.js';
 import type { IFileSystemService } from '../../../application/ports/output/services/file-system-service.interface.js';
 import { FileSystemService } from '../../services/file-system.service.js';
+import type { IMemoryRelevanceScorer } from '../../../application/ports/output/services/memory-relevance-scorer.interface.js';
+import { LexicalMemoryRelevanceScorer } from '../../services/project-memory/lexical-memory-relevance-scorer.js';
+import { EmbeddingMemoryRelevanceScorer } from '../../services/project-memory/embedding-memory-relevance-scorer.js';
+import type { IEmbeddingProvider } from '../../../application/ports/output/services/embedding-provider.interface.js';
+import { OpenAiCompatibleEmbeddingProvider } from '../../services/embeddings/openai-compatible-embedding-provider.js';
 import type { IApplicationBriefStore } from '../../../application/ports/output/services/application-brief-store.interface.js';
 import { ApplicationBriefStore } from '../../services/filesystem/application-brief.store.js';
 import type { IProjectScaffoldService } from '../../../application/ports/output/services/project-scaffold-service.interface.js';
@@ -183,6 +188,20 @@ export function registerServices(container: DependencyContainer): void {
   container.registerSingleton<IWorktreeService>('IWorktreeService', WorktreeService);
   container.registerSingleton<IGitCommitService>('IGitCommitService', GitCommitService);
   container.registerSingleton<IFileSystemService>('IFileSystemService', FileSystemService);
+  // Embedding provider (config-gated; offline/CI default → unavailable).
+  container.registerSingleton<IEmbeddingProvider>(
+    'IEmbeddingProvider',
+    OpenAiCompatibleEmbeddingProvider
+  );
+  // Lexical scorer kept as a resolvable class so the embedding scorer can inject
+  // it as its deterministic fallback.
+  container.registerSingleton(LexicalMemoryRelevanceScorer);
+  // The active scorer is semantic when embeddings are configured, and falls back
+  // to lexical otherwise — so behaviour is unchanged without an API key.
+  container.registerSingleton<IMemoryRelevanceScorer>(
+    'IMemoryRelevanceScorer',
+    EmbeddingMemoryRelevanceScorer
+  );
   container.registerSingleton<IApplicationBriefStore>(
     'IApplicationBriefStore',
     ApplicationBriefStore

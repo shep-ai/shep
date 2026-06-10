@@ -53,6 +53,8 @@ import type { IMcpServerManager } from '@/application/ports/output/services/mcp-
 import { UpdateFeatureLifecycleUseCase } from '@/application/use-cases/features/update/update-feature-lifecycle.use-case.js';
 import { CleanupFeatureWorktreeUseCase } from '@/application/use-cases/features/cleanup-feature-worktree.use-case.js';
 import { startPluginServers, stopPluginServers } from './plugin-startup.js';
+import { SelectProjectMemoryUseCase } from '@/application/use-cases/project-memory/select-project-memory.use-case.js';
+import { RecordProjectMemoryUseCase } from '@/application/use-cases/project-memory/record-project-memory.use-case.js';
 
 import type { ApprovalGates } from '@/domain/generated/output.js';
 
@@ -303,9 +305,21 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   const featureRepository = container.resolve<IFeatureRepository>('IFeatureRepository');
   const cleanupFeatureWorktreeUseCase = container.resolve(CleanupFeatureWorktreeUseCase);
 
+  // Per-phase/per-task memory selection ("Shep Brain"): each agent prompt
+  // receives only the entries relevant to its phase + task, ranked by the
+  // injected scorer and bounded by a token budget — not the whole store.
+  const selectProjectMemoryUseCase = container.resolve(SelectProjectMemoryUseCase);
+  const selectProjectMemory = (input: {
+    repositoryPath: string;
+    phase: string;
+    taskText: string;
+  }) => selectProjectMemoryUseCase.execute(input);
+
   const graphDeps: FeatureAgentGraphDeps = {
     executor,
+    selectProjectMemory,
     mergeNodeDeps: {
+      selectMemory: selectProjectMemory,
       getDiffSummary: (cwd: string, baseBranch: string) =>
         gitPrService.getPrDiffSummary(cwd, baseBranch),
       hasRemote: (cwd: string) => gitPrService.hasRemote(cwd),
@@ -328,6 +342,9 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
       gitPrService,
       gitForkService: container.resolve<IGitForkService>('IGitForkService'),
       cleanupFeatureWorktreeUseCase,
+    },
+    extractMemoryDeps: {
+      recordProjectMemory: container.resolve(RecordProjectMemoryUseCase),
     },
   };
 

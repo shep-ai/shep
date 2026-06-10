@@ -349,7 +349,8 @@
     "aspmCompliance": "Compliance",
     "collaboration": "Collaboration",
     "clusters": "Clusters",
-    "plugins": "Plugins"
+    "plugins": "Plugins",
+    "projectMemory": "Project Memory"
   },
   "sidebar": {
     "features": "Fonctionnalités",
@@ -840,5 +841,39 @@
     "linkedRepos_other": "{{count}} repos",
     "linkedApps_one": "{{count}} app",
     "linkedApps_other": "{{count}} apps"
+  },
+  "memory": {
+    "title": "Project Memory",
+    "subtitle": "Durable knowledge agents read at the start of every feature. Updated automatically after each merged PR.",
+    "empty": {
+      "title": "No project memory yet",
+      "description": "As features merge, agents distil conventions, library choices, and fixes here."
+    },
+    "categories": {
+      "convention": "Conventions",
+      "architectureDecision": "Architecture Decisions",
+      "library": "Preferred Libraries & Tools",
+      "namingPattern": "Naming Patterns",
+      "ciFixResolution": "Past CI/Build Fixes"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel",
+      "makeOrgWide": "Make organization-wide",
+      "makeProjectOnly": "Make project-only"
+    },
+    "deleteDialog": {
+      "title": "Delete this memory entry?",
+      "description": "Agents will no longer see this guidance when starting a feature. This cannot be undone."
+    },
+    "errors": {
+      "emptyContent": "Memory content cannot be empty.",
+      "updateFailed": "Failed to update the memory entry."
+    },
+    "scope": {
+      "organization": "Organization"
+    }
   }
 }

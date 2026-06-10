@@ -1,0 +1,30 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ProjectMemory.yaml
+type: object
+properties:
+  repositoryPath:
+    type: string
+    description: Normalised repository path that scopes this memory entry
+  category:
+    $ref: MemoryCategory.yaml
+    description: Category of knowledge captured by this entry
+  entryKey:
+    type: string
+    description: Stable upsert key within (repositoryPath, category)
+  content:
+    type: string
+    description: Concise, actionable memory text injected into agent prompts
+  sourceFeatureId:
+    type: string
+    description: Optional ID of the feature whose merge produced this entry
+  scope:
+    $ref: MemoryScope.yaml
+    description: "Reach of this entry: Project (default) or Organization-wide"
+required:
+  - repositoryPath
+  - category
+  - entryKey
+  - content
+allOf:
+  - $ref: BaseEntity.yaml
+description: A durable, categorised unit of per-repository project knowledge (Shep Brain)

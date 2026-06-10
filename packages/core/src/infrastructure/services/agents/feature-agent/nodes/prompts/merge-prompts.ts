@@ -12,6 +12,7 @@
 import yaml from 'js-yaml';
 import { EvidenceType, type Evidence } from '@/domain/generated/output.js';
 import { readSpecFile, buildResumeContext } from '../node-helpers.js';
+import { buildProjectMemorySection, renderProjectMemoryBlock } from './project-memory-section.js';
 import type { FeatureAgentState } from '../../state.js';
 import { PR_BRANDING, COMMIT_CO_AUTHOR } from './pr-branding.js';
 
@@ -189,7 +190,7 @@ export function buildCommitPushPrPrompt(
 
   return `${resumeContext}You are performing git operations in a feature worktree.
 ${rejectionSection}
-## Feature Specification Context
+${buildProjectMemorySection(state)}## Feature Specification Context
 
 \`\`\`yaml
 ${specContent}
@@ -304,11 +305,12 @@ export function buildCiWatchFixPrompt(
   failureLogs: string,
   attemptNumber: number,
   maxAttempts: number,
-  branch: string
+  branch: string,
+  projectMemory?: string
 ): string {
   return `You are fixing a CI failure on branch \`${branch}\` (attempt ${attemptNumber}/${maxAttempts}).
 
-## CI Failure Logs
+${renderProjectMemoryBlock(projectMemory)}## CI Failure Logs
 
 The following logs were retrieved from the failed GitHub Actions run:
 

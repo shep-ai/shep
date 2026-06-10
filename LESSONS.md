@@ -853,6 +853,48 @@ In the cloud org-runner pod, the cli process runs with `NEXT_ASSET_PREFIX=/cli` 
 
 **Rule:** scrub cli-only vars (`NEXT_ASSET_PREFIX`, `PORT`, Anthropic creds) from the env at the spawn point via `buildDevServerEnv()` — do NOT rely on the org-runner `env-scrub` PATH wrappers, which only intercept `npm/pnpm/yarn/bun/npx` by name and are bypassed when the binary (e.g. `bun`, or a globally-installed pnpm in `/data/.npm-global/bin`) resolves ahead of `/usr/local/sbin`. Keep `HOST`/`HOSTNAME` (intentionally `0.0.0.0` so the preview proxy can reach the dev server on the pod IP).
 
+## LangGraph Node Wiring Must Stay One Fluent Chain (Node-Name Types)
+
+`new StateGraph(...).addNode('a',...).addNode('b',...)` returns a type whose
+node-name string-literal union grows with each `.addNode`. If you split the chain
+across statements that re-reference the same `const graph` — e.g.
+`graph.addNode('merge',...).addEdge(...); ... graph.addConditionalEdges('merge',...)`
+— the second statement sees `graph`'s ORIGINAL declared type (without `'merge'`)
+and fails with `Argument of type '"merge"' is not assignable to parameter of type
+'<existing node union>'`. Keep every `.addNode/.addEdge/.addConditionalEdges` for
+new nodes in a SINGLE fluent expression so the augmented node-name type flows
+through. (Hit when wiring the post-merge `extract_memory` node in both
+feature-agent-graph.ts and fast-feature-agent-graph.ts.)
+
+## Prompt Files Live One Dir Deeper Than Nodes — Relative Imports Need +1 `../`
+
+`feature-agent/nodes/*.ts` reach `domain/generated/output.js` with five `../`.
+Files under `feature-agent/nodes/prompts/*.ts` are one level deeper and need SIX
+`../`. This only fails at test/runtime (`Cannot find module`), not always at
+typecheck. When adding a new prompt builder that imports a domain type, copy the
+import depth from a sibling in `nodes/prompts/`, not from `nodes/`.
+
+## Adding a FeatureAgentAnnotation State Channel Ripples to Full-State Fixtures
+
+LangGraph's `StateType` makes every channel a REQUIRED key (value may be
+`undefined`, but the key must be present). Adding a channel to
+`FeatureAgentAnnotation` breaks every fixture that builds a *complete*
+`FeatureAgentState` object literal (not `Partial`) — they fail with `Property 'x'
+is missing`. Also update `state.test.ts`: it asserts `channelNames.length).toBe(N)`
+and lists each channel via `toContain`. Known full-state fixtures to update:
+`merge-step-real-git/setup.ts` (`makeState`), `repair.node.test.ts` (`baseState`),
+`langgraph/nodes/fast-implement.node.test.ts` (`createMockState`).
+
+## Test Git Harnesses Must Disable commit.gpgsign
+
+Throwaway git repos created by integration harnesses inherit the developer's /
+runner's global `commit.gpgsign=true`. In environments where signing is enforced
+(e.g. a sandbox signing server that can 400), `git commit` fails during harness
+SETUP — surfacing as unrelated-looking failures (`createLocalOnlyHarness`,
+verify-merge, local-merge). Always `git config commit.gpgsign false` in the
+harness's repo right after setting `user.name/email`, so the harness never
+depends on ambient signing config.
+
 ## Debugging Prod 404s: Read the Request's Referer/Origin BEFORE Theorizing
 
 I first "fixed" these `/cli/_next/*` 404s as a per-org-pod build-skew problem (shep-cloud PR #22) — plausible, but WRONG: the failing requests' **`Referer` was the preview host** (`<port>-<org>.preview.shep.bot`), i.e. they came from a *user dev server*, not the cli UI. The ingress access log line carries Referer, status, and `upstream_addr` — read those FIRST. A 404 from a path that a healthy pod serves at 200 means the request isn't going where you assume; the Referer/Host tells you which proxy path (`/cli/*` vs `/preview-proxy`) actually handled it. Confirm the exact failing request path end-to-end before writing a fix.
@@ -954,3 +996,121 @@ How to apply:
 - Inventory / list / explorer views: include every non-Archived, non-deleted Feature. Render `branch` as the secondary identifier.
 - Scan / build / deploy actions: when the action requires an on-disk path, check `worktreePath` per row at action time and disable the action (or fall back) when it is missing — do not pre-filter the row out of the list.
 - Tests: pin down the "row with null worktreePath still appears" case explicitly. It is the more common shape in real data.
+
+## A New Cross-Cutting Context (Memory/Skills) Must Reach EVERY Agent Prompt, Not Just the First Node
+
+When wiring a repository-wide context blob ("Shep Brain" project memory) into the
+feature-agent, the first cut only injected it into the `analyze` and `research`
+prompts. That left the highest-value phases — `implement`, `fast-implement`,
+`merge` (commit + CI-fix) — and the entire interactive chat agent with NO memory.
+The user immediately asked "is anything injecting this when relevant?" — because
+a feature that only reaches 2 of ~8 agent prompts looks done but isn't.
+
+Rules for any cross-cutting context that "every agent should see":
+
+1. **Enumerate every agent-call prompt before claiming done.** For the
+   feature-agent that is: analyze, requirements, research, plan, implement,
+   fast-implement, merge commit-push-pr, AND the CI-fix loop prompt. Plus the
+   interactive agent's `FeatureContextBuilder.buildContext`. Grep for
+   `executor.execute(` and every `build*Prompt(` to find them all.
+2. **Custom-execution nodes are easy to miss.** `analyze/requirements/research/
+   plan` go through `executeNode(name, executor, buildXPrompt)`, but `implement`,
+   `fast-implement`, and `merge` build prompts inline and call the executor
+   directly — they will NOT inherit anything you add to `executeNode`.
+3. **Prompts that don't take graph state need a parameter.** `buildCiWatchFixPrompt`
+   and `buildLocalSquashMergePrompt` take primitives, not `state`. Thread the blob
+   through as an explicit optional arg (and update the caller that has `state`).
+   The CI-fix prompt is the single most relevant place for "past CI fixes" memory.
+4. **The interactive agent is a separate subsystem.** It boots via
+   `BootPromptResolver` → `FeatureContextBuilder.buildContext`. Inject the read
+   use case into the resolver, load by `feature.repositoryPath`, pass the blob in.
+   Best-effort: a load failure must never block session boot.
+5. **Provide a raw-string renderer, not just a state-based one.** Expose
+   `renderProjectMemoryBlock(blob)` alongside `buildProjectMemorySection(state)`
+   so non-state prompts can render the identical block without duplicating the
+   defensive framing text.
+6. **Test the breadth.** One parametrised test asserting the section appears in
+   every prompt (and is omitted when empty) is the proof that "all agents see it".
+
+## Injecting a Knowledge Store Into Prompts: Select Per-Prompt, Don't Dump the Whole Thing
+
+First we injected the FULL project-memory blob into every agent prompt. The user
+pushed back: "we shouldn't inject the whole memory, we should have a smart
+mechanism to understand what we need to inject per project/repo/task/prompt."
+Dumping everything bloats prompts, drowns the relevant entries in noise, and
+scales badly as the store grows.
+
+The pattern for injecting any growing knowledge store (memory, skills, docs)
+into an LLM prompt:
+
+1. **Make selection a first-class, pluggable port.** Define an
+   `IMemoryRelevanceScorer` (score(query, entries) → ranked) so a deterministic
+   scorer ships now and a semantic/embedding scorer can drop in later without
+   touching callers. Keep it agent-agnostic — no provider SDK in the port.
+2. **A deterministic scorer is enough for v1 and needs no deps:** combine
+   (a) lexical overlap between the entry and the task text, (b) phase→category
+   affinity (CI-fix cares about past CI fixes; implement cares about conventions
+   & naming), and (c) recency. Weight and sum to [0,1].
+3. **Budget, don't cap by count.** Greedily include top-ranked entries up to a
+   token budget so prompt size is bounded no matter how big the store is. Always
+   include at least the single most relevant entry.
+4. **Select per prompt at execution time, not once globally.** The worker used to
+   load ONE blob into state. Wrong — each phase/task wants a different subset.
+   Select inside the node boundary (async) with the phase + a derived task text,
+   then pass the selected blob to the (still pure, still sync) prompt builder via
+   a shallow-cloned state. Prompt builders and their tests stay unchanged.
+5. **The query is context-specific.** Derive task text from the spec/research/plan
+   for producer phases; use the FAILURE LOGS as the query for the CI-fix prompt
+   (so matching past fixes surface); use the feature name/description for the
+   interactive agent.
+6. **Thread the selector as an OPTIONAL dep** through graph deps → node factories
+   → executeNode (and the custom nodes). Optional = existing tests/callers keep
+   compiling and behave as before (no selector → no selection).
+7. **When you mock node-helpers in a node test, add every new export the node
+   imports** (e.g. `applyMemorySelection`) or the node throws "x is not a
+   function" at runtime.
+
+## Wiring an Optional External Capability (Embeddings) Agent-Agnostically + CI-Safe
+
+To add semantic memory ranking without violating the agent-agnostic rule or
+breaking offline CI:
+
+1. **Define an output port** (`IEmbeddingProvider { isAvailable(); embed() }`) and
+   keep the concrete adapter provider-agnostic — any OpenAI-compatible endpoint
+   via `fetch`, configured by env (`SHEP_EMBEDDINGS_API_KEY/BASE_URL/MODEL`). No
+   provider SDK imported, no hardcoded vendor.
+2. **Gate on config + degrade gracefully.** `isAvailable()` is false without an
+   API key, so the default/offline/CI path makes ZERO network calls and behaves
+   exactly as before. The semantic scorer composes the deterministic one and
+   **falls back to it** when the provider is unavailable, the task text is empty,
+   or any embedding call throws. Selection must never fail.
+3. **Compose, don't fork.** The embedding scorer injects the lexical scorer as
+   its fallback and both share one `rankByContentScore(query, entries, contentFn)`
+   helper — only the content signal differs (token overlap vs. cosine). No
+   duplicated category/recency/weight/sort logic.
+4. **Cache embeddings in-process** keyed by a hash of the text, so the same entry
+   isn't re-embedded across the many selections in one agent run.
+5. **Test offline.** Stub the provider for the scorer tests (cosine ranking,
+   fallback, cache); spy on `globalThis.fetch` for the adapter test. Never make a
+   real network call — the no-key default keeps the whole suite deterministic.
+6. **eslint `prefer-nullish-coalescing` vs. empty env strings:** `process.env.X ||
+   DEFAULT` is flagged. But `??` won't fall back on an empty string. Use
+   `const v = process.env.X?.trim(); return v && v.length ? v : DEFAULT;`.
+## Release-notes generator: ground the tagline in commit types, pin evidence to an immutable ref
+
+Two bugs shipped together in the v1.210.0 GitHub release (custom `scripts/release-notes-*.mjs` semantic-release plugin):
+
+1. **Tagline contradicted the changelog.** Claude wrote _"Under the hood maintenance and housekeeping — no user-facing changes…"_ for a release whose only commit was a `feat` (gated behind a feature flag). A flagged feature still ships. The prompt let Claude reason "behind a flag ⇒ internal", and nothing validated the result against the actual commit types.
+2. **Evidence images 404'd.** PR bodies embedded `raw.githubusercontent.com/owner/repo/<feature-branch>/specs/.../evidence/*.png`. After squash-merge the branch is deleted ⇒ broken images. The extractor added PR-body URLs verbatim.
+
+Fixes:
+
+- `buildPrompt` now branches on `hasUserFacingChanges` (any feat/fix/perf) and explicitly forbids "maintenance / housekeeping / under the hood / behind the scenes / no user-facing changes" framings for user-facing releases. Plus a post-generation guard (`isMaintenanceOnlyFraming`) rejects a contradictory tagline and falls back to the static one.
+- `normalizeRepoMediaUrl` rewrites any repo-hosted raw/blob URL to the immutable release tag (`nextRelease.gitTag`), threaded through as `ref`. Bare `specs|docs|evidence` paths now also pin to the tag, not `main`.
+
+Rules:
+
+- A git **ref can contain slashes** (`feat/aspm-platform`). You cannot split ref-from-path positionally in a `raw.githubusercontent.com/owner/repo/<ref>/<path>` URL. Recover the path by locating the first known repo root segment (`specs`/`docs`/`evidence`), not by `slice(3)`.
+- Anything permanent (release notes, changelog) must reference an **immutable ref** (tag or commit SHA), never a branch — branches get deleted.
+- When an LLM writes user-facing copy from structured data, **validate the output against that same data** before publishing. Don't trust the prompt alone; add a deterministic guard that falls back on contradiction.
+- `.mjs` scripts under ESLint need browser/Node globals declared: `/* global fetch, URL */`.

@@ -12,7 +12,7 @@ import type { IAgentExecutor } from '@/application/ports/output/agents/agent-exe
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import { CiStatus, type CiFixRecord } from '@/domain/generated/output.js';
-import type { NodeLogger } from '../node-helpers.js';
+import type { NodeLogger, MemorySelector } from '../node-helpers.js';
 import { retryExecute } from '../node-helpers.js';
 import type { AgentExecutionOptions } from '@/application/ports/output/agents/agent-executor.interface.js';
 import { buildCiWatchFixPrompt, buildCiWatchPrompt } from '../prompts/merge-prompts.js';
@@ -37,6 +37,10 @@ export interface CiWatchFixParams {
   existingAttempts: number;
   messages: string[];
   log: NodeLogger;
+  /** Selects the relevant memory (ranked by the failure logs) for the CI-fix prompt. */
+  selectMemory?: MemorySelector;
+  /** Repository path used to scope memory selection. */
+  repositoryPath: string;
 }
 
 export type CiFixStatusValue = 'idle' | 'watching' | 'fixing' | 'success' | 'exhausted' | 'timeout';
@@ -130,7 +134,7 @@ export async function runCiWatchFixLoop(
   params: CiWatchFixParams
 ): Promise<CiWatchFixResult> {
   const { executor, gitPrService } = deps;
-  const { cwd, branch, options, feature, prUrl, prNumber, messages, log } = params;
+  const { cwd, branch, options, feature, prUrl, prNumber, messages, log, selectMemory } = params;
 
   const settings = getSettings();
   const maxAttempts = settings.workflow?.ciMaxFixAttempts ?? 3;
@@ -225,9 +229,31 @@ export async function runCiWatchFixLoop(
       agentType: executor.agentType,
     });
 
+    // Select the memory most relevant to THIS failure (the logs are the query),
+    // so past CI/build fixes that match the current error surface first.
+    let ciFixMemory: string | undefined;
+    if (selectMemory) {
+      try {
+        const { blob } = await selectMemory({
+          repositoryPath: params.repositoryPath,
+          phase: 'ci-fix',
+          taskText: failureLogs,
+        });
+        ciFixMemory = blob.length > 0 ? blob : undefined;
+      } catch {
+        ciFixMemory = undefined;
+      }
+    }
+
     // Invoke fix executor — maxAttempts:1 prevents retryExecute's internal
     // retry logic from consuming CI fix attempts behind the outer loop's back.
-    const fixPrompt = buildCiWatchFixPrompt(failureLogs, ciFixAttempts + 1, maxAttempts, branch);
+    const fixPrompt = buildCiWatchFixPrompt(
+      failureLogs,
+      ciFixAttempts + 1,
+      maxAttempts,
+      branch,
+      ciFixMemory
+    );
     try {
       const fixResult = await retryExecute(executor, fixPrompt, options, {
         maxAttempts: 1,

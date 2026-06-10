@@ -83,6 +83,7 @@ vi.mock('@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js', 
         executor.execute(prompt)
     ),
   buildExecutorOptions: vi.fn().mockReturnValue({ cwd: '/tmp/worktree', maxTurns: 50 }),
+  applyMemorySelection: vi.fn(async (state: unknown) => state),
 }));
 
 vi.mock('@/infrastructure/services/agents/feature-agent/heartbeat.js', () => ({
@@ -432,7 +433,8 @@ describe('createMergeNode — CI watch/fix loop', () => {
         'test failure logs',
         1,
         3,
-        expect.any(String)
+        expect.any(String),
+        undefined
       );
     });
 

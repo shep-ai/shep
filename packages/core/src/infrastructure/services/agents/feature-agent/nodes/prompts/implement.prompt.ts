@@ -7,6 +7,7 @@
  */
 
 import { readSpecFile } from '../node-helpers.js';
+import { buildProjectMemorySection } from './project-memory-section.js';
 import type { FeatureAgentState } from '../../state.js';
 import { COMMIT_CO_AUTHOR } from '../../../../git/pr-branding.js';
 
@@ -99,7 +100,7 @@ export function buildImplementPhasePrompt(
   return `You are a senior software engineer performing autonomous implementation.
 You are executing phase ${context.phaseIndex + 1} of ${context.totalPhases}: "${phase.name}".
 
-## Feature Specification
+${buildProjectMemorySection(state)}## Feature Specification
 
 \`\`\`yaml
 ${specContent}

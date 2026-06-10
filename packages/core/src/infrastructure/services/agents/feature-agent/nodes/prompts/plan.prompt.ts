@@ -9,6 +9,7 @@
 
 import yaml from 'js-yaml';
 import { readSpecFile, buildCommitPushBlock } from '../node-helpers.js';
+import { buildProjectMemorySection } from './project-memory-section.js';
 import type { FeatureAgentState } from '../../state.js';
 
 export function buildPlanPrompt(state: FeatureAgentState): string {
@@ -53,7 +54,7 @@ ${olderSection}
   return `You are a software architect performing the PLANNING phase of feature development.
 ${rejectionFeedbackSection}
 
-## Your Task
+${buildProjectMemorySection(state)}## Your Task
 
 1. Read the feature spec (with requirements) and research findings
 2. Create a high-level implementation plan with architecture decisions, phases, and rationale

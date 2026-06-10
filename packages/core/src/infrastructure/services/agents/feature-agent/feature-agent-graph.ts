@@ -7,6 +7,11 @@ import { createResearchNode } from './nodes/research.node.js';
 import { createPlanNode } from './nodes/plan.node.js';
 import { createImplementNode } from './nodes/implement.node.js';
 import { createMergeNode, type MergeNodeDeps } from './nodes/merge/merge.node.js';
+import {
+  createExtractMemoryNode,
+  type ExtractMemoryNodeDeps,
+} from './nodes/extract-memory.node.js';
+import type { MemorySelector } from './nodes/node-helpers.js';
 import { createValidateNode } from './nodes/validate.node.js';
 import { createRepairNode } from './nodes/repair.node.js';
 import { validateSpecAnalyze, validateSpecRequirements } from './nodes/schemas/spec.schema.js';
@@ -30,6 +35,16 @@ export { FeatureAgentAnnotation, type FeatureAgentState } from './state.js';
 export interface FeatureAgentGraphDeps {
   executor: IAgentExecutor;
   mergeNodeDeps?: Omit<MergeNodeDeps, 'executor'>;
+  /**
+   * When provided (and merge is wired), enables the post-merge extract_memory
+   * node that distils durable project knowledge after a successful merge.
+   */
+  extractMemoryDeps?: Omit<ExtractMemoryNodeDeps, 'executor'>;
+  /**
+   * Selects the relevant project-memory subset per phase/task. When provided,
+   * every producer node injects only on-topic memory instead of the whole store.
+   */
+  selectProjectMemory?: MemorySelector;
 }
 
 /**
@@ -202,15 +217,15 @@ export function createFeatureAgentGraph(
   // Support legacy signature: createFeatureAgentGraph(executor, checkpointer)
   const deps: FeatureAgentGraphDeps =
     'execute' in depsOrExecutor ? { executor: depsOrExecutor } : depsOrExecutor;
-  const { executor } = deps;
+  const { executor, selectProjectMemory } = deps;
 
   const graph = new StateGraph(FeatureAgentAnnotation)
     // --- Producer nodes ---
-    .addNode('analyze', createAnalyzeNode(executor))
-    .addNode('requirements', createRequirementsNode(executor))
-    .addNode('research', createResearchNode(executor))
-    .addNode('plan', createPlanNode(executor))
-    .addNode('implement', createImplementNode(executor))
+    .addNode('analyze', createAnalyzeNode(executor, selectProjectMemory))
+    .addNode('requirements', createRequirementsNode(executor, selectProjectMemory))
+    .addNode('research', createResearchNode(executor, selectProjectMemory))
+    .addNode('plan', createPlanNode(executor, selectProjectMemory))
+    .addNode('implement', createImplementNode(executor, selectProjectMemory))
 
     // --- Validate nodes ---
     // Each validate node receives its SUCCESSOR phase name (the phase that runs
@@ -274,10 +289,22 @@ export function createFeatureAgentGraph(
       executor,
       ...deps.mergeNodeDeps,
     };
-    graph
-      .addNode('merge', createMergeNode(mergeNodeDeps))
-      .addEdge('implement', 'merge')
-      .addConditionalEdges('merge', routeReexecution('merge', END));
+    // --- Post-merge extraction: wired when deps are provided ---
+    // merge → extract_memory → END (extract_memory is a pure terminal node;
+    // it self-guards on state.merged so re-execution semantics are preserved).
+    if (deps.extractMemoryDeps) {
+      graph
+        .addNode('merge', createMergeNode(mergeNodeDeps))
+        .addNode('extract_memory', createExtractMemoryNode({ executor, ...deps.extractMemoryDeps }))
+        .addEdge('implement', 'merge')
+        .addConditionalEdges('merge', routeReexecution('merge', 'extract_memory'))
+        .addEdge('extract_memory', END);
+    } else {
+      graph
+        .addNode('merge', createMergeNode(mergeNodeDeps))
+        .addEdge('implement', 'merge')
+        .addConditionalEdges('merge', routeReexecution('merge', END));
+    }
   } else {
     graph.addEdge('implement', END);
   }

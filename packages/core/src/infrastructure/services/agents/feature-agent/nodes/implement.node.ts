@@ -23,6 +23,8 @@ import {
   retryExecute,
   getCompletedPhases,
   markPhaseComplete,
+  applyMemorySelection,
+  type MemorySelector,
 } from './node-helpers.js';
 import { reportNodeStart } from '../heartbeat.js';
 import {
@@ -86,7 +88,7 @@ function updateFeatureProgress(
   }
 }
 
-export function createImplementNode(executor: IAgentExecutor) {
+export function createImplementNode(executor: IAgentExecutor, selectMemory?: MemorySelector) {
   const log = createNodeLogger('implement');
 
   return async (state: FeatureAgentState): Promise<Partial<FeatureAgentState>> => {
@@ -96,6 +98,9 @@ export function createImplementNode(executor: IAgentExecutor) {
     await updateNodeLifecycle('implement');
     const startTime = Date.now();
     const messages: string[] = [];
+
+    // Inject only the memory relevant to the implementation phase + task.
+    const stateForPrompt = await applyMemorySelection(state, 'implement', selectMemory);
 
     // Record top-level implement phase timing (sub-phases are recorded individually below)
     const implementTimingId = await recordPhaseStart('implement', {
@@ -234,7 +239,12 @@ export function createImplementNode(executor: IAgentExecutor) {
               ...phase,
               taskIds: [task.id],
             };
-            return buildImplementPhasePrompt(state, singleTaskPhase, [task], promptContext);
+            return buildImplementPhasePrompt(
+              stateForPrompt,
+              singleTaskPhase,
+              [task],
+              promptContext
+            );
           });
           await updatePhasePrompt(phaseTimingId, taskPrompts.join('\n\n---\n\n'));
 
@@ -259,7 +269,12 @@ export function createImplementNode(executor: IAgentExecutor) {
           }
         } else {
           // Sequential: single executor call with all phase tasks
-          const prompt = buildImplementPhasePrompt(state, phase, phaseTasks, promptContext);
+          const prompt = buildImplementPhasePrompt(
+            stateForPrompt,
+            phase,
+            phaseTasks,
+            promptContext
+          );
           await updatePhasePrompt(phaseTimingId, prompt);
           log.info(`Executing phase prompt — ${prompt.length} chars`);
           const result = await retryExecute(executor, prompt, options, retryOpts);

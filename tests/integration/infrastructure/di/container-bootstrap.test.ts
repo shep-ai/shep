@@ -57,6 +57,7 @@ import { SettingsProviderAdapter } from '@/infrastructure/services/interactive/l
 import { AgentConfigResolver } from '@/infrastructure/services/interactive/lifecycle/agent-config.resolver.js';
 import { AgentStreamConsumer } from '@/infrastructure/services/interactive/runtime/agent-stream.consumer.js';
 import { BootPromptResolver } from '@/infrastructure/services/interactive/lifecycle/boot-prompt.resolver.js';
+import { SelectProjectMemoryUseCase } from '@/application/use-cases/project-memory/select-project-memory.use-case.js';
 import { SessionBootstrapper } from '@/infrastructure/services/interactive/lifecycle/session-bootstrapper.js';
 import { SessionTerminator } from '@/infrastructure/services/interactive/lifecycle/session-terminator.js';
 import { TurnExecutor } from '@/infrastructure/services/interactive/runtime/turn.executor.js';
@@ -264,7 +265,11 @@ describe('DI container bootstrap (integration)', () => {
     const agentExecutorFactory =
       scopedContainer.resolve<IAgentExecutorFactory>('IAgentExecutorFactory');
     const featureContextBuilder = new FeatureContextBuilder();
-    const bootPromptResolver = new BootPromptResolver(featureRepository, featureContextBuilder);
+    const bootPromptResolver = new BootPromptResolver(
+      featureRepository,
+      featureContextBuilder,
+      scopedContainer.resolve(SelectProjectMemoryUseCase)
+    );
     const interactionCoordinator = new UserInteractionCoordinator(
       sessionPersistence,
       streamEventDispatcher,

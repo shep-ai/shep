@@ -146,6 +146,8 @@ function createMockState(overrides?: Partial<FeatureAgentState>): FeatureAgentSt
     prNumber: null,
     commitHash: null,
     ciStatus: null,
+    merged: false,
+    projectMemory: undefined,
     push: false,
     openPr: false,
     ciFixAttempts: 0,

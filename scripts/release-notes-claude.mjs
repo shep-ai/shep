@@ -37,12 +37,53 @@ function stripMarkdownLinks(subject) {
   return String(subject).replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
 }
 
+/**
+ * Does this release ship anything a user would see? `feat`/`fix`/`perf`
+ * commits all surface in the release's changelog sections, so a tagline that
+ * calls the release "maintenance only" / "no user-facing changes" would
+ * directly contradict the notes printed right below it.
+ */
+function hasUserFacingChanges(commits) {
+  return (commits || []).some((c) => c && RELEVANT_COMMIT_TYPES.has(c.type));
+}
+
+// Framings that are only honest for a chore-only release. If the release
+// actually ships features/fixes, a tagline matching any of these contradicts
+// the changelog and must be rejected in favor of the static fallback.
+const MAINTENANCE_ONLY_PATTERNS = [
+  /no user-facing/i,
+  /under the hood/i,
+  /housekeeping/i,
+  /maintenance (?:release|only|and)/i,
+  /nothing user-facing/i,
+  /behind the scenes/i,
+];
+
+function isMaintenanceOnlyFraming(tagline) {
+  return MAINTENANCE_ONLY_PATTERNS.some((re) => re.test(tagline));
+}
+
 function buildPrompt({ commits, version }) {
   const summary = summarizeCommits(commits) || '- (chore-only release)';
+  const userFacing = hasUserFacingChanges(commits);
+  const naturePromptLines = userFacing
+    ? [
+        'This release SHIPS user-facing changes — the commits above appear as',
+        'Features / Bug Fixes / Performance sections in the published notes. Your',
+        'tagline MUST reflect that. NEVER describe it as "maintenance",',
+        '"housekeeping", "under the hood", "behind the scenes", or "no user-facing',
+        'changes" — even if a change is behind a feature flag, it still shipped.',
+      ]
+    : [
+        'This is a chore-only release with no feature/fix/perf commits. Keep the',
+        'tagline modest and honest — do not invent user-facing features.',
+      ];
   return [
     `You are writing the one-line tagline for the v${version} release of Shep — an autonomous AI-native SDLC platform that runs parallel AI agents in isolated git worktrees to automate the dev cycle from idea to deploy.`,
     '',
     'The tagline appears immediately below the version header in the GitHub release, before the changelog. It should capture the SOUL of THIS release based on the actual changes — not generic boilerplate.',
+    '',
+    ...naturePromptLines,
     '',
     'Commits in this release:',
     summary,
@@ -174,6 +215,12 @@ export async function generateTagline({
       logger.warn?.('[release-notes] Claude returned empty tagline; using static tagline.');
       return null;
     }
+    if (hasUserFacingChanges(commits) && isMaintenanceOnlyFraming(tagline)) {
+      logger.warn?.(
+        `[release-notes] Claude tagline framed a user-facing release as maintenance ("${tagline}"); using static tagline.`
+      );
+      return null;
+    }
     logger.info?.(`[release-notes] Generated tagline via Claude: ${tagline}`);
     return tagline;
   } catch (err) {
@@ -187,5 +234,7 @@ export const __test__ = {
   postProcessTagline,
   summarizeCommits,
   hasAuthCredentials,
+  hasUserFacingChanges,
+  isMaintenanceOnlyFraming,
   STATIC_TAGLINE,
 };

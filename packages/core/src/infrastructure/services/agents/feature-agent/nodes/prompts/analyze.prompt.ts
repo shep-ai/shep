@@ -6,6 +6,7 @@
  */
 
 import { readSpecFile, buildCommitPushBlock } from '../node-helpers.js';
+import { buildProjectMemorySection } from './project-memory-section.js';
 import type { FeatureAgentState } from '../../state.js';
 
 export function buildAnalyzePrompt(state: FeatureAgentState): string {
@@ -13,7 +14,7 @@ export function buildAnalyzePrompt(state: FeatureAgentState): string {
 
   return `You are a senior software architect performing the ANALYSIS phase of feature development.
 
-## Your Task
+${buildProjectMemorySection(state)}## Your Task
 
 1. Read and understand the feature request from the spec below
 2. Explore this repository thoroughly — understand the project structure, architecture, key technologies, patterns, and conventions

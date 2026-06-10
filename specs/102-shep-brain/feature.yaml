@@ -1,0 +1,42 @@
+feature:
+  id: '102-shep-brain'
+  name: 'shep-brain'
+  number: 102
+  branch: 'claude/gracious-sagan-i7672o'
+  lifecycle: 'implementation'
+  createdAt: '2026-06-09T08:09:58Z'
+
+status:
+  phase: 'implementation'
+  progress:
+    completed: 15
+    total: 15
+    percentage: 100
+  currentTask: null
+  lastUpdated: '2026-06-09T08:09:58Z'
+  lastUpdatedBy: 'shep-kit:implement'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: 'task-1'
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-06-09T08:09:58Z'
+    completedBy: 'shep-kit:new-feature'
+  - phase: 'research'
+    completedAt: '2026-06-09T08:09:58Z'
+    completedBy: 'shep-kit:research'
+  - phase: 'planning'
+    completedAt: '2026-06-09T08:09:58Z'
+    completedBy: 'shep-kit:plan'
+
+errors:
+  current: null
+  history: []

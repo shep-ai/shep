@@ -36,6 +36,7 @@ import { SessionTerminator } from '@/infrastructure/services/interactive/lifecyc
 import { TurnExecutor } from '@/infrastructure/services/interactive/runtime/turn.executor.js';
 import { UserInteractionCoordinator } from '@/infrastructure/services/interactive/runtime/user-interaction.coordinator.js';
 import { BootPromptResolver } from '@/infrastructure/services/interactive/lifecycle/boot-prompt.resolver.js';
+import type { SelectProjectMemoryUseCase } from '@/application/use-cases/project-memory/select-project-memory.use-case.js';
 import { MessageDispatcher } from '@/infrastructure/services/interactive/api/message-dispatcher.js';
 import { ChatStateAssembler } from '@/infrastructure/services/interactive/api/chat-state.assembler.js';
 import { WorkflowHooks } from '@/infrastructure/services/interactive/api/workflow-hooks.js';
@@ -331,7 +332,9 @@ describe('InteractiveSessionService', () => {
       error: vi.fn(),
     };
     const streamConsumer = new AgentStreamConsumer(persistence, dispatcher, fakeLogger);
-    const bootPromptResolver = new BootPromptResolver(featureRepo, contextBuilder);
+    const bootPromptResolver = new BootPromptResolver(featureRepo, contextBuilder, {
+      execute: async () => ({ blob: '', selectedCount: 0, totalCount: 0 }),
+    } as unknown as SelectProjectMemoryUseCase);
     const interactionCoordinator = new UserInteractionCoordinator(
       persistence,
       dispatcher,

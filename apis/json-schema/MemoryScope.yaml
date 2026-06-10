@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: MemoryScope.yaml
+type: string
+enum:
+  - Project
+  - Organization
+description: "Reach of a project-memory entry: a single project or the whole organization"

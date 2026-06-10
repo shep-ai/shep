@@ -20,6 +20,8 @@ import {
   retryExecute,
   getCompletedPhases,
   markPhaseComplete,
+  applyMemorySelection,
+  type MemorySelector,
 } from './node-helpers.js';
 import { reportNodeStart } from '../heartbeat.js';
 import { recordPhaseStart, recordPhaseEnd } from '../phase-timing-context.js';
@@ -33,7 +35,7 @@ import { createEvidenceNode } from './evidence.node.js';
  * @param executor - The agent executor to use for implementation
  * @returns A LangGraph node function
  */
-export function createFastImplementNode(executor: IAgentExecutor) {
+export function createFastImplementNode(executor: IAgentExecutor, selectMemory?: MemorySelector) {
   const log = createNodeLogger('fast-implement');
 
   return async (state: FeatureAgentState): Promise<Partial<FeatureAgentState>> => {
@@ -54,7 +56,8 @@ export function createFastImplementNode(executor: IAgentExecutor) {
     }
 
     const startTime = Date.now();
-    const prompt = buildFastImplementPrompt(state);
+    const stateForPrompt = await applyMemorySelection(state, 'fast-implement', selectMemory);
+    const prompt = buildFastImplementPrompt(stateForPrompt);
     const timingId = await recordPhaseStart('fast-implement', {
       prompt,
       modelId: state.model,

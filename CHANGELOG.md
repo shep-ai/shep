@@ -4,6 +4,47 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.211.0](/compare/v1.210.0...v1.211.0) · _2026-06-09_
+
+> You've hit your limit · resets 8:30pm (UTC)
+
+
+
+### ✨ Features
+
+* **agents:** persistent project memory (Shep Brain) ([#731](https://github.com/shep-ai/shep/issues/731)) ([e3387ed](https://github.com/shep-ai/shep/commit/e3387ed1dcc991a69f73ca636e19e9c6001141b6))
+
+
+
+### 🐛 Bug Fixes
+
+* **release:** pin evidence URLs to release tag, validate tagline against commit types ([#736](https://github.com/shep-ai/shep/issues/736)) ([7f0aa62](https://github.com/shep-ai/shep/commit/7f0aa62b7934a882a53f3e65428c2ea7a53ba0a6))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.211.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.210.0](/compare/v1.209.2...v1.210.0) · _2026-06-09_
 
 > _Under the hood_ maintenance to keep Shep running smoothly — no new features, just the polish that keeps the engine clean.

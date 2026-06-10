@@ -1,0 +1,410 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: shep-brain
+summary: Task breakdown for 102-shep-brain — persistent project memory.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - LangGraph
+  - SQLite
+  - TypeSpec
+relatedLinks: []
+
+# Structured task list — single source of truth for tasks.
+tasks:
+  - id: task-1
+    title: ProjectMemory domain model (TypeSpec-first)
+    description: >
+      Define the `ProjectMemory` entity and `MemoryCategory` enum in TypeSpec,
+      import into the domain index, and regenerate domain types. Fields:
+      repositoryPath, category, entryKey, content, optional sourceFeatureId.
+      Non-invariant fields stay optional to avoid rippling required-field changes
+      into ~20 fixtures.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - tsp/domain/entities/project-memory.tsp defines ProjectMemory + MemoryCategory
+      - pnpm tsp:codegen regenerates output.ts with ProjectMemory and MemoryCategory
+      - pnpm typecheck passes
+    tdd:
+      red:
+        - Add a domain type assertion test referencing ProjectMemory/MemoryCategory (fails to compile until codegen)
+      green:
+        - Author the .tsp, import in index.tsp, run tsp:codegen
+      refactor:
+        - Tighten @doc strings and field optionality
+    estimatedEffort: S
+
+  - id: task-2
+    title: Migration 109 — project_memory table
+    description: >
+      Additive, idempotent umzug migration creating `project_memory` with columns
+      (id, repository_path, category, entry_key, content, source_feature_id,
+      created_at, updated_at), a UNIQUE index on (repository_path, category,
+      entry_key) for upsert, and a lookup index on repository_path. Mirrors
+      migration 106 exactly.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Migration creates table + indexes guarded by sqlite_master/index_list checks
+      - Running migrations twice is a no-op (idempotent)
+      - down() drops the table
+    tdd:
+      red:
+        - Integration test asserting table + unique index exist after migrations run
+      green:
+        - Write the migration file
+      refactor:
+        - Align comments/JSDoc with neighbouring migrations
+    estimatedEffort: S
+
+  - id: task-3
+    title: IProjectMemoryRepository port + SQLite repo + mapper
+    description: >
+      Output port with create/upsert, listByRepository, and (optional) delete.
+      SQLite implementation with hardcoded INSERT ... ON CONFLICT upsert and a
+      listByRepository query ordered by category then updatedAt. Mapper converts
+      every column both directions. Register in DI (factory + string token).
+    state: Done
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Mapper unit test round-trips every column incl. both enum halves
+      - Integration test upserts (no duplicate row on same key) and lists by repo
+      - INSERT and UPDATE/UPSERT column lists include every column (LESSONS.md)
+      - Repository resolvable from DI by 'IProjectMemoryRepository'
+    tdd:
+      red:
+        - Mapper round-trip unit test; repository integration test (create, upsert, list)
+      green:
+        - Implement mapper + repository; register in DI
+      refactor:
+        - Extract shared column list / row interface
+    estimatedEffort: M
+
+  - id: task-4
+    title: ReadProjectMemoryUseCase (compact blob renderer)
+    description: >
+      Use case that loads entries for a repositoryPath and renders a compact,
+      category-sectioned text blob (with per-category caps) suitable for prompt
+      injection. Empty store ⇒ empty string. Injected via port; no infra import.
+      Register with class token + string alias.
+    state: Done
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Empty store returns empty string (no section headers)
+      - Multiple categories render as ordered, labelled sections
+      - Per-category entry cap enforced to bound blob size
+      - Resolvable from DI by string alias
+    tdd:
+      red:
+        - Unit test with a stub repository for empty + multi-category + cap cases
+      green:
+        - Implement the use case + blob renderer
+      refactor:
+        - Extract the renderer into a pure domain helper if reused
+    estimatedEffort: M
+
+  - id: task-5
+    title: RecordProjectMemoryUseCase (upsert entries)
+    description: >
+      Use case that takes a repositoryPath, optional sourceFeatureId, and a list
+      of {category, entryKey, content} entries and upserts them via the repository.
+      Caps content length per entry; ignores empty entries. Register with class
+      token + string alias.
+    state: Done
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Inserts new entries and upserts existing ones by key (no duplicates)
+      - Empty/blank entries are skipped
+      - Content is length-capped per entry
+      - Resolvable from DI by string alias
+    tdd:
+      red:
+        - Unit test with stub repository for insert, upsert, skip-empty, cap cases
+      green:
+        - Implement the use case
+      refactor:
+        - Share entry-normalisation helper with read use case if applicable
+    estimatedEffort: M
+
+  - id: task-6
+    title: Inject project memory at feature start
+    description: >
+      Add optional `projectMemory?` state channel. Worker loads the blob via
+      ReadProjectMemoryUseCase and seeds it into the initial graph state. Analyze
+      and research prompt builders render a clearly demarcated, read-only PROJECT
+      MEMORY section when present; omit entirely when absent. Nodes read from
+      state, never a global singleton (LESSONS.md).
+    state: Done
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - state.ts has projectMemory channel with sane default
+      - analyze + research prompts include the section iff state.projectMemory is non-empty
+      - Worker seeds projectMemory from the read use case on initial run
+      - Existing feature-agent tests stay green
+    tdd:
+      red:
+        - Prompt-builder unit tests for present/absent memory
+      green:
+        - Add channel, wire worker, edit prompt builders
+      refactor:
+        - Extract a shared renderMemorySection helper used by both prompts
+    estimatedEffort: M
+
+  - id: task-7
+    title: Post-merge extract_memory node
+    description: >
+      New terminal node wired after merge (merge → extract_memory → END). Guards
+      on a successful merge; uses the injected IAgentExecutor to distil structured
+      entries (conventions, libraries, naming, architecture decisions, CI-fix
+      resolutions) from the merged change; persists via RecordProjectMemoryUseCase.
+      Best-effort: any failure is logged and swallowed, returning state unchanged.
+    state: Done
+    dependencies:
+      - task-5
+      - task-6
+    acceptanceCriteria:
+      - Graph wires merge → extract_memory → END without breaking resume/reexec
+      - Node skips work when the feature did not merge
+      - On merge, node records ≥1 entry via the record use case (with a stubbed executor)
+      - Extraction errors do not fail the node (swallowed + logged)
+      - No hardcoded agent type; all model calls via the injected executor
+    tdd:
+      red:
+        - Node unit tests: not-merged skip; merged persists; error swallowed
+      green:
+        - Implement node + prompt + graph wiring
+      refactor:
+        - Reuse executeNode helpers / option builders where possible
+    estimatedEffort: L
+
+  - id: task-8
+    title: Repository + use case for memory management
+    description: >
+      Extend IProjectMemoryRepository with listAll, updateContent, and delete.
+      Add ManageProjectMemoryUseCase (list all/by-repo, update content, delete)
+      mirroring the ManageLabelsUseCase precedent. Register in DI (class token +
+      string alias). Integration + unit tests.
+    state: Done
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - listAll returns entries across repos; updateContent/delete work
+      - ManageProjectMemoryUseCase validates input, length-caps content
+      - Resolvable from DI by 'ManageProjectMemoryUseCase'
+    tdd:
+      red:
+        - Repo integration tests for listAll/updateContent/delete; use-case unit tests
+      green:
+        - Implement repo methods + use case; wire DI
+      refactor:
+        - Reuse MAX_CONTENT_LENGTH constant
+    estimatedEffort: M
+
+  - id: task-9
+    title: Project Memory management page + server actions
+    description: >
+      Server actions (list/update/delete) calling ManageProjectMemoryUseCase via
+      resolve(). An ungated /memory page (server component) that lists entries
+      and passes them to a client panel. Sidebar nav item (ungated, like SDLC
+      Board) + translation keys (en, runtime fallback for other locales).
+    state: Done
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - /memory page renders entries; sidebar links to it
+      - Server actions return {data?, error?} and resolve the use case by token
+      - Translation keys added under navigation + memory
+    tdd: null
+    estimatedEffort: M
+
+  - id: task-10
+    title: ProjectMemoryPanel component + Storybook story
+    description: >
+      Client component grouping entries by category with inline content edit and
+      confirmed (AlertDialog) delete, updating local state after each mutation.
+      Colocated .stories.tsx (WithEntries / SingleCategory / Empty) + Storybook
+      action mock. RTL test for grouping, edit, delete, and empty/error states.
+    state: Done
+    dependencies:
+      - task-9
+    acceptanceCriteria:
+      - Groups by category; edit + delete call the server actions and update the list
+      - Colocated Storybook story exists; storybook build passes
+      - RTL test covers render/edit/delete/empty/error
+    tdd:
+      red:
+        - RTL test for ProjectMemoryPanel
+      green:
+        - Build the component + story + mock
+      refactor:
+        - Extract category label/order constants
+    estimatedEffort: M
+
+  - id: task-11
+    title: Cross-project (organization-wide) memory
+    description: >
+      Add a MemoryScope (Project | Organization). Organization-scoped entries are
+      read by every project's agents in addition to that project's own memory.
+      Migration 121 adds a `scope` column (default 'Project'); repository gains
+      listOrganization + updateScope; ReadProjectMemoryUseCase merges project +
+      org entries (dedup by id); ManageProjectMemoryUseCase.setScope promotes/
+      demotes.
+    state: Done
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - scope persists (default Project) and round-trips Organization
+      - listOrganization returns org entries across all repos
+      - Read use case injects project + all org entries for a repo
+      - setScope promotes/demotes; rejects unknown id
+    tdd:
+      red:
+        - Repo integration (scope round-trip, listOrganization, updateScope); use-case units (org merge, setScope)
+      green:
+        - tsp enum + field, migration, mapper, repo methods, use-case changes
+      refactor:
+        - Dedup merge by id in the read use case
+    estimatedEffort: M
+
+  - id: task-12
+    title: Scope controls in the management UI
+    description: >
+      Surface scope in ProjectMemoryPanel: an "Organization" badge on org-wide
+      entries and a promote/demote toggle (Globe / FolderGit2) calling a new
+      setProjectMemoryScope server action. Translation keys (scope + actions)
+      across all 9 locales. RTL coverage for badge + promote.
+    state: Done
+    dependencies:
+      - task-11
+      - task-10
+    acceptanceCriteria:
+      - Org entries show an Organization badge; toggle promotes/demotes
+      - setProjectMemoryScope server action + Storybook mock
+      - memory.scope/actions keys in all 9 locales
+    tdd:
+      red:
+        - RTL test for org badge + promote
+      green:
+        - Panel controls + server action + i18n
+      refactor:
+        - Reuse MemoryScope across component and tests
+    estimatedEffort: M
+
+  - id: task-13
+    title: Inject memory into every agent prompt (not just analyze/research)
+    description: >
+      Extend memory injection beyond the first two nodes so EVERY running agent
+      shares the context: requirements, plan, implement, fast-implement, merge
+      (commit-push-pr), the CI-fix loop prompt, and the interactive chat agent
+      (FeatureContextBuilder via BootPromptResolver). Add renderProjectMemoryBlock
+      for non-state prompts; thread the blob into the CI-fix prompt and the
+      interactive resolver (best-effort load).
+    state: Done
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Every producer prompt + CI-fix + interactive context includes the section when memory is present and omits it when absent
+      - CI-fix prompt receives state.projectMemory via the loop params
+      - Interactive resolver loads memory by feature.repositoryPath (best-effort) and passes it to buildContext
+      - Parametrised test proves injection across all prompts
+    tdd:
+      red:
+        - Parametrised prompt-injection test across all prompts + resolver test
+      green:
+        - Inject section into each prompt; wire CI-fix + interactive
+      refactor:
+        - Share renderProjectMemoryBlock between state and non-state prompts
+    estimatedEffort: M
+
+  - id: task-14
+    title: Smart per-prompt relevance selection (not the whole store)
+    description: >
+      Replace whole-blob injection with a relevance selector. Add an
+      IMemoryRelevanceScorer port + a deterministic LexicalMemoryRelevanceScorer
+      (phase→category affinity + lexical overlap with the task text + recency).
+      SelectProjectMemoryUseCase loads candidates (repo + org), ranks via the
+      scorer, and greedily includes top entries up to a token budget. Each node
+      selects its own subset at execution time (phase + derived task text); the
+      CI-fix loop ranks by the actual failure logs; the interactive agent ranks
+      by the feature name/description. Pluggable seam for future embeddings.
+    state: Done
+    dependencies:
+      - task-13
+    acceptanceCriteria:
+      - IMemoryRelevanceScorer port + LexicalMemoryRelevanceScorer (DI-registered)
+      - SelectProjectMemoryUseCase ranks + token-budgets; always includes top entry
+      - Each prompt receives only its relevant subset (per phase + task)
+      - CI-fix ranks by failure logs; interactive ranks by feature description
+      - Whole-blob seeding removed from the worker
+    tdd:
+      red:
+        - Scorer unit tests (lexical, category affinity, recency); select use-case unit tests (budget, merge, empty)
+      green:
+        - Build port + scorer + select use case; wire selector through nodes
+      refactor:
+        - Share loadCandidateMemory between read + select
+    estimatedEffort: L
+
+  - id: task-15
+    title: Semantic (embedding) relevance scorer behind the port
+    description: >
+      Wire an embedding-based scorer behind IMemoryRelevanceScorer. Add an
+      IEmbeddingProvider port + an OpenAI-compatible adapter gated on
+      SHEP_EMBEDDINGS_API_KEY (offline/CI default → unavailable). The
+      EmbeddingMemoryRelevanceScorer ranks by cosine similarity to the task-text
+      embedding (blended with phase affinity + recency via a shared helper),
+      caches embeddings in-process, and falls back to the lexical scorer when
+      embeddings are unavailable or fail. Becomes the active scorer.
+    state: Done
+    dependencies:
+      - task-14
+    acceptanceCriteria:
+      - IEmbeddingProvider port + OpenAI-compatible adapter (env-gated)
+      - EmbeddingMemoryRelevanceScorer ranks by cosine; caches; falls back to lexical
+      - Active 'IMemoryRelevanceScorer' is the embedding scorer; offline behaviour unchanged
+      - Shared relevance-ranking helper used by both scorers (no duplication)
+    tdd:
+      red:
+        - Embedding scorer unit (fallback, cosine ranking, cache, error fallback); provider unit (isAvailable, fetch)
+      green:
+        - Build port + adapter + scorer; refactor lexical onto shared helper; DI swap
+      refactor:
+        - Extract rankByContentScore shared between lexical + embedding
+    estimatedEffort: L
+
+# Total effort estimate
+totalEstimate: XL (15 tasks, 6 phases)
+
+# Open questions
+openQuestions: []
+
+# Markdown content — summary and acceptance checklist only.
+content: |
+  ## Summary
+
+  Persistent per-repository project memory: a SQLite-backed store, read/record use
+  cases, prompt injection at feature start, and a post-merge extraction node —
+  7 tasks across 5 phases, all TDD.
+
+  ## Acceptance Checklist
+
+  Before marking feature complete:
+
+  - [ ] All tasks completed
+  - [ ] Tests passing (`pnpm test`)
+  - [ ] Linting clean (`pnpm lint`)
+  - [ ] Types valid (`pnpm typecheck`)
+  - [ ] TypeSpec compiles (`pnpm tsp:compile`)
+  - [ ] PR created and reviewed
+
+  ---
+
+  _Task details are in the tasks[] array of tasks.yaml_

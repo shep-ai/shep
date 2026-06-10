@@ -1,4 +1,4 @@
-/* global fetch */
+/* global fetch, URL */
 
 /**
  * Evidence extraction for release notes.
@@ -52,6 +52,82 @@ function isVideoUrl(url) {
   return VIDEO_EXTS.some((ext) => lower.endsWith(`.${ext}`));
 }
 
+const RAW_HOST = 'raw.githubusercontent.com';
+const GITHUB_HOST = 'github.com';
+const BLOB_OR_RAW_SEGMENTS = new Set(['blob', 'raw']);
+
+// Top-level repo directories evidence lives under. Used to find where the
+// (possibly multi-segment) git ref ends and the repo-relative path begins —
+// a branch like `feat/aspm-platform` is two path segments, so we cannot split
+// ref-from-path positionally. Kept in sync with REPO_EVIDENCE_PATH_RE.
+const EVIDENCE_PATH_ROOTS = new Set(['specs', 'docs', 'evidence']);
+
+/**
+ * Recover the repo-relative path from a GitHub URL's path segments, tolerating
+ * multi-segment branch refs. Prefers the first known evidence root; falls back
+ * to assuming the ref is a single segment starting at `fallbackStart`.
+ */
+function recoverRepoPath(segments, fallbackStart) {
+  for (let i = fallbackStart; i < segments.length; i += 1) {
+    if (EVIDENCE_PATH_ROOTS.has(segments[i])) {
+      return segments.slice(i).join('/');
+    }
+  }
+  return segments.slice(fallbackStart).join('/');
+}
+
+/**
+ * Rewrite a GitHub-hosted media URL that points at THIS repo so it references
+ * a stable, permanent ref (the release tag / commit) instead of whatever ref
+ * the PR author happened to embed.
+ *
+ * PR bodies frequently embed evidence with branch-pinned URLs like
+ * `raw.githubusercontent.com/owner/repo/feat/my-branch/...png`. Once the PR is
+ * squash-merged the feature branch is deleted and the image 404s. Pinning to
+ * the release ref keeps the image resolving forever, because the evidence
+ * files committed in that PR exist at the release commit on the default branch.
+ *
+ * Non-repo URLs (external CDNs, github user-attachments, user-images) are
+ * returned unchanged — those are already immutable.
+ *
+ * @param {string} url
+ * @param {{ owner?: string, repo?: string, ref?: string }} opts
+ * @returns {string}
+ */
+export function normalizeRepoMediaUrl(url, { owner, repo, ref } = {}) {
+  if (!url || !owner || !repo || !ref) return url;
+
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+
+  const segments = parsed.pathname.split('/').filter(Boolean);
+  const repoMatches =
+    `${segments[0]}/${segments[1]}`.toLowerCase() === `${owner}/${repo}`.toLowerCase();
+  if (!repoMatches) return url;
+
+  // raw.githubusercontent.com/{owner}/{repo}/{ref}/{path...}
+  if (parsed.hostname === RAW_HOST && segments.length >= 4) {
+    const path = recoverRepoPath(segments, 3);
+    return `https://${RAW_HOST}/${owner}/${repo}/${ref}/${path}${parsed.search}`;
+  }
+
+  // github.com/{owner}/{repo}/(blob|raw)/{ref}/{path...} → serve raw bytes
+  if (
+    parsed.hostname === GITHUB_HOST &&
+    segments.length >= 5 &&
+    BLOB_OR_RAW_SEGMENTS.has(segments[2])
+  ) {
+    const path = recoverRepoPath(segments, 4);
+    return `https://${RAW_HOST}/${owner}/${repo}/${ref}/${path}`;
+  }
+
+  return url;
+}
+
 function deriveAlt(url) {
   const fileName = url.split('?')[0].split('/').pop() || 'evidence';
   return (
@@ -66,25 +142,28 @@ function deriveAlt(url) {
  * Extract evidence URLs from a PR body or commit body string.
  *
  * @param {string} body — raw markdown body (PR description, commit body)
- * @param {{ owner?: string, repo?: string, defaultBranch?: string }} [opts] — repo info
+ * @param {{ owner?: string, repo?: string, defaultBranch?: string, ref?: string }} [opts] — repo info.
+ *        `ref` is the stable release ref (tag/commit) that branch-pinned repo
+ *        URLs are normalized to; falls back to `defaultBranch`.
  * @returns {Array<{ url: string, alt: string, kind: 'image' | 'video' }>}
  */
 export function extractEvidenceFromBody(body, opts = {}) {
   const { owner, repo, defaultBranch = 'main' } = opts;
+  const ref = opts.ref || defaultBranch;
   if (typeof body !== 'string' || body.trim() === '') return [];
 
   const evidence = [];
   const seen = new Set();
 
-  function add(url, alt) {
-    if (!url) return;
-    const trimmed = url.trim();
-    if (seen.has(trimmed)) return;
-    seen.add(trimmed);
+  function add(rawUrl, alt) {
+    if (!rawUrl) return;
+    const url = normalizeRepoMediaUrl(rawUrl.trim(), { owner, repo, ref });
+    if (seen.has(url)) return;
+    seen.add(url);
     evidence.push({
-      url: trimmed,
-      alt: alt && alt.trim() ? alt.trim() : deriveAlt(trimmed),
-      kind: isVideoUrl(trimmed) ? 'video' : 'image',
+      url,
+      alt: alt && alt.trim() ? alt.trim() : deriveAlt(url),
+      kind: isVideoUrl(url) ? 'video' : 'image',
     });
   }
 
@@ -107,7 +186,7 @@ export function extractEvidenceFromBody(body, opts = {}) {
   if (owner && repo) {
     for (const match of body.matchAll(REPO_EVIDENCE_PATH_RE)) {
       const path = match[1];
-      const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/${path}`;
+      const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${path}`;
       add(rawUrl);
     }
   }
@@ -195,7 +274,7 @@ export async function fetchPrBody({ owner, repo, prNumber, token, fetcher = fetc
  * @returns The same commits array, mutated in place.
  */
 export async function attachEvidenceToCommits(commits, options = {}) {
-  const { owner, repo, token, fetcher, defaultBranch } = options;
+  const { owner, repo, token, fetcher, defaultBranch, ref } = options;
   if (!Array.isArray(commits) || commits.length === 0) return commits;
   if (!owner || !repo || !token) return commits;
 
@@ -207,7 +286,7 @@ export async function attachEvidenceToCommits(commits, options = {}) {
     for (const prNumber of prNumbers) {
       const body = await fetchPrBody({ owner, repo, prNumber, token, fetcher });
       if (!body) continue;
-      const items = extractEvidenceFromBody(body, { owner, repo, defaultBranch });
+      const items = extractEvidenceFromBody(body, { owner, repo, defaultBranch, ref });
       all.push(...items);
       if (all.length >= MAX_EVIDENCE_PER_COMMIT) break;
     }
@@ -237,5 +316,6 @@ export const __test__ = {
   REPO_EVIDENCE_PATH_RE,
   isVideoUrl,
   deriveAlt,
+  normalizeRepoMediaUrl,
   MAX_EVIDENCE_PER_COMMIT,
 };
