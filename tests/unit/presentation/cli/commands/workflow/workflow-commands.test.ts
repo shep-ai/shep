@@ -50,7 +50,7 @@ vi.mock('../../../../../../src/presentation/cli/ui/index.js', () => ({
 }));
 
 // Mock templates
-vi.mock('@/application/use-cases/workflows/templates/issue-triage.template.js', () => ({
+vi.mock('@/application/use-cases/scheduled-workflows/templates/issue-triage.template.js', () => ({
   getIssueTriageTemplate: vi.fn().mockReturnValue({
     name: 'issue-triage',
     description: 'Triage issues',
@@ -59,7 +59,7 @@ vi.mock('@/application/use-cases/workflows/templates/issue-triage.template.js', 
   }),
 }));
 
-vi.mock('@/application/use-cases/workflows/templates/branch-rebase.template.js', () => ({
+vi.mock('@/application/use-cases/scheduled-workflows/templates/branch-rebase.template.js', () => ({
   getBranchRebaseTemplate: vi.fn().mockReturnValue({
     name: 'branch-rebase',
     description: 'Rebase branches',
@@ -126,23 +126,23 @@ function setupMockResolve() {
   mockResolve.mockImplementation((token: unknown) => {
     const key = typeof token === 'string' ? token : (token as { name?: string })?.name;
     switch (key) {
-      case 'CreateWorkflowUseCase':
+      case 'CreateScheduledWorkflowUseCase':
         return { execute: mockCreateExecute };
-      case 'ListWorkflowsUseCase':
+      case 'ListScheduledWorkflowsUseCase':
         return { execute: mockListExecute };
-      case 'GetWorkflowUseCase':
+      case 'GetScheduledWorkflowUseCase':
         return { execute: mockGetExecute };
-      case 'RunWorkflowUseCase':
+      case 'RunScheduledWorkflowUseCase':
         return { execute: mockRunExecute };
-      case 'ScheduleWorkflowUseCase':
+      case 'ScheduleScheduledWorkflowUseCase':
         return { execute: mockScheduleExecute };
-      case 'ToggleWorkflowUseCase':
+      case 'ToggleScheduledWorkflowUseCase':
         return { execute: mockToggleExecute };
-      case 'GetWorkflowHistoryUseCase':
+      case 'GetScheduledWorkflowHistoryUseCase':
         return { execute: mockHistoryExecute };
-      case 'UpdateWorkflowUseCase':
+      case 'UpdateScheduledWorkflowUseCase':
         return { execute: mockUpdateExecute };
-      case 'DeleteWorkflowUseCase':
+      case 'DeleteScheduledWorkflowUseCase':
         return { execute: mockDeleteExecute };
       default:
         return {};

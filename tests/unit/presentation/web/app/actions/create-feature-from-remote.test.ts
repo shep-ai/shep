@@ -52,7 +52,7 @@ describe('createFeatureFromRemote server action', () => {
       description: '',
     });
 
-    expect(result).toEqual({ error: 'description is required' });
+    expect(result).toEqual({ error: 'Description is required' });
     expect(mockCreateRecord).not.toHaveBeenCalled();
   });
 
@@ -62,7 +62,7 @@ describe('createFeatureFromRemote server action', () => {
       description: '   ',
     });
 
-    expect(result).toEqual({ error: 'description is required' });
+    expect(result).toEqual({ error: 'Description is required' });
     expect(mockCreateRecord).not.toHaveBeenCalled();
   });
 

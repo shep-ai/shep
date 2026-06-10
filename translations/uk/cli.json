@@ -255,7 +255,9 @@
         "fullyAutonomous": "повністю автономний",
         "pauseAfterEvery": "пауза після кожної фази",
         "autoApprove": "автозатвердження: {{approved}}",
-        "failedToCreate": "Не вдалося створити функцію"
+        "failedToCreate": "Не вдалося створити функцію",
+        "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
+        "exploreOption": "Start an exploration/prototyping session for iterative design"
       },
       "ls": {
         "description": "Показати список функцій",
@@ -446,6 +448,28 @@
         "notWaitingForApproval": "Функція \"{{name}}\" не очікує затвердження (статус: {{status}})",
         "noFeaturesWaiting": "Немає функцій, що очікують затвердження, у цьому репозиторії",
         "multipleFeaturesWaiting": "Кілька функцій очікують затвердження. Вкажіть одну:"
+      },
+      "feedback": {
+        "agentIterating": "iterating on feedback",
+        "agentLabel": "Agent:",
+        "description": "Send feedback on an exploration prototype to iterate",
+        "failedToSubmit": "Failed to submit feedback",
+        "feedbackArgument": "Feedback text for the next iteration",
+        "feedbackSubmitted": "Feedback submitted for: {{name}}",
+        "idArgument": "Feature ID or prefix",
+        "iterationLabel": "Iteration:",
+        "notExploration": "Feature \"{{name}}\" is not in exploration mode (mode: {{mode}}, lifecycle: {{lifecycle}})"
+      },
+      "promote": {
+        "agentLabel": "Agent:",
+        "agentSpawned": "spawned for {{mode}} mode",
+        "description": "Promote an exploration feature to Regular or Fast mode",
+        "failedToPromote": "Failed to promote exploration",
+        "fastOption": "Promote to Fast mode (skip SDLC phases)",
+        "idArgument": "Feature ID or prefix",
+        "modeLabel": "Mode:",
+        "promoted": "Exploration promoted: {{name}}",
+        "statusLabel": "Status:"
       }
     },
     "repo": {

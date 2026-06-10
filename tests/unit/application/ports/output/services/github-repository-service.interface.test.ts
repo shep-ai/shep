@@ -224,7 +224,7 @@ describe('IGitHubRepositoryService', () => {
       'getAuthenticatedUser',
     ];
 
-    expect(methodNames).toHaveLength(5);
+    expect(methodNames).toHaveLength(8);
     for (const name of methodNames) {
       expect(typeof mock[name]).toBe('function');
     }

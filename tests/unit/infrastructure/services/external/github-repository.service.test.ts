@@ -13,6 +13,7 @@ import {
   GitHubAuthError,
   GitHubCloneError,
   GitHubForkError,
+  GitHubPermissionError,
   GitHubRepoListError,
   GitHubUrlParseError,
 } from '@/application/ports/output/services/github-repository-service.interface.js';
@@ -432,7 +433,7 @@ describe('GitHubRepositoryService', () => {
       mockExecFile.mockRejectedValue(err);
 
       await expect(service.getAuthenticatedUser()).rejects.toThrow(GitHubAuthError);
-      await expect(service.getAuthenticatedUser()).rejects.toThrow('not installed');
+      await expect(service.getAuthenticatedUser()).rejects.toThrow('Failed to get authenticated user');
     });
 
     it('should throw GitHubAuthError when not authenticated', async () => {
@@ -469,15 +470,12 @@ describe('GitHubRepositoryService', () => {
       expect(result.viewerLogin).toBe('myuser');
     });
 
-    it('should return hasPushAccess false when API call fails', async () => {
+    it('should throw GitHubPermissionError when API call fails', async () => {
       mockExecFile
         .mockResolvedValueOnce({ stdout: 'myuser\n', stderr: '' }) // getAuthenticatedUser
         .mockRejectedValueOnce(new Error('Not Found')); // gh api repos/...
 
-      const result = await service.checkPushAccess('private/repo');
-
-      expect(result.hasPushAccess).toBe(false);
-      expect(result.viewerLogin).toBe('myuser');
+      await expect(service.checkPushAccess('private/repo')).rejects.toThrow(GitHubPermissionError);
     });
   });
 
@@ -486,87 +484,61 @@ describe('GitHubRepositoryService', () => {
   // -------------------------------------------------------------------------
 
   describe('forkRepository()', () => {
-    function createMockChildProcess() {
-      const cp = new EventEmitter() as EventEmitter & {
-        stdout: EventEmitter;
-        stderr: EventEmitter;
-      };
-      cp.stdout = new EventEmitter();
-      cp.stderr = new EventEmitter();
-      return cp;
-    }
-
     it('should fork successfully and detect new fork', async () => {
-      const child = createMockChildProcess();
-      mockSpawn.mockReturnValue(child);
+      mockExecFile.mockResolvedValue({
+        stdout: 'https://github.com/myuser/hello-world\n',
+        stderr: '',
+      });
 
-      const promise = service.forkRepository('octocat/hello-world');
-
-      child.stderr.emit('data', Buffer.from('Created fork myuser/hello-world\n'));
-      child.emit('close', 0);
-
-      const result = await promise;
+      const result = await service.forkRepository('octocat/hello-world');
 
       expect(result.nameWithOwner).toBe('myuser/hello-world');
       expect(result.alreadyExisted).toBe(false);
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'gh',
-        ['repo', 'fork', 'octocat/hello-world', '--clone=false'],
-        expect.objectContaining({ stdio: ['ignore', 'pipe', 'pipe'] })
-      );
+      expect(mockExecFile).toHaveBeenCalledWith('gh', [
+        'repo',
+        'fork',
+        'octocat/hello-world',
+        '--clone=false',
+      ]);
     });
 
     it('should detect already-existing fork', async () => {
-      const child = createMockChildProcess();
-      mockSpawn.mockReturnValue(child);
+      mockExecFile.mockResolvedValue({
+        stdout: '',
+        stderr: 'https://github.com/myuser/hello-world already exists\n',
+      });
 
-      const promise = service.forkRepository('octocat/hello-world');
-
-      child.stderr.emit('data', Buffer.from('myuser/hello-world already exists\n'));
-      child.emit('close', 0);
-
-      const result = await promise;
+      const result = await service.forkRepository('octocat/hello-world');
 
       expect(result.alreadyExisted).toBe(true);
       expect(result.nameWithOwner).toBe('myuser/hello-world');
     });
 
-    it('should throw GitHubForkError on non-zero exit', async () => {
-      const child = createMockChildProcess();
-      mockSpawn.mockReturnValue(child);
+    it('should throw GitHubForkError on execFile failure', async () => {
+      mockExecFile.mockRejectedValue(new Error('unable to fork'));
 
-      const promise = service.forkRepository('octocat/hello-world');
-
-      child.stderr.emit('data', Buffer.from('unable to fork'));
-      child.emit('close', 1);
-
-      await expect(promise).rejects.toThrow(GitHubForkError);
+      await expect(service.forkRepository('octocat/hello-world')).rejects.toThrow(GitHubForkError);
     });
 
-    it('should call onProgress with fork output', async () => {
-      const child = createMockChildProcess();
-      mockSpawn.mockReturnValue(child);
+    it('should call onProgress with fork status messages', async () => {
+      mockExecFile.mockResolvedValue({
+        stdout: 'https://github.com/myuser/hello-world\n',
+        stderr: '',
+      });
       const onProgress = vi.fn();
 
-      const promise = service.forkRepository('octocat/hello-world', { onProgress });
+      await service.forkRepository('octocat/hello-world', { onProgress });
 
-      child.stderr.emit('data', Buffer.from('Created fork myuser/hello-world\n'));
-      child.emit('close', 0);
-
-      await promise;
-
-      expect(onProgress).toHaveBeenCalledWith('Created fork myuser/hello-world\n');
+      expect(onProgress).toHaveBeenCalledWith('Forking octocat/hello-world...');
+      expect(onProgress).toHaveBeenCalledWith('Fork created');
     });
 
-    it('should throw GitHubForkError on spawn error', async () => {
-      const child = createMockChildProcess();
-      mockSpawn.mockReturnValue(child);
+    it('should throw GitHubForkError on ENOENT', async () => {
+      const err = new Error('spawn ENOENT') as NodeJS.ErrnoException;
+      err.code = 'ENOENT';
+      mockExecFile.mockRejectedValue(err);
 
-      const promise = service.forkRepository('octocat/hello-world');
-
-      child.emit('error', new Error('spawn ENOENT'));
-
-      await expect(promise).rejects.toThrow(GitHubForkError);
+      await expect(service.forkRepository('octocat/hello-world')).rejects.toThrow(GitHubForkError);
     });
   });
 });

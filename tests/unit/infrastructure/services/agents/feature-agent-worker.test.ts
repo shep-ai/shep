@@ -160,6 +160,11 @@ describe('parseWorkerArgs', () => {
       resumePayload: undefined,
       agentType: undefined,
       fast: false,
+      exploration: false,
+      model: undefined,
+      resumeReason: undefined,
+      securityMode: undefined,
+      securityActionDispositions: undefined,
     });
   });
 

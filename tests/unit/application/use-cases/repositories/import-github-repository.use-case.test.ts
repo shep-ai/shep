@@ -251,6 +251,10 @@ describe('ImportGitHubRepositoryUseCase', () => {
     });
 
     it('should fork and clone when user lacks push access', async () => {
+      vi.mocked(mockGitHubService.forkRepository).mockResolvedValue({
+        nameWithOwner: 'myuser/my-project',
+        alreadyExisted: false,
+      });
       vi.mocked(mockAddRepoUseCase.execute).mockResolvedValue(
         createMockRepository({ id: 'fork-repo-id' })
       );

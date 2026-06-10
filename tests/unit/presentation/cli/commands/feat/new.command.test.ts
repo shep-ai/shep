@@ -385,7 +385,7 @@ describe('createNewCommand', () => {
       await cmd.parseAsync(['Fix typo', '--fast'], { from: 'user' });
 
       expect(mockCreateExecute).toHaveBeenCalledWith(
-        expect.objectContaining({ mode: BuildMode.Fast })
+        expect.objectContaining({ buildMode: BuildMode.Fast })
       );
     });
 
@@ -395,7 +395,7 @@ describe('createNewCommand', () => {
 
       const callArg = mockCreateExecute.mock.calls[0][0];
       // Default settings have no defaultMode set, so fallback is Fast
-      expect(callArg.mode).toBe(BuildMode.Fast);
+      expect(callArg.buildMode).toBe(BuildMode.Fast);
     });
 
     it('should combine --fast with --allow-all', async () => {
@@ -404,7 +404,7 @@ describe('createNewCommand', () => {
 
       expect(mockCreateExecute).toHaveBeenCalledWith(
         expect.objectContaining({
-          mode: BuildMode.Fast,
+          buildMode: BuildMode.Fast,
           approvalGates: { allowPrd: true, allowPlan: true, allowMerge: true },
         })
       );
@@ -424,7 +424,7 @@ describe('createNewCommand', () => {
       await cmd.parseAsync(['Explore an idea', '--explore'], { from: 'user' });
 
       expect(mockCreateExecute).toHaveBeenCalledWith(
-        expect.objectContaining({ mode: BuildMode.Exploration })
+        expect.objectContaining({ buildMode: BuildMode.Exploration })
       );
     });
 
@@ -447,7 +447,7 @@ describe('createNewCommand', () => {
 
       const callArg = mockCreateExecute.mock.calls[0][0];
       // Default settings have no defaultMode set, so fallback is Fast
-      expect(callArg.mode).toBe(BuildMode.Fast);
+      expect(callArg.buildMode).toBe(BuildMode.Fast);
     });
 
     it('should expose --explore option in command help', () => {

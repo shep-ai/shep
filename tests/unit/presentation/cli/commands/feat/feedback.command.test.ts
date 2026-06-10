@@ -44,7 +44,7 @@ function makeExplorationFeature(overrides: Record<string, unknown> = {}) {
   return {
     id: 'feat-explore-001',
     name: 'Explore idea',
-    mode: BuildMode.Exploration,
+    buildMode: BuildMode.Exploration,
     lifecycle: SdlcLifecycle.Exploring,
     agentRunId: 'run-001',
     ...overrides,
@@ -112,7 +112,7 @@ describe('createFeedbackCommand', () => {
 
   it('should reject non-exploration features with error', async () => {
     const feature = makeExplorationFeature({
-      mode: BuildMode.Fast,
+      buildMode: BuildMode.Fast,
       lifecycle: SdlcLifecycle.Implementation,
     });
     mockFindById.mockResolvedValue(feature);

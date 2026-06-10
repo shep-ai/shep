@@ -72,8 +72,6 @@
       "title": "Робочий процес",
       "description": "Налаштуйте поведінку PR, етапи затвердження та параметри CI",
       "sectionDescription": "Поведінка автоматизації після реалізації",
-      "defaultFastMode": "Швидкий режим за замовчуванням",
-      "defaultFastModeDescription": "Пропустити фази SDLC і реалізувати напряму з промпту",
       "subsections": {
         "approve": "Затвердження",
         "evidence": "Підтвердження",
@@ -112,7 +110,12 @@
       "links": {
         "approvalGates": "Етапи затвердження",
         "pushAndPrFlags": "Прапорці відправки та PR"
-      }
+      },
+      "defaultMode": "Default feature mode",
+      "defaultModeDescription": "Default mode for new features created via CLI or Web UI",
+      "modeExploration": "Exploration",
+      "modeFast": "Fast",
+      "modeRegular": "Regular"
     },
     "ci": {
       "title": "Безперервна інтеграція",
@@ -476,7 +479,8 @@
     "agentSessions": "Сесії агента",
     "noSessionsFound": "Сесій не знайдено",
     "showLess": "Показати менше",
-    "showMore": "Показати ще {{count}}"
+    "showMore": "Показати ще {{count}}",
+    "explorationMode": "Exploration Mode"
   },
   "applicationNode": {
     "newFeature": "Нова функція"

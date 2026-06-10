@@ -128,7 +128,7 @@ describe('ResumeFeatureUseCase', () => {
       runRepo as any,
       processService as any,
       worktreeService as any,
-      { load: vi.fn().mockResolvedValue(null) } as any
+      { load: vi.fn().mockResolvedValue({ security: { mode: 'Advisory' } }) } as any
     );
   });
 

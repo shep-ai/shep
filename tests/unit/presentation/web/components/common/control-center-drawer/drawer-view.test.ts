@@ -31,8 +31,8 @@ describe('parseTabKey', () => {
 });
 
 describe('VALID_TAB_KEYS', () => {
-  it('contains all 10 tab keys', () => {
-    expect(VALID_TAB_KEYS.size).toBe(10);
+  it('contains all 11 tab keys', () => {
+    expect(VALID_TAB_KEYS.size).toBe(11);
   });
 
   it('matches the FeatureTabKey type values', () => {

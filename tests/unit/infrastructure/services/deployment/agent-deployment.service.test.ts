@@ -86,10 +86,7 @@ describe('AgentDeploymentService', () => {
     it('should start the deployment service with the detected command', async () => {
       await service.deploy('feature-1', '/path/to/repo');
 
-      expect(deps.deploymentService.start).toHaveBeenCalledWith('feature-1', '/path/to/repo', {
-        command: 'pnpm dev',
-        cwd: '.',
-      });
+      expect(deps.deploymentService.start).toHaveBeenCalledWith('feature-1', '/path/to/repo');
     });
 
     it('should return success with Booting state and analysis', async () => {

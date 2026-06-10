@@ -5,6 +5,7 @@
  * the WorkflowSchedulerService alongside existing services.
  */
 
+import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // --- Hoisted mock factories ---
@@ -39,6 +40,19 @@ vi.mock('@/infrastructure/di/container.js', () => ({
         return { start: mockWebServerStart, stop: mockWebServerStop };
       }
       if (token === 'IDeploymentService') return { stopAll: mockDeploymentStopAll };
+      if (token === 'IMessagingService') {
+        return {
+          isConfigured: vi.fn().mockReturnValue(false),
+          start: vi.fn().mockResolvedValue(undefined),
+          stop: vi.fn().mockResolvedValue(undefined),
+        };
+      }
+      if (token === 'WhatsAppConnectionService') {
+        return {
+          start: vi.fn().mockResolvedValue(undefined),
+          stop: vi.fn().mockResolvedValue(undefined),
+        };
+      }
       if (
         token === 'IAgentRunRepository' ||
         token === 'IPhaseTimingRepository' ||
@@ -46,7 +60,10 @@ vi.mock('@/infrastructure/di/container.js', () => ({
         token === 'INotificationService' ||
         token === 'IWorkflowRepository' ||
         token === 'IWorkflowExecutionRepository' ||
-        token === 'IClock'
+        token === 'IClock' ||
+        token === 'IRepositoryRepository' ||
+        token === 'IGitHubRepositoryService' ||
+        token === 'IDesktopNotifier'
       ) {
         return {};
       }
@@ -66,6 +83,33 @@ vi.mock('@/infrastructure/services/web-server.service.js', () => ({
 vi.mock('@/infrastructure/services/notifications/notification-watcher.service.js', () => ({
   initializeNotificationWatcher: vi.fn(),
   getNotificationWatcher: vi.fn().mockReturnValue({
+    start: vi.fn(),
+    stop: vi.fn(),
+  }),
+}));
+
+vi.mock('@/infrastructure/services/auto-archive/auto-archive-watcher.service.js', () => ({
+  initializeAutoArchiveWatcher: vi.fn(),
+  getAutoArchiveWatcher: vi.fn().mockReturnValue({
+    start: vi.fn(),
+    stop: vi.fn(),
+  }),
+}));
+
+vi.mock(
+  '@/infrastructure/services/contributors/stale-good-first-issue-watcher.service.js',
+  () => ({
+    initializeStaleGoodFirstIssueWatcher: vi.fn(),
+    getStaleGoodFirstIssueWatcher: vi.fn().mockReturnValue({
+      start: vi.fn(),
+      stop: vi.fn(),
+    }),
+  })
+);
+
+vi.mock('@/infrastructure/services/contributors/monthly-recap-watcher.service.js', () => ({
+  initializeMonthlyRecapWatcher: vi.fn(),
+  getMonthlyRecapWatcher: vi.fn().mockReturnValue({
     start: vi.fn(),
     stop: vi.fn(),
   }),

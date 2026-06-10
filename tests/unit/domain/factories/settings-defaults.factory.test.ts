@@ -334,6 +334,7 @@ describe('createDefaultSettings', () => {
         // defaults to true so existing users keep the feature they already see.
         supplyChainSecurity: true,
         scheduledWorkflows: false,
+        githubImport: true,
       });
     });
 

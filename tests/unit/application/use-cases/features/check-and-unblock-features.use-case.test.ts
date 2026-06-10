@@ -179,7 +179,7 @@ describe('CheckAndUnblockFeaturesUseCase', () => {
     useCase = new CheckAndUnblockFeaturesUseCase(
       mockFeatureRepo,
       mockAgentProcess,
-      { load: vi.fn().mockResolvedValue(null) } as any,
+      { load: vi.fn().mockResolvedValue({ security: { mode: 'Advisory' } }) } as any,
       mockGitPrService,
       mockWorktreeService,
       mockConflictResolution,

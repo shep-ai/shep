@@ -11,9 +11,9 @@ import { describe, it, expect } from 'vitest';
 import { BuildMode } from '@/domain/generated/output.js';
 
 describe('BuildMode enum', () => {
-  it('should have exactly 3 values', () => {
+  it('should have exactly 4 values', () => {
     const values = Object.values(BuildMode);
-    expect(values).toHaveLength(3);
+    expect(values).toHaveLength(4);
   });
 
   it('should map Application to "application"', () => {
@@ -28,8 +28,12 @@ describe('BuildMode enum', () => {
     expect(BuildMode.Spec).toBe('spec');
   });
 
+  it('should map Exploration to "exploration"', () => {
+    expect(BuildMode.Exploration).toBe('exploration');
+  });
+
   it('should contain all expected lowercase string values', () => {
     const values = Object.values(BuildMode);
-    expect(values).toEqual(expect.arrayContaining(['application', 'fast', 'spec']));
+    expect(values).toEqual(expect.arrayContaining(['application', 'fast', 'spec', 'exploration']));
   });
 });

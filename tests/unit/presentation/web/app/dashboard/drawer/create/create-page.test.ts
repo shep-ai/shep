@@ -12,6 +12,7 @@ vi.mock('@/lib/server-container', () => ({
     if (token === 'ListFeaturesUseCase') return { execute: mockListFeaturesExecute };
     if (token === 'ListRepositoriesUseCase') return { execute: mockListReposExecute };
     if (token === 'GetApplicationUseCase') return { execute: mockGetApplicationExecute };
+    if (token === 'ListPluginsUseCase') return { execute: vi.fn().mockResolvedValue([]) };
     throw new Error(`Unknown token: ${token}`);
   },
 }));

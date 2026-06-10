@@ -223,6 +223,9 @@ export function createNewCommand(): Command {
               ...commonInput,
               remoteUrl: options.remote!,
               defaultCloneDir,
+              cloneOptions: {
+                onProgress: (msg: string) => process.stderr.write(msg),
+              },
             })
           );
         } else {

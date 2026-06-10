@@ -54,7 +54,7 @@ describe('createPromoteCommand', () => {
       feature: {
         id: 'feat-001',
         name: 'Explore idea',
-        mode: BuildMode.Application,
+        buildMode: BuildMode.Application,
         lifecycle: SdlcLifecycle.Requirements,
       },
     });
@@ -73,7 +73,7 @@ describe('createPromoteCommand', () => {
       feature: {
         id: 'feat-001',
         name: 'Explore idea',
-        mode: BuildMode.Fast,
+        buildMode: BuildMode.Fast,
         lifecycle: SdlcLifecycle.Implementation,
       },
     });
@@ -92,7 +92,7 @@ describe('createPromoteCommand', () => {
       feature: {
         id: 'feat-001',
         name: 'Explore idea',
-        mode: BuildMode.Application,
+        buildMode: BuildMode.Application,
         lifecycle: SdlcLifecycle.Requirements,
       },
     });
@@ -107,7 +107,7 @@ describe('createPromoteCommand', () => {
     const logCalls = (console.log as ReturnType<typeof vi.fn>).mock.calls
       .map((args) => args.join(' '))
       .join('\n');
-    expect(logCalls).toMatch(/Regular/);
+    expect(logCalls).toMatch(/application/);
     expect(logCalls).toMatch(/Requirements/);
   });
 
@@ -141,7 +141,7 @@ describe('createPromoteCommand', () => {
       feature: {
         id: 'feat-001',
         name: 'Explore idea',
-        mode: BuildMode.Application,
+        buildMode: BuildMode.Application,
         lifecycle: SdlcLifecycle.Requirements,
       },
     });
