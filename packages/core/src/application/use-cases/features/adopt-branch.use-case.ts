@@ -24,7 +24,7 @@ import type { IWorktreeService } from '../../ports/output/services/worktree-serv
 import type { IGitPrService } from '../../ports/output/services/git-pr-service.interface.js';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { ISpecInitializerService } from '../../ports/output/services/spec-initializer.interface.js';
-import { getSettings } from '../../../infrastructure/services/settings.service.js';
+import type { ISettingsProvider } from '../../ports/output/services/settings-provider.interface.js';
 import { deriveName, deriveSlug } from './branch-name-utils.js';
 
 export interface AdoptBranchInput {
@@ -53,7 +53,9 @@ export class AdoptBranchUseCase {
     @inject('IAgentRunRepository')
     private readonly agentRunRepo: IAgentRunRepository,
     @inject('ISpecInitializerService')
-    private readonly specInitializer: ISpecInitializerService
+    private readonly specInitializer: ISpecInitializerService,
+    @inject('ISettingsProvider')
+    private readonly settingsProvider: ISettingsProvider
   ) {}
 
   async execute(input: AdoptBranchInput): Promise<AdoptBranchResult> {
@@ -130,7 +132,7 @@ export class AdoptBranchUseCase {
 
     // --- Create AgentRun record (following CreateFeatureUseCase pattern lines 156-210) ---
     const runId = randomUUID();
-    const settings = getSettings();
+    const settings = this.settingsProvider.get();
     const now = new Date();
 
     const agentRun = {

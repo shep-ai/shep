@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SdlcLifecycle, AgentRunStatus } from '@/domain/generated/output.js';
 import { AdoptBranchUseCase } from '@/application/use-cases/features/adopt-branch.use-case.js';
-import { initializeSettings, resetSettings } from '@/infrastructure/services/settings.service.js';
+import { initializeSettings, resetSettings, getSettings } from '@/infrastructure/services/settings.service.js';
 import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IRepositoryRepository } from '@/application/ports/output/repositories/repository-repository.interface.js';
@@ -24,6 +24,7 @@ import type { IAgentRunRepository } from '@/application/ports/output/agents/agen
 import type { IWorktreeService } from '@/application/ports/output/services/worktree-service.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { ISpecInitializerService } from '@/application/ports/output/services/spec-initializer.interface.js';
+import type { ISettingsProvider } from '@/application/ports/output/services/settings-provider.interface.js';
 
 describe('Adopt Flow Integration Tests', () => {
   let tempDir: string;
@@ -188,7 +189,8 @@ describe('Adopt Flow Integration Tests', () => {
       mockWorktreeService,
       mockGitPrService,
       mockAgentRunRepo,
-      mockSpecInitializer
+      mockSpecInitializer,
+      { has: () => true, get: () => getSettings() } as unknown as ISettingsProvider
     );
   });
 

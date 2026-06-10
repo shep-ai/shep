@@ -29,10 +29,10 @@ declare module '@modelcontextprotocol/sdk/server/mcp.js' {
   class McpServer {
     constructor(options: McpServerOptions);
     /** Register a tool with name, options (description + inputSchema), and handler */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     registerTool(
       name: string,
       options: RegisterToolOptions,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cb: (args: any, extra: unknown) => Promise<ToolCallbackResult>
     ): void;
     /** Legacy overload */

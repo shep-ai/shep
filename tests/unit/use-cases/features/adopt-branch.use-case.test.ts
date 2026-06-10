@@ -8,17 +8,12 @@ import type { IWorktreeService } from '@/application/ports/output/services/workt
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { ISpecInitializerService } from '@/application/ports/output/services/spec-initializer.interface.js';
+import type { ISettingsProvider } from '@/application/ports/output/services/settings-provider.interface.js';
 import { AdoptBranchUseCase } from '@/application/use-cases/features/adopt-branch.use-case.js';
-import { getSettings } from '@/infrastructure/services/settings.service.js';
 
 // Mock fs module for spec directory detection
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
-}));
-
-// Mock settings service for AgentRun creation
-vi.mock('@/infrastructure/services/settings.service.js', () => ({
-  getSettings: vi.fn(),
 }));
 
 describe('AdoptBranchUseCase', () => {
@@ -28,6 +23,7 @@ describe('AdoptBranchUseCase', () => {
   let mockGitPrService: IGitPrService;
   let mockAgentRunRepo: IAgentRunRepository;
   let mockSpecInitializer: ISpecInitializerService;
+  let mockSettingsProvider: ISettingsProvider;
   let useCase: AdoptBranchUseCase;
 
   const repoPath = '/home/user/my-project';
@@ -52,11 +48,14 @@ describe('AdoptBranchUseCase', () => {
   );
 
   beforeEach(() => {
-    // Mock getSettings with default values
-    vi.mocked(getSettings).mockReturnValue({
-      agent: { type: 'claude-code' },
-      models: { default: 'claude-sonnet-4.5' },
-    } as any);
+    // Mock settings provider with default values
+    mockSettingsProvider = {
+      has: vi.fn().mockReturnValue(true),
+      get: vi.fn().mockReturnValue({
+        agent: { type: 'claude-code' },
+        models: { default: 'claude-sonnet-4.5' },
+      }),
+    } as unknown as ISettingsProvider;
 
     mockFeatureRepo = {
       create: vi.fn().mockResolvedValue(undefined),
@@ -170,7 +169,8 @@ describe('AdoptBranchUseCase', () => {
       mockWorktreeService,
       mockGitPrService,
       mockAgentRunRepo,
-      mockSpecInitializer
+      mockSpecInitializer,
+      mockSettingsProvider
     );
   });
 
@@ -502,7 +502,8 @@ describe('AdoptBranchUseCase', () => {
           mockWorktreeService,
           mockGitPrService,
           mockAgentRunRepo,
-          mockSpecInitializer
+          mockSpecInitializer,
+          mockSettingsProvider
         );
       }).not.toThrow();
     });
@@ -590,10 +591,10 @@ describe('AdoptBranchUseCase', () => {
   describe('AgentRun creation', () => {
     it('should create AgentRun with correct fields from settings', async () => {
       // Mock settings (already mocked in beforeEach with default values)
-      vi.mocked(getSettings).mockReturnValue({
+      vi.mocked(mockSettingsProvider.get).mockReturnValue({
         agent: { type: 'claude-code' },
         models: { default: 'claude-sonnet-4.5' },
-      } as any);
+      } as unknown as ReturnType<ISettingsProvider['get']>);
 
       await useCase.execute({
         branchName: 'fix/login-bug',
@@ -614,10 +615,10 @@ describe('AdoptBranchUseCase', () => {
     });
 
     it('should handle missing models.default setting gracefully', async () => {
-      vi.mocked(getSettings).mockReturnValue({
+      vi.mocked(mockSettingsProvider.get).mockReturnValue({
         agent: { type: 'cursor' },
         models: undefined,
-      } as any);
+      } as unknown as ReturnType<ISettingsProvider['get']>);
 
       await useCase.execute({
         branchName: 'fix/login-bug',
@@ -739,10 +740,10 @@ describe('AdoptBranchUseCase', () => {
     });
 
     it('should handle missing models.default without throwing error', async () => {
-      vi.mocked(getSettings).mockReturnValue({
+      vi.mocked(mockSettingsProvider.get).mockReturnValue({
         agent: { type: 'gemini-cli' },
         models: undefined,
-      } as any);
+      } as unknown as ReturnType<ISettingsProvider['get']>);
 
       // Should not throw
       await expect(
