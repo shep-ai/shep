@@ -1,6 +1,42 @@
 {
   "permissions": {
-    "allow": ["mcp__plugin_playwright_playwright__browser_take_screenshot"]
+    "allow": [
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "PowerShell(pnpm validate)",
+      "PowerShell(pnpm dev:cli ide --help)",
+      "Bash(npx pnpm *)",
+      "Bash(tee /tmp/validate-out.txt)",
+      "Bash(tee /tmp/pnpm-install.txt)",
+      "Bash(rm node_modules/.pnpm-workspace-state-v1.json && npx pnpm install 2>&1 | tail -5)",
+      "Bash(tee /tmp/pnpm-install2.txt)",
+      "Bash(tee /tmp/pnpm-install3.txt)",
+      "Bash(printf '[core]\\\\n\\\\trepositoryformatversion = 0\\\\n\\\\tfilemode = false\\\\n\\\\tbare = false\\\\n\\\\tlogallrefupdates = true\\\\n\\\\tsymlinks = false\\\\n\\\\tignorecase = true\\\\n[remote \"origin\"]\\\\n\\\\turl = https://github.com/Shanidhya01/shep\\\\n\\\\tfetch = +refs/heads/*:refs/remotes/origin/*\\\\n[branch \"main\"]\\\\n\\\\tremote = origin\\\\n\\\\tmerge = refs/heads/main\\\\n[branch \"docs/add-help-examples-ide-notifications\"]\\\\n\\\\tremote = origin\\\\n\\\\tmerge = refs/heads/docs/add-help-examples-ide-notifications\\\\n')",
+      "Bash(git config *)",
+      "Read(//c/Users/shani/.claude/projects/d--OPEN-shep/a4793b3e-00da-419d-baef-52453ab31af3/tool-results/**)",
+      "Bash(git update-index *)",
+      "Bash(awk '{print $1, $2}')",
+      "Bash(git hash-object *)",
+      "Bash(echo \"worktree: $\\(git hash-object .all-contributorsrc\\)\")",
+      "Bash(git diff-files *)",
+      "Bash(echo \"exit: $?\")",
+      "Read(//d/OPEN/shep/**)",
+      "Bash(echo \"refresh exit: $?\")",
+      "Read(//tmp/**)",
+      "Bash(awk '$1!=0 || $2!=0' /tmp/numstat.txt)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(git --version)",
+      "Bash(git fsmonitor--daemon status)",
+      "Bash(git checkout *)",
+      "Bash(git status *)",
+      "Bash(grep -v -e '^.claude/settings.json$' -e '^src/presentation/cli/commands/ide-open.command.ts$' -e '^src/presentation/cli/commands/notifications/ls.command.ts$')",
+      "Bash(xargs -0 -n 200 git update-index --)",
+      "Bash(echo \"update exit: $?\")",
+      "Read(//c/Users/shani/.claude/projects/d--OPEN-shep/memory//**)",
+      "Read(//c/Users/shani/.claude/projects/d--OPEN-shep/memory/**)"
+    ],
+    "additionalDirectories": [
+      "D:\\OPEN\\shep\\node_modules"
+    ]
   },
   "hooks": {
     "PostToolUse": [

@@ -37,6 +37,14 @@ export function createIdeOpenCommand(): Command {
   const t = getCliI18n().t;
   const cmd = new Command('ide')
     .description(t('cli:commands.ide.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep ide feat-abc12345                Open the configured default editor
+  $ shep ide feat-abc12345 --vscode       Force VS Code
+  $ shep ide feat-abc12345 --cursor       Force Cursor`
+    )
     .argument('<feat-id>', t('cli:commands.ide.featArgument'));
 
   const ideEntries = getIdeEntries();

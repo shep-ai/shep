@@ -6,6 +6,14 @@ import { colors, messages, renderListView } from '../../ui/index.js';
 export function createLsCommand(): Command {
   return new Command('ls')
     .description('List notifications')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep notifications ls alice                          List all of alice's notifications
+  $ shep notifications ls alice --unread                 Show only unread notifications
+  $ shep notifications ls alice --project proj-abc12345  Filter by project ID`
+    )
     .argument('<recipient>', 'Recipient user ID')
     .option('-p, --project <projectId>', 'Filter by project ID')
     .option('--unread', 'Show only unread notifications')
