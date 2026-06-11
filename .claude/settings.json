@@ -2,9 +2,6 @@
   "permissions": {
     "allow": [
       "mcp__plugin_playwright_playwright__browser_take_screenshot"
-    ],
-    "additionalDirectories": [
-      "D:\\OPEN\\shep\\node_modules"
     ]
   },
   "hooks": {
