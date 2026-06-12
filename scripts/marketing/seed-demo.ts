@@ -852,7 +852,7 @@ function buildAgentRun(
 ): AgentRun {
   return {
     id,
-    agentType: AgentType.Dev,
+    agentType: AgentType.ClaudeCode,
     agentName,
     status,
     prompt: `Execute ${agentName} workflow for feature ${featureId}`,
