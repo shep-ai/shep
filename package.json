@@ -81,6 +81,7 @@
     "tsp:watch": "tsp compile tsp/ --watch",
     "demo:seed": "tsx scripts/marketing/seed-demo.ts",
     "demo:capture": "tsx scripts/marketing/capture-screenshots.ts",
+    "demo:video": "tsx scripts/marketing/render-hero-video.ts",
     "spec:generate-md": "tsx scripts/spec-generate-md.ts",
     "spec:validate": "tsx scripts/spec-validate.ts",
     "cli": "tsx src/presentation/cli/index.ts",
