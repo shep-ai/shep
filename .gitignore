@@ -106,3 +106,7 @@ storybook-static/
 .worktrees/
 .plan/
 .superpowers/
+# =============================================================================
+# Marketing screenshot factory output (generated assets, not source)
+# =============================================================================
+scripts/marketing/output/

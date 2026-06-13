@@ -1,6 +1,6 @@
 {
   "name": "@shepai/cli",
-  "version": "1.212.0",
+  "version": "1.213.0",
   "description": "Autonomous AI-native SDLC platform — run parallel AI agents in isolated worktrees to automate the development cycle from idea to deploy.",
   "type": "module",
   "license": "MIT",
@@ -79,6 +79,9 @@
     "tsp:compile": "tsp compile tsp/",
     "tsp:format": "tsp format \"tsp/**/*.tsp\"",
     "tsp:watch": "tsp compile tsp/ --watch",
+    "demo:seed": "tsx scripts/marketing/seed-demo.ts",
+    "demo:capture": "tsx scripts/marketing/capture-screenshots.ts",
+    "demo:video": "tsx scripts/marketing/render-hero-video.ts",
     "spec:generate-md": "tsx scripts/spec-generate-md.ts",
     "spec:validate": "tsx scripts/spec-validate.ts",
     "cli": "tsx src/presentation/cli/index.ts",
