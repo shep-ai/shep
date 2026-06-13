@@ -69,6 +69,7 @@ Idea → Requirements → Research → Plan → Code → Tests → PR → CI →
 | [Gas Town](./gastown.md)        | Steve Yegge's multi-agent fleet orchestrator           | Frontier experimentation  |
 | [OpenHands](./openhands.md)     | Composable AI agent platform (formerly OpenDevin)      | Largest open-source agent |
 | [OpenCode](./opencode.md)       | Terminal AI coding agent with 120K+ stars              | Biggest community         |
+| [MiMo Code](./mimo-code.md)     | Xiaomi's terminal coding agent, OpenCode fork with cross-session memory | OpenCode-shaped, MIT |
 | [Aider](./aider.md)             | AI pair programming in the terminal                    | Git-first pioneer         |
 | [Cline](./cline.md)             | VS Code agent with plan/act modes                      | 4M+ installs              |
 | [Codex](./codex.md) | OpenAI's terminal coding agent | OpenAI ecosystem |
@@ -95,6 +96,7 @@ Every tool in this space taught us something:
 - **Gas Town** showed that parallel agent orchestration is the frontier
 - **Aider** demonstrated that git-first design matters
 - **Spec Kitty** confirmed that structured workflows beat ad-hoc prompting
+- **MiMo Code** showed that OpenCode forks can specialize on memory and voice without rewriting the agent loop
 - **OpenHands** showed the power of an open-source community around autonomous agents
 
 We built Shep to combine these insights: spec-driven lifecycle, parallel worktree isolation, configurable approval gates, agent-agnostic design, and a visual dashboard — all in one open-source CLI.
