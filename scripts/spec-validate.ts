@@ -227,7 +227,7 @@ export function validateSpec(specDir: string): ValidationResult[] {
 }
 
 // CLI entry point
-/* eslint-disable no-console */
+
 if (typeof process !== 'undefined' && process.argv[1]?.includes('spec-validate')) {
   const args = process.argv.slice(2);
   const specDir = args[0];
@@ -248,4 +248,3 @@ if (typeof process !== 'undefined' && process.argv[1]?.includes('spec-validate')
   const hasFail = results.some((r) => r.status === 'fail');
   if (hasFail) process.exit(1);
 }
-/* eslint-enable no-console */

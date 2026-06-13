@@ -46,7 +46,7 @@ const ARTIFACT_TYPE_TO_FILENAME: Record<ArtifactType, string> = {
 };
 
 // CLI entry point
-/* eslint-disable no-console */
+
 if (typeof process !== 'undefined' && process.argv[1]?.includes('spec-generate-md')) {
   const args = process.argv.slice(2);
   const featureDir = args[0];
@@ -65,4 +65,3 @@ if (typeof process !== 'undefined' && process.argv[1]?.includes('spec-generate-m
     }
   }
 }
-/* eslint-enable no-console */
