@@ -17,11 +17,6 @@
 #   │  Release  │  (after ALL jobs pass)
 #   └───────────┘
 #
-#   On pull requests (after ALL jobs pass):
-#   ┌───────────────┐
-#   │  Dev Release   │  npm dev tag
-#   └───────────────┘
-#
 # @see https://docs.github.com/en/actions
 
 name: CI/CD
@@ -465,76 +460,3 @@ jobs:
           # gracefully falls back to a static tagline if this is unset.
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: npx semantic-release
-
-  # ===========================================================================
-  # Dev Release (PRs only, after ALL jobs pass)
-  # Publishes npm prerelease with dev tag
-  # ===========================================================================
-  dev-release:
-    name: Dev Release
-    runs-on: ubuntu-latest
-    needs:
-      - lint
-      - typecheck
-      - test-unit
-      - test-e2e-cli
-      - test-e2e-tui
-      - test-e2e-web
-      - storybook-build
-      - build-electron
-      - security-gitleaks
-      - security-semgrep
-      - security-enforce
-    if: github.event_name == 'pull_request'
-
-    permissions:
-      contents: read
-      pull-requests: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Compute dev version
-        id: devver
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          SHORT_SHA=$(git rev-parse --short=7 HEAD)
-          BASE_VERSION=$(node -p "require('./package.json').version")
-          DEV_VERSION="${BASE_VERSION}-pr${PR_NUMBER}.${SHORT_SHA}"
-          echo "version=$DEV_VERSION" >> $GITHUB_OUTPUT
-          echo "Dev version: $DEV_VERSION"
-
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run build:release
-
-      - name: Publish npm dev release
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          DEV_VERSION: ${{ steps.devver.outputs.version }}
-        run: |
-          npm version "$DEV_VERSION" --no-git-tag-version
-          npm publish --tag dev --access public
-
-      - name: Post PR comment with dev versions
-        uses: peter-evans/create-or-update-comment@v5
-        env:
-          DEV_VERSION: ${{ steps.devver.outputs.version }}
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-tag: dev-release
-          body: |
-            ## Dev Release Published
-
-            | Artifact | Version | Install |
-            |----------|---------|---------|
-            | **npm** | `${{ steps.devver.outputs.version }}` | `npm install -g @shepai/cli@${{ steps.devver.outputs.version }}` |
-
-            ---
-            <sub>Published from commit ${{ github.event.pull_request.head.sha }} | [View CI](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})</sub>
