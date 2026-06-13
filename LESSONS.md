@@ -1,5 +1,17 @@
 # Lessons Learned
 
+## Npm dev-release ENEEDAUTH: don't reshape CI unless asked
+
+When a PR dev-release fails with `npm error code ENEEDAUTH`, the minimal fix is
+usually npm authentication: verify the repository/environment has a valid
+`NPM_TOKEN` secret with publish rights to `@shepai/cli`, and that the workflow
+context can access it. Do not change dev-release job policy, PR eligibility,
+permissions, or provenance flags unless the user explicitly asks for a pipeline
+change.
+
+Rule: for release auth failures, first diagnose/configure credentials; avoid
+"improving" the CI/CD pipeline as part of the fix.
+
 ## npm trusted publishing requires npm >= 11.5 on the runner
 
 `@semantic-release/npm` v13 added OIDC trusted publishing. In `lib/verify-auth.js`, when the OIDC token exchange with npmjs.com succeeds, the plugin **early-returns and does NOT write `NPM_TOKEN` to the userconfig `.npmrc`**. It then runs plain `npm publish` and relies on the **npm CLI itself** to do trusted publishing — which needs **npm >= 11.5.0**.
