@@ -1,35 +1,38 @@
 #!/usr/bin/env node
 /**
- * gen-config.mjs — single source of truth → pm2 + Caddy configs.
+ * gen-config.mjs — single source of truth → pm2 + reverse-proxy configs.
  *
  * Reads deploy/tenants.json and generates:
- *   - deploy/ecosystem.config.cjs   (pm2: one process per tenant, isolated by env)
- *   - deploy/Caddyfile              (per-subdomain login gate → 127.0.0.1:<port>)
+ *   - deploy/ecosystem.config.cjs        (pm2: one process per tenant, isolated by env)
+ *   - one of:
+ *       deploy/shep.nginx.conf  + deploy/htpasswd/<id>   (proxy: "nginx", default)
+ *       deploy/Caddyfile                                 (proxy: "caddy")
  *
- * Each tenant is fully isolated via env vars (no app code change needed):
+ * Per-tenant isolation (no app code change needed):
  *   SHEP_HOME       → its own DB, secrets, worktrees, projects, logs, checkpoints
  *   GH_CONFIG_DIR   → its own GitHub credentials (gh CLI honors this natively)
  *   SHEP_BIND_HOST  → 127.0.0.1 so the app is never directly public
  *   --port <N>      → its own listen port behind the reverse proxy
  *
- * The Claude key is shared across all tenants and is NOT written here — it is
- * read from the ambient environment (CLAUDE_CODE_OAUTH_TOKEN) by pm2 at start,
- * keeping the secret out of generated files and source control.
+ * Claude auth: NOT handled here. The agents spawn the `claude` CLI, which uses
+ * its own login (~/.claude) — shared by all tenants as long as pm2 runs as the
+ * same OS user that ran `claude login`. Optionally set CLAUDE_CODE_OAUTH_TOKEN /
+ * ANTHROPIC_API_KEY in the pm2 environment and it will be inherited.
  *
  * Usage:  node deploy/gen-config.mjs [path/to/tenants.json]
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const configPath = resolve(process.argv[2] ?? join(here, 'tenants.json'));
 
-/** Shared env var name for the Claude Code subscription/OAuth token. */
 const CLAUDE_TOKEN_ENV = 'CLAUDE_CODE_OAUTH_TOKEN';
 /** Routes that must stay reachable WITHOUT login (they self-verify HMAC signatures). */
-const WEBHOOK_PATHS = ['/api/webhooks/*', '/api/whatsapp/webhook'];
+const WEBHOOK_PREFIX = '/api/webhooks/';
+const WHATSAPP_WEBHOOK = '/api/whatsapp/webhook';
 
 function loadConfig() {
   let raw;
@@ -44,87 +47,69 @@ function loadConfig() {
   } catch (err) {
     fail(`Invalid JSON in ${configPath}: ${err.message}`);
   }
+  cfg.proxy = cfg.proxy ?? 'nginx';
   validate(cfg);
   return cfg;
 }
 
 function validate(cfg) {
-  const required = ['domain', 'appDir', 'tenantsRoot', 'appEntry', 'tenants'];
-  for (const key of required) {
+  for (const key of ['domain', 'appDir', 'tenantsRoot', 'appEntry', 'tenants']) {
     if (!cfg[key]) fail(`tenants.json is missing required key: "${key}"`);
+  }
+  if (!['nginx', 'caddy'].includes(cfg.proxy)) {
+    fail(`tenants.json "proxy" must be "nginx" or "caddy" (got "${cfg.proxy}")`);
+  }
+  if (cfg.proxy === 'nginx') {
+    if (!cfg.tls?.cert || !cfg.tls?.key) {
+      fail('nginx mode requires "tls": { "cert": "...", "key": "..." } (your wildcard cert)');
+    }
+    if (!cfg.htpasswdDir) fail('nginx mode requires "htpasswdDir" (e.g. /etc/nginx/shep)');
   }
   if (!Array.isArray(cfg.tenants) || cfg.tenants.length === 0) {
     fail('tenants.json "tenants" must be a non-empty array');
   }
-  const seenPorts = new Set();
-  const seenIds = new Set();
-  const seenSubs = new Set();
+  const seen = { id: new Set(), subdomain: new Set(), port: new Set() };
   for (const t of cfg.tenants) {
     for (const key of ['id', 'subdomain', 'port']) {
       if (t[key] === undefined || t[key] === null || t[key] === '') {
         fail(`tenant ${JSON.stringify(t)} is missing "${key}"`);
       }
+      if (seen[key].has(t[key])) fail(`duplicate ${key}: ${t[key]}`);
+      seen[key].add(t[key]);
     }
-    if (seenIds.has(t.id)) fail(`duplicate tenant id: ${t.id}`);
-    if (seenSubs.has(t.subdomain)) fail(`duplicate subdomain: ${t.subdomain}`);
-    if (seenPorts.has(t.port)) fail(`duplicate port: ${t.port}`);
-    seenIds.add(t.id);
-    seenSubs.add(t.subdomain);
-    seenPorts.add(t.port);
-    if (!t.authHash || t.authHash.startsWith('REPLACE_')) {
-      warn(`tenant "${t.id}" has no real authHash — its subdomain will reject logins until set.`);
+    if (!t.authHash || String(t.authHash).startsWith('REPLACE_')) {
+      warn(`tenant "${t.id}" has no real authHash — its login will fail until set.`);
     }
   }
 }
 
-function shepHome(cfg, t) {
-  return join(cfg.tenantsRoot, t.id, '.shep');
-}
-function ghConfigDir(cfg, t) {
-  return join(cfg.tenantsRoot, t.id, 'gh');
-}
+const shepHome = (cfg, t) => join(cfg.tenantsRoot, t.id, '.shep');
+const ghConfigDir = (cfg, t) => join(cfg.tenantsRoot, t.id, 'gh');
+const host = (cfg, t) => `${t.subdomain}.${cfg.domain}`;
+const upstream = (cfg, t) => `${cfg.bindHost ?? '127.0.0.1'}:${t.port}`;
 
+// ── pm2 ──────────────────────────────────────────────────────────────────────
 function renderEcosystem(cfg) {
-  const apps = cfg.tenants.map((t) => ({
-    name: `shep-${t.id}`,
-    script: join(cfg.appDir, cfg.appEntry),
-    args: `_serve --port ${t.port}`,
-    interpreter: 'node',
-    cwd: cfg.appDir,
-    autorestart: true,
-    max_restarts: 10,
-    watch: false,
-    max_memory_restart: '1500M',
-    env: {
-      NODE_ENV: 'production',
-      SHEP_BIND_HOST: cfg.bindHost ?? '127.0.0.1',
-      SHEP_HOME: shepHome(cfg, t),
-      GH_CONFIG_DIR: ghConfigDir(cfg, t),
-      // Shared Claude token: inherited from the pm2 parent environment so it is
-      // never written into this generated file. Set it once before `pm2 start`.
-      [CLAUDE_TOKEN_ENV]: `process.env.${CLAUDE_TOKEN_ENV}`,
-    },
-  }));
-
-  // Build the JS source by hand so the Claude token value is a live
-  // `process.env.X` reference rather than a quoted string.
-  const appBlocks = apps
-    .map((app) => {
-      const env = Object.entries(app.env)
-        .map(([k, v]) =>
-          k === CLAUDE_TOKEN_ENV ? `        ${k}: ${v},` : `        ${k}: ${JSON.stringify(v)},`
-        )
-        .join('\n');
+  const appBlocks = cfg.tenants
+    .map((t) => {
+      const env = [
+        `        NODE_ENV: "production",`,
+        `        SHEP_BIND_HOST: ${JSON.stringify(cfg.bindHost ?? '127.0.0.1')},`,
+        `        SHEP_HOME: ${JSON.stringify(shepHome(cfg, t))},`,
+        `        GH_CONFIG_DIR: ${JSON.stringify(ghConfigDir(cfg, t))},`,
+        // Inherited from the pm2 parent env if present; harmless (undefined) if not.
+        `        ${CLAUDE_TOKEN_ENV}: process.env.${CLAUDE_TOKEN_ENV},`,
+      ].join('\n');
       return `    {
-      name: ${JSON.stringify(app.name)},
-      script: ${JSON.stringify(app.script)},
-      args: ${JSON.stringify(app.args)},
-      interpreter: ${JSON.stringify(app.interpreter)},
-      cwd: ${JSON.stringify(app.cwd)},
-      autorestart: ${app.autorestart},
-      max_restarts: ${app.max_restarts},
-      watch: ${app.watch},
-      max_memory_restart: ${JSON.stringify(app.max_memory_restart)},
+      name: ${JSON.stringify(`shep-${t.id}`)},
+      script: ${JSON.stringify(join(cfg.appDir, cfg.appEntry))},
+      args: ${JSON.stringify(`_serve --port ${t.port}`)},
+      interpreter: "node",
+      cwd: ${JSON.stringify(cfg.appDir)},
+      autorestart: true,
+      max_restarts: 10,
+      watch: false,
+      max_memory_restart: "1500M",
       env: {
 ${env}
       },
@@ -142,36 +127,105 @@ ${appBlocks}
 `;
 }
 
+// ── nginx ────────────────────────────────────────────────────────────────────
+function proxyHeaders(cfg, t) {
+  return [
+    `        proxy_pass http://${upstream(cfg, t)};`,
+    `        proxy_http_version 1.1;`,
+    `        proxy_set_header Upgrade $http_upgrade;`,
+    `        proxy_set_header Connection $connection_upgrade;`,
+    `        proxy_set_header Host $host;`,
+    `        proxy_set_header X-Real-IP $remote_addr;`,
+    `        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`,
+    `        proxy_set_header X-Forwarded-Proto $scheme;`,
+    `        proxy_buffering off;        # required for SSE / streaming agent output`,
+    `        proxy_read_timeout 3600s;`,
+    `        client_max_body_size 100m;`,
+  ].join('\n');
+}
+
+function renderNginx(cfg) {
+  const blocks = cfg.tenants
+    .map((t) => {
+      const h = host(cfg, t);
+      const htpasswd = join(cfg.htpasswdDir, `${t.id}.htpasswd`);
+      return `# ${t.id}
+server {
+    listen 80;
+    server_name ${h};
+    return 301 https://$host$request_uri;
+}
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${h};
+
+    ssl_certificate     ${cfg.tls.cert};
+    ssl_certificate_key ${cfg.tls.key};
+
+    # Webhooks self-verify HMAC signatures — no login required.
+    location ^~ ${WEBHOOK_PREFIX} {
+${proxyHeaders(cfg, t)}
+    }
+    location = ${WHATSAPP_WEBHOOK} {
+${proxyHeaders(cfg, t)}
+    }
+
+    # Everything else requires a login (identity-based — survives IP changes).
+    location / {
+        auth_basic "${h}";
+        auth_basic_user_file ${htpasswd};
+${proxyHeaders(cfg, t)}
+    }
+}`;
+    })
+    .join('\n\n');
+
+  return `# AUTO-GENERATED by deploy/gen-config.mjs from deploy/tenants.json — DO NOT EDIT.
+# Regenerate with: node deploy/gen-config.mjs
+# Install: sudo cp deploy/shep.nginx.conf /etc/nginx/conf.d/shep.conf && sudo nginx -t && sudo systemctl reload nginx
+
+# Needed once (http context) for WebSocket/SSE upgrades:
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+${blocks}
+`;
+}
+
+function writeHtpasswdFiles(cfg) {
+  const dir = join(here, 'htpasswd');
+  mkdirSync(dir, { recursive: true });
+  for (const t of cfg.tenants) {
+    const user = t.authUser ?? t.id;
+    writeFileSync(join(dir, `${t.id}.htpasswd`), `${user}:${t.authHash}\n`);
+  }
+  return dir;
+}
+
+// ── caddy (alternative) ───────────────────────────────────────────────────────
 function renderCaddyfile(cfg) {
   const blocks = cfg.tenants.map((t) => {
-    const host = `${t.subdomain}.${cfg.domain}`;
-    const upstream = `${cfg.bindHost ?? '127.0.0.1'}:${t.port}`;
     const user = t.authUser ?? t.id;
-    return `${host} {
-\t# Webhooks self-verify HMAC signatures — leave them un-gated so providers can reach them.
-\t@webhooks path ${WEBHOOK_PATHS.join(' ')}
+    return `${host(cfg, t)} {
+\t@webhooks path ${WEBHOOK_PREFIX}* ${WHATSAPP_WEBHOOK}
 \thandle @webhooks {
-\t\treverse_proxy ${upstream}
+\t\treverse_proxy ${upstream(cfg, t)}
 \t}
-
-\t# Everything else requires a login (identity-based — survives IP changes).
 \thandle {
 \t\tbasic_auth {
 \t\t\t${user} ${t.authHash}
 \t\t}
-\t\treverse_proxy ${upstream}
+\t\treverse_proxy ${upstream(cfg, t)}
 \t}
 }`;
   });
-
-  return `# AUTO-GENERATED by deploy/gen-config.mjs from deploy/tenants.json — DO NOT EDIT.
-# Regenerate with: node deploy/gen-config.mjs
-# Caddy auto-provisions Let's Encrypt TLS for each host below.
-
-${blocks.join('\n\n')}
-`;
+  return `# AUTO-GENERATED by deploy/gen-config.mjs — DO NOT EDIT.\n\n${blocks.join('\n\n')}\n`;
 }
 
+// ── helpers ───────────────────────────────────────────────────────────────────
 function fail(msg) {
   console.error(`\x1b[31m✖ ${msg}\x1b[0m`);
   process.exit(1);
@@ -183,22 +237,27 @@ function ok(msg) {
   console.log(`\x1b[32m✓ ${msg}\x1b[0m`);
 }
 
+// ── run ───────────────────────────────────────────────────────────────────────
 const cfg = loadConfig();
 const ecosystemPath = join(here, 'ecosystem.config.cjs');
-const caddyPath = join(here, 'Caddyfile');
-
 writeFileSync(ecosystemPath, renderEcosystem(cfg));
-writeFileSync(caddyPath, renderCaddyfile(cfg));
-
 ok(`Wrote ${ecosystemPath}`);
-ok(`Wrote ${caddyPath}`);
+
+if (cfg.proxy === 'nginx') {
+  const confPath = join(here, 'shep.nginx.conf');
+  writeFileSync(confPath, renderNginx(cfg));
+  const hdir = writeHtpasswdFiles(cfg);
+  ok(`Wrote ${confPath}`);
+  ok(`Wrote htpasswd files in ${hdir}/`);
+} else {
+  const caddyPath = join(here, 'Caddyfile');
+  writeFileSync(caddyPath, renderCaddyfile(cfg));
+  ok(`Wrote ${caddyPath}`);
+}
+
 console.log(`\nTenants (${cfg.tenants.length}):`);
 for (const t of cfg.tenants) {
   console.log(
-    `  • ${t.id.padEnd(12)} https://${t.subdomain}.${cfg.domain}  →  127.0.0.1:${t.port}  (SHEP_HOME=${shepHome(cfg, t)})`
+    `  • ${String(t.id).padEnd(12)} https://${host(cfg, t)}  →  ${upstream(cfg, t)}  (SHEP_HOME=${shepHome(cfg, t)})`
   );
 }
-console.log(`\nNext:`);
-console.log(`  export ${CLAUDE_TOKEN_ENV}=...        # shared Claude key (once per shell/systemd)`);
-console.log(`  pm2 start ${ecosystemPath} --update-env`);
-console.log(`  sudo cp ${caddyPath} /etc/caddy/Caddyfile && sudo systemctl reload caddy`);

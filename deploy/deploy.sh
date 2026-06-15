@@ -11,6 +11,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(node -e "process.stdout.write(require('$HERE/tenants.json').appDir)")"
+HTPASSWD_DIR="$(node -e "process.stdout.write(require('$HERE/tenants.json').htpasswdDir)")"
 
 echo "→ Updating code in $APP_DIR"
 cd "$APP_DIR"
@@ -27,10 +28,14 @@ node "$HERE/gen-config.mjs"
 
 echo "→ Reloading all tenants (zero-downtime) with refreshed env"
 pm2 reload "$HERE/ecosystem.config.cjs" --update-env
+pm2 save
 
-echo "→ Reloading Caddy"
-sudo cp "$HERE/Caddyfile" /etc/caddy/Caddyfile
-sudo systemctl reload caddy
+echo "→ Refreshing nginx (htpasswd + server blocks)"
+sudo mkdir -p "$HTPASSWD_DIR"
+sudo cp "$HERE"/htpasswd/*.htpasswd "$HTPASSWD_DIR"/
+sudo cp "$HERE/shep.nginx.conf" /etc/nginx/conf.d/shep.conf
+sudo nginx -t
+sudo systemctl reload nginx
 
 echo "✓ All tenants updated to $(git rev-parse --short HEAD)"
 pm2 list

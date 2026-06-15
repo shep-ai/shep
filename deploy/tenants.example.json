@@ -1,6 +1,11 @@
 {
-  "$schema": "./tenants.schema.json",
-  "domain": "shep.example.com",
+  "domain": "code.expertreg.com",
+  "proxy": "nginx",
+  "tls": {
+    "cert": "/etc/letsencrypt/live/code.expertreg.com/fullchain.pem",
+    "key": "/etc/letsencrypt/live/code.expertreg.com/privkey.pem"
+  },
+  "htpasswdDir": "/etc/nginx/shep",
   "appDir": "/srv/shep/app",
   "tenantsRoot": "/srv/shep/tenants",
   "appEntry": "dist/src/presentation/cli/index.js",
@@ -11,21 +16,21 @@
       "subdomain": "companya",
       "port": 4051,
       "authUser": "companya",
-      "authHash": "REPLACE_WITH_OUTPUT_OF_caddy_hash-password"
+      "authHash": "REPLACE_WITH_htpasswd_-nbB_hash"
     },
     {
       "id": "companyB",
       "subdomain": "companyb",
       "port": 4052,
       "authUser": "companyb",
-      "authHash": "REPLACE_WITH_OUTPUT_OF_caddy_hash-password"
+      "authHash": "REPLACE_WITH_htpasswd_-nbB_hash"
     },
     {
       "id": "companyC",
       "subdomain": "companyc",
       "port": 4053,
       "authUser": "companyc",
-      "authHash": "REPLACE_WITH_OUTPUT_OF_caddy_hash-password"
+      "authHash": "REPLACE_WITH_htpasswd_-nbB_hash"
     }
   ]
 }

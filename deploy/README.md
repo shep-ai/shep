@@ -1,136 +1,131 @@
-# Multi-Tenant Deployment
+# Multi-Tenant Deployment (Nginx + wildcard subdomains)
 
 Run several fully-isolated copies of Shep from **one codebase / one build**, one
-process per company, fronted by a single domain with per-subdomain login.
+process per company, behind your existing **Nginx** on `*.code.expertreg.com`,
+each gated by a login.
 
 Each tenant gets its own DB, sessions, history, worktrees, repos, secrets, **and
-GitHub credentials**. All tenants share one Claude key (capped cost). Updates
-propagate to every tenant with a single `deploy.sh`.
+GitHub credentials**. All tenants share the server's single logged-in `claude`
+CLI (capped cost). Updates propagate to every tenant with one `deploy.sh`.
 
 ## How isolation works
 
-Everything is driven by environment variables — **no app code change is required
-for isolation** (the codebase already honors these):
+Everything is driven by environment variables — **no app code change is required**:
 
 | Concern | Knob | Per-tenant value |
 | --- | --- | --- |
-| Data dir, DB, secrets, worktrees, projects, **logs, checkpoints** | `SHEP_HOME` | `<tenantsRoot>/<id>/.shep` |
+| Data dir, DB, secrets, worktrees, projects, logs, checkpoints | `SHEP_HOME` | `<tenantsRoot>/<id>/.shep` |
 | GitHub credentials | `GH_CONFIG_DIR` | `<tenantsRoot>/<id>/gh` |
 | Listen port | `--port` | unique per tenant |
 | Bind host (never public) | `SHEP_BIND_HOST` | `127.0.0.1` |
-| Claude key (shared) | `CLAUDE_CODE_OAUTH_TOKEN` | one value, inherited by all |
+| Claude auth | the logged-in `claude` CLI (`~/.claude`) | shared by all tenants |
 
-> Logs and checkpoints used to be hardcoded to `~/.shep`; they now respect
-> `SHEP_HOME` too (see `getShepLogsDir` / `getCheckpointPath` /
-> `getShepClustersDir`), so tenants never share agent state.
+> **Claude needs no token.** Agents spawn the `claude` CLI, which uses its own
+> login. Just run pm2 as the **same OS user** that ran `claude login`.
 
-## Server layout
+## `tenants.json` is the single source of truth
 
-```
-/srv/shep/
-├── app/                      # this repo, cloned once, built once — shared by all tenants
-├── tenants/
-│   ├── companyA/{.shep,gh}   # SHEP_HOME + GH_CONFIG_DIR
-│   ├── companyB/{.shep,gh}
-│   └── companyC/{.shep,gh}
-└── (these deploy/ scripts run from app/deploy)
-```
-
-`tenants.json` is the **single source of truth**. `gen-config.mjs` turns it into
-`ecosystem.config.cjs` (pm2) and `Caddyfile` (reverse proxy), so the two can never
-drift. Adding a company = one entry + regenerate.
+`gen-config.mjs` turns it into `ecosystem.config.cjs` (pm2), `shep.nginx.conf`
+(server blocks), and `htpasswd/<id>.htpasswd` (logins). Adding a company = one
+entry + regenerate; the configs can never drift.
 
 ## Prerequisites (on the server)
 
-- Node + `pnpm`, `pm2`, `caddy`, and the GitHub `gh` CLI on `PATH`
-- Your domain's DNS in Route 53 (a **wildcard** `*.shep.example.com` A-record
-  pointing at this box means you never touch DNS again per tenant)
-- AWS security group: allow inbound **80 + 443 only**. Tenant ports (4051+) stay
-  bound to `127.0.0.1` and must NOT be reachable from the internet.
+- Node + `pnpm`, `pm2`, the GitHub `gh` CLI, and `htpasswd`
+  (`apache2-utils` on Debian/Ubuntu, `httpd-tools` on RHEL/Fedora)
+- Nginx (you already have it) and `certbot`
+- The `claude` CLI, logged in as the user pm2 will run as
+- DNS: a **wildcard** `*.code.expertreg.com` A-record → this server
+- A **wildcard TLS cert** for `*.code.expertreg.com` (see step 7)
+- AWS security group: inbound **80 + 443 only**; tenant ports (4051+) stay on `127.0.0.1`
 
 ## First-time setup
 
 ```bash
 # 1. Clone + build once
-sudo mkdir -p /srv/shep && cd /srv/shep
-git clone <this-repo> app && cd app
+sudo mkdir -p /srv/shep && sudo chown "$USER" /srv/shep
+cd /srv/shep && git clone https://github.com/Myndbooster/shep-custom.git app && cd app
 pnpm install --frozen-lockfile
 pnpm build:release
 
-# 2. Create your tenant config from the example
+# 2. Tenant config
 cp deploy/tenants.example.json deploy/tenants.json
-#   edit deploy/tenants.json: set "domain", and for each tenant set a login
-#   password hash:  caddy hash-password   → paste into "authHash"
+#   edit "domain" if needed; for each tenant set a login hash:
+#   htpasswd -nbB <subdomain> '<password>' | cut -d: -f2-   → paste into "authHash"
 
-# 3. Create each tenant's isolated dirs + GitHub login
+# 3. Per-tenant isolated dirs + GitHub logins
 for ID in companyA companyB companyC; do
   mkdir -p /srv/shep/tenants/$ID/{.shep,gh}
   chmod 700 /srv/shep/tenants/$ID/{.shep,gh}
-  GH_CONFIG_DIR=/srv/shep/tenants/$ID/gh gh auth login   # log in as THAT company
+  GH_CONFIG_DIR=/srv/shep/tenants/$ID/gh gh auth login    # log in as THAT company
 done
 
-# 4. Generate pm2 + Caddy configs
+# 4. Generate configs
 node deploy/gen-config.mjs
 
-# 5. Share the Claude key (capped-cost subscription token) and start everything
-export CLAUDE_CODE_OAUTH_TOKEN=...            # put this in your systemd/pm2 env for persistence
+# 5. Start the tenants (pm2 must run as the claude-logged-in user)
 pm2 start deploy/ecosystem.config.cjs --update-env
-pm2 save
+pm2 save && pm2 startup        # run the printed command so they survive reboot
 
-# 6. Front it with Caddy (auto-HTTPS + login)
-sudo cp deploy/Caddyfile /etc/caddy/Caddyfile
-sudo systemctl reload caddy
+# 6. Install nginx config + logins
+sudo mkdir -p /etc/nginx/shep
+sudo cp deploy/htpasswd/*.htpasswd /etc/nginx/shep/
+sudo cp deploy/shep.nginx.conf /etc/nginx/conf.d/shep.conf
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Each company is now at `https://<subdomain>.<domain>`, behind a login, on its own
-isolated data — sharing one Claude bill.
+## Step 7 — Wildcard TLS cert
 
-## Add a new company later (one command)
+A wildcard cert needs a DNS-01 challenge. With Route 53:
 
 ```bash
-deploy/new-tenant.sh companyD companyd 4054
+sudo certbot certonly --dns-route53 -d '*.code.expertreg.com'
+# no route53 plugin? use manual DNS:
+# sudo certbot certonly --manual --preferred-challenges dns -d '*.code.expertreg.com'
 ```
 
-It creates the dirs, runs `gh auth login` for that company, prompts for a login
-password, appends to `tenants.json`, regenerates configs, starts the pm2 process,
-and reloads Caddy. With a wildcard DNS record there's nothing else to do.
+The cert lands at `/etc/letsencrypt/live/code.expertreg.com/` (matches the paths
+in `tenants.json`). Certbot auto-renews it; all subdomains reuse it.
 
-## Ship a code update to all tenants
+Now each company is at `https://<subdomain>.code.expertreg.com`, behind a login,
+on isolated data, sharing one Claude subscription.
 
-```bash
-deploy/deploy.sh
-```
+## Day-to-day
 
-`git pull` → `pnpm build:release` → regenerate configs → `pm2 reload` (≈zero
-downtime). Every tenant migrates its own DB on restart.
+**Update all tenants:** `cd /srv/shep/app && deploy/deploy.sh`
+
+**Add a company:** `deploy/new-tenant.sh companyD companyd 4054`
+(creates dirs, GitHub login, password, regenerates, installs, starts, reloads —
+the wildcard DNS + cert already cover the new subdomain, so zero DNS/cert work.)
 
 ## Cost & usage
 
-- **One shared `CLAUDE_CODE_OAUTH_TOKEN`** = a hard cost ceiling (the subscription
-  price). All tenants draw from the same rate/usage pool — heavy use by one
-  company is felt by the others. This is the trade-off for a capped bill.
-- Want a company on its own quota? Give that tenant its own token by adding a
-  `claudeToken` to its entry and extending `gen-config.mjs` to emit it in `env`
-  (the design already supports per-tenant override).
-- **Per-tenant usage visibility:** token counts are recorded per agent-run in each
-  tenant's own DB (`<SHEP_HOME>/data`), so usage is attributable by querying each
-  DB even though it isn't enforced.
+- One shared `claude` login = a hard cost ceiling (your subscription). All tenants
+  draw from the same rate/usage pool. Per-tenant token counts are still recorded
+  in each tenant's own DB (`<SHEP_HOME>/data`), so usage is attributable per
+  company by querying each DB.
 
 ## Security notes
 
-- Whoever logs into a subdomain gets **full control of that tenant** (the app has
-  no internal permission model) — keep credentials to people you trust with the box.
-- Keep tenant ports bound to `127.0.0.1`; only Caddy (80/443) is public.
-- The two webhook routes (`/api/webhooks/*`, `/api/whatsapp/webhook`) are left
-  un-gated on purpose — they self-verify HMAC signatures.
-- `tenants.json`, `Caddyfile`, and `ecosystem.config.cjs` are gitignored because
-  they hold login hashes / are generated. Back up `tenants/*/.shep/data` (DBs) and
-  `tenants/*/.shep/secret.key` (losing the key makes encrypted tokens unrecoverable).
+- Anyone who logs into a subdomain gets **full control of that tenant** (no
+  internal permission model) — keep credentials to people you trust with the box.
+- Tenant ports stay bound to `127.0.0.1`; only nginx (80/443) is public.
+- Each subdomain uses its **own** htpasswd file, so one company's login does not
+  work on another's.
+- Webhook routes (`/api/webhooks/*`, `/api/whatsapp/webhook`) are intentionally
+  un-gated — they self-verify HMAC signatures.
+- `tenants.json`, generated configs, and `htpasswd/` are gitignored (secrets).
+  Back up `tenants/*/.shep/data` (DBs) and `tenants/*/.shep/secret.key`.
 
 ## Sizing
 
-Each tenant spawns `claude` subprocesses and git worktrees during agent runs —
-CPU/memory heavy. Budget generously (e.g. `m5.xlarge`+ for 3–4 active tenants),
-mount a roomy EBS volume at `/srv/shep` (worktrees + cloned repos live under each
-`SHEP_HOME/repos`), and the `max_memory_restart` guard in the generated pm2 config
-will recycle runaway processes.
+Each tenant spawns `claude` subprocesses + git worktrees during agent runs (heavy).
+Budget generously, mount a roomy volume at `/srv/shep`, and the pm2
+`max_memory_restart` guard recycles runaway processes.
+
+## Your existing `code.expertreg.com → :4050`
+
+That apex instance is independent of this setup (this only adds
+`*.code.expertreg.com` subdomains). Keep it, or migrate it to a tenant later by
+adding an entry with `"subdomain"` pointing at the apex and removing the old
+Nginx block.
