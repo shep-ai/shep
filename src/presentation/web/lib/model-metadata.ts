@@ -34,6 +34,10 @@ const MODEL_METADATA: Record<string, ModelMeta> = {
   'composer-1.5': { displayName: 'Composer 1.5', description: 'Multi-file editing' },
   'grok-code': { displayName: 'Grok Code', description: 'xAI code model' },
 
+  // Z.ai models
+  'glm-5.2': { displayName: 'GLM-5.2', description: 'Z.ai 1M-context coding flagship' },
+  'glm-5.1': { displayName: 'GLM-5.1', description: 'Z.ai open-weights coding model' },
+
   // Demo / fun models
   'gpt-8': { displayName: 'GPT-8', description: 'Writes code before you think it' },
   'opus-7': { displayName: 'Opus 7', description: 'Achieved consciousness, ships on time' },

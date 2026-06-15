@@ -10,6 +10,8 @@ const CATALOG: { agentType: string; label: string; models: string[] }[] = [
       'claude-opus-4-6',
       'claude-sonnet-4-6',
       'claude-haiku-4-5',
+      'glm-5.2',
+      'glm-5.1',
     ],
   },
   {

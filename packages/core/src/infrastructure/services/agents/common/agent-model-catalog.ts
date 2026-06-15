@@ -13,6 +13,8 @@ export const CLAUDE_CODE_MODELS: string[] = [
   'claude-opus-4-6',
   'claude-sonnet-4-6',
   'claude-haiku-4-5',
+  'glm-5.2',
+  'glm-5.1',
 ];
 
 export const GEMINI_CLI_MODELS: string[] = [
