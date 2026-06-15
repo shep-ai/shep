@@ -1,0 +1,6 @@
+# Real tenant config holds login password hashes — never commit it.
+tenants.json
+
+# Generated from tenants.json by gen-config.mjs — regenerate, don't commit.
+ecosystem.config.cjs
+Caddyfile

@@ -183,6 +183,26 @@ export default tseslint.config(
   },
 
   // =============================================================================
+  // Deployment scripts - Node environment, intentional console output
+  // =============================================================================
+  {
+    files: ['deploy/**/*.mjs', 'deploy/**/*.cjs', 'deploy/**/*.js'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+        console: 'readonly',
+        module: 'writable',
+        require: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
+
+  // =============================================================================
   // CLI presentation layer - allow console statements (intentional user output)
   // =============================================================================
   {

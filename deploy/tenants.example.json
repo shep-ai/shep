@@ -1,0 +1,31 @@
+{
+  "$schema": "./tenants.schema.json",
+  "domain": "shep.example.com",
+  "appDir": "/srv/shep/app",
+  "tenantsRoot": "/srv/shep/tenants",
+  "appEntry": "dist/src/presentation/cli/index.js",
+  "bindHost": "127.0.0.1",
+  "tenants": [
+    {
+      "id": "companyA",
+      "subdomain": "companya",
+      "port": 4051,
+      "authUser": "companya",
+      "authHash": "REPLACE_WITH_OUTPUT_OF_caddy_hash-password"
+    },
+    {
+      "id": "companyB",
+      "subdomain": "companyb",
+      "port": 4052,
+      "authUser": "companyb",
+      "authHash": "REPLACE_WITH_OUTPUT_OF_caddy_hash-password"
+    },
+    {
+      "id": "companyC",
+      "subdomain": "companyc",
+      "port": 4053,
+      "authUser": "companyc",
+      "authHash": "REPLACE_WITH_OUTPUT_OF_caddy_hash-password"
+    }
+  ]
+}
