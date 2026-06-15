@@ -52,6 +52,7 @@ vi.mock('@/infrastructure/services/agents/feature-agent/fast-feature-agent-graph
 
 vi.mock('@/infrastructure/services/agents/common/checkpointer.js', () => ({
   createCheckpointer: (...args: unknown[]) => mockCreateCheckpointer(...args),
+  getCheckpointPath: (checkpointId: string) => `/mock/checkpoints/${checkpointId}.db`,
 }));
 
 vi.mock('@/infrastructure/services/settings.service.js', () => ({

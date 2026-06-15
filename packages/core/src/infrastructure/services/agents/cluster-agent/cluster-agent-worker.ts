@@ -10,13 +10,11 @@
  */
 
 import 'reflect-metadata';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
 import { unlinkSync } from 'node:fs';
 import { initializeContainer, container } from '@/infrastructure/di/container.js';
 import { createClusterAgentGraph } from './cluster-agent-graph.js';
 import type { ClusterAgentDeps } from './cluster-agent-deps.js';
-import { createCheckpointer } from '../common/checkpointer.js';
+import { createCheckpointer, getClusterCheckpointPath } from '../common/checkpointer.js';
 import type { IClusterRepository } from '@/application/ports/output/repositories/cluster-repository.interface.js';
 import type { IK3dService } from '@/application/ports/output/services/k3d-service.interface.js';
 import type { IKubectlService } from '@/application/ports/output/services/kubectl-service.interface.js';
@@ -138,7 +136,7 @@ export async function runClusterWorker(args: ClusterWorkerArgs): Promise<void> {
 
   // Use threadId for checkpoint path so resume runs share the same checkpoint DB.
   const checkpointId = args.threadId ?? args.runId;
-  const checkpointPath = join(homedir(), '.shep', 'checkpoints', `cluster-${checkpointId}.db`);
+  const checkpointPath = getClusterCheckpointPath(checkpointId);
   log(`Creating checkpointer at ${checkpointPath} (thread: ${checkpointId})`);
 
   // Start heartbeat

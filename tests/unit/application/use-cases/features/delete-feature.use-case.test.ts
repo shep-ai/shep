@@ -15,6 +15,7 @@ import type { IWorktreeService } from '@/application/ports/output/services/workt
 import type { IFeatureAgentProcessService } from '@/application/ports/output/agents/feature-agent-process.interface.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
+import type { ICheckpointStore } from '@/application/ports/output/services/checkpoint-store.interface.js';
 import {
   AgentRunStatus,
   AgentType,
@@ -74,6 +75,7 @@ describe('DeleteFeatureUseCase', () => {
   let mockProcessService: IFeatureAgentProcessService;
   let mockRunRepo: IAgentRunRepository;
   let mockGitPrService: IGitPrService;
+  let mockCheckpointStore: ICheckpointStore;
 
   beforeEach(() => {
     mockFeatureRepo = {
@@ -135,13 +137,32 @@ describe('DeleteFeatureUseCase', () => {
       getMergeableStatus: vi.fn().mockResolvedValue(undefined),
     } as unknown as IGitPrService;
 
+    mockCheckpointStore = {
+      deleteCheckpoint: vi.fn().mockResolvedValue(undefined),
+    };
+
     useCase = new DeleteFeatureUseCase(
       mockFeatureRepo,
       mockWorktreeService,
       mockProcessService,
       mockRunRepo,
-      mockGitPrService
+      mockGitPrService,
+      mockCheckpointStore
     );
+  });
+
+  it('cleans up the agent checkpoint via the checkpoint store (not the filesystem directly)', async () => {
+    const feature = createMockFeature({ agentRunId: 'run-1' });
+    mockFeatureRepo.findById = vi.fn().mockResolvedValue(feature);
+    mockRunRepo.findById = vi
+      .fn()
+      .mockResolvedValue(
+        createMockAgentRun({ id: 'run-1', threadId: 'thread-1', status: AgentRunStatus.running })
+      );
+
+    await useCase.execute('feat-123-full-uuid', { cleanup: true });
+
+    expect(mockCheckpointStore.deleteCheckpoint).toHaveBeenCalledWith('thread-1');
   });
 
   it('should delete a feature successfully with no agent run', async () => {

@@ -40,6 +40,36 @@ export function getShepDbPath(): string {
 }
 
 /**
+ * Gets the directory where agent worker log files are written.
+ * Derived from SHEP_HOME so multiple instances keep separate logs.
+ *
+ * @returns Path to the logs directory ($SHEP_HOME/logs)
+ */
+export function getShepLogsDir(): string {
+  return join(resolveShepHomeDir(), 'logs');
+}
+
+/**
+ * Gets the directory where LangGraph checkpoint databases are stored.
+ * Derived from SHEP_HOME so multiple instances keep separate agent state.
+ *
+ * @returns Path to the checkpoints directory ($SHEP_HOME/checkpoints)
+ */
+export function getShepCheckpointsDir(): string {
+  return join(resolveShepHomeDir(), 'checkpoints');
+}
+
+/**
+ * Gets the directory where per-cluster kubeconfigs are stored.
+ * Derived from SHEP_HOME so multiple instances keep separate cluster state.
+ *
+ * @returns Path to the clusters directory ($SHEP_HOME/clusters)
+ */
+export function getShepClustersDir(): string {
+  return join(resolveShepHomeDir(), 'clusters');
+}
+
+/**
  * Gets the path to the daemon state file.
  * Uses SHEP_HOME env var if set (for test isolation), otherwise ~/.shep/daemon.json
  *

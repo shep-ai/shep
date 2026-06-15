@@ -11,8 +11,8 @@ import { fileURLToPath } from 'node:url';
 import { fork } from 'node:child_process';
 import { join } from 'node:path';
 import { openSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { mkdirSync } from 'node:fs';
+import { getShepLogsDir } from '@/infrastructure/services/filesystem/shep-directory.service.js';
 import type { IFeatureAgentProcessService } from '@/application/ports/output/agents/feature-agent-process.interface.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import {
@@ -141,7 +141,7 @@ export class FeatureAgentProcessService implements IFeatureAgentProcessService {
       args.push('--security-dispositions', JSON.stringify(options.securityActionDispositions));
     }
     // Create log file for worker output (for debugging)
-    const logsDir = join(homedir(), '.shep', 'logs');
+    const logsDir = getShepLogsDir();
     mkdirSync(logsDir, { recursive: true });
     const logPath = join(logsDir, `worker-${runId}.log`);
     const logFd = openSync(logPath, 'a');

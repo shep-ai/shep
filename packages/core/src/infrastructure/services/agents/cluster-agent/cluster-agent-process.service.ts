@@ -12,7 +12,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fork } from 'node:child_process';
 import { openSync, mkdirSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { getShepLogsDir } from '../../filesystem/shep-directory.service.js';
 import type {
   IClusterAgentProcessService,
   ClusterAgentSpawnOptions,
@@ -41,7 +41,7 @@ export class ClusterAgentProcessService implements IClusterAgentProcessService {
     }
 
     // Create log file for worker output
-    const logsDir = join(homedir(), '.shep', 'logs');
+    const logsDir = getShepLogsDir();
     mkdirSync(logsDir, { recursive: true });
     const logPath = join(logsDir, `cluster-worker-${runId}.log`);
     const logFd = openSync(logPath, 'a');

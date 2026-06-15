@@ -7,8 +7,8 @@
  */
 
 import { join } from 'node:path';
-import { homedir } from 'node:os';
 import { mkdirSync, writeFileSync, chmodSync } from 'node:fs';
+import { getShepClustersDir } from '../../../filesystem/shep-directory.service.js';
 import type { ClusterAgentState } from '../cluster-agent-state.js';
 import type { ClusterAgentDeps } from '../cluster-agent-deps.js';
 
@@ -18,7 +18,7 @@ const KUBECONFIG_PERMISSIONS = 0o600;
 export function createConfigureKubectlNode(deps: ClusterAgentDeps) {
   return async (state: ClusterAgentState): Promise<Partial<ClusterAgentState>> => {
     const k3dName = `shep-${state.clusterName}`;
-    const kubeconfigDir = join(homedir(), '.shep', 'clusters', state.clusterId);
+    const kubeconfigDir = join(getShepClustersDir(), state.clusterId);
     const kubeconfigPath = join(kubeconfigDir, 'kubeconfig');
 
     try {

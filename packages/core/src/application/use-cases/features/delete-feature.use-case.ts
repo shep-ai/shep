@@ -14,9 +14,6 @@
  */
 
 import { injectable, inject } from 'tsyringe';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
-import { unlink } from 'node:fs/promises';
 import type { Feature } from '../../../domain/generated/output.js';
 import { AgentRunStatus, PrStatus, SdlcLifecycle } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
@@ -24,6 +21,7 @@ import type { IWorktreeService } from '../../ports/output/services/worktree-serv
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IGitPrService } from '../../ports/output/services/git-pr-service.interface.js';
+import type { ICheckpointStore } from '../../ports/output/services/checkpoint-store.interface.js';
 
 export interface DeleteFeatureOptions {
   cleanup?: boolean;
@@ -39,7 +37,8 @@ export class DeleteFeatureUseCase {
     @inject('IFeatureAgentProcessService')
     private readonly processService: IFeatureAgentProcessService,
     @inject('IAgentRunRepository') private readonly runRepo: IAgentRunRepository,
-    @inject('IGitPrService') private readonly gitPrService: IGitPrService
+    @inject('IGitPrService') private readonly gitPrService: IGitPrService,
+    @inject('ICheckpointStore') private readonly checkpointStore: ICheckpointStore
   ) {}
 
   async execute(featureId: string, options?: DeleteFeatureOptions): Promise<Feature> {
@@ -143,12 +142,7 @@ export class DeleteFeatureUseCase {
 
       // Clean up checkpoint database file (used by LangGraph for state persistence)
       if (run?.threadId) {
-        const checkpointPath = join(homedir(), '.shep', 'checkpoints', `${run.threadId}.db`);
-        try {
-          await unlink(checkpointPath);
-        } catch {
-          // Checkpoint file may not exist or already be removed
-        }
+        await this.checkpointStore.deleteCheckpoint(run.threadId);
       }
     }
 

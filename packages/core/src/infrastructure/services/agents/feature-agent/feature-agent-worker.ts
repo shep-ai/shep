@@ -10,8 +10,6 @@
  */
 
 import 'reflect-metadata';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
 import { unlinkSync } from 'node:fs';
 import { Command } from '@langchain/langgraph';
 import { initializeContainer, container } from '@/infrastructure/di/container.js';
@@ -21,7 +19,7 @@ import { createFastFeatureAgentGraph } from './fast-feature-agent-graph.js';
 import type { FastFeatureAgentGraphDeps } from './fast-feature-agent-graph.js';
 import { createExplorationAgentGraph } from './exploration-agent-graph.js';
 import type { ExplorationAgentGraphDeps } from './exploration-agent-graph.js';
-import { createCheckpointer } from '../common/checkpointer.js';
+import { createCheckpointer, getCheckpointPath } from '../common/checkpointer.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IAgentExecutorProvider } from '@/application/ports/output/agents/agent-executor-provider.interface.js';
 import type { IAgentExecutorFactory } from '@/application/ports/output/agents/agent-executor-factory.interface.js';
@@ -351,7 +349,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   // Use threadId for checkpoint path so resume runs share the same checkpoint DB.
   // Falls back to runId for backwards compatibility with existing runs.
   const checkpointId = args.threadId ?? args.runId;
-  const checkpointPath = join(homedir(), '.shep', 'checkpoints', `${checkpointId}.db`);
+  const checkpointPath = getCheckpointPath(checkpointId);
   log(`Creating checkpointer at ${checkpointPath} (thread: ${checkpointId})`);
   const checkpointer = createCheckpointer(checkpointPath);
   // All graph factories return compiled graphs with identical FeatureAgentAnnotation

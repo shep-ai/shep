@@ -1,5 +1,7 @@
 import type { DependencyContainer } from 'tsyringe';
 
+import type { ICheckpointStore } from '../../../application/ports/output/services/checkpoint-store.interface.js';
+import { CheckpointStore } from '../../services/agents/common/checkpoint-store.js';
 import { ImportWorkItemsCsvUseCase } from '../../../application/use-cases/import-export/import-work-items-csv.use-case.js';
 import { InitializeSettingsUseCase } from '../../../application/use-cases/settings/initialize-settings.use-case.js';
 import { LoadSettingsUseCase } from '../../../application/use-cases/settings/load-settings.use-case.js';
@@ -150,6 +152,9 @@ import {
  * `register-interactive.ts`).
  */
 export function registerUseCases(container: DependencyContainer): void {
+  // ─── Output-port adapters used by use cases ──────────────────────────────
+  container.registerInstance<ICheckpointStore>('ICheckpointStore', new CheckpointStore());
+
   // ─── Use-case singletons ─────────────────────────────────────────────────
   container.registerSingleton(InitializeSettingsUseCase);
   container.registerSingleton(LoadSettingsUseCase);
