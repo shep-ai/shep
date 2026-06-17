@@ -17,6 +17,12 @@ export function createConfigureCommand(): Command {
   const t = getCliI18n().t;
   return new Command('configure')
     .description(t('cli:commands.plugin.configure.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep plugin configure ruflo --tool-groups implement,test   Limit ruflo to the implement + test tool groups`
+    )
     .argument('<name>', t('cli:commands.plugin.configure.nameArg'))
     .option('--tool-groups <groups>', t('cli:commands.plugin.configure.toolGroupsOption'))
     .action(async (name: string, options: { toolGroups?: string }) => {

@@ -35,6 +35,12 @@ export function createListCommand(): Command {
   const t = getCliI18n().t;
   return new Command('list')
     .description(t('cli:commands.plugin.list.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep plugin list                                       Show all installed plugins with health + enable status`
+    )
     .action(async () => {
       try {
         const useCase = container.resolve(ListPluginsUseCase);

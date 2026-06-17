@@ -37,6 +37,13 @@ export function createAddCommand(): Command {
   const t = getCliI18n().t;
   return new Command('add')
     .description(t('cli:commands.plugin.add.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep plugin add mempalace                                              Install from the curated catalog
+  $ shep plugin add --name my-tool --type mcp --command "npx my-mcp" --transport stdio   Install a custom plugin`
+    )
     .argument('[catalogName]', t('cli:commands.plugin.add.nameArg'))
     .option('--name <name>', t('cli:commands.plugin.add.nameOption'))
     .option('--type <type>', t('cli:commands.plugin.add.typeOption'))

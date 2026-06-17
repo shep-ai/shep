@@ -88,6 +88,13 @@ export function createStatusCommand(): Command {
   const t = getCliI18n().t;
   return new Command('status')
     .description(t('cli:commands.plugin.status.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep plugin status                Health-check every installed plugin and print a table
+  $ shep plugin status mempalace      Show detailed health + config for one plugin`
+    )
     .argument('[name]', t('cli:commands.plugin.status.nameArg'))
     .action(async (name?: string) => {
       try {
