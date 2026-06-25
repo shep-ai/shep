@@ -24,13 +24,31 @@ import { getCliI18n } from '../i18n.js';
 export function createSecurityCommand(): Command {
   const t = getCliI18n().t;
 
-  const security = new Command('security').description(t('cli:commands.security.description'));
+  const security = new Command('security')
+    .description(t('cli:commands.security.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep security enforce                 Evaluate the current repository
+  $ shep security enforce --repo ../app   Evaluate a different repository
+  $ shep security enforce --output json   Emit machine-readable output for CI`
+    );
 
   security
     .command('enforce')
     .description(t('cli:commands.security.enforce.description'))
     .option('-r, --repo <path>', t('cli:commands.security.enforce.repoOption'), process.cwd())
     .option('-o, --output <format>', t('cli:commands.security.enforce.outputOption'), 'table')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep security enforce                                      Evaluate the current repository
+  $ shep security enforce --repo ../app                        Evaluate a repository outside the current directory
+  $ shep security enforce --output json                        Emit machine-readable output for CI
+  $ SHEP_SUPPLY_CHAIN_SECURITY=false shep security enforce     Disable enforcement as a CI kill-switch`
+    )
     .action(async (options: { repo: string; output: string }) => {
       try {
         // Master kill switch — if the supplyChainSecurity feature flag is off,
