@@ -53,6 +53,9 @@ export function makeSelectiveExec(realExec: ExecFunction): ExecFunction {
     if (sub === 'pr' && cmd === 'view') {
       return { stdout: '{"state":"MERGED","statusCheckRollup":[]}\n', stderr: '' };
     }
+    if (sub === 'pr' && cmd === 'checks') {
+      return { stdout: '[]', stderr: '' };
+    }
     if (sub === 'run') {
       return { stdout: '[]', stderr: '' };
     }
