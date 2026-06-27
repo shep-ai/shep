@@ -27,6 +27,12 @@ export function createShowCommand(): Command {
   return new Command('show')
     .description('Show project details')
     .argument('<slug>', 'Project slug or ID')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep project show <slug>`
+    )
     .action(async (slug: string) => {
       try {
         const getProject = container.resolve(GetPmProjectUseCase);

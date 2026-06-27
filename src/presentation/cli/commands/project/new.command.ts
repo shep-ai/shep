@@ -26,6 +26,14 @@ export function createNewCommand(): Command {
     .option('-n, --name <name>', 'Project name')
     .option('-p, --prefix <prefix>', 'Identifier prefix (1-5 uppercase letters)')
     .option('-d, --description <description>', 'Project description')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep project new
+  $ shep project new --name "My Project" --prefix MP --description "A sample project"
+  $ shep project new -n "My Project" -p MP -d "A sample project"`
+    )
     .action(async (options: NewOptions) => {
       try {
         const name =
