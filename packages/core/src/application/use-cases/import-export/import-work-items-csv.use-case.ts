@@ -1,3 +1,12 @@
+/**
+ * Import Work Items CSV Use Case
+ *
+ * Creates work items from mapped CSV rows through IPmProjectRepository, IWorkItemRepository,
+ * IWorkItemStateRepository, and IActivityLogRepository.
+ *
+ * By default skipHeaderRow drops the first CSV row; set it to false when there is no header.
+ */
+
 import { injectable, inject } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import Papa from 'papaparse';

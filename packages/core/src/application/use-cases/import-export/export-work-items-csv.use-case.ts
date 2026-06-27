@@ -1,3 +1,12 @@
+/**
+ * Export Work Items CSV Use Case
+ *
+ * Builds CSV output from work items through IWorkItemRepository, ICycleRepository,
+ * IWorkItemStateRepository, and ILabelRepository.
+ *
+ * Callers provide the explicit ExportColumn list used for headers and row values.
+ */
+
 import { injectable, inject } from 'tsyringe';
 import Papa from 'papaparse';
 import type { WorkItem, WorkItemState, Label } from '../../../domain/generated/output.js';

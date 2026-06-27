@@ -1,3 +1,11 @@
+/**
+ * Global Search Use Case
+ *
+ * Searches projects, work items, and pages through the injected Database token.
+ *
+ * User input is sanitized for FTS5 special characters before appending the prefix wildcard.
+ */
+
 import { injectable, inject } from 'tsyringe';
 import type Database from 'better-sqlite3';
 

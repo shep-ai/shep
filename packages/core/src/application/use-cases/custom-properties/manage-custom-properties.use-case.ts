@@ -1,8 +1,16 @@
+/**
+ * Manage Custom Properties Use Case
+ *
+ * Orchestrates project custom property list, create, update, and delete operations through
+ * ICustomPropertyRepository.
+ */
+
 import { injectable, inject } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import type { CustomProperty } from '../../../domain/generated/output.js';
 import type { ICustomPropertyRepository } from '../../ports/output/repositories/custom-property-repository.interface.js';
 
+/** Input required to create a custom property schema entry for a project. */
 export interface CreateCustomPropertyInput {
   projectId: string;
   name: string;
@@ -12,6 +20,7 @@ export interface CreateCustomPropertyInput {
   displayOrder?: number;
 }
 
+/** Result envelope returned by custom property management operations. */
 export type ManageCustomPropertyResult =
   | { ok: true; property?: CustomProperty; properties?: CustomProperty[] }
   | { ok: false; error: string };

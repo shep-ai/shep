@@ -1,3 +1,9 @@
+/**
+ * List Activity Log Use Case
+ *
+ * Returns the activity feed for a work item through IActivityLogRepository.
+ */
+
 import { injectable, inject } from 'tsyringe';
 import type { ActivityEntry } from '../../../domain/generated/output.js';
 import type { IActivityLogRepository } from '../../ports/output/repositories/activity-log-repository.interface.js';
