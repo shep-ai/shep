@@ -11,6 +11,7 @@ Guides for using Shep AI CLI effectively.
 | [cli-commands.md](./cli-commands.md)         | Complete CLI command reference |
 | [web-ui.md](./web-ui.md)                     | Web interface usage            |
 | [langgraph-agents.md](./langgraph-agents.md) | LangGraph agent system guide   |
+| [mcp-server.md](./mcp-server.md)             | MCP server setup and tools     |
 
 ## Quick Start
 
