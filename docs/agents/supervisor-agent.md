@@ -81,17 +81,18 @@ Do not edit generated files directly.
 `SupervisorVerdict` values are:
 
 ```ts
-approve = 'approve'
-reject = 'reject'
-escalate = 'escalate'
-advise = 'advise'
+export enum SupervisorVerdict {
+  approve = 'approve',
+  reject = 'reject',
+  escalate = 'escalate',
+  advise = 'advise',
+}
 ```
 
 ### Decision Shape
 
 ```ts
-{
-  id: string;
+export type SupervisorDecision = BaseEntity & {
   scopeType: string;
   scopeId?: string;
   featureId?: string;
@@ -103,10 +104,8 @@ advise = 'advise'
   modelId: string;
   promptVersion: string;
   ruleRef?: string;
-  confidence?: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+  confidence?: float64;
+};
 ```
 
 ### Field Rules
@@ -119,7 +118,7 @@ advise = 'advise'
 | `promptVersion` | Snapshot of the evaluator prompt version |
 | `ruleRef` | Optional policy rule reference |
 | `confidence` | Optional evaluator confidence value from 0 to 1 |
-| `sourceEventKind` | Event kind evaluated by the supervisor, currently `gate`, `question`, or `message` |
+| `sourceEventKind` | Kind of source event: `gate`, `question`, `message`, or `lifecycle` |
 | `sourceEventId` | Identifier of the source event being evaluated |
 
 ---
