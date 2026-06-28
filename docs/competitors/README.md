@@ -45,7 +45,7 @@ Idea → Requirements → Research → Plan → Code → Tests → PR → CI →
 | Parallel features via worktrees | Yes                                 | Auto-Claude, Windsurf (Wave 13)                    |
 | Open source CLI                 | Yes (MIT)                           | OpenCode, Aider, Cline, Spec Kitty                 |
 | Web dashboard                   | Yes (React Flow)                    | Auto-Claude (Electron), Spec Kitty (kanban)        |
-| Agent-agnostic | Claude Code, Cursor CLI, Gemini CLI, Codex CLI | Spec Kitty (multi-agent), Gas Town (Claude only)   |
+| Agent-agnostic | Claude Code, Cursor CLI, Gemini CLI, Codex CLI | [Sakana Fugu](./sakana-fugu.md) (model-level orchestration), Spec Kitty (multi-agent), Gas Town (Claude only)   |
 
 ---
 
@@ -74,6 +74,14 @@ Idea → Requirements → Research → Plan → Code → Tests → PR → CI →
 | [Cline](./cline.md)             | VS Code agent with plan/act modes                      | 4M+ installs              |
 | [Codex](./codex.md) | OpenAI's terminal coding agent | OpenAI ecosystem |
 
+### Multi-Agent Orchestration Models
+
+Foundation models trained to coordinate expert agents internally — model-level peers to Shep's process-level orchestration:
+
+| Tool                            | What It Does                                           | Profile                   |
+| ------------------------------- | ------------------------------------------------------ | ------------------------- |
+| [Sakana Fugu](./sakana-fugu.md) | Multi-agent orchestration as a single API (Trinity + Conductor) | ICLR 2026 research product |
+
 ### App Builders (Adjacent)
 
 These target a different audience (non-developers, rapid prototyping) but share the "describe it, get it built" philosophy:
@@ -94,6 +102,7 @@ Every tool in this space taught us something:
 - **Kiro** validated spec-driven development as a category
 - **Devin** proved developers want true autonomy, not just suggestions
 - **Gas Town** showed that parallel agent orchestration is the frontier
+- **Sakana Fugu** formalized the planner/executor split as a learned orchestration model
 - **Aider** demonstrated that git-first design matters
 - **Spec Kitty** confirmed that structured workflows beat ad-hoc prompting
 - **MiMo Code** showed that OpenCode forks can specialize on memory and voice without rewriting the agent loop
