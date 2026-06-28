@@ -85,6 +85,14 @@ These target a different audience (non-developers, rapid prototyping) but share 
 | [v0](https://v0.dev)               | Vercel's AI app builder trained on React/shadcn |
 | [Replit Agent](https://replit.com) | Prompt to deployed app with hosting             |
 
+### AI Wiki / Codebase Docs (Adjacent)
+
+Tools that generate codebase documentation as a first-class output — adjacent to Shep's research phase, not full SDLC replacements:
+
+| Tool                                      | What It Does                                              |
+| ----------------------------------------- | --------------------------------------------------------- |
+| [OpenKnowledge](./openknowledge.md)       | Local-first AI markdown wiki with agent-written codebase docs |
+
 ---
 
 ## What We Learned
