@@ -17,6 +17,13 @@ export function createRemoveCommand(): Command {
   const t = getCliI18n().t;
   return new Command('remove')
     .description(t('cli:commands.plugin.remove.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep plugin remove mempalace     Remove an installed plugin by name
+  $ shep plugin remove plugin_123    Remove an installed plugin by id`
+    )
     .argument('<name>', t('cli:commands.plugin.remove.nameArg'))
     .action(async (name: string) => {
       try {
