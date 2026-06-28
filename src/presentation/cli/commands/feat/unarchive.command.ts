@@ -24,6 +24,12 @@ export function createUnarchiveCommand(): Command {
   const t = getCliI18n().t;
   return new Command('unarchive')
     .description(t('cli:commands.feat.unarchive.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat unarchive feat-123    Restore an archived feature to its previous lifecycle`
+    )
     .argument('<id>', t('cli:commands.feat.unarchive.idArgument'))
     .action(async (featureId: string) => {
       try {

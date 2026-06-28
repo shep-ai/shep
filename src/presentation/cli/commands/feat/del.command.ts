@@ -34,6 +34,15 @@ export function createDelCommand(): Command {
   const t = getCliI18n().t;
   return new Command('del')
     .description(t('cli:commands.feat.del.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat del feat-123                           Delete a feature (prompts for confirmation)
+  $ shep feat del feat-123 --force                   Delete without confirmation
+  $ shep feat del feat-123 --force --no-cleanup      Delete but keep worktree and branches
+  $ shep feat del feat-123 --force --no-close-pr     Delete but leave the open PR open`
+    )
     .argument('<id>', t('cli:commands.feat.del.idArgument'))
     .option('-f, --force', t('cli:commands.feat.del.forceOption'))
     .option('--no-cleanup', t('cli:commands.feat.del.noCleanupOption'))
