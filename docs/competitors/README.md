@@ -81,7 +81,7 @@ These target a different audience (non-developers, rapid prototyping) but share 
 | Tool                               | Tagline                                         |
 | ---------------------------------- | ----------------------------------------------- |
 | [Lovable](https://lovable.dev)     | Build apps by chatting — $100M ARR in 8 months  |
-| [Bolt.new](https://bolt.new)       | Full-stack app generation in the browser        |
+| [Bolt.new](./bolt-new.md)          | Full-stack app generation in the browser        |
 | [v0](https://v0.dev)               | Vercel's AI app builder trained on React/shadcn |
 | [Replit Agent](https://replit.com) | Prompt to deployed app with hosting             |
 
