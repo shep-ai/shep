@@ -1,7 +1,12 @@
-name: Generate good-first-issues (daily)
+name: Generate good-first-issues (manual)
 
+# DISABLED BY DEFAULT — this automation no longer runs on a schedule.
+# It is retained as a manually-triggered workflow only. To run it,
+# dispatch it explicitly from the Actions tab (or `gh workflow run`).
+# To re-enable daily automation, restore the `schedule:` trigger below.
+#
 # Runs an agent that scans the codebase + current AI trends and opens
-# up to 10 NEW good-first-issues per day in shep-ai/shep.
+# up to 10 NEW good-first-issues per run in shep-ai/shep.
 #
 # What it does:
 #   1. Checks out the repo (shallow — agent only needs to read)
@@ -23,11 +28,12 @@ name: Generate good-first-issues (daily)
 #                              permission below grants issue-create rights
 
 on:
-  schedule:
-    # Daily at 13:05 UTC (09:05 ET / 14:05 CET / 15:05 IST).
-    # Picked to run AFTER ai-tldr's 12:00 UTC sweep so the trends
-    # file we curl is fresh (ai-tldr runs every 2h at minute 0).
-    - cron: '5 13 * * *'
+  # Schedule disabled by default. Re-enable by uncommenting the cron
+  # below — it ran daily at 13:05 UTC (after ai-tldr's 12:00 UTC sweep
+  # so the trends file we curl is fresh; ai-tldr runs every 2h at
+  # minute 0).
+  # schedule:
+  #   - cron: '5 13 * * *'
   workflow_dispatch: {}
 
 permissions:
@@ -47,9 +53,9 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     # Sized for one ~25m agent run + a few minutes of setup. No
-    # retry pattern here — if the agent fails, the daily cron just
-    # tries again tomorrow. (Unlike ai-tldr's release sweep, missing
-    # a day of issue generation is not a data-loss event.)
+    # retry pattern here — if the agent fails, just re-dispatch the
+    # workflow manually. (Unlike ai-tldr's release sweep, missing
+    # a run of issue generation is not a data-loss event.)
     timeout-minutes: 35
 
     env:
