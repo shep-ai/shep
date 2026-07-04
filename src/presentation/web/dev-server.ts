@@ -107,7 +107,9 @@ function openBrowser(url: string): void {
 
 async function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
-    const socket = net.createConnection({ host: 'localhost', port });
+    // Probe the loopback address, not the bind meta-address. 0.0.0.0 is a
+    // bind-only address and gives unreliable connect results across platforms.
+    const socket = net.createConnection({ host: '127.0.0.1', port });
     socket.on('connect', () => {
       socket.destroy();
       resolve(false); // Port is in use
@@ -240,7 +242,7 @@ async function main() {
   }
 
   // Start Next.js dev server
-  const app = next({ dev: true, dir: import.meta.dirname, hostname: 'localhost', port });
+  const app = next({ dev: true, dir: import.meta.dirname, hostname: '0.0.0.0', port });
   const handle = app.getRequestHandler();
   await app.prepare();
 
@@ -255,7 +257,9 @@ async function main() {
 
   await new Promise<void>((resolve, reject) => {
     server.on('error', reject);
-    server.listen(port, 'localhost', () => {
+    // Bind to 0.0.0.0 so the dev server is reachable from other hosts/containers,
+    // but advertise localhost — 0.0.0.0 is not a routable browser destination.
+    server.listen(port, '0.0.0.0', () => {
       console.log(`[dev-server] Ready at http://localhost:${port}`);
       resolve();
     });

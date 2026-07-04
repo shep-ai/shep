@@ -390,23 +390,84 @@ export class GitPrService implements IGitPrService {
 
   async getCiStatus(cwd: string, branch: string): Promise<CiStatusResult> {
     try {
+      const workflowStatus = await this.getWorkflowRunStatus(cwd, branch);
+      const prCheckStatus = await this.getPrChecksStatus(cwd, branch);
+
+      if (workflowStatus.status === 'failure' || prCheckStatus.status === 'failure') {
+        return {
+          status: 'failure',
+          runUrl: workflowStatus.runUrl,
+          logExcerpt: prCheckStatus.logExcerpt ?? workflowStatus.logExcerpt,
+        };
+      }
+
+      if (workflowStatus.status === 'pending' || prCheckStatus.status === 'pending') {
+        return { status: 'pending', runUrl: workflowStatus.runUrl };
+      }
+
+      return { status: 'success', runUrl: workflowStatus.runUrl };
+    } catch (error) {
+      throw this.parseGhError(error);
+    }
+  }
+
+  private async getWorkflowRunStatus(cwd: string, branch: string): Promise<CiStatusResult> {
+    const { stdout } = await this.execFile(
+      'gh',
+      ['run', 'list', '--branch', branch, '--json', 'conclusion,url', '--limit', '1'],
+      { cwd }
+    );
+
+    const runs = JSON.parse(stdout) as { conclusion: string | null; url: string }[];
+    if (runs.length === 0 || !runs[0].conclusion) {
+      return { status: 'pending', runUrl: runs[0]?.url };
+    }
+
+    return {
+      status: runs[0].conclusion === 'success' ? 'success' : 'failure',
+      runUrl: runs[0].url,
+    };
+  }
+
+  private async getPrChecksStatus(cwd: string, branch: string): Promise<CiStatusResult> {
+    try {
       const { stdout } = await this.execFile(
         'gh',
-        ['run', 'list', '--branch', branch, '--json', 'conclusion,url', '--limit', '1'],
+        ['pr', 'checks', branch, '--json', 'bucket,state,name'],
         { cwd }
       );
 
-      const runs = JSON.parse(stdout) as { conclusion: string | null; url: string }[];
-      if (runs.length === 0 || !runs[0].conclusion) {
-        return { status: 'pending', runUrl: runs[0]?.url };
+      const checks = JSON.parse(stdout.trim() || '[]') as {
+        bucket: string;
+        state: string;
+        name: string;
+      }[];
+      if (checks.length === 0) {
+        return { status: 'success' };
       }
 
-      return {
-        status: runs[0].conclusion === 'success' ? 'success' : 'failure',
-        runUrl: runs[0].url,
-      };
+      const failed = checks.filter((check) => check.bucket === 'fail');
+      if (failed.length > 0) {
+        const summary = failed.map((check) => `${check.name} (${check.state})`).join(', ');
+        return {
+          status: 'failure',
+          logExcerpt: `PR checks failed: ${summary}`,
+        };
+      }
+
+      const pending = checks.filter((check) => check.bucket === 'pending');
+      if (pending.length > 0) {
+        return { status: 'pending' };
+      }
+
+      return { status: 'success' };
     } catch (error) {
-      throw this.parseGhError(error);
+      const message = error instanceof Error ? error.message : String(error);
+      // No open PR for this branch — workflow runs are the only signal available.
+      if (message.includes('no pull requests found') || message.includes('Could not find')) {
+        return { status: 'success' };
+      }
+      throw error;
     }
   }
 

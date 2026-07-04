@@ -17,6 +17,13 @@ export function createDisableCommand(): Command {
   const t = getCliI18n().t;
   return new Command('disable')
     .description(t('cli:commands.plugin.disable.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep plugin disable mempalace    Disable a plugin by name
+  $ shep plugin disable plugin_123   Disable a plugin by id`
+    )
     .argument('<name>', t('cli:commands.plugin.disable.nameArg'))
     .action(async (name: string) => {
       try {

@@ -17,6 +17,14 @@ export function createCatalogCommand(): Command {
   const t = getCliI18n().t;
   return new Command('catalog')
     .description(t('cli:commands.plugin.catalog.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep plugin catalog              Browse the curated plugin catalog
+  $ shep plugin catalog | grep mcp   Find MCP plugins before installing one
+  $ shep plugin add mempalace        Install a catalog plugin by slug`
+    )
     .action(async () => {
       try {
         const useCase = container.resolve(GetPluginCatalogUseCase);

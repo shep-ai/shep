@@ -66,6 +66,20 @@ describe('buildCiWatchPrompt', () => {
     expect(prompt).toContain('conclusion');
   });
 
+  it('instructs to verify PR checks with gh pr checks', () => {
+    const prompt = buildCiWatchPrompt('feat/test');
+
+    expect(prompt).toContain('gh pr checks');
+    expect(prompt).toContain('bucket');
+    expect(prompt).toContain('feat/test');
+  });
+
+  it('requires both workflow runs and PR checks to pass before CI_STATUS: PASSED', () => {
+    const prompt = buildCiWatchPrompt('feat/test');
+
+    expect(prompt).toMatch(/workflow run.*PR check|PR check.*workflow run/i);
+  });
+
   it('is deterministic (same input = same output)', () => {
     const prompt1 = buildCiWatchPrompt('feat/test');
     const prompt2 = buildCiWatchPrompt('feat/test');

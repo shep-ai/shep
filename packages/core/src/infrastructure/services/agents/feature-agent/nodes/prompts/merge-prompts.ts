@@ -382,19 +382,29 @@ gh run list --branch ${branch} --json databaseId,status,conclusion,name
 
 Check that EVERY run shows \`status: completed\`. Do NOT trust \`gh run watch\` exit status alone.
 
-### Step 4: Report status
+### Step 4: Verify PR checks (merge status)
 
-After verifying all runs are complete, report EXACTLY ONE of these lines:
+Workflow runs can pass while required PR checks still fail. Verify merge checks separately:
 
-- If every run has \`conclusion: success\`:
+\`\`\`
+gh pr checks ${branch} --json bucket,state,name
+\`\`\`
+
+Check that EVERY entry has \`bucket: pass\`. If the command reports no pull request for the branch, skip this step.
+
+### Step 5: Report status
+
+After verifying all workflow runs and PR checks are complete, report EXACTLY ONE of these lines:
+
+- If every workflow run has \`conclusion: success\` AND every PR check has \`bucket: pass\`:
   \`CI_STATUS: PASSED\`
 
-- If any run has a non-success conclusion:
-  \`CI_STATUS: FAILED — <brief summary of which runs failed and why>\`
+- If any workflow run has a non-success conclusion OR any PR check has \`bucket: fail\`:
+  \`CI_STATUS: FAILED — <brief summary of which runs/checks failed and why>\`
 
 ## Constraints
 
-- NEVER claim CI passed until EVERY run shows \`completed\` + \`success\`
+- NEVER claim CI passed until EVERY workflow run shows \`completed\` + \`success\` AND every PR check passes
 - NEVER watch a single run and assume it is the only one
 - If \`gh run list\` returns no runs, wait 10 seconds and retry up to 3 times
 - If rate-limited (403 error), report: \`CI_STATUS: PASSED\` (skip check gracefully)

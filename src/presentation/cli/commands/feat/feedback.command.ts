@@ -21,6 +21,13 @@ export function createFeedbackCommand(): Command {
   const t = getCliI18n().t;
   return new Command('feedback')
     .description(t('cli:commands.feat.feedback.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat feedback <id> <feedback-text>                              Send feedback on an exploration prototype
+  $ shep feat feedback feat-123 "Make the sidebar collapsible on mobile" Iterate on a design with concrete feedback`
+    )
     .argument('<id>', t('cli:commands.feat.feedback.idArgument'))
     .argument('<feedback>', t('cli:commands.feat.feedback.feedbackArgument'))
     .action(async (featureId: string, feedback: string) => {

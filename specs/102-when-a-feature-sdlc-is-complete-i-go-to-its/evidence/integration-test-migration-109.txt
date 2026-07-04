@@ -1,0 +1,15 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/admin/.shep/repos/cc5cf32c1a625c34/wt/feat-when-a-feature-sdlc-is-complete-i-go-to-its[39m
+
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-109.test.ts[2m > [22mMigration 109 — spec_path backfill for completed features[2m > [22mrepoints spec_path from worktree location to repository root for Maintain features[33m 573[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-109.test.ts[2m > [22mMigration 109 — spec_path backfill for completed features[2m > [22mdoes not modify spec_path for non-Maintain features[32m 185[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-109.test.ts[2m > [22mMigration 109 — spec_path backfill for completed features[2m > [22mdoes not modify spec_path when it is NULL[32m 174[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-109.test.ts[2m > [22mMigration 109 — spec_path backfill for completed features[2m > [22mis idempotent when spec_path already points to repository root[32m 168[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-109.test.ts[2m > [22mMigration 109 — spec_path backfill for completed features[2m > [22mhandles trailing slashes in spec_path when computing specDirName[32m 173[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/integration/infrastructure/persistence/sqlite/migration-109.test.ts[2m > [22mMigration 109 — spec_path backfill for completed features[2m > [22mis idempotent (running migration twice does not throw)[32m 193[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 12:14:38
+[2m   Duration [22m 2.05s[2m (transform 567ms, setup 70ms, import 232ms, tests 1.47s, environment 0ms)[22m
+

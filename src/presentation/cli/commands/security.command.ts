@@ -24,11 +24,29 @@ import { getCliI18n } from '../i18n.js';
 export function createSecurityCommand(): Command {
   const t = getCliI18n().t;
 
-  const security = new Command('security').description(t('cli:commands.security.description'));
+  const security = new Command('security')
+    .description(t('cli:commands.security.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep security enforce                Evaluate and enforce security posture
+  $ shep security enforce --output json  Emit machine-readable output for CI
+  $ SHEP_SUPPLY_CHAIN_SECURITY=false shep security enforce  Disable enforcement via CI kill-switch`
+    );
 
   security
     .command('enforce')
     .description(t('cli:commands.security.enforce.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep security enforce                         Evaluate the current repository
+  $ shep security enforce --repo /path/to/repo    Evaluate a different repository
+  $ shep security enforce --output json           Emit machine-readable output for CI
+  $ SHEP_SUPPLY_CHAIN_SECURITY=false shep security enforce  Disable enforcement via CI kill-switch`
+    )
     .option('-r, --repo <path>', t('cli:commands.security.enforce.repoOption'), process.cwd())
     .option('-o, --output <format>', t('cli:commands.security.enforce.outputOption'), 'table')
     .action(async (options: { repo: string; output: string }) => {

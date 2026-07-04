@@ -322,4 +322,47 @@ describe('CleanupFeatureWorktreeUseCase', () => {
 
     await expect(useCase.execute('feat-123-full-uuid')).resolves.toBeUndefined();
   });
+
+  // ---------------------------------------------------------------------------
+  // Step 4: specPath update (post-merge path correction)
+  // ---------------------------------------------------------------------------
+
+  it('should update specPath to repository root location after worktree removal', async () => {
+    const feature = createMockFeature({
+      specPath: '/repo/.worktrees/feat-test-feature/specs/001-test-feature',
+    });
+    mockFeatureRepo.findById = vi.fn().mockResolvedValue(feature);
+
+    await useCase.execute('feat-123-full-uuid');
+
+    expect(mockFeatureRepo.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        specPath: '/repo/specs/001-test-feature',
+      })
+    );
+  });
+
+  it('should skip specPath update when feature has no specPath', async () => {
+    const feature = createMockFeature({ specPath: undefined });
+    mockFeatureRepo.findById = vi.fn().mockResolvedValue(feature);
+
+    await useCase.execute('feat-123-full-uuid');
+
+    expect(mockFeatureRepo.update).not.toHaveBeenCalled();
+  });
+
+  it('should log warn and resolve without error when specPath update fails', async () => {
+    const feature = createMockFeature({
+      specPath: '/repo/.worktrees/feat-test-feature/specs/001-test-feature',
+    });
+    mockFeatureRepo.findById = vi.fn().mockResolvedValue(feature);
+    mockFeatureRepo.update = vi.fn().mockRejectedValue(new Error('db write failed'));
+
+    await expect(useCase.execute('feat-123-full-uuid')).resolves.toBeUndefined();
+
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('specPath update failed'),
+      expect.anything()
+    );
+  });
 });

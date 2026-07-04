@@ -79,6 +79,13 @@ export function createReviewCommand(): Command {
   const t = getCliI18n().t;
   return new Command('review')
     .description(t('cli:commands.feat.review.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat review              Auto-pick the single waiting feature
+  $ shep feat review feat-123     Review a specific feature by id`
+    )
     .argument('[id]', t('cli:commands.feat.review.idArgument'))
     .action(async (featureId?: string) => {
       try {

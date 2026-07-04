@@ -24,6 +24,13 @@ export function createPromoteCommand(): Command {
   const t = getCliI18n().t;
   return new Command('promote')
     .description(t('cli:commands.feat.promote.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat promote <id>          Promote to Regular mode
+  $ shep feat promote <id> --fast   Promote to Fast mode`
+    )
     .argument('<id>', t('cli:commands.feat.promote.idArgument'))
     .option('--fast', t('cli:commands.feat.promote.fastOption'))
     .action(async (featureId: string, options: PromoteOptions) => {

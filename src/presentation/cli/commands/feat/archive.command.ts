@@ -30,6 +30,13 @@ export function createArchiveCommand(): Command {
   const t = getCliI18n().t;
   return new Command('archive')
     .description(t('cli:commands.feat.archive.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat archive feat-123            Archive a feature (prompts for confirmation)
+  $ shep feat archive feat-123 --force    Archive without confirmation`
+    )
     .argument('<id>', t('cli:commands.feat.archive.idArgument'))
     .option('-f, --force', t('cli:commands.feat.archive.forceOption'))
     .action(async (featureId: string, options: ArchiveOptions) => {

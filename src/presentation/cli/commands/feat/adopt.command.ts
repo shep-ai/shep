@@ -20,6 +20,13 @@ export function createAdoptCommand(): Command {
   const t = getCliI18n().t;
   return new Command('adopt')
     .description(t('cli:commands.feat.adopt.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat adopt <branch>              Adopt a branch into feature tracking
+  $ shep feat adopt <branch> -r /path/to/repo   Adopt from a specific repository`
+    )
     .argument('<branch>', t('cli:commands.feat.adopt.branchArgument'))
     .option('-r, --repo <path>', t('cli:commands.feat.adopt.repoOption'))
     .action(async (branch: string, options: { repo?: string }) => {

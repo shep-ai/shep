@@ -1,6 +1,6 @@
 {
   "name": "@shepai/cli",
-  "version": "1.215.0",
+  "version": "1.216.0",
   "description": "Autonomous AI-native SDLC platform — run parallel AI agents in isolated worktrees to automate the development cycle from idea to deploy.",
   "type": "module",
   "license": "MIT",
@@ -43,6 +43,8 @@
     "dev": "tsx --tsconfig tsconfig.json src/presentation/web/dev-server.ts",
     "dev:cli": "tsx src/presentation/cli/index.ts",
     "dev:web": "tsx --tsconfig tsconfig.json src/presentation/web/dev-server.ts",
+    "clean:dev": "node -e \"const fs=require('fs');['dist','web','.next','src/presentation/web/.next','node_modules'].forEach((p)=>fs.rmSync(p,{recursive:true,force:true}));\"",
+    "reset:dev": "pnpm run clean:dev && pnpm install",
     "dev:storybook": "storybook dev -p 6006",
     "generate": "pnpm tsp:codegen",
     "tsp:codegen": "tsp compile tsp/ --emit @typespec-tools/emitter-typescript && prettier --write packages/core/src/domain/generated/",

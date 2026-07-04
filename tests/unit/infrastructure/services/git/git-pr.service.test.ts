@@ -426,11 +426,14 @@ describe('GitPrService', () => {
           url: 'https://github.com/org/repo/actions/runs/123',
         },
       ]);
-      vi.mocked(mockExec).mockResolvedValue({ stdout: ghOutput, stderr: '' });
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({ stdout: ghOutput, stderr: '' })
+        .mockResolvedValueOnce({ stdout: JSON.stringify([]), stderr: '' });
 
       const result = await service.getCiStatus('/repo', 'feat/branch');
 
-      expect(mockExec).toHaveBeenCalledWith(
+      expect(mockExec).toHaveBeenNthCalledWith(
+        1,
         'gh',
         ['run', 'list', '--branch', 'feat/branch', '--json', 'conclusion,url', '--limit', '1'],
         { cwd: '/repo' }
@@ -440,7 +443,9 @@ describe('GitPrService', () => {
     });
 
     it('should return pending when no runs found', async () => {
-      vi.mocked(mockExec).mockResolvedValue({ stdout: '[]', stderr: '' });
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({ stdout: '[]', stderr: '' })
+        .mockResolvedValueOnce({ stdout: JSON.stringify([]), stderr: '' });
 
       const result = await service.getCiStatus('/repo', 'feat/branch');
 
@@ -467,11 +472,143 @@ describe('GitPrService', () => {
       const ghOutput = JSON.stringify([
         { conclusion: null, url: 'https://github.com/org/repo/actions/runs/456' },
       ]);
-      vi.mocked(mockExec).mockResolvedValue({ stdout: ghOutput, stderr: '' });
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({ stdout: ghOutput, stderr: '' })
+        .mockResolvedValueOnce({ stdout: JSON.stringify([]), stderr: '' });
 
       const result = await service.getCiStatus('/repo', 'feat/branch');
 
       expect(result.status).toBe('pending');
+    });
+
+    it('should return failure when workflow runs pass but PR checks fail', async () => {
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              conclusion: 'success',
+              url: 'https://github.com/org/repo/actions/runs/123',
+            },
+          ]),
+          stderr: '',
+        })
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            { bucket: 'pass', state: 'SUCCESS', name: 'CI' },
+            { bucket: 'fail', state: 'FAILURE', name: 'Required Check' },
+          ]),
+          stderr: '',
+        });
+
+      const result = await service.getCiStatus('/repo', 'feat/branch');
+
+      expect(mockExec).toHaveBeenNthCalledWith(
+        2,
+        'gh',
+        ['pr', 'checks', 'feat/branch', '--json', 'bucket,state,name'],
+        { cwd: '/repo' }
+      );
+      expect(result.status).toBe('failure');
+      expect(result.logExcerpt).toContain('Required Check');
+    });
+
+    it('should return success when workflow runs and PR checks both pass', async () => {
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              conclusion: 'success',
+              url: 'https://github.com/org/repo/actions/runs/123',
+            },
+          ]),
+          stderr: '',
+        })
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([{ bucket: 'pass', state: 'SUCCESS', name: 'CI' }]),
+          stderr: '',
+        });
+
+      const result = await service.getCiStatus('/repo', 'feat/branch');
+
+      expect(result.status).toBe('success');
+    });
+
+    it('should return pending when PR checks are still pending', async () => {
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              conclusion: 'success',
+              url: 'https://github.com/org/repo/actions/runs/123',
+            },
+          ]),
+          stderr: '',
+        })
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([{ bucket: 'pending', state: 'IN_PROGRESS', name: 'Lint' }]),
+          stderr: '',
+        });
+
+      const result = await service.getCiStatus('/repo', 'feat/branch');
+
+      expect(result.status).toBe('pending');
+    });
+
+    it('should return failure when workflow runs fail even if PR checks pass', async () => {
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              conclusion: 'failure',
+              url: 'https://github.com/org/repo/actions/runs/123',
+            },
+          ]),
+          stderr: '',
+        })
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([{ bucket: 'pass', state: 'SUCCESS', name: 'CI' }]),
+          stderr: '',
+        });
+
+      const result = await service.getCiStatus('/repo', 'feat/branch');
+
+      expect(result.status).toBe('failure');
+    });
+
+    it('should treat empty PR checks output as no checks', async () => {
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              conclusion: 'success',
+              url: 'https://github.com/org/repo/actions/runs/123',
+            },
+          ]),
+          stderr: '',
+        })
+        .mockResolvedValueOnce({ stdout: '', stderr: '' });
+
+      const result = await service.getCiStatus('/repo', 'feat/branch');
+
+      expect(result.status).toBe('success');
+    });
+
+    it('should ignore missing PR when checking PR checks', async () => {
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              conclusion: 'success',
+              url: 'https://github.com/org/repo/actions/runs/123',
+            },
+          ]),
+          stderr: '',
+        })
+        .mockRejectedValueOnce(new Error('no pull requests found for branch "feat/branch"'));
+
+      const result = await service.getCiStatus('/repo', 'feat/branch');
+
+      expect(result.status).toBe('success');
     });
   });
 

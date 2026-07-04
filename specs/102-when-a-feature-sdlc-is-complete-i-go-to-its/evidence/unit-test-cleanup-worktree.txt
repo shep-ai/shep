@@ -1,0 +1,24 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/admin/.shep/repos/cc5cf32c1a625c34/wt/feat-when-a-feature-sdlc-is-complete-i-go-to-its[39m
+
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould remove worktree, delete local branch, and delete remote branch on happy path[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould return early without calling any service when feature is not found[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould log warn and continue when worktree remove throws[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould call prune after worktree remove fails to clean stale entries[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould not call prune when worktree remove succeeds[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould continue with branch deletion even when prune fails[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould compute worktree path via getWorktreePath when feature has no worktreePath[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould log warn and continue when local branch deleteBranch throws[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould skip remote deleteBranch when remoteBranchExists returns false[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould log warn and resolve without error when remoteBranchExists throws[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould skip cleanup when feature lifecycle is Deleting (idempotency guard)[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould not reject even when all three steps throw[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould update specPath to repository root location after worktree removal[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould skip specPath update when feature has no specPath[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[43m node [49m[39m tests/unit/application/use-cases/features/cleanup-feature-worktree.use-case.test.ts[2m > [22mCleanupFeatureWorktreeUseCase[2m > [22mshould log warn and resolve without error when specPath update fails[32m 2[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m15 passed[39m[22m[90m (15)[39m
+[2m   Start at [22m 12:14:42
+[2m   Duration [22m 462ms[2m (transform 105ms, setup 67ms, import 91ms, tests 30ms, environment 0ms)[22m
+

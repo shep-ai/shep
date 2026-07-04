@@ -17,6 +17,13 @@ export function createEnableCommand(): Command {
   const t = getCliI18n().t;
   return new Command('enable')
     .description(t('cli:commands.plugin.enable.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep plugin enable mempalace     Enable a plugin by name
+  $ shep plugin enable plugin_123    Enable a plugin by id`
+    )
     .argument('<name>', t('cli:commands.plugin.enable.nameArg'))
     .action(async (name: string) => {
       try {

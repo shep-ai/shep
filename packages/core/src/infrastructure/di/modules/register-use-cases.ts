@@ -1,5 +1,116 @@
 import type { DependencyContainer } from 'tsyringe';
 
+// ─── Auth (feature 087) use cases ───────────────────────────────────────────
+import { LoginUserUseCase } from '../../../application/use-cases/auth/login-user.use-case.js';
+import { LogoutUserUseCase } from '../../../application/use-cases/auth/logout-user.use-case.js';
+import { RegisterUserUseCase } from '../../../application/use-cases/auth/register-user.use-case.js';
+import { ValidateSessionUseCase } from '../../../application/use-cases/auth/validate-session.use-case.js';
+
+// ─── PM Projects (feature 087) use cases ────────────────────────────────────
+import { ListPmProjectsUseCase } from '../../../application/use-cases/pm-projects/list-pm-projects.use-case.js';
+import { CreatePmProjectUseCase } from '../../../application/use-cases/pm-projects/create-pm-project.use-case.js';
+import { GetPmProjectUseCase } from '../../../application/use-cases/pm-projects/get-pm-project.use-case.js';
+import { UpdatePmProjectUseCase } from '../../../application/use-cases/pm-projects/update-pm-project.use-case.js';
+import { DeletePmProjectUseCase } from '../../../application/use-cases/pm-projects/delete-pm-project.use-case.js';
+
+// ─── Work Items (feature 087) use cases ─────────────────────────────────────
+import { ListWorkItemsUseCase } from '../../../application/use-cases/work-items/list-work-items.use-case.js';
+import { CreateWorkItemUseCase } from '../../../application/use-cases/work-items/create-work-item.use-case.js';
+import { GetWorkItemUseCase } from '../../../application/use-cases/work-items/get-work-item.use-case.js';
+import { UpdateWorkItemUseCase } from '../../../application/use-cases/work-items/update-work-item.use-case.js';
+import { DeleteWorkItemUseCase } from '../../../application/use-cases/work-items/delete-work-item.use-case.js';
+import { BulkUpdateWorkItemsUseCase } from '../../../application/use-cases/work-items/bulk-update-work-items.use-case.js';
+import { ManageWorkItemStatesUseCase } from '../../../application/use-cases/work-item-states/manage-work-item-states.use-case.js';
+import { CreateWorkItemRelationUseCase } from '../../../application/use-cases/work-item-relations/create-work-item-relation.use-case.js';
+import { ListWorkItemRelationsUseCase } from '../../../application/use-cases/work-item-relations/list-work-item-relations.use-case.js';
+import { DeleteWorkItemRelationUseCase } from '../../../application/use-cases/work-item-relations/delete-work-item-relation.use-case.js';
+
+// ─── Labels (feature 087) use cases ─────────────────────────────────────────
+import { ManageLabelsUseCase } from '../../../application/use-cases/labels/manage-labels.use-case.js';
+
+// ─── Cycles (feature 087) use cases ─────────────────────────────────────────
+import { ListCyclesUseCase } from '../../../application/use-cases/cycles/list-cycles.use-case.js';
+import { CreateCycleUseCase } from '../../../application/use-cases/cycles/create-cycle.use-case.js';
+import { UpdateCycleUseCase } from '../../../application/use-cases/cycles/update-cycle.use-case.js';
+import { DeleteCycleUseCase } from '../../../application/use-cases/cycles/delete-cycle.use-case.js';
+import { AddItemsToCycleUseCase } from '../../../application/use-cases/cycles/add-items-to-cycle.use-case.js';
+import { RemoveItemsFromCycleUseCase } from '../../../application/use-cases/cycles/remove-items-from-cycle.use-case.js';
+import { TransferCycleItemsUseCase } from '../../../application/use-cases/cycles/transfer-cycle-items.use-case.js';
+
+// ─── Modules (feature 087) use cases ────────────────────────────────────────
+import { ListModulesUseCase } from '../../../application/use-cases/modules/list-modules.use-case.js';
+import { CreateModuleUseCase } from '../../../application/use-cases/modules/create-module.use-case.js';
+import { UpdateModuleUseCase } from '../../../application/use-cases/modules/update-module.use-case.js';
+import { DeleteModuleUseCase } from '../../../application/use-cases/modules/delete-module.use-case.js';
+import { AddItemsToModuleUseCase } from '../../../application/use-cases/modules/add-items-to-module.use-case.js';
+import { RemoveItemsFromModuleUseCase } from '../../../application/use-cases/modules/remove-items-from-module.use-case.js';
+
+// ─── Epics (feature 087) use cases ──────────────────────────────────────────
+import { ListEpicsUseCase } from '../../../application/use-cases/epics/list-epics.use-case.js';
+import { CreateEpicUseCase } from '../../../application/use-cases/epics/create-epic.use-case.js';
+import { UpdateEpicUseCase } from '../../../application/use-cases/epics/update-epic.use-case.js';
+import { DeleteEpicUseCase } from '../../../application/use-cases/epics/delete-epic.use-case.js';
+
+// ─── Pages (feature 087) use cases ──────────────────────────────────────────
+import { ListPagesUseCase } from '../../../application/use-cases/pages/list-pages.use-case.js';
+import { CreatePageUseCase } from '../../../application/use-cases/pages/create-page.use-case.js';
+import { GetPageUseCase } from '../../../application/use-cases/pages/get-page.use-case.js';
+import { UpdatePageUseCase } from '../../../application/use-cases/pages/update-page.use-case.js';
+import { DeletePageUseCase } from '../../../application/use-cases/pages/delete-page.use-case.js';
+
+// ─── Attachments (feature 087) use cases ────────────────────────────────────
+import { ListAttachmentsUseCase } from '../../../application/use-cases/pm-attachments/list-attachments.use-case.js';
+import { UploadAttachmentUseCase } from '../../../application/use-cases/pm-attachments/upload-attachment.use-case.js';
+import { DeleteAttachmentUseCase } from '../../../application/use-cases/pm-attachments/delete-attachment.use-case.js';
+
+// ─── Time Entries (feature 087) use cases ───────────────────────────────────
+import { ListTimeEntriesUseCase } from '../../../application/use-cases/time-entries/list-time-entries.use-case.js';
+import { LogTimeEntryUseCase } from '../../../application/use-cases/time-entries/log-time-entry.use-case.js';
+import { DeleteTimeEntryUseCase } from '../../../application/use-cases/time-entries/delete-time-entry.use-case.js';
+
+// ─── Comments (feature 087) use cases ───────────────────────────────────────
+import { ManageCommentsUseCase } from '../../../application/use-cases/comments/manage-comments.use-case.js';
+
+// ─── Saved Views (feature 087) use cases ────────────────────────────────────
+import { ManageSavedViewsUseCase } from '../../../application/use-cases/saved-views/manage-saved-views.use-case.js';
+
+// ─── Custom Properties (feature 087) use cases ──────────────────────────────
+import { ManageCustomPropertiesUseCase } from '../../../application/use-cases/custom-properties/manage-custom-properties.use-case.js';
+
+// ─── Activity Log (feature 087) use cases ───────────────────────────────────
+import { ListActivityLogUseCase } from '../../../application/use-cases/activity-log/list-activity-log.use-case.js';
+
+// ─── Notifications (feature 087) use cases ──────────────────────────────────
+import { ListNotificationsUseCase } from '../../../application/use-cases/notifications/list-notifications.use-case.js';
+import { MarkNotificationReadUseCase } from '../../../application/use-cases/notifications/mark-notification-read.use-case.js';
+
+// ─── Project Members (feature 087) use cases ────────────────────────────────
+import { AddProjectMemberUseCase } from '../../../application/use-cases/project-members/add-project-member.use-case.js';
+import { ListProjectMembersUseCase } from '../../../application/use-cases/project-members/list-project-members.use-case.js';
+import { RemoveProjectMemberUseCase } from '../../../application/use-cases/project-members/remove-project-member.use-case.js';
+import { UpdateProjectMemberRoleUseCase } from '../../../application/use-cases/project-members/update-project-member-role.use-case.js';
+
+// ─── Analytics (feature 087) use cases ──────────────────────────────────────
+import { GetAiCycleSummaryUseCase } from '../../../application/use-cases/analytics/get-ai-cycle-summary.use-case.js';
+import { GetAiProjectHealthUseCase } from '../../../application/use-cases/analytics/get-ai-project-health.use-case.js';
+import { GetCycleBurndownUseCase } from '../../../application/use-cases/analytics/get-cycle-burndown.use-case.js';
+import { GetModuleProgressUseCase } from '../../../application/use-cases/analytics/get-module-progress.use-case.js';
+import { GetProjectBreakdownUseCase } from '../../../application/use-cases/analytics/get-project-breakdown.use-case.js';
+
+// ─── Intake (feature 087) use cases ─────────────────────────────────────────
+import { ListIntakeItemsUseCase } from '../../../application/use-cases/intake/list-intake-items.use-case.js';
+import { CreateIntakeItemUseCase } from '../../../application/use-cases/intake/create-intake-item.use-case.js';
+import { AcceptIntakeItemUseCase } from '../../../application/use-cases/intake/accept-intake-item.use-case.js';
+import { AutoTriageIntakeItemUseCase } from '../../../application/use-cases/intake/auto-triage-intake-item.use-case.js';
+import { DeclineIntakeItemUseCase } from '../../../application/use-cases/intake/decline-intake-item.use-case.js';
+import { DetectDuplicatesUseCase } from '../../../application/use-cases/intake/detect-duplicates.use-case.js';
+
+// ─── Import/Export (feature 087) use cases ──────────────────────────────────
+import { ExportWorkItemsCsvUseCase } from '../../../application/use-cases/import-export/export-work-items-csv.use-case.js';
+
+// ─── Global Search use case ──────────────────────────────────────────────────
+import { GlobalSearchUseCase } from '../../../application/use-cases/search/global-search.use-case.js';
+
 import { ImportWorkItemsCsvUseCase } from '../../../application/use-cases/import-export/import-work-items-csv.use-case.js';
 import { InitializeSettingsUseCase } from '../../../application/use-cases/settings/initialize-settings.use-case.js';
 import { LoadSettingsUseCase } from '../../../application/use-cases/settings/load-settings.use-case.js';
@@ -599,4 +710,278 @@ export function registerUseCases(container: DependencyContainer): void {
   container.register('ManageProjectMemoryUseCase', {
     useFactory: (c) => c.resolve(ManageProjectMemoryUseCase),
   });
+
+  // ─── Auth (feature 087) ─────────────────────────────────────────────────
+  container.registerSingleton(LoginUserUseCase);
+  container.register('LoginUserUseCase', { useFactory: (c) => c.resolve(LoginUserUseCase) });
+  container.registerSingleton(LogoutUserUseCase);
+  container.register('LogoutUserUseCase', { useFactory: (c) => c.resolve(LogoutUserUseCase) });
+  container.registerSingleton(RegisterUserUseCase);
+  container.register('RegisterUserUseCase', { useFactory: (c) => c.resolve(RegisterUserUseCase) });
+  container.registerSingleton(ValidateSessionUseCase);
+  container.register('ValidateSessionUseCase', {
+    useFactory: (c) => c.resolve(ValidateSessionUseCase),
+  });
+
+  // ─── PM Projects (feature 087) ──────────────────────────────────────────
+  container.registerSingleton(ListPmProjectsUseCase);
+  container.register('ListPmProjectsUseCase', {
+    useFactory: (c) => c.resolve(ListPmProjectsUseCase),
+  });
+  container.registerSingleton(CreatePmProjectUseCase);
+  container.register('CreatePmProjectUseCase', {
+    useFactory: (c) => c.resolve(CreatePmProjectUseCase),
+  });
+  container.registerSingleton(GetPmProjectUseCase);
+  container.register('GetPmProjectUseCase', { useFactory: (c) => c.resolve(GetPmProjectUseCase) });
+  container.registerSingleton(UpdatePmProjectUseCase);
+  container.register('UpdatePmProjectUseCase', {
+    useFactory: (c) => c.resolve(UpdatePmProjectUseCase),
+  });
+  container.registerSingleton(DeletePmProjectUseCase);
+  container.register('DeletePmProjectUseCase', {
+    useFactory: (c) => c.resolve(DeletePmProjectUseCase),
+  });
+
+  // ─── Work Items (feature 087) ────────────────────────────────────────────
+  container.registerSingleton(ListWorkItemsUseCase);
+  container.register('ListWorkItemsUseCase', {
+    useFactory: (c) => c.resolve(ListWorkItemsUseCase),
+  });
+  container.registerSingleton(CreateWorkItemUseCase);
+  container.register('CreateWorkItemUseCase', {
+    useFactory: (c) => c.resolve(CreateWorkItemUseCase),
+  });
+  container.registerSingleton(GetWorkItemUseCase);
+  container.register('GetWorkItemUseCase', { useFactory: (c) => c.resolve(GetWorkItemUseCase) });
+  container.registerSingleton(UpdateWorkItemUseCase);
+  container.register('UpdateWorkItemUseCase', {
+    useFactory: (c) => c.resolve(UpdateWorkItemUseCase),
+  });
+  container.registerSingleton(DeleteWorkItemUseCase);
+  container.register('DeleteWorkItemUseCase', {
+    useFactory: (c) => c.resolve(DeleteWorkItemUseCase),
+  });
+  container.registerSingleton(BulkUpdateWorkItemsUseCase);
+  container.register('BulkUpdateWorkItemsUseCase', {
+    useFactory: (c) => c.resolve(BulkUpdateWorkItemsUseCase),
+  });
+  container.registerSingleton(ManageWorkItemStatesUseCase);
+  container.register('ManageWorkItemStatesUseCase', {
+    useFactory: (c) => c.resolve(ManageWorkItemStatesUseCase),
+  });
+  container.registerSingleton(CreateWorkItemRelationUseCase);
+  container.register('CreateWorkItemRelationUseCase', {
+    useFactory: (c) => c.resolve(CreateWorkItemRelationUseCase),
+  });
+  container.registerSingleton(ListWorkItemRelationsUseCase);
+  container.register('ListWorkItemRelationsUseCase', {
+    useFactory: (c) => c.resolve(ListWorkItemRelationsUseCase),
+  });
+  container.registerSingleton(DeleteWorkItemRelationUseCase);
+  container.register('DeleteWorkItemRelationUseCase', {
+    useFactory: (c) => c.resolve(DeleteWorkItemRelationUseCase),
+  });
+
+  // ─── Labels (feature 087) ───────────────────────────────────────────────
+  container.registerSingleton(ManageLabelsUseCase);
+  container.register('ManageLabelsUseCase', { useFactory: (c) => c.resolve(ManageLabelsUseCase) });
+
+  // ─── Cycles (feature 087) ───────────────────────────────────────────────
+  container.registerSingleton(ListCyclesUseCase);
+  container.register('ListCyclesUseCase', { useFactory: (c) => c.resolve(ListCyclesUseCase) });
+  container.registerSingleton(CreateCycleUseCase);
+  container.register('CreateCycleUseCase', { useFactory: (c) => c.resolve(CreateCycleUseCase) });
+  container.registerSingleton(UpdateCycleUseCase);
+  container.register('UpdateCycleUseCase', { useFactory: (c) => c.resolve(UpdateCycleUseCase) });
+  container.registerSingleton(DeleteCycleUseCase);
+  container.register('DeleteCycleUseCase', { useFactory: (c) => c.resolve(DeleteCycleUseCase) });
+  container.registerSingleton(AddItemsToCycleUseCase);
+  container.register('AddItemsToCycleUseCase', {
+    useFactory: (c) => c.resolve(AddItemsToCycleUseCase),
+  });
+  container.registerSingleton(RemoveItemsFromCycleUseCase);
+  container.register('RemoveItemsFromCycleUseCase', {
+    useFactory: (c) => c.resolve(RemoveItemsFromCycleUseCase),
+  });
+  container.registerSingleton(TransferCycleItemsUseCase);
+  container.register('TransferCycleItemsUseCase', {
+    useFactory: (c) => c.resolve(TransferCycleItemsUseCase),
+  });
+
+  // ─── Modules (feature 087) ──────────────────────────────────────────────
+  container.registerSingleton(ListModulesUseCase);
+  container.register('ListModulesUseCase', { useFactory: (c) => c.resolve(ListModulesUseCase) });
+  container.registerSingleton(CreateModuleUseCase);
+  container.register('CreateModuleUseCase', { useFactory: (c) => c.resolve(CreateModuleUseCase) });
+  container.registerSingleton(UpdateModuleUseCase);
+  container.register('UpdateModuleUseCase', { useFactory: (c) => c.resolve(UpdateModuleUseCase) });
+  container.registerSingleton(DeleteModuleUseCase);
+  container.register('DeleteModuleUseCase', { useFactory: (c) => c.resolve(DeleteModuleUseCase) });
+  container.registerSingleton(AddItemsToModuleUseCase);
+  container.register('AddItemsToModuleUseCase', {
+    useFactory: (c) => c.resolve(AddItemsToModuleUseCase),
+  });
+  container.registerSingleton(RemoveItemsFromModuleUseCase);
+  container.register('RemoveItemsFromModuleUseCase', {
+    useFactory: (c) => c.resolve(RemoveItemsFromModuleUseCase),
+  });
+
+  // ─── Epics (feature 087) ────────────────────────────────────────────────
+  container.registerSingleton(ListEpicsUseCase);
+  container.register('ListEpicsUseCase', { useFactory: (c) => c.resolve(ListEpicsUseCase) });
+  container.registerSingleton(CreateEpicUseCase);
+  container.register('CreateEpicUseCase', { useFactory: (c) => c.resolve(CreateEpicUseCase) });
+  container.registerSingleton(UpdateEpicUseCase);
+  container.register('UpdateEpicUseCase', { useFactory: (c) => c.resolve(UpdateEpicUseCase) });
+  container.registerSingleton(DeleteEpicUseCase);
+  container.register('DeleteEpicUseCase', { useFactory: (c) => c.resolve(DeleteEpicUseCase) });
+
+  // ─── Pages (feature 087) ────────────────────────────────────────────────
+  container.registerSingleton(ListPagesUseCase);
+  container.register('ListPagesUseCase', { useFactory: (c) => c.resolve(ListPagesUseCase) });
+  container.registerSingleton(CreatePageUseCase);
+  container.register('CreatePageUseCase', { useFactory: (c) => c.resolve(CreatePageUseCase) });
+  container.registerSingleton(GetPageUseCase);
+  container.register('GetPageUseCase', { useFactory: (c) => c.resolve(GetPageUseCase) });
+  container.registerSingleton(UpdatePageUseCase);
+  container.register('UpdatePageUseCase', { useFactory: (c) => c.resolve(UpdatePageUseCase) });
+  container.registerSingleton(DeletePageUseCase);
+  container.register('DeletePageUseCase', { useFactory: (c) => c.resolve(DeletePageUseCase) });
+
+  // ─── Attachments (feature 087) ──────────────────────────────────────────
+  container.registerSingleton(ListAttachmentsUseCase);
+  container.register('ListAttachmentsUseCase', {
+    useFactory: (c) => c.resolve(ListAttachmentsUseCase),
+  });
+  container.registerSingleton(UploadAttachmentUseCase);
+  container.register('UploadAttachmentUseCase', {
+    useFactory: (c) => c.resolve(UploadAttachmentUseCase),
+  });
+  container.registerSingleton(DeleteAttachmentUseCase);
+  container.register('DeleteAttachmentUseCase', {
+    useFactory: (c) => c.resolve(DeleteAttachmentUseCase),
+  });
+
+  // ─── Time Entries (feature 087) ─────────────────────────────────────────
+  container.registerSingleton(ListTimeEntriesUseCase);
+  container.register('ListTimeEntriesUseCase', {
+    useFactory: (c) => c.resolve(ListTimeEntriesUseCase),
+  });
+  container.registerSingleton(LogTimeEntryUseCase);
+  container.register('LogTimeEntryUseCase', { useFactory: (c) => c.resolve(LogTimeEntryUseCase) });
+  container.registerSingleton(DeleteTimeEntryUseCase);
+  container.register('DeleteTimeEntryUseCase', {
+    useFactory: (c) => c.resolve(DeleteTimeEntryUseCase),
+  });
+
+  // ─── Comments (feature 087) ─────────────────────────────────────────────
+  container.registerSingleton(ManageCommentsUseCase);
+  container.register('ManageCommentsUseCase', {
+    useFactory: (c) => c.resolve(ManageCommentsUseCase),
+  });
+
+  // ─── Saved Views (feature 087) ──────────────────────────────────────────
+  container.registerSingleton(ManageSavedViewsUseCase);
+  container.register('ManageSavedViewsUseCase', {
+    useFactory: (c) => c.resolve(ManageSavedViewsUseCase),
+  });
+
+  // ─── Custom Properties (feature 087) ────────────────────────────────────
+  container.registerSingleton(ManageCustomPropertiesUseCase);
+  container.register('ManageCustomPropertiesUseCase', {
+    useFactory: (c) => c.resolve(ManageCustomPropertiesUseCase),
+  });
+
+  // ─── Activity Log (feature 087) ─────────────────────────────────────────
+  container.registerSingleton(ListActivityLogUseCase);
+  container.register('ListActivityLogUseCase', {
+    useFactory: (c) => c.resolve(ListActivityLogUseCase),
+  });
+
+  // ─── Notifications (feature 087) ────────────────────────────────────────
+  container.registerSingleton(ListNotificationsUseCase);
+  container.register('ListNotificationsUseCase', {
+    useFactory: (c) => c.resolve(ListNotificationsUseCase),
+  });
+  container.registerSingleton(MarkNotificationReadUseCase);
+  container.register('MarkNotificationReadUseCase', {
+    useFactory: (c) => c.resolve(MarkNotificationReadUseCase),
+  });
+
+  // ─── Project Members (feature 087) ──────────────────────────────────────
+  container.registerSingleton(AddProjectMemberUseCase);
+  container.register('AddProjectMemberUseCase', {
+    useFactory: (c) => c.resolve(AddProjectMemberUseCase),
+  });
+  container.registerSingleton(ListProjectMembersUseCase);
+  container.register('ListProjectMembersUseCase', {
+    useFactory: (c) => c.resolve(ListProjectMembersUseCase),
+  });
+  container.registerSingleton(RemoveProjectMemberUseCase);
+  container.register('RemoveProjectMemberUseCase', {
+    useFactory: (c) => c.resolve(RemoveProjectMemberUseCase),
+  });
+  container.registerSingleton(UpdateProjectMemberRoleUseCase);
+  container.register('UpdateProjectMemberRoleUseCase', {
+    useFactory: (c) => c.resolve(UpdateProjectMemberRoleUseCase),
+  });
+
+  // ─── Analytics (feature 087) ────────────────────────────────────────────
+  container.registerSingleton(GetAiCycleSummaryUseCase);
+  container.register('GetAiCycleSummaryUseCase', {
+    useFactory: (c) => c.resolve(GetAiCycleSummaryUseCase),
+  });
+  container.registerSingleton(GetAiProjectHealthUseCase);
+  container.register('GetAiProjectHealthUseCase', {
+    useFactory: (c) => c.resolve(GetAiProjectHealthUseCase),
+  });
+  container.registerSingleton(GetCycleBurndownUseCase);
+  container.register('GetCycleBurndownUseCase', {
+    useFactory: (c) => c.resolve(GetCycleBurndownUseCase),
+  });
+  container.registerSingleton(GetModuleProgressUseCase);
+  container.register('GetModuleProgressUseCase', {
+    useFactory: (c) => c.resolve(GetModuleProgressUseCase),
+  });
+  container.registerSingleton(GetProjectBreakdownUseCase);
+  container.register('GetProjectBreakdownUseCase', {
+    useFactory: (c) => c.resolve(GetProjectBreakdownUseCase),
+  });
+
+  // ─── Intake (feature 087) ───────────────────────────────────────────────
+  container.registerSingleton(ListIntakeItemsUseCase);
+  container.register('ListIntakeItemsUseCase', {
+    useFactory: (c) => c.resolve(ListIntakeItemsUseCase),
+  });
+  container.registerSingleton(CreateIntakeItemUseCase);
+  container.register('CreateIntakeItemUseCase', {
+    useFactory: (c) => c.resolve(CreateIntakeItemUseCase),
+  });
+  container.registerSingleton(AcceptIntakeItemUseCase);
+  container.register('AcceptIntakeItemUseCase', {
+    useFactory: (c) => c.resolve(AcceptIntakeItemUseCase),
+  });
+  container.registerSingleton(AutoTriageIntakeItemUseCase);
+  container.register('AutoTriageIntakeItemUseCase', {
+    useFactory: (c) => c.resolve(AutoTriageIntakeItemUseCase),
+  });
+  container.registerSingleton(DeclineIntakeItemUseCase);
+  container.register('DeclineIntakeItemUseCase', {
+    useFactory: (c) => c.resolve(DeclineIntakeItemUseCase),
+  });
+  container.registerSingleton(DetectDuplicatesUseCase);
+  container.register('DetectDuplicatesUseCase', {
+    useFactory: (c) => c.resolve(DetectDuplicatesUseCase),
+  });
+
+  // ─── Import/Export (feature 087) ────────────────────────────────────────
+  container.registerSingleton(ExportWorkItemsCsvUseCase);
+  container.register('ExportWorkItemsCsvUseCase', {
+    useFactory: (c) => c.resolve(ExportWorkItemsCsvUseCase),
+  });
+
+  // ─── Global Search ───────────────────────────────────────────────────────
+  container.registerSingleton(GlobalSearchUseCase);
+  container.register('GlobalSearchUseCase', { useFactory: (c) => c.resolve(GlobalSearchUseCase) });
 }

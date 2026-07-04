@@ -11,6 +11,7 @@
  */
 
 import { injectable, inject } from 'tsyringe';
+import { join, basename } from 'node:path';
 import { SdlcLifecycle } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { IWorktreeService } from '../../ports/output/services/worktree-service.interface.js';
@@ -76,6 +77,23 @@ export class CleanupFeatureWorktreeUseCase {
       this.logger.warn('[CleanupFeatureWorktreeUseCase] remote branch delete failed', {
         err: err instanceof Error ? err.message : String(err),
       });
+    }
+
+    // Step 4: Update specPath to the main repository location.
+    // After merge, spec files exist at <repositoryPath>/specs/<specDirName>/ (committed to main).
+    // The worktree directory was removed in Step 1, so the old specPath is no longer valid.
+    if (feature.specPath) {
+      try {
+        const specDirName = basename(feature.specPath.replace(/[/\\]+$/, ''));
+        // Normalize to forward slashes — specPath is stored in the DB and consumed
+        // by cross-platform layers (web UI, git), so it must not contain Windows separators.
+        const repoSpecPath = join(feature.repositoryPath, 'specs', specDirName).replace(/\\/g, '/');
+        await this.featureRepo.update({ ...feature, specPath: repoSpecPath });
+      } catch (err) {
+        this.logger.warn('[CleanupFeatureWorktreeUseCase] specPath update failed', {
+          err: err instanceof Error ? err.message : String(err),
+        });
+      }
     }
   }
 }

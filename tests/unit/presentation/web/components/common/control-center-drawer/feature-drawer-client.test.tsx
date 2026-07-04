@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { FeatureDrawerClient } from '@/components/common/control-center-drawer/feature-drawer-client';
 import type { DrawerView } from '@/components/common/control-center-drawer/drawer-view';
 import type { FeatureNodeData } from '@/components/common/feature-node';
+// Imported (mocked) fetcher references so artifact-fetch assertions can match on
+// the fetcher argument instead of brittle positional call indices.
+import { getResearchArtifact } from '@/app/actions/get-research-artifact';
+import { getFeatureArtifact } from '@/app/actions/get-feature-artifact';
 
 const mockApproveFeature = vi.fn();
 const mockGetFeatureArtifact = vi.fn();
@@ -17,6 +21,7 @@ const mockStopFeature = vi.fn();
 const mockToastError = vi.fn();
 const mockToastSuccess = vi.fn();
 const mockUpdateFeaturePinnedConfig = vi.fn();
+const mockUseArtifactFetch = vi.fn((..._args: unknown[]) => false);
 
 let mockPathname = '/feature/feat-1';
 
@@ -205,7 +210,8 @@ vi.mock('@/components/ui/tooltip', () => ({
 }));
 
 vi.mock('@/components/common/control-center-drawer/use-artifact-fetch', () => ({
-  useArtifactFetch: () => false,
+  useArtifactFetch: (featureId: string | null, ...rest: unknown[]) =>
+    mockUseArtifactFetch(featureId, ...rest),
 }));
 
 vi.mock('@/components/common/control-center-drawer/use-drawer-sync', () => ({
@@ -243,6 +249,7 @@ function createView(overrides: Partial<FeatureNodeData> = {}): DrawerView {
 describe('FeatureDrawerClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseArtifactFetch.mockReturnValue(false);
     mockPathname = '/feature/feat-1';
     mockApproveFeature.mockResolvedValue({ approved: true });
     mockGetFeatureArtifact.mockResolvedValue({});
@@ -289,6 +296,79 @@ describe('FeatureDrawerClient', () => {
     expect(mockUpdateFeaturePinnedConfig).toHaveBeenCalledWith('feat-1', 'codex-cli', 'gpt-5.4');
   });
 
+  // Collect the featureIds passed to useArtifactFetch grouped by fetcher, so
+  // assertions match on the fetcher (stable) rather than positional call index.
+  function artifactFetchIds(): { techIds: unknown[]; productIds: unknown[] } {
+    const calls = mockUseArtifactFetch.mock.calls;
+    return {
+      techIds: calls.filter((c) => c[1] === getResearchArtifact).map((c) => c[0]),
+      productIds: calls.filter((c) => c[1] === getFeatureArtifact).map((c) => c[0]),
+    };
+  }
+
+  describe('tech/product artifact fetch lifecycle gating', () => {
+    /**
+     * Regression test for: Tech Decisions and Product tabs empty in review/maintain.
+     * techFeatureId must be set (non-null) for implementation, review, and maintain
+     * so that useArtifactFetch actually fires for all phases where the tabs are visible.
+     */
+    it.each([
+      ['implementation', 'running'],
+      ['review', 'action-required'],
+      ['maintain', 'done'],
+    ] as const)(
+      'fetches tech/product artifacts when lifecycle=%s (tabs are visible)',
+      (lifecycle, state) => {
+        mockUseArtifactFetch.mockReturnValue(false);
+
+        render(<FeatureDrawerClient view={createView({ lifecycle, state })} />);
+
+        // Match calls by their fetcher argument (not positional index) so the
+        // assertion survives reordering/adding artifact fetches. Tech decisions
+        // use getResearchArtifact; product uses getFeatureArtifact (shared with
+        // the PRD fetch, which is null in these phases).
+        const { techIds, productIds } = artifactFetchIds();
+        expect(techIds).toContain('feat-1'); // tech featureId must not be null
+        expect(productIds).toContain('feat-1'); // product featureId must not be null
+      }
+    );
+
+    it.each([
+      ['implementation', 'running'],
+      ['review', 'action-required'],
+      ['maintain', 'done'],
+    ] as const)(
+      'does not fetch tech/product artifacts for fast-mode features when lifecycle=%s',
+      (lifecycle, state) => {
+        mockUseArtifactFetch.mockReturnValue(false);
+
+        render(<FeatureDrawerClient view={createView({ lifecycle, state, fastMode: true })} />);
+
+        const { techIds, productIds } = artifactFetchIds();
+        // fast-mode: tech/product fetches must never receive a featureId.
+        expect(techIds.every((id) => id === null)).toBe(true);
+        expect(productIds.every((id) => id === null)).toBe(true);
+      }
+    );
+
+    it('does not fetch tech/product artifacts for early phases (requirements/research)', () => {
+      for (const lifecycle of ['requirements', 'research'] as const) {
+        mockUseArtifactFetch.mockClear();
+        mockUseArtifactFetch.mockReturnValue(false);
+
+        const { unmount } = render(
+          <FeatureDrawerClient view={createView({ lifecycle, state: 'running' })} />
+        );
+
+        const { techIds, productIds } = artifactFetchIds();
+        // early phase: tech/product fetches must never receive a featureId.
+        expect(techIds.every((id) => id === null)).toBe(true);
+        expect(productIds.every((id) => id === null)).toBe(true);
+        unmount();
+      }
+    });
+  });
+
   it('rolls back to the last saved pinned config and shows the save error when persistence fails', async () => {
     const user = userEvent.setup();
     const deferred = createDeferred<{ ok: boolean; error?: string }>();
@@ -314,5 +394,41 @@ describe('FeatureDrawerClient', () => {
     });
 
     expect(mockToastError).toHaveBeenCalledWith('Could not save pinned config');
+  });
+
+  it('does not fetch tech artifacts for fast-mode implementation features', () => {
+    render(
+      <FeatureDrawerClient
+        view={createView({
+          lifecycle: 'implementation',
+          state: 'running',
+          fastMode: true,
+          specPath: '/tmp/repo/specs/feat-1',
+        })}
+      />
+    );
+
+    const latestCycle = mockUseArtifactFetch.mock.calls.slice(-4);
+    expect(latestCycle).toHaveLength(4);
+    expect(latestCycle[1]?.[0]).toBeNull();
+    expect(latestCycle[2]?.[0]).toBeNull();
+  });
+
+  it('fetches tech artifacts for spec-mode implementation features with a spec path', () => {
+    render(
+      <FeatureDrawerClient
+        view={createView({
+          lifecycle: 'implementation',
+          state: 'running',
+          fastMode: false,
+          specPath: '/tmp/repo/specs/feat-1',
+        })}
+      />
+    );
+
+    const latestCycle = mockUseArtifactFetch.mock.calls.slice(-4);
+    expect(latestCycle).toHaveLength(4);
+    expect(latestCycle[1]?.[0]).toBe('feat-1');
+    expect(latestCycle[2]?.[0]).toBe('feat-1');
   });
 });

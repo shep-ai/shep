@@ -40,6 +40,17 @@ pnpm install
 
 This installs all dependencies including dev dependencies.
 
+If you previously built or exported Shep through Docker in the same checkout, do **not**
+reuse the copied runtime bundle or Linux-built `node_modules` for local development.
+Reset the workspace first:
+
+```bash
+pnpm reset:dev
+```
+
+That removes `node_modules`, `dist`, `web`, and Next.js build output, then reinstalls a
+clean host-native dependency tree.
+
 ### 3. Verify Setup
 
 ```bash
@@ -154,11 +165,14 @@ Debug configuration (`.vscode/launch.json`):
 ### Starting Development
 
 ```bash
-# Run CLI directly (ts-node)
+# Run CLI directly (tsx)
 pnpm dev:cli
 
-# Start Web UI (Next.js)
+# Start Web UI (same as `pnpm dev`)
 pnpm dev:web
+
+# Shortcut for local web development
+pnpm dev
 
 # Start Storybook (Design System)
 pnpm dev:storybook
