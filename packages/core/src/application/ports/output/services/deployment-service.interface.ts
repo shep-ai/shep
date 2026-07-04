@@ -25,6 +25,30 @@ export interface LogEntry {
   timestamp: number;
 }
 
+/**
+ * Explicit run instructions for a deployment, produced by the
+ * dev-server-agent graph (or a cached run plan). When provided to start(),
+ * the service spawns exactly this command instead of running dev-script
+ * detection.
+ */
+export interface RunPlanOverride {
+  /** Full shell command to spawn (executed with shell: true). */
+  command: string;
+  /** Absolute working directory to spawn the command in. */
+  cwd: string;
+  /**
+   * Extra environment variables merged on top of the scrubbed base env.
+   * Applied AFTER the cli-only blocklist scrub, so these always win.
+   */
+  env?: Record<string, string>;
+}
+
+/** Optional behaviour overrides for IDeploymentService.start(). */
+export interface StartOptions {
+  /** When present, spawn this plan verbatim and skip dev-script detection. */
+  runPlan?: RunPlanOverride;
+}
+
 /** Status snapshot returned by getStatus(). */
 export interface DeploymentStatus {
   /** Current lifecycle state of the deployment. */
@@ -66,14 +90,48 @@ export interface IDeploymentService {
 
   /**
    * Start a dev server deployment for the given target.
-   * If a deployment already exists for this targetId, it is stopped first.
+   * If a deployment already exists for this targetId, it is stopped first
+   * (transient Analyzing/Installing entries are simply replaced).
+   *
+   * When `options.runPlan` is provided, the service spawns exactly that
+   * command in that cwd (shell: true, scrubbed env + runPlan.env overrides)
+   * and never runs dev-script detection. Without a runPlan the dev script is
+   * detected from package.json as before. start() never installs
+   * dependencies — installation is the dev-server-agent graph's job.
    *
    * @param targetId - Unique identifier for the deployment target (featureId or repositoryId)
    * @param targetPath - Absolute filesystem path to the directory to run the dev server in
    * @param targetType - Type of target ('feature' or 'repository')
+   * @param options - Optional overrides (e.g. an explicit run plan)
    * @throws Error if no dev script is found in package.json or the process fails to spawn
    */
-  start(targetId: string, targetPath: string, targetType?: string): void;
+  start(targetId: string, targetPath: string, targetType?: string, options?: StartOptions): void;
+
+  /**
+   * Surface an externally-driven pre-spawn state (Analyzing / Installing)
+   * for a target so getStatus()/listAll() (and thus polling/SSE consumers)
+   * can show progress before any process exists.
+   *
+   * Transient entries are in-memory ONLY and are NEVER persisted to the
+   * dev_servers table — same rationale as Booting: a child shep instance
+   * sharing the global DB must not see (and kill) them during recovery.
+   *
+   * Clearing rules:
+   * - A subsequent start() for the same targetId replaces the transient entry.
+   * - stop() on a transient entry just removes it (there is no process to kill).
+   * - A subsequent setTransientState() call replaces the previous transient state.
+   *
+   * @param targetId - Unique identifier for the deployment target
+   * @param targetPath - Absolute filesystem path of the target
+   * @param targetType - Type of target ('feature' or 'repository')
+   * @param state - The pre-spawn lifecycle state to surface
+   */
+  setTransientState(
+    targetId: string,
+    targetPath: string,
+    targetType: string,
+    state: DeploymentState.Analyzing | DeploymentState.Installing
+  ): void;
 
   /**
    * Stop a running deployment gracefully.
