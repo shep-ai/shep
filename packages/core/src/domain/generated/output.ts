@@ -5221,6 +5221,8 @@ export type DeploySkill = {
   createdAt: any;
 };
 export enum DeploymentState {
+  Analyzing = 'Analyzing',
+  Installing = 'Installing',
   Booting = 'Booting',
   Ready = 'Ready',
   Stopped = 'Stopped',
@@ -5254,6 +5256,68 @@ export type Deployment = {
    * Timestamp when the deployment was stopped (only present when state is Stopped)
    */
   stoppedAt?: any;
+};
+export enum RunPlanSource {
+  Deterministic = 'Deterministic',
+  Agent = 'Agent',
+}
+
+/**
+ * Persisted plan describing how to run a repository's dev server, keyed by repository path
+ */
+export type DevServerRunPlan = {
+  /**
+   * Absolute path of the repository/worktree the plan applies to (primary key)
+   */
+  repoPath: string;
+  /**
+   * How the plan was produced (Deterministic detection or Agent analysis)
+   */
+  source: RunPlanSource;
+  /**
+   * Exact command to spawn the dev server
+   */
+  command: string;
+  /**
+   * Working directory for the spawn (may be a subdirectory in monorepos)
+   */
+  cwd: string;
+  /**
+   * Package manager for installs (npm/pnpm/yarn/bun); absent for non-package stacks
+   */
+  packageManager?: string;
+  /**
+   * Port the server is expected to listen on (verify-node TCP fallback)
+   */
+  expectedPort?: number;
+  /**
+   * Detected primary language (informational/logging)
+   */
+  language?: string;
+  /**
+   * Detected framework (informational/logging)
+   */
+  framework?: string;
+  /**
+   * Ordered one-time setup commands to run before first start (may be empty)
+   */
+  setupCommands: string[];
+  /**
+   * Hash of the config-file set that produced this plan (cache invalidation)
+   */
+  configHash: string;
+  /**
+   * Lockfile/manifest hash stamped after the last successful install (staleness)
+   */
+  installStampHash?: string;
+  /**
+   * Timestamp when the plan was created
+   */
+  createdAt: any;
+  /**
+   * Timestamp when the plan was last updated
+   */
+  updatedAt: any;
 };
 export enum AgentRunStatus {
   pending = 'pending',

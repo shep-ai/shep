@@ -7,15 +7,34 @@
 /**
  * Deployment State Transition Flow:
  * ```
- * Booting --> Ready --> Stopped
- *    ^          |          |
- *    |          v          |
- *    +----------+----------+
- *        (restart cycle)
+ * Analyzing --> Installing --> Booting --> Ready --> Stopped
+ *     ^                           ^          |          |
+ *     |                           |          v          |
+ *     +---------------------------+----------+----------+
+ *              (restart cycle)
  * ```
+ *
+ * Analyzing and Installing are optional early phases used by the
+ * agentic dev-server flow (spec 103): Analyzing resolves the run plan
+ * (cache/detection/agent) and Installing streams dependency installation.
+ * Deployments that skip them start directly at Booting.
  */
 @doc("States for deployment instances")
 enum DeploymentState {
+  /**
+   * Run plan is being resolved - cached plan lookup, deterministic
+   * detection, or structured agent analysis of the repository.
+   */
+  @doc("Run plan is being resolved (cache, detection, or agent analysis)")
+  Analyzing,
+
+  /**
+   * Dependencies are being installed - package-manager install and
+   * one-time setup commands run with log-streamed progress.
+   */
+  @doc("Dependencies are being installed (log-streamed)")
+  Installing,
+
   /**
    * Deployment is starting up - containers are being created,
    * services are initializing, and health checks are pending.

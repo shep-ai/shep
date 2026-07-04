@@ -1,0 +1,59 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DevServerRunPlan.yaml
+type: object
+properties:
+  repoPath:
+    type: string
+    description: Absolute path of the repository/worktree the plan applies to (primary key)
+  source:
+    $ref: RunPlanSource.yaml
+    description: How the plan was produced (Deterministic detection or Agent analysis)
+  command:
+    type: string
+    description: Exact command to spawn the dev server
+  cwd:
+    type: string
+    description: Working directory for the spawn (may be a subdirectory in monorepos)
+  packageManager:
+    type: string
+    description: Package manager for installs (npm/pnpm/yarn/bun); absent for non-package stacks
+  expectedPort:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Port the server is expected to listen on (verify-node TCP fallback)
+  language:
+    type: string
+    description: Detected primary language (informational/logging)
+  framework:
+    type: string
+    description: Detected framework (informational/logging)
+  setupCommands:
+    type: array
+    items:
+      type: string
+    description: Ordered one-time setup commands to run before first start (may be empty)
+  configHash:
+    type: string
+    description: Hash of the config-file set that produced this plan (cache invalidation)
+  installStampHash:
+    type: string
+    description: Lockfile/manifest hash stamped after the last successful install (staleness)
+  createdAt:
+    type: string
+    format: date-time
+    description: Timestamp when the plan was created
+  updatedAt:
+    type: string
+    format: date-time
+    description: Timestamp when the plan was last updated
+required:
+  - repoPath
+  - source
+  - command
+  - cwd
+  - setupCommands
+  - configHash
+  - createdAt
+  - updatedAt
+description: Persisted plan describing how to run a repository's dev server, keyed by repository path

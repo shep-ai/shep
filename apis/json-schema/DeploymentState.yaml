@@ -2,6 +2,8 @@ $schema: https://json-schema.org/draft/2020-12/schema
 $id: DeploymentState.yaml
 type: string
 enum:
+  - Analyzing
+  - Installing
   - Booting
   - Ready
   - Stopped

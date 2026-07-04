@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RunPlanSource.yaml
+type: string
+enum:
+  - Deterministic
+  - Agent
+description: Sources for dev-server run plan production

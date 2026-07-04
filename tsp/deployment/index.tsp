@@ -15,6 +15,10 @@
  * ### Entities
  * - **Deployment**: A running deployment instance with state and network config
  * - **DeploySkill**: Configuration blueprint for how to deploy an application
+ * - **DevServerRunPlan**: Cached per-repository plan for how to run a dev server
+ *
+ * ### Enums
+ * - **RunPlanSource**: How a run plan was produced (Deterministic or Agent)
  *
  * ## Usage
  *
@@ -44,3 +48,4 @@
 import "./port-map.tsp";
 import "./deployment.tsp";
 import "./deploy-skill.tsp";
+import "./dev-server-run-plan.tsp";

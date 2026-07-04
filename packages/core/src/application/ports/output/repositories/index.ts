@@ -49,3 +49,4 @@ export type {
 export type { IWorkflowRepository, WorkflowListFilters } from './workflow-repository.interface.js';
 export type { IWorkflowExecutionRepository } from './workflow-execution-repository.interface.js';
 export type { IPluginRepository } from './plugin-repository.interface.js';
+export type { IDevServerRunPlanRepository } from './dev-server-run-plan-repository.interface.js';
