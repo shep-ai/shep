@@ -22,6 +22,13 @@ export interface DeploymentEntry {
   stdoutBuffer: string;
   stderrBuffer: string;
   logs: LogRingBuffer;
+  /**
+   * Set before an INTENTIONAL teardown (stop/stopAll/replacement) so the
+   * child's 'close' handler does not retain the buffer as a post-mortem
+   * trail. Unset (default) = a spontaneous exit retains the logs for
+   * inspection after the process is gone.
+   */
+  suppressLogRetention?: boolean;
 }
 
 /** Placeholder pid for transient (pre-spawn) entries — there is no process. */

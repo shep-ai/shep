@@ -221,13 +221,33 @@ describe('DeploymentService — log accumulation', () => {
       expect(service.getLogs('feat-1')).toBeNull();
     });
 
-    it('should clear logs when process exits spontaneously', () => {
+    // Spec 103 (task-15): a spontaneous exit RETAINS the log buffer as a
+    // post-mortem trail — the dev-server-agent graph reports verify/remediate
+    // progress and the terminal failure reason AFTER the process crashed, and
+    // users must be able to read why a server died. The trail is dismissed
+    // when a new lifecycle begins (start) or on explicit stop/stopAll.
+    it('should retain logs as a post-mortem when the process exits spontaneously', () => {
       service.start('feat-1', '/project');
       mockChild.stdout.emit('data', Buffer.from('some output\n'));
 
       mockChild.emit('close', 1, null);
 
-      expect(service.getLogs('feat-1')).toBeNull();
+      const retained = service.getLogs('feat-1')!;
+      expect(retained.map((l) => l.line)).toEqual(['some output']);
+
+      // Synthetic lines (agent failure reasons) still land in the retained
+      // trail and are visible to late readers.
+      service.appendLog('feat-1', 'dev server crashed: reason');
+      expect(service.getLogs('feat-1')!.map((l) => l.line)).toEqual([
+        'some output',
+        'dev server crashed: reason',
+      ]);
+
+      // A fresh start dismisses the previous run's trail.
+      const nextChild = createMockChild();
+      (deps.spawn as ReturnType<typeof vi.fn>).mockReturnValue(nextChild);
+      service.start('feat-1', '/project');
+      expect(service.getLogs('feat-1')).toEqual([]);
     });
   });
 

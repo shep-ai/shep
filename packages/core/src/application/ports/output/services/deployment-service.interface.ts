@@ -177,8 +177,11 @@ export interface IDeploymentService {
    * (analysis, install, remediation) alongside real process output. The
    * entry is recorded with stream 'stdout' and the current timestamp.
    *
-   * No-op when no deployment entry (transient or live) exists for the
-   * target — synthetic lines never create an entry on their own.
+   * When the target's entry is already gone because its process exited
+   * (e.g. the agent graph reporting a failure after a crash), the line is
+   * appended to the target's retained post-mortem trail instead. No-op for
+   * never-tracked targets — synthetic lines never create a trail on their
+   * own.
    *
    * @param targetId - Unique identifier for the deployment target
    * @param line - The log line content (without trailing newline)
@@ -188,8 +191,13 @@ export interface IDeploymentService {
   /**
    * Get the accumulated log buffer for a deployment.
    *
+   * After a spontaneous process exit or a failed dev-server-agent run the
+   * retained post-mortem trail is returned until a new lifecycle for the
+   * target begins (next start/setTransientState) or the trail is dismissed
+   * (explicit stop of a live entry, stopAll).
+   *
    * @param targetId - Unique identifier for the deployment target
-   * @returns Array of log entries in chronological order, or null if no deployment exists
+   * @returns Array of log entries in chronological order, or null if the target is untracked
    */
   getLogs(targetId: string): LogEntry[] | null;
 

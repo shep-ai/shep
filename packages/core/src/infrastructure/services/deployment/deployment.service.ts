@@ -56,6 +56,16 @@ const DEFAULT_TARGET_TYPE = 'repository';
 
 export class DeploymentService implements IDeploymentService {
   private readonly deployments = new Map<string, DeploymentEntry>();
+  /**
+   * Post-mortem log buffers for targets whose entry is gone (crashed
+   * process or failed dev-server-agent run). Served by getLogs()/appendLog()
+   * so a run's failure trail stays inspectable AND streamable (SSE) after
+   * the process died — without this, the agent graph's verify/remediate
+   * lines and terminal failureReason vanish exactly when they matter.
+   * Cleared when a new lifecycle begins (start/setTransientState), on
+   * explicit stop of a live entry, and on stopAll.
+   */
+  private readonly retainedLogs = new Map<string, LogRingBuffer>();
   private readonly deps: DeploymentServiceDeps;
   private readonly emitter = new EventEmitter();
   private readonly dbStore = new DeploymentDbStore();
@@ -115,6 +125,8 @@ export class DeploymentService implements IDeploymentService {
     log.info(`start() called — targetId="${targetId}", targetPath="${targetPath}"`);
 
     this.removeExisting(targetId);
+    // A fresh spawn starts a fresh visible log trail.
+    this.retainedLogs.delete(targetId);
 
     const child = options?.runPlan
       ? spawnFromRunPlan(this.deps, options.runPlan)
@@ -154,6 +166,7 @@ export class DeploymentService implements IDeploymentService {
     child.on('error', (err) => {
       log.error(`Child process error for "${targetId}" (pid=${entry.pid}): ${err.message}`);
       entry.state = DeploymentState.Stopped;
+      this.retainEntryLogs(entry);
       this.deployments.delete(targetId);
       this.dbStore.delete(targetId);
     });
@@ -181,7 +194,14 @@ export class DeploymentService implements IDeploymentService {
     state: DeploymentState.Analyzing | DeploymentState.Installing
   ): void {
     const existing = this.deployments.get(targetId);
-    const previousLogs = existing && isTransientEntry(existing) ? existing.logs : null;
+    // Continuity: adopt the previous transient buffer, or the retained
+    // post-mortem buffer of a just-crashed attempt (mid-run remediation
+    // loops keep one uninterrupted trail).
+    const previousLogs =
+      existing && isTransientEntry(existing)
+        ? existing.logs
+        : (this.retainedLogs.get(targetId) ?? null);
+    this.retainedLogs.delete(targetId);
     this.removeExisting(targetId);
 
     const entry: DeploymentEntry = {
@@ -222,9 +242,21 @@ export class DeploymentService implements IDeploymentService {
 
   /**
    * Stop a deployment gracefully: SIGTERM → poll → SIGKILL.
-   * Transient (pre-spawn) entries are simply removed — no process to kill.
+   * Transient (pre-spawn) entries are simply removed — no process to kill —
+   * but their log trail is RETAINED as a post-mortem (the dev-server-agent
+   * graph stops failed runs this way; the failure reason must stay
+   * inspectable). Stopping a live entry dismisses any retained trail.
    */
   async stop(targetId: string): Promise<void> {
+    const entry = this.deployments.get(targetId);
+    if (entry) {
+      if (isTransientEntry(entry)) {
+        this.retainedLogs.set(targetId, entry.logs);
+      } else {
+        entry.suppressLogRetention = true;
+        this.retainedLogs.delete(targetId);
+      }
+    }
     await stopDeployment(this.ctx, targetId);
   }
 
@@ -239,20 +271,25 @@ export class DeploymentService implements IDeploymentService {
         this.deployments.delete(targetId);
         continue;
       }
+      entry.suppressLogRetention = true;
       this.killProcess(entry);
     }
+    this.retainedLogs.clear();
     // Also clean DB
     this.dbStore.deleteAll();
   }
 
   /**
    * Append a synthetic log line to the target's buffer (transient or live
-   * entry alike) and emit it on the 'log' event for live SSE streaming.
-   * No-op when the target has no entry.
+   * entry alike — falling back to the retained post-mortem buffer when the
+   * entry is already gone) and emit it on the 'log' event for live SSE
+   * streaming. No-op when the target has neither an entry nor a retained
+   * trail (never-tracked targets).
    */
   appendLog(targetId: string, line: string): void {
     const entry = this.deployments.get(targetId);
-    if (!entry) return;
+    const logs = entry?.logs ?? this.retainedLogs.get(targetId);
+    if (!logs) return;
 
     const logEntry: LogEntry = {
       targetId,
@@ -260,17 +297,19 @@ export class DeploymentService implements IDeploymentService {
       line,
       timestamp: Date.now(),
     };
-    entry.logs.push(logEntry);
+    logs.push(logEntry);
     this.emitter.emit('log', logEntry);
   }
 
   /**
-   * Get the accumulated log buffer for a deployment.
+   * Get the accumulated log buffer for a deployment. After a spontaneous
+   * exit or a failed dev-server-agent run the retained post-mortem trail is
+   * served until a new lifecycle for the target begins.
    */
   getLogs(targetId: string): LogEntry[] | null {
     const entry = this.deployments.get(targetId);
-    if (!entry) return null;
-    return entry.logs.getAll();
+    if (entry) return entry.logs.getAll();
+    return this.retainedLogs.get(targetId)?.getAll() ?? null;
   }
 
   /**
@@ -305,6 +344,8 @@ export class DeploymentService implements IDeploymentService {
     }
 
     log.info(`Stopping existing deployment for "${targetId}" (pid=${existing.pid})`);
+    // Intentional replacement — the new lifecycle owns the log trail.
+    existing.suppressLogRetention = true;
     this.killProcess(existing);
     this.deployments.delete(targetId);
     this.dbStore.delete(targetId);
@@ -323,8 +364,19 @@ export class DeploymentService implements IDeploymentService {
     if (wasBooting) {
       logBootCrashOutput(entry, code, signal);
     }
+    this.retainEntryLogs(entry);
     this.deployments.delete(entry.targetId);
     this.dbStore.delete(entry.targetId);
+  }
+
+  /**
+   * Retain a departing entry's log buffer as the target's post-mortem
+   * trail — unless the teardown was intentional (stop/stopAll/replacement
+   * set suppressLogRetention before killing).
+   */
+  private retainEntryLogs(entry: DeploymentEntry): void {
+    if (entry.suppressLogRetention) return;
+    this.retainedLogs.set(entry.targetId, entry.logs);
   }
 
   private killProcess(entry: DeploymentEntry): void {
