@@ -1,0 +1,256 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: agentic-dev-server
+summary: Convert dev-server startup into a LangGraph agent graph reusing existing agent-agnostic ports, with a deterministic zero-LLM fast path, persisted run-plan cache, and in-process execution (no worker).
+
+# Relationships
+relatedFeatures:
+  - '068-agent-dev-environment'
+technologies:
+  - LangGraph (@langchain/langgraph ^1.1.4)
+  - '@langchain/langgraph-checkpoint-sqlite ^1.0.1'
+  - TypeSpec
+  - SQLite (better-sqlite3)
+  - tsyringe
+relatedLinks:
+  - title: Agent System
+    url: ./docs/architecture/agent-system.md
+  - title: Feature-agent graph (pattern reference)
+    url: ./packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-graph.ts
+  - title: Supervisor graph (small-graph pattern reference)
+    url: ./packages/core/src/infrastructure/services/agents/supervisor/supervisor-graph.ts
+
+# Structured technology decisions
+decisions:
+  - title: Orchestration framework for the agentic flow
+    chosen: LangGraph StateGraph (Annotation.Root state, node factories, conditional edges) — the same stack as feature-agent and supervisor graphs
+    rejected:
+      - Keep one-shot IStructuredAgentCaller orchestration in a plain service (spec-068 approach)
+      - Ad-hoc promise pipeline inside DeploymentService
+    rationale: The flow is genuinely multi-step with conditional routing (fast path vs. agent analysis, remediation loops, bounded retries) — exactly what StateGraph models. Reusing the project's established LangGraph idioms (state annotations with reducers, single fluent wiring chain, node factories taking injected executors) keeps one way of building agents in the codebase. The one-shot structured call remains as the *analysis* step inside a node, not as the orchestrator.
+
+  - title: Where the graph executes
+    chosen: In-process within the CLI/web server process, invoked by a new DevServerAgentService behind an application port
+    rejected:
+      - Dedicated worker process like feature-agent-worker
+      - Next.js server action running the graph directly
+    rationale: The spawned dev-server child process MUST be owned by the same process that holds DeploymentService's in-memory process Map (stop/recovery/log streaming all assume it). A worker would orphan the child or need cross-process PID adoption. The graph is short-lived (seconds to a few minutes) — nothing like the hours-long feature SDLC graph that justifies a worker. Presentation still only calls use cases; the use case delegates to the port.
+
+  - title: Model interaction inside nodes
+    chosen: Existing ports — IStructuredAgentCaller for schema-validated repo analysis; IAgentExecutorProvider/IAgentExecutor for free-form remediation executions
+    rejected:
+      - Direct provider SDK (@anthropic-ai/*) calls inside nodes
+      - New bespoke agent-caller port
+    rationale: Mandatory agent-agnostic rule. Both ports already exist, are DI-registered, and were proven by DevEnvironmentAgentService (analysis) and the feature-agent CI-fix loop (remediation-style prompts). No new port needed for model access.
+
+  - title: Fast path vs. always-agentic
+    chosen: Deterministic fast path as the first graph node — detectDevScript() plus a fresh-deps check short-circuits to start; agent analysis runs only on ambiguity, cache miss, or failure. If no agent executor is available, degrade to the deterministic path rather than fail.
+    rejected:
+      - Always call the agent on every start
+      - Feature-flag the whole agentic path (settings featureFlags toggle)
+      - Two separate services (deterministic vs. agentic) selected upstream
+    rationale: Startup latency is user-facing (preview auto-starts after every agent turn). An LLM call per start would add seconds and token cost for the ~90% case that a plain `pnpm dev` covers. Embedding the fast path as a node keeps ONE flow, one state machine, and one set of logs. Graceful degradation removes the need for a feature flag (13-touchpoint wiring per LESSONS.md) — behaviour without a configured agent is identical to today.
+
+  - title: Run-plan persistence and cache invalidation
+    chosen: New dev_server_run_plans SQLite table (additive migration) keyed by repository path, storing the plan plus a hash of the config files that produced it; invalidate when the hash changes
+    rejected:
+      - In-memory per-process cache only (spec-068 approach)
+      - Re-analyze on every start
+      - Storing the plan on the Application entity
+    rationale: In-memory caching evaporates on restart and can't help the recovery path. Hashing the same CONFIG_FILES set the analysis reads (package.json, lockfiles, Cargo.toml, go.mod, pyproject.toml, ...) gives cheap, correct invalidation. A separate table (not Application columns) is right because plans are keyed by repository path and also serve feature worktrees and bare repositories.
+
+  - title: Dependency staleness detection for install_deps
+    chosen: Content hash of the lockfile (or manifest when no lockfile) stamped after successful install (stored on the run-plan row); node_modules existence remains the cheap first check
+    rejected:
+      - node_modules existence only (status quo)
+      - Always run install
+      - mtime comparison of lockfile vs node_modules
+    rationale: Existence-only misses every dependency update (the concrete gap in this feature's premise). Always-install adds tens of seconds per start. mtimes are unreliable across git operations and worktree churn; content hashes are deterministic and we already persist a run-plan row to stamp.
+
+  - title: DeploymentState lifecycle extension
+    chosen: Add Analyzing and Installing to the existing TypeSpec DeploymentState enum (additive); keep Booting/Ready/Stopped semantics unchanged
+    rejected:
+      - New parallel DevServerPhase enum alongside DeploymentState
+      - Overload Booting for everything (status quo)
+    rationale: The UI already keys off DeploymentState and fakes "Installing dependencies and booting…" copy during Booting. Additive enum values are backward compatible with the dev_servers table (TEXT column), keep one source of truth, and per code-quality rules status strings must be TypeSpec enums. Polling loop extends its active set to {Analyzing, Installing, Booting, Ready}.
+
+  - title: Checkpointing
+    chosen: Optional SqliteSaver checkpointer (createCheckpointer helper), thread_id `dev-server:<targetId>`, following the supervisor-graph pattern; no resume-from-error replay — a failed run starts fresh
+    rejected:
+      - Mandatory checkpoint DB per run with resume semantics (feature-agent-worker pattern)
+      - No checkpointer at all
+    rationale: Runs are short and idempotent-ish (analysis is cached, install is safe to re-run), so resume adds complexity without value; the feature-agent's delete-checkpoint-on-error lesson shows stale checkpoints are a liability. Accepting the compile({ checkpointer }) parameter keeps the graph testable and consistent with project patterns while defaulting to fresh runs.
+
+  - title: Fate of the spec-068 prototype
+    chosen: Delete AgentDeploymentService and fold DevEnvironmentAgentService's analysis prompt/schema/CONFIG_FILES into the new dev-server-agent analyze node; keep IDevEnvironmentAgent port only if the CLI doctor path needs it, otherwise remove
+    rejected:
+      - Leave the dormant services in place alongside the new path
+      - Wire the old services up as-is
+    rationale: Two agentic deployment paths violate the no-duplication rule, and the old one is unreachable dead code whose core limitation (no command override) this feature fixes properly. The valuable parts — the analysis JSON schema, config-file inventory, and prompt — migrate into the graph node with their tests.
+
+  - title: Remediation loop bounds and safety
+    chosen: Bounded conditional edge (max 2 remediation attempts) feeding captured stdout/stderr to an agent execution with cwd pinned to the target repo; infra-level installs restricted to user-space, non-interactive commands (per-LESSONS non-interactive flags); escalate with an actionable error otherwise
+    rejected:
+      - Unbounded retry-until-green loop
+      - Automatic system-level installs (sudo/brew) without bounds
+    rationale: Mirrors the proven routeValidation bounded-retry pattern from the feature-agent graph. Unbounded loops burn tokens and can wedge the UI in a perpetual Booting state. System-level mutation from a background flow is a footgun; user-space bootstrap (corepack enable pnpm, npm i -g inside the user prefix, pipx-style) covers the realistic gap, and anything beyond that surfaces as a clear error with the suggested command.
+
+# Open questions (should be resolved by end of research)
+openQuestions: []
+
+# Markdown content (the full research document)
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-07-04
+
+  ## Context: what exists today
+
+  Two parallel implementations exist:
+
+  1. **Live path** — `DeploymentService.start()` + `detectDevScript()`:
+     deterministic, Node-only (`dev`/`start`/`serve` scripts, lockfile-based
+     package-manager pick, bun first), synchronous invisible
+     `execFileSync(pm, ['install'])` when `node_modules` is missing, spawn with
+     `buildDevServerEnv()` scrubbing, port parsed from stdout via regex
+     (`parse-port.ts`), state machine Booting → Ready → Stopped persisted in
+     the `dev_servers` table, `recoverAll()` reconciliation at boot.
+  2. **Dormant agentic prototype (spec 068)** — `AgentDeploymentService` +
+     `DevEnvironmentAgentService` (`IStructuredAgentCaller` one-shot analysis,
+     language-agnostic CONFIG_FILES inventory, JSON schema
+     `{deployable, reason, command, cwd, expectedPort, language, framework,
+     setupCommands}`), DI-registered but never called, and unable to apply its
+     command because `DeploymentService.start()` has no override parameter
+     (flagged in-code as follow-up).
+
+  ## Technology Decisions
+
+  ### 1. Orchestration: LangGraph StateGraph
+
+  **Options considered:** LangGraph graph (project way) · keep one-shot
+  structured call in a plain service · promise pipeline in DeploymentService.
+
+  **Decision:** LangGraph `StateGraph`, mirroring the supervisor graph's
+  small-graph idiom and the feature-agent's node-factory + conditional-edge
+  patterns.
+
+  **Rationale:** The flow has real branching (cache hit vs. miss, deterministic
+  vs. agent analysis, remediation loops with bounded retries). StateGraph
+  models this declaratively, gives per-node observability, and keeps a single
+  way of building agents in the repo. Graph shape:
+
+  ```
+  START → analyze → ensure_infra → install_deps → start_server → verify
+                        ↑                                          |
+                        └────────── remediate (≤2 attempts) ←──────┘
+                                            (failure)
+  verify --success--> END
+  remediate --exhausted--> fail (surface actionable error) → END
+  ```
+
+  ### 2. Execution locus: in-process service, not a worker
+
+  The dev-server child process must be owned by the process holding
+  `DeploymentService`'s in-memory `Map<targetId, DeploymentEntry>` — stop,
+  recovery (`recoverAll`), and log streaming all assume same-process ownership.
+  A `DevServerAgentService` (infrastructure) implements a new
+  `IDevServerAgentService` application port; the existing
+  `Start{Application,Feature,Repository}DeploymentUseCase` delegate to it,
+  keeping their public API stable. Single-flight per targetId prevents
+  concurrent graph runs against one target (the auto-deploy double-fire lesson).
+
+  ### 3. Model access: existing agent-agnostic ports only
+
+  - **Analysis node:** `IStructuredAgentCaller.call<T>(prompt, ANALYSIS_SCHEMA,
+    { cwd, maxTurns: 3, silent: true })` — the schema and CONFIG_FILES
+    inventory migrate from `DevEnvironmentAgentService`.
+  - **Remediation node:** `IAgentExecutorProvider.getExecutor()` →
+    `executor.execute(prompt, { cwd, timeout })`, prompt carrying the failed
+    command, captured stdout/stderr tail, and environment probe results —
+    the same shape as the feature-agent CI-fix loop.
+  - No node imports a provider SDK; no hardcoded agent type anywhere.
+
+  ### 4. Deterministic fast path & graceful degradation
+
+  `analyze` first consults (a) the persisted run-plan cache (config-hash
+  valid), then (b) `detectDevScript()`. Only on miss/ambiguity/prior-failure
+  does it invoke the structured agent call. If
+  `IAgentExecutorProvider.getExecutor()` is unavailable (no configured agent,
+  no credentials), the graph runs deterministic-only — identical behaviour to
+  today, no feature flag needed.
+
+  ### 5. Run-plan persistence
+
+  New `dev_server_run_plans` table (additive migration, following
+  `040-create-dev-servers-table` conventions):
+  `repo_path TEXT PK, plan_source TEXT (RunPlanSource enum), command TEXT,
+  cwd TEXT, package_manager TEXT NULL, expected_port INTEGER NULL,
+  language TEXT NULL, framework TEXT NULL, setup_commands TEXT (JSON),
+  config_hash TEXT, install_stamp_hash TEXT NULL, created_at, updated_at`.
+  TypeSpec-first `DevServerRunPlan` model + `RunPlanSource { Deterministic,
+  Agent }` enum; mapper + SQLite repository behind `IDevServerRunPlanRepository`
+  with full-column INSERT/UPDATE and non-default round-trip tests
+  (repository-SQL-drift lesson).
+
+  ### 6. Missing-dependency handling, end to end
+
+  - **Infra level (`ensure_infra`):** probe required binaries from the run plan
+    (runtime + package manager) via `command -v` / `where` with short
+    timeouts. Missing → remediation attempt (user-space, non-interactive:
+    e.g. `corepack enable pnpm`) via the agent executor; still missing →
+    actionable error ("pnpm is required — install with `npm i -g pnpm`").
+  - **Package level (`install_deps`):** needed when node_modules absent OR
+    lockfile hash ≠ stamped hash. Runs `spawn` (async, NOT execFileSync),
+    streams output lines into the deployment logger (SSE-visible), applies
+    `buildDevServerEnv()` scrubbing, uses non-interactive flags, stamps the
+    hash on success. UI shows the new `Installing` state truthfully instead of
+    faked copy.
+
+  ### 7. DeploymentService changes
+
+  `start()` gains an optional `runPlan` override `{ command, cwd, env? }` —
+  when present, spawn uses it verbatim instead of `detectDevScript()`; the
+  embedded blocking install is deleted (the graph owns installation).
+  `Analyzing`/`Installing` states are set by the graph via the service so the
+  existing polling/SSE surfaces them. `recoverAll()` and stop/kill semantics
+  (unix process-group SIGTERM→SIGKILL, Windows taskkill) are untouched.
+
+  ## Library Analysis
+
+  No new libraries. `@langchain/langgraph ^1.1.4`, `@langchain/core ^1.1.22`,
+  and `@langchain/langgraph-checkpoint-sqlite ^1.0.1` are already direct
+  dependencies used by the feature-agent and supervisor graphs.
+
+  ## Security Considerations
+
+  - Agent-remediation executions run with cwd pinned inside the target repo,
+    bounded attempts, and non-interactive commands only; no sudo/system
+    package-manager mutation is ever run automatically.
+  - All spawned processes (install + dev server + remediation) get
+    `buildDevServerEnv()` scrubbing so user projects never inherit
+    `ANTHROPIC_API_KEY`/`CLAUDE_CODE_OAUTH_TOKEN`/`NEXT_ASSET_PREFIX`/`PORT`.
+  - Run-plan commands originate from repo analysis (untrusted repo content →
+    executed command). This is the same trust boundary as today's
+    package.json `dev` script execution — starting a dev server has always
+    meant executing repo-defined code — but agent-derived commands are
+    additionally persisted, logged verbatim to the SSE log stream, and capped
+    in length, so the executed command is always inspectable.
+
+  ## Performance Implications
+
+  - Fast path (cache hit or unambiguous detection + fresh deps): zero LLM
+    calls, latency identical to today.
+  - First-ever start of an ambiguous/non-Node repo: one structured agent call
+    (~seconds), then cached until config files change.
+  - Event loop is no longer blocked during installs (execFileSync →
+    streamed async spawn), fixing UI freezes during first-run installs.
+
+  ## Open Questions
+
+  All questions resolved.
+
+  ---
+
+  _Updated by `/shep-kit:new-feature-fast` — proceed with plan_

@@ -1,0 +1,258 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: agentic-dev-server
+summary: Bottom-up build — TypeSpec + persistence first, DeploymentService override groundwork second, the LangGraph graph third, service/use-case/DI wiring fourth, then web surface, end-to-end hardening, and removal of the dormant spec-068 path.
+
+# Relationships
+relatedFeatures:
+  - '068-agent-dev-environment'
+technologies:
+  - TypeScript
+  - LangGraph
+  - SQLite (better-sqlite3)
+  - TypeSpec
+  - tsyringe
+relatedLinks:
+  - title: Agent System
+    url: ./docs/architecture/agent-system.md
+
+# Structured implementation phases
+phases:
+  - id: phase-1
+    name: 'Domain & Persistence Foundation'
+    parallel: false
+    taskIds:
+      - task-1
+      - task-2
+      - task-3
+  - id: phase-2
+    name: 'Deployment Service Groundwork'
+    parallel: false
+    taskIds:
+      - task-4
+      - task-5
+  - id: phase-3
+    name: 'Dev-Server Agent Graph'
+    parallel: false
+    taskIds:
+      - task-6
+      - task-7
+      - task-8
+      - task-9
+      - task-10
+  - id: phase-4
+    name: 'Service, Use-Case & DI Wiring'
+    parallel: false
+    taskIds:
+      - task-11
+      - task-12
+      - task-13
+  - id: phase-5
+    name: 'Presentation, Hardening & Docs'
+    parallel: false
+    taskIds:
+      - task-14
+      - task-15
+      - task-16
+
+# File change tracking
+filesToCreate:
+  - tsp/deployment/dev-server-run-plan.tsp
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/XXX-create-dev-server-run-plans-table.ts
+  - packages/core/src/infrastructure/persistence/sqlite/mappers/dev-server-run-plan.mapper.ts
+  - packages/core/src/infrastructure/repositories/sqlite-dev-server-run-plan.repository.ts
+  - packages/core/src/application/ports/output/repositories/dev-server-run-plan-repository.interface.ts
+  - packages/core/src/application/ports/output/services/dev-server-agent-service.interface.ts
+  - packages/core/src/infrastructure/services/deployment/dependency-installer.ts
+  - packages/core/src/infrastructure/services/deployment/config-hash.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/state.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/dev-server-agent-graph.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/dev-server-agent.service.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/ensure-infra.node.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/install-deps.node.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/start-server.node.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/verify.node.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/remediate.node.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/prompts/analysis.prompt.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/prompts/remediation.prompt.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/schemas/run-plan-analysis.schema.ts
+  - tests/unit/infrastructure/services/agents/dev-server-agent/ (graph, nodes, service suites)
+  - tests/unit/infrastructure/services/deployment/dependency-installer.test.ts
+  - tests/unit/infrastructure/services/deployment/config-hash.test.ts
+  - tests/integration/infrastructure/repositories/sqlite-dev-server-run-plan.repository.test.ts
+  - tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent.int.test.ts
+
+filesToModify:
+  - tsp/common/enums/deployment.tsp
+  - packages/core/src/infrastructure/services/deployment/deployment.service.ts
+  - packages/core/src/application/ports/output/services/deployment-service.interface.ts
+  - packages/core/src/application/use-cases/deployments/start-application-deployment.use-case.ts
+  - packages/core/src/application/use-cases/deployments/start-feature-deployment.use-case.ts
+  - packages/core/src/application/use-cases/deployments/start-repository-deployment.use-case.ts
+  - packages/core/src/infrastructure/di/modules/register-deployment.ts
+  - tests/integration/infrastructure/di/container-bootstrap.test.ts
+  - src/presentation/web/components/features/application-page/web-preview-tab.tsx
+  - src/presentation/web/components/features/application-page/status-pill.tsx
+  - src/presentation/web/hooks/deployment-status-provider.tsx
+  - translations/en/web.json (plus ar, de, es, fr, he, pt, ru, uk)
+  - docs/architecture/agent-system.md
+
+# Open questions (should all be resolved before implementation)
+openQuestions: []
+
+# Markdown content — architecture, strategy, and risks only.
+# Task-level detail lives in tasks.yaml (no duplication).
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-07-04
+
+  ## Architecture Overview
+
+  ```
+  Presentation (web actions / CLI)              — unchanged API
+        │  resolve<StartXDeploymentUseCase>('...')
+        ▼
+  Start{Application,Feature,Repository}DeploymentUseCase   (application)
+        │  validates target, resolves path (as today)
+        ▼
+  IDevServerAgentService (new application output port)
+        ▼
+  DevServerAgentService (infrastructure/agents/dev-server-agent)
+        │  single-flight per targetId · builds graph deps · thread_id dev-server:<targetId>
+        ▼
+  ┌──────────────────── LangGraph StateGraph ────────────────────┐
+  │ START → analyze → ensure_infra → install_deps → start_server │
+  │            │            ▲                            │       │
+  │   (cache / detect /     └──── remediate (≤2) ◄───────┤       │
+  │    structured agent)                                 ▼       │
+  │                                                   verify ──► END
+  └──────────────────────────────────────────────────────────────┘
+        │ analyze:      IDevServerRunPlanRepository (cache) ·
+        │               detectDevScript() · IStructuredAgentCaller
+        │ ensure_infra: binary probes · IAgentExecutor (user-space fix)
+        │ install_deps: DependencyInstaller (async spawn, log-streamed,
+        │               lockfile-hash staleness, env-scrubbed)
+        │ start_server: DeploymentService.start(target, path, type,
+        │               { runPlan }) — explicit command override
+        │ verify:       port/URL from parse-port + expectedPort TCP probe
+        │ remediate:    IAgentExecutor with failure logs (CI-fix-loop shape)
+        ▼
+  DeploymentService (existing) — owns child processes, states, dev_servers
+  table, SSE logs, recoverAll(); gains Analyzing/Installing states + runPlan
+  override; loses its embedded blocking install.
+  ```
+
+  ## Implementation Strategy
+
+  **MANDATORY TDD:** every phase with executable code follows RED → GREEN →
+  REFACTOR; tests are written first in each task's `tdd.red` list.
+
+  Bottom-up, dependency-ordered:
+
+  1. **Phase 1 — Domain & persistence.** TypeSpec first (`DevServerRunPlan`,
+     `RunPlanSource`, additive `DeploymentState` values) because everything
+     downstream imports the generated types; then the additive migration and
+     the run-plan repository behind its port. New enum values ripple into the
+     UI and fixtures — doing this first surfaces every touchpoint via
+     `pnpm typecheck` immediately (per LESSONS: required-field/enum ripple).
+  2. **Phase 2 — Deployment service groundwork.** The `runPlan` override on
+     `DeploymentService.start()` and the standalone async `DependencyInstaller`
+     are pure prerequisites for the graph and independently testable. Removing
+     the embedded blocking install happens here, guarded by tests that pin
+     stop/recovery semantics unchanged.
+  3. **Phase 3 — The graph.** State annotation + skeleton first (structure
+     tests pin nodes/edges — supervisor-graph pattern, single fluent chain per
+     LESSONS), then nodes in execution order. Each node is a factory taking
+     injected deps (executor, structured caller, repo, installer, deployment
+     service) — no DI decorators inside graph code, mirroring feature-agent.
+  4. **Phase 4 — Wiring.** `DevServerAgentService` implements the port,
+     the three start use cases delegate to it (public API unchanged), DI
+     registrations land as class + string tokens with bootstrap-test coverage
+     (per LESSONS: every new token in CRITICAL_INFRA_TOKENS), and the dormant
+     spec-068 services are deleted with their salvageable assets migrated.
+  5. **Phase 5 — Surface & hardening.** Web status rendering for the two new
+     states (all 9 locales), integration tests against fixture repos with a
+     mocked executor, docs.
+
+  Ordering rationale: the graph (phase 3) cannot be built before the override
+  and installer exist (phase 2), which cannot compile before the generated
+  types exist (phase 1). Wiring before UI keeps the web diff trivially small
+  and reviewable. The dormant-path removal sits in phase 4 because the analyze
+  node (phase 3) first harvests its schema/prompt/config-file assets.
+
+  ## Files to Create/Modify
+
+  ### New Files
+
+  | File | Purpose |
+  | ---- | ------- |
+  | `tsp/deployment/dev-server-run-plan.tsp` | `DevServerRunPlan` model + `RunPlanSource` enum (TypeSpec-first) |
+  | `.../migrations/XXX-create-dev-server-run-plans-table.ts` | Additive table for persisted run plans + install stamp |
+  | `.../mappers/dev-server-run-plan.mapper.ts` + `.../sqlite-dev-server-run-plan.repository.ts` | Persistence behind `IDevServerRunPlanRepository` |
+  | `.../deployment/dependency-installer.ts` | Async, log-streamed, env-scrubbed package install with hash stamping |
+  | `.../deployment/config-hash.ts` | Deterministic hash over the analysis CONFIG_FILES set |
+  | `.../agents/dev-server-agent/state.ts` | `Annotation.Root` state channels + reducers |
+  | `.../agents/dev-server-agent/dev-server-agent-graph.ts` | Graph wiring (single fluent chain, bounded remediation edges) |
+  | `.../agents/dev-server-agent/dev-server-agent.service.ts` | Port impl: single-flight, graph invocation, log bridging, graceful degradation |
+  | `.../dev-server-agent/nodes/*.node.ts` (6) | analyze / ensure-infra / install-deps / start-server / verify / remediate |
+  | `.../dev-server-agent/nodes/prompts/*.prompt.ts` (2) | Analysis + remediation prompt builders (pure functions) |
+  | `.../dev-server-agent/schemas/run-plan-analysis.schema.ts` | JSON schema for the structured analysis call (migrated from spec-068) |
+  | `application/ports/output/...` (2 interfaces) | `IDevServerRunPlanRepository`, `IDevServerAgentService` |
+
+  ### Modified Files
+
+  | File | Changes |
+  | ---- | ------- |
+  | `tsp/common/enums/deployment.tsp` | Add `Analyzing`, `Installing` to `DeploymentState` (additive) |
+  | `deployment.service.ts` | `start()` runPlan override; delete embedded `execFileSync` install; allow externally-set Analyzing/Installing states |
+  | `deployment-service.interface.ts` | Extend `start()` signature + `RunPlanOverride` type |
+  | `start-*-deployment.use-case.ts` (3) | Delegate to `IDevServerAgentService`; validation/errors unchanged |
+  | `register-deployment.ts` | Register repo + services (class AND string tokens); drop spec-068 registrations |
+  | `container-bootstrap.test.ts` | New tokens in CRITICAL_INFRA_TOKENS / register module |
+  | `status-pill.tsx`, `web-preview-tab.tsx`, `deployment-status-provider.tsx` | Render/poll `Analyzing` + `Installing` |
+  | `translations/*/web.json` (9) | Keys for the two new states |
+  | `docs/architecture/agent-system.md` | Document the dev-server agent graph |
+
+  ### Deleted Files
+
+  | File | Reason |
+  | ---- | ------ |
+  | `.../deployment/agent-deployment.service.ts` (+ interface, tests) | Superseded by dev-server-agent graph |
+  | `.../deployment/dev-environment-agent.service.ts` (+ interface, tests) | Analysis assets migrate into the analyze node |
+
+  ## Testing Strategy (TDD: Tests FIRST)
+
+  ### Unit Tests (RED → GREEN → REFACTOR)
+
+  - **Graph structure:** nodes/edges/conditional routing pinned (supervisor-graph test style); remediation bound (≤2) exhausts to failure.
+  - **Nodes:** each node factory tested with mocked deps — cache hit skips agent; deterministic detection skips agent; agent path parses/validates schema output; ensure-infra probe hit/miss/remediate; install staleness matrix (no node_modules / stale hash / fresh); start passes runPlan verbatim; verify success + timeout; remediate builds prompt from captured logs.
+  - **DependencyInstaller:** async spawn, line-streamed logs, env scrubbed (no ANTHROPIC_*/PORT/NEXT_ASSET_PREFIX), non-interactive flags, hash stamped on success only.
+  - **DeploymentService:** override spawn path; no install inside start(); Booting/Ready/Stopped semantics + stop/kill + recoverAll pinned unchanged (regression suite).
+  - **Mapper/repository:** full-column round-trip with non-default values for EVERY field (repository-SQL-drift lesson).
+  - **Web:** status pill + preview tab render the two new states; polling set includes them.
+
+  ### Integration Tests
+
+  - Run-plan repository against real SQLite (migration applied, round-trip, config-hash invalidation).
+  - End-to-end graph run against a fixture Node repo with a mocked executor/structured-caller: deterministic fast path (zero agent calls asserted), agent path (mock analysis → override spawn), install path (node_modules absent → installer invoked → Ready), remediation path (first start fails → remediate → second start succeeds), degradation path (no executor available → deterministic only).
+  - DI bootstrap resolves all new tokens.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Regressing stop/recovery/kill semantics while changing `DeploymentService.start()` | Pin existing behaviour with a regression test suite BEFORE the change (phase-2 RED step); override is additive-optional |
+  | Fast path becomes slower (extra graph hops / DB reads per start) | Fast path = one cache read + existing detection; assert zero executor calls in the fast-path integration test; no checkpoint DB writes by default |
+  | Agent-derived command is wrong or unsafe | Command logged verbatim to SSE before spawn; persisted for inspection; same trust boundary as executing package.json scripts; remediation bounded to 2 attempts, user-space + non-interactive only |
+  | New enum values break exhaustive switches / fixtures across the codebase | Phase-1 typecheck sweep; grep DeploymentState consumers (status-pill, provider, derive-app-status, dev_servers recovery) and update in the same task |
+  | Stale run-plan cache after repo changes | Cache keyed on config-file content hash; verify/remediate failures invalidate the cached plan before re-analysis |
+  | tsyringe boot bombs from new injectables | Constructor params are class types or @inject(token) only; tokens registered class+string; bootstrap test extended (LESSONS) |
+  | Windows behaviour drift (kill, `where` vs `command -v`) | Platform-branched probes; reuse existing cross-platform kill helpers; Windows CI watched on the PR |
+
+  ---
+
+  _Updated by `/shep-kit:new-feature-fast` — see tasks.yaml for detailed task breakdown_

@@ -1,0 +1,156 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: agentic-dev-server
+number: 103
+branch: claude/agentic-dev-server-y00ju1
+oneLiner: Replace the deterministic "start dev server" flow with a LangGraph-driven agent that analyzes the repo, provisions missing dependencies (from runtime/package-manager tools down to package install), and starts + verifies the dev server.
+summary: >
+  Today "start dev server" is a hardcoded, Node-only detection pipeline:
+  detectDevScript() scans package.json for dev/start/serve, picks a package
+  manager from lockfiles, runs a blocking invisible `install` when node_modules
+  is missing, and spawns the script. When anything deviates — a non-Node stack,
+  a missing runtime or package manager, stale dependencies, a failing boot —
+  the flow dead-ends. A dormant agentic prototype (AgentDeploymentService /
+  DevEnvironmentAgentService) exists but is unreachable and cannot even apply
+  its own analysis because DeploymentService has no command override.
+  This feature converts dev-server startup into a proper LangGraph agent graph
+  (the project way: Annotation.Root state, node factories, IAgentExecutorProvider,
+  SqliteSaver checkpointer) with nodes for analyze → ensure-infra →
+  install-deps → start → verify, a bounded agent-driven remediation loop, a
+  persisted per-repo run plan cache, and a deterministic fast path so zero-LLM
+  startups stay instant when detection is unambiguous.
+phase: Requirements
+sizeEstimate: L
+
+# Relationships
+relatedFeatures:
+  - '068-agent-dev-environment'
+
+technologies:
+  - TypeScript
+  - LangGraph
+  - SQLite (better-sqlite3)
+  - TypeSpec
+  - tsyringe
+
+relatedLinks:
+  - title: Clean Architecture
+    url: ./docs/architecture/clean-architecture.md
+  - title: Agent System
+    url: ./docs/architecture/agent-system.md
+  - title: Repository Pattern + DI
+    url: ./docs/architecture/repository-pattern.md
+
+# Open questions (must be resolved before implementation)
+openQuestions: []
+
+# Markdown content (the actual spec)
+content: |
+  ## Problem Statement
+
+  Starting an application's dev server is a core loop of the product (web
+  preview after every agent iteration), yet the implementation is a rigid,
+  Node-only script detector:
+
+  - `detectDevScript()` only understands `package.json` scripts named
+    `dev`/`start`/`serve` and JS lockfiles. Any other stack (Python, Go, Rust,
+    plain static sites) is unsupported.
+  - Dependency installation is a synchronous `execFileSync(pm, ['install'],
+    { stdio: 'ignore' })` inside `DeploymentService.start()` — it blocks the
+    event loop, streams nothing to the user, and its "needs install" check is
+    just `node_modules` existence (never staleness vs. the lockfile).
+  - Missing *infrastructure* dependencies (bun/pnpm/yarn not installed, wrong
+    Node runtime, missing global tools) are not detected at all — the spawn
+    fails and the user gets a dead "Booting" state.
+  - Boot failures are terminal: stderr is logged, but nothing attempts a fix.
+  - A previous attempt at an agentic path (`AgentDeploymentService` +
+    `DevEnvironmentAgentService`, spec 068) is DI-registered but dead code: no
+    use case calls it, and `DeploymentService.start()` cannot accept the
+    agent-derived command anyway (explicitly flagged as follow-up in
+    `agent-deployment.service.ts`).
+
+  The fix is to make dev-server startup **agentic the project way**: a small
+  LangGraph graph (like the supervisor graph) whose nodes analyze the
+  repository, verify and remediate the environment from infra-level tools down
+  to package install, start the server with an explicit, agent-derived command,
+  and verify readiness — with a bounded remediation loop when startup fails.
+
+  ## Success Criteria
+
+  - [ ] A `dev-server-agent` LangGraph graph exists under
+        `packages/core/src/infrastructure/services/agents/dev-server-agent/`
+        following the established patterns: `Annotation.Root` state with
+        reducers, single fluent `.addNode/.addEdge/.addConditionalEdges`
+        chain, node factories, `START`/`END`, optional SqliteSaver
+        checkpointer. Graph-structure unit tests pin nodes and edges.
+  - [ ] The graph handles missing dependencies end-to-end: an `ensure_infra`
+        node detects absent runtimes/package managers (e.g. bun/pnpm not on
+        PATH) and either remediates via an agent execution or fails with an
+        actionable, user-visible reason; an `install_deps` node performs
+        asynchronous, log-streamed package installation with lockfile-hash
+        staleness detection (replacing the blocking invisible install).
+  - [ ] All model interaction flows through the existing agent-agnostic ports
+        (`IAgentExecutorProvider` / `IStructuredAgentCaller`). No node imports
+        a provider SDK; no agent type is hardcoded.
+  - [ ] `DeploymentService.start()` accepts an explicit run-plan override
+        (command, cwd, env additions) so the agent's decision is what actually
+        spawns — closing the gap flagged in `agent-deployment.service.ts`.
+        The blocking install inside `start()` is removed.
+  - [ ] Deterministic fast path: when `detectDevScript()` resolves
+        unambiguously and dependencies are fresh, startup makes **zero** LLM
+        calls and is as fast as today. When no agent is configured/available,
+        the graph degrades gracefully to the deterministic path instead of
+        failing.
+  - [ ] Analysis results persist as a per-repository run plan (SQLite,
+        additive migration, config-file-hash invalidation) so repeated starts
+        skip re-analysis; `DeploymentState` gains `Analyzing` and `Installing`
+        values (TypeSpec-first) surfaced in the web preview status pill with
+        translations in all 9 locales.
+  - [ ] Startup failures feed captured stdout/stderr into a bounded
+        agent-driven remediation loop (max 2 attempts) before surfacing a
+        final, human-readable error; every phase streams progress lines into
+        the existing deployment-logs SSE channel.
+  - [ ] The dormant `AgentDeploymentService` path is superseded and removed
+        (or refactored into the new graph service) so there is exactly one
+        agentic deployment path. Existing StartApplication/Feature/Repository
+        deployment use cases keep their public API — presentation layers are
+        untouched except for new status rendering.
+  - [ ] Full TDD (RED → GREEN → REFACTOR) across domain, application,
+        infrastructure, and graph nodes; all existing tests stay green.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | tsp/ (domain) | Medium | New `DevServerRunPlan` model + `RunPlanSource` enum; additive `DeploymentState` values (`Analyzing`, `Installing`) |
+  | domain/ | Low | Generated types only (never hand-edited) |
+  | application/ | Medium | New ports (`IDevServerRunPlanRepository`, `IDevServerAgentService`); deployment use cases route through the agentic service |
+  | infrastructure (agents) | High | New `dev-server-agent/` graph: state, 5 nodes, prompts, structured-output schema, remediation loop |
+  | infrastructure (deployment) | High | `DeploymentService.start()` override support, async streamed install, new states; retire dormant `AgentDeploymentService` |
+  | infrastructure (persistence) | Medium | Additive migration for `dev_server_run_plans`; mapper + SQLite repository |
+  | infrastructure (DI) | Medium | Register new services/repos (class + string tokens) in `register-deployment.ts`; bootstrap-test token lists |
+  | presentation (web) | Low-Medium | Status pill / preview tab render `Analyzing`/`Installing`; polling includes new states; 9-locale translation keys; story updates |
+
+  ## Dependencies
+
+  - Builds directly on the existing LangGraph pipeline conventions
+    (`feature-agent`, `supervisor-graph`), the SQLite repository pattern, and
+    TypeSpec codegen. No new external libraries — `@langchain/langgraph` and
+    `@langchain/langgraph-checkpoint-sqlite` are already in the stack.
+  - Supersedes the dormant spec-068 prototype (`AgentDeploymentService`,
+    `DevEnvironmentAgentService`).
+
+  ## Size Estimate
+
+  **L** — One new graph with five nodes and a remediation loop, one new
+  entity + migration + repository, a behavioural change to the central
+  `DeploymentService` (override + async install + two new states), DI wiring,
+  and a small web surface update. The main risk concentrations are (a)
+  changing `DeploymentService.start()` without regressing recovery/stop
+  semantics and (b) keeping the deterministic path byte-for-byte as fast as
+  today.
+
+  ---
+
+  _Generated by `/shep-kit:new-feature-fast` — research and plan follow in this pass_

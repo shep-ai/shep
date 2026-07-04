@@ -1,0 +1,42 @@
+feature:
+  id: '103-agentic-dev-server'
+  name: 'agentic-dev-server'
+  number: 103
+  branch: 'claude/agentic-dev-server-y00ju1'
+  lifecycle: 'implementation'
+  createdAt: '2026-07-04T07:48:18Z'
+
+status:
+  phase: 'ready-to-implement'
+  progress:
+    completed: 0
+    total: 16
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-07-04T07:49:25Z'
+  lastUpdatedBy: 'shep-kit:new-feature-fast'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-07-04T07:48:18Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'research-complete'
+    completedAt: '2026-07-04T07:49:25Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'plan-complete'
+    completedAt: '2026-07-04T07:49:25Z'
+    completedBy: 'shep-kit:new-feature-fast'
+
+errors:
+  current: null
+  history: []
