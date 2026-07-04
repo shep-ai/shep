@@ -8,23 +8,22 @@
  * - The directory must exist on disk
  * - Rejects the currently running Shep instance's own repository
  *
- * Returns the deployment status after the start call (Booting).
+ * Delegates the start to the agentic dev-server flow
+ * (`IDevServerAgentService`, spec 103) and returns the deployment status
+ * once the run is accepted (Analyzing).
  */
 
 import { isAbsolute } from 'node:path';
 import { injectable, inject } from 'tsyringe';
-import type {
-  IDeploymentService,
-  DeploymentStatus,
-} from '../../ports/output/services/deployment-service.interface.js';
+import type { DeploymentStatus } from '../../ports/output/services/deployment-service.interface.js';
+import type { IDevServerAgentService } from '../../ports/output/services/dev-server-agent-service.interface.js';
 import type { IFileSystemService } from '../../ports/output/services/file-system-service.interface.js';
 import type { IShepInstanceService } from '../../ports/output/services/shep-instance-service.interface.js';
-import { DeploymentState } from '../../../domain/generated/output.js';
 
 @injectable()
 export class StartRepositoryDeploymentUseCase {
   constructor(
-    @inject('IDeploymentService') private readonly deploymentService: IDeploymentService,
+    @inject('IDevServerAgentService') private readonly devServerAgent: IDevServerAgentService,
     @inject('IFileSystemService') private readonly fileSystem: IFileSystemService,
     @inject('IShepInstanceService') private readonly shepInstance: IShepInstanceService
   ) {}
@@ -42,8 +41,12 @@ export class StartRepositoryDeploymentUseCase {
       throw new Error('Cannot start a dev server for the repository Shep is running from');
     }
 
-    this.deploymentService.start(repositoryPath, repositoryPath, 'repository');
+    const result = await this.devServerAgent.startDevServer(
+      repositoryPath,
+      repositoryPath,
+      'repository'
+    );
 
-    return { state: DeploymentState.Booting, url: null };
+    return { state: result.state, url: null };
   }
 }

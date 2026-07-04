@@ -38,6 +38,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDeployAction } from '@/hooks/use-deploy-action';
+import { isDeploymentActive as computeIsDeploymentActive } from '@/hooks/deployment-status-store';
 import { useWebhookAction } from '@/hooks/use-webhook-action';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import type { RepositoryNodeData } from './repository-node-config';
@@ -82,7 +83,7 @@ export function RepositoryNode({
         }
       : null
   );
-  const isDeploymentActive = deployAction.status === 'Booting' || deployAction.status === 'Ready';
+  const isDeploymentActive = computeIsDeploymentActive(deployAction.status);
   const webhookAction = useWebhookAction(data.repositoryPath ?? null);
 
   const webhookTooltip = !webhookAction.tunnelConnected

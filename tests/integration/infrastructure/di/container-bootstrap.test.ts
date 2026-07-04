@@ -182,6 +182,11 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   // registered before any worker boots (LESSONS: transitive worker tokens
   // must be verified here).
   'ISdlcBoardTracker',
+  // Agentic dev-server flow (spec 103): the start-deployment use cases
+  // inject 'IDevServerAgentService', which in turn resolves the run-plan
+  // repository — both must resolve or every dev-server start breaks.
+  'IDevServerRunPlanRepository',
+  'IDevServerAgentService',
 ] as const;
 
 describe('DI container bootstrap (integration)', () => {

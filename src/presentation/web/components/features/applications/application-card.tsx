@@ -39,6 +39,7 @@ import { deleteApplication } from '@/app/actions/delete-application';
 import { deriveAppLiveStatus } from '@/lib/derive-app-status';
 import { useTurnStatus } from '@/hooks/turn-statuses-provider';
 import { useDeployAction } from '@/hooks/use-deploy-action';
+import { isDeploymentStarting } from '@/hooks/deployment-status-store';
 import { CloudDeploymentStatus, DeploymentState } from '@shepai/core/domain/generated/output';
 import type { ApplicationWithStatus } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
@@ -213,7 +214,7 @@ export function ApplicationCard({ application, className }: ApplicationCardProps
   const isBuilding = application.effectiveStatus === 'building';
   const isInterrupted = application.effectiveStatus === 'interrupted';
   const isFailed = application.effectiveStatus === 'failed';
-  const isBooting = deploy.status === DeploymentState.Booting || deploy.deployLoading;
+  const isBooting = isDeploymentStarting(deploy.status) || deploy.deployLoading;
   const isLocalRunning = deploy.status === DeploymentState.Ready && Boolean(effectiveDeploymentUrl);
 
   // Resolve the URL to show in the header iframe. Prefer the local

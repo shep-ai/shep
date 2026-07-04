@@ -5,6 +5,8 @@ import { Loader2, ExternalLink, Terminal } from 'lucide-react';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ServerLogViewer } from '@/components/common/server-log-viewer';
+import { isDeploymentActive } from '@/hooks/deployment-status-store';
+import { getDeploymentStartingLabel } from '@/lib/deployment-state-copy';
 
 export interface DeploymentStatusBadgeProps {
   status: DeploymentState | null;
@@ -17,16 +19,19 @@ const tbBtn =
 
 export function DeploymentStatusBadge({ status, url, targetId }: DeploymentStatusBadgeProps) {
   const [logViewerOpen, setLogViewerOpen] = useState(false);
-  const showLogButton =
-    targetId && (status === DeploymentState.Booting || status === DeploymentState.Ready);
+  const showLogButton = targetId && isDeploymentActive(status);
 
   switch (status) {
+    case DeploymentState.Analyzing:
+    case DeploymentState.Installing:
     case DeploymentState.Booting:
       return (
         <>
           <div className="flex items-center gap-1 pl-1">
             <Loader2 className="size-3 animate-spin text-blue-500" />
-            <span className="text-muted-foreground text-[11px]">Starting...</span>
+            <span className="text-muted-foreground text-[11px]">
+              {getDeploymentStartingLabel(status)}
+            </span>
             {showLogButton ? (
               <TooltipProvider delayDuration={300}>
                 <Tooltip>

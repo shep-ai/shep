@@ -1,4 +1,5 @@
-import type { DependencyContainer } from 'tsyringe';
+import { instanceCachingFactory, type DependencyContainer } from 'tsyringe';
+import type Database from 'better-sqlite3';
 
 import { StartApplicationDeploymentUseCase } from '../../../application/use-cases/deployments/start-application-deployment.use-case.js';
 import { StartFeatureDeploymentUseCase } from '../../../application/use-cases/deployments/start-feature-deployment.use-case.js';
@@ -6,35 +7,53 @@ import { StartRepositoryDeploymentUseCase } from '../../../application/use-cases
 import { StopDeploymentUseCase } from '../../../application/use-cases/deployments/stop-deployment.use-case.js';
 import { GetDeploymentStatusUseCase } from '../../../application/use-cases/deployments/get-deployment-status.use-case.js';
 import { ListDeploymentsUseCase } from '../../../application/use-cases/deployments/list-deployments.use-case.js';
-import type { IDevEnvironmentAgent } from '../../../application/ports/output/services/dev-environment-agent.interface.js';
-import { DevEnvironmentAgentService } from '../../services/deployment/dev-environment-agent.service.js';
-import type { IAgentDeploymentService } from '../../../application/ports/output/services/agent-deployment-service.interface.js';
-import { AgentDeploymentService } from '../../services/deployment/agent-deployment.service.js';
-import type { IStructuredAgentCaller } from '../../../application/ports/output/agents/structured-agent-caller.interface.js';
 import type { IDeploymentService } from '../../../application/ports/output/services/deployment-service.interface.js';
+import type { IDevServerAgentService } from '../../../application/ports/output/services/dev-server-agent-service.interface.js';
+import type { IDevServerRunPlanRepository } from '../../../application/ports/output/repositories/dev-server-run-plan-repository.interface.js';
+import type { IAgentExecutorProvider } from '../../../application/ports/output/agents/agent-executor-provider.interface.js';
+import type { IStructuredAgentCaller } from '../../../application/ports/output/agents/structured-agent-caller.interface.js';
+import { SQLiteDevServerRunPlanRepository } from '../../repositories/sqlite-dev-server-run-plan.repository.js';
+import { DevServerAgentService } from '../../services/agents/dev-server-agent/dev-server-agent.service.js';
 
 /**
- * Register local-deployment use cases and agent-based deployment services.
- * The `IDeploymentService` instance itself is constructed eagerly in container.ts
- * (it calls `recoverAll()` at startup).
+ * Resolve a token, degrading to null when it is not registered. Used for
+ * the agent-facing dependencies of the dev-server agent: a missing executor
+ * provider or structured caller must degrade the graph to deterministic-only
+ * operation, never break container bootstrap (spec 103 research decision).
+ */
+function safeResolve<T>(container: DependencyContainer, token: string): T | null {
+  try {
+    return container.resolve<T>(token);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Register local-deployment use cases and the agentic dev-server services
+ * (spec 103). The `IDeploymentService` instance itself is constructed
+ * eagerly in container.ts (it calls `recoverAll()` at startup).
  */
 export function registerDeployment(container: DependencyContainer): void {
-  // Agent-based deployment services (dev environment analysis)
-  container.register<IDevEnvironmentAgent>('IDevEnvironmentAgent', {
-    useFactory: (c) => {
-      const caller = c.resolve<IStructuredAgentCaller>('IStructuredAgentCaller');
-      return new DevEnvironmentAgentService({ structuredAgentCaller: caller });
-    },
+  container.register<IDevServerRunPlanRepository>('IDevServerRunPlanRepository', {
+    useFactory: instanceCachingFactory<IDevServerRunPlanRepository>((c) => {
+      const db = c.resolve<Database.Database>('Database');
+      return new SQLiteDevServerRunPlanRepository(db);
+    }),
   });
-  container.register<IAgentDeploymentService>('IAgentDeploymentService', {
-    useFactory: (c) => {
-      const devEnvAgent = c.resolve<IDevEnvironmentAgent>('IDevEnvironmentAgent');
-      const deploySvc = c.resolve<IDeploymentService>('IDeploymentService');
-      return new AgentDeploymentService({
-        devEnvironmentAgent: devEnvAgent,
-        deploymentService: deploySvc,
-      });
-    },
+
+  // Cached instance — the service owns the single-flight run registry, so
+  // every consumer must share ONE instance.
+  container.register<IDevServerAgentService>('IDevServerAgentService', {
+    useFactory: instanceCachingFactory<IDevServerAgentService>(
+      (c) =>
+        new DevServerAgentService({
+          deploymentService: c.resolve<IDeploymentService>('IDeploymentService'),
+          runPlanRepository: c.resolve<IDevServerRunPlanRepository>('IDevServerRunPlanRepository'),
+          executorProvider: safeResolve<IAgentExecutorProvider>(c, 'IAgentExecutorProvider'),
+          structuredCaller: safeResolve<IStructuredAgentCaller>(c, 'IStructuredAgentCaller'),
+        })
+    ),
   });
 
   container.registerSingleton(StartApplicationDeploymentUseCase);

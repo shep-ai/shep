@@ -33,6 +33,7 @@ import { getDeploymentStatus } from '@/app/actions/get-deployment-status';
 import { createLogger } from '@/lib/logger';
 import {
   DeploymentStatusStore,
+  isDeploymentActive,
   type DeploymentEntryState,
   EMPTY_ENTRY,
 } from './deployment-status-store';
@@ -40,10 +41,6 @@ import {
 const log = createLogger('[DeploymentStatusProvider]');
 
 const POLL_INTERVAL_MS = 3000;
-const ACTIVE_STATES: ReadonlySet<DeploymentState> = new Set([
-  DeploymentState.Booting,
-  DeploymentState.Ready,
-]);
 
 export interface DeployActionInput {
   targetId: string;
@@ -126,7 +123,7 @@ export function DeploymentStatusProvider({
       // Stop polls for entries that are no longer active.
       for (const [targetId] of intervals) {
         const entry = store.getEntry(targetId);
-        if (!entry.status || !ACTIVE_STATES.has(entry.status)) {
+        if (!isDeploymentActive(entry.status)) {
           stopPolling(targetId);
         }
       }
@@ -164,7 +161,7 @@ export function DeploymentStatusProvider({
         try {
           const result = await getDeploymentStatus(targetId);
           store.setStatus(targetId, result);
-          if (result && ACTIVE_STATES.has(result.state)) startPolling(targetId);
+          if (result && isDeploymentActive(result.state)) startPolling(targetId);
         } catch (err) {
           log.warn(`ensureHydrated failed for "${targetId}"`, err);
         }

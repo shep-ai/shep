@@ -1,7 +1,11 @@
 // @vitest-environment node
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { DeploymentStatusStore } from '../../../../../src/presentation/web/hooks/deployment-status-store.js';
+import {
+  DeploymentStatusStore,
+  isDeploymentActive,
+  isDeploymentStarting,
+} from '../../../../../src/presentation/web/hooks/deployment-status-store.js';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
 
 describe('DeploymentStatusStore', () => {
@@ -108,6 +112,48 @@ describe('DeploymentStatusStore', () => {
       const entry = store.getEntry('feat-1');
       expect(entry.status).toBeNull();
       expect(entry.url).toBeNull();
+    });
+  });
+
+  describe('isDeploymentActive', () => {
+    it.each([
+      DeploymentState.Analyzing,
+      DeploymentState.Installing,
+      DeploymentState.Booting,
+      DeploymentState.Ready,
+    ])('is true for %s', (state) => {
+      expect(isDeploymentActive(state)).toBe(true);
+    });
+
+    it('is false for Stopped', () => {
+      expect(isDeploymentActive(DeploymentState.Stopped)).toBe(false);
+    });
+
+    it('is false for null/undefined', () => {
+      expect(isDeploymentActive(null)).toBe(false);
+      expect(isDeploymentActive(undefined)).toBe(false);
+    });
+  });
+
+  describe('isDeploymentStarting', () => {
+    it.each([DeploymentState.Analyzing, DeploymentState.Installing, DeploymentState.Booting])(
+      'is true for %s',
+      (state) => {
+        expect(isDeploymentStarting(state)).toBe(true);
+      }
+    );
+
+    it('is false for Ready (already serving traffic)', () => {
+      expect(isDeploymentStarting(DeploymentState.Ready)).toBe(false);
+    });
+
+    it('is false for Stopped', () => {
+      expect(isDeploymentStarting(DeploymentState.Stopped)).toBe(false);
+    });
+
+    it('is false for null/undefined', () => {
+      expect(isDeploymentStarting(null)).toBe(false);
+      expect(isDeploymentStarting(undefined)).toBe(false);
     });
   });
 });

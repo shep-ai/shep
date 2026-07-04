@@ -36,6 +36,18 @@ export const Default: Story = {
   args: { deploy: makeDeploy() },
 };
 
+export const Analyzing: Story = {
+  args: {
+    deploy: makeDeploy({ status: DeploymentState.Analyzing, deployLoading: true }),
+  },
+};
+
+export const Installing: Story = {
+  args: {
+    deploy: makeDeploy({ status: DeploymentState.Installing, deployLoading: true }),
+  },
+};
+
 export const Booting: Story = {
   args: {
     deploy: makeDeploy({ status: DeploymentState.Booting, deployLoading: true }),

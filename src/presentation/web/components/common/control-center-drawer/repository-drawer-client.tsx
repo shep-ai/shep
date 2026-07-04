@@ -34,6 +34,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useRepositoryActions } from '@/components/common/repository-node/use-repository-actions';
 import { useDeployAction } from '@/hooks/use-deploy-action';
+import { isDeploymentActive as computeIsDeploymentActive } from '@/hooks/deployment-status-store';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import type { RepositoryNodeData } from '@/components/common/repository-node';
 import { ChatTab } from '@/components/features/chat/ChatTab';
@@ -76,7 +77,7 @@ export function RepositoryDrawerClient({ data, initialTab }: RepositoryDrawerCli
         }
       : null
   );
-  const isDeployActive = deployAction.status === 'Booting' || deployAction.status === 'Ready';
+  const isDeployActive = computeIsDeploymentActive(deployAction.status);
 
   const handleCopyPath = useCallback(() => {
     if (!data.repositoryPath) return;

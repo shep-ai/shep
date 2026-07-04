@@ -27,6 +27,7 @@ import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { useSoundAction } from '@/hooks/use-sound-action';
 import { useGuardedDrawerClose } from '@/hooks/drawer-close-guard';
 import { useDeployAction } from '@/hooks/use-deploy-action';
+import { isDeploymentActive as computeIsDeploymentActive } from '@/hooks/deployment-status-store';
 import { useAgentEventsContext } from '@/hooks/agent-events-provider';
 import { BaseDrawer } from '@/components/common/base-drawer';
 import { DeploymentStatusBadge } from '@/components/common/deployment-status-badge';
@@ -772,8 +773,7 @@ export function FeatureDrawerClient({
       : null;
 
   const deployAction = useDeployAction(featureDeployTarget);
-  const isFeatureDeployActive =
-    deployAction.status === 'Booting' || deployAction.status === 'Ready';
+  const isFeatureDeployActive = computeIsDeploymentActive(deployAction.status);
 
   // ── Short ID copy ───────────────────────────────────────────────────
   const COPY_FEEDBACK_DELAY = 2000;

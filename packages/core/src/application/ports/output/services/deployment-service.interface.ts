@@ -170,6 +170,22 @@ export interface IDeploymentService {
   // --- Log accumulation ---
 
   /**
+   * Append a synthetic log line to a target's log buffer and emit it on the
+   * 'log' event so live consumers (SSE route) stream it immediately.
+   *
+   * Used by the dev-server-agent graph to surface its own progress
+   * (analysis, install, remediation) alongside real process output. The
+   * entry is recorded with stream 'stdout' and the current timestamp.
+   *
+   * No-op when no deployment entry (transient or live) exists for the
+   * target — synthetic lines never create an entry on their own.
+   *
+   * @param targetId - Unique identifier for the deployment target
+   * @param line - The log line content (without trailing newline)
+   */
+  appendLog(targetId: string, line: string): void;
+
+  /**
    * Get the accumulated log buffer for a deployment.
    *
    * @param targetId - Unique identifier for the deployment target

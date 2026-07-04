@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from 'react-i18next';
 import { useDeployAction, type DeployActionInput } from '@/hooks/use-deploy-action';
+import { isDeploymentActive } from '@/hooks/deployment-status-store';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 
 const drawerVariants = cva('', {
@@ -158,7 +159,7 @@ export function BaseDrawer({
 
 function DeployBar({ deployTarget }: { deployTarget: DeployActionInput }) {
   const deployAction = useDeployAction(deployTarget);
-  const isDeploymentActive = deployAction.status === 'Booting' || deployAction.status === 'Ready';
+  const deploymentActive = isDeploymentActive(deployAction.status);
 
   return (
     <div data-testid="base-drawer-deploy-bar" className="flex items-center gap-2 px-4 pt-3 pb-3">
@@ -167,11 +168,11 @@ function DeployBar({ deployTarget }: { deployTarget: DeployActionInput }) {
           <TooltipTrigger asChild>
             <span>
               <ActionButton
-                label={isDeploymentActive ? 'Stop Dev Server' : 'Start Dev Server'}
-                onClick={isDeploymentActive ? deployAction.stop : deployAction.deploy}
+                label={deploymentActive ? 'Stop Dev Server' : 'Start Dev Server'}
+                onClick={deploymentActive ? deployAction.stop : deployAction.deploy}
                 loading={deployAction.deployLoading || deployAction.stopLoading}
                 error={!!deployAction.deployError}
-                icon={isDeploymentActive ? Square : Play}
+                icon={deploymentActive ? Square : Play}
                 iconOnly
                 variant="outline"
                 size="icon-sm"
@@ -179,11 +180,11 @@ function DeployBar({ deployTarget }: { deployTarget: DeployActionInput }) {
             </span>
           </TooltipTrigger>
           <TooltipContent>
-            {isDeploymentActive ? 'Stop Dev Server' : 'Start Dev Server'}
+            {deploymentActive ? 'Stop Dev Server' : 'Start Dev Server'}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      {isDeploymentActive ? (
+      {deploymentActive ? (
         <DeploymentStatusBadge
           status={deployAction.status}
           url={deployAction.url}

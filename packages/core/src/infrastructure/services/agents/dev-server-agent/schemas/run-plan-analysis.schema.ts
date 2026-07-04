@@ -3,7 +3,7 @@
  *
  * JSON schema for the structured agent call the analyze node makes when
  * deterministic detection cannot resolve a dev command. Migrated verbatim
- * from the legacy DevEnvironmentAgentService (spec 103 replaces that
+ * from the legacy spec-068 dev-environment agent (spec 103 replaced that
  * service with the dev-server agent graph).
  */
 

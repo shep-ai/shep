@@ -1,11 +1,10 @@
 'use client';
 
-import { DeploymentState } from '@shepai/core/domain/generated/output';
-
 import { cn } from '@/lib/utils';
 import { TerminalTab } from '@/components/features/application-page/terminal-tab';
 import { IdeTab } from '@/components/features/application-page/ide-tab';
 import { WebPreviewTab } from '@/components/features/application-page/web-preview-tab';
+import { isDeploymentActive } from '@/hooks/deployment-status-store';
 import type { DeployActionState } from '@/hooks/use-deploy-action';
 
 import type { AppView } from './app-view-tabs';
@@ -42,11 +41,7 @@ export function ViewBody({
   // mounted so its "Building your app…" stub renders — treat `isBuilding`
   // as meaningful deploy state for mount purposes.
   const hasWebContent =
-    deploy.status === DeploymentState.Ready ||
-    deploy.status === DeploymentState.Booting ||
-    deploy.deployLoading ||
-    !!deploy.deployError ||
-    isBuilding;
+    isDeploymentActive(deploy.status) || deploy.deployLoading || !!deploy.deployError || isBuilding;
 
   return (
     <div className="relative flex min-h-0 flex-1">

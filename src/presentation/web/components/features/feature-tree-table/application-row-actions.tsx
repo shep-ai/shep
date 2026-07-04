@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useDeployAction } from '@/hooks/use-deploy-action';
+import { isDeploymentStarting } from '@/hooks/deployment-status-store';
 import { deleteApplication } from '@/app/actions/delete-application';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
 
@@ -51,7 +52,7 @@ export function ApplicationRowActions({
   });
 
   const isLocalRunning = deploy.status === DeploymentState.Ready && Boolean(deploy.url);
-  const isBooting = deploy.status === DeploymentState.Booting || deploy.deployLoading;
+  const isBooting = isDeploymentStarting(deploy.status) || deploy.deployLoading;
 
   function handleOpen() {
     setMenuOpen(false);

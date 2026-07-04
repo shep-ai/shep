@@ -1,5 +1,16 @@
 # Lessons Learned
 
+## Adding Enum Members — Grep String Literals, Not Just `Enum.Member`
+
+Adding `Analyzing`/`Installing` to `DeploymentState` (spec 103, task-14) required updating every place that treats a deployment as "active". Grepping for `DeploymentState\.` found the touchpoints written as `deploy.status === DeploymentState.Booting`, but missed FIVE more call sites that compared against raw **string literals** instead: `deployAction.status === 'Booting' || deployAction.status === 'Ready'` in `base-drawer.tsx`, `repository-node.tsx`, `feature-node.tsx`, `repository-drawer-client.tsx`, and `feature-drawer-client.tsx`. All five happened to reuse the exact variable name `isDeploymentActive`/`isDeployActive` — a strong signal it should have been one shared helper from the start.
+
+**Rule:** When adding a member to a string enum, grep for BOTH forms: `EnumName\.` (typed comparisons) AND the enum's string values as bare literals (`'Booting'`, `"Ready"`, etc.) — TS allows comparing a typed enum value against a matching string literal, so these compile silently and never show up in an `EnumName.` grep. A literal-string comparison against an enum value is itself a code smell to fix opportunistically when you touch it.
+
+**Rule:** The moment the same derived boolean (`isDeploymentActive = status === X || status === Y`) appears in a second file, extract it to a shared helper (e.g. `isDeploymentActive(state)` next to the enum-consuming store/hook) instead of waiting for a third occurrence — string-literal duplicates are easy to miss in a `no-duplication` grep since they don't share an obvious import.
+
+**Gotcha:** `const flag = someOptionalString && predicate(...)` gets special TS narrowing (control-flow analysis of aliased conditions) that lets `{flag ? <Component requiredString={someOptionalString} /> : null}` typecheck. Rewriting it as `Boolean(someOptionalString) && predicate(...)` breaks that narrowing — TS no longer sees the direct `x && ...` shape and the required-string prop errors. Keep the literal `x && ...` form when refactoring this pattern into a shared helper call.
+
+
 ## npm trusted publishing requires npm >= 11.5 on the runner
 
 `@semantic-release/npm` v13 added OIDC trusted publishing. In `lib/verify-auth.js`, when the OIDC token exchange with npmjs.com succeeds, the plugin **early-returns and does NOT write `NPM_TOKEN` to the userconfig `.npmrc`**. It then runs plain `npm publish` and relies on the **npm CLI itself** to do trusted publishing — which needs **npm >= 11.5.0**.

@@ -11,11 +11,49 @@
  * logic.
  */
 
-import type { DeploymentState } from '@shepai/core/domain/generated/output';
+import { DeploymentState } from '@shepai/core/domain/generated/output';
 import type {
   DeploymentStatus,
   DeploymentStatusEntry,
 } from '@shepai/core/application/ports/output/services/deployment-service.interface';
+
+/**
+ * States in which a deployment is in flight or live — the agentic
+ * dev-server graph runs Analyzing → Installing → Booting before landing
+ * on Ready. Any component that previously treated `Booting | Ready` as
+ * "there is an active deployment" (poll for updates, show the stop
+ * button, show the log viewer, block a redundant deploy click) must
+ * treat all four of these the same way, or the new pre-Booting stages
+ * regress those behaviors back to looking idle.
+ *
+ * Single source of truth — reuse this instead of re-deriving the state
+ * set (or comparing against string literals) at each call site.
+ */
+export const ACTIVE_DEPLOYMENT_STATES: ReadonlySet<DeploymentState> = new Set([
+  DeploymentState.Analyzing,
+  DeploymentState.Installing,
+  DeploymentState.Booting,
+  DeploymentState.Ready,
+]);
+
+export function isDeploymentActive(state: DeploymentState | null | undefined): boolean {
+  return state != null && ACTIVE_DEPLOYMENT_STATES.has(state);
+}
+
+/**
+ * "Starting" states — the dev server is coming up but not yet serving
+ * traffic (excludes Ready). Drives busy/spinner UI and start-button
+ * disabling that must NOT fire again once the deployment reaches Ready.
+ */
+export const STARTING_DEPLOYMENT_STATES: ReadonlySet<DeploymentState> = new Set([
+  DeploymentState.Analyzing,
+  DeploymentState.Installing,
+  DeploymentState.Booting,
+]);
+
+export function isDeploymentStarting(state: DeploymentState | null | undefined): boolean {
+  return state != null && STARTING_DEPLOYMENT_STATES.has(state);
+}
 
 export interface DeploymentEntryState {
   status: DeploymentState | null;

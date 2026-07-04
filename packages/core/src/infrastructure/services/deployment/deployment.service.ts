@@ -246,6 +246,25 @@ export class DeploymentService implements IDeploymentService {
   }
 
   /**
+   * Append a synthetic log line to the target's buffer (transient or live
+   * entry alike) and emit it on the 'log' event for live SSE streaming.
+   * No-op when the target has no entry.
+   */
+  appendLog(targetId: string, line: string): void {
+    const entry = this.deployments.get(targetId);
+    if (!entry) return;
+
+    const logEntry: LogEntry = {
+      targetId,
+      stream: 'stdout',
+      line,
+      timestamp: Date.now(),
+    };
+    entry.logs.push(logEntry);
+    this.emitter.emit('log', logEntry);
+  }
+
+  /**
    * Get the accumulated log buffer for a deployment.
    */
   getLogs(targetId: string): LogEntry[] | null {

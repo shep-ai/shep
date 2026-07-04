@@ -39,6 +39,24 @@ export const Idle: Story = {
   args: { deploy: makeDeploy() },
 };
 
+export const DevServerAnalyzing: Story = {
+  args: {
+    deploy: makeDeploy({
+      status: DeploymentState.Analyzing,
+      deployLoading: true,
+    }),
+  },
+};
+
+export const DevServerInstalling: Story = {
+  args: {
+    deploy: makeDeploy({
+      status: DeploymentState.Installing,
+      deployLoading: true,
+    }),
+  },
+};
+
 export const DevServerBooting: Story = {
   args: {
     deploy: makeDeploy({

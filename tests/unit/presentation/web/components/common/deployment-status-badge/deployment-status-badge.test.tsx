@@ -26,6 +26,22 @@ describe('DeploymentStatusBadge', () => {
     expect(blueIcon).toBeInTheDocument();
   });
 
+  it('renders spinning loader badge with "Analyzing..." when status is Analyzing', () => {
+    const { container } = render(<DeploymentStatusBadge status={DeploymentState.Analyzing} />);
+
+    expect(screen.getByText('Analyzing...')).toBeInTheDocument();
+    const spinner = container.querySelector('.animate-spin');
+    expect(spinner).toBeInTheDocument();
+  });
+
+  it('renders spinning loader badge with "Installing..." when status is Installing', () => {
+    const { container } = render(<DeploymentStatusBadge status={DeploymentState.Installing} />);
+
+    expect(screen.getByText('Installing...')).toBeInTheDocument();
+    const spinner = container.querySelector('.animate-spin');
+    expect(spinner).toBeInTheDocument();
+  });
+
   it('renders green badge with clickable URL when status is Ready', () => {
     const { container } = render(
       <DeploymentStatusBadge status={DeploymentState.Ready} url="http://localhost:3000" />
@@ -68,6 +84,18 @@ describe('DeploymentStatusBadge', () => {
 
     it('renders log button when status is Booting and targetId is provided', () => {
       render(<DeploymentStatusBadge status={DeploymentState.Booting} targetId="my-target" />);
+
+      expect(screen.getByRole('button', { name: /view server logs/i })).toBeInTheDocument();
+    });
+
+    it('renders log button when status is Analyzing and targetId is provided', () => {
+      render(<DeploymentStatusBadge status={DeploymentState.Analyzing} targetId="my-target" />);
+
+      expect(screen.getByRole('button', { name: /view server logs/i })).toBeInTheDocument();
+    });
+
+    it('renders log button when status is Installing and targetId is provided', () => {
+      render(<DeploymentStatusBadge status={DeploymentState.Installing} targetId="my-target" />);
 
       expect(screen.getByRole('button', { name: /view server logs/i })).toBeInTheDocument();
     });

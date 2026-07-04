@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StartApplicationDeploymentUseCase } from '@/application/use-cases/deployments/start-application-deployment.use-case.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
-import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
+import type { IDevServerAgentService } from '@/application/ports/output/services/dev-server-agent-service.interface.js';
 import type { IFileSystemService } from '@/application/ports/output/services/file-system-service.interface.js';
 import type { IShepInstanceService } from '@/application/ports/output/services/shep-instance-service.interface.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
@@ -42,18 +42,8 @@ function createDeps() {
     isSameInstance: vi.fn().mockReturnValue(false),
   };
 
-  const deploymentService: IDeploymentService = {
-    setDatabase: vi.fn(),
-    recoverAll: vi.fn(),
-    setTransientState: vi.fn(),
-    start: vi.fn(),
-    stop: vi.fn().mockResolvedValue(undefined),
-    getStatus: vi.fn().mockReturnValue(null),
-    listAll: vi.fn().mockReturnValue([]),
-    stopAll: vi.fn(),
-    getLogs: vi.fn().mockReturnValue(null),
-    on: vi.fn(),
-    off: vi.fn(),
+  const devServerAgent: IDevServerAgentService = {
+    startDevServer: vi.fn().mockResolvedValue({ state: DeploymentState.Analyzing }),
   };
 
   const logger: ILogger = {
@@ -63,7 +53,7 @@ function createDeps() {
     error: vi.fn(),
   };
 
-  return { applicationRepo, fileSystem, shepInstance, deploymentService, logger };
+  return { applicationRepo, fileSystem, shepInstance, devServerAgent, logger };
 }
 
 describe('StartApplicationDeploymentUseCase', () => {
@@ -76,19 +66,23 @@ describe('StartApplicationDeploymentUseCase', () => {
       deps.applicationRepo,
       deps.fileSystem,
       deps.shepInstance,
-      deps.deploymentService,
+      deps.devServerAgent,
       deps.logger
     );
   });
 
-  it('starts the deployment keyed by applicationId with targetType=application and returns Booting state', async () => {
+  it('delegates to the dev-server agent keyed by applicationId with targetType=application and returns its state', async () => {
     const result = await useCase.execute({ applicationId: APP_ID });
 
     expect(deps.applicationRepo.findById).toHaveBeenCalledWith(APP_ID);
     expect(deps.fileSystem.pathExists).toHaveBeenCalledWith(REPO_PATH);
     expect(deps.shepInstance.isSameInstance).toHaveBeenCalledWith(REPO_PATH);
-    expect(deps.deploymentService.start).toHaveBeenCalledWith(APP_ID, REPO_PATH, 'application');
-    expect(result).toEqual({ state: DeploymentState.Booting });
+    expect(deps.devServerAgent.startDevServer).toHaveBeenCalledWith(
+      APP_ID,
+      REPO_PATH,
+      'application'
+    );
+    expect(result).toEqual({ state: DeploymentState.Analyzing });
   });
 
   it('throws ApplicationNotFoundError when the application does not exist', async () => {
@@ -97,7 +91,7 @@ describe('StartApplicationDeploymentUseCase', () => {
     await expect(useCase.execute({ applicationId: APP_ID })).rejects.toBeInstanceOf(
       ApplicationNotFoundError
     );
-    expect(deps.deploymentService.start).not.toHaveBeenCalled();
+    expect(deps.devServerAgent.startDevServer).not.toHaveBeenCalled();
     expect(deps.logger.warn).toHaveBeenCalled();
   });
 
@@ -107,7 +101,7 @@ describe('StartApplicationDeploymentUseCase', () => {
     await expect(useCase.execute({ applicationId: APP_ID })).rejects.toBeInstanceOf(
       ApplicationRepositoryNotOnDiskError
     );
-    expect(deps.deploymentService.start).not.toHaveBeenCalled();
+    expect(deps.devServerAgent.startDevServer).not.toHaveBeenCalled();
     expect(deps.logger.warn).toHaveBeenCalled();
   });
 
@@ -117,13 +111,13 @@ describe('StartApplicationDeploymentUseCase', () => {
     await expect(useCase.execute({ applicationId: APP_ID })).rejects.toBeInstanceOf(
       CannotDeploySelfError
     );
-    expect(deps.deploymentService.start).not.toHaveBeenCalled();
+    expect(deps.devServerAgent.startDevServer).not.toHaveBeenCalled();
     expect(deps.logger.warn).toHaveBeenCalled();
   });
 
   it('rejects an empty applicationId', async () => {
     await expect(useCase.execute({ applicationId: '' })).rejects.toThrow(/required/i);
-    expect(deps.deploymentService.start).not.toHaveBeenCalled();
+    expect(deps.devServerAgent.startDevServer).not.toHaveBeenCalled();
     expect(deps.logger.warn).toHaveBeenCalled();
   });
 });

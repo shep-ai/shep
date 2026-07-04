@@ -30,6 +30,7 @@ import { DeploymentState } from '@shepai/core/domain/generated/output';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { isDeploymentStarting } from '@/hooks/deployment-status-store';
 import type { DeployActionState } from '@/hooks/use-deploy-action';
 
 export const VIEW_TABS = ['ide', 'terminal', 'web'] as const;
@@ -69,7 +70,10 @@ type WebStatus = 'idle' | 'booting' | 'ready' | 'error' | 'building';
 function deriveWebStatus(deploy: DeployActionState, isBuilding: boolean): WebStatus {
   if (isBuilding) return 'building';
   if (deploy.deployError) return 'error';
-  if (deploy.status === DeploymentState.Booting || deploy.deployLoading) return 'booting';
+  // Analyzing / Installing behave exactly like Booting here — all three
+  // are "the dev server is coming up, not ready yet" for tab-icon and
+  // click-to-deploy purposes.
+  if (isDeploymentStarting(deploy.status) || deploy.deployLoading) return 'booting';
   if (deploy.status === DeploymentState.Ready && deploy.url) return 'ready';
   return 'idle';
 }

@@ -33,6 +33,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { DeploymentState } from '@shepai/core/domain/generated/output';
 
+import { isDeploymentActive } from '@/hooks/deployment-status-store';
 import type { DeployActionState } from '@/hooks/use-deploy-action';
 
 import type { AppView } from './app-view-tabs';
@@ -67,9 +68,11 @@ export function useDevServerCoordinator({
     prevAgentRunningRef.current = agentRunning;
 
     if (agentRunning && !wasRunning) {
-      // Agent just started — stop the dev server if running so the
-      // code it's about to change isn't being served stale.
-      if (deploy.status === DeploymentState.Ready || deploy.status === DeploymentState.Booting) {
+      // Agent just started — stop the dev server if it's active (running,
+      // or anywhere in the Analyzing/Installing/Booting startup sequence)
+      // so the code it's about to change isn't being served stale (or
+      // spawned against a tree that's about to be rewritten).
+      if (isDeploymentActive(deploy.status)) {
         void deploy.stop();
       }
       // Intentionally no longer auto-switch away from the Web tab —
@@ -85,11 +88,14 @@ export function useDevServerCoordinator({
       // coming up. This is the single source of truth for auto-deploy
       // on agent transitions; it covers the initial build AND every
       // iteration, both of which end with this transition.
-      if (
-        deploy.status !== DeploymentState.Ready &&
-        deploy.status !== DeploymentState.Booting &&
-        !deploy.deployLoading
-      ) {
+      //
+      // The guard must skip for EVERY active state (Analyzing/
+      // Installing/Booting/Ready), not just Ready/Booting — otherwise
+      // finishing a turn while the graph is mid-Analyzing or
+      // mid-Installing would fire a second, competing deploy() and
+      // kill the in-flight spawn (see LESSONS.md — deploy() is not
+      // idempotent).
+      if (!isDeploymentActive(deploy.status) && !deploy.deployLoading) {
         void deploy.deploy();
       }
     }

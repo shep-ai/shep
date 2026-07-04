@@ -6,10 +6,12 @@
  * as the top-bar Run button so there's a single source of truth.
  *
  * States:
- *   - Ready   → <iframe src={url}> with an "open in new tab" badge
- *   - Booting → spinner + "Starting dev server…"
- *   - Idle    → friendly empty state pointing at the Run button
- *   - Error   → deploy error with a retry hint
+ *   - Ready      → <iframe src={url}> with an "open in new tab" badge
+ *   - Analyzing  → spinner + "Analyzing project…"
+ *   - Installing → spinner + "Installing dependencies…"
+ *   - Booting    → spinner + "Starting dev server…"
+ *   - Idle       → friendly empty state pointing at the Run button
+ *   - Error      → deploy error with a retry hint
  *
  * The iframe is always mounted once we have a URL so switching tabs
  * (IDE → Terminal → Web) does NOT tear down the preview session. It
@@ -21,6 +23,8 @@
 import { useCallback } from 'react';
 import { ExternalLink, Globe, Hammer, Loader2, Play, Square, TriangleAlert } from 'lucide-react';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
+import { isDeploymentStarting } from '@/hooks/deployment-status-store';
+import { getDeploymentStartingCopy } from '@/lib/deployment-state-copy';
 import type { DeployActionState } from '@/hooks/use-deploy-action';
 
 export interface WebPreviewTabProps {
@@ -104,13 +108,18 @@ export function WebPreviewTab({ deploy, isBuilding = false }: WebPreviewTabProps
     );
   }
 
-  // Booting — spinner
-  if (deploy.status === DeploymentState.Booting || deploy.deployLoading) {
+  // Analyzing / Installing / Booting — spinner, one honest message per
+  // stage instead of the old faked "Installing dependencies and
+  // booting…" combined copy. `deploy.deployLoading` covers the instant
+  // after clicking Start before the store has a status yet, which
+  // presents as the Booting copy (the default fallback).
+  if (isDeploymentStarting(deploy.status) || deploy.deployLoading) {
+    const { title, description } = getDeploymentStartingCopy(deploy.status);
     return (
       <EmptyState
         icon={<Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />}
-        title="Starting dev server…"
-        description="Installing dependencies and booting the app. This can take a minute on the first run."
+        title={title}
+        description={description}
       />
     );
   }

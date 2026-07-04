@@ -27,9 +27,11 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTurnStatus } from '@/hooks/turn-statuses-provider';
 import { useDeployAction } from '@/hooks/use-deploy-action';
+import { isDeploymentStarting } from '@/hooks/deployment-status-store';
 import { DeploymentState } from '@shepai/core/domain/generated/output';
 import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 import { deriveAppLiveStatus } from '@/lib/derive-app-status';
+import { getDeploymentStartingLabel } from '@/lib/deployment-state-copy';
 import type { ApplicationNodeData } from './application-node-config';
 
 /** Preview slot height. Used only when a deployment is actually Live —
@@ -343,10 +345,10 @@ export function ApplicationNode({
         >
           {deploy.deployError ? (
             <span className="truncate text-xs text-red-500">{deploy.deployError}</span>
-          ) : deploy.status === DeploymentState.Booting || deploy.deployLoading ? (
+          ) : isDeploymentStarting(deploy.status) || deploy.deployLoading ? (
             <span className="text-muted-foreground inline-flex items-center gap-1.5">
               <Loader2 className="h-3 w-3 shrink-0 animate-spin text-amber-500" />
-              <span>Starting…</span>
+              <span>{getDeploymentStartingLabel(deploy.status)}</span>
             </span>
           ) : deploy.stopLoading ? (
             <span className="text-muted-foreground inline-flex items-center gap-1.5">

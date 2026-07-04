@@ -28,6 +28,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ChatDotIndicator } from '@/components/features/chat/ChatDotIndicator';
 import { useTurnStatus } from '@/hooks/turn-statuses-provider';
 import { useDeployAction } from '@/hooks/use-deploy-action';
+import { isDeploymentActive as computeIsDeploymentActive } from '@/hooks/deployment-status-store';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import {
   AlertDialog,
@@ -130,7 +131,7 @@ export function FeatureNode({
         }
       : null;
   const deployAction = useDeployAction(deployTarget);
-  const isDeployActive = deployAction.status === 'Booting' || deployAction.status === 'Ready';
+  const isDeployActive = computeIsDeploymentActive(deployAction.status);
   const isDeployReady = deployAction.status === 'Ready';
 
   return (

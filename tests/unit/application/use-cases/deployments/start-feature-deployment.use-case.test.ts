@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StartFeatureDeploymentUseCase } from '@/application/use-cases/deployments/start-feature-deployment.use-case.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
-import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
+import type { IDevServerAgentService } from '@/application/ports/output/services/dev-server-agent-service.interface.js';
 import type { IFileSystemService } from '@/application/ports/output/services/file-system-service.interface.js';
 import type { IShepInstanceService } from '@/application/ports/output/services/shep-instance-service.interface.js';
 import type { IWorktreePathProvider } from '@/application/ports/output/services/worktree-path-provider.interface.js';
@@ -57,18 +57,8 @@ function createDeps() {
     hardDelete: vi.fn(),
   } as unknown as IFeatureRepository;
 
-  const deploymentService: IDeploymentService = {
-    setDatabase: vi.fn(),
-    recoverAll: vi.fn(),
-    setTransientState: vi.fn(),
-    start: vi.fn(),
-    stop: vi.fn().mockResolvedValue(undefined),
-    getStatus: vi.fn().mockReturnValue(null),
-    listAll: vi.fn().mockReturnValue([]),
-    stopAll: vi.fn(),
-    getLogs: vi.fn().mockReturnValue(null),
-    on: vi.fn(),
-    off: vi.fn(),
+  const devServerAgent: IDevServerAgentService = {
+    startDevServer: vi.fn().mockResolvedValue({ state: DeploymentState.Analyzing }),
   };
 
   const fileSystem: IFileSystemService = {
@@ -86,7 +76,7 @@ function createDeps() {
     ),
   };
 
-  return { featureRepo, deploymentService, fileSystem, shepInstance, worktreePaths };
+  return { featureRepo, devServerAgent, fileSystem, shepInstance, worktreePaths };
 }
 
 describe('StartFeatureDeploymentUseCase', () => {
@@ -97,7 +87,7 @@ describe('StartFeatureDeploymentUseCase', () => {
     deps = createDeps();
     useCase = new StartFeatureDeploymentUseCase(
       deps.featureRepo,
-      deps.deploymentService,
+      deps.devServerAgent,
       deps.fileSystem,
       deps.shepInstance,
       deps.worktreePaths
@@ -119,7 +109,7 @@ describe('StartFeatureDeploymentUseCase', () => {
     vi.mocked(deps.fileSystem.pathExists).mockReturnValue(false);
 
     await expect(useCase.execute('feat-1')).rejects.toThrow(/worktree/i);
-    expect(deps.deploymentService.start).not.toHaveBeenCalled();
+    expect(deps.devServerAgent.startDevServer).not.toHaveBeenCalled();
   });
 
   it('rejects features that belong to the running shep instance', async () => {
@@ -127,21 +117,21 @@ describe('StartFeatureDeploymentUseCase', () => {
     vi.mocked(deps.shepInstance.isSameInstance).mockReturnValue(true);
 
     await expect(useCase.execute('feat-1')).rejects.toThrow(/shep/i);
-    expect(deps.deploymentService.start).not.toHaveBeenCalled();
+    expect(deps.devServerAgent.startDevServer).not.toHaveBeenCalled();
   });
 
-  it('starts the deployment and returns Booting state', async () => {
+  it('delegates to the dev-server agent and returns its state with url null', async () => {
     const feature = makeFeature({ id: 'feat-1', repositoryPath: '/repos/demo', branch: 'feat/x' });
     vi.mocked(deps.featureRepo.findById).mockResolvedValue(feature);
 
     const result = await useCase.execute('feat-1');
 
-    expect(deps.deploymentService.start).toHaveBeenCalledWith(
+    expect(deps.devServerAgent.startDevServer).toHaveBeenCalledWith(
       'feat-1',
       expect.any(String),
       'feature'
     );
-    expect(result).toEqual({ state: DeploymentState.Booting, url: null });
+    expect(result).toEqual({ state: DeploymentState.Analyzing, url: null });
   });
 
   it('checks same-shep-instance against the feature repositoryPath, not the worktree path', async () => {

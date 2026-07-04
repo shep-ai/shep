@@ -3,8 +3,8 @@
  *
  * Pure function that builds the structured-analysis prompt the analyze node
  * sends when deterministic detection fails. Migrated from the legacy
- * DevEnvironmentAgentService prompt building (buildPrompt / getDirListing /
- * readConfigFiles), with fs access injectable for tests.
+ * spec-068 dev-environment agent's prompt building (buildPrompt /
+ * getDirListing / readConfigFiles), with fs access injectable for tests.
  *
  * The config-file inventory is shared with the run-plan cache hashing
  * (CONFIG_FILES from config-hash.js) so the prompt context and cache

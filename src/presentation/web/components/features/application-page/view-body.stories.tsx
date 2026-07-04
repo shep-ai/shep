@@ -21,6 +21,18 @@ const readyDeploy: DeployActionState = {
   url: 'http://localhost:4321',
 };
 
+const analyzingDeploy: DeployActionState = {
+  ...idleDeploy,
+  status: DeploymentState.Analyzing,
+  deployLoading: true,
+};
+
+const installingDeploy: DeployActionState = {
+  ...idleDeploy,
+  status: DeploymentState.Installing,
+  deployLoading: true,
+};
+
 const meta: Meta<typeof ViewBody> = {
   title: 'ApplicationPage/ViewBody',
   component: ViewBody,
@@ -52,5 +64,23 @@ export const WebReady: Story = {
     applicationId: 'app-001',
     terminalCwd: '/home/user/example-app',
     deploy: readyDeploy,
+  },
+};
+
+export const WebAnalyzing: Story = {
+  args: {
+    activeView: 'web',
+    applicationId: 'app-001',
+    terminalCwd: '/home/user/example-app',
+    deploy: analyzingDeploy,
+  },
+};
+
+export const WebInstalling: Story = {
+  args: {
+    activeView: 'web',
+    applicationId: 'app-001',
+    terminalCwd: '/home/user/example-app',
+    deploy: installingDeploy,
   },
 };
