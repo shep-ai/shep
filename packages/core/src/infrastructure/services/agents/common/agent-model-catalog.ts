@@ -8,9 +8,11 @@
  */
 
 export const CLAUDE_CODE_MODELS: string[] = [
+  'claude-fable-5',
   'claude-opus-4-8',
   'claude-opus-4-7',
   'claude-opus-4-6',
+  'claude-sonnet-5',
   'claude-sonnet-4-6',
   'claude-haiku-4-5',
   'glm-5.2',
@@ -29,6 +31,7 @@ export const CURSOR_MODELS: string[] = [
   'claude-opus-4-8',
   'claude-opus-4-7',
   'claude-opus-4-6',
+  'claude-sonnet-5',
   'claude-sonnet-4-6',
   'gpt-5.4-high',
   'gpt-5.2',
